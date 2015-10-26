@@ -1,0 +1,40 @@
+{
+  "name": "sqlectron-core",
+  "version": "0.0.0",
+  "description": "sqlectron-core",
+  "main": "lib/index.js",
+  "author": "The SQLECTRON Team",
+  "scripts": {
+    "compile": "babel --stage 0 -d lib/ src/",
+    "prepublish": "npm run compile",
+    "test": "eslint src/ spec/ && mocha --compilers js:babel/register --reporter spec ./spec/**/*.spec.js",
+    "watch-test": "eslint src/ spec/ && mocha --compilers js:babel/register --watch --reporter spec ./spec/**/*.spec.js"
+  },
+  "keywords": [
+    "sqlectron",
+    "sql",
+    "postgres",
+    "mysql"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sqlectron/sqlectron-core"
+  },
+  "dependencies": {
+    "debug": "^2.2.0",
+    "pg": "^4.4.3",
+    "portfinder": "^0.4.0",
+    "ssh2": "^0.4.11",
+    "valida": "^2.0.0"
+  },
+  "devDependencies": {
+    "babel": "^5.8.29",
+    "babel-eslint": "^4.1.3",
+    "chai": "^3.4.0",
+    "eslint": "^1.7.3",
+    "eslint-config-airbnb": "^0.1.0",
+    "mocha": "^2.3.3",
+    "sinon": "^1.17.2",
+    "sqlite3": "^3.1.0"
+  }
+}

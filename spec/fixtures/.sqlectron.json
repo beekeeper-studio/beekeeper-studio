@@ -1,0 +1,136 @@
+{
+  "servers": [
+    {
+      "name": "pg-vm",
+      "client": "postgresql",
+      "host": "10.10.10.10",
+      "port": 5432,
+      "user": "user",
+      "password": "password",
+      "database": "company"
+    },
+    {
+      "name": "mysql",
+      "client": "mysql",
+      "host": "10.10.10.15",
+      "port": 3306,
+      "database": "authentication",
+      "user": "root",
+      "password": "password"
+    },
+    {
+      "name": "pg-vm-ssh",
+      "client": "postgresql",
+      "host": "localhost",
+      "port": 5432,
+      "user": "user",
+      "password": "password",
+      "database": "company",
+      "ssh": {
+        "host": "10.10.10.10",
+        "port": 22,
+        "privateKey": "~/.vagrant.d/insecure_private_key",
+        "user": "core"
+      }
+    },
+    {
+      "name": "name333",
+      "client": "mysql",
+      "host": "host.com",
+      "port": 33,
+      "user": "user",
+      "password": "passd",
+      "database": "database",
+      "ssh": {
+        "host": "hostssh.com",
+        "port": 22,
+        "user": "usrssh",
+        "password": "pwdssh"
+      }
+    },
+    {
+      "name": "name",
+      "client": null,
+      "host": "hsot.com",
+      "port": 3,
+      "user": "user",
+      "password": "pass",
+      "database": "databa",
+      "ssh": {
+        "host": "hostssh.com",
+        "port": 33,
+        "user": "user",
+        "password": "pass"
+      }
+    },
+    {
+      "name": "Name",
+      "client": null,
+      "host": "host.com",
+      "port": 33,
+      "user": "user",
+      "password": "pass",
+      "database": "database",
+      "ssh": {
+        "host": "hostsssss.com",
+        "port": 22,
+        "user": "userssh",
+        "password": "pwdssh"
+      }
+    },
+    {
+      "name": "name",
+      "client": null,
+      "host": "host.com",
+      "port": 33,
+      "user": "user",
+      "password": "paas",
+      "database": "databse"
+    },
+    {
+      "name": "namename",
+      "client": null,
+      "host": "hsot.com",
+      "port": 33,
+      "user": "user",
+      "password": "pass",
+      "database": "database"
+    },
+    {
+      "name": "ola",
+      "client": "mysql",
+      "host": "hot.com",
+      "port": 34,
+      "user": "user",
+      "password": "pass",
+      "database": "data"
+    },
+    {
+      "name": "name",
+      "client": "postgresql",
+      "host": "host.com",
+      "port": 33434,
+      "user": "use",
+      "password": "pass",
+      "database": "database"
+    },
+    {
+      "name": "My new name",
+      "client": "mysql",
+      "host": "host",
+      "port": 334,
+      "user": "user",
+      "password": "pass",
+      "database": "data"
+    },
+    {
+      "name": "My other name",
+      "client": "mysql",
+      "host": "hsot.com",
+      "port": 3434,
+      "user": "user",
+      "password": "padad",
+      "database": "data"
+    }
+  ]
+}
