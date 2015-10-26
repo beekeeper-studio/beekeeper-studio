@@ -1,12 +1,11 @@
-import fs from 'fs';
 import { validate } from './validators/server';
-import { getConfigPath } from './utils';
+import { getConfigPath, writeFile, readFile, fileExists } from './utils';
 
 
 export async function loadServerListFromFile() {
   const filename = getConfigPath();
   if (!await fileExists(filename)) {
-    await createFile(filename, { servers: [] });
+    await writeFile(filename, { servers: [] });
   }
   const result = await readFile(filename);
   // TODO: Validate whole configuration file
@@ -23,7 +22,7 @@ export async function addServer(server) {
 
   const data = await readFile(filename);
   data.servers.push(server);
-  await createFile(filename, data);
+  await writeFile(filename, data);
 
   return server;
 }
@@ -36,7 +35,7 @@ export async function updateServer(id, server) {
   const data = await readFile(filename);
 
   data.servers[id] = server;
-  await createFile(filename, data);
+  await writeFile(filename, data);
 
   return server;
 }
@@ -51,35 +50,5 @@ export async function removeServer(id) {
     ...data.servers.slice(id + 1),
   ];
 
-  await createFile(filename, data);
-}
-
-
-function fileExists(filename) {
-  return new Promise(resolve => {
-    fs.stat(filename, (err, stats) => {
-      if (err) return resolve(false);
-      resolve(stats.isFile());
-    });
-  });
-}
-
-
-function createFile(filename, data) {
-  return new Promise((resolve, reject) => {
-    fs.writeFile(filename, JSON.stringify(data, null, 2), err => {
-      if (err) return reject(err);
-      resolve();
-    });
-  });
-}
-
-
-function readFile(filename) {
-  return new Promise((resolve, reject) => {
-    fs.readFile(filename, (err, data) => {
-      if (err) return reject(err);
-      resolve(JSON.parse(data));
-    });
-  });
+  await writeFile(filename, data);
 }

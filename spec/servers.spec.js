@@ -1,20 +1,73 @@
-import { join } from 'path';
 import { expect } from 'chai';
-import { stub } from 'sinon';
 import { servers } from '../src';
-import * as utils from '../src/utils';
-
-const FIXTURE_PATH = join(__dirname, './fixtures/.sqlectron.json');
-const fixture = require(FIXTURE_PATH);
+import { readFile } from './../src/utils';
+import utilsStub from './utils-stub';
 
 
 describe('servers', () => {
-  beforeEach(() => {
-    stub(utils, 'getConfigPath').returns(FIXTURE_PATH);
+  utilsStub.getConfigPath.install({ copyFixtureToTemp: true });
+
+  describe('.loadServerListFromFile', () => {
+    it('should be able to load servers from file', async () => {
+      const fixture = await loadConfig();
+      const config = await servers.loadServerListFromFile();
+      expect(config).to.eql(fixture);
+    });
   });
 
-  it('should be able to load servers from file', async () => {
-    const config = await servers.loadServerListFromFile();
-    expect(config).to.eql(fixture);
+  describe('.addServer', () => {
+    it('should be able to add new server', async () => {
+      const configBefore = await loadConfig();
+      const newServer = {
+        'name': 'mysql',
+        'client': 'mysql',
+        'host': '10.10.10.15',
+        'port': 3306,
+        'database': 'authentication',
+        'user': 'root',
+        'password': 'password',
+      };
+      const createdServer = await servers.addServer(newServer);
+      expect(createdServer).to.eql(newServer);
+
+      const configAfter = await loadConfig();
+      expect(configAfter.servers.length).to.eql(configBefore.servers.length + 1);
+    });
   });
+
+  describe('.updateServer', () => {
+    it('should be able to update existing server', async () => {
+      const configBefore = await loadConfig();
+      const serverToUpdate = {
+        'name': 'mysql-vm',
+        'client': 'mysql',
+        'host': '10.10.10.10',
+        'port': 3306,
+        'database': 'mydb',
+        'user': 'usr',
+        'password': 'pwd',
+      };
+      const updatedServer = await servers.updateServer(0, serverToUpdate);
+      expect(updatedServer).to.eql(serverToUpdate);
+
+      const configAfter = await loadConfig();
+      expect(configAfter.servers.length).to.eql(configBefore.servers.length);
+      expect(configAfter.servers[0]).to.eql(serverToUpdate);
+    });
+  });
+
+  describe('.removeServer', () => {
+    it('should be able to remove existing server', async () => {
+      const configBefore = await loadConfig();
+      await servers.removeServer(0);
+
+      const configAfter = await loadConfig();
+      expect(configAfter.servers.length).to.eql(configBefore.servers.length - 1);
+      expect(configAfter.servers[0].name).to.not.eql('pg-vm');
+    });
+  });
+
+  function loadConfig() {
+    return readFile(utilsStub.TMP_FIXTURE_PATH);
+  }
 });
