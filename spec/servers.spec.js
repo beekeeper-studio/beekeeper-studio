@@ -7,15 +7,15 @@ import utilsStub from './utils-stub';
 describe('servers', () => {
   utilsStub.getConfigPath.install({ copyFixtureToTemp: true });
 
-  describe('.loadServerListFromFile', () => {
+  describe('.getAll', () => {
     it('should be able to load servers from file', async () => {
       const fixture = await loadConfig();
-      const config = await servers.loadServerListFromFile();
+      const config = await servers.getAll();
       expect(config).to.eql(fixture);
     });
   });
 
-  describe('.addServer', () => {
+  describe('.add', () => {
     it('should be able to add new server', async () => {
       const configBefore = await loadConfig();
       const newServer = {
@@ -27,7 +27,7 @@ describe('servers', () => {
         'user': 'root',
         'password': 'password',
       };
-      const createdServer = await servers.addServer(newServer);
+      const createdServer = await servers.add(newServer);
       expect(createdServer).to.eql(newServer);
 
       const configAfter = await loadConfig();
@@ -35,7 +35,7 @@ describe('servers', () => {
     });
   });
 
-  describe('.updateServer', () => {
+  describe('.update', () => {
     it('should be able to update existing server', async () => {
       const id = 0;
       const configBefore = await loadConfig();
@@ -48,7 +48,7 @@ describe('servers', () => {
         'user': 'usr',
         'password': 'pwd',
       };
-      const updatedServer = await servers.updateServer(id, serverToUpdate);
+      const updatedServer = await servers.update(id, serverToUpdate);
       expect(updatedServer).to.eql(serverToUpdate);
 
       const configAfter = await loadConfig();
@@ -57,7 +57,7 @@ describe('servers', () => {
     });
   });
 
-  describe('.addOrUpdateServer', () => {
+  describe('.addOrUpdate', () => {
     describe('given is a new server', () => {
       it('should be able to add the new server', async () => {
         const configBefore = await loadConfig();
@@ -70,7 +70,7 @@ describe('servers', () => {
           'user': 'root',
           'password': 'password',
         };
-        const createdServer = await servers.addOrUpdateServer(null, newServer);
+        const createdServer = await servers.addOrUpdate(null, newServer);
         expect(createdServer).to.eql(newServer);
 
         const configAfter = await loadConfig();
@@ -91,7 +91,7 @@ describe('servers', () => {
           'user': 'usr',
           'password': 'pwd',
         };
-        const updatedServer = await servers.addOrUpdateServer(id, serverToUpdate);
+        const updatedServer = await servers.addOrUpdate(id, serverToUpdate);
         expect(updatedServer).to.eql(serverToUpdate);
 
         const configAfter = await loadConfig();
@@ -101,14 +101,15 @@ describe('servers', () => {
     });
   });
 
-  describe('.removeServer', () => {
+  describe('.remove', () => {
     it('should be able to remove an existing server', async () => {
+      const id = 0;
       const configBefore = await loadConfig();
-      await servers.removeServer(0);
+      await servers.remove(id);
 
       const configAfter = await loadConfig();
       expect(configAfter.servers.length).to.eql(configBefore.servers.length - 1);
-      expect(configAfter.servers[0].name).to.not.eql('pg-vm');
+      expect(configAfter.servers[id].name).to.not.eql('pg-vm');
     });
   });
 

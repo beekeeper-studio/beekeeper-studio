@@ -2,7 +2,7 @@ import { validate } from './validators/server';
 import { getConfigPath, writeFile, readFile, fileExists } from './utils';
 
 
-export async function loadServerListFromFile() {
+export async function getAll() {
   const filename = getConfigPath();
   if (!await fileExists(filename)) {
     await writeFile(filename, { servers: [] });
@@ -16,7 +16,7 @@ export async function loadServerListFromFile() {
 }
 
 
-export async function addServer(server) {
+export async function add(server) {
   await validate(server);
   const filename = getConfigPath();
 
@@ -28,7 +28,7 @@ export async function addServer(server) {
 }
 
 
-export async function updateServer(id, server) {
+export async function update(id, server) {
   await validate(server);
 
   const filename = getConfigPath();
@@ -41,18 +41,18 @@ export async function updateServer(id, server) {
 }
 
 
-export async function addOrUpdateServer(id, server) {
+export async function addOrUpdate(id, server) {
   if (isNaN(parseInt(id, 10)) && id >= 0) {
-    await addServer(server);
+    await add(server);
   } else {
-    await updateServer(id, server);
+    await update(id, server);
   }
 
   return server;
 }
 
 
-export async function removeServer(id) {
+export async function remove(id) {
   const filename = getConfigPath();
   const data = await readFile(filename);
 
