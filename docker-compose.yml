@@ -1,0 +1,31 @@
+mysql:
+  image: mysql:5.7
+  ports:
+    - 3306
+  environment:
+    MYSQL_ROOT_PASSWORD: password
+    MYSQL_USER: user
+    MYSQL_PASSWORD: password
+    MYSQL_DATABASE: sqlectron
+  volumes:
+    - spec/databases/mysql:/docker-entrypoint-initdb.d
+
+postgres:
+  image: postgres:9.4.5
+  ports:
+    - 5432
+  environment:
+    POSTGRES_USER: user
+    POSTGRES_PASSWORD: password
+    POSTGRES_DB: sqlectron
+  volumes:
+    - spec/databases/postgres:/docker-entrypoint-initdb.d
+
+test:
+  image: node:0.12.7-onbuild
+  command: npm test
+  volumes:
+    - .:/usr/src/app
+  links:
+    - mysql:mysql
+    - postgres:postgres

@@ -98,6 +98,11 @@ export function listDatabases(client) {
 }
 
 
+export function wrapQueryName(item) {
+  return `"${item}"`;
+}
+
+
 function _configDatabase(serverInfo, databaseName, localPort) {
   const host = localPort
     ? '127.0.0.1'

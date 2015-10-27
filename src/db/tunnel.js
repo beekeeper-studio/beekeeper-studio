@@ -1,6 +1,6 @@
 import net from 'net';
 import { Client } from 'ssh2';
-import { getPort, readFile } from '../../utils';
+import { getPort, readFile } from '../utils';
 
 
 export default function(serverInfo) {
