@@ -41,6 +41,17 @@ export async function updateServer(id, server) {
 }
 
 
+export async function addOrUpdateServer(id, server) {
+  if (isNaN(parseInt(id, 10)) && id >= 0) {
+    await addServer(server);
+  } else {
+    await updateServer(id, server);
+  }
+
+  return server;
+}
+
+
 export async function removeServer(id) {
   const filename = getConfigPath();
   const data = await readFile(filename);
