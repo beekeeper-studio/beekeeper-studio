@@ -22,18 +22,25 @@ export async function connect(serverInfo, databaseName) {
 
 
 export async function listTables() {
-  if (connecting || !connection) throw new Error('connecting to server');
+  _checkIsConnected();
   return await connection.listTables();
 }
 
 
 export async function executeQuery(query) {
-  if (connecting || !connection) throw new Error('connecting to server');
+  _checkIsConnected();
   return await connection.executeQuery(query);
 }
 
 
 export async function listDatabases() {
-  if (connecting || !connection) throw new Error('connecting to server');
+  _checkIsConnected();
   return await connection.listDatabases();
+}
+
+
+function _checkIsConnected() {
+  if (connecting || !connection) {
+    throw new Error('connecting to server');
+  }
 }
