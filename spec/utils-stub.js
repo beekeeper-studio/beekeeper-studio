@@ -15,8 +15,8 @@ export default {
     install: function({ copyFixtureToTemp }) {
       beforeEach(async function() {
         if (copyFixtureToTemp) {
-          const data = await utils.readFile(FIXTURE_PATH);
-          await utils.writeFile(TMP_FIXTURE_PATH, data);
+          const data = await utils.readJSONFile(FIXTURE_PATH);
+          await utils.writeJSONFile(TMP_FIXTURE_PATH, data);
         }
         stub(utils, 'getConfigPath').returns(TMP_FIXTURE_PATH);
       });

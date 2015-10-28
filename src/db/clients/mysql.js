@@ -98,7 +98,7 @@ export function listDatabases(client) {
 }
 
 
-export function wrapQueryName(item) {
+export function wrapQuery(item) {
   return `\`${item}\``;
 }
 

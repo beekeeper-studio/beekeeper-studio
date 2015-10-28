@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { servers } from '../src';
-import { readFile } from './../src/utils';
+import { readJSONFile } from './../src/utils';
 import utilsStub from './utils-stub';
 
 
@@ -114,6 +114,6 @@ describe('servers', () => {
   });
 
   function loadConfig() {
-    return readFile(utilsStub.TMP_FIXTURE_PATH);
+    return readJSONFile(utilsStub.TMP_FIXTURE_PATH);
   }
 });

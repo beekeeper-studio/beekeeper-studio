@@ -47,6 +47,7 @@ export default function(serverInfo, databaseName) {
 
       debug('connected');
       resolve({
+        wrapQuery,
         disconnect: () => disconnect(client),
         listTables: () => listTables(client),
         executeQuery: (query) => executeQuery(client, query),
@@ -101,7 +102,7 @@ export function listDatabases(client) {
 }
 
 
-export function wrapQueryName(item) {
+export function wrapQuery(item) {
   return `"${item}"`;
 }
 

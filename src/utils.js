@@ -1,9 +1,10 @@
 import fs from 'fs';
-import { join } from 'path';
+import path from 'path';
+import pf from 'portfinder';
 
 
 export function getConfigPath() {
-  return join(homedir(), '.sqlectron.json');
+  return path.join(homedir(), '.sqlectron.json');
 }
 
 
@@ -24,7 +25,7 @@ export function fileExists(filename) {
 
 export function writeFile(filename, data) {
   return new Promise((resolve, reject) => {
-    fs.writeFile(filename, JSON.stringify(data, null, 2), err => {
+    fs.writeFile(filename, data, err => {
       if (err) return reject(err);
       resolve();
     });
@@ -32,11 +33,41 @@ export function writeFile(filename, data) {
 }
 
 
+export function writeJSONFile(filename, data) {
+  return writeFile(filename, JSON.stringify(data, null, 2));
+}
+
+
 export function readFile(filename) {
+  const filePath = resolveHomePathToAbsolute(filename);
   return new Promise((resolve, reject) => {
-    fs.readFile(filename, (err, data) => {
+    fs.readFile(path.resolve(filePath), (err, data) => {
       if (err) return reject(err);
-      resolve(JSON.parse(data));
+      resolve(data);
+    });
+  });
+}
+
+
+export function readJSONFile(filename) {
+  return readFile(filename).then(data => JSON.parse(data));
+}
+
+
+function resolveHomePathToAbsolute(filename) {
+  if (!/^~\//.test(filename)) {
+    return filename;
+  }
+
+  return path.join(homedir(), filename.substring(2));
+}
+
+
+export function getPort() {
+  return new Promise((resolve, reject) => {
+    pf.getPort({ host: '127.0.0.1' }, (err, port) => {
+      if (err) return reject(err);
+      resolve(port);
     });
   });
 }

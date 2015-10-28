@@ -1,16 +1,16 @@
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { connect, listDatabases, listTables, executeQuery } from '../src/db';
+import { db } from '../src';
 import config from './databases/config';
 chai.use(chaiAsPromised);
 
 
 const SUPPORTED_DB_CLIENTS = {
   mysql: {
-    tables: [ 'information_schema', 'sqlectron' ],
+    defaulTables: [ 'information_schema' ],
   },
   postgresql: {
-    tables: [ 'postgres', 'sqlectron' ],
+    defaulTables: [ 'postgres' ],
   },
 };
 
@@ -27,7 +27,7 @@ describe('db', () => {
             name: dbClient,
             client: dbClient,
           };
-          const promise = connect(serverInfo, serverInfo.database);
+          const promise = db.connect(serverInfo, serverInfo.database);
 
           return expect(promise).to.not.be.rejected;
         });
@@ -41,19 +41,22 @@ describe('db', () => {
             client: dbClient,
           };
 
-          return connect(serverInfo, serverInfo.database);
+          return db.connect(serverInfo, serverInfo.database);
         });
 
         describe('.listDatabases', () => {
           it('should be able to list all databases', async () => {
-            const databases = await listDatabases();
-            expect(databases).to.eql(dbClientOpts.tables);
+            const databases = await db.listDatabases();
+            expect(databases).to.eql([
+              ...dbClientOpts.defaulTables,
+              'sqlectron',
+            ]);
           });
         });
 
         describe('.listTables', () => {
           it('should be able to list all tables', async () => {
-            const tables = await listTables();
+            const tables = await db.listTables();
             expect(tables).to.eql([
               'roles',
               'users',
@@ -63,8 +66,8 @@ describe('db', () => {
 
         describe('.executeQuery', () => {
           it('should be able to execute a select', async () => {
-            const wrapQueryName = require(`../src/db/clients/${dbClient}`).wrapQueryName;
-            const result = await executeQuery(`select * from ${wrapQueryName('users')}`);
+            const wrapQuery = require(`../src/db/clients/${dbClient}`).wrapQuery;
+            const result = await db.executeQuery(`select * from ${wrapQuery('users')}`);
             expect(result).to.have.property('rows').to.eql([]);
             expect(result).to.have.deep.property('fields[0].name').to.eql('id');
             expect(result).to.have.deep.property('fields[1].name').to.eql('username');
