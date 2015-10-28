@@ -1,3 +1,4 @@
+import slug from 'slug';
 import Valida from 'valida';
 
 
@@ -113,4 +114,13 @@ const SERVER_SCHEMA = {
 export async function validate(server) {
   const validated = await Valida.process(server, SERVER_SCHEMA);
   if (!validated.isValid()) { throw validated.invalidError(); }
+}
+
+
+export function validateUniqueName(servers, newName, currentName) {
+  const slugNewName = slug(newName);
+  const server = servers.some(srv => slug(srv.name) === slugNewName);
+  if (!server) { return; }
+  if (currentName && slug(server.name) === slug(currentName)) { return; }
+  throw new Error('Already exist another server with same name');
 }
