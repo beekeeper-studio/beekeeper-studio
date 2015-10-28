@@ -2,13 +2,16 @@ import mysql from 'mysql';
 import connectTunnel from '../tunnel';
 
 
+const debug = require('../../debug')('db:clients:mysql');
+
+
 export default function(serverInfo, databaseName) {
   return new Promise(async (resolve, reject) => {
     let connecting = true;
 
     let tunnel = null;
     if (serverInfo.ssh) {
-      // create tunnel and connect to it
+      debug('creating ssh tunnel');
       try {
         tunnel = await connectTunnel(serverInfo);
       } catch (error) {
@@ -17,8 +20,7 @@ export default function(serverInfo, databaseName) {
       }
     }
 
-    // create database connection and connect to it
-
+    debug('creating database connection');
     const localPort = tunnel
       ? tunnel.address().port
       : 0;
@@ -43,6 +45,7 @@ export default function(serverInfo, databaseName) {
         return reject(err);
       }
 
+      debug('connected');
       resolve({
         disconnect: () => disconnect(client),
         listTables: () => listTables(client),

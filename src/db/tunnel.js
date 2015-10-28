@@ -3,30 +3,44 @@ import { Client } from 'ssh2';
 import { getPort, readFile } from '../utils';
 
 
+const debug = require('../debug')('db:tunnel');
+
+
 export default function(serverInfo) {
   return new Promise(async (resolve, reject) => {
+    debug('configuring tunnel');
     const config = await _configTunnel(serverInfo);
 
     const connections = [];
 
+    debug('creating ssh tunnel server');
     const server = net.createServer(async conn => {
       conn.on('error', err => server.emit('error', err));
 
+      debug('creating ssh tunnel client');
       const client = new Client();
       connections.push(conn);
 
       client.on('error', err => server.emit('error', err));
 
       client.on('ready', () => {
+        debug('connected ssh tunnel client');
         connections.push(client);
-        client.forwardOut(config.srcHost, config.srcPort, config.dstHost,
-          config.dstPort, (err, sshStream) => {
+
+        debug('forwarding ssh tunnel client output');
+        client.forwardOut(
+          config.srcHost,
+          config.srcPort,
+          config.dstHost,
+          config.dstPort,
+          (err, sshStream) => {
             if (err) {
               server.close();
               server.emit('error', err);
               return;
             }
             sshStream.once('close', () => {
+              debug('closed ssh tunnel stream output');
               server.close();
             });
             conn.pipe(sshStream).pipe(conn);
@@ -35,6 +49,8 @@ export default function(serverInfo) {
 
       try {
         const localPort = await getPort();
+
+        debug('connecting ssh tunnel client');
         client.connect({ ...config, localPort });
       } catch (err) {
         server.emit('error', err);
@@ -42,11 +58,15 @@ export default function(serverInfo) {
     });
 
     server.once('close', () => {
+      debug('close ssh tunnel server');
       connections.forEach(conn => conn.end());
     });
 
+    debug('connecting ssh tunnel server');
     server.listen(config.localPort, config.localHost, err => {
       if (err) return reject(err);
+
+      debug('connected ssh tunnel server');
       resolve(server);
     });
   });
