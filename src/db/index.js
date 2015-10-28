@@ -39,6 +39,12 @@ export async function listDatabases() {
 }
 
 
+export function getQuerySelectTop(table, limit = 1000) {
+  _checkIsConnected();
+  return connection.getQuerySelectTop(table, limit);
+}
+
+
 function _checkIsConnected() {
   if (connecting || !connection) {
     throw new Error('connecting to server');

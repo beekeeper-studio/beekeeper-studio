@@ -52,6 +52,7 @@ export default function(serverInfo, databaseName) {
         listTables: () => listTables(client),
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
+        getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
       });
     });
   });
@@ -99,6 +100,11 @@ export function listDatabases(client) {
       resolve(data.rows.map(row => row.datname));
     });
   });
+}
+
+
+export function getQuerySelectTop(client, table, limit) {
+  return `select * from ${wrapQuery(table)} limit ${limit}`;
 }
 
 
