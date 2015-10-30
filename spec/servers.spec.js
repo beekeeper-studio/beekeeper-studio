@@ -37,9 +37,10 @@ describe('servers', () => {
 
   describe('.update', () => {
     it('should be able to update existing server', async () => {
-      const currentName = 'mysql';
+      const id = 'ed2d52a7-d8ff-4fdd-897a-7033dee598f4';
       const configBefore = await loadConfig();
       const serverToUpdate = {
+        id,
         'name': 'mysql-vm',
         'client': 'mysql',
         'host': '10.10.10.10',
@@ -48,12 +49,12 @@ describe('servers', () => {
         'user': 'usr',
         'password': 'pwd',
       };
-      const updatedServer = await servers.update(currentName, serverToUpdate);
+      const updatedServer = await servers.update(serverToUpdate);
       expect(updatedServer).to.eql(serverToUpdate);
 
       const configAfter = await loadConfig();
       expect(configAfter.servers.length).to.eql(configBefore.servers.length);
-      expect(configAfter.servers.find(srv => srv.name === 'mysql-vm')).to.eql(serverToUpdate);
+      expect(configAfter.servers.find(srv => srv.id === id)).to.eql(serverToUpdate);
     });
   });
 
@@ -70,7 +71,7 @@ describe('servers', () => {
           'user': 'root',
           'password': 'password',
         };
-        const createdServer = await servers.addOrUpdate(null, newServer);
+        const createdServer = await servers.addOrUpdate(newServer);
         expect(createdServer).to.eql(newServer);
 
         const configAfter = await loadConfig();
@@ -80,9 +81,10 @@ describe('servers', () => {
 
     describe('given is an existing server', () => {
       it('should be able to update this existing server', async () => {
-        const currentName = 'mysql';
         const configBefore = await loadConfig();
+        const id = 'ed2d52a7-d8ff-4fdd-897a-7033dee598f4';
         const serverToUpdate = {
+          id,
           'name': 'mysql-vm',
           'client': 'mysql',
           'host': '10.10.10.10',
@@ -91,21 +93,20 @@ describe('servers', () => {
           'user': 'usr',
           'password': 'pwd',
         };
-        const updatedServer = await servers.addOrUpdate(currentName, serverToUpdate);
+        const updatedServer = await servers.addOrUpdate(serverToUpdate);
         expect(updatedServer).to.eql(serverToUpdate);
 
         const configAfter = await loadConfig();
         expect(configAfter.servers.length).to.eql(configBefore.servers.length);
-        expect(configAfter.servers.find(srv => srv.name === 'mysql-vm')).to.eql(serverToUpdate);
+        expect(configAfter.servers.find(srv => srv.id === id)).to.eql(serverToUpdate);
       });
     });
   });
 
   describe('.remove', () => {
     it('should be able to remove an existing server', async () => {
-      const currentName = 'pg-vm';
       const configBefore = await loadConfig();
-      await servers.removeByName(currentName);
+      await servers.removeById('c94cbafa-8977-4142-9f34-c84d382d8731');
 
       const configAfter = await loadConfig();
       expect(configAfter.servers.length).to.eql(configBefore.servers.length - 1);

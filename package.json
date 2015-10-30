@@ -23,9 +23,9 @@
   "dependencies": {
     "debug": "^2.2.0",
     "mysql": "^2.9.0",
+    "node-uuid": "^1.4.3",
     "pg": "^4.4.3",
     "portfinder": "^0.4.0",
-    "slug": "^0.9.1",
     "ssh2": "^0.4.11",
     "valida": "^2.0.0"
   },

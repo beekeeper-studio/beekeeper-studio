@@ -1,8 +1,10 @@
-import { validate, validateUniqueName } from './validators/server';
+import uuid from 'node-uuid';
+import { validate, validateUniqueId } from './validators/server';
 import { getConfigPath, writeJSONFile, readJSONFile, fileExists } from './utils';
 
 
 export async function getAll() {
+  // TODO: Add ids for those items without them.
   const filename = getConfigPath();
   if (!await fileExists(filename)) {
     await writeJSONFile(filename, { servers: [] });
@@ -21,8 +23,10 @@ export async function add(server) {
   const filename = getConfigPath();
 
   const data = await readJSONFile(filename);
-  validateUniqueName(data.servers, server.name);
+  const newId = uuid.v4();
+  validateUniqueId(data.servers, newId);
 
+  server.id = newId;
   data.servers.push(server);
   await writeJSONFile(filename, data);
 
@@ -30,14 +34,14 @@ export async function add(server) {
 }
 
 
-export async function update(currentName, server) {
+export async function update(server) {
   await validate(server);
 
   const filename = getConfigPath();
   const data = await readJSONFile(filename);
-  validateUniqueName(data.servers, server.name, currentName);
+  validateUniqueId(data.servers, server.id);
 
-  const index = data.servers.findIndex(srv => srv.name === currentName);
+  const index = data.servers.findIndex(srv => srv.id === server.id);
   data.servers = [
     ...data.servers.slice(0, index),
     server,
@@ -50,17 +54,18 @@ export async function update(currentName, server) {
 }
 
 
-export async function addOrUpdate(currentName, server) {
-  const hasCurrentName = !!(currentName && (currentName + '').length);
-  return hasCurrentName ? update(currentName, server) : add(server);
+export async function addOrUpdate(server) {
+  const hasId = !!(server.id && (server.id + '').length);
+  // TODO: Add validation to check if the current id is a valid uuid
+  return hasId ? update(server) : add(server);
 }
 
 
-export async function removeByName(currentName) {
+export async function removeById(id) {
   const filename = getConfigPath();
   const data = await readJSONFile(filename);
 
-  const index = data.servers.findIndex(srv => srv.name === currentName);
+  const index = data.servers.findIndex(srv => srv.id === id);
   data.servers = [
     ...data.servers.slice(0, index),
     ...data.servers.slice(index + 1),

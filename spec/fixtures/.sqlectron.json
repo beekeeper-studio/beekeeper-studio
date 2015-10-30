@@ -1,6 +1,7 @@
 {
   "servers": [
     {
+      "id": "c94cbafa-8977-4142-9f34-c84d382d8731",
       "name": "pg-vm",
       "client": "postgresql",
       "host": "10.10.10.10",
@@ -10,6 +11,7 @@
       "database": "company"
     },
     {
+      "id": "ed2d52a7-d8ff-4fdd-897a-7033dee598f4",
       "name": "mysql",
       "client": "mysql",
       "host": "10.10.10.15",
@@ -19,6 +21,7 @@
       "password": "password"
     },
     {
+      "id": "f7baa5f0-42a2-4f51-b49d-26cf3bfe8221",
       "name": "pg-vm-ssh",
       "client": "postgresql",
       "host": "localhost",
@@ -34,6 +37,7 @@
       }
     },
     {
+      "id": "40c1fc90-8bc2-4e77-a458-4140f4e9b40f",
       "name": "name333",
       "client": "mysql",
       "host": "host.com",
@@ -49,6 +53,7 @@
       }
     },
     {
+      "id": "961dfdfe-2697-4d02-b8a2-ee2b33e4c2a1",
       "name": "name",
       "client": null,
       "host": "hsot.com",
@@ -64,6 +69,7 @@
       }
     },
     {
+      "id": "df8b16d3-6ad4-4582-a5fd-58d18b5b50ae",
       "name": "Name",
       "client": null,
       "host": "host.com",
@@ -79,6 +85,7 @@
       }
     },
     {
+      "id": "2d002cce-54dc-4930-84c4-96a25d828989",
       "name": "name",
       "client": null,
       "host": "host.com",
@@ -88,6 +95,7 @@
       "database": "databse"
     },
     {
+      "id": "0108f534-c5fa-441f-b4a6-68eed18d4389",
       "name": "namename",
       "client": null,
       "host": "hsot.com",
@@ -97,6 +105,7 @@
       "database": "database"
     },
     {
+      "id": "da0d6685-3c95-4c69-b9b8-4611da412064",
       "name": "ola",
       "client": "mysql",
       "host": "hot.com",
@@ -106,6 +115,7 @@
       "database": "data"
     },
     {
+      "id": "bcd9b635-f6c5-4c22-b04b-a17f3f80b7b5",
       "name": "name",
       "client": "postgresql",
       "host": "host.com",
@@ -115,6 +125,7 @@
       "database": "database"
     },
     {
+      "id": "623b39d6-39cb-4c0a-bf69-7f00b94768a9",
       "name": "My new name",
       "client": "mysql",
       "host": "host",
@@ -124,6 +135,7 @@
       "database": "data"
     },
     {
+      "id": "0c60edd4-9795-422e-9ba4-b70cd703ae08",
       "name": "My other name",
       "client": "mysql",
       "host": "hsot.com",
