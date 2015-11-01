@@ -8,7 +8,7 @@ describe('servers', () => {
   utilsStub.getConfigPath.install({ copyFixtureToTemp: true });
 
   describe('.getAll', () => {
-    it('should be able to load servers from file', async () => {
+    it('should load servers from file', async () => {
       const fixture = await loadConfig();
       const config = await servers.getAll();
       expect(config).to.eql(fixture);
@@ -16,7 +16,7 @@ describe('servers', () => {
   });
 
   describe('.add', () => {
-    it('should be able to add new server', async () => {
+    it('should add new server', async () => {
       const configBefore = await loadConfig();
       const newServer = {
         'name': 'My New Mysql Server',
@@ -36,7 +36,7 @@ describe('servers', () => {
   });
 
   describe('.update', () => {
-    it('should be able to update existing server', async () => {
+    it('should update existing server', async () => {
       const id = 'ed2d52a7-d8ff-4fdd-897a-7033dee598f4';
       const configBefore = await loadConfig();
       const serverToUpdate = {
@@ -60,7 +60,7 @@ describe('servers', () => {
 
   describe('.addOrUpdate', () => {
     describe('given is a new server', () => {
-      it('should be able to add the new server', async () => {
+      it('should add the new server', async () => {
         const configBefore = await loadConfig();
         const newServer = {
           'name': 'My New Mysql Server',
@@ -80,7 +80,7 @@ describe('servers', () => {
     });
 
     describe('given is an existing server', () => {
-      it('should be able to update this existing server', async () => {
+      it('should update this existing server', async () => {
         const configBefore = await loadConfig();
         const id = 'ed2d52a7-d8ff-4fdd-897a-7033dee598f4';
         const serverToUpdate = {
@@ -104,7 +104,7 @@ describe('servers', () => {
   });
 
   describe('.remove', () => {
-    it('should be able to remove an existing server', async () => {
+    it('should remove an existing server', async () => {
       const configBefore = await loadConfig();
       await servers.removeById('c94cbafa-8977-4142-9f34-c84d382d8731');
 

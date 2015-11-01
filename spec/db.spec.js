@@ -21,7 +21,7 @@ describe('db', () => {
 
     describe(dbClient, () => {
       describe('.connect', () => {
-        it(`should be able to connect into a ${dbClient} database`, () => {
+        it(`should connect into a ${dbClient} database`, () => {
           const serverInfo = {
             ...config[dbClient],
             name: dbClient,
@@ -45,7 +45,7 @@ describe('db', () => {
         });
 
         describe('.listDatabases', () => {
-          it('should be able to list all databases', async () => {
+          it('should list all databases', async () => {
             const databases = await db.listDatabases();
             expect(databases).to.eql([
               ...dbClientOpts.defaulTables,
@@ -55,7 +55,7 @@ describe('db', () => {
         });
 
         describe('.listTables', () => {
-          it('should be able to list all tables', async () => {
+          it('should list all tables', async () => {
             const tables = await db.listTables();
             expect(tables).to.eql([
               'roles',
@@ -65,7 +65,7 @@ describe('db', () => {
         });
 
         describe('.executeQuery', () => {
-          it('should be able to execute a select', async () => {
+          it('should execute a select', async () => {
             const wrapQuery = require(`../src/db/clients/${dbClient}`).wrapQuery;
             const result = await db.executeQuery(`select * from ${wrapQuery('users')}`);
             expect(result).to.have.property('rows').to.eql([]);
