@@ -1,6 +1,15 @@
 {
   "servers": [
     {
+      "name": "without-id",
+      "client": "postgresql",
+      "host": "10.10.10.10",
+      "port": 5432,
+      "user": "user",
+      "password": "password",
+      "database": "company"
+    },
+    {
       "id": "c94cbafa-8977-4142-9f34-c84d382d8731",
       "name": "pg-vm",
       "client": "postgresql",

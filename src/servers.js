@@ -3,17 +3,30 @@ import { validate, validateUniqueId } from './validators/server';
 import { getConfigPath, writeJSONFile, readJSONFile, fileExists } from './utils';
 
 
-export async function getAll() {
-  // TODO: Add ids for those items without them.
+export async function prepareConfiguration() {
   const filename = getConfigPath();
   if (!await fileExists(filename)) {
     await writeJSONFile(filename, { servers: [] });
   }
+
   const result = await readJSONFile(filename);
+
+  result.servers = result.servers.map(srv => {
+    if (!srv.id) { srv.id = uuid.v4(); }
+    return srv;
+  });
+  await writeJSONFile(filename, result);
+
   // TODO: Validate whole configuration file
   // if (!serversValidate(result)) {
   //   throw new Error('Invalid ~/.sqlectron.json file format');
   // }
+}
+
+
+export async function getAll() {
+  const filename = getConfigPath();
+  const result = await readJSONFile(filename);
   return result;
 }
 
