@@ -2,6 +2,13 @@
 
 The common code used by all sqlectron clients.
 
+
+#### Current supported databases
+* PostgreSQL
+* MySQL
+
+Do you wanna support for another SQL database? Is expected that in the pull request the new database is included in the [db.spec.js](https://github.com/sqlectron/sqlectron-core/blob/master/spec/db.spec.js).
+
 ## Installation
 
 Install via npm:
