@@ -21,20 +21,18 @@ $ npm install sqlectron-core
 
 SQLECTRON keeps a hidden configuration file called `.sqlectron.json` at the user's home directory (`~/`).
 
+Although you can change this file manually, most of time you should not worry about it because SQLECTRON will manage the configuration for you.
+
 **Example**
 
 ```json
 {
-  // the limit used in the default query
   "limitQueryDefaultSelectTop": 100,
   "servers": [
     {
-      // in case including a new server manually
-      // there is no need setting an id field
-      // because SQLECTRON will do it for you
       "id": "c48890d8-5d87-4085-8b22-94981f8d522c",
       "name": "pg-vm-ssh",
-      "client": "postgresql", // postgresql or mysql
+      "client": "postgresql",
       "host": "localhost",
       "port": 5432,
       "user": "user",
@@ -61,7 +59,30 @@ SQLECTRON keeps a hidden configuration file called `.sqlectron.json` at the user
 }
 ```
 
-Although you can change this file manually, most of time you should not worry about it because SQLECTRON will manage the configuration for you.
+### Fields
+
+#### limitQueryDefaultSelectTop
+
+The limit used in the default query *`(default: 1000)`*
+
+#### servers
+
+Array with all servers connection.
+
+- `id`: in case including a new server manually there is no need setting an id field because SQLECTRON will do it for you
+- `name`
+- `client`: `postgresql` or `mysql`
+- `host`
+- `port`
+- `user`
+- `password`
+- `database`
+- `ssh`
+  - `host`
+  - `user`
+  - `port`
+  - `privateKey`
+
 
 
 ## Contributing
