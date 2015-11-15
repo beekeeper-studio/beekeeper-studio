@@ -1,47 +1,24 @@
 import uuid from 'node-uuid';
 import { validate, validateUniqueId } from './validators/server';
-import { getConfigPath, writeJSONFile, readJSONFile, fileExists } from './utils';
-
-
-export async function prepareConfiguration() {
-  const filename = getConfigPath();
-  if (!await fileExists(filename)) {
-    await writeJSONFile(filename, { servers: [] });
-  }
-
-  const result = await readJSONFile(filename);
-
-  result.servers = result.servers.map(srv => {
-    if (!srv.id) { srv.id = uuid.v4(); }
-    return srv;
-  });
-  await writeJSONFile(filename, result);
-
-  // TODO: Validate whole configuration file
-  // if (!serversValidate(result)) {
-  //   throw new Error('Invalid ~/.sqlectron.json file format');
-  // }
-}
+import * as config from './config';
 
 
 export async function getAll() {
-  const filename = getConfigPath();
-  const result = await readJSONFile(filename);
-  return result;
+  const result = await config.get();
+  return result.servers;
 }
 
 
 export async function add(server) {
   await validate(server);
-  const filename = getConfigPath();
 
-  const data = await readJSONFile(filename);
+  const data = await config.get();
   const newId = uuid.v4();
   validateUniqueId(data.servers, newId);
 
   server.id = newId;
   data.servers.push(server);
-  await writeJSONFile(filename, data);
+  await config.save(data);
 
   return server;
 }
@@ -50,8 +27,7 @@ export async function add(server) {
 export async function update(server) {
   await validate(server);
 
-  const filename = getConfigPath();
-  const data = await readJSONFile(filename);
+  const data = await config.get();
   validateUniqueId(data.servers, server.id);
 
   const index = data.servers.findIndex(srv => srv.id === server.id);
@@ -61,7 +37,7 @@ export async function update(server) {
     ...data.servers.slice(index + 1),
   ];
 
-  await writeJSONFile(filename, data);
+  await config.save(data);
 
   return server;
 }
@@ -75,8 +51,7 @@ export async function addOrUpdate(server) {
 
 
 export async function removeById(id) {
-  const filename = getConfigPath();
-  const data = await readJSONFile(filename);
+  const data = await config.get();
 
   const index = data.servers.findIndex(srv => srv.id === id);
   data.servers = [
@@ -84,5 +59,5 @@ export async function removeById(id) {
     ...data.servers.slice(index + 1),
   ];
 
-  await writeJSONFile(filename, data);
+  await config.save(data);
 }

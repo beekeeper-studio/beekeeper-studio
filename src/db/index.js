@@ -1,3 +1,8 @@
+import * as config from '../config';
+
+
+const DEFAULT_LIMIT = 1000;
+let limitSelect = null;
 let connecting = false;
 let connection = null;
 
@@ -39,9 +44,23 @@ export async function listDatabases() {
 }
 
 
-export function getQuerySelectTop(table, limit = 1000) {
+export async function getQuerySelectTop(table, limit) {
   _checkIsConnected();
-  return connection.getQuerySelectTop(table, limit);
+  let _limit = limit;
+  if (typeof _limit === 'undefined') {
+    await loadConfigLimit();
+    _limit = typeof limitSelect !== 'undefined' ? limitSelect : DEFAULT_LIMIT;
+  }
+  return connection.getQuerySelectTop(table, _limit);
+}
+
+
+async function loadConfigLimit() {
+  if (limitSelect === null) {
+    const { limitQueryDefaultSelectTop } = await config.get();
+    limitSelect = limitQueryDefaultSelectTop;
+  }
+  return limitSelect;
 }
 
 

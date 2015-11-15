@@ -7,24 +7,11 @@ import utilsStub from './utils-stub';
 describe('servers', () => {
   utilsStub.getConfigPath.install({ copyFixtureToTemp: true });
 
-  describe('.prepareConfiguration', () => {
-    it('should include id for those servers without it', async () => {
-      const findItem = (data) => data.servers.find(srv => srv.name === 'without-id');
-
-      const fixtureBefore = await loadConfig();
-      await servers.prepareConfiguration();
-      const fixtureAfter = await loadConfig();
-
-      expect(findItem(fixtureBefore)).to.not.have.property('id');
-      expect(findItem(fixtureAfter)).to.have.property('id');
-    });
-  });
-
   describe('.getAll', () => {
     it('should load servers from file', async () => {
       const fixture = await loadConfig();
-      const config = await servers.getAll();
-      expect(config).to.eql(fixture);
+      const result = await servers.getAll();
+      expect(result).to.eql(fixture.servers);
     });
   });
 
