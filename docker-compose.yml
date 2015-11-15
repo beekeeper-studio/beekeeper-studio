@@ -8,7 +8,7 @@ mysql:
     MYSQL_PASSWORD: password
     MYSQL_DATABASE: sqlectron
   volumes:
-    - spec/databases/mysql:/docker-entrypoint-initdb.d
+    - ./spec/databases/mysql:/docker-entrypoint-initdb.d
 
 postgres:
   image: postgres:9.4.5
@@ -19,7 +19,7 @@ postgres:
     POSTGRES_PASSWORD: password
     POSTGRES_DB: sqlectron
   volumes:
-    - spec/databases/postgres:/docker-entrypoint-initdb.d
+    - ./spec/databases/postgres:/docker-entrypoint-initdb.d
 
 test:
   image: node:0.12.7-onbuild
