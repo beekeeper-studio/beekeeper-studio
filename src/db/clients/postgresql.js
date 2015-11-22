@@ -3,6 +3,9 @@ import connectTunnel from '../tunnel';
 
 
 const debug = require('../../debug')('db:clients:postgresql');
+const REGEX_BEGIN_QUERY = /^(\n|\s)*/g;
+const REGEX_BETWEEN_QUERIES = /;(\n|\s)*/g;
+const REGEX_END_QUERY = /;/g;
 
 
 export default function(serverInfo, databaseName) {
@@ -78,7 +81,37 @@ export function listTables(client) {
 }
 
 
-export function executeQuery(client, query) {
+export async function executeQuery(client, query) {
+  const statements = query
+    .replace(REGEX_BEGIN_QUERY, '')
+    .replace(REGEX_BETWEEN_QUERIES, ';')
+    .split(REGEX_END_QUERY)
+    .filter(text => text.length);
+
+  const queries = statements.map(statement =>
+    executePromiseQuery(client, statement)
+  );
+
+  // Execute each statement in a different query
+  // while node-postgres does not have support for multiple query results
+  // https://github.com/brianc/node-postgres/pull/776
+  const results = await Promise.all(queries);
+  if (statements.length === 1) {
+    return results[0];
+  }
+
+  return results.reduce((allResults, result) => {
+    allResults.rows.push(result.rows);
+    allResults.fields.push(result.fields);
+    allResults.rowCount.push(result.rowCount);
+    return allResults;
+  }, { rows: [], fields: [], rowCount: [] });
+}
+
+
+function executePromiseQuery(client, query) {
+  // node-postgres has support for Promise query
+  // but that always returns the "fields" property empty
   return new Promise((resolve, reject) => {
     client.query(query, (err, data) => {
       if (err) return reject(err);

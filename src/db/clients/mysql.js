@@ -121,6 +121,7 @@ function _configDatabase(serverInfo, databaseName, localPort) {
     user: serverInfo.user,
     password: serverInfo.password,
     database: databaseName,
+    multipleStatements: true,
   };
 
   return config;

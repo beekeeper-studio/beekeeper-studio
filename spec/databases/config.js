@@ -15,5 +15,6 @@ export default {
     user: process.env.MYSQL_ENV_MYSQL_USER,
     password: process.env.MYSQL_ENV_MYSQL_PASSWORD,
     database: process.env.MYSQL_ENV_MYSQL_DATABASE,
+    multipleStatements: true,
   },
 };

@@ -1,11 +1,11 @@
 CREATE TABLE users(
-   id INT PRIMARY KEY     NOT NULL,
+   id             SERIAL PRIMARY KEY,
    username       TEXT    NOT NULL,
    email          TEXT    NOT NULL,
    password       TEXT    NOT NULL
 );
 
 CREATE TABLE roles(
-   id INT PRIMARY KEY     NOT NULL,
+   id             SERIAL PRIMARY KEY,
    name           TEXT    NOT NULL
 );
