@@ -19,7 +19,7 @@ $ npm install sqlectron-core
 
 ## Configuration
 
-SQLECTRON keeps a hidden configuration file called `.sqlectron.json` at the user's home directory (`~/`).
+SQLECTRON keeps a hidden configuration file called `.sqlectron.json` at the user's home directory (`~/` osx and linux; `%userprofile%` windows ).
 
 Although you can change this file manually, most of time you should not worry about it because SQLECTRON will manage the configuration for you.
 
