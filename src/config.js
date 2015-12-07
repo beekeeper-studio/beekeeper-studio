@@ -7,7 +7,8 @@ import { getConfigPath, writeJSONFile, readJSONFile, fileExists } from './utils'
  */
 export async function prepare() {
   const filename = getConfigPath();
-  if (!await fileExists(filename)) {
+  const fileExistsResult = await fileExists(filename);
+  if (!fileExistsResult) {
     await writeJSONFile(filename, { servers: [] });
   }
 
