@@ -8,7 +8,7 @@ chai.use(chaiAsPromised);
 
 const SUPPORTED_DB_CLIENTS = {
   mysql: {
-    defaulTables: [ 'information_schema' ],
+    defaulTables: [ 'information_schema', 'mysql', 'performance_schema' ],
     truncateTablesSQL: helper.readSQLScript('mysql'),
   },
   postgresql: {
