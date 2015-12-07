@@ -87,7 +87,19 @@ Array with all servers connection.
 
 ## Contributing
 
-It is required to use [editorconfig](http://editorconfig.org/) and please write and run specs before pushing any changes:
+It is required to use [editorconfig](http://editorconfig.org/) and please write and run specs before pushing any changes.
+
+### with docker + docker-compose
+
+It will bring up a MySQL and PostgreSQL database and run all the tests:
+
+```shell
+docker-compose run --rm test
+```
+
+### "manually"
+
+You will need bring up a MySQL and PostgreSQL database before running the tests then run the tests through:
 
 ```js
 npm test
