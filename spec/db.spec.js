@@ -2,22 +2,20 @@ import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { db } from '../src';
 import config from './databases/config';
-import * as helper from './databases/helper';
+import * as dbSpecHelper from './databases/helper';
 chai.use(chaiAsPromised);
 
 
-const SUPPORTED_DB_CLIENTS = {
-  mysql: {
-    truncateTablesSQL: helper.readSQLScript('mysql'),
-  },
-  postgresql: {
-    truncateTablesSQL: helper.readSQLScript('postgresql'),
-  },
-};
+/**
+ * List of supported DB clients.
+ * The "integration" tests will be executed for all supported DB clients.
+ * And ensure all these clients has the same API and output results.
+ */
+const SUPPORTED_DB_CLIENTS = ['mysql', 'postgresql'];
 
 
 describe('db', () => {
-  Object.keys(SUPPORTED_DB_CLIENTS).map(function testDBClient(dbClient) {
+  SUPPORTED_DB_CLIENTS.map(function testDBClient(dbClient) {
     const dbClientOpts = SUPPORTED_DB_CLIENTS[dbClient];
 
     describe(dbClient, () => {
@@ -40,6 +38,8 @@ describe('db', () => {
           name: dbClient,
           client: dbClient,
         };
+
+        dbSpecHelper.config(serverInfo, dbClientOpts);
 
         beforeEach(() => {
           return db.connect(serverInfo, serverInfo.database);
@@ -65,20 +65,18 @@ describe('db', () => {
         describe('.executeQuery', () => {
           const wrapQuery = require(`../src/db/clients/${dbClient}`).wrapQuery;
 
-          beforeEach(() => {
+          beforeEach(function beforeEach() {
             return Promise.all([
-              db.executeQuery(`
+              this.knex.raw(`
                 INSERT INTO ${wrapQuery('users')} (username, email, password)
                 VALUES ('maxcnunes', 'maxcnunes@gmail.com', '123456')
               `),
-              db.executeQuery(`
+              this.knex.raw(`
                 INSERT INTO ${wrapQuery('roles')} (name)
                 VALUES ('developer')
               `),
             ]);
           });
-
-          afterEach(() => helper.truncateAllTables(serverInfo, dbClientOpts));
 
           it('should execute a single select query', async () => {
             const result = await db.executeQuery(`select * from ${wrapQuery('users')}`);
