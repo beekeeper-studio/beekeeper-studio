@@ -8,11 +8,9 @@ chai.use(chaiAsPromised);
 
 const SUPPORTED_DB_CLIENTS = {
   mysql: {
-    defaulTables: [ 'information_schema', 'mysql', 'performance_schema' ],
     truncateTablesSQL: helper.readSQLScript('mysql'),
   },
   postgresql: {
-    defaulTables: [ 'postgres' ],
     truncateTablesSQL: helper.readSQLScript('postgresql'),
   },
 };
@@ -50,10 +48,7 @@ describe('db', () => {
         describe('.listDatabases', () => {
           it('should list all databases', async () => {
             const databases = await db.listDatabases();
-            expect(databases).to.eql([
-              ...dbClientOpts.defaulTables,
-              'sqlectron',
-            ]);
+            expect(databases).to.include.members(['sqlectron']);
           });
         });
 
