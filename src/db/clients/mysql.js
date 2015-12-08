@@ -52,6 +52,7 @@ export default function(serverInfo, databaseName) {
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
+        truncateAllTables: () => truncateAllTables(client),
       });
     });
   });
@@ -135,6 +136,18 @@ export function wrapQuery(item) {
   return `\`${item}\``;
 }
 
+const getSchema = async (connection) => {
+  const result = await executeQuery(connection, `select database() as 'schema'`);
+  return result.rows[0].schema;
+};
+
+export const truncateAllTables = async (connection) => {
+  const schema = await getSchema(connection);
+  const result = await executeQuery(connection, `select table_name from information_schema.tables where table_schema = '${schema}'`);
+  const tables = result.rows.map(row => row.table_name);
+  const promises = tables.map(t => executeQuery(connection, `truncate table ${wrapQuery(schema)}.${wrapQuery(t)}`));
+  await Promise.all(promises);
+};
 
 function _configDatabase(serverInfo, databaseName, localPort) {
   const host = localPort

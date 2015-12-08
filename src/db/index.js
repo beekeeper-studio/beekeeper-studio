@@ -54,6 +54,10 @@ export async function getQuerySelectTop(table, limit) {
   return connection.getQuerySelectTop(table, _limit);
 }
 
+export function truncateAllTables() {
+  return connection.truncateAllTables();
+}
+
 
 async function loadConfigLimit() {
   if (limitSelect === null) {

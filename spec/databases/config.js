@@ -1,6 +1,5 @@
 import url from 'url';
 
-
 export default {
   postgresql: {
     host: url.parse(process.env.POSTGRES_PORT).hostname,
@@ -16,5 +15,12 @@ export default {
     password: process.env.MYSQL_ENV_MYSQL_PASSWORD,
     database: process.env.MYSQL_ENV_MYSQL_DATABASE,
     multipleStatements: true,
+  },
+  sqlserver: {
+    host: process.env.SQLSERVER_ENV_SQLSERVER_HOST,
+    port: parseInt(process.env.SQLSERVER_ENV_SQLSERVER_PORT, 10),
+    user: process.env.SQLSERVER_ENV_SQLSERVER_USER,
+    password: process.env.SQLSERVER_ENV_SQLSERVER_PASSWORD,
+    database: process.env.SQLSERVER_ENV_SQLSERVER_DATABASE,
   },
 };

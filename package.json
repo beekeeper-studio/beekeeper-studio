@@ -7,8 +7,9 @@
   "scripts": {
     "compile": "babel --stage 0 -d lib/ src/",
     "prepublish": "npm run compile",
-    "test": "eslint src/ spec/ && mocha --compilers js:babel/register --reporter spec ./spec/**/*.spec.js",
-    "watch-test": "eslint src/ spec/ && mocha --compilers js:babel/register --watch --reporter spec ./spec/**/*.spec.js"
+    "lint": "eslint src/ spec/",
+    "test": "npm run lint && mocha --compilers js:babel/register --reporter spec ./spec/**/*.spec.js",
+    "watch-test": "npm run lint && mocha --compilers js:babel/register --watch --reporter spec ./spec/**/*.spec.js"
   },
   "keywords": [
     "sqlectron",
@@ -22,6 +23,7 @@
   },
   "dependencies": {
     "debug": "^2.2.0",
+    "mssql": "2.3.2",
     "mysql": "^2.9.0",
     "node-uuid": "^1.4.3",
     "pg": "^4.4.3",
@@ -36,7 +38,6 @@
     "chai-as-promised": "^5.1.0",
     "eslint": "^1.7.3",
     "eslint-config-airbnb": "^0.1.0",
-    "knex": "^0.9.0",
     "mocha": "^2.3.3",
     "sinon": "^1.17.2",
     "sqlite3": "^3.1.0"
