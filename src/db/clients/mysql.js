@@ -76,13 +76,40 @@ export function listTables(client) {
 
 
 export function executeQuery(client, query) {
+  const parseRowQueryResult = (data, fields) => {
+    const isSelect = Array.isArray(data);
+    return {
+      rows: isSelect ? data : [],
+      fields: fields || [],
+      rowCount: isSelect ? data.rowCount : undefined,
+      affectedRows: !isSelect ? data.affectedRows : undefined,
+    };
+  };
+
+  const isMultipleQuery = (fields) => {
+    if (!fields) { return false; }
+    if (!fields.length) { return false; }
+    return (Array.isArray(fields[0]) || fields[0] === undefined);
+  };
+
   return new Promise((resolve, reject) => {
     client.query(query, (err, data, fields) => {
       if (err) return reject(err);
-      resolve({
-        rows: fields ? data : [],
-        fields: fields,
-      });
+
+      if (!isMultipleQuery(fields)) {
+        return resolve(parseRowQueryResult(data, fields));
+      }
+
+      const result = { rows: [], fields: [], rowCount: [], affectedRows: [] };
+      for (let i = 0; i < data.length; i++) {
+        const rowResult = parseRowQueryResult(data[i], fields[i]);
+        result.rows[i] = rowResult.rows;
+        result.fields[i] = rowResult.fields;
+        result.rowCount[i] = rowResult.rowCount;
+        result.affectedRows[i] = rowResult.affectedRows;
+      }
+
+      return resolve(result);
     });
   });
 }

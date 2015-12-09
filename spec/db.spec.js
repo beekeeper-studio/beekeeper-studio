@@ -78,7 +78,7 @@ describe('db', () => {
             ]);
           });
 
-          describe('select query', () => {
+          describe('SELECT', () => {
             it('should execute a single query', async () => {
               const result = await db.executeQuery(`select * from ${wrapQuery('users')}`);
               expect(result).to.have.deep.property('fields[0].name').to.eql('id');
@@ -113,6 +113,31 @@ describe('db', () => {
 
               expect(result).to.have.deep.property('rows[1][0].id').to.eql(1);
               expect(result).to.have.deep.property('rows[1][0].name').to.eql('developer');
+            });
+          });
+
+          describe('DELETE', () => {
+            it('should execute a single query', async () => {
+              const result = await db.executeQuery(`
+                delete from ${wrapQuery('users')} where username = 'maxcnunes'
+              `);
+
+              expect(result).to.have.property('rows').to.eql([]);
+              expect(result).to.have.property('fields').to.eql([]);
+              expect(result).to.have.property('affectedRows').to.eql(1);
+              expect(result).to.have.property('rowCount').to.eql(undefined);
+            });
+
+            it('should execute multiple queries', async () => {
+              const result = await db.executeQuery(`
+                delete from ${wrapQuery('users')} where username = 'maxcnunes';
+                delete from ${wrapQuery('roles')} where name = 'developer';
+              `);
+
+              expect(result).to.have.property('rows').to.eql([ [], [] ]);
+              expect(result).to.have.property('fields').to.eql([ [], [] ]);
+              expect(result).to.have.property('affectedRows').to.eql([ 1, 1 ]);
+              expect(result).to.have.property('rowCount').to.eql([ undefined, undefined ]);
             });
           });
         });

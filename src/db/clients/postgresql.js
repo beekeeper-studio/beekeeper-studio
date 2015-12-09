@@ -104,8 +104,9 @@ export async function executeQuery(client, query) {
     allResults.rows.push(result.rows);
     allResults.fields.push(result.fields);
     allResults.rowCount.push(result.rowCount);
+    allResults.affectedRows.push(result.affectedRows);
     return allResults;
-  }, { rows: [], fields: [], rowCount: [] });
+  }, { rows: [], fields: [], rowCount: [], affectedRows: [] });
 }
 
 
@@ -115,9 +116,13 @@ function executePromiseQuery(client, query) {
   return new Promise((resolve, reject) => {
     client.query(query, (err, data) => {
       if (err) return reject(err);
+
+      const isSelect = data.command === 'SELECT';
       resolve({
         rows: data.rows,
         fields: data.fields,
+        rowCount: isSelect ? data.rowCount : undefined,
+        affectedRows: !isSelect ? data.rowCount : undefined,
       });
     });
   });
