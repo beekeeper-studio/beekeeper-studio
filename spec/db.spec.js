@@ -116,6 +116,35 @@ describe('db', () => {
             });
           });
 
+          describe('INSERT', () => {
+            it('should execute a single query', async () => {
+              const result = await db.executeQuery(`
+                insert into ${wrapQuery('users')} (username, email, password)
+                values ('user', 'user@hotmail.com', '123456')
+              `);
+
+              expect(result).to.have.property('rows').to.eql([]);
+              expect(result).to.have.property('fields').to.eql([]);
+              expect(result).to.have.property('affectedRows').to.eql(1);
+              expect(result).to.have.property('rowCount').to.eql(undefined);
+            });
+
+            it('should execute multiple queries', async () => {
+              const result = await db.executeQuery(`
+                insert into ${wrapQuery('users')} (username, email, password)
+                values ('user', 'user@hotmail.com', '123456');
+
+                insert into ${wrapQuery('roles')} (name)
+                values ('manager')
+              `);
+
+              expect(result).to.have.property('rows').to.eql([ [], [] ]);
+              expect(result).to.have.property('fields').to.eql([ [], [] ]);
+              expect(result).to.have.property('affectedRows').to.eql([ 1, 1 ]);
+              expect(result).to.have.property('rowCount').to.eql([ undefined, undefined ]);
+            });
+          });
+
           describe('DELETE', () => {
             it('should execute a single query', async () => {
               const result = await db.executeQuery(`
