@@ -140,6 +140,31 @@ describe('db', () => {
               expect(result).to.have.property('rowCount').to.eql([ undefined, undefined ]);
             });
           });
+
+          describe('UPDATE', () => {
+            it('should execute a single query', async () => {
+              const result = await db.executeQuery(`
+                update ${wrapQuery('users')} set username = 'max' where username = 'maxcnunes'
+              `);
+
+              expect(result).to.have.property('rows').to.eql([]);
+              expect(result).to.have.property('fields').to.eql([]);
+              expect(result).to.have.property('affectedRows').to.eql(1);
+              expect(result).to.have.property('rowCount').to.eql(undefined);
+            });
+
+            it('should execute multiple queries', async () => {
+              const result = await db.executeQuery(`
+                update ${wrapQuery('users')} set username = 'max' where username = 'maxcnunes';
+                update ${wrapQuery('roles')} set name = 'dev' where name = 'developer';
+              `);
+
+              expect(result).to.have.property('rows').to.eql([ [], [] ]);
+              expect(result).to.have.property('fields').to.eql([ [], [] ]);
+              expect(result).to.have.property('affectedRows').to.eql([ 1, 1 ]);
+              expect(result).to.have.property('rowCount').to.eql([ undefined, undefined ]);
+            });
+          });
         });
       });
     });
