@@ -81,7 +81,7 @@ export function executeQuery(client, query) {
     return {
       rows: isSelect ? data : [],
       fields: fields || [],
-      rowCount: isSelect ? data.rowCount : undefined,
+      rowCount: isSelect ? (data : []).length : undefined,
       affectedRows: !isSelect ? data.affectedRows : undefined,
     };
   };

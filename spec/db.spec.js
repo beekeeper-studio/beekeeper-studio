@@ -90,6 +90,8 @@ describe('db', () => {
               expect(result).to.have.deep.property('rows[0].username').to.eql('maxcnunes');
               expect(result).to.have.deep.property('rows[0].password').to.eql('123456');
               expect(result).to.have.deep.property('rows[0].email').to.eql('maxcnunes@gmail.com');
+
+              expect(result).to.have.property('rowCount').to.eql(1);
             });
 
             it('should execute multiple queries', async () => {
@@ -108,11 +110,15 @@ describe('db', () => {
               expect(result).to.have.deep.property('rows[0][0].password').to.eql('123456');
               expect(result).to.have.deep.property('rows[0][0].email').to.eql('maxcnunes@gmail.com');
 
+              expect(result).to.have.deep.property('rowCount[0]').to.eql(1);
+
               expect(result).to.have.deep.property('fields[1][0].name').to.eql('id');
               expect(result).to.have.deep.property('fields[1][1].name').to.eql('name');
 
               expect(result).to.have.deep.property('rows[1][0].id').to.eql(1);
               expect(result).to.have.deep.property('rows[1][0].name').to.eql('developer');
+
+              expect(result).to.have.deep.property('rowCount[1]').to.eql(1);
             });
           });
 
