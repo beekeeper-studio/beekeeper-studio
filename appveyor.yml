@@ -16,9 +16,16 @@ environment:
   MYSQL_ENV_MYSQL_DATABASE: sqlectron
   MYSQL_PATH: C:\Program Files\MySql\MySQL Server 5.6
   MYSQL_PWD: Password12!
+  # sql server
+  SQLSERVER_ENV_SQLSERVER_HOST: localhost
+  SQLSERVER_ENV_SQLSERVER_PORT: 1433
+  SQLSERVER_ENV_SQLSERVER_USER: sa
+  SQLSERVER_ENV_SQLSERVER_PASSWORD: Password12!
+  SQLSERVER_ENV_SQLSERVER_DATABASE: sqlectron
 services:
   - mysql
   - postgresql94
+  - mssql2008r2sp2
 init:
 - ps: Install-Product node $env:nodejs_version
 - npm -v
@@ -35,4 +42,9 @@ build_script:
 # mysql
 - mysql -e "drop database test; create database sqlectron;" --user=root
 - mysql sqlectron < spec/databases/mysql/schema/schema.sql --user=root
+# sqlserver
+- ps: ./appveyor-sqlserver.ps1 SQL2008R2SP2
+- sqlcmd -S localhost,1433 -U sa -P Password12! -Q "CREATE DATABASE sqlectron" -d "master"
+- sqlcmd -S localhost,1433 -U sa -P Password12! -i spec/databases/sqlserver/schema/schema.sql -d "sqlectron"
+- sqlcmd -S localhost,1433 -U sa -P Password12! -Q "select table_name from information_schema.tables" -d "sqlectron"
 - npm test

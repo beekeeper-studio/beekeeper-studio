@@ -2,22 +2,18 @@ import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { db } from '../src';
 import config from './databases/config';
-import * as dbSpecHelper from './databases/helper';
 chai.use(chaiAsPromised);
-
 
 /**
  * List of supported DB clients.
  * The "integration" tests will be executed for all supported DB clients.
  * And ensure all these clients has the same API and output results.
  */
-const SUPPORTED_DB_CLIENTS = ['mysql', 'postgresql'];
+const SUPPORTED_DB_CLIENTS = ['mysql', 'postgresql', 'sqlserver'];
 
 
 describe('db', () => {
-  SUPPORTED_DB_CLIENTS.map(function testDBClient(dbClient) {
-    const dbClientOpts = SUPPORTED_DB_CLIENTS[dbClient];
-
+  SUPPORTED_DB_CLIENTS.map(dbClient => {
     describe(dbClient, () => {
       describe('.connect', () => {
         it(`should connect into a ${dbClient} database`, () => {
@@ -39,8 +35,6 @@ describe('db', () => {
           client: dbClient,
         };
 
-        dbSpecHelper.config(serverInfo, dbClientOpts);
-
         beforeEach(() => {
           return db.connect(serverInfo, serverInfo.database);
         });
@@ -55,32 +49,27 @@ describe('db', () => {
         describe('.listTables', () => {
           it('should list all tables', async () => {
             const tables = await db.listTables();
-            expect(tables).to.eql([
-              'roles',
-              'users',
-            ]);
+            expect(tables).to.include.members(['users', 'roles']);
           });
         });
 
         describe('.executeQuery', () => {
-          const wrapQuery = require(`../src/db/clients/${dbClient}`).wrapQuery;
+          beforeEach(() => Promise.all([
+            db.executeQuery(`
+              INSERT INTO users (username, email, password)
+              VALUES ('maxcnunes', 'maxcnunes@gmail.com', '123456')
+            `),
+            db.executeQuery(`
+              INSERT INTO roles (name)
+              VALUES ('developer')
+            `),
+          ]));
 
-          beforeEach(function beforeEach() {
-            return Promise.all([
-              this.knex.raw(`
-                INSERT INTO ${wrapQuery('users')} (username, email, password)
-                VALUES ('maxcnunes', 'maxcnunes@gmail.com', '123456')
-              `),
-              this.knex.raw(`
-                INSERT INTO ${wrapQuery('roles')} (name)
-                VALUES ('developer')
-              `),
-            ]);
-          });
+          afterEach(db.truncateAllTables);
 
           describe('SELECT', () => {
             it('should execute a single query', async () => {
-              const result = await db.executeQuery(`select * from ${wrapQuery('users')}`);
+              const result = await db.executeQuery(`select * from users`);
               expect(result).to.have.deep.property('fields[0].name').to.eql('id');
               expect(result).to.have.deep.property('fields[1].name').to.eql('username');
               expect(result).to.have.deep.property('fields[2].name').to.eql('email');
@@ -96,8 +85,8 @@ describe('db', () => {
 
             it('should execute multiple queries', async () => {
               const result = await db.executeQuery(`
-                select * from ${wrapQuery('users')};
-                select * from ${wrapQuery('roles')};
+                select * from users;
+                select * from roles;
               `);
 
               expect(result).to.have.deep.property('fields[0][0].name').to.eql('id');
@@ -125,7 +114,7 @@ describe('db', () => {
           describe('INSERT', () => {
             it('should execute a single query', async () => {
               const result = await db.executeQuery(`
-                insert into ${wrapQuery('users')} (username, email, password)
+                insert into users (username, email, password)
                 values ('user', 'user@hotmail.com', '123456')
               `);
 
@@ -137,10 +126,10 @@ describe('db', () => {
 
             it('should execute multiple queries', async () => {
               const result = await db.executeQuery(`
-                insert into ${wrapQuery('users')} (username, email, password)
+                insert into users (username, email, password)
                 values ('user', 'user@hotmail.com', '123456');
 
-                insert into ${wrapQuery('roles')} (name)
+                insert into roles (name)
                 values ('manager')
               `);
 
@@ -150,11 +139,10 @@ describe('db', () => {
               expect(result).to.have.property('rowCount').to.eql([ undefined, undefined ]);
             });
           });
-
           describe('DELETE', () => {
             it('should execute a single query', async () => {
               const result = await db.executeQuery(`
-                delete from ${wrapQuery('users')} where username = 'maxcnunes'
+                delete from users where username = 'maxcnunes'
               `);
 
               expect(result).to.have.property('rows').to.eql([]);
@@ -165,8 +153,8 @@ describe('db', () => {
 
             it('should execute multiple queries', async () => {
               const result = await db.executeQuery(`
-                delete from ${wrapQuery('users')} where username = 'maxcnunes';
-                delete from ${wrapQuery('roles')} where name = 'developer';
+                delete from users where username = 'maxcnunes';
+                delete from roles where name = 'developer';
               `);
 
               expect(result).to.have.property('rows').to.eql([ [], [] ]);
@@ -179,7 +167,7 @@ describe('db', () => {
           describe('UPDATE', () => {
             it('should execute a single query', async () => {
               const result = await db.executeQuery(`
-                update ${wrapQuery('users')} set username = 'max' where username = 'maxcnunes'
+                update users set username = 'max' where username = 'maxcnunes'
               `);
 
               expect(result).to.have.property('rows').to.eql([]);
@@ -190,8 +178,8 @@ describe('db', () => {
 
             it('should execute multiple queries', async () => {
               const result = await db.executeQuery(`
-                update ${wrapQuery('users')} set username = 'max' where username = 'maxcnunes';
-                update ${wrapQuery('roles')} set name = 'dev' where name = 'developer';
+                update users set username = 'max' where username = 'maxcnunes';
+                update roles set name = 'dev' where name = 'developer';
               `);
 
               expect(result).to.have.property('rows').to.eql([ [], [] ]);
