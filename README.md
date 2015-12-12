@@ -102,7 +102,7 @@ docker-compose run --rm test
 
 ### "manually"
 
-You will need bring up a MySQL and PostgreSQL database before running the tests then run the tests through:
+You will need to bring up all the databases then run the tests through:
 
 ```js
 npm test
