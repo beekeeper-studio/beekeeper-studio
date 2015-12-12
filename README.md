@@ -6,9 +6,9 @@ The common code used by all sqlectron clients.
 
 
 #### Current supported databases
-* PostgreSQL
-* MySQL
-* SQL Server
+* [PostgreSQL](http://www.postgresql.org/)
+* [MySQL](https://www.mysql.com/)
+* [Microsoft SQL Server](http://www.microsoft.com/en-us/server-cloud/products/sql-server/)
 
 Do you wanna support for another SQL database? Is expected that in the pull request the new database is included in the [db.spec.js](https://github.com/sqlectron/sqlectron-core/blob/master/spec/db.spec.js).
 
