@@ -8,6 +8,9 @@
     "compile": "babel --stage 0 -d lib/ src/",
     "prepublish": "npm run compile",
     "lint": "eslint src/ spec/",
+    "test:mysql": "DB_CLIENTS=mysql npm run test",
+    "test:sqlserver": "DB_CLIENTS=sqlserver npm run test",
+    "test:postgresql": "DB_CLIENTS=postgresql npm run test",
     "test": "npm run lint && mocha --compilers js:babel/register --reporter spec ./spec/**/*.spec.js",
     "watch-test": "npm run lint && mocha --compilers js:babel/register --watch --reporter spec ./spec/**/*.spec.js"
   },

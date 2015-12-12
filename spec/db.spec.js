@@ -12,8 +12,19 @@ chai.use(chaiAsPromised);
 const SUPPORTED_DB_CLIENTS = ['mysql', 'postgresql', 'sqlserver'];
 
 
+/**
+ * List of selected databases to be tested in the current task
+ */
+const dbsToTest = process.env.DB_CLIENTS.split(',');
+
+
 describe('db', () => {
-  SUPPORTED_DB_CLIENTS.map(dbClient => {
+  const dbClients = dbsToTest.length ? dbsToTest : SUPPORTED_DB_CLIENTS;
+  if (dbClients.some(dbClient => !~SUPPORTED_DB_CLIENTS.indexOf(dbClient))) {
+    throw new Error('Invalid selected db client for tests');
+  }
+
+  dbClients.map(dbClient => {
     describe(dbClient, () => {
       describe('.connect', () => {
         it(`should connect into a ${dbClient} database`, () => {
