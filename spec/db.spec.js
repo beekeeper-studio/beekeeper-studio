@@ -15,7 +15,7 @@ const SUPPORTED_DB_CLIENTS = ['mysql', 'postgresql', 'sqlserver'];
 /**
  * List of selected databases to be tested in the current task
  */
-const dbsToTest = (process.env.DB_CLIENTS || '').split(',');
+const dbsToTest = (process.env.DB_CLIENTS || '').split(',').filter(client => !!client);
 
 
 describe('db', () => {
