@@ -1,7 +1,5 @@
 import Valida from 'valida';
-
-
-const VALID_CLIETNS = [ 'mysql', 'postgresql' ];
+import { CLIENTS } from '../db';
 
 
 function serverAddressValidator(ctx) {
@@ -26,7 +24,7 @@ function serverAddressValidator(ctx) {
 
 function clientValidator(ctx, options, value) {
   if (typeof value === 'undefined' || value === null) { return undefined; }
-  if (!~VALID_CLIETNS.indexOf(ctx.obj.client)) {
+  if (!~CLIENTS.some(dbClient => dbClient.key === ctx.obj.client)) {
     return {
       validator: 'clientValidator',
       msg: 'Invalid client type',

@@ -1,6 +1,16 @@
 import * as config from '../config';
 
 
+/**
+ * List of supported database clients
+ */
+export const CLIENTS = [
+  { key: 'mysql', name: 'MySQL' },
+  { key: 'postgresql', name: 'PostgreSQL' },
+  { key: 'sqlserver', name: 'Microsoft SQL Server' },
+];
+
+
 const DEFAULT_LIMIT = 1000;
 let limitSelect = null;
 let connecting = false;
