@@ -1,4 +1,5 @@
 version: 1.0.{build}
+
 environment:
   nodejs_version: "5.1.1"
   # postgres
@@ -22,29 +23,34 @@ environment:
   SQLSERVER_ENV_SQLSERVER_USER: sa
   SQLSERVER_ENV_SQLSERVER_PASSWORD: Password12!
   SQLSERVER_ENV_SQLSERVER_DATABASE: sqlectron
+
 services:
   - mysql
   - postgresql94
   - mssql2008r2sp2
+
 init:
-- ps: Install-Product node $env:nodejs_version
-- npm -v
-- node -v
-- npm cache clean
-- SET PATH=%POSTGRES_PATH%\bin;%MYSQL_PATH%\bin;%PATH%
+  - ps: Install-Product node $env:nodejs_version
+  - npm -v
+  - node -v
+  - npm cache clean
+  - SET PATH=%POSTGRES_PATH%\bin;%MYSQL_PATH%\bin;%PATH%
+
 test: false
+
 install:
-- npm install
+  - npm install
+
 build_script:
-# postgres
-- createdb sqlectron
-- psql -d sqlectron -a -f spec/databases/postgresql/schema/schema.sql
-# mysql
-- mysql -e "drop database test; create database sqlectron;" --user=root
-- mysql sqlectron < spec/databases/mysql/schema/schema.sql --user=root
-# sqlserver
-- ps: ./appveyor-sqlserver.ps1 SQL2008R2SP2
-- sqlcmd -S localhost,1433 -U sa -P Password12! -Q "CREATE DATABASE sqlectron" -d "master"
-- sqlcmd -S localhost,1433 -U sa -P Password12! -i spec/databases/sqlserver/schema/schema.sql -d "sqlectron"
-- sqlcmd -S localhost,1433 -U sa -P Password12! -Q "select table_name from information_schema.tables" -d "sqlectron"
-- npm test
+  # postgres
+  - createdb sqlectron
+  - psql -d sqlectron -a -f spec/databases/postgresql/schema/schema.sql
+  # mysql
+  - mysql -e "drop database test; create database sqlectron;" --user=root
+  - mysql sqlectron < spec/databases/mysql/schema/schema.sql --user=root
+  # sqlserver
+  - ps: ./appveyor-sqlserver.ps1 SQL2008R2SP2
+  - sqlcmd -S localhost,1433 -U sa -P Password12! -Q "CREATE DATABASE sqlectron" -d "master"
+  - sqlcmd -S localhost,1433 -U sa -P Password12! -i spec/databases/sqlserver/schema/schema.sql -d "sqlectron"
+  - sqlcmd -S localhost,1433 -U sa -P Password12! -Q "select table_name from information_schema.tables" -d "sqlectron"
+  - npm test
