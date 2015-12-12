@@ -24,6 +24,8 @@ postgres:
 test:
   image: node:0.12.7-onbuild
   command: npm test
+  environment:
+     DB_CLIENTS: mysql,postgresql
   volumes:
     - .:/usr/src/app
   links:
