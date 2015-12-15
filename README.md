@@ -74,7 +74,7 @@ Array with all servers connection.
 
 - `id`: in case including a new server manually there is no need setting an id field because SQLECTRON will do it for you
 - `name`
-- `client`: `postgresql` or `mysql`
+- `client`: `postgresql`, `mysql` or `sqlserver`
 - `host`
 - `port`
 - `user`
