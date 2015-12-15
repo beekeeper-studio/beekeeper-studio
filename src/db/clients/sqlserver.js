@@ -21,6 +21,7 @@ const _configDatabase = (serverInfo, databaseName) => {
   return config;
 };
 
+
 export default async function(serverInfo, databaseName) {
   return new Promise(async (resolve) => {
     debug('creating database connection');
@@ -46,6 +47,7 @@ export default async function(serverInfo, databaseName) {
 export const disconnect = (connection) => connection.close();
 export const wrapQuery = (item) => `[${item}]`;
 export const getQuerySelectTop = (client, table, limit) => `select top ${limit} * from ${wrapQuery(table)}`;
+
 
 const executePromiseQuery = (connection, query) => new Promise(async (resolve, reject) => {
   try {
@@ -75,6 +77,7 @@ const executePromiseQuery = (connection, query) => new Promise(async (resolve, r
   }
 });
 
+
 export const executeQuery = async (connection, query) => {
   const statements = query
     .replace(REGEX_BEGIN_QUERY, '')
@@ -98,20 +101,24 @@ export const executeQuery = async (connection, query) => {
   }, { rows: [], fields: [], rowCount: [], affectedRows: [] });
 };
 
+
 const getSchema = async (connection) => {
   const result = await executeQuery(connection, `select schema_name() as 'schema'`);
   return result.rows[0].schema;
 };
+
 
 export const listTables = async (connection) => {
   const result = await executeQuery(connection, 'select table_name from information_schema.tables order by table_name');
   return result.rows.map(row => row.table_name);
 };
 
+
 export const listDatabases = async (connection) => {
   const result = await executeQuery(connection, 'select name from sys.databases');
   return result.rows.map(row => row.name);
 };
+
 
 export const truncateAllTables = async (connection) => {
   const schema = await getSchema(connection);
