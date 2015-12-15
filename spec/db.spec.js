@@ -79,6 +79,26 @@ describe('db', () => {
           afterEach(db.truncateAllTables);
 
           describe('SELECT', () => {
+            it('should execute a single query with empty result', async () => {
+              const result = await db.executeQuery(`select * from users where id < 0`);
+
+              // MSSQL does not return the fields when the result is empty.
+              // For those DBs that return the field names even when the result
+              // is empty we should ensure all fields are included.
+              if (result.fields && result.fields.length === 0) {
+                expect(result).to.have.property('fields').to.eql([]);
+              } else {
+                expect(result).to.have.deep.property('fields[0].name').to.eql('id');
+                expect(result).to.have.deep.property('fields[1].name').to.eql('username');
+                expect(result).to.have.deep.property('fields[2].name').to.eql('email');
+                expect(result).to.have.deep.property('fields[3].name').to.eql('password');
+              }
+
+              expect(result).to.have.property('rows').to.eql([]);
+
+              expect(result).to.have.property('rowCount').to.eql(0);
+            });
+
             it('should execute a single query', async () => {
               const result = await db.executeQuery(`select * from users`);
               expect(result).to.have.deep.property('fields[0].name').to.eql('id');

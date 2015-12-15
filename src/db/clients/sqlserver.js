@@ -52,7 +52,8 @@ const executePromiseQuery = (connection, query) => new Promise(async (resolve, r
     const realQuery = `${query}; select @@ROWCOUNT as 'rowCount';`;
     const request = connection.request();
     const recordSet = await request.query(realQuery);
-    const isSelect = recordSet[0] && recordSet[0].rowCount === undefined;
+    const isSelect = !recordSet.length || (recordSet[0] && recordSet[0].rowCount === undefined);
+
     if (isSelect) {
       resolve({
         rows: recordSet,
