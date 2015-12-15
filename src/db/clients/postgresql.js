@@ -173,6 +173,7 @@ function _configDatabase(serverInfo, databaseName, localPort) {
   const config = {
     host,
     port,
+    ssl: serverInfo.ssl,
     user: serverInfo.user,
     password: serverInfo.password,
     database: databaseName,

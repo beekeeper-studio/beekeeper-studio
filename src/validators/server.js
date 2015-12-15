@@ -69,6 +69,9 @@ const SERVER_SCHEMA = {
     { validator: Valida.Validator.required },
     { validator: clientValidator },
   ],
+  ssl: [
+    { validator: Valida.Validator.required },
+  ],
   host: [
     { sanitizer: Valida.Sanitizer.trim },
     { validator: Valida.Validator.len, min: 1, max: 250 },

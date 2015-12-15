@@ -15,9 +15,10 @@ const _configDatabase = (serverInfo, databaseName) => {
     database: databaseName,
     port,
     options: {
-      encrypt: true,
+      encrypt: serverInfo.ssl,
     },
   };
+
   return config;
 };
 

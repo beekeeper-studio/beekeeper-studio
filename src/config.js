@@ -15,7 +15,12 @@ export async function prepare() {
   const result = await readJSONFile(filename);
 
   result.servers = result.servers.map(srv => {
+    // ensure all server has an unique id
     if (!srv.id) { srv.id = uuid.v4(); }
+
+    // ensure all servers has the new fileld SSL
+    if (srv.ssl === undefined) { srv.ssl = false; }
+
     return srv;
   });
   await writeJSONFile(filename, result);

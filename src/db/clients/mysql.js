@@ -164,5 +164,14 @@ function _configDatabase(serverInfo, databaseName, localPort) {
     multipleStatements: true,
   };
 
+  if (serverInfo.ssl) {
+    serverInfo.ssl = {
+      // It is not the best recommend way to use SSL with node-mysql
+      // https://github.com/felixge/node-mysql#ssl-options
+      // But this way we have compatibility with all clients.
+      rejectUnauthorized: false,
+    };
+  }
+
   return config;
 }

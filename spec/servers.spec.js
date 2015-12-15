@@ -21,6 +21,7 @@ describe('servers', () => {
       const newServer = {
         'name': 'My New Mysql Server',
         'client': 'mysql',
+        'ssl': true,
         'host': '10.10.10.15',
         'port': 3306,
         'database': 'authentication',
@@ -43,6 +44,7 @@ describe('servers', () => {
         id,
         'name': 'mysql-vm',
         'client': 'mysql',
+        'ssl': false,
         'host': '10.10.10.10',
         'port': 3306,
         'database': 'mydb',
@@ -65,6 +67,7 @@ describe('servers', () => {
         const newServer = {
           'name': 'My New Mysql Server',
           'client': 'mysql',
+          'ssl': false,
           'host': '10.10.10.15',
           'port': 3306,
           'database': 'authentication',
@@ -87,6 +90,7 @@ describe('servers', () => {
           id,
           'name': 'mysql-vm',
           'client': 'mysql',
+          'ssl': false,
           'host': '10.10.10.10',
           'port': 3306,
           'database': 'mydb',
