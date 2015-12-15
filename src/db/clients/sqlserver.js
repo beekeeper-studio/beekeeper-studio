@@ -59,7 +59,7 @@ const executePromiseQuery = (connection, query) => new Promise(async (resolve, r
     if (isSelect) {
       resolve({
         rows: recordSet,
-        fields: Object.keys(recordSet[0] || {}).map(k => ({name: k})),
+        fields: Object.keys(recordSet[0] || {}).map(name => ({ name })),
         rowCount: recordSet.length,
         affectedRows: undefined,
       });
