@@ -30,6 +30,7 @@ Although you can change this file manually, most of time you should not worry ab
 
 ```json
 {
+  "resultItemsPerPage": 50,
   "limitQueryDefaultSelectTop": 100,
   "servers": [
     {
@@ -63,6 +64,11 @@ Although you can change this file manually, most of time you should not worry ab
 ```
 
 ### Fields
+
+#### resultItemsPerPage
+
+The limit of items per page *`(default on sqlectron-gui: 100)`*
+The paging is not done in SQL query. Instead its is done during the results rendering.
 
 #### limitQueryDefaultSelectTop
 
