@@ -70,7 +70,12 @@ export function disconnect(client) {
 
 export function listTables(client) {
   return new Promise((resolve, reject) => {
-    const sql = `select table_name from information_schema.tables where table_schema = $1 order by table_name`;
+    const sql = `
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = $1
+      ORDER BY table_name
+    `;
     const params = [
       'public',
     ];
@@ -132,7 +137,12 @@ function executePromiseQuery(client, query) {
 
 export function listDatabases(client) {
   return new Promise((resolve, reject) => {
-    const sql = `select datname from pg_database where datistemplate = $1 order by datname`;
+    const sql = `
+      SELECT datname
+      FROM pg_database
+      WHERE datistemplate = $1
+      ORDER BY datname
+    `;
     const params = [ false ];
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
@@ -143,7 +153,7 @@ export function listDatabases(client) {
 
 
 export function getQuerySelectTop(client, table, limit) {
-  return `select * from ${wrapQuery(table)} limit ${limit}`;
+  return `SELECT * FROM ${wrapQuery(table)} LIMIT ${limit}`;
 }
 
 
@@ -152,15 +162,24 @@ export function wrapQuery(item) {
 }
 
 const getSchema = async (connection) => {
-  const result = await executeQuery(connection, `select current_schema() as schema`);
+  const result = await executeQuery(connection, `SELECT current_schema() AS schema`);
   return result.rows[0].schema;
 };
 
 export const truncateAllTables = async (connection) => {
   const schema = await getSchema(connection);
-  const result = await executeQuery(connection, `select table_name from information_schema.tables where table_schema = '${schema}'`);
+  const sql = `
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema = '${schema}'
+  `;
+  const result = await executeQuery(connection, sql);
   const tables = result.rows.map(row => row.table_name);
-  const promises = tables.map(t => executeQuery(connection, `truncate table ${wrapQuery(schema)}.${wrapQuery(t)} RESTART IDENTITY CASCADE;`));
+  const promises = tables.map(t => executeQuery(connection, `
+    TRUNCATE TABLE ${wrapQuery(schema)}.${wrapQuery(t)}
+    RESTART IDENTITY CASCADE;
+  `));
+
   await Promise.all(promises);
 };
 

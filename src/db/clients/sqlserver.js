@@ -47,12 +47,12 @@ export default async function(serverInfo, databaseName) {
 
 export const disconnect = (connection) => connection.close();
 export const wrapQuery = (item) => `[${item}]`;
-export const getQuerySelectTop = (client, table, limit) => `select top ${limit} * from ${wrapQuery(table)}`;
+export const getQuerySelectTop = (client, table, limit) => `SELECT TOP ${limit} * FROM ${wrapQuery(table)}`;
 
 
 const executePromiseQuery = (connection, query) => new Promise(async (resolve, reject) => {
   try {
-    const realQuery = `${query}; select @@ROWCOUNT as 'rowCount';`;
+    const realQuery = `${query}; SELECT @@ROWCOUNT as 'rowCount';`;
     const request = connection.request();
     const recordSet = await request.query(realQuery);
     const isSelect = !recordSet.length || (recordSet[0] && recordSet[0].rowCount === undefined);
@@ -104,27 +104,40 @@ export const executeQuery = async (connection, query) => {
 
 
 const getSchema = async (connection) => {
-  const result = await executeQuery(connection, `select schema_name() as 'schema'`);
+  const result = await executeQuery(connection, `SELECT schema_name() AS 'schema'`);
   return result.rows[0].schema;
 };
 
 
 export const listTables = async (connection) => {
-  const result = await executeQuery(connection, 'select table_name from information_schema.tables order by table_name');
+  const sql = `
+    SELECT table_name
+    FROM information_schema.tables
+    ORDER BY table_name
+  `;
+  const result = await executeQuery(connection, sql);
   return result.rows.map(row => row.table_name);
 };
 
 
 export const listDatabases = async (connection) => {
-  const result = await executeQuery(connection, 'select name from sys.databases');
+  const result = await executeQuery(connection, 'SELECT name FROM sys.databases');
   return result.rows.map(row => row.name);
 };
 
 
 export const truncateAllTables = async (connection) => {
   const schema = await getSchema(connection);
-  const result = await executeQuery(connection, `select table_name from information_schema.tables where table_schema = '${schema}'`);
+  const sql = `
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema = '${schema}'
+  `;
+  const result = await executeQuery(connection, sql);
   const tables = result.rows.map(row => row.table_name);
-  const promises = tables.map(t => executeQuery(connection, `truncate table ${wrapQuery(schema)}.${wrapQuery(t)}`));
+  const promises = tables.map(t => executeQuery(connection, `
+    TRUNCATE TABLE ${wrapQuery(schema)}.${wrapQuery(t)}
+  `));
+
   await Promise.all(promises);
 };
