@@ -57,19 +57,19 @@ async function connect(session, serverInfo, databaseName) {
 
 async function listTables(session) {
   _checkIsConnected(session);
-  return await session.connection.listTables();
+  return session.connection.listTables();
 }
 
 
 async function executeQuery(session, query) {
   _checkIsConnected(session);
-  return await session.connection.executeQuery(query);
+  return session.connection.executeQuery(query);
 }
 
 
 async function listDatabases(session) {
   _checkIsConnected(session);
-  return await session.connection.listDatabases();
+  return session.connection.listDatabases();
 }
 
 
