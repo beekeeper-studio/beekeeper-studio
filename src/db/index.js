@@ -13,59 +13,78 @@ export const CLIENTS = [
 
 const DEFAULT_LIMIT = 1000;
 let limitSelect = null;
-let connecting = false;
-let connection = null;
 
 
-export async function connect(serverInfo, databaseName) {
-  if (connecting) throw new Error('connecting to server');
+export function createSession() {
+  const session = {
+    connecting: false,
+    connection: null,
+  };
+
+  return {
+    connect: connect.bind(null, session),
+    listTables: listTables.bind(null, session),
+    executeQuery: executeQuery.bind(null, session),
+    listDatabases: listDatabases.bind(null, session),
+    getQuerySelectTop: getQuerySelectTop.bind(null, session),
+    truncateAllTables: truncateAllTables.bind(null, session),
+  };
+}
+
+
+async function connect(session, serverInfo, databaseName) {
+  if (session.connecting) {
+    throw new Error('connecting to server');
+  }
 
   try {
-    connecting = true;
+    session.connecting = true;
 
-    if (connection) connection.disconnect();
+    if (session.connection) {
+      session.connection.disconnect();
+    }
 
     const driver = require(`./clients/${serverInfo.client}`).default;
 
-    connection = await driver(serverInfo, databaseName);
+    session.connection = await driver(serverInfo, databaseName);
   } catch (err) {
     throw err;
   } finally {
-    connecting = false;
+    session.connecting = false;
   }
 }
 
 
-export async function listTables() {
-  _checkIsConnected();
-  return await connection.listTables();
+async function listTables(session) {
+  _checkIsConnected(session);
+  return await session.connection.listTables();
 }
 
 
-export async function executeQuery(query) {
-  _checkIsConnected();
-  return await connection.executeQuery(query);
+async function executeQuery(session, query) {
+  _checkIsConnected(session);
+  return await session.connection.executeQuery(query);
 }
 
 
-export async function listDatabases() {
-  _checkIsConnected();
-  return await connection.listDatabases();
+async function listDatabases(session) {
+  _checkIsConnected(session);
+  return await session.connection.listDatabases();
 }
 
 
-export async function getQuerySelectTop(table, limit) {
-  _checkIsConnected();
+async function getQuerySelectTop(session, table, limit) {
+  _checkIsConnected(session);
   let _limit = limit;
   if (typeof _limit === 'undefined') {
     await loadConfigLimit();
     _limit = typeof limitSelect !== 'undefined' ? limitSelect : DEFAULT_LIMIT;
   }
-  return connection.getQuerySelectTop(table, _limit);
+  return session.connection.getQuerySelectTop(table, _limit);
 }
 
-export function truncateAllTables() {
-  return connection.truncateAllTables();
+function truncateAllTables(session) {
+  return session.connection.truncateAllTables();
 }
 
 
@@ -78,8 +97,8 @@ async function loadConfigLimit() {
 }
 
 
-function _checkIsConnected() {
-  if (connecting || !connection) {
+function _checkIsConnected(session) {
+  if (session.connecting || !session.connection) {
     throw new Error('connecting to server');
   }
 }
