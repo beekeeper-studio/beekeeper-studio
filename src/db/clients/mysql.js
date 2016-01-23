@@ -141,21 +141,21 @@ export function wrapQuery(item) {
   return `\`${item}\``;
 }
 
-const getSchema = async (connection) => {
-  const result = await executeQuery(connection, `SELECT database() AS 'schema'`);
+const getSchema = async (client) => {
+  const result = await executeQuery(client, `SELECT database() AS 'schema'`);
   return result.rows[0].schema;
 };
 
-export const truncateAllTables = async (connection) => {
-  const schema = await getSchema(connection);
+export const truncateAllTables = async (client) => {
+  const schema = await getSchema(client);
   const sql = `
     SELECT table_name
     FROM information_schema.tables
     WHERE table_schema = '${schema}'
   `;
-  const result = await executeQuery(connection, sql);
+  const result = await executeQuery(client, sql);
   const tables = result.rows.map(row => row.table_name);
-  const promises = tables.map(t => executeQuery(connection, `
+  const promises = tables.map(t => executeQuery(client, `
     TRUNCATE TABLE ${wrapQuery(schema)}.${wrapQuery(t)}
   `));
 
