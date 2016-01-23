@@ -6,6 +6,8 @@ const REGEX_BETWEEN_QUERIES = /;(\n|\s)*/g;
 const REGEX_END_QUERY = /;/g;
 
 
+// TODO: add support for SSH tunnel connections
+
 const _configDatabase = (serverInfo, databaseName) => {
   const {host, port, user, password} = serverInfo;
   const config = {
