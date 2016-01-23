@@ -37,7 +37,7 @@ export function createSession() {
 
 async function connect(session, serverInfo, databaseName) {
   if (session.connecting) {
-    throw new Error('connecting to server');
+    throw new Error('There is already a connection in progress. Aborting this new request.');
   }
 
   try {
@@ -114,7 +114,7 @@ async function loadConfigLimit() {
 
 function _checkIsConnected(session) {
   if (session.connecting || !session.connection) {
-    throw new Error('connecting to server');
+    throw new Error('There is no connection available.');
   }
 }
 
