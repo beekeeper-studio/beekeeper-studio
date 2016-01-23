@@ -23,6 +23,7 @@ export function createSession() {
 
   return {
     connect: connect.bind(null, session),
+    disconnect: disconnect.bind(null, session),
     listTables: listTables.bind(null, session),
     executeQuery: executeQuery.bind(null, session),
     listDatabases: listDatabases.bind(null, session),
@@ -52,6 +53,13 @@ async function connect(session, serverInfo, databaseName) {
   } finally {
     session.connecting = false;
   }
+}
+
+
+function disconnect(session) {
+  session.connecting = false;
+  session.connection = null;
+  session.connection.disconnect();
 }
 
 
