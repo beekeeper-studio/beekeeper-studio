@@ -64,9 +64,9 @@ async function connect(session, serverInfo, databaseName) {
 
 
 function disconnect(session) {
+  session.connection.disconnect();
   session.connecting = false;
   session.connection = null;
-  session.connection.disconnect();
 }
 
 
