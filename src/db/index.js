@@ -1,3 +1,5 @@
+import { join } from 'path';
+import { exists } from 'fs';
 import * as config from '../config';
 
 
@@ -43,6 +45,11 @@ async function connect(session, serverInfo, databaseName) {
 
     if (session.connection) {
       session.connection.disconnect();
+    }
+
+    const clientExists = await _clientExits(serverInfo.client);
+    if (!clientExists) {
+      throw new Error('Invalid SQL client');
     }
 
     const driver = require(`./clients/${serverInfo.client}`).default;
@@ -109,4 +116,10 @@ function _checkIsConnected(session) {
   if (session.connecting || !session.connection) {
     throw new Error('connecting to server');
   }
+}
+
+
+function _clientExits(client) {
+  const pathClient = join(__dirname, 'clients', `${client}.js`);
+  return new Promise(resolve => exists(pathClient, resolve));
 }
