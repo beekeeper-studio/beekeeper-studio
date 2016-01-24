@@ -94,6 +94,11 @@ export async function executeQuery(client, query) {
     .split(REGEX_END_QUERY)
     .filter(text => text.length);
 
+  // pg does not throw an error for empty queries
+  if (statements.length === 0) {
+    throw new Error('Query was empty');
+  }
+
   const queries = statements.map(statement =>
     executePromiseQuery(client, statement)
   );
