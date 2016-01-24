@@ -29,6 +29,12 @@ export default function(serverInfo, databaseName) {
       _configDatabase(serverInfo, databaseName, localPort)
     );
 
+    client.on('error', error => {
+      debug('Connection fatal error %j', error);
+      connecting = false;
+      reject(error);
+    });
+
     if (tunnel) {
       tunnel.on('error', error => {
         if (connecting) {
@@ -74,7 +80,7 @@ export function listTables(client) {
     `;
     const params = [];
     client.query(sql, params, (err, data) => {
-      if (err) return reject(err);
+      if (err) return reject(_getRealError(client, err));
       resolve(data.map(row => row.table_name));
     });
   });
@@ -100,7 +106,7 @@ export function executeQuery(client, query) {
 
   return new Promise((resolve, reject) => {
     client.query(query, (err, data, fields) => {
-      if (err) return reject(err);
+      if (err) return reject(_getRealError(client, err));
 
       if (!isMultipleQuery(fields)) {
         return resolve(parseRowQueryResult(data, fields));
@@ -125,7 +131,7 @@ export function listDatabases(client) {
   return new Promise((resolve, reject) => {
     const sql = 'show databases';
     client.query(sql, (err, data) => {
-      if (err) return reject(err);
+      if (err) return reject(_getRealError(client, err));
       resolve(data.map(row => row.Database));
     });
   });
@@ -187,4 +193,12 @@ function _configDatabase(serverInfo, databaseName, localPort) {
   }
 
   return config;
+}
+
+
+function _getRealError(client, err) {
+  if (client && client._protocol && client._protocol._fatalError) {
+    return client._protocol._fatalError;
+  }
+  return err;
 }
