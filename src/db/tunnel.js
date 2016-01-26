@@ -35,13 +35,15 @@ export default function(serverInfo) {
           config.dstPort,
           (err, sshStream) => {
             if (err) {
+              debug('error ssh connection %j', err);
               server.close();
               server.emit('error', err);
               return;
             }
-            sshStream.once('close', () => {
+            sshStream.on('close', () => {
               debug('closed ssh tunnel stream output');
-              server.close();
+              // TODO: only auto close the server when all connected DBs had been closed
+              // server.close();
             });
             conn.pipe(sshStream).pipe(conn);
           });

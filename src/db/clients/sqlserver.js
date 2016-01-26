@@ -6,33 +6,22 @@ const REGEX_BETWEEN_QUERIES = /;(\n|\s)*/g;
 const REGEX_END_QUERY = /;/g;
 
 
-// TODO: add support for SSH tunnel connections
-
-const _configDatabase = (serverInfo, databaseName) => {
-  const {host, port, user, password} = serverInfo;
-  const config = {
-    user,
-    password,
-    server: host,
-    database: databaseName,
-    port,
-    options: {
-      encrypt: serverInfo.ssl,
-    },
-  };
-
-  return config;
-};
-
-
-export default async function(serverInfo, databaseName) {
+export default function(server, database) {
   return new Promise(async (resolve) => {
-    debug('creating database connection');
-    const connection = new Connection(_configDatabase(serverInfo, databaseName));
-    connection.on('error', (err) => {
-      debug('CONNECTION ERROR!', err);
+    database.connecting = true;
+
+    const dbConfig = _configDatabase(server, database);
+
+    debug('creating database connection %j', dbConfig);
+    const connection = new Connection(dbConfig);
+
+    connection.on('error', (error) => {
+      database.connecting = false;
+      debug('Connection error %j', error);
       connection.close();
     });
+
+    debug('connecting');
     await connection.connect();
     debug('connected');
 
@@ -45,7 +34,8 @@ export default async function(serverInfo, databaseName) {
       truncateAllTables: () => truncateAllTables(connection),
     });
   });
-};
+}
+
 
 export const disconnect = (connection) => connection.close();
 export const wrapQuery = (item) => `[${item}]`;
@@ -143,3 +133,24 @@ export const truncateAllTables = async (connection) => {
 
   await Promise.all(promises);
 };
+
+
+function _configDatabase(server, database) {
+  const config = {
+    user: server.config.user,
+    password: server.config.password,
+    server: server.config.host,
+    database: database.database,
+    port: server.config.port,
+    options: {
+      encrypt: server.config.ssl,
+    },
+  };
+
+  if (server.sshTunnel) {
+    config.server = server.config.localHost;
+    config.port = server.config.localPort;
+  }
+
+  return config;
+}

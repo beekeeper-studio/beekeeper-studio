@@ -1,5 +1,4 @@
 import { Client } from 'pg';
-import connectTunnel from '../tunnel';
 
 
 const debug = require('../../debug')('db:clients:postgresql');
@@ -8,42 +7,22 @@ const REGEX_BETWEEN_QUERIES = /;(\n|\s)*/g;
 const REGEX_END_QUERY = /;/g;
 
 
-export default function(serverInfo, databaseName) {
+export default function(server, database) {
   return new Promise(async (resolve, reject) => {
-    let connecting = true;
+    database.connecting = true;
 
-    let tunnel = null;
-    if (serverInfo.ssh) {
-      debug('creating ssh tunnel');
-      try {
-        tunnel = await connectTunnel(serverInfo);
-      } catch (error) {
-        connecting = false;
-        return reject(error);
-      }
-    }
+    const dbConfig = _configDatabase(server, database);
 
-    debug('creating database connection');
-    const localPort = tunnel
-      ? tunnel.address().port
-      : 0;
+    debug('creating database client %j', dbConfig);
+    const client = new Client(dbConfig);
 
-    const client = new Client(
-      _configDatabase(serverInfo, databaseName, localPort)
-    );
-
-    if (tunnel) {
-      tunnel.on('error', error => {
-        if (connecting) {
-          connecting = false;
-          return reject(error);
-        }
-      });
-    }
-
+    debug('connecting');
     client.connect(err => {
-      connecting = false;
+      debug('connected');
+
+      database.connecting = false;
       if (err) {
+        debug('Connection error %j', err);
         client.end();
         return reject(err);
       }
@@ -188,20 +167,19 @@ export const truncateAllTables = async (connection) => {
   await Promise.all(promises);
 };
 
-function _configDatabase(serverInfo, databaseName, localPort) {
-  const host = localPort
-    ? '127.0.0.1'
-    : serverInfo.host || serverInfo.socketPath;
-  const port = localPort || serverInfo.port;
-
+function _configDatabase(server, database) {
   const config = {
-    host,
-    port,
-    ssl: serverInfo.ssl,
-    user: serverInfo.user,
-    password: serverInfo.password,
-    database: databaseName,
+    host: server.config.host,
+    port: server.config.port,
+    user: server.config.user,
+    password: server.config.password,
+    database: database.database,
   };
+
+  if (server.sshTunnel) {
+    config.host = server.config.localHost;
+    config.port = server.config.localPort;
+  }
 
   return config;
 }

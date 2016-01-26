@@ -33,9 +33,11 @@ describe('db', () => {
             name: dbClient,
             client: dbClient,
           };
-          const promise = db.createSession().connect(serverInfo, serverInfo.database);
 
-          return expect(promise).to.not.be.rejected;
+          const serverSession = db.createServer(serverInfo);
+          const dbConn = serverSession.createConnection(serverInfo.database);
+
+          return expect(dbConn.connect()).to.not.be.rejected;
         });
       });
 
@@ -46,43 +48,45 @@ describe('db', () => {
           client: dbClient,
         };
 
-        let dbSession;
+        let serverSession;
+        let dbConn;
         beforeEach(() => {
-          dbSession = db.createSession();
-          return dbSession.connect(serverInfo, serverInfo.database);
+          serverSession = db.createServer(serverInfo);
+          dbConn = serverSession.createConnection(serverInfo.database);
+          return dbConn.connect();
         });
 
         describe('.listDatabases', () => {
           it('should list all databases', async () => {
-            const databases = await dbSession.listDatabases();
+            const databases = await dbConn.listDatabases();
             expect(databases).to.include.members(['sqlectron']);
           });
         });
 
         describe('.listTables', () => {
           it('should list all tables', async () => {
-            const tables = await dbSession.listTables();
+            const tables = await dbConn.listTables();
             expect(tables).to.include.members(['users', 'roles']);
           });
         });
 
         describe('.executeQuery', () => {
           beforeEach(() => Promise.all([
-            dbSession.executeQuery(`
+            dbConn.executeQuery(`
               INSERT INTO users (username, email, password)
               VALUES ('maxcnunes', 'maxcnunes@gmail.com', '123456')
             `),
-            dbSession.executeQuery(`
+            dbConn.executeQuery(`
               INSERT INTO roles (name)
               VALUES ('developer')
             `),
           ]));
 
-          afterEach(() => dbSession.truncateAllTables());
+          afterEach(() => dbConn.truncateAllTables());
 
           describe('SELECT', () => {
             it('should execute a single query with empty result', async () => {
-              const result = await dbSession.executeQuery(`select * from users where id < 0`);
+              const result = await dbConn.executeQuery(`select * from users where id < 0`);
 
               // MSSQL does not return the fields when the result is empty.
               // For those DBs that return the field names even when the result
@@ -102,7 +106,7 @@ describe('db', () => {
             });
 
             it('should execute a single query', async () => {
-              const result = await dbSession.executeQuery(`select * from users`);
+              const result = await dbConn.executeQuery(`select * from users`);
               expect(result).to.have.deep.property('fields[0].name').to.eql('id');
               expect(result).to.have.deep.property('fields[1].name').to.eql('username');
               expect(result).to.have.deep.property('fields[2].name').to.eql('email');
@@ -117,7 +121,7 @@ describe('db', () => {
             });
 
             it('should execute multiple queries', async () => {
-              const result = await dbSession.executeQuery(`
+              const result = await dbConn.executeQuery(`
                 select * from users;
                 select * from roles;
               `);
@@ -146,7 +150,7 @@ describe('db', () => {
 
           describe('INSERT', () => {
             it('should execute a single query', async () => {
-              const result = await dbSession.executeQuery(`
+              const result = await dbConn.executeQuery(`
                 insert into users (username, email, password)
                 values ('user', 'user@hotmail.com', '123456')
               `);
@@ -158,7 +162,7 @@ describe('db', () => {
             });
 
             it('should execute multiple queries', async () => {
-              const result = await dbSession.executeQuery(`
+              const result = await dbConn.executeQuery(`
                 insert into users (username, email, password)
                 values ('user', 'user@hotmail.com', '123456');
 
@@ -174,7 +178,7 @@ describe('db', () => {
           });
           describe('DELETE', () => {
             it('should execute a single query', async () => {
-              const result = await dbSession.executeQuery(`
+              const result = await dbConn.executeQuery(`
                 delete from users where username = 'maxcnunes'
               `);
 
@@ -185,7 +189,7 @@ describe('db', () => {
             });
 
             it('should execute multiple queries', async () => {
-              const result = await dbSession.executeQuery(`
+              const result = await dbConn.executeQuery(`
                 delete from users where username = 'maxcnunes';
                 delete from roles where name = 'developer';
               `);
@@ -199,7 +203,7 @@ describe('db', () => {
 
           describe('UPDATE', () => {
             it('should execute a single query', async () => {
-              const result = await dbSession.executeQuery(`
+              const result = await dbConn.executeQuery(`
                 update users set username = 'max' where username = 'maxcnunes'
               `);
 
@@ -210,7 +214,7 @@ describe('db', () => {
             });
 
             it('should execute multiple queries', async () => {
-              const result = await dbSession.executeQuery(`
+              const result = await dbConn.executeQuery(`
                 update users set username = 'max' where username = 'maxcnunes';
                 update roles set name = 'dev' where name = 'developer';
               `);

@@ -1,52 +1,31 @@
 import mysql from 'mysql';
-import connectTunnel from '../tunnel';
 
 
 const debug = require('../../debug')('db:clients:mysql');
 
 
-export default function(serverInfo, databaseName) {
+export default function(server, database) {
   return new Promise(async (resolve, reject) => {
-    let connecting = true;
+    database.connecting = true;
 
-    let tunnel = null;
-    if (serverInfo.ssh) {
-      debug('creating ssh tunnel');
-      try {
-        tunnel = await connectTunnel(serverInfo);
-      } catch (error) {
-        connecting = false;
-        return reject(error);
-      }
-    }
+    const dbConfig = _configDatabase(server, database);
 
-    debug('creating database connection');
-    const localPort = tunnel
-      ? tunnel.address().port
-      : 0;
-
-    const client = mysql.createConnection(
-      _configDatabase(serverInfo, databaseName, localPort)
-    );
+    debug('creating database client %j', dbConfig);
+    const client = mysql.createConnection(dbConfig);
 
     client.on('error', error => {
+      // it will be handled later in the next query execution
       debug('Connection fatal error %j', error);
-      connecting = false;
-      reject(error);
+      database.connecting = false;
     });
 
-    if (tunnel) {
-      tunnel.on('error', error => {
-        if (connecting) {
-          connecting = false;
-          return reject(error);
-        }
-      });
-    }
-
+    debug('connecting');
     client.connect(err => {
-      connecting = false;
+      debug('connected');
+
+      database.connecting = false;
       if (err) {
+        debug('Connection error %j', err);
         client.end();
         return reject(err);
       }
@@ -168,23 +147,24 @@ export const truncateAllTables = async (client) => {
   await Promise.all(promises);
 };
 
-function _configDatabase(serverInfo, databaseName, localPort) {
-  const host = localPort
-    ? '127.0.0.1'
-    : serverInfo.host || serverInfo.socketPath;
-  const port = localPort || serverInfo.port;
 
+function _configDatabase(server, database) {
   const config = {
-    host,
-    port,
-    user: serverInfo.user,
-    password: serverInfo.password,
-    database: databaseName,
+    host: server.config.host,
+    port: server.config.port,
+    user: server.config.user,
+    password: server.config.password,
+    database: database.database,
     multipleStatements: true,
   };
 
-  if (serverInfo.ssl) {
-    serverInfo.ssl = {
+  if (server.sshTunnel) {
+    config.host = server.config.localHost;
+    config.port = server.config.localPort;
+  }
+
+  if (server.config.ssl) {
+    server.config.ssl = {
       // It is not the best recommend way to use SSL with node-mysql
       // https://github.com/felixge/node-mysql#ssl-options
       // But this way we have compatibility with all clients.
