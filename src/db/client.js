@@ -63,8 +63,9 @@ async function connect(server, database) {
     const driver = clients[server.config.client];
 
     database.connection = await driver(server, database);
-    database.connecting = false;
   } catch (err) {
+    debug('Connection error %j', err);
+    disconnect(server, database);
     throw err;
   } finally {
     database.connecting = false;
@@ -73,9 +74,16 @@ async function connect(server, database) {
 
 
 function disconnect(server, database) {
-  database.connection.disconnect();
-  database.connection = null;
   database.connecting = false;
+
+  if (database.connection) {
+    database.connection.disconnect();
+    database.connection = null;
+  }
+
+  if (server.db[database.database]) {
+    delete server.db[database.database];
+  }
 }
 
 

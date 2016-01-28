@@ -9,8 +9,6 @@ const REGEX_END_QUERY = /;/g;
 
 export default function(server, database) {
   return new Promise(async (resolve, reject) => {
-    database.connecting = true;
-
     const dbConfig = _configDatabase(server, database);
 
     debug('creating database client %j', dbConfig);
@@ -18,11 +16,7 @@ export default function(server, database) {
 
     debug('connecting');
     client.connect(err => {
-      debug('connected');
-
-      database.connecting = false;
       if (err) {
-        debug('Connection error %j', err);
         client.end();
         return reject(err);
       }

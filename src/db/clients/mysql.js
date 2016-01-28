@@ -6,8 +6,6 @@ const debug = require('../../debug')('db:clients:mysql');
 
 export default function(server, database) {
   return new Promise(async (resolve, reject) => {
-    database.connecting = true;
-
     const dbConfig = _configDatabase(server, database);
 
     debug('creating database client %j', dbConfig);
@@ -16,16 +14,11 @@ export default function(server, database) {
     client.on('error', error => {
       // it will be handled later in the next query execution
       debug('Connection fatal error %j', error);
-      database.connecting = false;
     });
 
     debug('connecting');
     client.connect(err => {
-      debug('connected');
-
-      database.connecting = false;
       if (err) {
-        debug('Connection error %j', err);
         client.end();
         return reject(err);
       }

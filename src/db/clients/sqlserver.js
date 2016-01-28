@@ -6,34 +6,32 @@ const REGEX_BETWEEN_QUERIES = /;(\n|\s)*/g;
 const REGEX_END_QUERY = /;/g;
 
 
-export default function(server, database) {
-  return new Promise(async (resolve) => {
-    database.connecting = true;
-
+export default async function(server, database) {
+  let connection;
+  try {
     const dbConfig = _configDatabase(server, database);
 
     debug('creating database connection %j', dbConfig);
-    const connection = new Connection(dbConfig);
-
-    connection.on('error', (error) => {
-      database.connecting = false;
-      debug('Connection error %j', error);
-      connection.close();
-    });
+    connection = new Connection(dbConfig);
 
     debug('connecting');
     await connection.connect();
-    debug('connected');
 
-    resolve({
+    debug('connected');
+    return {
       disconnect: () => disconnect(connection),
       listTables: () => listTables(connection),
       executeQuery: (query) => executeQuery(connection, query),
       listDatabases: () => listDatabases(connection),
       getQuerySelectTop: (table, limit) => getQuerySelectTop(connection, table, limit),
       truncateAllTables: () => truncateAllTables(connection),
-    });
-  });
+    };
+  } catch (err) {
+    if (connection) {
+      connection.close();
+    }
+    throw err;
+  }
 }
 
 
