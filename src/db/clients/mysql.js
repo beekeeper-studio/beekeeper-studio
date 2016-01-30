@@ -60,40 +60,17 @@ export function listTables(client) {
 
 
 export function executeQuery(client, query) {
-  const parseRowQueryResult = (data, fields) => {
-    const isSelect = Array.isArray(data);
-    return {
-      rows: isSelect ? data : [],
-      fields: fields || [],
-      rowCount: isSelect ? (data : []).length : undefined,
-      affectedRows: !isSelect ? data.affectedRows : undefined,
-    };
-  };
-
-  const isMultipleQuery = (fields) => {
-    if (!fields) { return false; }
-    if (!fields.length) { return false; }
-    return (Array.isArray(fields[0]) || fields[0] === undefined);
-  };
-
   return new Promise((resolve, reject) => {
     client.query(query, (err, data, fields) => {
       if (err) return reject(_getRealError(client, err));
 
       if (!isMultipleQuery(fields)) {
-        return resolve(parseRowQueryResult(data, fields));
+        return resolve([parseRowQueryResult(data, fields)]);
       }
 
-      const result = { rows: [], fields: [], rowCount: [], affectedRows: [] };
-      for (let i = 0; i < data.length; i++) {
-        const rowResult = parseRowQueryResult(data[i], fields[i]);
-        result.rows[i] = rowResult.rows;
-        result.fields[i] = rowResult.fields;
-        result.rowCount[i] = rowResult.rowCount;
-        result.affectedRows[i] = rowResult.affectedRows;
-      }
-
-      return resolve(result);
+      resolve(
+        data.map((_, idx) => parseRowQueryResult(data[idx], fields[idx]))
+      );
     });
   });
 }
@@ -120,7 +97,7 @@ export function wrapQuery(item) {
 }
 
 const getSchema = async (client) => {
-  const result = await executeQuery(client, `SELECT database() AS 'schema'`);
+  const [result] = await executeQuery(client, `SELECT database() AS 'schema'`);
   return result.rows[0].schema;
 };
 
@@ -131,7 +108,7 @@ export const truncateAllTables = async (client) => {
     FROM information_schema.tables
     WHERE table_schema = '${schema}'
   `;
-  const result = await executeQuery(client, sql);
+  const [result] = await executeQuery(client, sql);
   const tables = result.rows.map(row => row.table_name);
   const promises = tables.map(t => executeQuery(client, `
     TRUNCATE TABLE ${wrapQuery(schema)}.${wrapQuery(t)}
@@ -174,4 +151,23 @@ function _getRealError(client, err) {
     return client._protocol._fatalError;
   }
   return err;
+}
+
+
+function parseRowQueryResult(data, fields) {
+  const isSelect = Array.isArray(data);
+  return {
+    isSelect,
+    rows: isSelect ? data : [],
+    fields: fields || [],
+    rowCount: isSelect ? (data : []).length : undefined,
+    affectedRows: !isSelect ? data.affectedRows : undefined,
+  };
+}
+
+
+function isMultipleQuery(fields) {
+  if (!fields) { return false; }
+  if (!fields.length) { return false; }
+  return (Array.isArray(fields[0]) || fields[0] === undefined);
 }

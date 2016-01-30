@@ -11,7 +11,7 @@
     "test:mysql": "DB_CLIENTS=mysql npm run test",
     "test:sqlserver": "DB_CLIENTS=sqlserver npm run test",
     "test:postgresql": "DB_CLIENTS=postgresql npm run test",
-    "test": "npm run lint && mocha --compilers js:babel/register --reporter spec ./spec/**/*.spec.js",
+    "test": "npm run lint && mocha --timeout 40000 --compilers js:babel/register --reporter spec ./spec/**/*.spec.js",
     "watch-test": "npm run lint && mocha --compilers js:babel/register --watch --reporter spec ./spec/**/*.spec.js"
   },
   "keywords": [
@@ -26,10 +26,10 @@
   },
   "dependencies": {
     "debug": "^2.2.0",
-    "mssql": "2.3.2",
-    "mysql": "^2.9.0",
+    "mssql": "^3.0.0",
+    "mysql": "^2.10.2",
     "node-uuid": "^1.4.3",
-    "pg": "^4.4.3",
+    "pg": "git+https://github.com/maxcnunes/node-postgres.git#multiple-statements",
     "portfinder": "^0.4.0",
     "ssh2": "^0.4.11",
     "valida": "^2.0.0"

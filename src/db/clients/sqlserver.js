@@ -1,9 +1,7 @@
 import {Connection} from 'mssql';
 
+
 const debug = require('../../debug')('db:clients:sqlserver');
-const REGEX_BEGIN_QUERY = /^(\n|\s)*/g;
-const REGEX_BETWEEN_QUERIES = /;(\n|\s)*/g;
-const REGEX_END_QUERY = /;/g;
 
 
 export default async function(server, database) {
@@ -40,61 +38,22 @@ export const wrapQuery = (item) => `[${item}]`;
 export const getQuerySelectTop = (client, table, limit) => `SELECT TOP ${limit} * FROM ${wrapQuery(table)}`;
 
 
-const executePromiseQuery = (connection, query) => new Promise(async (resolve, reject) => {
-  try {
-    const realQuery = `${query}; SELECT @@ROWCOUNT as 'rowCount';`;
-    const request = connection.request();
-    const recordSet = await request.query(realQuery);
-    const isSelect = !recordSet.length || (recordSet[0] && recordSet[0].rowCount === undefined);
-
-    if (isSelect) {
-      resolve({
-        rows: recordSet,
-        fields: Object.keys(recordSet[0] || {}).map(name => ({ name })),
-        rowCount: recordSet.length,
-        affectedRows: undefined,
-      });
-    } else {
-      const rowCount = recordSet[0].rowCount;
-      resolve({
-        rows: [],
-        fields: [],
-        rowCount: undefined,
-        affectedRows: rowCount,
-      });
-    }
-  } catch (e) {
-    reject(e);
-  }
-});
-
-
 export const executeQuery = async (connection, query) => {
-  const statements = query
-    .replace(REGEX_BEGIN_QUERY, '')
-    .replace(REGEX_BETWEEN_QUERIES, ';')
-    .split(REGEX_END_QUERY)
-    .filter(text => text.length);
+  const request = connection.request();
+  request.multiple = true;
 
-  const queries = statements.map(statement => executePromiseQuery(connection, statement));
+  const recordSet = await request.query(query);
 
-  const results = await Promise.all(queries);
-  if (statements.length === 1) {
-    return results[0];
-  }
+  // Executing only non select queries will not return results.
+  // So we "fake" there is at least one result.
+  const results = !recordSet.length && request.rowsAffected ? [[]] : recordSet;
 
-  return results.reduce((allResults, result) => {
-    allResults.rows.push(result.rows);
-    allResults.fields.push(result.fields);
-    allResults.rowCount.push(result.rowCount);
-    allResults.affectedRows.push(result.affectedRows);
-    return allResults;
-  }, { rows: [], fields: [], rowCount: [], affectedRows: [] });
+  return results.map((_, idx) => parseRowQueryResult(results[idx], request));
 };
 
 
 const getSchema = async (connection) => {
-  const result = await executeQuery(connection, `SELECT schema_name() AS 'schema'`);
+  const [result] = await executeQuery(connection, `SELECT schema_name() AS 'schema'`);
   return result.rows[0].schema;
 };
 
@@ -105,13 +64,13 @@ export const listTables = async (connection) => {
     FROM information_schema.tables
     ORDER BY table_name
   `;
-  const result = await executeQuery(connection, sql);
+  const [result] = await executeQuery(connection, sql);
   return result.rows.map(row => row.table_name);
 };
 
 
 export const listDatabases = async (connection) => {
-  const result = await executeQuery(connection, 'SELECT name FROM sys.databases');
+  const [result] = await executeQuery(connection, 'SELECT name FROM sys.databases');
   return result.rows.map(row => row.name);
 };
 
@@ -123,7 +82,7 @@ export const truncateAllTables = async (connection) => {
     FROM information_schema.tables
     WHERE table_schema = '${schema}'
   `;
-  const result = await executeQuery(connection, sql);
+  const [result] = await executeQuery(connection, sql);
   const tables = result.rows.map(row => row.table_name);
   const promises = tables.map(t => executeQuery(connection, `
     TRUNCATE TABLE ${wrapQuery(schema)}.${wrapQuery(t)}
@@ -151,4 +110,19 @@ function _configDatabase(server, database) {
   }
 
   return config;
+}
+
+
+function parseRowQueryResult(data, request) {
+  // TODO: find a better way without hacks to detect if it is a select query
+  // This current approach will not work properly in some cases
+  const isSelect = !!(data.length || !request.rowsAffected);
+
+  return {
+    isSelect,
+    rows: data,
+    fields: Object.keys(data[0] || {}).map(name => ({ name })),
+    rowCount: data.length,
+    affectedRows: request.rowsAffected,
+  };
 }

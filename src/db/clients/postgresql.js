@@ -2,9 +2,6 @@ import { Client } from 'pg';
 
 
 const debug = require('../../debug')('db:clients:postgresql');
-const REGEX_BEGIN_QUERY = /^(\n|\s)*/g;
-const REGEX_BETWEEN_QUERIES = /;(\n|\s)*/g;
-const REGEX_END_QUERY = /;/g;
 
 
 export default function(server, database) {
@@ -61,53 +58,13 @@ export function listTables(client) {
 
 
 export async function executeQuery(client, query) {
-  const statements = query
-    .replace(REGEX_BEGIN_QUERY, '')
-    .replace(REGEX_BETWEEN_QUERIES, ';')
-    .split(REGEX_END_QUERY)
-    .filter(text => text.length);
-
-  // pg does not throw an error for empty queries
-  if (statements.length === 0) {
-    throw new Error('Query was empty');
-  }
-
-  const queries = statements.map(statement =>
-    executePromiseQuery(client, statement)
-  );
-
-  // Execute each statement in a different query
-  // while node-postgres does not have support for multiple query results
-  // https://github.com/brianc/node-postgres/pull/776
-  const results = await Promise.all(queries);
-  if (statements.length === 1) {
-    return results[0];
-  }
-
-  return results.reduce((allResults, result) => {
-    allResults.rows.push(result.rows);
-    allResults.fields.push(result.fields);
-    allResults.rowCount.push(result.rowCount);
-    allResults.affectedRows.push(result.affectedRows);
-    return allResults;
-  }, { rows: [], fields: [], rowCount: [], affectedRows: [] });
-}
-
-
-function executePromiseQuery(client, query) {
   // node-postgres has support for Promise query
   // but that always returns the "fields" property empty
   return new Promise((resolve, reject) => {
-    client.query(query, (err, data) => {
+    client.query({ text: query, multiResult: true}, (err, data) => {
       if (err) return reject(err);
 
-      const isSelect = data.command === 'SELECT';
-      resolve({
-        rows: data.rows,
-        fields: data.fields,
-        rowCount: isSelect ? data.rowCount : undefined,
-        affectedRows: !isSelect ? data.rowCount : undefined,
-      });
+      resolve(data.map(parseRowQueryResult));
     });
   });
 }
@@ -140,7 +97,7 @@ export function wrapQuery(item) {
 }
 
 const getSchema = async (connection) => {
-  const result = await executeQuery(connection, `SELECT current_schema() AS schema`);
+  const [result] = await executeQuery(connection, `SELECT current_schema() AS schema`);
   return result.rows[0].schema;
 };
 
@@ -151,12 +108,15 @@ export const truncateAllTables = async (connection) => {
     FROM information_schema.tables
     WHERE table_schema = '${schema}'
   `;
-  const result = await executeQuery(connection, sql);
+  const [result] = await executeQuery(connection, sql);
   const tables = result.rows.map(row => row.table_name);
-  const promises = tables.map(t => executeQuery(connection, `
-    TRUNCATE TABLE ${wrapQuery(schema)}.${wrapQuery(t)}
-    RESTART IDENTITY CASCADE;
-  `));
+  const promises = tables.map(t => {
+    const truncateSQL = `
+      TRUNCATE TABLE ${wrapQuery(schema)}.${wrapQuery(t)}
+      RESTART IDENTITY CASCADE;
+    `;
+    return executeQuery(connection, truncateSQL);
+  });
 
   await Promise.all(promises);
 };
@@ -176,4 +136,16 @@ function _configDatabase(server, database) {
   }
 
   return config;
+}
+
+
+function parseRowQueryResult(data) {
+  const isSelect = data.command === 'SELECT';
+  return {
+    isSelect,
+    rows: data.rows,
+    fields: data.fields,
+    rowCount: isSelect ? data.rowCount : undefined,
+    affectedRows: !isSelect ? data.rowCount : undefined,
+  };
 }
