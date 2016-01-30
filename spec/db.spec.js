@@ -85,6 +85,23 @@ describe('db', () => {
           afterEach(() => dbConn.truncateAllTables());
 
           describe('SELECT', () => {
+            it('should execute an empty query', async () => {
+              const results = await dbConn.executeQuery('');
+
+              expect(results).to.have.length(0);
+            });
+
+            it('should execute an query with only comments', async () => {
+              const results = await dbConn.executeQuery('-- my comment');
+
+              // MySQL treats commented query as a non select query
+              if (dbClient === 'mysql') {
+                expect(results).to.have.length(1);
+              } else {
+                expect(results).to.have.length(0);
+              }
+            });
+
             it('should execute a single query with empty result', async () => {
               const results = await dbConn.executeQuery(`select * from users where id < 0`);
 

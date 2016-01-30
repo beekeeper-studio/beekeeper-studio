@@ -1,7 +1,9 @@
 import mysql from 'mysql';
 
-
 const debug = require('../../debug')('db:clients:mysql');
+const mysqlErrors = {
+  ER_EMPTY_QUERY: 'ER_EMPTY_QUERY',
+};
 
 
 export default function(server, database) {
@@ -62,6 +64,7 @@ export function listTables(client) {
 export function executeQuery(client, query) {
   return new Promise((resolve, reject) => {
     client.query(query, (err, data, fields) => {
+      if (err && err.code === mysqlErrors.ER_EMPTY_QUERY) return resolve([]);
       if (err) return reject(_getRealError(client, err));
 
       if (!isMultipleQuery(fields)) {
