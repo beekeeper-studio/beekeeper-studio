@@ -53,16 +53,16 @@ async function connect(server, database) {
 
       server.config.localHost = '127.0.0.1';
       server.config.localPort = localPort;
-
-      server.sshTunnel.on('error', error => {
-        debug('ssh error %j', error);
-        database.connecting = false;
-      });
     }
 
     const driver = clients[server.config.client];
 
-    database.connection = await driver(server, database);
+    const [connection] = await Promise.all([
+      driver(server, database),
+      handleSSHError(server.sshTunnel),
+    ]);
+
+    database.connection = connection;
   } catch (err) {
     debug('Connection error %j', err);
     disconnect(server, database);
@@ -70,6 +70,21 @@ async function connect(server, database) {
   } finally {
     database.connecting = false;
   }
+}
+
+
+function handleSSHError(sshTunnel) {
+  return new Promise((resolve, reject) => {
+    if (!sshTunnel) {
+      return resolve();
+    }
+
+    sshTunnel.on('success', resolve);
+    sshTunnel.on('error', error => {
+      debug('ssh error %j', error);
+      reject(error);
+    });
+  });
 }
 
 
