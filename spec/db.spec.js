@@ -194,7 +194,7 @@ describe('db', () => {
               expect(result).to.have.property('isSelect').to.eql(false);
 
               // MSSQL does not return row count
-              // so these value is based in the number of rows
+              // so this value is based in the number of rows
               if (dbClient === 'sqlserver') {
                 expect(result).to.have.property('rowCount').to.eql(0);
               } else {
