@@ -29,6 +29,8 @@ export default function(server, database) {
       resolve({
         disconnect: () => disconnect(client),
         listTables: () => listTables(client),
+        listViews: () => listViews(client),
+        listRoutines: () => listRoutines(client),
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
@@ -60,6 +62,40 @@ export function listTables(client) {
   });
 }
 
+export function listViews(client) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT table_name
+      FROM information_schema.views
+      WHERE table_schema = database()
+      ORDER BY table_name
+    `;
+    const params = [];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(_getRealError(client, err));
+      resolve(data.map(row => row.table_name));
+    });
+  });
+}
+
+export function listRoutines(client) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT routine_name, routine_type
+      FROM information_schema.routines
+      WHERE routine_schema = database()
+      ORDER BY routine_name
+    `;
+    const params = [];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(_getRealError(client, err));
+      resolve(data.map(row => ({
+        routineName: row.routine_name,
+        routineType: row.routine_type,
+      })));
+    });
+  });
+}
 
 export function executeQuery(client, query) {
   return new Promise((resolve, reject) => {
@@ -110,6 +146,7 @@ export const truncateAllTables = async (client) => {
     SELECT table_name
     FROM information_schema.tables
     WHERE table_schema = '${schema}'
+    AND table_type NOT LIKE '%VIEW%'
   `;
   const [result] = await executeQuery(client, sql);
   const tables = result.rows.map(row => row.table_name);
