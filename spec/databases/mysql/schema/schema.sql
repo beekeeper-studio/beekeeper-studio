@@ -12,3 +12,14 @@ CREATE TABLE IF NOT EXISTS `roles` (
   `name` VARCHAR(100) NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
+
+CREATE OR REPLACE VIEW `email_view` AS
+  SELECT users.email, users.password
+  FROM users;
+
+DELIMITER $$
+CREATE PROCEDURE `users_count`()
+BEGIN
+  SELECT COUNT(*) FROM users;
+END$$
+DELIMITER ;
