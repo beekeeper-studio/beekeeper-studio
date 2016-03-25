@@ -17,6 +17,7 @@ END
 IF OBJECT_ID('dbo.email_view', 'V') IS NOT NULL
   DROP VIEW dbo.email_view
 GO
+
 CREATE VIEW dbo.email_view AS
 SELECT dbo.users.email, dbo.users.password
 FROM dbo.users;
@@ -24,11 +25,12 @@ FROM dbo.users;
 IF OBJECT_ID('dbo.users_count', 'P') IS NOT NULL
   DROP PROCEDURE dbo.users_count
 GO
+
 CREATE PROCEDURE dbo.users_count
 (
   @Count int OUTPUT
 )
 AS
   BEGIN
-    SELECT @Count = COUNT(*) FROM dbo.users;
+    SELECT @Count = COUNT(*) FROM dbo.users
   END
