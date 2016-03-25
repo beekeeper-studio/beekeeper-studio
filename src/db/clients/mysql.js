@@ -52,6 +52,7 @@ export function listTables(client) {
       SELECT table_name
       FROM information_schema.tables
       WHERE table_schema = database()
+      AND table_type NOT LIKE '%VIEW%'
       ORDER BY table_name
     `;
     const params = [];

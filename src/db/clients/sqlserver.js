@@ -64,6 +64,7 @@ export const listTables = async (connection) => {
   const sql = `
     SELECT table_name
     FROM information_schema.tables
+    AND table_type NOT LIKE '%VIEW%'
     ORDER BY table_name
   `;
   const [result] = await executeQuery(connection, sql);
