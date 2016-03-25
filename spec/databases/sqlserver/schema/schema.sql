@@ -14,13 +14,14 @@ CREATE TABLE dbo.roles
     name varchar(100) NULL)
 END;
 
-IF OBJECT_ID('dbo.email_view', 'V') IS NOT NULL
-  DROP VIEW dbo.email_view
+IF EXISTS (SELECT table_name FROM information_schema.views WHERE table_name = 'email_view')
+   DROP VIEW dbo.email_view
 GO
 
 CREATE VIEW dbo.email_view AS
 SELECT dbo.users.email, dbo.users.password
 FROM dbo.users;
+GO
 
 IF OBJECT_ID('dbo.users_count', 'P') IS NOT NULL
   DROP PROCEDURE dbo.users_count
