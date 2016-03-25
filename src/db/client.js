@@ -18,6 +18,8 @@ export function createConnection(server, database) {
     connect: connect.bind(null, server, database),
     disconnect: disconnect.bind(null, server, database),
     listTables: listTables.bind(null, server, database),
+    listViews: listViews.bind(null, server, database),
+    listRoutines: listRoutines.bind(null, server, database),
     executeQuery: executeQuery.bind(null, server, database),
     listDatabases: listDatabases.bind(null, server, database),
     getQuerySelectTop: getQuerySelectTop.bind(null, server, database),
@@ -107,6 +109,15 @@ async function listTables(server, database) {
   return database.connection.listTables();
 }
 
+async function listViews(server, database) {
+  checkIsConnected(server, database);
+  return database.connection.listViews();
+}
+
+async function listRoutines(server, database) {
+  checkIsConnected(server, database);
+  return database.connection.listRoutines();
+}
 
 async function executeQuery(server, database, query) {
   checkIsConnected(server, database);

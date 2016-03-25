@@ -70,6 +70,28 @@ describe('db', () => {
           });
         });
 
+        describe('.listViews', () => {
+          it('should list all views', async () => {
+            const views = await dbConn.listViews();
+            expect(views).to.include.members(['email_view']);
+          });
+        });
+
+        describe('.listRoutines', () => {
+          it('should list all routines and their type', async() =>{
+            const routines = await dbConn.listRoutines();
+            expect(routines).to.have.length(1);
+            const [routine] = routines;
+
+            // Postgresql routine type is always function. SP do not exist
+            if (dbClient === 'postgresql') {
+              expect(routine).to.have.deep.property('routineType').to.eql('FUNCTION');
+            } else {
+              expect(routine).to.have.deep.property('routineType').to.eql('PROCEDURE');
+            }
+          });
+        });
+
         describe('.executeQuery', () => {
           beforeEach(() => Promise.all([
             dbConn.executeQuery(`

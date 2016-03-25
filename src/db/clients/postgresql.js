@@ -23,6 +23,8 @@ export default function(server, database) {
         wrapQuery,
         disconnect: () => disconnect(client),
         listTables: () => listTables(client),
+        listViews: () => listViews(client),
+        listRoutines: () => listRoutines(client),
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
@@ -44,6 +46,7 @@ export function listTables(client) {
       SELECT table_name
       FROM information_schema.tables
       WHERE table_schema = $1
+      AND table_type NOT LIKE '%VIEW%'
       ORDER BY table_name
     `;
     const params = [
@@ -56,6 +59,44 @@ export function listTables(client) {
   });
 }
 
+export function listViews(client) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT table_name
+      FROM information_schema.views
+      WHERE table_schema = $1
+      ORDER BY table_name
+    `;
+    const params = [
+      'public',
+    ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(err);
+      resolve(data.rows.map(row => row.table_name));
+    });
+  });
+}
+
+export function listRoutines(client) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT routine_name, routine_type
+      FROM information_schema.routines
+      WHERE routine_schema = $1
+      ORDER BY routine_name
+    `;
+    const params = [
+      'public',
+    ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(err);
+      resolve(data.rows.map(row => ({
+        routineName: row.routine_name,
+        routineType: row.routine_type,
+      })));
+    });
+  });
+}
 
 export async function executeQuery(client, query) {
   // node-postgres has support for Promise query
@@ -107,6 +148,7 @@ export const truncateAllTables = async (connection) => {
     SELECT table_name
     FROM information_schema.tables
     WHERE table_schema = '${schema}'
+    AND table_type NOT LIKE '%VIEW%'
   `;
   const [result] = await executeQuery(connection, sql);
   const tables = result.rows.map(row => row.table_name);
