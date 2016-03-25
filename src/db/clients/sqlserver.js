@@ -19,6 +19,8 @@ export default async function(server, database) {
     return {
       disconnect: () => disconnect(connection),
       listTables: () => listTables(connection),
+      listViews: () => listViews(connection),
+      listRoutines: () => listRoutines(connection),
       executeQuery: (query) => executeQuery(connection, query),
       listDatabases: () => listDatabases(connection),
       getQuerySelectTop: (table, limit) => getQuerySelectTop(connection, table, limit),
@@ -68,6 +70,28 @@ export const listTables = async (connection) => {
   return result.rows.map(row => row.table_name);
 };
 
+export const listViews = async (connection) => {
+  const sql = `
+    SELECT table_name
+    FROM information_schema.views
+    ORDER BY table_name
+  `;
+  const [result] = await executeQuery(connection, sql);
+  return result.rows.map(row => row.table_name);
+};
+
+export const listRoutines = async (connection) => {
+  const sql = `
+    SELECT routine_name, routine_type
+    FROM information_schema.routines
+    ORDER BY routine_name
+  `;
+  const [result] = await executeQuery(connection, sql);
+  return result.rows.map(row => ({
+    routineName: row.routine_name,
+    routineType: row.routine_type,
+  }));
+};
 
 export const listDatabases = async (connection) => {
   const [result] = await executeQuery(connection, 'SELECT name FROM sys.databases');
@@ -81,6 +105,7 @@ export const truncateAllTables = async (connection) => {
     SELECT table_name
     FROM information_schema.tables
     WHERE table_schema = '${schema}'
+    AND table_type NOT LIKE '%VIEW%'
   `;
   const [result] = await executeQuery(connection, sql);
   const tables = result.rows.map(row => row.table_name);
