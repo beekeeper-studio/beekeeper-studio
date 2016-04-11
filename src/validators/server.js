@@ -89,7 +89,6 @@ const SERVER_SCHEMA = {
   ],
   database: [
     { sanitizer: Valida.Sanitizer.trim },
-    { validator: Valida.Validator.required },
     { validator: Valida.Validator.len, min: 1, max: 100 },
   ],
   user: [

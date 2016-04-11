@@ -169,7 +169,7 @@ function _configDatabase(server, database) {
     port: server.config.port,
     user: server.config.user,
     password: server.config.password,
-    database: database.database,
+    database: database.database || 'postgres',
   };
 
   if (server.sshTunnel) {
