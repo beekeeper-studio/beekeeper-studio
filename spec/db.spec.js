@@ -39,6 +39,20 @@ describe('db', () => {
 
           return expect(dbConn.connect()).to.not.be.rejected;
         });
+
+        it('should connect into server without database specified', () => {
+          const serverInfo = {
+            ...config[dbClient],
+            database: db.CLIENTS.find(c => c.key === dbClient).defaultDatabase,
+            name: dbClient,
+            client: dbClient,
+          };
+
+          const serverSession = db.createServer(serverInfo);
+          const dbConn = serverSession.createConnection(serverInfo.database);
+
+          return expect(dbConn.connect()).to.not.be.rejected;
+        });
       });
 
       describe('given is already connected', () => {

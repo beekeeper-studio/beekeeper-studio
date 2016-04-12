@@ -8,7 +8,7 @@ import sqlserver from './sqlserver';
  */
 export const CLIENTS = [
   { key: 'mysql', name: 'MySQL' },
-  { key: 'postgresql', name: 'PostgreSQL' },
+  { key: 'postgresql', name: 'PostgreSQL', defaultDatabase: 'postgres' },
   { key: 'sqlserver', name: 'Microsoft SQL Server' },
 ];
 
