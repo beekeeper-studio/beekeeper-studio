@@ -43,7 +43,7 @@ describe('db', () => {
         it('should connect into server without database specified', () => {
           const serverInfo = {
             ...config[dbClient],
-            database: '',
+            database: db.CLIENTS.find(c => c.key === dbClient).defaultDatabase,
             name: dbClient,
             client: dbClient,
           };
