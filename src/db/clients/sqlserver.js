@@ -100,7 +100,7 @@ export const listTableColumns = async (connection, table) => {
   const sql = `
     SELECT column_name, data_type
     FROM information_schema.columns
-    WHERE table_name = ${table}
+    WHERE table_name = ${wrapQuery(table)}
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map(row => ({
@@ -113,7 +113,7 @@ export const listTableTriggers = async (connection, table) => {
   // SQL Server does not have information_schema for triggers, so other way around
   // is using sp_helptrigger stored procedure to fetch triggers related to table
   const sql = `
-    EXEC sp_helptrigger ${table}
+    EXEC sp_helptrigger ${wrapQuery(table)}
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map(row => row.trigger_name);
