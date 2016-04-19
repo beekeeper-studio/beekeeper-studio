@@ -31,6 +31,7 @@ export default function(server, database) {
         listTables: () => listTables(client),
         listViews: () => listViews(client),
         listRoutines: () => listRoutines(client),
+        listTableColumns: (table) => listTableColumns(client, table),
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
@@ -93,6 +94,27 @@ export function listRoutines(client) {
       resolve(data.map(row => ({
         routineName: row.routine_name,
         routineType: row.routine_type,
+      })));
+    });
+  });
+}
+
+export function listTableColumns(client, table) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT column_name, data_type
+      FROM information_schema.columns
+      WHERE table_schema = database()
+      AND table_name = ?
+    `;
+    const params = [
+      table,
+    ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(_getRealError(client, err));
+      resolve(data.map(row => ({
+        columnName: row.column_name,
+        dataType: row.data_type,
       })));
     });
   });
