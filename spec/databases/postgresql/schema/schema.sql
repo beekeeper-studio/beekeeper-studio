@@ -18,3 +18,14 @@ CREATE OR REPLACE FUNCTION user_count()
 RETURNS bigint AS $$
   SELECT COUNT(*) FROM users AS total;
 $$ LANGUAGE SQL;
+
+DROP TRIGGER IF EXISTS dummy_trigger ON users;
+CREATE OR REPLACE FUNCTION test_trigger_func() RETURNS TRIGGER AS $$
+    BEGIN
+      RETURN NULL;
+    END;
+$$ LANGUAGE plpgsql;
+CREATE TRIGGER dummy_trigger
+    AFTER INSERT ON users
+    FOR EACH ROW
+    EXECUTE PROCEDURE test_trigger_func();

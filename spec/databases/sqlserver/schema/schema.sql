@@ -35,3 +35,16 @@ AS
   BEGIN
     SELECT @Count = COUNT(*) FROM dbo.users
   END
+GO
+
+IF EXISTS (SELECT * FROM sys.objects WHERE [type] = 'TR' AND [name] = 'dummy_trigger')
+    DROP TRIGGER dbo.dummy_trigger;
+GO
+
+CREATE TRIGGER dbo.dummy_trigger
+ON users
+AFTER INSERT
+AS
+  BEGIN
+    return
+  END

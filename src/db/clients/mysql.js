@@ -31,6 +31,8 @@ export default function(server, database) {
         listTables: () => listTables(client),
         listViews: () => listViews(client),
         listRoutines: () => listRoutines(client),
+        listTableColumns: (table) => listTableColumns(client, table),
+        listTableTriggers: (table) => listTableTriggers(client, table),
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
@@ -94,6 +96,45 @@ export function listRoutines(client) {
         routineName: row.routine_name,
         routineType: row.routine_type,
       })));
+    });
+  });
+}
+
+export function listTableColumns(client, table) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT column_name, data_type
+      FROM information_schema.columns
+      WHERE table_schema = database()
+      AND table_name = ?
+    `;
+    const params = [
+      table,
+    ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(_getRealError(client, err));
+      resolve(data.map(row => ({
+        columnName: row.column_name,
+        dataType: row.data_type,
+      })));
+    });
+  });
+}
+
+export function listTableTriggers(client, table) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT trigger_name
+      FROM information_schema.triggers
+      WHERE event_object_schema = database()
+      AND event_object_table = ?
+    `;
+    const params = [
+      table,
+    ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(_getRealError(client, err));
+      resolve(data.map(row => row.trigger_name));
     });
   });
 }

@@ -94,15 +94,53 @@ describe('db', () => {
         describe('.listRoutines', () => {
           it('should list all routines and their type', async() =>{
             const routines = await dbConn.listRoutines();
-            expect(routines).to.have.length(1);
             const [routine] = routines;
 
             // Postgresql routine type is always function. SP do not exist
+            // Futhermore, PostgreSQL is expected to have two functions in schema, because
+            // additional one is needed for trigger
             if (dbClient === 'postgresql') {
+              expect(routines).to.have.length(2);
               expect(routine).to.have.deep.property('routineType').to.eql('FUNCTION');
             } else {
+              expect(routines).to.have.length(1);
               expect(routine).to.have.deep.property('routineType').to.eql('PROCEDURE');
             }
+          });
+        });
+
+        describe('.listTableColumns', () => {
+          it('should list all columns and their type from users table', async() => {
+            const columns = await dbConn.listTableColumns('users');
+            expect(columns).to.have.length(4);
+            const [firstCol, secondCol, thirdCol, fourthCol ] = columns;
+
+            expect(firstCol).to.have.property('columnName').to.eql('id');
+            expect(secondCol).to.have.property('columnName').to.eql('username');
+            expect(thirdCol).to.have.property('columnName').to.eql('email');
+            expect(fourthCol).to.have.property('columnName').to.eql('password');
+
+            expect(firstCol).to.have.property('dataType').to.have.string('int');
+
+            // According to schemas defined in specs, Postgresql has last three column
+            // types set as text, while in mysql and mssql they are defined as varchar
+            if (dbClient === 'postgresql') {
+              expect(secondCol).to.have.property('dataType').to.eql('text');
+              expect(thirdCol).to.have.property('dataType').to.eql('text');
+              expect(fourthCol).to.have.property('dataType').to.eql('text');
+            } else {
+              expect(secondCol).to.have.property('dataType').to.eql('varchar');
+              expect(thirdCol).to.have.property('dataType').to.eql('varchar');
+              expect(fourthCol).to.have.property('dataType').to.eql('varchar');
+            }
+          });
+        });
+
+        describe('.listTableTriggers', () => {
+          it('should list all table related triggers', async() => {
+            const triggers = await dbConn.listTableTriggers('users');
+            expect(triggers).to.have.length(1);
+            expect(triggers).to.include.members(['dummy_trigger']);
           });
         });
 
