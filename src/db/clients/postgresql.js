@@ -26,6 +26,7 @@ export default function(server, database) {
         listViews: () => listViews(client),
         listRoutines: () => listRoutines(client),
         listTableColumns: (table) => listTableColumns(client, table),
+        listTableTriggers: (table) => listTableTriggers(client, table),
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
@@ -117,6 +118,25 @@ export function listTableColumns(client, table) {
         columnName: row.column_name,
         dataType: row.data_type,
       })));
+    });
+  });
+}
+
+export function listTableTriggers(client, table) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT trigger_name
+      FROM information_schema.triggers
+      WHERE event_object_schema = $1
+      AND event_object_table = $2
+    `;
+    const params = [
+      'public',
+      table,
+    ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(err);
+      resolve(data.rows.map(row => row.trigger_name));
     });
   });
 }
