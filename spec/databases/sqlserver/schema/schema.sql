@@ -37,9 +37,12 @@ AS
   END
 GO
 
-DROP TRIGGER IF EXISTS dbo.dummy_trigger;
+IF EXISTS (SELECT * FROM sys.objects WHERE [type] = 'TR' AND [name] = 'dummy_trigger')
+    DROP TRIGGER dbo.dummy_trigger;
+GO
+
 CREATE TRIGGER dbo.dummy_trigger
-ON dbo.users
+ON users
 AFTER INSERT
 AS
   BEGIN
