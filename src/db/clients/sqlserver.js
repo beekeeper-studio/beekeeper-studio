@@ -100,7 +100,7 @@ export const listTableColumns = async (connection, table) => {
   const sql = `
     SELECT column_name, data_type
     FROM information_schema.columns
-    WHERE table_name = ${wrapQuery(table)}
+    WHERE table_name = '${table}'
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map(row => ({

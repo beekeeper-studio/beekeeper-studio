@@ -46,4 +46,5 @@ ON users
 AFTER INSERT
 AS
   BEGIN
+    return
   END
