@@ -117,7 +117,7 @@ describe('db', () => {
             expect(thirdCol).to.have.property('columnName').to.eql('email');
             expect(fourthCol).to.have.property('columnName').to.eql('password');
 
-            expect(firstCol).to.have.property('dataType').to.eql('int');
+            expect(firstCol).to.have.property('dataType').to.have.string('int');
 
             // According to schemas defined in specs, Postgresql has last three column
             // types set as text, while in mysql and mssql they are defined as varchar

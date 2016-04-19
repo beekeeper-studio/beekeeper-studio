@@ -21,6 +21,7 @@ export default async function(server, database) {
       listTables: () => listTables(connection),
       listViews: () => listViews(connection),
       listRoutines: () => listRoutines(connection),
+      listTableColumns: (table) => listTableColumns(connection, table),
       executeQuery: (query) => executeQuery(connection, query),
       listDatabases: () => listDatabases(connection),
       getQuerySelectTop: (table, limit) => getQuerySelectTop(connection, table, limit),
@@ -91,6 +92,19 @@ export const listRoutines = async (connection) => {
   return result.rows.map(row => ({
     routineName: row.routine_name,
     routineType: row.routine_type,
+  }));
+};
+
+export const listTableColumns = async (connection, table) => {
+  const sql = `
+    SELECT column_name, data_type
+    FROM information_schema.columns
+    WHERE table_name = ${table}
+  `;
+  const [result] = await executeQuery(connection, sql);
+  return result.rows.map(row => ({
+    columnName: row.column_name,
+    dataType: row.data_type,
   }));
 };
 
