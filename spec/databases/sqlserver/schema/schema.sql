@@ -35,3 +35,12 @@ AS
   BEGIN
     SELECT @Count = COUNT(*) FROM dbo.users
   END
+GO
+
+DROP TRIGGER IF EXISTS dbo.dummy_trigger;
+CREATE TRIGGER dbo.dummy_trigger
+ON dbo.users
+AFTER INSERT
+AS
+  BEGIN
+  END

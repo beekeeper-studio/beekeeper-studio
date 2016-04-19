@@ -22,6 +22,7 @@ export default async function(server, database) {
       listViews: () => listViews(connection),
       listRoutines: () => listRoutines(connection),
       listTableColumns: (table) => listTableColumns(connection, table),
+      listTableTriggers: (table) => listTableTriggers(connection, table),
       executeQuery: (query) => executeQuery(connection, query),
       listDatabases: () => listDatabases(connection),
       getQuerySelectTop: (table, limit) => getQuerySelectTop(connection, table, limit),
@@ -106,6 +107,16 @@ export const listTableColumns = async (connection, table) => {
     columnName: row.column_name,
     dataType: row.data_type,
   }));
+};
+
+export const listTableTriggers = async (connection, table) => {
+  // SQL Server does not have information_schema for triggers, so other way around
+  // is using sp_helptrigger stored procedure to fetch triggers related to table
+  const sql = `
+    EXEC sp_helptrigger ${table}
+  `;
+  const [result] = await executeQuery(connection, sql);
+  return result.rows.map(row => row.trigger_name);
 };
 
 export const listDatabases = async (connection) => {
