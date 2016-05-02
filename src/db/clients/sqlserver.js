@@ -85,7 +85,7 @@ export const listViews = async (connection) => {
 
 export const listRoutines = async (connection) => {
   const sql = `
-    SELECT routine_name, routine_type
+    SELECT routine_name, routine_type, routine_definition
     FROM information_schema.routines
     ORDER BY routine_name
   `;
@@ -93,6 +93,7 @@ export const listRoutines = async (connection) => {
   return result.rows.map(row => ({
     routineName: row.routine_name,
     routineType: row.routine_type,
+    routineDefinition: row.routine_definition,
   }));
 };
 

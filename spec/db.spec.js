@@ -92,9 +92,9 @@ describe('db', () => {
         });
 
         describe('.listRoutines', () => {
-          it('should list all routines and their type', async() =>{
+          it('should list all routines with their type and definition', async() =>{
             const routines = await dbConn.listRoutines();
-            const [routine] = routines;
+            const routine = dbClient === 'postgresql' ? routines[1] : routines[0];
 
             // Postgresql routine type is always function. SP do not exist
             // Futhermore, PostgreSQL is expected to have two functions in schema, because
@@ -105,6 +105,13 @@ describe('db', () => {
             } else {
               expect(routines).to.have.length(1);
               expect(routine).to.have.deep.property('routineType').to.eql('PROCEDURE');
+            }
+
+            // Check routine definition
+            if (dbClient === 'mssql') {
+              expect(routine).to.have.deep.property('routineDefinition').to.contain('SELECT @Count = COUNT(*) FROM dbo.users');
+            } else {
+              expect(routine).to.have.deep.property('routineDefinition').to.contain('SELECT COUNT(*) FROM users');
             }
           });
         });

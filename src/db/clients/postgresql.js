@@ -82,7 +82,7 @@ export function listViews(client) {
 export function listRoutines(client) {
   return new Promise((resolve, reject) => {
     const sql = `
-      SELECT routine_name, routine_type
+      SELECT routine_name, routine_type, routine_definition
       FROM information_schema.routines
       WHERE routine_schema = $1
       ORDER BY routine_name
@@ -95,6 +95,7 @@ export function listRoutines(client) {
       resolve(data.rows.map(row => ({
         routineName: row.routine_name,
         routineType: row.routine_type,
+        routineDefinition: row.routine_definition,
       })));
     });
   });
