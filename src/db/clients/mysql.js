@@ -36,6 +36,7 @@ export default function(server, database) {
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
+        getTableCreateScript: (table) => getTableCreateScript(client, table),
         truncateAllTables: () => truncateAllTables(client),
       });
     });
@@ -173,6 +174,16 @@ export function getQuerySelectTop(client, table, limit) {
   return `SELECT * FROM ${wrapQuery(table)} LIMIT ${limit}`;
 }
 
+export function getTableCreateScript(client, table) {
+  return new Promise((resolve, reject) => {
+    const sql = `SHOW CREATE TABLE ${table}`;
+    const params = [];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(_getRealError(client, err));
+      resolve(data.map(row => row['Create Table']));
+    });
+  });
+}
 
 export function wrapQuery(item) {
   return `\`${item}\``;

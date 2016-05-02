@@ -151,6 +151,30 @@ describe('db', () => {
           });
         });
 
+        describe('.getTableCreateScript', () => {
+          it('should return table create script', async() => {
+            const [createScript] = await dbConn.getTableCreateScript('users');
+
+            if (dbClient === 'mysql') {
+              expect(createScript).to.eql('CREATE TABLE `users` (\n' +
+                '  `id` int(11) NOT NULL AUTO_INCREMENT,\n' +
+                '  `username` varchar(45) DEFAULT NULL,\n' +
+                '  `email` varchar(150) DEFAULT NULL,\n' +
+                '  `password` varchar(45) DEFAULT NULL,\n' +
+                '  PRIMARY KEY (`id`)\n' +
+              ') ENGINE=InnoDB DEFAULT CHARSET=latin1');
+            } else if (dbClient === 'postgresql') {
+              expect(createScript).to.eql('CREATE TABLE users (\n' +
+                '  id integer NOT NULL,\n' +
+                '  username text NOT NULL,\n' +
+                '  email text NOT NULL,\n' +
+                '  password text NOT NULL\n' +
+                ');'
+              );
+            }
+          });
+        });
+
         describe('.executeQuery', () => {
           beforeEach(() => Promise.all([
             dbConn.executeQuery(`

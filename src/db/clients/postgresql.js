@@ -30,6 +30,7 @@ export default function(server, database) {
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
+        getTableCreateScript: (table) => getTableCreateScript(client, table),
         truncateAllTables: () => truncateAllTables(client),
       });
     });
@@ -174,6 +175,48 @@ export function listDatabases(client) {
 
 export function getQuerySelectTop(client, table, limit) {
   return `SELECT * FROM ${wrapQuery(table)} LIMIT ${limit}`;
+}
+
+export function getTableCreateScript(client, table) {
+  return new Promise((resolve, reject) => {
+    // Reference http://stackoverflow.com/a/32885178
+    const sql = `
+    SELECT
+      'CREATE TABLE ' || table_name || E' (\n' ||
+      array_to_string(
+        array_agg(
+          '  ' || column_name || ' ' ||  type || ' '|| not_null
+        )
+        , E',\n'
+      ) || E'\n);' AS createtable
+    FROM
+    ( SELECT
+        c.relname AS table_name,
+        a.attname AS column_name,
+        pg_catalog.format_type(a.atttypid, a.atttypmod) AS type,
+        CASE
+          WHEN a.attnotnull THEN 'NOT NULL'
+        ELSE 'NULL'
+        END AS not_null
+      FROM pg_class c,
+       pg_attribute a,
+       pg_type t
+      WHERE c.relname = $1
+      AND a.attnum > 0
+      AND a.attrelid = c.oid
+      AND a.atttypid = t.oid
+      ORDER BY a.attnum
+    ) AS tabdef
+    GROUP BY table_name;
+    `;
+    const params = [
+      table,
+    ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(err);
+      resolve(data.rows.map(row => row.createtable));
+    });
+  });
 }
 
 

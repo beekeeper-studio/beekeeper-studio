@@ -25,6 +25,7 @@ export function createConnection(server, database) {
     executeQuery: executeQuery.bind(null, server, database),
     listDatabases: listDatabases.bind(null, server, database),
     getQuerySelectTop: getQuerySelectTop.bind(null, server, database),
+    getTableCreateScript: getTableCreateScript.bind(null, server, database),
     truncateAllTables: truncateAllTables.bind(null, server, database),
   };
 }
@@ -151,6 +152,11 @@ async function getQuerySelectTop(server, database, table, limit) {
     _limit = typeof limitSelect !== 'undefined' ? limitSelect : DEFAULT_LIMIT;
   }
   return database.connection.getQuerySelectTop(table, _limit);
+}
+
+async function getTableCreateScript(server, database, table) {
+  checkIsConnected(server, database);
+  return database.connection.getTableCreateScript(table);
 }
 
 function truncateAllTables(server, database) {
