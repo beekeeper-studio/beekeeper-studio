@@ -108,7 +108,7 @@ describe('db', () => {
             }
 
             // Check routine definition
-            if (dbClient === 'mssql') {
+            if (dbClient === 'sqlserver') {
               expect(routine).to.have.deep.property('routineDefinition').to.contain('SELECT @Count = COUNT(*) FROM dbo.users');
             } else {
               expect(routine).to.have.deep.property('routineDefinition').to.contain('SELECT COUNT(*) FROM users');
@@ -156,13 +156,13 @@ describe('db', () => {
             const [createScript] = await dbConn.getTableCreateScript('users');
 
             if (dbClient === 'mysql') {
-              expect(createScript).to.eql('CREATE TABLE `users` (\n' +
+              expect(createScript).to.contain('CREATE TABLE `users` (\n' +
                 '  `id` int(11) NOT NULL AUTO_INCREMENT,\n' +
                 '  `username` varchar(45) DEFAULT NULL,\n' +
                 '  `email` varchar(150) DEFAULT NULL,\n' +
                 '  `password` varchar(45) DEFAULT NULL,\n' +
                 '  PRIMARY KEY (`id`)\n' +
-              ') ENGINE=InnoDB DEFAULT CHARSET=latin1');
+              ') ENGINE=InnoDB');
             } else if (dbClient === 'postgresql') {
               expect(createScript).to.eql('CREATE TABLE users (\n' +
                 '  id integer NOT NULL,\n' +
@@ -174,15 +174,14 @@ describe('db', () => {
                 'ALTER TABLE users ADD CONSTRAINT users_pkey PRIMARY KEY (id)'
               );
             } else { // dbClient === SQL Server
-              expect(createScript).to.eql('CREATE TABLE users (\n' +
+              expect(createScript).to.contain('CREATE TABLE users (\n' +
                 '  id int IDENTITY(1,1) NOT NULL,\n' +
                 '  username varchar(45)  NULL,\n' +
                 '  email varchar(150)  NULL,\n' +
                 '  password varchar(45)  NULL,\n' +
-                ')\n' +
-                '\n' +
-                'ALTER TABLE users ADD CONSTRAINT PK__users__3213E83F6E4B38A9 PRIMARY KEY (id)'
-              );
+                ')\n');
+              expect(createScript).to.contain('ALTER TABLE users ADD CONSTRAINT PK__users');
+              expect(createScript).to.contain('PRIMARY KEY (id)');
             }
           });
         });
