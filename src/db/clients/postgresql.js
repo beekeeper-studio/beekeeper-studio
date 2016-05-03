@@ -182,13 +182,18 @@ export function getTableCreateScript(client, table) {
     // Reference http://stackoverflow.com/a/32885178
     const sql = `
     SELECT
-      'CREATE TABLE ' || table_name || E' (\n' ||
+      'CREATE TABLE ' || tabdef.table_name || E' (\n' ||
       array_to_string(
         array_agg(
-          '  ' || column_name || ' ' ||  type || ' '|| not_null
+          '  ' || tabdef.column_name || ' ' ||  tabdef.type || ' '|| tabdef.not_null
         )
         , E',\n'
-      ) || E'\n);' AS createtable
+      ) || E'\n);\n' ||
+      CASE WHEN tc.constraint_name IS NULL THEN ''
+    	     ELSE E'\nALTER TABLE ' || tabdef.table_name ||
+           ' ADD CONSTRAINT ' || tc.constraint_name  ||
+           ' PRIMARY KEY ' || '(' || substring(constr.column_name from 0 for char_length(constr.column_name)-1) || ')'
+    	END AS createtable
     FROM
     ( SELECT
         c.relname AS table_name,
@@ -205,9 +210,18 @@ export function getTableCreateScript(client, table) {
       AND a.attnum > 0
       AND a.attrelid = c.oid
       AND a.atttypid = t.oid
-      ORDER BY a.attnum
+      ORDER BY a.attnum DESC
     ) AS tabdef
-    GROUP BY table_name;
+    LEFT JOIN information_schema.table_constraints tc
+    ON  tc.table_name       = tabdef.table_name
+    AND tc.constraint_Type  = 'PRIMARY KEY'
+    LEFT JOIN LATERAL (
+      SELECT column_name || ', ' AS column_name
+      FROM   information_schema.key_column_usage kcu
+      WHERE  kcu.constraint_name = tc.constraint_name
+      ORDER BY ordinal_position
+    ) AS constr ON true
+    GROUP BY tabdef.table_name, tc.constraint_name, constr.column_name;
     `;
     const params = [
       table,

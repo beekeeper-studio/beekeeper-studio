@@ -169,7 +169,9 @@ describe('db', () => {
                 '  username text NOT NULL,\n' +
                 '  email text NOT NULL,\n' +
                 '  password text NOT NULL\n' +
-                ');'
+                ');\n' +
+                '\n' +
+                'ALTER TABLE users ADD CONSTRAINT users_pkey PRIMARY KEY (id)'
               );
             } else { // dbClient === SQL Server
               expect(createScript).to.eql('CREATE TABLE users (\n' +
