@@ -171,6 +171,16 @@ describe('db', () => {
                 '  password text NOT NULL\n' +
                 ');'
               );
+            } else { // dbClient === SQL Server
+              expect(createScript).to.eql('CREATE TABLE users (\n' +
+                '  id int IDENTITY(1,1) NOT NULL,\n' +
+                '  username varchar(45)  NULL,\n' +
+                '  email varchar(150)  NULL,\n' +
+                '  password varchar(45)  NULL,\n' +
+                ')\n' +
+                '\n' +
+                'ALTER TABLE users ADD CONSTRAINT PK__users__3213E83F6E4B38A9 PRIMARY KEY (id)'
+              );
             }
           });
         });
