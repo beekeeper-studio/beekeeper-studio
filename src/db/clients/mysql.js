@@ -37,6 +37,7 @@ export default function(server, database) {
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
         getTableCreateScript: (table) => getTableCreateScript(client, table),
+        getViewCreateScript: (view) => getViewCreateScript(client, view),
         truncateAllTables: () => truncateAllTables(client),
       });
     });
@@ -181,6 +182,17 @@ export function getTableCreateScript(client, table) {
     client.query(sql, params, (err, data) => {
       if (err) return reject(_getRealError(client, err));
       resolve(data.map(row => row['Create Table']));
+    });
+  });
+}
+
+export function getViewCreateScript(client, view) {
+  return new Promise((resolve, reject) => {
+    const sql = `SHOW CREATE VIEW ${view}`;
+    const params = [];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(_getRealError(client, err));
+      resolve(data.map(row => row['Create View']));
     });
   });
 }

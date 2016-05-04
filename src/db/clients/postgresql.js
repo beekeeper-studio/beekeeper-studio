@@ -31,6 +31,7 @@ export default function(server, database) {
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
         getTableCreateScript: (table) => getTableCreateScript(client, table),
+        getViewCreateScript: (view) => getViewCreateScript(client, view),
         truncateAllTables: () => truncateAllTables(client),
       });
     });
@@ -229,6 +230,18 @@ export function getTableCreateScript(client, table) {
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
       resolve(data.rows.map(row => row.createtable));
+    });
+  });
+}
+
+export function getViewCreateScript(client, view) {
+  return new Promise((resolve, reject) => {
+    const createViewSql = `CREATE OR REPLACE VIEW ${view} AS`;
+    const sql = `SELECT pg_get_viewdef($1::regclass, true)`;
+    const params = [ view ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(err);
+      resolve(data.rows.map(row => `${createViewSql}\n${row.pg_get_viewdef}`));
     });
   });
 }

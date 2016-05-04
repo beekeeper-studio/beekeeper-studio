@@ -27,6 +27,7 @@ export default async function(server, database) {
       listDatabases: () => listDatabases(connection),
       getQuerySelectTop: (table, limit) => getQuerySelectTop(connection, table, limit),
       getTableCreateScript: (table) => getTableCreateScript(connection, table),
+      getViewCreateScript: (view) => getViewCreateScript(connection, view),
       truncateAllTables: () => truncateAllTables(connection),
     };
   } catch (err) {
@@ -193,6 +194,12 @@ export const getTableCreateScript = async (connection, table) => {
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map(row => row.createtable);
+};
+
+export const getViewCreateScript = async (connection, view) => {
+  const sql = `SELECT OBJECT_DEFINITION (OBJECT_ID('${view}')) AS ViewDefinition;`;
+  const [result] = await executeQuery(connection, sql);
+  return result.rows.map(row => row.ViewDefinition);
 };
 
 export const truncateAllTables = async (connection) => {

@@ -219,6 +219,20 @@ describe('db', () => {
           });
         });
 
+        describe('.getViewCreateScript', () => {
+          it('should return CREATE VIEW script', async() => {
+            const [createScript] = await dbConn.getViewCreateScript('email_view');
+
+            if (dbClient === 'mysql') {
+              expect(createScript).to.contain('VIEW `email_view` AS select `users`.`email` AS `email`,`users`.`password` AS `password` from `users`');
+            } else if (dbClient === 'postgresql') {
+              expect(createScript).to.eql(`CREATE OR REPLACE VIEW email_view AS\n SELECT users.email,\n    users.password\n   FROM users;`);
+            } else { // dbClient === SQL Server
+              expect(createScript).to.eql(`\nCREATE VIEW dbo.email_view AS\nSELECT dbo.users.email, dbo.users.password\nFROM dbo.users;`);
+            }
+          });
+        });
+
         describe('.executeQuery', () => {
           beforeEach(() => Promise.all([
             dbConn.executeQuery(`
