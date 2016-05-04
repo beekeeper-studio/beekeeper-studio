@@ -197,18 +197,14 @@ describe('db', () => {
         describe('.getTableInsertScript', () => {
           it('should return INSERT INTO table script', async() => {
             const insertQuery = await dbConn.getTableInsertScript('users');
-            expect(insertQuery).to.eql(`INSERT INTO users (id, username, email, password)
-  VALUES (?, ?, ?, ?);`);
+            expect(insertQuery).to.eql(`INSERT INTO users (id, username, email, password)\n VALUES (?, ?, ?, ?);`);
           });
         });
 
         describe('.getTableUpdateScript', () => {
           it('should return UPDATE table script', async() => {
             const updateQuery = await dbConn.getTableUpdateScript('users');
-            expect(updateQuery).to.eql(`
-  UPDATE users
-     SET id=?, username=?, email=?, password=?
-   WHERE <condition>;`);
+            expect(updateQuery).to.eql(`UPDATE users\n   SET id=?, username=?, email=?, password=?\n WHERE <condition>;`);
           });
         });
 

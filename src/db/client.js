@@ -172,18 +172,14 @@ async function getTableSelectScript(server, database, table) {
 
 async function getTableInsertScript(server, database, table) {
   const columnNames = await getTableColumnNames(server, database, table);
-  return `INSERT INTO ${table} (${columnNames.join(', ')})
-  VALUES (${columnNames.fill('?').join(', ')});`;
+  return `INSERT INTO ${table} (${columnNames.join(', ')})\n VALUES (${columnNames.fill('?').join(', ')});`;
 }
 
 async function getTableUpdateScript(server, database, table) {
   const columnNames = await getTableColumnNames(server, database, table);
   const setColumnForm = columnNames.map(columnName => `${columnName}=?`).join(', ');
   const condition = '<condition>';
-  return `
-  UPDATE ${table}
-     SET ${setColumnForm}
-   WHERE ${condition};`;
+  return `UPDATE ${table}\n   SET ${setColumnForm}\n WHERE ${condition};`;
 }
 
 async function getTableDeleteScript(server, database, table) {
