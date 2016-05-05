@@ -174,12 +174,12 @@ describe('db', () => {
                 'ALTER TABLE users ADD CONSTRAINT users_pkey PRIMARY KEY (id)'
               );
             } else { // dbClient === SQL Server
-              expect(createScript).to.contain('CREATE TABLE users (\n' +
-                '  id int IDENTITY(1,1) NOT NULL,\n' +
-                '  username varchar(45)  NULL,\n' +
-                '  email varchar(150)  NULL,\n' +
-                '  password varchar(45)  NULL,\n' +
-                ')\n');
+              expect(createScript).to.contain('CREATE TABLE users (\r\n' +
+                '  id int IDENTITY(1,1) NOT NULL,\r\n' +
+                '  username varchar(45)  NULL,\r\n' +
+                '  email varchar(150)  NULL,\r\n' +
+                '  password varchar(45)  NULL,\r\n' +
+                ')\r\n');
               expect(createScript).to.contain('ALTER TABLE users ADD CONSTRAINT PK__users');
               expect(createScript).to.contain('PRIMARY KEY (id)');
             }
@@ -224,7 +224,7 @@ describe('db', () => {
             } else if (dbClient === 'postgresql') {
               expect(createScript).to.eql(`CREATE OR REPLACE VIEW email_view AS\n SELECT users.email,\n    users.password\n   FROM users;`);
             } else { // dbClient === SQL Server
-              expect(createScript).to.eql(`\nCREATE VIEW dbo.email_view AS\nSELECT dbo.users.email, dbo.users.password\nFROM dbo.users;`);
+              expect(createScript).to.eql(`\nCREATE VIEW dbo.email_view AS\nSELECT dbo.users.email, dbo.users.password\nFROM dbo.users;\n`);
             }
           });
         });
