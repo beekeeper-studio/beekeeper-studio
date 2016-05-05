@@ -30,6 +30,8 @@ export default function(server, database) {
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
+        getTableCreateScript: (table) => getTableCreateScript(client, table),
+        getViewCreateScript: (view) => getViewCreateScript(client, view),
         truncateAllTables: () => truncateAllTables(client),
       });
     });
@@ -82,7 +84,7 @@ export function listViews(client) {
 export function listRoutines(client) {
   return new Promise((resolve, reject) => {
     const sql = `
-      SELECT routine_name, routine_type
+      SELECT routine_name, routine_type, routine_definition
       FROM information_schema.routines
       WHERE routine_schema = $1
       ORDER BY routine_name
@@ -95,6 +97,7 @@ export function listRoutines(client) {
       resolve(data.rows.map(row => ({
         routineName: row.routine_name,
         routineType: row.routine_type,
+        routineDefinition: row.routine_definition,
       })));
     });
   });
@@ -173,6 +176,74 @@ export function listDatabases(client) {
 
 export function getQuerySelectTop(client, table, limit) {
   return `SELECT * FROM ${wrapQuery(table)} LIMIT ${limit}`;
+}
+
+export function getTableCreateScript(client, table) {
+  return new Promise((resolve, reject) => {
+    // Reference http://stackoverflow.com/a/32885178
+    const sql = `
+    SELECT
+      'CREATE TABLE ' || tabdef.table_name || E' (\n' ||
+      array_to_string(
+        array_agg(
+          '  ' || tabdef.column_name || ' ' ||  tabdef.type || ' '|| tabdef.not_null
+        )
+        , E',\n'
+      ) || E'\n);\n' ||
+      CASE WHEN tc.constraint_name IS NULL THEN ''
+    	     ELSE E'\nALTER TABLE ' || tabdef.table_name ||
+           ' ADD CONSTRAINT ' || tc.constraint_name  ||
+           ' PRIMARY KEY ' || '(' || substring(constr.column_name from 0 for char_length(constr.column_name)-1) || ')'
+    	END AS createtable
+    FROM
+    ( SELECT
+        c.relname AS table_name,
+        a.attname AS column_name,
+        pg_catalog.format_type(a.atttypid, a.atttypmod) AS type,
+        CASE
+          WHEN a.attnotnull THEN 'NOT NULL'
+        ELSE 'NULL'
+        END AS not_null
+      FROM pg_class c,
+       pg_attribute a,
+       pg_type t
+      WHERE c.relname = $1
+      AND a.attnum > 0
+      AND a.attrelid = c.oid
+      AND a.atttypid = t.oid
+      ORDER BY a.attnum DESC
+    ) AS tabdef
+    LEFT JOIN information_schema.table_constraints tc
+    ON  tc.table_name       = tabdef.table_name
+    AND tc.constraint_Type  = 'PRIMARY KEY'
+    LEFT JOIN LATERAL (
+      SELECT column_name || ', ' AS column_name
+      FROM   information_schema.key_column_usage kcu
+      WHERE  kcu.constraint_name = tc.constraint_name
+      ORDER BY ordinal_position
+    ) AS constr ON true
+    GROUP BY tabdef.table_name, tc.constraint_name, constr.column_name;
+    `;
+    const params = [
+      table,
+    ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(err);
+      resolve(data.rows.map(row => row.createtable));
+    });
+  });
+}
+
+export function getViewCreateScript(client, view) {
+  return new Promise((resolve, reject) => {
+    const createViewSql = `CREATE OR REPLACE VIEW ${view} AS`;
+    const sql = `SELECT pg_get_viewdef($1::regclass, true)`;
+    const params = [ view ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(err);
+      resolve(data.rows.map(row => `${createViewSql}\n${row.pg_get_viewdef}`));
+    });
+  });
 }
 
 

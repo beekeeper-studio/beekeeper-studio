@@ -15,7 +15,7 @@ environment:
   MYSQL_ENV_MYSQL_USER: root
   MYSQL_ENV_MYSQL_PASSWORD: Password12!
   MYSQL_ENV_MYSQL_DATABASE: sqlectron
-  MYSQL_PATH: C:\Program Files\MySql\MySQL Server 5.6
+  MYSQL_PATH: C:\Program Files\MySql\MySQL Server 5.7
   MYSQL_PWD: Password12!
   # sql server
   SQLSERVER_ENV_SQLSERVER_HOST: localhost
@@ -46,7 +46,7 @@ build_script:
   - createdb sqlectron
   - psql -d sqlectron -a -f spec/databases/postgresql/schema/schema.sql
   # mysql
-  - mysql -e "drop database test; create database sqlectron;" --user=root
+  - mysql -e "create database sqlectron;" --user=root
   - mysql sqlectron < spec/databases/mysql/schema/schema.sql --user=root
   # sqlserver
   - ps: ./appveyor-sqlserver.ps1 SQL2008R2SP2

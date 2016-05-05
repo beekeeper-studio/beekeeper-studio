@@ -25,6 +25,12 @@ export function createConnection(server, database) {
     executeQuery: executeQuery.bind(null, server, database),
     listDatabases: listDatabases.bind(null, server, database),
     getQuerySelectTop: getQuerySelectTop.bind(null, server, database),
+    getTableCreateScript: getTableCreateScript.bind(null, server, database),
+    getTableSelectScript: getTableSelectScript.bind(null, server, database),
+    getTableInsertScript: getTableInsertScript.bind(null, server, database),
+    getTableUpdateScript: getTableUpdateScript.bind(null, server, database),
+    getTableDeleteScript: getTableDeleteScript.bind(null, server, database),
+    getViewCreateScript: getViewCreateScript.bind(null, server, database),
     truncateAllTables: truncateAllTables.bind(null, server, database),
   };
 }
@@ -153,10 +159,48 @@ async function getQuerySelectTop(server, database, table, limit) {
   return database.connection.getQuerySelectTop(table, _limit);
 }
 
+async function getTableCreateScript(server, database, table) {
+  checkIsConnected(server, database);
+  return database.connection.getTableCreateScript(table);
+}
+
+async function getTableSelectScript(server, database, table) {
+  const columnNames = await getTableColumnNames(server, database, table);
+  return `SELECT ${columnNames.join(', ')} FROM ${table};`;
+}
+
+
+async function getTableInsertScript(server, database, table) {
+  const columnNames = await getTableColumnNames(server, database, table);
+  return `INSERT INTO ${table} (${columnNames.join(', ')})\n VALUES (${columnNames.fill('?').join(', ')});`;
+}
+
+async function getTableUpdateScript(server, database, table) {
+  const columnNames = await getTableColumnNames(server, database, table);
+  const setColumnForm = columnNames.map(columnName => `${columnName}=?`).join(', ');
+  const condition = '<condition>';
+  return `UPDATE ${table}\n   SET ${setColumnForm}\n WHERE ${condition};`;
+}
+
+async function getTableDeleteScript(server, database, table) {
+  const condition = '<condition>';
+  return `DELETE FROM ${table} WHERE ${condition};`;
+}
+
+async function getViewCreateScript(server, database, view) {
+  checkIsConnected(server, database);
+  return database.connection.getViewCreateScript(view);
+}
+
 function truncateAllTables(server, database) {
   return database.connection.truncateAllTables();
 }
 
+async function getTableColumnNames(server, database, table) {
+  checkIsConnected(server, database);
+  const columns = await database.connection.listTableColumns(table);
+  return columns.map(column => column.columnName);
+}
 
 async function loadConfigLimit() {
   if (limitSelect === null) {

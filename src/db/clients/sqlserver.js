@@ -26,6 +26,8 @@ export default async function(server, database) {
       executeQuery: (query) => executeQuery(connection, query),
       listDatabases: () => listDatabases(connection),
       getQuerySelectTop: (table, limit) => getQuerySelectTop(connection, table, limit),
+      getTableCreateScript: (table) => getTableCreateScript(connection, table),
+      getViewCreateScript: (view) => getViewCreateScript(connection, view),
       truncateAllTables: () => truncateAllTables(connection),
     };
   } catch (err) {
@@ -85,7 +87,7 @@ export const listViews = async (connection) => {
 
 export const listRoutines = async (connection) => {
   const sql = `
-    SELECT routine_name, routine_type
+    SELECT routine_name, routine_type, routine_definition
     FROM information_schema.routines
     ORDER BY routine_name
   `;
@@ -93,6 +95,7 @@ export const listRoutines = async (connection) => {
   return result.rows.map(row => ({
     routineName: row.routine_name,
     routineType: row.routine_type,
+    routineDefinition: row.routine_definition,
   }));
 };
 
@@ -124,6 +127,80 @@ export const listDatabases = async (connection) => {
   return result.rows.map(row => row.name);
 };
 
+export const getTableCreateScript = async (connection, table) => {
+  // Reference http://stackoverflow.com/a/317864
+  const sql = `
+    SELECT  ('CREATE TABLE ' + so.name + ' (' +
+    	CHAR(13)+CHAR(10) + REPLACE(o.list, '&#x0D;', CHAR(13)) +
+    	')' + CHAR(13)+CHAR(10) +
+      CASE WHEN tc.Constraint_Name IS NULL THEN ''
+    	     ELSE + CHAR(13)+CHAR(10) + 'ALTER TABLE ' + so.Name +
+           ' ADD CONSTRAINT ' + tc.Constraint_Name  +
+           ' PRIMARY KEY ' + '(' + LEFT(j.List, Len(j.List)-1) + ')'
+    	END) AS createtable
+    FROM sysobjects so
+    CROSS APPLY
+      (SELECT
+        '  ' + column_name + ' ' +
+        data_type +
+        CASE data_type
+            WHEN 'sql_variant' THEN ''
+            WHEN 'text' THEN ''
+            WHEN 'ntext' THEN ''
+            WHEN 'xml' THEN ''
+            WHEN 'decimal' THEN '(' + cast(numeric_precision AS varchar) + ', '
+									+ cast(numeric_scale AS varchar) + ')'
+            ELSE coalesce('('+ CASE WHEN character_maximum_length = -1
+									THEN 'MAX'
+									ELSE cast(character_maximum_length AS varchar)
+								END + ')','')
+          END + ' ' +
+          CASE WHEN EXISTS (
+      			SELECT id FROM syscolumns
+      			WHERE object_name(id)=so.name
+      			AND name=column_name
+      			AND columnproperty(id,name,'IsIdentity') = 1
+    			) THEN
+      			'IDENTITY(' +
+      			cast(ident_seed(so.name) AS varchar) + ',' +
+      			cast(ident_incr(so.name) AS varchar) + ')'
+          ELSE ''
+          END + ' ' +
+           (CASE WHEN IS_NULLABLE = 'No'
+  			         THEN 'NOT '
+                 ELSE ''
+  		   END ) + 'NULL' +
+          CASE WHEN information_schema.columns.COLUMN_DEFAULT IS NOT NULL
+               THEN 'DEFAULT '+ information_schema.columns.COLUMN_DEFAULT
+               ELSE ''
+          END + ',' + CHAR(13)+CHAR(10)
+       FROM information_schema.columns WHERE table_name = so.name
+       ORDER BY ordinal_position
+       FOR XML PATH('')
+  	 ) o (list)
+    LEFT JOIN information_schema.table_constraints tc
+    ON  tc.Table_name       = so.Name
+    AND tc.Constraint_Type  = 'PRIMARY KEY'
+    CROSS APPLY
+        (SELECT Column_Name + ', '
+         FROM   information_schema.key_column_usage kcu
+         WHERE  kcu.Constraint_Name = tc.Constraint_Name
+         ORDER BY ORDINAL_POSITION
+         FOR XML PATH('')
+    	 ) j (list)
+    WHERE   xtype = 'U'
+    AND name    NOT IN ('dtproperties')
+    AND so.name = '${table}'
+  `;
+  const [result] = await executeQuery(connection, sql);
+  return result.rows.map(row => row.createtable);
+};
+
+export const getViewCreateScript = async (connection, view) => {
+  const sql = `SELECT OBJECT_DEFINITION (OBJECT_ID('${view}')) AS ViewDefinition;`;
+  const [result] = await executeQuery(connection, sql);
+  return result.rows.map(row => row.ViewDefinition);
+};
 
 export const truncateAllTables = async (connection) => {
   const schema = await getSchema(connection);

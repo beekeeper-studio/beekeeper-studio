@@ -92,9 +92,9 @@ describe('db', () => {
         });
 
         describe('.listRoutines', () => {
-          it('should list all routines and their type', async() =>{
+          it('should list all routines with their type and definition', async() =>{
             const routines = await dbConn.listRoutines();
-            const [routine] = routines;
+            const routine = dbClient === 'postgresql' ? routines[1] : routines[0];
 
             // Postgresql routine type is always function. SP do not exist
             // Futhermore, PostgreSQL is expected to have two functions in schema, because
@@ -105,6 +105,13 @@ describe('db', () => {
             } else {
               expect(routines).to.have.length(1);
               expect(routine).to.have.deep.property('routineType').to.eql('PROCEDURE');
+            }
+
+            // Check routine definition
+            if (dbClient === 'sqlserver') {
+              expect(routine).to.have.deep.property('routineDefinition').to.contain('SELECT @Count = COUNT(*) FROM dbo.users');
+            } else {
+              expect(routine).to.have.deep.property('routineDefinition').to.contain('SELECT COUNT(*) FROM users');
             }
           });
         });
@@ -141,6 +148,84 @@ describe('db', () => {
             const triggers = await dbConn.listTableTriggers('users');
             expect(triggers).to.have.length(1);
             expect(triggers).to.include.members(['dummy_trigger']);
+          });
+        });
+
+        describe('.getTableCreateScript', () => {
+          it('should return table create script', async() => {
+            const [createScript] = await dbConn.getTableCreateScript('users');
+
+            if (dbClient === 'mysql') {
+              expect(createScript).to.contain('CREATE TABLE `users` (\n' +
+                '  `id` int(11) NOT NULL AUTO_INCREMENT,\n' +
+                '  `username` varchar(45) DEFAULT NULL,\n' +
+                '  `email` varchar(150) DEFAULT NULL,\n' +
+                '  `password` varchar(45) DEFAULT NULL,\n' +
+                '  PRIMARY KEY (`id`)\n' +
+              ') ENGINE=InnoDB');
+            } else if (dbClient === 'postgresql') {
+              expect(createScript).to.eql('CREATE TABLE users (\n' +
+                '  id integer NOT NULL,\n' +
+                '  username text NOT NULL,\n' +
+                '  email text NOT NULL,\n' +
+                '  password text NOT NULL\n' +
+                ');\n' +
+                '\n' +
+                'ALTER TABLE users ADD CONSTRAINT users_pkey PRIMARY KEY (id)'
+              );
+            } else { // dbClient === SQL Server
+              expect(createScript).to.contain('CREATE TABLE users (\r\n' +
+                '  id int IDENTITY(1,1) NOT NULL,\r\n' +
+                '  username varchar(45)  NULL,\r\n' +
+                '  email varchar(150)  NULL,\r\n' +
+                '  password varchar(45)  NULL,\r\n' +
+                ')\r\n');
+              expect(createScript).to.contain('ALTER TABLE users ADD CONSTRAINT PK__users');
+              expect(createScript).to.contain('PRIMARY KEY (id)');
+            }
+          });
+        });
+
+        describe('.getTableSelectScript', () => {
+          it('should return SELECT table script', async() => {
+            const selectQuery = await dbConn.getTableSelectScript('users');
+            expect(selectQuery).to.eql('SELECT id, username, email, password FROM users;');
+          });
+        });
+
+
+        describe('.getTableInsertScript', () => {
+          it('should return INSERT INTO table script', async() => {
+            const insertQuery = await dbConn.getTableInsertScript('users');
+            expect(insertQuery).to.eql(`INSERT INTO users (id, username, email, password)\n VALUES (?, ?, ?, ?);`);
+          });
+        });
+
+        describe('.getTableUpdateScript', () => {
+          it('should return UPDATE table script', async() => {
+            const updateQuery = await dbConn.getTableUpdateScript('users');
+            expect(updateQuery).to.eql(`UPDATE users\n   SET id=?, username=?, email=?, password=?\n WHERE <condition>;`);
+          });
+        });
+
+        describe('.getTableDeleteScript', () => {
+          it('should return table DELETE script', async() => {
+            const deleteQuery = await dbConn.getTableDeleteScript('roles');
+            expect(deleteQuery).to.eql('DELETE FROM roles WHERE <condition>;');
+          });
+        });
+
+        describe('.getViewCreateScript', () => {
+          it('should return CREATE VIEW script', async() => {
+            const [createScript] = await dbConn.getViewCreateScript('email_view');
+
+            if (dbClient === 'mysql') {
+              expect(createScript).to.contain('VIEW `email_view` AS select `users`.`email` AS `email`,`users`.`password` AS `password` from `users`');
+            } else if (dbClient === 'postgresql') {
+              expect(createScript).to.eql(`CREATE OR REPLACE VIEW email_view AS\n SELECT users.email,\n    users.password\n   FROM users;`);
+            } else { // dbClient === SQL Server
+              expect(createScript).to.eql(`\nCREATE VIEW dbo.email_view AS\nSELECT dbo.users.email, dbo.users.password\nFROM dbo.users;\n`);
+            }
           });
         });
 
