@@ -46,7 +46,7 @@ build_script:
   - createdb sqlectron
   - psql -d sqlectron -a -f spec/databases/postgresql/schema/schema.sql
   # mysql
-  - mysql -e "drop database test; create database sqlectron;" --user=root
+  - mysql -e "create database sqlectron;" --user=root
   - mysql sqlectron < spec/databases/mysql/schema/schema.sql --user=root
   # sqlserver
   - ps: ./appveyor-sqlserver.ps1 SQL2008R2SP2
