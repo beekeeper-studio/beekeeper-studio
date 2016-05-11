@@ -31,6 +31,7 @@ export function createConnection(server, database) {
     getTableUpdateScript: getTableUpdateScript.bind(null, server, database),
     getTableDeleteScript: getTableDeleteScript.bind(null, server, database),
     getViewCreateScript: getViewCreateScript.bind(null, server, database),
+    getRoutineCreateScript: getRoutineCreateScript.bind(null, server, database),
     truncateAllTables: truncateAllTables.bind(null, server, database),
   };
 }
@@ -190,6 +191,11 @@ async function getTableDeleteScript(server, database, table) {
 async function getViewCreateScript(server, database, view) {
   checkIsConnected(server, database);
   return database.connection.getViewCreateScript(view);
+}
+
+async function getRoutineCreateScript(server, database, routine, type) {
+  checkIsConnected(server, database);
+  return database.connection.getRoutineCreateScript(routine, type);
 }
 
 function truncateAllTables(server, database) {
