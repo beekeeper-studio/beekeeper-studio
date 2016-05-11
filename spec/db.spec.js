@@ -238,7 +238,7 @@ describe('db', () => {
                 '$function$\n');
             } else { // dbClient === SQL Server
               expect(createScript).to.contain('CREATE PROCEDURE dbo.users_count');
-              expect(createScript).to.contain('( @Count int OUTPUT');
+              expect(createScript).to.contain('@Count int OUTPUT');
               expect(createScript).to.contain('SELECT @Count = COUNT(*) FROM dbo.users');
             }
           });
