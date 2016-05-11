@@ -206,7 +206,7 @@ export const getRoutineCreateScript = async (connection, routine) => {
   const sql = `
     SELECT routine_definition
     FROM information_schema.routines
-    WHERE routine_name = ${routine}
+    WHERE routine_name = '${routine}'
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map(row => row.routine_definition);
