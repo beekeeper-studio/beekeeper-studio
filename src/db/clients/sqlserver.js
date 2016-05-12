@@ -28,6 +28,7 @@ export default async function(server, database) {
       getQuerySelectTop: (table, limit) => getQuerySelectTop(connection, table, limit),
       getTableCreateScript: (table) => getTableCreateScript(connection, table),
       getViewCreateScript: (view) => getViewCreateScript(connection, view),
+      getRoutineCreateScript: (routine) => getRoutineCreateScript(connection, routine),
       truncateAllTables: () => truncateAllTables(connection),
     };
   } catch (err) {
@@ -87,7 +88,7 @@ export const listViews = async (connection) => {
 
 export const listRoutines = async (connection) => {
   const sql = `
-    SELECT routine_name, routine_type, routine_definition
+    SELECT routine_name, routine_type
     FROM information_schema.routines
     ORDER BY routine_name
   `;
@@ -95,7 +96,6 @@ export const listRoutines = async (connection) => {
   return result.rows.map(row => ({
     routineName: row.routine_name,
     routineType: row.routine_type,
-    routineDefinition: row.routine_definition,
   }));
 };
 
@@ -200,6 +200,16 @@ export const getViewCreateScript = async (connection, view) => {
   const sql = `SELECT OBJECT_DEFINITION (OBJECT_ID('${view}')) AS ViewDefinition;`;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map(row => row.ViewDefinition);
+};
+
+export const getRoutineCreateScript = async (connection, routine) => {
+  const sql = `
+    SELECT routine_definition
+    FROM information_schema.routines
+    WHERE routine_name = '${routine}'
+  `;
+  const [result] = await executeQuery(connection, sql);
+  return result.rows.map(row => row.routine_definition);
 };
 
 export const truncateAllTables = async (connection) => {

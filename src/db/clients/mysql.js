@@ -38,6 +38,7 @@ export default function(server, database) {
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
         getTableCreateScript: (table) => getTableCreateScript(client, table),
         getViewCreateScript: (view) => getViewCreateScript(client, view),
+        getRoutineCreateScript: (routine, type) => getRoutineCreateScript(client, routine, type),
         truncateAllTables: () => truncateAllTables(client),
       });
     });
@@ -86,7 +87,7 @@ export function listViews(client) {
 export function listRoutines(client) {
   return new Promise((resolve, reject) => {
     const sql = `
-      SELECT routine_name, routine_type, routine_definition
+      SELECT routine_name, routine_type
       FROM information_schema.routines
       WHERE routine_schema = database()
       ORDER BY routine_name
@@ -97,7 +98,6 @@ export function listRoutines(client) {
       resolve(data.map(row => ({
         routineName: row.routine_name,
         routineType: row.routine_type,
-        routineDefinition: row.routine_definition,
       })));
     });
   });
@@ -193,6 +193,16 @@ export function getViewCreateScript(client, view) {
     client.query(sql, params, (err, data) => {
       if (err) return reject(_getRealError(client, err));
       resolve(data.map(row => row['Create View']));
+    });
+  });
+}
+
+export function getRoutineCreateScript(client, routine, type) {
+  return new Promise((resolve, reject) => {
+    const sql = `SHOW CREATE ${type.toUpperCase()} ${routine}`;
+    client.query(sql, (err, data) => {
+      if (err) return reject(_getRealError(client, err));
+      resolve(data.map(row => row[`Create ${type}`]));
     });
   });
 }

@@ -32,6 +32,7 @@ export default function(server, database) {
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
         getTableCreateScript: (table) => getTableCreateScript(client, table),
         getViewCreateScript: (view) => getViewCreateScript(client, view),
+        getRoutineCreateScript: (routine) => getRoutineCreateScript(client, routine),
         truncateAllTables: () => truncateAllTables(client),
       });
     });
@@ -84,7 +85,7 @@ export function listViews(client) {
 export function listRoutines(client) {
   return new Promise((resolve, reject) => {
     const sql = `
-      SELECT routine_name, routine_type, routine_definition
+      SELECT routine_name, routine_type
       FROM information_schema.routines
       WHERE routine_schema = $1
       ORDER BY routine_name
@@ -97,7 +98,6 @@ export function listRoutines(client) {
       resolve(data.rows.map(row => ({
         routineName: row.routine_name,
         routineType: row.routine_type,
-        routineDefinition: row.routine_definition,
       })));
     });
   });
@@ -246,6 +246,20 @@ export function getViewCreateScript(client, view) {
   });
 }
 
+export function getRoutineCreateScript(client, routine) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT pg_get_functiondef(oid)
+      FROM pg_proc
+      WHERE proname = $1;
+    `;
+    const params = [ routine ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(err);
+      resolve(data.rows.map(row => row.pg_get_functiondef));
+    });
+  });
+}
 
 export function wrapQuery(item) {
   return `"${item}"`;

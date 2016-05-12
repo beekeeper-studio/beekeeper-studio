@@ -92,7 +92,7 @@ describe('db', () => {
         });
 
         describe('.listRoutines', () => {
-          it('should list all routines with their type and definition', async() =>{
+          it('should list all routines with their type', async() =>{
             const routines = await dbConn.listRoutines();
             const routine = dbClient === 'postgresql' ? routines[1] : routines[0];
 
@@ -105,13 +105,6 @@ describe('db', () => {
             } else {
               expect(routines).to.have.length(1);
               expect(routine).to.have.deep.property('routineType').to.eql('PROCEDURE');
-            }
-
-            // Check routine definition
-            if (dbClient === 'sqlserver') {
-              expect(routine).to.have.deep.property('routineDefinition').to.contain('SELECT @Count = COUNT(*) FROM dbo.users');
-            } else {
-              expect(routine).to.have.deep.property('routineDefinition').to.contain('SELECT COUNT(*) FROM users');
             }
           });
         });
@@ -225,6 +218,28 @@ describe('db', () => {
               expect(createScript).to.eql(`CREATE OR REPLACE VIEW email_view AS\n SELECT users.email,\n    users.password\n   FROM users;`);
             } else { // dbClient === SQL Server
               expect(createScript).to.eql(`\nCREATE VIEW dbo.email_view AS\nSELECT dbo.users.email, dbo.users.password\nFROM dbo.users;\n`);
+            }
+          });
+        });
+
+        describe('.getRoutineCreateScript', () => {
+          it('should return CREATE PROCEDURE/FUNCTION script', async() => {
+            const [createScript] = await dbConn.getRoutineCreateScript('users_count', 'Procedure');
+
+            if (dbClient === 'mysql') {
+              expect(createScript).to.contain('CREATE DEFINER=');
+              expect(createScript).to.contain('PROCEDURE `users_count`()\nBEGIN\n  SELECT COUNT(*) FROM users;\nEND');
+            } else if (dbClient === 'postgresql') {
+              expect(createScript).to.eql('CREATE OR REPLACE FUNCTION public.users_count()\n' +
+                ' RETURNS bigint\n' +
+                ' LANGUAGE sql\n' +
+                'AS $function$\n' +
+                '  SELECT COUNT(*) FROM users AS total;\n' +
+                '$function$\n');
+            } else { // dbClient === SQL Server
+              expect(createScript).to.contain('CREATE PROCEDURE dbo.users_count');
+              expect(createScript).to.contain('@Count int OUTPUT');
+              expect(createScript).to.contain('SELECT @Count = COUNT(*) FROM dbo.users');
             }
           });
         });
