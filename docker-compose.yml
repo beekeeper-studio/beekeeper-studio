@@ -25,7 +25,8 @@ test:
   image: node:0.12.7-onbuild
   command: npm test
   environment:
-     DB_CLIENTS: mysql,postgresql
+    DB_CLIENTS: mysql,postgresql
+    MYSQL_ENV_MYSQL_USER: root
   volumes:
     - .:/usr/src/app
   links:
