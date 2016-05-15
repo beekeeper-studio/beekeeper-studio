@@ -4,8 +4,6 @@ mysql:
     - 3306
   environment:
     MYSQL_ROOT_PASSWORD: password
-    MYSQL_USER: user
-    MYSQL_PASSWORD: password
     MYSQL_DATABASE: sqlectron
   volumes:
     - ./spec/databases/mysql/schema:/docker-entrypoint-initdb.d
@@ -27,6 +25,7 @@ test:
   environment:
     DB_CLIENTS: mysql,postgresql
     MYSQL_ENV_MYSQL_USER: root
+    MYSQL_ENV_MYSQL_PASSWORD: password
   volumes:
     - .:/usr/src/app
   links:
