@@ -545,6 +545,74 @@ describe('db', () => {
               }
             });
           });
+
+          describe('CREATE', () => {
+            describe('DATABSE', () => {
+              beforeEach(async () => {
+                try {
+                  await dbConn.executeQuery('drop database db_test_create_database');
+                } catch (err) {
+                  // just ignore
+                }
+              });
+
+              it('should execute a single query', async () => {
+                const results = await dbConn.executeQuery('create database db_test_create_database');
+
+                expect(results).to.have.length(1);
+                const [result] = results;
+
+                expect(result).to.have.property('command').to.eql('CREATEDATABASE');
+                expect(result).to.have.property('rows').to.eql([]);
+                expect(result).to.have.property('fields').to.eql([]);
+                // seems each DB client returns a different value for CREATE
+                expect(result).to.have.property('affectedRows').to.oneOf([0, 1, undefined]);
+                expect(result).to.have.property('isSelect').to.eql(false);
+
+                // MSSQL does not return row count
+                // so this value is based in the number of rows
+                if (dbClient === 'sqlserver') {
+                  expect(result).to.have.property('rowCount').to.eql(0);
+                } else {
+                  expect(result).to.have.property('rowCount').to.eql(undefined);
+                }
+              });
+            });
+          });
+
+          describe('DROP', () => {
+            describe('DATABSE', () => {
+              beforeEach(async () => {
+                try {
+                  await dbConn.executeQuery('create database db_test_create_database');
+                } catch (err) {
+                  // just ignore
+                }
+              });
+
+              it('should execute a single query', async () => {
+                const results = await dbConn.executeQuery('drop database db_test_create_database');
+
+                expect(results).to.have.length(1);
+                const [result] = results;
+
+                expect(result).to.have.property('command').to.eql('DROPDATABASE');
+                expect(result).to.have.property('rows').to.eql([]);
+                expect(result).to.have.property('fields').to.eql([]);
+                // seems each DB client returns a different value for DROP
+                expect(result).to.have.property('affectedRows').to.oneOf([0, 1, undefined]);
+                expect(result).to.have.property('isSelect').to.eql(false);
+
+                // MSSQL does not return row count
+                // so this value is based in the number of rows
+                if (dbClient === 'sqlserver') {
+                  expect(result).to.have.property('rowCount').to.eql(0);
+                } else {
+                  expect(result).to.have.property('rowCount').to.eql(undefined);
+                }
+              });
+            });
+          });
         });
       });
     });

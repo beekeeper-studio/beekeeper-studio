@@ -1,4 +1,5 @@
 import { Client } from 'pg';
+import { identify } from 'sql-query-identifier';
 
 
 const debug = require('../../debug')('db:clients:postgresql');
@@ -145,13 +146,15 @@ export function listTableTriggers(client, table) {
 }
 
 export async function executeQuery(client, query) {
+  const commands = identifyCommands(query);
+
   // node-postgres has support for Promise query
   // but that always returns the "fields" property empty
   return new Promise((resolve, reject) => {
     client.query({ text: query, multiResult: true}, (err, data) => {
       if (err) return reject(err);
 
-      resolve(data.map(parseRowQueryResult));
+      resolve(data.map((result, idx) => parseRowQueryResult(result, commands[idx])));
     });
   });
 }
@@ -313,14 +316,23 @@ function _configDatabase(server, database) {
 }
 
 
-function parseRowQueryResult(data) {
+function parseRowQueryResult(data, command) {
   const isSelect = data.command === 'SELECT';
   return {
     isSelect,
-    command: data.command,
+    command: command ? command.toUpperCase() : data.command,
     rows: data.rows,
     fields: data.fields,
     rowCount: isSelect ? data.rowCount : undefined,
-    affectedRows: !isSelect ? data.rowCount : undefined,
+    affectedRows: !isSelect && !isNaN(data.rowCount) ? data.rowCount : undefined,
   };
+}
+
+
+function identifyCommands(query) {
+  try {
+    return identify(query);
+  } catch (err) {
+    return [];
+  }
 }
