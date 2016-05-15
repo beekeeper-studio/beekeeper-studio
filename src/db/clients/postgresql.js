@@ -320,7 +320,7 @@ function parseRowQueryResult(data, command) {
   const isSelect = data.command === 'SELECT';
   return {
     isSelect,
-    command: command ? command.toUpperCase() : data.command,
+    command: command ? command : data.command,
     rows: data.rows,
     fields: data.fields,
     rowCount: isSelect ? data.rowCount : undefined,

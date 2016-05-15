@@ -562,7 +562,7 @@ describe('db', () => {
                 expect(results).to.have.length(1);
                 const [result] = results;
 
-                expect(result).to.have.property('command').to.eql('CREATEDATABASE');
+                expect(result).to.have.property('command').to.eql('CREATE_DATABASE');
                 expect(result).to.have.property('rows').to.eql([]);
                 expect(result).to.have.property('fields').to.eql([]);
                 // seems each DB client returns a different value for CREATE
@@ -596,7 +596,7 @@ describe('db', () => {
                 expect(results).to.have.length(1);
                 const [result] = results;
 
-                expect(result).to.have.property('command').to.eql('DROPDATABASE');
+                expect(result).to.have.property('command').to.eql('DROP_DATABASE');
                 expect(result).to.have.property('rows').to.eql([]);
                 expect(result).to.have.property('fields').to.eql([]);
                 // seems each DB client returns a different value for DROP

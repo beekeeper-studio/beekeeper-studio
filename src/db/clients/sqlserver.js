@@ -261,7 +261,7 @@ function parseRowQueryResult(data, request, command) {
 
   return {
     isSelect,
-    command: command && command.toUpperCase(),
+    command,
     rows: data,
     fields: Object.keys(data[0] || {}).map(name => ({ name })),
     rowCount: data.length,
