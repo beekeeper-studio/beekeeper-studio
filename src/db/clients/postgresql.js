@@ -319,7 +319,6 @@ function _configDatabase(server, database) {
 function parseRowQueryResult(data, command) {
   const isSelect = data.command === 'SELECT';
   return {
-    isSelect,
     command: command ? command : data.command,
     rows: data.rows,
     fields: data.fields,

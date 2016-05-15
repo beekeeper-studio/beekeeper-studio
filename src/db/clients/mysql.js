@@ -273,10 +273,10 @@ function _getRealError(client, err) {
 
 
 function parseRowQueryResult(data, fields, command) {
+  // Fallback in case the identifier could not reconize the command
   const isSelect = Array.isArray(data);
   return {
-    isSelect,
-    command,
+    command: command || (isSelect && 'SELECT'),
     rows: isSelect ? data : [],
     fields: fields || [],
     rowCount: isSelect ? (data : []).length : undefined,

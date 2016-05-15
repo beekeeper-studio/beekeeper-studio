@@ -295,7 +295,6 @@ describe('db', () => {
               }
 
               expect(result).to.have.property('command').to.eql('SELECT');
-              expect(result).to.have.property('isSelect').to.eql(true);
               expect(result).to.have.property('rows').to.eql([]);
               expect(result).to.have.deep.property('rowCount').to.eql(0);
             });
@@ -317,7 +316,6 @@ describe('db', () => {
               expect(result).to.have.deep.property('rows[0].email').to.eql('maxcnunes@gmail.com');
 
               expect(result).to.have.property('command').to.eql('SELECT');
-              expect(result).to.have.property('isSelect').to.eql(true);
               expect(result).to.have.deep.property('rowCount').to.eql(1);
             });
 
@@ -341,7 +339,6 @@ describe('db', () => {
               expect(firstResult).to.have.deep.property('rows[0].email').to.eql('maxcnunes@gmail.com');
 
               expect(firstResult).to.have.property('command').to.eql('SELECT');
-              expect(firstResult).to.have.property('isSelect').to.eql(true);
               expect(firstResult).to.have.deep.property('rowCount').to.eql(1);
 
               expect(secondResult).to.have.deep.property('fields[0].name').to.eql('id');
@@ -351,7 +348,6 @@ describe('db', () => {
               expect(secondResult).to.have.deep.property('rows[0].name').to.eql('developer');
 
               expect(secondResult).to.have.property('command').to.eql('SELECT');
-              expect(secondResult).to.have.property('isSelect').to.eql(true);
               expect(secondResult).to.have.deep.property('rowCount').to.eql(1);
             });
           });
@@ -370,7 +366,6 @@ describe('db', () => {
               expect(result).to.have.property('rows').to.eql([]);
               expect(result).to.have.property('fields').to.eql([]);
               expect(result).to.have.property('affectedRows').to.eql(1);
-              expect(result).to.have.property('isSelect').to.eql(false);
 
               // MSSQL does not return row count
               // so this value is based in the number of rows
@@ -398,7 +393,6 @@ describe('db', () => {
                 expect(result).to.have.property('command').to.eql('INSERT');
                 expect(result).to.have.property('rows').to.eql([]);
                 expect(result).to.have.property('fields').to.eql([]);
-                expect(result).to.have.property('isSelect').to.eql(false);
                 expect(result).to.have.property('rowCount').to.eql(0);
                 expect(result).to.have.property('affectedRows').to.eql(2);
               } else {
@@ -408,14 +402,12 @@ describe('db', () => {
                 expect(firstResult).to.have.property('command').to.eql('INSERT');
                 expect(firstResult).to.have.property('rows').to.eql([]);
                 expect(firstResult).to.have.property('fields').to.eql([]);
-                expect(firstResult).to.have.property('isSelect').to.eql(false);
                 expect(firstResult).to.have.property('rowCount').to.eql(undefined);
                 expect(firstResult).to.have.property('affectedRows').to.eql(1);
 
                 expect(secondResult).to.have.property('command').to.eql('INSERT');
                 expect(secondResult).to.have.property('rows').to.eql([]);
                 expect(secondResult).to.have.property('fields').to.eql([]);
-                expect(secondResult).to.have.property('isSelect').to.eql(false);
                 expect(secondResult).to.have.property('rowCount').to.eql(undefined);
                 expect(secondResult).to.have.property('affectedRows').to.eql(1);
               }
@@ -435,7 +427,6 @@ describe('db', () => {
               expect(result).to.have.property('rows').to.eql([]);
               expect(result).to.have.property('fields').to.eql([]);
               expect(result).to.have.property('affectedRows').to.eql(1);
-              expect(result).to.have.property('isSelect').to.eql(false);
 
               // MSSQL does not return row count
               // so these value is based in the number of rows
@@ -460,7 +451,6 @@ describe('db', () => {
                 expect(result).to.have.property('command').to.eql('DELETE');
                 expect(result).to.have.property('rows').to.eql([]);
                 expect(result).to.have.property('fields').to.eql([]);
-                expect(result).to.have.property('isSelect').to.eql(false);
                 expect(result).to.have.property('rowCount').to.eql(0);
                 expect(result).to.have.property('affectedRows').to.eql(2);
               } else {
@@ -470,14 +460,12 @@ describe('db', () => {
                 expect(firstResult).to.have.property('command').to.eql('DELETE');
                 expect(firstResult).to.have.property('rows').to.eql([]);
                 expect(firstResult).to.have.property('fields').to.eql([]);
-                expect(firstResult).to.have.property('isSelect').to.eql(false);
                 expect(firstResult).to.have.property('rowCount').to.eql(undefined);
                 expect(firstResult).to.have.property('affectedRows').to.eql(1);
 
                 expect(secondResult).to.have.property('command').to.eql('DELETE');
                 expect(secondResult).to.have.property('rows').to.eql([]);
                 expect(secondResult).to.have.property('fields').to.eql([]);
-                expect(secondResult).to.have.property('isSelect').to.eql(false);
                 expect(secondResult).to.have.property('rowCount').to.eql(undefined);
                 expect(secondResult).to.have.property('affectedRows').to.eql(1);
               }
@@ -497,7 +485,6 @@ describe('db', () => {
               expect(result).to.have.property('rows').to.eql([]);
               expect(result).to.have.property('fields').to.eql([]);
               expect(result).to.have.property('affectedRows').to.eql(1);
-              expect(result).to.have.property('isSelect').to.eql(false);
 
               // MSSQL does not return row count
               // so these value is based in the number of rows
@@ -522,7 +509,6 @@ describe('db', () => {
                 expect(result).to.have.property('command').to.eql('UPDATE');
                 expect(result).to.have.property('rows').to.eql([]);
                 expect(result).to.have.property('fields').to.eql([]);
-                expect(result).to.have.property('isSelect').to.eql(false);
                 expect(result).to.have.property('rowCount').to.eql(0);
                 expect(result).to.have.property('affectedRows').to.eql(2);
               } else {
@@ -532,14 +518,12 @@ describe('db', () => {
                 expect(firstResult).to.have.property('command').to.eql('UPDATE');
                 expect(firstResult).to.have.property('rows').to.eql([]);
                 expect(firstResult).to.have.property('fields').to.eql([]);
-                expect(firstResult).to.have.property('isSelect').to.eql(false);
                 expect(firstResult).to.have.property('rowCount').to.eql(undefined);
                 expect(firstResult).to.have.property('affectedRows').to.eql(1);
 
                 expect(secondResult).to.have.property('command').to.eql('UPDATE');
                 expect(secondResult).to.have.property('rows').to.eql([]);
                 expect(secondResult).to.have.property('fields').to.eql([]);
-                expect(secondResult).to.have.property('isSelect').to.eql(false);
                 expect(secondResult).to.have.property('rowCount').to.eql(undefined);
                 expect(secondResult).to.have.property('affectedRows').to.eql(1);
               }
@@ -573,7 +557,6 @@ describe('db', () => {
                 expect(result).to.have.property('fields').to.eql([]);
                 // seems each DB client returns a different value for CREATE
                 expect(result).to.have.property('affectedRows').to.oneOf([0, 1, undefined]);
-                expect(result).to.have.property('isSelect').to.eql(false);
                 expect(result).to.have.property('rowCount').to.eql(undefined);
               });
             });
@@ -606,7 +589,6 @@ describe('db', () => {
                 expect(result).to.have.property('fields').to.eql([]);
                 // seems each DB client returns a different value for DROP
                 expect(result).to.have.property('affectedRows').to.oneOf([0, 1, undefined]);
-                expect(result).to.have.property('isSelect').to.eql(false);
                 expect(result).to.have.property('rowCount').to.eql(undefined);
               });
             });

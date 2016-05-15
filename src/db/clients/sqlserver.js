@@ -255,13 +255,11 @@ function _configDatabase(server, database) {
 
 
 function parseRowQueryResult(data, request, command) {
-  // TODO: find a better way without hacks to detect if it is a select query
-  // This current approach will not work properly in some cases
+  // Fallback in case the identifier could not reconize the command
   const isSelect = !!(data.length || !request.rowsAffected);
 
   return {
-    isSelect,
-    command,
+    command: command || (isSelect && 'SELECT'),
     rows: data,
     fields: Object.keys(data[0] || {}).map(name => ({ name })),
     rowCount: data.length,
