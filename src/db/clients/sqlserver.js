@@ -1,4 +1,5 @@
 import {Connection} from 'mssql';
+import { identify } from 'sql-query-identifier';
 
 
 const debug = require('../../debug')('db:clients:sqlserver');
@@ -46,6 +47,8 @@ export const getQuerySelectTop = (client, table, limit) => `SELECT TOP ${limit} 
 
 
 export const executeQuery = async (connection, query) => {
+  const commands = identifyCommands(query);
+
   const request = connection.request();
   request.multiple = true;
 
@@ -55,7 +58,7 @@ export const executeQuery = async (connection, query) => {
   // So we "fake" there is at least one result.
   const results = !recordSet.length && request.rowsAffected ? [[]] : recordSet;
 
-  return results.map((_, idx) => parseRowQueryResult(results[idx], request));
+  return results.map((_, idx) => parseRowQueryResult(results[idx], request, commands[idx]));
 };
 
 
@@ -251,16 +254,26 @@ function _configDatabase(server, database) {
 }
 
 
-function parseRowQueryResult(data, request) {
+function parseRowQueryResult(data, request, command) {
   // TODO: find a better way without hacks to detect if it is a select query
   // This current approach will not work properly in some cases
   const isSelect = !!(data.length || !request.rowsAffected);
 
   return {
     isSelect,
+    command: command && command.toUpperCase(),
     rows: data,
     fields: Object.keys(data[0] || {}).map(name => ({ name })),
     rowCount: data.length,
     affectedRows: request.rowsAffected,
   };
+}
+
+
+function identifyCommands(query) {
+  try {
+    return identify(query);
+  } catch (err) {
+    return [];
+  }
 }

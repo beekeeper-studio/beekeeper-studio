@@ -294,6 +294,7 @@ describe('db', () => {
                 expect(result).to.have.deep.property('fields[3].name').to.eql('password');
               }
 
+              expect(result).to.have.property('command').to.eql('SELECT');
               expect(result).to.have.property('isSelect').to.eql(true);
               expect(result).to.have.property('rows').to.eql([]);
               expect(result).to.have.deep.property('rowCount').to.eql(0);
@@ -315,6 +316,7 @@ describe('db', () => {
               expect(result).to.have.deep.property('rows[0].password').to.eql('123456');
               expect(result).to.have.deep.property('rows[0].email').to.eql('maxcnunes@gmail.com');
 
+              expect(result).to.have.property('command').to.eql('SELECT');
               expect(result).to.have.property('isSelect').to.eql(true);
               expect(result).to.have.deep.property('rowCount').to.eql(1);
             });
@@ -338,6 +340,7 @@ describe('db', () => {
               expect(firstResult).to.have.deep.property('rows[0].password').to.eql('123456');
               expect(firstResult).to.have.deep.property('rows[0].email').to.eql('maxcnunes@gmail.com');
 
+              expect(firstResult).to.have.property('command').to.eql('SELECT');
               expect(firstResult).to.have.property('isSelect').to.eql(true);
               expect(firstResult).to.have.deep.property('rowCount').to.eql(1);
 
@@ -347,6 +350,7 @@ describe('db', () => {
               expect(secondResult).to.have.deep.property('rows[0].id').to.eql(1);
               expect(secondResult).to.have.deep.property('rows[0].name').to.eql('developer');
 
+              expect(secondResult).to.have.property('command').to.eql('SELECT');
               expect(secondResult).to.have.property('isSelect').to.eql(true);
               expect(secondResult).to.have.deep.property('rowCount').to.eql(1);
             });
@@ -362,6 +366,7 @@ describe('db', () => {
               expect(results).to.have.length(1);
               const [result] = results;
 
+              expect(result).to.have.property('command').to.eql('INSERT');
               expect(result).to.have.property('rows').to.eql([]);
               expect(result).to.have.property('fields').to.eql([]);
               expect(result).to.have.property('affectedRows').to.eql(1);
@@ -390,6 +395,7 @@ describe('db', () => {
                 expect(results).to.have.length(1);
                 const [result] = results;
 
+                expect(result).to.have.property('command').to.eql('INSERT');
                 expect(result).to.have.property('rows').to.eql([]);
                 expect(result).to.have.property('fields').to.eql([]);
                 expect(result).to.have.property('isSelect').to.eql(false);
@@ -399,12 +405,14 @@ describe('db', () => {
                 expect(results).to.have.length(2);
                 const [firstResult, secondResult] = results;
 
+                expect(firstResult).to.have.property('command').to.eql('INSERT');
                 expect(firstResult).to.have.property('rows').to.eql([]);
                 expect(firstResult).to.have.property('fields').to.eql([]);
                 expect(firstResult).to.have.property('isSelect').to.eql(false);
                 expect(firstResult).to.have.property('rowCount').to.eql(undefined);
                 expect(firstResult).to.have.property('affectedRows').to.eql(1);
 
+                expect(secondResult).to.have.property('command').to.eql('INSERT');
                 expect(secondResult).to.have.property('rows').to.eql([]);
                 expect(secondResult).to.have.property('fields').to.eql([]);
                 expect(secondResult).to.have.property('isSelect').to.eql(false);
@@ -423,6 +431,7 @@ describe('db', () => {
               expect(results).to.have.length(1);
               const [result] = results;
 
+              expect(result).to.have.property('command').to.eql('DELETE');
               expect(result).to.have.property('rows').to.eql([]);
               expect(result).to.have.property('fields').to.eql([]);
               expect(result).to.have.property('affectedRows').to.eql(1);
@@ -448,6 +457,7 @@ describe('db', () => {
                 expect(results).to.have.length(1);
                 const [result] = results;
 
+                expect(result).to.have.property('command').to.eql('DELETE');
                 expect(result).to.have.property('rows').to.eql([]);
                 expect(result).to.have.property('fields').to.eql([]);
                 expect(result).to.have.property('isSelect').to.eql(false);
@@ -457,12 +467,14 @@ describe('db', () => {
                 expect(results).to.have.length(2);
                 const [firstResult, secondResult] = results;
 
+                expect(firstResult).to.have.property('command').to.eql('DELETE');
                 expect(firstResult).to.have.property('rows').to.eql([]);
                 expect(firstResult).to.have.property('fields').to.eql([]);
                 expect(firstResult).to.have.property('isSelect').to.eql(false);
                 expect(firstResult).to.have.property('rowCount').to.eql(undefined);
                 expect(firstResult).to.have.property('affectedRows').to.eql(1);
 
+                expect(secondResult).to.have.property('command').to.eql('DELETE');
                 expect(secondResult).to.have.property('rows').to.eql([]);
                 expect(secondResult).to.have.property('fields').to.eql([]);
                 expect(secondResult).to.have.property('isSelect').to.eql(false);
@@ -481,6 +493,7 @@ describe('db', () => {
               expect(results).to.have.length(1);
               const [result] = results;
 
+              expect(result).to.have.property('command').to.eql('UPDATE');
               expect(result).to.have.property('rows').to.eql([]);
               expect(result).to.have.property('fields').to.eql([]);
               expect(result).to.have.property('affectedRows').to.eql(1);
@@ -506,6 +519,7 @@ describe('db', () => {
                 expect(results).to.have.length(1);
                 const [result] = results;
 
+                expect(result).to.have.property('command').to.eql('UPDATE');
                 expect(result).to.have.property('rows').to.eql([]);
                 expect(result).to.have.property('fields').to.eql([]);
                 expect(result).to.have.property('isSelect').to.eql(false);
@@ -515,12 +529,14 @@ describe('db', () => {
                 expect(results).to.have.length(2);
                 const [firstResult, secondResult] = results;
 
+                expect(firstResult).to.have.property('command').to.eql('UPDATE');
                 expect(firstResult).to.have.property('rows').to.eql([]);
                 expect(firstResult).to.have.property('fields').to.eql([]);
                 expect(firstResult).to.have.property('isSelect').to.eql(false);
                 expect(firstResult).to.have.property('rowCount').to.eql(undefined);
                 expect(firstResult).to.have.property('affectedRows').to.eql(1);
 
+                expect(secondResult).to.have.property('command').to.eql('UPDATE');
                 expect(secondResult).to.have.property('rows').to.eql([]);
                 expect(secondResult).to.have.property('fields').to.eql([]);
                 expect(secondResult).to.have.property('isSelect').to.eql(false);

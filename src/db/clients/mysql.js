@@ -1,4 +1,5 @@
 import mysql from 'mysql';
+import { identify } from 'sql-query-identifier';
 
 const debug = require('../../debug')('db:clients:mysql');
 const mysqlErrors = {
@@ -143,17 +144,18 @@ export function listTableTriggers(client, table) {
 }
 
 export function executeQuery(client, query) {
+  const commands = identifyCommands(query);
   return new Promise((resolve, reject) => {
     client.query(query, (err, data, fields) => {
       if (err && err.code === mysqlErrors.ER_EMPTY_QUERY) return resolve([]);
       if (err) return reject(_getRealError(client, err));
 
       if (!isMultipleQuery(fields)) {
-        return resolve([parseRowQueryResult(data, fields)]);
+        return resolve([parseRowQueryResult(data, fields, commands[0])]);
       }
 
       resolve(
-        data.map((_, idx) => parseRowQueryResult(data[idx], fields[idx]))
+        data.map((_, idx) => parseRowQueryResult(data[idx], fields[idx], commands[idx]))
       );
     });
   });
@@ -270,10 +272,11 @@ function _getRealError(client, err) {
 }
 
 
-function parseRowQueryResult(data, fields) {
+function parseRowQueryResult(data, fields, command) {
   const isSelect = Array.isArray(data);
   return {
     isSelect,
+    command: command && command.toUpperCase(),
     rows: isSelect ? data : [],
     fields: fields || [],
     rowCount: isSelect ? (data : []).length : undefined,
@@ -286,4 +289,13 @@ function isMultipleQuery(fields) {
   if (!fields) { return false; }
   if (!fields.length) { return false; }
   return (Array.isArray(fields[0]) || fields[0] === undefined);
+}
+
+
+function identifyCommands(query) {
+  try {
+    return identify(query);
+  } catch (err) {
+    return [];
+  }
 }

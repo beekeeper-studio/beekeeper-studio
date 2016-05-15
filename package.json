@@ -31,6 +31,7 @@
     "node-uuid": "^1.4.3",
     "pg": "git+https://github.com/maxcnunes/node-postgres.git#multiple-statements",
     "portfinder": "^0.4.0",
+    "sql-query-identifier": "^0.3.0",
     "ssh2": "^0.4.13",
     "valida": "^2.0.0"
   },

@@ -317,6 +317,7 @@ function parseRowQueryResult(data) {
   const isSelect = data.command === 'SELECT';
   return {
     isSelect,
+    command: data.command,
     rows: data.rows,
     fields: data.fields,
     rowCount: isSelect ? data.rowCount : undefined,
