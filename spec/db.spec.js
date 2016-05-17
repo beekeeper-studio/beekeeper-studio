@@ -563,7 +563,7 @@ describe('db', () => {
           });
 
           describe('DROP', () => {
-            describe('DATABSE', () => {
+            describe('DATABASE', () => {
               beforeEach(async () => {
                 try {
                   await dbConn.executeQuery('create database db_test_create_database');
