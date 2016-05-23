@@ -2,7 +2,8 @@ CREATE TABLE users(
    id             SERIAL PRIMARY KEY,
    username       TEXT    NOT NULL,
    email          TEXT    NOT NULL,
-   password       TEXT    NOT NULL
+   password       TEXT    NOT NULL,
+   createdat      DATE    NULL
 );
 
 CREATE TABLE roles(

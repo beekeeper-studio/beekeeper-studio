@@ -4,7 +4,8 @@ CREATE TABLE dbo.users
    (id int PRIMARY KEY IDENTITY(1,1) NOT NULL,
     username varchar(45) NULL,
     email varchar(150) NULL,
-    password varchar(45) NULL)
+    password varchar(45) NULL,
+    createdat datetime NULL)
 END;
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = N'roles' AND type = 'U')
