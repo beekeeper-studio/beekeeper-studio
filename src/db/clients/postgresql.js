@@ -1,8 +1,18 @@
-import { Client } from 'pg';
+import pg, { Client } from 'pg';
 import { identify } from 'sql-query-identifier';
 
 
 const debug = require('../../debug')('db:clients:postgresql');
+
+
+/**
+ * Do not convert DATE types to JS date.
+ * It gnores of applying a wrong timezone to the date.
+ * TODO: do not convert as well these same types with array (types 1115, 1182, 1185)
+ */
+pg.types.setTypeParser(1082, 'text', val => val); // date
+pg.types.setTypeParser(1114, 'text', val => val); // timestamp without timezone
+pg.types.setTypeParser(1184, 'text', val => val); // timestamp
 
 
 export default function(server, database) {

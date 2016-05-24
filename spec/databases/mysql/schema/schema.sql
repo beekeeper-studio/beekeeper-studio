@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `username` VARCHAR(45) NULL,
   `email` VARCHAR(150) NULL,
   `password` VARCHAR(45) NULL,
+  `createdat` DATETIME NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
 

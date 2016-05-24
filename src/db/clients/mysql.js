@@ -244,6 +244,9 @@ function _configDatabase(server, database) {
     password: server.config.password,
     database: database.database,
     multipleStatements: true,
+    dateStrings: true,
+    supportBigNumbers: true,
+    bigNumberStrings: true,
   };
 
   if (server.sshTunnel) {
