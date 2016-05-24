@@ -55,6 +55,10 @@ const SSH_SCHEMA = {
     { sanitizer: Valida.Sanitizer.trim },
     { validator: Valida.Validator.len, min: 1, max: 250 },
   ],
+  passphrase: [
+    { sanitizer: Valida.Sanitizer.trim },
+    { validator: Valida.Validator.len, min: 1, max: 250 },
+  ],
 };
 
 
