@@ -33,6 +33,17 @@ function clientValidator(ctx, options, value) {
 }
 
 
+function boolValidator(ctx, options, value) {
+  if (typeof value === 'undefined' || value === null) { return undefined; }
+  if (value !== true && value !== false) {
+    return {
+      validator: 'boolValidator',
+      msg: 'Invalid boolean type.',
+    };
+  }
+}
+
+
 const SSH_SCHEMA = {
   host: [
     { sanitizer: Valida.Sanitizer.trim },
@@ -55,9 +66,8 @@ const SSH_SCHEMA = {
     { sanitizer: Valida.Sanitizer.trim },
     { validator: Valida.Validator.len, min: 1, max: 250 },
   ],
-  passphrase: [
-    { sanitizer: Valida.Sanitizer.trim },
-    { validator: Valida.Validator.len, min: 1, max: 250 },
+  privateKeyWithPassphrase: [
+    { validator: boolValidator },
   ],
 };
 

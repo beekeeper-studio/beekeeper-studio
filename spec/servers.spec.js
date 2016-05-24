@@ -34,6 +34,32 @@ describe('servers', () => {
       const configAfter = await loadConfig();
       expect(configAfter.servers.length).to.eql(configBefore.servers.length + 1);
     });
+
+    it('should add new server with ssh', async () => {
+      const configBefore = await loadConfig();
+      const newServer = {
+        'name': 'My New Mysql Server',
+        'client': 'mysql',
+        'ssl': true,
+        'host': '10.10.10.15',
+        'port': 3306,
+        'database': 'authentication',
+        'user': 'root',
+        'password': 'password',
+        ssh: {
+          host: '10.10.10.10',
+          port: 22,
+          user: 'root',
+          privateKey: '~/.ssh/id_rsa',
+          privateKeyWithPassphrase: true,
+        },
+      };
+      const createdServer = await servers.add(newServer);
+      expect(createdServer).to.eql(newServer);
+
+      const configAfter = await loadConfig();
+      expect(configAfter.servers.length).to.eql(configBefore.servers.length + 1);
+    });
   });
 
   describe('.update', () => {
