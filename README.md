@@ -91,6 +91,7 @@ Array with all servers connection.
   - `user`
   - `port`
   - `privateKey`
+  - `passphrase`
 
 
 
