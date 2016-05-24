@@ -89,6 +89,7 @@ async function _configTunnel(serverInfo) {
     localHost: 'localhost',
   };
   if (serverInfo.ssh.password) config.password = serverInfo.ssh.password;
+  if (serverInfo.ssh.passphrase) config.passphrase = serverInfo.ssh.passphrase;
   if (serverInfo.ssh.privateKey) {
     config.privateKey = await readFile(serverInfo.ssh.privateKey);
   }
