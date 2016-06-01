@@ -1,18 +1,19 @@
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `username` VARCHAR(45) NULL,
-  `email` VARCHAR(150) NULL,
-  `password` VARCHAR(45) NULL,
-  `createdat` DATETIME NULL,
-  PRIMARY KEY (`id`))
-ENGINE = InnoDB;
-
-
 CREATE TABLE IF NOT EXISTS `roles` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(100) NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `username` VARCHAR(45) NULL,
+  `email` VARCHAR(150) NULL,
+  `password` VARCHAR(45) NULL,
+  `role_id` INT,
+  `createdat` DATETIME NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE CASCADE
+) ENGINE = InnoDB;
 
 CREATE OR REPLACE VIEW `email_view` AS
   SELECT users.email, users.password

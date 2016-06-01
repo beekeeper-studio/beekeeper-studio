@@ -1,3 +1,10 @@
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = N'roles' AND type = 'U')
+BEGIN
+CREATE TABLE dbo.roles
+   (id int PRIMARY KEY IDENTITY(1,1) NOT NULL,
+    name varchar(100) NULL)
+END;
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = N'users' AND type = 'U')
 BEGIN
 CREATE TABLE dbo.users
@@ -5,14 +12,9 @@ CREATE TABLE dbo.users
     username varchar(45) NULL,
     email varchar(150) NULL,
     password varchar(45) NULL,
-    createdat datetime NULL)
-END;
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = N'roles' AND type = 'U')
-BEGIN
-CREATE TABLE dbo.roles
-   (id int PRIMARY KEY IDENTITY(1,1) NOT NULL,
-    name varchar(100) NULL)
+    role_id int NULL,
+    createdat datetime NULL,
+    CONSTRAINT fk_user_role FOREIGN KEY (role_id) REFERENCES roles (id))
 END;
 
 IF EXISTS (SELECT table_name FROM information_schema.views WHERE table_name = 'email_view')
