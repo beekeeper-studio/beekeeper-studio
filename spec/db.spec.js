@@ -152,6 +152,14 @@ describe('db', () => {
           });
         });
 
+        describe('.getTableReferences', () => {
+          it('should list all tables that selected table has references to', async() => {
+            const references = await dbConn.getTableReferences('users');
+            expect(references).to.have.length(1);
+            expect(references).to.include.members(['roles']);
+          });
+        });
+
         describe('.getTableCreateScript', () => {
           it('should return table create script', async() => {
             const [createScript] = await dbConn.getTableCreateScript('users');
