@@ -59,11 +59,11 @@ async function connect(server, database) {
       debug('creating ssh tunnel');
       server.sshTunnel = await connectTunnel(server.config);
 
-      const localPort = server.sshTunnel.address().port;
-      debug('ssh forwarding through local port connection %d', localPort);
+      const { address, port } = server.sshTunnel.address();
+      debug('ssh forwarding through local connection %s:%d', address, port);
 
-      server.config.localHost = '127.0.0.1';
-      server.config.localPort = localPort;
+      server.config.localHost = address;
+      server.config.localPort = port;
     }
 
     const driver = clients[server.config.client];
