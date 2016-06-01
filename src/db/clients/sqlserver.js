@@ -24,6 +24,7 @@ export default async function(server, database) {
       listRoutines: () => listRoutines(connection),
       listTableColumns: (table) => listTableColumns(connection, table),
       listTableTriggers: (table) => listTableTriggers(connection, table),
+      getTableReferences: (table) => getTableReferences(connection, table),
       executeQuery: (query) => executeQuery(connection, query),
       listDatabases: () => listDatabases(connection),
       getQuerySelectTop: (table, limit) => getQuerySelectTop(connection, table, limit),
@@ -128,6 +129,16 @@ export const listTableTriggers = async (connection, table) => {
 export const listDatabases = async (connection) => {
   const [result] = await executeQuery(connection, 'SELECT name FROM sys.databases');
   return result.rows.map(row => row.name);
+};
+
+export const getTableReferences = async (connection, table) => {
+  const sql = `
+    SELECT OBJECT_NAME(referenced_object_id) referenced_table_name
+    FROM sys.foreign_keys
+    WHERE parent_object_id = OBJECT_ID('${table}')
+  `;
+  const [result] = await executeQuery(connection, sql);
+  return result.rows.map(row => row.referenced_table_name);
 };
 
 export const getTableCreateScript = async (connection, table) => {

@@ -34,6 +34,7 @@ export default function(server, database) {
         listRoutines: () => listRoutines(client),
         listTableColumns: (table) => listTableColumns(client, table),
         listTableTriggers: (table) => listTableTriggers(client, table),
+        getTableReferences: (table) => getTableReferences(client, table),
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
@@ -139,6 +140,25 @@ export function listTableTriggers(client, table) {
     client.query(sql, params, (err, data) => {
       if (err) return reject(_getRealError(client, err));
       resolve(data.map(row => row.trigger_name));
+    });
+  });
+}
+
+export function getTableReferences(client, table) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT referenced_table_name
+      FROM information_schema.key_column_usage
+      WHERE referenced_table_name IS NOT NULL
+      AND table_schema = database()
+      AND table_name = ?
+    `;
+    const params = [
+      table,
+    ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(_getRealError(client, err));
+      resolve(data.map(row => row.referenced_table_name));
     });
   });
 }
