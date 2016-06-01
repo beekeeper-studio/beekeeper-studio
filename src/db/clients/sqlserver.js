@@ -237,7 +237,8 @@ export const truncateAllTables = async (connection) => {
   const [result] = await executeQuery(connection, sql);
   const tables = result.rows.map(row => row.table_name);
   const promises = tables.map(t => executeQuery(connection, `
-    TRUNCATE TABLE ${wrapQuery(schema)}.${wrapQuery(t)}
+    DELETE FROM ${wrapQuery(schema)}.${wrapQuery(t)}
+    DBCC CHECKIDENT ('${schema}.${t}', RESEED, 0)
   `));
 
   await Promise.all(promises);

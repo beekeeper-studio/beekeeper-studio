@@ -249,7 +249,9 @@ export const truncateAllTables = async (client) => {
   const [result] = await executeQuery(client, sql);
   const tables = result.rows.map(row => row.table_name);
   const promises = tables.map(t => executeQuery(client, `
-    TRUNCATE TABLE ${wrapQuery(schema)}.${wrapQuery(t)}
+    SET FOREIGN_KEY_CHECKS = 0;
+    TRUNCATE TABLE ${wrapQuery(schema)}.${wrapQuery(t)};
+    SET FOREIGN_KEY_CHECKS = 1;
   `));
 
   await Promise.all(promises);
