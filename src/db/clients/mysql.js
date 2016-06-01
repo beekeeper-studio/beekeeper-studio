@@ -34,6 +34,7 @@ export default function(server, database) {
         listRoutines: () => listRoutines(client),
         listTableColumns: (table) => listTableColumns(client, table),
         listTableTriggers: (table) => listTableTriggers(client, table),
+        getTableReferences: (table) => getTableReferences(client, table),
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
@@ -143,6 +144,25 @@ export function listTableTriggers(client, table) {
   });
 }
 
+export function getTableReferences(client, table) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT referenced_table_name
+      FROM information_schema.key_column_usage
+      WHERE referenced_table_name IS NOT NULL
+      AND table_schema = database()
+      AND table_name = ?
+    `;
+    const params = [
+      table,
+    ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(_getRealError(client, err));
+      resolve(data.map(row => row.referenced_table_name));
+    });
+  });
+}
+
 export function executeQuery(client, query) {
   const commands = identifyCommands(query);
   return new Promise((resolve, reject) => {
@@ -229,7 +249,9 @@ export const truncateAllTables = async (client) => {
   const [result] = await executeQuery(client, sql);
   const tables = result.rows.map(row => row.table_name);
   const promises = tables.map(t => executeQuery(client, `
-    TRUNCATE TABLE ${wrapQuery(schema)}.${wrapQuery(t)}
+    SET FOREIGN_KEY_CHECKS = 0;
+    TRUNCATE TABLE ${wrapQuery(schema)}.${wrapQuery(t)};
+    SET FOREIGN_KEY_CHECKS = 1;
   `));
 
   await Promise.all(promises);

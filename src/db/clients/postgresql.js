@@ -38,6 +38,7 @@ export default function(server, database) {
         listRoutines: () => listRoutines(client),
         listTableColumns: (table) => listTableColumns(client, table),
         listTableTriggers: (table) => listTableTriggers(client, table),
+        getTableReferences: (table) => getTableReferences(client, table),
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
@@ -151,6 +152,25 @@ export function listTableTriggers(client, table) {
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
       resolve(data.rows.map(row => row.trigger_name));
+    });
+  });
+}
+
+export function getTableReferences(client, table) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT ctu.table_name AS referenced_table_name
+      FROM information_schema.table_constraints AS tc
+      JOIN information_schema.constraint_table_usage AS ctu
+      ON ctu.constraint_name = tc.constraint_name
+      WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name = $1
+    `;
+    const params = [
+      table,
+    ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(err);
+      resolve(data.rows.map(row => row.referenced_table_name));
     });
   });
 }

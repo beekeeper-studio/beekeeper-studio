@@ -112,15 +112,16 @@ describe('db', () => {
         describe('.listTableColumns', () => {
           it('should list all columns and their type from users table', async() => {
             const columns = await dbConn.listTableColumns('users');
-            expect(columns).to.have.length(5);
+            expect(columns).to.have.length(6);
 
-            const [firstCol, secondCol, thirdCol, fourthCol, fifthCol ] = columns;
+            const [firstCol, secondCol, thirdCol, fourthCol, fifthCol, sixthCol ] = columns;
 
             expect(firstCol).to.have.property('columnName').to.eql('id');
             expect(secondCol).to.have.property('columnName').to.eql('username');
             expect(thirdCol).to.have.property('columnName').to.eql('email');
             expect(fourthCol).to.have.property('columnName').to.eql('password');
-            expect(fifthCol).to.have.property('columnName').to.eql('createdat');
+            expect(fifthCol).to.have.property('columnName').to.eql('role_id');
+            expect(sixthCol).to.have.property('columnName').to.eql('createdat');
 
             expect(firstCol).to.have.property('dataType').to.have.string('int');
 
@@ -131,12 +132,14 @@ describe('db', () => {
               expect(secondCol).to.have.property('dataType').to.eql('text');
               expect(thirdCol).to.have.property('dataType').to.eql('text');
               expect(fourthCol).to.have.property('dataType').to.eql('text');
-              expect(fifthCol).to.have.property('dataType').to.eql('date');
+              expect(fifthCol).to.have.property('dataType').to.eql('integer');
+              expect(sixthCol).to.have.property('dataType').to.eql('date');
             } else {
               expect(secondCol).to.have.property('dataType').to.eql('varchar');
               expect(thirdCol).to.have.property('dataType').to.eql('varchar');
               expect(fourthCol).to.have.property('dataType').to.eql('varchar');
-              expect(fifthCol).to.have.property('dataType').to.eql('datetime');
+              expect(fifthCol).to.have.property('dataType').to.eql('int');
+              expect(sixthCol).to.have.property('dataType').to.eql('datetime');
             }
           });
         });
@@ -146,6 +149,14 @@ describe('db', () => {
             const triggers = await dbConn.listTableTriggers('users');
             expect(triggers).to.have.length(1);
             expect(triggers).to.include.members(['dummy_trigger']);
+          });
+        });
+
+        describe('.getTableReferences', () => {
+          it('should list all tables that selected table has references to', async() => {
+            const references = await dbConn.getTableReferences('users');
+            expect(references).to.have.length(1);
+            expect(references).to.include.members(['roles']);
           });
         });
 
@@ -159,8 +170,11 @@ describe('db', () => {
                 '  `username` varchar(45) DEFAULT NULL,\n' +
                 '  `email` varchar(150) DEFAULT NULL,\n' +
                 '  `password` varchar(45) DEFAULT NULL,\n' +
+                '  `role_id` int(11) DEFAULT NULL,\n' +
                 '  `createdat` datetime DEFAULT NULL,\n' +
-                '  PRIMARY KEY (`id`)\n' +
+                '  PRIMARY KEY (`id`),\n' +
+                '  KEY `role_id` (`role_id`),\n' +
+                '  CONSTRAINT `users_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE\n' +
               ') ENGINE=InnoDB');
             } else if (dbClient === 'postgresql') {
               expect(createScript).to.eql('CREATE TABLE users (\n' +
@@ -168,6 +182,7 @@ describe('db', () => {
                 '  username text NOT NULL,\n' +
                 '  email text NOT NULL,\n' +
                 '  password text NOT NULL,\n' +
+                '  role_id integer NULL,\n' +
                 '  createdat date NULL\n' +
                 ');\n' +
                 '\n' +
@@ -179,6 +194,7 @@ describe('db', () => {
                 '  username varchar(45)  NULL,\r\n' +
                 '  email varchar(150)  NULL,\r\n' +
                 '  password varchar(45)  NULL,\r\n' +
+                '  role_id int  NULL,\r\n' +
                 '  createdat datetime  NULL,\r\n' +
                 ')\r\n');
               expect(createScript).to.contain('ALTER TABLE users ADD CONSTRAINT PK__users');
@@ -190,7 +206,7 @@ describe('db', () => {
         describe('.getTableSelectScript', () => {
           it('should return SELECT table script', async() => {
             const selectQuery = await dbConn.getTableSelectScript('users');
-            expect(selectQuery).to.eql('SELECT id, username, email, password, createdat FROM users;');
+            expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM users;');
           });
         });
 
@@ -198,14 +214,14 @@ describe('db', () => {
         describe('.getTableInsertScript', () => {
           it('should return INSERT INTO table script', async() => {
             const insertQuery = await dbConn.getTableInsertScript('users');
-            expect(insertQuery).to.eql(`INSERT INTO users (id, username, email, password, createdat)\n VALUES (?, ?, ?, ?, ?);`);
+            expect(insertQuery).to.eql(`INSERT INTO users (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
           });
         });
 
         describe('.getTableUpdateScript', () => {
           it('should return UPDATE table script', async() => {
             const updateQuery = await dbConn.getTableUpdateScript('users');
-            expect(updateQuery).to.eql(`UPDATE users\n   SET id=?, username=?, email=?, password=?, createdat=?\n WHERE <condition>;`);
+            expect(updateQuery).to.eql(`UPDATE users\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
           });
         });
 
@@ -255,12 +271,12 @@ describe('db', () => {
         describe('.executeQuery', () => {
           beforeEach(() => Promise.all([
             dbConn.executeQuery(`
-              INSERT INTO users (username, email, password, createdat)
-              VALUES ('maxcnunes', 'maxcnunes@gmail.com', '123456', '2016-10-25')
-            `),
-            dbConn.executeQuery(`
               INSERT INTO roles (name)
               VALUES ('developer')
+            `),
+            dbConn.executeQuery(`
+              INSERT INTO users (username, email, password, role_id, createdat)
+              VALUES ('maxcnunes', 'maxcnunes@gmail.com', '123456', '1','2016-10-25')
             `),
           ]));
 
@@ -317,7 +333,9 @@ describe('db', () => {
               expect(result).to.have.deep.property('fields[1].name').to.eql('username');
               expect(result).to.have.deep.property('fields[2].name').to.eql('email');
               expect(result).to.have.deep.property('fields[3].name').to.eql('password');
-              expect(result).to.have.deep.property('fields[4].name').to.eql('createdat');
+              expect(result).to.have.deep.property('fields[4].name').to.eql('role_id');
+              expect(result).to.have.deep.property('fields[5].name').to.eql('createdat');
+
 
               expect(result).to.have.deep.property('rows[0].id').to.eql(1);
               expect(result).to.have.deep.property('rows[0].username').to.eql('maxcnunes');

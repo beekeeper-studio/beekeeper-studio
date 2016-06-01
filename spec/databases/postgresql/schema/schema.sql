@@ -1,14 +1,15 @@
+CREATE TABLE roles(
+   id             SERIAL PRIMARY KEY,
+   name           TEXT    NOT NULL
+);
+
 CREATE TABLE users(
    id             SERIAL PRIMARY KEY,
    username       TEXT    NOT NULL,
    email          TEXT    NOT NULL,
    password       TEXT    NOT NULL,
+   role_id        INT REFERENCES roles (id) ON DELETE CASCADE,
    createdat      DATE    NULL
-);
-
-CREATE TABLE roles(
-   id             SERIAL PRIMARY KEY,
-   name           TEXT    NOT NULL
 );
 
 CREATE OR REPLACE VIEW email_view AS
