@@ -6,6 +6,7 @@
   "author": "The SQLECTRON Team",
   "scripts": {
     "compile": "babel --stage 0 -d lib/ src/",
+    "watch": "babel --watch --stage 0 -d lib/ src/",
     "prepublish": "npm run compile",
     "lint": "eslint src/ spec/",
     "test:mysql": "DB_CLIENTS=mysql npm run test",
