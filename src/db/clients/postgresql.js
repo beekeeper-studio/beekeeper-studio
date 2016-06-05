@@ -216,16 +216,16 @@ export function getTableCreateScript(client, table) {
     // Reference http://stackoverflow.com/a/32885178
     const sql = `
     SELECT
-      'CREATE TABLE ' || tabdef.table_name || E' (\n' ||
+      'CREATE TABLE ' || quote_ident(tabdef.table_name) || E' (\n' ||
       array_to_string(
         array_agg(
-          '  ' || tabdef.column_name || ' ' ||  tabdef.type || ' '|| tabdef.not_null
+          '  ' || quote_ident(tabdef.column_name) || ' ' ||  tabdef.type || ' '|| tabdef.not_null
         )
         , E',\n'
       ) || E'\n);\n' ||
       CASE WHEN tc.constraint_name IS NULL THEN ''
-    	     ELSE E'\nALTER TABLE ' || tabdef.table_name ||
-           ' ADD CONSTRAINT ' || tc.constraint_name  ||
+    	     ELSE E'\nALTER TABLE ' || quote_ident(tabdef.table_name) ||
+           ' ADD CONSTRAINT ' || quote_ident(tc.constraint_name)  ||
            ' PRIMARY KEY ' || '(' || substring(constr.column_name from 0 for char_length(constr.column_name)-1) || ')'
     	END AS createtable
     FROM
@@ -306,7 +306,7 @@ const getSchema = async (connection) => {
 export const truncateAllTables = async (connection) => {
   const schema = await getSchema(connection);
   const sql = `
-    SELECT table_name
+    SELECT quote_ident(table_name) as table_name
     FROM information_schema.tables
     WHERE table_schema = '${schema}'
     AND table_type NOT LIKE '%VIEW%'
