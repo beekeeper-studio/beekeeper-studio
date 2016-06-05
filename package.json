@@ -1,6 +1,6 @@
 {
   "name": "sqlectron-core",
-  "version": "6.1.0",
+  "version": "6.1.1",
   "description": "sqlectron-core",
   "main": "lib/index.js",
   "author": "The SQLECTRON Team",
