@@ -28,6 +28,7 @@ export default function(server, database) {
 
       debug('connected');
       resolve({
+        wrapIdentifier,
         disconnect: () => disconnect(client),
         listTables: () => listTables(client),
         listViews: () => listViews(client),
@@ -194,7 +195,7 @@ export function listDatabases(client) {
 
 
 export function getQuerySelectTop(client, table, limit) {
-  return `SELECT * FROM ${wrapQuery(table)} LIMIT ${limit}`;
+  return `SELECT * FROM ${wrapIdentifier(table)} LIMIT ${limit}`;
 }
 
 export function getTableCreateScript(client, table) {
@@ -229,8 +230,8 @@ export function getRoutineCreateScript(client, routine, type) {
   });
 }
 
-export function wrapQuery(item) {
-  return `\`${item}\``;
+export function wrapIdentifier(value) {
+  return (value !== '*' ? `\`${value.replace(/`/g, '``')}\`` : '*');
 }
 
 const getSchema = async (client) => {
@@ -250,7 +251,7 @@ export const truncateAllTables = async (client) => {
   const tables = result.rows.map(row => row.table_name);
   const promises = tables.map(t => executeQuery(client, `
     SET FOREIGN_KEY_CHECKS = 0;
-    TRUNCATE TABLE ${wrapQuery(schema)}.${wrapQuery(t)};
+    TRUNCATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(t)};
     SET FOREIGN_KEY_CHECKS = 1;
   `));
 
