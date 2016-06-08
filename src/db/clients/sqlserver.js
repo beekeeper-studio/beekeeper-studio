@@ -18,6 +18,7 @@ export default async function(server, database) {
 
     debug('connected');
     return {
+      wrapIdentifier,
       disconnect: () => disconnect(connection),
       listTables: () => listTables(connection),
       listViews: () => listViews(connection),
@@ -43,8 +44,8 @@ export default async function(server, database) {
 
 
 export const disconnect = (connection) => connection.close();
-export const wrapQuery = (item) => `[${item}]`;
-export const getQuerySelectTop = (client, table, limit) => `SELECT TOP ${limit} * FROM ${wrapQuery(table)}`;
+export const wrapIdentifier = (value) => (value !== '*' ? `[${value.replace(/\[/g, '\[')}]` : '*');
+export const getQuerySelectTop = (client, table, limit) => `SELECT TOP ${limit} * FROM ${wrapIdentifier(table)}`;
 
 
 export const executeQuery = async (connection, query) => {
@@ -120,7 +121,7 @@ export const listTableTriggers = async (connection, table) => {
   // SQL Server does not have information_schema for triggers, so other way around
   // is using sp_helptrigger stored procedure to fetch triggers related to table
   const sql = `
-    EXEC sp_helptrigger ${wrapQuery(table)}
+    EXEC sp_helptrigger ${wrapIdentifier(table)}
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map(row => row.trigger_name);
@@ -237,7 +238,7 @@ export const truncateAllTables = async (connection) => {
   const [result] = await executeQuery(connection, sql);
   const tables = result.rows.map(row => row.table_name);
   const promises = tables.map(t => executeQuery(connection, `
-    DELETE FROM ${wrapQuery(schema)}.${wrapQuery(t)}
+    DELETE FROM ${wrapIdentifier(schema)}.${wrapIdentifier(t)}
     DBCC CHECKIDENT ('${schema}.${t}', RESEED, 0)
   `));
 

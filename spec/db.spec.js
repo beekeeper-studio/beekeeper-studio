@@ -206,7 +206,13 @@ describe('db', () => {
         describe('.getTableSelectScript', () => {
           it('should return SELECT table script', async() => {
             const selectQuery = await dbConn.getTableSelectScript('users');
-            expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM users;');
+            if (dbClient === 'mysql') {
+              expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM `users`;');
+            } else if (dbClient === 'sqlserver') {
+              expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM [users];');
+            } else { // postgresql
+              expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM "users";');
+            }
           });
         });
 
@@ -214,21 +220,39 @@ describe('db', () => {
         describe('.getTableInsertScript', () => {
           it('should return INSERT INTO table script', async() => {
             const insertQuery = await dbConn.getTableInsertScript('users');
-            expect(insertQuery).to.eql(`INSERT INTO users (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
+            if (dbClient === 'mysql') {
+              expect(insertQuery).to.eql(`INSERT INTO \`users\` (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
+            } else if (dbClient === 'sqlserver') {
+              expect(insertQuery).to.eql(`INSERT INTO [users] (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
+            } else { // postgresql
+              expect(insertQuery).to.eql(`INSERT INTO "users" (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
+            }
           });
         });
 
         describe('.getTableUpdateScript', () => {
           it('should return UPDATE table script', async() => {
             const updateQuery = await dbConn.getTableUpdateScript('users');
-            expect(updateQuery).to.eql(`UPDATE users\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
+            if (dbClient === 'mysql') {
+              expect(updateQuery).to.eql(`UPDATE \`users\`\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
+            } else if (dbClient === 'sqlserver') {
+              expect(updateQuery).to.eql(`UPDATE [users]\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
+            } else { // postgresql
+              expect(updateQuery).to.eql(`UPDATE "users"\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
+            }
           });
         });
 
         describe('.getTableDeleteScript', () => {
           it('should return table DELETE script', async() => {
             const deleteQuery = await dbConn.getTableDeleteScript('roles');
-            expect(deleteQuery).to.eql('DELETE FROM roles WHERE <condition>;');
+            if (dbClient === 'mysql') {
+              expect(deleteQuery).to.contain('DELETE FROM `roles` WHERE <condition>;');
+            } else if (dbClient === 'sqlserver') {
+              expect(deleteQuery).to.contain('DELETE FROM [roles] WHERE <condition>;');
+            } else { // postgresql
+              expect(deleteQuery).to.contain('DELETE FROM "roles" WHERE <condition>;');
+            }
           });
         });
 
