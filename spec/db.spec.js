@@ -208,7 +208,9 @@ describe('db', () => {
             const selectQuery = await dbConn.getTableSelectScript('users');
             if (dbClient === 'mysql') {
               expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM `users`;');
-            } else { // sqlserver or postgresql
+            } else if (dbClient === 'sqlserver') {
+              expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM [users];');
+            } else { // postgresql
               expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM "users";');
             }
           });
@@ -220,7 +222,9 @@ describe('db', () => {
             const insertQuery = await dbConn.getTableInsertScript('users');
             if (dbClient === 'mysql') {
               expect(insertQuery).to.eql(`INSERT INTO \`users\` (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
-            } else { // sqlserver or postgresql
+            } else if (dbClient === 'sqlserver') {
+              expect(insertQuery).to.eql(`INSERT INTO [users] (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
+            } else { // postgresql
               expect(insertQuery).to.eql(`INSERT INTO "users" (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
             }
           });
@@ -231,7 +235,9 @@ describe('db', () => {
             const updateQuery = await dbConn.getTableUpdateScript('users');
             if (dbClient === 'mysql') {
               expect(updateQuery).to.eql(`UPDATE \`users\`\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
-            } else { // sqlserver or postgresql
+            } else if (dbClient === 'sqlserver') {
+              expect(updateQuery).to.eql(`UPDATE [users]\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
+            } else { // postgresql
               expect(updateQuery).to.eql(`UPDATE "users"\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
             }
           });
@@ -242,7 +248,9 @@ describe('db', () => {
             const deleteQuery = await dbConn.getTableDeleteScript('roles');
             if (dbClient === 'mysql') {
               expect(deleteQuery).to.contain('DELETE FROM `roles` WHERE <condition>;');
-            } else { // sqlserver or postgresql
+            } else if (dbClient === 'sqlserver') {
+              expect(deleteQuery).to.contain('DELETE FROM [roles] WHERE <condition>;');
+            } else { // postgresql
               expect(deleteQuery).to.contain('DELETE FROM "roles" WHERE <condition>;');
             }
           });
