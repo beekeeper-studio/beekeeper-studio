@@ -160,6 +160,25 @@ describe('db', () => {
           });
         });
 
+        describe('.getTableKeys', () => {
+          it('should list all tables keys', async() => {
+            const tableKeys = await dbConn.getTableKeys('users');
+
+            expect(tableKeys).to.have.length(2);
+
+            tableKeys.map((key) => {
+              if ( key.keyType === 'PRIMARY KEY') {
+                expect(key).to.have.property('columnName').to.eql('id');
+                expect(key).to.have.property('referencedTable').to.be.a('null');
+              } else {
+                expect(key).to.have.property('columnName').to.eql('role_id');
+                expect(key).to.have.property('referencedTable').to.eql('roles');
+                expect(key).to.have.property('keyType').to.eql('FOREIGN KEY');
+              }
+            });
+          });
+        });
+
         describe('.getTableCreateScript', () => {
           it('should return table create script', async() => {
             const [createScript] = await dbConn.getTableCreateScript('users');

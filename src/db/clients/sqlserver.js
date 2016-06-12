@@ -26,6 +26,7 @@ export default async function(server, database) {
       listTableColumns: (table) => listTableColumns(connection, table),
       listTableTriggers: (table) => listTableTriggers(connection, table),
       getTableReferences: (table) => getTableReferences(connection, table),
+      getTableKeys: (table) => getTableKeys(connection, table),
       executeQuery: (query) => executeQuery(connection, query),
       listDatabases: () => listDatabases(connection),
       getQuerySelectTop: (table, limit) => getQuerySelectTop(connection, table, limit),
@@ -140,6 +141,32 @@ export const getTableReferences = async (connection, table) => {
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map(row => row.referenced_table_name);
+};
+
+export const getTableKeys = async (connection, table) => {
+  const sql = `
+    SELECT
+      tc.constraint_name,
+    	kcu.column_name,
+    	CASE WHEN tc.constraint_type LIKE '%FOREIGN%' THEN OBJECT_NAME(sfk.referenced_object_id)
+    	ELSE NULL
+    	END AS referenced_table_name,
+    	tc.constraint_type
+  	FROM information_schema.table_constraints AS tc
+  	JOIN information_schema.key_column_usage AS kcu
+    	ON tc.constraint_name = kcu.constraint_name
+  	JOIN sys.foreign_keys as sfk
+    	ON sfk.parent_object_id = OBJECT_ID(tc.table_name)
+  	WHERE tc.table_name = '${table}'
+  	AND tc.constraint_type IN ('PRIMARY KEY', 'FOREIGN KEY')
+  `;
+  const [result] = await executeQuery(connection, sql);
+  return result.rows.map(row => ({
+    constraintName: row.constraint_name,
+    columnName: row.column_name,
+    referencedTable: row.referenced_table_name,
+    keyType: row.constraint_type,
+  }));
 };
 
 export const getTableCreateScript = async (connection, table) => {

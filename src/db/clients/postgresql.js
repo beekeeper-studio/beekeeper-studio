@@ -39,6 +39,7 @@ export default function(server, database) {
         listTableColumns: (table) => listTableColumns(client, table),
         listTableTriggers: (table) => listTableTriggers(client, table),
         getTableReferences: (table) => getTableReferences(client, table),
+        getTableKeys: (table) => getTableKeys(client, table),
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
@@ -171,6 +172,39 @@ export function getTableReferences(client, table) {
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
       resolve(data.rows.map(row => row.referenced_table_name));
+    });
+  });
+}
+
+export function getTableKeys(client, table) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT
+        tc.constraint_name,
+        kcu.column_name,
+        CASE WHEN tc.constraint_type LIKE '%FOREIGN%' THEN ctu.table_name
+        ELSE NULL
+        END AS referenced_table_name,
+        tc.constraint_type
+      FROM information_schema.table_constraints AS tc
+      JOIN information_schema.key_column_usage AS kcu
+        USING (constraint_schema, constraint_name)
+      JOIN information_schema.constraint_table_usage as ctu
+        USING (constraint_schema, constraint_name)
+      WHERE tc.table_name = $1
+      AND tc.constraint_type IN ('PRIMARY KEY', 'FOREIGN KEY')
+    `;
+    const params = [
+      table,
+    ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(err);
+      resolve(data.rows.map(row => ({
+        constraintName: row.constraint_name,
+        columnName: row.column_name,
+        referencedTable: row.referenced_table_name,
+        keyType: row.constraint_type,
+      })));
     });
   });
 }

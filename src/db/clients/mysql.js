@@ -36,6 +36,7 @@ export default function(server, database) {
         listTableColumns: (table) => listTableColumns(client, table),
         listTableTriggers: (table) => listTableTriggers(client, table),
         getTableReferences: (table) => getTableReferences(client, table),
+        getTableKeys: (table) => getTableKeys(client, table),
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
@@ -160,6 +161,33 @@ export function getTableReferences(client, table) {
     client.query(sql, params, (err, data) => {
       if (err) return reject(_getRealError(client, err));
       resolve(data.map(row => row.referenced_table_name));
+    });
+  });
+}
+
+export function getTableKeys(client, table) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT constraint_name, column_name, referenced_table_name,
+        CASE WHEN (referenced_table_name IS NOT NULL) THEN 'FOREIGN'
+        ELSE constraint_name
+        END as key_type
+      FROM information_schema.key_column_usage
+      WHERE table_schema = database()
+      AND table_name = ?
+      AND ((referenced_table_name IS NOT NULL) OR constraint_name LIKE '%PRIMARY%')
+    `;
+    const params = [
+      table,
+    ];
+    client.query(sql, params, (err, data) => {
+      if (err) return reject(_getRealError(client, err));
+      resolve(data.map(row => ({
+        constraintName: `${row.constraint_name} KEY`,
+        columnName: row.column_name,
+        referencedTable: row.referenced_table_name,
+        keyType: `${row.key_type} KEY`,
+      })));
     });
   });
 }
