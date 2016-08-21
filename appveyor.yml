@@ -5,6 +5,7 @@ environment:
   # TODO: test cassandra with docker on travis
   # While that is not configured we do not
   # run automated test for cassandra client
+  CASSANDRA_PORT: tcp://localhost:9042
   DB_CLIENTS: mysql,postgresql,sqlserver
   # postgres
   POSTGRES_PORT: tcp://localhost:5432
