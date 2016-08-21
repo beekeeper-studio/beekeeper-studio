@@ -9,6 +9,7 @@ The common code used by all sqlectron clients.
 * [PostgreSQL](http://www.postgresql.org/)
 * [MySQL](https://www.mysql.com/)
 * [Microsoft SQL Server](http://www.microsoft.com/en-us/server-cloud/products/sql-server/)
+* [Cassandra](http://cassandra.apache.org/)
 
 Do you want to support another SQL database? It is expected that in the pull request the new database is included in the [db.spec.js](https://github.com/sqlectron/sqlectron-core/blob/master/spec/db.spec.js).
 
