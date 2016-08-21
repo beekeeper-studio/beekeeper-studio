@@ -107,7 +107,6 @@ const SERVER_SCHEMA = {
   ],
   user: [
     { sanitizer: Valida.Sanitizer.trim },
-    { validator: Valida.Validator.required },
     { validator: Valida.Validator.len, min: 1, max: 55 },
   ],
   password: [
