@@ -28,6 +28,9 @@ export const CLIENTS = [
     key: 'cassandra',
     name: 'Cassandra',
     defaultPort: 9042,
+    disabledFeatures: [
+      'scriptCreateTable',
+    ],
   },
 ];
 
