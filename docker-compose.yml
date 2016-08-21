@@ -19,11 +19,19 @@ postgres:
   volumes:
     - ./spec/databases/postgresql/schema:/docker-entrypoint-initdb.d
 
+cassandra:
+  image: cassandra:3.7
+  environment:
+    JVM_OPTS: -Xms128m -Xmx512m
+  ports:
+    - 7000 # cluster
+    - 9042 # native
+
 test:
   image: node:0.12.7-onbuild
   command: npm test
   environment:
-    DB_CLIENTS: mysql,postgresql
+    DB_CLIENTS: mysql,postgresql,cassandra
     MYSQL_ENV_MYSQL_USER: root
     MYSQL_ENV_MYSQL_PASSWORD: password
   volumes:
@@ -31,3 +39,4 @@ test:
   links:
     - mysql:mysql
     - postgres:postgres
+    - cassandra:cassandra

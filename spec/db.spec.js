@@ -2,6 +2,7 @@ import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { db } from '../src';
 import config from './databases/config';
+import setupCassandra from './databases/cassandra/setup';
 chai.use(chaiAsPromised);
 
 /**
@@ -9,7 +10,12 @@ chai.use(chaiAsPromised);
  * The "integration" tests will be executed for all supported DB clients.
  * And ensure all these clients has the same API and output results.
  */
-const SUPPORTED_DB_CLIENTS = ['mysql', 'postgresql', 'sqlserver'];
+const SUPPORTED_DB_CLIENTS = [
+  'mysql',
+  'postgresql',
+  'sqlserver',
+  'cassandra',
+];
 
 
 /**
@@ -22,6 +28,10 @@ describe('db', () => {
   const dbClients = dbsToTest.length ? dbsToTest : SUPPORTED_DB_CLIENTS;
   if (dbClients.some(dbClient => !~SUPPORTED_DB_CLIENTS.indexOf(dbClient))) {
     throw new Error('Invalid selected db client for tests');
+  }
+
+  if (~dbClients.indexOf('cassandra')) {
+    setupCassandra(config.cassandra);
   }
 
   dbClients.map(dbClient => {
@@ -84,62 +94,71 @@ describe('db', () => {
           });
         });
 
-        describe('.listViews', () => {
-          it('should list all views', async () => {
-            const views = await dbConn.listViews();
-            expect(views).to.include.members(['email_view']);
+        if (dbClient !== 'cassandra') {
+          describe('.listViews', () => {
+            it('should list all views', async () => {
+              const views = await dbConn.listViews();
+              expect(views).to.include.members(['email_view']);
+            });
           });
-        });
+        }
 
-        describe('.listRoutines', () => {
-          it('should list all routines with their type', async() =>{
-            const routines = await dbConn.listRoutines();
-            const routine = dbClient === 'postgresql' ? routines[1] : routines[0];
+        if (dbClient !== 'cassandra') {
+          describe('.listRoutines', () => {
+            it('should list all routines with their type', async() =>{
+              const routines = await dbConn.listRoutines();
+              const routine = dbClient === 'postgresql' ? routines[1] : routines[0];
 
-            // Postgresql routine type is always function. SP do not exist
-            // Futhermore, PostgreSQL is expected to have two functions in schema, because
-            // additional one is needed for trigger
-            if (dbClient === 'postgresql') {
-              expect(routines).to.have.length(2);
-              expect(routine).to.have.deep.property('routineType').to.eql('FUNCTION');
-            } else {
-              expect(routines).to.have.length(1);
-              expect(routine).to.have.deep.property('routineType').to.eql('PROCEDURE');
-            }
+              // Postgresql routine type is always function. SP do not exist
+              // Futhermore, PostgreSQL is expected to have two functions in schema, because
+              // additional one is needed for trigger
+              if (dbClient === 'postgresql') {
+                expect(routines).to.have.length(2);
+                expect(routine).to.have.deep.property('routineType').to.eql('FUNCTION');
+              } else {
+                expect(routines).to.have.length(1);
+                expect(routine).to.have.deep.property('routineType').to.eql('PROCEDURE');
+              }
+            });
           });
-        });
+        }
 
         describe('.listTableColumns', () => {
           it('should list all columns and their type from users table', async() => {
             const columns = await dbConn.listTableColumns('users');
             expect(columns).to.have.length(6);
 
-            const [firstCol, secondCol, thirdCol, fourthCol, fifthCol, sixthCol ] = columns;
+            const column = (name) => columns.find(col => col.columnName === name);
 
-            expect(firstCol).to.have.property('columnName').to.eql('id');
-            expect(secondCol).to.have.property('columnName').to.eql('username');
-            expect(thirdCol).to.have.property('columnName').to.eql('email');
-            expect(fourthCol).to.have.property('columnName').to.eql('password');
-            expect(fifthCol).to.have.property('columnName').to.eql('role_id');
-            expect(sixthCol).to.have.property('columnName').to.eql('createdat');
+            /* eslint no-unused-expressions:0 */
+            expect(column('id')).to.exist;
+            expect(column('username')).to.exist;
+            expect(column('email')).to.exist;
+            expect(column('password')).to.exist;
+            expect(column('role_id')).to.exist;
+            expect(column('createdat')).to.exist;
 
-            expect(firstCol).to.have.property('dataType').to.have.string('int');
+            expect(column('id')).to.have.property('dataType').to.have.string('int');
 
-            // According to schemas defined in specs
-            // Postgresql has the columns: username, email and password
-            // types set as text, while in mysql and mssql they are defined as varchar
+            // Each database may have different db types
             if (dbClient === 'postgresql') {
-              expect(secondCol).to.have.property('dataType').to.eql('text');
-              expect(thirdCol).to.have.property('dataType').to.eql('text');
-              expect(fourthCol).to.have.property('dataType').to.eql('text');
-              expect(fifthCol).to.have.property('dataType').to.eql('integer');
-              expect(sixthCol).to.have.property('dataType').to.eql('date');
+              expect(column('username')).to.have.property('dataType').to.eql('text');
+              expect(column('email')).to.have.property('dataType').to.eql('text');
+              expect(column('password')).to.have.property('dataType').to.eql('text');
+              expect(column('role_id')).to.have.property('dataType').to.eql('integer');
+              expect(column('createdat')).to.have.property('dataType').to.eql('date');
+            } else if (dbClient === 'cassandra') {
+              expect(column('username')).to.have.property('dataType').to.eql('text');
+              expect(column('email')).to.have.property('dataType').to.eql('text');
+              expect(column('password')).to.have.property('dataType').to.eql('text');
+              expect(column('role_id')).to.have.property('dataType').to.eql('int');
+              expect(column('createdat')).to.have.property('dataType').to.eql('timestamp');
             } else {
-              expect(secondCol).to.have.property('dataType').to.eql('varchar');
-              expect(thirdCol).to.have.property('dataType').to.eql('varchar');
-              expect(fourthCol).to.have.property('dataType').to.eql('varchar');
-              expect(fifthCol).to.have.property('dataType').to.eql('int');
-              expect(sixthCol).to.have.property('dataType').to.eql('datetime');
+              expect(column('username')).to.have.property('dataType').to.eql('varchar');
+              expect(column('email')).to.have.property('dataType').to.eql('varchar');
+              expect(column('password')).to.have.property('dataType').to.eql('varchar');
+              expect(column('role_id')).to.have.property('dataType').to.eql('int');
+              expect(column('createdat')).to.have.property('dataType').to.eql('datetime');
             }
           });
         });
@@ -147,24 +166,35 @@ describe('db', () => {
         describe('.listTableTriggers', () => {
           it('should list all table related triggers', async() => {
             const triggers = await dbConn.listTableTriggers('users');
-            expect(triggers).to.have.length(1);
-            expect(triggers).to.include.members(['dummy_trigger']);
+            if (dbClient === 'cassandra') {
+              expect(triggers).to.have.length(0);
+            } else {
+              expect(triggers).to.have.length(1);
+              expect(triggers).to.include.members(['dummy_trigger']);
+            }
           });
         });
 
         describe('.getTableReferences', () => {
           it('should list all tables that selected table has references to', async() => {
             const references = await dbConn.getTableReferences('users');
-            expect(references).to.have.length(1);
-            expect(references).to.include.members(['roles']);
+            if (dbClient === 'cassandra') {
+              expect(references).to.have.length(0);
+            } else {
+              expect(references).to.have.length(1);
+              expect(references).to.include.members(['roles']);
+            }
           });
         });
 
         describe('.getTableKeys', () => {
           it('should list all tables keys', async() => {
             const tableKeys = await dbConn.getTableKeys('users');
-
-            expect(tableKeys).to.have.length(2);
+            if (dbClient === 'cassandra') {
+              expect(tableKeys).to.have.length(1);
+            } else {
+              expect(tableKeys).to.have.length(2);
+            }
 
             tableKeys.map((key) => {
               if ( key.keyType === 'PRIMARY KEY') {
@@ -207,7 +237,7 @@ describe('db', () => {
                 '\n' +
                 'ALTER TABLE users ADD CONSTRAINT users_pkey PRIMARY KEY (id)'
               );
-            } else { // dbClient === SQL Server
+            } else if (dbClient === 'sqlserver') {
               expect(createScript).to.contain('CREATE TABLE users (\r\n' +
                 '  id int IDENTITY(1,1) NOT NULL,\r\n' +
                 '  username varchar(45)  NULL,\r\n' +
@@ -218,6 +248,10 @@ describe('db', () => {
                 ')\r\n');
               expect(createScript).to.contain('ALTER TABLE users ADD CONSTRAINT PK__users');
               expect(createScript).to.contain('PRIMARY KEY (id)');
+            } else if (dbClient === 'cassandra') {
+              expect(createScript).to.eql(undefined);
+            } else {
+              throw new Error('Invalid db client');
             }
           });
         });
@@ -229,8 +263,12 @@ describe('db', () => {
               expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM `users`;');
             } else if (dbClient === 'sqlserver') {
               expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM [users];');
-            } else { // postgresql
+            } else if (dbClient === 'postgresql') {
               expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM "users";');
+            } else if (dbClient === 'cassandra') {
+              expect(selectQuery).to.eql('SELECT id, createdat, email, password, role_id, username FROM "users";');
+            } else {
+              throw new Error('Invalid db client');
             }
           });
         });
@@ -243,8 +281,12 @@ describe('db', () => {
               expect(insertQuery).to.eql(`INSERT INTO \`users\` (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
             } else if (dbClient === 'sqlserver') {
               expect(insertQuery).to.eql(`INSERT INTO [users] (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
-            } else { // postgresql
+            } else if (dbClient === 'postgresql') {
               expect(insertQuery).to.eql(`INSERT INTO "users" (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
+            } else if (dbClient === 'cassandra') {
+              expect(insertQuery).to.eql(`INSERT INTO "users" (id, createdat, email, password, role_id, username)\n VALUES (?, ?, ?, ?, ?, ?);`);
+            } else {
+              throw new Error('Invalid db client');
             }
           });
         });
@@ -256,8 +298,12 @@ describe('db', () => {
               expect(updateQuery).to.eql(`UPDATE \`users\`\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
             } else if (dbClient === 'sqlserver') {
               expect(updateQuery).to.eql(`UPDATE [users]\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
-            } else { // postgresql
+            } else if (dbClient === 'postgresql') {
               expect(updateQuery).to.eql(`UPDATE "users"\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
+            } else if (dbClient === 'cassandra') {
+              expect(updateQuery).to.eql(`UPDATE "users"\n   SET id=?, createdat=?, email=?, password=?, role_id=?, username=?\n WHERE <condition>;`);
+            } else {
+              throw new Error('Invalid db client');
             }
           });
         });
@@ -269,8 +315,12 @@ describe('db', () => {
               expect(deleteQuery).to.contain('DELETE FROM `roles` WHERE <condition>;');
             } else if (dbClient === 'sqlserver') {
               expect(deleteQuery).to.contain('DELETE FROM [roles] WHERE <condition>;');
-            } else { // postgresql
+            } else if (dbClient === 'postgresql') {
               expect(deleteQuery).to.contain('DELETE FROM "roles" WHERE <condition>;');
+            } else if (dbClient === 'cassandra') {
+              expect(deleteQuery).to.contain('DELETE FROM "roles" WHERE <condition>;');
+            } else {
+              throw new Error('Invalid db client');
             }
           });
         });
@@ -283,8 +333,12 @@ describe('db', () => {
               expect(createScript).to.contain('VIEW `email_view` AS select `users`.`email` AS `email`,`users`.`password` AS `password` from `users`');
             } else if (dbClient === 'postgresql') {
               expect(createScript).to.eql(`CREATE OR REPLACE VIEW email_view AS\n SELECT users.email,\n    users.password\n   FROM users;`);
-            } else { // dbClient === SQL Server
+            } else if (dbClient === 'sqlserver') {
               expect(createScript).to.eql(`\nCREATE VIEW dbo.email_view AS\nSELECT dbo.users.email, dbo.users.password\nFROM dbo.users;\n`);
+            } else if (dbClient === 'cassandra') {
+              expect(createScript).to.eql(undefined);
+            } else {
+              throw new Error('Invalid db client');
             }
           });
         });
@@ -303,23 +357,29 @@ describe('db', () => {
                 'AS $function$\n' +
                 '  SELECT COUNT(*) FROM users AS total;\n' +
                 '$function$\n');
-            } else { // dbClient === SQL Server
+            } else if (dbClient === 'sqlserver') {
               expect(createScript).to.contain('CREATE PROCEDURE dbo.users_count');
               expect(createScript).to.contain('@Count int OUTPUT');
               expect(createScript).to.contain('SELECT @Count = COUNT(*) FROM dbo.users');
+            } else if (dbClient === 'cassandra') {
+              expect(createScript).to.eql(undefined);
+            } else {
+              throw new Error('Invalid db client');
             }
           });
         });
 
         describe('.executeQuery', () => {
+          const includePk = dbClient === 'cassandra';
+
           beforeEach(() => Promise.all([
             dbConn.executeQuery(`
-              INSERT INTO roles (name)
-              VALUES ('developer')
+              INSERT INTO roles (${includePk ? 'id,' : ''} name)
+              VALUES (${includePk ? '1,' : ''} 'developer')
             `),
             dbConn.executeQuery(`
-              INSERT INTO users (username, email, password, role_id, createdat)
-              VALUES ('maxcnunes', 'maxcnunes@gmail.com', '123456', '1','2016-10-25')
+              INSERT INTO users (${includePk ? 'id,' : ''} username, email, password, role_id, createdat)
+              VALUES (${includePk ? '1,' : ''} 'maxcnunes', 'maxcnunes@gmail.com', '123456', 1,'2016-10-25')
             `),
           ]));
 
@@ -327,24 +387,39 @@ describe('db', () => {
 
           describe('SELECT', () => {
             it('should execute an empty query', async () => {
-              const results = await dbConn.executeQuery('');
-
-              expect(results).to.have.length(0);
+              try {
+                const results = await dbConn.executeQuery('');
+                expect(results).to.have.length(0);
+              } catch (err) {
+                if (dbClient === 'cassandra') {
+                  expect(err.message).to.eql('line 0:-1 no viable alternative at input \'<EOF>\'');
+                } else {
+                  throw err;
+                }
+              }
             });
 
             it('should execute an query with only comments', async () => {
-              const results = await dbConn.executeQuery('-- my comment');
+              try {
+                const results = await dbConn.executeQuery('-- my comment');
 
-              // MySQL treats commented query as a non select query
-              if (dbClient === 'mysql') {
-                expect(results).to.have.length(1);
-              } else {
-                expect(results).to.have.length(0);
+                // MySQL treats commented query as a non select query
+                if (dbClient === 'mysql') {
+                  expect(results).to.have.length(1);
+                } else {
+                  expect(results).to.have.length(0);
+                }
+              } catch (err) {
+                if (dbClient === 'cassandra') {
+                  expect(err.message).to.eql('line 1:13 mismatched character \'<EOF>\' expecting set null');
+                } else {
+                  throw err;
+                }
               }
             });
 
             it('should execute a single query with empty result', async () => {
-              const results = await dbConn.executeQuery(`select * from users where id < 0`);
+              const results = await dbConn.executeQuery(`select * from users where id = 0`);
 
               expect(results).to.have.length(1);
               const [result] = results;
@@ -355,10 +430,12 @@ describe('db', () => {
               if (dbClient === 'sqlserver') {
                 expect(result).to.have.property('fields').to.eql([]);
               } else {
-                expect(result).to.have.deep.property('fields[0].name').to.eql('id');
-                expect(result).to.have.deep.property('fields[1].name').to.eql('username');
-                expect(result).to.have.deep.property('fields[2].name').to.eql('email');
-                expect(result).to.have.deep.property('fields[3].name').to.eql('password');
+                const field = (name) => result.fields.find(item => item.name === name);
+
+                expect(field('id')).to.exist;
+                expect(field('username')).to.exist;
+                expect(field('email')).to.exist;
+                expect(field('password')).to.exist;
               }
 
               expect(result).to.have.property('command').to.eql('SELECT');
@@ -371,14 +448,14 @@ describe('db', () => {
 
               expect(results).to.have.length(1);
               const [result] = results;
+              const field = (name) => result.fields.find(item => item.name === name);
 
-              expect(result).to.have.deep.property('fields[0].name').to.eql('id');
-              expect(result).to.have.deep.property('fields[1].name').to.eql('username');
-              expect(result).to.have.deep.property('fields[2].name').to.eql('email');
-              expect(result).to.have.deep.property('fields[3].name').to.eql('password');
-              expect(result).to.have.deep.property('fields[4].name').to.eql('role_id');
-              expect(result).to.have.deep.property('fields[5].name').to.eql('createdat');
-
+              expect(field('id')).to.exist;
+              expect(field('username')).to.exist;
+              expect(field('email')).to.exist;
+              expect(field('password')).to.exist;
+              expect(field('role_id')).to.exist;
+              expect(field('createdat')).to.exist;
 
               expect(result).to.have.deep.property('rows[0].id').to.eql(1);
               expect(result).to.have.deep.property('rows[0].username').to.eql('maxcnunes');
@@ -390,7 +467,7 @@ describe('db', () => {
               expect(result).to.have.deep.property('rowCount').to.eql(1);
             });
 
-            if (dbClient !== 'sqlserver') {
+            if (dbClient === 'mysql' || dbClient === 'postgresql') {
               it('should not cast DATE types to native JS Date objects', async () => {
                 const results = await dbConn.executeQuery(`select createdat from users`);
 
@@ -403,43 +480,51 @@ describe('db', () => {
             }
 
             it('should execute multiple queries', async () => {
-              const results = await dbConn.executeQuery(`
-                select * from users;
-                select * from roles;
-              `);
+              try {
+                const results = await dbConn.executeQuery(`
+                  select * from users;
+                  select * from roles;
+                `);
 
-              expect(results).to.have.length(2);
-              const [firstResult, secondResult] = results;
+                expect(results).to.have.length(2);
+                const [firstResult, secondResult] = results;
 
-              expect(firstResult).to.have.deep.property('fields[0].name').to.eql('id');
-              expect(firstResult).to.have.deep.property('fields[1].name').to.eql('username');
-              expect(firstResult).to.have.deep.property('fields[2].name').to.eql('email');
-              expect(firstResult).to.have.deep.property('fields[3].name').to.eql('password');
+                expect(firstResult).to.have.deep.property('fields[0].name').to.eql('id');
+                expect(firstResult).to.have.deep.property('fields[1].name').to.eql('username');
+                expect(firstResult).to.have.deep.property('fields[2].name').to.eql('email');
+                expect(firstResult).to.have.deep.property('fields[3].name').to.eql('password');
 
-              expect(firstResult).to.have.deep.property('rows[0].id').to.eql(1);
-              expect(firstResult).to.have.deep.property('rows[0].username').to.eql('maxcnunes');
-              expect(firstResult).to.have.deep.property('rows[0].password').to.eql('123456');
-              expect(firstResult).to.have.deep.property('rows[0].email').to.eql('maxcnunes@gmail.com');
+                expect(firstResult).to.have.deep.property('rows[0].id').to.eql(1);
+                expect(firstResult).to.have.deep.property('rows[0].username').to.eql('maxcnunes');
+                expect(firstResult).to.have.deep.property('rows[0].password').to.eql('123456');
+                expect(firstResult).to.have.deep.property('rows[0].email').to.eql('maxcnunes@gmail.com');
 
-              expect(firstResult).to.have.property('command').to.eql('SELECT');
-              expect(firstResult).to.have.deep.property('rowCount').to.eql(1);
+                expect(firstResult).to.have.property('command').to.eql('SELECT');
+                expect(firstResult).to.have.deep.property('rowCount').to.eql(1);
 
-              expect(secondResult).to.have.deep.property('fields[0].name').to.eql('id');
-              expect(secondResult).to.have.deep.property('fields[1].name').to.eql('name');
+                expect(secondResult).to.have.deep.property('fields[0].name').to.eql('id');
+                expect(secondResult).to.have.deep.property('fields[1].name').to.eql('name');
 
-              expect(secondResult).to.have.deep.property('rows[0].id').to.eql(1);
-              expect(secondResult).to.have.deep.property('rows[0].name').to.eql('developer');
+                expect(secondResult).to.have.deep.property('rows[0].id').to.eql(1);
+                expect(secondResult).to.have.deep.property('rows[0].name').to.eql('developer');
 
-              expect(secondResult).to.have.property('command').to.eql('SELECT');
-              expect(secondResult).to.have.deep.property('rowCount').to.eql(1);
+                expect(secondResult).to.have.property('command').to.eql('SELECT');
+                expect(secondResult).to.have.deep.property('rowCount').to.eql(1);
+              } catch (err) {
+                if (dbClient === 'cassandra') {
+                  expect(err.message).to.match(/missing EOF at 'select'/);
+                } else {
+                  throw err;
+                }
+              }
             });
           });
 
           describe('INSERT', () => {
             it('should execute a single query', async () => {
               const results = await dbConn.executeQuery(`
-                insert into users (username, email, password)
-                values ('user', 'user@hotmail.com', '123456')
+                insert into users (${includePk ? 'id,' : ''} username, email, password)
+                values (${includePk ? '1,' : ''} 'user', 'user@hotmail.com', '123456')
               `);
 
               expect(results).to.have.length(1);
@@ -448,7 +533,13 @@ describe('db', () => {
               expect(result).to.have.property('command').to.eql('INSERT');
               expect(result).to.have.property('rows').to.eql([]);
               expect(result).to.have.property('fields').to.eql([]);
-              expect(result).to.have.property('affectedRows').to.eql(1);
+
+              // Cassandra does not return affectedRows
+              if (dbClient === 'cassandra') {
+                expect(result).to.have.property('affectedRows').to.eql(undefined);
+              } else {
+                expect(result).to.have.property('affectedRows').to.eql(1);
+              }
 
               // MSSQL does not return row count
               // so this value is based in the number of rows
@@ -460,39 +551,47 @@ describe('db', () => {
             });
 
             it('should execute multiple queries', async () => {
-              const results = await dbConn.executeQuery(`
-                insert into users (username, email, password)
-                values ('user', 'user@hotmail.com', '123456');
+              try {
+                const results = await dbConn.executeQuery(`
+                  insert into users (username, email, password)
+                  values ('user', 'user@hotmail.com', '123456');
 
-                insert into roles (name)
-                values ('manager');
-              `);
+                  insert into roles (name)
+                  values ('manager');
+                `);
 
-              // MSSQL treats multiple non select queries as a single query result
-              if (dbClient === 'sqlserver') {
-                expect(results).to.have.length(1);
-                const [result] = results;
+                // MSSQL treats multiple non select queries as a single query result
+                if (dbClient === 'sqlserver') {
+                  expect(results).to.have.length(1);
+                  const [result] = results;
 
-                expect(result).to.have.property('command').to.eql('INSERT');
-                expect(result).to.have.property('rows').to.eql([]);
-                expect(result).to.have.property('fields').to.eql([]);
-                expect(result).to.have.property('rowCount').to.eql(0);
-                expect(result).to.have.property('affectedRows').to.eql(2);
-              } else {
-                expect(results).to.have.length(2);
-                const [firstResult, secondResult] = results;
+                  expect(result).to.have.property('command').to.eql('INSERT');
+                  expect(result).to.have.property('rows').to.eql([]);
+                  expect(result).to.have.property('fields').to.eql([]);
+                  expect(result).to.have.property('rowCount').to.eql(0);
+                  expect(result).to.have.property('affectedRows').to.eql(2);
+                } else {
+                  expect(results).to.have.length(2);
+                  const [firstResult, secondResult] = results;
 
-                expect(firstResult).to.have.property('command').to.eql('INSERT');
-                expect(firstResult).to.have.property('rows').to.eql([]);
-                expect(firstResult).to.have.property('fields').to.eql([]);
-                expect(firstResult).to.have.property('rowCount').to.eql(undefined);
-                expect(firstResult).to.have.property('affectedRows').to.eql(1);
+                  expect(firstResult).to.have.property('command').to.eql('INSERT');
+                  expect(firstResult).to.have.property('rows').to.eql([]);
+                  expect(firstResult).to.have.property('fields').to.eql([]);
+                  expect(firstResult).to.have.property('rowCount').to.eql(undefined);
+                  expect(firstResult).to.have.property('affectedRows').to.eql(1);
 
-                expect(secondResult).to.have.property('command').to.eql('INSERT');
-                expect(secondResult).to.have.property('rows').to.eql([]);
-                expect(secondResult).to.have.property('fields').to.eql([]);
-                expect(secondResult).to.have.property('rowCount').to.eql(undefined);
-                expect(secondResult).to.have.property('affectedRows').to.eql(1);
+                  expect(secondResult).to.have.property('command').to.eql('INSERT');
+                  expect(secondResult).to.have.property('rows').to.eql([]);
+                  expect(secondResult).to.have.property('fields').to.eql([]);
+                  expect(secondResult).to.have.property('rowCount').to.eql(undefined);
+                  expect(secondResult).to.have.property('affectedRows').to.eql(1);
+                }
+              } catch (err) {
+                if (dbClient === 'cassandra') {
+                  expect(err.message).to.match(/missing EOF at 'insert'/);
+                } else {
+                  throw err;
+                }
               }
             });
           });
@@ -500,7 +599,7 @@ describe('db', () => {
           describe('DELETE', () => {
             it('should execute a single query', async () => {
               const results = await dbConn.executeQuery(`
-                delete from users where username = 'maxcnunes'
+                delete from users where id = 1
               `);
 
               expect(results).to.have.length(1);
@@ -509,7 +608,13 @@ describe('db', () => {
               expect(result).to.have.property('command').to.eql('DELETE');
               expect(result).to.have.property('rows').to.eql([]);
               expect(result).to.have.property('fields').to.eql([]);
-              expect(result).to.have.property('affectedRows').to.eql(1);
+
+              // Cassandra does not return affectedRows
+              if (dbClient === 'cassandra') {
+                expect(result).to.have.property('affectedRows').to.eql(undefined);
+              } else {
+                expect(result).to.have.property('affectedRows').to.eql(1);
+              }
 
               // MSSQL does not return row count
               // so these value is based in the number of rows
@@ -521,36 +626,44 @@ describe('db', () => {
             });
 
             it('should execute multiple queries', async () => {
-              const results = await dbConn.executeQuery(`
-                delete from users where username = 'maxcnunes';
-                delete from roles where name = 'developer';
-              `);
+              try {
+                const results = await dbConn.executeQuery(`
+                  delete from users where username = 'maxcnunes';
+                  delete from roles where name = 'developer';
+                `);
 
-              // MSSQL treats multiple non select queries as a single query result
-              if (dbClient === 'sqlserver') {
-                expect(results).to.have.length(1);
-                const [result] = results;
+                // MSSQL treats multiple non select queries as a single query result
+                if (dbClient === 'sqlserver') {
+                  expect(results).to.have.length(1);
+                  const [result] = results;
 
-                expect(result).to.have.property('command').to.eql('DELETE');
-                expect(result).to.have.property('rows').to.eql([]);
-                expect(result).to.have.property('fields').to.eql([]);
-                expect(result).to.have.property('rowCount').to.eql(0);
-                expect(result).to.have.property('affectedRows').to.eql(2);
-              } else {
-                expect(results).to.have.length(2);
-                const [firstResult, secondResult] = results;
+                  expect(result).to.have.property('command').to.eql('DELETE');
+                  expect(result).to.have.property('rows').to.eql([]);
+                  expect(result).to.have.property('fields').to.eql([]);
+                  expect(result).to.have.property('rowCount').to.eql(0);
+                  expect(result).to.have.property('affectedRows').to.eql(2);
+                } else {
+                  expect(results).to.have.length(2);
+                  const [firstResult, secondResult] = results;
 
-                expect(firstResult).to.have.property('command').to.eql('DELETE');
-                expect(firstResult).to.have.property('rows').to.eql([]);
-                expect(firstResult).to.have.property('fields').to.eql([]);
-                expect(firstResult).to.have.property('rowCount').to.eql(undefined);
-                expect(firstResult).to.have.property('affectedRows').to.eql(1);
+                  expect(firstResult).to.have.property('command').to.eql('DELETE');
+                  expect(firstResult).to.have.property('rows').to.eql([]);
+                  expect(firstResult).to.have.property('fields').to.eql([]);
+                  expect(firstResult).to.have.property('rowCount').to.eql(undefined);
+                  expect(firstResult).to.have.property('affectedRows').to.eql(1);
 
-                expect(secondResult).to.have.property('command').to.eql('DELETE');
-                expect(secondResult).to.have.property('rows').to.eql([]);
-                expect(secondResult).to.have.property('fields').to.eql([]);
-                expect(secondResult).to.have.property('rowCount').to.eql(undefined);
-                expect(secondResult).to.have.property('affectedRows').to.eql(1);
+                  expect(secondResult).to.have.property('command').to.eql('DELETE');
+                  expect(secondResult).to.have.property('rows').to.eql([]);
+                  expect(secondResult).to.have.property('fields').to.eql([]);
+                  expect(secondResult).to.have.property('rowCount').to.eql(undefined);
+                  expect(secondResult).to.have.property('affectedRows').to.eql(1);
+                }
+              } catch (err) {
+                if (dbClient === 'cassandra') {
+                  expect(err.message).to.match(/missing EOF at 'delete'/);
+                } else {
+                  throw err;
+                }
               }
             });
           });
@@ -558,7 +671,7 @@ describe('db', () => {
           describe('UPDATE', () => {
             it('should execute a single query', async () => {
               const results = await dbConn.executeQuery(`
-                update users set username = 'max' where username = 'maxcnunes'
+                update users set username = 'max' where id = 1
               `);
 
               expect(results).to.have.length(1);
@@ -567,7 +680,13 @@ describe('db', () => {
               expect(result).to.have.property('command').to.eql('UPDATE');
               expect(result).to.have.property('rows').to.eql([]);
               expect(result).to.have.property('fields').to.eql([]);
-              expect(result).to.have.property('affectedRows').to.eql(1);
+
+              // Cassandra does not return affectedRows
+              if (dbClient === 'cassandra') {
+                expect(result).to.have.property('affectedRows').to.eql(undefined);
+              } else {
+                expect(result).to.have.property('affectedRows').to.eql(1);
+              }
 
               // MSSQL does not return row count
               // so these value is based in the number of rows
@@ -579,103 +698,115 @@ describe('db', () => {
             });
 
             it('should execute multiple queries', async () => {
-              const results = await dbConn.executeQuery(`
-                update users set username = 'max' where username = 'maxcnunes';
-                update roles set name = 'dev' where name = 'developer';
-              `);
+              try {
+                const results = await dbConn.executeQuery(`
+                  update users set username = 'max' where username = 'maxcnunes';
+                  update roles set name = 'dev' where name = 'developer';
+                `);
 
-              // MSSQL treats multiple non select queries as a single query result
-              if (dbClient === 'sqlserver') {
-                expect(results).to.have.length(1);
-                const [result] = results;
+                // MSSQL treats multiple non select queries as a single query result
+                if (dbClient === 'sqlserver') {
+                  expect(results).to.have.length(1);
+                  const [result] = results;
 
-                expect(result).to.have.property('command').to.eql('UPDATE');
-                expect(result).to.have.property('rows').to.eql([]);
-                expect(result).to.have.property('fields').to.eql([]);
-                expect(result).to.have.property('rowCount').to.eql(0);
-                expect(result).to.have.property('affectedRows').to.eql(2);
-              } else {
-                expect(results).to.have.length(2);
-                const [firstResult, secondResult] = results;
+                  expect(result).to.have.property('command').to.eql('UPDATE');
+                  expect(result).to.have.property('rows').to.eql([]);
+                  expect(result).to.have.property('fields').to.eql([]);
+                  expect(result).to.have.property('rowCount').to.eql(0);
+                  expect(result).to.have.property('affectedRows').to.eql(2);
+                } else {
+                  expect(results).to.have.length(2);
+                  const [firstResult, secondResult] = results;
 
-                expect(firstResult).to.have.property('command').to.eql('UPDATE');
-                expect(firstResult).to.have.property('rows').to.eql([]);
-                expect(firstResult).to.have.property('fields').to.eql([]);
-                expect(firstResult).to.have.property('rowCount').to.eql(undefined);
-                expect(firstResult).to.have.property('affectedRows').to.eql(1);
+                  expect(firstResult).to.have.property('command').to.eql('UPDATE');
+                  expect(firstResult).to.have.property('rows').to.eql([]);
+                  expect(firstResult).to.have.property('fields').to.eql([]);
+                  expect(firstResult).to.have.property('rowCount').to.eql(undefined);
+                  expect(firstResult).to.have.property('affectedRows').to.eql(1);
 
-                expect(secondResult).to.have.property('command').to.eql('UPDATE');
-                expect(secondResult).to.have.property('rows').to.eql([]);
-                expect(secondResult).to.have.property('fields').to.eql([]);
-                expect(secondResult).to.have.property('rowCount').to.eql(undefined);
-                expect(secondResult).to.have.property('affectedRows').to.eql(1);
+                  expect(secondResult).to.have.property('command').to.eql('UPDATE');
+                  expect(secondResult).to.have.property('rows').to.eql([]);
+                  expect(secondResult).to.have.property('fields').to.eql([]);
+                  expect(secondResult).to.have.property('rowCount').to.eql(undefined);
+                  expect(secondResult).to.have.property('affectedRows').to.eql(1);
+                }
+              } catch (err) {
+                if (dbClient === 'cassandra') {
+                  expect(err.message).to.match(/missing EOF at 'update'/);
+                } else {
+                  throw err;
+                }
               }
             });
           });
 
-          describe('CREATE', () => {
-            describe('DATABSE', () => {
-              beforeEach(async () => {
-                try {
-                  await dbConn.executeQuery('drop database db_test_create_database');
-                } catch (err) {
-                  // just ignore
-                }
-              });
+          if (dbClient !== 'cassandra') {
+            describe('CREATE', () => {
+              describe('DATABSE', () => {
+                beforeEach(async () => {
+                  try {
+                    await dbConn.executeQuery('drop database db_test_create_database');
+                  } catch (err) {
+                    // just ignore
+                  }
+                });
 
-              it('should execute a single query', async () => {
-                const results = await dbConn.executeQuery('create database db_test_create_database');
+                it('should execute a single query', async () => {
+                  const results = await dbConn.executeQuery('create database db_test_create_database');
 
-                // MSSQL does not return any information about CREATE queries
-                if (dbClient === 'sqlserver') {
-                  expect(results).to.have.length(0);
-                  return;
-                }
+                  // MSSQL does not return any information about CREATE queries
+                  if (dbClient === 'sqlserver') {
+                    expect(results).to.have.length(0);
+                    return;
+                  }
 
-                expect(results).to.have.length(1);
-                const [result] = results;
+                  expect(results).to.have.length(1);
+                  const [result] = results;
 
-                expect(result).to.have.property('command').to.eql('CREATE_DATABASE');
-                expect(result).to.have.property('rows').to.eql([]);
-                expect(result).to.have.property('fields').to.eql([]);
-                // seems each DB client returns a different value for CREATE
-                expect(result).to.have.property('affectedRows').to.oneOf([0, 1, undefined]);
-                expect(result).to.have.property('rowCount').to.eql(undefined);
-              });
-            });
-          });
-
-          describe('DROP', () => {
-            describe('DATABASE', () => {
-              beforeEach(async () => {
-                try {
-                  await dbConn.executeQuery('create database db_test_create_database');
-                } catch (err) {
-                  // just ignore
-                }
-              });
-
-              it('should execute a single query', async () => {
-                const results = await dbConn.executeQuery('drop database db_test_create_database');
-
-                // MSSQL does not return any information about DROP queries
-                if (dbClient === 'sqlserver') {
-                  expect(results).to.have.length(0);
-                  return;
-                }
-
-                expect(results).to.have.length(1);
-                const [result] = results;
-
-                expect(result).to.have.property('command').to.eql('DROP_DATABASE');
-                expect(result).to.have.property('rows').to.eql([]);
-                expect(result).to.have.property('fields').to.eql([]);
-                // seems each DB client returns a different value for DROP
-                expect(result).to.have.property('affectedRows').to.oneOf([0, 1, undefined]);
-                expect(result).to.have.property('rowCount').to.eql(undefined);
+                  expect(result).to.have.property('command').to.eql('CREATE_DATABASE');
+                  expect(result).to.have.property('rows').to.eql([]);
+                  expect(result).to.have.property('fields').to.eql([]);
+                  // seems each DB client returns a different value for CREATE
+                  expect(result).to.have.property('affectedRows').to.oneOf([0, 1, undefined]);
+                  expect(result).to.have.property('rowCount').to.eql(undefined);
+                });
               });
             });
-          });
+          }
+
+          if (dbClient !== 'cassandra') {
+            describe('DROP', () => {
+              describe('DATABASE', () => {
+                beforeEach(async () => {
+                  try {
+                    await dbConn.executeQuery('create database db_test_create_database');
+                  } catch (err) {
+                    // just ignore
+                  }
+                });
+
+                it('should execute a single query', async () => {
+                  const results = await dbConn.executeQuery('drop database db_test_create_database');
+
+                  // MSSQL does not return any information about DROP queries
+                  if (dbClient === 'sqlserver') {
+                    expect(results).to.have.length(0);
+                    return;
+                  }
+
+                  expect(results).to.have.length(1);
+                  const [result] = results;
+
+                  expect(result).to.have.property('command').to.eql('DROP_DATABASE');
+                  expect(result).to.have.property('rows').to.eql([]);
+                  expect(result).to.have.property('fields').to.eql([]);
+                  // seems each DB client returns a different value for DROP
+                  expect(result).to.have.property('affectedRows').to.oneOf([0, 1, undefined]);
+                  expect(result).to.have.property('rowCount').to.eql(undefined);
+                });
+              });
+            });
+          }
         });
       });
     });

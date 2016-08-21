@@ -36,10 +36,10 @@ export default function(server, database) {
         listTables: () => listTables(client),
         listViews: () => listViews(client),
         listRoutines: () => listRoutines(client),
-        listTableColumns: (table) => listTableColumns(client, table),
+        listTableColumns: (db, table) => listTableColumns(client, db, table),
         listTableTriggers: (table) => listTableTriggers(client, table),
         getTableReferences: (table) => getTableReferences(client, table),
-        getTableKeys: (table) => getTableKeys(client, table),
+        getTableKeys: (db, table) => getTableKeys(client, db, table),
         executeQuery: (query) => executeQuery(client, query),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
@@ -116,7 +116,7 @@ export function listRoutines(client) {
   });
 }
 
-export function listTableColumns(client, table) {
+export function listTableColumns(client, database, table) {
   return new Promise((resolve, reject) => {
     const sql = `
       SELECT column_name, data_type
@@ -176,7 +176,7 @@ export function getTableReferences(client, table) {
   });
 }
 
-export function getTableKeys(client, table) {
+export function getTableKeys(client, database, table) {
   return new Promise((resolve, reject) => {
     const sql = `
       SELECT

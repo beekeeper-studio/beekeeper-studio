@@ -117,7 +117,7 @@ function disconnect(server, database) {
 
 async function listTables(server, database) {
   checkIsConnected(server, database);
-  return database.connection.listTables();
+  return database.connection.listTables(database.database);
 }
 
 async function listViews(server, database) {
@@ -132,7 +132,7 @@ async function listRoutines(server, database) {
 
 async function listTableColumns(server, database, table) {
   checkIsConnected(server, database);
-  return database.connection.listTableColumns(table);
+  return database.connection.listTableColumns(database.database, table);
 }
 
 async function listTableTriggers(server, database, table) {
@@ -147,7 +147,7 @@ async function getTableReferences(server, database, table) {
 
 async function getTableKeys(server, database, table) {
   checkIsConnected(server, database);
-  return database.connection.getTableKeys(table);
+  return database.connection.getTableKeys(database.database, table);
 }
 
 async function executeQuery(server, database, query) {
@@ -211,12 +211,12 @@ async function getRoutineCreateScript(server, database, routine, type) {
 }
 
 function truncateAllTables(server, database) {
-  return database.connection.truncateAllTables();
+  return database.connection.truncateAllTables(database.database);
 }
 
 async function getTableColumnNames(server, database, table) {
   checkIsConnected(server, database);
-  const columns = await database.connection.listTableColumns(table);
+  const columns = await database.connection.listTableColumns(database.database, table);
   return columns.map(column => column.columnName);
 }
 

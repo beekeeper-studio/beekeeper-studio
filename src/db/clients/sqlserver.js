@@ -23,10 +23,10 @@ export default async function(server, database) {
       listTables: () => listTables(connection),
       listViews: () => listViews(connection),
       listRoutines: () => listRoutines(connection),
-      listTableColumns: (table) => listTableColumns(connection, table),
+      listTableColumns: (db, table) => listTableColumns(connection, db, table),
       listTableTriggers: (table) => listTableTriggers(connection, table),
       getTableReferences: (table) => getTableReferences(connection, table),
-      getTableKeys: (table) => getTableKeys(connection, table),
+      getTableKeys: (db, table) => getTableKeys(connection, db, table),
       executeQuery: (query) => executeQuery(connection, query),
       listDatabases: () => listDatabases(connection),
       getQuerySelectTop: (table, limit) => getQuerySelectTop(connection, table, limit),
@@ -105,7 +105,7 @@ export const listRoutines = async (connection) => {
   }));
 };
 
-export const listTableColumns = async (connection, table) => {
+export const listTableColumns = async (connection, database, table) => {
   const sql = `
     SELECT column_name, data_type
     FROM information_schema.columns
@@ -143,7 +143,7 @@ export const getTableReferences = async (connection, table) => {
   return result.rows.map(row => row.referenced_table_name);
 };
 
-export const getTableKeys = async (connection, table) => {
+export const getTableKeys = async (connection, database, table) => {
   const sql = `
     SELECT
       tc.constraint_name,

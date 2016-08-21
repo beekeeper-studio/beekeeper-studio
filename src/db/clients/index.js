@@ -1,6 +1,7 @@
 import mysql from './mysql';
 import postgresql from './postgresql';
 import sqlserver from './sqlserver';
+import cassandra from './cassandra';
 
 
 /**
@@ -23,6 +24,11 @@ export const CLIENTS = [
     name: 'Microsoft SQL Server',
     defaultPort: 1433,
   },
+  {
+    key: 'cassandra',
+    name: 'Cassandra',
+    defaultPort: 9042,
+  },
 ];
 
 
@@ -30,4 +36,5 @@ export default {
   mysql,
   postgresql,
   sqlserver,
+  cassandra,
 };
