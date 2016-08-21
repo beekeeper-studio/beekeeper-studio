@@ -29,6 +29,10 @@ export const CLIENTS = [
     name: 'Cassandra',
     defaultPort: 9042,
     disabledFeatures: [
+      'server:ssl',
+      'server:socketPath',
+      'server:user',
+      'server:password',
       'scriptCreateTable',
     ],
   },
