@@ -807,6 +807,24 @@ describe('db', () => {
               });
             });
           }
+
+          if (dbClient === 'postgresql') {
+            describe('EXPLAIN', () => {
+              it('should execute a single query', async () => {
+                const results = await dbConn.executeQuery('explain select * from users');
+
+                expect(results).to.have.length(1);
+                const [result] = results;
+
+                expect(result).to.have.property('command').to.eql('EXPLAIN');
+                expect(result).to.have.property('rows').to.have.length.above(0);
+                expect(result).to.have.deep.property('fields').to.have.length(1);
+                expect(result).to.have.deep.property('fields[0].name').to.eql('QUERY PLAN');
+                expect(result).to.have.property('affectedRows').to.eql(undefined);
+                expect(result).to.have.property('rowCount').to.eql(undefined);
+              });
+            });
+          }
         });
       });
     });
