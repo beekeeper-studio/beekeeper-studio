@@ -35,6 +35,7 @@ export default function(server, database) {
         listRoutines: () => listRoutines(client),
         listTableColumns: (db, table) => listTableColumns(client, db, table),
         listTableTriggers: (table) => listTableTriggers(client, table),
+        listSchemas: () => listSchemas(client),
         getTableReferences: (table) => getTableReferences(client, table),
         getTableKeys: (db, table) => getTableKeys(client, db, table),
         executeQuery: (query) => executeQuery(client, query),
@@ -144,6 +145,10 @@ export function listTableTriggers(client, table) {
       resolve(data.map(row => row.trigger_name));
     });
   });
+}
+
+export function listSchemas() {
+  return Promise.resolve([]);
 }
 
 export function getTableReferences(client, table) {

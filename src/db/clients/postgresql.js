@@ -38,6 +38,7 @@ export default function(server, database) {
         listRoutines: () => listRoutines(client),
         listTableColumns: (db, table) => listTableColumns(client, db, table),
         listTableTriggers: (table) => listTableTriggers(client, table),
+        listSchemas: () => listSchemas(client),
         getTableReferences: (table) => getTableReferences(client, table),
         getTableKeys: (db, table) => getTableKeys(client, db, table),
         executeQuery: (query) => executeQuery(client, query),
@@ -153,6 +154,22 @@ export function listTableTriggers(client, table) {
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
       resolve(data.rows.map(row => row.trigger_name));
+    });
+  });
+}
+
+export function listSchemas(client) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT schema_name
+      FROM information_schema.schemata
+      WHERE schema_name <> 'information_schema' -- exclude 'system' schemata
+      AND schema_name !~ E'^pg_'                -- exclude more 'system' (pg-specific)
+    `;
+
+    client.query(sql, [], (err, data) => {
+      if (err) return reject(err);
+      resolve(data.rows.map(row => row.schema_name));
     });
   });
 }

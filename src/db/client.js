@@ -22,6 +22,7 @@ export function createConnection(server, database) {
     listRoutines: listRoutines.bind(null, server, database),
     listTableColumns: listTableColumns.bind(null, server, database),
     listTableTriggers: listTableTriggers.bind(null, server, database),
+    listSchemas: listSchemas.bind(null, server, database),
     getTableReferences: getTableReferences.bind(null, server, database),
     getTableKeys: getTableKeys.bind(null, server, database),
     executeQuery: executeQuery.bind(null, server, database),
@@ -118,6 +119,11 @@ function disconnect(server, database) {
 async function listTables(server, database) {
   checkIsConnected(server, database);
   return database.connection.listTables(database.database);
+}
+
+function listSchemas(server, database) {
+  checkIsConnected(server, database);
+  return database.connection.listSchemas(database.database);
 }
 
 async function listViews(server, database) {

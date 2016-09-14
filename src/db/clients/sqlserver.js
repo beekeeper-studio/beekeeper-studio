@@ -25,6 +25,7 @@ export default async function(server, database) {
       listRoutines: () => listRoutines(connection),
       listTableColumns: (db, table) => listTableColumns(connection, db, table),
       listTableTriggers: (table) => listTableTriggers(connection, table),
+      listSchemas: () => listSchemas(connection),
       getTableReferences: (table) => getTableReferences(connection, table),
       getTableKeys: (db, table) => getTableKeys(connection, db, table),
       executeQuery: (query) => executeQuery(connection, query),
@@ -126,6 +127,16 @@ export const listTableTriggers = async (connection, table) => {
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map(row => row.trigger_name);
+};
+
+export const listSchemas = async (connection) => {
+  const sql = `
+    SELECT schema_name
+    FROM information_schema.schemata
+    ORDER BY schema_name
+  `;
+  const [result] = await executeQuery(connection, sql);
+  return result.rows.map(row => row.schema_name);
 };
 
 export const listDatabases = async (connection) => {

@@ -44,6 +44,9 @@ IF EXISTS (SELECT * FROM sys.objects WHERE [type] = 'TR' AND [name] = 'dummy_tri
     DROP TRIGGER dbo.dummy_trigger;
 GO
 
+CREATE SCHEMA dummy_schema;
+GO
+
 CREATE TRIGGER dbo.dummy_trigger
 ON users
 AFTER INSERT

@@ -31,3 +31,5 @@ CREATE TRIGGER dummy_trigger
     AFTER INSERT ON users
     FOR EACH ROW
     EXECUTE PROCEDURE test_trigger_func();
+
+CREATE SCHEMA dummy_schema;
