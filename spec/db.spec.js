@@ -175,6 +175,20 @@ describe('db', () => {
           });
         });
 
+        describe('.listSchemas', () => {
+          it('should list all schema', async() => {
+            const schemas = await dbConn.listSchemas();
+            if (dbClient === 'postgresql') {
+              expect(schemas).to.have.length(2);
+              expect(schemas).to.include.members(['public', 'dummy_schema']);
+            } else if (dbClient === 'sqlserver') {
+              expect(schemas).to.include('dummy_schema');
+            } else {
+              expect(schemas).to.have.length(0);
+            }
+          });
+        });
+
         describe('.getTableReferences', () => {
           it('should list all tables that selected table has references to', async() => {
             const references = await dbConn.getTableReferences('users');
@@ -742,7 +756,7 @@ describe('db', () => {
 
           if (dbClient !== 'cassandra') {
             describe('CREATE', () => {
-              describe('DATABSE', () => {
+              describe('DATABASE', () => {
                 beforeEach(async () => {
                   try {
                     await dbConn.executeQuery('drop database db_test_create_database');
