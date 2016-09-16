@@ -240,7 +240,7 @@ describe('db', () => {
                 '  CONSTRAINT `users_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE\n' +
               ') ENGINE=InnoDB');
             } else if (dbClient === 'postgresql') {
-              expect(createScript).to.eql('CREATE TABLE users (\n' +
+              expect(createScript).to.eql('CREATE TABLE public.users (\n' +
                 '  id integer NOT NULL,\n' +
                 '  username text NOT NULL,\n' +
                 '  email text NOT NULL,\n' +
@@ -346,7 +346,7 @@ describe('db', () => {
             if (dbClient === 'mysql') {
               expect(createScript).to.contain('VIEW `email_view` AS select `users`.`email` AS `email`,`users`.`password` AS `password` from `users`');
             } else if (dbClient === 'postgresql') {
-              expect(createScript).to.eql(`CREATE OR REPLACE VIEW email_view AS\n SELECT users.email,\n    users.password\n   FROM users;`);
+              expect(createScript).to.eql(`CREATE OR REPLACE VIEW "public".email_view AS\n SELECT users.email,\n    users.password\n   FROM users;`);
             } else if (dbClient === 'sqlserver') {
               expect(createScript).to.eql(`\nCREATE VIEW dbo.email_view AS\nSELECT dbo.users.email, dbo.users.password\nFROM dbo.users;\n`);
             } else if (dbClient === 'cassandra') {
