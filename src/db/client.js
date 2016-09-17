@@ -116,9 +116,9 @@ function disconnect(server, database) {
 }
 
 
-async function listTables(server, database) {
+async function listTables(server, database, schema) {
   checkIsConnected(server, database);
-  return database.connection.listTables(database.database);
+  return database.connection.listTables(database.database, schema);
 }
 
 function listSchemas(server, database) {
@@ -126,34 +126,34 @@ function listSchemas(server, database) {
   return database.connection.listSchemas(database.database);
 }
 
-async function listViews(server, database) {
+async function listViews(server, database, schema) {
   checkIsConnected(server, database);
-  return database.connection.listViews();
+  return database.connection.listViews(schema);
 }
 
-async function listRoutines(server, database) {
+async function listRoutines(server, database, schema) {
   checkIsConnected(server, database);
-  return database.connection.listRoutines();
+  return database.connection.listRoutines(schema);
 }
 
-async function listTableColumns(server, database, table) {
+async function listTableColumns(server, database, table, schema) {
   checkIsConnected(server, database);
-  return database.connection.listTableColumns(database.database, table);
+  return database.connection.listTableColumns(database.database, table, schema);
 }
 
-async function listTableTriggers(server, database, table) {
+async function listTableTriggers(server, database, table, schema) {
   checkIsConnected(server, database);
-  return database.connection.listTableTriggers(table);
+  return database.connection.listTableTriggers(table, schema);
 }
 
-async function getTableReferences(server, database, table) {
+async function getTableReferences(server, database, table, schema) {
   checkIsConnected(server, database);
-  return database.connection.getTableReferences(table);
+  return database.connection.getTableReferences(table, schema);
 }
 
-async function getTableKeys(server, database, table) {
+async function getTableKeys(server, database, table, schema) {
   checkIsConnected(server, database);
-  return database.connection.getTableKeys(database.database, table);
+  return database.connection.getTableKeys(database.database, table, schema);
 }
 
 async function executeQuery(server, database, query) {
@@ -168,7 +168,7 @@ async function listDatabases(server, database) {
 }
 
 
-async function getQuerySelectTop(server, database, table, limit) {
+async function getQuerySelectTop(server, database, table, schema, limit) {
   checkIsConnected(server, database);
   let _limit = limit;
   if (typeof _limit === 'undefined') {
@@ -178,51 +178,51 @@ async function getQuerySelectTop(server, database, table, limit) {
   return database.connection.getQuerySelectTop(table, _limit);
 }
 
-async function getTableCreateScript(server, database, table) {
+async function getTableCreateScript(server, database, table, schema) {
   checkIsConnected(server, database);
-  return database.connection.getTableCreateScript(table);
+  return database.connection.getTableCreateScript(table, schema);
 }
 
-async function getTableSelectScript(server, database, table) {
-  const columnNames = await getTableColumnNames(server, database, table);
+async function getTableSelectScript(server, database, table, schema) {
+  const columnNames = await getTableColumnNames(server, database, table, schema);
   return `SELECT ${columnNames.join(', ')} FROM ${database.connection.wrapIdentifier(table)};`;
 }
 
 
-async function getTableInsertScript(server, database, table) {
-  const columnNames = await getTableColumnNames(server, database, table);
+async function getTableInsertScript(server, database, table, schema) {
+  const columnNames = await getTableColumnNames(server, database, table, schema);
   return `INSERT INTO ${database.connection.wrapIdentifier(table)} (${columnNames.join(', ')})\n VALUES (${columnNames.fill('?').join(', ')});`;
 }
 
-async function getTableUpdateScript(server, database, table) {
-  const columnNames = await getTableColumnNames(server, database, table);
+async function getTableUpdateScript(server, database, table, schema) {
+  const columnNames = await getTableColumnNames(server, database, table, schema);
   const setColumnForm = columnNames.map(columnName => `${columnName}=?`).join(', ');
   const condition = '<condition>';
   return `UPDATE ${database.connection.wrapIdentifier(table)}\n   SET ${setColumnForm}\n WHERE ${condition};`;
 }
 
-async function getTableDeleteScript(server, database, table) {
+async function getTableDeleteScript(server, database, table /* , schema */) {
   const condition = '<condition>';
   return `DELETE FROM ${database.connection.wrapIdentifier(table)} WHERE ${condition};`;
 }
 
-async function getViewCreateScript(server, database, view) {
+async function getViewCreateScript(server, database, view /* , schema */) {
   checkIsConnected(server, database);
   return database.connection.getViewCreateScript(view);
 }
 
-async function getRoutineCreateScript(server, database, routine, type) {
+async function getRoutineCreateScript(server, database, routine, type, schema) {
   checkIsConnected(server, database);
-  return database.connection.getRoutineCreateScript(routine, type);
+  return database.connection.getRoutineCreateScript(routine, type, schema);
 }
 
-function truncateAllTables(server, database) {
-  return database.connection.truncateAllTables(database.database);
+function truncateAllTables(server, database, schema) {
+  return database.connection.truncateAllTables(database.database, schema);
 }
 
-async function getTableColumnNames(server, database, table) {
+async function getTableColumnNames(server, database, table, schema) {
   checkIsConnected(server, database);
-  const columns = await database.connection.listTableColumns(database.database, table);
+  const columns = await database.connection.listTableColumns(database.database, table, schema);
   return columns.map(column => column.columnName);
 }
 
