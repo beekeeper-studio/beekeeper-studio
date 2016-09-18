@@ -338,7 +338,7 @@ function parseRowQueryResult(data, fields, command) {
     command: command || (isSelect && 'SELECT'),
     rows: isSelect ? data : [],
     fields: fields || [],
-    rowCount: isSelect ? (data : []).length : undefined,
+    rowCount: isSelect ? (data || []).length : undefined,
     affectedRows: !isSelect ? data.affectedRows : undefined,
   };
 }
