@@ -42,6 +42,7 @@ export function createConnection(server, database) {
 
 
 async function connect(server, database) {
+  /* eslint no-param-reassign: 0 */
   if (database.connecting) {
     throw new Error('There is already a connection in progress for this server. Aborting this new request.');
   }
@@ -95,7 +96,7 @@ function handleSSHError(sshTunnel) {
     }
 
     sshTunnel.on('success', resolve);
-    sshTunnel.on('error', error => {
+    sshTunnel.on('error', (error) => {
       debug('ssh error %j', error);
       reject(error);
     });
@@ -117,7 +118,7 @@ function disconnect(server, database) {
 }
 
 
-async function listTables(server, database, schema) {
+function listTables(server, database, schema) {
   checkIsConnected(server, database);
   return database.connection.listTables(database.database, schema);
 }
@@ -127,43 +128,43 @@ function listSchemas(server, database) {
   return database.connection.listSchemas(database.database);
 }
 
-async function listViews(server, database, schema) {
+function listViews(server, database, schema) {
   checkIsConnected(server, database);
   return database.connection.listViews(schema);
 }
 
-async function listRoutines(server, database, schema) {
+function listRoutines(server, database, schema) {
   checkIsConnected(server, database);
   return database.connection.listRoutines(schema);
 }
 
-async function listTableColumns(server, database, table, schema) {
+function listTableColumns(server, database, table, schema) {
   checkIsConnected(server, database);
   return database.connection.listTableColumns(database.database, table, schema);
 }
 
-async function listTableTriggers(server, database, table, schema) {
+function listTableTriggers(server, database, table, schema) {
   checkIsConnected(server, database);
   return database.connection.listTableTriggers(table, schema);
 }
 
-async function getTableReferences(server, database, table, schema) {
+function getTableReferences(server, database, table, schema) {
   checkIsConnected(server, database);
   return database.connection.getTableReferences(table, schema);
 }
 
-async function getTableKeys(server, database, table, schema) {
+function getTableKeys(server, database, table, schema) {
   checkIsConnected(server, database);
   return database.connection.getTableKeys(database.database, table, schema);
 }
 
-async function executeQuery(server, database, query) {
+function executeQuery(server, database, query) {
   checkIsConnected(server, database);
   return database.connection.executeQuery(query);
 }
 
 
-async function listDatabases(server, database) {
+function listDatabases(server, database) {
   checkIsConnected(server, database);
   return database.connection.listDatabases();
 }
@@ -171,15 +172,15 @@ async function listDatabases(server, database) {
 
 async function getQuerySelectTop(server, database, table, schema, limit) {
   checkIsConnected(server, database);
-  let _limit = limit;
+  let limitValue = limit;
   if (typeof _limit === 'undefined') {
     await loadConfigLimit();
-    _limit = typeof limitSelect !== 'undefined' ? limitSelect : DEFAULT_LIMIT;
+    limitValue = typeof limitSelect !== 'undefined' ? limitSelect : DEFAULT_LIMIT;
   }
-  return database.connection.getQuerySelectTop(table, _limit);
+  return database.connection.getQuerySelectTop(table, limitValue);
 }
 
-async function getTableCreateScript(server, database, table, schema) {
+function getTableCreateScript(server, database, table, schema) {
   checkIsConnected(server, database);
   return database.connection.getTableCreateScript(table, schema);
 }
@@ -197,22 +198,22 @@ async function getTableInsertScript(server, database, table, schema) {
 
 async function getTableUpdateScript(server, database, table, schema) {
   const columnNames = await getTableColumnNames(server, database, table, schema);
-  const setColumnForm = columnNames.map(columnName => `${columnName}=?`).join(', ');
+  const setColumnForm = columnNames.map((columnName) => `${columnName}=?`).join(', ');
   const condition = '<condition>';
   return `UPDATE ${database.connection.wrapIdentifier(table)}\n   SET ${setColumnForm}\n WHERE ${condition};`;
 }
 
-async function getTableDeleteScript(server, database, table /* , schema */) {
+function getTableDeleteScript(server, database, table /* , schema */) {
   const condition = '<condition>';
   return `DELETE FROM ${database.connection.wrapIdentifier(table)} WHERE ${condition};`;
 }
 
-async function getViewCreateScript(server, database, view /* , schema */) {
+function getViewCreateScript(server, database, view /* , schema */) {
   checkIsConnected(server, database);
   return database.connection.getViewCreateScript(view);
 }
 
-async function getRoutineCreateScript(server, database, routine, type, schema) {
+function getRoutineCreateScript(server, database, routine, type, schema) {
   checkIsConnected(server, database);
   return database.connection.getRoutineCreateScript(routine, type, schema);
 }
@@ -224,7 +225,7 @@ function truncateAllTables(server, database, schema) {
 async function getTableColumnNames(server, database, table, schema) {
   checkIsConnected(server, database);
   const columns = await database.connection.listTableColumns(database.database, table, schema);
-  return columns.map(column => column.columnName);
+  return columns.map((column) => column.columnName);
 }
 
 async function loadConfigLimit() {

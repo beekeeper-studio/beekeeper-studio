@@ -14,7 +14,7 @@ export function homedir() {
 
 
 export function fileExists(filename) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     fs.stat(filename, (err, stats) => {
       if (err) return resolve(false);
       resolve(stats.isFile());
@@ -25,7 +25,7 @@ export function fileExists(filename) {
 
 export function writeFile(filename, data) {
   return new Promise((resolve, reject) => {
-    fs.writeFile(filename, data, err => {
+    fs.writeFile(filename, data, (err) => {
       if (err) return reject(err);
       resolve();
     });
@@ -50,7 +50,7 @@ export function readFile(filename) {
 
 
 export function readJSONFile(filename) {
-  return readFile(filename).then(data => JSON.parse(data));
+  return readFile(filename).then((data) => JSON.parse(data));
 }
 
 

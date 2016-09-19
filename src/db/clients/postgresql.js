@@ -11,20 +11,20 @@ const debug = createDebug('db:clients:postgresql');
  * It gnores of applying a wrong timezone to the date.
  * TODO: do not convert as well these same types with array (types 1115, 1182, 1185)
  */
-pg.types.setTypeParser(1082, 'text', val => val); // date
-pg.types.setTypeParser(1114, 'text', val => val); // timestamp without timezone
-pg.types.setTypeParser(1184, 'text', val => val); // timestamp
+pg.types.setTypeParser(1082, 'text', (val) => val); // date
+pg.types.setTypeParser(1114, 'text', (val) => val); // timestamp without timezone
+pg.types.setTypeParser(1184, 'text', (val) => val); // timestamp
 
 
-export default function(server, database) {
+export default function (server, database) {
   return new Promise(async (resolve, reject) => {
-    const dbConfig = _configDatabase(server, database);
+    const dbConfig = configDatabase(server, database);
 
     debug('creating database client %j', dbConfig);
     const client = new Client(dbConfig);
 
     debug('connecting');
-    client.connect(async err => {
+    client.connect(async (err) => {
       if (err) {
         client.end();
         return reject(err);
@@ -34,6 +34,7 @@ export default function(server, database) {
       const defaultSchema = await getSchema(client);
 
       resolve({
+        /* eslint max-len:0 */
         wrapIdentifier,
         disconnect: () => disconnect(client),
         listTables: (_, schema = defaultSchema) => listTables(client, schema),
@@ -76,7 +77,7 @@ export function listTables(client, schema) {
     ];
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => row.table_name));
+      resolve(data.rows.map((row) => row.table_name));
     });
   });
 }
@@ -94,7 +95,7 @@ export function listViews(client, schema) {
     ];
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => row.table_name));
+      resolve(data.rows.map((row) => row.table_name));
     });
   });
 }
@@ -112,7 +113,7 @@ export function listRoutines(client, schema) {
     ];
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => ({
+      resolve(data.rows.map((row) => ({
         routineName: row.routine_name,
         routineType: row.routine_type,
       })));
@@ -134,7 +135,7 @@ export function listTableColumns(client, database, table, schema) {
     ];
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => ({
+      resolve(data.rows.map((row) => ({
         columnName: row.column_name,
         dataType: row.data_type,
       })));
@@ -156,7 +157,7 @@ export function listTableTriggers(client, table, schema) {
     ];
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => row.trigger_name));
+      resolve(data.rows.map((row) => row.trigger_name));
     });
   });
 }
@@ -172,7 +173,7 @@ export function listSchemas(client) {
 
     client.query(sql, [], (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => row.schema_name));
+      resolve(data.rows.map((row) => row.schema_name));
     });
   });
 }
@@ -193,7 +194,7 @@ export function getTableReferences(client, table, schema) {
     ];
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => row.referenced_table_name));
+      resolve(data.rows.map((row) => row.referenced_table_name));
     });
   });
 }
@@ -223,7 +224,7 @@ export function getTableKeys(client, database, table, schema) {
     ];
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => ({
+      resolve(data.rows.map((row) => ({
         constraintName: row.constraint_name,
         columnName: row.column_name,
         referencedTable: row.referenced_table_name,
@@ -233,13 +234,13 @@ export function getTableKeys(client, database, table, schema) {
   });
 }
 
-export async function executeQuery(client, query) {
+export function executeQuery(client, query) {
   const commands = identifyCommands(query);
 
   // node-postgres has support for Promise query
   // but that always returns the "fields" property empty
   return new Promise((resolve, reject) => {
-    client.query({ text: query, multiResult: true}, (err, data) => {
+    client.query({ text: query, multiResult: true }, (err, data) => {
       if (err) return reject(err);
 
       resolve(data.map((result, idx) => parseRowQueryResult(result, commands[idx])));
@@ -256,10 +257,10 @@ export function listDatabases(client) {
       WHERE datistemplate = $1
       ORDER BY datname
     `;
-    const params = [ false ];
+    const params = [false];
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => row.datname));
+      resolve(data.rows.map((row) => row.datname));
     });
   });
 }
@@ -282,10 +283,10 @@ export function getTableCreateScript(client, table, schema) {
         , E',\n'
       ) || E'\n);\n' ||
       CASE WHEN tc.constraint_name IS NULL THEN ''
-    	     ELSE E'\nALTER TABLE ' || quote_ident(tabdef.table_name) ||
+           ELSE E'\nALTER TABLE ' || quote_ident(tabdef.table_name) ||
            ' ADD CONSTRAINT ' || quote_ident(tc.constraint_name)  ||
            ' PRIMARY KEY ' || '(' || substring(constr.column_name from 0 for char_length(constr.column_name)-1) || ')'
-    	END AS createtable
+      END AS createtable
     FROM
     ( SELECT
         c.relname AS table_name,
@@ -321,7 +322,7 @@ export function getTableCreateScript(client, table, schema) {
     ];
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => row.createtable));
+      resolve(data.rows.map((row) => row.createtable));
     });
   });
 }
@@ -329,11 +330,11 @@ export function getTableCreateScript(client, table, schema) {
 export function getViewCreateScript(client, view, schema) {
   return new Promise((resolve, reject) => {
     const createViewSql = `CREATE OR REPLACE VIEW ${wrapIdentifier(schema)}.${view} AS`;
-    const sql = `SELECT pg_get_viewdef($1::regclass, true)`;
-    const params = [ view ];
+    const sql = 'SELECT pg_get_viewdef($1::regclass, true)';
+    const params = [view];
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => `${createViewSql}\n${row.pg_get_viewdef}`));
+      resolve(data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`));
     });
   });
 }
@@ -353,7 +354,7 @@ export function getRoutineCreateScript(client, routine, _, schema) {
     ];
     client.query(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => row.pg_get_functiondef));
+      resolve(data.rows.map((row) => row.pg_get_functiondef));
     });
   });
 }
@@ -367,38 +368,36 @@ export function wrapIdentifier(value) {
 
 
 const getSchema = async (connection) => {
-  const [result] = await executeQuery(connection, `SELECT current_schema() AS schema`);
+  const [result] = await executeQuery(connection, 'SELECT current_schema() AS schema');
   return result.rows[0].schema;
 };
 
-export const truncateAllTables = async (connection, schema) => {
-  return new Promise((resolve, reject) => {
-    const sql = `
-      SELECT quote_ident(table_name) as table_name
-      FROM information_schema.tables
-      WHERE table_schema = $1
-      AND table_type NOT LIKE '%VIEW%'
-    `;
-    const params = [
-      schema,
-    ];
+export const truncateAllTables = async (connection, schema) => new Promise((resolve, reject) => {
+  const sql = `
+    SELECT quote_ident(table_name) as table_name
+    FROM information_schema.tables
+    WHERE table_schema = $1
+    AND table_type NOT LIKE '%VIEW%'
+  `;
+  const params = [
+    schema,
+  ];
 
-    connection.query(sql, params, (err, data) => {
-      if (err) return reject(err);
-      const tables = data.rows.map(row => row.table_name);
-      const promises = tables.map(t => {
-        const truncateSQL = `
-          TRUNCATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(t)}
-          RESTART IDENTITY CASCADE;
-        `;
-        return executeQuery(connection, truncateSQL);
-      });
-      Promise.all(promises).then((alldata) => resolve(alldata));
+  connection.query(sql, params, (err, data) => {
+    if (err) return reject(err);
+    const tables = data.rows.map((row) => row.table_name);
+    const promises = tables.map((t) => {
+      const truncateSQL = `
+        TRUNCATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(t)}
+        RESTART IDENTITY CASCADE;
+      `;
+      return executeQuery(connection, truncateSQL);
     });
+    Promise.all(promises).then((alldata) => resolve(alldata));
   });
-};
+});
 
-function _configDatabase(server, database) {
+function configDatabase(server, database) {
   const config = {
     host: server.config.host,
     port: server.config.port,
@@ -423,7 +422,7 @@ function _configDatabase(server, database) {
 function parseRowQueryResult(data, command) {
   const isSelect = data.command === 'SELECT';
   return {
-    command: command ? command : data.command,
+    command: command || data.command,
     rows: data.rows,
     fields: data.fields,
     rowCount: isSelect ? data.rowCount : undefined,

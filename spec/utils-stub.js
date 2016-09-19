@@ -12,7 +12,7 @@ export default {
   TMP_FIXTURE_PATH,
 
   getConfigPath: {
-    install: function({ copyFixtureToTemp }) {
+    install({ copyFixtureToTemp }) {
       beforeEach(async function() {
         if (copyFixtureToTemp) {
           const data = await utils.readJSONFile(FIXTURE_PATH);
@@ -22,9 +22,7 @@ export default {
       });
 
 
-      afterEach(function() {
-        utils.getConfigPath.restore();
-      });
+      afterEach(() => utils.getConfigPath.restore());
     },
   },
 };

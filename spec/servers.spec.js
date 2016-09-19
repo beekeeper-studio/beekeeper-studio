@@ -19,16 +19,18 @@ describe('servers', () => {
     it('should add new server', async () => {
       const configBefore = await loadConfig();
       const newServer = {
-        'name': 'My New Mysql Server',
-        'client': 'mysql',
-        'ssl': true,
-        'host': '10.10.10.15',
-        'port': 3306,
-        'database': 'authentication',
-        'user': 'root',
-        'password': 'password',
+        name: 'My New Mysql Server',
+        client: 'mysql',
+        ssl: true,
+        host: '10.10.10.15',
+        port: 3306,
+        database: 'authentication',
+        user: 'root',
+        password: 'password',
       };
       const createdServer = await servers.add(newServer);
+      expect(createdServer).to.have.property('id');
+      delete createdServer.id;
       expect(createdServer).to.eql(newServer);
 
       const configAfter = await loadConfig();
@@ -38,14 +40,14 @@ describe('servers', () => {
     it('should add new server with ssh', async () => {
       const configBefore = await loadConfig();
       const newServer = {
-        'name': 'My New Mysql Server',
-        'client': 'mysql',
-        'ssl': true,
-        'host': '10.10.10.15',
-        'port': 3306,
-        'database': 'authentication',
-        'user': 'root',
-        'password': 'password',
+        name: 'My New Mysql Server',
+        client: 'mysql',
+        ssl: true,
+        host: '10.10.10.15',
+        port: 3306,
+        database: 'authentication',
+        user: 'root',
+        password: 'password',
         ssh: {
           host: '10.10.10.10',
           port: 22,
@@ -55,6 +57,8 @@ describe('servers', () => {
         },
       };
       const createdServer = await servers.add(newServer);
+      expect(createdServer).to.have.property('id');
+      delete createdServer.id;
       expect(createdServer).to.eql(newServer);
 
       const configAfter = await loadConfig();
@@ -68,21 +72,21 @@ describe('servers', () => {
       const configBefore = await loadConfig();
       const serverToUpdate = {
         id,
-        'name': 'mysql-vm',
-        'client': 'mysql',
-        'ssl': false,
-        'host': '10.10.10.10',
-        'port': 3306,
-        'database': 'mydb',
-        'user': 'usr',
-        'password': 'pwd',
+        name: 'mysql-vm',
+        client: 'mysql',
+        ssl: false,
+        host: '10.10.10.10',
+        port: 3306,
+        database: 'mydb',
+        user: 'usr',
+        password: 'pwd',
       };
       const updatedServer = await servers.update(serverToUpdate);
       expect(updatedServer).to.eql(serverToUpdate);
 
       const configAfter = await loadConfig();
       expect(configAfter.servers.length).to.eql(configBefore.servers.length);
-      expect(configAfter.servers.find(srv => srv.id === id)).to.eql(serverToUpdate);
+      expect(configAfter.servers.find((srv) => srv.id === id)).to.eql(serverToUpdate);
     });
   });
 
@@ -91,16 +95,18 @@ describe('servers', () => {
       it('should add the new server', async () => {
         const configBefore = await loadConfig();
         const newServer = {
-          'name': 'My New Mysql Server',
-          'client': 'mysql',
-          'ssl': false,
-          'host': '10.10.10.15',
-          'port': 3306,
-          'database': 'authentication',
-          'user': 'root',
-          'password': 'password',
+          name: 'My New Mysql Server',
+          client: 'mysql',
+          ssl: false,
+          host: '10.10.10.15',
+          port: 3306,
+          database: 'authentication',
+          user: 'root',
+          password: 'password',
         };
         const createdServer = await servers.addOrUpdate(newServer);
+        expect(createdServer).to.have.property('id');
+        delete createdServer.id;
         expect(createdServer).to.eql(newServer);
 
         const configAfter = await loadConfig();
@@ -114,21 +120,21 @@ describe('servers', () => {
         const id = 'ed2d52a7-d8ff-4fdd-897a-7033dee598f4';
         const serverToUpdate = {
           id,
-          'name': 'mysql-vm',
-          'client': 'mysql',
-          'ssl': false,
-          'host': '10.10.10.10',
-          'port': 3306,
-          'database': 'mydb',
-          'user': 'usr',
-          'password': 'pwd',
+          name: 'mysql-vm',
+          client: 'mysql',
+          ssl: false,
+          host: '10.10.10.10',
+          port: 3306,
+          database: 'mydb',
+          user: 'usr',
+          password: 'pwd',
         };
         const updatedServer = await servers.addOrUpdate(serverToUpdate);
         expect(updatedServer).to.eql(serverToUpdate);
 
         const configAfter = await loadConfig();
         expect(configAfter.servers.length).to.eql(configBefore.servers.length);
-        expect(configAfter.servers.find(srv => srv.id === id)).to.eql(serverToUpdate);
+        expect(configAfter.servers.find((srv) => srv.id === id)).to.eql(serverToUpdate);
       });
     });
   });
@@ -140,7 +146,7 @@ describe('servers', () => {
 
       const configAfter = await loadConfig();
       expect(configAfter.servers.length).to.eql(configBefore.servers.length - 1);
-      expect(configAfter.servers.find(srv => srv.name === 'pg-vm')).to.eql(undefined);
+      expect(configAfter.servers.find((srv) => srv.name === 'pg-vm')).to.eql(undefined);
     });
   });
 

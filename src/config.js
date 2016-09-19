@@ -14,7 +14,8 @@ export async function prepare() {
 
   const result = await readJSONFile(filename);
 
-  result.servers = result.servers.map(srv => {
+  result.servers = result.servers.map((server) => {
+    const srv = { ...server };
     // ensure all server has an unique id
     if (!srv.id) { srv.id = uuid.v4(); }
 

@@ -24,7 +24,7 @@ function serverAddressValidator(ctx) {
 
 function clientValidator(ctx, options, value) {
   if (typeof value === 'undefined' || value === null) { return undefined; }
-  if (!~CLIENTS.some(dbClient => dbClient.key === ctx.obj.client)) {
+  if (!~CLIENTS.some((dbClient) => dbClient.key === ctx.obj.client)) {
     return {
       validator: 'clientValidator',
       msg: 'Invalid client type',
@@ -131,7 +131,7 @@ export async function validate(server) {
 export function validateUniqueId(servers, serverId) {
   if (!serverId) { return; }
 
-  const server = servers.find(srv => srv.id === serverId);
+  const server = servers.find((srv) => srv.id === serverId);
   if (!server) { return; }
   if (serverId && server.id === serverId) { return; }
 

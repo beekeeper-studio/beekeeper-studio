@@ -9,20 +9,20 @@ const mysqlErrors = {
 };
 
 
-export default function(server, database) {
+export default function (server, database) {
   return new Promise(async (resolve, reject) => {
-    const dbConfig = _configDatabase(server, database);
+    const dbConfig = configDatabase(server, database);
 
     debug('creating database client %j', dbConfig);
     const client = mysql.createConnection(dbConfig);
 
-    client.on('error', error => {
+    client.on('error', (error) => {
       // it will be handled later in the next query execution
       debug('Connection fatal error %j', error);
     });
 
     debug('connecting');
-    client.connect(err => {
+    client.connect((err) => {
       if (err) {
         client.end();
         return reject(err);
@@ -69,8 +69,8 @@ export function listTables(client) {
     `;
     const params = [];
     client.query(sql, params, (err, data) => {
-      if (err) return reject(_getRealError(client, err));
-      resolve(data.map(row => row.table_name));
+      if (err) return reject(getRealError(client, err));
+      resolve(data.map((row) => row.table_name));
     });
   });
 }
@@ -85,8 +85,8 @@ export function listViews(client) {
     `;
     const params = [];
     client.query(sql, params, (err, data) => {
-      if (err) return reject(_getRealError(client, err));
-      resolve(data.map(row => row.table_name));
+      if (err) return reject(getRealError(client, err));
+      resolve(data.map((row) => row.table_name));
     });
   });
 }
@@ -101,8 +101,8 @@ export function listRoutines(client) {
     `;
     const params = [];
     client.query(sql, params, (err, data) => {
-      if (err) return reject(_getRealError(client, err));
-      resolve(data.map(row => ({
+      if (err) return reject(getRealError(client, err));
+      resolve(data.map((row) => ({
         routineName: row.routine_name,
         routineType: row.routine_type,
       })));
@@ -122,8 +122,8 @@ export function listTableColumns(client, database, table) {
       table,
     ];
     client.query(sql, params, (err, data) => {
-      if (err) return reject(_getRealError(client, err));
-      resolve(data.map(row => ({
+      if (err) return reject(getRealError(client, err));
+      resolve(data.map((row) => ({
         columnName: row.column_name,
         dataType: row.data_type,
       })));
@@ -143,8 +143,8 @@ export function listTableTriggers(client, table) {
       table,
     ];
     client.query(sql, params, (err, data) => {
-      if (err) return reject(_getRealError(client, err));
-      resolve(data.map(row => row.trigger_name));
+      if (err) return reject(getRealError(client, err));
+      resolve(data.map((row) => row.trigger_name));
     });
   });
 }
@@ -166,8 +166,8 @@ export function getTableReferences(client, table) {
       table,
     ];
     client.query(sql, params, (err, data) => {
-      if (err) return reject(_getRealError(client, err));
-      resolve(data.map(row => row.referenced_table_name));
+      if (err) return reject(getRealError(client, err));
+      resolve(data.map((row) => row.referenced_table_name));
     });
   });
 }
@@ -188,8 +188,8 @@ export function getTableKeys(client, database, table) {
       table,
     ];
     client.query(sql, params, (err, data) => {
-      if (err) return reject(_getRealError(client, err));
-      resolve(data.map(row => ({
+      if (err) return reject(getRealError(client, err));
+      resolve(data.map((row) => ({
         constraintName: `${row.constraint_name} KEY`,
         columnName: row.column_name,
         referencedTable: row.referenced_table_name,
@@ -204,7 +204,7 @@ export function executeQuery(client, query) {
   return new Promise((resolve, reject) => {
     client.query(query, (err, data, fields) => {
       if (err && err.code === mysqlErrors.ER_EMPTY_QUERY) return resolve([]);
-      if (err) return reject(_getRealError(client, err));
+      if (err) return reject(getRealError(client, err));
 
       if (!isMultipleQuery(fields)) {
         return resolve([parseRowQueryResult(data, fields, commands[0])]);
@@ -222,8 +222,8 @@ export function listDatabases(client) {
   return new Promise((resolve, reject) => {
     const sql = 'show databases';
     client.query(sql, (err, data) => {
-      if (err) return reject(_getRealError(client, err));
-      resolve(data.map(row => row.Database));
+      if (err) return reject(getRealError(client, err));
+      resolve(data.map((row) => row.Database));
     });
   });
 }
@@ -238,8 +238,8 @@ export function getTableCreateScript(client, table) {
     const sql = `SHOW CREATE TABLE ${table}`;
     const params = [];
     client.query(sql, params, (err, data) => {
-      if (err) return reject(_getRealError(client, err));
-      resolve(data.map(row => row['Create Table']));
+      if (err) return reject(getRealError(client, err));
+      resolve(data.map((row) => row['Create Table']));
     });
   });
 }
@@ -249,8 +249,8 @@ export function getViewCreateScript(client, view) {
     const sql = `SHOW CREATE VIEW ${view}`;
     const params = [];
     client.query(sql, params, (err, data) => {
-      if (err) return reject(_getRealError(client, err));
-      resolve(data.map(row => row['Create View']));
+      if (err) return reject(getRealError(client, err));
+      resolve(data.map((row) => row['Create View']));
     });
   });
 }
@@ -259,8 +259,8 @@ export function getRoutineCreateScript(client, routine, type) {
   return new Promise((resolve, reject) => {
     const sql = `SHOW CREATE ${type.toUpperCase()} ${routine}`;
     client.query(sql, (err, data) => {
-      if (err) return reject(_getRealError(client, err));
-      resolve(data.map(row => row[`Create ${type}`]));
+      if (err) return reject(getRealError(client, err));
+      resolve(data.map((row) => row[`Create ${type}`]));
     });
   });
 }
@@ -270,7 +270,7 @@ export function wrapIdentifier(value) {
 }
 
 const getSchema = async (client) => {
-  const [result] = await executeQuery(client, `SELECT database() AS 'schema'`);
+  const [result] = await executeQuery(client, 'SELECT database() AS \'schema\'');
   return result.rows[0].schema;
 };
 
@@ -283,8 +283,8 @@ export const truncateAllTables = async (client) => {
     AND table_type NOT LIKE '%VIEW%'
   `;
   const [result] = await executeQuery(client, sql);
-  const tables = result.rows.map(row => row.table_name);
-  const promises = tables.map(t => executeQuery(client, `
+  const tables = result.rows.map((row) => row.table_name);
+  const promises = tables.map((t) => executeQuery(client, `
     SET FOREIGN_KEY_CHECKS = 0;
     TRUNCATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(t)};
     SET FOREIGN_KEY_CHECKS = 1;
@@ -294,7 +294,7 @@ export const truncateAllTables = async (client) => {
 };
 
 
-function _configDatabase(server, database) {
+function configDatabase(server, database) {
   const config = {
     host: server.config.host,
     port: server.config.port,
@@ -325,7 +325,8 @@ function _configDatabase(server, database) {
 }
 
 
-function _getRealError(client, err) {
+function getRealError(client, err) {
+  /* eslint no-underscore-dangle:0 */
   if (client && client._protocol && client._protocol._fatalError) {
     return client._protocol._fatalError;
   }

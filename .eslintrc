@@ -5,33 +5,28 @@
     "node": true,
     "mocha": true
   },
+  "plugins": [
+    "babel"
+  ],
   "rules": {
     "generator-star-spacing": 0,
+    "babel/generator-star-spacing": 1,
+
     "no-use-before-define": 0,
-    "no-param-reassign": 0,
+
     "arrow-parens": 0,
-    "array-bracket-spacing": 0,
+    "babel/arrow-parens": 2,
+
     "consistent-return": 0,
-    "max-len": 0,
-    "no-underscore-dangle": 0,
-    "quote-props": 0,
-    "array-callback-return": 0,
-    "no-bitwise": 0,
-    "quotes": 0,
-    "prefer-template": 0,
-    "no-tabs": 0,
-    "space-before-function-paren": 0,
-    "arrow-body-style": 0,
-    "arrow-spacing": 0,
-    "space-in-parens": 0,
-    "object-curly-spacing": 0,
-    "no-useless-escape": 0,
-    "import/no-extraneous-dependencies": 0,
-    "require-yield": 0,
-    "object-shorthand": 0,
-    "prefer-arrow-callback": 0,
-    "import/prefer-default-export": 0,
-    "no-unneeded-ternary": 0,
-    "import/newline-after-import": 0
+
+    "no-bitwise": ["error", { "allow": ["~"] }],
+    "import/no-extraneous-dependencies": [
+      "error", {
+      "devDependencies": true,
+      "optionalDependencies": true,
+      "peerDependencies": false
+    }],
+
+    "import/prefer-default-export": 0
   }
 }

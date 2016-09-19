@@ -9,7 +9,7 @@ export default function run(config) {
       contactPoints: [config.host],
     });
     const script = fs.readFileSync(path.join(__dirname, 'schema/schema.cql'), { encoding: 'utf8' });
-    const queries = script.split(';').filter(query => query.trim().length);
+    const queries = script.split(';').filter((query) => query.trim().length);
     for (const query of queries) {
       await executeQuery(client, query);
     }

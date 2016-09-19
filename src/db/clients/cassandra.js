@@ -9,15 +9,15 @@ const debug = createDebug('db:clients:cassandra');
  * To keep compatibility with the other clients we treat keyspaces as database.
  */
 
-export default function(server, database) {
+export default function (server, database) {
   return new Promise(async (resolve, reject) => {
-    const dbConfig = _configDatabase(server, database);
+    const dbConfig = configDatabase(server, database);
 
     debug('creating database client %j', dbConfig);
     const client = new Client(dbConfig);
 
     debug('connecting');
-    client.connect(err => {
+    client.connect((err) => {
       if (err) {
         client.shutdown();
         return reject(err);
@@ -63,7 +63,7 @@ export function listTables(client, database) {
     const params = [database];
     client.execute(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => row.table_name));
+      resolve(data.rows.map((row) => row.table_name));
     });
   });
 }
@@ -94,7 +94,7 @@ export function listTableColumns(client, database, table) {
         data.rows
         // force pks be placed at the results beginning
         .sort((a, b) => b.position - a.position)
-        .map(row => ({
+        .map((row) => ({
           columnName: row.column_name,
           dataType: row.type,
         }))
@@ -131,7 +131,7 @@ export function getTableKeys(client, database, table) {
     ];
     client.execute(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => ({
+      resolve(data.rows.map((row) => ({
         constraintName: null,
         columnName: row.column_name,
         referencedTable: null,
@@ -141,7 +141,7 @@ export function getTableKeys(client, database, table) {
   });
 }
 
-export async function executeQuery(client, query) {
+export function executeQuery(client, query) {
   const commands = identifyCommands(query);
 
   return new Promise((resolve, reject) => {
@@ -160,7 +160,7 @@ export function listDatabases(client) {
     const params = [];
     client.execute(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map(row => row.keyspace_name));
+      resolve(data.rows.map((row) => row.keyspace_name));
     });
   });
 }
@@ -197,8 +197,8 @@ export const truncateAllTables = async (connection, database) => {
     WHERE keyspace_name = '${database}'
   `;
   const [result] = await executeQuery(connection, sql);
-  const tables = result.rows.map(row => row.table_name);
-  const promises = tables.map(t => {
+  const tables = result.rows.map((row) => row.table_name);
+  const promises = tables.map((t) => {
     const truncateSQL = `
       TRUNCATE TABLE ${wrapIdentifier(database)}.${wrapIdentifier(t)};
     `;
@@ -208,7 +208,7 @@ export const truncateAllTables = async (connection, database) => {
   await Promise.all(promises);
 };
 
-function _configDatabase(server, database) {
+function configDatabase(server, database) {
   const config = {
     contactPoints: [server.config.host],
     protocolOptions: {

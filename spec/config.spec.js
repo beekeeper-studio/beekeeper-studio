@@ -9,7 +9,7 @@ describe('config', () => {
 
   describe('.prepare', () => {
     it('should include id for those servers without it', async () => {
-      const findItem = (data) => data.servers.find(srv => srv.name === 'without-id');
+      const findItem = (data) => data.servers.find((srv) => srv.name === 'without-id');
 
       const fixtureBefore = await loadConfig();
       await config.prepare();

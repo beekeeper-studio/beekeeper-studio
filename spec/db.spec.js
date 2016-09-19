@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { db } from '../src';
 import config from './databases/config';
 import setupCassandra from './databases/cassandra/setup';
+
 chai.use(chaiAsPromised);
 
 /**
@@ -21,12 +22,12 @@ const SUPPORTED_DB_CLIENTS = [
 /**
  * List of selected databases to be tested in the current task
  */
-const dbsToTest = (process.env.DB_CLIENTS || '').split(',').filter(client => !!client);
+const dbsToTest = (process.env.DB_CLIENTS || '').split(',').filter((client) => !!client);
 
 
 describe('db', () => {
   const dbClients = dbsToTest.length ? dbsToTest : SUPPORTED_DB_CLIENTS;
-  if (dbClients.some(dbClient => !~SUPPORTED_DB_CLIENTS.indexOf(dbClient))) {
+  if (dbClients.some((dbClient) => !~SUPPORTED_DB_CLIENTS.indexOf(dbClient))) {
     throw new Error('Invalid selected db client for tests');
   }
 
@@ -34,7 +35,7 @@ describe('db', () => {
     setupCassandra(config.cassandra);
   }
 
-  dbClients.map(dbClient => {
+  dbClients.forEach((dbClient) => {
     describe(dbClient, () => {
       describe('.connect', () => {
         it(`should connect into a ${dbClient} database`, () => {
@@ -53,7 +54,7 @@ describe('db', () => {
         it('should connect into server without database specified', () => {
           const serverInfo = {
             ...config[dbClient],
-            database: db.CLIENTS.find(c => c.key === dbClient).defaultDatabase,
+            database: db.CLIENTS.find((c) => c.key === dbClient).defaultDatabase,
             name: dbClient,
             client: dbClient,
           };
@@ -105,7 +106,7 @@ describe('db', () => {
 
         if (dbClient !== 'cassandra') {
           describe('.listRoutines', () => {
-            it('should list all routines with their type', async() =>{
+            it('should list all routines with their type', async() => {
               const routines = await dbConn.listRoutines();
               const routine = dbClient === 'postgresql' ? routines[1] : routines[0];
 
@@ -128,7 +129,7 @@ describe('db', () => {
             const columns = await dbConn.listTableColumns('users');
             expect(columns).to.have.length(6);
 
-            const column = (name) => columns.find(col => col.columnName === name);
+            const column = (name) => columns.find((col) => col.columnName === name);
 
             /* eslint no-unused-expressions:0 */
             expect(column('id')).to.exist;
@@ -210,8 +211,8 @@ describe('db', () => {
               expect(tableKeys).to.have.length(2);
             }
 
-            tableKeys.map((key) => {
-              if ( key.keyType === 'PRIMARY KEY') {
+            tableKeys.forEach((key) => {
+              if (key.keyType === 'PRIMARY KEY') {
                 expect(key).to.have.property('columnName').to.eql('id');
                 expect(key).to.have.property('referencedTable').to.be.a('null');
               } else {
@@ -433,7 +434,7 @@ describe('db', () => {
             });
 
             it('should execute a single query with empty result', async () => {
-              const results = await dbConn.executeQuery(`select * from users where id = 0`);
+              const results = await dbConn.executeQuery('select * from users where id = 0');
 
               expect(results).to.have.length(1);
               const [result] = results;
@@ -444,7 +445,7 @@ describe('db', () => {
               if (dbClient === 'sqlserver') {
                 expect(result).to.have.property('fields').to.eql([]);
               } else {
-                const field = (name) => result.fields.find(item => item.name === name);
+                const field = (name) => result.fields.find((item) => item.name === name);
 
                 expect(field('id')).to.exist;
                 expect(field('username')).to.exist;
@@ -458,11 +459,11 @@ describe('db', () => {
             });
 
             it('should execute a single query', async () => {
-              const results = await dbConn.executeQuery(`select * from users`);
+              const results = await dbConn.executeQuery('select * from users');
 
               expect(results).to.have.length(1);
               const [result] = results;
-              const field = (name) => result.fields.find(item => item.name === name);
+              const field = (name) => result.fields.find((item) => item.name === name);
 
               expect(field('id')).to.exist;
               expect(field('username')).to.exist;
@@ -483,7 +484,7 @@ describe('db', () => {
 
             if (dbClient === 'mysql' || dbClient === 'postgresql') {
               it('should not cast DATE types to native JS Date objects', async () => {
-                const results = await dbConn.executeQuery(`select createdat from users`);
+                const results = await dbConn.executeQuery('select createdat from users');
 
                 expect(results).to.have.length(1);
                 const [result] = results;

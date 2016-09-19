@@ -7,7 +7,7 @@ export function createServer(serverConfig) {
     throw new Error('Missing server configuration');
   }
 
-  if (!CLIENTS.some(cli => cli.key === serverConfig.client)) {
+  if (!CLIENTS.some((cli) => cli.key === serverConfig.client)) {
     throw new Error('Invalid SQL client');
   }
 
@@ -33,7 +33,7 @@ export function createServer(serverConfig) {
 
     end() {
       // disconnect from all DBs
-      Object.keys(server.db).forEach(key => server.db[key].disconnect());
+      Object.keys(server.db).forEach((key) => server.db[key].disconnect());
 
       // close SSH tunnel
       if (server.sshTunnel) {

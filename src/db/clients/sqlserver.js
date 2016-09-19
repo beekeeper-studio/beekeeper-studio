@@ -1,4 +1,4 @@
-import {Connection} from 'mssql';
+import { Connection } from 'mssql';
 import { identify } from 'sql-query-identifier';
 
 import createDebug from '../../debug';
@@ -9,7 +9,7 @@ const debug = createDebug('db:clients:sqlserver');
 export default async function(server, database) {
   let connection;
   try {
-    const dbConfig = _configDatabase(server, database);
+    const dbConfig = configDatabase(server, database);
 
     debug('creating database connection %j', dbConfig);
     connection = new Connection(dbConfig);
@@ -47,7 +47,7 @@ export default async function(server, database) {
 
 
 export const disconnect = (connection) => connection.close();
-export const wrapIdentifier = (value) => (value !== '*' ? `[${value.replace(/\[/g, '\[')}]` : '*');
+export const wrapIdentifier = (value) => (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*');
 export const getQuerySelectTop = (client, table, limit) => `SELECT TOP ${limit} * FROM ${wrapIdentifier(table)}`;
 
 
@@ -68,7 +68,7 @@ export const executeQuery = async (connection, query) => {
 
 
 const getSchema = async (connection) => {
-  const [result] = await executeQuery(connection, `SELECT schema_name() AS 'schema'`);
+  const [result] = await executeQuery(connection, 'SELECT schema_name() AS \'schema\'');
   return result.rows[0].schema;
 };
 
@@ -81,7 +81,7 @@ export const listTables = async (connection) => {
     ORDER BY table_name
   `;
   const [result] = await executeQuery(connection, sql);
-  return result.rows.map(row => row.table_name);
+  return result.rows.map((row) => row.table_name);
 };
 
 export const listViews = async (connection) => {
@@ -91,7 +91,7 @@ export const listViews = async (connection) => {
     ORDER BY table_name
   `;
   const [result] = await executeQuery(connection, sql);
-  return result.rows.map(row => row.table_name);
+  return result.rows.map((row) => row.table_name);
 };
 
 export const listRoutines = async (connection) => {
@@ -101,7 +101,7 @@ export const listRoutines = async (connection) => {
     ORDER BY routine_name
   `;
   const [result] = await executeQuery(connection, sql);
-  return result.rows.map(row => ({
+  return result.rows.map((row) => ({
     routineName: row.routine_name,
     routineType: row.routine_type,
   }));
@@ -114,7 +114,7 @@ export const listTableColumns = async (connection, database, table) => {
     WHERE table_name = '${table}'
   `;
   const [result] = await executeQuery(connection, sql);
-  return result.rows.map(row => ({
+  return result.rows.map((row) => ({
     columnName: row.column_name,
     dataType: row.data_type,
   }));
@@ -127,7 +127,7 @@ export const listTableTriggers = async (connection, table) => {
     EXEC sp_helptrigger ${wrapIdentifier(table)}
   `;
   const [result] = await executeQuery(connection, sql);
-  return result.rows.map(row => row.trigger_name);
+  return result.rows.map((row) => row.trigger_name);
 };
 
 export const listSchemas = async (connection) => {
@@ -137,12 +137,12 @@ export const listSchemas = async (connection) => {
     ORDER BY schema_name
   `;
   const [result] = await executeQuery(connection, sql);
-  return result.rows.map(row => row.schema_name);
+  return result.rows.map((row) => row.schema_name);
 };
 
 export const listDatabases = async (connection) => {
   const [result] = await executeQuery(connection, 'SELECT name FROM sys.databases');
-  return result.rows.map(row => row.name);
+  return result.rows.map((row) => row.name);
 };
 
 export const getTableReferences = async (connection, table) => {
@@ -152,28 +152,28 @@ export const getTableReferences = async (connection, table) => {
     WHERE parent_object_id = OBJECT_ID('${table}')
   `;
   const [result] = await executeQuery(connection, sql);
-  return result.rows.map(row => row.referenced_table_name);
+  return result.rows.map((row) => row.referenced_table_name);
 };
 
 export const getTableKeys = async (connection, database, table) => {
   const sql = `
     SELECT
       tc.constraint_name,
-    	kcu.column_name,
-    	CASE WHEN tc.constraint_type LIKE '%FOREIGN%' THEN OBJECT_NAME(sfk.referenced_object_id)
-    	ELSE NULL
-    	END AS referenced_table_name,
-    	tc.constraint_type
-  	FROM information_schema.table_constraints AS tc
-  	JOIN information_schema.key_column_usage AS kcu
-    	ON tc.constraint_name = kcu.constraint_name
-  	JOIN sys.foreign_keys as sfk
-    	ON sfk.parent_object_id = OBJECT_ID(tc.table_name)
-  	WHERE tc.table_name = '${table}'
-  	AND tc.constraint_type IN ('PRIMARY KEY', 'FOREIGN KEY')
+      kcu.column_name,
+      CASE WHEN tc.constraint_type LIKE '%FOREIGN%' THEN OBJECT_NAME(sfk.referenced_object_id)
+      ELSE NULL
+      END AS referenced_table_name,
+      tc.constraint_type
+    FROM information_schema.table_constraints AS tc
+    JOIN information_schema.key_column_usage AS kcu
+      ON tc.constraint_name = kcu.constraint_name
+    JOIN sys.foreign_keys as sfk
+      ON sfk.parent_object_id = OBJECT_ID(tc.table_name)
+    WHERE tc.table_name = '${table}'
+    AND tc.constraint_type IN ('PRIMARY KEY', 'FOREIGN KEY')
   `;
   const [result] = await executeQuery(connection, sql);
-  return result.rows.map(row => ({
+  return result.rows.map((row) => ({
     constraintName: row.constraint_name,
     columnName: row.column_name,
     referencedTable: row.referenced_table_name,
@@ -185,13 +185,13 @@ export const getTableCreateScript = async (connection, table) => {
   // Reference http://stackoverflow.com/a/317864
   const sql = `
     SELECT  ('CREATE TABLE ' + so.name + ' (' +
-    	CHAR(13)+CHAR(10) + REPLACE(o.list, '&#x0D;', CHAR(13)) +
-    	')' + CHAR(13)+CHAR(10) +
+      CHAR(13)+CHAR(10) + REPLACE(o.list, '&#x0D;', CHAR(13)) +
+      ')' + CHAR(13)+CHAR(10) +
       CASE WHEN tc.Constraint_Name IS NULL THEN ''
-    	     ELSE + CHAR(13)+CHAR(10) + 'ALTER TABLE ' + so.Name +
+           ELSE + CHAR(13)+CHAR(10) + 'ALTER TABLE ' + so.Name +
            ' ADD CONSTRAINT ' + tc.Constraint_Name  +
            ' PRIMARY KEY ' + '(' + LEFT(j.List, Len(j.List)-1) + ')'
-    	END) AS createtable
+      END) AS createtable
     FROM sysobjects so
     CROSS APPLY
       (SELECT
@@ -203,27 +203,27 @@ export const getTableCreateScript = async (connection, table) => {
             WHEN 'ntext' THEN ''
             WHEN 'xml' THEN ''
             WHEN 'decimal' THEN '(' + cast(numeric_precision AS varchar) + ', '
-									+ cast(numeric_scale AS varchar) + ')'
+                  + cast(numeric_scale AS varchar) + ')'
             ELSE coalesce('('+ CASE WHEN character_maximum_length = -1
-									THEN 'MAX'
-									ELSE cast(character_maximum_length AS varchar)
-								END + ')','')
+                  THEN 'MAX'
+                  ELSE cast(character_maximum_length AS varchar)
+                END + ')','')
           END + ' ' +
           CASE WHEN EXISTS (
-      			SELECT id FROM syscolumns
-      			WHERE object_name(id)=so.name
-      			AND name=column_name
-      			AND columnproperty(id,name,'IsIdentity') = 1
-    			) THEN
-      			'IDENTITY(' +
-      			cast(ident_seed(so.name) AS varchar) + ',' +
-      			cast(ident_incr(so.name) AS varchar) + ')'
+            SELECT id FROM syscolumns
+            WHERE object_name(id)=so.name
+            AND name=column_name
+            AND columnproperty(id,name,'IsIdentity') = 1
+          ) THEN
+            'IDENTITY(' +
+            cast(ident_seed(so.name) AS varchar) + ',' +
+            cast(ident_incr(so.name) AS varchar) + ')'
           ELSE ''
           END + ' ' +
            (CASE WHEN IS_NULLABLE = 'No'
-  			         THEN 'NOT '
+                 THEN 'NOT '
                  ELSE ''
-  		   END ) + 'NULL' +
+          END ) + 'NULL' +
           CASE WHEN information_schema.columns.COLUMN_DEFAULT IS NOT NULL
                THEN 'DEFAULT '+ information_schema.columns.COLUMN_DEFAULT
                ELSE ''
@@ -231,7 +231,7 @@ export const getTableCreateScript = async (connection, table) => {
        FROM information_schema.columns WHERE table_name = so.name
        ORDER BY ordinal_position
        FOR XML PATH('')
-  	 ) o (list)
+    ) o (list)
     LEFT JOIN information_schema.table_constraints tc
     ON  tc.Table_name       = so.Name
     AND tc.Constraint_Type  = 'PRIMARY KEY'
@@ -241,19 +241,19 @@ export const getTableCreateScript = async (connection, table) => {
          WHERE  kcu.Constraint_Name = tc.Constraint_Name
          ORDER BY ORDINAL_POSITION
          FOR XML PATH('')
-    	 ) j (list)
+        ) j (list)
     WHERE   xtype = 'U'
     AND name    NOT IN ('dtproperties')
     AND so.name = '${table}'
   `;
   const [result] = await executeQuery(connection, sql);
-  return result.rows.map(row => row.createtable);
+  return result.rows.map((row) => row.createtable);
 };
 
 export const getViewCreateScript = async (connection, view) => {
   const sql = `SELECT OBJECT_DEFINITION (OBJECT_ID('${view}')) AS ViewDefinition;`;
   const [result] = await executeQuery(connection, sql);
-  return result.rows.map(row => row.ViewDefinition);
+  return result.rows.map((row) => row.ViewDefinition);
 };
 
 export const getRoutineCreateScript = async (connection, routine) => {
@@ -263,7 +263,7 @@ export const getRoutineCreateScript = async (connection, routine) => {
     WHERE routine_name = '${routine}'
   `;
   const [result] = await executeQuery(connection, sql);
-  return result.rows.map(row => row.routine_definition);
+  return result.rows.map((row) => row.routine_definition);
 };
 
 export const truncateAllTables = async (connection) => {
@@ -275,8 +275,8 @@ export const truncateAllTables = async (connection) => {
     AND table_type NOT LIKE '%VIEW%'
   `;
   const [result] = await executeQuery(connection, sql);
-  const tables = result.rows.map(row => row.table_name);
-  const promises = tables.map(t => executeQuery(connection, `
+  const tables = result.rows.map((row) => row.table_name);
+  const promises = tables.map((t) => executeQuery(connection, `
     DELETE FROM ${wrapIdentifier(schema)}.${wrapIdentifier(t)}
     DBCC CHECKIDENT ('${schema}.${t}', RESEED, 0)
   `));
@@ -285,7 +285,7 @@ export const truncateAllTables = async (connection) => {
 };
 
 
-function _configDatabase(server, database) {
+function configDatabase(server, database) {
   const config = {
     user: server.config.user,
     password: server.config.password,
@@ -313,7 +313,7 @@ function parseRowQueryResult(data, request, command) {
   return {
     command: command || (isSelect && 'SELECT'),
     rows: data,
-    fields: Object.keys(data[0] || {}).map(name => ({ name })),
+    fields: Object.keys(data[0] || {}).map((name) => ({ name })),
     rowCount: data.length,
     affectedRows: request.rowsAffected,
   };

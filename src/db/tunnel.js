@@ -7,22 +7,22 @@ import createDebug from '../debug';
 const debug = createDebug('db:tunnel');
 
 
-export default function(serverInfo) {
+export default function (serverInfo) {
   return new Promise(async (resolve, reject) => {
     debug('configuring tunnel');
-    const config = await _configTunnel(serverInfo);
+    const config = await configTunnel(serverInfo);
 
     const connections = [];
 
     debug('creating ssh tunnel server');
-    const server = net.createServer(async conn => {
-      conn.on('error', err => server.emit('error', err));
+    const server = net.createServer(async (conn) => {
+      conn.on('error', (err) => server.emit('error', err));
 
       debug('creating ssh tunnel client');
       const client = new Client();
       connections.push(conn);
 
-      client.on('error', err => server.emit('error', err));
+      client.on('error', (err) => server.emit('error', err));
 
       client.on('ready', () => {
         debug('connected ssh tunnel client');
@@ -63,11 +63,11 @@ export default function(serverInfo) {
 
     server.once('close', () => {
       debug('close ssh tunnel server');
-      connections.forEach(conn => conn.end());
+      connections.forEach((conn) => conn.end());
     });
 
     debug('connecting ssh tunnel server');
-    server.listen(config.localPort, config.localHost, err => {
+    server.listen(config.localPort, config.localHost, (err) => {
       if (err) return reject(err);
 
       debug('connected ssh tunnel server');
@@ -77,7 +77,7 @@ export default function(serverInfo) {
 }
 
 
-async function _configTunnel(serverInfo) {
+async function configTunnel(serverInfo) {
   const config = {
     username: serverInfo.ssh.user,
     port: serverInfo.ssh.port,

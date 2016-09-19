@@ -25,7 +25,9 @@
     "type": "git",
     "url": "https://github.com/sqlectron/sqlectron-core"
   },
-  "engines" : { "node" : ">=6" },
+  "engines": {
+    "node": ">=6"
+  },
   "dependencies": {
     "cassandra-driver": "^3.1.1",
     "debug": "^2.2.0",
@@ -50,6 +52,7 @@
     "chai-as-promised": "^5.3.0",
     "eslint": "^3.5.0",
     "eslint-config-airbnb-base": "^7.1.0",
+    "eslint-plugin-babel": "^3.3.0",
     "eslint-plugin-import": "^1.15.0",
     "mocha": "^3.0.2",
     "sinon": "^1.17.2",
