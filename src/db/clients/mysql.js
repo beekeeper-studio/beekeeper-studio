@@ -313,7 +313,7 @@ function _configDatabase(server, database) {
   }
 
   if (server.config.ssl) {
-    server.config.ssl = {
+    config.ssl = {
       // It is not the best recommend way to use SSL with node-mysql
       // https://github.com/felixge/node-mysql#ssl-options
       // But this way we have compatibility with all clients.
