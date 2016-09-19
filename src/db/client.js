@@ -1,9 +1,10 @@
 import connectTunnel from './tunnel';
 import clients from './clients';
 import * as config from '../config';
+import createDebug from '../debug';
 
 
-const debug = require('../debug')('db');
+const debug = createDebug('db');
 
 
 const DEFAULT_LIMIT = 1000;

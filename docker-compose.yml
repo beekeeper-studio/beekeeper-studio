@@ -28,7 +28,7 @@ cassandra:
     - 9042 # native
 
 test:
-  image: node:0.12.7-onbuild
+  image: node:6.5.0-onbuild
   command: npm test
   environment:
     DB_CLIENTS: mysql,postgresql,cassandra

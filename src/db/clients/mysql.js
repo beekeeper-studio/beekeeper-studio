@@ -1,7 +1,9 @@
 import mysql from 'mysql';
 import { identify } from 'sql-query-identifier';
 
-const debug = require('../../debug')('db:clients:mysql');
+import createDebug from '../../debug';
+
+const debug = createDebug('db:clients:mysql');
 const mysqlErrors = {
   ER_EMPTY_QUERY: 'ER_EMPTY_QUERY',
 };

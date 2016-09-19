@@ -1,8 +1,9 @@
 import {Connection} from 'mssql';
 import { identify } from 'sql-query-identifier';
 
+import createDebug from '../../debug';
 
-const debug = require('../../debug')('db:clients:sqlserver');
+const debug = createDebug('db:clients:sqlserver');
 
 
 export default async function(server, database) {

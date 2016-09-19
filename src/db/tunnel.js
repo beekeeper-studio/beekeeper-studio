@@ -1,9 +1,10 @@
 import net from 'net';
 import { Client } from 'ssh2';
 import { getPort, readFile } from '../utils';
+import createDebug from '../debug';
 
 
-const debug = require('../debug')('db:tunnel');
+const debug = createDebug('db:tunnel');
 
 
 export default function(serverInfo) {

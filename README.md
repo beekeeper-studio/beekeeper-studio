@@ -4,6 +4,7 @@
 
 The common code used by all sqlectron clients.
 
+> Requires node 6 or higher.
 
 #### Current supported databases
 * [PostgreSQL](http://www.postgresql.org/)

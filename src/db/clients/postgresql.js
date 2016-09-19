@@ -1,8 +1,9 @@
 import pg, { Client } from 'pg';
 import { identify } from 'sql-query-identifier';
 
+import createDebug from '../../debug';
 
-const debug = require('../../debug')('db:clients:postgresql');
+const debug = createDebug('db:clients:postgresql');
 
 
 /**

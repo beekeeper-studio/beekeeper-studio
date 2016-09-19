@@ -1,7 +1,9 @@
 import { Client } from 'cassandra-driver';
 import { identify } from 'sql-query-identifier';
 
-const debug = require('../../debug')('db:clients:cassandra');
+import createDebug from '../../debug';
+
+const debug = createDebug('db:clients:cassandra');
 
 /**
  * To keep compatibility with the other clients we treat keyspaces as database.

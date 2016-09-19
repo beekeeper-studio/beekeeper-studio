@@ -1,3 +1,9 @@
 {
-  "stage": 0
+  "plugins": [
+    "transform-es2015-destructuring",
+    "transform-es2015-modules-commonjs",
+    "transform-async-to-generator",
+    "transform-object-rest-spread",
+    "syntax-object-rest-spread"
+  ]
 }
