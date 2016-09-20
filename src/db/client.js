@@ -188,28 +188,40 @@ function getTableCreateScript(server, database, table, schema) {
 async function getTableSelectScript(server, database, table, schema) {
   const columnNames = await getTableColumnNames(server, database, table, schema);
   const schemaSelection = schema ? `${database.connection.wrapIdentifier(schema)}.` : '';
-  return `SELECT ${columnNames.join(', ')} FROM ${schemaSelection}${database.connection.wrapIdentifier(table)};`;
+  return [
+    `SELECT ${columnNames.join(', ')}`,
+    `FROM ${schemaSelection}${database.connection.wrapIdentifier(table)};`,
+  ].join(' ');
 }
 
 
 async function getTableInsertScript(server, database, table, schema) {
   const columnNames = await getTableColumnNames(server, database, table, schema);
   const schemaSelection = schema ? `${database.connection.wrapIdentifier(schema)}.` : '';
-  return `INSERT INTO ${schemaSelection}${database.connection.wrapIdentifier(table)} (${columnNames.join(', ')})\n VALUES (${columnNames.fill('?').join(', ')});`;
+  return [
+    `INSERT INTO ${schemaSelection}${database.connection.wrapIdentifier(table)}`,
+    `(${columnNames.join(', ')})\n`,
+    `VALUES (${columnNames.fill('?').join(', ')});`,
+  ].join(' ');
 }
 
 async function getTableUpdateScript(server, database, table, schema) {
   const columnNames = await getTableColumnNames(server, database, table, schema);
   const schemaSelection = schema ? `${database.connection.wrapIdentifier(schema)}.` : '';
   const setColumnForm = columnNames.map((columnName) => `${columnName}=?`).join(', ');
-  const condition = '<condition>';
-  return `UPDATE ${schemaSelection}${database.connection.wrapIdentifier(table)}\n   SET ${setColumnForm}\n WHERE ${condition};`;
+  return [
+    `UPDATE ${schemaSelection}${database.connection.wrapIdentifier(table)}\n`,
+    `SET ${setColumnForm}\n`,
+    'WHERE <condition>;',
+  ].join(' ');
 }
 
 function getTableDeleteScript(server, database, table, schema) {
-  const condition = '<condition>';
   const schemaSelection = schema ? `${database.connection.wrapIdentifier(schema)}.` : '';
-  return `DELETE FROM ${schemaSelection}${database.connection.wrapIdentifier(table)} WHERE ${condition};`;
+  return [
+    `DELETE FROM ${schemaSelection}${database.connection.wrapIdentifier(table)}`,
+    'WHERE <condition>;',
+  ].join(' ');
 }
 
 function getViewCreateScript(server, database, view /* , schema */) {

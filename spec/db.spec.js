@@ -302,13 +302,25 @@ describe('db', () => {
           it('should return INSERT INTO table script', async() => {
             const insertQuery = await dbConn.getTableInsertScript('users');
             if (dbClient === 'mysql') {
-              expect(insertQuery).to.eql(`INSERT INTO \`users\` (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
+              expect(insertQuery).to.eql([
+                'INSERT INTO `users` (id, username, email, password, role_id, createdat)\n',
+                'VALUES (?, ?, ?, ?, ?, ?);',
+              ].join(' '));
             } else if (dbClient === 'sqlserver') {
-              expect(insertQuery).to.eql(`INSERT INTO [users] (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
+              expect(insertQuery).to.eql([
+                'INSERT INTO [users] (id, username, email, password, role_id, createdat)\n',
+                'VALUES (?, ?, ?, ?, ?, ?);',
+              ].join(' '));
             } else if (dbClient === 'postgresql') {
-              expect(insertQuery).to.eql(`INSERT INTO "users" (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
+              expect(insertQuery).to.eql([
+                'INSERT INTO "users" (id, username, email, password, role_id, createdat)\n',
+                'VALUES (?, ?, ?, ?, ?, ?);',
+              ].join(' '));
             } else if (dbClient === 'cassandra') {
-              expect(insertQuery).to.eql(`INSERT INTO "users" (id, createdat, email, password, role_id, username)\n VALUES (?, ?, ?, ?, ?, ?);`);
+              expect(insertQuery).to.eql([
+                'INSERT INTO "users" (id, createdat, email, password, role_id, username)\n',
+                'VALUES (?, ?, ?, ?, ?, ?);',
+              ].join(' '));
             } else {
               throw new Error('Invalid db client');
             }
@@ -317,9 +329,15 @@ describe('db', () => {
           it('should return INSERT INTO table script with schema if defined', async() => {
             const insertQuery = await dbConn.getTableInsertScript('users', 'public');
             if (dbClient === 'sqlserver') {
-              expect(insertQuery).to.eql(`INSERT INTO [public].[users] (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
+              expect(insertQuery).to.eql([
+                'INSERT INTO [public].[users] (id, username, email, password, role_id, createdat)\n',
+                'VALUES (?, ?, ?, ?, ?, ?);',
+              ].join(' '));
             } else if (dbClient === 'postgresql') {
-              expect(insertQuery).to.eql(`INSERT INTO "public"."users" (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
+              expect(insertQuery).to.eql([
+                'INSERT INTO "public"."users" (id, username, email, password, role_id, createdat)\n',
+                'VALUES (?, ?, ?, ?, ?, ?);',
+              ].join(' '));
             }
           });
         });
@@ -328,13 +346,29 @@ describe('db', () => {
           it('should return UPDATE table script', async() => {
             const updateQuery = await dbConn.getTableUpdateScript('users');
             if (dbClient === 'mysql') {
-              expect(updateQuery).to.eql(`UPDATE \`users\`\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
+              expect(updateQuery).to.eql([
+                'UPDATE `users`\n',
+                'SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n',
+                'WHERE <condition>;',
+              ].join(' '));
             } else if (dbClient === 'sqlserver') {
-              expect(updateQuery).to.eql(`UPDATE [users]\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
+              expect(updateQuery).to.eql([
+                'UPDATE [users]\n',
+                'SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n',
+                'WHERE <condition>;',
+              ].join(' '));
             } else if (dbClient === 'postgresql') {
-              expect(updateQuery).to.eql(`UPDATE "users"\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
+              expect(updateQuery).to.eql([
+                'UPDATE "users"\n',
+                'SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n',
+                'WHERE <condition>;',
+              ].join(' '));
             } else if (dbClient === 'cassandra') {
-              expect(updateQuery).to.eql(`UPDATE "users"\n   SET id=?, createdat=?, email=?, password=?, role_id=?, username=?\n WHERE <condition>;`);
+              expect(updateQuery).to.eql([
+                'UPDATE "users"\n',
+                'SET id=?, createdat=?, email=?, password=?, role_id=?, username=?\n',
+                'WHERE <condition>;',
+              ].join(' '));
             } else {
               throw new Error('Invalid db client');
             }
@@ -343,9 +377,17 @@ describe('db', () => {
           it('should return UPDATE table script with schema if defined', async() => {
             const updateQuery = await dbConn.getTableUpdateScript('users', 'public');
             if (dbClient === 'sqlserver') {
-              expect(updateQuery).to.eql(`UPDATE [public].[users]\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
+              expect(updateQuery).to.eql([
+                'UPDATE [public].[users]\n',
+                'SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n',
+                'WHERE <condition>;',
+              ].join(' '));
             } else if (dbClient === 'postgresql') {
-              expect(updateQuery).to.eql(`UPDATE "public"."users"\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
+              expect(updateQuery).to.eql([
+                'UPDATE "public"."users"\n',
+                'SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n',
+                'WHERE <condition>;',
+              ].join(' '));
             }
           });
         });
@@ -381,11 +423,24 @@ describe('db', () => {
             const [createScript] = await dbConn.getViewCreateScript('email_view');
 
             if (dbClient === 'mysql') {
-              expect(createScript).to.contain('VIEW `email_view` AS select `users`.`email` AS `email`,`users`.`password` AS `password` from `users`');
+              expect(createScript).to.contain([
+                'VIEW `email_view`',
+                'AS select `users`.`email` AS `email`,`users`.`password` AS `password`',
+                'from `users`',
+              ].join(' '));
             } else if (dbClient === 'postgresql') {
-              expect(createScript).to.eql(`CREATE OR REPLACE VIEW "public".email_view AS\n SELECT users.email,\n    users.password\n   FROM users;`);
+              expect(createScript).to.eql([
+                'CREATE OR REPLACE VIEW "public".email_view AS',
+                ' SELECT users.email,',
+                '    users.password',
+                '   FROM users;',
+              ].join('\n'));
             } else if (dbClient === 'sqlserver') {
-              expect(createScript).to.eql(`\nCREATE VIEW dbo.email_view AS\nSELECT dbo.users.email, dbo.users.password\nFROM dbo.users;\n`);
+              expect(createScript).to.eql([
+                '\nCREATE VIEW dbo.email_view AS',
+                'SELECT dbo.users.email, dbo.users.password',
+                'FROM dbo.users;\n',
+              ].join('\n'));
             } else if (dbClient === 'cassandra') {
               expect(createScript).to.eql(undefined);
             } else {
@@ -400,14 +455,21 @@ describe('db', () => {
 
             if (dbClient === 'mysql') {
               expect(createScript).to.contain('CREATE DEFINER=');
-              expect(createScript).to.contain('PROCEDURE `users_count`()\nBEGIN\n  SELECT COUNT(*) FROM users;\nEND');
+              expect(createScript).to.contain([
+                'PROCEDURE `users_count`()',
+                'BEGIN',
+                '  SELECT COUNT(*) FROM users;',
+                'END',
+              ].join('\n'));
             } else if (dbClient === 'postgresql') {
-              expect(createScript).to.eql('CREATE OR REPLACE FUNCTION public.users_count()\n' +
-                ' RETURNS bigint\n' +
-                ' LANGUAGE sql\n' +
-                'AS $function$\n' +
-                '  SELECT COUNT(*) FROM users AS total;\n' +
-                '$function$\n');
+              expect(createScript).to.eql([
+                'CREATE OR REPLACE FUNCTION public.users_count()',
+                ' RETURNS bigint',
+                ' LANGUAGE sql',
+                'AS $function$',
+                '  SELECT COUNT(*) FROM users AS total;',
+                '$function$\n',
+              ].join('\n'));
             } else if (dbClient === 'sqlserver') {
               expect(createScript).to.contain('CREATE PROCEDURE dbo.users_count');
               expect(createScript).to.contain('@Count int OUTPUT');
