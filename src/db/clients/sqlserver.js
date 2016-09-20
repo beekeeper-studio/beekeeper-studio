@@ -46,12 +46,22 @@ export default async function(server, database) {
 }
 
 
-export const disconnect = (connection) => connection.close();
-export const wrapIdentifier = (value) => (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*');
-export const getQuerySelectTop = (client, table, limit) => `SELECT TOP ${limit} * FROM ${wrapIdentifier(table)}`;
+export function disconnect(connection) {
+  connection.close();
+}
 
 
-export const executeQuery = async (connection, query) => {
+export function wrapIdentifier(value) {
+  return (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*');
+}
+
+
+export function getQuerySelectTop(client, table, limit) {
+  return `SELECT TOP ${limit} * FROM ${wrapIdentifier(table)}`;
+}
+
+
+export async function executeQuery(connection, query) {
   const commands = identifyCommands(query);
 
   const request = connection.request();
@@ -64,16 +74,16 @@ export const executeQuery = async (connection, query) => {
   const results = !recordSet.length && request.rowsAffected ? [[]] : recordSet;
 
   return results.map((_, idx) => parseRowQueryResult(results[idx], request, commands[idx]));
-};
+}
 
 
-const getSchema = async (connection) => {
+async function getSchema(connection) {
   const [result] = await executeQuery(connection, 'SELECT schema_name() AS \'schema\'');
   return result.rows[0].schema;
-};
+}
 
 
-export const listTables = async (connection) => {
+export async function listTables(connection) {
   const sql = `
     SELECT table_name
     FROM information_schema.tables
@@ -82,9 +92,9 @@ export const listTables = async (connection) => {
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map((row) => row.table_name);
-};
+}
 
-export const listViews = async (connection) => {
+export async function listViews(connection) {
   const sql = `
     SELECT table_name
     FROM information_schema.views
@@ -92,9 +102,9 @@ export const listViews = async (connection) => {
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map((row) => row.table_name);
-};
+}
 
-export const listRoutines = async (connection) => {
+export async function listRoutines(connection) {
   const sql = `
     SELECT routine_name, routine_type
     FROM information_schema.routines
@@ -105,9 +115,9 @@ export const listRoutines = async (connection) => {
     routineName: row.routine_name,
     routineType: row.routine_type,
   }));
-};
+}
 
-export const listTableColumns = async (connection, database, table) => {
+export async function listTableColumns(connection, database, table) {
   const sql = `
     SELECT column_name, data_type
     FROM information_schema.columns
@@ -118,9 +128,9 @@ export const listTableColumns = async (connection, database, table) => {
     columnName: row.column_name,
     dataType: row.data_type,
   }));
-};
+}
 
-export const listTableTriggers = async (connection, table) => {
+export async function listTableTriggers(connection, table) {
   // SQL Server does not have information_schema for triggers, so other way around
   // is using sp_helptrigger stored procedure to fetch triggers related to table
   const sql = `
@@ -128,9 +138,9 @@ export const listTableTriggers = async (connection, table) => {
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map((row) => row.trigger_name);
-};
+}
 
-export const listSchemas = async (connection) => {
+export async function listSchemas(connection) {
   const sql = `
     SELECT schema_name
     FROM information_schema.schemata
@@ -138,14 +148,14 @@ export const listSchemas = async (connection) => {
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map((row) => row.schema_name);
-};
+}
 
-export const listDatabases = async (connection) => {
+export async function listDatabases(connection) {
   const [result] = await executeQuery(connection, 'SELECT name FROM sys.databases');
   return result.rows.map((row) => row.name);
-};
+}
 
-export const getTableReferences = async (connection, table) => {
+export async function getTableReferences(connection, table) {
   const sql = `
     SELECT OBJECT_NAME(referenced_object_id) referenced_table_name
     FROM sys.foreign_keys
@@ -153,9 +163,9 @@ export const getTableReferences = async (connection, table) => {
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map((row) => row.referenced_table_name);
-};
+}
 
-export const getTableKeys = async (connection, database, table) => {
+export async function getTableKeys(connection, database, table) {
   const sql = `
     SELECT
       tc.constraint_name,
@@ -179,9 +189,9 @@ export const getTableKeys = async (connection, database, table) => {
     referencedTable: row.referenced_table_name,
     keyType: row.constraint_type,
   }));
-};
+}
 
-export const getTableCreateScript = async (connection, table) => {
+export async function getTableCreateScript(connection, table) {
   // Reference http://stackoverflow.com/a/317864
   const sql = `
     SELECT  ('CREATE TABLE ' + so.name + ' (' +
@@ -248,15 +258,15 @@ export const getTableCreateScript = async (connection, table) => {
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map((row) => row.createtable);
-};
+}
 
-export const getViewCreateScript = async (connection, view) => {
+export async function getViewCreateScript(connection, view) {
   const sql = `SELECT OBJECT_DEFINITION (OBJECT_ID('${view}')) AS ViewDefinition;`;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map((row) => row.ViewDefinition);
-};
+}
 
-export const getRoutineCreateScript = async (connection, routine) => {
+export async function getRoutineCreateScript(connection, routine) {
   const sql = `
     SELECT routine_definition
     FROM information_schema.routines
@@ -264,9 +274,9 @@ export const getRoutineCreateScript = async (connection, routine) => {
   `;
   const [result] = await executeQuery(connection, sql);
   return result.rows.map((row) => row.routine_definition);
-};
+}
 
-export const truncateAllTables = async (connection) => {
+export async function truncateAllTables(connection) {
   const schema = await getSchema(connection);
   const sql = `
     SELECT table_name
@@ -282,7 +292,7 @@ export const truncateAllTables = async (connection) => {
   `));
 
   await Promise.all(promises);
-};
+}
 
 
 function configDatabase(server, database) {
