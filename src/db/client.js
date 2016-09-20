@@ -187,19 +187,19 @@ function getTableCreateScript(server, database, table, schema) {
 
 async function getTableSelectScript(server, database, table, schema) {
   const columnNames = await getTableColumnNames(server, database, table, schema);
-  const schemaSelection = schema ? `${database.connection.wrapIdentifier(schema)}.` : '';
+  const schemaSelection = resolveSchema(database, schema);
   return [
     `SELECT ${columnNames.join(', ')}`,
-    `FROM ${schemaSelection}${database.connection.wrapIdentifier(table)};`,
+    `FROM ${schemaSelection}${wrap(database, table)};`,
   ].join(' ');
 }
 
 
 async function getTableInsertScript(server, database, table, schema) {
   const columnNames = await getTableColumnNames(server, database, table, schema);
-  const schemaSelection = schema ? `${database.connection.wrapIdentifier(schema)}.` : '';
+  const schemaSelection = resolveSchema(database, schema);
   return [
-    `INSERT INTO ${schemaSelection}${database.connection.wrapIdentifier(table)}`,
+    `INSERT INTO ${schemaSelection}${wrap(database, table)}`,
     `(${columnNames.join(', ')})\n`,
     `VALUES (${columnNames.fill('?').join(', ')});`,
   ].join(' ');
@@ -207,19 +207,19 @@ async function getTableInsertScript(server, database, table, schema) {
 
 async function getTableUpdateScript(server, database, table, schema) {
   const columnNames = await getTableColumnNames(server, database, table, schema);
-  const schemaSelection = schema ? `${database.connection.wrapIdentifier(schema)}.` : '';
   const setColumnForm = columnNames.map((columnName) => `${columnName}=?`).join(', ');
+  const schemaSelection = resolveSchema(database, schema);
   return [
-    `UPDATE ${schemaSelection}${database.connection.wrapIdentifier(table)}\n`,
+    `UPDATE ${schemaSelection}${wrap(database, table)}\n`,
     `SET ${setColumnForm}\n`,
     'WHERE <condition>;',
   ].join(' ');
 }
 
 function getTableDeleteScript(server, database, table, schema) {
-  const schemaSelection = schema ? `${database.connection.wrapIdentifier(schema)}.` : '';
+  const schemaSelection = resolveSchema(database, schema);
   return [
-    `DELETE FROM ${schemaSelection}${database.connection.wrapIdentifier(table)}`,
+    `DELETE FROM ${schemaSelection}${wrap(database, table)}`,
     'WHERE <condition>;',
   ].join(' ');
 }
@@ -242,6 +242,14 @@ async function getTableColumnNames(server, database, table, schema) {
   checkIsConnected(server, database);
   const columns = await database.connection.listTableColumns(database.database, table, schema);
   return columns.map((column) => column.columnName);
+}
+
+function resolveSchema(database, schema) {
+  return schema ? `${wrap(database, schema)}.` : '';
+}
+
+function wrap(database, identifier) {
+  return database.connection.wrapIdentifier(identifier);
 }
 
 async function loadConfigLimit() {
