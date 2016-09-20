@@ -286,6 +286,15 @@ describe('db', () => {
               throw new Error('Invalid db client');
             }
           });
+
+          it('should return SELECT table script with schema if defined', async() => {
+            const selectQuery = await dbConn.getTableSelectScript('users', 'public');
+            if (dbClient === 'sqlserver') {
+              expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM [public].[users];');
+            } else if (dbClient === 'postgresql') {
+              expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM "public"."users";');
+            }
+          });
         });
 
 
@@ -302,6 +311,15 @@ describe('db', () => {
               expect(insertQuery).to.eql(`INSERT INTO "users" (id, createdat, email, password, role_id, username)\n VALUES (?, ?, ?, ?, ?, ?);`);
             } else {
               throw new Error('Invalid db client');
+            }
+          });
+
+          it('should return INSERT INTO table script with schema if defined', async() => {
+            const insertQuery = await dbConn.getTableInsertScript('users', 'public');
+            if (dbClient === 'sqlserver') {
+              expect(insertQuery).to.eql(`INSERT INTO [public].[users] (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
+            } else if (dbClient === 'postgresql') {
+              expect(insertQuery).to.eql(`INSERT INTO "public"."users" (id, username, email, password, role_id, createdat)\n VALUES (?, ?, ?, ?, ?, ?);`);
             }
           });
         });
@@ -321,6 +339,15 @@ describe('db', () => {
               throw new Error('Invalid db client');
             }
           });
+
+          it('should return UPDATE table script with schema if defined', async() => {
+            const updateQuery = await dbConn.getTableUpdateScript('users', 'public');
+            if (dbClient === 'sqlserver') {
+              expect(updateQuery).to.eql(`UPDATE [public].[users]\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
+            } else if (dbClient === 'postgresql') {
+              expect(updateQuery).to.eql(`UPDATE "public"."users"\n   SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n WHERE <condition>;`);
+            }
+          });
         });
 
         describe('.getTableDeleteScript', () => {
@@ -336,6 +363,15 @@ describe('db', () => {
               expect(deleteQuery).to.contain('DELETE FROM "roles" WHERE <condition>;');
             } else {
               throw new Error('Invalid db client');
+            }
+          });
+
+          it('should return table DELETE script with schema if defined', async() => {
+            const deleteQuery = await dbConn.getTableDeleteScript('roles', 'public');
+            if (dbClient === 'sqlserver') {
+              expect(deleteQuery).to.contain('DELETE FROM [public].[roles] WHERE <condition>;');
+            } else if (dbClient === 'postgresql') {
+              expect(deleteQuery).to.contain('DELETE FROM "public"."roles" WHERE <condition>;');
             }
           });
         });
