@@ -189,7 +189,7 @@ async function getTableSelectScript(server, database, table, schema) {
   const columnNames = await getTableColumnNames(server, database, table, schema);
   const schemaSelection = resolveSchema(database, schema);
   return [
-    `SELECT ${columnNames.join(', ')}`,
+    `SELECT ${wrap(database, columnNames).join(', ')}`,
     `FROM ${schemaSelection}${wrap(database, table)};`,
   ].join(' ');
 }
@@ -200,14 +200,14 @@ async function getTableInsertScript(server, database, table, schema) {
   const schemaSelection = resolveSchema(database, schema);
   return [
     `INSERT INTO ${schemaSelection}${wrap(database, table)}`,
-    `(${columnNames.join(', ')})\n`,
+    `(${wrap(database, columnNames).join(', ')})\n`,
     `VALUES (${columnNames.fill('?').join(', ')});`,
   ].join(' ');
 }
 
 async function getTableUpdateScript(server, database, table, schema) {
   const columnNames = await getTableColumnNames(server, database, table, schema);
-  const setColumnForm = columnNames.map((columnName) => `${columnName}=?`).join(', ');
+  const setColumnForm = wrap(database, columnNames).map((col) => `${col}=?`).join(', ');
   const schemaSelection = resolveSchema(database, schema);
   return [
     `UPDATE ${schemaSelection}${wrap(database, table)}\n`,
@@ -249,7 +249,11 @@ function resolveSchema(database, schema) {
 }
 
 function wrap(database, identifier) {
-  return database.connection.wrapIdentifier(identifier);
+  if (!Array.isArray(identifier)) {
+    return database.connection.wrapIdentifier(identifier);
+  }
+
+  return identifier.map((item) => database.connection.wrapIdentifier(item));
 }
 
 async function loadConfigLimit() {

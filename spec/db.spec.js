@@ -275,13 +275,13 @@ describe('db', () => {
           it('should return SELECT table script', async() => {
             const selectQuery = await dbConn.getTableSelectScript('users');
             if (dbClient === 'mysql') {
-              expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM `users`;');
+              expect(selectQuery).to.eql('SELECT `id`, `username`, `email`, `password`, `role_id`, `createdat` FROM `users`;');
             } else if (dbClient === 'sqlserver') {
-              expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM [users];');
+              expect(selectQuery).to.eql('SELECT [id], [username], [email], [password], [role_id], [createdat] FROM [users];');
             } else if (dbClient === 'postgresql') {
-              expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM "users";');
+              expect(selectQuery).to.eql('SELECT "id", "username", "email", "password", "role_id", "createdat" FROM "users";');
             } else if (dbClient === 'cassandra') {
-              expect(selectQuery).to.eql('SELECT id, createdat, email, password, role_id, username FROM "users";');
+              expect(selectQuery).to.eql('SELECT "id", "createdat", "email", "password", "role_id", "username" FROM "users";');
             } else {
               throw new Error('Invalid db client');
             }
@@ -290,9 +290,9 @@ describe('db', () => {
           it('should return SELECT table script with schema if defined', async() => {
             const selectQuery = await dbConn.getTableSelectScript('users', 'public');
             if (dbClient === 'sqlserver') {
-              expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM [public].[users];');
+              expect(selectQuery).to.eql('SELECT [id], [username], [email], [password], [role_id], [createdat] FROM [public].[users];');
             } else if (dbClient === 'postgresql') {
-              expect(selectQuery).to.eql('SELECT id, username, email, password, role_id, createdat FROM "public"."users";');
+              expect(selectQuery).to.eql('SELECT "id", "username", "email", "password", "role_id", "createdat" FROM "public"."users";');
             }
           });
         });
@@ -303,22 +303,22 @@ describe('db', () => {
             const insertQuery = await dbConn.getTableInsertScript('users');
             if (dbClient === 'mysql') {
               expect(insertQuery).to.eql([
-                'INSERT INTO `users` (id, username, email, password, role_id, createdat)\n',
+                'INSERT INTO `users` (`id`, `username`, `email`, `password`, `role_id`, `createdat`)\n',
                 'VALUES (?, ?, ?, ?, ?, ?);',
               ].join(' '));
             } else if (dbClient === 'sqlserver') {
               expect(insertQuery).to.eql([
-                'INSERT INTO [users] (id, username, email, password, role_id, createdat)\n',
+                'INSERT INTO [users] ([id], [username], [email], [password], [role_id], [createdat])\n',
                 'VALUES (?, ?, ?, ?, ?, ?);',
               ].join(' '));
             } else if (dbClient === 'postgresql') {
               expect(insertQuery).to.eql([
-                'INSERT INTO "users" (id, username, email, password, role_id, createdat)\n',
+                'INSERT INTO "users" ("id", "username", "email", "password", "role_id", "createdat")\n',
                 'VALUES (?, ?, ?, ?, ?, ?);',
               ].join(' '));
             } else if (dbClient === 'cassandra') {
               expect(insertQuery).to.eql([
-                'INSERT INTO "users" (id, createdat, email, password, role_id, username)\n',
+                'INSERT INTO "users" ("id", "createdat", "email", "password", "role_id", "username")\n',
                 'VALUES (?, ?, ?, ?, ?, ?);',
               ].join(' '));
             } else {
@@ -330,12 +330,12 @@ describe('db', () => {
             const insertQuery = await dbConn.getTableInsertScript('users', 'public');
             if (dbClient === 'sqlserver') {
               expect(insertQuery).to.eql([
-                'INSERT INTO [public].[users] (id, username, email, password, role_id, createdat)\n',
+                'INSERT INTO [public].[users] ([id], [username], [email], [password], [role_id], [createdat])\n',
                 'VALUES (?, ?, ?, ?, ?, ?);',
               ].join(' '));
             } else if (dbClient === 'postgresql') {
               expect(insertQuery).to.eql([
-                'INSERT INTO "public"."users" (id, username, email, password, role_id, createdat)\n',
+                'INSERT INTO "public"."users" ("id", "username", "email", "password", "role_id", "createdat")\n',
                 'VALUES (?, ?, ?, ?, ?, ?);',
               ].join(' '));
             }
@@ -348,25 +348,25 @@ describe('db', () => {
             if (dbClient === 'mysql') {
               expect(updateQuery).to.eql([
                 'UPDATE `users`\n',
-                'SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n',
+                'SET `id`=?, `username`=?, `email`=?, `password`=?, `role_id`=?, `createdat`=?\n',
                 'WHERE <condition>;',
               ].join(' '));
             } else if (dbClient === 'sqlserver') {
               expect(updateQuery).to.eql([
                 'UPDATE [users]\n',
-                'SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n',
+                'SET [id]=?, [username]=?, [email]=?, [password]=?, [role_id]=?, [createdat]=?\n',
                 'WHERE <condition>;',
               ].join(' '));
             } else if (dbClient === 'postgresql') {
               expect(updateQuery).to.eql([
                 'UPDATE "users"\n',
-                'SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n',
+                'SET "id"=?, "username"=?, "email"=?, "password"=?, "role_id"=?, "createdat"=?\n',
                 'WHERE <condition>;',
               ].join(' '));
             } else if (dbClient === 'cassandra') {
               expect(updateQuery).to.eql([
                 'UPDATE "users"\n',
-                'SET id=?, createdat=?, email=?, password=?, role_id=?, username=?\n',
+                'SET "id"=?, "createdat"=?, "email"=?, "password"=?, "role_id"=?, "username"=?\n',
                 'WHERE <condition>;',
               ].join(' '));
             } else {
@@ -379,13 +379,13 @@ describe('db', () => {
             if (dbClient === 'sqlserver') {
               expect(updateQuery).to.eql([
                 'UPDATE [public].[users]\n',
-                'SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n',
+                'SET [id]=?, [username]=?, [email]=?, [password]=?, [role_id]=?, [createdat]=?\n',
                 'WHERE <condition>;',
               ].join(' '));
             } else if (dbClient === 'postgresql') {
               expect(updateQuery).to.eql([
                 'UPDATE "public"."users"\n',
-                'SET id=?, username=?, email=?, password=?, role_id=?, createdat=?\n',
+                'SET "id"=?, "username"=?, "email"=?, "password"=?, "role_id"=?, "createdat"=?\n',
                 'WHERE <condition>;',
               ].join(' '));
             }
