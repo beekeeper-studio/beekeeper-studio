@@ -302,6 +302,7 @@ function configDatabase(server, database) {
     server: server.config.host,
     database: database.database,
     port: server.config.port,
+    requestTimeout: Infinity,
     options: {
       encrypt: server.config.ssl,
     },
