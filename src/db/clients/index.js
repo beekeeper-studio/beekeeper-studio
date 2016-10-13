@@ -12,6 +12,9 @@ export const CLIENTS = [
     key: 'mysql',
     name: 'MySQL',
     defaultPort: 3306,
+    disabledFeatures: [
+      'server:schema',
+    ],
   },
   {
     key: 'postgresql',
@@ -33,6 +36,7 @@ export const CLIENTS = [
       'server:socketPath',
       'server:user',
       'server:password',
+      'server:schema',
       'scriptCreateTable',
     ],
   },
