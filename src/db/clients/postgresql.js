@@ -275,7 +275,7 @@ export function getTableCreateScript(client, table, schema) {
     // Reference http://stackoverflow.com/a/32885178
     const sql = `
     SELECT
-      'CREATE TABLE ' || quote_ident($2) || '.' || quote_ident(tabdef.table_name) || E' (\n' ||
+      'CREATE TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) || E' (\n' ||
       array_to_string(
         array_agg(
           '  ' || quote_ident(tabdef.column_name) || ' ' ||  tabdef.type || ' '|| tabdef.not_null
@@ -283,7 +283,7 @@ export function getTableCreateScript(client, table, schema) {
         , E',\n'
       ) || E'\n);\n' ||
       CASE WHEN tc.constraint_name IS NULL THEN ''
-           ELSE E'\nALTER TABLE ' || quote_ident(tabdef.table_name) ||
+           ELSE E'\nALTER TABLE ' || quote_ident($2) || '.' || quote_ident(tabdef.table_name) ||
            ' ADD CONSTRAINT ' || quote_ident(tc.constraint_name)  ||
            ' PRIMARY KEY ' || '(' || substring(constr.column_name from 0 for char_length(constr.column_name)-1) || ')'
       END AS createtable
@@ -295,26 +295,33 @@ export function getTableCreateScript(client, table, schema) {
         CASE
           WHEN a.attnotnull THEN 'NOT NULL'
         ELSE 'NULL'
-        END AS not_null
+        END AS not_null,
+        n.nspname as schema_name
       FROM pg_class c,
        pg_attribute a,
-       pg_type t
+       pg_type t,
+       pg_namespace n
       WHERE c.relname = $1
       AND a.attnum > 0
       AND a.attrelid = c.oid
       AND a.atttypid = t.oid
+      AND n.oid = c.relnamespace
+      AND n.nspname = $2
       ORDER BY a.attnum DESC
     ) AS tabdef
     LEFT JOIN information_schema.table_constraints tc
     ON  tc.table_name       = tabdef.table_name
+    AND tc.table_schema     = tabdef.schema_name
     AND tc.constraint_Type  = 'PRIMARY KEY'
     LEFT JOIN LATERAL (
       SELECT column_name || ', ' AS column_name
       FROM   information_schema.key_column_usage kcu
       WHERE  kcu.constraint_name = tc.constraint_name
+      AND kcu.table_name = tabdef.table_name
+      AND kcu.table_schema = tabdef.schema_name
       ORDER BY ordinal_position
     ) AS constr ON true
-    GROUP BY tabdef.table_name, tc.constraint_name, constr.column_name;
+    GROUP BY tabdef.schema_name, tabdef.table_name, tc.constraint_name, constr.column_name;
     `;
     const params = [
       table,

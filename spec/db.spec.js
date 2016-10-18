@@ -250,7 +250,7 @@ describe('db', () => {
                 '  createdat date NULL\n' +
                 ');\n' +
                 '\n' +
-                'ALTER TABLE users ADD CONSTRAINT users_pkey PRIMARY KEY (id)'
+                'ALTER TABLE public.users ADD CONSTRAINT users_pkey PRIMARY KEY (id)'
               );
             } else if (dbClient === 'sqlserver') {
               expect(createScript).to.contain('CREATE TABLE users (\r\n' +
