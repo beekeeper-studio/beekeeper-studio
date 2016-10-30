@@ -450,6 +450,7 @@ function configDatabase(server, database) {
     password: server.config.password,
     database: database.database,
     max: 5, // max idle connections per time (30 secs)
+    application_name: server.config.applicationName || 'sqlectron',
   };
 
   if (server.sshTunnel) {

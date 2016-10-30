@@ -365,6 +365,7 @@ function configDatabase(server, database) {
     database: database.database,
     port: server.config.port,
     requestTimeout: Infinity,
+    appName: server.config.applicationName || 'sqlectron',
     pool: {
       max: 5,
     },
