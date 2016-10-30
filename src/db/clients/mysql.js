@@ -10,288 +10,257 @@ const mysqlErrors = {
 
 
 export default function (server, database) {
-  return new Promise(async (resolve, reject) => {
-    const dbConfig = configDatabase(server, database);
+  const dbConfig = configDatabase(server, database);
+  debug('create driver client for mysql with config %j', dbConfig);
 
-    debug('creating database client %j', dbConfig);
-    const client = mysql.createConnection(dbConfig);
+  const conn = {
+    pool: mysql.createPool(dbConfig),
+  };
 
-    client.on('error', (error) => {
-      // it will be handled later in the next query execution
-      debug('Connection fatal error %j', error);
-    });
-
-    debug('connecting');
-    client.connect((err) => {
-      if (err) {
-        client.end();
-        return reject(err);
-      }
-
-      debug('connected');
-      resolve({
-        wrapIdentifier,
-        disconnect: () => disconnect(client),
-        listTables: () => listTables(client),
-        listViews: () => listViews(client),
-        listRoutines: () => listRoutines(client),
-        listTableColumns: (db, table) => listTableColumns(client, db, table),
-        listTableTriggers: (table) => listTableTriggers(client, table),
-        listSchemas: () => listSchemas(client),
-        getTableReferences: (table) => getTableReferences(client, table),
-        getTableKeys: (db, table) => getTableKeys(client, db, table),
-        executeQuery: (query) => executeQuery(client, query),
-        listDatabases: () => listDatabases(client),
-        getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
-        getTableCreateScript: (table) => getTableCreateScript(client, table),
-        getViewCreateScript: (view) => getViewCreateScript(client, view),
-        getRoutineCreateScript: (routine, type) => getRoutineCreateScript(client, routine, type),
-        truncateAllTables: () => truncateAllTables(client),
-      });
-    });
-  });
+  return {
+    wrapIdentifier,
+    disconnect: () => disconnect(conn),
+    listTables: () => listTables(conn),
+    listViews: () => listViews(conn),
+    listRoutines: () => listRoutines(conn),
+    listTableColumns: (db, table) => listTableColumns(conn, db, table),
+    listTableTriggers: (table) => listTableTriggers(conn, table),
+    listSchemas: () => listSchemas(conn),
+    getTableReferences: (table) => getTableReferences(conn, table),
+    getTableKeys: (db, table) => getTableKeys(conn, db, table),
+    executeQuery: (queryText) => executeQuery(conn, queryText),
+    listDatabases: () => listDatabases(conn),
+    getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
+    getTableCreateScript: (table) => getTableCreateScript(conn, table),
+    getViewCreateScript: (view) => getViewCreateScript(conn, view),
+    getRoutineCreateScript: (routine, type) => getRoutineCreateScript(conn, routine, type),
+    truncateAllTables: () => truncateAllTables(conn),
+  };
 }
 
 
-export function disconnect(client) {
-  client.end();
+export function disconnect(conn) {
+  conn.pool.end();
 }
 
 
-export function listTables(client) {
-  return new Promise((resolve, reject) => {
-    const sql = `
-      SELECT table_name
-      FROM information_schema.tables
-      WHERE table_schema = database()
-      AND table_type NOT LIKE '%VIEW%'
-      ORDER BY table_name
-    `;
-    const params = [];
-    client.query(sql, params, (err, data) => {
-      if (err) return reject(getRealError(client, err));
-      resolve(data.map((row) => row.table_name));
-    });
-  });
+export async function listTables(conn) {
+  const sql = `
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema = database()
+    AND table_type NOT LIKE '%VIEW%'
+    ORDER BY table_name
+  `;
+
+  const { data } = await driverExecuteQuery(conn, { query: sql });
+
+  return data.map((row) => row.table_name);
 }
 
-export function listViews(client) {
-  return new Promise((resolve, reject) => {
-    const sql = `
-      SELECT table_name
-      FROM information_schema.views
-      WHERE table_schema = database()
-      ORDER BY table_name
-    `;
-    const params = [];
-    client.query(sql, params, (err, data) => {
-      if (err) return reject(getRealError(client, err));
-      resolve(data.map((row) => row.table_name));
-    });
-  });
+export async function listViews(conn) {
+  const sql = `
+    SELECT table_name
+    FROM information_schema.views
+    WHERE table_schema = database()
+    ORDER BY table_name
+  `;
+
+  const { data } = await driverExecuteQuery(conn, { query: sql });
+
+  return data.map((row) => row.table_name);
 }
 
-export function listRoutines(client) {
-  return new Promise((resolve, reject) => {
-    const sql = `
-      SELECT routine_name, routine_type
-      FROM information_schema.routines
-      WHERE routine_schema = database()
-      ORDER BY routine_name
-    `;
-    const params = [];
-    client.query(sql, params, (err, data) => {
-      if (err) return reject(getRealError(client, err));
-      resolve(data.map((row) => ({
-        routineName: row.routine_name,
-        routineType: row.routine_type,
-      })));
-    });
-  });
+export async function listRoutines(conn) {
+  const sql = `
+    SELECT routine_name, routine_type
+    FROM information_schema.routines
+    WHERE routine_schema = database()
+    ORDER BY routine_name
+  `;
+
+  const { data } = await driverExecuteQuery(conn, { query: sql });
+
+  return data.map((row) => ({
+    routineName: row.routine_name,
+    routineType: row.routine_type,
+  }));
 }
 
-export function listTableColumns(client, database, table) {
-  return new Promise((resolve, reject) => {
-    const sql = `
-      SELECT column_name, data_type
-      FROM information_schema.columns
-      WHERE table_schema = database()
-      AND table_name = ?
-    `;
-    const params = [
-      table,
-    ];
-    client.query(sql, params, (err, data) => {
-      if (err) return reject(getRealError(client, err));
-      resolve(data.map((row) => ({
-        columnName: row.column_name,
-        dataType: row.data_type,
-      })));
-    });
-  });
+export async function listTableColumns(conn, database, table) {
+  const sql = `
+    SELECT column_name, data_type
+    FROM information_schema.columns
+    WHERE table_schema = database()
+    AND table_name = ?
+  `;
+
+  const params = [
+    table,
+  ];
+
+  const { data } = await driverExecuteQuery(conn, { query: sql, params });
+
+  return data.map((row) => ({
+    columnName: row.column_name,
+    dataType: row.data_type,
+  }));
 }
 
-export function listTableTriggers(client, table) {
-  return new Promise((resolve, reject) => {
-    const sql = `
-      SELECT trigger_name
-      FROM information_schema.triggers
-      WHERE event_object_schema = database()
-      AND event_object_table = ?
-    `;
-    const params = [
-      table,
-    ];
-    client.query(sql, params, (err, data) => {
-      if (err) return reject(getRealError(client, err));
-      resolve(data.map((row) => row.trigger_name));
-    });
-  });
+export async function listTableTriggers(conn, table) {
+  const sql = `
+    SELECT trigger_name
+    FROM information_schema.triggers
+    WHERE event_object_schema = database()
+    AND event_object_table = ?
+  `;
+
+  const params = [
+    table,
+  ];
+
+  const { data } = await driverExecuteQuery(conn, { query: sql, params });
+
+  return data.map((row) => row.trigger_name);
 }
 
 export function listSchemas() {
   return Promise.resolve([]);
 }
 
-export function getTableReferences(client, table) {
-  return new Promise((resolve, reject) => {
-    const sql = `
-      SELECT referenced_table_name
-      FROM information_schema.key_column_usage
-      WHERE referenced_table_name IS NOT NULL
-      AND table_schema = database()
-      AND table_name = ?
-    `;
-    const params = [
-      table,
-    ];
-    client.query(sql, params, (err, data) => {
-      if (err) return reject(getRealError(client, err));
-      resolve(data.map((row) => row.referenced_table_name));
-    });
-  });
+export async function getTableReferences(conn, table) {
+  const sql = `
+    SELECT referenced_table_name
+    FROM information_schema.key_column_usage
+    WHERE referenced_table_name IS NOT NULL
+    AND table_schema = database()
+    AND table_name = ?
+  `;
+
+  const params = [
+    table,
+  ];
+
+  const { data } = await driverExecuteQuery(conn, { query: sql, params });
+
+  return data.map((row) => row.referenced_table_name);
 }
 
-export function getTableKeys(client, database, table) {
-  return new Promise((resolve, reject) => {
-    const sql = `
-      SELECT constraint_name, column_name, referenced_table_name,
-        CASE WHEN (referenced_table_name IS NOT NULL) THEN 'FOREIGN'
-        ELSE constraint_name
-        END as key_type
-      FROM information_schema.key_column_usage
-      WHERE table_schema = database()
-      AND table_name = ?
-      AND ((referenced_table_name IS NOT NULL) OR constraint_name LIKE '%PRIMARY%')
-    `;
-    const params = [
-      table,
-    ];
-    client.query(sql, params, (err, data) => {
-      if (err) return reject(getRealError(client, err));
-      resolve(data.map((row) => ({
-        constraintName: `${row.constraint_name} KEY`,
-        columnName: row.column_name,
-        referencedTable: row.referenced_table_name,
-        keyType: `${row.key_type} KEY`,
-      })));
-    });
-  });
+export async function getTableKeys(conn, database, table) {
+  const sql = `
+    SELECT constraint_name, column_name, referenced_table_name,
+      CASE WHEN (referenced_table_name IS NOT NULL) THEN 'FOREIGN'
+      ELSE constraint_name
+      END as key_type
+    FROM information_schema.key_column_usage
+    WHERE table_schema = database()
+    AND table_name = ?
+    AND ((referenced_table_name IS NOT NULL) OR constraint_name LIKE '%PRIMARY%')
+  `;
+
+  const params = [
+    table,
+  ];
+
+  const { data } = await driverExecuteQuery(conn, { query: sql, params });
+
+  return data.map((row) => ({
+    constraintName: `${row.constraint_name} KEY`,
+    columnName: row.column_name,
+    referencedTable: row.referenced_table_name,
+    keyType: `${row.key_type} KEY`,
+  }));
 }
 
-export function executeQuery(client, query) {
-  const commands = identifyCommands(query);
-  return new Promise((resolve, reject) => {
-    client.query(query, (err, data, fields) => {
-      if (err && err.code === mysqlErrors.ER_EMPTY_QUERY) return resolve([]);
-      if (err) return reject(getRealError(client, err));
+export async function executeQuery(conn, queryText) {
+  const { fields, data } = await driverExecuteQuery(conn, { query: queryText });
+  if (!data) {
+    return [];
+  }
 
-      if (!isMultipleQuery(fields)) {
-        return resolve([parseRowQueryResult(data, fields, commands[0])]);
-      }
+  const commands = identifyCommands(queryText);
 
-      resolve(
-        data.map((_, idx) => parseRowQueryResult(data[idx], fields[idx], commands[idx]))
-      );
-    });
-  });
+  if (!isMultipleQuery(fields)) {
+    return [parseRowQueryResult(data, fields, commands[0])];
+  }
+
+  return data.map((_, idx) => parseRowQueryResult(data[idx], fields[idx], commands[idx]));
 }
 
 
-export function listDatabases(client) {
-  return new Promise((resolve, reject) => {
-    const sql = 'show databases';
-    client.query(sql, (err, data) => {
-      if (err) return reject(getRealError(client, err));
-      resolve(data.map((row) => row.Database));
-    });
-  });
+export async function listDatabases(conn) {
+  const sql = 'show databases';
+
+  const { data } = await driverExecuteQuery(conn, { query: sql });
+
+  return data.map((row) => row.Database);
 }
 
 
-export function getQuerySelectTop(client, table, limit) {
+export function getQuerySelectTop(conn, table, limit) {
   return `SELECT * FROM ${wrapIdentifier(table)} LIMIT ${limit}`;
 }
 
-export function getTableCreateScript(client, table) {
-  return new Promise((resolve, reject) => {
-    const sql = `SHOW CREATE TABLE ${table}`;
-    const params = [];
-    client.query(sql, params, (err, data) => {
-      if (err) return reject(getRealError(client, err));
-      resolve(data.map((row) => row['Create Table']));
-    });
-  });
+export async function getTableCreateScript(conn, table) {
+  const sql = `SHOW CREATE TABLE ${table}`;
+
+  const { data } = await driverExecuteQuery(conn, { query: sql });
+
+  return data.map((row) => row['Create Table']);
 }
 
-export function getViewCreateScript(client, view) {
-  return new Promise((resolve, reject) => {
-    const sql = `SHOW CREATE VIEW ${view}`;
-    const params = [];
-    client.query(sql, params, (err, data) => {
-      if (err) return reject(getRealError(client, err));
-      resolve(data.map((row) => row['Create View']));
-    });
-  });
+export async function getViewCreateScript(conn, view) {
+  const sql = `SHOW CREATE VIEW ${view}`;
+
+  const { data } = await driverExecuteQuery(conn, { query: sql });
+
+  return data.map((row) => row['Create View']);
 }
 
-export function getRoutineCreateScript(client, routine, type) {
-  return new Promise((resolve, reject) => {
-    const sql = `SHOW CREATE ${type.toUpperCase()} ${routine}`;
-    client.query(sql, (err, data) => {
-      if (err) return reject(getRealError(client, err));
-      resolve(data.map((row) => row[`Create ${type}`]));
-    });
-  });
+export async function getRoutineCreateScript(conn, routine, type) {
+  const sql = `SHOW CREATE ${type.toUpperCase()} ${routine}`;
+
+  const { data } = await driverExecuteQuery(conn, { query: sql });
+
+  return data.map((row) => row[`Create ${type}`]);
 }
 
 export function wrapIdentifier(value) {
   return (value !== '*' ? `\`${value.replace(/`/g, '``')}\`` : '*');
 }
 
-const getSchema = async (client) => {
-  const [result] = await executeQuery(client, 'SELECT database() AS \'schema\'');
-  return result.rows[0].schema;
-};
+async function getSchema(conn) {
+  const sql = 'SELECT database() AS \'schema\'';
 
-export const truncateAllTables = async (client) => {
-  const schema = await getSchema(client);
-  const sql = `
-    SELECT table_name
-    FROM information_schema.tables
-    WHERE table_schema = '${schema}'
-    AND table_type NOT LIKE '%VIEW%'
-  `;
-  const [result] = await executeQuery(client, sql);
-  const tables = result.rows.map((row) => row.table_name);
-  const promises = tables.map((t) => executeQuery(client, `
-    SET FOREIGN_KEY_CHECKS = 0;
-    TRUNCATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(t)};
-    SET FOREIGN_KEY_CHECKS = 1;
-  `));
+  const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  await Promise.all(promises);
-};
+  return data[0].schema;
+}
+
+export async function truncateAllTables(conn) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+
+    const schema = await getSchema(connClient);
+
+    const sql = `
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = '${schema}'
+      AND table_type NOT LIKE '%VIEW%'
+    `;
+
+    const { data } = await driverExecuteQuery(connClient, { query: sql });
+
+    const truncateAll = data.map((row) => `
+      SET FOREIGN_KEY_CHECKS = 0;
+      TRUNCATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(row.table_name)};
+      SET FOREIGN_KEY_CHECKS = 1;
+    `).join('');
+
+    await driverExecuteQuery(connClient, { query: truncateAll });
+  });
+}
 
 
 function configDatabase(server, database) {
@@ -325,10 +294,10 @@ function configDatabase(server, database) {
 }
 
 
-function getRealError(client, err) {
+function getRealError(conn, err) {
   /* eslint no-underscore-dangle:0 */
-  if (client && client._protocol && client._protocol._fatalError) {
-    return client._protocol._fatalError;
+  if (conn && conn._protocol && conn._protocol._fatalError) {
+    return conn._protocol._fatalError;
   }
   return err;
 }
@@ -360,4 +329,51 @@ function identifyCommands(query) {
   } catch (err) {
     return [];
   }
+}
+
+function driverExecuteQuery(conn, queryArgs) {
+  const runQuery = (connection) => new Promise((resolve, reject) => {
+    connection.query(queryArgs.query, queryArgs.params, (err, data, fields) => {
+      if (err && err.code === mysqlErrors.ER_EMPTY_QUERY) return resolve({});
+      if (err) return reject(getRealError(connection, err));
+
+      resolve({ data, fields });
+    });
+  });
+
+  return conn.connection
+    ? runQuery(conn.connection)
+    : runWithConnection(conn, runQuery);
+}
+
+async function runWithConnection({ pool }, run) {
+  let rejected = false;
+  return new Promise((resolve, reject) => {
+    const rejectErr = (err) => {
+      if (!rejected) {
+        rejected = true;
+        reject(err);
+      }
+    };
+
+    pool.getConnection(async (errPool, connection) => {
+      if (errPool) {
+        rejectErr(errPool);
+        return;
+      }
+
+      connection.on('error', (error) => {
+        // it will be handled later in the next query execution
+        debug('Connection fatal error %j', error);
+      });
+
+      try {
+        resolve(await run(connection));
+      } catch (err) {
+        rejectErr(err);
+      } finally {
+        connection.release();
+      }
+    });
+  });
 }

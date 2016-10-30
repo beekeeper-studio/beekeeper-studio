@@ -485,16 +485,17 @@ describe('db', () => {
         describe('.executeQuery', () => {
           const includePk = dbClient === 'cassandra';
 
-          beforeEach(() => Promise.all([
-            dbConn.executeQuery(`
+          beforeEach(async () => {
+            await dbConn.executeQuery(`
               INSERT INTO roles (${includePk ? 'id,' : ''} name)
               VALUES (${includePk ? '1,' : ''} 'developer')
-            `),
-            dbConn.executeQuery(`
+            `);
+
+            await dbConn.executeQuery(`
               INSERT INTO users (${includePk ? 'id,' : ''} username, email, password, role_id, createdat)
               VALUES (${includePk ? '1,' : ''} 'maxcnunes', 'maxcnunes@gmail.com', '123456', 1,'2016-10-25')
-            `),
-          ]));
+            `);
+          });
 
           afterEach(() => dbConn.truncateAllTables());
 
@@ -588,7 +589,7 @@ describe('db', () => {
                 const [result] = results;
 
                 expect(result).to.have.deep.property('fields[0].name').to.eql('createdat');
-                expect(result).to.have.deep.property('rows[0].createdat').to.match(/^2016\-10\-25/);
+                expect(result).to.have.deep.property('rows[0].createdat').to.match(/^2016-10-25/);
               });
             }
 

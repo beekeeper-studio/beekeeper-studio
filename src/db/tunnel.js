@@ -42,11 +42,6 @@ export default function (serverInfo) {
               return;
             }
             server.emit('success');
-            sshStream.on('close', () => {
-              debug('closed ssh tunnel stream output');
-              // TODO: only auto close the server when all connected DBs had been closed
-              // server.close();
-            });
             conn.pipe(sshStream).pipe(conn);
           });
       });

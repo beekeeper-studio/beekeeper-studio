@@ -184,7 +184,7 @@ export function getRoutineCreateScript() {
 
 export function wrapIdentifier(value) {
   if (value === '*') return value;
-  const matched = value.match(/(.*?)(\[[0-9]\])/);
+  const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
   if (matched) return wrapIdentifier(matched[1]) + matched[2];
   return `"${value.replace(/"/g, '""')}"`;
 }
