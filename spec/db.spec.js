@@ -482,6 +482,44 @@ describe('db', () => {
           });
         });
 
+        if (dbClient !== 'cassandra') {
+          describe('.query', function () { // eslint-disable-line func-names
+            this.timeout(15000);
+
+            it('should be able to cancel the current query', (done) => {
+              const sleepCommands = {
+                postgresql: 'SELECT pg_sleep(10);',
+                mysql: 'SELECT SLEEP(10000);',
+                sqlserver: 'waitfor delay \'00:00:10\'; select 1 as number',
+              };
+
+              const query = dbConn.query(sleepCommands[dbClient]);
+              const executing = query.execute();
+
+              // wait a 5 secs before cancel
+              setTimeout(async () => {
+                let error;
+                try {
+                  await Promise.all([
+                    executing,
+                    query.cancel(),
+                  ]);
+                } catch (err) {
+                  error = err;
+                }
+
+                try {
+                  expect(error).to.exists;
+                  expect(error.sqlectronError).to.eql('CANCELED_BY_USER');
+                  done();
+                } catch (err) {
+                  done(err);
+                }
+              }, 5000);
+            });
+          });
+        }
+
         describe('.executeQuery', () => {
           const includePk = dbClient === 'cassandra';
 

@@ -38,6 +38,7 @@ export const CLIENTS = [
       'server:password',
       'server:schema',
       'scriptCreateTable',
+      'cancelQuery',
     ],
   },
 ];

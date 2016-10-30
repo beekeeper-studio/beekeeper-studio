@@ -35,7 +35,8 @@ export default function (server, database) {
         listSchemas: () => listSchemas(client),
         getTableReferences: (table) => getTableReferences(client, table),
         getTableKeys: (db, table) => getTableKeys(client, db, table),
-        executeQuery: (query) => executeQuery(client, query),
+        query: (queryText) => executeQuery(client, queryText),
+        executeQuery: (queryText) => executeQuery(client, queryText),
         listDatabases: () => listDatabases(client),
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
         getTableCreateScript: (table) => getTableCreateScript(client, table),
@@ -141,11 +142,15 @@ export function getTableKeys(client, database, table) {
   });
 }
 
-export function executeQuery(client, query) {
+function query(conn, queryText) { // eslint-disable-line no-unused-vars
+  throw new Error('"query" function is not implementd by cassandra client.');
+}
+
+export function executeQuery(client, queryText) {
   const commands = identifyCommands(query);
 
   return new Promise((resolve, reject) => {
-    client.execute(query, (err, data) => {
+    client.execute(queryText, (err, data) => {
       if (err) return reject(err);
 
       resolve([parseRowQueryResult(data, commands[0])]);
@@ -243,9 +248,9 @@ function parseRowQueryResult(data, command) {
 }
 
 
-function identifyCommands(query) {
+function identifyCommands(queryText) {
   try {
-    return identify(query);
+    return identify(queryText);
   } catch (err) {
     return [];
   }

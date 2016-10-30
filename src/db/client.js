@@ -26,6 +26,7 @@ export function createConnection(server, database) {
     listSchemas: listSchemas.bind(null, server, database),
     getTableReferences: getTableReferences.bind(null, server, database),
     getTableKeys: getTableKeys.bind(null, server, database),
+    query: query.bind(null, server, database),
     executeQuery: executeQuery.bind(null, server, database),
     listDatabases: listDatabases.bind(null, server, database),
     getQuerySelectTop: getQuerySelectTop.bind(null, server, database),
@@ -158,9 +159,14 @@ function getTableKeys(server, database, table, schema) {
   return database.connection.getTableKeys(database.database, table, schema);
 }
 
-function executeQuery(server, database, query) {
+function query(server, database, queryText) {
   checkIsConnected(server, database);
-  return database.connection.executeQuery(query);
+  return database.connection.query(queryText);
+}
+
+function executeQuery(server, database, queryText) {
+  checkIsConnected(server, database);
+  return database.connection.executeQuery(queryText);
 }
 
 

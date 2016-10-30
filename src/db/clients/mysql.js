@@ -4,8 +4,10 @@ import { identify } from 'sql-query-identifier';
 import createDebug from '../../debug';
 
 const debug = createDebug('db:clients:mysql');
+
 const mysqlErrors = {
-  ER_EMPTY_QUERY: 'ER_EMPTY_QUERY',
+  EMPTY_QUERY: 'ER_EMPTY_QUERY',
+  CONNECTION_LOST: 'PROTOCOL_CONNECTION_LOST',
 };
 
 
@@ -28,6 +30,7 @@ export default function (server, database) {
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table) => getTableReferences(conn, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
+    query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: () => listDatabases(conn),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -171,6 +174,57 @@ export async function getTableKeys(conn, database, table) {
     keyType: `${row.key_type} KEY`,
   }));
 }
+
+export function query(conn, queryText) {
+  let pid = null;
+  let canceling = false;
+
+  return {
+    execute() {
+      return runWithConnection(conn, async (connection) => {
+        const connClient = { connection };
+
+        const { data: dataPid } = await driverExecuteQuery(connClient, {
+          query: 'SELECT connection_id() AS pid',
+        });
+
+        pid = dataPid[0].pid;
+
+        try {
+          const data = await executeQuery(connClient, queryText);
+
+          pid = null;
+
+          return data;
+        } catch (err) {
+          if (canceling && err.code === mysqlErrors.CONNECTION_LOST) {
+            canceling = false;
+            err.sqlectronError = 'CANCELED_BY_USER';
+          }
+
+          throw err;
+        }
+      });
+    },
+
+    async cancel() {
+      if (!pid) {
+        throw new Error('Query not ready to be canceled');
+      }
+
+      canceling = true;
+      try {
+        await driverExecuteQuery(conn, {
+          query: `kill ${pid};`,
+        });
+      } catch (err) {
+        canceling = false;
+        throw err;
+      }
+    },
+  };
+}
+
 
 export async function executeQuery(conn, queryText) {
   const { fields, data } = await driverExecuteQuery(conn, { query: queryText });
@@ -323,9 +377,9 @@ function isMultipleQuery(fields) {
 }
 
 
-function identifyCommands(query) {
+function identifyCommands(queryText) {
   try {
-    return identify(query);
+    return identify(queryText);
   } catch (err) {
     return [];
   }
@@ -334,7 +388,7 @@ function identifyCommands(query) {
 function driverExecuteQuery(conn, queryArgs) {
   const runQuery = (connection) => new Promise((resolve, reject) => {
     connection.query(queryArgs.query, queryArgs.params, (err, data, fields) => {
-      if (err && err.code === mysqlErrors.ER_EMPTY_QUERY) return resolve({});
+      if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});
       if (err) return reject(getRealError(connection, err));
 
       resolve({ data, fields });

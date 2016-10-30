@@ -5,6 +5,10 @@ import createDebug from '../../debug';
 
 const debug = createDebug('db:clients:sqlserver');
 
+const mmsqlErrors = {
+  CANCELED: 'ECANCEL',
+};
+
 
 export default function (server, database) {
   const dbConfig = configDatabase(server, database);
@@ -23,6 +27,7 @@ export default function (server, database) {
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table) => getTableReferences(conn, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
+    query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: () => listDatabases(conn),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -47,6 +52,50 @@ export function wrapIdentifier(value) {
 export function getQuerySelectTop(client, table, limit) {
   return `SELECT TOP ${limit} * FROM ${wrapIdentifier(table)}`;
 }
+
+export function query(conn, queryText) {
+  let queryRequest = null;
+
+  return {
+    execute() {
+      return runWithConnection(conn, async (connection) => {
+        const request = connection.request();
+        request.multiple = true;
+
+        try {
+          const promiseQuery = request.query(queryText);
+
+          queryRequest = request;
+
+          const data = await promiseQuery;
+
+          const commands = identifyCommands(queryText);
+
+          // Executing only non select queries will not return results.
+          // So we "fake" there is at least one result.
+          const results = !data.length && request.rowsAffected ? [[]] : data;
+
+          return results.map((_, idx) => parseRowQueryResult(results[idx], request, commands[idx]));
+        } catch (err) {
+          if (err.code === mmsqlErrors.CANCELED) {
+            err.sqlectronError = 'CANCELED_BY_USER';
+          }
+
+          throw err;
+        }
+      });
+    },
+
+    async cancel() {
+      if (!queryRequest) {
+        throw new Error('Query not ready to be canceled');
+      }
+
+      queryRequest.cancel();
+    },
+  };
+}
+
 
 export async function executeQuery(conn, queryText) {
   const { request, data } = await driverExecuteQuery(conn, { query: queryText, multiple: true });
@@ -347,9 +396,9 @@ function parseRowQueryResult(data, request, command) {
 }
 
 
-function identifyCommands(query) {
+function identifyCommands(queryText) {
   try {
-    return identify(query);
+    return identify(queryText);
   } catch (err) {
     return [];
   }

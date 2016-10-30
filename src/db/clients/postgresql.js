@@ -5,6 +5,9 @@ import createDebug from '../../debug';
 
 const debug = createDebug('db:clients:postgresql');
 
+const pgErrors = {
+  CANCELED: '57014',
+};
 
 /**
  * Do not convert DATE types to JS date.
@@ -39,6 +42,7 @@ export default async function (server, database) {
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
+    query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
     executeQuery: (queryText, schema = defaultSchema) => executeQuery(conn, queryText, schema),
     listDatabases: () => listDatabases(conn),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
@@ -215,6 +219,61 @@ export async function getTableKeys(conn, database, table, schema) {
     referencedTable: row.referenced_table_name,
     keyType: row.constraint_type,
   }));
+}
+
+
+export function query(conn, queryText) {
+  let pid = null;
+  let canceling = false;
+
+  return {
+    execute() {
+      return runWithConnection(conn, async (connection) => {
+        const connClient = { connection };
+
+        const dataPid = await driverExecuteQuery(connClient, {
+          query: 'SELECT pg_backend_pid() AS pid',
+        });
+
+        pid = dataPid.rows[0].pid;
+
+        try {
+          const data = await executeQuery(connClient, queryText);
+
+          pid = null;
+
+          return data;
+        } catch (err) {
+          if (canceling && err.code === pgErrors.CANCELED) {
+            canceling = false;
+            err.sqlectronError = 'CANCELED_BY_USER';
+          }
+
+          throw err;
+        }
+      });
+    },
+
+    async cancel() {
+      if (!pid) {
+        throw new Error('Query not ready to be canceled');
+      }
+
+      canceling = true;
+      try {
+        const data = await driverExecuteQuery(conn, {
+          query: `SELECT pg_cancel_backend(${pid});`,
+        });
+
+        if (!data.rows[0].pg_cancel_backend) {
+          throw new Error(`Failed canceling query with pid ${pid}.`);
+        }
+      } catch (err) {
+        canceling = false;
+        throw err;
+      }
+    },
+  };
 }
 
 
@@ -418,9 +477,9 @@ function parseRowQueryResult(data, command) {
 }
 
 
-function identifyCommands(query) {
+function identifyCommands(queryText) {
   try {
-    return identify(query);
+    return identify(queryText);
   } catch (err) {
     return [];
   }
