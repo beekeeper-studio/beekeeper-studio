@@ -11,13 +11,16 @@ const mysqlErrors = {
 };
 
 
-export default function (server, database) {
+export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
   debug('create driver client for mysql with config %j', dbConfig);
 
   const conn = {
     pool: mysql.createPool(dbConfig),
   };
+
+  // light solution to test connection with with the server
+  await driverExecuteQuery(conn, { query: 'select version();' });
 
   return {
     wrapIdentifier,

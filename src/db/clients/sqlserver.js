@@ -10,11 +10,14 @@ const mmsqlErrors = {
 };
 
 
-export default function (server, database) {
+export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
   debug('create driver client fro mmsql with config %j', dbConfig);
 
   const conn = { dbConfig };
+
+  // light solution to test connection with with the server
+  await driverExecuteQuery(conn, { query: 'SELECT @@version' });
 
   return {
     wrapIdentifier,
