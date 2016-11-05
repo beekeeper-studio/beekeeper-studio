@@ -147,7 +147,7 @@ function query(conn, queryText) { // eslint-disable-line no-unused-vars
 }
 
 export function executeQuery(client, queryText) {
-  const commands = identifyCommands(query);
+  const commands = identifyCommands(queryText);
 
   return new Promise((resolve, reject) => {
     client.execute(queryText, (err, data) => {
