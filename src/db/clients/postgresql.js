@@ -2,6 +2,8 @@ import pg from 'pg';
 import { identify } from 'sql-query-identifier';
 
 import createDebug from '../../debug';
+import { createCancelablePromise } from '../../utils';
+import errors from '../../errors';
 
 const debug = createDebug('db:clients:postgresql');
 
@@ -225,6 +227,10 @@ export async function getTableKeys(conn, database, table, schema) {
 export function query(conn, queryText) {
   let pid = null;
   let canceling = false;
+  const cancelable = createCancelablePromise({
+    ...errors.CANCELED_BY_USER,
+    sqlectronError: 'CANCELED_BY_USER',
+  });
 
   return {
     execute() {
@@ -238,7 +244,10 @@ export function query(conn, queryText) {
         pid = dataPid.rows[0].pid;
 
         try {
-          const data = await executeQuery(connClient, queryText);
+          const data = await Promise.race([
+            cancelable.wait(),
+            executeQuery(connClient, queryText),
+          ]);
 
           pid = null;
 
@@ -250,6 +259,8 @@ export function query(conn, queryText) {
           }
 
           throw err;
+        } finally {
+          cancelable.discard();
         }
       });
     },
@@ -268,6 +279,8 @@ export function query(conn, queryText) {
         if (!data.rows[0].pg_cancel_backend) {
           throw new Error(`Failed canceling query with pid ${pid}.`);
         }
+
+        cancelable.cancel();
       } catch (err) {
         canceling = false;
         throw err;

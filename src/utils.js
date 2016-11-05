@@ -71,3 +71,33 @@ export function getPort() {
     });
   });
 }
+
+export function createCancelablePromise(error, timeIdle = 100) {
+  let canceled = false;
+  let discarded = false;
+
+  const wait = (time) => new Promise((resolve) => setTimeout(resolve, time));
+
+  return {
+    async wait() {
+      while (!canceled && !discarded) {
+        await wait(timeIdle);
+      }
+
+      if (canceled) {
+        const err = new Error(error.message || 'Promise canceled.');
+
+        Object.getOwnPropertyNames(error)
+          .forEach((key) => err[key] = error[key]); // eslint-disable-line no-return-assign
+
+        throw err;
+      }
+    },
+    cancel() {
+      canceled = true;
+    },
+    discard() {
+      discarded = true;
+    },
+  };
+}

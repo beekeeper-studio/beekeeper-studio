@@ -2,6 +2,8 @@ import mysql from 'mysql';
 import { identify } from 'sql-query-identifier';
 
 import createDebug from '../../debug';
+import { createCancelablePromise } from '../../utils';
+import errors from '../../errors';
 
 const debug = createDebug('db:clients:mysql');
 
@@ -178,9 +180,14 @@ export async function getTableKeys(conn, database, table) {
   }));
 }
 
+
 export function query(conn, queryText) {
   let pid = null;
   let canceling = false;
+  const cancelable = createCancelablePromise({
+    ...errors.CANCELED_BY_USER,
+    sqlectronError: 'CANCELED_BY_USER',
+  });
 
   return {
     execute() {
@@ -194,7 +201,10 @@ export function query(conn, queryText) {
         pid = dataPid[0].pid;
 
         try {
-          const data = await executeQuery(connClient, queryText);
+          const data = await Promise.race([
+            cancelable.wait(),
+            executeQuery(connClient, queryText),
+          ]);
 
           pid = null;
 
@@ -206,6 +216,8 @@ export function query(conn, queryText) {
           }
 
           throw err;
+        } finally {
+          cancelable.discard();
         }
       });
     },
@@ -220,6 +232,7 @@ export function query(conn, queryText) {
         await driverExecuteQuery(conn, {
           query: `kill ${pid};`,
         });
+        cancelable.cancel();
       } catch (err) {
         canceling = false;
         throw err;
