@@ -65,7 +65,7 @@ function resolveHomePathToAbsolute(filename) {
 
 export function getPort() {
   return new Promise((resolve, reject) => {
-    pf.getPort({ host: '127.0.0.1' }, (err, port) => {
+    pf.getPort({ host: 'localhost' }, (err, port) => {
       if (err) return reject(err);
       resolve(port);
     });
