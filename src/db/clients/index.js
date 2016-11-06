@@ -14,6 +14,7 @@ export const CLIENTS = [
     defaultPort: 3306,
     disabledFeatures: [
       'server:schema',
+      'server:domain',
     ],
   },
   {
@@ -21,6 +22,9 @@ export const CLIENTS = [
     name: 'PostgreSQL',
     defaultDatabase: 'postgres',
     defaultPort: 5432,
+    disabledFeatures: [
+      'server:domain',
+    ],
   },
   {
     key: 'sqlserver',
@@ -37,6 +41,7 @@ export const CLIENTS = [
       'server:user',
       'server:password',
       'server:schema',
+      'server:domain',
       'scriptCreateTable',
       'cancelQuery',
     ],
