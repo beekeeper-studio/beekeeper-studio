@@ -99,7 +99,7 @@ Array with all servers connection.
 
 ## Contributing
 
-It is required to use [editorconfig](http://editorconfig.org/). Furthermore, please write and run tests (/spec/db.spec.js) before pushing any changes.
+It is required to use [editorconfig](http://editorconfig.org/). Furthermore, please write and run tests (`/spec/db.spec.js`) before pushing any changes.
 
 ### with docker + docker-compose
 
