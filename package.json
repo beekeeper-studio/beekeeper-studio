@@ -33,11 +33,11 @@
     "debug": "^2.2.0",
     "mssql": "^3.0.0",
     "mysql": "^2.10.2",
-    "node-uuid": "^1.4.3",
     "pg": "git+https://github.com/maxcnunes/node-postgres.git#multiple-statements-v6.1.0",
     "portfinder": "^0.4.0",
     "sql-query-identifier": "^1.0.0",
     "ssh2": "^0.5.0",
+    "uuid": "^3.0.0",
     "valida": "^2.0.0"
   },
   "devDependencies": {

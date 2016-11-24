@@ -1,4 +1,4 @@
-import uuid from 'node-uuid';
+import uuid from 'uuid';
 import { validate, validateUniqueId } from './validators/server';
 import * as config from './config';
 
