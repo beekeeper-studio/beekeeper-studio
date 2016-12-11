@@ -32,6 +32,7 @@ export default async function (server, database) {
     listRoutines: () => listRoutines(conn),
     listTableColumns: (db, table) => listTableColumns(conn, db, table),
     listTableTriggers: (table) => listTableTriggers(conn, table),
+    listTableIndexes: (table, db) => listTableIndexes(conn, table, db),
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table) => getTableReferences(conn, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
@@ -130,6 +131,16 @@ export async function listTableTriggers(conn, table) {
   const { data } = await driverExecuteQuery(conn, { query: sql, params });
 
   return data.map((row) => row.trigger_name);
+}
+
+export async function listTableIndexes(conn, table, database) {
+  const sql = `
+  SHOW INDEX FROM ${mysql.escape(table).replace(/'/g, '')} FROM ${mysql.escape(database).replace(/'/g, '')} ;
+  `;
+
+  const { data } = await driverExecuteQuery(conn, { query: sql });
+
+  return data.map((row) => row.Key_name);
 }
 
 export function listSchemas() {

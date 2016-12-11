@@ -41,6 +41,7 @@ export default async function (server, database) {
     listRoutines: (schema = defaultSchema) => listRoutines(conn, schema),
     listTableColumns: (db, table, schema = defaultSchema) => listTableColumns(conn, db, table, schema),
     listTableTriggers: (table, schema = defaultSchema) => listTableTriggers(conn, table, schema),
+    listTableIndexes: (table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
@@ -153,6 +154,23 @@ export async function listTableTriggers(conn, table, schema) {
   const data = await driverExecuteQuery(conn, { query: sql, params });
 
   return data.rows.map((row) => row.trigger_name);
+}
+export async function listTableIndexes(conn, table, schema) {
+  const sql = `
+    SELECT indexname as index_name
+    FROM pg_indexes
+    WHERE schemaname = $1
+    AND tablename = $2
+  `;
+
+  const params = [
+    schema,
+    table,
+  ];
+
+  const data = await driverExecuteQuery(conn, { query: sql, params });
+
+  return data.rows.map((row) => row.index_name);
 }
 
 export async function listSchemas(conn) {

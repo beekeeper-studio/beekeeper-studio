@@ -32,6 +32,7 @@ export default function (server, database) {
         listRoutines: () => listRoutines(client),
         listTableColumns: (db, table) => listTableColumns(client, db, table),
         listTableTriggers: (table) => listTableTriggers(client, table),
+        listTableIndexes: (table) => listTableIndexes(client, table),
         listSchemas: () => listSchemas(client),
         getTableReferences: (table) => getTableReferences(client, table),
         getTableKeys: (db, table) => getTableKeys(client, db, table),
@@ -105,6 +106,9 @@ export function listTableColumns(client, database, table) {
 }
 
 export function listTableTriggers() {
+  return Promise.resolve([]);
+}
+export function listTableIndexes() {
   return Promise.resolve([]);
 }
 

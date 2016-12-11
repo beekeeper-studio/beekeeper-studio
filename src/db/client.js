@@ -23,6 +23,7 @@ export function createConnection(server, database) {
     listRoutines: listRoutines.bind(null, server, database),
     listTableColumns: listTableColumns.bind(null, server, database),
     listTableTriggers: listTableTriggers.bind(null, server, database),
+    listTableIndexes: listTableIndexes.bind(null, server, database),
     listSchemas: listSchemas.bind(null, server, database),
     getTableReferences: getTableReferences.bind(null, server, database),
     getTableKeys: getTableKeys.bind(null, server, database),
@@ -147,6 +148,11 @@ function listTableColumns(server, database, table, schema) {
 function listTableTriggers(server, database, table, schema) {
   checkIsConnected(server, database);
   return database.connection.listTableTriggers(table, schema);
+}
+
+function listTableIndexes(server, database, table, schema) {
+  checkIsConnected(server, database);
+  return database.connection.listTableIndexes(table, database.database, schema);
 }
 
 function getTableReferences(server, database, table, schema) {
