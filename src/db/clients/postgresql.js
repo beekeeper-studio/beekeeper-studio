@@ -41,7 +41,7 @@ export default async function (server, database) {
     listRoutines: (schema = defaultSchema) => listRoutines(conn, schema),
     listTableColumns: (db, table, schema = defaultSchema) => listTableColumns(conn, db, table, schema),
     listTableTriggers: (table, schema = defaultSchema) => listTableTriggers(conn, table, schema),
-    listTableIndexes: (table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
+    listTableIndexes: (db, table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),

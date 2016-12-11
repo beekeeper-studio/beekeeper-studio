@@ -27,7 +27,7 @@ export default async function (server, database) {
     listRoutines: () => listRoutines(conn),
     listTableColumns: (db, table) => listTableColumns(conn, db, table),
     listTableTriggers: (table) => listTableTriggers(conn, table),
-    listTableIndexes: (table) => listTableIndexes(conn, table),
+    listTableIndexes: (db, table) => listTableIndexes(conn, db, table),
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table) => getTableReferences(conn, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
@@ -188,10 +188,10 @@ export async function listTableTriggers(conn, table) {
   return data.map((row) => row.trigger_name);
 }
 
-export async function listTableIndexes(conn, table) {
+export async function listTableIndexes(conn, database, table) {
   // SQL Server does not have information_schema for indexes, so other way around
   // is using sp_helpindex stored procedure to fetch indexes related to table
-  const sql = `EXEC sp_helpindex ${table}`;
+  const sql = `EXEC sp_helpindex ${wrapIdentifier(table)}`;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 

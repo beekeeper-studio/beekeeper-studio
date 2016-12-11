@@ -176,6 +176,26 @@ describe('db', () => {
           });
         });
 
+        describe('.listTableIndexes', () => {
+          it('should list all indexes', async() => {
+            const indexes = await dbConn.listTableIndexes('users', 'public');
+            if (dbClient === 'cassandra') {
+              expect(indexes).to.have.length(0);
+            } else if (dbClient === 'postgresql') {
+              expect(indexes).to.have.length(1);
+              expect(indexes).to.include.members(['users_pkey']);
+            } else if (dbClient === 'mysql') {
+              expect(indexes).to.have.length(2);
+              expect(indexes).to.include.members(['PRIMARY', 'role_id']);
+            } else if (dbClient === 'sqlserver') {
+              expect(indexes).to.have.length(1);
+              expect(indexes[0]).to.match(/^PK__users__/i);
+            } else {
+              throw new Error('Invalid db client');
+            }
+          });
+        });
+
         describe('.listSchemas', () => {
           it('should list all schema', async() => {
             const schemas = await dbConn.listSchemas();

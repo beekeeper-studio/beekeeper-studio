@@ -32,7 +32,7 @@ export default function (server, database) {
         listRoutines: () => listRoutines(client),
         listTableColumns: (db, table) => listTableColumns(client, db, table),
         listTableTriggers: (table) => listTableTriggers(client, table),
-        listTableIndexes: (table) => listTableIndexes(client, table),
+        listTableIndexes: (db, table) => listTableIndexes(client, table),
         listSchemas: () => listSchemas(client),
         getTableReferences: (table) => getTableReferences(client, table),
         getTableKeys: (db, table) => getTableKeys(client, db, table),
