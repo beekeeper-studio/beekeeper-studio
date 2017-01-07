@@ -81,6 +81,12 @@ describe('db', () => {
           return dbConn.connect();
         });
 
+        describe('.disconnect', () => {
+          it('should close all connections in the pool', () => {
+            dbConn.disconnect();
+          });
+        });
+
         describe('.listDatabases', () => {
           it('should list all databases', async () => {
             const databases = await dbConn.listDatabases();

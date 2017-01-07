@@ -43,8 +43,9 @@ export default async function (server, database) {
 }
 
 
-export function disconnect(conn) {
-  conn.close();
+export async function disconnect(conn) {
+  const connection = await new Connection(conn.dbConfig);
+  connection.close();
 }
 
 
