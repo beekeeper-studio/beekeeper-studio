@@ -6,6 +6,10 @@ The common code used by all sqlectron clients.
 
 > Requires node 6 or higher.
 
+#### How to pronounce
+
+It is pronounced "sequelectron" - https://translate.google.com/?source=osdd#en/en/sequelectron
+
 #### Current supported databases
 * [PostgreSQL](http://www.postgresql.org/)
 * [MySQL](https://www.mysql.com/)
