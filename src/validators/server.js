@@ -47,7 +47,7 @@ function boolValidator(ctx, options, value) {
 const SSH_SCHEMA = {
   host: [
     { sanitizer: Valida.Sanitizer.trim },
-    { validator: Valida.Validator.len, min: 1, max: 250 },
+    { validator: Valida.Validator.len, min: 1 },
   ],
   port: [
     { sanitizer: Valida.Sanitizer.toInt },
@@ -56,15 +56,15 @@ const SSH_SCHEMA = {
   user: [
     { sanitizer: Valida.Sanitizer.trim },
     { validator: Valida.Validator.required },
-    { validator: Valida.Validator.len, min: 1, max: 55 },
+    { validator: Valida.Validator.len, min: 1 },
   ],
   password: [
     { sanitizer: Valida.Sanitizer.trim },
-    { validator: Valida.Validator.len, min: 1, max: 55 },
+    { validator: Valida.Validator.len, min: 1 },
   ],
   privateKey: [
     { sanitizer: Valida.Sanitizer.trim },
-    { validator: Valida.Validator.len, min: 1, max: 250 },
+    { validator: Valida.Validator.len, min: 1 },
   ],
   privateKeyWithPassphrase: [
     { validator: boolValidator },
@@ -76,7 +76,7 @@ const SERVER_SCHEMA = {
   name: [
     { sanitizer: Valida.Sanitizer.trim },
     { validator: Valida.Validator.required },
-    { validator: Valida.Validator.len, min: 1, max: 250 },
+    { validator: Valida.Validator.len, min: 1 },
   ],
   client: [
     { sanitizer: Valida.Sanitizer.trim },
@@ -88,7 +88,7 @@ const SERVER_SCHEMA = {
   ],
   host: [
     { sanitizer: Valida.Sanitizer.trim },
-    { validator: Valida.Validator.len, min: 1, max: 250 },
+    { validator: Valida.Validator.len, min: 1 },
     { validator: serverAddressValidator },
   ],
   port: [
@@ -98,20 +98,20 @@ const SERVER_SCHEMA = {
   ],
   socketPath: [
     { sanitizer: Valida.Sanitizer.trim },
-    { validator: Valida.Validator.len, min: 1, max: 250 },
+    { validator: Valida.Validator.len, min: 1 },
     { validator: serverAddressValidator },
   ],
   database: [
     { sanitizer: Valida.Sanitizer.trim },
-    { validator: Valida.Validator.len, min: 1, max: 100 },
+    { validator: Valida.Validator.len, min: 1 },
   ],
   user: [
     { sanitizer: Valida.Sanitizer.trim },
-    { validator: Valida.Validator.len, min: 1, max: 55 },
+    { validator: Valida.Validator.len, min: 1 },
   ],
   password: [
     { sanitizer: Valida.Sanitizer.trim },
-    { validator: Valida.Validator.len, min: 1, max: 55 },
+    { validator: Valida.Validator.len, min: 1 },
   ],
   ssh: [
     { validator: Valida.Validator.schema, schema: SSH_SCHEMA },
