@@ -23,7 +23,7 @@ pg.types.setTypeParser(1184, 'text', (val) => val); // timestamp
 
 export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
-  debug('create driver client fro postgres with config %j', dbConfig);
+  debug('create driver client for postgres with config %j', dbConfig);
 
   const conn = {
     pool: new pg.Pool(dbConfig),

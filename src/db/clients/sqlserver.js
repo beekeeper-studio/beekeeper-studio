@@ -12,7 +12,7 @@ const mmsqlErrors = {
 
 export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
-  debug('create driver client fro mmsql with config %j', dbConfig);
+  debug('create driver client for mmsql with config %j', dbConfig);
 
   const conn = { dbConfig };
 
