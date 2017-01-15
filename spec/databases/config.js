@@ -23,6 +23,9 @@ export default {
     password: process.env.SQLSERVER_ENV_SQLSERVER_PASSWORD,
     database: process.env.SQLSERVER_ENV_SQLSERVER_DATABASE,
   },
+  sqlite: {
+    database: '/tmp/sqlectron.db',
+  },
   cassandra: {
     host: url.parse(process.env.CASSANDRA_PORT).hostname,
     port: 9042,

@@ -262,7 +262,7 @@ export async function executeQuery(conn, queryText) {
     return [];
   }
 
-  const commands = identifyCommands(queryText);
+  const commands = identifyCommands(queryText).map((item) => item.type);
 
   if (!isMultipleQuery(fields)) {
     return [parseRowQueryResult(data, fields, commands[0])];

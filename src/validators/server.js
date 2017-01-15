@@ -123,7 +123,19 @@ const SERVER_SCHEMA = {
  * validations applied on creating/updating a server
  */
 export async function validate(server) {
-  const validated = await Valida.process(server, SERVER_SCHEMA);
+  const serverSchema = { ...SERVER_SCHEMA };
+
+  const clientConfig = CLIENTS.find((dbClient) => dbClient.key === server.client);
+  if (clientConfig && clientConfig.disabledFeatures) {
+    clientConfig.disabledFeatures.forEach((item) => {
+      const [region, field] = item.split(':');
+      if (region === 'server') {
+        delete serverSchema[field];
+      }
+    });
+  }
+
+  const validated = await Valida.process(server, serverSchema);
   if (!validated.isValid()) { throw validated.invalidError(); }
 }
 

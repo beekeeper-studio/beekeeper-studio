@@ -10,6 +10,7 @@
     "prepublish": "npm run compile",
     "lint": "eslint src/ spec/",
     "test:mysql": "DB_CLIENTS=mysql npm run test",
+    "test:sqlite": "DB_CLIENTS=sqlite npm run test",
     "test:sqlserver": "DB_CLIENTS=sqlserver npm run test",
     "test:postgresql": "DB_CLIENTS=postgresql npm run test",
     "test": "npm run lint && mocha --timeout 40000 --compilers js:babel-core/register --reporter spec ./spec/**/*.spec.js",
@@ -35,7 +36,8 @@
     "mysql": "^2.10.2",
     "pg": "git+https://github.com/maxcnunes/node-postgres.git#multiple-statements-v6.1.0",
     "portfinder": "^0.4.0",
-    "sql-query-identifier": "^1.0.0",
+    "sql-query-identifier": "^1.1.0",
+    "sqlite3": "^3.1.8",
     "ssh2": "^0.5.0",
     "uuid": "^3.0.0",
     "valida": "^2.0.0"

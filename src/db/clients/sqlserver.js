@@ -74,7 +74,7 @@ export function query(conn, queryText) {
 
           const data = await promiseQuery;
 
-          const commands = identifyCommands(queryText);
+          const commands = identifyCommands(queryText).map((item) => item.type);
 
           // Executing only non select queries will not return results.
           // So we "fake" there is at least one result.
@@ -105,7 +105,7 @@ export function query(conn, queryText) {
 export async function executeQuery(conn, queryText) {
   const { request, data } = await driverExecuteQuery(conn, { query: queryText, multiple: true });
 
-  const commands = identifyCommands(queryText);
+  const commands = identifyCommands(queryText).map((item) => item.type);
 
   // Executing only non select queries will not return results.
   // So we "fake" there is at least one result.

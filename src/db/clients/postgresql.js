@@ -311,7 +311,7 @@ export function query(conn, queryText) {
 export async function executeQuery(conn, queryText) {
   const data = await driverExecuteQuery(conn, { query: queryText, multiple: true });
 
-  const commands = identifyCommands(queryText);
+  const commands = identifyCommands(queryText).map((item) => item.type);
 
   return data.map((result, idx) => parseRowQueryResult(result, commands[idx]));
 }
