@@ -15,6 +15,7 @@ It is pronounced "sequelectron" - https://translate.google.com/?source=osdd#en/e
 * [MySQL](https://www.mysql.com/)
 * [Microsoft SQL Server](http://www.microsoft.com/en-us/server-cloud/products/sql-server/)
 * [Cassandra](http://cassandra.apache.org/) (NoSQL; [Exceptions about this client](https://github.com/sqlectron/sqlectron-core/releases/tag/v6.3.0))
+* [SQLite](https://sqlite.org/)
 
 Do you want to support another SQL database? It is expected that in the pull request the new database is included in the [db.spec.js](https://github.com/sqlectron/sqlectron-core/blob/master/spec/db.spec.js).
 
