@@ -114,7 +114,7 @@ export async function listTables(conn) {
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.map((row) => row.name);
+  return data;
 }
 
 export async function listViews(conn) {
@@ -126,7 +126,7 @@ export async function listViews(conn) {
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.map((row) => row.name);
+  return data;
 }
 
 export function listRoutines() {

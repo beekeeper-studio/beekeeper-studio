@@ -38,7 +38,7 @@ export default async function (server, database) {
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
-    listDatabases: () => listDatabases(conn),
+    listDatabases: (filter) => listDatabases(conn, filter),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -55,7 +55,7 @@ export function disconnect(conn) {
 
 export async function listTables(conn) {
   const sql = `
-    SELECT table_name
+    SELECT table_name as name
     FROM information_schema.tables
     WHERE table_schema = database()
     AND table_type NOT LIKE '%VIEW%'
@@ -64,12 +64,12 @@ export async function listTables(conn) {
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.map((row) => row.table_name);
+  return data;
 }
 
 export async function listViews(conn) {
   const sql = `
-    SELECT table_name
+    SELECT table_name as name
     FROM information_schema.views
     WHERE table_schema = database()
     ORDER BY table_name
@@ -77,7 +77,7 @@ export async function listViews(conn) {
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.map((row) => row.table_name);
+  return data;
 }
 
 export async function listRoutines(conn) {
@@ -272,12 +272,14 @@ export async function executeQuery(conn, queryText) {
 }
 
 
-export async function listDatabases(conn) {
+export async function listDatabases(conn, filter) {
   const sql = 'show databases';
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.map((row) => row.Database);
+  return data
+    .filter((item) => filterDatabase(item, filter, 'Database'))
+    .map((row) => row.Database);
 }
 
 
@@ -460,4 +462,25 @@ async function runWithConnection({ pool }, run) {
       }
     });
   });
+}
+
+export function filterDatabase(item, { database } = {}, databaseField) {
+  if (!database) { return true; }
+
+  const value = item[databaseField];
+  if (typeof database === 'string') {
+    return database === value;
+  }
+
+  const { only, ignore } = database;
+
+  if (only && only.length && !~only.indexOf(value)) {
+    return false;
+  }
+
+  if (ignore && ignore.length && ~ignore.indexOf(value)) {
+    return false;
+  }
+
+  return true;
 }

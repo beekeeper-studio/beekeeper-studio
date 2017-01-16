@@ -58,14 +58,14 @@ export function disconnect(client) {
 export function listTables(client, database) {
   return new Promise((resolve, reject) => {
     const sql = `
-      SELECT table_name
+      SELECT table_name as name
       FROM system_schema.tables
       WHERE keyspace_name = ?
     `;
     const params = [database];
     client.execute(sql, params, (err, data) => {
       if (err) return reject(err);
-      resolve(data.rows.map((row) => row.table_name));
+      resolve(data.rows.map((row) => ({ name: row.name })));
     });
   });
 }

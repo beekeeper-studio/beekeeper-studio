@@ -104,23 +104,41 @@ describe('db', () => {
 
         describe('.listTables', () => {
           it('should list all tables', async () => {
-            const tables = await dbConn.listTables();
-            expect(tables).to.include.members(['users', 'roles']);
+            const tables = await dbConn.listTables({ schema: 'public' });
+            if (dbClient === 'postgresql') {
+              expect(tables).to.eql([
+                { schema: 'public', name: 'roles' },
+                { schema: 'public', name: 'users' },
+              ]);
+            } else {
+              expect(tables).to.eql([
+                { name: 'roles' },
+                { name: 'users' },
+              ]);
+            }
           });
         });
 
         if (dbClient !== 'cassandra') {
           describe('.listViews', () => {
             it('should list all views', async () => {
-              const views = await dbConn.listViews();
-              expect(views).to.include.members(['email_view']);
+              const views = await dbConn.listViews({ schema: 'public' });
+              if (dbClient === 'postgresql') {
+                expect(views).to.eql([
+                  { schema: 'public', name: 'email_view' },
+                ]);
+              } else {
+                expect(views).to.eql([
+                  { name: 'email_view' },
+                ]);
+              }
             });
           });
         }
 
         describe('.listRoutines', () => {
           it('should list all routines with their type', async() => {
-            const routines = await dbConn.listRoutines();
+            const routines = await dbConn.listRoutines({ schema: 'public' });
             const routine = dbClient === 'postgresql' ? routines[1] : routines[0];
 
             // Postgresql routine type is always function. SP do not exist
@@ -129,9 +147,15 @@ describe('db', () => {
             if (dbClient === 'postgresql') {
               expect(routines).to.have.length(2);
               expect(routine).to.have.deep.property('routineType').to.eql('FUNCTION');
-            } else if (dbClient === 'mysql' || dbClient === 'sqlserver') {
+              expect(routine).to.have.deep.property('schema').to.eql('public');
+            } else if (dbClient === 'mysql') {
               expect(routines).to.have.length(1);
               expect(routine).to.have.deep.property('routineType').to.eql('PROCEDURE');
+              expect(routine).to.not.have.deep.property('schema');
+            } else if (dbClient === 'sqlserver') {
+              expect(routines).to.have.length(1);
+              expect(routine).to.have.deep.property('routineType').to.eql('PROCEDURE');
+              expect(routine).to.have.deep.property('schema').to.eql('public');
             } else if (dbClient === 'cassandra' || dbClient === 'sqlite') {
               expect(routines).to.have.length(0);
             } else {
@@ -227,7 +251,7 @@ describe('db', () => {
 
         describe('.listSchemas', () => {
           it('should list all schema', async() => {
-            const schemas = await dbConn.listSchemas();
+            const schemas = await dbConn.listSchemas({ schema: { only: ['public', 'dummy_schema'] } });
             if (dbClient === 'postgresql') {
               expect(schemas).to.have.length(2);
               expect(schemas).to.include.members(['public', 'dummy_schema']);

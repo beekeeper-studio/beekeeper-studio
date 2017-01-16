@@ -1,6 +1,7 @@
 import pg from 'pg';
 import { identify } from 'sql-query-identifier';
 
+import { buildDatabseFilter, buildSchemaFilter } from './utils';
 import createDebug from '../../debug';
 import { createCancelablePromise } from '../../utils';
 import errors from '../../errors';
@@ -36,18 +37,18 @@ export default async function (server, database) {
     /* eslint max-len:0 */
     wrapIdentifier,
     disconnect: () => disconnect(conn),
-    listTables: (_, schema = defaultSchema) => listTables(conn, schema),
-    listViews: (schema = defaultSchema) => listViews(conn, schema),
-    listRoutines: (schema = defaultSchema) => listRoutines(conn, schema),
+    listTables: (db, filter) => listTables(conn, filter),
+    listViews: (filter) => listViews(conn, filter),
+    listRoutines: (filter) => listRoutines(conn, filter),
     listTableColumns: (db, table, schema = defaultSchema) => listTableColumns(conn, db, table, schema),
     listTableTriggers: (table, schema = defaultSchema) => listTableTriggers(conn, table, schema),
     listTableIndexes: (db, table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
-    listSchemas: () => listSchemas(conn),
+    listSchemas: (db, filter) => listSchemas(conn, filter),
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
     executeQuery: (queryText, schema = defaultSchema) => executeQuery(conn, queryText, schema),
-    listDatabases: () => listDatabases(conn),
+    listDatabases: (filter) => listDatabases(conn, filter),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
     getTableCreateScript: (table, schema = defaultSchema) => getTableCreateScript(conn, table, schema),
     getViewCreateScript: (view, schema = defaultSchema) => getViewCreateScript(conn, view, schema),
@@ -62,56 +63,56 @@ export function disconnect(conn) {
 }
 
 
-export async function listTables(conn, schema) {
+export async function listTables(conn, filter) {
+  const schemaFilter = buildSchemaFilter(filter, 'table_schema');
   const sql = `
-    SELECT table_name
+    SELECT
+      table_schema as schema,
+      table_name as name
     FROM information_schema.tables
-    WHERE table_schema = $1
-    AND table_type NOT LIKE '%VIEW%'
-    ORDER BY table_name
+    WHERE table_type NOT LIKE '%VIEW%'
+    ${schemaFilter ? `AND ${schemaFilter}` : ''}
+    ORDER BY table_schema, table_name
   `;
 
-  const params = [
-    schema,
-  ];
+  const data = await driverExecuteQuery(conn, { query: sql });
 
-  const data = await driverExecuteQuery(conn, { query: sql, params });
-
-  return data.rows.map((row) => row.table_name);
+  return data.rows;
 }
 
-export async function listViews(conn, schema) {
+export async function listViews(conn, filter) {
+  const schemaFilter = buildSchemaFilter(filter, 'table_schema');
   const sql = `
-    SELECT table_name
+    SELECT
+      table_schema as schema,
+      table_name as name
     FROM information_schema.views
-    WHERE table_schema = $1
-    ORDER BY table_name
+    ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
+    ORDER BY table_schema, table_name
   `;
 
-  const params = [
-    schema,
-  ];
+  const data = await driverExecuteQuery(conn, { query: sql });
 
-  const data = await driverExecuteQuery(conn, { query: sql, params });
-
-  return data.rows.map((row) => row.table_name);
+  return data.rows;
 }
 
-export async function listRoutines(conn, schema) {
+export async function listRoutines(conn, filter) {
+  const schemaFilter = buildSchemaFilter(filter, 'routine_schema');
   const sql = `
-    SELECT routine_name, routine_type
+    SELECT
+      routine_schema,
+      routine_name,
+      routine_type
     FROM information_schema.routines
-    WHERE routine_schema = $1
-    ORDER BY routine_name
+    ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
+    GROUP BY routine_schema, routine_name, routine_type
+    ORDER BY routine_schema, routine_name
   `;
 
-  const params = [
-    schema,
-  ];
-
-  const data = await driverExecuteQuery(conn, { query: sql, params });
+  const data = await driverExecuteQuery(conn, { query: sql });
 
   return data.rows.map((row) => ({
+    schema: row.routine_schema,
     routineName: row.routine_name,
     routineType: row.routine_type,
   }));
@@ -173,12 +174,13 @@ export async function listTableIndexes(conn, table, schema) {
   return data.rows.map((row) => row.index_name);
 }
 
-export async function listSchemas(conn) {
+export async function listSchemas(conn, filter) {
+  const schemaFilter = buildSchemaFilter(filter);
   const sql = `
     SELECT schema_name
     FROM information_schema.schemata
-    WHERE schema_name <> 'information_schema' -- exclude 'system' schemata
-    AND schema_name !~ E'^pg_'                -- exclude more 'system' (pg-specific)
+    ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
+    ORDER BY schema_name
   `;
 
   const data = await driverExecuteQuery(conn, { query: sql });
@@ -317,11 +319,13 @@ export async function executeQuery(conn, queryText) {
 }
 
 
-export async function listDatabases(conn) {
+export async function listDatabases(conn, filter) {
+  const databaseFilter = buildDatabseFilter(filter, 'datname');
   const sql = `
     SELECT datname
     FROM pg_database
     WHERE datistemplate = $1
+    ${databaseFilter ? `AND ${databaseFilter}` : ''}
     ORDER BY datname
   `;
 

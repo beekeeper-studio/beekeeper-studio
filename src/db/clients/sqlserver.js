@@ -1,6 +1,7 @@
 import { Connection } from 'mssql';
 import { identify } from 'sql-query-identifier';
 
+import { buildDatabseFilter, buildSchemaFilter } from './utils';
 import createDebug from '../../debug';
 
 const debug = createDebug('db:clients:sqlserver');
@@ -22,9 +23,9 @@ export default async function (server, database) {
   return {
     wrapIdentifier,
     disconnect: () => disconnect(conn),
-    listTables: () => listTables(conn),
-    listViews: () => listViews(conn),
-    listRoutines: () => listRoutines(conn),
+    listTables: (db, filter) => listTables(conn, filter),
+    listViews: (filter) => listViews(conn, filter),
+    listRoutines: (filter) => listRoutines(conn, filter),
     listTableColumns: (db, table) => listTableColumns(conn, db, table),
     listTableTriggers: (table) => listTableTriggers(conn, table),
     listTableIndexes: (db, table) => listTableIndexes(conn, db, table),
@@ -33,7 +34,7 @@ export default async function (server, database) {
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
-    listDatabases: () => listDatabases(conn),
+    listDatabases: (filter) => listDatabases(conn, filter),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -124,41 +125,56 @@ async function getSchema(conn) {
 }
 
 
-export async function listTables(conn) {
+export async function listTables(conn, filter) {
+  const schemaFilter = buildSchemaFilter(filter, 'table_schema');
   const sql = `
-    SELECT table_name
+    SELECT
+      table_schema as schema,
+      table_name as name
     FROM information_schema.tables
     WHERE table_type NOT LIKE '%VIEW%'
-    ORDER BY table_name
+    ${schemaFilter ? `AND ${schemaFilter}` : ''}
+    ORDER BY table_schema, table_name
   `;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.map((row) => row.table_name);
+  return data;
 }
 
-export async function listViews(conn) {
+export async function listViews(conn, filter) {
+  const schemaFilter = buildSchemaFilter(filter, 'table_schema');
   const sql = `
-    SELECT table_name
+    SELECT
+      table_schema as schema,
+      table_name as name
     FROM information_schema.views
-    ORDER BY table_name
+    ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
+    ORDER BY table_schema, table_name
   `;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.map((row) => row.table_name);
+  return data;
 }
 
-export async function listRoutines(conn) {
+export async function listRoutines(conn, filter) {
+  const schemaFilter = buildSchemaFilter(filter, 'routine_schema');
   const sql = `
-    SELECT routine_name, routine_type
+    SELECT
+      routine_schema,
+      routine_name,
+      routine_type
     FROM information_schema.routines
-    ORDER BY routine_name
+    ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
+    GROUP BY routine_schema, routine_name, routine_type
+    ORDER BY routine_schema, routine_name
   `;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
   return data.map((row) => ({
+    schema: row.routine_schema,
     routineName: row.routine_name,
     routineType: row.routine_type,
   }));
@@ -199,10 +215,12 @@ export async function listTableIndexes(conn, database, table) {
   return data.map((row) => row.index_name);
 }
 
-export async function listSchemas(conn) {
+export async function listSchemas(conn, filter) {
+  const schemaFilter = buildSchemaFilter(filter);
   const sql = `
     SELECT schema_name
     FROM information_schema.schemata
+    ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
     ORDER BY schema_name
   `;
 
@@ -211,8 +229,16 @@ export async function listSchemas(conn) {
   return data.map((row) => row.schema_name);
 }
 
-export async function listDatabases(conn) {
-  const { data } = await driverExecuteQuery(conn, { query: 'SELECT name FROM sys.databases' });
+export async function listDatabases(conn, filter) {
+  const databaseFilter = buildDatabseFilter(filter, 'name');
+  const sql = `
+    SELECT name
+    FROM sys.databases
+    ${databaseFilter ? `AND ${databaseFilter}` : ''}
+    ORDER BY name
+  `;
+
+  const { data } = await driverExecuteQuery(conn, { query: sql });
 
   return data.map((row) => row.name);
 }

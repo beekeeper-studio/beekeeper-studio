@@ -119,25 +119,24 @@ function disconnect(server, database) {
   }
 }
 
-
-function listTables(server, database, schema) {
+function listSchemas(server, database, filter) {
   checkIsConnected(server, database);
-  return database.connection.listTables(database.database, schema);
+  return database.connection.listSchemas(database.database, filter);
 }
 
-function listSchemas(server, database) {
+function listTables(server, database, filter) {
   checkIsConnected(server, database);
-  return database.connection.listSchemas(database.database);
+  return database.connection.listTables(database.database, filter);
 }
 
-function listViews(server, database, schema) {
+function listViews(server, database, filter) {
   checkIsConnected(server, database);
-  return database.connection.listViews(schema);
+  return database.connection.listViews(filter);
 }
 
-function listRoutines(server, database, schema) {
+function listRoutines(server, database, filter) {
   checkIsConnected(server, database);
-  return database.connection.listRoutines(schema);
+  return database.connection.listRoutines(filter);
 }
 
 function listTableColumns(server, database, table, schema) {
@@ -176,9 +175,9 @@ function executeQuery(server, database, queryText) {
 }
 
 
-function listDatabases(server, database) {
+function listDatabases(server, database, filter) {
   checkIsConnected(server, database);
-  return database.connection.listDatabases();
+  return database.connection.listDatabases(filter);
 }
 
 
