@@ -129,8 +129,8 @@ export async function listTables(conn, filter) {
   const schemaFilter = buildSchemaFilter(filter, 'table_schema');
   const sql = `
     SELECT
-      table_schema as schema,
-      table_name as name
+      table_schema,
+      table_name
     FROM information_schema.tables
     WHERE table_type NOT LIKE '%VIEW%'
     ${schemaFilter ? `AND ${schemaFilter}` : ''}
@@ -139,15 +139,18 @@ export async function listTables(conn, filter) {
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data;
+  return data.map((item) => ({
+    schema: item.table_schema,
+    name: item.table_name,
+  }));
 }
 
 export async function listViews(conn, filter) {
   const schemaFilter = buildSchemaFilter(filter, 'table_schema');
   const sql = `
     SELECT
-      table_schema as schema,
-      table_name as name
+      table_schema,
+      table_name
     FROM information_schema.views
     ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
     ORDER BY table_schema, table_name
@@ -155,7 +158,10 @@ export async function listViews(conn, filter) {
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data;
+  return data.map((item) => ({
+    schema: item.table_schema,
+    name: item.table_name,
+  }));
 }
 
 export async function listRoutines(conn, filter) {

@@ -20,6 +20,11 @@ const SUPPORTED_DB_CLIENTS = [
   'cassandra',
 ];
 
+const dbSchemas = {
+  postgresql: 'public',
+  sqlserver: 'dbo',
+};
+
 
 /**
  * List of selected databases to be tested in the current task
@@ -40,6 +45,8 @@ describe('db', () => {
   }
 
   dbClients.forEach((dbClient) => {
+    const dbSchema = dbSchemas[dbClient];
+
     describe(dbClient, () => {
       describe('.connect', () => {
         it(`should connect into a ${dbClient} database`, () => {
@@ -104,11 +111,11 @@ describe('db', () => {
 
         describe('.listTables', () => {
           it('should list all tables', async () => {
-            const tables = await dbConn.listTables({ schema: 'public' });
-            if (dbClient === 'postgresql') {
+            const tables = await dbConn.listTables({ schema: dbSchema });
+            if (dbClient === 'postgresql' || dbClient === 'sqlserver') {
               expect(tables).to.eql([
-                { schema: 'public', name: 'roles' },
-                { schema: 'public', name: 'users' },
+                { schema: dbSchema, name: 'roles' },
+                { schema: dbSchema, name: 'users' },
               ]);
             } else {
               expect(tables).to.eql([
@@ -122,10 +129,10 @@ describe('db', () => {
         if (dbClient !== 'cassandra') {
           describe('.listViews', () => {
             it('should list all views', async () => {
-              const views = await dbConn.listViews({ schema: 'public' });
-              if (dbClient === 'postgresql') {
+              const views = await dbConn.listViews({ schema: dbSchema });
+              if (dbClient === 'postgresql' || dbClient === 'sqlserver') {
                 expect(views).to.eql([
-                  { schema: 'public', name: 'email_view' },
+                  { schema: dbSchema, name: 'email_view' },
                 ]);
               } else {
                 expect(views).to.eql([
@@ -138,7 +145,7 @@ describe('db', () => {
 
         describe('.listRoutines', () => {
           it('should list all routines with their type', async() => {
-            const routines = await dbConn.listRoutines({ schema: 'public' });
+            const routines = await dbConn.listRoutines({ schema: dbSchema });
             const routine = dbClient === 'postgresql' ? routines[1] : routines[0];
 
             // Postgresql routine type is always function. SP do not exist
@@ -147,7 +154,7 @@ describe('db', () => {
             if (dbClient === 'postgresql') {
               expect(routines).to.have.length(2);
               expect(routine).to.have.deep.property('routineType').to.eql('FUNCTION');
-              expect(routine).to.have.deep.property('schema').to.eql('public');
+              expect(routine).to.have.deep.property('schema').to.eql(dbSchema);
             } else if (dbClient === 'mysql') {
               expect(routines).to.have.length(1);
               expect(routine).to.have.deep.property('routineType').to.eql('PROCEDURE');
@@ -155,7 +162,7 @@ describe('db', () => {
             } else if (dbClient === 'sqlserver') {
               expect(routines).to.have.length(1);
               expect(routine).to.have.deep.property('routineType').to.eql('PROCEDURE');
-              expect(routine).to.have.deep.property('schema').to.eql('public');
+              expect(routine).to.have.deep.property('schema').to.eql(dbSchema);
             } else if (dbClient === 'cassandra' || dbClient === 'sqlite') {
               expect(routines).to.have.length(0);
             } else {
@@ -228,7 +235,7 @@ describe('db', () => {
 
         describe('.listTableIndexes', () => {
           it('should list all indexes', async() => {
-            const indexes = await dbConn.listTableIndexes('users', 'public');
+            const indexes = await dbConn.listTableIndexes('users', dbSchema);
             if (dbClient === 'cassandra') {
               expect(indexes).to.have.length(0);
             } else if (dbClient === 'sqlite') {
@@ -251,10 +258,10 @@ describe('db', () => {
 
         describe('.listSchemas', () => {
           it('should list all schema', async() => {
-            const schemas = await dbConn.listSchemas({ schema: { only: ['public', 'dummy_schema'] } });
+            const schemas = await dbConn.listSchemas({ schema: { only: [dbSchema, 'dummy_schema'] } });
             if (dbClient === 'postgresql') {
               expect(schemas).to.have.length(2);
-              expect(schemas).to.include.members(['public', 'dummy_schema']);
+              expect(schemas).to.include.members([dbSchema, 'dummy_schema']);
             } else if (dbClient === 'sqlserver') {
               expect(schemas).to.include('dummy_schema');
             } else {
@@ -591,7 +598,7 @@ describe('db', () => {
               // This trick maske select from the same table multiple times.
               if (dbClient === 'sqlite') {
                 const fromTables = [];
-                for (let i = 0; i < 10; i++) { // eslint-disable-line no-plusplus
+                for (let i = 0; i < 50; i++) { // eslint-disable-line no-plusplus
                   fromTables.push('sqlite_master');
                 }
                 sleepCommands.sqlite = `SELECT last.name FROM ${fromTables.join(',')} as last`;
