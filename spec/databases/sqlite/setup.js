@@ -1,18 +1,24 @@
+import fs from 'fs';
 import path from 'path';
-import { exec } from 'child_process';
 
+const sqlite3 = require('sqlite3').verbose();
 
 export default function run(config) {
   before(async () => {
-    const script = path.join(__dirname, 'schema/schema.sql');
-    await executeCommand(`sqlite3 ${config.database} < ${script}`);
+    const db = new sqlite3.Database(config.database);
+
+    const script = fs.readFileSync(path.join(__dirname, 'schema/schema.sql'), { encoding: 'utf8' });
+
+    await executeQuery(db, script);
+
+    db.close();
   });
 }
 
 
-function executeCommand(command) {
+function executeQuery(client, query) {
   return new Promise((resolve, reject) => {
-    exec(command, (err) => {
+    client.exec(query, (err) => {
       if (err) {
         return reject(err);
       }

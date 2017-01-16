@@ -218,7 +218,7 @@ export async function truncateAllTables(conn) {
     const tables = await listTables(connClient);
 
     const truncateAll = tables.map((table) => `
-      DELETE FROM ${table};
+      DELETE FROM ${table.name};
     `).join('');
 
     // TODO: Check if sqlite_sequence exists then execute:
