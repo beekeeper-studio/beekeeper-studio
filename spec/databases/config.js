@@ -1,4 +1,5 @@
 import url from 'url';
+import path from 'path';
 
 export default {
   postgresql: {
@@ -24,7 +25,7 @@ export default {
     database: process.env.SQLSERVER_ENV_SQLSERVER_DATABASE,
   },
   sqlite: {
-    database: '/tmp/sqlectron.db',
+    database: path.join(__dirname, 'sqlite', 'sqlectron.db'),
   },
   cassandra: {
     host: url.parse(process.env.CASSANDRA_PORT).hostname,

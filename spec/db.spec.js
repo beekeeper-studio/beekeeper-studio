@@ -95,7 +95,7 @@ describe('db', () => {
           it('should list all databases', async () => {
             const databases = await dbConn.listDatabases();
             if (dbClient === 'sqlite') {
-              expect(databases).to.include.members(['/tmp/sqlectron.db']);
+              expect(databases[0]).to.match(/sqlectron\.db$/);
             } else {
               expect(databases).to.include.members(['sqlectron']);
             }

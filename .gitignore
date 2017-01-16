@@ -4,3 +4,4 @@ npm-debug.log
 *.bak
 lib
 spec/fixtures/.tmp.sqlectron.json
+sqlectron.db
