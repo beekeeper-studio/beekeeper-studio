@@ -2,11 +2,11 @@ import pg from 'pg';
 import { identify } from 'sql-query-identifier';
 
 import { buildDatabseFilter, buildSchemaFilter } from './utils';
-import createDebug from '../../debug';
+import createLogger from '../../logger';
 import { createCancelablePromise } from '../../utils';
 import errors from '../../errors';
 
-const debug = createDebug('db:clients:postgresql');
+const logger = createLogger('db:clients:postgresql');
 
 const pgErrors = {
   CANCELED: '57014',
@@ -24,13 +24,13 @@ pg.types.setTypeParser(1184, 'text', (val) => val); // timestamp
 
 export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
-  debug('create driver client for postgres with config %j', dbConfig);
+  logger().debug('create driver client for postgres with config %j', dbConfig);
 
   const conn = {
     pool: new pg.Pool(dbConfig),
   };
 
-  debug('connected');
+  logger().debug('connected');
   const defaultSchema = await getSchema(conn);
 
   return {

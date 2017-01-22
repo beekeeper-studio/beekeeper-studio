@@ -1,9 +1,9 @@
 import { Client } from 'cassandra-driver';
 import { identify } from 'sql-query-identifier';
 
-import createDebug from '../../debug';
+import createLogger from '../../logger';
 
-const debug = createDebug('db:clients:cassandra');
+const logger = createLogger('db:clients:cassandra');
 
 /**
  * To keep compatibility with the other clients we treat keyspaces as database.
@@ -13,17 +13,17 @@ export default function (server, database) {
   return new Promise(async (resolve, reject) => {
     const dbConfig = configDatabase(server, database);
 
-    debug('creating database client %j', dbConfig);
+    logger().debug('creating database client %j', dbConfig);
     const client = new Client(dbConfig);
 
-    debug('connecting');
+    logger().debug('connecting');
     client.connect((err) => {
       if (err) {
         client.shutdown();
         return reject(err);
       }
 
-      debug('connected');
+      logger().debug('connected');
       resolve({
         wrapIdentifier,
         disconnect: () => disconnect(client),

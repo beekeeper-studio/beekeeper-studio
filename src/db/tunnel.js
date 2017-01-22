@@ -1,34 +1,32 @@
 import net from 'net';
 import { Client } from 'ssh2';
 import { getPort, readFile } from '../utils';
-import createDebug from '../debug';
+import createLogger from '../logger';
 
-
-const debug = createDebug('db:tunnel');
-
+const logger = createLogger('db:tunnel');
 
 export default function (serverInfo) {
   return new Promise(async (resolve, reject) => {
-    debug('configuring tunnel');
+    logger().debug('configuring tunnel');
     const config = await configTunnel(serverInfo);
 
     const connections = [];
 
-    debug('creating ssh tunnel server');
+    logger().debug('creating ssh tunnel server');
     const server = net.createServer(async (conn) => {
       conn.on('error', (err) => server.emit('error', err));
 
-      debug('creating ssh tunnel client');
+      logger().debug('creating ssh tunnel client');
       const client = new Client();
       connections.push(conn);
 
       client.on('error', (err) => server.emit('error', err));
 
       client.on('ready', () => {
-        debug('connected ssh tunnel client');
+        logger().debug('connected ssh tunnel client');
         connections.push(client);
 
-        debug('forwarding ssh tunnel client output');
+        logger().debug('forwarding ssh tunnel client output');
         client.forwardOut(
           config.srcHost,
           config.srcPort,
@@ -36,7 +34,7 @@ export default function (serverInfo) {
           config.dstPort,
           (err, sshStream) => {
             if (err) {
-              debug('error ssh connection %j', err);
+              logger().error('error ssh connection %j', err);
               server.close();
               server.emit('error', err);
               return;
@@ -49,7 +47,7 @@ export default function (serverInfo) {
       try {
         const localPort = await getPort();
 
-        debug('connecting ssh tunnel client');
+        logger().debug('connecting ssh tunnel client');
         client.connect({ ...config, localPort });
       } catch (err) {
         server.emit('error', err);
@@ -57,15 +55,15 @@ export default function (serverInfo) {
     });
 
     server.once('close', () => {
-      debug('close ssh tunnel server');
+      logger().debug('close ssh tunnel server');
       connections.forEach((conn) => conn.end());
     });
 
-    debug('connecting ssh tunnel server');
+    logger().debug('connecting ssh tunnel server');
     server.listen(config.localPort, config.localHost, (err) => {
       if (err) return reject(err);
 
-      debug('connected ssh tunnel server');
+      logger().debug('connected ssh tunnel server');
       resolve(server);
     });
   });

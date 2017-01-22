@@ -2,9 +2,9 @@ import { Connection } from 'mssql';
 import { identify } from 'sql-query-identifier';
 
 import { buildDatabseFilter, buildSchemaFilter } from './utils';
-import createDebug from '../../debug';
+import createLogger from '../../logger';
 
-const debug = createDebug('db:clients:sqlserver');
+const logger = createLogger('db:clients:sqlserver');
 
 const mmsqlErrors = {
   CANCELED: 'ECANCEL',
@@ -13,7 +13,7 @@ const mmsqlErrors = {
 
 export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
-  debug('create driver client for mmsql with config %j', dbConfig);
+  logger().debug('create driver client for mmsql with config %j', dbConfig);
 
   const conn = { dbConfig };
 

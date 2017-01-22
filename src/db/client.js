@@ -1,10 +1,10 @@
 import connectTunnel from './tunnel';
 import clients from './clients';
 import * as config from '../config';
-import createDebug from '../debug';
+import createLogger from '../logger';
 
 
-const debug = createDebug('db');
+const logger = createLogger('db');
 
 
 const DEFAULT_LIMIT = 1000;
@@ -63,11 +63,11 @@ async function connect(server, database) {
 
     // reuse existing tunnel
     if (server.config.ssh && !server.sshTunnel) {
-      debug('creating ssh tunnel');
+      logger().debug('creating ssh tunnel');
       server.sshTunnel = await connectTunnel(server.config);
 
       const { address, port } = server.sshTunnel.address();
-      debug('ssh forwarding through local connection %s:%d', address, port);
+      logger().debug('ssh forwarding through local connection %s:%d', address, port);
 
       server.config.localHost = address;
       server.config.localPort = port;
@@ -82,7 +82,7 @@ async function connect(server, database) {
 
     database.connection = connection;
   } catch (err) {
-    debug('Connection error %j', err);
+    logger().error('Connection error %j', err);
     disconnect(server, database);
     throw err;
   } finally {
@@ -99,7 +99,7 @@ function handleSSHError(sshTunnel) {
 
     sshTunnel.on('success', resolve);
     sshTunnel.on('error', (error) => {
-      debug('ssh error %j', error);
+      logger().error('ssh error %j', error);
       reject(error);
     });
   });

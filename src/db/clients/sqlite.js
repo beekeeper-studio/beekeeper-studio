@@ -1,9 +1,9 @@
 import sqlite3 from 'sqlite3';
 import { identify } from 'sql-query-identifier';
 
-import createDebug from '../../debug';
+import createLogger from '../../logger';
 
-const debug = createDebug('db:clients:sqlite');
+const logger = createLogger('db:clients:sqlite');
 
 const sqliteErrors = {
   CANCELED: 'SQLITE_INTERRUPT',
@@ -12,7 +12,7 @@ const sqliteErrors = {
 
 export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
-  debug('create driver client for sqlite3 with config %j', dbConfig);
+  logger().debug('create driver client for sqlite3 with config %j', dbConfig);
 
   const conn = { dbConfig };
 

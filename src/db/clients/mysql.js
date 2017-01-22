@@ -1,11 +1,11 @@
 import mysql from 'mysql';
 import { identify } from 'sql-query-identifier';
 
-import createDebug from '../../debug';
+import createLogger from '../../logger';
 import { createCancelablePromise } from '../../utils';
 import errors from '../../errors';
 
-const debug = createDebug('db:clients:mysql');
+const logger = createLogger('db:clients:mysql');
 
 const mysqlErrors = {
   EMPTY_QUERY: 'ER_EMPTY_QUERY',
@@ -15,7 +15,7 @@ const mysqlErrors = {
 
 export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
-  debug('create driver client for mysql with config %j', dbConfig);
+  logger().debug('create driver client for mysql with config %j', dbConfig);
 
   const conn = {
     pool: mysql.createPool(dbConfig),
@@ -450,7 +450,7 @@ async function runWithConnection({ pool }, run) {
 
       connection.on('error', (error) => {
         // it will be handled later in the next query execution
-        debug('Connection fatal error %j', error);
+        logger().error('Connection fatal error %j', error);
       });
 
       try {
