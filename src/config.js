@@ -1,18 +1,18 @@
 import uuid from 'uuid';
-import { getConfigPath, writeJSONFile, readJSONFile, fileExists } from './utils';
+import * as utils from './utils';
 
 
 /**
  * Prepare the configuration file sanitizing and validating all fields availbale
  */
 export async function prepare() {
-  const filename = getConfigPath();
-  const fileExistsResult = await fileExists(filename);
+  const filename = utils.getConfigPath();
+  const fileExistsResult = await utils.fileExists(filename);
   if (!fileExistsResult) {
-    await writeJSONFile(filename, { servers: [] });
+    await utils.writeJSONFile(filename, { servers: [] });
   }
 
-  const result = await readJSONFile(filename);
+  const result = await utils.readJSONFile(filename);
 
   result.servers = result.servers.map((server) => {
     const srv = { ...server };
@@ -24,7 +24,7 @@ export async function prepare() {
 
     return srv;
   });
-  await writeJSONFile(filename, result);
+  await utils.writeJSONFile(filename, result);
 
   // TODO: Validate whole configuration file
   // if (!configValidate(result)) {
@@ -32,14 +32,23 @@ export async function prepare() {
   // }
 }
 
+export function path() {
+  const filename = utils.getConfigPath();
+  return utils.resolveHomePathToAbsolute(filename);
+}
 
 export function get() {
-  const filename = getConfigPath();
-  return readJSONFile(filename);
+  const filename = utils.getConfigPath();
+  return utils.readJSONFile(filename);
+}
+
+export function getSync() {
+  const filename = utils.getConfigPath();
+  return utils.readJSONFileSync(filename);
 }
 
 
 export function save(data) {
-  const filename = getConfigPath();
-  return writeJSONFile(filename, data);
+  const filename = utils.getConfigPath();
+  return utils.writeJSONFile(filename, data);
 }

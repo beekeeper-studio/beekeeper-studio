@@ -54,7 +54,14 @@ export function readJSONFile(filename) {
 }
 
 
-function resolveHomePathToAbsolute(filename) {
+export function readJSONFileSync(filename) {
+  const filePath = resolveHomePathToAbsolute(filename);
+  const data = fs.readFileSync(path.resolve(filePath), { enconding: 'utf-8' });
+  return JSON.parse(data);
+}
+
+
+export function resolveHomePathToAbsolute(filename) {
   if (!/^~\//.test(filename)) {
     return filename;
   }
