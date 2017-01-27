@@ -1,20 +1,10 @@
 import uuid from 'uuid';
 import * as utils from './utils';
 
+const EMPTY_CONFIG = { servers: [] };
 
-/**
- * Prepare the configuration file sanitizing and validating all fields availbale
- */
-export async function prepare() {
-  const filename = utils.getConfigPath();
-  const fileExistsResult = await utils.fileExists(filename);
-  if (!fileExistsResult) {
-    await utils.writeJSONFile(filename, { servers: [] });
-  }
-
-  const result = await utils.readJSONFile(filename);
-
-  result.servers = result.servers.map((server) => {
+function sanitizeServers(data) {
+  return data.servers.map((server) => {
     const srv = { ...server };
     // ensure all server has an unique id
     if (!srv.id) { srv.id = uuid.v4(); }
@@ -24,7 +14,42 @@ export async function prepare() {
 
     return srv;
   });
+}
+
+/**
+ * Prepare the configuration file sanitizing and validating all fields availbale
+ */
+export async function prepare() {
+  const filename = utils.getConfigPath();
+  const fileExistsResult = await utils.fileExists(filename);
+  if (!fileExistsResult) {
+    await utils.writeJSONFile(filename, EMPTY_CONFIG);
+  }
+
+  const result = await utils.readJSONFile(filename);
+
+  result.servers = sanitizeServers(result);
+
   await utils.writeJSONFile(filename, result);
+
+  // TODO: Validate whole configuration file
+  // if (!configValidate(result)) {
+  //   throw new Error('Invalid ~/.sqlectron.json file format');
+  // }
+}
+
+export function prepareSync() {
+  const filename = utils.getConfigPath();
+  const fileExistsResult = utils.fileExistsSync(filename);
+  if (!fileExistsResult) {
+    utils.writeJSONFileSync(filename, EMPTY_CONFIG);
+  }
+
+  const result = utils.readJSONFileSync(filename);
+
+  result.servers = sanitizeServers(result);
+
+  utils.writeJSONFileSync(filename, result);
 
   // TODO: Validate whole configuration file
   // if (!configValidate(result)) {

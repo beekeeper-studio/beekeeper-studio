@@ -23,6 +23,15 @@ export function fileExists(filename) {
 }
 
 
+export function fileExistsSync(filename) {
+  try {
+    return fs.statSync(filename).isFile();
+  } catch (e) {
+    return false;
+  }
+}
+
+
 export function writeFile(filename, data) {
   return new Promise((resolve, reject) => {
     fs.writeFile(filename, data, (err) => {
@@ -35,6 +44,11 @@ export function writeFile(filename, data) {
 
 export function writeJSONFile(filename, data) {
   return writeFile(filename, JSON.stringify(data, null, 2));
+}
+
+
+export function writeJSONFileSync(filename, data) {
+  return fs.writeFileSync(filename, JSON.stringify(data, null, 2));
 }
 
 
