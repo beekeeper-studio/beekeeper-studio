@@ -1,6 +1,7 @@
 import connectTunnel from './tunnel';
 import clients from './clients';
 import * as config from '../config';
+import * as crypto from '../crypto';
 import createLogger from '../logger';
 
 
@@ -43,7 +44,25 @@ export function createConnection(server, database) {
 }
 
 
-async function connect(server, database) {
+// decrypt secret fields
+function decryptSecrects(server, cryptoSecret) {
+  /* eslint no-param-reassign:0 */
+  if (!server.encrypted) {
+    return;
+  }
+
+  if (server.password) {
+    server.password = crypto.decrypt(server.password, cryptoSecret);
+  }
+
+  if (server.ssh && server.ssh.password) {
+    server.ssh.password = crypto.decrypt(server.ssh.password, cryptoSecret);
+  }
+
+  server.encrypted = false;
+}
+
+async function connect(server, database, cryptoSecret) {
   /* eslint no-param-reassign: 0 */
   if (database.connecting) {
     throw new Error('There is already a connection in progress for this server. Aborting this new request.');
@@ -60,6 +79,8 @@ async function connect(server, database) {
     if (database.connection) {
       database.connection.disconnect();
     }
+
+    decryptSecrects(server.config, cryptoSecret);
 
     // reuse existing tunnel
     if (server.config.ssh && !server.sshTunnel) {

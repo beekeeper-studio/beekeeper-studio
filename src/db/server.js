@@ -42,7 +42,7 @@ export function createServer(serverConfig) {
       }
     },
 
-    createConnection(dbName) {
+    createConnection(dbName, cryptoSecret) {
       if (server.db[dbName]) {
         return server.db[dbName];
       }
@@ -53,7 +53,7 @@ export function createServer(serverConfig) {
         connecting: false,
       };
 
-      server.db[dbName] = createConnection(server, database);
+      server.db[dbName] = createConnection(server, database, cryptoSecret);
 
       return server.db[dbName];
     },
