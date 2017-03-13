@@ -1,19 +1,37 @@
 import uuid from 'uuid';
 import * as utils from './utils';
+import * as crypto from './crypto';
 
 const EMPTY_CONFIG = { servers: [] };
 
-function sanitizeServers(data) {
-  return data.servers.map((server) => {
-    const srv = { ...server };
-    // ensure all server has an unique id
-    if (!srv.id) { srv.id = uuid.v4(); }
+function sanitizeServer(server, cryptoSecret) {
+  const srv = { ...server };
 
-    // ensure all servers has the new fileld SSL
-    if (srv.ssl === undefined) { srv.ssl = false; }
+  // ensure has an unique id
+  if (!srv.id) { srv.id = uuid.v4(); }
 
-    return srv;
-  });
+  // ensure has the new fileld SSL
+  if (typeof srv.ssl === 'undefined') { srv.ssl = false; }
+
+  // ensure all secret fields are encrypted
+  if (typeof srv.encrypted === 'undefined') {
+    srv.encrypted = true;
+
+    if (srv.password) {
+      srv.password = crypto.encrypt(srv.password, cryptoSecret);
+    }
+
+    if (srv.ssh && srv.ssh.password) {
+      srv.ssh.password = crypto.encrypt(srv.ssh.password, cryptoSecret);
+    }
+  }
+
+  return srv;
+}
+
+function sanitizeServers(data, cryptoSecret) {
+  return data.servers
+    .map((server) => sanitizeServer(server, cryptoSecret));
 }
 
 /**
