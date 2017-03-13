@@ -37,7 +37,7 @@ function sanitizeServers(data, cryptoSecret) {
 /**
  * Prepare the configuration file sanitizing and validating all fields availbale
  */
-export async function prepare() {
+export async function prepare(cryptoSecret) {
   const filename = utils.getConfigPath();
   const fileExistsResult = await utils.fileExists(filename);
   if (!fileExistsResult) {
@@ -46,7 +46,7 @@ export async function prepare() {
 
   const result = await utils.readJSONFile(filename);
 
-  result.servers = sanitizeServers(result);
+  result.servers = sanitizeServers(result, cryptoSecret);
 
   await utils.writeJSONFile(filename, result);
 

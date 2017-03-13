@@ -3,6 +3,7 @@ import { config } from '../src';
 import { readJSONFile } from './../src/utils';
 import utilsStub from './utils-stub';
 
+const cryptoSecret = 'CHK`Ya91Hs{me!^8ndwPPaPPxwQ}`';
 
 describe('config', () => {
   utilsStub.getConfigPath.install({ copyFixtureToTemp: true });
@@ -12,7 +13,7 @@ describe('config', () => {
       const findItem = (data) => data.servers.find((srv) => srv.name === 'without-id');
 
       const fixtureBefore = await loadConfig();
-      await config.prepare();
+      await config.prepare(cryptoSecret);
       const fixtureAfter = await loadConfig();
 
       expect(findItem(fixtureBefore)).to.not.have.property('id');
