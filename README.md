@@ -24,7 +24,7 @@ Do you want to support another SQL database? It is expected that in the pull req
 Install via npm:
 
 ```bash
-$ npm install sqlectron-core
+$ npm install sqlectron-core --save
 ```
 
 ## Configuration
