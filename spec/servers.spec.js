@@ -19,7 +19,18 @@ describe('servers', () => {
   describe('.getAll', () => {
     it('should load servers from file', async () => {
       const fixture = await loadConfig();
-      const result = await servers.getAll();
+      const result = await servers.getAll(cryptoSecret);
+
+      // decrypt assert data
+      const encryptedServer1 = fixture.servers.find((srv) => srv.id === '65f36ca9-331f-43b3-ab38-3f5556fd65ce');
+      encryptedServer1.encrypted = false;
+      encryptedServer1.password = 'password';
+
+      const encryptedServer2 = fixture.servers.find((srv) => srv.id === '179d7c6e-2d7c-4c86-b203-d901b7dfea77');
+      encryptedServer2.encrypted = false;
+      encryptedServer2.password = 'password';
+      encryptedServer2.ssh.password = 'password';
+
       expect(result).to.eql(fixture.servers);
     });
   });

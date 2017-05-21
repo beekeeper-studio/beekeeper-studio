@@ -4,8 +4,9 @@ import * as config from './config';
 import * as crypto from './crypto';
 
 
-export async function getAll() {
+export async function getAll(cryptoSecret) {
   const result = await config.get();
+  result.servers.forEach((server) => decryptSecrects(server, cryptoSecret));
   return result.servers;
 }
 
@@ -22,7 +23,7 @@ export async function add(server, cryptoSecret) {
 
   srv.id = newId;
   data.servers.push(srv);
-  await config.save(data, cryptoSecret);
+  await config.save(data);
 
   return srv;
 }
@@ -43,7 +44,7 @@ export async function update(server, cryptoSecret) {
     ...data.servers.slice(index + 1),
   ];
 
-  await config.save(data, cryptoSecret);
+  await config.save(data);
 
   return server;
 }
@@ -94,4 +95,22 @@ function encryptSecrects(server, cryptoSecret, oldSever) {
   }
 
   server.encrypted = true;
+}
+
+// decrypt secret fields
+function decryptSecrects(server, cryptoSecret) {
+  /* eslint no-param-reassign:0 */
+  if (!server.encrypted) {
+    return;
+  }
+
+  if (server.password) {
+    server.password = crypto.decrypt(server.password, cryptoSecret);
+  }
+
+  if (server.ssh && server.ssh.password) {
+    server.ssh.password = crypto.decrypt(server.ssh.password, cryptoSecret);
+  }
+
+  server.encrypted = false;
 }

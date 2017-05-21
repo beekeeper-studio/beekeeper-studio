@@ -25,8 +25,6 @@ const dbSchemas = {
   sqlserver: 'dbo',
 };
 
-const cryptoSecret = 'CHK`Ya91Hs{me!^8ndwPPaPPxwQ}`';
-
 /**
  * List of selected databases to be tested in the current task
  */
@@ -60,7 +58,7 @@ describe('db', () => {
           const serverSession = db.createServer(serverInfo);
           const dbConn = serverSession.createConnection(serverInfo.database);
 
-          return expect(dbConn.connect(null, cryptoSecret)).to.not.be.rejected;
+          return expect(dbConn.connect()).to.not.be.rejected;
         });
 
         it('should connect into server without database specified', () => {
@@ -90,7 +88,7 @@ describe('db', () => {
         beforeEach(() => {
           serverSession = db.createServer(serverInfo);
           dbConn = serverSession.createConnection(serverInfo.database);
-          return dbConn.connect(null, cryptoSecret);
+          return dbConn.connect();
         });
 
         describe('.disconnect', () => {
