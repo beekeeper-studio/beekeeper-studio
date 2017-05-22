@@ -30,6 +30,34 @@
       "password": "password"
     },
     {
+      "encrypted": true,
+      "id": "65f36ca9-331f-43b3-ab38-3f5556fd65ce",
+      "name": "mysql",
+      "client": "mysql",
+      "host": "10.10.10.15",
+      "port": 3306,
+      "database": "authentication",
+      "user": "root",
+      "password": "fa1d88ee82bd4439"
+    },
+    {
+      "encrypted": true,
+      "id": "179d7c6e-2d7c-4c86-b203-d901b7dfea77",
+      "name": "mysql",
+      "client": "mysql",
+      "host": "10.10.10.15",
+      "port": 3306,
+      "database": "authentication",
+      "user": "root",
+      "password": "fa1d88ee82bd4439",
+      "ssh": {
+        "host": "10.10.10.10",
+        "port": 22,
+        "user": "core",
+        "password": "fa1d88ee82bd4439"
+      }
+    },
+    {
       "id": "f7baa5f0-42a2-4f51-b49d-26cf3bfe8221",
       "name": "pg-vm-ssh",
       "client": "postgresql",

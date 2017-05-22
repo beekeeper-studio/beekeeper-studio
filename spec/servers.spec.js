@@ -1,8 +1,17 @@
 import { expect } from 'chai';
 import { servers } from '../src';
 import { readJSONFile } from './../src/utils';
+import * as crypto from './../src/crypto';
 import utilsStub from './utils-stub';
 
+const cryptoSecret = 'CHK`Ya91Hs{me!^8ndwPPaPPxwQ}`';
+
+const assertPassword = (newData, savedData, password) => {
+  /* eslint no-param-reassign:0 */
+  expect(crypto.decrypt(savedData.password, cryptoSecret)).to.eql(password);
+  newData.password = crypto.encrypt(password, cryptoSecret);
+  newData.encrypted = true;
+};
 
 describe('servers', () => {
   utilsStub.getConfigPath.install({ copyFixtureToTemp: true });
@@ -10,7 +19,18 @@ describe('servers', () => {
   describe('.getAll', () => {
     it('should load servers from file', async () => {
       const fixture = await loadConfig();
-      const result = await servers.getAll();
+      const result = await servers.getAll(cryptoSecret);
+
+      // decrypt assert data
+      const encryptedServer1 = fixture.servers.find((srv) => srv.id === '65f36ca9-331f-43b3-ab38-3f5556fd65ce');
+      encryptedServer1.encrypted = false;
+      encryptedServer1.password = 'password';
+
+      const encryptedServer2 = fixture.servers.find((srv) => srv.id === '179d7c6e-2d7c-4c86-b203-d901b7dfea77');
+      encryptedServer2.encrypted = false;
+      encryptedServer2.password = 'password';
+      encryptedServer2.ssh.password = 'password';
+
       expect(result).to.eql(fixture.servers);
     });
   });
@@ -28,9 +48,10 @@ describe('servers', () => {
         user: 'root',
         password: 'password',
       };
-      const createdServer = await servers.add(newServer);
+      const createdServer = await servers.add(newServer, cryptoSecret);
       expect(createdServer).to.have.property('id');
       delete createdServer.id;
+      assertPassword(newServer, createdServer, 'password');
       expect(createdServer).to.eql(newServer);
 
       const configAfter = await loadConfig();
@@ -56,9 +77,10 @@ describe('servers', () => {
           privateKeyWithPassphrase: true,
         },
       };
-      const createdServer = await servers.add(newServer);
+      const createdServer = await servers.add(newServer, cryptoSecret);
       expect(createdServer).to.have.property('id');
       delete createdServer.id;
+      assertPassword(newServer, createdServer, 'password');
       expect(createdServer).to.eql(newServer);
 
       const configAfter = await loadConfig();
@@ -81,7 +103,30 @@ describe('servers', () => {
         user: 'usr',
         password: 'pwd',
       };
-      const updatedServer = await servers.update(serverToUpdate);
+      const updatedServer = await servers.update(serverToUpdate, cryptoSecret);
+      expect(updatedServer).to.eql(serverToUpdate);
+      assertPassword(serverToUpdate, updatedServer, 'pwd');
+
+      const configAfter = await loadConfig();
+      expect(configAfter.servers.length).to.eql(configBefore.servers.length);
+      expect(configAfter.servers.find((srv) => srv.id === id)).to.eql(serverToUpdate);
+    });
+
+    it('should not update encrypted password when password has not changed', async () => {
+      const id = '65f36ca9-331f-43b3-ab38-3f5556fd65ce';
+      const configBefore = await loadConfig();
+      const serverToUpdate = {
+        id,
+        name: 'mysql-vm',
+        client: 'mysql',
+        ssl: false,
+        host: '10.10.10.10',
+        port: 3306,
+        database: 'mydb',
+        user: 'usr',
+        password: 'fa1d88ee82bd4439',
+      };
+      const updatedServer = await servers.update(serverToUpdate, cryptoSecret);
       expect(updatedServer).to.eql(serverToUpdate);
 
       const configAfter = await loadConfig();
@@ -104,9 +149,10 @@ describe('servers', () => {
           user: 'root',
           password: 'password',
         };
-        const createdServer = await servers.addOrUpdate(newServer);
+        const createdServer = await servers.addOrUpdate(newServer, cryptoSecret);
         expect(createdServer).to.have.property('id');
         delete createdServer.id;
+        assertPassword(newServer, createdServer, 'password');
         expect(createdServer).to.eql(newServer);
 
         const configAfter = await loadConfig();
@@ -129,7 +175,8 @@ describe('servers', () => {
           user: 'usr',
           password: 'pwd',
         };
-        const updatedServer = await servers.addOrUpdate(serverToUpdate);
+        const updatedServer = await servers.addOrUpdate(serverToUpdate, cryptoSecret);
+        assertPassword(serverToUpdate, updatedServer, 'pwd');
         expect(updatedServer).to.eql(serverToUpdate);
 
         const configAfter = await loadConfig();

@@ -25,7 +25,6 @@ const dbSchemas = {
   sqlserver: 'dbo',
 };
 
-
 /**
  * List of selected databases to be tested in the current task
  */
