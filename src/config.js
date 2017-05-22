@@ -56,7 +56,7 @@ export async function prepare(cryptoSecret) {
   // }
 }
 
-export function prepareSync() {
+export function prepareSync(cryptoSecret) {
   const filename = utils.getConfigPath();
   const fileExistsResult = utils.fileExistsSync(filename);
   if (!fileExistsResult) {
@@ -65,7 +65,7 @@ export function prepareSync() {
 
   const result = utils.readJSONFileSync(filename);
 
-  result.servers = sanitizeServers(result);
+  result.servers = sanitizeServers(result, cryptoSecret);
 
   utils.writeJSONFileSync(filename, result);
 
