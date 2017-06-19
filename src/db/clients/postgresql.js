@@ -506,7 +506,7 @@ function parseRowQueryResult(data, command) {
     command: command || data.command,
     rows: data.rows,
     fields: data.fields,
-    rowCount: isSelect ? data.rowCount : undefined,
+    rowCount: isSelect ? (data.rowCount || data.rows.length) : undefined,
     affectedRows: !isSelect && !isNaN(data.rowCount) ? data.rowCount : undefined,
   };
 }
