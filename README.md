@@ -17,7 +17,7 @@ It is pronounced "sequelectron" - https://translate.google.com/?source=osdd#en/e
 * [Cassandra](http://cassandra.apache.org/) (NoSQL; [Exceptions about this client](https://github.com/sqlectron/sqlectron-core/releases/tag/v6.3.0))
 * [SQLite](https://sqlite.org/)
 
-Do you want to support another SQL database? It is expected that in the pull request the new database is included in the [db.spec.js](https://github.com/sqlectron/sqlectron-core/blob/master/spec/db.spec.js).
+Do you want to support another SQL database? Please follow [these steps](/CONTRIBUTING.md#adding-a-new-client).
 
 ## Installation
 
@@ -104,23 +104,7 @@ Array with all servers connection.
 
 ## Contributing
 
-It is required to use [editorconfig](http://editorconfig.org/). Furthermore, please write and run tests (`/spec/db.spec.js`) before pushing any changes.
-
-### with docker + docker-compose
-
-It will bring up a MySQL and PostgreSQL database and run all the tests:
-
-```shell
-docker-compose run --rm test
-```
-
-### "manually"
-
-You will need to bring up all the databases then run the tests through:
-
-```js
-npm test
-```
+Please check out it [here](/CONTRIBUTING.md).
 
 ## License
 

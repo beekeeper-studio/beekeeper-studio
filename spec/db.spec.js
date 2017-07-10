@@ -12,13 +12,7 @@ chai.use(chaiAsPromised);
  * The "integration" tests will be executed for all supported DB clients.
  * And ensure all these clients has the same API and output results.
  */
-const SUPPORTED_DB_CLIENTS = [
-  'mysql',
-  'postgresql',
-  'sqlserver',
-  'sqlite',
-  'cassandra',
-];
+const SUPPORTED_DB_CLIENTS = db.CLIENTS.map((client) => client.key);
 
 const dbSchemas = {
   postgresql: 'public',
