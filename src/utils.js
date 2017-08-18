@@ -1,10 +1,27 @@
 import fs from 'fs';
 import path from 'path';
+import mkdirp from 'mkdirp';
 import pf from 'portfinder';
+import envPaths from 'env-paths';
 
+let configPath = '';
 
 export function getConfigPath() {
-  return path.join(homedir(), '.sqlectron.json');
+  if (configPath) {
+    return configPath;
+  }
+
+  const configName = 'sqlectron.json';
+  const oldConfigPath = path.join(homedir(), `.${configName}`);
+
+  if (fileExistsSync(oldConfigPath)) {
+    configPath = oldConfigPath;
+  } else {
+    const newConfigDir = envPaths('Sqlectron', { suffix: '' }).config;
+    configPath = path.join(newConfigDir, configName);
+  }
+
+  return configPath;
 }
 
 
@@ -72,6 +89,16 @@ export function readJSONFileSync(filename) {
   const filePath = resolveHomePathToAbsolute(filename);
   const data = fs.readFileSync(path.resolve(filePath), { enconding: 'utf-8' });
   return JSON.parse(data);
+}
+
+export function createParentDirectory(filename) {
+  return new Promise((resolve, reject) =>
+    (mkdirp(path.dirname(filename), (err) => (err ? reject(err) : resolve())))
+  );
+}
+
+export function createParentDirectorySync(filename) {
+  mkdirp.sync(path.dirname(filename));
 }
 
 

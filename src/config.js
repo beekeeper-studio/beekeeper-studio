@@ -41,6 +41,7 @@ export async function prepare(cryptoSecret) {
   const filename = utils.getConfigPath();
   const fileExistsResult = await utils.fileExists(filename);
   if (!fileExistsResult) {
+    await utils.createParentDirectory(filename);
     await utils.writeJSONFile(filename, EMPTY_CONFIG);
   }
 
@@ -60,6 +61,7 @@ export function prepareSync(cryptoSecret) {
   const filename = utils.getConfigPath();
   const fileExistsResult = utils.fileExistsSync(filename);
   if (!fileExistsResult) {
+    utils.createParentDirectorySync(filename);
     utils.writeJSONFileSync(filename, EMPTY_CONFIG);
   }
 

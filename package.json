@@ -33,6 +33,8 @@
   "dependencies": {
     "cassandra-driver": "^3.1.1",
     "debug": "^2.2.0",
+    "env-paths": "^1.0.0",
+    "mkdirp": "^0.5.1",
     "mssql": "^3.0.0",
     "mysql": "^2.10.2",
     "pg": "git+https://github.com/maxcnunes/node-postgres.git#multiple-statements-v6.1.0",
