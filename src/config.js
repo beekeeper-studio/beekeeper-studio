@@ -97,3 +97,11 @@ export function save(data) {
   const filename = utils.getConfigPath();
   return utils.writeJSONFile(filename, data);
 }
+
+
+export async function saveSettings(data) {
+  const fullData = await get();
+  const filename = utils.getConfigPath();
+  const newData = { ...fullData, ...data };
+  return utils.writeJSONFile(filename, newData);
+}
