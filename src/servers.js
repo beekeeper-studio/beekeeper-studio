@@ -4,22 +4,21 @@ import * as config from './config';
 import * as crypto from './crypto';
 
 
-export async function getAll(cryptoSecret) {
-  const result = await config.get();
-  result.servers.forEach((server) => decryptSecrects(server, cryptoSecret));
-  return result.servers;
+export async function getAll() {
+  const { servers } = await config.get();
+  return servers;
 }
 
 
 export async function add(server, cryptoSecret) {
-  const srv = { ...server };
+  let srv = { ...server };
   await validate(srv);
 
   const data = await config.get();
   const newId = uuid.v4();
   validateUniqueId(data.servers, newId);
 
-  encryptSecrects(srv, cryptoSecret);
+  srv = encryptSecrects(srv, cryptoSecret);
 
   srv.id = newId;
   data.servers.push(srv);
@@ -30,17 +29,18 @@ export async function add(server, cryptoSecret) {
 
 
 export async function update(server, cryptoSecret) {
-  await validate(server);
+  let srv = { ...server };
+  await validate(srv);
 
   const data = await config.get();
-  validateUniqueId(data.servers, server.id);
+  validateUniqueId(data.servers, srv.id);
 
-  const index = data.servers.findIndex((srv) => srv.id === server.id);
-  encryptSecrects(server, cryptoSecret, data.servers[index]);
+  const index = data.servers.findIndex((item) => item.id === srv.id);
+  srv = encryptSecrects(srv, cryptoSecret, data.servers[index]);
 
   data.servers = [
     ...data.servers.slice(0, index),
-    server,
+    srv,
     ...data.servers.slice(index + 1),
   ];
 
@@ -71,46 +71,45 @@ export async function removeById(id) {
 
 // ensure all secret fields are encrypted
 function encryptSecrects(server, cryptoSecret, oldSever) {
+  const updatedServer = { ...server };
+
   /* eslint no-param-reassign:0 */
   if (server.password) {
-    const isPassDiff = (
-      oldSever &&
-      server.password !== crypto.decrypt(oldSever.password, cryptoSecret)
-    );
+    const isPassDiff = (oldSever && server.password !== oldSever.password);
 
     if (!oldSever || isPassDiff) {
-      server.password = crypto.encrypt(server.password, cryptoSecret);
+      updatedServer.password = crypto.encrypt(server.password, cryptoSecret);
     }
   }
 
   if (server.ssh && server.ssh.password) {
-    const isPassDiff = (
-      oldSever &&
-      server.ssh.password !== crypto.decrypt(oldSever.ssh.password, cryptoSecret)
-    );
+    const isPassDiff = (oldSever && server.ssh.password !== oldSever.ssh.password);
 
     if (!oldSever || isPassDiff) {
-      server.ssh.password = crypto.encrypt(server.ssh.password, cryptoSecret);
+      updatedServer.ssh.password = crypto.encrypt(server.ssh.password, cryptoSecret);
     }
   }
 
-  server.encrypted = true;
+  updatedServer.encrypted = true;
+  return updatedServer;
 }
 
 // decrypt secret fields
-function decryptSecrects(server, cryptoSecret) {
+export function decryptSecrects(server, cryptoSecret) {
+  const updatedServer = { ...server };
   /* eslint no-param-reassign:0 */
   if (!server.encrypted) {
     return;
   }
 
   if (server.password) {
-    server.password = crypto.decrypt(server.password, cryptoSecret);
+    updatedServer.password = crypto.decrypt(server.password, cryptoSecret);
   }
 
   if (server.ssh && server.ssh.password) {
-    server.ssh.password = crypto.decrypt(server.ssh.password, cryptoSecret);
+    updatedServer.ssh.password = crypto.decrypt(server.ssh.password, cryptoSecret);
   }
 
-  server.encrypted = false;
+  updatedServer.encrypted = false;
+  return updatedServer;
 }
