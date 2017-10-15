@@ -19,17 +19,17 @@ describe('servers', () => {
   describe('.getAll', () => {
     it('should load servers from file', async () => {
       const fixture = await loadConfig();
-      const result = await servers.getAll(cryptoSecret);
+      const result = await servers.getAll();
 
-      // decrypt assert data
+      // DO NOT decrypt assert data
       const encryptedServer1 = fixture.servers.find((srv) => srv.id === '65f36ca9-331f-43b3-ab38-3f5556fd65ce');
-      encryptedServer1.encrypted = false;
-      encryptedServer1.password = 'password';
+      encryptedServer1.encrypted = true;
+      encryptedServer1.password = 'fa1d88ee82bd4439';
 
       const encryptedServer2 = fixture.servers.find((srv) => srv.id === '179d7c6e-2d7c-4c86-b203-d901b7dfea77');
-      encryptedServer2.encrypted = false;
-      encryptedServer2.password = 'password';
-      encryptedServer2.ssh.password = 'password';
+      encryptedServer2.encrypted = true;
+      encryptedServer2.password = 'fa1d88ee82bd4439';
+      encryptedServer2.ssh.password = 'fa1d88ee82bd4439';
 
       expect(result).to.eql(fixture.servers);
     });
@@ -105,11 +105,11 @@ describe('servers', () => {
       };
       const updatedServer = await servers.update(serverToUpdate, cryptoSecret);
       expect(updatedServer).to.eql(serverToUpdate);
-      assertPassword(serverToUpdate, updatedServer, 'pwd');
 
       const configAfter = await loadConfig();
       expect(configAfter.servers.length).to.eql(configBefore.servers.length);
-      expect(configAfter.servers.find((srv) => srv.id === id)).to.eql(serverToUpdate);
+      expect(configAfter.servers.find((srv) => srv.id === id))
+        .to.eql({ ...serverToUpdate, password: 'fa0b9f', encrypted: true });
     });
 
     it('should not update encrypted password when password has not changed', async () => {
@@ -131,7 +131,8 @@ describe('servers', () => {
 
       const configAfter = await loadConfig();
       expect(configAfter.servers.length).to.eql(configBefore.servers.length);
-      expect(configAfter.servers.find((srv) => srv.id === id)).to.eql(serverToUpdate);
+      expect(configAfter.servers.find((srv) => srv.id === id))
+        .to.eql({ ...serverToUpdate, encrypted: true });
     });
   });
 
@@ -176,12 +177,12 @@ describe('servers', () => {
           password: 'pwd',
         };
         const updatedServer = await servers.addOrUpdate(serverToUpdate, cryptoSecret);
-        assertPassword(serverToUpdate, updatedServer, 'pwd');
         expect(updatedServer).to.eql(serverToUpdate);
 
         const configAfter = await loadConfig();
         expect(configAfter.servers.length).to.eql(configBefore.servers.length);
-        expect(configAfter.servers.find((srv) => srv.id === id)).to.eql(serverToUpdate);
+        expect(configAfter.servers.find((srv) => srv.id === id))
+          .to.eql({ ...serverToUpdate, password: 'fa0b9f', encrypted: true });
       });
     });
   });
