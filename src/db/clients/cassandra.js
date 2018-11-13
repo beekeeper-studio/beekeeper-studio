@@ -1,4 +1,4 @@
-import { Client } from 'cassandra-driver';
+import * as cassandra from 'cassandra-driver';
 import { identify } from 'sql-query-identifier';
 
 import createLogger from '../../logger';
@@ -14,7 +14,7 @@ export default function (server, database) {
     const dbConfig = configDatabase(server, database);
 
     logger().debug('creating database client %j', dbConfig);
-    const client = new Client(dbConfig);
+    const client = new cassandra.Client(dbConfig);
 
     logger().debug('connecting');
     client.connect((err) => {
@@ -94,12 +94,12 @@ export function listTableColumns(client, database, table) {
       if (err) return reject(err);
       resolve(
         data.rows
-        // force pks be placed at the results beginning
-        .sort((a, b) => b.position - a.position)
-        .map((row) => ({
-          columnName: row.column_name,
-          dataType: row.type,
-        }))
+          // force pks be placed at the results beginning
+          .sort((a, b) => b.position - a.position)
+          .map((row) => ({
+            columnName: row.column_name,
+            dataType: row.type,
+          }))
       );
     });
   });
@@ -233,6 +233,14 @@ function configDatabase(server, database) {
 
   if (server.config.ssl) {
     // TODO: sslOptions
+  }
+
+  // client authentication
+  if (server.config.user && server.config.password) {
+    const user = server.config.user;
+    const password = server.config.password;
+    const authProviderInfo = new cassandra.auth.PlainTextAuthProvider(user, password);
+    config.authProvider = authProviderInfo;
   }
 
   return config;
