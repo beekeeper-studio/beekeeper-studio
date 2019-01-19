@@ -98,7 +98,7 @@ export async function listRoutines(conn) {
 
 export async function listTableColumns(conn, database, table) {
   const sql = `
-    SELECT column_name, data_type
+    SELECT column_name AS 'column_name', data_type AS 'data_type'
     FROM information_schema.columns
     WHERE table_schema = database()
     AND table_name = ?
