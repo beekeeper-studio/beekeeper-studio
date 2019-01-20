@@ -28,8 +28,9 @@ cassandra:
     - 9042 # native
 
 test:
-  image: node:6.5.0-onbuild
+  image: node:10.15.0
   command: npm test
+  working_dir: /usr/src/app
   environment:
     DB_CLIENTS: mysql,postgresql,cassandra
     MYSQL_ENV_MYSQL_USER: root

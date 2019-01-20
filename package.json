@@ -1,9 +1,10 @@
 {
   "name": "sqlectron-core",
-  "version": "8.0.0",
+  "version": "8.0.1",
   "description": "sqlectron-core",
   "main": "lib/index.js",
   "author": "The SQLECTRON Team",
+  "license": "MIT",
   "scripts": {
     "compile": "babel -d lib/ src/",
     "watch": "babel --watch -d lib/ src/",
@@ -31,6 +32,7 @@
     "node": ">=6"
   },
   "dependencies": {
+    "@sinonjs/formatio": "^3.1.0",
     "cassandra-driver": "^3.1.1",
     "debug": "^2.2.0",
     "env-paths": "^1.0.0",
@@ -40,7 +42,6 @@
     "pg": "git+https://github.com/maxcnunes/node-postgres.git#multiple-statements-v6.1.0",
     "portfinder": "^0.4.0",
     "sql-query-identifier": "^1.1.0",
-    "sqlite3": "^3.1.8",
     "ssh2": "^0.5.0",
     "uuid": "^3.0.0",
     "valida": "^2.0.0"
@@ -59,8 +60,8 @@
     "eslint-config-airbnb-base": "^7.1.0",
     "eslint-plugin-babel": "^3.3.0",
     "eslint-plugin-import": "^1.15.0",
-    "mocha": "^3.0.2",
+    "mocha": "^5.2.0",
     "sinon": "^1.17.2",
-    "sqlite3": "^3.1.0"
+    "sqlite3": "^4.0.6"
   }
 }
