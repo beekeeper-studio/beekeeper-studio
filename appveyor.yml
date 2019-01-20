@@ -1,7 +1,7 @@
 version: 1.0.{build}
 
 environment:
-  nodejs_version: "6.5.0"
+  nodejs_version: "10.15.0"
   # TODO: test cassandra with docker on travis
   # While that is not configured we do not
   # run automated test for cassandra client
