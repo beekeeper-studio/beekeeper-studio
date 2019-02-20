@@ -38,7 +38,6 @@ init:
   - ps: Install-Product node $env:nodejs_version
   - npm -v
   - node -v
-  - npm cache clean
   - SET PATH=%POSTGRES_PATH%\bin;%MYSQL_PATH%\bin;%PATH%
 
 test: false
