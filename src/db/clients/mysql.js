@@ -82,7 +82,7 @@ export async function listViews(conn) {
 
 export async function listRoutines(conn) {
   const sql = `
-    SELECT routine_name, routine_type
+    SELECT routine_name as 'routine_name', routine_type as 'routine_type'
     FROM information_schema.routines
     WHERE routine_schema = database()
     ORDER BY routine_name
@@ -98,7 +98,7 @@ export async function listRoutines(conn) {
 
 export async function listTableColumns(conn, database, table) {
   const sql = `
-    SELECT column_name, data_type
+    SELECT column_name AS 'column_name', data_type AS 'data_type'
     FROM information_schema.columns
     WHERE table_schema = database()
     AND table_name = ?
@@ -118,7 +118,7 @@ export async function listTableColumns(conn, database, table) {
 
 export async function listTableTriggers(conn, table) {
   const sql = `
-    SELECT trigger_name
+    SELECT trigger_name as 'trigger_name'
     FROM information_schema.triggers
     WHERE event_object_schema = database()
     AND event_object_table = ?
@@ -152,7 +152,7 @@ export function listSchemas() {
 
 export async function getTableReferences(conn, table) {
   const sql = `
-    SELECT referenced_table_name
+    SELECT referenced_table_name as 'referenced_table_name'
     FROM information_schema.key_column_usage
     WHERE referenced_table_name IS NOT NULL
     AND table_schema = database()
@@ -170,7 +170,7 @@ export async function getTableReferences(conn, table) {
 
 export async function getTableKeys(conn, database, table) {
   const sql = `
-    SELECT constraint_name, column_name, referenced_table_name,
+    SELECT constraint_name as 'constraint_name', column_name as 'column_name', referenced_table_name as 'referenced_table_name',
       CASE WHEN (referenced_table_name IS NOT NULL) THEN 'FOREIGN'
       ELSE constraint_name
       END as key_type
@@ -330,7 +330,7 @@ export async function truncateAllTables(conn) {
     const schema = await getSchema(connClient);
 
     const sql = `
-      SELECT table_name
+      SELECT table_name as 'table_name'
       FROM information_schema.tables
       WHERE table_schema = '${schema}'
       AND table_type NOT LIKE '%VIEW%'
