@@ -5,14 +5,8 @@ import { CLIENTS } from '../db';
 function serverAddressValidator(ctx) {
   const { host, port, socketPath } = ctx.obj;
 
-  if (!host && !socketPath) {
-    return {
-      validator: 'serverAddressValidator',
-      msg: 'You must use host+port or socket path',
-    };
-  }
-
-  if (host && socketPath) {
+  // we need either a host, or a socket path, but not both, and not neither.
+  if ((!host && !socketPath) || (host && socketPath)) {
     return {
       validator: 'serverAddressValidator',
       msg: 'You must use host+port or socket path',
