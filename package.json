@@ -15,7 +15,7 @@
     "test:sqlserver": "DB_CLIENTS=sqlserver npm run test",
     "test:postgresql": "DB_CLIENTS=postgresql npm run test",
     "test:cassandra": "DB_CLIENTS=cassandra npm run test",
-    "test": "npm run lint && mocha --timeout 40000 --compilers js:babel-core/register --reporter spec ./spec/**/*.spec.js",
+    "test": "npm run lint && mocha --exit --timeout 40000 --compilers js:babel-core/register --reporter spec ./spec/**/*.spec.js",
     "watch-test": "npm run lint && mocha --compilers js:babel/register --watch --reporter spec ./spec/**/*.spec.js"
   },
   "keywords": [

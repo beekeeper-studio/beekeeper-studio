@@ -57,8 +57,6 @@ export const CLIENTS = [
     disabledFeatures: [
       'server:ssl',
       'server:socketPath',
-      'server:user',
-      'server:password',
       'server:schema',
       'server:domain',
       'scriptCreateTable',
