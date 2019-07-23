@@ -1,0 +1,39 @@
+
+#sidebar-wrapper {
+  width: $sidebar-width;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  overflow-y: auto;
+
+  .database-select {
+    border-right: none;
+    border-left: none;
+  }
+
+  .sidebar-heading {
+    padding: 0.875rem 1.25rem;
+    font-size: 1.2rem;
+  }
+
+  .list-group {
+  }
+
+  .badge {
+   display: flex;
+   margin-left: auto;
+   line-height: inherit;
+  }
+
+  .columns-list {
+    li {
+      padding:4px;
+      padding-left: 0.75rem;
+    }
+  }
+
+
+
+}
+

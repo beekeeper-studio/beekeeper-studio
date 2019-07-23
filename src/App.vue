@@ -1,17 +1,14 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-  </div>
+  <core-interface></core-interface>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import CoreInterface from './components/CoreInterface'
 
 export default {
   name: 'app',
   components: {
-    HelloWorld
+    CoreInterface
   }
 }
 </script>

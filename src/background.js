@@ -1,15 +1,34 @@
 'use strict'
-
+import fs from 'fs'
 import { app, protocol, BrowserWindow } from 'electron'
 import {
   createProtocol,
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib'
+
+import config from './config'
+
+
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win
+
+
+function setupUserDirectory() {
+  console.log("userDir: " + config.userDirectory)
+  if(!fs.existsSync(config.userDirectory)) {
+    fs.mkdirSync(config.userDirectory)
+  }
+}
+
+
+function initializeDB() {
+  // QueryRun.sync({ force: true })
+  // Connection.sync({ force: true })
+
+}
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
@@ -64,6 +83,8 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
+  setupUserDirectory()
+  initializeDB()
   createWindow()
 })
 
