@@ -15,16 +15,17 @@
   "dependencies": {
     "bootstrap": "^4.3.1",
     "bootswatch": "^4.3.1",
+    "codemirror": "^5.48.2",
     "core-js": "^2.6.5",
     "jquery": "^3.4.1",
-    "monaco-editor": "^0.17.1",
-    "monaco-editor-webpack-plugin": "^1.7.0",
+    "mysql": "^2.17.1",
     "node-sass": "^4.12.0",
     "popper.js": "^1.15.0",
     "sass-loader": "^7.1.0",
+    "sequelize": "^5.12.2",
+    "sqlite3": "^4.0.9",
     "tabulator-tables": "^4.2.7",
-    "vue": "^2.6.10",
-    "vue-monaco": "^1.0.0"
+    "vue": "^2.6.10"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.9.0",

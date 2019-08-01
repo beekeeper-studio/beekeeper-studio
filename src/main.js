@@ -5,6 +5,7 @@ import '@fortawesome/fontawesome-free/css/all.css'
 import './assets/styles/vendor.scss'
 import './assets/styles/app.scss'
 import $ from 'jquery';
+import SQL from 'codemirror/mode/sql/sql'
 
 window.$ = $;
 window.jQuery = $;

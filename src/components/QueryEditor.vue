@@ -1,8 +1,7 @@
 <template>
   <div class="query-editor">
     <div class="top-panel">
-      <monaco-editor class="editor" v-model="query.queryText" language="sql"></monaco-editor>
-
+      <textarea name="editor" class="form-control" ref="editor" id="" cols="30" rows="10"></textarea>
       <div class="text-right">
         <a v-bind:click="runQuery" class="btn text-white btn-primary btn-sm">Execute Query</a>
       </div>
@@ -33,16 +32,19 @@
 </template>
 
 <script>
-  import MonacoEditor from 'vue-monaco'
-  // import QueryRun from '../models/QueryRun.js'
+  import CodeMirror from 'codemirror'
+
+  import QueryRun from '../models/QueryRun.js'
+  import ResultTable from './ResultTable.vue'
 
   export default {
-    components: { MonacoEditor },
+    components: { ResultTable },
     props: ['query', 'database', 'connection'],
     data() {
       return {
         result: null,
         running: false,
+        editor: null,
       }
     },
     computed: {
@@ -64,7 +66,14 @@
         queryRun = await queryRun.save()
         this.result = result
       }
-    }
+    },
+    mounted() {
+      const $editor = this.$refs.editor
+      this.editor = CodeMirror.fromTextArea($editor, {
+          lineNumbers: true,
+          mode: "sql"
+        })
+    },
   }
 </script>
 
