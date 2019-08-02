@@ -1,7 +1,7 @@
 
 import Sequelize from 'sequelize'
 
-import sequelize from './db'
+import sequelize from '../sequelize-db'
 import Connection from './connection'
 
 const QueryRun = sequelize.define('query_run', {

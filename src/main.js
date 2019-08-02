@@ -7,8 +7,9 @@ import './assets/styles/app.scss'
 import $ from 'jquery';
 import SQL from 'codemirror/mode/sql/sql'
 
-window.$ = $;
-window.jQuery = $;
+window.$ = $
+window.jQuery = $
+window.sql = SQL
 
 import 'bootstrap'
 

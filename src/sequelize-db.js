@@ -1,7 +1,7 @@
 
 import Sequelize from 'sequelize'
 import path from 'path'
-import config from '../config'
+import config from './config'
 
 const p = path.join(config.userDirectory, 'app.sqlite')
 

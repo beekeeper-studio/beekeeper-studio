@@ -7,7 +7,8 @@ import {
 } from 'vue-cli-plugin-electron-builder/lib'
 
 import config from './config'
-
+import QueryRun from './models/query-run'
+import Connection from './models/connection'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -25,9 +26,8 @@ function setupUserDirectory() {
 
 
 function initializeDB() {
-  // QueryRun.sync({ force: true })
-  // Connection.sync({ force: true })
-
+  QueryRun.sync({ force: true })
+  Connection.sync({ force: true })
 }
 
 // Scheme must be registered before the app is ready

@@ -1,5 +1,5 @@
 import Sequelize from 'sequelize'
-import sequelize from './db'
+import sequelize from '../sequelize-db'
 
 const Connection = sequelize.define('connection', {
   host: {

@@ -1,7 +1,7 @@
 <template>
   <div class="core-tabs">
     <ul class="nav-tabs nav">
-      <li v-for="(tab, idx) in tabItems" class="nav-item">
+      <li v-for="(tab, idx) in tabItems" class="nav-item" :key="idx">
         <a
           :href="'#tab-'+idx"
           class="nav-link"
@@ -18,6 +18,7 @@
         v-for="(tab, idx) in tabItems"
         class="tab-pane"
         :id="'tab-' + idx"
+        :key="idx"
         :class="{show: (activeItem === idx), active: (activeItem === idx)}"
       >
         <QueryEditor v-if="tab.type === 'query'" :query="tab"></QueryEditor>
