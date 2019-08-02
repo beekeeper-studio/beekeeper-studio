@@ -2,7 +2,9 @@
 
 
 Use https://dexie.org/ for query run and connection storage
-
+NO
+Just make sqlite3 an external dependency in webpack.
+In fact everything EXCEPT libs that provide .vue files can be externals.
 
 ## Project setup
 ```
