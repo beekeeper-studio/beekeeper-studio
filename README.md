@@ -1,5 +1,9 @@
 # beekeeper-studio
 
+
+Use https://dexie.org/ for query run and connection storage
+
+
 ## Project setup
 ```
 yarn install
