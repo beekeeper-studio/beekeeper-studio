@@ -1,7 +1,7 @@
 <template>
-  <div class="wrapper">
+  <div class="interface flex-row">
     <core-sidebar></core-sidebar>
-    <div id="page-content-wrapper">
+    <div class="page-content flex-column" id="page-content">
       <core-tabs></core-tabs>
     </div>
   </div>

@@ -1,0 +1,130 @@
+
+// Global
+// ------------------------
+:root {
+  font-family: $font-family, Helvetica, Arial, sans-serif;
+  font-size: $base-font-size;
+}
+body {
+  @extend :root;
+}
+::selection {
+  background: rgba($brand-primary, 0.25);
+}
+::placeholder {
+  color: $placeholder;
+}
+a {
+  display: inline-block;
+  align-items: center;
+  color: $link-color;
+  text-decoration: none;
+  cursor: pointer;
+  &:hover, &:focus {
+    color: $link-color;
+    text-decoration: none;
+  }
+  &.disabled, &.disabled:hover {
+    cursor: initial;
+    opacity: 0.25;
+  }
+}
+
+// Material-icons
+.material-icons {
+  font-size: 18px;
+}
+
+// Scrollbar
+// ---------------------
+.md-scrollbar {
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    border-radius: 1px;
+    background: rgba(black, 0.06);
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background: rgba(black, 0.37);
+  }
+  &::-webkit-scrollbar-button {
+    display: none;
+  }
+}
+
+// ---------------------------------
+// Bootstrap Overrides - so I can scrap it all but the grid
+// ---------------------------------
+
+// Inputs
+// -----------------------
+.form-control {
+  display: block;
+  width: 100%;
+  height: calc(1.5em + 0.65rem);
+  padding: 0.25rem 0.75rem;
+  font-size: 1rem;
+  font-weight: normal;
+  line-height: 1.5;
+  color: $text-color;
+  background-color: rgba(black, 0.06);
+  background-clip: padding-box;
+  border: none;
+  border-radius: 1px;
+  outline: 0;
+  transition: border-color 0.15s ease-in-out, 
+              box-shadow 0.15s ease-in-out,
+}
+input, select, textarea {
+  @extend .form-control;
+  &:focus {
+    outline: 1px solid rgba($brand-primary, 0.75);
+  }
+}
+
+// Nav
+// ----------------------------------
+.nav {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+  padding-left: 0;
+  margin-bottom: 0;
+  list-style: none;
+}
+.nav-tabs {
+  border: 0;
+  .nav-link {
+    border: 0;
+    &.active {
+      border: 0;
+      background: white;
+    }
+  }
+}
+.nav-link {
+  display: block;
+  padding: 0.5rem 1rem;
+}
+
+// Badge
+// -------------------
+.badge {
+  display: inline-block;
+  padding: 0 0.35rem;
+  border-radius: 2px;
+  font-size: 80%;
+  font-weight: normal;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  transition: color 0.15s ease-in-out, 
+              background-color 0.15s ease-in-out, 
+              border-color 0.15s ease-in-out, 
+              box-shadow 0.15s ease-in-out;
+}
+    

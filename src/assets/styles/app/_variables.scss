@@ -1,2 +1,50 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto+Mono|Roboto:400,600,700&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
-$sidebar-width: 250px;
+
+// Colors
+// -----------------------------
+$gray-dark:          rgba(black, 0.87);
+$gray:               rgba(black, 0.67);
+$gray-light:         rgba(black, 0.57);
+$gray-lighter:       rgba(black, 0.37);
+
+$brand-info:         #0072ff;
+$brand-success:      #15db95;
+$brand-warning:      #15db95;
+$brand-danger:       #15db95;
+$brand-default:      $gray-light;
+
+// Brand Colors
+$brand-primary:      $brand-info;
+$brand-secondary:    $brand-success;
+
+// General
+$border-color:       rgba(black, 0.1);
+$text-color:         $gray;
+$link-color:         $gray-dark;
+$placeholder:        $gray-lighter;
+$selection:          rgba($brand-primary, 0.2);
+
+// Font
+$font-family:        'Roboto';
+$font-family-mono:   'Roboto Mono';
+$base-font-size:      12px;
+
+// Inputs
+
+// Layout
+// -----------------------------
+
+// Sidebar
+$sidebar-width:         280px;
+$sidebar-min-width:     150px;
+$sidebar-max-width:     90%;
+$sidebar-padding-w:     0.5rem;
+$sidebar-padding-h:     0.25rem;
+$item-icon-w:           1.4rem;
+
+// Query Editor
+$query-editor-bg:       white;
+$tab-height:            32px;
+$tab-padding-w:         0.85rem;

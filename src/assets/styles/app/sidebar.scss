@@ -1,39 +1,78 @@
 
-#sidebar-wrapper {
+#sidebar {
   width: $sidebar-width;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  overflow-y: auto;
-
+  background: rgba(black, 0.035);
+  overflow-x: hidden;
   .database-select {
-    border-right: none;
-    border-left: none;
+    background: rgba(white, 0.9);
+    height: $tab-height;
+    color: $gray-dark;
+    font-size: 110%;
+    padding: 0 $sidebar-padding-w;
+    box-shadow: inset 0 -1px $border-color;
   }
-
-  .sidebar-heading {
-    padding: 0.875rem 1.25rem;
-    font-size: 1.2rem;
+  .status {
+    padding: $sidebar-padding-h $sidebar-padding-w;
+    padding-top: $sidebar-padding-h * 3;
+    justify-content: flex-end;
   }
-
-  .list-group {
-  }
-
-  .badge {
-   display: flex;
-   margin-left: auto;
-   line-height: inherit;
-  }
-
-  .columns-list {
-    li {
-      padding:4px;
-      padding-left: 0.75rem;
+  .search-wrap {
+    display: flex;
+    align-items: center;
+    padding: $sidebar-padding-h $sidebar-padding-w;
+    input {
+      border: 0;
+      &:focus {
+        background: white;
+      }
     }
   }
-
-
-
+  .sidebar-heading {
+    font-size: 85%;
+    padding: $sidebar-padding-h $sidebar-padding-w;
+    margin-top: $sidebar-padding-h;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+  nav {
+    padding-top: $sidebar-padding-h;
+    padding-bottom: $sidebar-padding-h;
+    a, .sub-item {
+      display: flex;
+      align-items: center;
+      flex: 0 1 100%;
+      padding: $sidebar-padding-h $sidebar-padding-w;
+      padding-left: $sidebar-padding-w / 3;
+    }
+    .sub-items {
+      display: none;
+      flex-direction: column;
+      color: $gray;
+      .title {
+        font-size: 90%;
+        flex-grow: 1;
+      }
+    }
+    .sub-item {
+      padding-left: $sidebar-padding-w * 1.2 + $item-icon-w;
+    }
+    .item-icon {
+      width: $item-icon-w;
+      opacity: 0.75;
+      transition: transform 0.15s ease-in;
+    }
+    .collapsed {
+      .item-icon{
+        transform: rotate(-90deg);
+      }
+    }
+    .collapse {
+      display: none;
+      transition: transform 0.15s ease-in;
+      &.show {
+        display: flex;
+      }
+    }
+  }
 }
 

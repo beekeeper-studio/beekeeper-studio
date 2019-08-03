@@ -10,7 +10,7 @@
         >{{tab.title}}</a>
       </li>
       <li class="nav-item">
-        <a v-on:click="createQuery" class="nav-link"><i class="fa fa-plus"></i></a>
+        <a v-on:click="createQuery" class="nav-link add-query"><i class=" material-icons">add</i></a>
       </li>
     </ul>
     <div class="tab-content">

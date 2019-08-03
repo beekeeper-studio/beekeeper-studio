@@ -1,5 +1,22 @@
 .query-editor {
-  .bottom-panel {
-    margin-top: 30px;
+  background: $query-editor-bg;
+  .actions {
+    background: rgba(black, 0.06);
   }
+  .top-panel {
+    padding-top: 0.5rem;
+  }
+  .bottom-panel {
+    padding: 0.5rem;
+  }
+}
+
+// CodeMirror - Overrides
+// ----------------------
+.CodeMirror {
+  font-family: $font-family-mono, monospace;
+}
+.CodeMirror-gutters {
+  border: 0;
+  background: transparent;
 }

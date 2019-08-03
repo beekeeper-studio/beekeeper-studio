@@ -2,7 +2,7 @@
   <div class="query-editor">
     <div class="top-panel">
       <textarea name="editor" class="form-control" ref="editor" id="" cols="30" rows="10"></textarea>
-      <div class="text-right">
+      <div class="actions text-right">
         <a v-bind:click="runQuery" class="btn text-white btn-primary btn-sm">Execute Query</a>
       </div>
     </div>

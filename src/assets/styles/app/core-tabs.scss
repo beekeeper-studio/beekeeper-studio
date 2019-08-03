@@ -1,5 +1,36 @@
 
 .core-tabs {
+  background: rgba(black, 0.08);
   .nav-tabs {
+    .nav-link {
+      display: flex;
+      align-items: center;
+      padding: 0 $tab-padding-w;
+      height: $tab-height;
+      background: rgba(white, 0.4);
+      color: $text-color;
+      transition: background 0.15s ease-in-out;
+      border: 0;
+      border-right: 1px solid $query-editor-bg;
+      &:hover {
+        background: rgba(black, 0.025);
+      }
+      &.active {
+        border: 0;
+        background: $query-editor-bg;
+        font-weight: bold;
+        color: black;
+        &:hover {
+          background: $query-editor-bg;
+        }
+      }
+      &.add-query {
+        background: transparent;
+        border: 0;
+        &:hover {
+          background: rgba(black, 0.025);
+        }
+      }
+    }
   }
 }
