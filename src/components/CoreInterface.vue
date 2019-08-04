@@ -2,7 +2,7 @@
   <div class="wrapper">
     <core-sidebar></core-sidebar>
     <div id="page-content-wrapper">
-      <core-tabs></core-tabs>
+      <core-tabs :connection="connection"></core-tabs>
     </div>
   </div>
 </template>
@@ -14,9 +14,9 @@
 
   export default {
     components: { CoreSidebar, CoreTabs },
+    props: [ 'connection' ]
     data() {
       return {
-        connection: null,
       }
     },
   }

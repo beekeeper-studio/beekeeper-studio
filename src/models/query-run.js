@@ -2,7 +2,7 @@
 import Sequelize from 'sequelize'
 
 import sequelize from '../sequelize-db'
-import Connection from './connection'
+import ConnectionConfig from './connection-config'
 
 const QueryRun = sequelize.define('query_run', {
   queryText: {
@@ -27,8 +27,8 @@ const QueryRun = sequelize.define('query_run', {
   }
 })
 
-Connection.hasMany(QueryRun)
-QueryRun.belongsTo(Connection)
+ConnectionConfig.hasMany(QueryRun)
+QueryRun.belongsTo(ConnectionConfig)
 
 
 export default QueryRun
