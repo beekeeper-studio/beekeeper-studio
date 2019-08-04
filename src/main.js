@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import App from './App.vue'
 
-import '@fortawesome/fontawesome-free/css/all.css'
+//import '@fortawesome/fontawesome-free/css/all.css'
 import './assets/styles/vendor.scss'
 import './assets/styles/app.scss'
 import $ from 'jquery';

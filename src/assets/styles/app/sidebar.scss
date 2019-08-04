@@ -1,7 +1,8 @@
 
 #sidebar {
-  //background: rgba(black, 0.035);
   overflow-x: hidden;
+
+  // Sidebar Header
   .data-select-wrap {
     .status {
       display: flex;
@@ -15,39 +16,48 @@
         font-size: 85%;
         color: $gray-light;
       }
+      small {
+        align-items: center;
+        display: flex;
+      }
+      .material-icons {
+        font-size: 10px;
+        margin-right: 0.25em;
+      }
     }
   }
   .database-select {
     background: rgba(white, 0.9);
-    //height: $tab-height;
     color: $gray-dark;
     font-size: 110%;
-    font-weight: 600;
-    box-shadow: 0 1px $border-color;
+    font-weight: 500;
+    &:focus {
+      outline: 0;
+    }
   }
+
+  // Search
   .search-wrap {
     position: relative;
     display: flex;
     align-items: center;
-    padding: $sidebar-padding-h $sidebar-padding-w;
-    padding-top: $sidebar-padding-h * 2;
     i {
-      font-size: 14px;
+      font-size: 16px;
       position: absolute;
-      width: 20px;
       margin-top: 2px;
       left: $sidebar-padding-w;
     }
     input {
       border: 0;
-      background: transparent;
-      padding-left: 20px;
+      padding-left: 32px;
       box-shadow: none;
       &:focus {
-        box-shadow: 0 2px $brand-primary;
+        box-shadow: 0 1px $brand-primary;
       }
     }
   }
+
+  // Tables
   .sidebar-heading {
     font-size: 85%;
     padding: $sidebar-padding-h $sidebar-padding-w;
@@ -62,41 +72,52 @@
       display: flex;
       align-items: center;
       flex: 0 1 100%;
-      padding: $sidebar-padding-h $sidebar-padding-w;
-      padding-left: $sidebar-padding-w;
     }
     a {
+      color: $gray-dark;
+      padding: $sidebar-padding-h $sidebar-padding-w;
+      padding-left: $sidebar-padding-w;
       &:hover {
-        background: rgba(black, 0.04);
+        background: rgba(black, 0.06);
       }
       &.active, 
       &.active:hover, 
       &.active:focus {
-        background: rgba($brand-primary, 0.08);
+        background: rgba($brand-primary, 0.1);
       }
     }
     .sub-items {
       display: flex;
       flex-direction: column;
       color: $gray;
+      padding: $sidebar-padding-h 0;
       .title {
-        font-size: 90%;
         flex-grow: 1;
       }
     }
     .sub-item {
-      padding-left: $sidebar-padding-w * 1.4 + $item-icon-w;
+      padding-top: $sidebar-padding-h * 0.25;
+      padding-bottom: $sidebar-padding-h * 0.8;
+      padding-right: $sidebar-padding-w;
+      padding-left: $sidebar-padding-w + $item-icon-w;
     }
     .item-icon {
-      font-size: 14px;
-      width: 1.6rem;
-      margin-top: 2px;
-      opacity: 0.5;
+      font-size: 16px;
+      width: $item-icon-w;
+      opacity: 0.75;
       transition: transform 0.15s ease-in;
       color: $brand-primary;
     }
     .badge-info {
       background: $brand-info;
+    }
+    
+    // Collapse
+    .collapse {
+      display: none;
+      &.show {
+        display: flex;
+      }
     }
   }
 }

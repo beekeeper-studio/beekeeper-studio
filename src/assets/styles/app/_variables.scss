@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Roboto+Mono|Roboto:400,600,700&display=swap');
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,500,700,400italic|Material+Icons');
 
 
 // Colors
@@ -29,7 +28,7 @@ $selection:          rgba($brand-primary, 0.2);
 // Font
 $font-family:        'Roboto';
 $font-family-mono:   'Roboto Mono';
-$base-font-size:      12px;
+$base-font-size:      13px;
 
 // Inputs
 
@@ -42,8 +41,8 @@ $sidebar-w:           250px;
 $sidebar-min-w:       200px;
 $sidebar-max-w:       90%;
 $sidebar-padding-w:   0.75rem;
-$sidebar-padding-h:   0.35rem;
-$item-icon-w:         1.4rem;
+$sidebar-padding-h:   0.4rem;
+$item-icon-w:         2rem;
 
 // Query Editor
 $query-editor-bg:     white;
