@@ -1,0 +1,22 @@
+version: '3'
+services:
+  psql:
+    image: postgres
+    volumes:
+      - ./data/psql:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  mysql:
+    image: mysql:5.7.22
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: test
+    ports:
+      - 3306:3306
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
+

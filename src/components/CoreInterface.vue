@@ -2,7 +2,7 @@
   <div id="interface" class="interface flex-row">
     <core-sidebar></core-sidebar>
     <div class="page-content flex-column" id="page-content">
-      <core-tabs></core-tabs>
+      <core-tabs :connection="connection"></core-tabs>
     </div>
   </div>
 </template>
@@ -14,9 +14,9 @@
 
   export default {
     components: { CoreSidebar, CoreTabs },
+    props: [ 'connection' ]
     data() {
       return {
-        connection: null,
       }
     },
   }
