@@ -2,6 +2,9 @@
 .core-tabs {
   background: rgba(black, 0.08);
   .nav-tabs {
+    .nav-item {
+      max-width: 200px;
+    }
     .nav-link {
       display: flex;
       align-items: center;
@@ -13,7 +16,7 @@
       border: 0;
       box-shadow: inset -1px 0 $query-editor-bg;
       &:hover {
-        background: rgba(black, 0.025);
+        background: transparent;
       }
       &.active {
         border: 0;
@@ -28,8 +31,25 @@
         background: transparent;
         box-shadow: none;
         &:hover {
-          background: rgba(black, 0.025);
+          background: rgba(black, 0.05);
         }
+      }
+    }
+    .tab-close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 18px;
+      min-width: 18px;
+      border-radius: 50%;
+      margin-left: 0.25rem;
+      margin-right: -($tab-padding-w * 0.5);
+      &:hover {
+        background: rgba(black, 0.1);
+      }
+      i {
+        font-size: 14px;
+        font-weight: bold;
       }
     }
   }

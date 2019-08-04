@@ -7,7 +7,10 @@
           class="nav-link"
           v-on:click="click(idx)"
           :class="{ active: activeItem === idx }"
-        >{{tab.title}}</a>
+        >
+          <span class="truncate">{{tab.title}}</span>
+          <span class="tab-close"><i class="material-icons">close</i></span>
+        </a>
       </li>
       <li class="nav-item">
         <a v-on:click="createQuery" class="nav-link add-query"><i class=" material-icons">add</i></a>
