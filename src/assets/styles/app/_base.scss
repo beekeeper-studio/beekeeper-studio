@@ -64,8 +64,8 @@ a {
 .form-control {
   display: block;
   width: 100%;
-  height: calc(1.5em + 1rem);
-  padding: 0.25rem 0.75rem;
+  height: calc(1.5rem + 1rem);
+  padding: 0.75rem;
   font-size: 1rem;
   font-weight: normal;
   line-height: 1.5;
@@ -83,6 +83,24 @@ input, select, textarea {
   &:focus {
     box-shadow: 0 1px $brand-primary;
   }
+}
+select {
+  border: 0!important; 
+  -webkit-appearance: none; 
+  appearance: none;
+  background: #0088cc url(/select-arrow.svg) no-repeat 90% center;
+  padding: 5px;
+}
+.card-shadow {
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.06),
+              0 1px 3px 0 rgba(0,0,0,0.12),
+              0 2px 1px -1px rgba(0,0,0,0.08);
+  transition: box-shadow 0.28s ease-in-out;
+}
+.card-shadow-hover {
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.06),
+              0 1px 2px rgba(0,0,0,0.08),
+              0 6px 15px rgba(0,0,0,0.12);
 }
 
 // Nav

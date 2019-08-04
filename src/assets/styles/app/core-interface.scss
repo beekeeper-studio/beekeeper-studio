@@ -16,6 +16,7 @@
   .page-content {
     flex: 0 1 100%;
     box-shadow: -1px 0 $border-color;
+    z-index: 1;
     .top-panel, .bottom-panel {
       display: flex;
       flex-direction: column;

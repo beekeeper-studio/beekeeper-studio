@@ -23,6 +23,7 @@
     "pg-hstore": "^2.3.3",
     "popper.js": "^1.15.0",
     "sass-loader": "^7.1.0",
+    "selectise": "^1.1.0",
     "sequelize": "^5.9.5",
     "split.js": "^1.5.11",
     "sqlite3": "^4.0.9",

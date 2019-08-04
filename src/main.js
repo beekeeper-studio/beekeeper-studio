@@ -12,6 +12,7 @@ window.jQuery = $
 window.sql = SQL
 
 import 'bootstrap'
+import Selectise from 'selectise'
 import Split from 'split.js'
 
 Vue.config.productionTip = false
@@ -21,17 +22,17 @@ new Vue({
 }).$mount('#app')
 
 
-Split(['.sidebar', '.page-content'], {
-  elementStyle: (dimension, size) => ({
-      'flex-basis': `calc(${size}%)`,
-  }),
-  sizes: [25,75],
-  gutterSize: 8,
-})
-// Split(['.core-tabs .top-panel', '.core-tabs .bottom-panel'], {
-//   elementStyle: (dimension, size) => ({
-//       'flex-basis': `calc(${size}%)`,
-//   }),
-//   direction: 'vertical',
-//   gutterSize: 8,
-// })
+window.addEventListener('DOMContentLoaded', () => {
+
+  Split(['.sidebar', '.page-content'], {
+    elementStyle: (dimension, size) => ({
+        'flex-basis': `calc(${size}%)`,
+    }),
+    sizes: [25,75],
+    gutterSize: 8,
+  });
+
+  new Selectise('select', {
+    shouldCloseOnClickBody: true
+  })
+});
