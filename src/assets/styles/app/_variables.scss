@@ -35,16 +35,17 @@ $base-font-size:      12px;
 
 // Layout
 // -----------------------------
+$resize-gutter:       8px;
 
 // Sidebar
-$sidebar-width:         280px;
-$sidebar-min-width:     150px;
-$sidebar-max-width:     90%;
-$sidebar-padding-w:     0.5rem;
-$sidebar-padding-h:     0.25rem;
-$item-icon-w:           1.4rem;
+$sidebar-w:           250px;
+$sidebar-min-w:       200px;
+$sidebar-max-w:       90%;
+$sidebar-padding-w:   0.75rem;
+$sidebar-padding-h:   0.35rem;
+$item-icon-w:         1.4rem;
 
 // Query Editor
-$query-editor-bg:       white;
-$tab-height:            32px;
-$tab-padding-w:         0.85rem;
+$query-editor-bg:     white;
+$tab-height:          40px;
+$tab-padding-w:       0.85rem;

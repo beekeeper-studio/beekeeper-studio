@@ -1,29 +1,50 @@
 
 #sidebar {
-  width: $sidebar-width;
-  background: rgba(black, 0.035);
+  //background: rgba(black, 0.035);
   overflow-x: hidden;
+  .data-select-wrap {
+    .status {
+      display: flex;
+      align-items: center;
+      padding: 0 $sidebar-padding-w;
+      padding-top: $sidebar-padding-h * 2;
+      padding-bottom: 0;
+      label {
+        flex-grow: 1;
+        margin: 0;
+        font-size: 85%;
+        color: $gray-light;
+      }
+    }
+  }
   .database-select {
     background: rgba(white, 0.9);
-    height: $tab-height;
+    //height: $tab-height;
     color: $gray-dark;
     font-size: 110%;
-    padding: 0 $sidebar-padding-w;
-    box-shadow: inset 0 -1px $border-color;
-  }
-  .status {
-    padding: $sidebar-padding-h $sidebar-padding-w;
-    padding-top: $sidebar-padding-h * 3;
-    justify-content: flex-end;
+    font-weight: 600;
+    box-shadow: 0 1px $border-color;
   }
   .search-wrap {
+    position: relative;
     display: flex;
     align-items: center;
     padding: $sidebar-padding-h $sidebar-padding-w;
+    padding-top: $sidebar-padding-h * 2;
+    i {
+      font-size: 14px;
+      position: absolute;
+      width: 20px;
+      margin-top: 2px;
+      left: $sidebar-padding-w;
+    }
     input {
       border: 0;
+      background: transparent;
+      padding-left: 20px;
+      box-shadow: none;
       &:focus {
-        background: white;
+        box-shadow: 0 2px $brand-primary;
       }
     }
   }
@@ -42,10 +63,20 @@
       align-items: center;
       flex: 0 1 100%;
       padding: $sidebar-padding-h $sidebar-padding-w;
-      padding-left: $sidebar-padding-w / 3;
+      padding-left: $sidebar-padding-w;
+    }
+    a {
+      &:hover {
+        background: rgba(black, 0.04);
+      }
+      &.active, 
+      &.active:hover, 
+      &.active:focus {
+        background: rgba($brand-primary, 0.08);
+      }
     }
     .sub-items {
-      display: none;
+      display: flex;
       flex-direction: column;
       color: $gray;
       .title {
@@ -54,24 +85,18 @@
       }
     }
     .sub-item {
-      padding-left: $sidebar-padding-w * 1.2 + $item-icon-w;
+      padding-left: $sidebar-padding-w * 1.4 + $item-icon-w;
     }
     .item-icon {
-      width: $item-icon-w;
-      opacity: 0.75;
+      font-size: 14px;
+      width: 1.6rem;
+      margin-top: 2px;
+      opacity: 0.5;
       transition: transform 0.15s ease-in;
+      color: $brand-primary;
     }
-    .collapsed {
-      .item-icon{
-        transform: rotate(-90deg);
-      }
-    }
-    .collapse {
-      display: none;
-      transition: transform 0.15s ease-in;
-      &.show {
-        display: flex;
-      }
+    .badge-info {
+      background: $brand-info;
     }
   }
 }

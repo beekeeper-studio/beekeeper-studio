@@ -1,5 +1,5 @@
 <template>
-  <div class="interface flex-row">
+  <div id="interface" class="interface flex-row">
     <core-sidebar></core-sidebar>
     <div class="page-content flex-column" id="page-content">
       <core-tabs></core-tabs>

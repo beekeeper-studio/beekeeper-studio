@@ -24,6 +24,7 @@
     "popper.js": "^1.15.0",
     "sass-loader": "^7.1.0",
     "sequelize": "^5.9.5",
+    "split.js": "^1.5.11",
     "sqlite3": "^4.0.9",
     "tabulator-tables": "^4.2.7",
     "vue": "^2.6.10"

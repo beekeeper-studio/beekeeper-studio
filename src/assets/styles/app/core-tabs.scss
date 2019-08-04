@@ -11,7 +11,7 @@
       color: $text-color;
       transition: background 0.15s ease-in-out;
       border: 0;
-      border-right: 1px solid $query-editor-bg;
+      box-shadow: inset -1px 0 $query-editor-bg;
       &:hover {
         background: rgba(black, 0.025);
       }
@@ -26,7 +26,7 @@
       }
       &.add-query {
         background: transparent;
-        border: 0;
+        box-shadow: none;
         &:hover {
           background: rgba(black, 0.025);
         }

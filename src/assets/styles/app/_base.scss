@@ -37,20 +37,18 @@ a {
 
 // Scrollbar
 // ---------------------
-.md-scrollbar {
-  &::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-    border-radius: 1px;
-    background: rgba(black, 0.06);
-  }
-  &::-webkit-scrollbar-thumb {
-    border-radius: 8px;
-    background: rgba(black, 0.37);
-  }
-  &::-webkit-scrollbar-button {
-    display: none;
-  }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: rgba(black, 0.06);
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 6px;
+  background: rgba(black, 0.37);
+}
+::-webkit-scrollbar-button {
+  display: none;
 }
 
 // ---------------------------------
@@ -62,7 +60,7 @@ a {
 .form-control {
   display: block;
   width: 100%;
-  height: calc(1.5em + 0.65rem);
+  height: calc(1.5em + 1rem);
   padding: 0.25rem 0.75rem;
   font-size: 1rem;
   font-weight: normal;
@@ -79,7 +77,7 @@ a {
 input, select, textarea {
   @extend .form-control;
   &:focus {
-    outline: 1px solid rgba($brand-primary, 0.75);
+    box-shadow: inset 0 0 0 1px rgba($brand-primary, 0.75);
   }
 }
 
@@ -127,4 +125,20 @@ input, select, textarea {
               border-color 0.15s ease-in-out, 
               box-shadow 0.15s ease-in-out;
 }
-    
+
+.gutter {
+  &.gutter-horizontal,
+  &.gutter-vertical {
+    display: flex;
+    background-color: tranparent;
+    z-index: 10;
+  }
+  &.gutter-horizontal {
+    margin-right: -$resize-gutter;
+    height: 100%;
+    cursor: ew-resize;
+  }
+  &.gutter-vertical {
+    cursor: e-resize;
+  }
+}
