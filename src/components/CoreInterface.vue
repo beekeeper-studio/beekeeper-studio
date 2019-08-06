@@ -14,7 +14,7 @@
 
   export default {
     components: { CoreSidebar, CoreTabs },
-    props: [ 'connection' ]
+    props: [ 'connection' ],
     data() {
       return {
       }

@@ -1,10 +1,11 @@
 <template>
-  <core-interface :connection="connectionConfig"></core-interface>
+  <div class="beekeeper-studio-wrapper">
+    <connection-interface v-if="!connection" @connected="connected" ></connection-interface>
+    <core-interface v-else :connection="connection"></core-interface>
+  </div>
 </template>
 
 <script>
-
-import ConnectionConfig from './models/connection-config'
 
 import CoreInterface from './components/CoreInterface'
 import ConnectionInterface from './components/ConnectionInterface'
@@ -12,11 +13,16 @@ import ConnectionInterface from './components/ConnectionInterface'
 export default {
   name: 'app',
   components: {
-    CoreInterface
+    CoreInterface, ConnectionInterface
   },
-  async data() {
+  data() {
     return {
-      connectionConfig: await ConnectionConfig.findOne({})
+      connection: null
+    }
+  },
+  method: {
+    connected(connection) {
+      this.connection = connection
     }
   }
 }

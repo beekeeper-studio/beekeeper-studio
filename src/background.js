@@ -8,7 +8,7 @@ import {
 
 import config from './config'
 import QueryRun from './models/query-run'
-import ConnectionConfig from './models/connection'
+import ConnectionConfig from './models/connection-config'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
