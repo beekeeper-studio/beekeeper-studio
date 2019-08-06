@@ -16,16 +16,15 @@
   .database-select {
     //background: rgba($theme-bg, 0.9);
     display: block;
-    color: $text-dark;
     font-size: 110%;
     font-weight: 500;
     margin: 0;
     width: 100%;
-    &:after {
-      border-color: $theme-bg transparent transparent transparent;
-    }
     .selectise-trigger {
-      color: $theme-bg;
+      color: $db-select-text;
+      &::after {
+        border-color: $db-select-text transparent transparent transparent;
+      }
     }
     &:focus {
       outline: 0;
