@@ -1,55 +1,81 @@
 <template>
-    <!-- Sidebar -->
-    <div class="bg-light border-right" id="sidebar-wrapper">
-      <select class="custom-select custom-select-sm database-select">
+  <!-- Sidebar -->
+  <div class="sidebar flex-column" id="sidebar">
+    
+    <div class="data-select-wrap">
+      <select class="database-select">
         <option selected>Public</option>
         <option value="1">One</option>
         <option value="2">Two</option>
         <option value="3">Three</option>
       </select>
-      <div class="container">
-        <small class="form-text text-success"><i class="fa fa-circle"></i> Connected</small>
-      </div>
-
-      <div class="sidebar-heading">Tables</div>
-      <input type="text" class="form-control border border-left-0 border-bottom-0 border-right-0" placeholder="Search">
-
-      <div class="list-group list-group-flush">
-        <a href="#dashboard-details" class="list-group-item list-group-item-action bg-light" data-toggle="collapse">Dashboard</a>
-        <div class="list-group list-group-flush collapse columns-list" id="dashboard-details">
-          <li class="list-group-item d-flex">
-            <div class="justify-content-between">first_name</div>
-            <span class="badge badge-info">varchar(255)</span>
-          </li>
-          <li class="list-group-item d-flex">
-            <div class="justify-content-between">last_name</div>
-            <span class="badge badge-info right">varchar(255)</span>
-          </li>
-          <li class="list-group-item d-flex">
-            <div class="justify-content-between">age</div>
-            <span class="badge badge-info right">int(8)</span>
-          </li>
-        </div>
-        <a href="#shortcuts-details" class="list-group-item list-group-item-action bg-light" data-toggle="collapse">Shortcuts</a>
-        <div class="list-group list-group-flush collapse columns-list" id="shortcuts-details">
-          <li class="list-group-item d-flex">
-            <div class="justify-content-between">first_name</div>
-            <span class="badge badge-info">varchar(255)</span>
-          </li>
-          <li class="list-group-item d-flex">
-            <div class="justify-content-between">last_name</div>
-            <span class="badge badge-info right">varchar(255)</span>
-          </li>
-          <li class="list-group-item d-flex">
-            <div class="justify-content-between">age</div>
-            <span class="badge badge-info right">int(8)</span>
-          </li>
-        </div>        <a href="#" class="list-group-item list-group-item-action bg-light">Overview</a>
-        <a href="#" class="list-group-item list-group-item-action bg-light">Events</a>
-        <a href="#" class="list-group-item list-group-item-action bg-light">Profile</a>
-        <a href="#" class="list-group-item list-group-item-action bg-light">Status</a>
-      </div>
     </div>
-    <!-- /#sidebar-wrapper -->
+   
+    <!--<div class="status">
+      <span class="expand"></span>
+      <small class="text-success"><i class="material-icons">brightness_1</i> Connected</small>
+    </div>-->
 
+    <div class="search-wrap">
+      <input type="text" placeholder="Filter">
+    </div>
+
+    <div class="sidebar-heading">Tables</div>
+
+    <nav class="flex-column">
+      <a href="#dashboard-details" data-toggle="collapse" role="button">
+        <i class="item-icon material-icons">grid_on</i>
+        <span>Dashboard</span>
+      </a>
+      <div class="sub-items collapse" id="dashboard-details">
+        <span class="sub-item">
+          <span class="title">first_name</span>
+          <span class="badge badge-info">varchar(255)</span>
+        </span>
+        <span class="sub-item">
+          <span class="title">last_name</span>
+          <span class="badge badge-info">varchar(255)</span>
+        </span>
+        <span class="sub-item">
+          <span class="title">age</span>
+          <span class="badge badge-info">int(8)</span>
+        </span>
+      </div>
+      <a href="#shortcuts-details" data-toggle="collapse" role="button">
+        <i class="item-icon material-icons">grid_on</i>
+        <span>Shortcuts</span>
+      </a>
+      <div class="sub-items collapse" id="shortcuts-details">
+        <span class="sub-item">
+          <span class="title">first_name</span>
+          <span class="badge badge-info">varchar(255)</span>
+        </span>
+        <span class="sub-item">
+          <span class="title">last_name</span>
+          <span class="badge badge-info">varchar(255)</span>
+        </span>
+        <span class="sub-item">
+          <span class="title">age</span>
+          <span class="badge badge-info">int(8)</span>
+        </span>
+      </div>        
+      <a href="#" class="">
+        <i class="item-icon material-icons">grid_on</i>
+        <span>Overview</span>
+      </a>
+      <a href="#" class="">
+        <i class="item-icon material-icons">grid_on</i>
+        <span>Events</span>
+      </a>
+      <a href="#" class="">
+        <i class="item-icon material-icons">grid_on</i>
+        <span>Profile</span>
+      </a>
+      <a href="#" class="">
+        <i class="item-icon material-icons">grid_on</i>
+        <span>Status</span>
+      </a>
+    </nav>
+    <span class="expand"></span>
+  </div>
 </template>

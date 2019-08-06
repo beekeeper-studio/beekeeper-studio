@@ -1,5 +1,61 @@
 
 .core-tabs {
+  background: rgba($theme-base, 0.08);
   .nav-tabs {
+    .nav-item {
+      max-width: 200px;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      padding: 0 ($tab-padding-w * 1.25);
+      height: $tab-height;
+      background: rgba($theme-bg, 0.4);
+      color: $text;
+      transition: background 0.15s ease-in-out;
+      border: 0;
+      border-radius: 0;
+      box-shadow: inset -1px 0 $query-editor-bg;
+      &:hover {
+        background: transparent;
+      }
+      &.active {
+        border: 0;
+        background: $query-editor-bg;
+        font-weight: bold;
+        color: $text-dark;
+        &:hover {
+          background: $query-editor-bg;
+        }
+      }
+      &.add-query {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: transparent;
+        box-shadow: none;
+        width: $tab-height * 0.9;
+        &:hover {
+          background: rgba($theme-base, 0.05);
+        }
+      }
+    }
+    .tab-close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 16px;
+      min-width: 16px;
+      border-radius: 50%;
+      margin-left: $gutter-w;
+      margin-right: -($tab-padding-w * 0.5);
+      &:hover {
+        background: rgba($theme-base, 0.1);
+      }
+      i {
+        font-size: 14px;
+        font-weight: bold;
+      }
+    }
   }
 }
