@@ -2,32 +2,35 @@
   font-size: 15px;
   box-sizing: border-box;
   position: relative;
-  padding-right: 30px;
-  margin-top: $sidebar-padding-h;
-  &::after {
-    content: '';
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 5px 5px 0 5px;
-    border-color: rgba(black, 0.65) transparent transparent transparent;
-
-    position: absolute;
-    top: 50%;
-    right: $input-padding-w;
-    transform: translateY(-50%);
-  }
+  margin-top: $gutter-h;
+  cursor: pointer;
   .selectise-trigger {
     @extend .truncate;
     background: transparent;
-    display: block;
+    display: flex;
     align-items: center;
-    color: $gray-dark;
+    flex: 0 1 100%;
+    align-items: center;
+    color: $text-dark;
     font-size: 1.1rem;
-    height: 2.8rem;
-    line-height: 2.8rem;
+    height: $input-height * 1.25;
     padding: 0 $input-padding-w;
+    padding-right: 30px;
     cursor: pointer;
+    &::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 5px 5px 0 5px;
+      //border-color: $text transparent transparent transparent;
+      border-color: rgba(black, 067) transparent transparent transparent;
+  
+      position: absolute;
+      top: 50%;
+      right: $gutter-w;
+      transform: translateY(-50%);
+    }
   }
   &.selectise-open {
     .selectise-options {
@@ -40,26 +43,25 @@
     position: absolute;
     left: 0;
     right: 0;
-    margin-left: 3px;
-    margin-right: 3px;
-    max-height: 300px;
-    background: white;
+    border-radius: 3px;
+    background: lighten($theme-bg, 5%);
     z-index: 20;
     overflow-x: hidden;
     
     font-weight: 400;
     font-size: 1rem;
-    border-radius: 1px;
-    padding: $input-padding-h 0;
+    max-height: 350px;
+    border-radius: 6px;
+    padding: ($gutter-h * 1.5) 0;
     margin-top: -2.2rem;
     @extend .card-shadow;
   }
   .selectise-option {
-    padding: $input-padding-h $input-padding-w;
+    padding: $gutter-h $gutter-w;
     transition: background 0.15s ease-in-out;
     cursor: pointer;
     &:hover {
-      background: rgba(black, 0.1);
+      background: rgba($theme-base, 0.1);
     }
   }
 }

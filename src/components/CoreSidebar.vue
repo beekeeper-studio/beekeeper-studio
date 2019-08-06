@@ -3,10 +3,6 @@
   <div class="sidebar flex-column" id="sidebar">
     
     <div class="data-select-wrap">
-      <div class="status">
-        <label>Database</label>
-        <small class="text-success"><i class="material-icons">brightness_1</i> Connected</small>
-      </div>
       <select class="database-select">
         <option selected>Public</option>
         <option value="1">One</option>
@@ -15,9 +11,13 @@
       </select>
     </div>
    
+    <!--<div class="status">
+      <span class="expand"></span>
+      <small class="text-success"><i class="material-icons">brightness_1</i> Connected</small>
+    </div>-->
+
     <div class="search-wrap">
-      <i class="material-icons">search</i>
-      <input type="text" placeholder="Search">
+      <input type="text" placeholder="Filter">
     </div>
 
     <div class="sidebar-heading">Tables</div>
@@ -76,6 +76,6 @@
         <span>Status</span>
       </a>
     </nav>
-
+    <span class="expand"></span>
   </div>
 </template>

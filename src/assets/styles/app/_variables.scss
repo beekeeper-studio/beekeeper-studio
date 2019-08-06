@@ -1,29 +1,31 @@
 @import url('https://fonts.googleapis.com/css?family=Roboto:400,500,700,400italic|Material+Icons');
 
+// Theme
+// ---------------------------
+$theme-bg:           #282828;
+$theme-base:         #fff;
+$theme-primary:      #F9A220;
+$theme-secondary:    #FCCB11;
 
 // Colors
 // -----------------------------
-$gray-dark:          rgba(black, 0.87);
-$gray:               rgba(black, 0.67);
-$gray-light:         rgba(black, 0.57);
-$gray-lighter:       rgba(black, 0.37);
+$text-dark:          rgba($theme-base, 0.87);
+$text:               rgba($theme-base, 0.67);
+$text-light:         rgba($theme-base, 0.57);
+$text-hint:          rgba($theme-base, 0.37);
+$text-disabled:      rgba($theme-base, 0.37);
 
 $brand-info:         #0072ff;
 $brand-success:      #15db95;
 $brand-warning:      #15db95;
 $brand-danger:       #15db95;
-$brand-default:      $gray-light;
-
-// Brand Colors
-$brand-primary:      $brand-info;
-$brand-secondary:    $brand-success;
+$brand-default:      rgba($theme-base, 0.57);
 
 // General
-$border-color:       rgba(black, 0.1);
-$text-color:         $gray;
-$link-color:         $gray-dark;
-$placeholder:        $gray-lighter;
-$selection:          rgba($brand-primary, 0.2);
+$border-color:       rgba($theme-base, 0.1);
+$link-color:         $text-dark;
+$placeholder:        $text-hint;
+$selection:          rgba($theme-primary, 0.2);
 
 // Font
 $font-family:        'Roboto';
@@ -31,22 +33,23 @@ $font-family-mono:   'Roboto Mono';
 $base-font-size:      13px;
 
 // Inputs
-$input-padding-h:    0.35rem;
-$input-padding-w:    0.75rem;
+$input-padding-h:     0;
+$input-height:        28px;
+$input-padding-w:     0.75rem;
+$input-highlight:     $brand-info;
 
 // Layout
 // -----------------------------
-$resize-gutter:       8px;
+$gutter-w:            0.85rem;
+$gutter-h:            0.4rem;
 
 // Sidebar
 $sidebar-w:           250px;
 $sidebar-min-w:       200px;
 $sidebar-max-w:       90%;
-$sidebar-padding-w:   0.75rem;
-$sidebar-padding-h:   0.4rem;
-$item-icon-w:         2rem;
+$sidebar-icon-w:      1.8rem;
 
 // Query Editor
-$query-editor-bg:     white;
-$tab-height:          36px;
+$query-editor-bg:     $theme-bg;
+$tab-height:          46px;
 $tab-padding-w:       0.65rem;

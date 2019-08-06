@@ -1,36 +1,32 @@
 
 #sidebar {
   overflow-x: hidden;
+  background: rgba($theme-base, 0.015);
 
   // Sidebar Header
   .data-select-wrap {
-    .status {
-      display: flex;
-      align-items: center;
-      padding: 0 $sidebar-padding-w;
-      padding-top: $sidebar-padding-h * 2;
-      padding-bottom: 0;
-      label {
-        flex-grow: 1;
-        margin: 0;
-        font-size: 85%;
-        color: $gray-light;
-      }
-      small {
-        align-items: center;
-        display: flex;
-      }
-      .material-icons {
-        font-size: 10px;
-        margin-right: 0.25em;
-      }
-    }
+    display: flex;
+    align-items: center;
+    height: $tab-height - 1px; // Nav tabs fix
+    //box-shadow: 0 1px $border-color;
+    padding: 0 $gutter-h;
+    background: $theme-primary;
+    background: linear-gradient(45deg,  $theme-primary 0%,$theme-secondary 100%);
   }
   .database-select {
-    background: rgba(white, 0.9);
-    color: $gray-dark;
+    //background: rgba($theme-bg, 0.9);
+    display: block;
+    color: $text-dark;
     font-size: 110%;
     font-weight: 500;
+    margin: 0;
+    width: 100%;
+    &:after {
+      border-color: $theme-bg transparent transparent transparent;
+    }
+    .selectise-trigger {
+      color: $theme-bg;
+    }
     &:focus {
       outline: 0;
     }
@@ -41,72 +37,66 @@
     position: relative;
     display: flex;
     align-items: center;
+    padding: $gutter-w $gutter-w;
     i {
       font-size: 16px;
       position: absolute;
       margin-top: 2px;
-      left: $sidebar-padding-w;
+      left: $gutter-w;
     }
     input {
       border: 0;
-      padding-left: 32px;
-      box-shadow: none;
-      &:focus {
-        box-shadow: 0 1px $brand-primary;
-      }
     }
   }
 
   // Tables
   .sidebar-heading {
     font-size: 85%;
-    padding: $sidebar-padding-h $sidebar-padding-w;
-    margin-top: $sidebar-padding-h;
+    padding: $gutter-h $gutter-w;
     text-transform: uppercase;
     font-weight: bold;
   }
   nav {
-    padding-top: $sidebar-padding-h;
-    padding-bottom: $sidebar-padding-h;
+    //padding-top: $gutter-h;
+    //padding-bottom: $gutter-h;
     a, .sub-item {
       display: flex;
       align-items: center;
       flex: 0 1 100%;
     }
     a {
-      color: $gray-dark;
-      padding: $sidebar-padding-h $sidebar-padding-w;
-      padding-left: $sidebar-padding-w;
+      color: $text-dark;
+      padding: $gutter-h $gutter-w;
+      padding-left: $gutter-w;
       &:hover {
-        background: rgba(black, 0.06);
+        background: rgba($theme-base, 0.06);
       }
       &.active, 
       &.active:hover, 
       &.active:focus {
-        background: rgba($brand-primary, 0.1);
+        background: rgba($theme-primary, 0.1);
       }
     }
     .sub-items {
       display: flex;
       flex-direction: column;
-      color: $gray;
-      padding: $sidebar-padding-h 0;
+      color: $text;
+      padding: $gutter-h 0;
       .title {
         flex-grow: 1;
       }
     }
     .sub-item {
-      padding-top: $sidebar-padding-h * 0.25;
-      padding-bottom: $sidebar-padding-h * 0.8;
-      padding-right: $sidebar-padding-w;
-      padding-left: $sidebar-padding-w + $item-icon-w;
+      padding-top: $gutter-h * 0.25;
+      padding-bottom: $gutter-h * 0.8;
+      padding-right: $gutter-w;
+      padding-left: $gutter-w + $sidebar-icon-w;
     }
     .item-icon {
-      font-size: 16px;
-      width: $item-icon-w;
-      opacity: 0.75;
+      font-size: 15px;
+      width: $sidebar-icon-w;
       transition: transform 0.15s ease-in;
-      color: $brand-primary;
+      color: $theme-primary;
     }
     .badge-info {
       background: $brand-info;
@@ -118,6 +108,27 @@
       &.show {
         display: flex;
       }
+    }
+  }
+
+  // Status
+  .status {
+    display: flex;
+    align-items: center;
+    padding: $gutter-h $gutter-w;
+    label {
+      flex-grow: 1;
+      margin: 0;
+      font-size: 85%;
+      color: $text-light;
+    }
+    small {
+      align-items: center;
+      display: flex;
+    }
+    .material-icons {
+      font-size: 10px;
+      margin-right: 0.25em;
     }
   }
 }

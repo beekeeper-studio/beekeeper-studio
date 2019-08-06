@@ -4,12 +4,14 @@
 :root {
   font-family: $font-family, Helvetica, Arial, sans-serif;
   font-size: $base-font-size;
+  background: $theme-bg;
+  color: $theme-base;
 }
 body {
   @extend :root;
 }
 ::selection {
-  background: rgba($brand-primary, 0.25);
+  background: rgba($theme-primary, 0.25);
 }
 ::placeholder {
   color: $placeholder;
@@ -29,6 +31,9 @@ a {
     opacity: 0.25;
   }
 }
+.expand {
+  flex-grow: 1;
+}
 .truncate {
   overflow: hidden;
   white-space: nowrap;
@@ -46,10 +51,10 @@ a {
   width: 8px;
   height: 8px;
   border-radius: 1px;
-  background: rgba(black, 0.06);
+  background: rgba($theme-base, 0.06);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(black, 0.37);
+  background: rgba($theme-base, 0.37);
 }
 ::-webkit-scrollbar-button {
   display: none;
@@ -64,24 +69,27 @@ a {
 .form-control {
   display: block;
   width: 100%;
-  height: calc(1.5rem + 1rem);
-  padding: 0.75rem;
+  height: $input-height;
+  padding: 0 0.75rem;
   font-size: 1rem;
   font-weight: normal;
   line-height: 1.5;
-  color: $text-color;
-  background-color: rgba(black, 0.06);
+  color: $text;
+  //background-color: rgba($theme-base, 0.06);
+  background: transparent;
   background-clip: padding-box;
   border: none;
-  border-radius: 1px;
+  border-radius: 3px;
   outline: 0;
+  width: 100%;
+  box-shadow: 0 0 0 1px rgba($theme-base, 0.1);
   transition: border-color 0.15s ease-in-out, 
               box-shadow 0.15s ease-in-out,
 }
 input, select, textarea {
   @extend .form-control;
   &:focus {
-    box-shadow: 0 1px $brand-primary;
+    box-shadow: 0 0 0 1px $input-highlight;
   }
 }
 select {
@@ -92,15 +100,15 @@ select {
   padding: 5px;
 }
 .card-shadow {
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.06),
-              0 1px 3px 0 rgba(0,0,0,0.12),
-              0 2px 1px -1px rgba(0,0,0,0.08);
+  box-shadow: 0 0 0 1px rgba(black ,0.06),
+              0 1px 3px 0 rgba(black ,0.12),
+              0 2px 1px -1px rgba(black ,0.08);
   transition: box-shadow 0.28s ease-in-out;
 }
 .card-shadow-hover {
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.06),
-              0 1px 2px rgba(0,0,0,0.08),
-              0 6px 15px rgba(0,0,0,0.12);
+  box-shadow: 0 0 0 1px rgba(black ,0.06),
+              0 1px 2px rgba(black ,0.08),
+              0 6px 15px rgba(black ,0.12);
 }
 
 // Nav
@@ -121,7 +129,7 @@ select {
     border: 0;
     &.active {
       border: 0;
-      background: white;
+      background: $query-editor-bg;
     }
   }
 }
@@ -156,7 +164,7 @@ select {
     z-index: 10;
   }
   &.gutter-horizontal {
-    margin-right: -$resize-gutter;
+    margin-right: -8px;
     height: 100%;
     cursor: ew-resize;
   }
