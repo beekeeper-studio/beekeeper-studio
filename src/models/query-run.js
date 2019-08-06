@@ -24,7 +24,7 @@ const QueryRun = sequelize.define('query_run', {
     validate: {
       min: 0
     }
-  }
+  },
 })
 
 ConnectionConfig.hasMany(QueryRun)
