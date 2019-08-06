@@ -5,7 +5,7 @@ const ConnectionConfig = sequelize.define('connection_config', {
   connectionType: {
     type: Sequelize.ENUM,
     values: ['postgres', 'mysql']
-  }
+  },
   host: {
     type: Sequelize.STRING
   },
