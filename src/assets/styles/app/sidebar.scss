@@ -1,5 +1,6 @@
 
 #sidebar {
+  display: flex;
   overflow-x: hidden;
   background: rgba($theme-base, 0.015);
 
@@ -8,13 +9,12 @@
     display: flex;
     align-items: center;
     height: $tab-height - 1px; // Nav tabs fix
-    //box-shadow: 0 1px $border-color;
-    padding: 0 $gutter-h;
+    min-height: $tab-height - 1px; // Nav tabs fix
+    padding: 0 $gutter-w;
     background: $theme-primary;
     background: linear-gradient(45deg,  $theme-primary 0%,$theme-secondary 100%);
   }
   .database-select {
-    //background: rgba($theme-bg, 0.9);
     display: block;
     font-size: 110%;
     font-weight: 500;
@@ -22,6 +22,9 @@
     width: 100%;
     .selectise-trigger {
       color: $db-select-text;
+      background: white;
+      border-radius: $input-radius;
+      height: $input-height * 1.1;
       &::after {
         border-color: $db-select-text transparent transparent transparent;
       }
@@ -56,8 +59,6 @@
     font-weight: bold;
   }
   nav {
-    //padding-top: $gutter-h;
-    //padding-bottom: $gutter-h;
     a, .sub-item {
       display: flex;
       align-items: center;
@@ -114,7 +115,8 @@
   .status {
     display: flex;
     align-items: center;
-    padding: $gutter-h $gutter-w;
+    padding: ($gutter-w * 0.75) $gutter-w;
+    background: rgba($theme-base, 0.025);
     label {
       flex-grow: 1;
       margin: 0;
@@ -126,8 +128,8 @@
       display: flex;
     }
     .material-icons {
-      font-size: 10px;
-      margin-right: 0.25em;
+      font-size: 8px;
+      margin-right: 0.35em;
     }
   }
 }

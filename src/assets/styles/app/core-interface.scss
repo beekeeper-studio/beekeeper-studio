@@ -17,6 +17,7 @@
   }
   .page-content {
     flex: 0 1 100%;
+    min-width: 350px;
     box-shadow: -1px 0 $border-color;
     z-index: 1;
     .top-panel, .bottom-panel {

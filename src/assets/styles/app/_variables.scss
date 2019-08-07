@@ -17,8 +17,8 @@ $text-disabled:      rgba($theme-base, 0.37);
 
 $brand-info:         #0072ff;
 $brand-success:      #15db95;
-$brand-warning:      #15db95;
-$brand-danger:       #15db95;
+$brand-warning:      #f39c12;
+$brand-danger:       #e74c3c;
 $brand-default:      rgba($theme-base, 0.57);
 
 // General
@@ -31,12 +31,14 @@ $selection:          rgba($theme-primary, 0.2);
 $font-family:        'Roboto';
 $font-family-mono:   'Roboto Mono';
 $base-font-size:      13px;
+  
 
 // Inputs
 $input-padding-h:     0;
 $input-height:        28px;
 $input-padding-w:     0.75rem;
 $input-highlight:     $brand-info;
+$input-radius:        3px;
 
 // Layout
 // -----------------------------

@@ -11,11 +11,6 @@
       </select>
     </div>
    
-    <!--<div class="status">
-      <span class="expand"></span>
-      <small class="text-success"><i class="material-icons">brightness_1</i> Connected</small>
-    </div>-->
-
     <div class="search-wrap">
       <input type="text" placeholder="Filter">
     </div>
@@ -77,5 +72,8 @@
       </a>
     </nav>
     <span class="expand"></span>
+    <div class="status">
+      <small class="text-success"><i class="material-icons">brightness_1</i> Connected</small>
+    </div>
   </div>
 </template>

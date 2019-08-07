@@ -1,9 +1,9 @@
 <template>
   <div class="query-editor">
     <div class="top-panel">
-      <textarea name="editor" class="form-control" ref="editor" id="" cols="30" rows="10"></textarea>
+      <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <div class="actions text-right">
-        <a v-bind:click="runQuery" class="btn text-white btn-primary btn-sm">Execute Query</a>
+        <a v-bind:click="runQuery" class="btn btn-link btn-primary">Run Query</a>
       </div>
     </div>
     <div class="bottom-panel">
@@ -76,12 +76,3 @@
     },
   }
 </script>
-
-
-<style>
-
-.editor {
-  width: 100%;
-  height: 400px;
-}
-</style>

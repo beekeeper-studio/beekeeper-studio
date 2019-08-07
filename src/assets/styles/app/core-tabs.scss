@@ -2,6 +2,12 @@
 .core-tabs {
   background: rgba($theme-base, 0.08);
   .nav-tabs {
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    &::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
     .nav-item {
       max-width: 200px;
     }
@@ -36,7 +42,18 @@
         box-shadow: none;
         width: $tab-height * 0.9;
         &:hover {
-          background: rgba($theme-base, 0.05);
+          i {
+            background: rgba($theme-base, 0.05);
+          }
+        }
+        i {
+          line-height: $tab-height * 0.65;
+          text-align: center;
+          height: $tab-height * 0.65;
+          min-width: $tab-height * 0.65;
+          border-radius: 50%;
+          transition: background 0.2s ease-in-out;
+          color: $text-dark;
         }
       }
     }

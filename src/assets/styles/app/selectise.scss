@@ -13,7 +13,7 @@
     align-items: center;
     color: $text-dark;
     font-size: 1.1rem;
-    height: $input-height * 1.25;
+    height: $input-height;
     padding: 0 $input-padding-w;
     padding-right: 30px;
     cursor: pointer;
@@ -50,9 +50,9 @@
     font-weight: 400;
     font-size: 1rem;
     max-height: 350px;
-    border-radius: 6px;
+    border-radius: $input-radius;
     padding: ($gutter-h * 1.5) 0;
-    margin-top: -2.2rem;
+    margin-top: -2.4rem;
     @extend .card-shadow;
   }
   .selectise-option {
