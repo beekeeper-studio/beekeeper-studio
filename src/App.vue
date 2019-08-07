@@ -1,6 +1,6 @@
 <template>
   <div class="beekeeper-studio-wrapper">
-    <connection-interface v-if="!connection" @connected="connected" ></connection-interface>
+    <connection-interface v-if="!connection" v-on:connected="connected"></connection-interface>
     <core-interface v-else :connection="connection"></core-interface>
   </div>
 </template>
@@ -20,7 +20,7 @@ export default {
       connection: null
     }
   },
-  method: {
+  methods: {
     connected(connection) {
       this.connection = connection
     }
