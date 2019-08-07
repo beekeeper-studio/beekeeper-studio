@@ -19,6 +19,7 @@
     "core-js": "^2.6.5",
     "jquery": "^3.4.1",
     "lodash": "^4.17.15",
+    "lowdb": "^1.0.0",
     "mysql": "^2.17.1",
     "node-sass": "^4.12.0",
     "pg-hstore": "^2.3.3",
@@ -27,6 +28,7 @@
     "selectise": "^1.1.0",
     "sequelize": "^5.9.5",
     "split.js": "^1.5.11",
+    "shortid": "^2.2.14",
     "sqlite3": "^4.0.9",
     "tabulator-tables": "^4.2.7",
     "vue": "^2.6.10"
