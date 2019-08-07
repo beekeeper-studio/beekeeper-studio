@@ -11,8 +11,7 @@
     height: $tab-height - 1px; // Nav tabs fix
     min-height: $tab-height - 1px; // Nav tabs fix
     padding: 0 $gutter-w;
-    background: $theme-primary;
-    background: linear-gradient(45deg,  $theme-primary 0%,$theme-secondary 100%);
+    box-shadow: 0 1px $border-color;
   }
   .database-select {
     display: block;
@@ -22,7 +21,6 @@
     width: 100%;
     .selectise-trigger {
       color: $db-select-text;
-      background: white;
       border-radius: $input-radius;
       height: $input-height * 1.1;
       &::after {

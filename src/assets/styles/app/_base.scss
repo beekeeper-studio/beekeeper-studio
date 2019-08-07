@@ -170,7 +170,10 @@ select {
               box-shadow 0.15s ease-in-out;
 }
 
+// Slit.js Resizer
 .gutter {
+  position: relative;
+  width: 0!important;
   &.gutter-horizontal,
   &.gutter-vertical {
     display: flex;
@@ -178,11 +181,25 @@ select {
     z-index: 10;
   }
   &.gutter-horizontal {
-    margin-right: -8px;
-    height: 100%;
-    cursor: ew-resize;
+    cursor: col-resize;
+    &:after {
+      height: 100%;
+      width: 8px;
+      left: -4px;
+    }
   }
   &.gutter-vertical {
-    cursor: e-resize;
+    cursor: row-resize;
+    &:after {
+      height: 8px;
+      width: 100%;
+      top: -4px;
+    }
+  }
+  &:after {
+    content: "";
+    display: block;
+    position: absolute;
+    z-index: 10;
   }
 }
