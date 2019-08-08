@@ -19,7 +19,6 @@
     "core-js": "^2.6.5",
     "jquery": "^3.4.1",
     "lodash": "^4.17.15",
-    "lowdb": "^1.0.0",
     "mysql": "^2.17.1",
     "node-sass": "^4.12.0",
     "pg-hstore": "^2.3.3",
@@ -31,7 +30,9 @@
     "shortid": "^2.2.14",
     "sqlite3": "^4.0.9",
     "tabulator-tables": "^4.2.7",
-    "vue": "^2.6.10"
+    "vue": "^2.6.10",
+    "vuex": "^3.1.1",
+    "vuex-persist": "^2.0.1"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.9.0",

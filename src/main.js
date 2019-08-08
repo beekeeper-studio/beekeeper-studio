@@ -6,6 +6,7 @@ import './assets/styles/vendor.scss'
 import './assets/styles/app.scss'
 import $ from 'jquery';
 import SQL from 'codemirror/mode/sql/sql'
+import store from './store/index'
 
 window.$ = $
 window.jQuery = $
@@ -19,6 +20,7 @@ Vue.config.productionTip = false
 
 new Vue({
   render: h => h(App),
+  store,
 }).$mount('#app')
 
 

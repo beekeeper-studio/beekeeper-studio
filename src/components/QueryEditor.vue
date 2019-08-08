@@ -34,7 +34,6 @@
 <script>
   import CodeMirror from 'codemirror'
 
-  import QueryRun from '../models/query-run.js'
   import ResultTable from './ResultTable.vue'
 
   export default {
@@ -51,10 +50,10 @@
     },
     methods: {
       async submitQuery() {
-        const run = QueryRun.build({
+        const run = {
           queryText: this.query.queryText,
           database: this.database,
-        })
+        }
         return await this.runQuery(run)
       },
       async runQuery(queryRun) {

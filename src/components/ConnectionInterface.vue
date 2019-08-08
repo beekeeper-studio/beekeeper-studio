@@ -1,23 +1,10 @@
 <template>
   <div class="connection-interface">
-    <!-- TODO: move to a component -->
-    <div class="connection-sidebar">
-      <div id="sidebar-wrapper" class="bg-light border-right">
-        <h5 class="p-3">Saved Connections</h5>
-        <!-- <div class="sidbar-heading mt-2 p-3">Saved Connections</div> -->
-        <div class="list-group list-group-flush">
-          <a href="#" class="list-group-item-link list-group-item">
-            Foo
-            <span class="float-right"><a href="" class="">CONNECT</a></span>
-          </a>
-        </div>
-      </div>
-    </div>
-    <!-- END TODO -->
+    <connection-sidebar @edit="edit"></connection-sidebar>
     <div class="connection-main">
       <div class="container">
         <div class="row justify-content-sm-center">
-          <div class="col-lg-6 col-md-9">
+          <div class="col-lg-9 col-md-10 col-xl-6">
             <div class="card mt-5">
               <div class="card-body">
                 <h5 class="card-title">Enter Connection Information</h5>
@@ -25,6 +12,7 @@
                   <div class="form-group">
                     <label for="connectionType">Connection Type</label>
                     <select name="connectionType" @change="typeChanged" class="form-control custom-select" v-model="config.connectionType" id="connection-select">
+                      <option disabled value="null">Select a connection type...</option>
                       <option :key="t.value" v-for="t in connectionTypes" :value="t.value">{{t.name}}</option>
                     </select>
                   </div>
@@ -62,7 +50,7 @@
                     <h5 class="card-title">Save the Connection</h5>
                     <div class="row">
                       <div class="col-lg-8"><input type="text" v-model="config.name" placeholder="Connection Name" class="form-control"></div>
-                      <div class="col-lg-4 text-lg-right"><button class="btn btn-primary" @click.prevent="saveNewConnection">Save</button></div>
+                      <div class="col-lg-4 text-lg-right"><button class="btn btn-primary" @click.prevent="save">Save</button></div>
                     </div>
                   </div>
                 </form>
@@ -75,7 +63,7 @@
           </div>
         </div>
         <div class="row justify-content-sm-center mt-5">
-          <div class="col-md-6">
+          <div class="col-lg-9 col-md-10 col-xl-6">
             <div class="card">
               <div class="card-body">
                 <h5 class="card-title">Recent Connections</h5>
@@ -93,11 +81,13 @@
 
 <script>
 
-  import _ from 'lodash'
-  import db from '../lowdb/db'
   import config from '../config'
+  import { mapActions } from 'vuex'
+
+  import ConnectionSidebar from './ConnectionSidebar'
 
   export default {
+    components: { ConnectionSidebar },
     data() {
       return {
         config: config.defaults.connectionConfig,
@@ -105,6 +95,10 @@
       }
     },
     methods: {
+      ...mapActions(['saveConnectionConfig']),
+      edit(config) {
+        this.config = config
+      },
       submit() {
         this.$store.commit('')
       },
@@ -127,13 +121,11 @@
       clearForm(){
 
       },
-      async saveNewConnection() {
+      save() {
         this.checkConfig(this.config)
         this.testConnection(this.config)
         if(!this.errors) {
-          db.get('configs').push(this.config).write()
-          this.clearForm()
-          console.log("saved!")
+          this.saveConnectionConfig(this.config)
         }
       }
     },
@@ -144,6 +136,7 @@
     },
     mounted() {
       window.config = this.config
-    }
+    },
+
   }
 </script>
