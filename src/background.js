@@ -7,8 +7,8 @@ import {
 } from 'vue-cli-plugin-electron-builder/lib'
 
 import config from './config'
-import QueryRun from './models/query-run'
-import ConnectionConfig from './models/connection-config'
+// import QueryRun from './models/query-run'
+// import ConnectionConfig from './models/connection-config'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -26,16 +26,16 @@ function setupUserDirectory() {
 
 
 async function initializeDB() {
-  await QueryRun.sync({ force: true })
-  await ConnectionConfig.sync({ force: true })
-  await ConnectionConfig.create({
-    connectionType: 'mysql',
-    host: '127.0.0.1',
-    port: 3306,
-    defaultDatabase: 'employees',
-    user: 'root',
-    password: 'example'
-  })
+  // await QueryRun.sync({ force: true })
+  // await ConnectionConfig.sync({ force: true })
+  // await ConnectionConfig.create({
+  //   connectionType: 'mysql',
+  //   host: '127.0.0.1',
+  //   port: 3306,
+  //   defaultDatabase: 'employees',
+  //   user: 'root',
+  //   password: 'example'
+  // })
 
 }
 
