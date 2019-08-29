@@ -33,7 +33,8 @@
     "vue": "^2.6.10",
     "vuejs-noty": "^0.1.3",
     "vuex": "^3.1.1",
-    "vuex-persist": "^2.0.1"
+    "vuex-persist": "^2.0.1",
+    "yup": "^0.27.0"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.9.0",

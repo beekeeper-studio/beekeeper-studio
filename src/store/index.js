@@ -7,6 +7,8 @@ import path from 'path'
 import config from '../config'
 import shortid from 'shortid'
 
+import Validate from '../lib/validation'
+
 Vue.use(Vuex)
 
 function fPath(key) {
@@ -46,12 +48,15 @@ const store = new Vuex.Store({
   },
   actions: {
     async saveConnectionConfig({ commit }, config) {
-      if(!config.id) {
-        config.id = shortid.generate()
+      const result = await Validate.config(config)
+      if(result.valid) {
+        if(!config.id) {
+          config.id = shortid.generate()
+        }
+        commit('SAVE_CONFIG', config)
       }
-      commit('SAVE_CONFIG', config)
-      return config
-    }
+      return result
+    },
   },
   plugins: [vuexFile.plugin],
 })
