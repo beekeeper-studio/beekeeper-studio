@@ -8,6 +8,11 @@
             <div class="card mt-5">
               <div class="card-body">
                 <h5 class="card-title">Enter Connection Information</h5>
+                <p class="text-danger" v-show="errors">Please fix the following errors</p>
+                <ul class="text-danger" v-show="errors">
+
+                  <li v-for="e in errors">{{e}}</li>
+                </ul>
                 <form @action="submit" v-if="config">
                   <div class="form-group">
                     <label for="connectionType">Connection Type</label>
@@ -118,9 +123,7 @@
         }
 
       },
-      checkConfig() {
 
-      },
       testConnection(){
 
       },
@@ -128,10 +131,13 @@
 
       },
       async save() {
-        this.checkConfig(this.config)
         this.testConnection(this.config)
-        if(!this.errors) {
-          await this.saveConnectionConfig(this.config)
+        const result = await this.saveConnectionConfig(this.config)
+        if(result.errors) {
+          console.log(result)
+          this.errors = result.errors
+          this.$noty.error("Could not save connection information")
+        } else {
           if(this.config === this.defaultConfig) {
             this.defaultConfig = _.clone(config.defaults.connectionConfig)
           }
@@ -142,7 +148,7 @@
     computed: {
       connectionTypes() {
         return config.defaults.connectionTypes
-      }
+      },
     }
 
   }
