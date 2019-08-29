@@ -25,7 +25,10 @@ const vuexFile = new VueXPersistence({
       }
     }
   },
-  saveState: (key, state) => fs.writeFileSync(fPath(key), JSON.stringify(state))
+  saveState: (key, state) => {
+    console.log("saving now")
+    fs.writeFileSync(fPath(key), JSON.stringify(state))
+  }
 })
 
 
@@ -42,7 +45,7 @@ const store = new Vuex.Store({
     }
   },
   actions: {
-    saveConnectionConfig({ commit }, config) {
+    async saveConnectionConfig({ commit }, config) {
       if(!config.id) {
         config.id = shortid.generate()
       }

@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import VueNoty from 'vuejs-noty'
 import App from './App.vue'
 
 //import '@fortawesome/fontawesome-free/css/all.css'
@@ -17,6 +18,13 @@ import Selectise from 'selectise'
 import Split from 'split.js'
 
 Vue.config.productionTip = false
+Vue.use(VueNoty, {
+  timeout: 3000,
+  progressBar: true,
+  layout: 'bottomRight',
+  theme: 'mint',
+  closeWith: ['button', 'click']
+})
 
 new Vue({
   render: h => h(App),

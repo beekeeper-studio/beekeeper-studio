@@ -1,6 +1,6 @@
 <template>
   <div class="connection-interface">
-    <connection-sidebar @edit="edit"></connection-sidebar>
+    <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @edit="edit"></connection-sidebar>
     <div class="connection-main">
       <div class="container">
         <div class="row justify-content-sm-center">
@@ -8,7 +8,7 @@
             <div class="card mt-5">
               <div class="card-body">
                 <h5 class="card-title">Enter Connection Information</h5>
-                <form @action="submit">
+                <form @action="submit" v-if="config">
                   <div class="form-group">
                     <label for="connectionType">Connection Type</label>
                     <select name="connectionType" @change="typeChanged" class="form-control custom-select" v-model="config.connectionType" id="connection-select">
@@ -81,6 +81,7 @@
 
 <script>
 
+  import _ from 'lodash'
   import config from '../config'
   import { mapActions } from 'vuex'
 
@@ -90,9 +91,14 @@
     components: { ConnectionSidebar },
     data() {
       return {
-        config: config.defaults.connectionConfig,
+        defaultConfig: _.clone(config.defaults.connectionConfig),
+        config: null,
         errors: null
       }
+    },
+    mounted() {
+      this.config = this.defaultConfig
+      window.config = this.config
     },
     methods: {
       ...mapActions(['saveConnectionConfig']),
@@ -121,11 +127,15 @@
       clearForm(){
 
       },
-      save() {
+      async save() {
         this.checkConfig(this.config)
         this.testConnection(this.config)
         if(!this.errors) {
-          this.saveConnectionConfig(this.config)
+          await this.saveConnectionConfig(this.config)
+          if(this.config === this.defaultConfig) {
+            this.defaultConfig = _.clone(config.defaults.connectionConfig)
+          }
+          this.$noty.success("Connection Information Saved")
         }
       }
     },
@@ -133,10 +143,7 @@
       connectionTypes() {
         return config.defaults.connectionTypes
       }
-    },
-    mounted() {
-      window.config = this.config
-    },
+    }
 
   }
 </script>
