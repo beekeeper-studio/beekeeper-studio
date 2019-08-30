@@ -9,6 +9,10 @@ export default {
       { name: 'MySql', value: 'mysql' },
       { name: 'Postgres', value: 'psql' }
     ],
+    ports: {
+      'mysql': 3306,
+      'psql': 5432
+    },
     connectionConfig: {
       connectionType: null,
       host: null,

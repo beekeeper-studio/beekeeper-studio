@@ -48,8 +48,8 @@
 
 
                     <div class="text-right">
-                      <button class="btn btn-success mr-2" @click="testConnection">Test</button>
-                      <button class="btn btn-info" @click.prevent="submit">Connect</button>
+                      <button :disabled="testing" class="btn btn-success mr-2" @click="testConnection">Test</button>
+                      <button :disabled="testing" class="btn btn-info" @click.prevent="submit">Connect</button>
                     </div>
 
                     <h5 class="card-title">Save the Connection</h5>
@@ -89,6 +89,7 @@
   import _ from 'lodash'
   import config from '../config'
   import { mapActions } from 'vuex'
+  import ConnectionProvider from '../lib/connection-provider'
 
   import ConnectionSidebar from './ConnectionSidebar'
 
@@ -98,12 +99,23 @@
       return {
         defaultConfig: _.clone(config.defaults.connectionConfig),
         config: null,
-        errors: null
+        errors: null,
+        testing: false,
       }
     },
     mounted() {
       this.config = this.defaultConfig
       window.config = this.config
+    },
+    watch: {
+      config: {
+        deep: true,
+        handler(nu, old) {
+          if(nu === old && nu.connectionType != old.connectionType) {
+            this.$set(nu, 'port', config.defaults.ports[nu.connectionType])
+          }
+        },
+      },
     },
     methods: {
       ...mapActions(['saveConnectionConfig']),
@@ -125,6 +137,8 @@
       },
 
       testConnection(){
+        this.testing = true
+        // TODO (matthew): get connection, connect, run test query
 
       },
       clearForm(){
@@ -133,9 +147,9 @@
       async save() {
         this.testConnection(this.config)
         const result = await this.saveConnectionConfig(this.config)
+        this.errors = result.errors
         if(result.errors) {
           console.log(result)
-          this.errors = result.errors
           this.$noty.error("Could not save connection information")
         } else {
           if(this.config === this.defaultConfig) {

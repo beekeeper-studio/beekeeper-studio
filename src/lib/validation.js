@@ -14,7 +14,7 @@ export default {
   async config(connectionConfig) {
     try {
       const result = await configSchema.validate(connectionConfig, {abortEarly: false})
-      return { result, errors: null, valid: false }
+      return { result, errors: null, valid: true }
     } catch(ex) {
       return { result: null, errors: ex.errors, valid: false }
     }
