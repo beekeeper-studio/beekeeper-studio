@@ -48,7 +48,7 @@
 
 
                     <div class="text-right">
-                      <button :disabled="testing" class="btn btn-success mr-2" @click="testConnection">Test</button>
+                      <button :disabled="testing" class="btn btn-success mr-2" @click.prevent="testConnection">Test</button>
                       <button :disabled="testing" class="btn btn-info" @click.prevent="submit">Connect</button>
                     </div>
 
