@@ -1,4 +1,5 @@
 
+import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import VueXPersistence from 'vuex-persist'
@@ -39,11 +40,15 @@ const store = new Vuex.Store({
     connectionConfigs: {},
     queries: {},
     queryRuns: {},
+    connectionHistory: []
 
   },
   mutations: {
     SAVE_CONFIG (state, config) {
       Vue.set(state.connectionConfigs, config.id, config)
+    },
+    ADD_TO_CONFIG_HISTORY(state, config) {
+      state.connectionHistory.push(config)
     }
   },
   actions: {
@@ -57,6 +62,11 @@ const store = new Vuex.Store({
       }
       return result
     },
+    async saveRecentConnection({ commit }, config) {
+      const cpy = _.clone(config)
+      cpy.password = null
+      commit('ADD_TO_CONFIG_HISTORY', cpy)
+    }
   },
   plugins: [vuexFile.plugin],
 })

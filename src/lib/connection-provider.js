@@ -6,7 +6,7 @@ export default {
   for(config) {
     if (config.connectionType === 'mysql') {
 
-      options = {
+      const options = {
         host: config.host,
         port: config.port,
         user: config.user
