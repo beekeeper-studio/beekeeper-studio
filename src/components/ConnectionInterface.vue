@@ -61,6 +61,9 @@
                 </form>
 
               </div>
+              <div v-if="connectionError" class="card-body border-danger border text-danger">
+                {{connectionError}}
+              </div>
 
 
             </div>
@@ -100,6 +103,7 @@
         defaultConfig: _.clone(config.defaults.connectionConfig),
         config: null,
         errors: null,
+        connectionError: null,
         testing: false,
       }
     },
@@ -118,12 +122,18 @@
       },
     },
     methods: {
-      ...mapActions(['saveConnectionConfig']),
+      ...mapActions(['saveConnectionConfig', 'saveRecentConnection']),
       edit(config) {
         this.config = config
       },
-      submit() {
-        this.$store.commit('')
+      async submit() {
+        try {
+          const connection = await this.buildConnection()
+          await this.saveRecentConnection(this.config)
+          this.$emit('connected', connection)
+        } catch(ex) {
+          // do nothing
+        }
       },
       typeChanged() {
         if(this.config.connectionType === 'mysql') {
@@ -136,10 +146,36 @@
 
       },
 
-      testConnection(){
-        this.testing = true
-        // TODO (matthew): get connection, connect, run test query
+      buildConnection() {
+        return new Promise((resolve, reject) => {
+          this.connectionError = null
+          // TODO (matthew): get connection, connect, run test query
+          const connection = ConnectionProvider.for(this.config)
+          connection.connect((err) => {
+            this.testing = false
+            if (err) {
+              this.connectionError = err.message
+              this.$noty.error("Error establishing a connection")
+              // this.$noty.error(`Connection error: ${err.message}`)
+              reject(err)
+            }
+            resolve(connection)
 
+          })
+
+        })
+      },
+      async testConnection(){
+        try {
+          this.testing = true
+          const connection = await this.buildConnection()
+          connection.end(() => {
+            this.$noty.success("Connection looks good!")
+            this.testing = false
+          })
+        } catch(ex) {
+          this.testing = false
+        }
       },
       clearForm(){
 
@@ -149,7 +185,6 @@
         const result = await this.saveConnectionConfig(this.config)
         this.errors = result.errors
         if(result.errors) {
-          console.log(result)
           this.$noty.error("Could not save connection information")
         } else {
           if(this.config === this.defaultConfig) {
