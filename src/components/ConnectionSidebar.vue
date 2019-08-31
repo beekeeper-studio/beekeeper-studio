@@ -1,5 +1,5 @@
 <template>
-<div class="connection-sidebar">
+<div class="sidebar flex-column connection-sidebar" id="sidebar">
   <div id="sidebar-wrapper" class="bg-light border-right">
     <div class="list-group list-group-flush">
       <a

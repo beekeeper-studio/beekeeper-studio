@@ -1,7 +1,7 @@
 <template>
-  <div class="connection-interface">
+  <div class="connection-interface flex-row">
     <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @edit="edit"></connection-sidebar>
-    <div class="connection-main">
+    <div class="connection-main page-content flex-column" id="page-content">
       <div class="container">
         <div class="row justify-content-sm-center">
           <div class="col-lg-9 col-md-10 col-xl-6">
