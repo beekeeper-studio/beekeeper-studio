@@ -14,7 +14,7 @@ window.jQuery = $
 window.sql = SQL
 
 import 'bootstrap'
-import Selectise from 'selectise'
+// import Selectise from 'selectise'
 import Split from 'split.js'
 
 Vue.config.productionTip = false
@@ -42,7 +42,7 @@ window.addEventListener('DOMContentLoaded', () => {
     gutterSize: 8,
   });
 
-  new Selectise('select', {
-    shouldCloseOnClickBody: true
-  })
+  // new Selectise('select', {
+  //   shouldCloseOnClickBody: true
+  // })
 });

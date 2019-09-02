@@ -15,7 +15,7 @@ export default {
     },
     connectionConfig: {
       connectionType: null,
-      host: null,
+      host: 'localhost',
       port: null,
       user: null,
       password: null,

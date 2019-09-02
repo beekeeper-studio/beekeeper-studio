@@ -6,17 +6,17 @@
         <div class="row justify-content-sm-center">
           <div class="col-lg-9 col-md-10 col-xl-6">
             <div class="card mt-5">
-              <div class="card-body">
+              <div class="card-body bg-dark text-white">
                 <h5 class="card-title">Enter Connection Information</h5>
                 <p class="text-danger" v-show="errors">Please fix the following errors</p>
                 <ul class="text-danger" v-show="errors">
 
-                  <li v-for="e in errors">{{e}}</li>
+                  <li v-for="(e, i) in errors" :key="i">{{e}}</li>
                 </ul>
                 <form @action="submit" v-if="config">
                   <div class="form-group">
                     <label for="connectionType">Connection Type</label>
-                    <select name="connectionType" @change="typeChanged" class="form-control custom-select" v-model="config.connectionType" id="connection-select">
+                    <select name="connectionType" class="form-control custom-select" v-model="config.connectionType" @change="changeType" id="connection-select">
                       <option disabled value="null">Select a connection type...</option>
                       <option :key="t.value" v-for="t in connectionTypes" :value="t.value">{{t.name}}</option>
                     </select>
@@ -73,7 +73,7 @@
         <div class="row justify-content-sm-center mt-5">
           <div class="col-lg-9 col-md-10 col-xl-6">
             <div class="card">
-              <div class="card-body">
+              <div class="card-body bg-dark text-white">
                 <h5 class="card-title">Recent Connections</h5>
               </div>
 
@@ -109,15 +109,11 @@
     },
     mounted() {
       this.config = this.defaultConfig
-      window.config = this.config
     },
     watch: {
       config: {
         deep: true,
         handler(nu, old) {
-          if(nu === old && nu.connectionType != old.connectionType) {
-            this.$set(nu, 'port', config.defaults.ports[nu.connectionType])
-          }
         },
       },
     },
@@ -125,6 +121,13 @@
       ...mapActions(['saveConnectionConfig', 'saveRecentConnection']),
       edit(config) {
         this.config = config
+      },
+      changeType(e) {
+        if(this.config.connectionType === 'mysql') {
+          this.config.port = 3306
+        } else if(this.config.connectionType === 'psql') {
+          this.config.port = 5432
+        }
       },
       async submit() {
         try {
@@ -135,17 +138,6 @@
           // do nothing
         }
       },
-      typeChanged() {
-        if(this.config.connectionType === 'mysql') {
-          this.config.port = 3306
-          this.config.host = this.config.host || 'localhost'
-        } else if(this.config.connectionType === 'psql') {
-          this.config.port = 5432
-          this.config.host = this.config.host || 'localhost'
-        }
-
-      },
-
       buildConnection() {
         return new Promise((resolve, reject) => {
           this.connectionError = null
