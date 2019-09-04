@@ -1,75 +1,35 @@
 <template>
   <!-- Sidebar -->
   <div class="sidebar flex-column" id="sidebar">
-    
+
     <div class="data-select-wrap">
-      <select class="database-select">
+      <select class="database-select" v-model="database">
         <option selected>Public</option>
         <option value="1">One</option>
         <option value="2">Two</option>
         <option value="3">Three</option>
       </select>
     </div>
-   
+
     <div class="search-wrap">
       <input type="text" placeholder="Filter">
     </div>
 
     <div class="sidebar-heading">Tables</div>
 
-    <nav class="flex-column">
-      <a href="#dashboard-details" data-toggle="collapse" role="button">
-        <i class="item-icon material-icons">grid_on</i>
-        <span>Dashboard</span>
-      </a>
-      <div class="sub-items collapse" id="dashboard-details">
-        <span class="sub-item">
-          <span class="title">first_name</span>
-          <span class="badge badge-info">varchar(255)</span>
-        </span>
-        <span class="sub-item">
-          <span class="title">last_name</span>
-          <span class="badge badge-info">varchar(255)</span>
-        </span>
-        <span class="sub-item">
-          <span class="title">age</span>
-          <span class="badge badge-info">int(8)</span>
-        </span>
-      </div>
-      <a href="#shortcuts-details" data-toggle="collapse" role="button">
-        <i class="item-icon material-icons">grid_on</i>
-        <span>Shortcuts</span>
-      </a>
-      <div class="sub-items collapse" id="shortcuts-details">
-        <span class="sub-item">
-          <span class="title">first_name</span>
-          <span class="badge badge-info">varchar(255)</span>
-        </span>
-        <span class="sub-item">
-          <span class="title">last_name</span>
-          <span class="badge badge-info">varchar(255)</span>
-        </span>
-        <span class="sub-item">
-          <span class="title">age</span>
-          <span class="badge badge-info">int(8)</span>
-        </span>
-      </div>        
-      <a href="#" class="">
-        <i class="item-icon material-icons">grid_on</i>
-        <span>Overview</span>
-      </a>
-      <a href="#" class="">
-        <i class="item-icon material-icons">grid_on</i>
-        <span>Events</span>
-      </a>
-      <a href="#" class="">
-        <i class="item-icon material-icons">grid_on</i>
-        <span>Profile</span>
-      </a>
-      <a href="#" class="">
-        <i class="item-icon material-icons">grid_on</i>
-        <span>Status</span>
-      </a>
+    <nav class="flex-column" v-if="tables">
+      <template v-for="table in tables" v-key="table.name">
+        <a :href="table.name + '-details'" data-toggle="collapse" role="button">
+          <i class="item-icon material-icons">grid_on</i>
+          <span>{{table.name}}</span>
+        </a>
+        <div class="sub-items collapse" :id="table.name + '-details'">
+          <span v-if="table.columns" v-for="c in table.columns" class="sub-item">
+            <span class="title">{{c.name}}</span>
+            <span class="badge badge-info">{{c.dataType}}</span>
+          </span>
+        </div>
+      </template>
     </nav>
     <span class="expand"></span>
     <div class="status">
@@ -77,3 +37,43 @@
     </div>
   </div>
 </template>
+
+<script>
+  import _ from 'lodash'
+
+  export default {
+    props: ['connection'],
+    data() {
+      return {
+        tables: null,
+        tableLoadError: null,
+        database: null
+      }
+    },
+    methods: {
+      async loadTables() {
+        try {
+          this.tables = await this.connection.getTables(this.database)
+        } catch(ex) {
+          this.tableLoadError = ex.message
+          this.$noty.error("Error loading tables")
+        }
+
+      }
+    },
+    async mounted() {
+      window.connection = this.connection
+      this.database = this.connection.database
+      await this.loadTables()
+    },
+    watch: {
+      database(nuValue, oldValue) {
+        if(_.isNil(oldValue)) {
+          return
+        }
+        this.connection.setDatabase(nuValue)
+        this.loadTables()
+      }
+    }
+  }
+</script>

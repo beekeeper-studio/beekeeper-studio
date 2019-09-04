@@ -12,6 +12,7 @@ import store from './store/index'
 window.$ = $
 window.jQuery = $
 window.sql = SQL
+Vue.config.devtools = process.env.NODE_ENV === 'development';
 
 import 'bootstrap'
 // import Selectise from 'selectise'

@@ -70,16 +70,6 @@
 
           </div>
         </div>
-        <div class="row justify-content-sm-center mt-5">
-          <div class="col-lg-9 col-md-10 col-xl-6">
-            <div class="card">
-              <div class="card-body bg-dark text-white">
-                <h5 class="card-title">Recent Connections</h5>
-              </div>
-
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -131,41 +121,26 @@
       },
       async submit() {
         try {
-          const connection = await this.buildConnection()
+          const connection = ConnectionProvider.for(this.config)
+          await connection.connect()
           await this.saveRecentConnection(this.config)
           this.$emit('connected', connection)
         } catch(ex) {
-          // do nothing
+          this.connectionError = ex.message
+          this.$noty.error("Error establishing a connection")
         }
       },
-      buildConnection() {
-        return new Promise((resolve, reject) => {
-          this.connectionError = null
-          // TODO (matthew): get connection, connect, run test query
-          const connection = ConnectionProvider.for(this.config)
-          connection.connect((err) => {
-            this.testing = false
-            if (err) {
-              this.connectionError = err.message
-              this.$noty.error("Error establishing a connection")
-              // this.$noty.error(`Connection error: ${err.message}`)
-              reject(err)
-            }
-            resolve(connection)
-
-          })
-
-        })
-      },
-      async testConnection(){
+      async testConnection(close){
         try {
           this.testing = true
-          const connection = await this.buildConnection()
-          connection.end(() => {
-            this.$noty.success("Connection looks good!")
-            this.testing = false
-          })
+          const connection = ConnectionProvider.for(this.config)
+          await connection.connect()
+          await connection.end()
+          this.$noty.success("Connection looks good!")
         } catch(ex) {
+          this.connectionError = ex.message
+          this.$noty.error("Error establishing a connection")
+        } finally {
           this.testing = false
         }
       },

@@ -3,7 +3,7 @@
     <div class="top-panel">
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <div class="actions text-right">
-        <a v-bind:click="runQuery" class="btn btn-link btn-primary">Run Query</a>
+        <a href="" @click.prevent="runQuery" class="btn btn-link btn-primary">Run Query</a>
       </div>
     </div>
     <div class="bottom-panel">
