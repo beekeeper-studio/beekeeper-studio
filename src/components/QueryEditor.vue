@@ -3,7 +3,7 @@
     <div class="top-panel">
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <div class="actions text-right">
-        <a v-bind:click="runQuery" class="btn btn-link btn-primary">Run Query</a>
+        <a href="" @click.prevent="runQuery" class="btn btn-link btn-primary">Run Query</a>
       </div>
     </div>
     <div class="bottom-panel">
@@ -34,7 +34,6 @@
 <script>
   import CodeMirror from 'codemirror'
 
-  import QueryRun from '../models/query-run.js'
   import ResultTable from './ResultTable.vue'
 
   export default {
@@ -51,10 +50,10 @@
     },
     methods: {
       async submitQuery() {
-        const run = QueryRun.build({
+        const run = {
           queryText: this.query.queryText,
           database: this.database,
-        })
+        }
         return await this.runQuery(run)
       },
       async runQuery(queryRun) {
