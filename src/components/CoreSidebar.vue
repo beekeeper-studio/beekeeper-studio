@@ -1,7 +1,5 @@
 <template>
-  <!-- Sidebar -->
-  <div class="sidebar flex-column" id="sidebar">
-
+  <div>
     <div class="data-select-wrap">
       <select class="database-select" v-model="database">
         <option selected>Public</option>

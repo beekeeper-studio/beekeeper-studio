@@ -1,7 +1,9 @@
 <template>
   <div class="connection-interface flex-row">
-    <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @edit="edit"></connection-sidebar>
-    <div class="connection-main page-content flex-column" id="page-content">
+    <div ref="sidebar" class="sidebar flex-column connection-sidebar" id="sidebar">
+      <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @edit="edit"></connection-sidebar>
+    </div>
+    <div ref="content" class="connection-main page-content flex-column" id="page-content">
       <div class="container">
         <div class="row justify-content-sm-center">
           <div class="col-lg-9 col-md-10 col-xl-6">
@@ -85,6 +87,7 @@
   import ConnectionProvider from '../lib/connection-provider'
 
   import ConnectionSidebar from './ConnectionSidebar'
+  import Split from 'split.js'
 
   export default {
     components: { ConnectionSidebar },
@@ -95,10 +98,30 @@
         errors: null,
         connectionError: null,
         testing: false,
+        split: null
       }
     },
     mounted() {
       this.config = this.defaultConfig
+      this.$nextTick(() => {
+        const components = [
+          this.$refs.sidebar,
+          this.$refs.content
+        ]
+        this.split = Split(components, {
+          elementStyle: (dimension, size) => ({
+              'flex-basis': `calc(${size}%)`,
+          }),
+          sizes: [25,75],
+          gutterSize: 8,
+        })
+      })
+    },
+    beforeDestroy() {
+      if(this.split) {
+        console.log("destroying split")
+        this.split.destroy()
+      }
     },
     watch: {
       config: {

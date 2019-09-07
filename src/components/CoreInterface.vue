@@ -1,7 +1,10 @@
 <template>
   <div id="interface" class="interface flex-row">
+  <!-- Sidebar -->
+  <div class="sidebar flex-column" id="sidebar" ref="sidebar">
     <core-sidebar @databaseSelected="databaseSelected" :connection="connection"></core-sidebar>
-    <div class="page-content flex-column" id="page-content">
+  </div>
+    <div ref="content" class="page-content flex-column" id="page-content">
       <core-tabs :connection="connection"></core-tabs>
     </div>
   </div>
@@ -11,12 +14,41 @@
 
   import CoreSidebar from './CoreSidebar'
   import CoreTabs from './CoreTabs'
+  import Split from 'split.js'
 
   export default {
     components: { CoreSidebar, CoreTabs },
     props: [ 'connection' ],
     data() {
       return {
+        split: null
+      }
+    },
+    computed: {
+      splitElements() {
+        return [
+          this.$refs.sidebar,
+          this.$refs.content
+        ]
+      }
+    },
+    mounted() {
+
+      this.$nextTick(() => {
+        this.split = Split(this.splitElements, {
+          elementStyle: (dimension, size) => ({
+              'flex-basis': `calc(${size}%)`,
+          }),
+          sizes: [25,75],
+          gutterSize: 8,
+        })
+      })
+
+    },
+    beforeDestroy() {
+      if(this.split) {
+        console.log("destroying split")
+        this.split.destroy()
       }
     },
     methods: {

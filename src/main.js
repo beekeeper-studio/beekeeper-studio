@@ -15,8 +15,6 @@ window.sql = SQL
 Vue.config.devtools = process.env.NODE_ENV === 'development';
 
 import 'bootstrap'
-// import Selectise from 'selectise'
-import Split from 'split.js'
 
 Vue.config.productionTip = false
 Vue.use(VueNoty, {
@@ -31,19 +29,3 @@ new Vue({
   render: h => h(App),
   store,
 }).$mount('#app')
-
-
-window.addEventListener('DOMContentLoaded', () => {
-
-  Split(['.sidebar', '.page-content'], {
-    elementStyle: (dimension, size) => ({
-        'flex-basis': `calc(${size}%)`,
-    }),
-    sizes: [25,75],
-    gutterSize: 8,
-  });
-
-  // new Selectise('select', {
-  //   shouldCloseOnClickBody: true
-  // })
-});
