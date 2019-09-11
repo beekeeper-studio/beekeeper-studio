@@ -1,6 +1,9 @@
 
 // Global
 // ------------------------
+*, *:after, *:before {
+  box-sizing: border-box;
+}
 :root {
   font-family: $font-family, Helvetica, Arial, sans-serif;
   font-size: $base-font-size;
@@ -45,6 +48,16 @@ a {
   font-size: 18px;
 }
 
+// Selection
+::selection {
+  background: rgba($brand-primary, 0.25);
+}
+
+// Placeholder
+::placeholder {
+  color: $text-hint;
+}
+
 // Scrollbar
 // ---------------------
 ::-webkit-scrollbar {
@@ -60,31 +73,158 @@ a {
   display: none;
 }
 
-// ---------------------------------
-// Bootstrap Overrides - so I can scrap it all but the grid
-// ---------------------------------
+// Buttons
+// -------------------
+.btn {
+  display: inline-block;
+  font-size: 12px;
+  line-height: 1.1rem;
+  font-weight: 700;
+  outline: 0;
+  border: 0;
+  padding: 0.6rem 1rem;
+  min-width: 88px;
+  border-radius: $btn-border-radius;
+  transition: background 0.15s ease-in-out,
+              color 0.15s ease-in-out,;
+  text-align: center;
+  cursor: pointer;
+  &:hover, &:focus {
+    font-weight: 700;
+    opacity: 0.9;
+    outline: 0;
+    border: 0;
+    box-shadow: none;
+  }
+  &.btn-icon {
+    display: flex;
+    align-items: center;
+    i {
+      font-size: 1rem;
+    }
+  }
+}
+.btn-primary {
+  background: $brand-secondary;
+  color: white;
+  transition: opacity 0.15s ease-in-out;
+  &:hover, &:focus {
+    opacity: 0.85;
+  }
+}
+.btn-flat {
+  color: $theme-base;
+  background: rgba($theme-base, 0.06);
+  &:hover, &:focus {
+    opacity: 1;
+    background: rgba($theme-base, 0.12);
+  }
+}
+.btn-link {
+  color: $theme-base;
+  background: transparent;
+  &:hover, &:focus {
+    opacity: 1;
+    background: rgba($theme-base, 0.06);
+  }
+}
+.btn-info {
+  background: $brand-info;
+  color: white;
+}
+.btn-danger {
+  &:hover {
+    background: $brand-danger;
+    color: white;
+  }
+}
+.btn-large {
+  padding: 1.25em;
+  font-size: 13px;
+  width: 100%;
+  max-width: 250px;
+}
+.btn-block {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.btn-fab {
+  $icon-size:   40px;
+
+  font-size: 24px;
+  height: $icon-size;
+  min-width: $icon-size;
+  width: $icon-size;
+  height: $icon-size;
+  line-height: $icon-size;
+  border-radius: 50%;
+  padding: 0;
+  margin: 0;
+  @extend .layout-center;
+  text-align: center;
+  &:hover, &:focus {
+    background: rgba($theme-base, 0.1);
+  }
+}
+.btn-group {
+  margin-left: -0.25rem;
+  margin-right: -0.25rem;
+  .btn {
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
+  }
+}
+
+// Disabled Buttons
+.btn[disabled="disabled"] {
+  $btn-disabled-opacity:      0.25;
+
+  opacity: $btn-disabled-opacity!important;
+  &:hover, &:focus {
+    opacity: $btn-disabled-opacity!important;
+  }
+  &.btn-primary {
+    &:hover, &:focus {
+      background: $brand-secondary!important;
+    }
+  }
+  &.btn-flat {
+    &:hover, &:focus {
+     background: transparent!important;
+    }
+  }
+}
 
 // Inputs
 // -----------------------
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  label {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+  }
+}
 .form-control {
+  position: relative;
   display: block;
-  width: 100%;
   height: $input-height;
   padding: 0 0.75rem;
   font-size: 1rem;
   font-weight: normal;
   line-height: 1.5;
   color: $text;
-  //background-color: rgba($theme-base, 0.06);
   background: transparent;
-  background-clip: padding-box;
   border: none;
   border-radius: $input-radius;
   outline: 0;
   width: 100%;
   box-shadow: 0 0 0 1px rgba($theme-base, 0.1);
   transition: border-color 0.15s ease-in-out, 
-              box-shadow 0.15s ease-in-out,
+              box-shadow 0.15s ease-in-out;
 }
 input, select, textarea {
   @extend .form-control;
@@ -112,7 +252,36 @@ select {
   color: $brand-warning!important;
 }
 
+// Buttons
+// ---------------------------------------
+
+
 // Cards
+// ---------------------------------------
+.card, .card-flat {
+  border-radius: 8px;
+  overflow: hidden;
+  &.padding {
+    padding: 1.5rem;
+  }
+}
+.card {
+  background: $theme-bg;
+  @extend .card-shadow;
+}
+.card-flat {
+  background: rgba($theme-base, 0.05);
+  box-shadow: none;
+}
+// .card-body {
+//   flex: 1 1 auto;
+//   padding: 1.25rem;
+// }
+.card-title {
+  font-size: 1.25rem;
+  margin: 0;
+  margin-bottom: 1.5rem;
+}
 .card-shadow {
   box-shadow: 0 0 0 1px rgba(black ,0.06),
               0 1px 3px 0 rgba(black ,0.12),
@@ -151,6 +320,8 @@ select {
   display: block;
   padding: 0.5rem 1rem;
 }
+
+//List
 
 // Badge
 // -------------------
@@ -202,4 +373,27 @@ select {
     position: absolute;
     z-index: 10;
   }
+}
+
+// Alerts
+// --------------------------
+.alert {
+  display: flex;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  background: rgba($theme-base, 0.035);
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+  line-height: 16px;
+  > i {
+    font-size: 16px;
+    margin-right: 1rem;
+  }
+  ul {
+    margin: 0.35rem 0;
+    padding-left: 1.5rem;
+  }
+}
+.alert-danger {
+  color: $brand-danger;
 }

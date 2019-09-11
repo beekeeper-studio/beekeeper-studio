@@ -15,7 +15,7 @@
 
     <div class="sidebar-heading">Tables</div>
 
-    <nav class="flex-column" v-if="tables">
+    <nav class="list-group flex-col" v-if="tables">
       <template v-for="table in tables" v-key="table.name">
         <a :href="table.name + '-details'" data-toggle="collapse" role="button">
           <i class="item-icon material-icons">grid_on</i>

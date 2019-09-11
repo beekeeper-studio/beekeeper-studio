@@ -14,7 +14,7 @@ window.jQuery = $
 window.sql = SQL
 Vue.config.devtools = process.env.NODE_ENV === 'development';
 
-import 'bootstrap'
+//import 'bootstrap'
 
 Vue.config.productionTip = false
 Vue.use(VueNoty, {

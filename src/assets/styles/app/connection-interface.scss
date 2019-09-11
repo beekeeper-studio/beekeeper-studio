@@ -1,28 +1,26 @@
 
 .connection-interface {
   display: flex;
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
   height: 100%;
-  //padding: 1px;
-  box-shadow: inset 0 0 0 1px $border-color;
-
   .sidebar {
     width: $sidebar-w;
     min-width: $sidebar-min-w;
     max-width: $sidebar-max-w;
   }
-
-  .page-content {
-    flex: 0 1 100%;
-    min-width: 350px;
-    box-shadow: -1px 0 $border-color;
-    z-index: 1;
-    .top-panel, .bottom-panel {
-      display: flex;
-      flex-direction: column;
+}
+.connection-main {
+  .card {
+    padding: 1.5rem;
+  }
+  .save-connection {
+    h3 {
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .btn {
+      margin-left: 0.5rem;
     }
   }
 }
