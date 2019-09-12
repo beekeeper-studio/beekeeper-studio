@@ -9,6 +9,8 @@ $theme-secondary:    #FCCB11;
 
 // Colors
 // -----------------------------
+$white:              #fff;
+$black:              #000;
 $text-dark:          rgba($theme-base, 0.87);
 $text:               rgba($theme-base, 0.67);
 $text-light:         rgba($theme-base, 0.57);
@@ -40,7 +42,7 @@ $btn-border-radius:   4px;
 
 // Inputs
 $input-padding-h:     0;
-$input-height:        28px;
+$input-height:        30px;
 $input-padding-w:     0.75rem;
 $input-highlight:     $brand-info;
 $input-radius:        3px;
