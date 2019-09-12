@@ -31,6 +31,16 @@ class MySQLDriver {
     })
   }
 
+  listTables() {
+    const sql = `
+    SELECT table_name as name
+    FROM information_schema.tables
+    WHERE table_schema = ${this.database}
+    AND table_type NOT LIKE '%VIEW%'
+    ORDER BY table_name
+    `
+  }
+
   getTables(db) {
     return new Promise((resolve, reject) => {
       const options = {
