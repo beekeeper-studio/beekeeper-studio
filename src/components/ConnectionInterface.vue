@@ -26,20 +26,20 @@
             </div>
             <div v-if="config.connectionType" class="with-connection-type">
               <div class="row gutter">
-                <div class="form-group m9">
+                <div class="col s9 form-group">
                   <label for="Host">Host</label>
                   <input type="text" class="form-control" name="host" v-model="config.host">
                 </div>
-                <div class="form-group m3">
+                <div class="col s3 form-group">
                   <label for="port">Port</label>
                   <input type="number" class="form-control" name="port" v-model="config.port">
                 </div>
               </div>
               <div class="row gutter">
-                <div class="form-group m6">
+                <div class="col s6 form-group">
                   <label for="user">User</label><input type="text" name="user" v-model="config.user" class="form-control">
                 </div>
-                <div class="form-group m6">
+                <div class="col s6 form-group">
                   <label for="password">Password</label><input type="password" v-model="config.password" class="form-control">
                 </div>
               </div>

@@ -201,11 +201,11 @@ a {
 .form-group {
   display: flex;
   flex-direction: column;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-top: 6px;
+  margin-bottom: 6px;
   label {
     font-size: 0.85rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 6px;
   }
 }
 .form-control {
@@ -215,29 +215,31 @@ a {
   padding: 0 0.75rem;
   font-size: 1rem;
   font-weight: normal;
-  line-height: 1.5;
+  line-height: $input-height;
   color: $text;
   background: transparent;
-  border: none;
   border-radius: $input-radius;
-  outline: 0;
+  border: 1px solid rgba($theme-base, 0.1);
+  outline: none;
+  box-shadow: none;
   width: 100%;
-  box-shadow: 0 0 0 1px rgba($theme-base, 0.1);
-  transition: border-color 0.15s ease-in-out, 
-              box-shadow 0.15s ease-in-out;
+  transition: box-shadow 0.15s ease-in-out;
 }
 input, select, textarea {
   @extend .form-control;
   &:focus {
-    box-shadow: 0 0 0 1px $input-highlight;
+    border-color: $input-highlight;
   }
 }
 select {
   border: 0!important; 
   -webkit-appearance: none; 
   appearance: none;
-  background: #0088cc url(/select-arrow.svg) no-repeat 90% center;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='silver'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
   padding: 5px;
+  option {
+    background: lighten($theme-bg, 2%);
+  }
 }
 .text-success {
   color: $brand-success!important;
@@ -564,11 +566,11 @@ pre {
   }
 }
 .btn-group {
-  margin-left: -0.1rem;
-  margin-right: -0.1rem;
+  margin-left: -0.2rem;
+  margin-right: -0.2rem;
   .btn {
-    margin-left: 0.1rem;
-    margin-right: 0.1rem;
+    margin-left: 0.2rem;
+    margin-right: 0.2rem;
   }
 }
 
@@ -600,8 +602,9 @@ pre {
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   label {
+    display: flex;
     font-size: 0.9rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
   }
   .hint {
     font-size: .8rem;
@@ -622,7 +625,7 @@ pre {
   border-radius: $input-radius;
   outline: 0;
   width: 100%;
-  box-shadow: 0 0 0 1px rgba($theme-base, 0.1);
+  box-shadow: inset 0 0 0 1px rgba($theme-base, 0.1);
   transition: border-color 0.15s ease-in-out, 
               box-shadow 0.15s ease-in-out;
 }
