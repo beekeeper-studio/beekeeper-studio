@@ -1,3 +1,5 @@
+// Copyright (c) 2015 The SQLECTRON Team
+
 export function buildSchemaFilter({ schema } = {}, schemaField = 'schema_name') {
   if (!schema) { return null; }
 

@@ -1,3 +1,5 @@
+// Copyright (c) 2015 The SQLECTRON Team
+
 import sqlite3 from 'sqlite3';
 import { identify } from 'sql-query-identifier';
 

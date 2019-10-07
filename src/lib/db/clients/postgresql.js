@@ -1,3 +1,5 @@
+// Copyright (c) 2015 The SQLECTRON Team
+
 import pg from 'pg';
 import { identify } from 'sql-query-identifier';
 

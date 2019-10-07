@@ -1,3 +1,4 @@
+// Copyright (c) 2015 The SQLECTRON Team
 // Reference: http://lollyrock.com/articles/nodejs-encryption
 import crypto from 'crypto';
 

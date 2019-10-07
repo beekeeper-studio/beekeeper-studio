@@ -1,3 +1,5 @@
+// Copyright (c) 2015 The SQLECTRON Team
+
 import * as cassandra from 'cassandra-driver';
 import { identify } from 'sql-query-identifier';
 

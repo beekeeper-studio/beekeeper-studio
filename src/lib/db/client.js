@@ -1,3 +1,5 @@
+// Copyright (c) 2015 The SQLECTRON Team
+
 import connectTunnel from './tunnel';
 import clients from './clients';
 import * as config from '../config';

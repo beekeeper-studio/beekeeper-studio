@@ -1,3 +1,5 @@
+// Copyright (c) 2015 The SQLECTRON Team
+
 import mysql from 'mysql';
 import { identify } from 'sql-query-identifier';
 

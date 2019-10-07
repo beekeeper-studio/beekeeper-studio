@@ -1,3 +1,5 @@
+// Copyright (c) 2015 The SQLECTRON Team
+
 import debug from 'debug';
 
 const loggers = {};

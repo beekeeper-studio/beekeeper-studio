@@ -1,3 +1,5 @@
+// Copyright (c) 2015 The SQLECTRON Team
+
 import { Connection } from 'mssql';
 import { identify } from 'sql-query-identifier';
 

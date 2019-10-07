@@ -1,3 +1,5 @@
+// Copyright (c) 2015 The SQLECTRON Team
+
 import net from 'net';
 import { Client } from 'ssh2';
 import { getPort, readFile } from '../utils';

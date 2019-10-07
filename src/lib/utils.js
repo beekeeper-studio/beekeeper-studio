@@ -1,3 +1,5 @@
+// Copyright (c) 2015 The SQLECTRON Team
+
 import fs from 'fs';
 import path from 'path';
 import mkdirp from 'mkdirp';
