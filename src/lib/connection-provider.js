@@ -1,15 +1,23 @@
 
 
 import { MySQLDriver } from './drivers/mysql.js'
+import { createServer } from './db/index.js'
 
 export default {
-  for(config) {
-    if (config.connectionType === 'mysql') {
-      return new MySQLDriver(config)
-    }
 
-    if (config.connectionType === 'psql') {
-      return null
-    }
+  convertConfig(config) {
+  	return {
+  		client: config.connectionType,
+  		host: config.host,
+  		port: config.host,
+  		socketPath: null,
+  		password: config.password,
+  		database: config.defaultDatabase
+  	}
+  },
+
+  for(config) {
+  	let convertedConfig = this.convertConfig(config)
+  	return createConnection(convertedConfig).createConnection(config.defaultDatabase)
   }
 }

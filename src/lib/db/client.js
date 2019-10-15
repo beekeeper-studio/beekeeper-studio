@@ -2,7 +2,6 @@
 
 import connectTunnel from './tunnel';
 import clients from './clients';
-import * as config from '../config';
 import createLogger from '../logger';
 
 
@@ -20,6 +19,7 @@ export function createConnection(server, database) {
   return {
     connect: connect.bind(null, server, database),
     disconnect: disconnect.bind(null, server, database),
+    end: disconnect.bind(null, server, database),
     listTables: listTables.bind(null, server, database),
     listViews: listViews.bind(null, server, database),
     listRoutines: listRoutines.bind(null, server, database),
@@ -187,7 +187,7 @@ async function getQuerySelectTop(server, database, table, schema, limit) {
   checkIsConnected(server, database);
   let limitValue = limit;
   if (typeof _limit === 'undefined') {
-    await loadConfigLimit();
+    // await loadConfigLimit();
     limitValue = typeof limitSelect !== 'undefined' ? limitSelect : DEFAULT_LIMIT;
   }
   return database.connection.getQuerySelectTop(table, limitValue, schema);
@@ -268,15 +268,6 @@ function wrap(database, identifier) {
 
   return identifier.map((item) => database.connection.wrapIdentifier(item));
 }
-
-async function loadConfigLimit() {
-  if (limitSelect === null) {
-    const { limitQueryDefaultSelectTop } = await config.get();
-    limitSelect = limitQueryDefaultSelectTop;
-  }
-  return limitSelect;
-}
-
 
 function checkIsConnected(server, database) {
   if (database.connecting || !database.connection) {
