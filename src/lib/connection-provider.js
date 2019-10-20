@@ -9,8 +9,9 @@ export default {
   	return {
   		client: config.connectionType,
   		host: config.host,
-  		port: config.host,
+  		port: config.port,
   		socketPath: null,
+      user: config.user,
   		password: config.password,
   		database: config.defaultDatabase
   	}
@@ -18,6 +19,6 @@ export default {
 
   for(config) {
   	let convertedConfig = this.convertConfig(config)
-  	return createConnection(convertedConfig).createConnection(config.defaultDatabase)
+  	return createServer(convertedConfig).createConnection(config.defaultDatabase)
   }
 }

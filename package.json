@@ -25,6 +25,7 @@
     "node-sass": "^4.12.0",
     "pg": "^7.12.1",
     "pg-hstore": "^2.3.3",
+    "pg-native": "^3.0.0",
     "popper.js": "^1.15.0",
     "sass-loader": "^7.1.0",
     "sequelize": "^5.9.5",

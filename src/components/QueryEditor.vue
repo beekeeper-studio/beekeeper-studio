@@ -3,7 +3,7 @@
     <div class="top-panel">
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <div class="actions text-right">
-        <a href="" @click.prevent="runQuery" class="btn btn-link btn-primary">Run Query</a>
+        <a href="" @click.prevent="submitQuery" class="btn btn-link btn-primary">Run Query</a>
       </div>
     </div>
     <div class="bottom-panel">
@@ -44,6 +44,7 @@
         result: null,
         running: false,
         editor: null,
+        runningQuery: null
       }
     },
     computed: {
@@ -51,19 +52,25 @@
     methods: {
       async submitQuery() {
         const run = {
-          queryText: this.query.queryText,
+          queryText: this.editor.getValue(),
           database: this.database,
         }
         return await this.runQuery(run)
       },
       async runQuery(queryRun) {
-        const result = await this.connection.runQuery(
-          queryRun.queryText
-        )
+        console.log(queryRun)
+        this.runningQuery = this.connection.query(queryRun.queryText)
+        // TODO (matthew): Allow multiple queries executed here.
+        console.log(queryRun.queryText)
+        const results = await this.runningQuery.execute()
+        console.log(results)
+
+        // right now we return the result of the first query
+        this.result = results[0]
+        console.log(this.result)
         queryRun.status = 'completed'
-        queryRun.records = result.length
-        queryRun = await queryRun.save()
-        this.result = result
+        queryRun.records = this.result.rowCount
+
       }
     },
     mounted() {

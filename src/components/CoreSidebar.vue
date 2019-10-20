@@ -17,16 +17,7 @@
 
     <nav class="flex-column" v-if="tables">
       <template v-for="table in tables" v-key="table.name">
-        <a :href="table.name + '-details'" data-toggle="collapse" role="button">
-          <i class="item-icon material-icons">grid_on</i>
-          <span>{{table.name}}</span>
-        </a>
-        <div class="sub-items collapse" :id="table.name + '-details'">
-          <span v-if="table.columns" v-for="c in table.columns" class="sub-item">
-            <span class="title">{{c.name}}</span>
-            <span class="badge badge-info">{{c.dataType}}</span>
-          </span>
-        </div>
+        <table-list-item :table="table" :connection="connection" ></table-list-item>
       </template>
     </nav>
     <span class="expand"></span>
@@ -38,8 +29,10 @@
 
 <script>
   import _ from 'lodash'
+  import TableListItem from './TableListItem.vue'
 
   export default {
+    components: { TableListItem },
     props: ['connection'],
     data() {
       return {
@@ -51,7 +44,7 @@
     methods: {
       async loadTables() {
         try {
-          this.tables = await this.connection.getTables(this.database)
+          this.tables = await this.connection.listTables()
         } catch(ex) {
           this.tableLoadError = ex.message
           this.$noty.error("Error loading tables")
