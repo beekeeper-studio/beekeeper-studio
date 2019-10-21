@@ -41,6 +41,9 @@ export function createConnection(server, database) {
     getViewCreateScript: getViewCreateScript.bind(null, server, database),
     getRoutineCreateScript: getRoutineCreateScript.bind(null, server, database),
     truncateAllTables: truncateAllTables.bind(null, server, database),
+    async currentDatabase() {
+      return database.database
+    }
   };
 }
 

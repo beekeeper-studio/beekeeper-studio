@@ -53,7 +53,7 @@
     },
     methods: {
       databaseSelected(database) {
-
+        this.$emit('databaseSelected', database)
       }
     }
   }

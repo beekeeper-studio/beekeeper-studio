@@ -1,13 +1,6 @@
 <template>
   <div>
-    <div class="data-select-wrap">
-      <select class="database-select" v-model="database">
-        <option selected>Public</option>
-        <option value="1">One</option>
-        <option value="2">Two</option>
-        <option value="3">Three</option>
-      </select>
-    </div>
+    <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
 
     <div class="search-wrap">
       <input type="text" placeholder="Filter">
@@ -30,9 +23,10 @@
 <script>
   import _ from 'lodash'
   import TableListItem from './TableListItem.vue'
+  import DatabaseDropdown from './DatabaseDropdown.vue'
 
   export default {
-    components: { TableListItem },
+    components: { TableListItem, DatabaseDropdown },
     props: ['connection'],
     data() {
       return {
@@ -49,7 +43,9 @@
           this.tableLoadError = ex.message
           this.$noty.error("Error loading tables")
         }
-
+      },
+      databaseSelected(db) {
+        this.$emit('databaseSelected', db)
       }
     },
     async mounted() {

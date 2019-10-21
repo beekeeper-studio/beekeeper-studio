@@ -1,7 +1,7 @@
 <template>
   <div class="beekeeper-studio-wrapper">
     <connection-interface v-if="!connection" @connected="connected"></connection-interface>
-    <core-interface v-else :connection="connection"></core-interface>
+    <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
   </div>
 </template>
 
@@ -23,6 +23,9 @@ export default {
   methods: {
     connected(connection) {
       this.connection = connection
+    },
+    databaseSelected(db) {
+      console.log("Do something here! (Db selected) " + db)
     }
   }
 }
