@@ -24,7 +24,7 @@
         :key="idx"
         :class="{show: (activeItem === idx), active: (activeItem === idx)}"
       >
-        <QueryEditor v-if="tab.type === 'query'" :query="tab"></QueryEditor>
+        <QueryEditor v-if="tab.type === 'query'" :query="tab" :connection="connection"></QueryEditor>
         <div v-if="tab.type === 'table'">TABLE</div>
       </div>
     </div>

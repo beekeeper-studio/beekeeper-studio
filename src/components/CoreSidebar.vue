@@ -1,13 +1,6 @@
 <template>
   <div>
-    <div class="data-select-wrap">
-      <select class="database-select" v-model="database">
-        <option selected>Public</option>
-        <option value="1">One</option>
-        <option value="2">Two</option>
-        <option value="3">Three</option>
-      </select>
-    </div>
+    <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
 
     <div class="search-wrap">
       <input type="text" placeholder="Filter">
@@ -17,16 +10,7 @@
 
     <nav class="list-group flex-col" v-if="tables">
       <template v-for="table in tables" v-key="table.name">
-        <a :href="table.name + '-details'" data-toggle="collapse" role="button">
-          <i class="item-icon material-icons">grid_on</i>
-          <span>{{table.name}}</span>
-        </a>
-        <div class="sub-items collapse" :id="table.name + '-details'">
-          <span v-if="table.columns" v-for="c in table.columns" class="sub-item">
-            <span class="title">{{c.name}}</span>
-            <span class="badge badge-info">{{c.dataType}}</span>
-          </span>
-        </div>
+        <table-list-item :table="table" :connection="connection" ></table-list-item>
       </template>
     </nav>
     <span class="expand"></span>
@@ -38,8 +22,11 @@
 
 <script>
   import _ from 'lodash'
+  import TableListItem from './TableListItem.vue'
+  import DatabaseDropdown from './DatabaseDropdown.vue'
 
   export default {
+    components: { TableListItem, DatabaseDropdown },
     props: ['connection'],
     data() {
       return {
@@ -51,12 +38,14 @@
     methods: {
       async loadTables() {
         try {
-          this.tables = await this.connection.getTables(this.database)
+          this.tables = await this.connection.listTables()
         } catch(ex) {
           this.tableLoadError = ex.message
           this.$noty.error("Error loading tables")
         }
-
+      },
+      databaseSelected(db) {
+        this.$emit('databaseSelected', db)
       }
     },
     async mounted() {
