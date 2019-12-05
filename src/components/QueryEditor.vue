@@ -23,7 +23,7 @@
           </div>
         </div>
       </div>
-      <result-table v-else-if="result" result="result"></result-table>
+      <result-table v-else-if="result" :result="result"></result-table>
       <div v-else class="not-run-yet">Nothing to show</div>
 
     </div>
@@ -65,7 +65,7 @@
         const results = await this.runningQuery.execute()
         console.log(results)
 
-        // right now we return the result of the first query
+        // TODO (matthew): Figure out multiple results. Right now we return the result of the first query
         this.result = results[0]
         console.log(this.result)
         queryRun.status = 'completed'

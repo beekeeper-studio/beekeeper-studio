@@ -9438,10 +9438,10 @@ table@^5.2.3:
     slice-ansi "^2.1.0"
     string-width "^3.0.0"
 
-tabulator-tables@^4.2.7:
-  version "4.2.7"
-  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-4.2.7.tgz#e1b00a34d362d4178c8c76b16f80372110557d6e"
-  integrity sha512-dVR/qnzApleVCzSrltRXTenRs6tLGZO570D3V0kOELohecfiMTDGYJbexUEHx6pQ5I5wjwVga9d2cL/CnDB6hw==
+tabulator-tables@^4.3.1:
+  version "4.5.1"
+  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-4.5.1.tgz#77c8751f79404de0cfd23572c259a3881305049d"
+  integrity sha512-yifbMLpVrzn57mAB25X/pyL5BSjEiEncK8GmGw4Yj7kBBkCpQe1K9ublBEVJ6xRTV4SmoSjRpZxi01A1e7qLqg==
 
 tapable@^1.0.0, tapable@^1.1.0:
   version "1.1.3"

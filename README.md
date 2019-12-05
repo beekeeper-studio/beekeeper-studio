@@ -31,3 +31,9 @@ Firstly: ** YAY! Sequelize core db utilities has been merged **
     - make the config expected by the db/clients look like our own connection config objects
     - adjust expectations to deal with the server + database split set-up
     - replace our MySQL driver with the one from sequelize
+
+
+
+### Result Table
+
+- which table should I be using?
