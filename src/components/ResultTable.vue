@@ -56,7 +56,7 @@
         */
         return _.map(this.result.fields, (item) => {
           return {
-            name: _.capitalize(item.name),
+            title: _.capitalize(item.name),
             field: item.name
             
           }
@@ -67,7 +67,7 @@
       this.tabulator = new Tabulator(this.$refs.tabulator, {
         data: this.tableData, //link data to table
         reactiveData:true, //enable data reactivity
-        columns: [], //define table columns
+        columns: this.tableColumns, //define table columns
       });
     }
 
