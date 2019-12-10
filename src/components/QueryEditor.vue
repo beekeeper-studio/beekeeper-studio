@@ -24,6 +24,7 @@
         </div>
       </div>
       <result-table v-else-if="result" :result="result"></result-table>
+      <div class="error" v-else-if="error">{{error}}</div>
       <div v-else class="not-run-yet">Nothing to show</div>
 
     </div>
@@ -44,7 +45,8 @@
         result: null,
         running: false,
         editor: null,
-        runningQuery: null
+        runningQuery: null,
+        error: null,
       }
     },
     computed: {
@@ -62,14 +64,19 @@
         this.runningQuery = this.connection.query(queryRun.queryText)
         // TODO (matthew): Allow multiple queries executed here.
         console.log(queryRun.queryText)
-        const results = await this.runningQuery.execute()
-        console.log(results)
+        try {
+          const results = await this.runningQuery.execute()
+          console.log(results)
 
-        // TODO (matthew): Figure out multiple results. Right now we return the result of the first query
-        this.result = results[0]
-        console.log(this.result)
-        queryRun.status = 'completed'
-        queryRun.records = this.result.rowCount
+          // TODO (matthew): Figure out multiple results. Right now we return the result of the first query
+          this.result = results[0]
+          console.log(this.result)
+          queryRun.status = 'completed'
+          queryRun.records = this.result.rowCount
+        } catch(ex) {
+          this.error = ex
+          this.result = null
+        }
 
       }
     },
