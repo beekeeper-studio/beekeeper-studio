@@ -1,15 +1,21 @@
 
 
 // App Layout
-.interface {
-  display: flex;
+.beekeeper-studio-wrapper {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  //padding: 1px;
-  box-shadow: inset 0 0 0 1px $border-color;
+  overflow: hidden;
+}
+.page-content {
+  width: 100%;
+}
+.interface {
+  display: flex;
+  width: 100%;
+  height: 100%;
   .sidebar {
     width: $sidebar-w;
     min-width: $sidebar-min-w;

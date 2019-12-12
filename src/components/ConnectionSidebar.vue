@@ -1,27 +1,20 @@
 <template>
-<div>
-  <div id="sidebar-wrapper" class="bg-light border-right">
-    <div class="list-group list-group-flush">
-      <a
-        href=""
-        class="list-group-item list-group-item-action"
-        :class="{'active': defaultConfig == selectedConfig }"
-        @click.prevent="edit(defaultConfig)"
-      ><i class="fas fa-bolt"></i> Quick Connect</a>
-      <div class="list-group-item">
-        <h5>Saved Connections</h5>
-      </div>
-      <a
-        href=""
-        v-for="c in connectionConfigs"
-        :key="c.id"
-        class="list-group-item list-group-item-action"
-        :class="{'active': c == selectedConfig }"
-        @click.prevent="edit(c)"
-      >{{c.name}} ({{c.connectionType}})</a>
-    </div>
-  </div>
-</div>
+  <nav class="list-group">
+    <a
+      href=""
+      class="quick-connect"
+      :class="{'active': defaultConfig == selectedConfig }"
+      @click.prevent="edit(defaultConfig)"
+    ><i class="material-icons">offline_bolt</i> Quick Connect</a>
+    <h5>Saved Connections</h5>
+    <a
+      href=""
+      v-for="c in connectionConfigs"
+      :key="c.id"
+      :class="{'active': c == selectedConfig }"
+      @click.prevent="edit(c)"
+    >{{c.name}} ({{c.connectionType}})</a>
+  </nav>
 </template>
 
 <script>

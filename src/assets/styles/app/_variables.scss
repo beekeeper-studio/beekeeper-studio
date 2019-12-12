@@ -9,6 +9,8 @@ $theme-secondary:    #FCCB11;
 
 // Colors
 // -----------------------------
+$white:              white;
+$black:              black;
 $text-dark:          rgba($theme-base, 0.87);
 $text:               rgba($theme-base, 0.67);
 $text-light:         rgba($theme-base, 0.57);
@@ -21,6 +23,9 @@ $brand-warning:      #f39c12;
 $brand-danger:       #e74c3c;
 $brand-default:      rgba($theme-base, 0.57);
 
+$brand-primary:      $theme-primary;
+$brand-secondary:    $brand-info;
+
 // General
 $border-color:       rgba($theme-base, 0.1);
 $link-color:         $text-dark;
@@ -32,6 +37,8 @@ $font-family:        'Roboto';
 $font-family-mono:   'Roboto Mono';
 $base-font-size:      13px;
   
+// Buttons
+$btn-border-radius:   4px;
 
 // Inputs
 $input-padding-h:     0;
@@ -54,5 +61,5 @@ $db-select-text:      white;
 
 // Query Editor
 $query-editor-bg:     $theme-bg;
-$tab-height:          46px;
+$tab-height:          36px;
 $tab-padding-w:       0.65rem;

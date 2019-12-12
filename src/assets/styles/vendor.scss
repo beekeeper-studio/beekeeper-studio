@@ -1,8 +1,9 @@
 
 //@import "~bootswatch/dist/cosmo/variables";
-@import "~bootstrap/scss/bootstrap";
+//@import "~bootstrap/scss/bootstrap";
 @import "~codemirror/lib/codemirror";
 @import "~codemirror/theme/monokai";
-// @import "~bootswatch/dist/cosmo/bootswatch";
 @import '~vuejs-noty/dist/vuejs-noty.css';
-@import  "~tabulator-tables/dist/css/materialize/tabulator_materialize";
+//@import  "~tabulator-tables/dist/css/tabulator_site.min.css";
+
+@import  "./app/vendor/tabulator";

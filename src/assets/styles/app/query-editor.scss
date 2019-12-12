@@ -8,6 +8,8 @@
     outline: none;
   }
   .actions {
+    display: flex;
+    justify-content: flex-end;
     background: rgba($theme-base, 0.06);
     box-shadow: inset 0 -1px rgba($theme-base, 0.035);
     .btn {
@@ -18,6 +20,7 @@
       text-transform: uppercase;
       font-size: 0.85rem;
       border: 0;
+      box-shadow: none;
       border-left: 1px solid rgba($theme-bg, 0.5);
       transition: background 0.2s ease-in-out;
       &.btn-primary {
@@ -26,13 +29,14 @@
       }
       &:hover, &:focus {
         background: rgba($theme-base, 0.05);
-        outline: 0;
-        border: 0;
       }
     }
   }
   .bottom-panel {
-    padding: 0.5rem;
+    padding: 0;
+    .not-run-yet {
+      padding: 0.5rem 0.75rem;
+    }
   }
 }
 
@@ -40,10 +44,10 @@
 // ----------------------
 .CodeMirror {
   font-family: $font-family-mono, monospace;
-  background: $query-editor-bg;
+  background: $query-editor-bg!important;
   padding: 0.75rem 0;
 }
 .CodeMirror-gutters {
   border: 0;
-  background: transparent;
+  background: transparent!important;
 }

@@ -1,8 +1,13 @@
 
 #sidebar {
-  display: flex;
+  flex: 0 1 100%;
   overflow-x: hidden;
-  background: rgba($theme-base, 0.015);
+  box-shadow: inset -1px 0 $border-color;
+  > div {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
 
   // Sidebar Header
   .data-select-wrap {
@@ -16,9 +21,10 @@
   .database-select {
     display: block;
     font-size: 110%;
-    font-weight: 500;
+    font-weight: 600;
     margin: 0;
     width: 100%;
+    border: 0;
     .selectise-trigger {
       color: $db-select-text;
       border-radius: $input-radius;
@@ -44,9 +50,6 @@
       margin-top: 2px;
       left: $gutter-w;
     }
-    input {
-      border: 0;
-    }
   }
 
   // Tables
@@ -56,56 +59,13 @@
     text-transform: uppercase;
     font-weight: bold;
   }
-  nav {
-    a, .sub-item {
-      display: flex;
-      align-items: center;
-      flex: 0 1 100%;
-    }
-    a {
-      color: $text-dark;
-      padding: $gutter-h $gutter-w;
-      padding-left: $gutter-w;
-      &:hover {
-        background: rgba($theme-base, 0.06);
-      }
-      &.active, 
-      &.active:hover, 
-      &.active:focus {
-        background: rgba($theme-primary, 0.1);
-      }
-    }
-    .sub-items {
-      display: flex;
-      flex-direction: column;
-      color: $text;
-      padding: $gutter-h 0;
-      .title {
-        flex-grow: 1;
-      }
-    }
-    .sub-item {
-      padding-top: $gutter-h * 0.25;
-      padding-bottom: $gutter-h * 0.8;
-      padding-right: $gutter-w;
-      padding-left: $gutter-w + $sidebar-icon-w;
-    }
-    .item-icon {
-      font-size: 15px;
-      width: $sidebar-icon-w;
-      transition: transform 0.15s ease-in;
-      color: $theme-primary;
-    }
-    .badge-info {
-      background: $brand-info;
-    }
-    
-    // Collapse
-    .collapse {
-      display: none;
-      &.show {
-        display: flex;
-      }
+
+  // Quick Connect 
+  .quick-connect {
+    background: $brand-info;
+    height: $tab-height;
+    i {
+      margin-right: 0.5rem;
     }
   }
 
@@ -132,3 +92,67 @@
   }
 }
 
+// List Group
+// ------------------------------
+.list-group {
+  width: 100%;
+  a, .sub-item {
+    display: flex;
+    align-items: center;
+    flex: 0 1 100%;
+  }
+  a {
+    color: $text-dark;
+    padding: $gutter-h $gutter-w;
+    padding-left: $gutter-w;
+    &:hover {
+      background: rgba($theme-base, 0.06);
+    }
+    &.active, 
+    &.active:hover, 
+    &.active:focus {
+      background: rgba($theme-primary, 0.1);
+    }
+  }
+  h5 {
+    padding: $gutter-h $gutter-w;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.025rem;
+    font-weight: 400;
+    color: $text-light;
+    line-height: 2;
+  }
+  .sub-items {
+    display: flex;
+    flex-direction: column;
+    color: $text;
+    padding: $gutter-h 0;
+    .title {
+      flex-grow: 1;
+    }
+  }
+  .sub-item {
+    padding-top: $gutter-h * 0.25;
+    padding-bottom: $gutter-h * 0.8;
+    padding-right: $gutter-w;
+    padding-left: $gutter-w + $sidebar-icon-w;
+  }
+  .item-icon {
+    font-size: 15px;
+    width: $sidebar-icon-w;
+    transition: transform 0.15s ease-in;
+    color: $theme-primary;
+  }
+  .badge-info {
+    background: $brand-info;
+  }
+  
+  // Collapse
+  .collapse {
+    display: none;
+    &.show {
+      display: flex;
+    }
+  }
+}

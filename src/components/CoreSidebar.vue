@@ -8,7 +8,7 @@
 
     <div class="sidebar-heading">Tables</div>
 
-    <nav class="flex-column" v-if="tables">
+    <nav class="list-group flex-col" v-if="tables">
       <template v-for="table in tables" v-key="table.name">
         <table-list-item :table="table" :connection="connection" ></table-list-item>
       </template>
