@@ -28,7 +28,6 @@
     "pg-native": "^3.0.0",
     "popper.js": "^1.15.0",
     "sass-loader": "^7.1.0",
-    "sequelize": "^5.9.5",
     "shortid": "^2.2.14",
     "split.js": "^1.5.11",
     "sql-query-identifier": "^1.1.0",
