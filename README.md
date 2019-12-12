@@ -33,6 +33,9 @@ Firstly: ** YAY! Sequelize core db utilities has been merged **
     - replace our MySQL driver with the one from sequelize
 
 
+- (matthew) Investigate Bookshelf for ORM needs https://github.com/bookshelf/bookshelf/
+
+
 
 ### Result Table
 
