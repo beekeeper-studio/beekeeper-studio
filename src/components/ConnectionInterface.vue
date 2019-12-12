@@ -6,7 +6,7 @@
     <div ref="content" class="connection-main page-content layout-center" id="page-content">
       <div class="small-wrap">
         <div class="card-flat padding">
-          <h3 class="card-title">Enter Connection Information</h3>
+          <h3 class="card-title">Connect</h3>
           <div class="alert alert-danger" v-show="errors">
             <i class="material-icons">warning</i>
             <div>
@@ -54,7 +54,7 @@
               
               <!-- Save Connection -->
               <div class="save-connection">
-                <h3>Save the Connection</h3>
+                <h3>Save Connection</h3>
                 <div class="row">
                   <div class="expand"><input class="form-control full" type="text" v-model="config.name" placeholder="Connection Name"></div>
                   <div><button class="btn btn-flat" @click.prevent="save">Save</button></div>

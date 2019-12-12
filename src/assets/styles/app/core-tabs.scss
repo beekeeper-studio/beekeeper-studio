@@ -4,6 +4,7 @@
   .nav-tabs {
     overflow-y: hidden;
     flex-wrap: nowrap;
+    margin: 0;
     &::-webkit-scrollbar {
       width: 4px;
       height: 4px;
@@ -17,6 +18,7 @@
       padding: 0 ($tab-padding-w * 1.25);
       height: $tab-height;
       background: rgba($theme-bg, 0.4);
+      font-size: 0.85rem;
       color: $text;
       transition: background 0.15s ease-in-out;
       border: 0;
@@ -70,8 +72,9 @@
         background: rgba($theme-base, 0.1);
       }
       i {
-        font-size: 14px;
+        font-size: 12px;
         font-weight: bold;
+        color: $text-light;
       }
     }
   }

@@ -1,8 +1,13 @@
 
 #sidebar {
-  display: flex;
+  flex: 0 1 100%;
   overflow-x: hidden;
-  background: rgba($theme-base, 0.015);
+  box-shadow: inset -1px 0 $border-color;
+  > div {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
 
   // Sidebar Header
   .data-select-wrap {
@@ -16,9 +21,10 @@
   .database-select {
     display: block;
     font-size: 110%;
-    font-weight: 500;
+    font-weight: 600;
     margin: 0;
     width: 100%;
+    border: 0;
     .selectise-trigger {
       color: $db-select-text;
       border-radius: $input-radius;
@@ -43,9 +49,6 @@
       position: absolute;
       margin-top: 2px;
       left: $gutter-w;
-    }
-    input {
-      border: 0;
     }
   }
 

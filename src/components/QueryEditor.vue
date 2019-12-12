@@ -84,7 +84,8 @@
       const $editor = this.$refs.editor
       this.editor = CodeMirror.fromTextArea($editor, {
           lineNumbers: true,
-          mode: "sql"
+          mode: "sql",
+          theme: 'monokai'
         })
     },
   }

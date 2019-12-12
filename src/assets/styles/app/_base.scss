@@ -215,7 +215,7 @@ a {
   padding: 0 0.75rem;
   font-size: 1rem;
   font-weight: normal;
-  line-height: $input-height;
+  line-height: 1;
   color: $text;
   background: transparent;
   border-radius: $input-radius;
@@ -232,11 +232,10 @@ input, select, textarea {
   }
 }
 select {
-  border: 0!important; 
   -webkit-appearance: none; 
   appearance: none;
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='silver'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
-  padding: 5px;
+  padding: 0 0.75rem;
   option {
     background: lighten($theme-bg, 2%);
   }
@@ -481,6 +480,7 @@ pre {
   font-weight: 700;
   outline: 0;
   border: 0;
+  box-shadow: inset 0 0 0 1px rgba($theme-base, 0.025);
   padding: 0 1rem;
   min-width: 88px;
   border-radius: $btn-border-radius;
@@ -593,71 +593,6 @@ pre {
     }
   }
 }
-
-// Inputs
-// -----------------------
-.form-group {
-  display: flex;
-  flex-direction: column;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-  label {
-    display: flex;
-    font-size: 0.9rem;
-    margin-bottom: 0.25rem;
-  }
-  .hint {
-    font-size: .8rem;
-    margin-top: 0.35rem;
-  }
-}
-.form-control {
-  position: relative;
-  display: block;
-  height: $input-height;
-  padding: 0 0.75rem;
-  font-size: 1rem;
-  font-weight: normal;
-  line-height: 1.5;
-  color: $text;
-  background: transparent;
-  border: none;
-  border-radius: $input-radius;
-  outline: 0;
-  width: 100%;
-  box-shadow: inset 0 0 0 1px rgba($theme-base, 0.1);
-  transition: border-color 0.15s ease-in-out, 
-              box-shadow 0.15s ease-in-out;
-}
-input, select, textarea {
-  @extend .form-control;
-  &:focus {
-    box-shadow: 0 0 0 1px $input-highlight;
-  }
-}
-select {
-  border: 0!important; 
-  -webkit-appearance: none; 
-  appearance: none;
-  background: #0088cc url(/select-arrow.svg) no-repeat 90% center;
-  padding: 5px;
-}
-.text-success {
-  color: $brand-success!important;
-}
-.text-info {
-  color: $brand-info!important;
-}
-.text-danger {
-  color: $brand-danger!important;
-}
-.text-warning {
-  color: $brand-warning!important;
-}
-
-// Buttons
-// ---------------------------------------
-
 
 // Cards
 // ---------------------------------------
@@ -810,6 +745,7 @@ select {
   }
   .badge-info {
     background: $brand-info;
+    color: white;
   }
   
   // Collapse
