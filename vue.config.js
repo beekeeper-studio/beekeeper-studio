@@ -1,5 +1,5 @@
 
-const externals = ['sqlite3', 'sequelize', 'mysql']
+const externals = ['sqlite3', 'sequelize', 'mysql', 'bookshelf', 'knex']
 module.exports = {
   pluginOptions: {
     electronBuilder: {

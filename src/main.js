@@ -25,6 +25,9 @@ Vue.use(VueNoty, {
   closeWith: ['button', 'click']
 })
 
+
+
+
 new Vue({
   render: h => h(App),
   store,
