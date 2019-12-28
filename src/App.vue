@@ -10,12 +10,12 @@
 
 import CoreInterface from './components/CoreInterface'
 import ConnectionInterface from './components/ConnectionInterface'
-import DBTest from './components/DBTest'
+import DbTest from './components/DbTest'
 
 export default {
   name: 'app',
   components: {
-    CoreInterface, ConnectionInterface, DBTest
+    CoreInterface, ConnectionInterface, DbTest
   },
   data() {
     return {

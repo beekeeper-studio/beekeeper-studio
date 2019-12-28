@@ -9,13 +9,10 @@ var knex = Knex({
   }
 });
 
+
 const bookshelf = Bookshelf(knex)
 
 // Defining models
-const Connection = Bookshelf.model('Connection', {
+export const Connection = bookshelf.model('Connection', {
   tableName: 'saved_connections'
 })
-
-export default {
-  bookshelf, Connection
-}

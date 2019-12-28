@@ -24,18 +24,20 @@
       return {
         connections: [],
         editable: null
+      }
+    },
+    async mounted() {
+      console.log(Connection)
+      this.connections = await Connection().fetch()
+    },
+    methods: {
+      edit(connection) {
+        this.ediable = connection
       },
-      async mounted() {
-        this.connections = await new Connection().fetch()
-      },
-      methods: {
-        edit(connection) {
-          this.ediable = connection
-        },
-        submit() {
-          
-        }
+      submit() {
+        
       }
     }
+
   }
 </script>
