@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import VueNoty from 'vuejs-noty'
 import App from './App.vue'
-
+import path from 'path'
 //import '@fortawesome/fontawesome-free/css/all.css'
 import './assets/styles/vendor.scss'
 import './assets/styles/app.scss'
@@ -23,7 +23,9 @@ import {TypeOrmPlugin} from './lib/typeorm_plugin'
           PostSchema
       ],
       logging: true,
-      synchronize: true
+      synchronize: true,
+      migrations: [path.join(__dirname, "migration/*.js")],
+      migrationsRun: true
     })
     console.log("Connection Created")
     // setting true will drop tables and recreate
