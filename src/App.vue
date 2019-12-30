@@ -1,19 +1,22 @@
 <template>
   <div class="beekeeper-studio-wrapper">
-    <connection-interface v-if="!connection" @connected="connected"></connection-interface>
-    <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
+    <db-test></db-test>
+<!--     <connection-interface v-if="!connection" @connected="connected"></connection-interface>
+    <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface> -->
   </div>
 </template>
 
 <script>
 
+
 import CoreInterface from './components/CoreInterface'
 import ConnectionInterface from './components/ConnectionInterface'
+import DbTest from './components/DbTest'
 
 export default {
   name: 'app',
   components: {
-    CoreInterface, ConnectionInterface
+    CoreInterface, ConnectionInterface, DbTest
   },
   data() {
     return {
