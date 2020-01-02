@@ -4,7 +4,7 @@
       <li v-for="(user, idx) in users" :key="idx">
         <input type="text" v-model="user.firstName">
         <button @click.prevent="submit(user)">Update</button>
-        {{user.id}}-{{user.firstName}}: {{user.lastName}}
+        {{user.id}}-{{user.firstName}}: {{user.lastName}}: {{user}}
       </li>
     </ul>
   </div>
