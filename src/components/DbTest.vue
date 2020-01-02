@@ -1,7 +1,7 @@
 <template>
   <div class="example">
     <ul class="posts">
-      <li v-for="(post, idx) in posts" :id="idx">
+      <li v-for="(post, idx) in posts" :key="idx">
         <input type="text" v-model="post.title">
         <button @click.prevent="submit(post)">Update</button>
         {{post.id}}-{{post.title}}: {{post.text}}

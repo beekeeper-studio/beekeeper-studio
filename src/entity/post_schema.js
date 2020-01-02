@@ -17,12 +17,4 @@ export const PostSchema = new EntitySchema({
             type: "text"
         }
     },
-    // relations: {
-    //     categories: {
-    //         target: "Category",
-    //         type: "many-to-many",
-    //         joinTable: true,
-    //         cascade: true
-    //     }
-    // }
 });
