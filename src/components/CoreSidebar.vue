@@ -9,9 +9,7 @@
     <div class="sidebar-heading">Tables</div>
 
     <nav class="list-group flex-col" v-if="tables">
-      <template v-for="table in tables" v-key="table.name">
-        <table-list-item :table="table" :connection="connection" ></table-list-item>
-      </template>
+      <table-list-item v-for="table in tables" v-bind:key="table.name" :table="table" :connection="connection" ></table-list-item>
     </nav>
     <span class="expand"></span>
     <div class="status">

@@ -1,10 +1,10 @@
 <template>
   <div class="example">
     <ul class="posts">
-      <li v-for="(post, idx) in posts" :key="idx">
-        <input type="text" v-model="post.title">
-        <button @click.prevent="submit(post)">Update</button>
-        {{post.id}}-{{post.title}}: {{post.text}}
+      <li v-for="(user, idx) in users" :key="idx">
+        <input type="text" v-model="user.firstName">
+        <button @click.prevent="submit(user)">Update</button>
+        {{user.id}}-{{user.firstName}}: {{user.lastName}}
       </li>
     </ul>
   </div>
@@ -12,23 +12,25 @@
 
 <script type="text/javascript">
   
-  import {Post} from '../model/post'
+  // import {Post} from '../model/post'
+  import {User} from '../entity/user'
 
   export default {
     data() {
       return {
         posts: [],
-        repo: null
+        repo: null,
+        users: []
       }
     },
     async mounted() {
-      this.repo = this.$connection.getRepository(Post)
-      this.posts = await this.repo.find()
+      // this.repo = this.$connection.getRepository(Post)
+      // this.posts = await this.repo.find()
+      this.users = await User.find()
     },
     methods: {
-      async submit(post) {
-        await this.repo.save(post)
-        this.$noty.success("Saved")
+      async submit(user) {
+        await user.save()
       }
     }
   }

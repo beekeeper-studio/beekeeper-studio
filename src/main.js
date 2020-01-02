@@ -11,7 +11,7 @@ import store from './store/index'
 import 'reflect-metadata'
 import {createConnection} from "typeorm";
 import {PostSchema} from './entity/post_schema.js'
-import {Post} from "./model/post";
+import {User} from './entity/user'
 import {TypeOrmPlugin} from './lib/typeorm_plugin'
 
 (async () => {
@@ -20,7 +20,8 @@ import {TypeOrmPlugin} from './lib/typeorm_plugin'
       database: 'test.db',
       type: 'sqlite',
       entities: [
-          PostSchema
+          PostSchema,
+          User
       ],
       logging: true,
       synchronize: true,
@@ -35,6 +36,10 @@ import {TypeOrmPlugin} from './lib/typeorm_plugin'
     window.jQuery = $
     window.sql = SQL
     Vue.config.devtools = process.env.NODE_ENV === 'development';
+    let user = new User()
+    user.firstName = "foo"
+    user.lastName = "bar"
+    await user.save()
 
     Vue.config.productionTip = false
     Vue.use(TypeOrmPlugin, {connection})
