@@ -7,7 +7,7 @@
     <div v-show="showColumns" class="sub-items">
       <span v-if="columns" v-for="c in columns" class="sub-item">
         <span class="title">{{c.columnName}}</span>
-        <span class="badge badge-info">{{c.dataType}}</span>
+        <span class="badge">{{c.dataType}}</span>
       </span>
     </div>    
   </div>

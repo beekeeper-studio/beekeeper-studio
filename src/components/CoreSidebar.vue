@@ -13,10 +13,6 @@
         <table-list-item :table="table" :connection="connection" ></table-list-item>
       </template>
     </nav>
-    <span class="expand"></span>
-    <div class="status">
-      <small class="text-success"><i class="material-icons">brightness_1</i> Connected</small>
-    </div>
   </div>
 </template>
 

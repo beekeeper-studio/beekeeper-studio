@@ -1,5 +1,15 @@
 .query-editor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   background: $query-editor-bg;
+  .top-panel, .bottom-panel {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
   .editor {
     width: 100%;
     height: 400px;
@@ -10,26 +20,16 @@
   .actions {
     display: flex;
     justify-content: flex-end;
-    background: rgba($theme-base, 0.06);
-    box-shadow: inset 0 -1px rgba($theme-base, 0.035);
+    background: $theme-bg;
+    box-shadow: inset 0 -1px $border-color;
+    padding: $gutter-h;
+    z-index: 1;
     .btn {
-      height: 28px;
-      display: inline-flex;
+      height: 24px;
+      line-height: 24px;
       padding: 0 $gutter-w;
-      border-radius: 0;
-      text-transform: uppercase;
       font-size: 0.85rem;
-      border: 0;
-      box-shadow: none;
-      border-left: 1px solid rgba($theme-bg, 0.5);
-      transition: background 0.2s ease-in-out;
-      &.btn-primary {
-        background: rgba($theme-base, 0.025);
-        color: $theme-primary;
-      }
-      &:hover, &:focus {
-        background: rgba($theme-base, 0.05);
-      }
+      min-width: 24px;
     }
   }
   .bottom-panel {

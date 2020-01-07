@@ -91,7 +91,6 @@ a {
   cursor: pointer;
   &:hover, &:focus {
     font-weight: 700;
-    opacity: 0.9;
     outline: 0;
     border: 0;
     box-shadow: none;
@@ -109,14 +108,13 @@ a {
   color: white;
   transition: opacity 0.15s ease-in-out;
   &:hover, &:focus {
-    opacity: 0.85;
+    background: lighten($brand-secondary, 3%);
   }
 }
 .btn-flat {
   color: $theme-base;
   background: rgba($theme-base, 0.06);
   &:hover, &:focus {
-    opacity: 1;
     background: rgba($theme-base, 0.12);
   }
 }
@@ -124,7 +122,6 @@ a {
   color: $theme-base;
   background: transparent;
   &:hover, &:focus {
-    opacity: 1;
     background: rgba($theme-base, 0.06);
   }
 }
@@ -322,30 +319,9 @@ select {
   padding: 0.5rem 1rem;
 }
 
-//List
-
-// Badge
-// -------------------
-.badge {
-  display: inline-block;
-  padding: 0 0.35rem;
-  border-radius: 2px;
-  font-size: 80%;
-  font-weight: normal;
-  line-height: 1.4;
-  text-align: center;
-  white-space: nowrap;
-  vertical-align: baseline;
-  transition: color 0.15s ease-in-out, 
-              background-color 0.15s ease-in-out, 
-              border-color 0.15s ease-in-out, 
-              box-shadow 0.15s ease-in-out;
-}
-
 // Slit.js Resizer
 .gutter {
   position: relative;
-  width: 0!important;
   &.gutter-horizontal,
   &.gutter-vertical {
     display: flex;
@@ -353,6 +329,7 @@ select {
     z-index: 10;
   }
   &.gutter-horizontal {
+    width: 0!important;
     cursor: col-resize;
     &:after {
       height: 100%;
@@ -362,6 +339,7 @@ select {
   }
   &.gutter-vertical {
     cursor: row-resize;
+    height: 0!important;
     &:after {
       height: 8px;
       width: 100%;
@@ -638,13 +616,15 @@ pre {
 .badge {
   display: inline-block;
   padding: 0 0.35rem;
-  border-radius: 2px;
+  border-radius: 4px;
   font-size: 80%;
   font-weight: normal;
   line-height: 1.4;
   text-align: center;
   white-space: nowrap;
   vertical-align: baseline;
+  background: rgba($theme-base, 0.2);
+  color: $theme-base;
   transition: color 0.15s ease-in-out, 
               background-color 0.15s ease-in-out, 
               border-color 0.15s ease-in-out, 
@@ -741,7 +721,7 @@ pre {
     font-size: 15px;
     width: $sidebar-icon-w;
     transition: transform 0.15s ease-in;
-    color: $theme-primary;
+    color: $theme-secondary;
   }
   .badge-info {
     background: $brand-info;
