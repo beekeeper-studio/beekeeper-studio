@@ -37,7 +37,7 @@
               </div>
               <div class="row gutter">
                 <div class="col s6 form-group">
-                  <label for="user">User</label><input type="text" name="user" v-model="config.user" class="form-control">
+                  <label for="user">User</label><input type="text" name="user" v-model="config.username" class="form-control">
                 </div>
                 <div class="col s6 form-group">
                   <label for="password">Password</label><input type="password" v-model="config.password" class="form-control">
@@ -77,9 +77,8 @@
 
 <script>
 
-  import _ from 'lodash'
   import config from '../config'
-  import { mapActions } from 'vuex'
+  import {SavedConnection} from '../entity/saved_connection'
   import ConnectionProvider from '../lib/connection-provider'
 
   import ConnectionSidebar from './ConnectionSidebar'
@@ -89,7 +88,7 @@
     components: { ConnectionSidebar },
     data() {
       return {
-        defaultConfig: _.clone(config.defaults.connectionConfig),
+        defaultConfig: new SavedConnection(),
         config: null,
         errors: null,
         connectionError: null,
@@ -99,6 +98,7 @@
     },
     mounted() {
       this.config = this.defaultConfig
+      this.$store.dispatch('loadSavedConfigs')
       this.$nextTick(() => {
         const components = [
           this.$refs.sidebar,
@@ -119,19 +119,11 @@
         this.split.destroy()
       }
     },
-    watch: {
-      config: {
-        deep: true,
-        handler(nu, old) {
-        },
-      },
-    },
     methods: {
-      ...mapActions(['saveConnectionConfig', 'saveRecentConnection']),
       edit(config) {
         this.config = config
       },
-      changeType(e) {
+      changeType() {
         if(this.config.connectionType === 'mysql') {
           this.config.port = 3306
         } else if(this.config.connectionType === 'psql') {
@@ -142,23 +134,26 @@
         try {
           const connection = ConnectionProvider.for(this.config)
           await connection.connect()
-          await this.saveRecentConnection(this.config)
-          this.$emit('connected', connection)
+          // yay, now we can make a usedConnection to record it
+          await this.$store.dispatch('setConnection', {config: this.config, connection: connection})
         } catch(ex) {
           this.connectionError = ex.message
           this.$noty.error("Error establishing a connection")
         }
       },
-      async testConnection(close){
+      async testConnection(){
+
         try {
           this.testing = true
           const connection = ConnectionProvider.for(this.config)
           await connection.connect()
           await connection.end()
           this.$noty.success("Connection looks good!")
+          return true
         } catch(ex) {
           this.connectionError = ex.message
           this.$noty.error("Error establishing a connection")
+          return false
         } finally {
           this.testing = false
         }
@@ -167,16 +162,16 @@
 
       },
       async save() {
-        this.testConnection(this.config)
-        const result = await this.saveConnectionConfig(this.config)
-        this.errors = result.errors
-        if(result.errors) {
-          this.$noty.error("Could not save connection information")
-        } else {
+        try {
+          this.errors = null
+          this.$store.dispatch('saveConnectionConfig', this.config)
           if(this.config === this.defaultConfig) {
-            this.defaultConfig = _.clone(config.defaults.connectionConfig)
+            this.defaultConfig = new SavedConnection()
           }
           this.$noty.success("Connection Information Saved")
+        } catch (ex) {
+          this.errors = [ex.message]
+          this.$noty.error("Could not save connection information")
         }
       }
     },

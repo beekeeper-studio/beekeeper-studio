@@ -4,8 +4,8 @@
       <i class="item-icon material-icons">grid_on</i>
       <span>{{table.name}}</span>
     </a>
-    <div v-show="showColumns" class="sub-items">
-      <span v-if="columns" v-for="c in columns" class="sub-item">
+    <div v-show="showColumns" v-if="columns" class="sub-items">
+      <span v-bind:key="c.columnName" v-for="c in columns" class="sub-item">
         <span class="title">{{c.columnName}}</span>
         <span class="badge badge-info">{{c.dataType}}</span>
       </span>
@@ -24,7 +24,7 @@
     },
     methods: {
       async toggleColumns() {
-
+        // TODO (matthew): move to the store later on when we need this info
         if(this.showColumns) {
           this.showColumns = false
           return

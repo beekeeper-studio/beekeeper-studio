@@ -1,74 +1,80 @@
 
-import _ from 'lodash'
+// import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import VueXPersistence from 'vuex-persist'
-import fs from 'fs'
-import path from 'path'
-import config from '../config'
-import shortid from 'shortid'
+// import VueXPersistence from 'vuex-persist'
 
-import Validate from '../lib/validation'
+import { UsedConnection } from '../entity/used_connection'
+import { SavedConnection } from '../entity/saved_connection'
+import config from '../config'
 
 Vue.use(Vuex)
-
-function fPath(key) {
-  return path.join(config.userDirectory, `${key}.json`)
-}
-
-const vuexFile = new VueXPersistence({
-  restoreState: (key) => {
-    try {
-      return JSON.parse(fs.readFileSync(fPath(key)))
-    } catch(err) {
-      if(err.code === 'ENOENT') {
-        return null
-      } else {
-        throw err
-      }
-    }
-  },
-  saveState: (key, state) => {
-    console.log("saving now")
-    fs.writeFileSync(fPath(key), JSON.stringify(state))
-  }
-})
-
+// const vuexFile = new VueXPersistence()
 
 const store = new Vuex.Store({
   state: {
-    connectionConfigs: {},
-    queries: {},
-    queryRuns: {},
-    connectionHistory: []
-
+    usedConfig: null,
+    connection: null,
+    database: null,
+    tables: null,
+    connectionConfigs: []
   },
   mutations: {
-    SAVE_CONFIG (state, config) {
-      Vue.set(state.connectionConfigs, config.id, config)
+    connection(state, payload) {
+      state.usedConfig = payload.config
+      state.connection = payload.connection
     },
-    ADD_TO_CONFIG_HISTORY(state, config) {
-      state.connectionHistory.push(config)
+    database(state, newDatabase) {
+      state.connection.setDatabase(newDatabase)
+      state.database = newDatabase
+    },
+    tables(state, tables) {
+      state.tables = tables
+    },
+    config(state, newConfig) {
+      if (!state.connectionConfigs.includes(newConfig)) {
+        state.connectionConfigs.push(newConfig)
+      }
+    },
+    configs(state, configs){
+      state.connectionConfigs = configs
     }
   },
   actions: {
-    async saveConnectionConfig({ commit }, config) {
-      const result = await Validate.config(config)
-      if(result.valid) {
-        if(!config.id) {
-          config.id = shortid.generate()
-        }
-        commit('SAVE_CONFIG', config)
-      }
-      return result
+    async setConnection(context, payload) {
+      const config = payload.config
+      const connection = payload.connection
+      console.log(config)
+      const usedConfig = new UsedConnection({
+        connectionType: config.connectionType,
+        defaultDatabase: config.defaultDatabase,
+        port: config.port,
+        path: config.path,
+        url: config.uri,
+      })
+      await usedConfig.save()
+      context.commit('connection', {config: usedConfig, connection: connection})
     },
-    async saveRecentConnection({ commit }, config) {
-      const cpy = _.clone(config)
-      cpy.password = null
-      commit('ADD_TO_CONFIG_HISTORY', cpy)
+    async changeDatabase(context, newDatabase) {
+      context.commit('database', newDatabase)
+      context.dispatch('updateTables')
+    },
+    async updateTables(context) {
+      const tables = await context.state.connection.listTables()
+      context.commit('tables', tables)
+    },
+
+    async saveConnectionConfig(context, newConfig) {
+      await newConfig.save()
+      context.commit('config', newConfig)
+    },
+    async loadSavedConfigs(context) {
+      let configs = await SavedConnection.find()
+      context.commit('configs', configs)
     }
   },
-  plugins: [vuexFile.plugin],
+  plugins: [],
+  devtools: config.environment == 'development'
 })
 
 export default store

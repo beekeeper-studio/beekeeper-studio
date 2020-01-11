@@ -33,6 +33,7 @@
 
 <script>
 
+  import _ from 'lodash'
   import QueryEditor from './QueryEditor'
 
   export default {
@@ -57,8 +58,9 @@
         this.activeItem = this.tabItems.length - 1
       },
       openTable(table) {
+        // todo (matthew): trigger this from a vuex event
         const t = {
-          title: table.name,
+          title: _.capitalize(table.name),
           table: table,
           type: "table",
           connection: this.connection

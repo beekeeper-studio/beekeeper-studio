@@ -10,36 +10,38 @@ import SQL from 'codemirror/mode/sql/sql'
 import store from './store/index'
 import 'reflect-metadata'
 import {createConnection} from "typeorm";
-import {PostSchema} from './entity/post_schema.js'
-import {User} from './entity/user'
+import {SavedConnection} from './entity/saved_connection'
+import {UsedConnection} from './entity/used_connection'
+import {UsedQuery} from './entity/used_query'
 import {TypeOrmPlugin} from './lib/typeorm_plugin'
+import config from './config'
+import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
 
 (async () => {
   try {
+
+    // TODO (matthew): move this somewhere else
     const connection = await createConnection({
-      database: 'test.db',
+      database: path.join(config.userDirectory, 'test.db'),
       type: 'sqlite',
       entities: [
-          PostSchema,
-          User
+          SavedConnection,
+          UsedConnection,
+          UsedQuery
+      ],
+      subscriptions: [
+        EncryptedColumnSubscriber
       ],
       logging: true,
-      synchronize: true,
-      migrations: [path.join(__dirname, "migration/*.js")],
+      synchronize: true, // dev mode only
+      migrations: [path.join(__dirname, "migration/*.js")], // make these
       migrationsRun: true
     })
-    console.log("Connection Created")
-    // setting true will drop tables and recreate
-    console.log("Synchronized")
 
     window.$ = $
     window.jQuery = $
     window.sql = SQL
     Vue.config.devtools = process.env.NODE_ENV === 'development';
-    let user = new User()
-    user.firstName = "foo"
-    user.lastName = "bar"
-    await user.save()
 
     Vue.config.productionTip = false
     Vue.use(TypeOrmPlugin, {connection})

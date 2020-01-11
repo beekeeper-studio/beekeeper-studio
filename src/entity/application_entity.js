@@ -1,6 +1,7 @@
-import {PrimaryGeneratedColumn, UpdateDateColumn, CreateDateColumn, BaseEntity} from 'typeorm'
+import {VersionColumn, PrimaryGeneratedColumn, UpdateDateColumn, CreateDateColumn, BaseEntity} from 'typeorm'
 
 export class ApplicationEntity extends BaseEntity {
+
 
   @PrimaryGeneratedColumn()
   id
@@ -10,4 +11,8 @@ export class ApplicationEntity extends BaseEntity {
 
   @UpdateDateColumn()
   updatedAt
+
+  @VersionColumn()
+  version
+
 }

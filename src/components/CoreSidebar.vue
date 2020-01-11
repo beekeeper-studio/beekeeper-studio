@@ -19,45 +19,25 @@
 </template>
 
 <script>
-  import _ from 'lodash'
   import TableListItem from './TableListItem.vue'
   import DatabaseDropdown from './DatabaseDropdown.vue'
+  import { mapState } from 'vuex'
 
   export default {
     components: { TableListItem, DatabaseDropdown },
-    props: ['connection'],
     data() {
       return {
-        tables: null,
         tableLoadError: null,
         database: null
       }
     },
+    mounted() {
+      this.$store.dispatch('updateTables')
+    },
+    computed: mapState(['tables', 'connection']),
     methods: {
-      async loadTables() {
-        try {
-          this.tables = await this.connection.listTables()
-        } catch(ex) {
-          this.tableLoadError = ex.message
-          this.$noty.error("Error loading tables")
-        }
-      },
       databaseSelected(db) {
-        this.$emit('databaseSelected', db)
-      }
-    },
-    async mounted() {
-      window.connection = this.connection
-      this.database = this.connection.database
-      await this.loadTables()
-    },
-    watch: {
-      database(nuValue, oldValue) {
-        if(_.isNil(oldValue)) {
-          return
-        }
-        this.connection.setDatabase(nuValue)
-        this.loadTables()
+        this.$store.dispatch('changeDatabase', db)
       }
     }
   }

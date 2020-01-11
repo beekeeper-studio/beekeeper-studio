@@ -34,12 +34,14 @@
 
 <script>
   import CodeMirror from 'codemirror'
-
   import ResultTable from './ResultTable.vue'
+
+  import { UsedQuery } from '../entity/used_query'
+import { mapState } from 'vuex'
 
   export default {
     components: { ResultTable },
-    props: ['query', 'database', 'connection'],
+    props: ['query'],
     data() {
       return {
         result: null,
@@ -49,30 +51,27 @@
         error: null,
       }
     },
-    computed: {
-    },
+    computed: mapState(['usedConfig', 'connection', 'database', 'tables']),
     methods: {
       async submitQuery() {
-        const run = {
-          queryText: this.editor.getValue(),
+        const run = new UsedQuery({
+          text: this.editor.getValue(),
           database: this.database,
-        }
+          connectionHash: this.usedConfig.uniqueHash
+        })
         return await this.runQuery(run)
       },
       async runQuery(queryRun) {
         console.log(queryRun)
-        this.runningQuery = this.connection.query(queryRun.queryText)
+        this.runningQuery = this.connection.query(queryRun.text)
         // TODO (matthew): Allow multiple queries executed here.
-        console.log(queryRun.queryText)
         try {
+          queryRun.status = 'running'
           const results = await this.runningQuery.execute()
-          console.log(results)
-
-          // TODO (matthew): Figure out multiple results. Right now we return the result of the first query
           this.result = results[0]
-          console.log(this.result)
           queryRun.status = 'completed'
-          queryRun.records = this.result.rowCount
+          queryRun.numberOfRecords = this.result.rowCount
+          await queryRun.save()
         } catch(ex) {
           this.error = ex
           this.result = null
@@ -82,6 +81,7 @@
     },
     mounted() {
       const $editor = this.$refs.editor
+      // TODO (matthew): Add hint options for all tables and columns
       this.editor = CodeMirror.fromTextArea($editor, {
           lineNumbers: true,
           mode: "sql",
