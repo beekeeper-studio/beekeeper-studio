@@ -54,11 +54,11 @@ import { mapState } from 'vuex'
     computed: mapState(['usedConfig', 'connection', 'database', 'tables']),
     methods: {
       async submitQuery() {
-        const run = new UsedQuery({
-          text: this.editor.getValue(),
-          database: this.database,
-          connectionHash: this.usedConfig.uniqueHash
-        })
+        const run = new UsedQuery()
+        run.text = this.editor.getValue()
+        run.database = this.database
+        run.connectionHash = this.usedConfig.uniqueHash
+        console.log(run)
         return await this.runQuery(run)
       },
       async runQuery(queryRun) {
@@ -75,6 +75,7 @@ import { mapState } from 'vuex'
         } catch(ex) {
           this.error = ex
           this.result = null
+          throw ex
         }
 
       }

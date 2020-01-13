@@ -4,6 +4,7 @@ import { ApplicationEntity  } from './application_entity'
 @Entity()
 export class UsedQuery extends ApplicationEntity {
 
+
   @Column({type: "text", nullable: false})
   text
 

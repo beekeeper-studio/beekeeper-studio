@@ -21,6 +21,12 @@
         handler() {
           this.tabulator.replaceData(this.tableData)
         }
+      },
+      tableColumns: {
+        deep: true,
+        handler() {
+          this.tabulator.setColumns(this.tableColumns)
+        }
       }
     },
     computed: {

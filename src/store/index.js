@@ -23,6 +23,7 @@ const store = new Vuex.Store({
     connection(state, payload) {
       state.usedConfig = payload.config
       state.connection = payload.connection
+      state.database = payload.config.defaultDatabase
     },
     database(state, newDatabase) {
       state.connection.setDatabase(newDatabase)
