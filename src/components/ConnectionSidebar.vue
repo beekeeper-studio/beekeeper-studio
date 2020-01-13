@@ -31,9 +31,6 @@
       edit(connectionConfig) {
         this.$emit('edit', connectionConfig)
       },
-      connect(connectionConfig) {
-
-      }
     }
   }
 </script>

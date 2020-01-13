@@ -99,7 +99,7 @@ import { mapState } from 'vuex'
       })
       this.$nextTick(() => {
         this.split = Split(this.splitElements, {
-          elementStyle: (dimension, size, direction) => ({
+          elementStyle: (dimension, size) => ({
               'flex-basis': `calc(${size}%)`,
           }),
           sizes: [50,50],
