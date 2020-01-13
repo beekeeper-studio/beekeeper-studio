@@ -1,15 +1,3 @@
-
-.connection-interface {
-  display: flex;
-  position: relative;
-  width: 100%;
-  height: 100%;
-  .sidebar {
-    width: $sidebar-w;
-    min-width: $sidebar-min-w;
-    max-width: $sidebar-max-w;
-  }
-}
 .connection-main {
   .small-wrap {
     max-width: 550px;

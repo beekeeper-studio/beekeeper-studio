@@ -1,7 +1,5 @@
 <template>
-  <div>
-    <div ref="tabulator"></div>
-  </div>
+  <div ref="tabulator"></div>
 </template>
 
 <script type="text/javascript">

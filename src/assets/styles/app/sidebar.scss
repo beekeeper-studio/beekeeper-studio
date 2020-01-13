@@ -63,31 +63,9 @@
   // Quick Connect 
   .quick-connect {
     background: $brand-info;
-    height: $tab-height;
+    //height: $tab-height;
     i {
       margin-right: 0.5rem;
-    }
-  }
-
-  // Status
-  .status {
-    display: flex;
-    align-items: center;
-    padding: ($gutter-w * 0.75) $gutter-w;
-    background: rgba($theme-base, 0.025);
-    label {
-      flex-grow: 1;
-      margin: 0;
-      font-size: 85%;
-      color: $text-light;
-    }
-    small {
-      align-items: center;
-      display: flex;
-    }
-    .material-icons {
-      font-size: 8px;
-      margin-right: 0.35em;
     }
   }
 }
@@ -96,6 +74,9 @@
 // ------------------------------
 .list-group {
   width: 100%;
+  .btn-wrap {
+    padding: $gutter-w;
+  }
   a, .sub-item {
     display: flex;
     align-items: center;
@@ -105,13 +86,9 @@
     color: $text-dark;
     padding: $gutter-h $gutter-w;
     padding-left: $gutter-w;
+    line-height: 1.4;
     &:hover {
       background: rgba($theme-base, 0.06);
-    }
-    &.active, 
-    &.active:hover, 
-    &.active:focus {
-      background: rgba($theme-primary, 0.1);
     }
   }
   h5 {
@@ -127,14 +104,14 @@
     display: flex;
     flex-direction: column;
     color: $text;
-    padding: $gutter-h 0;
+    padding: ($gutter-h * 0.5) 0;
     .title {
       flex-grow: 1;
     }
   }
   .sub-item {
-    padding-top: $gutter-h * 0.25;
-    padding-bottom: $gutter-h * 0.8;
+    padding-top: $gutter-h * 0.5;
+    padding-bottom: $gutter-h * 0.5;
     padding-right: $gutter-w;
     padding-left: $gutter-w + $sidebar-icon-w;
   }
@@ -142,8 +119,9 @@
     font-size: 15px;
     width: $sidebar-icon-w;
     transition: transform 0.15s ease-in;
-    color: $theme-primary;
+    color: $theme-secondary;
   }
+  .badge
   .badge-info {
     background: $brand-info;
   }

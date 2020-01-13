@@ -1,9 +1,19 @@
 
 .core-tabs {
-  background: rgba($theme-base, 0.08);
+  position: relative;
+  display: flex;
+  flex: 1 1 100%;
+  flex-direction: column;
+  .tab-content, .tab-pane {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
   .nav-tabs {
     overflow-y: hidden;
     flex-wrap: nowrap;
+    background: rgba($theme-base, 0.08);
     margin: 0;
     &::-webkit-scrollbar {
       width: 4px;

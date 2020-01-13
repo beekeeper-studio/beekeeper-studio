@@ -1,11 +1,13 @@
 <template>
   <nav class="list-group">
-    <a
-      href=""
-      class="quick-connect"
-      :class="{'active': defaultConfig == selectedConfig }"
-      @click.prevent="edit(defaultConfig)"
-    ><i class="material-icons">offline_bolt</i> Quick Connect</a>
+    <div class="btn-wrap">
+      <a
+        href=""
+        class="quick-connect btn btn-primary btn-block btn-icon"
+        :class="{'active': defaultConfig == selectedConfig }"
+        @click.prevent="edit(defaultConfig)"
+      ><i class="material-icons">offline_bolt</i> Quick Connect</a>
+    </div>
     <h5>Saved Connections</h5>
     <a
       href=""

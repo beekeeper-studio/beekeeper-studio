@@ -1,11 +1,16 @@
 <template>
-  <div id="interface" class="interface flex-row">
-  <!-- Sidebar -->
-  <div class="sidebar flex-column" id="sidebar" ref="sidebar">
-    <core-sidebar @databaseSelected="databaseSelected" :connection="connection"></core-sidebar>
-  </div>
-    <div ref="content" class="page-content flex-column" id="page-content">
-      <core-tabs :connection="connection"></core-tabs>
+  <div id="interface" class="interface">
+    <div class="interface-wrap row">
+      <div class="sidebar flex-col" id="sidebar" ref="sidebar">
+        <core-sidebar @databaseSelected="databaseSelected" :connection="connection"></core-sidebar>
+      </div>
+      <div ref="content" class="page-content flex-col" id="page-content">
+        <core-tabs :connection="connection"></core-tabs>
+      </div>
+    </div>
+    <div class="status-bar row connected">
+      <span><i class="material-icons">check_circle</i> Connected</span>
+      <!-- <span><i class="material-icons">cancel</i> No Connection</span> -->
     </div>
   </div>
 </template>

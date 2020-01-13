@@ -11,10 +11,6 @@
     <nav class="list-group flex-col" v-if="tables">
       <table-list-item v-for="table in tables" v-bind:key="table.name" :table="table" :connection="connection" ></table-list-item>
     </nav>
-    <span class="expand"></span>
-    <div class="status">
-      <small class="text-success"><i class="material-icons">brightness_1</i> Connected</small>
-    </div>
   </div>
 </template>
 
