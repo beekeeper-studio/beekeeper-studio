@@ -2,7 +2,7 @@
   <div class="data-select-wrap">
     <select class="database-select" v-model="selectedDatabase">
       <option selected :value="currentDatabase">{{currentDatabase}}</option>
-      <option v-for="db in availableDatabases" :value="db">{{db}}</option>
+      <option v-for="db in availableDatabases" v-bind:key="db" :value="db">{{db}}</option>
     </select>
   </div>
 </template>
