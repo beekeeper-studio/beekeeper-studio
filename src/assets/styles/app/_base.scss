@@ -549,6 +549,12 @@ pre {
   .btn {
     margin-left: 0.2rem;
     margin-right: 0.2rem;
+    &:first-child {
+      margin-left: 0;
+    }
+    &:last-child {
+      margin-right: 0;
+    }
   }
 }
 

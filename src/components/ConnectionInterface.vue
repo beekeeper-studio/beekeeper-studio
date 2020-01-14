@@ -45,8 +45,8 @@
                   </div>
                 </div>
               </div>
-              <div class="row gutter">
-                <div class="form-group">
+              <div class="row">
+                <div class="form-group expand">
                   <label for="defaultDatabase">Default Database</label>
                   <input type="text" class="form-control" v-model="config.defaultDatabase">
                 </div>
@@ -56,7 +56,7 @@
                 </div>
                 
                 <!-- Save Connection -->
-                <div class="save-connection">
+                <div class="save-connection expand">
                   <h3>Save Connection</h3>
                   <div class="row">
                     <div class="expand"><input class="form-control full" type="text" v-model="config.name" placeholder="Connection Name"></div>
