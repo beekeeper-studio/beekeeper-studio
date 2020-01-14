@@ -10,6 +10,19 @@
     flex-direction: column;
     height: 100%;
   }
+  .tab-pane {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: $theme-bg;
+    &.active {
+      display: flex;
+      z-index: 1;
+    }
+  }
   .nav-tabs {
     overflow-y: hidden;
     flex-wrap: nowrap;
@@ -76,7 +89,7 @@
       height: 16px;
       min-width: 16px;
       border-radius: 50%;
-      margin-left: $gutter-w;
+      margin-left: $gutter-h;
       margin-right: -($tab-padding-w * 0.5);
       &:hover {
         background: rgba($theme-base, 0.1);

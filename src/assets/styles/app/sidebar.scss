@@ -16,7 +16,7 @@
     height: $tab-height - 1px; // Nav tabs fix
     min-height: $tab-height - 1px; // Nav tabs fix
     padding: 0 $gutter-w;
-    box-shadow: 0 1px $border-color;
+    box-shadow: inset 0 -1px $border-color;
   }
   .database-select {
     display: block;

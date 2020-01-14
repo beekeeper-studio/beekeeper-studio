@@ -40,14 +40,16 @@
   .status-bar {
     display: flex;
     align-items: center;
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1;
     padding: $gutter-h $gutter-w;
     background: rgba($theme-base, 0.1);
     &.connected {
-      background: $brand-info;
+      color: $brand-success;
     }
-    &
+    &.disconnected {
+      color: $brand-danger;
+    }
     label {
       flex-grow: 1;
       margin: 0;
