@@ -12,19 +12,20 @@
         tabulator: null
       }
     },
-    props: ['result'],
+    props: ['result', 'tableHeight'],
     watch: {
       tableData: {
-        deep: true,
         handler() {
           this.tabulator.replaceData(this.tableData)
         }
       },
       tableColumns: {
-        deep: true,
         handler() {
           this.tabulator.setColumns(this.tableColumns)
         }
+      },
+      tableHeight() {
+        this.tabulator.setHeight(this.tableHeight)
       }
     },
     computed: {
@@ -41,9 +42,10 @@
         let columnArray = _.map(this.tableColumns, (col) => {
           return col.field
         })
-        return _.map(this.result.rows, (row) => {
+        let result = _.map(this.result.rows, (row) => {
           return _.pick(row, columnArray)
         })
+        return result
       },
       tableColumns() {
         // columns here
@@ -67,11 +69,12 @@
         })
       }
     },
-    mounted() {
+    async mounted() {
       this.tabulator = new Tabulator(this.$refs.tabulator, {
         data: this.tableData, //link data to table
-        reactiveData:true, //enable data reactivity
         columns: this.tableColumns, //define table columns
+        height: this.tableHeight
+
       });
     }
 

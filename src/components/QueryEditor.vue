@@ -24,7 +24,7 @@
           </div>
         </div>
       </div>
-      <result-table v-else-if="result" :result="result"></result-table>
+      <result-table v-else-if="result" :tableHeight="tableHeight" :result="result"></result-table>
       <div class="error" v-else-if="error">{{error}}</div>
       <div v-else class="not-run-yet">Nothing to show</div>
     </div>
@@ -50,6 +50,7 @@ import { mapState } from 'vuex'
         runningQuery: null,
         error: null,
         split: null,
+        tableHeight: 0
       }
     },
     computed: {
@@ -105,7 +106,13 @@ import { mapState } from 'vuex'
           sizes: [50,50],
           gutterSize: 8,
           direction: 'vertical',
+          onDragEnd: () => {
+            this.$nextTick(() => {
+              this.tableHeight = this.$refs.bottomPanel.clientHeight
+            })
+          }
         })
+        this.tableHeight = this.$refs.bottomPanel.clientHeight
       })
     },
     beforeDestroy() {
