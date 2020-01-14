@@ -330,7 +330,7 @@ select {
   }
   &.gutter-horizontal {
     width: 0!important;
-    cursor: col-resize;
+    cursor: e-resize;
     &:after {
       height: 100%;
       width: 8px;
@@ -338,7 +338,7 @@ select {
     }
   }
   &.gutter-vertical {
-    cursor: row-resize;
+    cursor: n-resize;
     height: 0!important;
     &:after {
       height: 8px;

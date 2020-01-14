@@ -3,7 +3,8 @@
 
 .tabulator {
   position: relative;
-  //background-color: $theme-bg;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   font-size: 12px;
   text-align: left;
@@ -245,9 +246,8 @@
   .tabulator-tableHolder {
     position: relative;
     width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
     height: 100%;
+    overflow: hidden;
     -webkit-overflow-scrolling: touch;
 
     &:focus {
