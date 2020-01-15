@@ -15,6 +15,7 @@
       :key="c.id"
       :class="{'active': c == selectedConfig }"
       @click.prevent="edit(c)"
+      @dblclick.prevent="connect(c)"
     >{{c.name}} ({{c.connectionType}})</a>
   </nav>
 </template>
@@ -28,9 +29,12 @@
       }
     },
     methods: {
-      edit(connectionConfig) {
-        this.$emit('edit', connectionConfig)
+      edit(config) {
+        this.$emit('edit', config)
       },
+      connect(config) {
+        this.$emit('connect', config)
+      }
     }
   }
 </script>

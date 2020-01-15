@@ -11,6 +11,9 @@
     <nav class="list-group flex-col" v-if="tables">
       <table-list-item v-for="table in tables" v-bind:key="table.name" :table="table" :connection="connection" ></table-list-item>
     </nav>
+    <div class="stick-to-bottom">
+      <button @click.prevent="disconnect()">disconnect</button>
+    </div>
   </div>
 </template>
 
@@ -34,6 +37,10 @@
     methods: {
       databaseSelected(db) {
         this.$store.dispatch('changeDatabase', db)
+      },
+      async disconnect() {
+        await this.$store.dispatch('disconnect')
+        this.$noty.success("Successfully Disconnected")
       }
     }
   }

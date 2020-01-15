@@ -2,12 +2,12 @@
   <div class="interface connection-interface">
     <div class="interface-wrap row">
       <div ref="sidebar" class="sidebar flex-col connection-sidebar" id="sidebar">
-        <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @edit="edit"></connection-sidebar>
+        <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @edit="edit" @connect="submit"></connection-sidebar>
       </div>
       <div ref="content" class="connection-main page-content layout-center" id="page-content">
         <div class="small-wrap">
           <div class="card-flat padding">
-            <h3 class="card-title">Connect</h3>
+            <h3 class="card-title">{{pageTitle}}</h3>
             <div class="alert alert-danger" v-show="errors">
               <i class="material-icons">warning</i>
               <div>
@@ -44,26 +44,27 @@
                     <label for="password">Password</label><input type="password" v-model="config.password" class="form-control">
                   </div>
                 </div>
-              </div>
-              <div class="row">
-                <div class="form-group expand">
-                  <label for="defaultDatabase">Default Database</label>
-                  <input type="text" class="form-control" v-model="config.defaultDatabase">
-                </div>
-                <div class="btn-group flex flex-right">
-                  <button :disabled="testing" class="btn btn-flat" @click.prevent="testConnection">Test</button>
-                  <button :disabled="testing" class="btn btn-primary" @click.prevent="submit">Connect</button>
-                </div>
-                
-                <!-- Save Connection -->
-                <div class="save-connection expand">
-                  <h3>Save Connection</h3>
-                  <div class="row">
-                    <div class="expand"><input class="form-control full" type="text" v-model="config.name" placeholder="Connection Name"></div>
-                    <div><button class="btn btn-flat" @click.prevent="save">Save</button></div>
+                <div class="row">
+                  <div class="form-group expand">
+                    <label for="defaultDatabase">Default Database</label>
+                    <input type="text" class="form-control" v-model="config.defaultDatabase">
+                  </div>
+                  <div class="btn-group flex flex-right">
+                    <button :disabled="testing" class="btn btn-flat" @click.prevent="testConnection">Test</button>
+                    <button :disabled="testing" class="btn btn-primary" @click.prevent="submit">Connect</button>
+                  </div>
+                  
+                  <!-- Save Connection -->
+                  <div class="save-connection expand">
+                    <h3>Save Connection</h3>
+                    <div class="row">
+                      <div class="expand"><input class="form-control full" type="text" v-model="config.name" placeholder="Connection Name"></div>
+                      <div><button class="btn btn-flat" @click.prevent="save">Save</button></div>
+                    </div>
                   </div>
                 </div>
               </div>
+ 
             </form>
   
           </div>
@@ -89,6 +90,7 @@
 
   import ConnectionSidebar from './ConnectionSidebar'
   import Split from 'split.js'
+  import _ from 'lodash'
 
   export default {
     components: { ConnectionSidebar },
@@ -100,6 +102,19 @@
         connectionError: null,
         testing: false,
         split: null
+      }
+    },
+    computed: {
+      connectionTypes() {
+        return config.defaults.connectionTypes
+      },
+      pageTitle() {
+        console.log(this.config)
+        if(_.isNull(this.config) || _.isUndefined(this.config.id)) {
+          return "Quick Connect"
+        } else {
+          return this.config.name
+        }
       }
     },
     mounted() {
@@ -181,11 +196,7 @@
         }
       }
     },
-    computed: {
-      connectionTypes() {
-        return config.defaults.connectionTypes
-      },
-    }
+
 
   }
 </script>

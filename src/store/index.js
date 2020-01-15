@@ -25,6 +25,12 @@ const store = new Vuex.Store({
       state.connection = payload.connection
       state.database = payload.config.defaultDatabase
     },
+
+    clearConnection(state) {
+      state.usedConfig = null
+      state.connection = null
+      state.database = null
+    },
     database(state, newDatabase) {
       state.connection.setDatabase(newDatabase)
       state.database = newDatabase
@@ -55,6 +61,11 @@ const store = new Vuex.Store({
       })
       await usedConfig.save()
       context.commit('connection', {config: usedConfig, connection: connection})
+    },
+    async disconnect(context) {
+      const connection = context.state.connection
+      await connection.disconnect()
+      context.commit('clearConnection')
     },
     async changeDatabase(context, newDatabase) {
       context.commit('database', newDatabase)
