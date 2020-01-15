@@ -1,5 +1,5 @@
 <template>
-  <div class="core-tabs">
+  <div class="core-tabs" v-hotkey="keymap">
     <ul class="nav-tabs nav">
       <li v-for="(tab, idx) in tabItems" class="nav-item" :key="idx">
         <a
@@ -24,7 +24,7 @@
         :key="idx"
         :class="{show: (activeItem === idx), active: (activeItem === idx)}"
       >
-        <QueryEditor v-if="tab.type === 'query'" :query="tab" :connection="connection"></QueryEditor>
+        <QueryEditor v-if="tab.type === 'query'" :active="activeItem == idx" :query="tab" :connection="connection"></QueryEditor>
         <div v-if="tab.type === 'table'">TABLE</div>
       </div>
     </div>
@@ -35,6 +35,8 @@
 
   import _ from 'lodash'
   import QueryEditor from './QueryEditor'
+  import config from '../config'
+
 
   export default {
     props: [ 'connection' ],
@@ -45,8 +47,50 @@
         activeItem: 0
       }
     },
+    computed: {
+      lastItem() {
+        return this.tabItems.length - 1
+      },
+      activeTab() {
+        return this.tabItems[this.activeItem]
+      },
+      keymap() {
 
+        let cmdOrCtrl = 'ctrl'
+
+        if(config.isMac) {
+          cmdOrCtrl = 'cmd'
+        }
+
+        const newTab = cmdOrCtrl + '+t'
+        const result = {
+          'ctrl+tab': this.nextTab,
+          'ctrl+shift+tab': this.previousTab,
+          'ctrl+w': this.closeTab
+        }
+        result[newTab] = this.createQuery
+        return result
+      }
+    },
     methods: {
+      nextTab() {
+        if(this.activeItem == this.lastItem) {
+          this.activeItem = 0
+        } else {
+          this.activeItem = this.activeItem + 1
+        }
+      },
+
+      previousTab() {
+        if(this.activeItem == 0) {
+          this.activeItem = this.lastItem
+        } else {
+          this.activeItem = this.activeItem - 1
+        }
+      },
+      closeTab() {
+        this.close(this.activeTab)
+      },
       createQuery() {
         const result = {
           queryText: "",
@@ -76,7 +120,6 @@
       },
       close(tab) {
         this.tabItems = _.without(this.tabItems, tab)
-        console.log("length ", this.tabItems.length)
         if (this.activeItem >= this.tabItems.length) {
           this.click()
         }

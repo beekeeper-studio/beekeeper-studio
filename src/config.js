@@ -31,6 +31,7 @@ export default {
   userDirectory,
   encryptionKey: loadEncryptionKey(),
   environment: process.env.NODE_ENV,
+  isMac: false,
   defaults: {
     connectionTypes: [
       { name: 'MySql', value: 'mysql' },

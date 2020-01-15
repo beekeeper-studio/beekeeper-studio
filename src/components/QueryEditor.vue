@@ -1,10 +1,10 @@
 <template>
-  <div class="query-editor">
+  <div class="query-editor" v-hotkey="keymap">
     <div class="top-panel" ref="topPanel">
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
       <div class="actions text-right">
-        <a href="" @click.prevent="submitQuery" class="btn btn-primary">Run Query</a>
+        <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitQuery" class="btn btn-primary">Run Query</a>
       </div>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
@@ -41,7 +41,7 @@ import { mapState } from 'vuex'
 
   export default {
     components: { ResultTable },
-    props: ['query'],
+    props: ['query', 'active'],
     data() {
       return {
         result: null,
@@ -60,9 +60,25 @@ import { mapState } from 'vuex'
           this.$refs.bottomPanel,
         ]
       },
+      keymap() {
+        return {
+          'ctrl+l': this.selectEditor
+        }
+      },
       ...mapState(['usedConfig', 'connection', 'database', 'tables'])
     },
+    watch: {
+      active() {
+        if(this.active) {
+          this.editor.focus()
+        }
+      }
+    },
     methods: {
+
+      selectEditor() {
+        this.editor.focus()
+      },
       async submitQuery() {
         const run = new UsedQuery()
         run.text = this.editor.getValue()
@@ -93,12 +109,27 @@ import { mapState } from 'vuex'
     mounted() {
       const $editor = this.$refs.editor
       // TODO (matthew): Add hint options for all tables and columns
+      let startingValue = ""
+      for (var i = 0; i < 9; i++) {
+          startingValue += '\n';
+      }
+
+
       this.editor = CodeMirror.fromTextArea($editor, {
         lineNumbers: true,
         mode: "sql",
         theme: 'monokai'
       })
+      this.editor.setValue(startingValue)
+
+      const runQueryKeyMap = {
+        "Ctrl-Enter": this.submitQuery,
+        "Cmd-Enter": this.submitQuery
+      }
+      this.editor.addKeyMap(runQueryKeyMap)
+
       this.$nextTick(() => {
+        this.editor.focus()
         this.split = Split(this.splitElements, {
           elementStyle: (dimension, size) => ({
               'flex-basis': `calc(${size}%)`,

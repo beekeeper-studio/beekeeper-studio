@@ -1,5 +1,7 @@
 import Vue from 'vue'
 import VueNoty from 'vuejs-noty'
+import VueHotkey from 'v-hotkey'
+import VTooltip from 'v-tooltip'
 import App from './App.vue'
 import path from 'path'
 //import '@fortawesome/fontawesome-free/css/all.css'
@@ -16,6 +18,7 @@ import {UsedQuery} from './entity/used_query'
 import {TypeOrmPlugin} from './lib/typeorm_plugin'
 import config from './config'
 import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
+
 
 (async () => {
   try {
@@ -42,9 +45,12 @@ import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
     window.jQuery = $
     window.sql = SQL
     Vue.config.devtools = process.env.NODE_ENV === 'development';
+    config.isMac = window.navigator.platform == 'MacIntel'
 
     Vue.config.productionTip = false
     Vue.use(TypeOrmPlugin, {connection})
+    Vue.use(VueHotkey)
+    Vue.use(VTooltip)
     Vue.use(VueNoty, {
       timeout: 3000,
       progressBar: true,
