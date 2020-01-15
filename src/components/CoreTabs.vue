@@ -5,11 +5,11 @@
         <a
           :href="'#tab-'+idx"
           class="nav-link"
-          v-on:click="click(idx)"
+          @click.prevent="click(idx)"
           :class="{ active: activeItem === idx }"
         >
           <span class="truncate">{{tab.title}}</span>
-          <span class="tab-close"><i class="material-icons">close</i></span>
+          <span class="tab-close" @click.prevent.stop="close(tab, idx)"><i class="material-icons">close</i></span>
         </a>
       </li>
       <li class="nav-item">
@@ -55,7 +55,7 @@
           title: "Query #" + this.tabItems.length,
         }
         this.tabItems.push(result)
-        this.activeItem = this.tabItems.length - 1
+        this.click()
       },
       openTable(table) {
         // todo (matthew): trigger this from a vuex event
@@ -68,8 +68,19 @@
         this.tabItems.push(t)
       },
       click(clickedIdx) {
-        this.activeItem = clickedIdx
-      }
+        if(clickedIdx) {
+          this.activeItem = clickedIdx
+        } else{
+          this.activeItem = this.tabItems.length - 1
+        }
+      },
+      close(tab) {
+        this.tabItems = _.without(this.tabItems, tab)
+        console.log("length ", this.tabItems.length)
+        if (this.activeItem >= this.tabItems.length) {
+          this.click()
+        }
+      },
 
     }
   }
