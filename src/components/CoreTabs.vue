@@ -125,6 +125,9 @@
         }
       },
 
+    },
+    mounted() {
+      this.createQuery()
     }
   }
 </script>
