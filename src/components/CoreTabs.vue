@@ -99,7 +99,7 @@
           title: "Query #" + this.tabItems.length,
         }
         this.tabItems.push(result)
-        this.click()
+        this.click(this.lastItem)
       },
       openTable(table) {
         // todo (matthew): trigger this from a vuex event
@@ -112,16 +112,12 @@
         this.tabItems.push(t)
       },
       click(clickedIdx) {
-        if(clickedIdx) {
-          this.activeItem = clickedIdx
-        } else{
-          this.activeItem = this.tabItems.length - 1
-        }
+        this.activeItem = clickedIdx
       },
       close(tab) {
         this.tabItems = _.without(this.tabItems, tab)
         if (this.activeItem >= this.tabItems.length) {
-          this.click()
+          this.click(this.lastItem)
         }
       },
 
