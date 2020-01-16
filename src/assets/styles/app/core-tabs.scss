@@ -40,7 +40,7 @@
       align-items: center;
       padding: 0 ($tab-padding-w * 1.25);
       height: $tab-height;
-      background: rgba($theme-bg, 0.4);
+      background: rgba($theme-bg, 0.25);
       font-size: 0.85rem;
       font-weight: normal;
       color: $text;
@@ -49,7 +49,9 @@
       border-radius: 0;
       box-shadow: inset -1px 0 $query-editor-bg;
       &:hover {
-        background: transparent;
+        .tab-close {
+          visibility: visible;
+        }
       }
       &.active {
         border: 0;
@@ -96,13 +98,13 @@
       border-radius: 50%;
       margin-left: $gutter-h;
       margin-right: -($tab-padding-w * 0.5);
-      &:hover {
-        background: rgba($theme-base, 0.1);
-      }
+      // &:hover {
+      //   background: rgba($theme-base, 0.1);
+      // }
       i {
         font-size: 12px;
         font-weight: bold;
-        color: $text-light;
+        color: $text-dark;
       }
     }
   }
