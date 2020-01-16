@@ -438,11 +438,11 @@ pre {
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
-  border-radius: 1px;
   background: rgba($theme-base, 0.06);
 }
 ::-webkit-scrollbar-thumb {
   background: rgba($theme-base, 0.37);
+  border-radius: 1px;
 }
 ::-webkit-scrollbar-button {
   display: none;

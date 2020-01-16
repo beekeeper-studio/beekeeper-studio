@@ -22,14 +22,17 @@
   border: 0;
   background: $theme-bg;
   .tabulator-header {
-    background: transparent;
+    background: rgba($theme-base, 0.025);
     border-color: $border-color;
     .tabulator-col {
       background: transparent;
       border-color: $border-color;
+      height: 24px!important;
+      font-size: 85%;
+      line-height: 1;
       &.tabulator-sortable{
         &:hover {
-          background: rgba($theme-base, 0.025);
+          background: rgba($theme-base, 0.02);
         }
         .tabulator-col-title {
           padding-right: 16px;
@@ -57,9 +60,9 @@
         }
       }
       .tabulator-col-content {
-        padding: 6px 8px;
+        padding: 8px;
         .tabulator-arrow {
-          top: 12px;
+          top: 10px;
           border-width: 4px!important;
           border-bottom-color: rgba($theme-base, 0.35);
         }
