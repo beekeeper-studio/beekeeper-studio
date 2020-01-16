@@ -2,7 +2,7 @@
 
 // Theme
 // ---------------------------
-$theme-bg:           #222;
+$theme-bg:           #252525;
 $theme-base:         #fff;
 $theme-primary:      #0072ff;
 $theme-secondary:    #F9A220;
@@ -60,6 +60,6 @@ $sidebar-icon-w:      1.8rem;
 $db-select-text:      white;
 
 // Query Editor
-$query-editor-bg:     $theme-bg;
+$query-editor-bg:     darken($theme-bg, 3%);
 $tab-height:          36px;
 $tab-padding-w:       0.65rem;

@@ -2,7 +2,7 @@
 #sidebar {
   flex: 0 1 100%;
   overflow-x: hidden;
-  box-shadow: inset -1px 0 $border-color;
+  //box-shadow: inset -1px 0 $border-color;
   > div {
     display: flex;
     flex-direction: column;
@@ -107,11 +107,12 @@
     padding: ($gutter-h * 0.5) 0;
     .title {
       flex-grow: 1;
+      font-size: 85%;
     }
   }
   .sub-item {
-    padding-top: $gutter-h * 0.5;
-    padding-bottom: $gutter-h * 0.5;
+    padding-top: $gutter-h * 0.35;
+    padding-bottom: $gutter-h * 0.35;
     padding-right: $gutter-w;
     padding-left: $gutter-w + $sidebar-icon-w;
   }

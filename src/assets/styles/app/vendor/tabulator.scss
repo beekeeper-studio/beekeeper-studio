@@ -20,13 +20,14 @@
 .tabulator {
   font-size: 12px;
   border: 0;
-  background: $theme-bg;
+  background: transparent;
   .tabulator-header {
-    background: rgba($theme-base, 0.025);
-    border-color: $border-color;
+    background: rgba($theme-base, 0.075);
+    //border-color: $border-color;
+    border: 0;
     .tabulator-col {
       background: transparent;
-      border-color: $border-color;
+      border-color: $query-editor-bg;
       height: 24px!important;
       font-size: 85%;
       line-height: 1;

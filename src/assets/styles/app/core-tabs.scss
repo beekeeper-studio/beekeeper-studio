@@ -42,6 +42,7 @@
       height: $tab-height;
       background: rgba($theme-bg, 0.4);
       font-size: 0.85rem;
+      font-weight: normal;
       color: $text;
       transition: background 0.15s ease-in-out;
       border: 0;
@@ -53,10 +54,13 @@
       &.active {
         border: 0;
         background: $query-editor-bg;
-        font-weight: bold;
+        font-weight: 600;
         color: $text-dark;
         &:hover {
           background: $query-editor-bg;
+        }
+        .tab-close {
+          visibility: visible;
         }
       }
       &.add-query {
@@ -83,6 +87,7 @@
       }
     }
     .tab-close {
+      visibility: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
