@@ -33,6 +33,10 @@ export function createServer(serverConfig) {
       return server.db[dbName];
     },
 
+    disconnect() {
+      return this.end()
+    },
+
     end() {
       // disconnect from all DBs
       Object.keys(server.db).forEach((key) => server.db[key].disconnect());

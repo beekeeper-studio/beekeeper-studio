@@ -51,7 +51,7 @@
                   </div>
                   <div class="btn-group flex flex-right">
                     <button :disabled="testing" class="btn btn-flat" @click.prevent="testConnection">Test</button>
-                    <button :disabled="testing" class="btn btn-primary" @click.prevent="submit">Connect</button>
+                    <button :disabled="testing" class="btn btn-primary" @click.prevent="submit(config)">Connect</button>
                   </div>
                   
                   <!-- Save Connection -->
@@ -86,8 +86,6 @@
 
   import config from '../config'
   import {SavedConnection} from '../entity/saved_connection'
-  import ConnectionProvider from '../lib/connection-provider'
-
   import ConnectionSidebar from './ConnectionSidebar'
   import Split from 'split.js'
   import _ from 'lodash'
@@ -151,12 +149,11 @@
           this.config.port = 5432
         }
       },
-      async submit() {
+      async submit(config) {
+        this.config = config
+        this.connectionError = null
         try {
-          const connection = ConnectionProvider.for(this.config)
-          await connection.connect()
-          // yay, now we can make a usedConnection to record it
-          await this.$store.dispatch('setConnection', {config: this.config, connection: connection})
+          await this.$store.dispatch('connect', config)
         } catch(ex) {
           this.connectionError = ex.message
           this.$noty.error("Error establishing a connection")
@@ -166,9 +163,8 @@
 
         try {
           this.testing = true
-          const connection = ConnectionProvider.for(this.config)
-          await connection.connect()
-          await connection.end()
+          this.connectionError = null
+          await this.$store.dispatch('test', this.config)
           this.$noty.success("Connection looks good!")
           return true
         } catch(ex) {
@@ -185,6 +181,7 @@
       async save() {
         try {
           this.errors = null
+          this.connectionError = null
           this.$store.dispatch('saveConnectionConfig', this.config)
           if(this.config === this.defaultConfig) {
             this.defaultConfig = new SavedConnection()

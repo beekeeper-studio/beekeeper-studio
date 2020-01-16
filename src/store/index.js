@@ -7,6 +7,7 @@ import Vuex from 'vuex'
 import { UsedConnection } from '../entity/used_connection'
 import { SavedConnection } from '../entity/saved_connection'
 import config from '../config'
+import ConnectionProvider from '../lib/connection-provider'
 
 Vue.use(Vuex)
 // const vuexFile = new VueXPersistence()
@@ -14,13 +15,15 @@ Vue.use(Vuex)
 const store = new Vuex.Store({
   state: {
     usedConfig: null,
+    server: null,
     connection: null,
     database: null,
     tables: null,
     connectionConfigs: []
   },
   mutations: {
-    connection(state, payload) {
+    newConnection(state, payload) {
+      state.server = payload.server
       state.usedConfig = payload.config
       state.connection = payload.connection
       state.database = payload.config.defaultDatabase
@@ -31,9 +34,9 @@ const store = new Vuex.Store({
       state.connection = null
       state.database = null
     },
-    database(state, newDatabase) {
-      state.connection.setDatabase(newDatabase)
-      state.database = newDatabase
+    updateConnection(state, {connection, database}) {
+      state.connection = connection
+      state.database = database
     },
     tables(state, tables) {
       state.tables = tables
@@ -48,28 +51,33 @@ const store = new Vuex.Store({
     }
   },
   actions: {
-    async setConnection(context, payload) {
-      const config = payload.config
-      const connection = payload.connection
-      console.log(config)
-      const usedConfig = new UsedConnection({
-        connectionType: config.connectionType,
-        defaultDatabase: config.defaultDatabase,
-        port: config.port,
-        path: config.path,
-        url: config.uri,
-      })
+
+    async test(context, config) {
+      // TODO (matthew): fix this mess.
+      const server = ConnectionProvider.for(config)
+      await server.createConnection(config.defaultDatabase).connect()
+      server.disconnect()
+    },
+
+    async connect(context, config) {
+      const server = ConnectionProvider.for(config)
+      const connection = await server.createConnection(config.defaultDatabase)
+      await connection.connect()
+      const usedConfig = new UsedConnection(config)
       await usedConfig.save()
-      context.commit('connection', {config: usedConfig, connection: connection})
+      context.commit('newConnection', {config: usedConfig, server, connection})
     },
     async disconnect(context) {
-      const connection = context.state.connection
-      await connection.disconnect()
+      const server = context.state.server
+      server.disconnect()
       context.commit('clearConnection')
     },
     async changeDatabase(context, newDatabase) {
-      context.commit('database', newDatabase)
-      context.dispatch('updateTables')
+      const server = context.state.server
+      const connection = server.createConnection(newDatabase)
+      await connection.connect()
+      context.commit('updateConnection', {connection, database: newDatabase})
+      await context.dispatch('updateTables')
     },
     async updateTables(context) {
       const tables = await context.state.connection.listTables()

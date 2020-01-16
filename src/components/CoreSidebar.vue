@@ -35,8 +35,8 @@
     },
     computed: mapState(['tables', 'connection']),
     methods: {
-      databaseSelected(db) {
-        this.$store.dispatch('changeDatabase', db)
+      async databaseSelected(db) {
+        await this.$store.dispatch('changeDatabase', db)
       },
       async disconnect() {
         await this.$store.dispatch('disconnect')
