@@ -1,5 +1,8 @@
 <template>
-  <div ref="tabulator"></div>
+  <div class="result-table">
+    <div v-if="tableTruncated" class="row">Results truncated to 10,000 records</div>
+    <div ref="tabulator"></div>
+  </div>
 </template>
 
 <script type="text/javascript">
@@ -42,10 +45,15 @@
         let columnArray = _.map(this.tableColumns, (col) => {
           return col.field
         })
-        let result = _.map(this.result.rows, (row) => {
-          return _.pick(row, columnArray)
-        })
+        let result = _(this.result.rows)
+          .take(10000)
+          .map(this.result.rows, (row) => {
+            return _.pick(row, columnArray)
+          })
         return result
+      },
+      tableTruncated() {
+        return this.result.rowCount > 10000
       },
       tableColumns() {
         // columns here

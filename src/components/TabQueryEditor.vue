@@ -1,3 +1,4 @@
+r
 <template>
   <div class="query-editor" v-hotkey="keymap">
     <div class="top-panel" ref="topPanel">
@@ -8,38 +9,28 @@
       </div>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
-      <div v-if="running" class="running">
-        <div class="container">
-          <div class="row justify-content-center">
-            <div class="col-md-8">
-              <div class="card">
-                <div class="card-body">
-                  <div class="progress">
-                    <div class="progress-bar progress-bar-striped bg-info progress-bar-animated" style="width: 100%;">Retriculating Splines</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <progress-bar v-if="running"></progress-bar>
       <result-table v-else-if="result" :tableHeight="tableHeight" :result="result"></result-table>
       <div class="error" v-else-if="error">{{error}}</div>
-      <div v-else class="not-run-yet">Nothing to show</div>
+      <div v-else class="not-run-yet">No Results</div>
     </div>
   </div>
 </template>
 
 <script>
+
   import CodeMirror from 'codemirror'
-  import ResultTable from './ResultTable.vue'
+
   import Split from 'split.js'
 
   import { UsedQuery } from '../entity/used_query'
-import { mapState } from 'vuex'
+  import { mapState } from 'vuex'
+
+  import ProgressBar from './editor/ProgressBar'
+  import ResultTable from './editor/ResultTable'
 
   export default {
-    components: { ResultTable },
+    components: { ResultTable, ProgressBar },
     props: ['query', 'active'],
     data() {
       return {
@@ -88,9 +79,10 @@ import { mapState } from 'vuex'
       },
       async runQuery(queryRun) {
         console.log(queryRun)
-        this.runningQuery = this.connection.query(queryRun.text)
+        this.running = true
         // TODO (matthew): Allow multiple queries executed here.
         try {
+          this.runningQuery = this.connection.query(queryRun.text)
           queryRun.status = 'running'
           const results = await this.runningQuery.execute()
           this.result = results[0]
@@ -101,6 +93,8 @@ import { mapState } from 'vuex'
           this.error = ex
           this.result = null
           throw ex
+        } finally {
+          this.running = false
         }
 
       }

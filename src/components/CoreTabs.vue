@@ -34,7 +34,7 @@
 <script>
 
   import _ from 'lodash'
-  import QueryEditor from './QueryEditor'
+  import QueryEditor from './TabQueryEditor'
   import config from '../config'
 
 
