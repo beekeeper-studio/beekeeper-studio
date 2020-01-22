@@ -19,10 +19,12 @@ r
 
 <script>
 
+  import _ from 'lodash'
   import CodeMirror from 'codemirror'
 
   import Split from 'split.js'
 
+  import config from '../config'
   import { UsedQuery } from '../entity/used_query'
   import { mapState } from 'vuex'
 
@@ -85,7 +87,15 @@ r
           this.runningQuery = this.connection.query(queryRun.text)
           queryRun.status = 'running'
           const results = await this.runningQuery.execute()
-          this.result = results[0]
+          const result = results[0]
+
+          // TODO (matthew): remove truncation logic somewhere sensible
+          if (result.rowCount > config.maxResults) {
+            result.rows = _.take(result.rows, config.maxResults)
+            result.truncated = true
+            result.truncatedRowCount = config.maxResults
+          }
+          this.result = result
           queryRun.status = 'completed'
           queryRun.numberOfRecords = this.result.rowCount
           await queryRun.save()

@@ -42,18 +42,18 @@
             {id:5, name:"Margret Marmajuke", age:"16", col:"yellow", dob:"31/01/1999"},
           ];
         */
+
         let columnArray = _.map(this.tableColumns, (col) => {
           return col.field
         })
         let result = _(this.result.rows)
-          .take(10000)
-          .map(this.result.rows, (row) => {
+          .map((row) => {
             return _.pick(row, columnArray)
-          })
+          }).value()
         return result
       },
       tableTruncated() {
-        return this.result.rowCount > 10000
+        return this.result.truncated
       },
       tableColumns() {
         // columns here

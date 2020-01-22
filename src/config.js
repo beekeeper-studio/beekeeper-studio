@@ -49,5 +49,6 @@ export default {
       password: null,
       defaultDatabase: null
     }
-  }
+  },
+  maxResults: 10000
 }
