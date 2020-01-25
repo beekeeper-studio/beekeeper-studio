@@ -1,7 +1,7 @@
 <template>
   <div class="data-select-wrap">
     <select class="database-select" v-model="selectedDatabase">
-      <option selected :value="currentDatabase">{{currentDatabase}}</option>
+      <option selected :value="selectedDatabase">{{selectedDatabase}}</option>
       <option v-for="db in availableDatabases" v-bind:key="db" :value="db">{{db}}</option>
     </select>
   </div>
@@ -14,24 +14,23 @@
     props: [ 'connection' ],
     data() {
       return {
-        availableDatabases: [],
         currentDatabase: null,
-        selectedDatabase: null
+        selectedDatabase: null,
+        dbs: [],
       }
     },
     async mounted() {
-      this.currentDatabase = await this.connection.currentDatabase()
-      this.selectedDatabase = this.currentDatabase
-
-      const dbs = await this.connection.listDatabases()
-      this.availableDatabases = _.without(dbs, this.currentDatabase)
+      this.selectedDatabase = await this.connection.currentDatabase()
+      this.dbs = await this.connection.listDatabases()
+    },
+    computed: {
+      availableDatabases() {
+        return _.without(this.dbs, this.selectedDatabase)
+      }
     },
     watch: {
       selectedDatabase() {
-        if (this.selectedDatabase != this.currentDatabase) {
-          this.$emit('databaseSelected', this.selectedDatabase)
-        }
-
+        this.$emit('databaseSelected', this.selectedDatabase)
       }
     }
   }

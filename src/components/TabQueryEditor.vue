@@ -12,6 +12,7 @@ r
       <progress-bar v-if="running"></progress-bar>
       <result-table v-else-if="result" :tableHeight="tableHeight" :result="result"></result-table>
       <div class="error" v-else-if="error">{{error}}</div>
+      <!-- TODO (gregory): Make the no results section nicer -->
       <div v-else class="not-run-yet">No Results</div>
     </div>
   </div>

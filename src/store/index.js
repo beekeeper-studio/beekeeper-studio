@@ -74,8 +74,11 @@ const store = new Vuex.Store({
     },
     async changeDatabase(context, newDatabase) {
       const server = context.state.server
-      const connection = server.createConnection(newDatabase)
-      await connection.connect()
+      let connection = server.db(newDatabase)
+      if (! connection) {
+        connection = server.createConnection(newDatabase)
+        await connection.connect()
+      }
       context.commit('updateConnection', {connection, database: newDatabase})
       await context.dispatch('updateTables')
     },
