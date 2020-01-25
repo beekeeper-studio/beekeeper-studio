@@ -1,5 +1,6 @@
 <template>
   <div class="data-select-wrap">
+    <i class="material-icons">storage</i>
     <select class="database-select" v-model="selectedDatabase">
       <option selected :value="selectedDatabase">{{selectedDatabase}}</option>
       <option v-for="db in availableDatabases" v-bind:key="db" :value="db">{{db}}</option>

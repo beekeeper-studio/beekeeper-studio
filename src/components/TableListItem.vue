@@ -1,8 +1,11 @@
 <template>
   <div>
-    <a @click="toggleColumns" role="button">
+    <a role="button">
       <i class="item-icon material-icons">grid_on</i>
-      <span>{{table.name}}</span>
+      <span class="expand">{{table.name}}</span>
+      <span class="btn-fab" @click="toggleColumns" v-bind:class="{ 'open': showColumns }">
+        <i class="dropdown material-icons">keyboard_arrow_down</i>
+      </span>
     </a>
     <div v-show="showColumns" v-if="columns" class="sub-items">
       <span v-bind:key="c.columnName" v-for="c in columns" class="sub-item">

@@ -6,7 +6,7 @@
         class="quick-connect btn btn-primary btn-block btn-icon"
         :class="{'active': defaultConfig == selectedConfig }"
         @click.prevent="edit(defaultConfig)"
-      ><i class="material-icons">offline_bolt</i>Connect to Database</a>
+      ><i class="material-icons">offline_bolt</i>Quick Connect</a>
     </div>
     <h5>Saved Connections</h5>
     <a
