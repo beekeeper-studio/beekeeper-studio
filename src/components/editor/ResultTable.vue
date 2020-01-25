@@ -1,6 +1,6 @@
 <template>
   <div class="result-table">
-    <div v-if="tableTruncated" class="row">Results truncated to 10,000 records</div>
+    <div v-if="tableTruncated" ref="warning" >Results truncated to 10,000 records</div>
     <div ref="tabulator"></div>
   </div>
 </template>
@@ -27,11 +27,18 @@
           this.tabulator.setColumns(this.tableColumns)
         }
       },
-      tableHeight() {
-        this.tabulator.setHeight(this.tableHeight)
+      actualTableHeight() {
+        this.tabulator.setHeight(this.actualTableHeight)
       }
     },
     computed: {
+      actualTableHeight() {
+        let result = this.tableHeight
+        if (this.tableTruncated) {
+          result = this.tableHeight - this.$refs.warning.clientHeight
+        }
+        return result
+      },
       tableData() {
         /*
           var data = [
