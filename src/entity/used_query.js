@@ -18,7 +18,7 @@ export class UsedQuery extends ApplicationEntity {
   @Column('varchar')
   status = 'pending'
 
-  @Column('bigint')
+  @Column({ type:'bigint', nullable: true})
   numberOfRecords
 
 }

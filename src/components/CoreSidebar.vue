@@ -7,6 +7,9 @@
       <div class="sidebar-heading">
         <span class="expand">Tables</span>
         <span class="right">
+          <a @click.prevent="refreshTables" v-tooltip="'Refresh Tables'">
+            <i class="material-icons">refresh</i>
+          </a>
           <a @click.prevent="collapseAll" v-tooltip="'Collapse all tables'">
             <i class="material-icons">remove</i>
           </a>
@@ -108,6 +111,9 @@
       },
       collapseAll() {
         this.allCollapsed = Date.now()
+      },
+      refreshTables() {
+        this.$store.dispatch('updateTables')
       }
     }
   }
