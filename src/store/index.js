@@ -1,5 +1,5 @@
 
-// import _ from 'lodash'
+import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
 // import VueXPersistence from 'vuex-persist'
@@ -84,7 +84,11 @@ const store = new Vuex.Store({
     },
     async updateTables(context) {
       const tables = await context.state.connection.listTables()
-      context.commit('tables', tables)
+      const result = await Promise.all(_.map(tables, async (table) => {
+        table.columns = await context.state.connection.listTableColumns(table.name)
+        return table
+      }))
+      context.commit('tables', result)
     },
 
     async saveConnectionConfig(context, newConfig) {

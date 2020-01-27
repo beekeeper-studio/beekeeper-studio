@@ -1,44 +1,53 @@
 <template>
   <div>
-    <a role="button">
+    <a role="button" v-bind:class="{'active': selected}" @dblclick.prevent="doubleClick" @click.prevent="$emit('selected', table)">
       <i class="item-icon material-icons">grid_on</i>
       <span class="expand">{{table.name}}</span>
       <span class="btn-fab" @click="toggleColumns" v-bind:class="{ 'open': showColumns }">
         <i class="dropdown material-icons">keyboard_arrow_down</i>
       </span>
     </a>
-    <div v-show="showColumns" v-if="columns" class="sub-items">
-      <span v-bind:key="c.columnName" v-for="c in columns" class="sub-item">
+    <div v-show="showColumns" class="sub-items">
+      <span v-bind:key="c.columnName" v-for="c in table.columns" class="sub-item">
         <span class="title">{{c.columnName}}</span>
         <span class="badge">{{c.dataType}}</span>
       </span>
-    </div>    
+    </div>
   </div>
 </template>
 
 <script type="text/javascript">
 	export default {
-		props: ["connection", "table"],
+		props: ["connection", "table", "selected", "forceExpand", "forceCollapse"],
+    mounted() {
+      this.showColumns = !!this.table.showColumns
+    },
     data() {
       return {
-        columns: null,
-        showColumns: false
+        showColumns: false,
+      }
+    },
+    watch: {
+      forceExpand() {
+        if (this.forceExpand) {
+          this.showColumns = true
+        }
+      },
+      forceCollapse() {
+        if (this.forceCollapse) {
+          this.showColumns = false
+        }
+      },
+      showColumns() {
+        this.table.showColumns = this.showColumns
       }
     },
     methods: {
       async toggleColumns() {
-        // TODO (matthew): move to the store later on when we need this info
-        if(this.showColumns) {
-          this.showColumns = false
-          return
-        }
-
-        if (!this.columns) {
-          this.columns = await this.connection.listTableColumns(this.table.name)
-        }
-        this.showColumns = true
-        console.log("columns")
-        console.log(this.columns)
+        this.showColumns = !this.showColumns
+      },
+      doubleClick() {
+        // TODO (matthew): Load table tab when double clicking
       }
     }
 	}

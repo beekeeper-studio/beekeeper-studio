@@ -4,10 +4,22 @@
     <div class="shouldnt-scroll">
       <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
 
-      <div class="sidebar-heading">Tables</div>
+      <div class="sidebar-heading">
+        <span class="expand">Tables</span>
+        <span class="right">
+          <a @click.prevent="collapseAll" v-tooltip="'Collapse all tables'">
+            <i class="material-icons">remove</i>
+          </a>
+          <a @click.prevent="expandAll" v-tooltip="'Expand all tables'">
+            <i class="material-icons">add</i>
+          </a>
+        </span>
+      </div>
 
       <div class="search-wrap">
-        <input type="text" placeholder="Filter">
+        <!-- TODO (gregory) -> have an (x) button at the end of the input box
+        bind to the 'clearFilter' method below -->
+        <input type="text" placeholder="Filter" v-model="filterQuery">
       </div>
       
     </div>
@@ -16,10 +28,19 @@
       <!-- TODO (gregory) open the 'performance_schema' db  -->
       <!-- Tables with long names require horizontal scrolling -->
       <!--  This whole div shouldn't horizontal scroll, just cut-off the table names -->
-      <table-list-item v-for="table in tables" v-bind:key="table.name" :table="table" :connection="connection" ></table-list-item>
+      <table-list-item 
+        v-for="table in filteredTables"
+        v-bind:key="table.name"
+        @selected="tableSelected"
+        :table="table"
+        :connection="connection"
+        :selected="table == selectedTable"
+        :forceExpand="allExpanded"
+        :forceCollapse="allCollapsed"
+      ></table-list-item>
     </nav>
     <!-- TODO (gregory): Make the 'no tables div nicer' -->
-    <div v-if="tables.length == 0">
+    <div v-if="!tables || tables.length == 0">
       There are no tables in {{database}}
     </div>
     <!-- TODO (gregory): Make the disconnect button nicer  -->
@@ -32,6 +53,7 @@
 </template>
 
 <script>
+  import _ from 'lodash'
   import TableListItem from './TableListItem.vue'
   import DatabaseDropdown from './DatabaseDropdown.vue'
   import { mapState } from 'vuex'
@@ -40,20 +62,52 @@
     components: { TableListItem, DatabaseDropdown },
     data() {
       return {
-        tableLoadError: null
+        tableLoadError: null,
+        selectedTable: null,
+        filterQuery: null,
+        allExpanded: null,
+        allCollapsed: null
       }
     },
     mounted() {
       this.$store.dispatch('updateTables')
     },
-    computed: mapState(['tables', 'connection', 'database']),
+    computed: {
+      filteredTables() {
+        if (!this.filterQuery) {
+          return this.tables
+        }
+        const startsWithFilter = _(this.tables)
+          .filter((item) => _.startsWith(item.name, this.filterQuery))
+          .value()
+        const containsFilter = _(this.tables)
+          .difference(startsWithFilter)
+          .filter((item) => item.name.includes(this.filterQuery))
+          .value()
+        return _.concat(startsWithFilter, containsFilter)
+      },
+      ...mapState(['tables', 'connection', 'database']),
+    },
     methods: {
       async databaseSelected(db) {
         await this.$store.dispatch('changeDatabase', db)
+        this.allExpanded = false
       },
       async disconnect() {
         await this.$store.dispatch('disconnect')
         this.$noty.success("Successfully Disconnected")
+      },
+      tableSelected(table) {
+        this.selectedTable = table
+      },
+      clearFilter() {
+        this.filterQuery = null
+      },
+      expandAll() {
+        this.allExpanded = Date.now()
+      },
+      collapseAll() {
+        this.allCollapsed = Date.now()
       }
     }
   }

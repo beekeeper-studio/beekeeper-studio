@@ -67,6 +67,8 @@
     padding: $gutter-w $gutter-w 0;
     text-transform: uppercase;
     font-weight: bold;
+    display: flex;
+    flex: 0 1 100%;
   }
 
   // Quick Connect 
