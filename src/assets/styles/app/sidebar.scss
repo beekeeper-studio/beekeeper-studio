@@ -1,7 +1,7 @@
 
 #sidebar {
   flex: 0 1 100%;
-  overflow-x: hidden;
+  overflow: hidden;
   //box-shadow: inset -1px 0 $border-color;
   > div {
     display: flex;
@@ -13,18 +13,18 @@
   .data-select-wrap {
     display: flex;
     align-items: center;
-    height: $tab-height - 1px; // Nav tabs fix
-    min-height: $tab-height - 1px; // Nav tabs fix
+    height: $tab-height - 2px; // Nav tabs fix
+    min-height: $tab-height - 2px; // Nav tabs fix
     padding: 0 $gutter-w;
-    box-shadow: inset 0 -1px $border-color;
-    .material-icons {
-      position: absolute;
-      font-size: 18px;
-      color: rgba($theme-base, 0.37);
+    background: rgba($theme-base, 0.04);
+    transition: background 0.15s ease-in-out;
+    cursor: pointer;
+    &:hover {
+      background: rgba($theme-base, 0.08);
     }
     select {
-      padding-left: $gutter-w * 2.8;
       color: $text-dark;
+      cursor: pointer;
     }
   }
   .database-select {
@@ -48,16 +48,28 @@
   }
 
   // Search
-  .search-wrap {
+  .filter {
     position: relative;
-    display: flex;
-    align-items: center;
-    padding: $gutter-h $gutter-w $gutter-h;
-    i {
-      font-size: 16px;
+    padding: $gutter-h $gutter-w $gutter-w;
+    .filter-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    input {
+      padding-right: 26px;
+    }
+    .clear {
       position: absolute;
-      margin-top: 2px;
-      left: $gutter-w;
+      right: 0;
+      font-size: 14px;
+      width: 26px;
+      padding: 0 $gutter-h;
+      color: rgba($theme-base, 0.5);
+      cursor: pointer;
+      &:hover {
+        color: $text-dark;
+      }
     }
   }
 
@@ -69,6 +81,18 @@
     font-weight: bold;
     display: flex;
     flex: 0 1 100%;
+    .actions {
+      > a {
+        margin: 0 ($gutter-h * 0.5);
+        color: $text-light;
+        &:hover {
+          color: $text-dark;
+        }
+      }
+      .material-icons {
+        font-size: 16px;
+      }
+    }
   }
 
   // Quick Connect 
@@ -85,6 +109,9 @@
 // ------------------------------
 .list-group {
   width: 100%;
+  overflow: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch!important;
   .btn-wrap {
     padding: $gutter-w;
   }
@@ -125,28 +152,30 @@
     padding-top: $gutter-h * 0.35;
     padding-bottom: $gutter-h * 0.35;
     padding-right: $gutter-w;
-    padding-left: $gutter-w + $sidebar-icon-w;
+    padding-left: $gutter-w + ($sidebar-icon-w * 2.2);
   }
   .btn-fab {
     color: rgba($theme-base, 0.37);    
     min-width: 18px;
     width: 18px;
     height: 18px;
+    margin-right: $gutter-h * 0.5;
     transition: color 0.2 ease-in-out;
     &:hover {
       color: $text-dark;
       background: transparent;
     }
     &.open {
-      transform: rotate(180deg);
+      transform: rotate(90deg);
     }
     .material-icons {
       font-size: 18px;
     }
   }
   .item-icon {
-    font-size: 15px;
+    font-size: 12px;
     width: $sidebar-icon-w;
+    min-width: $sidebar-icon-w;
     transition: transform 0.15s ease-in;
     color: $theme-secondary;
   }

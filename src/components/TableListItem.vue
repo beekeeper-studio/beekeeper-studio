@@ -1,11 +1,11 @@
 <template>
   <div>
     <a role="button" v-bind:class="{'active': selected}" @dblclick.prevent="doubleClick" @click.prevent="$emit('selected', table)">
-      <i class="item-icon material-icons">grid_on</i>
-      <span class="expand">{{table.name}}</span>
       <span class="btn-fab" @click="toggleColumns" v-bind:class="{ 'open': showColumns }">
-        <i class="dropdown material-icons">keyboard_arrow_down</i>
+        <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
+      <i class="item-icon material-icons">grid_on</i>
+      <span class="table-name truncate expand">{{table.name}}</span>
     </a>
     <div v-show="showColumns" class="sub-items">
       <span v-bind:key="c.columnName" v-for="c in table.columns" class="sub-item">

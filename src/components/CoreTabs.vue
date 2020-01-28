@@ -8,7 +8,7 @@
           @click.prevent="click(idx)"
           :class="{ active: activeItem === idx }"
         >
-          <span class="truncate">{{tab.title}}</span>
+          <span class="expand truncate">{{tab.title}}</span>
           <span class="tab-close" @click.prevent.stop="close(tab, idx)"><i class="material-icons">close</i></span>
         </a>
       </li>

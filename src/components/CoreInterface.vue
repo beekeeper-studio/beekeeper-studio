@@ -8,10 +8,6 @@
         <core-tabs :connection="connection"></core-tabs>
       </div>
     </div>
-    <div class="status-bar row connected">
-      <span><i class="material-icons">check_circle</i> Connected</span>
-      <!-- <span><i class="material-icons">cancel</i> No Connection</span> -->
-    </div>
   </div>
 </template>
 

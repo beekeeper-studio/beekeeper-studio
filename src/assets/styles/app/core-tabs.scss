@@ -26,8 +26,11 @@
   .nav-tabs {
     overflow-y: hidden;
     flex-wrap: nowrap;
-    background: rgba($theme-base, 0.08);
+    background: rgba($theme-base, 0.035);
     margin: 0;
+    &:first-child {
+      box-shadow: inset 1px 0 $query-editor-bg;
+    }
     &::-webkit-scrollbar {
       width: 4px;
       height: 4px;
@@ -38,16 +41,17 @@
     .nav-link {
       display: flex;
       align-items: center;
-      padding: 0 ($tab-padding-w * 1.25);
+      background: rgba($theme-base, 0.035);
+      padding: 0 $tab-padding-w 0 ($tab-padding-w * 1.25);
       height: $tab-height;
-      background: rgba($theme-bg, 0.25);
+      min-width: 110px;
       font-size: 0.85rem;
       font-weight: normal;
       color: $text;
       transition: background 0.15s ease-in-out;
       border: 0;
       border-radius: 0;
-      box-shadow: inset -1px 0 $query-editor-bg;
+      box-shadow: inset -1px 0 rgba($query-editor-bg, 0.5);
       &:hover {
         .tab-close {
           visibility: visible;
@@ -66,12 +70,15 @@
         }
       }
       &.add-query {
+        // position: absolute;
+        // right: 0;
         display: flex;
         justify-content: center;
         align-items: center;
         background: transparent;
         box-shadow: none;
         width: $tab-height * 0.9;
+        min-width: $tab-height * 0.9;
         &:hover {
           i {
             background: rgba($theme-base, 0.05);

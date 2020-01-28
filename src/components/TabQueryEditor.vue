@@ -13,6 +13,7 @@ r
       <result-table v-else-if="result" :tableHeight="tableHeight" :result="result"></result-table>
       <div class="error" v-else-if="error">{{error}}</div>
       <!-- TODO (gregory): Make the no results section nicer -->
+      <!-- QUESTION (matthew): Should this even display if there are no results? -->
       <div v-else class="not-run-yet">No Results</div>
     </div>
   </div>

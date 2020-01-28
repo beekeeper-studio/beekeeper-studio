@@ -1,36 +1,34 @@
 <template>
   <div>
-    <!-- TODO (gregory) This stuff shouldn't scroll -->
-    <div class="shouldnt-scroll">
+    <div class="fixed">
       <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
 
       <div class="sidebar-heading">
-        <span class="expand">Tables</span>
-        <span class="right">
+        <span class="title expand">Tables</span>
+        <span class="actions">
+          <a @click.prevent="collapseAll" v-tooltip="'Collapse all tables'">
+            <i class="material-icons">crop_7_5</i>
+          </a>
+          <!-- QUESTION (matthew): Is there a use case for people needing to expand all? VSCode only has collapse -->
+          <a @click.prevent="expandAll" v-tooltip="'Expand all tables'">
+            <i class="material-icons">crop_portrait</i>
+          </a>
           <a @click.prevent="refreshTables" v-tooltip="'Refresh Tables'">
             <i class="material-icons">refresh</i>
-          </a>
-          <a @click.prevent="collapseAll" v-tooltip="'Collapse all tables'">
-            <i class="material-icons">remove</i>
-          </a>
-          <a @click.prevent="expandAll" v-tooltip="'Expand all tables'">
-            <i class="material-icons">add</i>
           </a>
         </span>
       </div>
 
-      <div class="search-wrap">
-        <!-- TODO (gregory) -> have an (x) button at the end of the input box
-        bind to the 'clearFilter' method below -->
-        <input type="text" placeholder="Filter" v-model="filterQuery">
+      <div class="filter">
+       <div class="filter-wrap">
+          <input type="text" placeholder="Filter" v-model="filterQuery">
+          <!-- TODO (matthew): clear icon needs to hide when input has no value also. ie. Type then delete characters and still shows currently -->
+          <i class="clear material-icons" @click="clearFilter" v-if="filterQuery !== null">cancel</i>
+       </div>
       </div>
-      
     </div>
 
-    <nav class="list-group flex-col" v-if="tables">
-      <!-- TODO (gregory) open the 'performance_schema' db  -->
-      <!-- Tables with long names require horizontal scrolling -->
-      <!--  This whole div shouldn't horizontal scroll, just cut-off the table names -->
+    <nav class="list-group flex-col expand" v-if="tables">
       <table-list-item 
         v-for="table in filteredTables"
         v-bind:key="table.name"
@@ -46,12 +44,14 @@
     <div v-if="!tables || tables.length == 0">
       There are no tables in {{database}}
     </div>
-    <!-- TODO (gregory): Make the disconnect button nicer  -->
-    <!--  Maybe move the 'bottom bar' so it's just in the sidebar then it can have a disconnect button -->
-    <!-- maybe the disconnect button is a power button? -->
-    <div class="stick-to-bottom">
-      <button class="btn btn-primary" @click.prevent="disconnect()">disconnect</button>
-    </div>
+
+    <span class="expand"></span>
+    <footer class="status-bar row connected">
+      <button class="btn btn-link btn-icon" @click.prevent="disconnect()" v-tooltip="'Disconnect from database'">
+        <i class="material-icons">check_circle</i>
+        <span>Connected</span>
+      </button>
+    </footer>
   </div>
 </template>
 

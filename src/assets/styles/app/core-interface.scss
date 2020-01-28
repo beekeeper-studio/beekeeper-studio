@@ -41,24 +41,23 @@
     display: flex;
     align-items: center;
     font-size: 11px;
-    line-height: 1;
-    padding: $gutter-h $gutter-w;
-    background: rgba($theme-base, 0.1);
+    line-height: 20px;
+    padding: 0;
+    background: rgba($theme-base, 0.035);
     &.connected {
-      color: $brand-success;
+      .btn {
+        color: $brand-success;
+      }
     }
     &.disconnected {
-      color: $brand-danger;
+      .btn {
+        color: $brand-danger;
+      }
     }
-    label {
-      flex-grow: 1;
-      margin: 0;
-      font-size: 85%;
-      color: $text-light;
-    }
-    > span {
-      display: flex;
-      align-items: center;
+    .btn {
+      font-weight: normal;
+      font-size: 11px;
+      border-radius: 0;
     }
     .material-icons {
       font-size: 12px;

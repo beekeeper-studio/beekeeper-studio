@@ -61,8 +61,8 @@ a {
 // Scrollbar
 // ---------------------
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 1px;
   background: rgba($theme-base, 0.06);
 }
@@ -121,6 +121,7 @@ a {
 .btn-link {
   color: $theme-base;
   background: transparent;
+  box-shadow: none;
   &:hover, &:focus {
     background: rgba($theme-base, 0.06);
   }
@@ -500,6 +501,7 @@ pre {
 .btn-link {
   color: $theme-base;
   background: transparent;
+  box-shadow: none;
   &:hover, &:focus {
     opacity: 1;
     background: rgba($theme-base, 0.06);
