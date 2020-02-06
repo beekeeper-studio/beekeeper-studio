@@ -10,6 +10,16 @@
     flex-direction: column;
     flex-grow: 1;
   }
+
+  footer {
+    .row-counts {
+      flex-grow: 1
+    }
+    .affected-rows {
+
+    }
+  }
+
   .editor {
     width: 100%;
     height: 400px;

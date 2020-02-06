@@ -10,12 +10,29 @@ r
     </div>
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar v-if="running"></progress-bar>
-      <result-table v-else-if="result" :tableHeight="tableHeight" :result="result"></result-table>
+      <result-table v-else-if="result && result.rowCount > 0" :tableHeight="tableHeight" :result="result"></result-table>
+      <!-- so, there is a situation where you've run a query but there are no results -->
+      <!-- like creating or updating a table -->
+      <!-- so we need two things. 1 a true 'no results returned' div (see below) -->
+      <!-- 2. somewhere we should say 'x rows affected', maybe a bottom bar -->
+      <!--  I added a footer, looks like poop  -->
+      <!-- TODO (gregory) -->
+      <div class="info" v-else-if="result">Query Executed Successfully. No Results</div>
       <div class="error" v-else-if="error">{{error}}</div>
-      <!-- TODO (gregory): Make the no results section nicer -->
-      <!-- QUESTION (matthew): Should this even display if there are no results? -->
-      <div v-else class="not-run-yet">No Results</div>
+      <div v-else></div>
     </div>
+    <footer class="status-bar row query-meta">
+      <template v-if="result">
+        <div class="row-counts">
+          <span class="num-rows" v-if="result.rowCount > 0">{{result.rowCount}} Results</span>
+          <span class="truncated-rows" v-if="result && result.truncated"> &middot; only {{result.truncatedRowCount}} shown.</span>
+        </div>
+        <span class="affected-rows" v-if="result && result.affectedRows">{{ affectedRowsText}}</span>
+      </template>
+      <template v-else>
+        No Data
+      </template>
+    </footer>
   </div>
 </template>
 
@@ -25,6 +42,7 @@ r
   import CodeMirror from 'codemirror'
 
   import Split from 'split.js'
+  import Pluralize from 'pluralize'
 
   import config from '../config'
   import { UsedQuery } from '../entity/used_query'
@@ -48,6 +66,9 @@ r
       }
     },
     computed: {
+      affectedRowsText() {
+        return `${this.result.affectedRows} ${Pluralize('row', this.result.affectedRows)} affected`
+      },
       splitElements() {
         return [
           this.$refs.topPanel,
@@ -89,6 +110,7 @@ r
           this.runningQuery = this.connection.query(queryRun.text)
           queryRun.status = 'running'
           const results = await this.runningQuery.execute()
+          console.log("results", results)
           const result = results[0]
 
           // TODO (matthew): remove truncation logic somewhere sensible
@@ -118,7 +140,6 @@ r
       for (var i = 0; i < 9; i++) {
           startingValue += '\n';
       }
-
 
       this.editor = CodeMirror.fromTextArea($editor, {
         lineNumbers: true,
