@@ -9,6 +9,17 @@
     height: 100%;
   }
 
+  .tab-content {
+
+    .tab-pane {
+      display: none;
+
+      &.active {
+        display: flex;
+      }
+    }
+  }
+
   // Sidebar Header
   .data-select-wrap {
     display: flex;

@@ -2,74 +2,99 @@
   <div>
     <div class="fixed">
       <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
+    </div>
+    <div class="nav-tabs nav">
+      <li class="nav-item">
+        <a 
+          href=""
+          @click.prevent="click('tables')"
+          class="nav-link"
+          :class="{ active: activeItem === 'tables'}"
+        >
+          <span class="expand truncate">Tables</span>
+        </a>
 
-      <div class="sidebar-heading">
-        <span class="title expand">Tables</span>
-        <span class="actions">
-          <a @click.prevent="collapseAll" v-tooltip="'Collapse all tables'">
-            <i class="material-icons">crop_7_5</i>
-          </a>
-          <!-- QUESTION (matthew): Is there a use case for people needing to expand all? VSCode only has collapse -->
-          <a @click.prevent="expandAll" v-tooltip="'Expand all tables'">
-            <i class="material-icons">crop_portrait</i>
-          </a>
-          <a @click.prevent="refreshTables" v-tooltip="'Refresh Tables'">
-            <i class="material-icons">refresh</i>
-          </a>
-        </span>
+      </li>
+      <li class="nav-item">
+        <a 
+          href=""
+          @click.prevent="click('queries')"
+          class="nav-link"
+          :class="{ active: activeItem === 'queries'}"
+        >
+          <span class="expand truncate">Queries</span>
+        </a>
+
+      </li>
+      <li class="nav-item">
+        <a
+          href=""
+          @click.prevent="click('history')"
+          class="nav-link"
+          :class="{ active: activeItem === 'history'}"
+        >
+          <span class="expand truncate">History</span>
+        </a>
+      </li>
+    </div>
+    
+    <div class="tab-content">
+      <div 
+        class="tab-pane"
+        id="tab-tables"
+        :class="tabClasses('tables')"
+        v-if="activeItem === 'tables'"
+      >
+        <table-list></table-list>
+
       </div>
 
-      <div class="filter">
-       <div class="filter-wrap">
-          <input type="text" placeholder="Filter" v-model="filterQuery">
-          <!-- TODO (matthew): clear icon needs to hide when input has no value also. ie. Type then delete characters and still shows currently -->
-          <i class="clear material-icons" @click="clearFilter" v-if="filterQuery !== null">cancel</i>
-       </div>
+      <div 
+        class="tab-pane"
+        id="tab-saved"
+        :class="tabClasses('tables')"
+        v-if="activeItem === 'queries'"
+      >
+        TBD - List of Saved Queries
       </div>
-    </div>
+      <div 
+        class="tab-pane"
+        id="tab-history"
+        v-if="activeItem === 'history'"
+        :class="tabClasses('history')"
+      >
+        <history-list></history-list>
+      </div>
 
-    <nav class="list-group flex-col expand" v-if="tables">
-      <table-list-item 
-        v-for="table in filteredTables"
-        v-bind:key="table.name"
-        @selected="tableSelected"
-        :table="table"
-        :connection="connection"
-        :selected="table == selectedTable"
-        :forceExpand="allExpanded"
-        :forceCollapse="allCollapsed"
-      ></table-list-item>
-    </nav>
-    <!-- TODO (gregory): Make the 'no tables div nicer' -->
-    <div v-if="!tables || tables.length == 0">
-      There are no tables in {{database}}
-    </div>
-
-    <span class="expand"></span>
     <footer class="status-bar row connected">
       <button class="btn btn-link btn-icon" @click.prevent="disconnect()" v-tooltip="'Disconnect from database'">
         <i class="material-icons">check_circle</i>
         <span>Connected</span>
       </button>
     </footer>
+    </div>
+
+
   </div>
 </template>
 
 <script>
   import _ from 'lodash'
-  import TableListItem from './TableListItem.vue'
-  import DatabaseDropdown from './DatabaseDropdown.vue'
+  import TableList from './TableList'
+  import HistoryList from './HistoryList'
+  import DatabaseDropdown from './DatabaseDropdown'
   import { mapState } from 'vuex'
 
   export default {
-    components: { TableListItem, DatabaseDropdown },
+    components: { TableList, DatabaseDropdown, HistoryList },
     data() {
       return {
         tableLoadError: null,
         selectedTable: null,
         filterQuery: null,
         allExpanded: null,
-        allCollapsed: null
+        allCollapsed: null,
+        activeItem: 'tables'
       }
     },
     mounted() {
@@ -92,6 +117,15 @@
       ...mapState(['tables', 'connection', 'database']),
     },
     methods: {
+      tabClasses(item) {
+        return {
+          show: (this.activeItem === item),
+          active: (this.activeItem === item)
+        }
+      },
+      click(item) {
+        this.activeItem = item;
+      },
       async databaseSelected(db) {
         await this.$store.dispatch('changeDatabase', db)
         this.allExpanded = false
@@ -100,21 +134,6 @@
         await this.$store.dispatch('disconnect')
         this.$noty.success("Successfully Disconnected")
       },
-      tableSelected(table) {
-        this.selectedTable = table
-      },
-      clearFilter() {
-        this.filterQuery = null
-      },
-      expandAll() {
-        this.allExpanded = Date.now()
-      },
-      collapseAll() {
-        this.allCollapsed = Date.now()
-      },
-      refreshTables() {
-        this.$store.dispatch('updateTables')
-      }
     }
   }
 </script>

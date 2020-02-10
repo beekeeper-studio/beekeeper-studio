@@ -6,6 +6,7 @@ import Vuex from 'vuex'
 
 import { UsedConnection } from '../entity/used_connection'
 import { SavedConnection } from '../entity/saved_connection'
+import { UsedQuery } from '../entity/used_query'
 import config from '../config'
 import ConnectionProvider from '../lib/connection-provider'
 
@@ -19,7 +20,8 @@ const store = new Vuex.Store({
     connection: null,
     database: null,
     tables: null,
-    connectionConfigs: []
+    connectionConfigs: [],
+    history: []
   },
   mutations: {
     newConnection(state, payload) {
@@ -48,6 +50,9 @@ const store = new Vuex.Store({
     },
     configs(state, configs){
       state.connectionConfigs = configs
+    },
+    history(state, history) {
+      state.history = history
     }
   },
   actions: {
@@ -98,6 +103,10 @@ const store = new Vuex.Store({
     async loadSavedConfigs(context) {
       let configs = await SavedConnection.find()
       context.commit('configs', configs)
+    },
+    async updateHistory(context) {
+      let historyItems = await UsedQuery.find({ take: 100, order: { createdAt: 'DESC' } });
+      context.commit('history', historyItems)
     }
   },
   plugins: [],
