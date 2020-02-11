@@ -8,3 +8,5 @@ temp/
 test.db
 *.sqlite
 dist_electron/
+.DS_Store
+yarn-error.log
