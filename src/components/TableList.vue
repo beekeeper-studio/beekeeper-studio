@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="flex-col expand">
     <div class="fixed">
       <div class="sidebar-heading">
         <span class="title expand">Tables</span>
@@ -27,7 +27,7 @@
     </div>
 
     <nav class="list-group flex-col expand" v-if="tables">
-      <table-list-item 
+      <table-list-item
         v-for="table in filteredTables"
         v-bind:key="table.name"
         @selected="tableSelected"

@@ -40,14 +40,13 @@ r
 
   import _ from 'lodash'
   import CodeMirror from 'codemirror'
-
   import Split from 'split.js'
   import Pluralize from 'pluralize'
 
-  import config from '../config'
-  import { UsedQuery } from '../entity/used_query'
   import { mapState } from 'vuex'
 
+  import config from '@/config'
+  import { ctrlOrCmd } from '@/lib/utils'
   import ProgressBar from './editor/ProgressBar'
   import ResultTable from './editor/ResultTable'
 
@@ -67,6 +66,9 @@ r
     },
     computed: {
       affectedRowsText() {
+        if (!this.result) {
+          return ""
+        }
         return `${this.result.affectedRows} ${Pluralize('row', this.result.affectedRows)} affected`
       },
       splitElements() {
@@ -76,15 +78,16 @@ r
         ]
       },
       keymap() {
-        return {
-          'ctrl+l': this.selectEditor
-        }
+        const result = {}
+        result[ctrlOrCmd('l')] = this.selectEditor
+        return result
       },
       ...mapState(['usedConfig', 'connection', 'database', 'tables'])
     },
     watch: {
       active() {
         if(this.active) {
+          this.editor.refresh()
           this.editor.focus()
         }
       }
@@ -95,82 +98,84 @@ r
         this.editor.focus()
       },
       async submitQuery() {
-        const run = new UsedQuery()
-        run.text = this.editor.getValue()
-        run.database = this.database
-        run.connectionHash = this.usedConfig.uniqueHash
-        console.log(run)
-        return await this.runQuery(run)
-      },
-      async runQuery(queryRun) {
-        console.log(queryRun)
         this.running = true
-        // TODO (matthew): Allow multiple queries executed here.
         try {
-          this.runningQuery = this.connection.query(queryRun.text)
-          queryRun.status = 'running'
-          const results = await this.runningQuery.execute()
-          console.log("results", results)
-          const result = results[0]
 
+          const runningQuery = this.connection.query(this.editor.getValue())
+          const results = await runningQuery.execute()
+          const result = results[0]
           // TODO (matthew): remove truncation logic somewhere sensible
           if (result.rowCount > config.maxResults) {
             result.rows = _.take(result.rows, config.maxResults)
             result.truncated = true
             result.truncatedRowCount = config.maxResults
           }
+
           this.result = result
-          queryRun.status = 'completed'
-          queryRun.numberOfRecords = this.result.rowCount
-          await queryRun.save()
-        } catch(ex) {
+          this.$store.dispatch('logQuery', { text: this.editor.getValue(), rowCount: result.rowCount})
+        } catch (ex) {
           this.error = ex
           this.result = null
-          throw ex
         } finally {
           this.running = false
         }
-
-      }
+      },
     },
     mounted() {
       const $editor = this.$refs.editor
       // TODO (matthew): Add hint options for all tables and columns
+
       let startingValue = ""
-      for (var i = 0; i < 9; i++) {
-          startingValue += '\n';
+      if (this.query.text) {
+        startingValue = this.query.text
+      } else {
+        for (var i = 0; i < 9; i++) {
+            startingValue += '\n';
+        }
       }
 
-      this.editor = CodeMirror.fromTextArea($editor, {
-        lineNumbers: true,
-        mode: "sql",
-        theme: 'monokai'
+      this.split = Split(this.splitElements, {
+        elementStyle: (dimension, size) => ({
+            'flex-basis': `calc(${size}%)`,
+        }),
+        sizes: [50,50],
+        gutterSize: 8,
+        direction: 'vertical',
+        onDragEnd: () => {
+          this.$nextTick(() => {
+            this.tableHeight = this.$refs.bottomPanel.clientHeight
+          })
+        }
       })
-      this.editor.setValue(startingValue)
-
-      const runQueryKeyMap = {
-        "Ctrl-Enter": this.submitQuery,
-        "Cmd-Enter": this.submitQuery
-      }
-      this.editor.addKeyMap(runQueryKeyMap)
 
       this.$nextTick(() => {
-        this.editor.focus()
-        this.split = Split(this.splitElements, {
-          elementStyle: (dimension, size) => ({
-              'flex-basis': `calc(${size}%)`,
-          }),
-          sizes: [50,50],
-          gutterSize: 8,
-          direction: 'vertical',
-          onDragEnd: () => {
-            this.$nextTick(() => {
-              this.tableHeight = this.$refs.bottomPanel.clientHeight
-            })
-          }
+
+        const runQueryKeyMap = {
+          "Ctrl-Enter": this.submitQuery,
+          "Cmd-Enter": this.submitQuery
+        }
+
+        this.editor = CodeMirror.fromTextArea($editor, {
+          lineNumbers: true,
+          mode: "sql",
+          theme: 'monokai'
         })
+        this.editor.setValue(startingValue)
+        this.editor.addKeyMap(runQueryKeyMap)
+
+        this.editor.on("change", (cm) => {
+          this.query.text = cm.getValue()
+        })
+        this.editor.focus()
+
+        setTimeout(() => {
+          this.editor.refresh()
+        }, 1)
+
         this.tableHeight = this.$refs.bottomPanel.clientHeight
+
       })
+
     },
     beforeDestroy() {
       if(this.split) {

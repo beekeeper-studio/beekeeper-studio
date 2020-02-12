@@ -5,7 +5,7 @@
     </div>
     <div class="nav-tabs nav">
       <li class="nav-item">
-        <a 
+        <a
           href=""
           @click.prevent="click('tables')"
           class="nav-link"
@@ -16,7 +16,7 @@
 
       </li>
       <li class="nav-item">
-        <a 
+        <a
           href=""
           @click.prevent="click('queries')"
           class="nav-link"
@@ -37,9 +37,9 @@
         </a>
       </li>
     </div>
-    
+
     <div class="tab-content">
-      <div 
+      <div
         class="tab-pane"
         id="tab-tables"
         :class="tabClasses('tables')"
@@ -49,7 +49,7 @@
 
       </div>
 
-      <div 
+      <div
         class="tab-pane"
         id="tab-saved"
         :class="tabClasses('tables')"
@@ -57,7 +57,7 @@
       >
         TBD - List of Saved Queries
       </div>
-      <div 
+      <div
         class="tab-pane"
         id="tab-history"
         v-if="activeItem === 'history'"

@@ -26,14 +26,18 @@
           this.tabulator.setColumns(this.tableColumns)
         }
       },
-      actualTableHeight() {
+      tableHeight() {
         this.tabulator.setHeight(this.actualTableHeight)
       }
     },
     computed: {
       actualTableHeight() {
-        let result = this.tableHeight
-        return result
+        return '100%'
+        // let result = this.tableHeight
+        // if (this.tableHeight == 0) {
+        //   result = '100%'
+        // }
+        // return result
       },
       tableData() {
         /*
@@ -69,13 +73,13 @@
           { title: "Rating", field: "rating", align: "center", formatter: "star" },
           { title: "Passed?", field: "passed", align: "center", formatter: "tickCross" }
         ]
-        
+
         */
         return _.map(this.result.fields, (item) => {
           return {
             title: _.capitalize(item.name),
             field: item.name
-            
+
           }
         })
       }
@@ -84,7 +88,7 @@
       this.tabulator = new Tabulator(this.$refs.tabulator, {
         data: this.tableData, //link data to table
         columns: this.tableColumns, //define table columns
-        height: this.tableHeight
+        height: this.actualTableHeight
 
       });
     }

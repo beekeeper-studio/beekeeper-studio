@@ -44,6 +44,11 @@
   }
   .bottom-panel {
     padding: 0;
+
+    .result-table {
+      height: 100%;
+    }
+
     .not-run-yet {
       padding: 0.5rem 0.75rem;
     }

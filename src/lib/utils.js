@@ -6,6 +6,8 @@ import mkdirp from 'mkdirp';
 import pf from 'portfinder';
 import envPaths from 'env-paths';
 
+import config from '@/config'
+
 let configPath = '';
 
 export function getConfigPath() {
@@ -24,6 +26,14 @@ export function getConfigPath() {
   }
 
   return configPath;
+}
+
+export function ctrlOrCmd(otherKey) {
+  if (config.isMac) {
+    return `meta+${otherKey}`
+  } else {
+    return `ctrl+${otherKey}`
+  }
 }
 
 

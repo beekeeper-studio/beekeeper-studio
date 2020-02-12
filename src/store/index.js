@@ -53,7 +53,11 @@ const store = new Vuex.Store({
     },
     history(state, history) {
       state.history = history
+    },
+    historyAdd(state, run) {
+      state.history.unshift(run)
     }
+
   },
   actions: {
 
@@ -107,6 +111,16 @@ const store = new Vuex.Store({
     async updateHistory(context) {
       let historyItems = await UsedQuery.find({ take: 100, order: { createdAt: 'DESC' } });
       context.commit('history', historyItems)
+    },
+    async logQuery(context, details) {
+      const run = new UsedQuery()
+      run.text = details.text
+      run.database = context.state.database
+      run.connectionHash = context.state.usedConfig.uniqueHash
+      run.status = 'completed'
+      run.numberOfRecords = details.rowCount
+      await run.save()
+      context.commit('historyAdd', run)
     }
   },
   plugins: [],
