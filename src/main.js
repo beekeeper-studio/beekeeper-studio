@@ -15,6 +15,7 @@ import {createConnection} from "typeorm";
 import {SavedConnection} from './entity/saved_connection'
 import {UsedConnection} from './entity/used_connection'
 import {UsedQuery} from './entity/used_query'
+import {FavoriteQuery} from './entity/favorite_query'
 import {TypeOrmPlugin} from './lib/typeorm_plugin'
 import config from './config'
 import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
@@ -30,7 +31,8 @@ import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
       entities: [
           SavedConnection,
           UsedConnection,
-          UsedQuery
+          UsedQuery,
+          FavoriteQuery
       ],
       subscriptions: [
         EncryptedColumnSubscriber

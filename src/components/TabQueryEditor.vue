@@ -4,7 +4,8 @@ r
     <div class="top-panel" ref="topPanel">
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
-      <div class="actions text-right">
+      <div class="actions text-right" ref="actions">
+        <a v-tooltip="'Save to the favorite queries list'" :disabled="!hasText" @click.prevent="triggerSave" class="btn btn-success">Save</a>
         <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitQuery" class="btn btn-primary">Run Query</a>
       </div>
     </div>
@@ -19,7 +20,7 @@ r
       <!-- TODO (gregory) -->
       <div class="info" v-else-if="result">Query Executed Successfully. No Results</div>
       <div class="error" v-else-if="error">{{error}}</div>
-      <div v-else></div>
+      <div v-else>No Data</div>
     </div>
     <footer class="status-bar row query-meta">
       <template v-if="result">
@@ -61,7 +62,9 @@ r
         runningQuery: null,
         error: null,
         split: null,
-        tableHeight: 0
+        tableHeight: 0,
+        savedQuery: null,
+        savePrompt: false
       }
     },
     computed: {
@@ -70,6 +73,9 @@ r
           return ""
         }
         return `${this.result.affectedRows} ${Pluralize('row', this.result.affectedRows)} affected`
+      },
+      hasText() {
+        return this.query.text && this.query.text.replace(/\s+/, '').length > 0
       },
       splitElements() {
         return [
@@ -96,6 +102,19 @@ r
 
       selectEditor() {
         this.editor.focus()
+      },
+      updateEditorHeight() {
+        let height = this.$refs.topPanel.clientHeight
+        height -= this.$refs.actions.clientHeight
+        this.editor.setSize(null, height)
+      },
+      triggerSave() {
+        if (this.savedQuery) {
+          this.savedQuery.text = this.query.text
+          this.$store.dispatch('saveFavorite', this.savedQuery)
+        } else {
+          this.savePrompt = true
+        }
       },
       async submitQuery() {
         this.running = true
@@ -144,6 +163,7 @@ r
         onDragEnd: () => {
           this.$nextTick(() => {
             this.tableHeight = this.$refs.bottomPanel.clientHeight
+            this.updateEditorHeight()
           })
         }
       })
@@ -152,7 +172,9 @@ r
 
         const runQueryKeyMap = {
           "Ctrl-Enter": this.submitQuery,
-          "Cmd-Enter": this.submitQuery
+          "Cmd-Enter": this.submitQuery,
+          "Ctrl-s": this.saveQuery,
+          "Cmd-s": this.saveQuery
         }
 
         this.editor = CodeMirror.fromTextArea($editor, {
@@ -172,7 +194,12 @@ r
           this.editor.refresh()
         }, 1)
 
-        this.tableHeight = this.$refs.bottomPanel.clientHeight
+        // this gives the dom a chance to kick in and render these
+        // before we try to read their heights
+        setTimeout(() => {
+          this.tableHeight = this.$refs.bottomPanel.clientHeight
+          this.updateEditorHeight()
+        }, 1)
 
       })
 

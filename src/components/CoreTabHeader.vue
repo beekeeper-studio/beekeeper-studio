@@ -14,11 +14,23 @@
   export default {
     props: ['tab', 'selected'],
     computed: {
+      cleanText() {
+        // no spaces
+        if (!this.tab.text) {
+          return null
+        }
+        const result = this.tab.text.replace(/\s+/, '')
+        return result.length == 0 ? null : result
+      },
       title() {
-        if (this.tab.text && this.tab.text.length > 0) {
-          return this.tab.text.substring(0, 32)
-        } else {
+        if (!this.cleanText) {
           return this.tab.title
+        }
+
+        if (this.tab.text.length >= 32) {
+          return `${this.tab.text.substring(0, 32)}...`
+        } else {
+          return this.tab.text
         }
       }
     }
