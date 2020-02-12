@@ -88,6 +88,16 @@ r
         result[ctrlOrCmd('l')] = this.selectEditor
         return result
       },
+      hintOptions() {
+        const result = {}
+        this.tables.forEach(table => {
+          const cleanColumns = table.columns.map(col => {
+            return col.columnName
+          })
+          result[table.name] = cleanColumns
+        })
+        return { tables: result }
+      },
       ...mapState(['usedConfig', 'connection', 'database', 'tables'])
     },
     watch: {
@@ -96,6 +106,11 @@ r
           this.editor.refresh()
           this.editor.focus()
         }
+      },
+      hintOptions() {
+        this.editor.setOption('hintOptions',this.hintOptions)
+        // this.editor.setOptions('hint', CodeMirror.hint.sql)
+        // this.editor.refresh()
       }
     },
     methods: {
@@ -179,15 +194,24 @@ r
 
         this.editor = CodeMirror.fromTextArea($editor, {
           lineNumbers: true,
-          mode: "sql",
-          theme: 'monokai'
+          mode: "text/x-sql",
+          theme: 'monokai',
+          extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete"},
+          hint: CodeMirror.hint.sql,
+          hintOptions: this.hintOptions
         })
         this.editor.setValue(startingValue)
         this.editor.addKeyMap(runQueryKeyMap)
 
         this.editor.on("change", (cm) => {
           this.query.text = cm.getValue()
+
         })
+        // TODO: make this not suck
+        // this.editor.on('keyup', (e) => {
+        //   CodeMirror.showHint(e)
+        // })
+
         this.editor.focus()
 
         setTimeout(() => {

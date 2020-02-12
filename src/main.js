@@ -9,6 +9,8 @@ import './assets/styles/vendor.scss'
 import './assets/styles/app.scss'
 import $ from 'jquery';
 import SQL from 'codemirror/mode/sql/sql'
+import Hint from 'codemirror/addon/hint/show-hint.js'
+import SQLHint from 'codemirror/addon/hint/sql-hint.js'
 import store from './store/index'
 import 'reflect-metadata'
 import {createConnection} from "typeorm";
@@ -46,6 +48,8 @@ import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
     window.$ = $
     window.jQuery = $
     window.sql = SQL
+    window.hint = Hint
+    window.SQLHint = SQLHint
     Vue.config.devtools = process.env.NODE_ENV === 'development';
     config.isMac = window.navigator.platform == 'MacIntel'
 

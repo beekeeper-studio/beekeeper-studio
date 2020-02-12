@@ -19,7 +19,7 @@ const store = new Vuex.Store({
     server: null,
     connection: null,
     database: null,
-    tables: null,
+    tables: [],
     connectionConfigs: [],
     history: []
   },
