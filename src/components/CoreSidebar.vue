@@ -1,80 +1,102 @@
 <template>
-  <div>
-    <div class="fixed">
-      <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
-    </div>
-    <div class="nav-tabs nav">
-      <li class="nav-item">
-        <a
-          href=""
-          @click.prevent="click('tables')"
-          class="nav-link"
-          :class="{ active: activeItem === 'tables'}"
-        >
-          <span class="expand truncate">Tables</span>
-        </a>
 
-      </li>
-      <li class="nav-item">
-        <a
-          href=""
-          @click.prevent="click('queries')"
-          class="nav-link"
-          :class="{ active: activeItem === 'queries'}"
-        >
-          <span class="expand truncate">Queries</span>
-        </a>
-
-      </li>
-      <li class="nav-item">
-        <a
-          href=""
-          @click.prevent="click('history')"
-          class="nav-link"
-          :class="{ active: activeItem === 'history'}"
-        >
-          <span class="expand truncate">History</span>
-        </a>
-      </li>
+  <div class="sidebar-wrap row"> 
+    <div class="global-items">
+      <a
+        href=""
+        @click.prevent="click('tables')"
+        class="nav-item"
+        :class="{ active: activeItem === 'tables'}"
+        v-tooltip="'Connection'"
+      >
+        <span class="material-icons">filter_none</span>
+      </a>
+      <a
+        href=""
+        @click.prevent="click('history')"
+        class="nav-item"
+        :class="{ active: activeItem === 'history'}"
+        v-tooltip="'History'"
+      >
+        <span class="material-icons">history</span>
+      </a>
+      <a
+        href=""
+        @click.prevent="click('queries')"
+        class="nav-item"
+        :class="{ active: activeItem === 'queries'}"
+        v-tooltip="'Favorite'"
+      >
+        <span class="material-icons">star</span>
+      </a>
     </div>
 
     <div class="tab-content">
+
+      <!-- Connection -->
       <div
         class="tab-pane"
         id="tab-tables"
         :class="tabClasses('tables')"
         v-if="activeItem === 'tables'"
       >
+        <div class="fixed">
+          <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
+        </div>
         <table-list></table-list>
-
+        <footer class="status-bar row connected">
+          <!-- <button class="btn btn-link btn-icon" @click.prevent="disconnect()" v-tooltip="'Disconnect from database'">
+            <span>Connected</span>
+          </button> -->
+          <span>Connected</span>
+          <span class="expand"></span>
+          <span class="actions">
+            <a @click.prevent="collapseAll" v-tooltip="'Collapse all tables'">
+              <i class="material-icons">unfold_less</i>
+            </a>
+            <!-- <a @click.prevent="expandAll" v-tooltip="'Expand all tables'">
+              <i class="material-icons">unfold_more</i>
+            </a> -->
+            <a @click.prevent="refreshTables" v-tooltip="'Refresh Tables'">
+              <i class="material-icons">refresh</i>
+            </a>
+            <a v-tooltip="'Menu'">
+              <i class="material-icons">more_horiz</i>
+            </a>
+          </span>
+        </footer>
       </div>
 
-      <div
-        class="tab-pane"
-        id="tab-saved"
-        :class="tabClasses('tables')"
-        v-if="activeItem === 'queries'"
-      >
-        TBD - List of Saved Queries
-      </div>
+      <!-- History -->
       <div
         class="tab-pane"
         id="tab-history"
         v-if="activeItem === 'history'"
         :class="tabClasses('history')"
       >
+        <div class="sidebar-heading fixed row">
+          <span class="sub expand">History</span>
+          <div class="actions">
+            <a><i class="material-icons">more_horiz</i></a>
+          </div>
+        </div>
         <history-list></history-list>
       </div>
 
-    <footer class="status-bar row connected">
-      <button class="btn btn-link btn-icon" @click.prevent="disconnect()" v-tooltip="'Disconnect from database'">
-        <i class="material-icons">check_circle</i>
-        <span>Connected</span>
-      </button>
-    </footer>
+      <!-- Favorites -->
+      <div
+        class="tab-pane"
+        id="tab-saved"
+        :class="tabClasses('tables')"
+        v-if="activeItem === 'queries'"
+      >
+        <div class="sidebar-heading fixed row">
+          <span class="sub expand">Favorites</span>
+        </div>
+        <span>TBD - List of Saved Queries</span>
+      </div>
     </div>
-
-
+      
   </div>
 </template>
 

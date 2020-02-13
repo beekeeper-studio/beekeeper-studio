@@ -1,21 +1,6 @@
 <template>
-  <div class="flex-col expand">
+  <div class="table-list flex-col expand">
     <div class="fixed">
-      <div class="sidebar-heading">
-        <span class="title expand">Tables</span>
-        <span class="actions">
-          <a @click.prevent="collapseAll" v-tooltip="'Collapse all tables'">
-            <i class="material-icons">crop_7_5</i>
-          </a>
-          <!-- QUESTION (matthew): Is there a use case for people needing to expand all? VSCode only has collapse -->
-          <a @click.prevent="expandAll" v-tooltip="'Expand all tables'">
-            <i class="material-icons">crop_portrait</i>
-          </a>
-          <a @click.prevent="refreshTables" v-tooltip="'Refresh Tables'">
-            <i class="material-icons">refresh</i>
-          </a>
-        </span>
-      </div>
 
       <div class="filter">
        <div class="filter-wrap">

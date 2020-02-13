@@ -29,6 +29,9 @@
     width: $sidebar-w;
     min-width: $sidebar-min-w;
     max-width: $sidebar-max-w;
+    .status-bar {
+      padding-right: 0;
+    }
   }
   .page-content {
     flex: 0 1 100%;
@@ -41,27 +44,40 @@
     display: flex;
     align-items: center;
     font-size: 11px;
-    line-height: 20px;
-    padding: 0;
-    background: rgba($theme-base, 0.035);
+    line-height: $status-bar-height;
+    padding: 0 $gutter-w;
+    background: rgba($theme-base, 0.08);
     &.connected {
-      .btn {
-        color: $brand-success;
-      }
+      background: $brand-primary;
     }
     &.disconnected {
-      .btn {
-        color: $brand-danger;
-      }
+      background: $brand-danger;
     }
     .btn {
       font-weight: normal;
       font-size: 11px;
       border-radius: 0;
     }
-    .material-icons {
-      font-size: 12px;
-      margin-right: 0.35em;
+    .actions {
+      display: flex;
+      a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: rgba(white, 0.68);
+        color: $text;
+        transition: color 0.15s ease-in-out;
+        &:hover {
+          color: white;
+        }
+      }
+      .material-icons {
+        height: $status-bar-height;
+        width: $status-bar-height;
+        line-height: $status-bar-height;
+        font-size: 16px;
+      }
+
     }
   }
 }

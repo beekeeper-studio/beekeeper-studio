@@ -53,11 +53,12 @@ $gutter-w:            0.8rem;
 $gutter-h:            0.4rem;
 
 // Sidebar
-$sidebar-w:           250px;
-$sidebar-min-w:       200px;
+$sidebar-w:           300px;
+$sidebar-min-w:       300px;
 $sidebar-max-w:       90%;
 $sidebar-icon-w:      1.4rem;
 $db-select-text:      white;
+$status-bar-height:   1.8rem;
 
 // Query Editor
 $query-editor-bg:     darken($theme-bg, 3%);

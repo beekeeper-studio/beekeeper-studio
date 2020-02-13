@@ -4,7 +4,7 @@
       <span class="btn-fab" @click="toggleColumns" v-bind:class="{ 'open': showColumns }">
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
-      <i class="item-icon material-icons">grid_on</i>
+      <!-- <i class="item-icon material-icons">grid_on</i> -->
       <span class="table-name truncate expand">{{table.name}}</span>
     </a>
     <div v-show="showColumns" class="sub-items">

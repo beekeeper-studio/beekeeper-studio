@@ -3,19 +3,51 @@
   flex: 0 1 100%;
   overflow: hidden;
   //box-shadow: inset -1px 0 $border-color;
-  > div {
+  // > div {
+  //   display: flex;
+  //   flex-direction: column;
+  //   height: 100%;
+  // }
+  .sidebar-wrap {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+  }
+  .global-items {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    background: rgba($theme-base, 0.04);
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      color: rgba($theme-base, 0.38);
+      &:hover {
+        color: $text-dark;
+        transition: color 0.15s ease-in-out;
+      }
+      &.active {
+        color: $brand-primary;
+        box-shadow: inset 3px 0 $brand-primary;
+      }
+    }
   }
-
   .tab-content {
-
+    flex: 1 1 100%;
+    max-width: 100%;
+    overflow: hidden;
     .tab-pane {
       display: none;
-
+      flex-direction: column;
+      flex-grow: 1;
+      height: 100%;
+      overflow: hidden;
       &.active {
         display: flex;
+      }
+      > .fixed {
+        padding: ($gutter-h * 1.5) $gutter-w;
       }
     }
   }
@@ -24,14 +56,15 @@
   .data-select-wrap {
     display: flex;
     align-items: center;
-    height: $tab-height - 2px; // Nav tabs fix
-    min-height: $tab-height - 2px; // Nav tabs fix
-    padding: 0 $gutter-w;
-    background: rgba($theme-base, 0.04);
+    height: $input-height;
+    min-height: $input-height;
+    padding: 0 $gutter-h 0 0;
+    background: rgba($theme-base, 0.08);
     transition: background 0.15s ease-in-out;
+    border-radius: 4px;
     cursor: pointer;
     &:hover {
-      background: rgba($theme-base, 0.08);
+      background: rgba($theme-base, 0.1);
     }
     select {
       color: $text-dark;
@@ -40,7 +73,7 @@
   }
   .database-select {
     display: block;
-    font-size: 110%;
+    font-size: 100%;
     font-weight: 600;
     margin: 0;
     width: 100%;
@@ -61,7 +94,7 @@
   // Search
   .filter {
     position: relative;
-    padding: $gutter-h $gutter-w $gutter-w;
+    padding: 0 $gutter-w $gutter-w;
     .filter-wrap {
       position: relative;
       display: flex;
@@ -85,25 +118,8 @@
   }
 
   // Tables
-  .sidebar-heading {
-    font-size: 85%;
-    padding: $gutter-w $gutter-w 0;
-    text-transform: uppercase;
-    font-weight: bold;
-    display: flex;
-    flex: 0 1 100%;
-    .actions {
-      > a {
-        margin: 0 ($gutter-h * 0.5);
-        color: $text-light;
-        &:hover {
-          color: $text-dark;
-        }
-      }
-      .material-icons {
-        font-size: 16px;
-      }
-    }
+  .table-list {
+    flex-grow: 1
   }
 
   // Quick Connect 
@@ -113,6 +129,25 @@
     i {
       margin-right: 0.5rem;
     }
+  }
+}
+
+// Tab History
+// ------------------------------
+#tab-history {
+  .list-group {
+    a {
+      justify-content: space-between;
+      overflow: hidden;
+      font-size: 0.9rem;
+      color: $text
+    }
+    .query-text {
+      padding-right: $gutter-w;
+    }
+  }
+  .list-group-item {
+    position: relative;
   }
 }
 
@@ -163,7 +198,7 @@
     padding-top: $gutter-h * 0.35;
     padding-bottom: $gutter-h * 0.35;
     padding-right: $gutter-w;
-    padding-left: $gutter-w + ($sidebar-icon-w * 2.2);
+    padding-left: $gutter-w + ($sidebar-icon-w * 1.5);
   }
   .btn-fab {
     color: rgba($theme-base, 0.37);    

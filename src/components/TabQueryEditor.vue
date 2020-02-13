@@ -23,6 +23,7 @@ r
       <div v-else>No Data</div>
     </div>
     <footer class="status-bar row query-meta">
+      <span class="expand"></span>
       <template v-if="result">
         <div class="row-counts">
           <span class="num-rows" v-if="result.rowCount > 0">{{result.rowCount}} Results</span>
