@@ -19,9 +19,6 @@
 
       ...mapState(['history'])
     },
-    mounted() {
-      this.$store.dispatch('updateHistory')
-    },
     methods: {
       click(item) {
         this.$root.$emit("historyClick", item)

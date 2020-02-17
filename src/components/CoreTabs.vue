@@ -21,7 +21,7 @@
         :key="idx"
         :class="{show: (activeTab === tab), active: (activeTab === tab)}"
       >
-        <QueryEditor v-if="tab.type === 'query'" :active="activeTab == tab" :query="tab" :connection="connection"></QueryEditor>
+        <QueryEditor v-if="tab.type === 'query'" :active="activeTab == tab" :tab="tab" :connection="connection"></QueryEditor>
         <div v-if="tab.type === 'table'">TABLE</div>
       </div>
     </div>
@@ -31,6 +31,7 @@
 <script>
 
   import _ from 'lodash'
+  import {FavoriteQuery} from '../entity/favorite_query'
   import QueryEditor from './TabQueryEditor'
   import config from '../config'
   import CoreTabHeader from './CoreTabHeader'
@@ -76,6 +77,13 @@
       }
     },
     methods: {
+      addTab(item) {
+        this.tabItems.push(item)
+        this.newTabId += 1
+        this.$nextTick(() => {
+          this.click(item)
+        })
+      },
       nextTab() {
         if(this.activeTab == this.lastTab) {
           this.activeTab = this.firstTab
@@ -96,17 +104,17 @@
       },
       createQuery(optionalText) {
         // const text = optionalText ? optionalText : ""
+        const query = new FavoriteQuery()
+        query.text = optionalText
+
         const result = {
-          text: optionalText,
-          connection: this.connection,
           type: "query",
           title: "Query #" + this.newTabId,
+          connection: this.connection,
+          query: query
         }
-        this.tabItems.push(result)
-        this.newTabId += 1
-        this.$nextTick(() => {
-          this.click(result)
-        })
+
+        this.addTab(result)
 
       },
       openTable(table) {
@@ -140,6 +148,28 @@
       this.$root.$on('historyClick', (item) => {
         this.createQuery(item.text)
       })
+
+      this.$root.$on('favoriteClick', (item) => {
+
+        const queriesOnly = this.tabItems.map((item) => {
+          return item.query
+        })
+
+        if (queriesOnly.includes(item)) {
+          this.click(this.tabItems[queriesOnly.indexOf(item)])
+        } else {
+          const result = {
+            type: 'query',
+            title: item.title,
+            connection: this.connection,
+            query: item
+          }
+          this.addTab(result)
+        }
+
+
+      })
+
     }
   }
 </script>

@@ -4,11 +4,12 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 // import VueXPersistence from 'vuex-persist'
 
-import { UsedConnection } from '../entity/used_connection'
-import { SavedConnection } from '../entity/saved_connection'
-import { UsedQuery } from '../entity/used_query'
-import config from '../config'
-import ConnectionProvider from '../lib/connection-provider'
+import { UsedConnection } from '@/entity/used_connection'
+import { SavedConnection } from '@/entity/saved_connection'
+import { FavoriteQuery } from '@/entity/favorite_query'
+import { UsedQuery } from '@/entity/used_query'
+import config from '@/config'
+import ConnectionProvider from '@/lib/connection-provider'
 
 Vue.use(Vuex)
 // const vuexFile = new VueXPersistence()
@@ -21,7 +22,8 @@ const store = new Vuex.Store({
     database: null,
     tables: [],
     connectionConfigs: [],
-    history: []
+    history: [],
+    favorites: []
   },
   mutations: {
     newConnection(state, payload) {
@@ -56,6 +58,12 @@ const store = new Vuex.Store({
     },
     historyAdd(state, run) {
       state.history.unshift(run)
+    },
+    favorites(state, list) {
+      state.favorites = list
+    },
+    favoritesAdd(state, query) {
+      state.favorites.unshift(query)
     }
 
   },
@@ -121,6 +129,20 @@ const store = new Vuex.Store({
       run.numberOfRecords = details.rowCount
       await run.save()
       context.commit('historyAdd', run)
+    },
+
+    async updateFavorites(context) {
+      const items = await FavoriteQuery.find({order: { createdAt: 'DESC'}})
+      context.commit('favorites', items)
+    },
+    async saveFavorite(context, query) {
+      query.database = context.state.database
+      query.connectionHash = context.state.usedConfig.uniqueHash
+      await query.save()
+      // otherwise it's already there!
+      if (!context.state.favorites.includes(query)) {
+        context.commit('favoritesAdd', query)
+      }
     }
   },
   plugins: [],

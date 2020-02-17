@@ -4,6 +4,9 @@ import { ApplicationEntity  } from './application_entity'
 @Entity()
 export class FavoriteQuery extends ApplicationEntity {
 
+  @Column({type: "varchar", nullable: false})
+  title
+
   @Column({type: "text", nullable: false})
   text
 

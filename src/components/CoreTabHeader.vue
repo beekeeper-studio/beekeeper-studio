@@ -5,7 +5,7 @@
       @click.prevent="$emit('click', tab)"
       :class="{ active: selected }"
     >
-      <span class="expand truncate">{{title}}</span>
+      <span class="expand truncate">{{this.tab.unsavedChanges ? "[unsaved] " : ""}}{{title}}</span>
       <span class="tab-close" @click.prevent.stop="$emit('close', tab)"><i class="material-icons">close</i></span>
     </a>
   </li>
@@ -22,7 +22,18 @@
         const result = this.tab.text.replace(/\s+/, '')
         return result.length == 0 ? null : result
       },
+      unsaved() {
+        console.log("unsaved computing")
+        if (this.tab.unsavedChanges) {
+          return "[unsaved] "
+        } else {
+          return ""
+        }
+      },
       title() {
+        if (this.tab.query && this.tab.query.title) {
+          return this.tab.query.title
+        }
         if (!this.cleanText) {
           return this.tab.title
         }

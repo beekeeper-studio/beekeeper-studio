@@ -34,6 +34,9 @@
       }
     },
     mounted() {
+      this.$store.dispatch('updateHistory')
+      this.$store.dispatch('updateFavorites')
+      this.$store.dispatch('updateTables')
 
       this.$nextTick(() => {
         this.split = Split(this.splitElements, {

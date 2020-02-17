@@ -5,7 +5,8 @@ r
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
       <div class="actions text-right" ref="actions">
-        <a v-tooltip="'Save to the favorite queries list'" :disabled="!hasText" @click.prevent="triggerSave" class="btn btn-success">Save</a>
+        <input type="text" class="form-control" v-model="tab.query.title" name="Title" placeholder="Untitled Query">
+        <a v-tooltip="'Save to the favorite queries list'" :disabled="!hasText || !hasTitle" @click.prevent="triggerSave" class="btn btn-success">Save</a>
         <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitQuery" class="btn btn-primary">Run Query</a>
       </div>
     </div>
@@ -54,7 +55,7 @@ r
 
   export default {
     components: { ResultTable, ProgressBar },
-    props: ['query', 'active'],
+    props: ['tab', 'active'],
     data() {
       return {
         result: null,
@@ -64,11 +65,17 @@ r
         error: null,
         split: null,
         tableHeight: 0,
-        savedQuery: null,
-        savePrompt: false
+        savePrompt: false,
+        unsavedText: null
       }
     },
     computed: {
+      query() {
+        return this.tab.query
+      },
+      queryText() {
+        return this.tab.query.text
+      },
       affectedRowsText() {
         if (!this.result) {
           return ""
@@ -77,6 +84,9 @@ r
       },
       hasText() {
         return this.query.text && this.query.text.replace(/\s+/, '').length > 0
+      },
+      hasTitle() {
+        return this.query.title && this.query.title.replace(/\s+/, '').length > 0
       },
       splitElements() {
         return [
@@ -112,6 +122,16 @@ r
         this.editor.setOption('hintOptions',this.hintOptions)
         // this.editor.setOptions('hint', CodeMirror.hint.sql)
         // this.editor.refresh()
+      },
+      queryText() {
+        if (this.query.id && this.unsavedText === this.queryText) {
+          console.log("match")
+          this.tab.unsavedChanges = false
+          return
+        } else {
+          console.log("no match")
+          this.tab.unsavedChanges = true
+        }
       }
     },
     methods: {
@@ -124,13 +144,9 @@ r
         height -= this.$refs.actions.clientHeight
         this.editor.setSize(null, height)
       },
-      triggerSave() {
-        if (this.savedQuery) {
-          this.savedQuery.text = this.query.text
-          this.$store.dispatch('saveFavorite', this.savedQuery)
-        } else {
-          this.savePrompt = true
-        }
+      async triggerSave() {
+        await this.$store.dispatch('saveFavorite', this.query)
+        this.$noty.success('Saved')
       },
       async submitQuery() {
         this.running = true
@@ -159,11 +175,13 @@ r
     mounted() {
       const $editor = this.$refs.editor
       // TODO (matthew): Add hint options for all tables and columns
-
       let startingValue = ""
       if (this.query.text) {
         startingValue = this.query.text
+        this.unsavedText = this.query.text
+        this.tab.unsavedChanges = false
       } else {
+        this.tab.unsavedChanges = true
         for (var i = 0; i < 9; i++) {
             startingValue += '\n';
         }
@@ -205,7 +223,7 @@ r
         this.editor.addKeyMap(runQueryKeyMap)
 
         this.editor.on("change", (cm) => {
-          this.query.text = cm.getValue()
+          this.tab.query.text = cm.getValue()
 
         })
         // TODO: make this not suck

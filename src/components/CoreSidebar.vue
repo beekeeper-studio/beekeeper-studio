@@ -63,13 +63,13 @@
       <div
         class="tab-pane"
         id="tab-saved"
-        :class="tabClasses('tables')"
+        :class="tabClasses('queries')"
         v-show="activeItem === 'queries'"
       >
         <div class="sidebar-heading fixed row">
           <span class="sub expand">Favorites</span>
         </div>
-        <span>TBD - List of Saved Queries</span>
+        <favorite-list></favorite-list>
       </div>
     </div>
       
@@ -81,11 +81,12 @@
   import GlobalSidebar from './GlobalSidebar'
   import TableList from './TableList'
   import HistoryList from './HistoryList'
+  import FavoriteList from './FavoriteList'
   import DatabaseDropdown from './DatabaseDropdown'
   import { mapState } from 'vuex'
 
   export default {
-    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar },
+    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList },
     data() {
       return {
         tableLoadError: null,
@@ -95,9 +96,6 @@
         allCollapsed: null,
         activeItem: 'tables'
       }
-    },
-    mounted() {
-      this.$store.dispatch('updateTables')
     },
     computed: {
       filteredTables() {

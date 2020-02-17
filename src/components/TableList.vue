@@ -50,9 +50,6 @@
         activeItem: 'tables'
       }
     },
-    mounted() {
-      this.$store.dispatch('updateTables')
-    },
     computed: {
       filteredTables() {
         if (!this.filterQuery) {
