@@ -1,44 +1,20 @@
 <template>
 
   <div class="sidebar-wrap row"> 
-    <div class="global-items">
-      <a
-        href=""
-        @click.prevent="click('tables')"
-        class="nav-item"
-        :class="{ active: activeItem === 'tables'}"
-        v-tooltip="'Connection'"
-      >
-        <span class="material-icons">filter_none</span>
-      </a>
-      <a
-        href=""
-        @click.prevent="click('history')"
-        class="nav-item"
-        :class="{ active: activeItem === 'history'}"
-        v-tooltip="'History'"
-      >
-        <span class="material-icons">history</span>
-      </a>
-      <a
-        href=""
-        @click.prevent="click('queries')"
-        class="nav-item"
-        :class="{ active: activeItem === 'queries'}"
-        v-tooltip="'Favorite'"
-      >
-        <span class="material-icons">star</span>
-      </a>
-    </div>
+    <global-sidebar
+      @click="click"
+      :activeItem="activeItem"
+    ></global-sidebar>
 
     <div class="tab-content">
+
 
       <!-- Connection -->
       <div
         class="tab-pane"
         id="tab-tables"
         :class="tabClasses('tables')"
-        v-if="activeItem === 'tables'"
+        v-show="activeItem === 'tables'"
       >
         <div class="fixed">
           <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
@@ -71,7 +47,7 @@
       <div
         class="tab-pane"
         id="tab-history"
-        v-if="activeItem === 'history'"
+        v-show="activeItem === 'history'"
         :class="tabClasses('history')"
       >
         <div class="sidebar-heading fixed row">
@@ -88,7 +64,7 @@
         class="tab-pane"
         id="tab-saved"
         :class="tabClasses('tables')"
-        v-if="activeItem === 'queries'"
+        v-show="activeItem === 'queries'"
       >
         <div class="sidebar-heading fixed row">
           <span class="sub expand">Favorites</span>
@@ -102,13 +78,14 @@
 
 <script>
   import _ from 'lodash'
+  import GlobalSidebar from './GlobalSidebar'
   import TableList from './TableList'
   import HistoryList from './HistoryList'
   import DatabaseDropdown from './DatabaseDropdown'
   import { mapState } from 'vuex'
 
   export default {
-    components: { TableList, DatabaseDropdown, HistoryList },
+    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar },
     data() {
       return {
         tableLoadError: null,
