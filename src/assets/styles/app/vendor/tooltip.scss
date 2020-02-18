@@ -4,10 +4,10 @@
   z-index: 10000;
 
   .tooltip-inner {
-    background: lighten($theme-bg, 8%);
+    background: #555;
     color: white;
     border-radius: 6px;
-    padding: $gutter-h ($gutter-h * 1.5);
+    padding: ($gutter-h * 0.35) ($gutter-h * 1.25);
   }
 
   .tooltip-arrow {
@@ -15,19 +15,19 @@
   }
 
   &[x-placement^="top"] {
-    margin-bottom: 5px;
+    margin-bottom: 2px;
   }
 
   &[x-placement^="bottom"] {
-    margin-top: 5px;
+    margin-top: 2px;
   }
 
   &[x-placement^="right"] {
-    margin-left: 5px;
+    margin-left: 2px;
   }
 
   &[x-placement^="left"] {
-    margin-right: 5px;
+    margin-right: 2px;
   }
 
   &.popover {

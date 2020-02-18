@@ -23,17 +23,24 @@
       z-index: 1;
     }
   }
-  .nav-tabs {
-    overflow-y: hidden;
-    flex-wrap: nowrap;
+  .tabs-header {
+    display: flex;
+    align-items: center;
+    // height: $tab-height;
     background: rgba($theme-base, 0.035);
+  }
+  .nav-tabs {
+    position: relative;
+    overflow: hidden;
+    flex-wrap: nowrap;
     margin: 0;
-    &:first-child {
-      box-shadow: inset 1px 0 $query-editor-bg;
-    }
+    height: $tab-height;
     &::-webkit-scrollbar {
       width: 4px;
       height: 4px;
+    }
+    &:hover {
+      overflow-x: auto;
     }
     .nav-item {
       max-width: 200px;
@@ -41,7 +48,7 @@
     .nav-link {
       display: flex;
       align-items: center;
-      background: rgba($theme-base, 0.035);
+      background: rgba($theme-base, 0.05);
       padding: 0 $tab-padding-w 0 ($tab-padding-w * 1.25);
       height: $tab-height;
       min-width: 110px;
@@ -69,31 +76,6 @@
           visibility: visible;
         }
       }
-      &.add-query {
-        // position: absolute;
-        // right: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: transparent;
-        box-shadow: none;
-        width: $tab-height * 0.9;
-        min-width: $tab-height * 0.9;
-        &:hover {
-          i {
-            background: rgba($theme-base, 0.05);
-          }
-        }
-        i {
-          line-height: $tab-height * 0.65;
-          text-align: center;
-          height: $tab-height * 0.65;
-          min-width: $tab-height * 0.65;
-          border-radius: 50%;
-          transition: background 0.2s ease-in-out;
-          color: $text-dark;
-        }
-      }
     }
     .tab-close {
       visibility: hidden;
@@ -105,14 +87,14 @@
       border-radius: 50%;
       margin-left: $gutter-h;
       margin-right: -($tab-padding-w * 0.5);
-      // &:hover {
-      //   background: rgba($theme-base, 0.1);
-      // }
       i {
         font-size: 12px;
         font-weight: bold;
         color: $text-dark;
       }
     }
+  }
+  .actions {
+    padding: 0 $gutter-h;
   }
 }

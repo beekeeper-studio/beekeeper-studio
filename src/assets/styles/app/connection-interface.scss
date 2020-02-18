@@ -16,3 +16,14 @@
     }
   }
 }
+.connection-interface {
+  .list-heading {
+    padding-left: $gutter-w;
+    margin-bottom: 0.5rem;
+  }
+  .sidebar {
+    .list-item-btn {
+      padding: $gutter-h $gutter-w;
+    }
+  }
+}

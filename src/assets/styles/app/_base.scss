@@ -42,6 +42,12 @@ a {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.sub {
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 80%;
+  letter-spacing: 0.05rem;
+}
 
 // Material-icons
 .material-icons {
@@ -73,8 +79,9 @@ a {
   display: none;
 }
 
+
 // Buttons
-// -------------------
+// ---------------------------------------
 .btn {
   display: inline-block;
   font-size: 12px;
@@ -104,11 +111,12 @@ a {
   }
 }
 .btn-primary {
-  background: $brand-secondary;
-  color: white;
-  transition: opacity 0.15s ease-in-out;
+  background: $theme-primary;
+  color: rgba(black, 0.87);
+  transition: background 0.15s ease-in-out;
   &:hover, &:focus {
-    background: lighten($brand-secondary, 3%);
+    background: lighten($theme-primary, 10%);
+    color: rgba(black, 0.87);
   }
 }
 .btn-flat {
@@ -148,21 +156,25 @@ a {
   width: 100%;
 }
 .btn-fab {
-  $icon-size:   40px;
+  $fab-size:   26px;
 
-  font-size: 24px;
-  height: $icon-size;
-  min-width: $icon-size;
-  width: $icon-size;
-  height: $icon-size;
-  line-height: $icon-size;
-  border-radius: 50%;
+  height: $fab-size;
+  min-width: $fab-size;
+  width: $fab-size;
+  height: $fab-size;
+  line-height: $fab-size;
+  border-radius: $fab-size;
   padding: 0;
   margin: 0;
-  @extend .layout-center;
   text-align: center;
+  @extend .layout-center;
+  transition: background 0.15s ease-in-out;
   &:hover, &:focus {
     background: rgba($theme-base, 0.1);
+  }
+  .material-icons {
+    font-size: 20px;
+    color: $text-dark;
   }
 }
 .btn-group {
@@ -221,7 +233,7 @@ a {
   outline: none;
   box-shadow: none;
   width: 100%;
-  transition: box-shadow 0.15s ease-in-out;
+  transition: border-color 0.15s ease-in-out;
 }
 input, select, textarea {
   @extend .form-control;
@@ -250,9 +262,6 @@ select {
 .text-warning {
   color: $brand-warning!important;
 }
-
-// Buttons
-// ---------------------------------------
 
 
 // Cards
@@ -335,7 +344,7 @@ select {
     &:after {
       height: 100%;
       width: 8px;
-      left: -4px;
+      left: -2px;
     }
   }
   &.gutter-vertical {
@@ -437,148 +446,18 @@ pre {
 // Scrollbar
 // ---------------------
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   background: rgba($theme-base, 0.06);
 }
 ::-webkit-scrollbar-thumb {
   background: rgba($theme-base, 0.37);
-  border-radius: 1px;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-button {
   display: none;
 }
 
-// Buttons
-// -------------------
-.btn {
-  display: inline-block;
-  font-size: 12px;
-  line-height: $input-height;
-  height: $input-height;
-  font-weight: 700;
-  outline: 0;
-  border: 0;
-  box-shadow: inset 0 0 0 1px rgba($theme-base, 0.025);
-  padding: 0 1rem;
-  min-width: 88px;
-  border-radius: $btn-border-radius;
-  transition: background 0.15s ease-in-out,
-              color 0.15s ease-in-out,;
-  text-align: center;
-  cursor: pointer;
-  &:hover, &:focus {
-    font-weight: 700;
-    opacity: 0.9;
-    outline: 0;
-    border: 0;
-    box-shadow: none;
-  }
-  &.btn-icon {
-    display: flex;
-    align-items: center;
-    i {
-      font-size: 1rem;
-    }
-  }
-}
-.btn-primary {
-  background: $brand-secondary;
-  color: white;
-  transition: opacity 0.15s ease-in-out;
-  &:hover, &:focus {
-    opacity: 0.85;
-  }
-}
-.btn-flat {
-  color: $theme-base;
-  background: rgba($theme-base, 0.06);
-  &:hover, &:focus {
-    opacity: 1;
-    background: rgba($theme-base, 0.12);
-  }
-}
-.btn-link {
-  color: $theme-base;
-  background: transparent;
-  box-shadow: none;
-  &:hover, &:focus {
-    opacity: 1;
-    background: rgba($theme-base, 0.06);
-  }
-}
-.btn-info {
-  background: $brand-info;
-  color: white;
-}
-.btn-danger {
-  &:hover {
-    background: $brand-danger;
-    color: white;
-  }
-}
-.btn-large {
-  padding: 1.25em;
-  font-size: 13px;
-  width: 100%;
-  max-width: 250px;
-}
-.btn-block {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-.btn-fab {
-  $icon-size:   36px;
-  
-  height: $icon-size;
-  min-width: $icon-size;
-  width: $icon-size;
-  height: $icon-size;
-  border-radius: 50%;
-  padding: 0;
-  margin: 0;
-  @extend .layout-center;
-  text-align: center;
-  .material-icons {
-    font-size: 22px;
-    line-height: $icon-size;
-  }
-}
-.btn-group {
-  margin-left: -0.2rem;
-  margin-right: -0.2rem;
-  .btn {
-    margin-left: 0.2rem;
-    margin-right: 0.2rem;
-    &:first-child {
-      margin-left: 0;
-    }
-    &:last-child {
-      margin-right: 0;
-    }
-  }
-}
-
-// Disabled Buttons
-.btn.disabled {
-  $btn-disabled-opacity:      0.25;
-
-  opacity: $btn-disabled-opacity!important;
-  &:hover, &:focus {
-    opacity: $btn-disabled-opacity!important;
-  }
-  &.btn-primary {
-    &:hover, &:focus {
-      background: $brand-secondary!important;
-    }
-  }
-  &.btn-flat {
-    &:hover, &:focus {
-     background: transparent!important;
-    }
-  }
-}
 
 // Cards
 // ---------------------------------------
@@ -668,82 +547,6 @@ pre {
   color: lighten($brand-success, 20%);
 }
 
-// List Group
-// ------------------------------
-.list-group {
-  $gutter-h :     0.75rem;
-  $gutter-w:      1.25rem;
-
-  width: 100%;
-  &.border {
-    a {
-      box-shadow: 0 1px $border-color;
-      &:last-child {
-        box-shadow: none;
-      }
-    }
-  }
-  a, .sub-item {
-    display: flex;
-    align-items: center;
-    flex: 0 1 100%;
-  }
-  a {
-    color: $text-dark;
-    padding: $gutter-h $gutter-w;
-    padding-left: $gutter-w;
-    &:hover {
-      background: rgba($theme-base, 0.04);
-    }
-    &.active, 
-    &.active:hover, 
-    &.active:focus {
-      background: rgba($theme-base, 0.1);
-    }
-  }
-  h5 {
-    padding: $gutter-h $gutter-w;
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.025rem;
-    font-weight: 400;
-    color: $text-light;
-    line-height: 2;
-  }
-  .sub-items {
-    display: flex;
-    flex-direction: column;
-    color: $text;
-    padding: $gutter-h 0;
-    .title {
-      flex-grow: 1;
-    }
-  }
-  .sub-item {
-    padding-top: $gutter-h * 0.25;
-    padding-bottom: $gutter-h * 0.8;
-    padding-right: $gutter-w;
-    padding-left: $gutter-w + $sidebar-icon-w;
-  }
-  .item-icon {
-    font-size: 15px;
-    width: $sidebar-icon-w;
-    transition: transform 0.15s ease-in;
-    color: $theme-secondary;
-  }
-  .badge-info {
-    background: $brand-info;
-    color: white;
-  }
-  
-  // Collapse
-  .collapse {
-    display: none;
-    &.show {
-      display: flex;
-    }
-  }
-}
 
 // Nav
 // ----------------------------------

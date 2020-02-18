@@ -1,12 +1,14 @@
 <template>
-  <nav class="list-group" v-if="favorites">
-    <div class="list-group-item" v-for="item in favorites" v-bind:key="item.id">
-      <a @click.prevent="click(item)">
-        <span class="title">{{item.title}}</span>
-        <span class="database">{{item.database}}</span>
-      </a>
-    </div>
-  </nav>
+  <div class="sidebar-favorites">
+    <nav class="list-group" v-if="favorites">
+      <div class="list-item" v-for="item in favorites" v-bind:key="item.id">
+        <a class="list-item-btn" @click.prevent="click(item)">
+          <span class="item-text title truncate">{{item.title}}</span>
+          <span class="badge database">{{item.database}}</span>
+        </a>
+      </div>
+    </nav>
+  </div>
 </template>
 
 <script>

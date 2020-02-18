@@ -16,31 +16,18 @@
         :class="tabClasses('tables')"
         v-show="activeItem === 'tables'"
       >
-        <div class="fixed">
-          <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
-        </div>
-        <table-list></table-list>
-        <footer class="status-bar row connected">
-          <!-- <button class="btn btn-link btn-icon" @click.prevent="disconnect()" v-tooltip="'Disconnect from database'">
-            <span>Connected</span>
-          </button> -->
-          <span>Connected</span>
+        <div class="sidebar-heading">
+          <div class="status connected sidebar-title row flex-middle" v-tooltip="'{Connected}'">
+            <i class="material-icons">fiber_manual_record</i>
+            <span>Connection</span>
+          </div>
           <span class="expand"></span>
-          <span class="actions">
-            <a @click.prevent="collapseAll" v-tooltip="'Collapse all tables'">
-              <i class="material-icons">unfold_less</i>
-            </a>
-            <!-- <a @click.prevent="expandAll" v-tooltip="'Expand all tables'">
-              <i class="material-icons">unfold_more</i>
-            </a> -->
-            <a @click.prevent="refreshTables" v-tooltip="'Refresh Tables'">
-              <i class="material-icons">refresh</i>
-            </a>
-            <a v-tooltip="'Menu'">
-              <i class="material-icons">more_horiz</i>
-            </a>
-          </span>
-        </footer>
+          <div class="actions">
+            <a class="btn-fab"><i class="material-icons">more_horiz</i></a>
+          </div>
+        </div>
+        <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
+        <table-list></table-list>
       </div>
 
       <!-- History -->
@@ -50,11 +37,12 @@
         v-show="activeItem === 'history'"
         :class="tabClasses('history')"
       >
-        <div class="sidebar-heading fixed row">
-          <span class="sub expand">History</span>
-          <div class="actions">
-            <a><i class="material-icons">more_horiz</i></a>
-          </div>
+        <div class="sidebar-heading">
+          <span class="sidebar-title">History</span>
+          <span class="expand"></span>
+          <!-- <div class="actions">
+            <a class="btn-fab"><i class="material-icons">more_horiz</i></a>
+          </div> -->
         </div>
         <history-list></history-list>
       </div>
@@ -66,8 +54,12 @@
         :class="tabClasses('queries')"
         v-show="activeItem === 'queries'"
       >
-        <div class="sidebar-heading fixed row">
-          <span class="sub expand">Favorites</span>
+        <div class="sidebar-heading">
+          <span class="sidebar-title">Favorites</span>
+          <span class="expand"></span>
+          <!-- <div class="actions">
+            <a class="btn-fab"><i class="material-icons">more_horiz</i></a>
+          </div> -->
         </div>
         <favorite-list></favorite-list>
       </div>

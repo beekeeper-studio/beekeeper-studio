@@ -1,14 +1,16 @@
 <template>
-  <nav class="list-group" v-if="history">
-    <div class="list-group-item" v-for="item in history" v-bind:key="item.id">
-      <a @click.prevent="click(item)">
-        <span class="query-text expand truncate">
-          {{nicelySized(item.text)}}
-        </span>
-        <span class="badge">{{item.database}}</span>
-      </a>
-    </div>
-  </nav>
+  <div class="sidebar-history">
+    <nav class="list-group" v-if="history">
+      <div class="list-item" v-for="item in history" v-bind:key="item.id">
+        <a class="list-item-btn" @click.prevent="click(item)">
+          <span class="item-text expand truncate">
+            {{nicelySized(item.text)}}
+          </span>
+          <span class="badge">{{item.database}}</span>
+        </a>
+      </div>
+    </nav>
+  </div>
 </template>
 <script>
 

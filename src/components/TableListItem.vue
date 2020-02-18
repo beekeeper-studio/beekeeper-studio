@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <a role="button" v-bind:class="{'active': selected}" @dblclick.prevent="doubleClick" @click.prevent="$emit('selected', table)">
+  <div class="list-item">
+    <a class="list-item-btn" role="button" v-bind:class="{'active': selected}" @dblclick.prevent="doubleClick" @click.prevent="$emit('selected', table)">
       <span class="btn-fab" @click="toggleColumns" v-bind:class="{ 'open': showColumns }">
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>

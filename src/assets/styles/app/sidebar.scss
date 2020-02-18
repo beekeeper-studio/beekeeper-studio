@@ -22,14 +22,37 @@
       justify-content: center;
       width: 44px;
       height: 44px;
+      font-size: 16px;
       color: rgba($theme-base, 0.38);
       &:hover {
         color: $text-dark;
         transition: color 0.15s ease-in-out;
       }
       &.active {
-        color: $brand-primary;
-        box-shadow: inset 3px 0 $brand-primary;
+        color: $theme-primary;
+        box-shadow: inset 2px 0 $theme-primary;
+      }
+      .material-icons {
+        font-size: 22px;
+      }
+    }
+  }
+  .sidebar-heading {
+    display: flex;
+    align-items: center;
+    padding: $gutter-h $gutter-h $gutter-h $gutter-w;
+    line-height: 28px;
+    font-size: 13px;
+    font-weight: 600;
+    .status {
+      .material-icons {
+        font-size: 11px;
+        margin-right: 0.25rem;
+      }
+      &.connected {
+        .material-icons {
+          color: $brand-success;
+        }
       }
     }
   }
@@ -46,8 +69,8 @@
       &.active {
         display: flex;
       }
-      > .fixed {
-        padding: ($gutter-h * 1.5) $gutter-w;
+      .fixed {
+        padding: 0 ($gutter-h * 1.25);
       }
     }
   }
@@ -59,6 +82,7 @@
     height: $input-height;
     min-height: $input-height;
     padding: 0 $gutter-h 0 0;
+    margin-bottom: $gutter-h;
     background: rgba($theme-base, 0.08);
     transition: background 0.15s ease-in-out;
     border-radius: 4px;
@@ -74,7 +98,6 @@
   .database-select {
     display: block;
     font-size: 100%;
-    font-weight: 600;
     margin: 0;
     width: 100%;
     border: 0;
@@ -94,7 +117,7 @@
   // Search
   .filter {
     position: relative;
-    padding: 0 $gutter-w $gutter-w;
+    margin-bottom: $gutter-w;
     .filter-wrap {
       position: relative;
       display: flex;
@@ -124,17 +147,19 @@
 
   // Quick Connect 
   .quick-connect {
-    background: $brand-info;
-    //height: $tab-height;
     i {
       margin-right: 0.5rem;
     }
   }
 }
 
-// Tab History
+// History
 // ------------------------------
-#tab-history {
+.sidebar-history {    
+  flex: 1 1 100%;
+  overflow-x: hidden;
+  height: 0;
+  padding: 0 0 $gutter-w;
   .list-group {
     a {
       justify-content: space-between;
@@ -142,22 +167,78 @@
       font-size: 0.9rem;
       color: $text
     }
-    .query-text {
+    .item-text {
       padding-right: $gutter-w;
     }
+    .list-item-btn {
+      padding: $gutter-h $gutter-w;
+    }
   }
-  .list-group-item {
-    position: relative;
+}
+
+
+// Favorites
+// ------------------------------
+.sidebar-favorites {    
+  flex: 1 1 100%;
+  overflow-x: hidden;
+  height: 0;
+  padding: 0 0 $gutter-w;
+  .list-group {
+    a {
+      justify-content: space-between;
+      overflow: hidden;
+      font-size: 0.9rem;
+      color: $text
+    }
+    .item-text {
+      padding-right: $gutter-w;
+    }
+    .list-item-btn {
+      padding: $gutter-h $gutter-w;
+    }
   }
 }
 
 // List Group
 // ------------------------------
-.list-group {
-  width: 100%;
+.list-heading {
+  display: flex;
+  align-items: center;
+  line-height: 1.8;
+  padding: ($gutter-h * 0.5) $gutter-h;
+  padding-right: $gutter-h;
+  background: rgba($theme-base, 0.06);
+  .actions {
+    a {
+      margin: 0 ($gutter-h * 0.5);
+      padding: 0;
+    }
+    .material-icons {
+      font-size: 16px;
+    }
+  }
+}
+.list-body {
+  flex: 1 1 100%;
+  height: 0;
+  padding-top: $gutter-h;
   overflow: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch!important;
+}
+.list-group {
+  flex: 1 1 100%;
+  &:hover{
+    .list-heading .actions {
+      visibility: visible;
+    }
+  }
+  .list-heading .actions {
+    display: flex;
+    align-items: center;
+    visibility: hidden;
+  }
   .btn-wrap {
     padding: $gutter-w;
   }
@@ -166,23 +247,14 @@
     align-items: center;
     flex: 0 1 100%;
   }
-  a {
-    color: $text-dark;
-    padding: $gutter-h $gutter-w;
+  .list-item-btn {
+    color: rgba($theme-base, 0.77);
+    padding: ($gutter-h * 0.5) $gutter-w;
     padding-left: $gutter-w;
     line-height: 1.4;
     &:hover {
-      background: rgba($theme-base, 0.06);
+      background: rgba($theme-base, 0.03);
     }
-  }
-  h5 {
-    padding: $gutter-h $gutter-w;
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.025rem;
-    font-weight: 400;
-    color: $text-light;
-    line-height: 2;
   }
   .sub-items {
     display: flex;
@@ -195,13 +267,11 @@
     }
   }
   .sub-item {
-    padding-top: $gutter-h * 0.35;
-    padding-bottom: $gutter-h * 0.35;
+    color: rgba($theme-base, 0.47);
     padding-right: $gutter-w;
-    padding-left: $gutter-w + ($sidebar-icon-w * 1.5);
+    padding-left: $gutter-w + ($sidebar-icon-w * 1.35);
   }
   .btn-fab {
-    color: rgba($theme-base, 0.37);    
     min-width: 18px;
     width: 18px;
     height: 18px;
@@ -215,6 +285,7 @@
       transform: rotate(90deg);
     }
     .material-icons {
+      color: rgba($theme-base, 0.37);    
       font-size: 18px;
     }
   }

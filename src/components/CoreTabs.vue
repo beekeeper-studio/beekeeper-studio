@@ -1,18 +1,21 @@
 <template>
   <div class="core-tabs" v-hotkey="keymap">
-    <ul class="nav-tabs nav">
-      <core-tab-header
-        v-for="(tab, idx) in tabItems"
-        :key="idx"
-        :tab="tab"
-        :selected="activeTab === tab"
-        @click="click"
-        @close="close"
-        ></core-tab-header>
-      <li class="nav-item">
-        <a @click.prevent="createQuery(null)" class="nav-link add-query"><i class=" material-icons">add</i></a>
-      </li>
-    </ul>
+    <div class="tabs-header">
+      <ul class="nav-tabs nav">
+        <core-tab-header
+          v-for="(tab, idx) in tabItems"
+          :key="idx"
+          :tab="tab"
+          :selected="activeTab === tab"
+          @click="click"
+          @close="close"
+          ></core-tab-header>
+      </ul>
+      <span class="expand"></span>
+      <span class="actions">
+        <a @click.prevent="createQuery(null)" class="btn-fab add-query"><i class=" material-icons">add</i></a>
+      </span>
+    </div>
     <div class="tab-content">
       <div
         v-for="(tab, idx) in tabItems"

@@ -7,7 +7,7 @@
         :class="{ active: activeItem === 'tables'}"
         v-tooltip="tablesTooltip"
       >
-        <span class="material-icons">filter_none</span>
+        <span class="bk-database"></span>
       </a>
       <a
         href=""

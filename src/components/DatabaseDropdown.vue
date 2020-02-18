@@ -1,10 +1,12 @@
 <template>
   <!-- TODO (matthew): either not use select or find good library for dropdowns, this is hideous -- no way to style currently -->
-  <div class="data-select-wrap">
-    <select class="database-select" v-model="selectedDatabase">
-      <option selected :value="selectedDatabase">{{selectedDatabase}}</option>
-      <option v-for="db in availableDatabases" v-bind:key="db" :value="db">{{db}}</option>
-    </select>
+  <div class="fixed">
+    <div class="data-select-wrap">
+      <select class="database-select" v-model="selectedDatabase">
+        <option selected :value="selectedDatabase">{{selectedDatabase}}</option>
+        <option v-for="db in availableDatabases" v-bind:key="db" :value="db">{{db}}</option>
+      </select>
+    </div>
   </div>
 </template>
 
