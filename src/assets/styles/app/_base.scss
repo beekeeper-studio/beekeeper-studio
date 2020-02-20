@@ -111,12 +111,12 @@ a {
   }
 }
 .btn-primary {
-  background: $theme-primary;
-  color: rgba(black, 0.87);
+  background: rgba($theme-base, 0.37);
+  // background: $theme-secondary;
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
-    background: lighten($theme-primary, 10%);
-    color: rgba(black, 0.87);
+    background: rgba($theme-base, 0.44);
+    // background: lighten($theme-secondary, 8%);
   }
 }
 .btn-flat {
@@ -446,12 +446,10 @@ pre {
 // Scrollbar
 // ---------------------
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
-  background: rgba($theme-base, 0.06);
+  -webkit-appearance: none!important;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba($theme-base, 0.37);
+  background: rgba($theme-base, 0.2);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-button {

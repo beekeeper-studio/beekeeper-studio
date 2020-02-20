@@ -5,7 +5,7 @@
 $theme-bg:           #252525;
 $theme-base:         #fff;
 $theme-primary:      #fad83b;
-$theme-secondary:    #0072ff;
+$theme-secondary:    #3498db;
 
 // Colors
 // -----------------------------
@@ -17,11 +17,13 @@ $text-light:         rgba($theme-base, 0.57);
 $text-hint:          rgba($theme-base, 0.37);
 $text-disabled:      rgba($theme-base, 0.37);
 
-$brand-info:         #0072ff;
+$brand-info:         #3498db;
 $brand-success:      #15db95;
 $brand-warning:      #f39c12;
 $brand-danger:       #e74c3c;
 $brand-default:      rgba($theme-base, 0.57);
+
+$brand-purple:       #9b59b6;
 
 $brand-primary:      $theme-primary;
 $brand-secondary:    $theme-secondary;
@@ -44,7 +46,7 @@ $btn-border-radius:   4px;
 $input-padding-h:     0;
 $input-height:        26px;
 $input-padding-w:     0.75rem;
-$input-highlight:     lighten($theme-primary, 10%);
+$input-highlight:     rgba($theme-base, 0.68);
 $input-radius:        3px;
 
 // Layout

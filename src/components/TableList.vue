@@ -19,12 +19,12 @@
             <span>Tables</span>
           </div>
           <div class="actions">
-            <a @click.prevent="collapseAll" v-tooltip="'Collapse all'">
+            <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
               <i class="material-icons">unfold_less</i>
             </a>
-            <!-- <a @click.prevent="expandAll" v-tooltip="'Expand all tables'">
+            <a @click.prevent="expandAll" v-tooltip="'Expand All'">
               <i class="material-icons">unfold_more</i>
-            </a> -->
+            </a>
             <a @click.prevent="refreshTables" v-tooltip="'Refresh'">
               <i class="material-icons">refresh</i>
             </a>

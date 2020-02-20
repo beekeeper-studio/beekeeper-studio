@@ -249,11 +249,39 @@
   }
   .list-item-btn {
     color: rgba($theme-base, 0.77);
-    padding: ($gutter-h * 0.5) $gutter-w;
+    padding: ($gutter-h * 0.8) $gutter-w;
     padding-left: $gutter-w;
     line-height: 1.4;
     &:hover {
       background: rgba($theme-base, 0.03);
+      .actions {
+        display: flex;
+      }
+    }
+    &.open {
+      .open-close {
+        transform: rotate(90deg);
+      }
+    }
+    .actions {
+      display: none;
+      align-items: center;
+      .btn-fab {
+        &:hover {
+          .material-icons {
+            color: $theme-base;
+          }
+        }
+      }
+      // .new-tab {
+      //   .material-icons {
+      //     font-size: 14px;
+      //   }
+      // }
+      .material-icons {
+        color: rgba($theme-base, 0.77);
+        transition: color 0.15s ease-in-out;;
+      }
     }
   }
   .sub-items {
@@ -263,11 +291,32 @@
     padding: ($gutter-h * 0.5) 0;
     .title {
       flex-grow: 1;
-      font-size: 85%;
+      font-size: 90%;
+    }
+
+    // Badge Colors
+    // ---------------------------
+    .badge {
+      &.int {
+        background: rgba($brand-purple, 0.75);
+      }
+      &.char {
+        background: rgba($brand-info, 0.75);
+      }
+      &.varchar {
+        background: rgba($theme-primary, 0.6);
+      }
+      &.date {
+        background: rgba($brand-success, 0.75);
+      }
+      // &.enum {
+      //   background: rgba($brand-warning, 0.75);
+      // }
     }
   }
   .sub-item {
-    color: rgba($theme-base, 0.47);
+    color: $text;
+    padding: ($gutter-h * 0.35);
     padding-right: $gutter-w;
     padding-left: $gutter-w + ($sidebar-icon-w * 1.35);
   }
@@ -281,9 +330,6 @@
       color: $text-dark;
       background: transparent;
     }
-    &.open {
-      transform: rotate(90deg);
-    }
     .material-icons {
       color: rgba($theme-base, 0.37);    
       font-size: 18px;
@@ -294,7 +340,7 @@
     width: $sidebar-icon-w;
     min-width: $sidebar-icon-w;
     transition: transform 0.15s ease-in;
-    color: $theme-secondary;
+    color: lighten($theme-secondary, 15%);
   }
   .badge
   .badge-info {
@@ -302,6 +348,7 @@
   }
   
   // Collapse
+  // -----------------------
   .collapse {
     display: none;
     &.show {

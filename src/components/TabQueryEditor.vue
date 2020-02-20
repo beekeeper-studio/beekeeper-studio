@@ -7,7 +7,7 @@ r
       <div class="actions text-right" ref="actions">
         <input type="text" class="form-control" v-model="tab.query.title" name="Title" placeholder="Untitled Query">
         <a v-tooltip="'Save to the favorite queries list'" :disabled="!hasText || !hasTitle" @click.prevent="triggerSave" class="btn btn-success">Save</a>
-        <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitQuery" class="btn btn-primary">Run Query</a>
+        <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitQuery" class="btn btn-primary">Run</a>
       </div>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
