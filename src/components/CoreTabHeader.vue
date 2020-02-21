@@ -5,8 +5,11 @@
       @click.prevent="$emit('click', tab)"
       :class="{ active: selected }"
     >
-      <span class="expand truncate">{{this.tab.unsavedChanges ? "[unsaved] " : ""}}{{title}}</span>
-      <span class="tab-close" @click.prevent.stop="$emit('close', tab)"><i class="material-icons">close</i></span>
+      <span class="expand truncate">{{title}}</span>
+      <span class="tab-close" :class="{unsaved: this.tab.unsavedChanges}" @click.prevent.stop="$emit('close', tab)">
+        <i class="material-icons close">close</i>
+        <i class="material-icons unsaved-icon" >fiber_manual_record</i>
+      </span>
     </a>
   </li>
 </template>

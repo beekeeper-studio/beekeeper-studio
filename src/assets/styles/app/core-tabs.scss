@@ -59,11 +59,6 @@
       border: 0;
       border-radius: 0;
       box-shadow: inset -1px 0 rgba($query-editor-bg, 0.5);
-      &:hover {
-        .tab-close {
-          visibility: visible;
-        }
-      }
       &.active {
         border: 0;
         background: $query-editor-bg;
@@ -73,12 +68,45 @@
           background: $query-editor-bg;
         }
         .tab-close {
-          visibility: visible;
+          .close {
+            display: inline-block;
+          }
+          &.unsaved {
+            .close {
+              display: none;
+            }
+            &:hover {
+              .unsaved-icon {
+                display: none;
+              }
+            }
+          }
         }
       }
+      &:hover { 
+        .tab-close {
+          .close {
+            display: inline-block;
+          }
+          &:hover {
+            .unsaved-icon {
+              display: none;
+            }
+          }
+          &.unsaved {
+            .close {
+              display: none;
+            }
+            &:hover {
+              .close {
+                display: inline-block;
+              }
+            }
+          }
+        }
+      } 
     }
     .tab-close {
-      visibility: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -88,9 +116,19 @@
       margin-left: $gutter-h;
       margin-right: -($tab-padding-w * 0.5);
       i {
+        position: absolute;
+        display: none;
         font-size: 12px;
         font-weight: bold;
+        height: $tab-height;
+        line-height: $tab-height;
         color: $text-dark;
+        transition: none;
+      }
+      &.unsaved {
+        .unsaved-icon {
+          display: inline-block;
+        }
       }
     }
   }

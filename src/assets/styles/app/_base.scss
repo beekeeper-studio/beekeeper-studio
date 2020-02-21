@@ -34,6 +34,9 @@ a {
     opacity: 0.25;
   }
 }
+i {
+  @extend .noselect;
+}
 .expand {
   flex-grow: 1;
 }
@@ -47,6 +50,11 @@ a {
   text-transform: uppercase;
   font-size: 80%;
   letter-spacing: 0.05rem;
+}
+.noselect {
+        -ms-user-select: none; 
+    -webkit-user-select: none; 
+            user-select: none; 
 }
 
 // Material-icons
@@ -111,12 +119,16 @@ a {
   }
 }
 .btn-primary {
-  background: rgba($theme-base, 0.37);
-  // background: $theme-secondary;
-  transition: background 0.15s ease-in-out;
+  // background: rgba($theme-base, 0.37);
+  background: $theme-secondary;
+  // background: rgba($theme-base, 0.87);
+  color: $theme-base;
+  // transition: background 0.15s ease-in-out;
   &:hover, &:focus {
-    background: rgba($theme-base, 0.44);
-    // background: lighten($theme-secondary, 8%);
+    // background: rgba($theme-base, 0.44);
+    background: lighten($theme-secondary, 8%);
+    // background: $theme-base;
+    // color: $theme-bg;
   }
 }
 .btn-flat {
@@ -167,6 +179,7 @@ a {
   padding: 0;
   margin: 0;
   text-align: center;
+  @extend .noselect;
   @extend .layout-center;
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
