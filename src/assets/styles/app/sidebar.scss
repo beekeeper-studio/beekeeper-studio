@@ -29,8 +29,8 @@
         transition: color 0.15s ease-in-out;
       }
       &.active {
-        color: $theme-base;
-        box-shadow: inset 2px 0 $theme-base;
+        color: $theme-primary;
+        box-shadow: inset 2px 0 $theme-primary;
       }
       .material-icons {
         font-size: 22px;

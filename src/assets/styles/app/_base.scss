@@ -120,15 +120,13 @@ i {
 }
 .btn-primary {
   // background: rgba($theme-base, 0.37);
-  background: $theme-secondary;
-  // background: rgba($theme-base, 0.87);
-  color: $theme-base;
-  // transition: background 0.15s ease-in-out;
+  background: $theme-primary;
+  color: $theme-bg;
+  transition: background 0.15s ease-in-out;
   &:hover, &:focus {
     // background: rgba($theme-base, 0.44);
-    background: lighten($theme-secondary, 8%);
-    // background: $theme-base;
-    // color: $theme-bg;
+    background: lighten($theme-primary, 8%);
+    color: $theme-bg;
   }
 }
 .btn-flat {
