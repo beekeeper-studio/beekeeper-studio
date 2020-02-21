@@ -15,7 +15,7 @@
   .global-items {
     display: flex;
     flex-direction: column;
-    background: rgba($theme-base, 0.04);
+    background: rgba($theme-base, 0.035);
     .nav-item {
       display: flex;
       align-items: center;
@@ -40,9 +40,13 @@
   .sidebar-heading {
     display: flex;
     align-items: center;
+    background: rgba($theme-base, 0.06);
+    box-shadow: 0 1px 2px rgba(black, 0.25),
+                inset 1px 0 rgba($query-editor-bg, 0.5);
     padding: $gutter-h $gutter-h $gutter-h $gutter-w;
-    line-height: 28px;
+    height: $tab-height;
     font-size: 14px;
+    line-height: 28px;
     .status {
       .material-icons {
         font-size: 11px;
@@ -71,6 +75,9 @@
       .fixed {
         padding: 0 ($gutter-h * 1.25);
       }
+      .list-group {
+        padding: $gutter-h 0;
+      }
     }
   }
 
@@ -81,6 +88,7 @@
     height: $input-height;
     min-height: $input-height;
     padding: 0 $gutter-h 0 0;
+    margin-top: $gutter-w;
     margin-bottom: $gutter-h;
     background: rgba($theme-base, 0.08);
     transition: background 0.15s ease-in-out;
@@ -116,7 +124,7 @@
   // Search
   .filter {
     position: relative;
-    margin-bottom: $gutter-w;
+    margin-bottom: $gutter-h;
     .filter-wrap {
       position: relative;
       display: flex;
