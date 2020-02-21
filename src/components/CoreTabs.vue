@@ -143,6 +143,9 @@
           }
         }
         this.tabItems = _.without(this.tabItems, tab)
+        if (tab.query && tab.query.id) {
+          tab.query.reload()
+        }
       },
 
     },

@@ -2,6 +2,7 @@ import Vue from 'vue'
 import VueNoty from 'vuejs-noty'
 import VueHotkey from 'v-hotkey'
 import VTooltip from 'v-tooltip'
+import VModal from 'vue-js-modal'
 import App from './App.vue'
 import path from 'path'
 //import '@fortawesome/fontawesome-free/css/all.css'
@@ -57,6 +58,7 @@ import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
     Vue.use(TypeOrmPlugin, {connection})
     Vue.use(VueHotkey)
     Vue.use(VTooltip)
+    Vue.use(VModal)
     Vue.use(VueNoty, {
       timeout: 3000,
       progressBar: true,
