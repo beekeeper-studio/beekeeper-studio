@@ -129,6 +129,8 @@
         if(this.active && this.editor) {
           this.editor.refresh()
           this.editor.focus()
+        } else {
+          this.$modal.hide('save-modal')
         }
       },
       hintOptions() {

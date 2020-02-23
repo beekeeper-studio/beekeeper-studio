@@ -25,45 +25,11 @@
                   <option :key="t.value" v-for="t in connectionTypes" :value="t.value">{{t.name}}</option>
                 </select>
               </div>
-              <div v-if="config.connectionType" class="with-connection-type">
-                <div class="row gutter">
-                  <div class="col s9 form-group">
-                    <label for="Host">Host</label>
-                    <input type="text" class="form-control" name="host" v-model="config.host">
-                  </div>
-                  <div class="col s3 form-group">
-                    <label for="port">Port</label>
-                    <input type="number" class="form-control" name="port" v-model="config.port">
-                  </div>
-                </div>
-                <div class="row gutter">
-                  <div class="col s6 form-group">
-                    <label for="user">User</label><input type="text" name="user" v-model="config.username" class="form-control">
-                  </div>
-                  <div class="col s6 form-group">
-                    <label for="password">Password</label><input type="password" v-model="config.password" class="form-control">
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="form-group expand">
-                    <label for="defaultDatabase">Default Database</label>
-                    <input type="text" class="form-control" v-model="config.defaultDatabase">
-                  </div>
-                  <div class="btn-group flex flex-right">
-                    <button :disabled="testing" class="btn btn-flat" @click.prevent="testConnection">Test</button>
-                    <button :disabled="testing" class="btn btn-primary" @click.prevent="submit(config)">Connect</button>
-                  </div>
-                  
-                  <!-- Save Connection -->
-                  <div class="save-connection expand">
-                    <h3>Save Connection</h3>
-                    <div class="row">
-                      <div class="expand"><input class="form-control full" type="text" v-model="config.name" placeholder="Connection Name"></div>
-                      <div><button class="btn btn-flat" @click.prevent="save">Save</button></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <mysql-form v-if="config.connectionType === 'mysql'" :config="config" :testing="testing" @save="save" @test="testConnection" @connect="submit"></mysql-form>
+              <postgres-form v-if="config.connectionType === 'postgresql'" :config="config" :testing="testing"></postgres-form>
+              <redshift-form v-if="config.connectionType === 'redshift'" :config="config" :testing="testing"></redshift-form>
+              <sqlite-form v-if="config.connectionType === 'sqlite'" :config="config" :testing="testing"></sqlite-form>
+              <sql-server-form v-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"></sql-server-form>
  
             </form>
   
@@ -83,11 +49,16 @@
   import config from '../config'
   import {SavedConnection} from '../entity/saved_connection'
   import ConnectionSidebar from './ConnectionSidebar'
+  import MysqlForm from './connection/MysqlForm'
+  import PostgresForm from './connection/PostgresForm'
+  import RedshiftForm from './connection/RedshiftForm'
+  import SqliteForm from './connection/SqliteForm'
+  import SqlServerForm from './connection/SqlServerForm'
   import Split from 'split.js'
   import _ from 'lodash'
 
   export default {
-    components: { ConnectionSidebar },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, SqliteForm, SqlServerForm },
     data() {
       return {
         defaultConfig: new SavedConnection(),
@@ -146,10 +117,13 @@
         }
       },
       async submit(config) {
-        this.config = config
+        if (config) {
+          this.config = config
+        }
+
         this.connectionError = null
         try {
-          await this.$store.dispatch('connect', config)
+          await this.$store.dispatch('connect', this.config)
         } catch(ex) {
           this.connectionError = ex.message
           this.$noty.error("Error establishing a connection")

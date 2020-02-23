@@ -17,13 +17,14 @@
         v-show="activeItem === 'tables'"
       >
         <div class="sidebar-heading">
-          <div class="status connected sidebar-title row flex-middle" v-tooltip="'{Connected}'">
+          <div class="status connected sidebar-title row flex-middle">
             <i class="material-icons">fiber_manual_record</i>
             <span>Connection</span>
           </div>
           <span class="expand"></span>
           <div class="actions">
-            <a class="btn-fab"><i class="material-icons">more_horiz</i></a>
+            <a class="btn-fab" @click.prevent="disconnect"><i class="material-icons">clear</i></a>
+            <!-- <a class="btn-fab"><i class="material-icons">more_horiz</i></a> -->
           </div>
         </div>
         <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
