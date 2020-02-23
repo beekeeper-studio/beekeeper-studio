@@ -1,12 +1,10 @@
-r
 <template>
   <div class="query-editor" v-hotkey="keymap">
     <div class="top-panel" ref="topPanel">
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
       <div class="actions text-right" ref="actions">
-        <input type="text" class="form-control" v-model="tab.query.title" name="Title" placeholder="Untitled Query">
-        <a v-tooltip="'Save to the favorite queries list'" :disabled="!hasText || !hasTitle" @click.prevent="triggerSave" class="btn btn-success">Save</a>
+        <a @click.prevent="triggerSave" class="btn btn-success">Save</a>
         <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitQuery" class="btn btn-primary">Run</a>
       </div>
     </div>
@@ -36,6 +34,19 @@ r
         No Data
       </template>
     </footer>
+
+    <modal name="save-modal" @closed="selectEditor" @opened="selectTitleInput">
+      <div class="modal-form">
+        <form @submit.prevent="saveQuery">
+          <div class="save-errors" v-if="saveError">{{saveError}}</div>
+          <label for="title">Title</label>
+          <input type="text" ref="titleInput" name="title" class="form-control" v-model="tab.query.title">
+          <button class="btn btn-success">Save</button>
+        </form>
+      </div>
+    </modal>
+
+
   </div>
 </template>
 
@@ -66,7 +77,8 @@ r
         split: null,
         tableHeight: 0,
         savePrompt: false,
-        unsavedText: null
+        unsavedText: null,
+        saveError: null
       }
     },
     computed: {
@@ -113,7 +125,7 @@ r
     },
     watch: {
       active() {
-        if(this.active) {
+        if(this.active && this.editor) {
           this.editor.refresh()
           this.editor.focus()
         }
@@ -125,11 +137,9 @@ r
       },
       queryText() {
         if (this.query.id && this.unsavedText === this.queryText) {
-          console.log("match")
           this.tab.unsavedChanges = false
           return
         } else {
-          console.log("no match")
           this.tab.unsavedChanges = true
         }
       }
@@ -139,14 +149,30 @@ r
       selectEditor() {
         this.editor.focus()
       },
+      selectTitleInput() {
+        this.$refs.titleInput.select()
+      },
       updateEditorHeight() {
         let height = this.$refs.topPanel.clientHeight
         height -= this.$refs.actions.clientHeight
         this.editor.setSize(null, height)
       },
-      async triggerSave() {
-        await this.$store.dispatch('saveFavorite', this.query)
-        this.$noty.success('Saved')
+      triggerSave() {
+        if (this.query.id) {
+          this.saveQuery()
+        } else {
+          this.$modal.show('save-modal')
+        }
+      },
+      async saveQuery() {
+        if (!this.hasTitle || !this.hasText) {
+          this.saveError = "You need both a title, and some query text."
+        } else {
+          await this.$store.dispatch('saveFavorite', this.query)
+          this.$modal.hide('save-modal')
+          this.$noty.success('Saved')
+          this.unsavedText = this.tab.query.text
+        }
       },
       async submitQuery() {
         this.running = true
@@ -187,28 +213,30 @@ r
         }
       }
 
-      this.split = Split(this.splitElements, {
-        elementStyle: (dimension, size) => ({
-            'flex-basis': `calc(${size}%)`,
-        }),
-        sizes: [50,50],
-        gutterSize: 8,
-        direction: 'vertical',
-        onDragEnd: () => {
-          this.$nextTick(() => {
-            this.tableHeight = this.$refs.bottomPanel.clientHeight
-            this.updateEditorHeight()
-          })
-        }
-      })
 
       this.$nextTick(() => {
+
+
+        this.split = Split(this.splitElements, {
+          elementStyle: (dimension, size) => ({
+              'flex-basis': `calc(${size}%)`,
+          }),
+          sizes: [50,50],
+          gutterSize: 8,
+          direction: 'vertical',
+          onDragEnd: () => {
+            this.$nextTick(() => {
+              this.tableHeight = this.$refs.bottomPanel.clientHeight
+              this.updateEditorHeight()
+            })
+          }
+        })
 
         const runQueryKeyMap = {
           "Ctrl-Enter": this.submitQuery,
           "Cmd-Enter": this.submitQuery,
-          "Ctrl-s": this.saveQuery,
-          "Cmd-s": this.saveQuery
+          "Ctrl-S": this.triggerSave,
+          "Cmd-S": this.triggerSave
         }
 
         this.editor = CodeMirror.fromTextArea($editor, {

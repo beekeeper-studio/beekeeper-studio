@@ -1,5 +1,22 @@
 <template>
   <div class="flex-col expand">
+
+    <div v-if="pinned.length > 0" class="table-list flex-col expand">
+      <nav class="list-group flex-col">
+        <div class="list-body">
+          <table-list-item
+            v-for="table in pinned"
+            v-bind:key="table.name"
+            @selected="tableSelected"
+            :table="table"
+            :connection="connection"
+            :selected="table == selectedTable"
+            :forceExpand="allExpanded"
+            :forceCollapse="allCollapsed"
+          ></table-list-item>
+        </div>
+      </nav>
+    </div>
     <div class="fixed">
       <div class="filter">
         <div class="filter-wrap">
@@ -68,7 +85,7 @@
         filterQuery: null,
         allExpanded: null,
         allCollapsed: null,
-        activeItem: 'tables'
+        activeItem: 'tables',
       }
     },
     computed: {
@@ -85,7 +102,7 @@
           .value()
         return _.concat(startsWithFilter, containsFilter)
       },
-      ...mapState(['tables', 'connection', 'database']),
+      ...mapState(['tables', 'connection', 'database', 'pinned']),
     },
     methods: {
       tableSelected(table) {

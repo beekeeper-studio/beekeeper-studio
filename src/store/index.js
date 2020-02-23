@@ -21,6 +21,7 @@ const store = new Vuex.Store({
     connection: null,
     database: null,
     tables: [],
+    pinned: [],
     connectionConfigs: [],
     history: [],
     favorites: []
@@ -44,6 +45,14 @@ const store = new Vuex.Store({
     },
     tables(state, tables) {
       state.tables = tables
+    },
+    addPinned(state, table) {
+      if (!state.pinned.includes(table)) {
+        state.pinned.push(table)
+      }
+    },
+    removePinned(state, table) {
+      state.pinned = _.without(state.pinned, table)
     },
     config(state, newConfig) {
       if (!state.connectionConfigs.includes(newConfig)) {
@@ -108,6 +117,14 @@ const store = new Vuex.Store({
       context.commit('tables', result)
     },
 
+    async pinTable(context, table) {
+      table.pinned = true
+      context.commit('addPinned', table)
+    },
+    async unpinTable(context, table) {
+      table.pinned = false
+      context.commit('removePinned', table)
+    },
     async saveConnectionConfig(context, newConfig) {
       await newConfig.save()
       context.commit('config', newConfig)

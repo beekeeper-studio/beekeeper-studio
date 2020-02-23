@@ -6,7 +6,7 @@
       :class="{ active: selected }"
     >
       <span class="expand truncate">{{title}}</span>
-      <span class="tab-close" :class="{unsaved: this.tab.unsavedChanges}" @click.prevent.stop="$emit('close', tab)">
+      <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @click.prevent.stop="$emit('close', tab)">
         <i class="material-icons close">close</i>
         <i class="material-icons unsaved-icon" >fiber_manual_record</i>
       </span>
@@ -16,6 +16,13 @@
 <script>
   export default {
     props: ['tab', 'selected'],
+    data() {
+      return {
+        unsaved: false,
+      }
+    },
+    watch: {
+    },
     computed: {
       cleanText() {
         // no spaces
@@ -25,14 +32,6 @@
         const result = this.tab.text.replace(/\s+/, '')
         return result.length == 0 ? null : result
       },
-      unsaved() {
-        console.log("unsaved computing")
-        if (this.tab.unsavedChanges) {
-          return "[unsaved] "
-        } else {
-          return ""
-        }
-      },
       title() {
         if (this.tab.query && this.tab.query.title) {
           return this.tab.query.title
@@ -41,13 +40,14 @@
           return this.tab.title
         }
 
-        if (this.tab.text.length >= 32) {
-          return `${this.tab.text.substring(0, 32)}...`
+        if (this.tab.query.text.length >= 32) {
+          return `${this.tab.query.text.substring(0, 32)}...`
         } else {
-          return this.tab.text
+          return this.tab.query.text
         }
       }
-    }
+    },
+
   }
 
 </script>

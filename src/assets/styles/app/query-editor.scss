@@ -20,6 +20,17 @@
     }
   }
 
+  .modal-form {
+    label {
+      color: black;
+    }
+    input {
+      // I'm Sorry Gregory
+      border: solid 1px black;
+      color: black;
+    }
+  }
+
   .editor {
     width: 100%;
     height: 400px;

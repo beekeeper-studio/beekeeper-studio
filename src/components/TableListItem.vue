@@ -8,7 +8,8 @@
       <span class="table-name truncate expand">{{table.name}}</span>
       <span class="actions">
         <!-- <span class="btn-fab new-tab"><i class="material-icons">open_in_new</i></span> -->
-        <span class="btn-fab dropdown"><i class="material-icons">arrow_drop_down</i></span>
+        <span v-if="!pinned.includes(table)" @click.prevent.stop="pin" class="btn-fab dropdown" v-tooltip="'Pin'"><i class="material-icons">add</i></span>
+        <span v-if="pinned.includes(table)" @click.prevent.stop="unpin" v-tooltip="'Unpin'" class="btn-fab dropdown"><i class="material-icons">clear</i></span>
       </span>
     </a>
     <div v-show="showColumns" class="sub-items">
@@ -21,6 +22,8 @@
 </template>
 
 <script type="text/javascript">
+  import { mapState } from 'vuex'
+
 	export default {
 		props: ["connection", "table", "selected", "forceExpand", "forceCollapse"],
     mounted() {
@@ -46,12 +49,21 @@
         this.table.showColumns = this.showColumns
       }
     },
+    computed: {
+      ...mapState(['pinned'])
+    },
     methods: {
       async toggleColumns() {
         this.showColumns = !this.showColumns
       },
       doubleClick() {
         // TODO (matthew): Load table tab when double clicking
+      },
+      pin() {
+        this.$store.dispatch('pinTable', this.table)
+      },
+      unpin() {
+        this.$store.dispatch('unpinTable', this.table)
       }
     }
 	}

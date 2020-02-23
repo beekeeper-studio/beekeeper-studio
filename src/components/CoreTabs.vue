@@ -75,7 +75,7 @@
           'ctrl+shift+tab': this.previousTab,
           'ctrl+w': this.closeTab
         }
-        result[newTab] = this.createQuery
+        result[newTab] = this.handleCreateTab
         return result
       }
     },
@@ -105,6 +105,9 @@
       closeTab() {
         this.close(this.activeTab)
       },
+      handleCreateTab() {
+        this.createQuery()
+      },
       createQuery(optionalText) {
         // const text = optionalText ? optionalText : ""
         const query = new FavoriteQuery()
@@ -114,7 +117,8 @@
           type: "query",
           title: "Query #" + this.newTabId,
           connection: this.connection,
-          query: query
+          query: query,
+          unsavedChanges: true
         }
 
         this.addTab(result)
@@ -168,7 +172,8 @@
             type: 'query',
             title: item.title,
             connection: this.connection,
-            query: item
+            query: item,
+            unsavedChanges: false
           }
           this.addTab(result)
         }

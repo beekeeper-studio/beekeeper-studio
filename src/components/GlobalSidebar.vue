@@ -45,7 +45,7 @@
         },
         queriesTooltip: {
           placement: 'right',
-          content: "Favorites"
+          content: "Saved"
         }
       }
     },

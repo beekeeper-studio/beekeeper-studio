@@ -55,7 +55,7 @@
         v-show="activeItem === 'queries'"
       >
         <div class="sidebar-heading">
-          <span class="sidebar-title">Favorites</span>
+          <span class="sidebar-title">Saved Queries</span>
           <span class="expand"></span>
           <!-- <div class="actions">
             <a class="btn-fab"><i class="material-icons">more_horiz</i></a>
