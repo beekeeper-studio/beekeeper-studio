@@ -41,7 +41,8 @@
           <div class="save-errors" v-if="saveError">{{saveError}}</div>
           <label for="title">Title</label>
           <input type="text" ref="titleInput" name="title" class="form-control" v-model="tab.query.title">
-          <button class="btn btn-success">Save</button>
+          <button class="btn btn-default" @click.prevent="$modal.hide('save-modal')">Cancel</button>
+          <button type="submit" class="btn btn-info">Save</button>
         </form>
       </div>
     </modal>
