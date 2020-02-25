@@ -1,0 +1,185 @@
+@import '../variables';
+@import '../extends';
+
+.vue-modal-resizer {
+  display: block;
+  overflow: hidden;
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  right: 0;
+  bottom: 0;
+  z-index: 9999999;
+  background: transparent;
+  cursor: se-resize;
+}
+.vue-modal-resizer::after {
+  display: block;
+  position: absolute;
+  content: '';
+  background: transparent;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-bottom: 10px solid #ddd;
+  border-left: 10px solid transparent;
+}
+.vue-modal-resizer.clicked::after {
+  border-bottom: 10px solid #369be9;
+}
+.v--modal-block-scroll {
+  overflow: hidden;
+  width: 100vw;
+}
+
+// Overlay
+// -----------------------------------
+.v--modal-overlay {
+  position: fixed;
+  box-sizing: border-box;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(darken($theme-bg, 3%), 0.8);
+  z-index: 999;
+  opacity: 1;
+  &.scrollable {
+    height: 100%;
+    min-height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    .v--modal-box {
+      margin-bottom: 2px;
+    }
+  }
+  .v--modal-background-click {
+    width: 100%;
+    min-height: 100%;
+    height: auto;
+    overflow-x: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: $gutter-w;
+  }
+  .v--modal-box {
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+}
+
+// Modal
+// ----------------------------
+.v--modal {
+  background-color: lighten($theme-bg, 1%);
+  color: $theme-base;
+  text-align: left;
+  border-radius: 8px;
+  padding: 0;
+  width: 100%!important;
+  top: initial!important;
+  left: initial!important;
+  min-width: 380px;
+  max-width: 600px;
+  @extend .card-shadow;
+}
+.v--modal.v--modal-fullscreen {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  left: 0;
+  top: 0;
+}
+.v--modal-top-right {
+  display: block;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+// Animations
+// ---------------------------------
+// .overlay-fade-enter-active,
+// .overlay-fade-leave-active {
+//   transition: all 0.2s;
+// }
+// .overlay-fade-enter,
+// .overlay-fade-leave-active {
+//   opacity: 0;
+// }
+// .nice-modal-fade-enter-active,
+// .nice-modal-fade-leave-active {
+//   transition: all 0.4s;
+// }
+// .nice-modal-fade-enter,
+// .nice-modal-fade-leave-active {
+//   opacity: 0;
+//   transform: translateY(-20px);
+// }
+
+
+.vue-dialog div {
+  box-sizing: border-box;
+}
+.vue-dialog .dialog-flex {
+  width: 100%;
+  height: 100%;
+}
+.vue-dialog .dialog-content {
+  flex: 1 0 auto;
+  width: 100%;
+  padding: $gutter-w $gutter-w * 1.5;
+  // font-size: 14px;
+}
+.vue-dialog .dialog-c-title {
+  font-weight: 500;
+  padding-bottom: $gutter-w;
+}
+.vue-dialog .dialog-c-text {
+}
+
+
+// Buttons
+// ---------------------------------
+.vue-dialog .vue-dialog-buttons {
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
+  border: 0;
+  padding: 0 $gutter-h $gutter-w;
+  margin-left: -0.25rem;
+  margin-right: -0.25rem;
+  .btn {
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
+  }
+}
+.vue-dialog .vue-dialog-buttons-none {
+  width: 100%;
+  padding-bottom: $gutter-w * 1.5;
+}
+// .vue-dialog-button {
+//   font-size: 12px !important;
+//   background: transparent;
+//   padding: 0;
+//   border: 0;
+//   cursor: pointer;
+//   box-sizing: border-box;
+//   line-height: 40px;
+//   height: 40px;
+//   color: inherit;
+//   font: inherit;
+//   outline: none;
+//   &:hover {
+//     background: rgba($theme-base, 0.01);
+//   }
+//   &:active {
+//     background: rgba($theme-base, 0.025);
+//   }
+//   &:not(:first-of-type) {
+//     border-left: 1px solid $border-color;
+//   }
+// }

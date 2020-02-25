@@ -11,24 +11,8 @@
     flex-grow: 1;
   }
 
-  footer {
-    .row-counts {
-      
-    }
-    .affected-rows {
-
-    }
-  }
-
-  .modal-form {
-    label {
-      color: black;
-    }
-    input {
-      // I'm Sorry Gregory
-      border: solid 1px black;
-      color: black;
-    }
+  .v--modal {
+    max-width: 400px;
   }
 
   .editor {
@@ -50,7 +34,7 @@
       line-height: 24px;
       padding: 0 $gutter-w;
       font-size: 0.85rem;
-      min-width: 24px;
+      min-width: 48px;
     }
   }
   .bottom-panel {

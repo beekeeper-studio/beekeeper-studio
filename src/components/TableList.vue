@@ -1,8 +1,39 @@
 <template>
   <div class="flex-col expand">
 
-    <div v-if="pinned.length > 0" class="table-list flex-col expand">
+    <!-- Filter -->
+    <div class="fixed">
+      <div class="filter">
+        <div class="filter-wrap">
+          <input type="text" placeholder="Filter" v-model="filterQuery">
+          <!-- TODO (matthew): clear icon needs to hide when input has no value also. ie. Type then delete characters and still shows currently -->
+          <i class="clear material-icons" @click="clearFilter" v-if="filterQuery !== null">cancel</i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pinned -->
+    <div v-if="pinned.length > 0" class="table-list pinned flex-col">
       <nav class="list-group flex-col">
+        <div class="list-heading row">
+          <div class="sub row flex-middle expand">
+            <span class="btn-fab open">
+              <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
+            </span>
+            <span>Pinned</span>
+          </div>
+          <!-- <div class="actions">
+            <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
+              <i class="material-icons">unfold_less</i>
+            </a>
+            <a @click.prevent="expandAll" v-tooltip="'Expand All'">
+              <i class="material-icons">unfold_more</i>
+            </a>
+            <a @click.prevent="refreshTables" v-tooltip="'Refresh'">
+              <i class="material-icons">refresh</i>
+            </a>
+          </div> -->
+        </div>
         <div class="list-body">
           <table-list-item
             v-for="table in pinned"
@@ -17,21 +48,14 @@
         </div>
       </nav>
     </div>
-    <div class="fixed">
-      <div class="filter">
-        <div class="filter-wrap">
-          <input type="text" placeholder="Filter" v-model="filterQuery">
-          <!-- TODO (matthew): clear icon needs to hide when input has no value also. ie. Type then delete characters and still shows currently -->
-          <i class="clear material-icons" @click="clearFilter" v-if="filterQuery !== null">cancel</i>
-        </div>
-      </div>
-    </div>
-    <div class="table-list flex-col expand">
+
+    <!-- Tables -->
+    <div class="table-list flex-col">
       <nav class="list-group flex-col" v-if="tables">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
             <span class="btn-fab open">
-              <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
+              <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span>
             <span>Tables</span>
           </div>
@@ -64,9 +88,6 @@
       <div v-if="!tables || tables.length == 0">
         There are no tables in {{database}}
       </div>
-  
-      <span class="expand"></span>
-  
     </div>
   </div>
 </template>

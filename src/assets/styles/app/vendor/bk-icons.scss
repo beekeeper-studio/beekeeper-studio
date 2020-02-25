@@ -24,6 +24,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.bk-pin-outline:before {
+  content: "\e900";
+}
+.bk-pin:before {
+  content: "\e901";
+}
 .bk-database:before {
   content: "\e964";
 }

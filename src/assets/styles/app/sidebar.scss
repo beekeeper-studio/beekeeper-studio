@@ -75,9 +75,6 @@
       .fixed {
         padding: 0 ($gutter-h * 1.25);
       }
-      .list-group {
-        padding: $gutter-h 0;
-      }
     }
   }
 
@@ -124,7 +121,7 @@
   // Search
   .filter {
     position: relative;
-    margin-bottom: $gutter-h;
+    margin-bottom: $gutter-w;
     .filter-wrap {
       position: relative;
       display: flex;
@@ -147,11 +144,6 @@
     }
   }
 
-  // Tables
-  .table-list {
-    flex-grow: 1
-  }
-
   // Quick Connect 
   .quick-connect {
     i {
@@ -159,13 +151,16 @@
     }
   }
 }
+.table-list {
+  flex-grow: 1;
+}
 
 // History
 // ------------------------------
 .sidebar-history {    
   flex: 1 1 100%;
-  overflow-x: hidden;
   height: 0;
+  overflow-x: hidden;
   padding: 0 0 $gutter-w;
   .list-group {
     a {
@@ -188,8 +183,8 @@
 // ------------------------------
 .sidebar-favorites {    
   flex: 1 1 100%;
-  overflow-x: hidden;
   height: 0;
+  overflow-x: hidden;
   padding: 0 0 $gutter-w;
   .list-group {
     a {
@@ -275,23 +270,29 @@
       align-items: center;
       .btn-fab {
         &:hover {
-          .material-icons {
+          i {
             color: $theme-base;
           }
         }
+        &.unpin {
+          display: none;
+        }
+        &.pinned {
+          display: inline-block;
+          i {
+            color: $theme-secondary;
+          }
+        }
       }
-      // .new-tab {
-      //   .material-icons {
-      //     font-size: 14px;
-      //   }
-      // }
-      .material-icons {
-        color: $text;
-        transition: color 0.15s ease-in-out;;
+      i {
+        font-size: 14px;
+        color: rgba($theme-base, 0.37);
+        transition: color 0.15s ease-in-out;
       }
     }
   }
   .sub-items {
+    // background: darken($theme-bg, 2.5%);
     display: flex;
     flex-direction: column;
     color: $text;
@@ -360,6 +361,29 @@
     display: none;
     &.show {
       display: flex;
+    }
+  }
+}
+
+.pinned {
+  flex-grow: initial;
+  .list-body {
+    height: min-content;
+    max-height: 20vh;
+  }
+  .list-group {
+    .list-item-btn {
+      .actions {
+        display: flex;
+        .btn-fab {
+          &.pinned {
+            display: none;
+          }
+          &.unpin {
+            display: inline-block;
+          }
+        }
+      }
     }
   }
 }

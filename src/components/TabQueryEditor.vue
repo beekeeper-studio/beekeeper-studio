@@ -4,8 +4,10 @@
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
       <div class="actions text-right" ref="actions">
-        <a @click.prevent="triggerSave" class="btn btn-success">Save</a>
-        <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitQuery" class="btn btn-primary">Run</a>
+        <div class="btn-group">
+          <a @click.prevent="triggerSave" class="btn btn-link">Save</a>
+          <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitQuery" class="btn btn-primary">Run</a>
+        </div>
       </div>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
@@ -35,15 +37,22 @@
       </template>
     </footer>
 
-    <modal name="save-modal" @closed="selectEditor" @opened="selectTitleInput">
-      <div class="modal-form">
-        <form @submit.prevent="saveQuery">
-          <div class="save-errors" v-if="saveError">{{saveError}}</div>
-          <label for="title">Title</label>
-          <input type="text" ref="titleInput" name="title" class="form-control" v-model="tab.query.title">
-          <button class="btn btn-default" @click.prevent="$modal.hide('save-modal')">Cancel</button>
-          <button type="submit" class="btn btn-info">Save</button>
-        </form>
+    <!-- Save Modal -->
+    <modal class="vue-dialog" name="save-modal" @closed="selectEditor" @opened="selectTitleInput" height="auto" :scrollable="true">
+      <div class="dialog-content">
+        <div class="dialog-c-title">Saved Query Name</div>
+        <div class="modal-form">
+          <form @submit.prevent="saveQuery">
+            <div class="save-errors" v-if="saveError">{{saveError}}</div>
+           <div class="form-group">
+              <input type="text" ref="titleInput" name="title" class="form-control"  v-model="tab.query.title" autofocus>
+           </div>
+          </form>
+        </div>
+      </div>
+      <div class="vue-dialog-buttons">
+        <button class="btn btn-flat" @click.prevent="$modal.hide('save-modal')">Cancel</button>
+        <button class="btn btn-primary" type="submit">Save</button>
       </div>
     </modal>
 
@@ -213,7 +222,6 @@
             startingValue += '\n';
         }
       }
-
 
       this.$nextTick(() => {
 
