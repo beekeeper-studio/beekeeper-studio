@@ -144,7 +144,7 @@
     }
   }
 
-  // Quick Connect 
+  // Quick Connect
   .quick-connect {
     i {
       margin-right: 0.5rem;
@@ -157,7 +157,7 @@
 
 // History
 // ------------------------------
-.sidebar-history {    
+.sidebar-history {
   flex: 1 1 100%;
   height: 0;
   overflow-x: hidden;
@@ -181,7 +181,7 @@
 
 // Favorites
 // ------------------------------
-.sidebar-favorites {    
+.sidebar-favorites {
   flex: 1 1 100%;
   height: 0;
   overflow-x: hidden;
@@ -339,7 +339,7 @@
       background: transparent;
     }
     .material-icons {
-      color: rgba($theme-base, 0.37);    
+      color: rgba($theme-base, 0.37);
       font-size: 18px;
     }
   }
@@ -354,7 +354,7 @@
   .badge-info {
     background: $brand-info;
   }
-  
+
   // Collapse
   // -----------------------
   .collapse {
@@ -369,7 +369,7 @@
   flex-grow: initial;
   .list-body {
     height: min-content;
-    max-height: 20vh;
+    max-height: 70vh;
   }
   .list-group {
     .list-item-btn {
