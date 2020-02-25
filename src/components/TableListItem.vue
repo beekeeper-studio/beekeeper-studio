@@ -22,8 +22,8 @@
 </template>
 
 <script type="text/javascript">
-  import { mapState } from 'vuex'
 
+  import { mapGetters } from 'vuex'
 	export default {
 		props: ["connection", "table", "selected", "forceExpand", "forceCollapse"],
     mounted() {
@@ -50,7 +50,7 @@
       }
     },
     computed: {
-      ...mapState(['pinned'])
+      ...mapGetters(['pinned'])
     },
     methods: {
       async toggleColumns() {

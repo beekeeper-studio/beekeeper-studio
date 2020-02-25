@@ -182,6 +182,7 @@
           this.$modal.hide('save-modal')
           this.$noty.success('Saved')
           this.unsavedText = this.tab.query.text
+          this.tab.unsavedChanges = false
         }
       },
       async submitQuery() {

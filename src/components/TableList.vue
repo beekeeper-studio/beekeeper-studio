@@ -7,7 +7,7 @@
         <div class="filter-wrap">
           <input type="text" placeholder="Filter" v-model="filterQuery">
           <!-- TODO (matthew): clear icon needs to hide when input has no value also. ie. Type then delete characters and still shows currently -->
-          <i class="clear material-icons" @click="clearFilter" v-if="filterQuery !== null">cancel</i>
+          <i class="clear material-icons" @click="clearFilter" v-if="filterQuery">cancel</i>
         </div>
       </div>
     </div>
@@ -95,7 +95,7 @@
 <script>
   import _ from 'lodash'
   import TableListItem from './TableListItem'
-  import { mapState } from 'vuex'
+  import { mapState, mapGetters } from 'vuex'
 
   export default {
     components: { TableListItem},
@@ -123,7 +123,8 @@
           .value()
         return _.concat(startsWithFilter, containsFilter)
       },
-      ...mapState(['tables', 'connection', 'database', 'pinned']),
+      ...mapState(['tables', 'connection', 'database']),
+      ...mapGetters(['pinned']),
     },
     methods: {
       tableSelected(table) {

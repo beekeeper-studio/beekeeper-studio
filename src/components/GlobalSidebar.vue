@@ -41,11 +41,11 @@
         },
         historyTooltip: {
           placement: 'right',
-          content: 'History'
+          content: 'Run History'
         },
         queriesTooltip: {
           placement: 'right',
-          content: "Saved"
+          content: "Saved Queries"
         }
       }
     },

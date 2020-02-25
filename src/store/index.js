@@ -21,10 +21,16 @@ const store = new Vuex.Store({
     connection: null,
     database: null,
     tables: [],
-    pinned: [],
+    pinStore: {},
     connectionConfigs: [],
     history: [],
     favorites: []
+  },
+  getters: {
+    pinned(state) {
+      const result = state.pinStore[state.database]
+      return _.isNil(result) ? [] : result
+    }
   },
   mutations: {
     newConnection(state, payload) {
@@ -47,12 +53,18 @@ const store = new Vuex.Store({
       state.tables = tables
     },
     addPinned(state, table) {
-      if (!state.pinned.includes(table)) {
-        state.pinned.push(table)
+      if (_.isNil(state.pinStore[state.database])) {
+        Vue.set(state.pinStore, state.database, [])
+      }
+      if (!state.pinStore[state.database].includes(table)) {
+        state.pinStore[state.database].push(table)
       }
     },
     removePinned(state, table) {
-      state.pinned = _.without(state.pinned, table)
+      if(_.isNil(state.pinStore[state.database])) {
+        return
+      }
+      Vue.set(state.pinStore, state.database, _.without(state.pinStore[state.database], table))
     },
     config(state, newConfig) {
       if (!state.connectionConfigs.includes(newConfig)) {
