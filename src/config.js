@@ -50,7 +50,15 @@ export default {
       port: null,
       user: null,
       password: null,
-      defaultDatabase: null
+      defaultDatabase: null,
+      ssh: {
+        hostname: null,
+        port: null,
+        user: null,
+        password: null,
+        keyfile: null,
+        mode: "keyfile"
+      }
     }
   },
   maxResults: 10000

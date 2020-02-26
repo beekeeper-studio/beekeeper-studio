@@ -32,6 +32,49 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: "varchar", length: 500, nullable: false})
   uniqueHash
 
+  @Column({type: 'boolean', nullable: false, default: false})
+  sshEnabled
+
+  @Column({type: "varchar", nullable: true})
+  sshHost
+
+  @Column({type: "int", nullable: true})
+  sshPort
+
+  @Column({type: "varchar", length: "8", nullable: false, default: "keyfile"})
+  sshMode
+
+  @Column({type: "varchar", nullable: true})
+  sshKeyfile
+
+  @EncryptedColumn({
+    type: "varchar",
+    nullable: true,
+    encrypt: {
+      key: config.encryptionKey,
+      algorithm: 'aes-256-cbc',
+      ivLength: 16,
+      looseMatching: false
+    }
+  })
+  sshKeyfilePassword
+
+
+  @Column({type: 'varchar', nullable: true})
+  sshUsername
+
+  @EncryptedColumn({
+    type: 'varchar',
+    nullable: true,
+    encrypt: {
+      key: config.encryptionKey,
+      algorithm: 'aes-256-cbc',
+      ivLength: 16,
+      looseMatching: false
+    }
+  })
+  sshPassword
+
   /* 
     This unique hash is so that even if a user doesn't save
     the connection, we can still figure out if they're connected

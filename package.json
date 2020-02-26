@@ -44,6 +44,7 @@
     "v-tooltip": "^2.0.2",
     "vue": "^2.6.10",
     "vue-js-modal": "^1.3.33",
+    "vue-select": "^3.4.0",
     "vuejs-noty": "^0.1.3",
     "vuex": "^3.1.1",
     "vuex-persist": "^2.0.1",
