@@ -7,9 +7,9 @@
       <i class="item-icon material-icons">grid_on</i>
       <span class="table-name truncate expand">{{table.name}}</span>
       <span class="actions">
-        <!-- <span class="btn-fab new-tab"><i class="material-icons">open_in_new</i></span> -->
-        <span v-if="!pinned.includes(table)" @click.prevent.stop="pin" class="btn-fab dropdown"><i class="material-icons">add</i></span>
-        <span v-if="pinned.includes(table)" @click.prevent.stop="unpin" class="btn-fab dropdown"><i class="material-icons">clear</i></span>
+        <span v-if="!pinned.includes(table)" @click.prevent.stop="pin" class="btn-fab pin"><i class="bk-pin"></i></span>
+        <span v-if="pinned.includes(table)" @click.prevent.stop="unpin" class="btn-fab unpin"><i class="material-icons">clear</i></span>
+        <span v-if="pinned.includes(table)" @click.prevent.stop="unpin" class="btn-fab pinned"><i class="bk-pin"></i></span>
       </span>
     </a>
     <div v-show="showColumns" class="sub-items">
@@ -22,8 +22,8 @@
 </template>
 
 <script type="text/javascript">
-  import { mapState } from 'vuex'
 
+  import { mapGetters } from 'vuex'
 	export default {
 		props: ["connection", "table", "selected", "forceExpand", "forceCollapse"],
     mounted() {
@@ -50,7 +50,7 @@
       }
     },
     computed: {
-      ...mapState(['pinned'])
+      ...mapGetters(['pinned'])
     },
     methods: {
       async toggleColumns() {
