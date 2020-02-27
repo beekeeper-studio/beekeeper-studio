@@ -5,7 +5,7 @@
       <span class="expand"></span>
       <div class="actions text-right" ref="actions">
         <div class="btn-group">
-          <a @click.prevent="triggerSave" class="btn btn-link">Save</a>
+          <a @click.prevent="triggerSave" class="btn btn-flat">Save</a>
           <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitQuery" class="btn btn-primary">Run</a>
         </div>
       </div>

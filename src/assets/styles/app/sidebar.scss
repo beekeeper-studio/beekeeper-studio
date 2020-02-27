@@ -22,7 +22,7 @@
       justify-content: center;
       width: 44px;
       height: 44px;
-      font-size: 16px;
+      font-size: 18px;
       color: rgba($theme-base, 0.38);
       &:hover {
         color: $text-dark;
@@ -33,16 +33,15 @@
         box-shadow: inset 2px 0 $theme-primary;
       }
       .material-icons {
-        font-size: 22px;
+        font-size: 24px;
       }
     }
   }
   .sidebar-heading {
     display: flex;
     align-items: center;
-    background: rgba($theme-base, 0.06);
-    box-shadow: 0 1px 2px rgba(black, 0.25),
-                inset 1px 0 rgba($query-editor-bg, 0.5);
+    background: rgba($theme-base, 0.07);
+    box-shadow: 0 1px 2px rgba(black, 0.2);
     padding: $gutter-h $gutter-h $gutter-h $gutter-w;
     height: $tab-height;
     font-size: 14px;
@@ -161,8 +160,9 @@
   flex: 1 1 100%;
   height: 0;
   overflow-x: hidden;
-  padding: 0 0 $gutter-w;
+  padding: $gutter-h 0 $gutter-w;
   .list-group {
+    padding
     a {
       justify-content: space-between;
       overflow: hidden;
@@ -185,7 +185,7 @@
   flex: 1 1 100%;
   height: 0;
   overflow-x: hidden;
-  padding: 0 0 $gutter-w;
+  padding: $gutter-h 0 $gutter-w;
   .list-group {
     a {
       justify-content: space-between;

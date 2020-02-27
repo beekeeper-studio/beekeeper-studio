@@ -1,4 +1,3 @@
-
 // Global
 // ------------------------
 *, *:after, *:before {
@@ -281,12 +280,16 @@ select {
 .checkbox-group {
   display: inline-flex;
   align-items: center;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
+  cursor: pointer;
+  span {
+    font-size: 13px;
+  }
   i {
-    margin: 0 ($gutter-h * 0.5);
+    margin: 0 ($gutter-h * 0.75);
     font-size: 18px;
     color: rgba($theme-base, 0.37);
   }
@@ -296,7 +299,6 @@ input[type="checkbox"] {
 
   position: relative;
   display: inline-flex;
-  cursor: pointer;
 	-webkit-appearance: none;
 	background-color: transparent;
   box-shadow: inset 0 0 0 2px $border-color;
@@ -333,15 +335,18 @@ input[type=file] {
     font-family: $font-family, Helvetica, Arial, sans-serif;
     color: $theme-base;
     background: rgba($theme-base, 0.06);
-    border:0;
-    border-radius: 4px;
-    font-size: 12px;
+    border: 0;
+    font-size: 11px!important;
+    line-height: $input-height;
+    height: $input-height;
+    padding: 0 $gutter-w;
     font-weight: bold;
-    padding: ($gutter-h * 0.5) $gutter-w;
-    margin-top: 0.25rem;
-    margin-left: -0.2rem;
+    padding: 0 $gutter-w;
+    margin-left: -$gutter-h;
     outline: none;
-    box-shadow: inset 0 0 0 1px rgba(white, 0.025);
+    cursor: pointer;
+    box-shadow: inset -1px 0 rgba(white, 0.025);
+    transition: background 0.15s ease-in-out;
     &:hover, &:focus {
       background: rgba($theme-base, 0.12);
     }
@@ -372,34 +377,6 @@ input[type=file] {
   }
 }
 
-
-// Cards
-// ---------------------------------------
-.card, .card-flat {
-  border-radius: 8px;
-  overflow: hidden;
-  &.padding {
-    padding: 1.5rem;
-  }
-}
-.card {
-  background: $theme-bg;
-  @extend .card-shadow;
-}
-.card-flat {
-  background: rgba($theme-base, 0.05);
-  box-shadow: none;
-}
-// .card-body {
-//   flex: 1 1 auto;
-//   padding: 1.25rem;
-// }
-.card-title {
-  font-size: 1.25rem;
-  margin: 0;
-  margin-bottom: 1.5rem;
-}
-
 // Nav
 // ----------------------------------
 .nav {
@@ -427,7 +404,8 @@ input[type=file] {
   padding: 0.5rem 1rem;
 }
 
-// Slit.js Resizer
+// Split.js Resizer
+// ------------------------------------------
 .gutter {
   position: relative;
   &.gutter-horizontal,
@@ -461,98 +439,6 @@ input[type=file] {
     z-index: 10;
   }
 }
-// Global
-// ------------------------
-*, *:after, *:before {
-  box-sizing: border-box;
-}
-:root {
-  font-family: $font-family, Helvetica, Arial, sans-serif;
-  font-size: $base-font-size;
-  line-height: 1.6;
-  background: $theme-bg;
-  color: $text-dark;
-}
-body {
-  @extend :root;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-::selection {
-  background: rgba($theme-primary, 0.25);
-}
-::placeholder {
-  color: $placeholder;
-}
-figure {
-  margin: 0;
-}
-h1, h2, h3, h4, h5, h6, b, strong {
-  color: $theme-base;
-}
-a {
-  display: inline-block;
-  align-items: center;
-  color: $link-color;
-  text-decoration: none;
-  cursor: pointer;
-  &:hover, &:focus {
-    color: $link-color;
-    text-decoration: none;
-  }
-  &.disabled, &.disabled:hover {
-    cursor: initial;
-    opacity: 0.25;
-  }
-}
-pre {
-  background: darken($theme-bg, 5%);
-  border-radius: 8px;
-  padding: 1rem;
-  font-size: 0.9rem;
-}
-.expand {
-  flex-grow: 1;
-}
-.truncate {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-// Material-icons
-.material-icons {
-  font-size: 18px;
-}
-
-// Selection
-::selection {
-  background: rgba($brand-primary, 0.25);
-}
-
-// Placeholder
-::placeholder {
-  color: $text-hint;
-}
-
-// Scrollbar
-// ---------------------
-::-webkit-scrollbar {
-  -webkit-appearance: none!important;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba($theme-base, 0.2);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-button {
-  display: none;
-}
 
 
 // Cards
@@ -580,7 +466,7 @@ pre {
 .card-title {
   font-size: 1.25rem;
   margin: 0;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 .card-shadow {
   box-shadow: 0 0 0 1px rgba(black ,0.06),
@@ -641,56 +527,4 @@ pre {
 }
 .alert-success {
   color: lighten($brand-success, 20%);
-}
-
-
-// Nav
-// ----------------------------------
-.nav {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -ms-flex-wrap: wrap;
-  flex-wrap: wrap;
-  padding-left: 0;
-  margin-bottom: 0;
-  list-style: none;
-}
-.nav-tabs {
-  border: 0;
-  .nav-link {
-    border: 0;
-    &.active {
-      border: 0;
-      background: $brand-secondary;
-    }
-  }
-}
-.nav-link {
-  display: block;
-  padding: 0.5rem 1rem;
-}
-
-
-// Alerts
-// --------------------------
-.alert {
-  display: flex;
-  border-radius: 6px;
-  padding: 0.75rem 1rem;
-  background: rgba($theme-base, 0.035);
-  margin: 0.5rem 0;
-  font-size: 0.85rem;
-  line-height: 16px;
-  > i {
-    font-size: 16px;
-    margin-right: 1rem;
-  }
-  ul {
-    margin: 0.35rem 0;
-    padding-left: 1.5rem;
-  }
-}
-.alert-danger {
-  color: $brand-danger;
 }

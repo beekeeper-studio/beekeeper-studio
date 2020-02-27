@@ -23,6 +23,8 @@
     i {
       font-size: 3rem;
       color: $text-lighter;
+      transition: color 0.15s ease-in-out;
+      cursor: pointer;
     }
     &.enabled {
       i {

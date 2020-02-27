@@ -4,7 +4,7 @@
       <div ref="sidebar" class="sidebar flex-col connection-sidebar" id="sidebar">
         <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @edit="edit" @connect="submit"></connection-sidebar>
       </div>
-      <div ref="content" class="connection-main page-content layout-center" id="page-content">
+      <div ref="content" class="connection-main page-content" id="page-content">
         <div class="small-wrap">
           <div class="card-flat padding">
             <h3 class="card-title">{{pageTitle}}</h3>
@@ -30,7 +30,7 @@
               <redshift-form v-if="config.connectionType === 'redshift'" :config="config" :testing="testing"></redshift-form>
               <sqlite-form v-if="config.connectionType === 'sqlite'" :config="config" :testing="testing"></sqlite-form>
               <sql-server-form v-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"></sql-server-form>
- 
+  
             </form>
   
           </div>

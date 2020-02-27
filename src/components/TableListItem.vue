@@ -9,7 +9,7 @@
       <span class="actions">
         <span v-if="!pinned.includes(table)" @click.prevent.stop="pin" class="btn-fab pin"><i class="bk-pin"></i></span>
         <span v-if="pinned.includes(table)" @click.prevent.stop="unpin" class="btn-fab unpin"><i class="material-icons">clear</i></span>
-        <span v-if="pinned.includes(table)" @click.prevent.stop="pin" class="btn-fab pinned"><i class="bk-pin"></i></span>
+        <span v-if="pinned.includes(table)" class="btn-fab pinned"><i class="bk-pin"></i></span>
       </span>
     </a>
     <div v-show="showColumns" class="sub-items">
