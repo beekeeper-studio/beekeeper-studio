@@ -1,22 +1,35 @@
 .connection-main {
   background: darken($theme-bg, 1.5%);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   .small-wrap {
     max-width: 550px;
   }
-  .card {
-    padding: 1.5rem;
+  .card-flat {
+    margin: $gutter-w 0;
   }
-
   .advanced-connection-settings {
-    background-color: #0000004a;
-    margin: 1rem;
-    margin-left: -1.5rem;
-    margin-right: -1.5rem;
-    padding: 1.5rem;
-    padding-top: 0.2rem;
-    padding-bottom: 0.2rem;
+    display: flex;
+    flex-direction: column;
+    background: darken($theme-bg, 1%);
+    border-radius: 8px;
+    margin: ($gutter-w * 1.5) 0;
+    padding: $gutter-h ($gutter-w * 1.25);
   }
-
+  .advanced-heading {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    i {
+      font-size: 3rem;
+      color: $text-lighter;
+    }
+    &.enabled {
+      i {
+        color: $theme-primary;
+      }
+    }
+  }
   .save-connection {
     h3 {
       margin-top: 1.5rem;

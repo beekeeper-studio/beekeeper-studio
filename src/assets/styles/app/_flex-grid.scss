@@ -52,6 +52,10 @@ $gutter: 1rem;
   >.col {
     display: inline-block;
     flex: 100%;
+    > .form-group {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
   }
   &.gutter {
     width: initial !important; // split.js class overlap fix

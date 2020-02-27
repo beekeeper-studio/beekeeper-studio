@@ -14,6 +14,7 @@ $black:              black;
 $text-dark:          rgba($theme-base, 0.87);
 $text:               rgba($theme-base, 0.67);
 $text-light:         rgba($theme-base, 0.57);
+$text-lighter:       rgba($theme-base, 0.37);
 $text-hint:          rgba($theme-base, 0.37);
 $text-disabled:      rgba($theme-base, 0.37);
 
@@ -46,8 +47,8 @@ $btn-border-radius:   4px;
 $input-padding-h:     0;
 $input-height:        26px;
 $input-padding-w:     0.75rem;
-$input-highlight:     rgba($theme-base, 0.68);
-$input-radius:        3px;
+$input-highlight:     rgba($theme-base, 0.37);
+$input-radius:        4px;
 
 // Layout
 // -----------------------------
