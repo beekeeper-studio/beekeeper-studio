@@ -31,23 +31,32 @@
       <div v-if="config.sshMode === 'keyfile'" class="row gutter">
         <div class="form-group s9 col">
           <label for="sshKeyfile">Private Key File</label>
-          <input type="file" @change="setKeyfile">
+          <input class="form-control" type="file" @change="setKeyfile">
         </div>
         <div class="form-group s3 col">
           <label for="sshKeyfilePassword">Key File Password</label>
-          <input type="password" v-model="config.sshKeyfilePassword">
+          <input type="password" class="form-control" v-model="config.sshKeyfilePassword">
           <span class="help">Optional</span>
         </div>
+        <div class="col form-group">
+          <input type="checkbox" name="rememberPassword" class="form-control" v-model="config.rememberSshKeyfilePassword">
+          <label for="rememberPassword">Save Password? <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help</i></label>
+        </div>
+
       </div>
       <div v-if="config.sshMode === 'userpass'" class="row gutter">
         <div class="form-group s6 col">
           <label for="sshUsername">SSH Username</label>
-          <input type="text" v-model="config.sshUsername">
+          <input class="form-control" type="text" v-model="config.sshUsername">
         </div>
         <div class="form-group s6 col">
           <label for="sshPassword">SSH Password</label>
-          <input type="password" v-model="config.sshPassword">
+          <input type="password" class="form-control" v-model="config.sshPassword">
         </div>
+      </div>
+      <div class="col form-group">
+        <input type="checkbox" name="rememberPassword" class="form-control" v-model="config.rememberSshPassword">
+        <label for="rememberPassword">Save Password? <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help</i></label>
       </div>
 
     </div>

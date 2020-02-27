@@ -74,14 +74,14 @@ export class SavedConnection extends DbConnectionBase {
   name
 
 
-  @Column({type: 'boolean', default: false})
-  rememberPassword = false
+  @Column({type: 'boolean', default: true})
+  rememberPassword = true
 
-  @Column({type: 'boolean', default: false})
-  rememberSshPassword = false
+  @Column({type: 'boolean', default: true})
+  rememberSshPassword = true
 
-  @Column({type: 'boolean', default: false})
-  rememberSshKeyfilePassword = false
+  @Column({type: 'boolean', default: true})
+  rememberSshKeyfilePassword = true
 
   @EncryptedColumn({
     type: 'varchar',
@@ -119,5 +119,20 @@ export class SavedConnection extends DbConnectionBase {
   })
   sshPassword
 
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  maybeClearPasswords() {
+    console.log("checking password settings")
+    if (!this.rememberPassword) {
+      this.password = null
+    }
+    if (!this.rememberSshPassword) {
+      this.sshPassword = null
+    }
+    if (!this.rememberSshKeyfilePassword) {
+      this.sshKeyfilePassword = null
+    }
+  }
 
 }
