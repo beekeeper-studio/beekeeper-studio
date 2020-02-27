@@ -7,7 +7,7 @@
       </div>
       <div class="col s3 form-group">
         <label for="port">Port</label>
-        <input type="number" class="form-control" name="port" v-model="config.port">
+        <input type="number" class="form-control" name="port" v-model.number="config.port">
       </div>
     </div>
     <div class="row gutter">

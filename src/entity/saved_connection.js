@@ -33,7 +33,7 @@ export class DbConnectionBase extends ApplicationEntity {
   uniqueHash
 
   @Column({type: 'boolean', nullable: false, default: false})
-  sshEnabled
+  sshEnabled = false
 
   @Column({type: "varchar", nullable: true})
   sshHost
@@ -42,38 +42,13 @@ export class DbConnectionBase extends ApplicationEntity {
   sshPort
 
   @Column({type: "varchar", length: "8", nullable: false, default: "keyfile"})
-  sshMode
+  sshMode = "keyfile"
 
   @Column({type: "varchar", nullable: true})
-  sshKeyfile
-
-  @EncryptedColumn({
-    type: "varchar",
-    nullable: true,
-    encrypt: {
-      key: config.encryptionKey,
-      algorithm: 'aes-256-cbc',
-      ivLength: 16,
-      looseMatching: false
-    }
-  })
-  sshKeyfilePassword
-
+  sshKeyfile = ""
 
   @Column({type: 'varchar', nullable: true})
   sshUsername
-
-  @EncryptedColumn({
-    type: 'varchar',
-    nullable: true,
-    encrypt: {
-      key: config.encryptionKey,
-      algorithm: 'aes-256-cbc',
-      ivLength: 16,
-      looseMatching: false
-    }
-  })
-  sshPassword
 
   /* 
     This unique hash is so that even if a user doesn't save
@@ -84,7 +59,7 @@ export class DbConnectionBase extends ApplicationEntity {
   @BeforeInsert()
   @BeforeUpdate()
   setUniqueHashCode() {
-    let str = `${this.host}${this.port}${this.path}${this.uri}`
+    let str = `${this.host}${this.port}${this.path}${this.uri}${this.sshHost}${this.sshPort}`
     this.uniqueHash = Crypto.createHash('md5').update(str).digest('hex')
   }
 
@@ -98,6 +73,16 @@ export class SavedConnection extends DbConnectionBase {
   @Column("varchar")
   name
 
+
+  @Column({type: 'boolean', default: false})
+  rememberPassword = false
+
+  @Column({type: 'boolean', default: false})
+  rememberSshPassword = false
+
+  @Column({type: 'boolean', default: false})
+  rememberSshKeyfilePassword = false
+
   @EncryptedColumn({
     type: 'varchar',
     nullable: true,
@@ -109,5 +94,30 @@ export class SavedConnection extends DbConnectionBase {
     }
   })
   password
+
+  @EncryptedColumn({
+    type: "varchar",
+    nullable: true,
+    encrypt: {
+      key: config.encryptionKey,
+      algorithm: 'aes-256-cbc',
+      ivLength: 16,
+      looseMatching: false
+    }
+  })
+  sshKeyfilePassword
+
+  @EncryptedColumn({
+    type: 'varchar',
+    nullable: true,
+    encrypt: {
+      key: config.encryptionKey,
+      algorithm: 'aes-256-cbc',
+      ivLength: 16,
+      looseMatching: false
+    }
+  })
+  sshPassword
+
 
 }

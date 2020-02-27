@@ -225,7 +225,7 @@ i {
   margin-top: 6px;
   margin-bottom: 6px;
   label {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     margin-bottom: 6px;
   }
 }
@@ -261,6 +261,11 @@ select {
     background: lighten($theme-bg, 2%);
   }
 }
+
+.text-primary {
+  color: $brand-primary!important;
+}
+
 .text-success {
   color: $brand-success!important;
 }
@@ -272,6 +277,13 @@ select {
 }
 .text-warning {
   color: $brand-warning!important;
+}
+
+.text-2x {
+  font-size: 2rem;
+  &.material-icons {
+    font-size: 2em;
+  }
 }
 
 

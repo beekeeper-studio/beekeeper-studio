@@ -1,6 +1,9 @@
 <template>
   <div class="advanced-connection-settings">
-    <h4><span class="expand">SSH Tunnel</span> <i class="material-icons" @click.prevent="config.sshEnabled = !config.sshEnabled">{{icon}}</i></h4>
+    <h4 class="flex">
+      <span class="expand">SSH Tunnel</span>
+      <i class="material-icons text-2x text-primary" @click.prevent="config.sshEnabled = !config.sshEnabled">{{icon}}</i>
+    </h4>
     <div class="advanced-body" v-show="config.sshEnabled">
       <div class="row gutter">
         <div class="col s9 form-group">
@@ -9,12 +12,20 @@
         </div>
         <div class="col s3 form-group">
           <label for="sshPort">Port</label>
-          <input type="text" v-model="config.sshPort">
+          <input type="number" v-model.number="config.sshPort">
         </div>
       </div>
       <div class="row gutter">
         <h5>SSH Authentication</h5>
-        <v-select :options="sshModeOptions" @input="setMode" :value="config.sshMode"></v-select>
+        <v-select 
+          :options="sshModeOptions"
+          @input="setMode"
+          :value="config.sshMode"
+          :clearable="false"
+          :searchable="false"
+          :clearSearchOnSelect="false"
+          placeholder="Select SSH authentication method"
+          ></v-select>
       </div>
 
       <div v-if="config.sshMode === 'keyfile'" class="row gutter">
@@ -26,6 +37,16 @@
           <label for="sshKeyfilePassword">Key File Password</label>
           <input type="password" v-model="config.sshKeyfilePassword">
           <span class="help">Optional</span>
+        </div>
+      </div>
+      <div v-if="config.sshMode === 'userpass'" class="row gutter">
+        <div class="form-group s6 col">
+          <label for="sshUsername">SSH Username</label>
+          <input type="text" v-model="config.sshUsername">
+        </div>
+        <div class="form-group s6 col">
+          <label for="sshPassword">SSH Password</label>
+          <input type="password" v-model="config.sshPassword">
         </div>
       </div>
 
@@ -50,10 +71,11 @@
     },
     methods: {
       setMode(option) {
+        console.log("selected", option)
         this.config.sshMode = option.mode
       },
       setKeyfile(e) {
-        this.config.sshKeyfile = e.target.files[0].name
+        this.config.sshKeyfile = e.target.files[0].path
       }
     }
   }
