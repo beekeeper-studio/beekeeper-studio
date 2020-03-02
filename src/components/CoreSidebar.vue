@@ -9,7 +9,7 @@
     <div class="tab-content">
 
 
-      <!-- Connection -->
+      <!-- Tables -->
       <div
         class="tab-pane"
         id="tab-tables"
@@ -23,8 +23,12 @@
           </div>
           <span class="expand"></span>
           <div class="actions">
-            <a class="btn-fab" @click.prevent="disconnect"><i class="material-icons">clear</i></a>
-            <!-- <a class="btn-fab"><i class="material-icons">more_horiz</i></a> -->
+            <toggle class="dropdown right">
+              <a class="btn-fab dropdown-toggle"><i class="material-icons">more_horiz</i></a>
+              <target class="dropdown-menu show">
+                <a class="dropdown-item" @click.prevent="disconnect">Disconnect</a>
+              </target>
+            </toggle>
           </div>
         </div>
         <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
@@ -76,6 +80,7 @@
   import HistoryList from './HistoryList'
   import FavoriteList from './FavoriteList'
   import DatabaseDropdown from './DatabaseDropdown'
+
   import { mapState } from 'vuex'
 
   export default {
@@ -87,7 +92,7 @@
         filterQuery: null,
         allExpanded: null,
         allCollapsed: null,
-        activeItem: 'tables'
+        activeItem: 'tables',
       }
     },
     computed: {

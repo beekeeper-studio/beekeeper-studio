@@ -1,6 +1,8 @@
 .connection-main {
+  display: flex;
   background: darken($theme-bg, 1.5%);
   overflow-y: auto;
+  align-items: center;
   -webkit-overflow-scrolling: touch;
   .small-wrap {
     max-width: 550px;
@@ -50,6 +52,23 @@
   .sidebar {
     .list-item-btn {
       padding: $gutter-h $gutter-w;
+    }
+  }
+}
+.connection-sidebar {
+  .list-group {
+    padding: $gutter-h 0;
+  }
+  .quick-connect {
+    border-top: 1px solid $border-color;
+    .btn {
+      // color: $theme-primary;
+      height: initial;
+      border-radius: 0;
+      padding: $gutter-w;
+    }
+    i {
+      margin-right: 0.5rem;
     }
   }
 }

@@ -4,6 +4,7 @@ import VueHotkey from 'v-hotkey'
 import VSelect from 'vue-select'
 import VTooltip from 'v-tooltip'
 import VModal from 'vue-js-modal'
+import Vueable from '@sagalbot/vueable'
 import App from './App.vue'
 import path from 'path'
 //import '@fortawesome/fontawesome-free/css/all.css'
@@ -60,6 +61,8 @@ import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
     Vue.use(VueHotkey)
     Vue.use(VTooltip)
     Vue.use(VModal)
+    Vue.component('toggle', Vueable.Toggle);
+    Vue.component('target', Vueable.Target);
     Vue.component('v-select', VSelect)
     Vue.use(VueNoty, {
       timeout: 3000,

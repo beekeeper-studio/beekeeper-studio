@@ -1,0 +1,34 @@
+@import '../variables';
+@import '../extends';
+
+.dropdown {
+  position: relative;
+  z-index: 100;
+  &.right {
+    .dropdown-menu {
+      right: 0;
+      left: initial;
+    }
+  }
+  .dropdown-menu {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: lighten($theme-bg, 10%);
+    padding: ($gutter-h * 0.65) 0;
+    min-width: 200px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    @extend .dropdown-shadow;
+  }
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    flex: 0 1 100%;
+    padding: ($gutter-h * 0.25) $gutter-w;
+    transition: background 0.15s ease-in-out;
+    &:hover, &:focus {
+      background: rgba($theme-base, 0.06);
+    }
+  }
+}
