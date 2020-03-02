@@ -1,11 +1,13 @@
 .connection-main {
   display: flex;
   background: darken($theme-bg, 1.5%);
+  max-height: 100vh;
   overflow-y: auto;
   align-items: center;
   -webkit-overflow-scrolling: touch;
   .small-wrap {
     max-width: 550px;
+    max-height: inherit;
   }
   .card-flat {
     margin: $gutter-w 0;

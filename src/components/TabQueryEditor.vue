@@ -3,39 +3,41 @@
     <div class="top-panel" ref="topPanel">
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
-      <div class="actions text-right" ref="actions">
-        <div class="btn-group">
+      <div class="toolbar text-right">
+        <div class="actions btn-group" ref="actions">
           <a @click.prevent="triggerSave" class="btn btn-flat">Save</a>
           <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitQuery" class="btn btn-primary">Run</a>
         </div>
       </div>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
+      <header class="toolbar row flex-middle" v-if="result">
+        <span class="title expand">Results</span>
+        <div class="actions btn-group">
+          <a class="btn-fab" v-tooltip="'Download Query Results'"><i class="material-icons">save_alt</i></a>
+          <a class="btn-fab" v-tooltip="'Expand'"><i class="material-icons">keyboard_arrow_up</i></a>
+        </div>
+      </header>
       <progress-bar v-if="running"></progress-bar>
       <result-table v-else-if="result && result.rowCount > 0" :tableHeight="tableHeight" :result="result"></result-table>
-      <!-- so, there is a situation where you've run a query but there are no results -->
-      <!-- like creating or updating a table -->
-      <!-- so we need two things. 1 a true 'no results returned' div (see below) -->
-      <!-- 2. somewhere we should say 'x rows affected', maybe a bottom bar -->
-      <!--  I added a footer, looks like poop  -->
-      <!-- TODO (gregory) -->
       <div class="info" v-else-if="result">Query Executed Successfully. No Results</div>
       <div class="error" v-else-if="error">{{error}}</div>
-      <div v-else>No Data</div>
-    </div>
-    <footer class="status-bar row query-meta">
+      <div v-else><!-- No Data --></div>
       <span class="expand"></span>
-      <template v-if="result">
-        <div class="row-counts">
-          <span class="num-rows" v-if="result.rowCount > 0">{{result.rowCount}} Results</span>
-          <span class="truncated-rows" v-if="result && result.truncated"> &middot; only {{result.truncatedRowCount}} shown.</span>
-        </div>
-        <span class="affected-rows" v-if="result && result.affectedRows">{{ affectedRowsText}}</span>
-      </template>
-      <template v-else>
-        No Data
-      </template>
-    </footer>
+      <footer class="status-bar row query-meta">
+        <span class="expand"></span>
+        <template v-if="result">
+          <div class="row-counts">
+            <span class="num-rows" v-if="result.rowCount > 0">{{result.rowCount}} Results</span>
+            <span class="truncated-rows" v-if="result && result.truncated"> &middot; only {{result.truncatedRowCount}} shown.</span>
+          </div>
+          <span class="affected-rows" v-if="result && result.affectedRows">{{ affectedRowsText}}</span>
+        </template>
+        <template v-else>
+          No Data
+        </template>
+      </footer>
+    </div>
 
     <!-- Save Modal -->
     <modal class="vue-dialog" name="save-modal" @closed="selectEditor" @opened="selectTitleInput" height="auto" :scrollable="true">

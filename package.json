@@ -15,8 +15,6 @@
   "main": "background.js",
   "dependencies": {
     "@sagalbot/vueable": "^0.0.3",
-    "bootstrap": "^4.3.1",
-    "bootswatch": "^4.3.1",
     "cassandra-driver": "^4.2.0",
     "codemirror": "^5.48.2",
     "core-js": "^3.4.4",
@@ -52,7 +50,6 @@
     "yup": "^0.27.0"
   },
   "devDependencies": {
-    "@fortawesome/fontawesome-free": "^5.9.0",
     "@types/node": "^8.0.29",
     "@vue/cli-plugin-babel": "^4.1.2",
     "@vue/cli-plugin-eslint": "^4.1.2",

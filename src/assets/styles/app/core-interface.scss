@@ -46,7 +46,7 @@
     font-size: 11px;
     line-height: $status-bar-height;
     padding: 0 $gutter-w;
-    background: rgba($theme-base, 0.08);
+    // background: rgba($theme-base, 0.08);
     &.connected {
       background: $brand-primary;
     }

@@ -7,7 +7,6 @@ import VModal from 'vue-js-modal'
 import Vueable from '@sagalbot/vueable'
 import App from './App.vue'
 import path from 'path'
-//import '@fortawesome/fontawesome-free/css/all.css'
 import './assets/styles/vendor.scss'
 import './assets/styles/app.scss'
 import $ from 'jquery';

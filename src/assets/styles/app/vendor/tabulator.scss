@@ -6,11 +6,12 @@
     border-right: 0;
     padding: 4px 8px;
     height: 28px!important;
-  }
-  &:nth-child(odd) {
-    background: transparent;
+    line-height: 20px;
   }
   &:nth-child(even) {
+    background: transparent;
+  }
+  &:nth-child(odd) {
     background: rgba($theme-base, 0.025);
   }
   &.tabulator-selectable:hover {
@@ -21,13 +22,15 @@
   font-size: 12px;
   border: 0;
   background: transparent;
+  background: lighte($query-editor-bg, 1%);
   .tabulator-header {
-    background: rgba($theme-base, 0.075);
-    //border-color: $border-color;
+    background: $query-editor-bg;
     border: 0;
+    box-shadow: inset 0 -2px $border-color,;
     .tabulator-col {
       background: transparent;
-      border-color: $query-editor-bg;
+      // border-color: $query-editor-bg;
+      border-color: transparent;
       height: 24px!important;
       font-size: 85%;
       line-height: 1;
