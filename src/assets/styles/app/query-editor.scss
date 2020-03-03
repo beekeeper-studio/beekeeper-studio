@@ -19,16 +19,21 @@
   }
   .toolbar {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
     background: $query-editor-bg;
     padding: $gutter-h;
     z-index: 1;
+    .title {
+      line-height: 1;
+    }
     .actions {
       display: flex;
       align-items: center;
     }
     .btn-fab {
       i {
+        line-height: 26px;
         font-size: 18px;
       }
     }
@@ -48,9 +53,9 @@
   .bottom-panel {
     .toolbar {
       padding-top: $gutter-h * 0.5;
+      padding-bottom: $gutter-h * 0.5;
       padding-left: ($gutter-h * 1.5);
-      padding-bottom: 0;
-      height: 28px;
+      background: lighten($query-editor-bg, 1%);
     }
     .result-table {
       display: flex;

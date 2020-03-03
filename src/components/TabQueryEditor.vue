@@ -14,8 +14,8 @@
       <header class="toolbar row flex-middle" v-if="result">
         <span class="title expand">Results</span>
         <div class="actions btn-group">
-          <a class="btn-fab" v-tooltip="'Download Query Results'"><i class="material-icons">save_alt</i></a>
-          <a class="btn-fab" v-tooltip="'Expand'"><i class="material-icons">keyboard_arrow_up</i></a>
+          <a class="btn btn-fab" v-tooltip="'Download Query Results'"><i class="material-icons">save_alt</i></a>
+          <a class="btn btn-fab" v-tooltip="'Expand'"><i class="material-icons">keyboard_arrow_up</i></a>
         </div>
       </header>
       <progress-bar v-if="running"></progress-bar>

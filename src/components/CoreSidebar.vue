@@ -45,9 +45,6 @@
         <div class="sidebar-heading">
           <span class="sidebar-title">History</span>
           <span class="expand"></span>
-          <!-- <div class="actions">
-            <a class="btn-fab"><i class="material-icons">more_horiz</i></a>
-          </div> -->
         </div>
         <history-list></history-list>
       </div>
@@ -62,9 +59,6 @@
         <div class="sidebar-heading">
           <span class="sidebar-title">Saved Queries</span>
           <span class="expand"></span>
-          <!-- <div class="actions">
-            <a class="btn-fab"><i class="material-icons">more_horiz</i></a>
-          </div> -->
         </div>
         <favorite-list></favorite-list>
       </div>
