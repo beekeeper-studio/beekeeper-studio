@@ -31,7 +31,7 @@
         </select>
       </div>
 
-      <div v-if="config.sshMode === 'keyfile'" class="row gutter">
+      <div v-if="config.sshMode === 'keyfile'" class="private-key row gutter">
         <div class="col s6 form-group">
           <label for="sshKeyfile">Private Key File</label>
           <input class="form-control" type="file" @change="setKeyfile">

@@ -247,7 +247,7 @@
     padding: ($gutter-h * 0.8) $gutter-w;
     padding-left: $gutter-w;
     line-height: 1.4;
-    &:hover {
+    &:hover, &:focus {
       background: rgba($theme-base, 0.03);
       .actions {
         display: flex;

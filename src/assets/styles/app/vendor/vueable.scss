@@ -3,6 +3,8 @@
 
 .dropdown {
   position: relative;
+  display: flex;
+  align-items: center;
   z-index: 100;
   &.right {
     .dropdown-menu {
@@ -25,7 +27,7 @@
     display: flex;
     align-items: center;
     flex: 0 1 100%;
-    padding: ($gutter-h * 0.25) $gutter-w;
+    padding: $gutter-h $gutter-w;
     transition: background 0.15s ease-in-out;
     &:hover, &:focus {
       background: rgba($theme-base, 0.06);

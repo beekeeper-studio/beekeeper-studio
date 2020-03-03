@@ -15,7 +15,17 @@
           :class="{'active': c == selectedConfig }"
           @click.prevent="edit(c)"
           @dblclick.prevent="connect(c)"
-        >{{c.name}} ({{c.connectionType}})</a>
+        >
+          <span class="title expand">{{c.name}} </span>
+          <span class="badge">{{c.connectionType}}</span>
+          <toggle class="dropdown right">
+              <a class="btn-fab dropdown-toggle"><i class="material-icons">more_horiz</i></a>
+              <target class="dropdown-menu show">
+                <a class="dropdown-item">Rename</a>
+                <a class="dropdown-item text-danger">Remove</a>
+              </target>
+            </toggle>
+        </a>
       </div>
     </nav>
     <div class="btn-wrap quick-connect">
