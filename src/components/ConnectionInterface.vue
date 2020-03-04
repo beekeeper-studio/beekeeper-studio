@@ -25,19 +25,47 @@
                   <option :key="t.value" v-for="t in connectionTypes" :value="t.value">{{t.name}}</option>
                 </select>
               </div>
-              <mysql-form v-if="config.connectionType === 'mysql'" :config="config" :testing="testing" @save="save" @test="testConnection" @connect="submit"></mysql-form>
-              <postgres-form v-if="config.connectionType === 'postgresql'" :config="config" :testing="testing"></postgres-form>
-              <redshift-form v-if="config.connectionType === 'redshift'" :config="config" :testing="testing"></redshift-form>
-              <sqlite-form v-if="config.connectionType === 'sqlite'" :config="config" :testing="testing"></sqlite-form>
-              <sql-server-form v-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"></sql-server-form>
-  
+              <div v-if="config.connectionType">
+                <!-- INDIVIDUAL DB CONFIGS -->
+                <mysql-form v-if="config.connectionType === 'mysql'" :config="config" :testing="testing" @save="save" @test="testConnection" @connect="submit"></mysql-form>
+                <postgres-form v-if="config.connectionType === 'postgresql'" :config="config" :testing="testing"></postgres-form>
+                <redshift-form v-if="config.connectionType === 'redshift'" :config="config" :testing="testing"></redshift-form>
+                <sqlite-form v-if="config.connectionType === 'sqlite'" :config="config" :testing="testing"></sqlite-form>
+                <sql-server-form v-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"></sql-server-form>
+
+                <!-- TEST AND CONNECT -->
+                <div class="row flex-middle">
+                  <span class="expand"></span>
+                  <div class="btn-group">
+                    <button :disabled="testing" class="btn btn-flat" @click.prevent="testConnection">Test</button>
+                    <button :disabled="testing" class="btn btn-primary" @click.prevent="submit">Connect</button>
+                  </div>
+                </div>
+
+                <!-- Save Connection -->
+                <div class="save-connection expand">
+                  <h3>Save Connection</h3>
+                  <div class="row">
+                    <div class="expand"><input class="form-control" type="text" v-model="config.name" placeholder="Connection Name"></div>
+                    <div><button class="btn btn-flat" @click.prevent="save">Save</button></div>
+                  </div>
+
+                  <!-- TODO MATTHEW: Not sure if this breaks this -->
+                  <label for="rememberPassword" class="checkbox-group row">
+                    <input id="rememberPassword" type="checkbox" name="rememberPassword" class="form-control" v-model="config.rememberPassword">
+                    <span>Save Passwords</span>
+                    <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help_outlined</i>
+                  </label>
+                </div>
+              </div>
+
             </form>
-  
+
           </div>
           <div v-if="connectionError" class="alert alert-danger">
             {{connectionError}}
           </div>
-    
+
         </div>
       </div>
     </div>
@@ -112,7 +140,7 @@
       changeType() {
         if(this.config.connectionType === 'mysql') {
           this.config.port = 3306
-        } else if(this.config.connectionType === 'psql') {
+        } else if(this.config.connectionType === 'postgresql') {
           this.config.port = 5432
         }
       },

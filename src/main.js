@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import VueNoty from 'vuejs-noty'
 import VueHotkey from 'v-hotkey'
-import VSelect from 'vue-select'
 import VTooltip from 'v-tooltip'
 import VModal from 'vue-js-modal'
 import Vueable from '@sagalbot/vueable'
@@ -62,7 +61,6 @@ import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
     Vue.use(VModal)
     Vue.component('toggle', Vueable.Toggle);
     Vue.component('target', Vueable.Target);
-    Vue.component('v-select', VSelect)
     Vue.use(VueNoty, {
       timeout: 3000,
       progressBar: true,

@@ -17,17 +17,8 @@
       </div>
       <div class="form-group">
         <label>SSH Authentication</label>
-        <!-- <v-select 
-          :options="sshModeOptions"
-          @input="setMode"
-          :value="config.sshMode"
-          :clearable="false"
-          :searchable="false"
-          :clearSearchOnSelect="false"
-          placeholder="Select SSH authentication method"
-          ></v-select> -->
-        <select class="form-control">
-          <option>keyfile</option>
+        <select class="form-control" v-model="config.sshMode">
+          <option v-for="option in sshModeOptions" :key="option.mode" :value="option.mode">{{option.label}}</option>
         </select>
       </div>
 
