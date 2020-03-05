@@ -91,6 +91,11 @@
         height: this.actualTableHeight
 
       });
+    },
+    methods: {
+      download() {
+        this.tabulator.download('csv', 'data.csv')
+      }
     }
 
 
