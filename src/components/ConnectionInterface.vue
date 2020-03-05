@@ -2,7 +2,7 @@
   <div class="interface connection-interface">
     <div class="interface-wrap row">
       <div ref="sidebar" class="sidebar flex-col connection-sidebar" id="sidebar">
-        <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @edit="edit" @connect="submit"></connection-sidebar>
+        <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @edit="edit" @connect="handleConnect"></connection-sidebar>
       </div>
       <div ref="content" class="connection-main page-content" id="page-content">
         <div class="small-wrap">
@@ -144,11 +144,7 @@
           this.config.port = 5432
         }
       },
-      async submit(config) {
-        if (config) {
-          this.config = config
-        }
-
+      async submit() {
         this.connectionError = null
         try {
           await this.$store.dispatch('connect', this.config)
@@ -156,6 +152,10 @@
           this.connectionError = ex.message
           this.$noty.error("Error establishing a connection")
         }
+      },
+      async handleConnect(config) {
+        this.config = config
+        await this.submit()
       },
       async testConnection(){
 
