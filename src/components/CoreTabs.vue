@@ -3,8 +3,8 @@
     <div class="tabs-header">
       <ul class="nav-tabs nav">
         <core-tab-header
-          v-for="(tab, idx) in tabItems"
-          :key="idx"
+          v-for="tab in tabItems"
+          :key="tab.id"
           :tab="tab"
           :selected="activeTab === tab"
           @click="click"
@@ -21,7 +21,7 @@
         v-for="(tab, idx) in tabItems"
         class="tab-pane"
         :id="'tab-' + idx"
-        :key="idx"
+        :key="tab.id"
         :class="{show: (activeTab === tab), active: (activeTab === tab)}"
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab == tab" :tab="tab" :connection="connection"></QueryEditor>
@@ -38,6 +38,7 @@
   import QueryEditor from './TabQueryEditor'
   import config from '../config'
   import CoreTabHeader from './CoreTabHeader'
+  import { uuidv4 } from '@/lib/crypto'
 
 
   export default {
@@ -114,6 +115,7 @@
         query.text = optionalText
 
         const result = {
+          id: uuidv4(),
           type: "query",
           title: "Query #" + this.newTabId,
           connection: this.connection,
@@ -169,6 +171,7 @@
           this.click(this.tabItems[queriesOnly.indexOf(item)])
         } else {
           const result = {
+            id: uuidv4(),
             type: 'query',
             title: item.title,
             connection: this.connection,

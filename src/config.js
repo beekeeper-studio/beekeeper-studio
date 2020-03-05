@@ -61,5 +61,5 @@ export default {
       }
     }
   },
-  maxResults: 10000
+  maxResults: 50000
 }
