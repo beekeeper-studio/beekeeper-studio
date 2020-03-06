@@ -7,6 +7,7 @@
 <script type="text/javascript">
   import Tabulator from 'tabulator-tables'
   import _ from 'lodash'
+  import dateFormat from 'dateformat'
 
   export default {
     data() {
@@ -14,7 +15,7 @@
         tabulator: null
       }
     },
-    props: ['result', 'tableHeight'],
+    props: ['result', 'tableHeight', 'query'],
     watch: {
       tableData: {
         handler() {
@@ -94,7 +95,9 @@
     },
     methods: {
       download() {
-        this.tabulator.download('csv', 'data.csv')
+        const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
+        const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
+        this.tabulator.download('csv', `${title}-${dateString}.csv`, 'all')
       }
     }
 

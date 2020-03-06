@@ -18,6 +18,7 @@
     "cassandra-driver": "^4.2.0",
     "codemirror": "^5.48.2",
     "core-js": "^3.4.4",
+    "dateformat": "^3.0.3",
     "jquery": "^3.4.1",
     "lodash": "^4.17.15",
     "mssql": "^5.1.0",

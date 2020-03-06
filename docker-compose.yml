@@ -11,7 +11,6 @@ services:
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
-
   mysql:
     image: mysql:5.7.22
     command: --default-authentication-plugin=mysql_native_password
@@ -24,4 +23,13 @@ services:
     volumes:
       - ./data/mysql:/var/lib/mysql
       - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
+  sqlserver:
+    image: "mcr.microsoft.com/mssql/server:2017-latest"
+    restart: always
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Example@1"
+    ports:
+      - 1433:1433
+
 
