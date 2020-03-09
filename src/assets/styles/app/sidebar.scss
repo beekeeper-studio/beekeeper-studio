@@ -297,23 +297,23 @@
 
     // Badge Colors
     // ---------------------------
-    .badge {
-      &.int {
-        background: rgba($brand-purple, 0.75);
-      }
-      &.char {
-        background: rgba($brand-info, 0.75);
-      }
-      &.varchar {
-        background: rgba($theme-primary, 0.6);
-      }
-      &.date {
-        background: rgba($brand-success, 0.75);
-      }
-      // &.enum {
-      //   background: rgba($brand-warning, 0.75);
-      // }
-    }
+    // .badge {
+    //   &.int {
+    //     background: rgba($brand-purple, 0.75);
+    //   }
+    //   &.char {
+    //     background: rgba($brand-info, 0.75);
+    //   }
+    //   &.varchar {
+    //     background: rgba($theme-primary, 0.6);
+    //   }
+    //   &.date {
+    //     background: rgba($brand-success, 0.75);
+    //   }
+    //   &.enum {
+    //     background: rgba($brand-warning, 0.75);
+    //   }
+    // }
   }
   .sub-item {
     color: $text;

@@ -1,0 +1,42 @@
+$data-types: (
+
+  tinyint:        red,
+  smallint:       red,
+  mediumint:      red,
+  int:            red,
+  bigint:         red,
+  bit:            red,
+  bool:           red,
+  boolean:        red,
+  decimal:        red,
+  float:          red,
+  double:         red,
+
+  char:           red,
+  varchar:        red,
+  binary:         red,
+  varbinary:      red,
+  tinyblob:       red,
+  tinytext:       red,
+  blob:           red,
+  text:           red,
+  mediumblob:     red,
+  mediumtext:     red,
+  longblob:       red,
+  longtext:       red,
+  enum:           red,
+  set:            red,
+
+  date:           red,
+  datetime:       red,
+  timestamp:      red,
+  time:           red,
+  year:           red
+
+);
+
+@each $key, $val in $data-types {
+  .badge.#{$key} {
+    background-color: nth($val, 1);
+  }
+}
