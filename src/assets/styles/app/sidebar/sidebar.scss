@@ -126,6 +126,10 @@
   flex-grow: 1;
 }
 
+.badge {
+  text-transform: lowercase;
+}
+
 // List Group
 // ------------------------------
 .list-heading {
@@ -216,7 +220,6 @@
     }
   }
   .sub-items {
-    // background: darken($theme-bg, 2.5%);
     display: flex;
     flex-direction: column;
     color: $text;
@@ -224,26 +227,6 @@
     .title {
       flex-grow: 1;
       font-size: 90%;
-    }
-
-    // Badge Colors **Remove**
-    // ---------------------------
-    .badge {
-      &.int {
-        background: rgba($brand-purple, 0.75);
-      }
-      &.char {
-        background: rgba($brand-info, 0.75);
-      }
-      &.varchar {
-        background: rgba($theme-primary, 0.6);
-      }
-      &.date {
-        background: rgba($brand-success, 0.75);
-      }
-      &.enum {
-        background: rgba($brand-warning, 0.75);
-      }
     }
   }
   .sub-item {

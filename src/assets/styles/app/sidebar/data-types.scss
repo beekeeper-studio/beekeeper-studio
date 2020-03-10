@@ -1,42 +1,38 @@
 $data-types: (
-
-  tinyint:        red,
-  smallint:       red,
-  mediumint:      red,
-  int:            red,
-  bigint:         red,
-  bit:            red,
-  bool:           red,
-  boolean:        red,
-  decimal:        red,
-  float:          red,
-  double:         red,
-
-  char:           red,
-  varchar:        red,
-  binary:         red,
-  varbinary:      red,
-  tinyblob:       red,
-  tinytext:       red,
-  blob:           red,
-  text:           red,
-  mediumblob:     red,
-  mediumtext:     red,
-  longblob:       red,
-  longtext:       red,
-  enum:           red,
-  set:            red,
-
-  date:           red,
-  datetime:       red,
-  timestamp:      red,
-  time:           red,
-  year:           red
-
+  tinyint:        #0DF7FF,
+  smallint:       #0CC0E8,
+  mediumint:      #00ACFF,
+  int:            #0C7DE8,
+  bigint:         #1865FF,
+  bit:            #3B0AFF,
+  bool:           #884EFF,
+  boolean:        #A43CE8,
+  decimal:        #E842FF,
+  float:          #FF0D7B,
+  double:         #E80C31,
+  char:           #FF0800,
+  varchar:        #E8250C,
+  binary:         #FF3C0D,
+  varbinary:      #FF572B,
+  tinyblob:       #FF572B,
+  tinytext:       #e67e22,
+  blob:           #E88020,
+  text:           #FFAA24,
+  mediumblob:     #E8D717,
+  mediumtext:     #F0FF19,
+  longblob:       #C6E81E,
+  longtext:       #93FF2F,
+  enum:           #39E81E,
+  set:            #21FF48,
+  date:           #21FF3F,
+  datetime:       #1EE872,
+  timestamp:      #2FFFC2,
+  time:           #1EE8E5,
+  year:           #21C8FF
 );
 
 @each $key, $val in $data-types {
   .badge.#{$key} {
-    background-color: nth($val, 1);
+    background: nth($val, 1);
   }
 }
