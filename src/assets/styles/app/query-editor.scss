@@ -67,6 +67,14 @@
     .status-bar {
       color: $text-light;
     }
+    .alert {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1 1 100%;
+      padding: 0;
+      background: transparent;
+    }
   }
 
   // Modal
@@ -74,6 +82,13 @@
   .v--modal {
     max-width: 400px;
   }
+}
+
+.progress-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 100%;
 }
 
 // CodeMirror - Overrides

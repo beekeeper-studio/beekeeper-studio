@@ -50,8 +50,8 @@
     </div>
 
     <!-- Tables -->
-    <div class="table-list flex-col">
-      <nav class="list-group flex-col" v-if="tables">
+    <div v-if="tables" class="table-list flex-col">
+      <nav class="list-group flex-col">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
             <span class="btn-fab open">
@@ -84,9 +84,10 @@
           ></table-list-item>
         </div>
       </nav>
+
       <!-- TODO (gregory): Make the 'no tables div nicer' -->
-      <div v-if="!tables || tables.length == 0">
-        There are no tables in {{database}}
+      <div class="empty" v-if="!tables || tables.length == 0">
+        There are no tables in <span class="truncate">{{database}}</span>
       </div>
     </div>
   </div>
