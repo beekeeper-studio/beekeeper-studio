@@ -1,0 +1,11 @@
+@import '../variables';
+
+.CodeMirror {
+  font-family: $font-family-mono, monospace;
+  background: $query-editor-bg!important;
+  padding: 0.75rem 0;
+}
+.CodeMirror-gutters {
+  border: 0;
+  background: transparent!important;
+}

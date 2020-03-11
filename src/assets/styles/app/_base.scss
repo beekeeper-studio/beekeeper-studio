@@ -6,17 +6,12 @@
 :root {
   font-family: $font-family, Helvetica, Arial, sans-serif;
   font-size: $base-font-size;
+  -webkit-font-smoothing: antialiased;
   background: $theme-bg;
   color: $theme-base;
 }
 body {
   @extend :root;
-}
-::selection {
-  background: rgba($theme-primary, 0.25);
-}
-::placeholder {
-  color: $placeholder;
 }
 a {
   display: inline-block;
@@ -63,7 +58,7 @@ i {
 
 // Selection
 ::selection {
-  background: rgba($brand-primary, 0.25);
+  background: $theme-secondary;
 }
 
 // Placeholder
@@ -336,24 +331,27 @@ input[type="checkbox"] {
 input[type=file] {
   padding-left: $gutter-h;
   font-size: 12px;
+  outline: none;
+  border: 0;
+  box-shadow: inset 0 0 0 1px $border-color;
   &::-webkit-file-upload-button {
     font-family: $font-family, Helvetica, Arial, sans-serif;
     color: $theme-base;
-    background: rgba($theme-base, 0.06);
-    border: 0;
+    background: rgba($theme-base, 0.035);
     font-size: 11px!important;
     line-height: $input-height;
-    height: $input-height;
+    height: $input-height + 1px;
     padding: 0 $gutter-w;
     font-weight: bold;
     padding: 0 $gutter-w;
     margin-left: -$gutter-h;
+    border: 0;
     outline: none;
-    cursor: pointer;
-    box-shadow: inset -1px 0 rgba(white, 0.025);
+    box-shadow: inset -1px 0 rgba(white, 0.08);
     transition: background 0.15s ease-in-out;
+    cursor: pointer;
     &:hover, &:focus {
-      background: rgba($theme-base, 0.12);
+      background: rgba($theme-base, 0.08);
     }
   }
 }
@@ -525,6 +523,9 @@ input[type=file] {
   }
 }
 .alert-danger {
+  color: $brand-danger;
+}
+.alert-warning {
   color: $brand-danger;
 }
 .alert-info {
