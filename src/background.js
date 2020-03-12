@@ -43,8 +43,8 @@ async function initializeDB() {
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 
 function createWindow () {
-  // Create the browser window.
-  win = new BrowserWindow({ width: 1200, height: 800, webPreferences: {
+
+  win = new BrowserWindow({ width: 1200, height: 800, frame: false, webPreferences: {
     nodeIntegration: true
   } })
 

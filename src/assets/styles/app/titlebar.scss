@@ -1,0 +1,26 @@
+#titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba($theme-base, 0.035);
+  padding: 0.5rem;
+  margin: 0;
+  -webkit-app-region: drag;
+  .window-icon {
+    height: 16px;
+    width: 16px;
+  }
+  .window-title {
+    color: $text;
+    font-size: 0.85rem;
+  }
+  .window-actions {
+    margin: -0.5rem;
+    margin-left: 0;
+    -webkit-app-region: no-drag;
+    button {
+      min-width: 0;
+    }
+  }
+}
