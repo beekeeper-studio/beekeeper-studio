@@ -1,26 +1,61 @@
-#titlebar {
+.titlebar {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba($theme-base, 0.035);
+  background: rgba($theme-base, 0.1);
   padding: 0.5rem;
   margin: 0;
   -webkit-app-region: drag;
-  .window-icon {
-    height: 16px;
-    width: 16px;
-  }
   .window-title {
-    color: $text;
+    color: $text-light;
     font-size: 0.85rem;
   }
+}
+
+// Windows Titlebar
+// --------------------------
+#windows-titlebar {
+  .window-icon {
+    display: flex;
+    align-items: center;
+    width: 120px;
+    img {
+      height: 16px;
+      width: 16px;
+    }
+  }
   .window-actions {
+    display: flex;
     margin: -0.5rem;
     margin-left: 0;
     -webkit-app-region: no-drag;
     button {
+      display: flex;
+      align-items: center;
       min-width: 0;
+      border-radius: 0;
+      color: $text-light;
+      margin: 0;
+      padding: 0 0.75rem;
+      height: 30px;
+      z-index: 10;
+      &:hover {
+        color: $text-dark;
+      }
+    }
+    #max-btn {
+      i {
+        font-size: 16px;
+      }
+      &:hover {
+        background: $brand-info;
+      }
+    }
+    #close-btn {
+      &:hover {
+        background: $brand-danger;
+      }
     }
   }
 }

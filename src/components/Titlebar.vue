@@ -1,16 +1,14 @@
 <template>
-  <div id="titlebar">
+  <div id="windows-titlebar" class="titlebar">
     <div class="window-icon">
-      <span style="vertical-align: middle;">
-          <img src="@/assets/logo.png" style="width:20px;height:20px;"/>
-      </span>
+      <img src="@/assets/logo.svg" />
     </div>
-    <div class="window-title"></div>
-     <div class="window-actions">
-        <button class="btn btn-link" id="min-btn">-</button>
-        <button class="btn btn-link" id="max-btn">+</button>
-        <button class="btn btn-link" id="close-btn">x</button>
-     </div>
+    <div class="window-title">Beekeeper Studio</div>
+    <div class="window-actions">
+      <button class="btn btn-link" id="min-btn"><i class="material-icons">minimize</i></button>
+      <button class="btn btn-link" id="max-btn"><i class="material-icons">crop_3_2</i></button>
+      <button class="btn btn-link" id="close-btn"><i class="material-icons">clear</i></button>
+    </div>
   </div>
 </template>
 
@@ -28,9 +26,9 @@ export default {
         });
         document.getElementById("max-btn").addEventListener("click", () => {
           if(window.isMaximized()){
-              window.unmaximize();
+            window.unmaximize();
           } else {
-              window.maximize();
+            window.maximize();
           }
         });
         document.getElementById("close-btn").addEventListener("click", () => {
