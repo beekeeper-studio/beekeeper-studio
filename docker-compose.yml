@@ -24,12 +24,18 @@ services:
       - ./data/mysql:/var/lib/mysql
       - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
   sqlserver:
-    image: "mcr.microsoft.com/mssql/server:2017-latest"
+    image: "mcr.microsoft.com/mssql/server:2017-latest-ubuntu"
+    volumes:
+      - ./data/sqlserver:/var/opt/mssql
+      - ./dev/docker_sqlserver:/docker_init
     restart: always
     environment:
       ACCEPT_EULA: "Y"
+      MSSSQL_PID: "Express"
       SA_PASSWORD: "Example@1"
+      MSSQL_AGENT_ENABLED: "true"
     ports:
       - 1433:1433
+    command: "/docker_init/entrypoint.sh"
 
 
