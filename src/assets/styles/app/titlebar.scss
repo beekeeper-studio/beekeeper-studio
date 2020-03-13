@@ -44,7 +44,7 @@
         color: $text-dark;
       }
     }
-    #max-btn {
+    #maximize {
       i {
         font-size: 16px;
       }
@@ -52,7 +52,7 @@
         background: $brand-info;
       }
     }
-    #close-btn {
+    #quit {
       &:hover {
         background: $brand-danger;
       }

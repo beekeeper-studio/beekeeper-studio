@@ -35,7 +35,7 @@
           No Data
         </template>
         <span class="expand"></span>
-        <a class="btn btn-fab" @click.prevent="download" v-tooltip="'Download Query Results'"><i class="material-icons">save_alt</i></a>
+        <a class="btn btn-fab" v-if="result" @click.prevent="download" v-tooltip="'Download Query Results'"><i class="material-icons">save_alt</i></a>
       </footer>
     </div>
 
