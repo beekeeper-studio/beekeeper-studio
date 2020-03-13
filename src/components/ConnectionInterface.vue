@@ -142,6 +142,8 @@
           this.config.port = 3306
         } else if(this.config.connectionType === 'postgresql') {
           this.config.port = 5432
+        } else if(this.config.connectionType === 'sqlserver') {
+          this.config.port = 1433
         }
       },
       async submit() {

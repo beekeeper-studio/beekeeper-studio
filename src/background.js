@@ -1,6 +1,6 @@
 'use strict'
 import fs from 'fs'
-import { app, protocol, BrowserWindow } from 'electron'
+import { app, protocol, BrowserWindow, Menu } from 'electron'
 import {
   createProtocol,
   installVueDevtools
@@ -43,10 +43,12 @@ async function initializeDB() {
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 
 function createWindow () {
+  Menu.setApplicationMenu(null)
   // Create the browser window.
   win = new BrowserWindow({ width: 1200, height: 800, webPreferences: {
-    nodeIntegration: true
+    nodeIntegration: true,
   } })
+
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
