@@ -46,9 +46,9 @@ i {
   letter-spacing: 0.05rem;
 }
 .noselect {
-        -ms-user-select: none; 
-    -webkit-user-select: none; 
-            user-select: none; 
+        -ms-user-select: none;
+    -webkit-user-select: none;
+            user-select: none;
 }
 
 // Material-icons
@@ -266,7 +266,7 @@ input, select, textarea {
 // Select
 // --------------------------------
 select {
-  -webkit-appearance: none; 
+  -webkit-appearance: none;
   appearance: none;
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='silver'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
   padding: 0 0.75rem;
@@ -275,7 +275,7 @@ select {
   }
 }
 
-// Checkbox 
+// Checkbox
 // -------------------------------
 .checkbox-group {
   display: inline-flex;
@@ -309,8 +309,8 @@ input[type="checkbox"] {
   margin-right: $gutter-h;
 	border-radius: 5px;
   transition: background 0.2s ease-in-out;
-  &:active, 
-  &:checked, 
+  &:active,
+  &:checked,
   &:checked:active {
     background: $theme-primary;
     color: $theme-bg;
@@ -497,9 +497,9 @@ input[type=file] {
   vertical-align: baseline;
   background: rgba($theme-base, 0.2);
   color: $theme-base;
-  transition: color 0.15s ease-in-out, 
-              background-color 0.15s ease-in-out, 
-              border-color 0.15s ease-in-out, 
+  transition: color 0.15s ease-in-out,
+              background-color 0.15s ease-in-out,
+              border-color 0.15s ease-in-out,
               box-shadow 0.15s ease-in-out;
 }
 

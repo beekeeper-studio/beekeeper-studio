@@ -1,9 +1,9 @@
 <template>
   <div class="interface connection-interface">
     <div class="interface-wrap row">
-      <div ref="sidebar" class="sidebar flex-col connection-sidebar" id="sidebar">
+      <sidebar ref="sidebar">
         <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @edit="edit" @connect="handleConnect"></connection-sidebar>
-      </div>
+      </sidebar>
       <div ref="content" class="connection-main page-content" id="page-content">
         <div class="small-wrap">
           <div class="card-flat padding">
@@ -80,13 +80,14 @@
   import MysqlForm from './connection/MysqlForm'
   import PostgresForm from './connection/PostgresForm'
   import RedshiftForm from './connection/RedshiftForm'
+  import Sidebar from './Sidebar'
   import SqliteForm from './connection/SqliteForm'
   import SqlServerForm from './connection/SqlServerForm'
   import Split from 'split.js'
   import _ from 'lodash'
 
   export default {
-    components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, SqliteForm, SqlServerForm },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm },
     data() {
       return {
         defaultConfig: new SavedConnection(),
@@ -115,7 +116,7 @@
       this.$store.dispatch('loadSavedConfigs')
       this.$nextTick(() => {
         const components = [
-          this.$refs.sidebar,
+          this.$refs.sidebar.$refs.sidebar,
           this.$refs.content
         ]
         this.split = Split(components, {

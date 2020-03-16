@@ -1,6 +1,6 @@
 <template>
   <div class="beekeeper-studio-wrapper">
-    <titlebar></titlebar>
+    <titlebar v-if="isWindows || isMac"></titlebar>
     <connection-interface v-if="!connection"></connection-interface>
     <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
   </div>

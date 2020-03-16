@@ -1,9 +1,9 @@
 <template>
   <div id="interface" class="interface">
     <div class="interface-wrap row">
-      <div class="sidebar flex-col" id="sidebar" ref="sidebar">
+      <sidebar ref="sidebar">
         <core-sidebar @databaseSelected="databaseSelected" :connection="connection"></core-sidebar>
-      </div>
+      </sidebar>
       <div ref="content" class="page-content flex-col" id="page-content">
         <core-tabs :connection="connection"></core-tabs>
       </div>
@@ -12,13 +12,13 @@
 </template>
 
 <script>
-
+  import Sidebar from './Sidebar'
   import CoreSidebar from './CoreSidebar'
   import CoreTabs from './CoreTabs'
   import Split from 'split.js'
 
   export default {
-    components: { CoreSidebar, CoreTabs },
+    components: { CoreSidebar, CoreTabs, Sidebar },
     props: [ 'connection' ],
     data() {
       return {
@@ -28,7 +28,7 @@
     computed: {
       splitElements() {
         return [
-          this.$refs.sidebar,
+          this.$refs.sidebar.$refs.sidebar,
           this.$refs.content
         ]
       }

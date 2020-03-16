@@ -1,13 +1,20 @@
 <template>
   <div id="windows-titlebar" class="titlebar">
     <div class="window-icon">
-      <img src="@/assets/logo.svg" />
+      <img v-if="!isMac" src="@/assets/logo.svg" />
     </div>
     <div class="window-title">Beekeeper Studio</div>
     <div class="window-actions">
-      <button class="btn btn-link" id="minimize"><i class="material-icons">minimize</i></button>
-      <button class="btn btn-link" id="maximize"><i class="material-icons">crop_3_2</i></button>
-      <button class="btn btn-link" id="quit"><i class="material-icons">clear</i></button>
+      <template v-if="isMac">
+        <div class="window-icon">
+          <img src="@/assets/logo.svg" />
+        </div>
+      </template>
+      <template v-if="isWindows">
+        <button class="btn btn-link" id="minimize" @click.prevent="minimizeWindow"><i class="material-icons">minimize</i></button>
+        <button class="btn btn-link" id="maximize" @click.prevent="maximizeWindow"><i class="material-icons">crop_3_2</i></button>
+        <button class="btn btn-link" id="quit" @click.prevent="closeWindow"><i class="material-icons">clear</i></button>
+      </template>
     </div>
   </div>
 </template>
@@ -15,34 +22,31 @@
 <script>
 import {remote} from 'electron'
 export default {
-    mounted() {
-      this.init()
+    data() {
+      return {
+        window: remote.BrowserWindow.getFocusedWindow()
+      }
     },
     methods: {
-      init() {
-        const minimize = document.getElementById("minimize");
-        const maximize = document.getElementById("maximize");
-        const quit = document.getElementById("quit");
-        const window = remote.BrowserWindow.getFocusedWindow();
-
-        minimize.addEventListener("click", minimizeWindow);
-        maximize.addEventListener("click", maximizeWindow);
-        quit.addEventListener("click", closeWindow);
-
-        function minimizeWindow() {
-          window.minimize();
+      minimizeWindow() {
+        this.window.minimize();
+      },
+      maximizeWindow() {
+        if (this.window.isMaximized()) {
+          this.window.unmaximize();
+        } else {
+          this.window.maximize();
         }
-        function maximizeWindow() {
-          if (window.isMaximized()) {
-            window.unmaximize();
-          } else {
-            window.maximize();
-          }
-        }
-        function closeWindow() {
-          remote.getCurrentWindow().close()
-        }
+      },
+      closeWindow() {
+        window.close()
       }
     }
   }
 </script>
+
+<style>
+  #windows-title {
+    user-select: none;
+  }
+</style>
