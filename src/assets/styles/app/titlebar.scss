@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: space-between;
   background: rgba($theme-base, 0.1);
-  padding: 0.5rem;
+  padding: $gutter-h;
   margin: 0;
   -webkit-app-region: drag;
   .window-title {
@@ -21,13 +21,13 @@
     align-items: center;
     width: 120px;
     img {
-      height: 16px;
-      width: 16px;
+      height: 18px;
+      width: 32px;
     }
   }
   .window-actions {
     display: flex;
-    margin: -0.5rem;
+    margin: -$gutter-h;
     margin-left: 0;
     -webkit-app-region: no-drag;
     button {

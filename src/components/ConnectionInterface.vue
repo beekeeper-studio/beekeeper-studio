@@ -1,7 +1,7 @@
 <template>
   <div class="interface connection-interface">
     <div class="interface-wrap row">
-      <sidebar ref="sidebar">
+      <sidebar class="connection-sidebar" ref="sidebar">
         <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @edit="edit" @connect="handleConnect"></connection-sidebar>
       </sidebar>
       <div ref="content" class="connection-main page-content" id="page-content">

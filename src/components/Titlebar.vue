@@ -11,8 +11,8 @@
         </div>
       </template>
       <template v-if="isWindows">
-        <button class="btn btn-link" id="minimize" @click.prevent="minimizeWindow"><i class="material-icons">minimize</i></button>
-        <button class="btn btn-link" id="maximize" @click.prevent="maximizeWindow"><i class="material-icons">crop_3_2</i></button>
+        <button class="btn btn-link" id="minimize" @click.prevent="minimizeWindow"><i class="material-icons">remove</i></button>
+        <button class="btn btn-link" id="maximize" @click.prevent="maximizeWindow"><i class="material-icons">crop_square</i></button>
         <button class="btn btn-link" id="quit" @click.prevent="closeWindow"><i class="material-icons">clear</i></button>
       </template>
     </div>

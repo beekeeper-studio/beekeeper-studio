@@ -1,6 +1,6 @@
 'use strict'
 import fs from 'fs'
-import { app, protocol, BrowserWindow, Menu } from 'electron'
+import { app, protocol, BrowserWindow } from 'electron'
 import {
   createProtocol,
   installVueDevtools
@@ -17,9 +17,10 @@ const isWindows = os === 'win32'
 const isMac = os === 'darwin'
 const isLinuxOrBSD = !isWindows && !isMac
 
-if(isWindows || isLinuxOrBSD) {
-  Menu.setApplicationMenu(null)
-}
+// Add onlyl for production -- need for dev
+// if(isWindows || isLinuxOrBSD) {
+//   Menu.setApplicationMenu(null)
+// }
 
 
 // Keep a global reference of the window object, if you don't, the window will
