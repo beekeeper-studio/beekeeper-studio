@@ -2,21 +2,17 @@
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   background: rgba($theme-base, 0.1);
   padding: $gutter-h;
   margin: 0;
   -webkit-app-region: drag;
-  .window-title {
-    color: $text-light;
-    font-size: 0.85rem;
-  }
-}
+  .titlebar-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
 
-// Windows Titlebar
-// --------------------------
-#windows-titlebar {
-  .window-icon {
     display: flex;
     align-items: center;
     width: 120px;
@@ -25,10 +21,14 @@
       width: 32px;
     }
   }
-  .window-actions {
+  .titlebar-title {
+    color: $text-light;
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+  .titlebar-actions {
     display: flex;
-    margin: -$gutter-h;
-    margin-left: 0;
+    margin: 0;
     -webkit-app-region: no-drag;
     button {
       display: flex;
@@ -56,6 +56,17 @@
       &:hover {
         background: $brand-danger;
       }
+    }
+  }
+
+  // If Windows
+  &.windows {
+    justify-content: space-between;
+    .window-icon {
+      position: initial;
+      top: initial;
+      left: initial;
+      bottom: initial;
     }
   }
 }

@@ -1,16 +1,11 @@
 <template>
-  <div id="windows-titlebar" class="titlebar">
-    <div class="window-icon">
-      <img v-if="!isMac" src="@/assets/logo.svg" />
+  <div class="titlebar" :class="{window: isWindows}">
+    <div class="titlebar-icon" v-if="!isMac">
+      <img src="@/assets/logo.svg" />
     </div>
-    <div class="window-title">Beekeeper Studio</div>
-    <div class="window-actions">
-      <template v-if="isMac">
-        <div class="window-icon">
-          <img src="@/assets/logo.svg" />
-        </div>
-      </template>
-      <template v-if="isWindows">
+    <div class="titlebar-title">Beekeeper Studio</div>
+    <div class="titlebar-actions" v-if="isWindows">
+      <template>
         <button class="btn btn-link" id="minimize" @click.prevent="minimizeWindow"><i class="material-icons">remove</i></button>
         <button class="btn btn-link" id="maximize" @click.prevent="maximizeWindow"><i class="material-icons">crop_square</i></button>
         <button class="btn btn-link" id="quit" @click.prevent="closeWindow"><i class="material-icons">clear</i></button>
