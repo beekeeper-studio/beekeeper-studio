@@ -28,7 +28,8 @@
   }
   .titlebar-actions {
     display: flex;
-    margin: 0;
+    margin: -$gutter-h;
+    margin-left: 0;
     -webkit-app-region: no-drag;
     button {
       display: flex;
@@ -62,7 +63,7 @@
   // If Windows
   &.windows {
     justify-content: space-between;
-    .window-icon {
+    .titlebar-icon {
       position: initial;
       top: initial;
       left: initial;

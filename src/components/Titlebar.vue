@@ -1,5 +1,5 @@
 <template>
-  <div class="titlebar" :class="{window: isWindows}">
+  <div class="titlebar" :class="{windows: isWindows}">
     <div class="titlebar-icon" v-if="!isMac">
       <img src="@/assets/logo.svg" />
     </div>
