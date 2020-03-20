@@ -66,6 +66,10 @@
     }
     .status-bar {
       color: $text-light;
+
+      .affected-rows {
+        padding-left: 10px;
+      }
     }
     .alert {
       display: flex;
