@@ -1,6 +1,6 @@
 <template>
 
-  <div class="sidebar-wrap row"> 
+  <div class="sidebar-wrap row">
     <global-sidebar
       @click="click"
       :activeItem="activeItem"
@@ -63,7 +63,7 @@
         <favorite-list></favorite-list>
       </div>
     </div>
-      
+
   </div>
 </template>
 

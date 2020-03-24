@@ -1,0 +1,73 @@
+.titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($theme-base, 0.1);
+  padding: $gutter-h;
+  margin: 0;
+  -webkit-app-region: drag;
+  .titlebar-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    display: flex;
+    align-items: center;
+    width: 120px;
+    img {
+      height: 18px;
+      width: 32px;
+    }
+  }
+  .titlebar-title {
+    color: $text-light;
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+  .titlebar-actions {
+    display: flex;
+    margin: -$gutter-h;
+    margin-left: 0;
+    -webkit-app-region: no-drag;
+    button {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      border-radius: 0;
+      color: $text-light;
+      margin: 0;
+      padding: 0 0.75rem;
+      height: 30px;
+      z-index: 10;
+      &:hover {
+        color: $text-dark;
+      }
+    }
+    #maximize {
+      i {
+        font-size: 16px;
+      }
+      &:hover {
+        background: $brand-info;
+      }
+    }
+    #quit {
+      &:hover {
+        background: $brand-danger;
+      }
+    }
+  }
+
+  // If Windows
+  &.windows {
+    justify-content: space-between;
+    .titlebar-icon {
+      position: initial;
+      top: initial;
+      left: initial;
+      bottom: initial;
+    }
+  }
+}

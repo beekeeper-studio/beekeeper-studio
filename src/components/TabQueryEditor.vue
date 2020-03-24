@@ -11,21 +11,19 @@
       </div>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
-      <header class="toolbar row flex-middle" v-if="result">
+      <!-- <header class="toolbar row flex-middle" v-if="result">
         <span class="title expand">Results</span>
         <div class="actions btn-group">
           <a class="btn btn-fab" @click.prevent="download" v-tooltip="'Download Query Results'"><i class="material-icons">save_alt</i></a>
-          <a class="btn btn-fab" v-tooltip="'Expand'"><i class="material-icons">keyboard_arrow_up</i></a>
         </div>
-      </header>
+      </header> -->
       <progress-bar v-if="running"></progress-bar>
       <result-table ref="table" v-else-if="result && result.rowCount > 0" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
       <div class="alert alert-info" v-else-if="result"><i class="material-icons">info</i>Query Executed Successfully. No Results</div>
       <div class="alert alert-danger" v-else-if="error"><i class="material-icons">warning</i>{{error}}</div>
       <div v-else><!-- No Data --></div>
-      <span class="expand"></span>
+      <span class="expand" v-if="!result"></span>
       <footer class="status-bar row query-meta">
-        <span class="expand"></span>
         <template v-if="result">
           <div class="row-counts">
             <span class="num-rows" v-if="result.rowCount > 0">{{result.rowCount}} Results</span>
@@ -36,6 +34,8 @@
         <template v-else>
           No Data
         </template>
+        <span class="expand"></span>
+        <a class="btn btn-fab" v-if="result" @click.prevent="download" v-tooltip="'Download Query Results'"><i class="material-icons">save_alt</i></a>
       </footer>
     </div>
 

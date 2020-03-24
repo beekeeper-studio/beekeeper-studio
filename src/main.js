@@ -53,7 +53,17 @@ import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
     window.hint = Hint
     window.SQLHint = SQLHint
     Vue.config.devtools = process.env.NODE_ENV === 'development';
-    config.isMac = window.navigator.platform == 'MacIntel'
+
+    Vue.mixin({
+      data: function() {
+        return {
+          platform: window.navigator.platform,
+          isMac: !!window.navigator.platform.match('Mac'),
+          isWindows: !!window.navigator.platform.match('Win'),
+          isLinux: !!window.navigator.userAgent.match("(Linux|X11)")
+        }
+      }
+    })
 
     Vue.config.productionTip = false
     Vue.use(TypeOrmPlugin, {connection})

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-col expand">
+  <div class="sidebar-wrap flex-col">
     <div class="sidebar-heading">
       <div class="status connected sidebar-title row flex-middle">
         <span>Saved Connections</span>

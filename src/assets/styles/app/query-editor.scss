@@ -60,13 +60,17 @@
     .result-table {
       display: flex;
       flex-direction: column;
+      flex-grow: 1;
     }
     .not-run-yet {
       padding: 0.5rem 0.75rem;
     }
     .status-bar {
       color: $text-light;
-
+      .btn {
+        display: flex;
+        align-items: center;
+      }
       .affected-rows {
         padding-left: 10px;
       }

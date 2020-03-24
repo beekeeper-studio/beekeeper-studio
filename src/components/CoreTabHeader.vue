@@ -2,7 +2,7 @@
   <li class="nav-item">
     <a
       class="nav-link"
-      @click.prevent="$emit('click', tab)"
+      @click.prevent.stop="$emit('click', tab)"
       :class="{ active: selected }"
     >
       <span class="expand truncate">{{title}}</span>

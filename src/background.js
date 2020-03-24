@@ -1,6 +1,6 @@
 'use strict'
 import fs from 'fs'
-import { app, protocol, BrowserWindow, Menu } from 'electron'
+import { app, protocol, BrowserWindow } from 'electron'
 import {
   createProtocol,
   installVueDevtools
@@ -11,6 +11,17 @@ import config from './config'
 // import ConnectionConfig from './models/connection-config'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
+const os = process.platform;
+
+const isWindows = os === 'win32'
+const isMac = os === 'darwin'
+const isLinuxOrBSD = !isWindows && !isMac
+
+// Add onlyl for production -- need for dev
+// if(isWindows || isLinuxOrBSD) {
+//   Menu.setApplicationMenu(null)
+// }
+
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -43,9 +54,9 @@ async function initializeDB() {
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 
 function createWindow () {
-  Menu.setApplicationMenu(null)
+
   // Create the browser window.
-  win = new BrowserWindow({ width: 1200, height: 800, webPreferences: {
+  win = new BrowserWindow({ width: 1200, height: 800, titleBarStyle: 'hidden', frame: isLinuxOrBSD, webPreferences: {
     nodeIntegration: true,
   } })
 

@@ -1,5 +1,6 @@
 #sidebar {
   flex: 0 1 100%;
+  max-height: 100%;
   overflow: hidden;
   .sidebar-wrap {
     flex: 1 1 100%;
@@ -8,7 +9,7 @@
   .sidebar-heading {
     display: flex;
     align-items: center;
-    background: rgba($theme-base, 0.07);
+    background: rgba($theme-base, 0.05);
     box-shadow: 0 1px 2px rgba(black, 0.2);
     padding: $gutter-h $gutter-h $gutter-h $gutter-w;
     height: $tab-height;
@@ -255,7 +256,9 @@
     width: $sidebar-icon-w;
     min-width: $sidebar-icon-w;
     transition: transform 0.15s ease-in;
-    color: lighten($theme-secondary, 15%);
+    // color: lighten($theme-secondary, 15%);
+    color: $theme-primary;
+    opacity: 0.75;
   }
   .badge
   .badge-info {
