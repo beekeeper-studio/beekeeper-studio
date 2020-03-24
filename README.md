@@ -1,10 +1,28 @@
-# beekeeper-studio
+# Beekeeper Studio
 
+Beekeeper Studio is a nice-to-use SQL database query tool for Windows, Mac, and Linux.
 
-Use https://dexie.org/ for query run and connection storage
-NO
-Just make sqlite3 an external dependency in webpack.
-In fact everything EXCEPT libs that provide .vue files can be externals.
+Beekeeper Studio supports connecting to the following databases:
+
+- SQLite
+- MySQL
+- Postgres
+- SQL Server
+
+![Screenshot](https://placehold.it/600x400)
+
+## Installation
+
+Visit our [releases page]
+
+## Features
+
+- Autocomplete SQL query editor
+- Tabbed interface, so you can run multiple queries side by side
+- Sensible keyboard-shortcuts
+- Save queries for later
+- Query run-history, so you can find that one query you got working 3 days ago
+
 
 ## Project setup
 ```
@@ -22,21 +40,4 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 
 
 ## TODO
-
-Firstly: ** YAY! Sequelize core db utilities has been merged **
-
-1. See ConnectionInterface.vue
-  ConnectionProvider should now get the connection from db/index using createConnection
-  Will need to:
-    - make the config expected by the db/clients look like our own connection config objects
-    - adjust expectations to deal with the server + database split set-up
-    - replace our MySQL driver with the one from sequelize
-
-
-- (matthew) Investigate Bookshelf for ORM needs https://github.com/bookshelf/bookshelf/
-
-
-
-### Result Table
-
-- which table should I be using?
+- 

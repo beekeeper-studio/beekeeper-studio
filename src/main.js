@@ -41,6 +41,7 @@ import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
         EncryptedColumnSubscriber
       ],
       logging: true,
+      logger: 'simple-console',
       synchronize: true, // dev mode only
       migrations: [path.join(__dirname, "migration/*.js")], // make these
       migrationsRun: true

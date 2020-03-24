@@ -11,21 +11,21 @@
       </a>
       <a
         href=""
-        @click.prevent="click('history')"
-        class="nav-item"
-        :class="{ active: activeItem === 'history'}"
-        v-tooltip="historyTooltip"
-      >
-        <span class="material-icons">history</span>
-      </a>
-      <a
-        href=""
         @click.prevent="click('queries')"
         class="nav-item"
         :class="{ active: activeItem === 'queries'}"
         v-tooltip="queriesTooltip"
       >
         <span class="material-icons">star</span>
+      </a>
+      <a
+        href=""
+        @click.prevent="click('history')"
+        class="nav-item"
+        :class="{ active: activeItem === 'history'}"
+        v-tooltip="historyTooltip"
+      >
+        <span class="material-icons">history</span>
       </a>
     </div>
 </template>

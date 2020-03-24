@@ -1,4 +1,7 @@
 version: '3'
+volumes:
+  mssql:
+
 services:
   psql:
     image: postgres
@@ -26,16 +29,15 @@ services:
   sqlserver:
     image: "mcr.microsoft.com/mssql/server:2017-latest-ubuntu"
     volumes:
-      - ./data/sqlserver:/var/opt/mssql
+      - mssql:/var/opt/mssql/data
       - ./dev/docker_sqlserver:/docker_init
     restart: always
     environment:
       ACCEPT_EULA: "Y"
       MSSSQL_PID: "Express"
       SA_PASSWORD: "Example@1"
-      MSSQL_AGENT_ENABLED: "true"
     ports:
       - 1433:1433
-    command: "/docker_init/entrypoint.sh"
+    command: sh -c ' chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /opt/mssql/bin/sqlservr;'
 
 

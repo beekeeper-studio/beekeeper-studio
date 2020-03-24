@@ -171,6 +171,7 @@
         } catch(ex) {
           this.connectionError = ex.message
           this.$noty.error("Error establishing a connection")
+          console.log(ex)
           return false
         } finally {
           this.testing = false
