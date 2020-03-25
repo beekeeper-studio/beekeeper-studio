@@ -4,7 +4,7 @@ const externals = ['sqlite3', 'sequelize', 'mysql', 'typeorm', 'reflect-metadata
 module.exports = {
   pluginOptions: {
     electronBuilder: {
-      extends: null,
+      nodeIntegration: true,
       externals,
       builderOptions: {
         appId: "io.beekeeperstudio.desktop",

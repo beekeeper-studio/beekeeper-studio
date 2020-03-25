@@ -65,7 +65,7 @@ function createWindow () {
     titleBarStyle: 'hidden', 
     frame: isLinuxOrBSD, 
     webPreferences: {
-      nodeIntegration: true,
+      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
     },
     icon: './public/icons/png/512x512.png',
   })
