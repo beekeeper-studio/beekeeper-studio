@@ -1,6 +1,6 @@
 const webpack = require('webpack');
 
-const externals = ['sqlite3', 'sequelize', 'mysql', 'typeorm', 'reflect-metadata']
+const externals = ['sqlite3', 'sequelize', 'mysql', 'typeorm', 'reflect-metadata', 'cassandra-driver']
 module.exports = {
   pluginOptions: {
     electronBuilder: {

@@ -20,7 +20,7 @@
   "main": "background.js",
   "dependencies": {
     "@sagalbot/vueable": "^0.0.3",
-    "cassandra-driver": "^4.2.0",
+    "cassandra-driver": "^4.4.0",
     "cli-highlight": "2.0.0",
     "codemirror": "^5.48.2",
     "core-js": "^3.4.4",
@@ -59,6 +59,7 @@
     "@vue/cli-plugin-babel": "^4.1.2",
     "@vue/cli-plugin-eslint": "^4.1.2",
     "@vue/cli-service": "^4.1.2",
+    "aws-sdk": "^2.645.0",
     "babel-eslint": "^10.0.1",
     "electron": "^5.0.0",
     "electron-rebuild": "^1.8.5",
@@ -95,5 +96,4 @@
     "> 1%",
     "last 2 versions"
   ]
-
 }
