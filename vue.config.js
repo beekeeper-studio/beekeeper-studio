@@ -11,15 +11,16 @@ module.exports = {
         productName: "Beekeeper Studio",
         files: ['**/*', 'public/icons/**/*'],
         mac: {
-          icon: 'public/icons/mac/bk-icon.icns',
+          icon: './public/icons/mac/bk-icon.icns',
           category: "public.app-category.developer-tools"
         },
         linux: {
+          icon: './public/icons/png/',
           target: ['AppImage', 'deb', 'rpm', 'snap'],
           category: "Development",
         },
         win: {
-          icon: 'public/icons/png/512x512.png'
+          icon: './public/icons/png/512x512.png'
         }
       }
     }
