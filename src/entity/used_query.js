@@ -1,7 +1,7 @@
 import { Entity, Column, Index } from 'typeorm'
 import { ApplicationEntity  } from './application_entity'
 
-@Entity()
+@Entity({ name: 'used_query'})
 export class UsedQuery extends ApplicationEntity {
 
 

@@ -67,7 +67,7 @@ export class DbConnectionBase extends ApplicationEntity {
 
 
 
-@Entity()
+@Entity({ name: 'saved_connection'} )
 export class SavedConnection extends DbConnectionBase {
 
   @Column("varchar")

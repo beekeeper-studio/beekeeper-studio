@@ -1,7 +1,7 @@
 import { Entity } from "typeorm"
 import {DbConnectionBase} from './saved_connection'
 
-@Entity()
+@Entity({ name: 'used_connection' })
 export class UsedConnection extends DbConnectionBase {
 
   constructor(other) {

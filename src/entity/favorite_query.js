@@ -1,7 +1,7 @@
 import { Entity, Column, Index } from 'typeorm'
 import { ApplicationEntity  } from './application_entity'
 
-@Entity()
+@Entity({ name: 'favorite_query' })
 export class FavoriteQuery extends ApplicationEntity {
 
   @Column({type: "varchar", nullable: false})
