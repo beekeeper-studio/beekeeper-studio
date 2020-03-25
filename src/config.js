@@ -1,15 +1,21 @@
-
-import os from 'os'
 import path from 'path'
 import fs from 'fs'
 import crypto from 'crypto'
 import Encryptor from 'simple-encryptor'
+import { remote } from 'electron'
 
-const userDirectory = path.join(os.homedir(), ".beekeeper-studio")
+const userDirectory = remote.app.getPath('userData');
 const defaultEncryptionKey = "38782F413F442A472D4B6150645367566B59703373367639792442264529482B"
 const keyFile = path.join(userDirectory, '.key')
 
+function initUserDirectory() {
+  if (!fs.existsSync(userDirectory)) {
+    fs.mkdirSync(userDirectory, { recursive: true })
+  }
+}
+
 function loadEncryptionKey() {
+  initUserDirectory();
   const encryptor = Encryptor(defaultEncryptionKey)
 
   if(!fs.existsSync(keyFile)) {
