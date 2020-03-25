@@ -313,10 +313,13 @@ export function query(conn, queryText) {
 
 
 export async function executeQuery(conn, queryText) {
-  const data = await driverExecuteQuery(conn, { query: queryText, multiple: true });
+  let data = await driverExecuteQuery(conn, { query: queryText, multiple: true });
 
   const commands = identifyCommands(queryText).map((item) => item.type);
 
+  if (!Array.isArray(data)) {
+    data = [data];
+  }
   return data.map((result, idx) => parseRowQueryResult(result, commands[idx]));
 }
 

@@ -1,6 +1,8 @@
 version: '3'
 volumes:
   mssql:
+  psql:
+  mysql:
 
 services:
   psql:
@@ -10,7 +12,7 @@ services:
       POSTGRES_PASSWORD: example
       POSTGRES_DB: saklia
     volumes:
-      - ./data/psql:/var/lib/postgresql/data
+      - psql:/var/lib/postgresql/data
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
@@ -24,7 +26,7 @@ services:
     ports:
       - 3306:3306
     volumes:
-      - ./data/mysql:/var/lib/mysql
+      - mysql:/var/lib/mysql
       - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
   sqlserver:
     image: "mcr.microsoft.com/mssql/server:2017-latest-ubuntu"
