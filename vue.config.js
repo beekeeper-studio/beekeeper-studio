@@ -28,6 +28,9 @@ module.exports = {
     plugins: [
       new webpack.IgnorePlugin(/pg-native/, /pg/)
     ],
+    node: {
+      dns: 'mock'
+    },
     module: {
       rules: [
         {
