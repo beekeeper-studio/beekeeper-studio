@@ -4,6 +4,7 @@ const externals = ['sqlite3', 'sequelize', 'mysql', 'typeorm', 'reflect-metadata
 module.exports = {
   pluginOptions: {
     electronBuilder: {
+      extends: null,
       externals,
       builderOptions: {
         appId: "io.beekeeperstudio.desktop",
@@ -26,7 +27,8 @@ module.exports = {
   },
   configureWebpack: {
     plugins: [
-      new webpack.IgnorePlugin(/pg-native/, /pg/)
+      new webpack.IgnorePlugin(/pg-native/, /pg/),
+      new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/)
     ],
     node: {
       dns: 'mock'
