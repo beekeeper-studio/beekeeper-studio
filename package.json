@@ -39,7 +39,7 @@
     "simple-encryptor": "^3.0.0",
     "split.js": "^1.5.11",
     "sql-query-identifier": "^1.1.0",
-    "sqlite3": "^4.0.3",
+    "sqlite3": "^4.1.1",
     "ssh2": "^0.8.5",
     "tabulator-tables": "^4.3.1",
     "typeorm": "0.2.22",

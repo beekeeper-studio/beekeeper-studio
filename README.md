@@ -40,7 +40,10 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 
 
 ## TODO
-- 
+- initial database migrations, and migrations run on start-up
+- fix UX issues
+- figure out icon issues in linux
+- figure out if the windows builds work
 
 
 ## TODO (later)
