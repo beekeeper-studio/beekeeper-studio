@@ -41,3 +41,8 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 
 ## TODO
 - 
+
+
+## TODO (later)
+- AppX Build for the windows store, including all required assets https://www.electron.build/configuration/appx#appx-assets
+
