@@ -1,5 +1,6 @@
+const webpack = require('webpack');
 
-const externals = ['sqlite3', 'pg', 'sequelize', 'mysql', 'typeorm', 'reflect-metadata']
+const externals = ['sqlite3', 'sequelize', 'mysql', 'typeorm', 'reflect-metadata']
 module.exports = {
   pluginOptions: {
     electronBuilder: {
@@ -25,7 +26,9 @@ module.exports = {
   },
   configureWebpack: {
     plugins: [
+      new webpack.IgnorePlugin(/pg-native/, /pg/)
     ],
+    externals,
     module: {
       rules: [
         {
