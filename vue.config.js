@@ -28,7 +28,6 @@ module.exports = {
     plugins: [
       new webpack.IgnorePlugin(/pg-native/, /pg/)
     ],
-    externals,
     module: {
       rules: [
         {
