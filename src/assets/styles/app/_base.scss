@@ -225,11 +225,12 @@ i {
   margin-bottom: 6px;
   label {
     display: flex;
-    font-size: 0.9rem;
+    align-items: center;
+    font-size: 0.85rem;
     line-height: 1.5;
     margin-bottom: 2px;
     .hint {
-      margin: 0;
+      margin: 0 0 0 0.25rem;
     }
   }
   .hint {

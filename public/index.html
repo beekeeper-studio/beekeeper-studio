@@ -10,8 +10,103 @@
     <noscript>
       <strong>We're sorry but beekeeper-studio doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
-    <div id="app">
-      LOADING
+    <div id="app" class="app-loading">
+      <style>
+        body {
+          background: #252525;
+        }
+        body, .app-loading {
+          position: absolute;
+          top: 0;
+          right: 0;
+          left: 0;
+          bottom: 0;
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+        }
+        .app-loading {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          -webkit-app-region: drag;
+        }
+        .preloader-wrap {
+          font-family: Helvetica, Arial, Helvetica, sans-serif;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          color: white;
+          font-size: 14px;
+        }
+        .preloader {
+          height: 100px;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 6px;
+        }
+        .preloader .layer {
+          display: block;
+          position: absolute;
+          height: 50px;
+          width: 50px;
+          border-radius: 50%;
+          box-shadow: 2px 2px #fad83b,
+                      0 4px rgba(0, 0, 0 , 0.4);
+          transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg);
+        }
+        .preloader .layer:nth-of-type(1) {
+          background: rgba(250, 216, 59, 0.65);
+          margin-top: 20px;
+          animation: movedown  0.8s cubic-bezier(0.39, 0.575, 0.565, 1)  0.4s infinite normal;
+        }
+        .preloader .layer:nth-of-type(2) {
+          background: rgba(250, 216, 59, 0.65);
+          margin-top: 10px;
+        }
+        .preloader .layer:nth-of-type(3) {
+          background: rgba(250, 216, 59, 0.65);
+          animation: moveup  0.8s cubic-bezier(0.39, 0.575, 0.565, 1) infinite normal;
+        }
+        @keyframes moveup {
+          0%, 60%, 100% {
+            transform: 
+              rotateX(50deg)
+              rotateY(0deg)
+              rotateZ(45deg)
+              translateZ(0);
+          }
+          25% {
+            transform:
+              rotateX(50deg)
+              rotateY(0deg)
+              rotateZ(45deg)
+              translateZ(5px);
+          }
+        }
+        @keyframes movedown {
+          0%, 60%, 100% {
+            transform: 
+              rotateX(50deg)
+              rotateY(0deg)
+              rotateZ(45deg)
+              translateZ(0);
+          }
+          25% {
+            transform:
+              rotateX(50deg)
+              rotateY(0deg)
+              rotateZ(45deg)
+              translateZ(-5px);
+          }
+        }
+      </style>
+      <div class="preloader-wrap">
+        <div class="preloader"><i class="layer"></i><i class="layer"></i><i class="layer"></i></div>
+        <span>Loading...</span>
+      </div>
     </div>
     <!-- built files will be auto injected -->
   </body>
