@@ -67,7 +67,7 @@ function createWindow () {
     webPreferences: {
       nodeIntegration: true,
     },
-    icon: './public/icons/png/256x256.png',
+    icon: './public/icons/png/512x512.png',
   })
   
 

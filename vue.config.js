@@ -9,18 +9,17 @@ module.exports = {
       builderOptions: {
         appId: "io.beekeeperstudio.desktop",
         productName: "Beekeeper Studio",
-        files: ['**/*', 'build/icon.*'],
+        files: ['**/*', 'public/icons/**/*'],
         mac: {
-          icon: 'build/icon.png',
+          icon: 'public/icons/mac/bk-icon.icns',
           category: "public.app-category.developer-tools"
         },
         linux: {
-          icon: 'build/icon.png',
           target: ['AppImage', 'deb', 'rpm', 'snap'],
           category: "Development",
         },
         win: {
-          icon: 'build/icon.png'
+          icon: 'public/icons/png/512x512.png'
         }
       }
     }
