@@ -19,6 +19,9 @@ jobs:
         with:
           node-version: 10
 
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v1
+
       - name: Build/release Electron app
         uses: beekeeper-studio/action-electron-builder@master
         with:
