@@ -23,7 +23,7 @@
       <div class="alert alert-danger" v-else-if="error"><i class="material-icons">warning</i>{{error}}</div>
       <div v-else><!-- No Data --></div>
       <span class="expand" v-if="!result"></span>
-      <footer class="status-bar row query-meta">
+      <footer class="status-bar row query-meta" v-bind:class="{'empty': !result}">
         <template v-if="result">
           <div class="row-counts">
             <span class="num-rows" v-if="result.rowCount > 0">{{result.rowCount}} Results</span>

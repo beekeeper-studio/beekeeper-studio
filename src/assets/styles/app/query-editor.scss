@@ -70,6 +70,9 @@
     .status-bar {
       background: rgba($theme-base,0.065);
       color: $text-light;
+      &.empty {
+        background: transparent;
+      }
       .btn {
         display: flex;
         align-items: center;
