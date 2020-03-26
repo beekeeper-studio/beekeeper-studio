@@ -8,6 +8,9 @@
         </a>
       </div>
     </nav>
+    <div class="empty" v-if="favorites.length == 0">
+      <span>No Saved Queries</span>
+    </div>
   </div>
 </template>
 

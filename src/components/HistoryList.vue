@@ -10,6 +10,9 @@
         </a>
       </div>
     </nav>
+    <div class="empty" v-if="history.length == 0">
+      <span>No Recent Queries</span>
+    </div>
   </div>
 </template>
 <script>
