@@ -140,14 +140,19 @@
 // List Group
 // ------------------------------
 .list-heading {
+  $list-heading-height:    1.8rem;
+
   display: flex;
   align-items: center;
-  height: 1.8rem;
+  height: $list-heading-height;
   padding: 0 $gutter-w;
   padding-right: $gutter-h;
   background: rgba($theme-base, 0.06);
-  .sub span {
-    line-height: 2;
+  .sub {
+    line-height: $list-heading-height;
+    span {
+      padding-top: 1px;
+    }
   }
   .actions {
     a {
