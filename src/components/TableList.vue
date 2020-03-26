@@ -13,13 +13,13 @@
     </div>
 
     <!-- Pinned -->
-    <div v-if="pinned.length > 0" class="table-list pinned flex-col">
+    <div v-if="pinned.length > 0" class="table-list pinned flex-col" ref="pinned">
       <nav class="list-group flex-col">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
-            <span class="btn-fab open">
+            <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
-            </span>
+            </span> -->
             <span>Pinned</span>
           </div>
           <!-- <div class="actions">
@@ -50,13 +50,13 @@
     </div>
 
     <!-- Tables -->
-    <div v-if="tables" class="table-list flex-col">
+    <div v-if="tables" class="table-list flex-col" ref="tables">
       <nav class="list-group flex-col">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
-            <span class="btn-fab open">
+            <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
-            </span>
+            </span> -->
             <span>Tables</span>
           </div>
           <div class="actions">
@@ -96,6 +96,7 @@
 <script>
   import _ from 'lodash'
   import TableListItem from './TableListItem'
+  import Split from 'split.js'
   import { mapState, mapGetters } from 'vuex'
 
   export default {
@@ -142,6 +143,27 @@
       },
       refreshTables() {
         this.$store.dispatch('updateTables')
+      }
+    },
+    mounted() {
+      this.$nextTick(() => {
+        const components = [
+          this.$refs.pinned,
+          this.$refs.tables
+        ]
+        this.split = Split(components, {
+          elementStyle: (dimension, size) => ({
+              'flex-basis': `calc(${size}%)`,
+          }),
+          direction: 'vertical',
+          sizes: [50,50],
+        })
+      })
+    },
+    beforeDestroy() {
+      if(this.split) {
+        console.log("destroying split")
+        this.split.destroy()
       }
     }
   }

@@ -6,7 +6,7 @@
       </span>
       <i class="item-icon material-icons">grid_on</i>
       <span class="table-name truncate expand">{{table.name}}</span>
-      <span class="actions">
+      <span class="actions" v-bind:class="{'pinned': pinned.includes(table)}">
         <span v-if="!pinned.includes(table)" @click.prevent.stop="pin" class="btn-fab pin"><i class="bk-pin"></i></span>
         <span v-if="pinned.includes(table)" @click.prevent.stop="unpin" class="btn-fab unpin"><i class="material-icons">clear</i></span>
         <span v-if="pinned.includes(table)" class="btn-fab pinned"><i class="bk-pin"></i></span>

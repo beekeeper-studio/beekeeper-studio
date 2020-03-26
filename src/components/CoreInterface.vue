@@ -43,7 +43,9 @@
           elementStyle: (dimension, size) => ({
               'flex-basis': `calc(${size}%)`,
           }),
-          sizes: [25,75],
+          sizes: [10,90],
+          minSize: 400,
+          expandToMin: true,
           gutterSize: 8,
         })
       })

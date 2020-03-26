@@ -2,6 +2,7 @@
 
 .tabulator-row {
   background: transparent;
+  width: min-content;
   .tabulator-cell {
     border-right: 0;
     padding: 4px 8px;
@@ -27,11 +28,12 @@
     background: lighten($query-editor-bg, 8%);
     border: 0;
     box-shadow: 0 -1px 2px 1px rgba(black, 0.5);
+    width: -webkit-fill-available;
     .tabulator-col {
       background: transparent;
       // border-color: $query-editor-bg;
       border-color: transparent;
-      height: 24px!important;
+      height: 32px!important;
       font-size: 85%;
       line-height: 1;
       &.tabulator-sortable{
@@ -64,9 +66,10 @@
         }
       }
       .tabulator-col-content {
-        padding: 8px;
+        padding: 0 8px;
+        line-height: 32px;
         .tabulator-arrow {
-          top: 10px;
+          top: 14px;
           border-width: 4px!important;
           border-bottom-color: rgba($theme-base, 0.35);
         }

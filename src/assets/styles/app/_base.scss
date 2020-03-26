@@ -73,7 +73,8 @@ i {
   height: 6px;
 }
 ::-webkit-scrollbar-track-piece {
-  background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=) repeat-y!important;
+  background-color: transparent;
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=); background-repeat: repeat-y!important;
 }
 ::-webkit-scrollbar-thumb {
   background: rgba($theme-base, 0.2);
@@ -81,6 +82,9 @@ i {
 }
 ::-webkit-scrollbar-button {
   display: none;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 

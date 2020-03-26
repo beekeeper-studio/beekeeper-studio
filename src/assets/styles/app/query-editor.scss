@@ -30,6 +30,7 @@
     .actions {
       display: flex;
       align-items: center;
+      padding: 0;
     }
     .btn-fab {
       i {
@@ -61,11 +62,13 @@
       display: flex;
       flex-direction: column;
       flex-grow: 1;
+      overflow: hidden;
     }
     .not-run-yet {
       padding: 0.5rem 0.75rem;
     }
     .status-bar {
+      background: rgba($theme-base,0.065);
       color: $text-light;
       .btn {
         display: flex;
@@ -82,6 +85,14 @@
       flex: 1 1 100%;
       padding: 0;
       background: transparent;
+    }
+    .tabulator {
+      .tabulator-tableHolder {
+        overflow: hidden;
+        &:hover {
+          overflow: auto;
+        }
+      }
     }
   }
 

@@ -4,6 +4,9 @@ $preloader-duration:  0.75s;
 $preloader-dimension: 1.25rem;
 
 .preloader {
+  position:relative;
+  height: 1.8rem;
+  width: 1.8rem;
   .layer {
     display: block;
     position: absolute;

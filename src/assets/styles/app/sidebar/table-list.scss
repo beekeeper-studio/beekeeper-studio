@@ -2,11 +2,6 @@
 // Pinned
 // ----------------------------------
 .pinned {
-  flex-grow: initial;
-  .list-body {
-    height: min-content;
-    max-height: 70vh;
-  }
   .list-group {
     .list-item-btn {
       .actions {

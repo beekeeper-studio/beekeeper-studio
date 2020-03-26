@@ -5,6 +5,12 @@
   .sidebar-wrap {
     flex: 1 1 100%;
     flex-wrap: nowrap;
+    .gutter.gutter-vertical {
+      &:after {
+        height: 10px;
+        top: -5px;
+      }
+    }
   }
   .sidebar-heading {
     display: flex;
@@ -136,13 +142,17 @@
 .list-heading {
   display: flex;
   align-items: center;
-  line-height: 1.8;
-  padding: ($gutter-h * 0.5) $gutter-h;
+  height: 1.8rem;
+  padding: 0 $gutter-w;
   padding-right: $gutter-h;
   background: rgba($theme-base, 0.06);
+  .sub span {
+    line-height: 2;
+  }
   .actions {
     a {
       margin: 0 ($gutter-h * 0.5);
+      margin-right: 0;
       padding: 0;
     }
     .material-icons {
@@ -151,8 +161,9 @@
   }
 }
 .list-body {
-  flex: 1 1 100%;
+  flex: 1 1 auto;
   height: 0;
+  max-height: -webkit-fill-available;
   padding: $gutter-h 0;
   overflow: hidden;
   overflow-y: auto;
@@ -180,7 +191,7 @@
   }
   .list-item-btn {
     color: rgba($theme-base, 0.77);
-    padding: ($gutter-h * 0.8) $gutter-w;
+    padding: ($gutter-h * 0.8);
     padding-left: $gutter-w;
     line-height: 1.4;
     &:hover, &:focus {
@@ -197,7 +208,11 @@
     .actions {
       display: none;
       align-items: center;
+      &.pinned {
+        display: inline-flex;
+      }
       .btn-fab {
+        line-height: 22px;
         &:hover {
           i {
             color: $theme-base;
@@ -209,7 +224,7 @@
         &.pinned {
           display: inline-block;
           i {
-            color: $theme-secondary;
+            color: $theme-primary;
           }
         }
       }
@@ -232,7 +247,7 @@
   }
   .sub-item {
     color: $text;
-    padding: ($gutter-h * 0.35);
+    padding: ($gutter-h * 0.5);
     padding-right: $gutter-w;
     padding-left: $gutter-w + ($sidebar-icon-w * 1.35);
   }

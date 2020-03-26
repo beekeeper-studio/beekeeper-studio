@@ -60,7 +60,7 @@
   -webkit-overflow-scrolling: touch;
   .small-wrap {
     max-width: 550px;
-    max-height: inherit;
+    max-height: -webkit-fill-available;
   }
   .card-flat {
     margin: $gutter-w 0;

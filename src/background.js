@@ -17,9 +17,9 @@ const isMac = os === 'darwin'
 const isLinuxOrBSD = !isWindows && !isMac
 
 // Add onlyl for production -- need for dev
-// if(isWindows || isLinuxOrBSD) {
-//   Menu.setApplicationMenu(null)
-// }
+if(isWindows || isLinuxOrBSD) {
+  Menu.setApplicationMenu(null)
+}
 
 
 // Keep a global reference of the window object, if you don't, the window will

@@ -49,40 +49,15 @@
     display: flex;
     align-items: center;
     font-size: 11px;
-    line-height: $status-bar-height;
-    padding: 0 $gutter-w;
-    // background: rgba($theme-base, 0.08);
-    &.connected {
-      background: $brand-primary;
-    }
-    &.disconnected {
-      background: $brand-danger;
-    }
+    padding: ($gutter-h * 0.5) $gutter-w;
+    padding-right: $gutter-h;
     .btn {
-      font-weight: normal;
-      font-size: 11px;
-      border-radius: 0;
-    }
-    .actions {
-      display: flex;
-      a {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: rgba(white, 0.68);
-        color: $text;
-        transition: color 0.15s ease-in-out;
-        &:hover {
-          color: white;
-        }
-      }
       .material-icons {
         height: $status-bar-height;
         width: $status-bar-height;
         line-height: $status-bar-height;
-        font-size: 16px;
+        font-size: 18px;
       }
-
     }
   }
 }

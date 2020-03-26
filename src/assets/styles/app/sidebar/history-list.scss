@@ -1,6 +1,7 @@
 .sidebar-history {
-  flex: 1 1 100%;
+  flex: 1 1 auto;
   height: 0;
+  max-height: -webkit-fill-available;
   overflow-x: hidden;
   padding: $gutter-h 0 $gutter-w;
   .list-group {
