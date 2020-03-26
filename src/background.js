@@ -1,54 +1,31 @@
 'use strict'
-import fs from 'fs'
 import { app, protocol, BrowserWindow, Menu} from 'electron'
 import {
   createProtocol,
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib'
 
-import config from './config'
 // import QueryRun from './models/query-run'
 // import ConnectionConfig from './models/connection-config'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const os = process.platform;
+const userDirectory = app.getPath('userData')
 
 const isWindows = os === 'win32'
 const isMac = os === 'darwin'
 const isLinuxOrBSD = !isWindows && !isMac
 
 // Add onlyl for production -- need for dev
-if(isWindows || isLinuxOrBSD) {
-  Menu.setApplicationMenu(null)
-}
+// if(isWindows || isLinuxOrBSD) {
+//   Menu.setApplicationMenu(null)
+// }
 
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win
 
-
-function setupUserDirectory() {
-  console.log("userDir: " + config.userDirectory)
-  if(!fs.existsSync(config.userDirectory)) {
-    fs.mkdirSync(config.userDirectory)
-  }
-}
-
-
-async function initializeDB() {
-  // await QueryRun.sync({ force: true })
-  // await ConnectionConfig.sync({ force: true })
-  // await ConnectionConfig.create({
-  //   connectionType: 'mysql',
-  //   host: '127.0.0.1',
-  //   port: 3306,
-  //   defaultDatabase: 'employees',
-  //   user: 'root',
-  //   password: 'example'
-  // })
-
-}
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
@@ -67,7 +44,7 @@ function createWindow () {
     webPreferences: {
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
     },
-    icon: './public/icons/png/512x512.png',
+    icon: './public/icons/png/512x512.png'
   })
   
 
@@ -115,8 +92,6 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
-  setupUserDirectory()
-  await initializeDB()
   createWindow()
 })
 
