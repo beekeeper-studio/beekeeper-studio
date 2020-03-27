@@ -16,7 +16,7 @@ module.exports = {
         },
         linux: {
           icon: './public/icons/png/',
-          target: ['AppImage', 'deb', 'rpm'],
+          target: ['AppImage', 'deb', 'rpm', 'snap'],
           category: "Development",
         },
         win: {
