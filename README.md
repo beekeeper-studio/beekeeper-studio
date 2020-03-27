@@ -9,7 +9,7 @@ Beekeeper Studio supports connecting to the following databases:
 - Postgres
 - SQL Server
 
-![Screenshot](https://placehold.it/600x400)
+![Screenshot](https://raw.githubusercontent.com/beekeeper-studio/beekeeper-studio/master/screenshots/main.png)
 
 ## Installation
 
