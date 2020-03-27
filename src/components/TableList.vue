@@ -13,14 +13,14 @@
     </div>
 
     <!-- Pinned -->
-    <div v-if="pinned.length > 0" class="table-list pinned flex-col" ref="pinned">
+    <div v-show="pinned.length > 0" class="table-list pinned flex-col" ref="pinned">
       <nav class="list-group flex-col">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <span>Pinned</span>
+            <span>Pinned ({{pinned.length}})</span>
           </div>
           <!-- <div class="actions">
             <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
@@ -57,7 +57,7 @@
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <span>Tables</span>
+            <span>Tables ({{tables.length}})</span>
           </div>
           <div class="actions">
             <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
@@ -109,9 +109,18 @@
         allExpanded: null,
         allCollapsed: null,
         activeItem: 'tables',
+        split: null,
+        sizes: [25,75],
+        lastPinnedSize: 0
       }
     },
     computed: {
+      components() {
+        return [
+          this.$refs.pinned,
+          this.$refs.tables
+        ]
+      },
       filteredTables() {
         if (!this.filterQuery) {
           return this.tables
@@ -127,6 +136,21 @@
       },
       ...mapState(['tables', 'connection', 'database']),
       ...mapGetters(['pinned']),
+    },
+    watch: {
+      pinned: {
+        deep: true,
+        handler(newPinned) {
+          if (newPinned.length > 0 && this.lastPinnedSize === 0) {
+            this.$nextTick(() => {
+              this.split.setSizes(this.sizes);
+            });
+          } else if (newPinned.length === 0) {
+            // this.split.destroy();
+          }
+          this.lastPinnedSize = newPinned.length
+        }
+      }
     },
     methods: {
       tableSelected(table) {
@@ -146,18 +170,12 @@
       }
     },
     mounted() {
-      this.$nextTick(() => {
-        const components = [
-          this.$refs.pinned,
-          this.$refs.tables
-        ]
-        this.split = Split(components, {
-          elementStyle: (dimension, size) => ({
-              'flex-basis': `calc(${size}%)`,
-          }),
-          direction: 'vertical',
-          sizes: [50,50],
-        })
+     this.split = Split(this.components, {
+        elementStyle: (dimension, size) => ({
+            'flex-basis': `calc(${size}%)`,
+        }),
+        direction: 'vertical',
+        sizes: this.sizes,
       })
     },
     beforeDestroy() {

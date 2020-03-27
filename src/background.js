@@ -10,7 +10,6 @@ import {
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const os = process.platform;
-const userDirectory = app.getPath('userData')
 
 const isWindows = os === 'win32'
 const isMac = os === 'darwin'
@@ -32,8 +31,11 @@ protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true
 
 function createWindow () {
   if (!isDevelopment && !process.env.IS_TEST) {
+    console.log("no menu in production mode")
     Menu.setApplicationMenu(null);
-  } 
+  } else {
+    console.log("leaving the menu for development mode")
+  }
 
   // Create the browser window.
   win = new BrowserWindow({ 
