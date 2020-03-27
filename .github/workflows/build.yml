@@ -38,3 +38,5 @@ jobs:
           release: ${{ startsWith(github.ref, 'refs/tags/v') }}
           windows_certs: ${{ secrets.windows_cert }}
           windows_certs_password: ${{ secrets.windows_cert_password }}
+          mac_certs: ${{ secrets.mac_cert }}
+          mac_certs_password: ${{ secrets.mac_cert_password }}
