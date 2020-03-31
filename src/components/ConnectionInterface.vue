@@ -46,7 +46,7 @@
                 <div class="save-connection expand">
                   <h3>Save Connection</h3>
                   <div class="row">
-                    <div class="expand"><input class="form-control" type="text" v-model="config.name" placeholder="Connection Name"></div>
+                    <div class="expand"><input class="form-control" @keydown.enter.prevent.stop="save" type="text" v-model="config.name" placeholder="Connection Name"></div>
                     <div><button class="btn btn-flat" @click.prevent="save">Save</button></div>
                   </div>
 
