@@ -16,7 +16,7 @@ const isMac = os === 'darwin'
 const isLinuxOrBSD = !isWindows && !isMac
 
 // Add onlyl for production -- need for dev
-if(isWindows || isLinuxOrBSD) {
+if((isWindows || isLinuxOrBSD) && !isDevelopment) {
   Menu.setApplicationMenu(null)
 }
 

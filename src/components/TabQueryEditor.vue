@@ -90,7 +90,8 @@
         tableHeight: 0,
         savePrompt: false,
         unsavedText: null,
-        saveError: null
+        saveError: null,
+        lastWord: null,
       }
     },
     computed: {
@@ -214,6 +215,41 @@
           this.running = false
         }
       },
+      inQuote() {
+        return false
+        // const word = editor.findWordAt(editor.getCursor())
+      },
+      maybeAutoComplete(editor, e) {
+        // Currently this doesn't do anything.
+        // BUGS:
+        // 1. only on periods if not in a quote
+        // 2. post-space trigger after a few SQL keywords
+        //    - from, join
+        const triggers = {
+          '190': 'period'
+        }
+        const space = 32
+        if (editor.state.completionActive) return;
+        if (triggers[e.keyCode] && !this.inQuote(editor, e)) {
+          // CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
+          return
+        }
+        if (e.keyCode === space) {
+          try {
+            const pos = _.clone(editor.getCursor());
+            if (pos.ch > 0) {
+              pos.ch = pos.ch - 2
+            }
+            const word = editor.findWordAt(pos)
+            const lastWord = editor.getRange(word.anchor, word.head)
+            if (lastWord.toLowerCase() !== 'from') return;
+            // CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
+
+          } catch (ex) {
+            console.log('no keyup space autocomplete')
+          }
+        }
+      }
     },
     mounted() {
       const $editor = this.$refs.editor
@@ -270,11 +306,9 @@
           this.tab.query.text = cm.getValue()
 
         })
-        // TODO: make this not suck
-        // this.editor.on('keyup', (e) => {
-        //   CodeMirror.showHint(e)
-        // })
 
+        // TODO: make this not suck
+        this.editor.on('keyup', this.maybeAutoComplete)
         this.editor.focus()
 
         setTimeout(() => {
