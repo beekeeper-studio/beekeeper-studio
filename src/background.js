@@ -42,7 +42,7 @@ function createWindow () {
     width: 1200, 
     height: 800, 
     titleBarStyle: 'hidden', 
-    frame: isLinuxOrBSD, 
+    frame: isLinuxOrBSD,
     webPreferences: {
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
     },
@@ -86,7 +86,7 @@ app.on('activate', () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
-  if (isDevelopment && !process.env.IS_TEST) {
+  if (isDevelopment && !process.env.IS_TEST && !isWindows) {
     // Install Vue Devtools
     try {
       await installVueDevtools()
