@@ -7,7 +7,10 @@
     <div class="titlebar-actions" v-if="isWindows">
       <template>
         <button class="btn btn-link" id="minimize" @click.prevent="minimizeWindow"><i class="material-icons">remove</i></button>
-        <button class="btn btn-link" id="maximize" @click.prevent="maximizeWindow"><i class="material-icons">crop_square</i></button>
+        <button class="btn btn-link" id="maximize" @click.prevent="maximizeWindow">
+          <i class="material-icons" v-if="maximized">filter_none</i>
+          <i class="material-icons" v-else>crop_square</i>
+        </button>
         <button class="btn btn-link" id="quit" @click.prevent="closeWindow"><i class="material-icons">clear</i></button>
       </template>
     </div>
@@ -20,6 +23,11 @@ export default {
     data() {
       return {
         window: remote.BrowserWindow.getFocusedWindow()
+      }
+    },
+    computed: {
+      maximized() {
+        return this.window.isMaximized()
       }
     },
     methods: {
