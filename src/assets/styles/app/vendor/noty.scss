@@ -1,0 +1,45 @@
+@import '../variables';
+@import '../extends';
+
+.noty_theme__mint.noty_bar {
+  margin: 4px 0;
+  overflow: hidden;
+  border-radius: 2px;
+  position: relative;
+  background: lighten($theme-bg, 5%);
+  border: 0;
+  border-radius: 8px;
+  @extend .card-shadow;
+  .noty_body {
+    padding: 10px;
+    font-size: 14px;
+  }
+  .noty_buttons {
+    padding: 10px;
+  }
+}
+.noty_progressbar {
+  display: none!important;
+}
+.noty_close_button {
+  background-color: transparent;
+  border-radius: 20px;
+  color: $text-lighter;
+}
+.noty_theme__mint.noty_type__alert,
+.noty_theme__mint.noty_type__notification {
+  color: $text-dark;
+}
+.noty_theme__mint.noty_type__warning {
+  color: lighten($brand-warning, 5%);
+}
+.noty_theme__mint.noty_type__error {
+  color: lighten($brand-danger, 5%);
+}
+.noty_theme__mint.noty_type__info,
+.noty_theme__mint.noty_type__information {
+  color: lighten($brand-info, 5%);
+}
+.noty_theme__mint.noty_type__success {
+  color: lighten($brand-success, 5%);
+}
