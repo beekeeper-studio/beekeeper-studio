@@ -22,13 +22,18 @@ import {remote} from 'electron'
 export default {
     data() {
       return {
-        window: remote.BrowserWindow.getFocusedWindow()
+        window: remote.getCurrentWindow(),
+        maximized: remote.getCurrentWindow().isMaximized()
       }
     },
-    computed: {
-      maximized() {
-        return this.window.isMaximized()
-      }
+    mounted() {
+      this.window.on('maximize', () => {
+        this.maximized = true
+      })
+
+      this.window.on('unmaximize', () => {
+        this.maximized = false
+      })
     },
     methods: {
       minimizeWindow() {
