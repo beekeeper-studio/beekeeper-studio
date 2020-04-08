@@ -528,14 +528,14 @@ input[type=file] {
   }
 }
 .alert-danger {
-  color: $brand-danger;
+  color: lighten($brand-warning, 5%);
 }
 .alert-warning {
-  color: $brand-danger;
+  color: lighten($brand-danger, 5%);
 }
 .alert-info {
-  color: lighten($brand-info, 20%);
+  color: lighten($brand-info, 5%);
 }
 .alert-success {
-  color: lighten($brand-success, 20%);
+  color: lighten($brand-success, 5%);
 }
