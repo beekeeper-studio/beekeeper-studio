@@ -1,4 +1,5 @@
 @import '../variables';
+@import '../extends';
 
 .CodeMirror {
   font-family: $font-family-mono, monospace;
@@ -8,4 +9,31 @@
 .CodeMirror-gutters {
   border: 0;
   background: transparent!important;
+}
+
+// Addon: Hints
+// --------------------------------------
+.CodeMirror-hints {
+  font-family: $font-family-mono, monospace;
+  background: lighten($theme-bg, 5%);
+  color: $text-dark;
+  padding: $gutter-h 0;
+  border: 0;
+  border-radius: 6px;
+  @extend .card-shadow;
+  li {
+    &:hover {
+      background: rgba($theme-base, 0.05);
+    }
+    &.CodeMirror-hint-active {
+      background: #08f;
+      color: white;
+    }
+  }
+}
+.CodeMirror-hint {
+  padding: ($gutter-h * 0.5) $gutter-h;
+  border-radius: 0;
+  color: $text-dark;
+  cursor: pointer;
 }
