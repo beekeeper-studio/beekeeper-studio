@@ -26,7 +26,7 @@
       background: rgba($theme-base, 0.05);
     }
     &.CodeMirror-hint-active {
-      background: #08f;
+      background: $brand-info;
       color: white;
     }
   }
