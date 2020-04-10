@@ -122,11 +122,12 @@ const store = new Vuex.Store({
     },
     async updateTables(context) {
       const tables = await context.state.connection.listTables()
-      const result = await Promise.all(_.map(tables, async (table) => {
-        table.columns = await context.state.connection.listTableColumns(table.name)
-        return table
-      }))
-      context.commit('tables', result)
+      for(let i = 0; i < tables.length; i++) {
+        const table = tables[i]
+        const columns = await context.state.connection.listTableColumns(table.name)
+        tables[i].columns = columns
+      }
+      context.commit('tables', tables)
     },
 
     async pinTable(context, table) {

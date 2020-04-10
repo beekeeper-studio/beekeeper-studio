@@ -73,7 +73,7 @@
 </template>
 
 <script>
-
+  import os from 'os'
   import config from '../config'
   import {SavedConnection} from '../entity/saved_connection'
   import ConnectionSidebar from './ConnectionSidebar'
@@ -113,6 +113,7 @@
     },
     mounted() {
       this.config = this.defaultConfig
+      this.config.sshUsername = os.userInfo().username
       this.$store.dispatch('loadSavedConfigs')
       this.$nextTick(() => {
         const components = [

@@ -22,13 +22,21 @@
         </select>
       </div>
 
+
+
       <div v-if="config.sshMode === 'keyfile'" class="private-key row gutter">
+        <div class="col">
+          <div class="form-group">
+            <label for="sshUsername">SSH Username</label>
+            <input class="form-control" type="text" v-model="config.sshUsername">
+          </div>
+        </div>
         <div class="col s6 form-group">
           <label for="sshKeyfile">Private Key File</label>
           <input class="form-control" type="file" @change="setKeyfile">
         </div>
         <div class="col s6 form-group">
-          <label for="sshKeyfilePassword">Key File Password <span class="hint">(Optional)</span></label>
+          <label for="sshKeyfilePassword">Key File PassPhrase <span class="hint">(Optional)</span></label>
           <input type="password" class="form-control" v-model="config.sshKeyfilePassword">
         </div>
         <!-- <div class="col form-group">

@@ -362,6 +362,9 @@ function configDatabase(server, database) {
     dateStrings: true,
     supportBigNumbers: true,
     bigNumberStrings: true,
+    connectTimeout  : 60 * 60 * 1000,
+    acquireTimeout  : 60 * 60 * 1000,
+    timeout         : 60 * 60 * 1000,
   };
 
   if (server.sshTunnel) {
@@ -420,8 +423,10 @@ function identifyCommands(queryText) {
 }
 
 function driverExecuteQuery(conn, queryArgs) {
+  logger().debug(`Running Query ${queryArgs.query}`)
   const runQuery = (connection) => new Promise((resolve, reject) => {
     connection.query(queryArgs.query, queryArgs.params, (err, data, fields) => {
+      logger().debug(`Resolving Query ${queryArgs.query}`)
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});
       if (err) return reject(getRealError(connection, err));
 
