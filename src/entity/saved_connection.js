@@ -39,7 +39,7 @@ export class DbConnectionBase extends ApplicationEntity {
   sshHost
 
   @Column({type: "int", nullable: true})
-  sshPort
+  sshPort = 22
 
   @Column({type: "varchar", length: "8", nullable: false, default: "keyfile"})
   sshMode = "keyfile"

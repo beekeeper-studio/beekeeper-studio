@@ -217,7 +217,6 @@
       },
       inQuote() {
         return false
-        // const word = editor.findWordAt(editor.getCursor())
       },
       maybeAutoComplete(editor, e) {
         // Currently this doesn't do anything.
@@ -225,14 +224,15 @@
         // 1. only on periods if not in a quote
         // 2. post-space trigger after a few SQL keywords
         //    - from, join
+        const triggerWords = ['from', 'join']
         const triggers = {
           '190': 'period'
         }
         const space = 32
         if (editor.state.completionActive) return;
         if (triggers[e.keyCode] && !this.inQuote(editor, e)) {
-          // CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
-          return
+          CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
+          // return
         }
         if (e.keyCode === space) {
           try {
@@ -242,8 +242,8 @@
             }
             const word = editor.findWordAt(pos)
             const lastWord = editor.getRange(word.anchor, word.head)
-            if (lastWord.toLowerCase() !== 'from') return;
-            // CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
+            if (!triggerWords.includes(lastWord.toLowerCase())) return;
+            CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
 
           } catch (ex) {
             console.log('no keyup space autocomplete')
