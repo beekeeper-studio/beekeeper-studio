@@ -121,6 +121,9 @@ const store = new Vuex.Store({
       await context.dispatch('updateTables')
     },
     async updateTables(context) {
+      // Ideally here we would run all queries in parallel
+      // however running through an SSH tunnel doesn't work
+      // it only supports one query at a time.
       const tables = await context.state.connection.listTables()
       for(let i = 0; i < tables.length; i++) {
         const table = tables[i]
