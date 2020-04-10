@@ -37,10 +37,6 @@
     margin: 0;
     height: $tab-height;
     box-shadow: inset 1px 0 rgba($query-editor-bg, 0.9);
-    &::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
     &:hover {
       overflow-x: auto;
     }

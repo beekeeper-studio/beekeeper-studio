@@ -6,6 +6,8 @@ import VModal from 'vue-js-modal'
 import Vueable from '@sagalbot/vueable'
 import App from './App.vue'
 import path from 'path'
+import 'typeface-roboto'
+import 'typeface-source-code-pro'
 import './assets/styles/vendor.scss'
 import './assets/styles/app.scss'
 import $ from 'jquery';

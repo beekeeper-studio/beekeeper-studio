@@ -5177,6 +5177,11 @@ map-visit@^1.0.0:
   dependencies:
     object-visit "^1.0.0"
 
+material-icons@^0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/material-icons/-/material-icons-0.3.1.tgz#425e06e2448632d6249d6e1ffe2993682c5b171e"
+  integrity sha512-5Hbj76A6xDPcDZEbM4oxTknhWuMwGWnAHVLLPCEq9eVlcHb0fn4koU9ZeyMy1wjARtDEPAHfd5ZdL2Re5hf0zQ==
+
 md5.js@^1.3.4:
   version "1.3.5"
   resolved "https://registry.yarnpkg.com/md5.js/-/md5.js-1.3.5.tgz#b5d07b8e3216e3e27cd728d72f70d1e6a342005f"
@@ -8261,6 +8266,16 @@ typedarray-to-buffer@^3.1.5:
 typedarray@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
+
+typeface-roboto@^0.0.75:
+  version "0.0.75"
+  resolved "https://registry.yarnpkg.com/typeface-roboto/-/typeface-roboto-0.0.75.tgz#98d5ba35ec234bbc7172374c8297277099cc712b"
+  integrity sha512-VrR/IiH00Z1tFP4vDGfwZ1esNqTiDMchBEXYY9kilT6wRGgFoCAlgkEUMHb1E3mB0FsfZhv756IF0+R+SFPfdg==
+
+typeface-source-code-pro@^1.1.3:
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/typeface-source-code-pro/-/typeface-source-code-pro-1.1.3.tgz#46113e0ad1729ed2a6b950bb4a77748f65bbf6ef"
+  integrity sha512-BAQ8I7Xy5zS5+KuG+gjRPNYCdfwL8vSF9jT8q9wzCRiiOG4h7id5zt8wcQx59riGRbRsgycRfs/ubyAm2z/FJQ==
 
 typeorm-encrypted-column@^0.0.4:
   version "0.0.4"
