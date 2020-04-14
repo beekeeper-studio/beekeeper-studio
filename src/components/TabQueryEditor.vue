@@ -41,23 +41,22 @@
 
     <!-- Save Modal -->
     <modal class="vue-dialog" name="save-modal" @closed="selectEditor" @opened="selectTitleInput" height="auto" :scrollable="true">
-      <div class="dialog-content">
-        <div class="dialog-c-title">Saved Query Name</div>
-        <div class="modal-form">
-          <form @submit.prevent="saveQuery">
+      <form @submit.prevent="saveQuery">
+        <div class="dialog-content">
+          <div class="dialog-c-title">Saved Query Name</div>
+          <div class="modal-form">
             <div class="save-errors" v-if="saveError">{{saveError}}</div>
-           <div class="form-group">
-              <input type="text" ref="titleInput" name="title" class="form-control"  v-model="tab.query.title" autofocus>
-           </div>
-          </form>
+            <div class="form-group">
+                <input type="text" ref="titleInput" name="title" class="form-control"  v-model="tab.query.title" autofocus>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="vue-dialog-buttons">
-        <button class="btn btn-flat" @click.prevent="$modal.hide('save-modal')">Cancel</button>
-        <button class="btn btn-primary" type="submit">Save</button>
-      </div>
+        <div class="vue-dialog-buttons">
+          <button class="btn btn-flat" @click.prevent="$modal.hide('save-modal')">Cancel</button>
+          <button class="btn btn-primary" type="submit">Save</button>
+        </div>
+      </form>
     </modal>
-
 
   </div>
 </template>
