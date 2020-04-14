@@ -12,6 +12,7 @@ module.exports = {
         productName: "Beekeeper Studio",
         files: ['**/*', 'public/icons/**/*'],
         mac: {
+          entitlements: "./build/entitlements.mac.plist",
           icon: './public/icons/mac/bk-icon.icns',
           category: "public.app-category.developer-tools",
           "hardenedRuntime": true
