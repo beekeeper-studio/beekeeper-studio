@@ -45,7 +45,7 @@
         <div class="dialog-content">
           <div class="dialog-c-title">Saved Query Name</div>
           <div class="modal-form">
-            <div class="save-errors" v-if="saveError">{{saveError}}</div>
+            <div class="alert alert-danger save-errors" v-if="saveError">{{saveError}}</div>
             <div class="form-group">
                 <input type="text" ref="titleInput" name="title" class="form-control"  v-model="tab.query.title" autofocus>
             </div>
