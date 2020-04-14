@@ -74,11 +74,11 @@
 // Modal
 // ----------------------------
 .v--modal {
-  background-color: lighten($theme-bg, 1%);
-  color: $theme-base;
-  text-align: left;
-  border-radius: 8px;
-  padding: 0;
+  background-color: lighten($theme-bg, 1%) !important;
+  color: $theme-base !important;
+  text-align: left !important;
+  border-radius: 8px !important;
+  padding: 0 !important;
   width: 100%!important;
   top: initial!important;
   left: initial!important;
@@ -148,7 +148,7 @@
   display: flex;
   width: 100%;
   justify-content: flex-end;
-  border: 0;
+  border: 0 !important;
   padding: 0 $gutter-h $gutter-w;
   margin-left: -0.25rem;
   margin-right: -0.25rem;

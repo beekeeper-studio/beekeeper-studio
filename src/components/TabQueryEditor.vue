@@ -40,7 +40,7 @@
     </div>
 
     <!-- Save Modal -->
-    <modal class="vue-dialog" name="save-modal" @closed="selectEditor" @opened="selectTitleInput" height="auto" :scrollable="true">
+    <modal class="vue-dialog beekeeper-modal" name="save-modal" @closed="selectEditor" @opened="selectTitleInput" height="auto" :scrollable="true">
       <form @submit.prevent="saveQuery">
         <div class="dialog-content">
           <div class="dialog-c-title">Saved Query Name</div>
@@ -332,3 +332,4 @@
     },
   }
 </script>
+
