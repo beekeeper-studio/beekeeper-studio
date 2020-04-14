@@ -1,7 +1,7 @@
 <template>
   <div class="sidebar-wrap flex-col">
     <div class="sidebar-heading">
-      <div class="status connected sidebar-title row flex-middle">
+      <div class="status connected sidebar-title row flex-middle noselect">
         <span>Saved Connections</span>
       </div>
     </div>
