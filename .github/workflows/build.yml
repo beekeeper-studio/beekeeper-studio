@@ -24,6 +24,13 @@ jobs:
         with:
           snapcraft_token: ${{ secrets.snapcraft_token }}
 
+      - name: Prepare for app notarization
+        if: startsWith(matrix.os, 'macos')
+        # Import Apple API key for app notarization on macOS
+        run: |
+          mkdir -p ~/private_keys/
+          echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
+
       - name: Build/release Electron app
         uses: beekeeper-studio/action-electron-builder@master
         with:
@@ -40,3 +47,6 @@ jobs:
           windows_certs_password: ${{ secrets.windows_cert_password }}
           mac_certs: ${{ secrets.mac_dev }}
           mac_certs_password: ${{ secrets.mac_dev_pw }}
+        env:
+          API_KEY_ID: ${{ secrets.apple_key_id }}
+          API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}

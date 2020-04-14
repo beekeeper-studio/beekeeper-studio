@@ -64,6 +64,7 @@
     "aws-sdk": "^2.645.0",
     "babel-eslint": "^10.0.1",
     "electron": "^6.0.0",
+    "electron-builder-notarize": "^1.1.2",
     "electron-rebuild": "^1.8.5",
     "eslint": "^5.16.0",
     "eslint-plugin-vue": "^5.0.0",

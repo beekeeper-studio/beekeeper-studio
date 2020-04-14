@@ -5,6 +5,7 @@ module.exports = {
   pluginOptions: {
     electronBuilder: {
       nodeIntegration: true,
+      afterSign: "electron-builder-notarize",
       externals,
       builderOptions: {
         appId: "io.beekeeperstudio.desktop",
@@ -12,7 +13,8 @@ module.exports = {
         files: ['**/*', 'public/icons/**/*'],
         mac: {
           icon: './public/icons/mac/bk-icon.icns',
-          category: "public.app-category.developer-tools"
+          category: "public.app-category.developer-tools",
+          "hardenedRuntime": true
         },
         linux: {
           icon: './public/icons/png/',
