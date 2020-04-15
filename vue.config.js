@@ -5,12 +5,12 @@ module.exports = {
   pluginOptions: {
     electronBuilder: {
       nodeIntegration: true,
-      afterSign: "electron-builder-notarize",
       externals,
       builderOptions: {
         appId: "io.beekeeperstudio.desktop",
         productName: "Beekeeper Studio",
         files: ['**/*', 'public/icons/**/*'],
+        afterSign: "electron-builder-notarize",
         mac: {
           entitlements: "./build/entitlements.mac.plist",
           icon: './public/icons/mac/bk-icon.icns',
