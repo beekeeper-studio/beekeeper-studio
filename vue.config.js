@@ -11,9 +11,6 @@ module.exports = {
         productName: "Beekeeper Studio",
         files: ['**/*', 'public/icons/**/*'],
         afterSign: "electron-builder-notarize",
-        bintrayOptions: {
-
-        },
         mac: {
           entitlements: "./build/entitlements.mac.plist",
           icon: './public/icons/mac/bk-icon.icns',
