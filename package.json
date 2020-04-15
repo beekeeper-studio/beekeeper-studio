@@ -1,7 +1,7 @@
 {
   "name": "beekeeper-studio",
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "private": true,
   "author": {
     "name": "Beekeeper Studio Team",
@@ -98,5 +98,8 @@
   "browserslist": [
     "> 1%",
     "last 2 versions"
-  ]
+  ],
+  "build": {
+    "appId": "io.beekeeperstudio.desktop"
+  }
 }
