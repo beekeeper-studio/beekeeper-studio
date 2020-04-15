@@ -21,6 +21,7 @@ jobs:
 
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v1
+        if: startsWith(matrix.os, 'ubuntu')
         with:
           snapcraft_token: ${{ secrets.snapcraft_token }}
 
