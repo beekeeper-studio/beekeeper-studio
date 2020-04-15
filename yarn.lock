@@ -3045,13 +3045,11 @@ ejs@^3.0.1:
   resolved "https://registry.yarnpkg.com/ejs/-/ejs-3.0.1.tgz#30c8f6ee9948502cc32e85c37a3f8b39b5a614a5"
   integrity sha512-cuIMtJwxvzumSAkqaaoGY/L6Fc/t6YvoP9/VIaK0V/CyqKLEQ8sqODmYfy/cjXEdZ9+OOL8TecbJu+1RsofGDw==
 
-electron-builder-notarize@^1.1.2:
+electron-builder-notarize@beekeeper-studio/electron-builder-notarize#master:
   version "1.1.2"
-  resolved "https://registry.yarnpkg.com/electron-builder-notarize/-/electron-builder-notarize-1.1.2.tgz#29939591c6edf133aadc8450d975e9ce94a15da3"
-  integrity sha512-IiuG+Wwky4EwekhJ9T5t9m00sFL9EGUrkyr4wqivXxrvtWIGAh2WCUwO6e47l3W8nE/4ng0v+VNJhZEIlCu1xg==
+  resolved "https://codeload.github.com/beekeeper-studio/electron-builder-notarize/tar.gz/491219179fe79b1dd4cf91e0950f2eafbbf418e4"
   dependencies:
     electron-notarize "^0.2.0"
-    read-pkg-up "^7.0.0"
 
 electron-builder@^22.2.0:
   version "22.4.1"
@@ -6886,15 +6884,6 @@ read-pkg-up@^1.0.1:
     find-up "^1.0.0"
     read-pkg "^1.0.0"
 
-read-pkg-up@^7.0.0:
-  version "7.0.1"
-  resolved "https://registry.yarnpkg.com/read-pkg-up/-/read-pkg-up-7.0.1.tgz#f3a6135758459733ae2b95638056e1854e7ef507"
-  integrity sha512-zK0TB7Xd6JpCLmlLmufqykGE+/TlOePD6qKClNW7hHDKFh/J7/7gCWGR7joEQEW1bKq3a3yUZSObOoWLFQ4ohg==
-  dependencies:
-    find-up "^4.1.0"
-    read-pkg "^5.2.0"
-    type-fest "^0.8.1"
-
 read-pkg@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/read-pkg/-/read-pkg-1.1.0.tgz#f5ffaa5ecd29cb31c0474bca7d756b6bb29e3f28"
@@ -6903,7 +6892,7 @@ read-pkg@^1.0.0:
     normalize-package-data "^2.3.2"
     path-type "^1.0.0"
 
-read-pkg@^5.1.1, read-pkg@^5.2.0:
+read-pkg@^5.1.1:
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/read-pkg/-/read-pkg-5.2.0.tgz#7bf295438ca5a33e56cd30e053b34ee7250c93cc"
   dependencies:
