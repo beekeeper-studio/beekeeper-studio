@@ -33,7 +33,7 @@ module.exports = {
               owner: 'beekeeper-studio'
             },
             {
-              provider: 'snap',
+              provider: 'snapStore',
               channels: ['edge', 'stable']
             }
           ]
