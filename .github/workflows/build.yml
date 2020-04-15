@@ -51,8 +51,13 @@ jobs:
           API_KEY_ID: ${{ secrets.apple_key_id }}
           API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
       - name: Cleanup artifacts
+        if: matrix.os != 'windows-latest'
         run: |
           npx rimraf "dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
+      - name: Cleanup artifacts Win
+        if: matrix.os == 'windows-latest'
+        run: |
+          npx rimraf "dist_electron/!(*.exe)"
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
