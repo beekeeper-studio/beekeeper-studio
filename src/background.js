@@ -67,7 +67,8 @@ function createWindow () {
     contents.send('update-available')
   })
 
-  autoUpdater.checkForUpdates()
+
+
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
@@ -78,6 +79,7 @@ function createWindow () {
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
     if (debugMode) win.webContents.openDevTools();
+    autoUpdater.checkForUpdates()
   }
 
   win.on('closed', () => {
