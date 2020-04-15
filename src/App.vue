@@ -22,8 +22,18 @@ export default {
   },
   data() {
     return {
-      n: null,
-
+      n: new Noty({
+        text: 'An update is available. Install now? (requires app restart)',
+        layout: 'bottomRight',
+        timeout: false,
+        closeWith: 'button',
+        buttons: [
+          Noty.button('YES', 'btn btn-success', this.triggerUpdate, {id: 'button1', 'data-status': 'ok'}),
+          Noty.button('NO', 'btn btn-error', () => {
+              this.n.close();
+          })
+        ]
+      }),
     }
   },
   computed: {
@@ -44,18 +54,6 @@ export default {
       console.log('update triggered, bloop bloop')
     },
     notifyUpdate() {
-      this.n = new Noty({
-        text: 'An update is available. Install now? (requires app restart)',
-        layout: 'bottomRight',
-        timeout: false,
-        closeWith: 'button',
-        buttons: [
-          Noty.button('YES', 'btn btn-success', this.triggerUpdate, {id: 'button1', 'data-status': 'ok'}),
-          Noty.button('NO', 'btn btn-error', () => {
-              this.n.close();
-          })
-        ]
-      });
       this.n.show();
     },
     notifyDownloading() {
