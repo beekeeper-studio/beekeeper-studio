@@ -1,5 +1,6 @@
 'use strict'
 import { app, protocol, BrowserWindow, Menu} from 'electron'
+import { autoUpdater } from 'electron-updater'
 import {
   createProtocol,
   installVueDevtools
@@ -88,6 +89,7 @@ app.on('activate', () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
+  autoUpdater.checkForUpdatesAndNotify()
   if (isDevelopment && !process.env.IS_TEST && !isWindows) {
     // Install Vue Devtools
     try {
