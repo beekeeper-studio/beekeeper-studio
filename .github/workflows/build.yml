@@ -24,7 +24,6 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         with:
           snapcraft_token: ${{ secrets.snapcraft_token }}
-
       - name: Prepare for app notarization
         if: startsWith(matrix.os, 'macos')
         # Import Apple API key for app notarization on macOS
@@ -51,3 +50,8 @@ jobs:
         env:
           API_KEY_ID: ${{ secrets.apple_key_id }}
           API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}
+          path: dist_electron
