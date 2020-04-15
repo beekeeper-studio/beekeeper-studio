@@ -19,8 +19,10 @@ module.exports = {
         },
         linux: {
           icon: './public/icons/png/',
-          target: ['AppImage', 'deb', 'rpm', 'snap'],
           category: "Development",
+          target: ['snap', 'deb', 'rpm', 'appImage']
+        },
+        deb: {
           publish: [
             {
               provider: 'github'
@@ -32,12 +34,18 @@ module.exports = {
               package: 'beekeeper-studio',
               owner: 'beekeeper-studio'
             },
-            {
-              provider: 'snapStore',
-              channels: ['edge', 'stable']
-            }
           ]
         },
+        appImage: {
+          publish: ['github']
+        },
+        snap: {
+          publish: ['github', 'snapStore']
+        },
+        rpm: {
+          publish: ['github']
+        },
+
         win: {
           icon: './public/icons/png/512x512.png'
         }
