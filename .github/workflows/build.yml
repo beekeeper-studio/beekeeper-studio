@@ -50,6 +50,9 @@ jobs:
         env:
           API_KEY_ID: ${{ secrets.apple_key_id }}
           API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
+      - name: Cleanup artifacts
+        run: |
+          npx rimraf "dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg)"
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
