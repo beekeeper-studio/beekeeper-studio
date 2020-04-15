@@ -1,5 +1,5 @@
 'use strict'
-import { app, protocol, BrowserWindow, Menu} from 'electron'
+import { app, ipcMain, protocol, BrowserWindow, Menu} from 'electron'
 import { autoUpdater } from 'electron-updater'
 import {
   createProtocol,
@@ -27,6 +27,16 @@ if((isWindows || isLinuxOrBSD) && !isDevelopment && !debugMode) {
 // be closed automatically when the JavaScript object is garbage collected.
 let win
 
+autoUpdater.autoDownload = false
+
+ipcMain.on('trigger-update', () => {
+  autoUpdater.downloadUpdate()
+  win.webContents.send('update-downloading')
+})
+
+autoUpdater.on('update-downloaded', () => {
+  autoUpdater.quitAndInstall()
+})
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
@@ -51,6 +61,13 @@ function createWindow () {
     icon: './public/icons/png/512x512.png'
   })
 
+  const contents = win.webContents
+
+  autoUpdater.on('update-available', () => {
+    contents.send('update-available')
+  })
+
+  autoUpdater.checkForUpdates()
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
@@ -89,7 +106,6 @@ app.on('activate', () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
-  autoUpdater.checkForUpdatesAndNotify()
   if (isDevelopment && !process.env.IS_TEST && !isWindows) {
     // Install Vue Devtools
     try {
