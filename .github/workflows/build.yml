@@ -50,6 +50,7 @@ jobs:
         env:
           API_KEY_ID: ${{ secrets.apple_key_id }}
           API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
+          BT_TOKEN: "${{secrets.bintray_apikey}}"
       - name: Cleanup artifacts
         if: matrix.os != 'windows-latest'
         run: |

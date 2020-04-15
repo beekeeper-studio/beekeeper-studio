@@ -11,6 +11,9 @@ module.exports = {
         productName: "Beekeeper Studio",
         files: ['**/*', 'public/icons/**/*'],
         afterSign: "electron-builder-notarize",
+        bintrayOptions: {
+
+        },
         mac: {
           entitlements: "./build/entitlements.mac.plist",
           icon: './public/icons/mac/bk-icon.icns',
@@ -21,6 +24,22 @@ module.exports = {
           icon: './public/icons/png/',
           target: ['AppImage', 'deb', 'rpm', 'snap'],
           category: "Development",
+          publish: [
+            {
+              provider: 'github'
+            }, 
+            {
+              provider: 'bintray',
+              user: 'rathboma',
+              repo: 'releases',
+              package: 'beekeeper-studio',
+              owner: 'beekeeper-studio'
+            },
+            {
+              provider: 'snap',
+              channels: ['edge', 'stable']
+            }
+          ]
         },
         win: {
           icon: './public/icons/png/512x512.png'
