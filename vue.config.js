@@ -30,9 +30,11 @@ module.exports = {
             {
               provider: 'bintray',
               user: 'rathboma',
-              repo: 'deb-releases',
+              repo: 'releases',
               package: 'beekeeper-studio',
-              owner: 'beekeeper-studio'
+              owner: 'beekeeper-studio',
+              distribution: 'disco',
+              component: 'main'
             },
           ]
         },
