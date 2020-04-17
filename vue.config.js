@@ -20,7 +20,11 @@ module.exports = {
         linux: {
           icon: './public/icons/png/',
           category: "Development",
-          target: ['snap', 'deb', 'appImage']
+          target: [
+            'snap',
+            'deb',
+            'appImage'
+          ]
         },
         deb: {
           publish: [
@@ -40,7 +44,14 @@ module.exports = {
           publish: ['github']
         },
         snap: {
-          publish: ['github', 'snapStore']
+          publish: [
+            'github',
+            {
+              provider: 'snapStore',
+              channels: ['edge', 'stable']
+            }
+          ],
+
         },
         win: {
           icon: './public/icons/png/512x512.png'
