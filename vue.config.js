@@ -46,10 +46,7 @@ module.exports = {
         snap: {
           publish: [
             'github',
-            {
-              provider: 'snapStore',
-              channels: ['edge', 'stable']
-            }
+            'snapStore'
           ],
 
         },
