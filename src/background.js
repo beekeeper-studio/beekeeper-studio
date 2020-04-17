@@ -1,10 +1,11 @@
 'use strict'
-import { app, ipcMain, protocol, BrowserWindow, Menu} from 'electron'
-import { autoUpdater } from 'electron-updater'
+import { app, protocol, BrowserWindow, Menu} from 'electron'
 import {
   createProtocol,
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib'
+
+import { manageUpdates } from './background/update_manager'
 
 // import QueryRun from './models/query-run'
 // import ConnectionConfig from './models/connection-config'
@@ -27,16 +28,8 @@ if((isWindows || isLinuxOrBSD) && !isDevelopment && !debugMode) {
 // be closed automatically when the JavaScript object is garbage collected.
 let win
 
-autoUpdater.autoDownload = false
 
-ipcMain.on('trigger-update', () => {
-  autoUpdater.downloadUpdate()
-  win.webContents.send('update-downloading')
-})
 
-autoUpdater.on('update-downloaded', () => {
-  autoUpdater.quitAndInstall()
-})
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
@@ -61,25 +54,20 @@ function createWindow () {
     icon: './public/icons/png/512x512.png'
   })
 
-  const contents = win.webContents
-
-  autoUpdater.on('update-available', () => {
-    contents.send('update-available')
-  })
-
-
 
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
     if (!process.env.IS_TEST) win.webContents.openDevTools();
+    console.log("not checking for package updates in dev mode")
+    manageUpdates(win, true)
   } else {
     createProtocol('app')
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
     if (debugMode) win.webContents.openDevTools();
-    autoUpdater.checkForUpdates()
+    manageUpdates(win)
   }
 
   win.on('closed', () => {
