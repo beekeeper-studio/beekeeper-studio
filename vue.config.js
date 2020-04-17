@@ -19,8 +19,36 @@ module.exports = {
         },
         linux: {
           icon: './public/icons/png/',
-          target: ['AppImage', 'deb', 'rpm', 'snap'],
           category: "Development",
+          target: [
+            'snap',
+            'deb',
+            'appImage'
+          ]
+        },
+        deb: {
+          publish: [
+            'github',
+            {
+              provider: 'bintray',
+              user: 'rathboma',
+              repo: 'releases',
+              package: 'beekeeper-studio',
+              owner: 'beekeeper-studio',
+              distribution: 'disco',
+              component: 'main'
+            },
+          ]
+        },
+        appImage: {
+          publish: ['github']
+        },
+        snap: {
+          publish: [
+            'github',
+            'snapStore'
+          ],
+
         },
         win: {
           icon: './public/icons/png/512x512.png'
