@@ -6,6 +6,7 @@
   background: rgba($theme-base, 0.1);
   padding: $gutter-h;
   margin: 0;
+  z-index: 100;
   -webkit-app-region: drag;
   .titlebar-icon {
     position: absolute;
