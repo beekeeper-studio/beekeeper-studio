@@ -16,10 +16,10 @@ export default {
         timeout: false,
         closeWith: 'button',
         buttons: [
-          Noty.button('Yes', 'btn btn-success', this.triggerUpdate),
-          Noty.button('Not Now', 'btn btn-error', () => {
+          Noty.button('Later', 'btn btn-flat', () => {
               this.n.close();
-          })
+          }),
+          Noty.button('Restart', 'btn btn-primary', this.triggerUpdate)
         ]
       }),
     }

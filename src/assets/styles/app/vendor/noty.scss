@@ -10,6 +10,18 @@
   border: 0;
   border-radius: 8px;
   @extend .card-shadow;
+  .noty-body {
+    padding: $gutter-w;
+  }
+  .noty_buttons{
+    display: flex;
+    justify-content: flex-end;
+    margin: 0 -3px;
+    padding-top: 0;
+    > .btn {
+      margin: 0 3px;
+    };
+  }
 }
 .noty_progressbar {
   display: none!important;
