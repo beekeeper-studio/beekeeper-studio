@@ -10,31 +10,51 @@ import Noty from 'noty'
 export default {
   data() {
     return {
-      n: new Noty({
-        text: 'A new version is availble. Install and restart?',
+      downloadNotification: new Noty({
+        text: 'A new version is availble. Download now?',
+        layout: 'bottomRight',
+        timeout: false,
+        closeWith: 'button',
+        buttons: [
+          Noty.button('Not now', 'btn btn-flat', () => {
+              this.downloadNotification.close();
+          }),
+          Noty.button('Download', 'btn btn-primary', this.triggerDownload)
+        ]
+      }),
+      installNotification: new Noty({
+        text: "Update downloaded. Restart Beekeeper Studio to install",
         layout: 'bottomRight',
         timeout: false,
         closeWith: 'button',
         buttons: [
           Noty.button('Later', 'btn btn-flat', () => {
-              this.n.close();
+            this.installNotification.close()
           }),
-          Noty.button('Restart', 'btn btn-primary', this.triggerUpdate)
+          Noty.button('Restart Now', 'btn btn-primary', this.triggerInstall)
         ]
-      }),
+      })
+
     }
   },
   mounted() {
     ipcRenderer.on('update-available', this.notifyUpdate)
+    ipcRenderer.on('update-downloaded', this.notifyDownloaded)
     ipcRenderer.send('updater-ready')
   },
   methods: {
-    triggerUpdate() {
-      ipcRenderer.send('trigger-update')
-      console.log('update triggered, bloop bloop')
+    triggerDownload() {
+      ipcRenderer.send('download-update')
+      this.$noty.info("Hold tight! Downloading update...")
+    },
+    triggerInstall() {
+      ipcRenderer.send('install-update')
     },
     notifyUpdate() {
-      this.n.show();
+      this.downloadNotification.show();
+    },
+    notifyDownloaded() {
+      this.installNotification.show();
     }
   }
 }

@@ -1,10 +1,9 @@
 import { ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
 
-export function manageUpdates(win, debug) {
+autoUpdater.autoDownload = false
 
-  autoUpdater.logger.debug(process.env)
-  // HACK(mc, 2019-09-10): work around https://github.com/electron-userland/electron-builder/issues/4046
+function dealWithAppImage() {
   if (process.env.DESKTOPINTEGRATION === 'AppImageLauncher') {
     // remap temporary running AppImage to actual source
     // THIS IS PROBABLY SUPER BRITTLE AND MAKES ME WANT TO STOP USING APPIMAGE
@@ -16,6 +15,13 @@ export function manageUpdates(win, debug) {
   } else {
     autoUpdater.logger.info('Not running in AppImageLauncher')
   }
+}
+
+export function manageUpdates(win, debug) {
+  dealWithAppImage();
+
+  autoUpdater.logger.debug(process.env)
+  // HACK(mc, 2019-09-10): work around https://github.com/electron-userland/electron-builder/issues/4046
 
   ipcMain.on('updater-ready', () => {
     autoUpdater.checkForUpdates()
@@ -25,14 +31,18 @@ export function manageUpdates(win, debug) {
   })
 
   autoUpdater.on('update-available', () => {
+    win.webContents.send('update-available')
+  })
+
+  ipcMain.on('download-update', () => {
     autoUpdater.downloadUpdate()
   })
 
   autoUpdater.on('update-downloaded', () => {
-    win.webContents.send('update-available')
+    win.webContents.send('update-downloaded')
   })
 
-  ipcMain.on('trigger-update', () => {
+  ipcMain.on('install-update', () => {
     autoUpdater.quitAndInstall()
   })
 
