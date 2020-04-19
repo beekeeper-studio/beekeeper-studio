@@ -27,7 +27,7 @@ jobs:
 
       - name: Build Electron app
         run: |
-          yarn install
+          yarn install --frozen-lockfile
           yarn run electron:build --publish never
 
       - name: Cleanup artifacts
