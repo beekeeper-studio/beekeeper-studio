@@ -26,7 +26,9 @@ jobs:
           node-version: 10
 
       - name: Build Electron app
-        run: yarn run electron:build --publish never
+        run: |
+          yarn install
+          yarn run electron:build --publish never
 
       - name: Cleanup artifacts
         if: matrix.os != 'windows-latest'
