@@ -5,7 +5,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  z-index: 100;
+  z-index: 1;
   &.right {
     .dropdown-menu {
       right: 0;

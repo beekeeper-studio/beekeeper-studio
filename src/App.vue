@@ -3,21 +3,22 @@
     <titlebar v-if="isWindows || isMac"></titlebar>
     <connection-interface v-if="!connection"></connection-interface>
     <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
+    <auto-updater></auto-updater>
   </div>
 </template>
 
 <script>
 
-
+import { ipcRenderer } from 'electron'
 import Titlebar from './components/Titlebar'
 import CoreInterface from './components/CoreInterface'
 import ConnectionInterface from './components/ConnectionInterface'
-// import DbTest from './components/DbTest'
+import AutoUpdater from './components/AutoUpdater'
 
 export default {
   name: 'app',
   components: {
-    CoreInterface, ConnectionInterface, Titlebar
+    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater
   },
   data() {
     return {
@@ -28,10 +29,16 @@ export default {
       return this.$store.state.connection
     }
   },
+  mounted() {
+    this.$nextTick(() => {
+      ipcRenderer.send('ready')
+    })
+  },
   methods: {
     databaseSelected(db) {
       console.log("Do something here! (Db selected) " + db)
     }
+
   }
 }
 </script>

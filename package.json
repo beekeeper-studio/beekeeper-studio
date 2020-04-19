@@ -66,6 +66,7 @@
     "electron": "^6.0.0",
     "electron-builder-notarize": "beekeeper-studio/electron-builder-notarize#master",
     "electron-rebuild": "^1.8.5",
+    "electron-updater": "^4.2.5",
     "eslint": "^5.16.0",
     "eslint-plugin-vue": "^5.0.0",
     "vue-cli-plugin-electron-builder": "^2.0.0-beta.6",

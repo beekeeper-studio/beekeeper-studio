@@ -42,8 +42,8 @@
   top: 0;
   width: 100%;
   height: 100vh;
-  background: rgba(darken($theme-bg, 3%), 0.8);
-  z-index: 999;
+  background: rgba(darken($theme-bg, 3%), 0.9);
+  z-index: 9999;
   opacity: 1;
   &.scrollable {
     height: 100%;
