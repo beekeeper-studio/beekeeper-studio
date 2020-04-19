@@ -45,6 +45,7 @@ export default {
   methods: {
     triggerDownload() {
       ipcRenderer.send('download-update')
+      this.downloadNotification.close()
       this.$noty.info("Hold tight! Downloading update...")
     },
     triggerInstall() {

@@ -79,11 +79,11 @@ import migrations from './migration/sql'
     Vue.component('toggle', Vueable.Toggle);
     Vue.component('target', Vueable.Target);
     Vue.use(VueNoty, {
-      timeout: 3000,
+      timeout: 2300,
       progressBar: true,
       layout: 'bottomRight',
       theme: 'mint',
-      closeWith: ['button', 'click']
+      closeWith: ['button', 'click'],
     })
 
     new Vue({
