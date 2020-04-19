@@ -25,10 +25,11 @@ jobs:
         with:
           node-version: 10
 
+      - name: Check dependencies
+        run: "yarn install --frozen-lockfile"
+
       - name: Build Electron app
-        run: |
-          yarn install --frozen-lockfile
-          yarn run electron:build --publish never
+        run: "yarn run electron:build --publish never"
 
       - name: Cleanup artifacts
         if: matrix.os != 'windows-latest'
