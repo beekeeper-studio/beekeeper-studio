@@ -1,6 +1,12 @@
-name: Build/release
+name: Build
 
-on: push
+on: 
+  push:
+    branches:
+      - *
+  pull_request:
+    branches:
+      - *
 
 jobs:
   release:
@@ -8,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-18.04, windows-latest]
+        os: [macos-latest, ubuntu-18.04, windows-latest, ubuntu-16.04]
 
     steps:
       - name: Check out Git repository
@@ -19,46 +25,19 @@ jobs:
         with:
           node-version: 10
 
-      - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v1
-        if: startsWith(matrix.os, 'ubuntu')
-        with:
-          snapcraft_token: ${{ secrets.snapcraft_token }}
-      - name: Prepare for app notarization
-        if: startsWith(matrix.os, 'macos')
-        # Import Apple API key for app notarization on macOS
-        run: |
-          mkdir -p ~/private_keys/
-          echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
+      - name: Build Electron app
+        run: yarn run electron:build --publish never
 
-      - name: Build/release Electron app
-        uses: beekeeper-studio/action-electron-builder@master
-        with:
-          # GitHub token, automatically provided to the action
-          # (No need to define this secret in the repo settings)
-          github_token: ${{ secrets.github_token }}
-          skip_build: true
-          use_vue_cli: true
-
-          # If the commit is tagged with a version (e.g. "v1.0.0"),
-          # release the app after building
-          release: ${{ startsWith(github.ref, 'refs/tags/v') }}
-          windows_certs: ${{ secrets.windows_cert }}
-          windows_certs_password: ${{ secrets.windows_cert_password }}
-          mac_certs: ${{ secrets.mac_dev }}
-          mac_certs_password: ${{ secrets.mac_dev_pw }}
-        env:
-          API_KEY_ID: ${{ secrets.apple_key_id }}
-          API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
-          BT_TOKEN: "${{secrets.bintray_apikey}}"
       - name: Cleanup artifacts
         if: matrix.os != 'windows-latest'
         run: |
           npx rimraf "dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
+
       - name: Cleanup artifacts Win
         if: matrix.os == 'windows-latest'
         run: |
           npx rimraf "dist_electron/!(*.exe)"
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
