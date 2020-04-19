@@ -89,8 +89,8 @@
       this.tabulator = new Tabulator(this.$refs.tabulator, {
         data: this.tableData, //link data to table
         columns: this.tableColumns, //define table columns
-        height: this.actualTableHeight
-
+        height: this.actualTableHeight,
+        nestedFieldSeparator: false
       });
     },
     methods: {
