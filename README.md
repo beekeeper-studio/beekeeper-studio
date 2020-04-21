@@ -13,8 +13,7 @@ Beekeeper Studio is a free and open source SQL editor and database manager. Beek
 
 One of our frustrations with other open-source SQL editors and database managers is that they take a 'kitchen sink' approach to features, adding so many features that the UI becomes cluttered and hard to navigate. We wanted a good looking, open source SQL workbench that powerful, but also easy to use. We couldn't fine one, so we created it!
 
-
-![Screenshot](https://raw.githubusercontent.com/beekeeper-studio/beekeeper-studio/master/screenshots/main.png)
+![SQL Editing Demo](https://raw.githubusercontent.com/beekeeper-studio/beekeeper-studio/master/screenshots/beekeeper-studio-demo.gif)
 
 Beekeeper Studio supports connecting to the following databases:
 
@@ -34,4 +33,4 @@ Please feel free to file issues, open pull requests, or comment on existing issu
 Building an inclusive and welcoming community is important to us, so please follow our code of conduct as you engage with the project.
 
 
-![SQL Editing Demo](https://raw.githubusercontent.com/beekeeper-studio/beekeeper-studio/master/screenshots/beekeeper-studio-demo.gif)
+
