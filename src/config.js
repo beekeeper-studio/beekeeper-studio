@@ -40,7 +40,7 @@ export default {
   isMac: false,
   defaults: {
     connectionTypes: [
-      { name: 'MySql', value: 'mysql' },
+      { name: 'MySQL', value: 'mysql' },
       { name: 'Postgres', value: 'postgresql' },
       { name: 'SQLite', value: 'sqlite' },
       { name: 'SQL Server', value: 'sqlserver' },
