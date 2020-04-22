@@ -50,6 +50,9 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'varchar', nullable: true})
   sshUsername
 
+  @Column({type: 'boolean', nullable: false, default: false})
+  ssl
+
   /* 
     This unique hash is so that even if a user doesn't save
     the connection, we can still figure out if they're connected
@@ -118,7 +121,6 @@ export class SavedConnection extends DbConnectionBase {
     }
   })
   sshPassword
-
 
   @BeforeInsert()
   @BeforeUpdate()
