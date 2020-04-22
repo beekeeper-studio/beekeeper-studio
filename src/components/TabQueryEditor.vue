@@ -52,7 +52,7 @@
           </div>
         </div>
         <div class="vue-dialog-buttons">
-          <button class="btn btn-flat" @click.prevent="$modal.hide('save-modal')">Cancel</button>
+          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('save-modal')">Cancel</button>
           <button class="btn btn-primary" type="submit">Save</button>
         </div>
       </form>
