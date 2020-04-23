@@ -10,6 +10,10 @@
         <input type="number" class="form-control" name="port" v-model.number="config.port">
       </div>
     </div>
+    <label for="ssl" class="checkbox-group row">
+      <input id="ssl" type="checkbox" name="ssl" class="form-control" v-model="config.ssl" >
+      <span>Enable SSL</span>
+    </label>
     <div class="row gutter">
       <div class="col s6 form-group">
         <label for="user">User</label>

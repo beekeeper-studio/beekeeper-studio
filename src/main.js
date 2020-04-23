@@ -24,7 +24,7 @@ import {FavoriteQuery} from './entity/favorite_query'
 import {TypeOrmPlugin} from './lib/typeorm_plugin'
 import config from './config'
 import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
-import migrations from './migration/sql'
+import Migration from './migration/index'
 
 (async () => {
   try {
@@ -33,6 +33,8 @@ import migrations from './migration/sql'
     const connection = await createConnection({
       database: appDb,
       type: 'sqlite',
+      synchronize: false,
+      migrationsRun: false,
       entities: [
           SavedConnection,
           UsedConnection,
@@ -46,12 +48,9 @@ import migrations from './migration/sql'
       logger: 'advanced-console',
     })
 
-    // TypeORM has built-in migrations, but instead of using sensible regular js module resolution
-    // it wants to dynamically load them from files and force you to use the cli.
-    // so instead we just have a big file with SQL in it.
-    for(let i = 0; i < migrations.length; i++) {
-      await connection.query(migrations[i]);
-    }
+    const migrator = new Migration(connection)
+    console.log(migrator)
+    await migrator.run()
 
     window.$ = $
     window.jQuery = $
@@ -91,7 +90,8 @@ import migrations from './migration/sql'
       store,
     }).$mount('#app')
   } catch (err) {
-    console.error(err)
+    throw err
+    // console.error(err)
   }
 })();
 

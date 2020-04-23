@@ -25,7 +25,7 @@ export default {
       user: config.username,
       password: config.password,
       ssh: ssh,
-
+      ssl: config.ssl
     }
   },
 
