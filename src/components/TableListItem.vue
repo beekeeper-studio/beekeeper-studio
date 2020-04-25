@@ -57,7 +57,7 @@
         this.showColumns = !this.showColumns
       },
       doubleClick() {
-        // TODO (matthew): Load table tab when double clicking
+        this.$root.$emit("loadTable", this.table);
       },
       pin() {
         this.$store.dispatch('pinTable', this.table)

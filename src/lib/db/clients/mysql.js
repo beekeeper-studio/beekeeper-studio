@@ -41,6 +41,7 @@ export default async function (server, database) {
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
+    selectTop: (table, offset, limit, orderBy) => selectTop(conn, table, offset, limit, orderBy),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -116,6 +117,32 @@ export async function listTableColumns(conn, database, table) {
     columnName: row.column_name,
     dataType: row.data_type,
   }));
+}
+
+export async function selectTop(conn, table, offset, limit, orderBy) {
+  let sql = `
+    SELECT *
+    FROM ${table}
+    LIMIT ${limit}
+    OFFSET ${offset}
+  `
+  if(orderBy) {
+    const orderByString = orderBy.map((item) => {
+      if (Array.isArray(item)) {
+        return item.join(" ")
+      } else {
+        return item
+      }
+    }).join(",")
+    sql += ` ORDER BY ${orderByString}`
+  }
+  const countQuery = `select count(1) as total from ${table}`
+  const countResults = await driverExecuteQuery(conn, { query: countQuery})
+  const result = await query(conn, sql)
+  return {
+    data: await result.execute(),
+    totalRecords: countResults.data.find((row) => { return row.total })
+  }
 }
 
 export async function listTableTriggers(conn, table) {
@@ -423,6 +450,7 @@ function identifyCommands(queryText) {
 }
 
 function driverExecuteQuery(conn, queryArgs) {
+  console.log(`MYSQL: ${queryArgs.query}, ${queryArgs.params}`)
   logger().debug(`Running Query ${queryArgs.query}`)
   const runQuery = (connection) => new Promise((resolve, reject) => {
     connection.query(queryArgs.query, queryArgs.params, (err, data, fields) => {

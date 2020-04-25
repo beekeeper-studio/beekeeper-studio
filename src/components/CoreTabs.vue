@@ -25,7 +25,7 @@
         :class="{show: (activeTab === tab), active: (activeTab === tab)}"
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab == tab" :tab="tab" :connection="connection"></QueryEditor>
-        <div v-if="tab.type === 'table'">TABLE</div>
+        <TableTable v-if="tab.type === 'table'" :connection="tab.connection" :table="tab.table"></TableTable>
       </div>
     </div>
   </div>
@@ -39,11 +39,11 @@
   import config from '../config'
   import CoreTabHeader from './CoreTabHeader'
   import { uuidv4 } from '@/lib/crypto'
-
+  import TableTable from './tableview/TableTable'
 
   export default {
     props: [ 'connection' ],
-    components: { QueryEditor, CoreTabHeader },
+    components: { QueryEditor, CoreTabHeader, TableTable },
     data() {
       return {
         tabItems: [],
@@ -159,6 +159,16 @@
       this.createQuery()
       this.$root.$on('historyClick', (item) => {
         this.createQuery(item.text)
+      })
+
+      this.$root.$on('loadTable', (table) => {
+        const result = {
+          id: uuidv4(),
+          type: 'table',
+          table: table,
+          connection: this.connection
+        }
+        this.addTab(result)
       })
 
       this.$root.$on('favoriteClick', (item) => {

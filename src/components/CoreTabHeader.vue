@@ -33,18 +33,23 @@
         return result.length == 0 ? null : result
       },
       title() {
-        if (this.tab.query && this.tab.query.title) {
-          return this.tab.query.title
-        }
-        if (!this.cleanText) {
-          return this.tab.title
-        }
+        if (this.tab.type === 'query') {
+          if (this.tab.query && this.tab.query.title) {
+            return this.tab.query.title
+          }
+          if (!this.cleanText) {
+            return this.tab.title
+          }
 
-        if (this.tab.query.text.length >= 32) {
-          return `${this.tab.query.text.substring(0, 32)}...`
-        } else {
-          return this.tab.query.text
+          if (this.tab.query.text.length >= 32) {
+            return `${this.tab.query.text.substring(0, 32)}...`
+          } else {
+            return this.tab.query.text
+          }
+        } else if (this.tab.type === 'table') {
+          return this.tab.table.name;
         }
+        return this.tab.title
       }
     },
 
