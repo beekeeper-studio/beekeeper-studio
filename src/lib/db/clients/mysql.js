@@ -141,7 +141,7 @@ export async function selectTop(conn, table, offset, limit, orderBy) {
   const result = await query(conn, sql)
   return {
     data: await result.execute(),
-    totalRecords: countResults.data.find((row) => { return row.total })
+    totalRecords: countResults.data.find((row) => { return row.total }).total
   }
 }
 

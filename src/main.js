@@ -4,6 +4,8 @@ import VueHotkey from 'v-hotkey'
 import VTooltip from 'v-tooltip'
 import VModal from 'vue-js-modal'
 import Vueable from '@sagalbot/vueable'
+import Tabulator from 'tabulator-tables'
+
 import App from './App.vue'
 import path from 'path'
 import 'typeface-roboto'
@@ -28,7 +30,7 @@ import Migration from './migration/index'
 
 (async () => {
   try {
-
+    Tabulator.prototype.defaultOptions.layout = "fitColumns";
     const appDb = path.join(config.userDirectory, 'app.db')
     const connection = await createConnection({
       database: appDb,
