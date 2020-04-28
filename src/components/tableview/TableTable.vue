@@ -2,7 +2,7 @@
     <div class="tabletable">
         <div v-show="loading" class="loading-overlay">LOADING</div>
         <div ref="table">
-            
+
         </div>
         <footer class="status-bar row-query-meta">
             <template v-if="result">
@@ -10,9 +10,6 @@
                     Showing {{offset + 1}} to {{currentMax}} of {{totalRecords}} records.
                 </div>
                 <span class="expand"></span>
-                <a :disabled="offset === 0" class="btn btn-fab" @click.prevent="previousPage"><i class="material-icons">arrow_back</i></a>
-                <a :disabled="currentMax >= totalRecords" @click.prevent="nextPage" class="btn btn-fab"><i class="material-icons">arrow_forward</i></a>
-
             </template>
         </footer>
 
@@ -22,6 +19,7 @@
 <style>
     /* G, I'm sorry for this */
     .tabletable {
+        /* Temporary */
         height: 500px;
     }
     .loading-overlay {
@@ -39,6 +37,8 @@ export default {
     props: ['table', 'connection'],
     data() {
         return {
+            headerFilter: true,
+            columnsSet: false,
             tabulator: null,
             offset: 0,
             limit: 100,
@@ -46,36 +46,29 @@ export default {
             result: [],
             actualTableHeight: "100%",
             loading: false,
-            sortOrders: {}
+            orderBy: []
         }
     },
     watch: {
-        async changeTrigger() {
-            this.fetch()
-        },
-        tableData: {
-            handler() {
-            this.tabulator.replaceData(this.tableData)
-            }
-        },
         tableColumns: {
             handler() {
-            this.tabulator.setColumns(this.tableColumns)
+            // this.tabulator.setColumns(this.tableColumns)
             }
         },
     },
     computed: {
-        orderBy() {
-            return Object.keys(this.sortOrders).map((key) => {
-                return [key, this.sortOrders[key]]
-            });
-        },
         currentMax() {
             return Math.min(this.offset + this.limit, this.totalRecords)
         },
         changeTrigger() {
             return [this.offset, this.limit, this.orderBy]
         },
+        pagedData() {
+            return {
+                last_page: Math.ceil(this.totalRecords / this.limit),
+                data: this.tableData
+            }
+        }
     },
     async mounted() {
         this.tabulator = new Tabulator(this.$refs.table, {
@@ -83,13 +76,45 @@ export default {
             columns: this.tableColumns,
             height: this.actualTableHeight,
             nestedFieldSeparator: false,
-            headerSort: false
-
-            // ajaxSorting: true
+            ajaxRequestFunc: this.dataFetch,
+            ajaxURL: "http://fake",
+            ajaxSorting: true,
+            ajaxFiltering: true,
+            pagination: 'remote',
+            paginationSize: this.limit
         })
-        this.fetch()
     },
     methods: {
+        dataFetch(url, config, params) {
+            console.log({ url, config, params })
+            if(params.sorters) {
+                this.orderBy = params.sorters.map(element => {
+                    return [element.field, element.dir]
+                });
+            }
+
+            if(params.page && params.size) {
+                this.limit = params.size
+                this.offset = (params.page - 1) * params.size
+            }
+
+            const result = new Promise((resolve, reject) => {
+                this.fetch().then(() => {
+                    console.log("fetched!")
+                    this.$nextTick(() => {
+                        if(!this.columnsSet) {
+                            this.columnsSet = true
+                            this.tabulator.setColumns(this.tableColumns)
+                        }
+                        resolve(this.pagedData)
+                    })
+                }).catch(() => {
+                    reject()
+                })
+
+            })
+            return result;
+        },
         headerClick(event, component) {
             console.log(component)
             const column = component._column
@@ -122,7 +147,7 @@ export default {
                     this.orderBy
                 )
                 this.result = response.data[0]
-                this.totalRecords = response.totalRecords                
+                this.totalRecords = response.totalRecords
             } finally {
                 this.loading = false
             }

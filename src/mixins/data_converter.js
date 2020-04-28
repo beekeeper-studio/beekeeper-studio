@@ -36,7 +36,7 @@ export default {
               { title: "Rating", field: "rating", align: "center", formatter: "star" },
               { title: "Passed?", field: "passed", align: "center", formatter: "tickCross" }
             ]
-    
+
             */
             return _.map(this.result.fields, (item) => {
                 let postfix = ''
@@ -44,15 +44,13 @@ export default {
                     const so = this.sortOrders[item.name]
                     postfix = so ? ` (${so})` : ""
                 }
-                
-                
+
+
                 const result = {
                     title: `${_.capitalize(item.name)}${postfix}`,
                     field: item.name,
-                    formatter: 'html'
-                }
-                if (this.headerClick) {
-                    result.headerClick = this.headerClick
+                    formatter: 'html',
+                    headerFilter: this.headerFilter ? 'input' : false
                 }
                 return result
             })
