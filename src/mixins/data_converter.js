@@ -39,11 +39,22 @@ export default {
     
             */
             return _.map(this.result.fields, (item) => {
-                return {
-                    title: _.capitalize(item.name),
-                    field: item.name
-
+                let postfix = ''
+                if (this.sortOrders) {
+                    const so = this.sortOrders[item.name]
+                    postfix = so ? ` (${so})` : ""
                 }
+                
+                
+                const result = {
+                    title: `${_.capitalize(item.name)}${postfix}`,
+                    field: item.name,
+                    formatter: 'html'
+                }
+                if (this.headerClick) {
+                    result.headerClick = this.headerClick
+                }
+                return result
             })
         }
     }

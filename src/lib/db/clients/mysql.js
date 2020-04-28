@@ -120,22 +120,24 @@ export async function listTableColumns(conn, database, table) {
 }
 
 export async function selectTop(conn, table, offset, limit, orderBy) {
-  let sql = `
-    SELECT *
-    FROM ${table}
-    LIMIT ${limit}
-    OFFSET ${offset}
-  `
-  if(orderBy) {
-    const orderByString = orderBy.map((item) => {
+  let orderByString = ""
+  if (orderBy && orderBy.length > 0) {
+    orderByString = "order by " + (orderBy.map((item) => {
       if (Array.isArray(item)) {
         return item.join(" ")
       } else {
         return item
       }
-    }).join(",")
-    sql += ` ORDER BY ${orderByString}`
+    })).join(",")
   }
+
+  let sql = `
+    SELECT *
+    FROM ${table}
+    ${orderByString}
+    LIMIT ${limit}
+    OFFSET ${offset}
+  `
   const countQuery = `select count(1) as total from ${table}`
   const countResults = await driverExecuteQuery(conn, { query: countQuery})
   const result = await query(conn, sql)

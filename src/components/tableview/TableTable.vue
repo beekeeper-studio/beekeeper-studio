@@ -42,11 +42,11 @@ export default {
             tabulator: null,
             offset: 0,
             limit: 100,
-            orderBy: null,
             totalRecords: 0,
             result: [],
             actualTableHeight: "100%",
-            loading: false
+            loading: false,
+            sortOrders: {}
         }
     },
     watch: {
@@ -65,6 +65,11 @@ export default {
         },
     },
     computed: {
+        orderBy() {
+            return Object.keys(this.sortOrders).map((key) => {
+                return [key, this.sortOrders[key]]
+            });
+        },
         currentMax() {
             return Math.min(this.offset + this.limit, this.totalRecords)
         },
@@ -78,10 +83,29 @@ export default {
             columns: this.tableColumns,
             height: this.actualTableHeight,
             nestedFieldSeparator: false,
+            headerSort: false
+
+            // ajaxSorting: true
         })
         this.fetch()
     },
     methods: {
+        headerClick(event, component) {
+            console.log(component)
+            const column = component._column
+            const so = this.sortOrders[column.field]
+            console.log("header clicked %s, %s", event, column)
+            console.log(column)
+
+            if (so && so === 'asc') {
+                this.$set(this.sortOrders, column.field, 'desc')
+            } else {
+                this.$set(this.sortOrders, column.field, 'asc')
+            }
+        },
+        sortTriggered() {
+            console.log("sort triggered")
+        },
         nextPage() {
             this.offset = this.currentMax
         },
