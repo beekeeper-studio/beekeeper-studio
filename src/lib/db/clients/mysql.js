@@ -122,6 +122,7 @@ export async function listTableColumns(conn, database, table) {
 export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   let orderByString = ""
   let filterString = ""
+  let filterParams = []
 
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
@@ -136,10 +137,13 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   console.log(filters)
   if (filters && filters.length > 0) {
     filterString = "WHERE " + filters.map((item) => {
-      return `${item.field} ${item.type} ${item.value}`
+      return `${item.field} ${item.type} ?`
     }).join(" AND ")
-  }
 
+    filterParams = filters.map((item) => {
+      return item.value
+    })
+  }
 
   let baseSQL = `
     FROM ${table}
@@ -155,11 +159,11 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
     OFFSET ${offset}
     `
 
-  const countResults = await driverExecuteQuery(conn, { query: countSQL})
-  const result = query(conn, sql)
+  const countResults = await driverExecuteQuery(conn, { query: countSQL, params: filterParams})
+  const result = await driverExecuteQuery(conn, { query: sql, params: filterParams })
   console.log({countResults, result})
   return {
-    data: await result.execute(),
+    result,
     totalRecords: countResults.data.find((row) => { return row.total }).total
   }
 }

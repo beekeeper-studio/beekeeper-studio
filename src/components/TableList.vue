@@ -57,7 +57,7 @@
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <span>Tables ({{tables.length}})</span>
+            <span>Tables & Views ({{tables.length}})</span>
           </div>
           <div class="actions">
             <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">

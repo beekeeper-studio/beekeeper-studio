@@ -87,8 +87,12 @@ export default {
     },
     methods: {
         triggerFilter() {
-            if(this.filter.type && this.filter.value && this.filter.field) {
-                this.tabulator.setFilter(this.filter.field, this.filter.type, this.filter.value)
+            if(this.filter.type && this.filter.field) {
+                if (this.filter.value) {
+                    this.tabulator.setFilter(this.filter.field, this.filter.type, this.filter.value)
+                } else {
+                    this.tabulator.clearFilter()
+                }
             }
         },
         clearFilter() {
@@ -132,12 +136,12 @@ export default {
                         filters
                     )
                     console.log("query data:")
-                    console.log(response.data[0])
-                     const data = response.data[0]
-                     const totalRecords = response.totalRecords
+                    const r = response.result
+                    const totalRecords = response.totalRecords
+                    const data = this.dataToTableData({ rows: r.data }, this.tableColumns)
                     resolve({
                         last_page: Math.ceil(totalRecords / limit),
-                        data: this.dataToTableData(data, this.tableColumns)
+                        data
                     })
                     } catch (error) {
                         reject()

@@ -281,6 +281,11 @@
     // color: lighten($theme-secondary, 15%);
     color: $theme-primary;
     opacity: 0.75;
+
+    &.view-icon {
+      color: pink;
+    }
+
   }
   .badge-info {
     background: $brand-info;

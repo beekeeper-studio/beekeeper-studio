@@ -124,7 +124,15 @@ const store = new Vuex.Store({
       // Ideally here we would run all queries in parallel
       // however running through an SSH tunnel doesn't work
       // it only supports one query at a time.
-      const tables = await context.state.connection.listTables()
+      const onlyTables = await context.state.connection.listTables()
+      onlyTables.forEach((t) => {
+        t.entityType = 'table'
+      })
+      const views = await context.state.connection.listViews()
+      views.forEach((v) => {
+        v.entityType = 'view'
+      })
+      const tables = onlyTables.concat(views)
       for(let i = 0; i < tables.length; i++) {
         const table = tables[i]
         const columns = await context.state.connection.listTableColumns(table.name)
