@@ -3,9 +3,8 @@
     <div class="beekeeper-studio-wrapper">
       <titlebar v-if="isWindows || isMac"></titlebar>
       <select name="" id="" @change.prevent="changeTheme" v-model="selectedTheme">
-        <option value="default">default</option>
-        <option value="blue">blue</option>
-        <option value="green">green</option>
+        <option value="dark">dark</option>
+        <option value="light">light</option>
       </select>
       
       <connection-interface v-if="!connection"></connection-interface>
@@ -30,7 +29,7 @@ export default {
   },
   data() {
     return {
-      selectedTheme: "default"
+      selectedTheme: "dark"
     }
   },
   computed: {

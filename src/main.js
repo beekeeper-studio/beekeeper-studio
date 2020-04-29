@@ -8,11 +8,7 @@ import App from './App.vue'
 import path from 'path'
 import 'typeface-roboto'
 import 'typeface-source-code-pro'
-import './assets/styles/vendor.scss'
 import './assets/styles/app.scss'
-// themes go after app styles.
-import './assets/themes/blue.scss'
-import './assets/themes/green.scss'
 import $ from 'jquery';
 import SQL from 'codemirror/mode/sql/sql'
 import Hint from 'codemirror/addon/hint/show-hint.js'

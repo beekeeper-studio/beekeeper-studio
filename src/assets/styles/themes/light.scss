@@ -1,0 +1,68 @@
+
+// Theme
+// ---------------------------
+$theme-bg:           white;
+$theme-base:         black;
+$theme-primary:      blue;
+$theme-secondary:    pink;
+
+// Colors
+// -----------------------------
+$white:              white;
+$black:              black;
+$text-dark:          rgba($theme-base, 0.87);
+$text:               rgba($theme-base, 0.67);
+$text-light:         rgba($theme-base, 0.57);
+$text-lighter:       rgba($theme-base, 0.37);
+$text-hint:          rgba($theme-base, 0.37);
+$text-disabled:      rgba($theme-base, 0.37);
+
+$brand-info:         #3498db;
+$brand-success:      #15db95;
+$brand-warning:      #ff8d21;
+$brand-danger:       #ff5d59;
+$brand-default:      rgba($theme-base, 0.57);
+
+$brand-purple:       #9b59b6;
+
+$brand-primary:      $theme-primary;
+$brand-secondary:    $theme-secondary;
+
+// General
+$border-color:       rgba($theme-base, 0.1);
+$link-color:         $text-dark;
+$placeholder:        $text-hint;
+$selection:          rgba($theme-primary, 0.2);
+
+// Font
+$font-family:        'Roboto';
+$font-family-mono:   'Source Code Pro';
+$base-font-size:      14px;
+  
+// Buttons
+$btn-border-radius:   0.65em;
+
+// Inputs
+$input-padding-h:     0;
+$input-height:        26px;
+$input-padding-w:     0.75rem;
+$input-highlight:     rgba($theme-base, 0.27);
+$input-radius:        4px;
+
+// Layout
+// -----------------------------
+$gutter-w:            0.8rem;
+$gutter-h:            0.4rem;
+
+// Sidebar
+$sidebar-w:           400px;
+$sidebar-min-w:       300px;
+$sidebar-max-w:       90%;
+$sidebar-icon-w:      1.4rem;
+$db-select-text:      white;
+$status-bar-height:   2.4rem;
+
+// Query Editor
+$query-editor-bg:     darken($theme-bg, 3%);
+$tab-height:          36px;
+$tab-padding-w:       1rem;

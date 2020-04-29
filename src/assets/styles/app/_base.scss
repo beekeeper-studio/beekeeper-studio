@@ -3,16 +3,7 @@
 *, *:after, *:before {
   box-sizing: border-box;
 }
-:root {
-  font-family: $font-family, Helvetica, Arial, sans-serif;
-  font-size: $base-font-size;
-  -webkit-font-smoothing: antialiased;
-  background: $theme-bg;
-  color: $theme-base;
-}
-body {
-  @extend :root;
-}
+
 a {
   display: inline-block;
   align-items: center;

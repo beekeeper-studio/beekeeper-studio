@@ -1,14 +1,28 @@
-@import './app/_normalize';
-@import './app/_variables';
-@import './app/_flex-grid';
-@import './app/_extends';
-@import './app/_base';
 
-@import './app/sidebar/_import';
-@import './app/titlebar';
-@import './app/core-interface';
-@import './app/core-tabs';
-@import './app/query-editor';
-@import './app/connection-interface';
-@import './app/preloader';
+@import './app/normalize.scss';
 
+body.theme-dark {
+    @import './themes/dark.scss';
+
+    font-family: $font-family, Helvetica, Arial, sans-serif;
+    font-size: $base-font-size;
+    -webkit-font-smoothing: antialiased;
+    background: $theme-bg;
+    color: $theme-base;
+
+    @import './vendor.scss';
+    @import './app/_all.scss';
+}
+
+body.theme-light {
+    @import './themes/light.scss';
+
+    font-family: $font-family, Helvetica, Arial, sans-serif;
+    font-size: $base-font-size;
+    -webkit-font-smoothing: antialiased;
+    background: $theme-bg;
+    color: $theme-base;
+
+    @import './vendor.scss';
+    @import './app/_all.scss';
+}
