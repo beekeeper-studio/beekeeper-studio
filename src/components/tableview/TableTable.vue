@@ -1,18 +1,24 @@
 <template>
     <div class="tabletable">
-        <div v-show="loading" class="loading-overlay">LOADING</div>
+        <div class="filter row">
+            <div class="card">
+                <form @submit.prevent="triggerFilter">
+                    <label for="filter">Search (I should be an inline form) </label>
+                    <select name="Filter Field" v-model="filter.field">
+                        <option v-for="column in table.columns" v-bind:key="column.columnName" :value="column.columnName">{{column.columnName}}</option>
+                    </select>
+                    <select name="Filter Type" v-model="filter.type">
+                        <option v-for="(v, k) in filterTypes" v-bind:key="k" :value="v">{{k}}</option>
+                    </select>
+                    <input type="text" v-model="filter.value">
+                    <button class="btn btn-primary" type="submit">Search</button>
+                    <button type="button" class="btn btn-danger" @click.prevent="clearFilter">Clear (I should be an (x) in the input box</button>
+                </form>
+            </div>
+        </div>
         <div ref="table">
 
         </div>
-        <footer class="status-bar row-query-meta">
-            <template v-if="result">
-                <div class="row-counts">
-                    Showing {{offset + 1}} to {{currentMax}} of {{totalRecords}} records.
-                </div>
-                <span class="expand"></span>
-            </template>
-        </footer>
-
     </div>
 </template>
 
@@ -37,44 +43,38 @@ export default {
     props: ['table', 'connection'],
     data() {
         return {
+            filterTypes: {
+                "equals": "=",
+                "does not equal": "!=",
+                "like": "like",
+                "less than": "<",
+                "less than or equal": "<=",
+                "greater than": ">",
+                "greater than or equal": ">="
+            },
+            filter: {
+                value: null,
+                type: "=",
+                field: this.table.columns[0].columnName
+            },
             headerFilter: true,
             columnsSet: false,
             tabulator: null,
-            offset: 0,
-            limit: 100,
-            totalRecords: 0,
-            result: [],
             actualTableHeight: "100%",
             loading: false,
-            orderBy: []
         }
     },
-    watch: {
-        tableColumns: {
-            handler() {
-            // this.tabulator.setColumns(this.tableColumns)
-            }
-        },
-    },
     computed: {
-        currentMax() {
-            return Math.min(this.offset + this.limit, this.totalRecords)
-        },
-        changeTrigger() {
-            return [this.offset, this.limit, this.orderBy]
-        },
-        pagedData() {
-            return {
-                last_page: Math.ceil(this.totalRecords / this.limit),
-                data: this.tableData
-            }
+        tableColumns() {
+            return this.table.columns.map((column) => {
+                return {title: column.columnName, field: column.columnName}
+            })
         }
     },
     async mounted() {
         this.tabulator = new Tabulator(this.$refs.table, {
-            data: this.tableData,
-            columns: this.tableColumns,
             height: this.actualTableHeight,
+            columns: this.tableColumns,
             nestedFieldSeparator: false,
             ajaxRequestFunc: this.dataFetch,
             ajaxURL: "http://fake",
@@ -83,75 +83,70 @@ export default {
             pagination: 'remote',
             paginationSize: this.limit
         })
+
     },
     methods: {
+        triggerFilter() {
+            if(this.filter.type && this.filter.value && this.filter.field) {
+                this.tabulator.setFilter(this.filter.field, this.filter.type, this.filter.value)
+            }
+        },
+        clearFilter() {
+            this.tabulator.clearFilter()
+            this.filter.value = ""
+        },
         dataFetch(url, config, params) {
+            // this conforms to the Tabulator API
+            // for ajax requests. Except we're just calling the database.
+            // we're using paging so requires page info
             console.log({ url, config, params })
+
+            let offset = 0
+            let limit = 100
+            let orderBy = null
+            let filters = null
+
             if(params.sorters) {
-                this.orderBy = params.sorters.map(element => {
+                orderBy = params.sorters.map(element => {
                     return [element.field, element.dir]
                 });
             }
 
             if(params.page && params.size) {
-                this.limit = params.size
-                this.offset = (params.page - 1) * params.size
+                limit = params.size
+                offset = (params.page - 1) * params.size
+            }
+
+            if(params.filters) {
+                filters = params.filters
             }
 
             const result = new Promise((resolve, reject) => {
-                this.fetch().then(() => {
-                    console.log("fetched!")
-                    this.$nextTick(() => {
-                        if(!this.columnsSet) {
-                            this.columnsSet = true
-                            this.tabulator.setColumns(this.tableColumns)
-                        }
-                        resolve(this.pagedData)
+                (async () => {
+                    try {
+                        const response = await this.connection.selectTop(
+                        this.table.name,
+                        offset,
+                        limit,
+                        orderBy,
+                        filters
+                    )
+                    console.log("query data:")
+                    console.log(response.data[0])
+                     const data = response.data[0]
+                     const totalRecords = response.totalRecords
+                    resolve({
+                        last_page: Math.ceil(totalRecords / limit),
+                        data: this.dataToTableData(data, this.tableColumns)
                     })
-                }).catch(() => {
-                    reject()
-                })
-
+                    } catch (error) {
+                        reject()
+                        throw error
+                    }
+                })()
             })
             return result;
         },
-        headerClick(event, component) {
-            console.log(component)
-            const column = component._column
-            const so = this.sortOrders[column.field]
-            console.log("header clicked %s, %s", event, column)
-            console.log(column)
-
-            if (so && so === 'asc') {
-                this.$set(this.sortOrders, column.field, 'desc')
-            } else {
-                this.$set(this.sortOrders, column.field, 'asc')
-            }
-        },
-        sortTriggered() {
-            console.log("sort triggered")
-        },
-        nextPage() {
-            this.offset = this.currentMax
-        },
-        previousPage() {
-            this.offset = this.offset - this.limit
-        },
-        async fetch() {
-            this.loading = true
-            try {
-                const response = await this.connection.selectTop(
-                    this.table.name,
-                    this.offset,
-                    this.limit,
-                    this.orderBy
-                )
-                this.result = response.data[0]
-                this.totalRecords = response.totalRecords
-            } finally {
-                this.loading = false
-            }
-        }
     }
 }
 </script>

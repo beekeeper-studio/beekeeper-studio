@@ -125,9 +125,9 @@ function disconnect(server, database) {
   }
 }
 
-function selectTop(server, database, table, offset, limit, orderBy) {
+function selectTop(server, database, table, offset, limit, orderBy, filters) {
   checkIsConnected(server, database)
-  return database.connection.selectTop(table, offset, limit, orderBy);
+  return database.connection.selectTop(table, offset, limit, orderBy, filters);
 }
 
 function listSchemas(server, database, filter) {

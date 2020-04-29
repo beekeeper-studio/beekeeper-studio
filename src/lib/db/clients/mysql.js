@@ -41,7 +41,7 @@ export default async function (server, database) {
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
-    selectTop: (table, offset, limit, orderBy) => selectTop(conn, table, offset, limit, orderBy),
+    selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -119,8 +119,10 @@ export async function listTableColumns(conn, database, table) {
   }));
 }
 
-export async function selectTop(conn, table, offset, limit, orderBy) {
+export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   let orderByString = ""
+  let filterString = ""
+
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
       if (Array.isArray(item)) {
@@ -131,16 +133,31 @@ export async function selectTop(conn, table, offset, limit, orderBy) {
     })).join(",")
   }
 
-  let sql = `
-    SELECT *
+  console.log(filters)
+  if (filters && filters.length > 0) {
+    filterString = "WHERE " + filters.map((item) => {
+      return `${item.field} ${item.type} ${item.value}`
+    }).join(" AND ")
+  }
+
+
+  let baseSQL = `
     FROM ${table}
+    ${filterString}
     ${orderByString}
+  `
+  let countSQL = `
+    select count(*) as total ${baseSQL}
+  `
+  let sql = `
+    SELECT * ${baseSQL}
     LIMIT ${limit}
     OFFSET ${offset}
-  `
-  const countQuery = `select count(1) as total from ${table}`
-  const countResults = await driverExecuteQuery(conn, { query: countQuery})
-  const result = await query(conn, sql)
+    `
+
+  const countResults = await driverExecuteQuery(conn, { query: countSQL})
+  const result = query(conn, sql)
+  console.log({countResults, result})
   return {
     data: await result.execute(),
     totalRecords: countResults.data.find((row) => { return row.total }).total

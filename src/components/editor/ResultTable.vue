@@ -34,6 +34,15 @@
       }
     },
     computed: {
+      tableData() {
+          return this.dataToTableData(this.result, this.tableColumns)
+      },
+      tableTruncated() {
+          return this.result.truncated
+      },
+      tableColumns() {
+          return this.extractColumns(this.result)
+      },
       actualTableHeight() {
         return '100%'
         // let result = this.tableHeight

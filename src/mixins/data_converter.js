@@ -1,8 +1,8 @@
 import _ from 'lodash'
 
 export default {
-    computed: {
-        tableData() {
+    methods: {
+        dataToTableData(data, columns) {
             /*
               var data = [
                 {id:1, name:"Oli Bob", age:"12", col:"red", dob:""},
@@ -12,20 +12,16 @@ export default {
                 {id:5, name:"Margret Marmajuke", age:"16", col:"yellow", dob:"31/01/1999"},
               ];
             */
-
-            let columnArray = _.map(this.tableColumns, (col) => {
+            let columnArray = _.map(columns, (col) => {
                 return col.field
             })
-            let result = _(this.result.rows)
+            let result = _(data.rows)
                 .map((row) => {
                     return _.pick(row, columnArray)
                 }).value()
             return result
         },
-        tableTruncated() {
-            return this.result.truncated
-        },
-        tableColumns() {
+        extractColumns(data) {
             // columns here
             /*
             [
@@ -38,22 +34,17 @@ export default {
             ]
 
             */
-            return _.map(this.result.fields, (item) => {
-                let postfix = ''
-                if (this.sortOrders) {
-                    const so = this.sortOrders[item.name]
-                    postfix = so ? ` (${so})` : ""
-                }
-
+            return _.map(data.fields, (item) => {
 
                 const result = {
-                    title: `${_.capitalize(item.name)}${postfix}`,
+                    title: item.name,
                     field: item.name,
-                    formatter: 'html',
-                    headerFilter: this.headerFilter ? 'input' : false
                 }
                 return result
             })
         }
+    },
+    computed: {
+
     }
 }
