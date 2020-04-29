@@ -1,10 +1,7 @@
 
-
-@import './_flex-grid';
 @import './_extends';
-@import './_base';
-
-@import './sidebar/_import';
+@import './_layout';
+@import './sidebar/base';
 @import './titlebar';
 @import './core-interface';
 @import './core-tabs';

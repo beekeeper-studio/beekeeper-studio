@@ -1,28 +1,18 @@
-
-@import './app/normalize.scss';
+@import './app/normalize';
+@import './app/flex-grid';
+@import './app/base';
 
 body.theme-dark {
-    @import './themes/dark.scss';
-
-    font-family: $font-family, Helvetica, Arial, sans-serif;
-    font-size: $base-font-size;
-    -webkit-font-smoothing: antialiased;
-    background: $theme-bg;
-    color: $theme-base;
-
-    @import './vendor.scss';
-    @import './app/_all.scss';
+  @import './themes/dark/variables.scss';
+  @import './vendor.scss';
+  @import './app/_all.scss';
+  @import './themes/dark/theme.scss';
 }
 
 body.theme-light {
-    @import './themes/light.scss';
-
-    font-family: $font-family, Helvetica, Arial, sans-serif;
-    font-size: $base-font-size;
-    -webkit-font-smoothing: antialiased;
-    background: $theme-bg;
-    color: $theme-base;
-
-    @import './vendor.scss';
-    @import './app/_all.scss';
+  @import './themes/light/variables.scss';
+  @import './vendor.scss';
+  @import './app/_all.scss';
+  @import './themes/light/theme.scss';
 }
+
