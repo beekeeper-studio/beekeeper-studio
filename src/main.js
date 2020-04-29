@@ -10,6 +10,9 @@ import 'typeface-roboto'
 import 'typeface-source-code-pro'
 import './assets/styles/vendor.scss'
 import './assets/styles/app.scss'
+// themes go after app styles.
+import './assets/themes/blue.scss'
+import './assets/themes/green.scss'
 import $ from 'jquery';
 import SQL from 'codemirror/mode/sql/sql'
 import Hint from 'codemirror/addon/hint/show-hint.js'
@@ -25,6 +28,7 @@ import {TypeOrmPlugin} from './lib/typeorm_plugin'
 import config from './config'
 import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
 import Migration from './migration/index'
+
 
 (async () => {
   try {
