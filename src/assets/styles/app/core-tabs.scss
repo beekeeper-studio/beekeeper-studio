@@ -57,6 +57,18 @@
       border: 0;
       border-radius: 0;
       box-shadow: inset -1px 0 rgba($query-editor-bg, 0.5);
+
+      .item-icon {
+        color: $theme-primary;
+        opacity: 0.75;
+        font-size: 12px;
+        margin-right: 5px;
+
+        &.view-icon {
+          color: $brand-secondary;
+        }
+      }
+
       &.active {
         border: 0;
         background: $query-editor-bg;

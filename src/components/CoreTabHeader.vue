@@ -5,6 +5,8 @@
       @click.prevent.stop="$emit('click', tab)"
       :class="{ active: selected }"
     >
+      <i v-if="tab.type === 'table'" :class="iconClass" class="material-icons item-icon">grid_on</i>
+      <i v-if="tab.type === 'query'" class="material-icons item-icon">notes</i>
       <span class="expand truncate">{{title}}</span>
       <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @click.prevent.stop="$emit('close', tab)">
         <i class="material-icons close">close</i>
@@ -31,6 +33,12 @@
         }
         const result = this.tab.text.replace(/\s+/, '')
         return result.length == 0 ? null : result
+      },
+      iconClass() {
+        return {
+          'view-icon': this.tab.table.entityType === 'view',
+          'table-icon': this.tab.table.entityType === 'table'
+        }
       },
       title() {
         if (this.tab.type === 'query') {
