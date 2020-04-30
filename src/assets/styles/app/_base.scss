@@ -251,7 +251,7 @@ i {
   padding: 0 0.75rem;
   font-size: 0.9rem;
   font-weight: normal;
-  line-height: 1;
+  line-height: 1.1;
   color: $text;
   background: transparent;
   border-radius: $input-radius;
@@ -275,6 +275,7 @@ select {
   appearance: none;
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='silver'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
   padding: 0 0.75rem;
+  cursor: pointer;
   option {
     background: lighten($theme-bg, 2%);
   }
@@ -454,8 +455,13 @@ input[type=file] {
 .card, .card-flat {
   border-radius: 8px;
   overflow: hidden;
-  &.padding, .card-body {
+  &.padding {
     padding: 1.5rem;
+  }
+}
+.card-body {
+  &.padding {
+    padding: 1.25rem;
   }
 }
 .card-actions {

@@ -18,7 +18,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: $theme-bg;
+    background: $query-editor-bg;
     &.active {
       display: flex;
       z-index: 1;
@@ -132,5 +132,76 @@
   }
   .actions {
     padding: 0 $gutter-h;
+  }
+}
+
+// Move Later
+.tabletable {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+.table-filter {
+  width: 100%;
+  .filter-group {
+    padding: $gutter-h;
+    margin-left: -($gutter-h * 0.5);
+    margin-right: -($gutter-h * 0.5);
+    > * {
+      display: inline-flex;
+      padding-left: ($gutter-h * 0.5);
+      padding-right: ($gutter-h * 0.5);
+      margin: 0;
+    }
+    .select-wrap {
+      padding-right: $gutter-h;
+      border-radius: $input-radius;
+      overflow: hidden;
+      width: 100%;
+      box-shadow: inset 0 0 0 1px $border-color;
+      transition: background 0.15s ease-in-out;
+      cursor: pointer;
+      &:hover {
+        background: rgba($theme-base, 0.025);
+      }
+      > select {
+        border: 0;
+        padding-right: 1.25rem;
+        min-width: 120px;
+      }
+    }
+  }
+  .filter {
+    position: relative;
+    .filter-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+    input {
+      padding-right: 26px;
+    }
+    .clear {
+      position: absolute;
+      right: 0;
+      display: flex;
+      align-items: center;
+      background: transparent;
+      color: rgba($theme-base, 0.5);
+      outline: none;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      &:hover {
+        color: $text-dark;
+      }
+      i {
+        font-size: 14px;
+        width: 26px;
+      }
+    }
   }
 }

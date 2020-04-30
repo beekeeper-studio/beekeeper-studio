@@ -1,5 +1,7 @@
 @import '../variables';
 
+$errorColor: $brand-danger;
+
 .tabulator-row {
   background: transparent;
   width: min-content;
@@ -20,8 +22,10 @@
   }
 }
 .tabulator {
+  position: relative;
   font-size: 12px;
   border: 0;
+  width: 100%;
   background: transparent;
   background: lighte($query-editor-bg, 1%);
   .tabulator-header {
@@ -81,6 +85,52 @@
       background: transparent;
       width: 100%;
       color: $text-dark;
+    }
+  }
+
+  //holding div that contains loader and covers tabulator element to prevent interaction
+	.tabulator-loader{
+		background:rgba(black,.4);
+		.tabulator-loader-msg{
+			border-radius: 8px;
+			background:transparent;
+			font-weight: normal;
+			font-size: 1rem;
+
+			//loading message
+			&.tabulator-loading{
+				border: 0;
+				color: $text-dark;
+			}
+
+			//error message
+			&.tabulator-error{
+				border: 0;
+				color: $brand-danger;
+			}
+		}
+  }
+  
+  .tabulator-footer {
+    border: 0;
+    background: rgba($theme-base, 0.06);
+    .tabulator-page {
+      color: $theme-base;
+      background: transparent;
+      color: $text-dark;
+      border: 0;
+      box-shadow: none;
+      font-size: 0.8rem;
+      font-weight: normal;
+      &:hover, &:focus {
+        background: rgba($theme-base, 0.1);
+      }
+      &:disabled {
+        opacity: 0.35;
+        &:hover, &:focus {
+          background: transparent;
+        }
+      }
     }
   }
 }

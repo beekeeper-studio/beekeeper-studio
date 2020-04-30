@@ -1,38 +1,44 @@
 <template>
-    <div class="tabletable">
-        <div class="filter row">
-            <div class="card">
-                <form @submit.prevent="triggerFilter">
-                    <label for="filter">Search (I should be an inline form) </label>
-                    <select name="Filter Field" v-model="filter.field">
-                        <option v-for="column in table.columns" v-bind:key="column.columnName" :value="column.columnName">{{column.columnName}}</option>
-                    </select>
-                    <select name="Filter Type" v-model="filter.type">
-                        <option v-for="(v, k) in filterTypes" v-bind:key="k" :value="v">{{k}}</option>
-                    </select>
-                    <input type="text" v-model="filter.value">
-                    <button class="btn btn-primary" type="submit">Search</button>
-                    <button type="button" class="btn btn-danger" @click.prevent="clearFilter">Clear (I should be an (x) in the input box</button>
-                </form>
+  <div class="tabletable flex-col">
+    <div class="table-filter">
+      <form @submit.prevent="triggerFilter">
+          <div class="filter-group row gutter">
+            <div>
+              <div class="select-wrap">
+                <select name="Filter Field" v-model="filter.field">
+                  <option v-for="column in table.columns" v-bind:key="column.columnName" :value="column.columnName">{{column.columnName}}</option>
+                </select>
+              </div>
             </div>
-        </div>
-        <div ref="table">
-
-        </div>
+            <div>
+              <div class="select-wrap">
+                <select name="Filter Type" v-model="filter.type">
+                  <option v-for="(v, k) in filterTypes" v-bind:key="k" :value="v">{{k}}</option>
+                </select>
+              </div>
+            </div>
+            <div class="expand filter">
+              <div class="filter-wrap">
+                <input class="form-control" type="text" v-model="filter.value" placeholder="Enter Value">
+                <button type="button" class="clear btn-link" @click.prevent="clearFilter"><i class="material-icons">cancel</i></button>
+              </div>
+            </div>
+            <div class="btn-wrap"><button class="btn btn-primary" type="submit">Search</button></div>
+          </div>
+      </form>
     </div>
+    <div ref="table">
+
+    </div>
+  </div>
 </template>
 
 <style>
-    /* G, I'm sorry for this */
-    .tabletable {
-        /* Temporary */
-        height: 500px;
-    }
-    .loading-overlay {
-        position: absolute;
-        right: 50%;
-        top: 200px;
-    }
+  .loading-overlay {
+    position: absolute;
+    right: 50%;
+    top: 200px;
+  }
 </style>
 
 <script>
