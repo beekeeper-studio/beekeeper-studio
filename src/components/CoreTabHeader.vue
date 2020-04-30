@@ -7,6 +7,7 @@
     >
       <i v-if="tab.type === 'table'" :class="iconClass" class="material-icons item-icon">grid_on</i>
       <i v-if="tab.type === 'query'" class="material-icons item-icon">notes</i>
+      <i v-if="tab.type === 'settings'" class="material-icons item-icon">settings</i>
       <span class="expand truncate">{{title}}</span>
       <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @click.prevent.stop="$emit('close', tab)">
         <i class="material-icons close">close</i>

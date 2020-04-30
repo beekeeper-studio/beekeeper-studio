@@ -129,12 +129,20 @@
       openTable(table) {
         // todo (matthew): trigger this from a vuex event
         const t = {
-          title: _.capitalize(table.name),
+          id: uuidv4(),
+          type: 'table',
           table: table,
-          type: "table",
           connection: this.connection
         }
-        this.tabItems.push(t)
+        this.addTab(t)
+      },
+      openSettings(settings) {
+        const t = {
+          title: "Settings",
+          settings,
+          type: 'settings'
+        }
+        this.addTab(t)
       },
       click(tab) {
         this.activeTab = tab
@@ -161,16 +169,8 @@
         this.createQuery(item.text)
       })
 
-      this.$root.$on('loadTable', (table) => {
-        const result = {
-          id: uuidv4(),
-          type: 'table',
-          table: table,
-          connection: this.connection
-        }
-        this.addTab(result)
-      })
-
+      this.$root.$on('loadTable', this.openTable)
+      this.$root.$on('loadSettings', this.openSettings)
       this.$root.$on('favoriteClick', (item) => {
 
         const queriesOnly = this.tabItems.map((item) => {
