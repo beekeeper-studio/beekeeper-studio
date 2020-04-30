@@ -38,7 +38,7 @@ export default {
 
                 const result = {
                     title: item.name,
-                    field: item.name,
+                    field: item.name
                 }
                 return result
             })

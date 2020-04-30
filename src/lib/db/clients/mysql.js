@@ -6,6 +6,7 @@ import { identify } from 'sql-query-identifier';
 import createLogger from '../../logger';
 import { createCancelablePromise } from '../../utils';
 import errors from '../../errors';
+import { genericSelectTop } from './utils';
 
 const logger = createLogger('db:clients:mysql');
 
@@ -42,7 +43,7 @@ export default async function (server, database) {
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
-    getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
+    w: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
     getRoutineCreateScript: (routine, type) => getRoutineCreateScript(conn, routine, type),
@@ -120,52 +121,7 @@ export async function listTableColumns(conn, database, table) {
 }
 
 export async function selectTop(conn, table, offset, limit, orderBy, filters) {
-  let orderByString = ""
-  let filterString = ""
-  let filterParams = []
-
-  if (orderBy && orderBy.length > 0) {
-    orderByString = "order by " + (orderBy.map((item) => {
-      if (Array.isArray(item)) {
-        return item.join(" ")
-      } else {
-        return item
-      }
-    })).join(",")
-  }
-
-  console.log(filters)
-  if (filters && filters.length > 0) {
-    filterString = "WHERE " + filters.map((item) => {
-      return `${item.field} ${item.type} ?`
-    }).join(" AND ")
-
-    filterParams = filters.map((item) => {
-      return item.value
-    })
-  }
-
-  let baseSQL = `
-    FROM ${table}
-    ${filterString}
-    ${orderByString}
-  `
-  let countSQL = `
-    select count(*) as total ${baseSQL}
-  `
-  let sql = `
-    SELECT * ${baseSQL}
-    LIMIT ${limit}
-    OFFSET ${offset}
-    `
-
-  const countResults = await driverExecuteQuery(conn, { query: countSQL, params: filterParams})
-  const result = await driverExecuteQuery(conn, { query: sql, params: filterParams })
-  console.log({countResults, result})
-  return {
-    result,
-    totalRecords: countResults.data.find((row) => { return row.total }).total
-  }
+  return genericSelectTop(conn, table, offset, limit, orderBy, filters, driverExecuteQuery)
 }
 
 export async function listTableTriggers(conn, table) {
@@ -473,7 +429,6 @@ function identifyCommands(queryText) {
 }
 
 function driverExecuteQuery(conn, queryArgs) {
-  console.log(`MYSQL: ${queryArgs.query}, ${queryArgs.params}`)
   logger().debug(`Running Query ${queryArgs.query}`)
   const runQuery = (connection) => new Promise((resolve, reject) => {
     connection.query(queryArgs.query, queryArgs.params, (err, data, fields) => {

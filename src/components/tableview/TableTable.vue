@@ -76,6 +76,7 @@ export default {
                 return {title: column.columnName, field: column.columnName}
             })
         }
+
     },
     async mounted() {
         this.tabulator = new Tabulator(this.$refs.table, {
@@ -87,7 +88,7 @@ export default {
             ajaxSorting: true,
             ajaxFiltering: true,
             pagination: 'remote',
-            paginationSize: this.limit
+            paginationSize: this.limit,
         })
 
     },

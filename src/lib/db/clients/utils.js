@@ -41,3 +41,58 @@ export function buildDatabseFilter({ database } = {}, databaseField) {
 
   return where.join(' AND ');
 }
+
+export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
+  let orderByString = ""
+  let filterString = ""
+  let filterParams = []
+
+  if (orderBy && orderBy.length > 0) {
+    orderByString = "order by " + (orderBy.map((item) => {
+      if (Array.isArray(item)) {
+        return item.join(" ")
+      } else {
+        return item
+      }
+    })).join(",")
+  }
+
+  if (filters && filters.length > 0) {
+    filterString = "WHERE " + filters.map((item) => {
+      return `${item.field} ${item.type} ?`
+    }).join(" AND ")
+
+    filterParams = filters.map((item) => {
+      return item.value
+    })
+  }
+
+  let baseSQL = `
+    FROM ${table}
+    ${filterString}
+    ${orderByString}
+  `
+  let countSQL = `
+    select count(*) as total ${baseSQL}
+  `
+  let sql = `
+    SELECT * ${baseSQL}
+    LIMIT ${limit}
+    OFFSET ${offset}
+    `
+    return {query: sql, countQuery: countSQL, params: filterParams}
+}
+
+export async function genericSelectTop(conn, table, offset, limit, orderBy, filters, executor){
+  const { query, countQuery, params } = buildSelectTopQuery(table, offset, limit, orderBy, filters)
+
+  const countResults = await executor(conn, { query: countQuery, params })
+  const result = await executor(conn, { query, params })
+  console.log({ countResults, result })
+  const rowWithTotal = countResults.data.find((row) => { return row.total })
+  const totalRecords = rowWithTotal ? rowWithTotal.total : 0
+  return {
+    result,
+    totalRecords
+  }
+}

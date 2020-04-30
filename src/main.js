@@ -30,7 +30,7 @@ import Migration from './migration/index'
 
 (async () => {
   try {
-    Tabulator.prototype.defaultOptions.layout = "fitColumns";
+    Tabulator.prototype.defaultOptions.layout = "fitDataFill";
     const appDb = path.join(config.userDirectory, 'app.db')
     const connection = await createConnection({
       database: appDb,
