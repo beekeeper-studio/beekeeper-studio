@@ -10,7 +10,6 @@ import App from './App.vue'
 import path from 'path'
 import 'typeface-roboto'
 import 'typeface-source-code-pro'
-import './assets/styles/vendor.scss'
 import './assets/styles/app.scss'
 import $ from 'jquery';
 import SQL from 'codemirror/mode/sql/sql'
@@ -27,6 +26,7 @@ import {TypeOrmPlugin} from './lib/typeorm_plugin'
 import config from './config'
 import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
 import Migration from './migration/index'
+
 
 (async () => {
   try {

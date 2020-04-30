@@ -1,16 +1,11 @@
-$material-icons-font-path: '~material-icons/iconfont/';
-
-@import "~codemirror/lib/codemirror";
-@import "~codemirror/theme/monokai";
-@import "~codemirror/addon/hint/show-hint";
-@import "~vuejs-noty/dist/vuejs-noty.css";
-@import "~tabulator-tables/dist/css/tabulator_midnight.css";
-@import '~material-icons/iconfont/material-icons.scss';
-
 @import "./app/vendor/tabulator";
 @import "./app/vendor/codemirror";
 @import "./app/vendor/tooltip";
-@import "./app/vendor/custom-icons";
 @import "./app/vendor/vueable";
 @import "./app/vendor/noty";
 @import "./app/vendor/vue-js-modal";
+
+@import "~codemirror/lib/codemirror";
+@import "~codemirror/addon/hint/show-hint";
+@import "~vuejs-noty/dist/vuejs-noty.css";
+@import "~tabulator-tables/dist/css/tabulator_midnight.css";

@@ -1,4 +1,3 @@
-@import '../variables';
 
 $errorColor: $brand-danger;
 
@@ -38,7 +37,7 @@ $errorColor: $brand-danger;
       // border-color: $query-editor-bg;
       border-color: transparent;
       height: 32px!important;
-      font-size: 85%;
+      font-size: 90%;
       line-height: 1;
       &.tabulator-sortable{
         &:hover {
@@ -46,6 +45,7 @@ $errorColor: $brand-danger;
         }
         .tabulator-col-title {
           padding-right: 16px;
+          color: $text-dark;
         }
       }
       &.tabulator-sortable[aria-sort="asc"] {

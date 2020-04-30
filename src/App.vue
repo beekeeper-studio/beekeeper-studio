@@ -1,14 +1,21 @@
 <template>
-  <div class="beekeeper-studio-wrapper">
-    <titlebar v-if="isWindows || isMac"></titlebar>
-    <connection-interface v-if="!connection"></connection-interface>
-    <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
-    <auto-updater></auto-updater>
-  </div>
+<div class="style-wrapper">
+    <div class="beekeeper-studio-wrapper">
+      <titlebar v-if="isWindows || isMac"></titlebar>
+      <select name="" id="" @change.prevent="changeTheme" v-model="selectedTheme">
+        <option value="dark">dark</option>
+        <option value="light">light</option>
+      </select>
+      
+      <connection-interface v-if="!connection"></connection-interface>
+      <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
+      <auto-updater></auto-updater>
+    </div>
+</div>
+
 </template>
 
 <script>
-
 import { ipcRenderer } from 'electron'
 import Titlebar from './components/Titlebar'
 import CoreInterface from './components/CoreInterface'
@@ -22,6 +29,7 @@ export default {
   },
   data() {
     return {
+      selectedTheme: "dark"
     }
   },
   computed: {
@@ -37,6 +45,9 @@ export default {
   methods: {
     databaseSelected(db) {
       console.log("Do something here! (Db selected) " + db)
+    },
+    changeTheme() {
+      document.body.classList = [`theme-${this.selectedTheme}`]
     }
 
   }
@@ -44,4 +55,6 @@ export default {
 </script>
 
 <style>
+
+
 </style>
