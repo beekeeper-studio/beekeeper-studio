@@ -4,6 +4,7 @@ $errorColor: $brand-danger;
 .tabulator-row {
   background: transparent;
   width: min-content;
+  min-width: 100%;
   .tabulator-cell {
     border-right: 0;
     padding: 4px 8px;

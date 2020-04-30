@@ -47,7 +47,7 @@
       display: flex;
       align-items: center;
       background: rgba($theme-base, 0.05);
-      padding: 0 $tab-padding-w 0 ($tab-padding-w * 1.25);
+      padding: 0 $tab-padding-w;
       height: $tab-height;
       min-width: 110px;
       font-size: 0.85rem;
@@ -57,18 +57,6 @@
       border: 0;
       border-radius: 0;
       box-shadow: inset -1px 0 rgba($query-editor-bg, 0.5);
-
-      .item-icon {
-        color: $theme-primary;
-        opacity: 0.75;
-        font-size: 12px;
-        margin-right: 5px;
-
-        &.view-icon {
-          color: $brand-secondary;
-        }
-      }
-
       &.active {
         border: 0;
         background: $query-editor-bg;
@@ -147,6 +135,22 @@
   }
 }
 
+.item-icon {
+  color: $theme-primary;
+  opacity: 0.75;
+  font-size: 12px;
+  margin-right: ($gutter-h * 1.25);
+  &.view-icon {
+    color: lighten($brand-secondary, 10%);
+  }
+  &.query {
+    color: $brand-pink;
+  }
+  &.settings {
+    color: $text-lighter;
+  }
+}
+
 // Move Later
 .tabletable {
   position: absolute;
@@ -183,6 +187,9 @@
         padding-right: 1.25rem;
         min-width: 120px;
       }
+    }
+    .btn-primary {
+      min-width: auto;
     }
   }
   .filter {

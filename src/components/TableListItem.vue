@@ -16,7 +16,7 @@
     <div v-show="showColumns" class="sub-items">
       <span v-bind:key="c.columnName" v-for="c in table.columns" class="sub-item">
         <span class="title">{{c.columnName}}</span>
-        <span class="badge" v-bind:class="c.dataType">{{c.dataType}}</span>
+        <span class="badge" v-bind:class="c.dataType"><span>{{c.dataType}}</span></span>
       </span>
     </div>
   </div>
