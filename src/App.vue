@@ -1,12 +1,7 @@
 <template>
 <div class="style-wrapper">
     <div class="beekeeper-studio-wrapper">
-      <titlebar v-if="isWindows || isMac"></titlebar>
-      <select name="" id="" @change.prevent="changeTheme" v-model="selectedTheme">
-        <option value="dark">dark</option>
-        <option value="light">light</option>
-      </select>
-      
+      <titlebar v-if="isWindows || isMac"></titlebar>      
       <connection-interface v-if="!connection"></connection-interface>
       <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
       <auto-updater></auto-updater>
@@ -29,7 +24,6 @@ export default {
   },
   data() {
     return {
-      selectedTheme: "dark"
     }
   },
   computed: {
@@ -46,10 +40,6 @@ export default {
     databaseSelected(db) {
       console.log("Do something here! (Db selected) " + db)
     },
-    changeTheme() {
-      document.body.classList = [`theme-${this.selectedTheme}`]
-    }
-
   }
 }
 </script>
