@@ -69,7 +69,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
 
   if (filters && filters.length > 0) {
     filterString = "WHERE " + filters.map((item) => {
-      return `${item.field} ${item.type} "${item.value}"`
+      return `${item.field} ${item.type} '${item.value}'`
     }).join(" AND ")
   }
 
