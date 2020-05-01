@@ -74,4 +74,6 @@ export default {
   sqlserver,
   sqlite,
   cassandra,
+  redshift: postgresql,
+  mariadb: mysql
 };

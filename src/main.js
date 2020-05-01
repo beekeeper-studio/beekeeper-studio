@@ -50,7 +50,7 @@ import Migration from './migration/index'
       logger: 'advanced-console',
     })
 
-    const migrator = new Migration(connection)
+    const migrator = new Migration(connection, process.env.NODE_ENV)
     console.log(migrator)
     await migrator.run()
 

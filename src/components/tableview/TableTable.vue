@@ -145,7 +145,7 @@ export default {
                     console.log("query data:")
                     const r = response.result
                     const totalRecords = response.totalRecords
-                    const data = this.dataToTableData({ rows: r.data }, this.tableColumns)
+                    const data = this.dataToTableData({ rows: r }, this.tableColumns)
                     resolve({
                         last_page: Math.ceil(totalRecords / limit),
                         data

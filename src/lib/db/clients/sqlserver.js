@@ -38,6 +38,7 @@ export default async function (server, database) {
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
+    selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),    
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -50,6 +51,50 @@ export default async function (server, database) {
 export async function disconnect(conn) {
   const connection = await new ConnectionPool(conn.dbConfig);
   connection.close();
+}
+
+export async function selectTop(conn, table, offset, limit, orderBy, filters) {
+  let orderByString = ""
+  let filterString = ""
+
+  if (orderBy && orderBy.length > 0) {
+    orderByString = "order by " + (orderBy.map((item) => {
+      if (Array.isArray(item)) {
+        return item.join(" ")
+      } else {
+        return item
+      }
+    })).join(",")
+  }
+
+  if (filters && filters.length > 0) {
+    filterString = "WHERE " + filters.map((item) => {
+      return `${item.field} ${item.type} "${item.value}"`
+    }).join(" AND ")
+  }
+
+  let baseSQL = `
+    FROM ${table}
+    ${filterString}
+    ${orderByString}
+  `
+  let countQuery = `
+    select count(*) as total ${baseSQL}
+  `
+  let query = `
+    SELECT * ${baseSQL}
+    OFFSET ${offset} ROWS
+    FETCH NEXT ${limit} ROWS ONLY
+    `
+  const countResults = await driverExecuteQuery(conn, { query: countQuery})
+  const result = await driverExecuteQuery(conn, { query })
+  console.log({ countResults, result })
+  const rowWithTotal = countResults.recordset.find((row) => { return row.total })
+  const totalRecords = rowWithTotal ? rowWithTotal.total : 0
+  return {
+    result: result.recordset,
+    totalRecords
+  }
 }
 
 
