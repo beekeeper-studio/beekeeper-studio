@@ -34,7 +34,7 @@ export default {
       host: 'localhost',
       username: 'sa',
       password: 'Example@1',
-      defaultDatabase: 'public'
+      defaultDatabase: 'saklia'
     }
   ],
 

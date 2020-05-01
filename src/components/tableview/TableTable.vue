@@ -20,7 +20,7 @@
             <div class="expand filter">
               <div class="filter-wrap">
                 <input class="form-control" type="text" v-model="filter.value" placeholder="Enter Value">
-                <button type="button" class="clear btn-link" @click.prevent="clearFilter"><i class="material-icons">cancel</i></button>
+                <button type="button" class="clear btn-link" @click.prevent="filter.value = ''"><i class="material-icons">cancel</i></button>
               </div>
             </div>
             <div class="btn-wrap"><button class="btn btn-primary" type="submit">Search</button></div>
@@ -75,8 +75,28 @@ export default {
             return this.table.columns.map((column) => {
                 return {title: column.columnName, field: column.columnName}
             })
+        },
+        filterValue() {
+          return this.filter.value
+        },
+        initialSort() {
+          if(this.table.columns.length === 0) {
+            return []
+          }
+
+          return [
+            {column: this.table.columns[0].columnName, dir: 'asc'}
+          ]
         }
 
+    },
+
+    watch: {
+      filterValue() {
+        if (this.filter.value === '') {
+          this.clearFilter()
+        }
+      }
     },
     async mounted() {
         this.tabulator = new Tabulator(this.$refs.table, {
@@ -89,6 +109,7 @@ export default {
             ajaxFiltering: true,
             pagination: 'remote',
             paginationSize: this.limit,
+            initialSort: this.initialSort
         })
 
     },
@@ -104,7 +125,6 @@ export default {
         },
         clearFilter() {
             this.tabulator.clearFilter()
-            this.filter.value = ""
         },
         dataFetch(url, config, params) {
             // this conforms to the Tabulator API

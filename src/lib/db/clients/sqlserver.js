@@ -21,7 +21,7 @@ export default async function (server, database) {
   const conn = { dbConfig };
 
   // light solution to test connection with with the server
-  await driverExecuteQuery(conn, { query: 'SELECT @@version' });
+  await driverExecuteQuery(conn, { query: 'SELECT 1' });
 
   return {
     wrapIdentifier,
@@ -76,23 +76,26 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   let baseSQL = `
     FROM ${table}
     ${filterString}
-    ${orderByString}
   `
   let countQuery = `
     select count(*) as total ${baseSQL}
   `
+  logger().debug(countQuery)
+  
   let query = `
     SELECT * ${baseSQL}
+    ${orderByString}
     OFFSET ${offset} ROWS
     FETCH NEXT ${limit} ROWS ONLY
     `
+  logger().debug(query)
   const countResults = await driverExecuteQuery(conn, { query: countQuery})
   const result = await driverExecuteQuery(conn, { query })
-  console.log({ countResults, result })
-  const rowWithTotal = countResults.recordset.find((row) => { return row.total })
+  console.log({ result, countResults })
+  const rowWithTotal = countResults.data.recordset.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return {
-    result: result.recordset,
+    result: result.data.recordset,
     totalRecords
   }
 }
@@ -506,8 +509,6 @@ export async function driverExecuteQuery(conn, queryArgs) {
   const runQuery = async (connection) => {
     const request = connection.request();
     const data = await request.query(queryArgs.query)
-    console.log("data:::")
-    console.log(data)
     const rowsAffected = _.sum(data.rowsAffected);
     return { request, data, rowsAffected };
   };

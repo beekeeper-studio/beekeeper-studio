@@ -70,13 +70,13 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
   let baseSQL = `
     FROM ${table}
     ${filterString}
-    ${orderByString}
   `
   let countSQL = `
     select count(*) as total ${baseSQL}
   `
   let sql = `
     SELECT * ${baseSQL}
+    ${orderByString}
     LIMIT ${limit}
     OFFSET ${offset}
     `
@@ -92,7 +92,7 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
   const rowWithTotal = countResults.data.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return {
-    result: result.rows,
+    result: result.data,
     totalRecords
   }
 }

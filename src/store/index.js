@@ -109,6 +109,7 @@ const store = new Vuex.Store({
       const server = context.state.server
       server.disconnect()
       context.commit('clearConnection')
+      context.commit('tables', [])
     },
     async changeDatabase(context, newDatabase) {
       const server = context.state.server

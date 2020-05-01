@@ -9,7 +9,7 @@ export default function createLogger(namespace) {
   if (loggers[namespace]) { throw new Error('This logger is already registered'); }
 
   // default logger
-  const debugLogger = debug(`bks:${namespace}`);
+  const debugLogger = debug(`beekeeper:${namespace}`);
   loggers[namespace] = {
     debug: debugLogger.bind(debugLogger),
     error: debugLogger.bind(debugLogger),

@@ -66,7 +66,7 @@ export function disconnect(conn) {
 }
 
 
-export async function listTables(conn, filter) {
+export async function listTables(conn, filter = { schema: 'public' }) {
   const schemaFilter = buildSchemaFilter(filter, 'table_schema');
   const sql = `
     SELECT
@@ -83,7 +83,7 @@ export async function listTables(conn, filter) {
   return data.rows;
 }
 
-export async function listViews(conn, filter) {
+export async function listViews(conn, filter = { schema: 'public' }) {
   const schemaFilter = buildSchemaFilter(filter, 'table_schema');
   const sql = `
     SELECT
@@ -102,7 +102,7 @@ export async function listViews(conn, filter) {
 export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   let orderByString = ""
   let filterString = ""
-  let params = []
+  let params = null
 
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
@@ -127,16 +127,19 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   let baseSQL = `
     FROM ${table}
     ${filterString}
-    ${orderByString}
   `
   let countQuery = `
-    select count(*) as total ${baseSQL}
+    select count(1) as total ${baseSQL}
   `
   let query = `
     SELECT * ${baseSQL}
+    ${orderByString}
     LIMIT ${limit}
     OFFSET ${offset}
     `
+
+  logger().debug(countQuery)
+  logger().debug(query)
 
   const countResults = await driverExecuteQuery(conn, { query: countQuery, params })
   const result = await driverExecuteQuery(conn, { query, params })
