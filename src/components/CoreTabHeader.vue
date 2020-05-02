@@ -8,7 +8,7 @@
       <i v-if="tab.type === 'table'" :class="iconClass" class="material-icons item-icon table">grid_on</i>
       <i v-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
       <i v-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
-      <span class="expand truncate">{{title}}</span>
+      <span class="tab-title expand truncate" :title="title">{{title}}</span>
       <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @click.prevent.stop="$emit('close', tab)">
         <i class="material-icons close">close</i>
         <i class="material-icons unsaved-icon" >fiber_manual_record</i>

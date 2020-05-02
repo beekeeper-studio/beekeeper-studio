@@ -57,6 +57,16 @@
       border: 0;
       border-radius: 0;
       box-shadow: inset -1px 0 rgba($query-editor-bg, 0.5);
+      .tab-title {
+        &:before {
+          display: block;
+          content: attr(title);
+          font-weight: 600;
+          height: 0;
+          overflow: hidden;
+          visibility: hidden;
+        }
+      }
       &.active {
         border: 0;
         background: $query-editor-bg;
@@ -104,6 +114,10 @@
         }
       } 
     }
+    .item-icon {
+      font-size: 12px;
+      margin-right: ($gutter-h * 1.25);
+    }
     .tab-close {
       display: flex;
       align-items: center;
@@ -132,22 +146,6 @@
   }
   .actions {
     padding: 0 $gutter-h;
-  }
-}
-
-.item-icon {
-  color: $theme-primary;
-  opacity: 0.75;
-  font-size: 12px;
-  margin-right: ($gutter-h * 1.25);
-  &.view-icon {
-    color: lighten($brand-secondary, 10%);
-  }
-  &.query {
-    color: $brand-pink;
-  }
-  &.settings {
-    color: $text-lighter;
   }
 }
 

@@ -3,11 +3,23 @@
 .CodeMirror {
   font-family: $font-family-mono, monospace;
   background: $query-editor-bg!important;
+  color: $text-dark!important;
   padding: 0.75rem 0;
 }
 .CodeMirror-gutters {
   border: 0!important;
   background: transparent!important;
+}
+
+// Monokai
+// ---------------------------------------
+.cm-s-monokai {
+  span.cm-keyword {
+    color: $brand-pink;
+  }
+  span.cm-variable-2 {
+    color: $brand-secondary;
+  }
 }
 
 // Addon: Hints
@@ -25,7 +37,7 @@
       background: rgba($theme-base, 0.05);
     }
     &.CodeMirror-hint-active {
-      background: $brand-info;
+      background: darken($theme-secondary, 25%);
       color: white;
     }
   }

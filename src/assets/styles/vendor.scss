@@ -1,11 +1,12 @@
+@import "~codemirror/lib/codemirror";
+@import "~codemirror/addon/hint/show-hint";
+@import "~vuejs-noty/dist/vuejs-noty.css";
+@import "~tabulator-tables/dist/css/tabulator_midnight.css";
+@import "~codemirror/theme/monokai";
+
 @import "./app/vendor/tabulator";
 @import "./app/vendor/codemirror";
 @import "./app/vendor/tooltip";
 @import "./app/vendor/vueable";
 @import "./app/vendor/noty";
 @import "./app/vendor/vue-js-modal";
-
-@import "~codemirror/lib/codemirror";
-@import "~codemirror/addon/hint/show-hint";
-@import "~vuejs-noty/dist/vuejs-noty.css";
-@import "~tabulator-tables/dist/css/tabulator_midnight.css";

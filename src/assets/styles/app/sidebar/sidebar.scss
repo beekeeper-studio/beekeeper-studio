@@ -300,18 +300,9 @@
     }
   }
   .item-icon {
-    font-size: 12px;
     width: $sidebar-icon-w;
     min-width: $sidebar-icon-w;
     transition: transform 0.15s ease-in;
-    // color: lighten($theme-secondary, 15%);
-    color: $theme-primary;
-    opacity: 0.75;
-
-    &.view-icon {
-      color: $brand-secondary;
-    }
-
   }
   .badge-info {
     background: $brand-info;

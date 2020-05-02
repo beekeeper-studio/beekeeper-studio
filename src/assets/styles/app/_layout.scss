@@ -308,7 +308,7 @@ input[type="checkbox"] {
   &:checked,
   &:checked:active {
     background: darken($theme-primary, 10%);
-    color: $text-dark;
+    color: rgba(black, 0.87);
     box-shadow: none;
   }
   &:checked:after {
@@ -318,7 +318,7 @@ input[type="checkbox"] {
     position: absolute;
     height: $checkbox-size;
     width: $checkbox-size;
-    color: $text-dark;
+    color: rgba(black, 0.87);
   }
 }
 
@@ -401,6 +401,19 @@ input[type=file] {
 .nav-link {
   display: block;
   padding: 0.5rem 1rem;
+}
+.item-icon {
+  font-size: 12px;
+  color: darken($theme-primary, 15%);
+  &.view-icon {
+    color: $brand-secondary;
+  }
+  &.query {
+    color: $brand-pink;
+  }
+  &.settings {
+    color: $text-lighter;
+  }
 }
 
 // Split.js Resizer
