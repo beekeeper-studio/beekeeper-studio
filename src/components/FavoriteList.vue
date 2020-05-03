@@ -5,7 +5,7 @@
         <a class="list-item-btn" @click.prevent="click(item)">
           <i class="item-icon query material-icons">code</i>
           <span class="item-text title truncate expand" :title="item.title">{{item.title}}</span>
-          <span class="badge database"><span>{{item.database}}</span></span>
+          <span class="badge database"><span :title="item.database" >{{item.database}}</span></span>
         </a>
       </div>
     </nav>
