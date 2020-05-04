@@ -73,10 +73,10 @@
         const newTab = cmdOrCtrl + '+t'
         const result = {
           'ctrl+tab': this.nextTab,
-          'ctrl+shift+tab': this.previousTab,
-          'ctrl+w': this.closeTab
+          'ctrl+shift+tab': this.previousTab
         }
         result[newTab] = this.handleCreateTab
+        result[`${cmdOrCtrl}+w`] = this.closeTab
         return result
       }
     },
