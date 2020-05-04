@@ -122,9 +122,14 @@ $errorColor: $brand-danger;
       border: 0;
       box-shadow: none;
       font-size: 0.8rem;
+      padding-bottom: 1px;
       font-weight: normal;
       &:hover, &:focus {
         background: rgba($theme-base, 0.1);
+      }
+      &.active {
+        color: $theme-primary;
+        background: rgba(black, 0.3); 
       }
       &:disabled {
         opacity: 0.35;
