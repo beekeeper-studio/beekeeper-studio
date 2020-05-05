@@ -130,8 +130,6 @@ export default {
             // this conforms to the Tabulator API
             // for ajax requests. Except we're just calling the database.
             // we're using paging so requires page info
-            console.log({ url, config, params })
-
             let offset = 0
             let limit = 100
             let orderBy = null
@@ -162,7 +160,6 @@ export default {
                         orderBy,
                         filters
                     )
-                    console.log("query data:")
                     const r = response.result
                     const totalRecords = response.totalRecords
                     const data = this.dataToTableData({ rows: r }, this.tableColumns)

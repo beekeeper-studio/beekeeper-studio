@@ -51,7 +51,6 @@ import Migration from './migration/index'
     })
 
     const migrator = new Migration(connection, process.env.NODE_ENV)
-    console.log(migrator)
     await migrator.run()
 
     window.$ = $

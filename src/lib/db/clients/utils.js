@@ -88,7 +88,6 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
 
   const countResults = await executor(conn, { query: countQuery, params })
   const result = await executor(conn, { query, params })
-  console.log({ countResults, result })
   const rowWithTotal = countResults.data.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return {

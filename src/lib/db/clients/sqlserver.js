@@ -91,7 +91,6 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   logger().debug(query)
   const countResults = await driverExecuteQuery(conn, { query: countQuery})
   const result = await driverExecuteQuery(conn, { query })
-  console.log({ result, countResults })
   const rowWithTotal = countResults.data.recordset.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return {

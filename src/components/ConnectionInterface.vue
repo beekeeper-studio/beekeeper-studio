@@ -103,7 +103,6 @@
         return config.defaults.connectionTypes
       },
       pageTitle() {
-        console.log(this.config)
         if(_.isNull(this.config) || _.isUndefined(this.config.id)) {
           return "Quick Connect"
         } else {
@@ -172,7 +171,6 @@
         } catch(ex) {
           this.connectionError = ex.message
           this.$noty.error("Error establishing a connection")
-          console.log(ex)
           return false
         } finally {
           this.testing = false
