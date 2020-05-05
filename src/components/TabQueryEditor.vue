@@ -19,7 +19,15 @@
       </header> -->
       <progress-bar v-if="running"></progress-bar>
       <result-table ref="table" v-else-if="result && result.rowCount > 0" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
-      <div class="alert alert-info" v-else-if="result"><i class="material-icons">info</i>Query Executed Successfully. No Results</div>
+      <div class="card" v-else-if="result">
+        <div class="alert alert-info" ><i class="material-icons">info</i>Query Executed Successfully. No Results</div>
+        <ul>
+          <li v-for="(result, idx) in results" v-bind:key="idx">
+            Query {{idx + 1}}: {{ result.affectedRows ? result.affectedRows : 'unknown'}} rows affected
+          </li>
+        </ul>
+      </div>
+
       <div class="alert alert-danger" v-else-if="error"><i class="material-icons">warning</i>{{error}}</div>
       <div v-else><!-- No Data --></div>
       <span class="expand" v-if="!result"></span>
@@ -29,7 +37,7 @@
             <span class="num-rows" v-if="result.rowCount > 0">{{result.rowCount}} Results</span>
             <span class="truncated-rows" v-if="result && result.truncated"> &middot; only {{result.truncatedRowCount}} shown.</span>
           </div>
-          <span class="affected-rows" v-if="result && result.affectedRows">{{ affectedRowsText}}</span>
+          <span class="affected-rows" v-if="affectedRowsText ">{{ affectedRowsText}}</span>
         </template>
         <template v-else>
           No Data
@@ -81,6 +89,7 @@
     data() {
       return {
         result: null,
+        results: [],
         running: false,
         editor: null,
         runningQuery: null,
@@ -101,10 +110,12 @@
         return this.tab.query.text
       },
       affectedRowsText() {
-        if (!this.result) {
-          return ""
+        if (!this.results || this.results.length == 0) {
+          return null
         }
-        return `${this.result.affectedRows} ${Pluralize('row', this.result.affectedRows)} affected`
+
+        const rows = this.results.map(r => { return r.affectedRows; }).reduce((a, b) => { return a + b}, 0)
+        return `${rows} ${Pluralize('row', rows)} affected total (${this.results.length} ${Pluralize('query', this.results.length)})`
       },
       hasText() {
         return this.query.text && this.query.text.replace(/\s+/, '').length > 0
@@ -206,6 +217,7 @@
           }
 
           this.result = result
+          this.results = results
           this.$store.dispatch('logQuery', { text: this.editor.getValue(), rowCount: result.rowCount})
         } catch (ex) {
           this.error = ex
