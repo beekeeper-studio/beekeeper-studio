@@ -119,7 +119,7 @@
         }).reduce((a, b) => {
           return a + b
         }, 0)
-        return `${rows} ${Pluralize('row', rows)} affected total (${this.results.length} ${Pluralize('query', this.results.length)})`
+        return `${rows} ${Pluralize('row', rows)} affected (${this.results.length} ${Pluralize('query', this.results.length)})`
       },
       hasText() {
         return this.query.text && this.query.text.replace(/\s+/, '').length > 0
