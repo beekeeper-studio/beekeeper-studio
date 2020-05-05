@@ -114,7 +114,11 @@
           return null
         }
 
-        const rows = this.results.map(r => { return r.affectedRows; }).reduce((a, b) => { return a + b}, 0)
+        const rows = this.results.map(r => {
+          return r.affectedRows ? r.affectedRows : 0;
+        }).reduce((a, b) => {
+          return a + b
+        }, 0)
         return `${rows} ${Pluralize('row', rows)} affected total (${this.results.length} ${Pluralize('query', this.results.length)})`
       },
       hasText() {
