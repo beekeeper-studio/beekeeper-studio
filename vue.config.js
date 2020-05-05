@@ -48,15 +48,7 @@ module.exports = {
             'github',
             'snapStore'
           ],
-          plugs: [
-            "default",
-            {
-              "full-home-access": {
-                "interface": "personal-files",
-                "read": ["$HOME"]
-              },
-            },
-          ]
+          plugs: ["default", "ssh-keys"]
         },
         win: {
           icon: './public/icons/png/512x512.png'
