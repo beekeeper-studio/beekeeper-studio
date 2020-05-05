@@ -27,9 +27,9 @@
               </div>
               <div v-if="config.connectionType">
                 <!-- INDIVIDUAL DB CONFIGS -->
-                <mysql-form v-if="config.connectionType === 'mysql'" :config="config" :testing="testing" @save="save" @test="testConnection" @connect="submit"></mysql-form>
+                <mysql-form v-if="['mysql', 'mariadb'].includes(config.connectionType)" :config="config" :testing="testing" @save="save" @test="testConnection" @connect="submit"></mysql-form>
                 <postgres-form v-if="config.connectionType === 'postgresql'" :config="config" :testing="testing"></postgres-form>
-                <redshift-form v-if="config.connectionType === 'redshift'" :config="config" :testing="testing"></redshift-form>
+                <postgres-form v-if="config.connectionType === 'redshift'" :config="config" :testing="testing"></postgres-form>
                 <sqlite-form v-if="config.connectionType === 'sqlite'" :config="config" :testing="testing"></sqlite-form>
                 <sql-server-form v-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"></sql-server-form>
 
@@ -79,7 +79,6 @@
   import ConnectionSidebar from './ConnectionSidebar'
   import MysqlForm from './connection/MysqlForm'
   import PostgresForm from './connection/PostgresForm'
-  import RedshiftForm from './connection/RedshiftForm'
   import Sidebar from './Sidebar'
   import SqliteForm from './connection/SqliteForm'
   import SqlServerForm from './connection/SqlServerForm'
@@ -87,7 +86,7 @@
   import _ from 'lodash'
 
   export default {
-    components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm },
     data() {
       return {
         defaultConfig: new SavedConnection(),
@@ -139,7 +138,7 @@
         this.config = config
       },
       changeType() {
-        if(this.config.connectionType === 'mysql') {
+        if(['mysql', 'mariadb'].includes(this.config.connectionType)) {
           this.config.port = 3306
         } else if(this.config.connectionType === 'postgresql') {
           this.config.port = 5432

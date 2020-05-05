@@ -15,9 +15,17 @@ export default {
       defaultDatabase: 'employees'
     },
     {
+      name: '[DEV] Docker MariaDB',
+      connectionType: 'mariadb',
+      port: 3307,
+      username: 'root',
+      password: 'example',
+      defaultDatabase: 'employees'
+    },
+    {
       name: "[DEV] local Sqlite",
       connectionType: 'sqlite',
-      path: './dev/saklia.db',
+      path: './dev/sakila.db',
     },
     {
       name: "[DEV] Docker PSQL",
@@ -34,7 +42,7 @@ export default {
       host: 'localhost',
       username: 'sa',
       password: 'Example@1',
-      defaultDatabase: 'saklia'
+      defaultDatabase: 'sakila'
     }
   ],
 
