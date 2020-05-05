@@ -5,14 +5,14 @@
           <div class="filter-group row gutter">
             <div>
               <div class="select-wrap">
-                <select name="Filter Field" v-model="filter.field">
+                <select name="Filter Field" class="form-control" v-model="filter.field">
                   <option v-for="column in table.columns" v-bind:key="column.columnName" :value="column.columnName">{{column.columnName}}</option>
                 </select>
               </div>
             </div>
             <div>
               <div class="select-wrap">
-                <select name="Filter Type" v-model="filter.type">
+                <select name="Filter Type" class="form-control" v-model="filter.type">
                   <option v-for="(v, k) in filterTypes" v-bind:key="k" :value="v">{{k}}</option>
                 </select>
               </div>

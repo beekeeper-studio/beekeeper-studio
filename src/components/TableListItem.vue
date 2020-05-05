@@ -4,7 +4,8 @@
       <span class="btn-fab open-close" >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
-      <i :class="iconClass" class="item-icon material-icons">grid_on</i>
+      <i v-if="table.entityType === 'table'" title="Table" class="table-icon item-icon material-icons">grid_on</i>
+      <i v-if="table.entityType === 'view'" title="View" class="view-icon item-icon material-icons">grid_on</i>
       <span class="table-name truncate expand">{{table.name}}</span>
       <span class="actions" v-bind:class="{'pinned': pinned.includes(table)}">
         <span class="btn-fab launch" title="Open in a new tab" @click.prevent="openTable"><i class="material-icons">launch</i></span>
@@ -51,12 +52,6 @@
       }
     },
     computed: {
-      iconClass() {
-        return {
-          'view-icon': this.table.entityType === 'view',
-          'table-icon': this.table.entityType === 'table'
-        }
-      },
       ...mapGetters(['pinned'])
     },
     methods: {
