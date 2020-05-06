@@ -5,7 +5,8 @@ Beekeeper Studio is a free and open source SQL editor and database manager. Beek
 ## Features
 
 - Autocomplete SQL query editor with syntax highlighting
-- Tabbed interface, so you can run multiple queries at once
+- Tabbed interface, so you can multitask
+- Sort and filter table data to find just what you need
 - Sensible keyboard-shortcuts
 - Save queries for later
 - Query run-history, so you can find that one query you got working 3 days ago
