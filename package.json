@@ -24,7 +24,7 @@
     "codemirror": "^5.48.2",
     "core-js": "^3.4.4",
     "dateformat": "^3.0.3",
-    "jquery": "^3.4.1",
+    "jquery": "^3.5.0",
     "lodash": "^4.17.15",
     "material-icons": "^0.3.1",
     "mssql": "^5.1.0",
