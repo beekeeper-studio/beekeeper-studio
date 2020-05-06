@@ -4,6 +4,7 @@ import sqlite3 from 'sqlite3';
 import { identify } from 'sql-query-identifier';
 
 import createLogger from '../../logger';
+import { genericSelectTop } from './utils';
 
 const logger = createLogger('db:clients:sqlite');
 
@@ -36,6 +37,7 @@ export default async function (server, database) {
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: () => listDatabases(conn),
+    selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -64,6 +66,11 @@ export function wrapIdentifier(value) {
 
 export function getQuerySelectTop(client, table, limit) {
   return `SELECT * FROM ${wrapIdentifier(table)} LIMIT ${limit}`;
+}
+
+export async function selectTop(conn, table, offset, limit, orderBy, filters) {
+  return genericSelectTop(conn, table, offset, limit, orderBy, filters, driverExecuteQuery)
+
 }
 
 export function query(conn, queryText) {

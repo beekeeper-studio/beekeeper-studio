@@ -26,7 +26,7 @@
             <toggle class="dropdown right">
               <a class="btn-fab dropdown-toggle"><i class="material-icons">more_horiz</i></a>
               <target class="dropdown-menu show">
-                <a class="dropdown-item" @click.prevent="disconnect">Disconnect</a>
+                <a class="dropdown-item text-danger" @click.prevent="disconnect">Disconnect</a>
               </target>
             </toggle>
           </div>

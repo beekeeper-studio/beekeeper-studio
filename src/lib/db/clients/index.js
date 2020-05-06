@@ -21,8 +21,26 @@ export const CLIENTS = [
     ],
   },
   {
+    key: 'mariadb',
+    name: 'MariaDB',
+    defaultPort: 3306,
+    disabledFeatures: [
+      'server:schema',
+      'server:domain',
+    ],
+  },
+  {
     key: 'postgresql',
     name: 'PostgreSQL',
+    defaultDatabase: 'postgres',
+    defaultPort: 5432,
+    disabledFeatures: [
+      'server:domain',
+    ],
+  },
+  {
+    key: 'redshift',
+    name: 'Amazon Redshift',
     defaultDatabase: 'postgres',
     defaultPort: 5432,
     disabledFeatures: [
@@ -74,4 +92,6 @@ export default {
   sqlserver,
   sqlite,
   cassandra,
+  redshift: postgresql,
+  mariadb: mysql
 };

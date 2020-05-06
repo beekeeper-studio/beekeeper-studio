@@ -1,0 +1,11 @@
+
+
+export default {
+    dataToTabulator() {
+
+    },
+
+    dataToColumns() {
+        
+    }
+}

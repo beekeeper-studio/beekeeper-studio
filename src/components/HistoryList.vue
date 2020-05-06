@@ -6,7 +6,7 @@
           <span class="item-text expand truncate">
             {{nicelySized(item.text)}}
           </span>
-          <span class="badge">{{item.database}}</span>
+          <span class="badge"><span>{{item.database}}</span></span>
         </a>
       </div>
     </nav>

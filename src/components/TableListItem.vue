@@ -1,12 +1,14 @@
 <template>
   <div class="list-item">
-    <a class="list-item-btn" role="button" v-bind:class="{'active': selected,'open': showColumns }" @click="toggleColumns" @dblclick.prevent="doubleClick" @click.prevent="$emit('selected', table)">
+    <a class="list-item-btn" role="button" v-bind:class="{'active': selected,'open': showColumns }" @click="toggleColumns" @click.prevent="$emit('selected', table)">
       <span class="btn-fab open-close" >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
-      <i class="item-icon material-icons">grid_on</i>
+      <i v-if="table.entityType === 'table'" title="Table" class="table-icon item-icon material-icons">grid_on</i>
+      <i v-if="table.entityType === 'view'" title="View" class="view-icon item-icon material-icons">grid_on</i>
       <span class="table-name truncate expand">{{table.name}}</span>
       <span class="actions" v-bind:class="{'pinned': pinned.includes(table)}">
+        <span class="btn-fab launch" title="Open in a new tab" @click.prevent="openTable"><i class="material-icons">launch</i></span>
         <span v-if="!pinned.includes(table)" @click.prevent.stop="pin" class="btn-fab pin"><i class="bk-pin"></i></span>
         <span v-if="pinned.includes(table)" @click.prevent.stop="unpin" class="btn-fab unpin"><i class="material-icons">clear</i></span>
         <span v-if="pinned.includes(table)" class="btn-fab pinned"><i class="bk-pin"></i></span>
@@ -15,7 +17,7 @@
     <div v-show="showColumns" class="sub-items">
       <span v-bind:key="c.columnName" v-for="c in table.columns" class="sub-item">
         <span class="title">{{c.columnName}}</span>
-        <span class="badge" v-bind:class="c.dataType">{{c.dataType}}</span>
+        <span class="badge" v-bind:class="c.dataType"><span>{{c.dataType}}</span></span>
       </span>
     </div>
   </div>
@@ -56,8 +58,8 @@
       async toggleColumns() {
         this.showColumns = !this.showColumns
       },
-      doubleClick() {
-        // TODO (matthew): Load table tab when double clicking
+      openTable() {
+        this.$root.$emit("loadTable", this.table);
       },
       pin() {
         this.$store.dispatch('pinTable', this.table)

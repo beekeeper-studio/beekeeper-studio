@@ -51,6 +51,7 @@ export default async function (server, database) {
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
     executeQuery: (queryText, schema = defaultSchema) => executeQuery(conn, queryText, schema),
     listDatabases: (filter) => listDatabases(conn, filter),
+    selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
     getTableCreateScript: (table, schema = defaultSchema) => getTableCreateScript(conn, table, schema),
     getViewCreateScript: (view, schema = defaultSchema) => getViewCreateScript(conn, view, schema),
@@ -65,7 +66,7 @@ export function disconnect(conn) {
 }
 
 
-export async function listTables(conn, filter) {
+export async function listTables(conn, filter = { schema: 'public' }) {
   const schemaFilter = buildSchemaFilter(filter, 'table_schema');
   const sql = `
     SELECT
@@ -82,7 +83,7 @@ export async function listTables(conn, filter) {
   return data.rows;
 }
 
-export async function listViews(conn, filter) {
+export async function listViews(conn, filter = { schema: 'public' }) {
   const schemaFilter = buildSchemaFilter(filter, 'table_schema');
   const sql = `
     SELECT
@@ -96,6 +97,58 @@ export async function listViews(conn, filter) {
   const data = await driverExecuteQuery(conn, { query: sql });
 
   return data.rows;
+}
+
+export async function selectTop(conn, table, offset, limit, orderBy, filters) {
+  let orderByString = ""
+  let filterString = ""
+  let params = null
+
+  if (orderBy && orderBy.length > 0) {
+    orderByString = "order by " + (orderBy.map((item) => {
+      if (Array.isArray(item)) {
+        return item.join(" ")
+      } else {
+        return item
+      }
+    })).join(",")
+  }
+
+  if (filters && filters.length > 0) {
+    filterString = "WHERE " + filters.map((item, index) => {
+      return `${item.field} ${item.type} $${index + 1}`
+    }).join(" AND ")
+
+    params = filters.map((item) => {
+      return item.value
+    })
+  }
+
+  let baseSQL = `
+    FROM ${table}
+    ${filterString}
+  `
+  let countQuery = `
+    select count(1) as total ${baseSQL}
+  `
+  let query = `
+    SELECT * ${baseSQL}
+    ${orderByString}
+    LIMIT ${limit}
+    OFFSET ${offset}
+    `
+
+  logger().debug(countQuery)
+  logger().debug(query)
+
+  const countResults = await driverExecuteQuery(conn, { query: countQuery, params })
+  const result = await driverExecuteQuery(conn, { query, params })
+  const rowWithTotal = countResults.rows.find((row) => { return row.total })
+  const totalRecords = rowWithTotal ? rowWithTotal.total : 0
+  return {
+    result: result.rows,
+    totalRecords
+  }
 }
 
 export async function listRoutines(conn, filter) {

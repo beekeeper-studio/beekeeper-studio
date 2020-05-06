@@ -41,10 +41,11 @@ export default {
   defaults: {
     connectionTypes: [
       { name: 'MySQL', value: 'mysql' },
+      { name: 'MariaDB', value: 'mariadb'},
       { name: 'Postgres', value: 'postgresql' },
       { name: 'SQLite', value: 'sqlite' },
       { name: 'SQL Server', value: 'sqlserver' },
-      { name: 'Amazon Redshift', value: 'redshift' }
+      { name: 'Amazon Redshift', value: 'redshift' },
     ],
     ports: {
       'mysql': 3306,

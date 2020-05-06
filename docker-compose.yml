@@ -3,6 +3,7 @@ volumes:
   mssql:
   psql:
   mysql:
+  mariadb:
 
 services:
   psql:
@@ -16,6 +17,17 @@ services:
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
+  mariadb:
+    image: mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: test
+    ports:
+      - 3307:3306
+    volumes:
+      - mariadb:/var/lib/mysql
+      - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
   mysql:
     image: mysql:5.7.22
     command: --default-authentication-plugin=mysql_native_password

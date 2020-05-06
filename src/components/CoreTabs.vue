@@ -25,7 +25,7 @@
         :class="{show: (activeTab === tab), active: (activeTab === tab)}"
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab == tab" :tab="tab" :connection="connection"></QueryEditor>
-        <div v-if="tab.type === 'table'">TABLE</div>
+        <TableTable v-if="tab.type === 'table'" :connection="tab.connection" :table="tab.table"></TableTable>
       </div>
     </div>
   </div>
@@ -39,11 +39,11 @@
   import config from '../config'
   import CoreTabHeader from './CoreTabHeader'
   import { uuidv4 } from '@/lib/crypto'
-
+  import TableTable from './tableview/TableTable'
 
   export default {
     props: [ 'connection' ],
-    components: { QueryEditor, CoreTabHeader },
+    components: { QueryEditor, CoreTabHeader, TableTable },
     data() {
       return {
         tabItems: [],
@@ -73,10 +73,10 @@
         const newTab = cmdOrCtrl + '+t'
         const result = {
           'ctrl+tab': this.nextTab,
-          'ctrl+shift+tab': this.previousTab,
-          'ctrl+w': this.closeTab
+          'ctrl+shift+tab': this.previousTab
         }
         result[newTab] = this.handleCreateTab
+        result[`${cmdOrCtrl}+w`] = this.closeTab
         return result
       }
     },
@@ -129,12 +129,20 @@
       openTable(table) {
         // todo (matthew): trigger this from a vuex event
         const t = {
-          title: _.capitalize(table.name),
+          id: uuidv4(),
+          type: 'table',
           table: table,
-          type: "table",
           connection: this.connection
         }
-        this.tabItems.push(t)
+        this.addTab(t)
+      },
+      openSettings(settings) {
+        const t = {
+          title: "Settings",
+          settings,
+          type: 'settings'
+        }
+        this.addTab(t)
       },
       click(tab) {
         this.activeTab = tab
@@ -161,6 +169,8 @@
         this.createQuery(item.text)
       })
 
+      this.$root.$on('loadTable', this.openTable)
+      this.$root.$on('loadSettings', this.openSettings)
       this.$root.$on('favoriteClick', (item) => {
 
         const queriesOnly = this.tabItems.map((item) => {

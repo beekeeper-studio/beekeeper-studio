@@ -32,6 +32,7 @@ export function createConnection(server, database) {
     query: query.bind(null, server, database),
     executeQuery: executeQuery.bind(null, server, database),
     listDatabases: listDatabases.bind(null, server, database),
+    selectTop: selectTop.bind(null, server, database),
     getQuerySelectTop: getQuerySelectTop.bind(null, server, database),
     getTableCreateScript: getTableCreateScript.bind(null, server, database),
     getTableSelectScript: getTableSelectScript.bind(null, server, database),
@@ -122,6 +123,11 @@ function disconnect(server, database) {
   if (server.db[database.database]) {
     delete server.db[database.database];
   }
+}
+
+function selectTop(server, database, table, offset, limit, orderBy, filters) {
+  checkIsConnected(server, database)
+  return database.connection.selectTop(table, offset, limit, orderBy, filters);
 }
 
 function listSchemas(server, database, filter) {
