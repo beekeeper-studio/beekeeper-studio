@@ -20,8 +20,10 @@ Beekeeper Studio supports connecting to the following databases:
 
 - SQLite
 - MySQL
+- MariaDB
 - Postgres
 - SQL Server
+- Amazon Redshift
 
 ## Installation
 
