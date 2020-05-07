@@ -126,11 +126,11 @@
           return this.tables
         }
         const startsWithFilter = _(this.tables)
-          .filter((item) => _.startsWith(item.name, this.filterQuery))
+          .filter((item) => _.startsWith(item.name.toLowerCase(), this.filterQuery.toLowerCase()))
           .value()
         const containsFilter = _(this.tables)
           .difference(startsWithFilter)
-          .filter((item) => item.name.includes(this.filterQuery))
+          .filter((item) => item.name.toLowerCase().includes(this.filterQuery.toLowerCase()))
           .value()
         return _.concat(startsWithFilter, containsFilter)
       },
