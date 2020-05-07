@@ -36,4 +36,6 @@ Please feel free to file issues, open pull requests, or comment on existing issu
 Building an inclusive and welcoming community is important to us, so please follow our code of conduct as you engage with the project.
 
 
+## Big Thanks
 
+Beekeeper Studio wouldn't exist without [Sqlectron-core](https://github.com/sqlectron/sqlectron-core), the core database libraries from the (now unmaintained) Sqlectron project. Beekeeper Studio started as an experimental fork of that repository. A big thanks to @maxcnunes and the rest of the Sqlectron community.
