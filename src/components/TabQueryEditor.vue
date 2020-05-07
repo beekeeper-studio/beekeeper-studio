@@ -223,6 +223,12 @@
       inQuote() {
         return false
       },
+      wrapIdentifier(value) {
+        if (value && this.connectionType === 'postgresql' && /[A-Z]/.test(value)) {
+          return `"${value.replace(/^"|"$/g, '')}"`
+        }
+        return value;
+      },
       maybeAutoComplete(editor, e) {
         // Currently this doesn't do anything.
         // BUGS:
@@ -316,21 +322,8 @@
             const { to, from, origin, text } = co;
             if (origin === 'complete') {
               let [tableName, colName] = text[0].split('.');
-              let replace = false;
-              if (/[A-Z]/.test(tableName)) {
-                tableName = tableName.replace(/^"|"$/g, '')
-                tableName = `"${tableName}"`;
-                replace = true;
-              }
-              if (/[A-Z]/.test(colName)) {
-                colName = colName.replace(/^"|"$/g, '')
-                colName = `"${colName}"`;
-                replace = true;
-              }
-              const newText = [[tableName, colName].filter(s => s).join('.')]
-              if (replace) {
-                co.update(from, to, newText, origin); 
-              }
+              const newText = [[this.wrapIdentifier(tableName), this.wrapIdentifier(colName)].filter(s => s).join('.')]
+              co.update(from, to, newText, origin); 
             }
           })
         }
