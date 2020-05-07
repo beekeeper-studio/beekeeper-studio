@@ -116,7 +116,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
 
   if (filters && filters.length > 0) {
     filterString = "WHERE " + filters.map((item, index) => {
-      return `${item.field} ${item.type} $${index + 1}`
+      return `${wrapIdentifier(item.field)} ${item.type} $${index + 1}`
     }).join(" AND ")
 
     params = filters.map((item) => {
@@ -125,7 +125,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   }
 
   let baseSQL = `
-    FROM ${table}
+    FROM ${wrapIdentifier(table)}
     ${filterString}
   `
   let countQuery = `

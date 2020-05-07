@@ -101,6 +101,7 @@ const store = new Vuex.Store({
       const server = ConnectionProvider.for(config)
       const connection = await server.createConnection(config.defaultDatabase)
       await connection.connect()
+      connection.connectionType = config.connectionType;
       const usedConfig = new UsedConnection(config)
       await usedConfig.save()
       context.commit('newConnection', {config: usedConfig, server, connection})
