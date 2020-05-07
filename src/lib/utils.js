@@ -1,6 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 
 import fs from 'fs';
+import {homedir} from 'os';
 import path from 'path';
 import mkdirp from 'mkdirp';
 import pf from 'portfinder';
@@ -35,12 +36,6 @@ export function ctrlOrCmd(otherKey) {
     return `ctrl+${otherKey}`
   }
 }
-
-
-export function homedir() {
-  return process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME'];
-}
-
 
 export function fileExists(filename) {
   return new Promise((resolve) => {
