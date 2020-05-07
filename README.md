@@ -12,7 +12,7 @@ Beekeeper Studio is a free and open source SQL editor and database manager. Beek
 - Query run-history, so you can find that one query you got working 3 days ago
 - Default dark theme
 
-One of our frustrations with other open-source SQL editors and database managers is that they take a 'kitchen sink' approach to features, adding so many features that the UI becomes cluttered and hard to navigate. We wanted a good looking, open source SQL workbench that powerful, but also easy to use. We couldn't fine one, so we created it!
+One of our frustrations with other open-source SQL editors and database managers is that they take a 'kitchen sink' approach to features, adding so many features that the UI becomes cluttered and hard to navigate. We wanted a good looking, open source SQL workbench that powerful, but also easy to use. We couldn't find one, so we created it!
 
 ![SQL Editing Demo](https://raw.githubusercontent.com/beekeeper-studio/beekeeper-studio/master/screenshots/beekeeper-studio-demo.gif)
 
