@@ -30,6 +30,9 @@ const store = new Vuex.Store({
     pinned(state) {
       const result = state.pinStore[state.database]
       return _.isNil(result) ? [] : result
+    },
+    schemaTables(state){
+      return _.chain(state.tables).groupBy('schema').value()
     }
   },
   mutations: {
@@ -125,7 +128,7 @@ const store = new Vuex.Store({
       // Ideally here we would run all queries in parallel
       // however running through an SSH tunnel doesn't work
       // it only supports one query at a time.
-      const onlyTables = await context.state.connection.listTables()
+      const onlyTables = await context.state.connection.listTables({schema: null})
       onlyTables.forEach((t) => {
         t.entityType = 'table'
       })
