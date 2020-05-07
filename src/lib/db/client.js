@@ -89,6 +89,7 @@ async function connect(server, database) {
     database.connection = connection;
   } catch (err) {
     logger().error('Connection error %j', err);
+    console.log("connection error")
     disconnect(server, database);
     throw err;
   } finally {

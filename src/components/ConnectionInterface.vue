@@ -113,6 +113,7 @@
       this.config = this.defaultConfig
       this.config.sshUsername = os.userInfo().username
       this.$store.dispatch('loadSavedConfigs')
+      this.$store.dispatch('fetchUsername')
       this.$nextTick(() => {
         const components = [
           this.$refs.sidebar.$refs.sidebar,
@@ -170,7 +171,6 @@
         } catch(ex) {
           this.connectionError = ex.message
           this.$noty.error("Error establishing a connection")
-          return false
         } finally {
           this.testing = false
         }

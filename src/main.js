@@ -30,6 +30,7 @@ import Migration from './migration/index'
 
 (async () => {
   try {
+    process.env.PGPASSFILE = ".pgpass"
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
     const appDb = path.join(config.userDirectory, 'app.db')
     const connection = await createConnection({

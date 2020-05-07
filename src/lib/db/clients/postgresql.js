@@ -539,11 +539,17 @@ function configDatabase(server, database) {
   const config = {
     host: server.config.host,
     port: server.config.port,
-    user: server.config.user,
     password: server.config.password,
     database: database.database,
     max: 5, // max idle connections per time (30 secs)
   };
+
+  if (server.config.user) {
+    config.user = server.config.user
+  } else if (server.config.osUser) {
+    config.user = server.config.osUser
+  }
+
 
   if (server.sshTunnel) {
     config.host = server.config.localHost;
