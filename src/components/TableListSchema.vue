@@ -1,0 +1,48 @@
+<template>
+  <div class="list-item">
+    <a class="list-item-btn" role="button" @click.prevent="expanded = !expanded">
+      <span class="btn-fab open-close" >
+        <i v-if="expanded" class="dropdown-icon material-icons">keyboard_arrow_down</i>
+        <i v-else class="dropdown-icon material-icons">keyboard_arrow_right</i>
+      </span>
+      <i title="Schema" class="table-icon item-icon material-icons">dynamic_feed</i>
+      <span class="table-name truncate expand">{{title}}</span>
+    </a>
+    <div v-if="expanded" class="sub-items contents">
+      <slot name="contents"></slot>
+    </div>
+  </div>
+</template>
+
+<script type="text/javascript">
+
+	export default {
+		props: ["title"],
+    data() {
+      return {
+        expanded: false,
+      }
+    },
+    watch: {
+      forceExpand() {
+        if (this.forceExpand) {
+          this.showColumns = true
+        }
+      },
+      forceCollapse() {
+        if (this.forceCollapse) {
+          this.showColumns = false
+        }
+      },
+      showColumns() {
+        this.table.showColumns = this.showColumns
+      }
+    }
+	}
+</script>
+
+<style scoped>
+.sub-items.contents {
+  padding-left: 20px !important;
+}
+</style>
