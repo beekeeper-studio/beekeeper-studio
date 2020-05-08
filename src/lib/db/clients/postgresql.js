@@ -2,6 +2,7 @@
 
 import pg from 'pg';
 import { identify } from 'sql-query-identifier';
+import _ from 'lodash'
 
 import { buildDatabseFilter, buildSchemaFilter } from './utils';
 import createLogger from '../../logger';
@@ -563,13 +564,22 @@ function configDatabase(server, database) {
   return config;
 }
 
+const typesById = _.invert(pg.types)
+
+function parseFields(fields) {
+  return fields.map((field) => {
+    field.dataType = typesById[field.dataTypeID]
+    return field
+  })
+}
+
 
 function parseRowQueryResult(data, command) {
   const isSelect = data.command === 'SELECT';
   return {
     command: command || data.command,
     rows: data.rows,
-    fields: data.fields,
+    fields: parseFields(data.fields),
     rowCount: isSelect ? (data.rowCount || data.rows.length) : undefined,
     affectedRows: !isSelect && !isNaN(data.rowCount) ? data.rowCount : undefined,
   };

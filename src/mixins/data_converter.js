@@ -12,14 +12,10 @@ export default {
                 {id:5, name:"Margret Marmajuke", age:"16", col:"yellow", dob:"31/01/1999"},
               ];
             */
-            let columnArray = _.map(columns, (col) => {
-                return col.field
-            })
-            let result = _(data.rows)
-                .map((row) => {
-                    return _.pick(row, columnArray)
-                }).value()
-            return result
+          const columnNamesOnly = columns.map((c) => { return c.columnName })
+          return data.rows.map((row) => {
+            return _.pick(row, columnNamesOnly)
+          })
         },
         extractColumns(data) {
             // columns here
@@ -38,7 +34,8 @@ export default {
 
                 const result = {
                     title: item.name,
-                    field: item.name
+                    field: item.name,
+                    dataType: item.dataType
                 }
                 return result
             })
