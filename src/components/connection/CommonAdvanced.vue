@@ -33,7 +33,12 @@
         </div>
         <div class="col s6 form-group">
           <label for="sshKeyfile">Private Key File</label>
-          <input class="form-control" type="file" @change="setKeyfile">
+          <div class="input-group" @click.prevent="openFilePickerDialog">
+            <input type="text" class="form-control clickable" placeholder="No file selected" :value="config.sshKeyfile" readonly>
+            <div class="input-group-append">
+              <button class="btn btn-small btn-flat">Choose file</button>
+            </div>
+          </div>
         </div>
         <div class="col s6 form-group">
           <label for="sshKeyfilePassword">Key File PassPhrase <span class="hint">(Optional)</span></label>
@@ -68,6 +73,8 @@
   </div>
 </template>
 <script>
+  import { remote } from 'electron'
+
   export default {
     props: ['config'],
     data() {
@@ -87,8 +94,14 @@
       setMode(option) {
         this.config.sshMode = option.mode
       },
-      setKeyfile(e) {
-        this.config.sshKeyfile = e.target.files[0].path
+      openFilePickerDialog() {
+        const file = remote.dialog.showOpenDialogSync({
+          properties: ['openFile', 'showHiddenFiles']
+        })
+
+        if (file) {
+          this.config.sshKeyfile = file
+        }
       }
     }
   }
