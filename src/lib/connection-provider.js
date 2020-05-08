@@ -4,10 +4,8 @@ import { createServer } from './db/index.js'
 
 export default {
 
-  convertConfig(config) {
-
+  convertConfig(config, osUsername) {
     const ssh = config.sshEnabled ? {} : null
-
     if (ssh) {
       ssh.host = config.sshHost
       ssh.port = config.sshPort
@@ -23,14 +21,15 @@ export default {
       port: config.port,
       socketPath: null,
       user: config.username,
+      osUser: osUsername,
       password: config.password,
       ssh: ssh,
       ssl: config.ssl
     }
   },
 
-  for(config) {
-    let convertedConfig = this.convertConfig(config)
+  for(config, osUsername) {
+    let convertedConfig = this.convertConfig(config, osUsername)
     const server = createServer(convertedConfig)
     return server
   }
