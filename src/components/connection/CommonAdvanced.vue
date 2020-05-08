@@ -74,6 +74,7 @@
 </template>
 <script>
   import { remote } from 'electron'
+  import { join as pathJoin } from 'path'
 
   export default {
     props: ['config'],
@@ -96,6 +97,7 @@
       },
       openFilePickerDialog() {
         const file = remote.dialog.showOpenDialogSync({
+          defaultPath: pathJoin(remote.app.getPath('home'), '.ssh'),
           properties: ['openFile', 'showHiddenFiles']
         })
 
