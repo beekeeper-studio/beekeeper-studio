@@ -59,6 +59,30 @@
       </form>
     </modal>
 
+    <!-- Parameter modal -->
+    <modal class="vue-dialog beekeeper-modal" name="parameters-modal" @closed="selectEditor" height="auto" :scrollable="true">
+      <form @submit.prevent="deparameterizeQuery">
+        <div class="dialog-content">
+          <div class="dialog-c-title">Provide parameter values</div>
+          <div class="modal-form">
+            <div class="form-group">
+                <div v-for="(param, index) in queryParameterPlaceholders" v-bind:key="index">
+                  <div class="form-group row">
+                    <label>{{param}}</label>
+                    <input type="text" class="form-control" v-model="queryParameterValues[param]" autofocus>
+                  </div>
+                </div>
+            </div>
+          </div>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('parameters-modal')">Cancel</button>
+          <button class="btn btn-primary" type="submit">Run</button>
+        </div>
+      </form>
+    </modal>
+
+
   </div>
 </template>
 
@@ -92,6 +116,10 @@
         unsavedText: null,
         saveError: null,
         lastWord: null,
+
+        queryParameterPlaceholders: null,
+        queryParameterValues: {},
+        deparameterizeQueryResolve: null,
       }
     },
     computed: {
@@ -206,12 +234,31 @@
           this.tab.unsavedChanges = false
         }
       },
+      escapeRegExp(string) {
+        return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
+      },
+      deparameterizeQuery() {
+        let query = this.editor.getValue()
+        _.each(this.queryParameterPlaceholders, param => {
+          query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`), `$1${this.queryParameterValues[param]}$2`)
+        });
+        return this.deparameterizeQueryResolve(query);
+      },
       async submitQuery() {
         this.running = true
         this.results = []
         this.selectedResult = 0
         try {
-          const runningQuery = this.connection.query(this.editor.getValue())
+          let query = this.editor.getValue();
+
+          this.queryParameterPlaceholders = this.getQueryParameterPlaceholders()
+          if (this.queryParameterPlaceholders) {
+            this.$modal.show('parameters-modal')
+            query = await new Promise(resolve => this.deparameterizeQueryResolve = resolve);
+            this.$modal.hide('parameters-modal')
+          }
+
+          const runningQuery = this.connection.query(query);
           const results = await runningQuery.execute()
           let totalRows = 0
           results.forEach(result => {
@@ -273,7 +320,25 @@
             console.log('no keyup space autocomplete')
           }
         }
-      }
+      },
+      getQueryParameterPlaceholders() {
+        const query = this.editor.getValue()
+        if (this.connectionType === "postgresql") {
+          // Get parameter placeholders that follow the patterns:
+          // :project_id, :user_id
+          // $1, $2
+          // Positional ? parameters are not yet supported
+          const namedAndNumberedParams = Array.from(query.matchAll(/(?:\W|^)(:\w+|\$\d+)(?:\W|$)/g)).map(match => match[1])
+          
+          if (!namedAndNumberedParams.length) {
+            return null;
+          }
+
+          return _.uniq(namedAndNumberedParams);
+        }
+
+        return null;
+      },
     },
     mounted() {
       const $editor = this.$refs.editor
@@ -291,8 +356,6 @@
       }
 
       this.$nextTick(() => {
-
-
         this.split = Split(this.splitElements, {
           elementStyle: (dimension, size) => ({
               'flex-basis': `calc(${size}%)`,
@@ -355,9 +418,7 @@
           this.tableHeight = this.$refs.bottomPanel.clientHeight
           this.updateEditorHeight()
         }, 1)
-
       })
-
     },
     beforeDestroy() {
       if(this.split) {
