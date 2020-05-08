@@ -53,7 +53,10 @@ module.exports = {
         win: {
           icon: './public/icons/png/512x512.png',
           target: ['nsis', 'portable']
-        }
+        },
+        portable: {
+          "artifactName": "${productName}-${version}-portable.exe",
+        },
       }
     }
   },
