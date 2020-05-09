@@ -10,10 +10,27 @@
         <input type="number" class="form-control" name="port" v-model.number="config.port">
       </div>
     </div>
-    <label for="ssl" class="checkbox-group row">
-      <input id="ssl" type="checkbox" name="ssl" class="form-control" v-model="config.ssl" >
-      <span>Enable SSL</span>
-    </label>
+
+    <div class="advanced-connection-settings">
+      <h4 class="advanced-heading flex" :class="{enabled: config.ssl}">
+        <span class="expand">Enable SSL</span>
+        <i class="material-icons" @click.prevent="config.ssl = !config.ssl">
+          {{ config.ssl ? 'toggle_on' : 'toggle_off' }}
+        </i>
+      </h4>
+      <div class="advanced-body" v-show="config.ssl">
+        <div class="row gutter">
+          <div class="col form-group">
+            <label for="sshKeyfile">CA certificate (optional)</label>
+            <file-picker
+              v-model="config.sslCaFile"
+              :show-hidden-files="true">
+            </file-picker>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="row gutter">
       <div class="col s6 form-group">
         <label for="user">User</label>
@@ -39,7 +56,12 @@
 </template>
 
 <script>
+  import FilePicker from '@/components/form/FilePicker'
+
   export default {
-    props: ['config']
+    props: ['config'],
+    components: {
+      FilePicker
+    }
   }
 </script>

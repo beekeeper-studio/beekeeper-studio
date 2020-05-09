@@ -29,6 +29,7 @@ import Migration from './migration/index'
 
 
 (async () => {
+    console.log(config.userDirectory)
   try {
     process.env.PGPASSFILE = ".pgpass"
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
