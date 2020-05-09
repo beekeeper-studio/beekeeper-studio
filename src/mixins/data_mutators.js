@@ -15,11 +15,5 @@ export default {
       if (_.isArray(value)) return JSON.stringify(value)
       return value
     },
-    jsonMutator(value) {
-      if (!value) {
-        return NULL
-      }
-      return JSON.stringify(value)
-    }
   }
 }
