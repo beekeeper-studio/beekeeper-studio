@@ -13,13 +13,14 @@ import { remote } from 'electron'
 export default {
   props: {
     value: {
-      type: String,
-      required: true
+      required: true,
+      // Allow String or null
+      validator: prop => typeof prop === 'string' || prop === null
     },
     defaultPath: {
       type: String,
       required: false,
-      default: null
+      default: ''
     },
     showHiddenFiles: {
       type: Boolean,
@@ -35,14 +36,18 @@ export default {
   methods: {
     openFilePickerDialog() {
       const dialogConfig = {
-        defaultPath: this.defaultPath,
         properties: ['openFile']
+      }
+
+      if (this.defaultPath.toString().length > 0) {
+        dialogConfig.defaultPath = this.defaultPath
       }
 
       if (this.showHiddenFiles) {
         dialogConfig.properties.push('showHiddenFiles')
       }
 
+      // Show dialog extending default config with provided custom config
       const file = remote.dialog.showOpenDialogSync({
         ...dialogConfig,
         ...this.options
