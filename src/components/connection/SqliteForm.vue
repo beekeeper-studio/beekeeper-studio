@@ -4,7 +4,7 @@
       <div class="row gutter">
         <div class="col form-group">
           <label for="Database" required>Database File</label>
-          <input type="file" @change="setDatabaseFile">
+          <file-picker v-model="config.defaultDatabase"></file-picker>
         </div>
       </div>
     </div>
@@ -12,12 +12,11 @@
 </template>
 
 <script>
+  import FilePicker from '@/components/form/FilePicker'
   export default {
     props: ['config'],
-    methods: {
-      setDatabaseFile(event) {
-        this.config.defaultDatabase = event.target.files[0].path
-      }
+    components: {
+      FilePicker
     }
   }
 </script>
