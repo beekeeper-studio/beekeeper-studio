@@ -86,10 +86,13 @@ export default {
   computed: {
     tableColumns() {
       return this.table.columns.map(column => {
-        const result = { title: column.columnName, field: column.columnName };
-        result.mutatorData = this.resolveDataMutator(column.dataType)
+        const result = { 
+          title: column.columnName,
+          field: column.columnName,
+          mutatorData: this.resolveDataMutator(column.dataType),
+          dataType: column.dataType
+        }
         return result
-        
       });
     },
     filterValue() {
@@ -178,7 +181,7 @@ export default {
             );
             const r = response.result;
             const totalRecords = response.totalRecords;
-            const data = this.dataToTableData({ rows: r }, this.table.columns);
+            const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data
             resolve({
               last_page: Math.ceil(totalRecords / limit),

@@ -1,17 +1,18 @@
-
-const NULL = '[NULL]'
+import _ from 'lodash'
+const NULL = '(NULL)'
 
 export default {
 
   methods: {
 
-    resolveDataMutator(fieldType) {
-      if (fieldType.toLowerCase().includes("json")) return this.jsonMutator
+    resolveDataMutator() {
       return this.genericMutator
     },
 
     genericMutator(value) {
       if (!value) return NULL
+      if (_.isObject(value)) return JSON.stringify(value)
+      if (_.isArray(value)) return JSON.stringify(value)
       return value
     },
     jsonMutator(value) {

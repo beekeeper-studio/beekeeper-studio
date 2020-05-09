@@ -43,11 +43,13 @@
       },
       tableColumns() {
           return this.result.fields.map((column) => {
-            return {
+            const result = {
               title: column.name,
               field: column.name,
+              dataType: column.dataType,
               mutatorData: this.resolveDataMutator(column.dataType)
             }
+            return result;
           })
       },
       actualTableHeight() {
