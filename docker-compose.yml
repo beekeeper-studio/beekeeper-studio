@@ -4,6 +4,7 @@ volumes:
   psql:
   mysql:
   mariadb:
+  cockroachdb:
 
 services:
   psql:
@@ -53,5 +54,12 @@ services:
     ports:
       - 1433:1433
     command: sh -c ' chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /opt/mssql/bin/sqlservr;'
+  cockroachdb:
+    image: cockroachdb/cockroach
+    volumes:
+      - cockroachdb:/cockroach/cockroach-data
+      - ./dev/docker_cockroachdb_init:/docker-entrypoint-initdb.d
+    ports:
+      - 26257:26257
 
 

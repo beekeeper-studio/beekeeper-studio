@@ -44,6 +44,14 @@ export default {
       password: 'Example@1',
       defaultDatabase: 'sakila'
     }
+    {
+      name: "[DEV] Docker CockroachDB",
+      connectionType: 'postgresql',
+      port: 26257,
+      username: 'root',
+      password: '',
+      defaultDatabase: 'defaultdb'
+    },
   ],
 
   async run() {

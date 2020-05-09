@@ -27,6 +27,7 @@
               </div>
               <div v-if="config.connectionType">
                 <!-- INDIVIDUAL DB CONFIGS -->
+                <postgres-form v-if="config.connectionType === 'cockroachdb'" :config="config" :testing="testing"></postgres-form>
                 <mysql-form v-if="['mysql', 'mariadb'].includes(config.connectionType)" :config="config" :testing="testing" @save="save" @test="testConnection" @connect="submit"></mysql-form>
                 <postgres-form v-if="config.connectionType === 'postgresql'" :config="config" :testing="testing"></postgres-form>
                 <postgres-form v-if="config.connectionType === 'redshift'" :config="config" :testing="testing"></postgres-form>
@@ -144,6 +145,8 @@
           this.config.port = 5432
         } else if(this.config.connectionType === 'sqlserver') {
           this.config.port = 1433
+        } else if(this.config.connectionType === 'cockroachdb') {
+          this.config.port = 26257
         }
       },
       async submit() {
