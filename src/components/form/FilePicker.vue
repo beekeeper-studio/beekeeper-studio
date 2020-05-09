@@ -14,8 +14,6 @@ export default {
   props: {
     value: {
       required: true,
-      // Allow String or null
-      validator: prop => typeof prop === 'string' || prop === null
     },
     defaultPath: {
       type: String,
