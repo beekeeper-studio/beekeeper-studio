@@ -55,6 +55,14 @@ function createWindow () {
   })
 
 
+  const finishLoadListener = () => {
+    win.webContents.reload()
+    win.webContents.removeListener('did-finish-load', finishLoadListener)
+  }
+  if(process.env.WEBPACK_DEV_SERVER_URL && isWindows) {
+    win.webContents.on('did-finish-load', finishLoadListener)
+  }
+
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode

@@ -20,7 +20,7 @@
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <span>Pinned ({{pinned.length}})</span>
+            <div>Pinned <span>({{pinned.length}})</span></div>
           </div>
           <!-- <div class="actions">
             <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
@@ -57,7 +57,7 @@
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <span>Tables ({{tables.length}})</span>
+            <div>Tables & Views <span>({{tables.length}})</span></div>
           </div>
           <div class="actions">
             <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
@@ -126,11 +126,11 @@
           return this.tables
         }
         const startsWithFilter = _(this.tables)
-          .filter((item) => _.startsWith(item.name, this.filterQuery))
+          .filter((item) => _.startsWith(item.name.toLowerCase(), this.filterQuery.toLowerCase()))
           .value()
         const containsFilter = _(this.tables)
           .difference(startsWithFilter)
-          .filter((item) => item.name.includes(this.filterQuery))
+          .filter((item) => item.name.toLowerCase().includes(this.filterQuery.toLowerCase()))
           .value()
         return _.concat(startsWithFilter, containsFilter)
       },

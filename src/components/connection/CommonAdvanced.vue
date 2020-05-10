@@ -85,7 +85,6 @@
     },
     methods: {
       setMode(option) {
-        console.log("selected", option)
         this.config.sshMode = option.mode
       },
       setKeyfile(e) {

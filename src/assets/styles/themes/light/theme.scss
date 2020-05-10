@@ -1,0 +1,117 @@
+@import "~codemirror/theme/xq-light";
+@import "./app/vendor/codemirror";
+
+$titlebar-bg:              darken($theme-bg, 2.5%);
+$connection-main-bg:       white;
+
+// Sidebar
+$sidebar-bg:               rgba($theme-base, 0.06);
+$sidebar-heading:          darken($theme-bg, 4.5%);
+$sidebar-list-icons:       darken($theme-primary, 15%);
+$sidebar-badge:            rgba($theme-base, 0.1);
+
+// Editor
+$tabs-heading:             rgba($theme-base, 0.08);
+$tab-link:                 rgba($theme-bg, 0.2);
+$codemirror-hint-bg:       darken($theme-bg, 2%);
+$tabulator-heading:        rgba($theme-base, 0.025);
+$editor-statusbar:         rgba($theme-base, 0.035);
+
+// Base Styles
+// -----------------------------------------
+& {
+  background: $theme-bg;
+  color: $text;
+}
+.btn {
+  box-shadow: inset 0 0 0 1px rgba($theme-base, 0.035);
+}
+.btn-link, .btn-fab {
+  box-shadow: none;
+}
+.form-control, input, select, textarea {
+  background: rgba($theme-bg, 0.1);
+}
+.list-group {
+  .item-icon {
+    color: $sidebar-list-icons;
+  }
+  .list-item-btn {
+    .actions {
+      .btn-fab.pinned {
+        i {
+          color: $text-dark;
+        }
+      }
+    }
+  }
+}
+
+// Layout
+// ---------------------------------------
+.titlebar {
+  background: $titlebar-bg;
+}
+.connection-main {
+  background: $connection-main-bg;
+}
+
+// Sidebar
+// ---------------------------------------
+#sidebar {
+  background: $sidebar-bg;
+  .global-items {
+    background: darken($theme-bg, 2.5%);
+    .nav-item {
+      color: $text-light;
+    }
+  }
+  .sidebar-heading {
+    background: $sidebar-heading;
+    color: $text-dark;
+  }
+}
+.badge {
+  background: $sidebar-badge;
+}
+.advanced-connection-settings {
+  background: rgba($theme-base, 0.05);
+}
+
+// Editor
+// ---------------------------------------
+.core-tabs {
+  .tabs-header {
+    background: $tabs-heading;
+  }
+  .nav-tabs {
+    .nav-link {
+      background: $tab-link;
+    }
+    .tab-close.unsaved {
+      .unsaved-icon {
+        color: $text-lighter;
+      }
+    }
+  }
+}
+.query-editor {
+  background: $theme-bg;
+  .bottom-panel {
+    .status-bar {
+      background: $editor-statusbar;
+    }
+  }
+}
+
+// Tabulator
+.tabulator {
+  .tabulator-header {
+    background: $tabulator-heading;
+  }
+}
+
+// CodeMirror
+.CodeMirror-hints {
+  background: $codemirror-hint-bg;
+}

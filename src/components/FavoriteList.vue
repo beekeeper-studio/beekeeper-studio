@@ -3,8 +3,9 @@
     <nav class="list-group" v-if="favorites">
       <div class="list-item" v-for="item in favorites" v-bind:key="item.id">
         <a class="list-item-btn" @click.prevent="click(item)">
-          <span class="item-text title truncate">{{item.title}}</span>
-          <span class="badge database">{{item.database}}</span>
+          <i class="item-icon query material-icons">code</i>
+          <span class="item-text title truncate expand" :title="item.title">{{item.title}}</span>
+          <span class="badge database"><span :title="item.database" >{{item.database}}</span></span>
         </a>
       </div>
     </nav>

@@ -1,6 +1,10 @@
 
 import a from './20200101'
 import b from './20200422'
+import dev1 from './dev-1'
+import createLogger from '../lib/logger'
+
+const logger = createLogger('migrations')()
 
 const setupSQL = `
  CREATE TABLE IF NOT EXISTS BK_MIGRATIONS(
@@ -8,8 +12,9 @@ const setupSQL = `
    run_at datetime NOT NULL DEFAULT (datetime('now'))
  )
 `
+// put dev migrations at the end
 const migrations = [
-a, b
+a, b, dev1
 ]
 
 const Manager = {
@@ -28,8 +33,9 @@ const Manager = {
 
 
 export default class {
-  constructor(connection) {
+  constructor(connection, env) {
     this.connection = connection
+    this.env = env
   }
 
   async run() {
@@ -40,10 +46,15 @@ export default class {
       // await runner.startTransaction()
       for(let i = 0; i < migrations.length; i++){
         const migration = migrations[i]
-        console.log(`Checking migration ${migration.name}`)
+        logger.debug(`Checking migration ${migration.name}`)
+        if(migration.env && migration.env !== this.env) {
+          // env defined, and does not match
+          logger.debug(`Skipping ${migration.name} in ${this.env}, required ${migration.env} `)
+          continue
+        }
         const hasRun = await Manager.checkExists(runner, migration.name)
         if (!hasRun) {
-          await migration.run(runner)
+          await migration.run(runner, this.env)
           await Manager.markExists(runner, migration.name)
         }
       }

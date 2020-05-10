@@ -2,6 +2,7 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
+import username from 'username'
 // import VueXPersistence from 'vuex-persist'
 
 import { UsedConnection } from '@/entity/used_connection'
@@ -24,7 +25,8 @@ const store = new Vuex.Store({
     pinStore: {},
     connectionConfigs: [],
     history: [],
-    favorites: []
+    favorites: [],
+    username: null
   },
   getters: {
     pinned(state) {
@@ -33,6 +35,9 @@ const store = new Vuex.Store({
     }
   },
   mutations: {
+    setUsername(state, name) {
+      state.username = name
+    },
     newConnection(state, payload) {
       state.server = payload.server
       state.usedConfig = payload.config
@@ -92,15 +97,21 @@ const store = new Vuex.Store({
 
     async test(context, config) {
       // TODO (matthew): fix this mess.
-      const server = ConnectionProvider.for(config)
+      const server = ConnectionProvider.for(config, context.state.username)
       await server.createConnection(config.defaultDatabase).connect()
       server.disconnect()
     },
 
+    async fetchUsername(context) {
+      const name = await username()
+      context.commit('setUsername', name)
+    },
+
     async connect(context, config) {
-      const server = ConnectionProvider.for(config)
+      const server = ConnectionProvider.for(config, context.state.username)
       const connection = await server.createConnection(config.defaultDatabase)
       await connection.connect()
+      connection.connectionType = config.connectionType;
       const usedConfig = new UsedConnection(config)
       await usedConfig.save()
       context.commit('newConnection', {config: usedConfig, server, connection})
@@ -109,6 +120,7 @@ const store = new Vuex.Store({
       const server = context.state.server
       server.disconnect()
       context.commit('clearConnection')
+      context.commit('tables', [])
     },
     async changeDatabase(context, newDatabase) {
       const server = context.state.server
@@ -124,7 +136,15 @@ const store = new Vuex.Store({
       // Ideally here we would run all queries in parallel
       // however running through an SSH tunnel doesn't work
       // it only supports one query at a time.
-      const tables = await context.state.connection.listTables()
+      const onlyTables = await context.state.connection.listTables()
+      onlyTables.forEach((t) => {
+        t.entityType = 'table'
+      })
+      const views = await context.state.connection.listViews()
+      views.forEach((v) => {
+        v.entityType = 'view'
+      })
+      const tables = onlyTables.concat(views)
       for(let i = 0; i < tables.length; i++) {
         const table = tables[i]
         const columns = await context.state.connection.listTableColumns(table.name)

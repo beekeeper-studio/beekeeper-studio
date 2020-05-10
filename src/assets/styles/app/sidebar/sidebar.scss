@@ -150,8 +150,13 @@
   background: rgba($theme-base, 0.06);
   .sub {
     line-height: $list-heading-height;
-    span {
+    div {
       padding-top: 1px;
+      color: $text-dark;
+    }
+    span {
+      font-weight: normal;
+      color: $text-light;
     }
   }
   .actions {
@@ -204,12 +209,30 @@
       background: rgba($theme-base, 0.03);
       .actions {
         display: flex;
+        .btn-fab {
+          &.launch {
+            display: inline-flex;
+          }
+        }
       }
     }
     &.open {
       background: rgba($theme-base, 0.03);
       .open-close {
         transform: rotate(90deg);
+      }
+    }
+    .item-text {
+      font-size: 0.95rem;
+    }
+    .badge {
+      display: inline-flex;
+      direction: rtl;
+      max-width: 50%;
+      overflow: hidden;
+      font-size: 0.8rem;
+      span {
+        @extend .truncate;
       }
     }
     .actions {
@@ -219,17 +242,19 @@
         display: inline-flex;
       }
       .btn-fab {
-        line-height: 22px;
         &:hover {
           i {
             color: $theme-base;
           }
         }
+        &.launch {
+          display: none;
+        }
         &.unpin {
           display: none;
         }
         &.pinned {
-          display: inline-block;
+          display: inline-flex;
           i {
             color: $theme-primary;
           }
@@ -237,6 +262,7 @@
       }
       i {
         font-size: 14px;
+        line-height: 1.4;
         color: rgba($theme-base, 0.37);
         transition: color 0.15s ease-in-out;
       }
@@ -274,13 +300,9 @@
     }
   }
   .item-icon {
-    font-size: 12px;
     width: $sidebar-icon-w;
     min-width: $sidebar-icon-w;
     transition: transform 0.15s ease-in;
-    // color: lighten($theme-secondary, 15%);
-    color: $theme-primary;
-    opacity: 0.75;
   }
   .badge-info {
     background: $brand-info;

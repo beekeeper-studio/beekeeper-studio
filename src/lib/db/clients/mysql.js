@@ -6,6 +6,7 @@ import { identify } from 'sql-query-identifier';
 import createLogger from '../../logger';
 import { createCancelablePromise } from '../../utils';
 import errors from '../../errors';
+import { genericSelectTop } from './utils';
 
 const logger = createLogger('db:clients:mysql');
 
@@ -41,7 +42,8 @@ export default async function (server, database) {
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
-    getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
+    selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
+    w: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
     getRoutineCreateScript: (routine, type) => getRoutineCreateScript(conn, routine, type),
@@ -116,6 +118,10 @@ export async function listTableColumns(conn, database, table) {
     columnName: row.column_name,
     dataType: row.data_type,
   }));
+}
+
+export async function selectTop(conn, table, offset, limit, orderBy, filters) {
+  return genericSelectTop(conn, table, offset, limit, orderBy, filters, driverExecuteQuery)
 }
 
 export async function listTableTriggers(conn, table) {

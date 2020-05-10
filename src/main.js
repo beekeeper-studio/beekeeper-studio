@@ -4,11 +4,12 @@ import VueHotkey from 'v-hotkey'
 import VTooltip from 'v-tooltip'
 import VModal from 'vue-js-modal'
 import Vueable from '@sagalbot/vueable'
+import Tabulator from 'tabulator-tables'
+
 import App from './App.vue'
 import path from 'path'
 import 'typeface-roboto'
 import 'typeface-source-code-pro'
-import './assets/styles/vendor.scss'
 import './assets/styles/app.scss'
 import $ from 'jquery';
 import SQL from 'codemirror/mode/sql/sql'
@@ -26,9 +27,11 @@ import config from './config'
 import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
 import Migration from './migration/index'
 
+
 (async () => {
   try {
-
+    process.env.PGPASSFILE = ".pgpass"
+    Tabulator.prototype.defaultOptions.layout = "fitDataFill";
     const appDb = path.join(config.userDirectory, 'app.db')
     const connection = await createConnection({
       database: appDb,
@@ -48,8 +51,7 @@ import Migration from './migration/index'
       logger: 'advanced-console',
     })
 
-    const migrator = new Migration(connection)
-    console.log(migrator)
+    const migrator = new Migration(connection, process.env.NODE_ENV)
     await migrator.run()
 
     window.$ = $

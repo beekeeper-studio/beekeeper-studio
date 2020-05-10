@@ -4814,9 +4814,10 @@ jmespath@0.15.0:
   resolved "https://registry.yarnpkg.com/jmespath/-/jmespath-0.15.0.tgz#a3f222a9aae9f966f5d27c796510e28091764217"
   integrity sha1-o/Iiqarp+Wb10nx5ZRDigJF2Qhc=
 
-jquery@^3.4.1:
-  version "3.4.1"
-  resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.4.1.tgz#714f1f8d9dde4bdfa55764ba37ef214630d80ef2"
+jquery@^3.5.0:
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.5.0.tgz#9980b97d9e4194611c36530e7dc46a58d7340fc9"
+  integrity sha512-Xb7SVYMvygPxbFMpTFQiHh1J7HClEaThguL15N/Gg37Lri/qKyhRGZYzHRyLH8Stq3Aow0LsHO2O2ci86fCrNQ==
 
 js-base64@^2.1.8:
   version "2.5.2"
@@ -5241,7 +5242,7 @@ media-typer@0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/media-typer/-/media-typer-0.3.0.tgz#8710d7af0aa626f8fffa1ce00168545263255748"
 
-mem@^4.0.0:
+mem@^4.0.0, mem@^4.3.0:
   version "4.3.0"
   resolved "https://registry.yarnpkg.com/mem/-/mem-4.3.0.tgz#461af497bc4ae09608cdb2e60eefb69bff744178"
   dependencies:
@@ -6303,11 +6304,11 @@ pg@^7.12.1:
     pgpass "1.x"
     semver "4.3.2"
 
-pgpass@1.x:
+pgpass@1.x, pgpass@beekeeper-studio/pgpass#blank-home:
   version "1.0.2"
-  resolved "https://registry.yarnpkg.com/pgpass/-/pgpass-1.0.2.tgz#2a7bb41b6065b67907e91da1b07c1847c877b306"
+  resolved "https://codeload.github.com/beekeeper-studio/pgpass/tar.gz/3eab42af79cca1c56a7ac9f21c3acbcc05ce76a7"
   dependencies:
-    split "^1.0.0"
+    split "^1.0.1"
 
 picomatch@^2.0.4, picomatch@^2.0.7:
   version "2.2.1"
@@ -7676,9 +7677,10 @@ split2@^3.0.0:
   dependencies:
     readable-stream "^3.0.0"
 
-split@^1.0.0:
+split@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/split/-/split-1.0.1.tgz#605bd9be303aa59fb35f9229fbea0ddec9ea07d9"
+  integrity sha512-mTyOoPbrivtXnwnIxZRFYRrPNtEFKlpB2fvjSnCQUiAA6qAZzqwna5envK4uk6OIeP17CsdF3rSBGYVBsU0Tkg==
   dependencies:
     through "2"
 
@@ -8004,7 +8006,7 @@ table@^5.2.3:
     slice-ansi "^2.1.0"
     string-width "^3.0.0"
 
-tabulator-tables@^4.3.1:
+tabulator-tables@^4.6.2:
   version "4.6.2"
   resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-4.6.2.tgz#ca331a1a9bb81fc33c6454ededc84518a0c4089e"
   integrity sha512-Taw+vZr2uqwrVIYR8pGz0cBTg6B+Kg5zXfJR1Hk70LGHOmLfFi7rw9JCfKdQ5njmfhhKihBbJUS8daohqeIB2w==
@@ -8515,6 +8517,14 @@ url@^0.11.0:
 use@^3.1.0:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/use/-/use-3.1.1.tgz#d50c8cac79a19fbc20f2911f56eb973f4e10070f"
+
+username@^5.1.0:
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/username/-/username-5.1.0.tgz#a7f9325adce2d0166448cdd55d4985b1360f2508"
+  integrity sha512-PCKbdWw85JsYMvmCv5GH3kXmM66rCd9m1hBEDutPNv94b/pqCMT4NtcKyeWYvLFiE8b+ha1Jdl8XAaUdPn5QTg==
+  dependencies:
+    execa "^1.0.0"
+    mem "^4.3.0"
 
 utf8-byte-length@^1.0.1:
   version "1.0.4"
