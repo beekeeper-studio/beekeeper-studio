@@ -7,7 +7,6 @@ import mkdirp from 'mkdirp';
 import pf from 'portfinder';
 import envPaths from 'env-paths';
 
-import config from '@/config'
 
 let configPath = '';
 
