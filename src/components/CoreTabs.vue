@@ -36,7 +36,6 @@
   import _ from 'lodash'
   import {FavoriteQuery} from '../entity/favorite_query'
   import QueryEditor from './TabQueryEditor'
-  import config from '../config'
   import CoreTabHeader from './CoreTabHeader'
   import { uuidv4 } from '@/lib/crypto'
   import TableTable from './tableview/TableTable'
@@ -63,12 +62,6 @@
         return _.indexOf(this.tabItems, this.activeTab)
       },
       keymap() {
-
-        let cmdOrCtrl = 'ctrl'
-
-        if(this.isMac) {
-          cmdOrCtrl = 'meta'
-        }
 
         const newTab = this.ctrlOrCmd('t')
         const closeTab = this.ctrlOrCmd('w')
