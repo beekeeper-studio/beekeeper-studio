@@ -72,16 +72,22 @@
           </div>
         </div>
         <div class="list-body">
-          <table-list-item
-            v-for="table in filteredTables"
-            v-bind:key="table.name"
-            @selected="tableSelected"
-            :table="table"
-            :connection="connection"
-            :selected="table == selectedTable"
-            :forceExpand="allExpanded"
-            :forceCollapse="allCollapsed"
-          ></table-list-item>
+          <div v-for="schema in Object.keys(schemaTables)" :key="schema">
+            <TableListSchema :title="schema">
+              <template slot="contents">
+                <table-list-item
+                  v-for="table in schemaTables[schema]"
+                  v-bind:key="table.name"
+                  @selected="tableSelected"
+                  :table="table"
+                  :connection="connection"
+                  :selected="table == selectedTable"
+                  :forceExpand="allExpanded"
+                  :forceCollapse="allCollapsed"
+                ></table-list-item>
+              </template>
+            </TableListSchema>
+          </div>
         </div>
       </nav>
 
@@ -96,11 +102,12 @@
 <script>
   import _ from 'lodash'
   import TableListItem from './TableListItem'
+  import TableListSchema from './TableListSchema'
   import Split from 'split.js'
   import { mapState, mapGetters } from 'vuex'
 
   export default {
-    components: { TableListItem},
+    components: { TableListItem, TableListSchema },
     data() {
       return {
         tableLoadError: null,
@@ -135,7 +142,7 @@
         return _.concat(startsWithFilter, containsFilter)
       },
       ...mapState(['tables', 'connection', 'database']),
-      ...mapGetters(['pinned']),
+      ...mapGetters(['pinned', 'schemaTables']),
     },
     watch: {
       pinned: {
