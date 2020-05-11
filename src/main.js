@@ -68,6 +68,12 @@ import Migration from './migration/index'
           isWindows: !!window.navigator.platform.match('Win'),
           isLinux: !!window.navigator.userAgent.match("(Linux|X11)")
         }
+      },
+      methods: {
+        ctrlOrCmd(key) {
+          if (this.isMac) return `meta+${key}`
+          return `ctrl+${key}`
+        }
       }
     })
 

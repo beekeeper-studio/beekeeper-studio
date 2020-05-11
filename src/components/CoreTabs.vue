@@ -66,17 +66,18 @@
 
         let cmdOrCtrl = 'ctrl'
 
-        if(config.isMac) {
+        if(this.isMac) {
           cmdOrCtrl = 'meta'
         }
 
-        const newTab = cmdOrCtrl + '+t'
+        const newTab = this.ctrlOrCmd('t')
+        const closeTab = this.ctrlOrCmd('w')
         const result = {
           'ctrl+tab': this.nextTab,
           'ctrl+shift+tab': this.previousTab
         }
         result[newTab] = this.handleCreateTab
-        result[`${cmdOrCtrl}+w`] = this.closeTab
+        result[closeTab] = this.closeTab
         return result
       }
     },

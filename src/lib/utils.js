@@ -29,14 +29,6 @@ export function getConfigPath() {
   return configPath;
 }
 
-export function ctrlOrCmd(otherKey) {
-  if (config.isMac) {
-    return `meta+${otherKey}`
-  } else {
-    return `ctrl+${otherKey}`
-  }
-}
-
 export function fileExists(filename) {
   return new Promise((resolve) => {
     fs.stat(filename, (err, stats) => {

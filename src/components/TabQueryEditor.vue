@@ -71,7 +71,6 @@
   import { mapState } from 'vuex'
 
   import config from '@/config'
-  import { ctrlOrCmd } from '@/lib/utils'
   import ProgressBar from './editor/ProgressBar'
   import ResultTable from './editor/ResultTable'
 
@@ -120,7 +119,7 @@
       },
       keymap() {
         const result = {}
-        result[ctrlOrCmd('l')] = this.selectEditor
+        result[this.ctrlOrCmd('l')] = this.selectEditor
         return result
       },
       connectionType() {
