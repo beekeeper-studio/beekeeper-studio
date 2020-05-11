@@ -1,6 +1,6 @@
 <template>
   <div class="list-item">
-    <a class="list-item-btn" role="button" @click.prevent="expanded = !expanded">
+    <a class="list-item-btn" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
       <span class="btn-fab open-close" >
         <i v-if="expanded" class="dropdown-icon material-icons">keyboard_arrow_down</i>
         <i v-else class="dropdown-icon material-icons">keyboard_arrow_right</i>
@@ -8,8 +8,8 @@
       <i title="Schema" class="table-icon item-icon material-icons">dynamic_feed</i>
       <span class="table-name truncate expand">{{title}}</span>
     </a>
-    <div v-if="expanded" class="sub-items contents">
-      <slot name="contents"></slot>
+    <div v-show="expanded" class="sub-items contents">
+      <slot></slot>
     </div>
   </div>
 </template>
@@ -17,10 +17,15 @@
 <script type="text/javascript">
 
 	export default {
-		props: ["title"],
+    props: ["title", "forceExpand", "forceCollapse"],
     data() {
       return {
-        expanded: false,
+        manuallyExpanded: false,
+      }
+    },
+    computed: {
+      expanded() {
+        return (this.manuallyExpanded || !!this.forceExpand) && !this.forceCollapse
       }
     },
     watch: {
@@ -36,6 +41,11 @@
       },
       showColumns() {
         this.table.showColumns = this.showColumns
+      }
+    },
+    methods: {
+      tableSelected(table) {
+        this.$emit("tableSelected", table)
       }
     }
 	}

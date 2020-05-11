@@ -50,7 +50,7 @@
     </div>
 
     <!-- Tables -->
-    <div v-if="tables" class="table-list flex-col" ref="tables">
+    <div v-if="!tablesLoading" class="table-list flex-col" ref="tables">
       <nav class="list-group flex-col">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
@@ -72,21 +72,37 @@
           </div>
         </div>
         <div class="list-body">
-          <div v-for="schema in Object.keys(schemaTables)" :key="schema">
-            <TableListSchema :title="schema">
-              <template slot="contents">
-                <table-list-item
-                  v-for="table in schemaTables[schema]"
-                  v-bind:key="table.name"
-                  @selected="tableSelected"
-                  :table="table"
-                  :connection="connection"
-                  :selected="table == selectedTable"
-                  :forceExpand="allExpanded"
-                  :forceCollapse="allCollapsed"
-                ></table-list-item>
-              </template>
+          <div class="with-schemas" v-if="tablesHaveSchemas">
+            <TableListSchema 
+              v-for="(tables, schema) in schemaTables"
+              :title="schema"
+              :key="schema"
+              :forceExpand="allExpanded || filterQuery"
+              :forceCollapse="allCollapsed"
+            >
+              <table-list-item
+                v-for="table in filter(tables, filterQuery)"
+                :key="table.name"
+                @selected="tableSelected"
+                :table="table"
+                :connection="connection"
+                :selected="table == selectedTable"
+                :forceExpand="allExpanded"
+                :forceCollapse="allCollapsed"
+              ></table-list-item>
             </TableListSchema>
+          </div>
+          <div v-else>
+            <table-list-item
+              v-for="table in filteredTables"
+              :key="table.name"
+              @selected="tableSelected"
+              :table="table"
+              :connection="connection"
+              :selected="table == selectedTable"
+              :forceExpand="allExpanded"
+              :forceCollapse="allCollapsed"
+            ></table-list-item>
           </div>
         </div>
       </nav>
@@ -96,17 +112,21 @@
         There are no tables in <span class="truncate">{{database}}</span>
       </div>
     </div>
+    <div v-else>
+      {{tablesLoading}}
+    </div>
   </div>
 </template>
 
 <script>
-  import _ from 'lodash'
   import TableListItem from './TableListItem'
   import TableListSchema from './TableListSchema'
   import Split from 'split.js'
   import { mapState, mapGetters } from 'vuex'
+  import TableFilter from '../mixins/table_filter'
 
   export default {
+    mixins: [TableFilter],
     components: { TableListItem, TableListSchema },
     data() {
       return {
@@ -128,21 +148,8 @@
           this.$refs.tables
         ]
       },
-      filteredTables() {
-        if (!this.filterQuery) {
-          return this.tables
-        }
-        const startsWithFilter = _(this.tables)
-          .filter((item) => _.startsWith(item.name.toLowerCase(), this.filterQuery.toLowerCase()))
-          .value()
-        const containsFilter = _(this.tables)
-          .difference(startsWithFilter)
-          .filter((item) => item.name.toLowerCase().includes(this.filterQuery.toLowerCase()))
-          .value()
-        return _.concat(startsWithFilter, containsFilter)
-      },
-      ...mapState(['tables', 'connection', 'database']),
-      ...mapGetters(['pinned', 'schemaTables']),
+      ...mapState(['tables', 'connection', 'database', 'tablesLoading']),
+      ...mapGetters(['pinned', 'schemaTables', 'tablesHaveSchemas']),
     },
     watch: {
       pinned: {
@@ -156,6 +163,20 @@
             // this.split.destroy();
           }
           this.lastPinnedSize = newPinned.length
+        }
+      },
+      tablesLoading() {
+        if (!this.tablesLoading) {
+          this.$nextTick(() => {
+            this.split = Split(this.components, {
+              elementStyle: (dimension, size) => ({
+                  'flex-basis': `calc(${size}%)`,
+              }),
+              direction: 'vertical',
+              sizes: this.sizes,
+            })
+
+          })
         }
       }
     },
@@ -177,13 +198,7 @@
       }
     },
     mounted() {
-     this.split = Split(this.components, {
-        elementStyle: (dimension, size) => ({
-            'flex-basis': `calc(${size}%)`,
-        }),
-        direction: 'vertical',
-        sizes: this.sizes,
-      })
+
     },
     beforeDestroy() {
       if(this.split) {
