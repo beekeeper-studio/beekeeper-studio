@@ -61,7 +61,7 @@
 
     <!-- Parameter modal -->
     <modal class="vue-dialog beekeeper-modal" name="parameters-modal" @closed="selectEditor" height="auto" :scrollable="true">
-      <form @submit.prevent="deparameterizeQuery">
+      <form @submit.prevent="deparameterizeQueryResolve">
         <div class="dialog-content">
           <div class="dialog-c-title">Provide parameter values</div>
           <div class="modal-form">
@@ -117,7 +117,6 @@
         saveError: null,
         lastWord: null,
 
-        queryParameterPlaceholders: null,
         queryParameterValues: {},
         deparameterizeQueryResolve: null,
       }
@@ -176,6 +175,35 @@
         })
         return { tables: result }
       },
+      queryParameterPlaceholders() {
+        let query = _.get(this.query, 'text');
+        if (_.isEmpty(query)) {
+          return query;
+        }
+
+        // Get parameter placeholders that follow the patterns:
+        // :project_id, :user_id
+        // $1, $2
+        // Positional ? parameters are not yet supported
+        const namedAndNumberedParams = Array.from(query.matchAll(/(?:\W|^)(:\w+|\$\d+)(?:\W|$)/g)).map(match => match[1])
+
+        if (!namedAndNumberedParams.length) {
+          return null;
+        }
+
+        return _.uniq(namedAndNumberedParams);
+      },
+      deparameterizedQuery() {
+        let query = _.get(this.query, 'text');
+        if (_.isEmpty(query)) {
+          return query;
+        }
+        _.each(this.queryParameterPlaceholders, param => {
+          query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`), `$1${this.queryParameterValues[param]}$2`)
+        });
+        return query;
+      },
+
       ...mapState(['usedConfig', 'connection', 'database', 'tables'])
     },
     watch: {
@@ -237,25 +265,18 @@
       escapeRegExp(string) {
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
-      deparameterizeQuery() {
-        let query = this.editor.getValue()
-        _.each(this.queryParameterPlaceholders, param => {
-          query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`), `$1${this.queryParameterValues[param]}$2`)
-        });
-        return this.deparameterizeQueryResolve(query);
-      },
       async submitQuery() {
         this.running = true
         this.results = []
         this.selectedResult = 0
         try {
-          let query = this.editor.getValue();
+          let query = this.query;
 
-          this.queryParameterPlaceholders = this.getQueryParameterPlaceholders()
           if (this.queryParameterPlaceholders) {
             this.$modal.show('parameters-modal')
-            query = await new Promise(resolve => this.deparameterizeQueryResolve = resolve);
+            await new Promise(resolve => this.deparameterizeQueryResolve = resolve);
             this.$modal.hide('parameters-modal')
+            query = this.deparameterizedQuery;
           }
 
           const runningQuery = this.connection.query(query);
@@ -320,24 +341,6 @@
             console.log('no keyup space autocomplete')
           }
         }
-      },
-      getQueryParameterPlaceholders() {
-        const query = this.editor.getValue()
-        if (this.connectionType === "postgresql") {
-          // Get parameter placeholders that follow the patterns:
-          // :project_id, :user_id
-          // $1, $2
-          // Positional ? parameters are not yet supported
-          const namedAndNumberedParams = Array.from(query.matchAll(/(?:\W|^)(:\w+|\$\d+)(?:\W|$)/g)).map(match => match[1])
-          
-          if (!namedAndNumberedParams.length) {
-            return null;
-          }
-
-          return _.uniq(namedAndNumberedParams);
-        }
-
-        return null;
       },
     },
     mounted() {
