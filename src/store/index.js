@@ -2,6 +2,7 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
+import username from 'username'
 // import VueXPersistence from 'vuex-persist'
 
 import { UsedConnection } from '@/entity/used_connection'
@@ -24,7 +25,8 @@ const store = new Vuex.Store({
     pinStore: {},
     connectionConfigs: [],
     history: [],
-    favorites: []
+    favorites: [],
+    username: null
   },
   getters: {
     pinned(state) {
@@ -33,6 +35,9 @@ const store = new Vuex.Store({
     }
   },
   mutations: {
+    setUsername(state, name) {
+      state.username = name
+    },
     newConnection(state, payload) {
       state.server = payload.server
       state.usedConfig = payload.config
@@ -92,15 +97,21 @@ const store = new Vuex.Store({
 
     async test(context, config) {
       // TODO (matthew): fix this mess.
-      const server = ConnectionProvider.for(config)
+      const server = ConnectionProvider.for(config, context.state.username)
       await server.createConnection(config.defaultDatabase).connect()
       server.disconnect()
     },
 
+    async fetchUsername(context) {
+      const name = await username()
+      context.commit('setUsername', name)
+    },
+
     async connect(context, config) {
-      const server = ConnectionProvider.for(config)
+      const server = ConnectionProvider.for(config, context.state.username)
       const connection = await server.createConnection(config.defaultDatabase)
       await connection.connect()
+      connection.connectionType = config.connectionType;
       const usedConfig = new UsedConnection(config)
       await usedConfig.save()
       context.commit('newConnection', {config: usedConfig, server, connection})

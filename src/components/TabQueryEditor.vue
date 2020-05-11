@@ -123,12 +123,18 @@
         result[ctrlOrCmd('l')] = this.selectEditor
         return result
       },
+      connectionType() {
+        return this.connection.connectionType;
+      },
       hintOptions() {
         const result = {}
         this.tables.forEach(table => {
           const cleanColumns = table.columns.map(col => {
             return col.columnName
           })
+          if (this.connectionType === 'postgresql' && /[A-Z]/.test(table.name)) {
+            result[`"${table.name}"`] = cleanColumns
+          } 
           result[table.name] = cleanColumns
         })
         return { tables: result }
@@ -217,6 +223,12 @@
       inQuote() {
         return false
       },
+      wrapIdentifier(value) {
+        if (value && this.connectionType === 'postgresql' && /[A-Z]/.test(value)) {
+          return `"${value.replace(/^"|"$/g, '')}"`
+        }
+        return value;
+      },
       maybeAutoComplete(editor, e) {
         // Currently this doesn't do anything.
         // BUGS:
@@ -303,8 +315,18 @@
 
         this.editor.on("change", (cm) => {
           this.tab.query.text = cm.getValue()
-
         })
+
+        if (this.connectionType === 'postgresql')  {
+          this.editor.on("beforeChange", (cm, co) => {
+            const { to, from, origin, text } = co;
+            if (origin === 'complete') {
+              let [tableName, colName] = text[0].split('.');
+              const newText = [[this.wrapIdentifier(tableName), this.wrapIdentifier(colName)].filter(s => s).join('.')]
+              co.update(from, to, newText, origin); 
+            }
+          })
+        }
 
         // TODO: make this not suck
         this.editor.on('keyup', this.maybeAutoComplete)

@@ -116,7 +116,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
 
   if (filters && filters.length > 0) {
     filterString = "WHERE " + filters.map((item, index) => {
-      return `${item.field} ${item.type} $${index + 1}`
+      return `${wrapIdentifier(item.field)} ${item.type} $${index + 1}`
     }).join(" AND ")
 
     params = filters.map((item) => {
@@ -125,7 +125,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   }
 
   let baseSQL = `
-    FROM ${table}
+    FROM ${wrapIdentifier(table)}
     ${filterString}
   `
   let countQuery = `
@@ -179,6 +179,7 @@ export async function listTableColumns(conn, database, table, schema) {
     FROM information_schema.columns
     WHERE table_schema = $1
     AND table_name = $2
+    ORDER BY ordinal_position
   `;
 
   const params = [
@@ -539,11 +540,17 @@ function configDatabase(server, database) {
   const config = {
     host: server.config.host,
     port: server.config.port,
-    user: server.config.user,
     password: server.config.password,
     database: database.database,
     max: 5, // max idle connections per time (30 secs)
   };
+
+  if (server.config.user) {
+    config.user = server.config.user
+  } else if (server.config.osUser) {
+    config.user = server.config.osUser
+  }
+
 
   if (server.sshTunnel) {
     config.host = server.config.localHost;
