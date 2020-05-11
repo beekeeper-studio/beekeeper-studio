@@ -106,6 +106,7 @@ export async function listTableColumns(conn, database, table) {
     FROM information_schema.columns
     WHERE table_schema = database()
     AND table_name = ?
+    ORDER BY ordinal_position
   `;
 
   const params = [

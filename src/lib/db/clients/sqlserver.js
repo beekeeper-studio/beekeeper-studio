@@ -38,7 +38,7 @@ export default async function (server, database) {
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
-    selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),    
+    selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -81,7 +81,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
     select count(*) as total ${baseSQL}
   `
   logger().debug(countQuery)
-  
+
   let query = `
     SELECT * ${baseSQL}
     ${orderByString}
@@ -242,6 +242,7 @@ export async function listTableColumns(conn, database, table) {
     SELECT column_name, data_type
     FROM information_schema.columns
     WHERE table_name = '${table}'
+    ORDER BY ordinal_position
   `;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
