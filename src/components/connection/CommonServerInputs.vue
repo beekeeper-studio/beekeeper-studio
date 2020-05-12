@@ -14,7 +14,7 @@
     <div class="advanced-connection-settings">
       <h4 class="advanced-heading flex" :class="{enabled: config.ssl}">
         <span class="expand">Enable SSL</span>
-        <i class="material-icons" @click.prevent="config.ssl = !config.ssl">
+        <i class="material-icons" @click.prevent="toggleSsl">
           {{ config.ssl ? 'toggle_on' : 'toggle_off' }}
         </i>
       </h4>
@@ -62,6 +62,16 @@
     props: ['config'],
     components: {
       FilePicker
+    },
+    methods: {
+      toggleSsl() {
+        this.config.ssl = !this.config.ssl
+
+        // Remove CA file when disabling ssl
+        if (!this.config.ssl) {
+          this.config.sslCaFile = ''
+        }
+      }
     }
   }
 </script>
