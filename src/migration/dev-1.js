@@ -46,7 +46,7 @@ export default {
     }
     {
       name: "[DEV] Docker CockroachDB",
-      connectionType: 'postgresql',
+      connectionType: 'cockroachdb',
       port: 26257,
       username: 'root',
       password: '',

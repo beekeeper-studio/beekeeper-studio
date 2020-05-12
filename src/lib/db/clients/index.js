@@ -102,5 +102,5 @@ export default {
   cassandra,
   redshift: postgresql,
   mariadb: mysql,
-  cockroachdb: cockroachdb
+  cockroachdb: postgresql
 };
