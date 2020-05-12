@@ -1,4 +1,5 @@
 // Copyright (c) 2015 The SQLECTRON Team
+import { readFileSync } from 'fs';
 
 import pg from 'pg';
 import { identify } from 'sql-query-identifier';
@@ -585,7 +586,21 @@ function configDatabase(server, database) {
   }
 
   if (server.config.ssl) {
-    config.ssl = server.config.ssl;
+    config.ssl = {}
+
+    if (!server.config.sslCaFile && !server.config.sslCertFile && !server.config.sslKeyFile) {
+      config.ssl.rejectUnauthorized = false;
+    }
+
+    if (server.config.sslCaFile) {
+      config.ssl.ca = readFileSync(server.config.sslCaFile);
+    }
+    if (server.config.sslCertFile) {
+      config.ssl.cert = readFileSync(server.config.sslCertFile);
+    }
+    if (server.config.sslKeyFile) {
+      config.ssl.key = readFileSync(server.config.sslKeyFile);
+    }
   }
 
   return config;
