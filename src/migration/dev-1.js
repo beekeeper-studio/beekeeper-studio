@@ -47,7 +47,7 @@ export default {
   ],
 
   async run() {
-    
+
     const connections = this.dbs.map(db => {
       const connection = new SavedConnection()
       _.merge(connection, db)
@@ -58,6 +58,6 @@ export default {
       const connection = connections[i];
       await connection.save()
     }
-    
+
   }
 }

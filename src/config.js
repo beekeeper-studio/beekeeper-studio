@@ -50,6 +50,7 @@ export default {
       { name: 'SQLite', value: 'sqlite' },
       { name: 'SQL Server', value: 'sqlserver' },
       { name: 'Amazon Redshift', value: 'redshift' },
+      { name: 'CockroachDB', value: 'cockroachdb' }
     ],
     ports: {
       'mysql': 3306,

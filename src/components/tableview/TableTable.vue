@@ -86,7 +86,7 @@ export default {
   computed: {
     tableColumns() {
       return this.table.columns.map(column => {
-        const result = { 
+        const result = {
           title: column.columnName,
           field: column.columnName,
           mutatorData: this.resolveDataMutator(column.dataType),
@@ -155,9 +155,7 @@ export default {
       let filters = null;
 
       if (params.sorters) {
-        orderBy = params.sorters.map(element => {
-          return [element.field, element.dir];
-        });
+        orderBy = params.sorters
       }
 
       if (params.page && params.size) {

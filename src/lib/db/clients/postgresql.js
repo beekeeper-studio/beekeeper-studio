@@ -30,10 +30,10 @@ pg.types.setTypeParser(1184, 'text', (val) => val); // timestamp
 
 async function getTypes(conn) {
   const sql = `
-    SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid 
-    FROM        pg_type t 
-    LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace 
-    WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid)) 
+    SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
+    FROM        pg_type t
+    LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+    WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
     AND     NOT EXISTS(SELECT 1 FROM pg_catalog.pg_type el WHERE el.oid = t.typelem AND el.typarray = t.oid)
     AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
   `
@@ -133,10 +133,10 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
 
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
-      if (Array.isArray(item)) {
-        return item.join(" ")
+      if (_.isObject(item)) {
+        return `${wrapIdentifier(item.field)} ${item.dir}`
       } else {
-        return item
+        return wrapIdentifier(item)
       }
     })).join(",")
   }

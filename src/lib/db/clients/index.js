@@ -12,6 +12,14 @@ import cassandra from './cassandra';
  */
 export const CLIENTS = [
   {
+    key: 'cockroachdb',
+    name: 'CockroachDB',
+    defaultPort: 26257,
+    disabledFeatures: [
+      'server:domain',
+    ],
+  },
+  {
     key: 'mysql',
     name: 'MySQL',
     defaultPort: 3306,
@@ -93,5 +101,6 @@ export default {
   sqlite,
   cassandra,
   redshift: postgresql,
-  mariadb: mysql
+  mariadb: mysql,
+  cockroachdb: postgresql
 };

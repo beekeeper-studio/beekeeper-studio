@@ -59,8 +59,8 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
 
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
-      if (Array.isArray(item)) {
-        return item.join(" ")
+      if (_.isObject(item)) {
+        return `${item.field} ${item.dir}`
       } else {
         return item
       }
