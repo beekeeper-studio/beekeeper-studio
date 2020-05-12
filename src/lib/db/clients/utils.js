@@ -1,4 +1,5 @@
 // Copyright (c) 2015 The SQLECTRON Team
+import _ from 'lodash'
 
 export function buildSchemaFilter({ schema } = {}, schemaField = 'schema_name') {
   if (!schema) { return null; }
@@ -49,8 +50,8 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
 
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
-      if (Array.isArray(item)) {
-        return item.join(" ")
+      if (_.isObject(item)) {
+        return `${item.field} ${item.dir}`
       } else {
         return item
       }
