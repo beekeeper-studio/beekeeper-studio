@@ -29,7 +29,6 @@ import Migration from './migration/index'
 
 
 (async () => {
-    console.log(config.userDirectory)
   try {
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
     const appDb = path.join(config.userDirectory, 'app.db')
