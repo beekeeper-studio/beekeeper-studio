@@ -9,3 +9,5 @@ test.db
 dist_electron/
 .DS_Store
 yarn-error.log
+.history
+.package-lock.json

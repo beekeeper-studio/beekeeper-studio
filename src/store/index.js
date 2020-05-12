@@ -22,6 +22,7 @@ const store = new Vuex.Store({
     connection: null,
     database: null,
     tables: [],
+    tablesLoading: "loading tables...",
     pinStore: {},
     connectionConfigs: [],
     history: [],
@@ -32,6 +33,12 @@ const store = new Vuex.Store({
     pinned(state) {
       const result = state.pinStore[state.database]
       return _.isNil(result) ? [] : result
+    },
+    schemaTables(state){
+      return _.chain(state.tables).groupBy('schema').value()
+    },
+    tablesHaveSchemas(state) {
+      return !! _.find(state.tables, 'schema')
     }
   },
   mutations: {
@@ -56,6 +63,9 @@ const store = new Vuex.Store({
     },
     tables(state, tables) {
       state.tables = tables
+    },
+    tablesLoading(state, value) {
+      state.tablesLoading = value
     },
     addPinned(state, table) {
       if (_.isNil(state.pinStore[state.database])) {
@@ -136,21 +146,28 @@ const store = new Vuex.Store({
       // Ideally here we would run all queries in parallel
       // however running through an SSH tunnel doesn't work
       // it only supports one query at a time.
-      const onlyTables = await context.state.connection.listTables()
-      onlyTables.forEach((t) => {
-        t.entityType = 'table'
-      })
-      const views = await context.state.connection.listViews()
-      views.forEach((v) => {
-        v.entityType = 'view'
-      })
-      const tables = onlyTables.concat(views)
-      for(let i = 0; i < tables.length; i++) {
-        const table = tables[i]
-        const columns = await context.state.connection.listTableColumns(table.name)
-        tables[i].columns = columns
+      try {
+        context.commit("tablesLoading", "finding tables")
+        const onlyTables = await context.state.connection.listTables({ schema: null })
+        onlyTables.forEach((t) => {
+          t.entityType = 'table'
+        })
+        const views = await context.state.connection.listViews()
+        views.forEach((v) => {
+          v.entityType = 'view'
+        })
+        const tables = onlyTables.concat(views)
+        for (let i = 0; i < tables.length; i++) {
+          const table = tables[i]
+          const columns = await context.state.connection.listTableColumns(table.name, table.schema)
+          context.commit("tablesLoading", `Loading ${i}/${tables.length} tables`)
+          tables[i].columns = columns
+        }
+        context.commit('tables', tables)
+
+      } finally {
+        context.commit("tablesLoading", null)
       }
-      context.commit('tables', tables)
     },
 
     async pinTable(context, table) {
