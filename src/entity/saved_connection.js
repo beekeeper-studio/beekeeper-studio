@@ -54,7 +54,13 @@ export class DbConnectionBase extends ApplicationEntity {
   ssl
 
   @Column({type: 'varchar', nullable: true})
-  sslCaFile = ""
+  sslCaFile = ''
+
+  @Column({type: 'varchar', nullable: true})
+  sslCertFile = ''
+
+  @Column({type: 'varchar', nullable: true})
+  sslKeyFile = ''
 
   /* 
     This unique hash is so that even if a user doesn't save

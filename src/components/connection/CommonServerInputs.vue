@@ -21,11 +21,19 @@
       <div class="advanced-body" v-show="config.ssl">
         <div class="row gutter">
           <div class="col form-group">
-            <label for="sshKeyfile">CA certificate (optional)</label>
-            <file-picker
-              v-model="config.sslCaFile"
-              :show-hidden-files="true">
-            </file-picker>
+            <label>CA Cert</label>
+            <file-picker v-model="config.sslCaFile"></file-picker>
+          </div>
+        </div>
+
+        <div class="row gutter private-key">
+          <div class="col s6 form-group">
+            <label>Certificate</label>
+            <file-picker v-model="config.sslCertFile"></file-picker>
+          </div>
+          <div class="col s6 form-group">
+            <label>Key File</label>
+            <file-picker v-model="config.sslKeyFile"></file-picker>
           </div>
         </div>
       </div>
@@ -70,6 +78,8 @@
         // Remove CA file when disabling ssl
         if (!this.config.ssl) {
           this.config.sslCaFile = ''
+          this.config.sslCertFile = ''
+          this.config.sslKeyFile = ''
         }
       }
     }
