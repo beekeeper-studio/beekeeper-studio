@@ -43,7 +43,7 @@ export default {
       username: 'sa',
       password: 'Example@1',
       defaultDatabase: 'sakila'
-    }
+    },
     {
       name: "[DEV] Docker CockroachDB",
       connectionType: 'cockroachdb',
