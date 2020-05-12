@@ -9,9 +9,10 @@
   import _ from 'lodash'
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
+  import Mutators from '../../mixins/data_mutators'
 
   export default {
-    mixins: [Converter],
+    mixins: [Converter, Mutators],
     data() {
       return {
         tabulator: null
@@ -41,7 +42,15 @@
           return this.result.truncated
       },
       tableColumns() {
-          return this.extractColumns(this.result)
+          return this.result.fields.map((column) => {
+            const result = {
+              title: column.name,
+              field: column.name,
+              dataType: column.dataType,
+              mutatorData: this.resolveDataMutator(column.dataType)
+            }
+            return result;
+          })
       },
       actualTableHeight() {
         return '100%'

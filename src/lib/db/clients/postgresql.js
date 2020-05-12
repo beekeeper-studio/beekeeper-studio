@@ -2,6 +2,7 @@
 
 import pg from 'pg';
 import { identify } from 'sql-query-identifier';
+import _ from 'lodash'
 
 import { buildDatabseFilter, buildSchemaFilter } from './utils';
 import createLogger from '../../logger';
@@ -14,6 +15,8 @@ const pgErrors = {
   CANCELED: '57014',
 };
 
+let dataTypes = {}
+
 /**
  * Do not convert DATE types to JS date.
  * It gnores of applying a wrong timezone to the date.
@@ -22,6 +25,27 @@ const pgErrors = {
 pg.types.setTypeParser(1082, 'text', (val) => val); // date
 pg.types.setTypeParser(1114, 'text', (val) => val); // timestamp without timezone
 pg.types.setTypeParser(1184, 'text', (val) => val); // timestamp
+
+
+
+async function getTypes(conn) {
+  const sql = `
+    SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid 
+    FROM        pg_type t 
+    LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace 
+    WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid)) 
+    AND     NOT EXISTS(SELECT 1 FROM pg_catalog.pg_type el WHERE el.oid = t.typelem AND el.typarray = t.oid)
+    AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
+  `
+  const result = {}
+  const data = await driverExecuteQuery(conn, { query: sql })
+  data.rows.forEach((row) => {
+    result[row.typeid] = row.typename
+  })
+  _.merge(result, _.invert(pg.types.builtins))
+  result[1009] = 'array'
+  return result
+}
 
 
 export default async function (server, database) {
@@ -34,6 +58,8 @@ export default async function (server, database) {
 
   logger().debug('connected');
   const defaultSchema = await getSchema(conn);
+
+  dataTypes = await getTypes(conn)
 
   return {
     /* eslint max-len:0 */
@@ -64,6 +90,7 @@ export default async function (server, database) {
 export function disconnect(conn) {
   conn.pool.end();
 }
+
 
 
 export async function listTables(conn, filter = { schema: 'public' }) {
@@ -179,6 +206,7 @@ export async function listTableColumns(conn, database, table, schema) {
     FROM information_schema.columns
     WHERE table_schema = $1
     AND table_name = $2
+    ORDER BY ordinal_position
   `;
 
   const params = [
@@ -563,13 +591,21 @@ function configDatabase(server, database) {
   return config;
 }
 
+function parseFields(fields) {
+  return fields.map((field) => {
+    field.dataType = dataTypes[field.dataTypeID] || 'user-defined'
+    return field
+  })
+}
+
 
 function parseRowQueryResult(data, command) {
+
   const isSelect = data.command === 'SELECT';
   return {
     command: command || data.command,
     rows: data.rows,
-    fields: data.fields,
+    fields: parseFields(data.fields),
     rowCount: isSelect ? (data.rowCount || data.rows.length) : undefined,
     affectedRows: !isSelect && !isNaN(data.rowCount) ? data.rowCount : undefined,
   };

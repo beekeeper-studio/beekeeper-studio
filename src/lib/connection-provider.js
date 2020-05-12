@@ -7,9 +7,9 @@ export default {
   convertConfig(config, osUsername) {
     const ssh = config.sshEnabled ? {} : null
     if (ssh) {
-      ssh.host = config.sshHost
+      ssh.host = config.sshHost ? config.sshHost.trim() : null
       ssh.port = config.sshPort
-      ssh.user = config.sshUsername
+      ssh.user = config.sshUsername ? config.sshUsername.trim() : null
       ssh.password = config.sshPassword
       ssh.privateKey = config.sshKeyfile
       ssh.passphrase = config.sshKeyfilePassword
@@ -17,10 +17,10 @@ export default {
 
     return {
       client: config.connectionType,
-      host: config.host,
+      host: config.host.trim(),
       port: config.port,
       socketPath: null,
-      user: config.username,
+      user: config.username ? config.username.trim() : null,
       osUser: osUsername,
       password: config.password,
       ssh: ssh,
