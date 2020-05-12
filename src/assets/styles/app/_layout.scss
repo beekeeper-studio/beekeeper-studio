@@ -443,6 +443,9 @@ input[type=file] {
 .item-icon {
   font-size: 12px;
   color: darken($theme-primary, 15%);
+  &.schema-icon {
+    color: $text-lighter;
+  }
   &.view-icon {
     color: $brand-secondary;
   }

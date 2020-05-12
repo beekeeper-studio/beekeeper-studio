@@ -1,14 +1,13 @@
 <template>
-  <div class="list-item">
-    <a class="list-item-btn" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
+  <div class="list-item schema">
+    <a class="list-item-btn" v-bind:class="{'open': expanded}" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
       <span class="btn-fab open-close" >
-        <i v-if="expanded" class="dropdown-icon material-icons">keyboard_arrow_down</i>
-        <i v-else class="dropdown-icon material-icons">keyboard_arrow_right</i>
+        <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
-      <i title="Schema" class="table-icon item-icon material-icons">dynamic_feed</i>
+      <i title="Schema" class="schema-icon item-icon material-icons">folder</i>
       <span class="table-name truncate expand">{{title}}</span>
     </a>
-    <div v-show="expanded" class="sub-items contents">
+    <div v-show="expanded" class="sub-items">
       <slot></slot>
     </div>
   </div>
@@ -52,7 +51,7 @@
 </script>
 
 <style scoped>
-.sub-items.contents {
-  padding-left: 20px !important;
-}
+  .schema > .sub-items {
+    padding-left: 18px!important;
+  }
 </style>

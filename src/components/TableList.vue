@@ -112,7 +112,7 @@
         There are no tables in <span class="truncate">{{database}}</span>
       </div>
     </div>
-    <div v-else>
+    <div class="empty" v-else>
       {{tablesLoading}}
     </div>
   </div>
