@@ -43,19 +43,11 @@ export default {
       username: 'sa',
       password: 'Example@1',
       defaultDatabase: 'sakila'
-    },
-    {
-      name: "[DEV] Docker CockroachDB",
-      connectionType: 'cockroachdb',
-      port: 26257,
-      username: 'root',
-      password: '',
-      defaultDatabase: 'defaultdb'
-    },
+    }
   ],
 
   async run() {
-    
+
     const connections = this.dbs.map(db => {
       const connection = new SavedConnection()
       _.merge(connection, db)
@@ -66,6 +58,6 @@ export default {
       const connection = connections[i];
       await connection.save()
     }
-    
+
   }
 }

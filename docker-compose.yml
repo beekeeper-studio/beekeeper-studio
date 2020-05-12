@@ -71,8 +71,8 @@ services:
     image: cockroachdb/cockroach
     volumes:
       - cockroachdb:/cockroach/cockroach-data
-      - ./dev/docker_cockroachdb_init:/docker-entrypoint-initdb.d
     ports:
       - 26257:26257
+    command: start --insecure
 
 
