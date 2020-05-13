@@ -74,14 +74,15 @@
         <div class="list-body">
           <div class="with-schemas" v-if="tablesHaveSchemas">
             <TableListSchema 
-              v-for="(tables, schema) in schemaTables"
-              :title="schema"
-              :key="schema"
+              v-for="(blob, index) in schemaTables"
+              :title="blob.schema"
+              :key="blob.schema"
+              :expandedInitially="index === 0"
               :forceExpand="allExpanded || filterQuery"
               :forceCollapse="allCollapsed"
             >
               <table-list-item
-                v-for="table in filter(tables, filterQuery)"
+                v-for="table in filter(blob.tables, filterQuery)"
                 :key="table.name"
                 @selected="tableSelected"
                 :table="table"

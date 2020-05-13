@@ -16,11 +16,14 @@
 <script type="text/javascript">
 
 	export default {
-    props: ["title", "forceExpand", "forceCollapse"],
+    props: ["title", "forceExpand", "forceCollapse", "expandedInitially"],
     data() {
       return {
         manuallyExpanded: false,
       }
+    },
+    mounted() {
+      this.manuallyExpanded = this.expandedInitially
     },
     computed: {
       expanded() {

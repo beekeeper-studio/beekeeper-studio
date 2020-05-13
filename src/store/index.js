@@ -35,10 +35,20 @@ const store = new Vuex.Store({
       return _.isNil(result) ? [] : result
     },
     schemaTables(state){
-      return _.chain(state.tables).groupBy('schema').value()
+      const obj = _.chain(state.tables).groupBy('schema').value()
+      return _(obj).keys().map(k => {
+        return {
+          schema: k,
+          tables: obj[k]
+        }
+      }).orderBy(o => {
+        // TODO: have the connection provide the default schema, hard-coded to public by default
+        if (o.schema === 'public') return '0'
+        return o.schema
+      }).value()
     },
-    tablesHaveSchemas(state) {
-      return !! _.find(state.tables, 'schema')
+    tablesHaveSchemas(state, getters) {
+      return getters.schemaTables.length > 1
     }
   },
   mutations: {

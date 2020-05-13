@@ -175,7 +175,8 @@ export default {
               offset,
               limit,
               orderBy,
-              filters
+              filters,
+              this.table.schema
             );
             const r = response.result;
             const totalRecords = response.totalRecords;

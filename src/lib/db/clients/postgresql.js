@@ -77,7 +77,7 @@ export default async function (server, database) {
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
     executeQuery: (queryText, schema = defaultSchema) => executeQuery(conn, queryText, schema),
     listDatabases: (filter) => listDatabases(conn, filter),
-    selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
+    selectTop: (table, offset, limit, orderBy, filters, schema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
     getTableCreateScript: (table, schema = defaultSchema) => getTableCreateScript(conn, table, schema),
     getViewCreateScript: (view, schema = defaultSchema) => getViewCreateScript(conn, view, schema),
@@ -126,7 +126,7 @@ export async function listViews(conn, filter = { schema: 'public' }) {
   return data.rows;
 }
 
-export async function selectTop(conn, table, offset, limit, orderBy, filters) {
+export async function selectTop(conn, table, offset, limit, orderBy, filters, schema = 'public') {
   let orderByString = ""
   let filterString = ""
   let params = null
@@ -152,7 +152,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   }
 
   let baseSQL = `
-    FROM ${wrapIdentifier(table)}
+    FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)}
     ${filterString}
   `
   let countQuery = `
@@ -164,10 +164,6 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
     LIMIT ${limit}
     OFFSET ${offset}
     `
-
-  logger().debug(countQuery)
-  logger().debug(query)
-
   const countResults = await driverExecuteQuery(conn, { query: countQuery, params })
   const result = await driverExecuteQuery(conn, { query, params })
   const rowWithTotal = countResults.rows.find((row) => { return row.total })
