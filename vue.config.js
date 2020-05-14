@@ -48,7 +48,7 @@ module.exports = {
             'github',
             'snapStore'
           ],
-
+          plugs: ["default", "ssh-keys"]
         },
         win: {
           icon: './public/icons/png/512x512.png',
