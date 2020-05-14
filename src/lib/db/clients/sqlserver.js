@@ -464,7 +464,7 @@ function configDatabase(server, database) {
     database: database.database,
     port: server.config.port,
     requestTimeout: Infinity,
-    appName: server.config.applicationName || 'sqlectron',
+    appName: server.config.applicationName || 'beekeeperstudio',
     domain: server.config.domain,
     pool: {
       max: 5,

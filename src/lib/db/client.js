@@ -72,20 +72,16 @@ async function connect(server, database) {
       logger().debug('creating ssh tunnel');
       server.sshTunnel = await connectTunnel(server.config);
 
-      const { address, port } = server.sshTunnel.address();
-      logger().debug('ssh forwarding through local connection %s:%d', address, port);
+      const { address, port } = server.sshTunnel
+      console.log('ssh forwarding through local connection %s:%d', address, port);
 
-      server.config.localHost = address;
-      server.config.localPort = port;
+      server.config.localHost = server.sshTunnel.localHost
+      server.config.localPort = server.sshTunnel.localPort
     }
 
     const driver = clients[server.config.client];
 
-    const [connection] = await Promise.all([
-      driver(server, database),
-      handleSSHError(server.sshTunnel),
-    ]);
-
+    const connection = await driver(server, database)
     database.connection = connection;
   } catch (err) {
     logger().error('Connection error %j', err);
@@ -98,27 +94,16 @@ async function connect(server, database) {
 }
 
 
-function handleSSHError(sshTunnel) {
-  return new Promise((resolve, reject) => {
-    if (!sshTunnel) {
-      return resolve();
-    }
-
-    sshTunnel.on('success', resolve);
-    sshTunnel.on('error', (error) => {
-      logger().error('ssh error %j', error);
-      reject(error);
-    });
-  });
-}
-
-
 function disconnect(server, database) {
   database.connecting = false;
 
   if (database.connection) {
     database.connection.disconnect();
     database.connection = null;
+  }
+
+  if(server.sshTunnel) {
+    server.sshTunnel.connection.shutdown()
   }
 
   if (server.db[database.database]) {

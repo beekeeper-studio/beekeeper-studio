@@ -1,94 +1,51 @@
 // Copyright (c) 2015 The SQLECTRON Team
 
-import net from 'net';
-import { Client } from 'ssh2';
-import { getPort, readFile } from '../utils';
-import createLogger from '../logger';
+import fs from 'fs'
+import path from 'path'
+import { getPort } from '../utils';
+// import createLogger from '../logger';
+import { SSHConnection } from 'node-ssh-forward'
+// const logger = createLogger('db:tunnel');
 
-const logger = createLogger('db:tunnel');
 
-export default function (serverInfo) {
+export default function(config) {
+  console.log('setting up ssh tunnel')
+
   return new Promise(async (resolve, reject) => {
-    logger().debug('configuring tunnel');
-    const config = await configTunnel(serverInfo);
+    try {
+      console.log("ssh config:")
+      console.log(config.ssh)
+      const connection = new SSHConnection({
+        endHost: config.ssh.host,
+        endPort: config.ssh.port,
+        bastionHost: config.ssh.bastionHost,
+        agentForward: config.ssh.agentForward,
+        privateKey: fs.readFileSync(path.resolve(config.ssh.privateKey)),
+        passphrase: config.ssh.passphrase,
+        username: config.ssh.user
+      })
+      console.log("connection created!")
 
-    const connections = [];
-
-    logger().debug('creating ssh tunnel server');
-    const server = net.createServer(async (conn) => {
-      conn.on('error', (err) => server.emit('error', err));
-
-      logger().debug('creating ssh tunnel client');
-      const client = new Client();
-      connections.push(conn);
-
-      client.on('error', (err) => server.emit('error', err));
-
-      client.on('ready', () => {
-        logger().debug('connected ssh tunnel client');
-        connections.push(client);
-
-        logger().debug('forwarding ssh tunnel client output');
-        client.forwardOut(
-          config.srcHost,
-          config.srcPort,
-          config.dstHost,
-          config.dstPort,
-          (err, sshStream) => {
-            if (err) {
-              logger().error('error ssh connection %j', err);
-              server.close();
-              server.emit('error', err);
-              return;
-            }
-            server.emit('success');
-            conn.pipe(sshStream).pipe(conn);
-          });
-      });
-
-      try {
-        const localPort = await getPort();
-
-        logger().debug('connecting ssh tunnel client');
-        client.connect({ ...config, localPort });
-      } catch (err) {
-        server.emit('error', err);
+      const localPort = await getPort()
+      console.log(`trying to tunnel on port ${localPort}`)
+      console.log('tunnel config:')
+      const tunnelConfig = {
+        fromPort: localPort,
+        toPort: config.port,
+        toHost: config.host
       }
-    });
-
-    server.once('close', () => {
-      logger().debug('close ssh tunnel server');
-      connections.forEach((conn) => conn.end());
-    });
-
-    logger().debug('connecting ssh tunnel server');
-    server.listen(config.localPort, config.localHost, (err) => {
-      if (err) return reject(err);
-
-      logger().debug('connected ssh tunnel server');
-      resolve(server);
-    });
-  });
-}
-
-
-async function configTunnel(serverInfo) {
-  const config = {
-    username: serverInfo.ssh.user,
-    port: serverInfo.ssh.port,
-    host: serverInfo.ssh.host,
-    dstPort: serverInfo.port,
-    dstHost: serverInfo.host,
-    sshPort: 22,
-    srcPort: 0,
-    srcHost: 'localhost',
-    localHost: 'localhost',
-    localPort: await getPort(),
-  };
-  if (serverInfo.ssh.password) config.password = serverInfo.ssh.password;
-  if (serverInfo.ssh.passphrase) config.passphrase = serverInfo.ssh.passphrase;
-  if (serverInfo.ssh.privateKey) {
-    config.privateKey = await readFile(serverInfo.ssh.privateKey);
-  }
-  return config;
+      console.log(tunnelConfig)
+      const tunnel = await connection.forward(tunnelConfig)
+      console.log('tunnel created!')
+      const result = {
+        connection: connection,
+        localHost: '127.0.0.1',
+        localPort: localPort,
+        tunnel: tunnel
+      }
+      resolve(result)
+    } catch (error) {
+      reject(error)
+    }
+  })
 }
