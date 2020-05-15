@@ -85,6 +85,7 @@
   import SqlServerForm from './connection/SqlServerForm'
   import Split from 'split.js'
   import _ from 'lodash'
+  import { resolveHomePathToAbsolute } from '../lib/utils'
 
   export default {
     components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm },
@@ -107,6 +108,27 @@
           return "Quick Connect"
         } else {
           return this.config.name
+        }
+      }
+    },
+    watch: {
+      config: {
+        deep: true,
+        handler() {
+          if (this.config.sshEnabled) {
+            if (this.config.sshMode === 'keyfile') {
+              this.config.sshPassword = null
+              if (!this.config.sshKeyfile) {
+                if (!this.isWindows) {
+                  this.config.sshKeyfile = resolveHomePathToAbsolute("~/.ssh/id_rsa")
+                }
+              }
+            } else {
+              this.config.sshKeyfile = null
+              this.config.sshBastionHost = null
+              this.config.sshKeyfilePassword = null
+            }
+          }
         }
       }
     },

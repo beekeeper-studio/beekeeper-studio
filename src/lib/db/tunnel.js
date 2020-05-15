@@ -6,7 +6,7 @@ import { getPort } from '../utils';
 // import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward'
 // const logger = createLogger('db:tunnel');
-
+import { resolveHomePathToAbsolute } from '../utils'
 
 export default function(config) {
   console.log('setting up ssh tunnel')
@@ -20,9 +20,10 @@ export default function(config) {
         endPort: config.ssh.port,
         bastionHost: config.ssh.bastionHost,
         agentForward: config.ssh.agentForward,
-        privateKey: fs.readFileSync(path.resolve(config.ssh.privateKey)),
+        privateKey: fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.privateKey))),
         passphrase: config.ssh.passphrase,
-        username: config.ssh.user
+        username: config.ssh.user,
+        password: config.ssh.password
       })
       console.log("connection created!")
 

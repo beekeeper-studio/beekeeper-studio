@@ -48,6 +48,9 @@ module.exports = {
             'github',
             'snapStore'
           ],
+          environment: {
+            "ELECTRON_SNAP": "true"
+          },
           plugs: ["default", "ssh-keys"]
         },
         win: {
