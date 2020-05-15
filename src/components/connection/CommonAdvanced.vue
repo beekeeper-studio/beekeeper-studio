@@ -15,6 +15,12 @@
           <input type="number" v-model.number="config.sshPort">
         </div>
       </div>
+      <div class="row gutter">
+        <div class="col form-group">
+          <label for="bastionHost">Bastion Host (Jump Host)</label>
+          <input class="form-control" v-model="config.sshBastionHost" type="text" name="bastionHost">
+        </div>
+      </div>
       <div class="form-group">
         <label>SSH Authentication</label>
         <select class="form-control" v-model="config.sshMode">
@@ -43,10 +49,6 @@
           <label for="sshKeyfilePassword">Key File PassPhrase <span class="hint">(Optional)</span></label>
           <input type="password" class="form-control" v-model="config.sshKeyfilePassword">
         </div>
-        <!-- <div class="col form-group">
-          <input type="checkbox" name="rememberPassword" class="form-control" v-model="config.rememberSshKeyfilePassword">
-          <label for="rememberPassword">Save Password? <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help</i></label>
-        </div> -->
 
       </div>
       <div v-if="config.sshMode === 'userpass'" class="row gutter">
@@ -63,10 +65,6 @@
           </div>
         </div>
       </div>
-      <!-- <div class="col form-group">
-        <input type="checkbox" name="rememberPassword" class="form-control" v-model="config.rememberSshPassword">
-        <label for="rememberPassword">Save Password? <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help</i></label>
-      </div> -->
 
     </div>
   </div>

@@ -50,6 +50,9 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'varchar', nullable: true})
   sshUsername
 
+  @Column({type: 'varchar', nullable: true})
+  sshBastionHost
+
   @Column({type: 'boolean', nullable: false, default: false})
   ssl
 
