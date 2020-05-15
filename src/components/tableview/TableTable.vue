@@ -56,11 +56,13 @@
 import Tabulator from "tabulator-tables";
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
+
 export default {
   mixins: [data_converter, DataMutators],
   props: ["table", "connection"],
   data() {
     return {
+      currentCell: null, // Last clicked cell
       filterTypes: {
         equals: "=",
         "does not equal": "!=",
@@ -125,7 +127,26 @@ export default {
       ajaxFiltering: true,
       pagination: "remote",
       paginationSize: this.limit,
-      initialSort: this.initialSort
+      initialSort: this.initialSort,
+      cellClick: (e, cell) => {
+        // Remove focus and listener on other cell, if any
+        if (this.currentCell) {
+          this.currentCell.getElement().classList.remove('active-cell')
+          this.currentCell.getElement().removeEventListener('copy', () => {})
+        }
+
+        // Set cell style
+        cell.getElement().classList.add('active-cell')
+
+        // Connect listener
+        cell.getElement().addEventListener('copy', event => {
+          event.clipboardData.setData('text/plain', cell.getValue())
+          event.preventDefault()
+        })
+
+        // Override current cell
+        this.currentCell = cell
+      }
     });
   },
   methods: {
