@@ -73,7 +73,7 @@ async function connect(server, database) {
       server.sshTunnel = await connectTunnel(server.config);
 
       const { address, port } = server.sshTunnel
-      console.log('ssh forwarding through local connection %s:%d', address, port);
+      logger().debug('ssh forwarding through local connection %s:%d', address, port);
 
       server.config.localHost = server.sshTunnel.localHost
       server.config.localPort = server.sshTunnel.localPort
@@ -85,7 +85,6 @@ async function connect(server, database) {
     database.connection = connection;
   } catch (err) {
     logger().error('Connection error %j', err);
-    console.log("connection error")
     disconnect(server, database);
     throw err;
   } finally {

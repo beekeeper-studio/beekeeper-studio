@@ -3,18 +3,18 @@
 import fs from 'fs'
 import path from 'path'
 import { getPort } from '../utils';
-// import createLogger from '../logger';
+import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward'
-// const logger = createLogger('db:tunnel');
+
 import { resolveHomePathToAbsolute } from '../utils'
 
+const logger = createLogger('db:tunnel');
+
 export default function(config) {
-  console.log('setting up ssh tunnel')
+  logger().debug('setting up ssh tunnel')
 
   return new Promise(async (resolve, reject) => {
     try {
-      console.log("ssh config:")
-      console.log(config.ssh)
       const connection = new SSHConnection({
         endHost: config.ssh.host,
         endPort: config.ssh.port,
@@ -25,19 +25,16 @@ export default function(config) {
         username: config.ssh.user,
         password: config.ssh.password
       })
-      console.log("connection created!")
+      logger().debug("connection created!")
 
       const localPort = await getPort()
-      console.log(`trying to tunnel on port ${localPort}`)
-      console.log('tunnel config:')
       const tunnelConfig = {
         fromPort: localPort,
         toPort: config.port,
         toHost: config.host
       }
-      console.log(tunnelConfig)
       const tunnel = await connection.forward(tunnelConfig)
-      console.log('tunnel created!')
+      logger().debug('tunnel created!')
       const result = {
         connection: connection,
         localHost: '127.0.0.1',
