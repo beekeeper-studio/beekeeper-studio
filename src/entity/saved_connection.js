@@ -54,6 +54,9 @@ export class DbConnectionBase extends ApplicationEntity {
   sshBastionHost
 
   @Column({type: 'boolean', nullable: false, default: false})
+  sshUseAgent = false
+
+  @Column({type: 'boolean', nullable: false, default: false})
   ssl
 
   /* 

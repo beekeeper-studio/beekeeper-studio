@@ -19,7 +19,7 @@ export default function(config) {
         endHost: config.ssh.host,
         endPort: config.ssh.port,
         bastionHost: config.ssh.bastionHost,
-        agentForward: config.ssh.agentForward,
+        agentForward: config.ssh.useAgent,
         privateKey: fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.privateKey))),
         passphrase: config.ssh.passphrase,
         username: config.ssh.user,

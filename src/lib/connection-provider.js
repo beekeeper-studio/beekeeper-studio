@@ -12,6 +12,7 @@ export default {
       ssh.privateKey = config.sshKeyfile
       ssh.passphrase = config.sshKeyfilePassword
       ssh.bastionHost = config.sshBastionHost
+      ssh.useAgent = config.sshUseAgent
     }
 
     return {

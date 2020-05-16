@@ -118,9 +118,15 @@
           if (this.config.sshEnabled) {
             if (this.config.sshMode === 'keyfile') {
               this.config.sshPassword = null
-              if (!this.config.sshKeyfile) {
-                if (!this.isWindows) {
-                  this.config.sshKeyfile = resolveHomePathToAbsolute("~/.ssh/id_rsa")
+
+              if (this.config.sshUseAgent) {
+                this.config.sshKeyfile = null
+                this.config.sshKeyfilePassword = null
+              } else {
+                if (!this.config.sshKeyfile) {
+                  if (!this.isWindows) {
+                    this.config.sshKeyfile = resolveHomePathToAbsolute("~/.ssh/id_rsa")
+                  }
                 }
               }
             } else {

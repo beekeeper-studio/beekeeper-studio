@@ -30,25 +30,34 @@
 
 
 
-      <div v-if="config.sshMode === 'keyfile'" class="private-key row gutter">
-        <div class="col">
-          <div class="form-group">
-            <label for="sshUsername">SSH Username</label>
-            <input class="form-control" type="text" v-model="config.sshUsername">
+      <div v-if="config.sshMode === 'keyfile'" class="private-key gutter">
+        <div class="row">
+          <div class="col">
+            <div class="form-group">
+              <label for="sshUsername">SSH Username</label>
+              <input class="form-control" type="text" v-model="config.sshUsername">
+            </div>
           </div>
         </div>
-        <div class="col s6 form-group">
-          <label for="sshKeyfile">Private Key File</label>
-          <file-picker
-            v-model="config.sshKeyfile"
-            :show-hidden-files="true"
-            :default-path="filePickerDefaultPath">
-          </file-picker>
+        <label for="sshAgent" class="checkbox-group row">
+          <input type="checkbox" name="sshAgent" id="sshAgent" class="form-control" v-model="config.sshUseAgent">           
+          <span>Use SSH Agent Forwarding</span>
+        </label>
+        <div v-show="!config.sshUseAgent" class="row">
+          <div class="col s6 form-group">
+            <label for="sshKeyfile">Private Key File</label>
+            <file-picker
+              v-model="config.sshKeyfile"
+              :show-hidden-files="true"
+              :default-path="filePickerDefaultPath">
+            </file-picker>
+          </div>
+          <div class="col s6 form-group">
+            <label for="sshKeyfilePassword">Key File PassPhrase <span class="hint">(Optional)</span></label>
+            <input type="password" class="form-control" v-model="config.sshKeyfilePassword">
+          </div>
         </div>
-        <div class="col s6 form-group">
-          <label for="sshKeyfilePassword">Key File PassPhrase <span class="hint">(Optional)</span></label>
-          <input type="password" class="form-control" v-model="config.sshKeyfilePassword">
-        </div>
+
 
       </div>
       <div v-if="config.sshMode === 'userpass'" class="row gutter">
