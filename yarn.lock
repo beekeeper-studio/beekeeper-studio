@@ -5742,7 +5742,7 @@ node-sass@^4.12.0:
 
 node-ssh-forward@beekeeper-studio/node-ssh-forward#built:
   version "0.6.3"
-  resolved "https://codeload.github.com/beekeeper-studio/node-ssh-forward/tar.gz/6390dd1fc79e06e132b366c60eab29663952c4b3"
+  resolved "https://codeload.github.com/beekeeper-studio/node-ssh-forward/tar.gz/159fc0bf8e99b42da1f195d0ed8123256e2a7918"
   dependencies:
     debug "^4.1.1"
     ssh2 "^0.8.9"
@@ -7785,6 +7785,7 @@ sqlstring@^2.3.1:
 ssh2-streams@~0.4.10:
   version "0.4.10"
   resolved "https://registry.yarnpkg.com/ssh2-streams/-/ssh2-streams-0.4.10.tgz#48ef7e8a0e39d8f2921c30521d56dacb31d23a34"
+  integrity sha512-8pnlMjvnIZJvmTzUIIA5nT4jr2ZWNNVHwyXfMGdRJbug9TpI3kd99ffglgfSWqujVv/0gxwMsDn9j9RVst8yhQ==
   dependencies:
     asn1 "~0.2.0"
     bcrypt-pbkdf "^1.0.2"
@@ -7888,6 +7889,7 @@ stream-shift@^1.0.0:
 streamsearch@~0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/streamsearch/-/streamsearch-0.1.2.tgz#808b9d0e56fc273d809ba57338e929919a1a9f1a"
+  integrity sha1-gIudDlb8Jz2Am6VzOOkpkZoanxo=
 
 strict-uri-encode@^1.0.0:
   version "1.1.0"

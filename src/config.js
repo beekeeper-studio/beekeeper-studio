@@ -45,6 +45,7 @@ export default {
   userDirectory,
   encryptionKey: loadEncryptionKey(),
   environment: process.env.NODE_ENV,
+  sshAuthSock: remote.process.env.SSH_AUTH_SOCK,
   isMac: false,
   defaults: {
     connectionTypes: [

@@ -5,6 +5,7 @@ import path from 'path'
 import { getPort } from '../utils';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward'
+import appConfig from '../../config'
 
 import { resolveHomePathToAbsolute } from '../utils'
 
@@ -15,16 +16,29 @@ export default function(config) {
 
   return new Promise(async (resolve, reject) => {
     try {
-      const connection = new SSHConnection({
+
+      const sshConfig = {
         endHost: config.ssh.host,
         endPort: config.ssh.port,
         bastionHost: config.ssh.bastionHost,
         agentForward: config.ssh.useAgent,
-        privateKey: fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.privateKey))),
         passphrase: config.ssh.passphrase,
         username: config.ssh.user,
-        password: config.ssh.password
-      })
+        password: config.ssh.password,
+        // this will try to read `id_rsa` just on its own. Don't do that.
+        skipAutoPrivateKey: true
+      }
+
+      if (config.ssh.useAgent && appConfig.sshAuthSock) {
+        sshConfig.agentSocket = appConfig.sshAuthSock
+      }
+
+      if (config.ssh.privateKey && !config.ssh.useAgent) {
+        sshConfig.privateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.privateKey)))
+      } else {
+        sshConfig.privateKey = null
+      }
+      const connection = new SSHConnection(sshConfig)
       logger().debug("connection created!")
 
       const localPort = await getPort()
