@@ -11,12 +11,6 @@
       </div>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
-      <!-- <header class="toolbar row flex-middle" v-if="result">
-        <span class="title expand">Results</span>
-        <div class="actions btn-group">
-          <a class="btn btn-fab" @click.prevent="download" v-tooltip="'Download Query Results'"><i class="material-icons">save_alt</i></a>
-        </div>
-      </header> -->
       <progress-bar v-if="running"></progress-bar>
       <result-table ref="table" v-else-if="result && result.rowCount > 0" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
       <div class="card" v-else-if="result">
@@ -32,9 +26,16 @@
       <div v-else><!-- No Data --></div>
       <span class="expand" v-if="!result"></span>
       <footer class="status-bar row query-meta" v-bind:class="{'empty': !result}">
-        <template v-if="result">
+        <template v-if="results.length > 0">
+          <span v-show="results.length > 1" class="result-selector">
+            <div class="data-select-wrap">
+              <select name="resultSelector" id="resultSelector" v-model="selectedResult" class="form-control">
+                <option v-for="(result, index) in results" :selected="selectedResult == index" :key="index" :value="index">Result {{index + 1}}</option>
+              </select>
+            </div>
+          </span>
           <div class="row-counts">
-            <span class="num-rows" v-if="result.rowCount > 0">{{result.rowCount}} Results</span>
+            <span class="num-rows" v-if="result.rowCount > 0">{{result.rowCount}} Records</span>
             <span class="truncated-rows" v-if="result && result.truncated"> &middot; only {{result.truncatedRowCount}} shown.</span>
           </div>
           <span class="affected-rows" v-if="affectedRowsText ">{{ affectedRowsText}}</span>
@@ -88,9 +89,10 @@
     props: ['tab', 'active'],
     data() {
       return {
-        result: null,
+        // result: null,
         results: [],
         running: false,
+        selectedResult: 0,
         editor: null,
         runningQuery: null,
         error: null,
@@ -103,6 +105,9 @@
       }
     },
     computed: {
+      result() {
+        return this.results[this.selectedResult]
+      },
       query() {
         return this.tab.query
       },
@@ -110,16 +115,12 @@
         return this.tab.query.text
       },
       affectedRowsText() {
-        if (!this.results || this.results.length == 0) {
+        if (!this.result) {
           return null
         }
 
-        const rows = this.results.map(r => {
-          return r.affectedRows ? r.affectedRows : 0;
-        }).reduce((a, b) => {
-          return a + b
-        }, 0)
-        return `${rows} ${Pluralize('row', rows)} affected (${this.results.length} ${Pluralize('query', this.results.length)})`
+        const rows = this.result.affectedRows
+        return `${rows} ${Pluralize('row', rows)} affected`
       },
       hasText() {
         return this.query.text && this.query.text.replace(/\s+/, '').length > 0
@@ -149,7 +150,7 @@
           })
           if (this.connectionType === 'postgresql' && /[A-Z]/.test(table.name)) {
             result[`"${table.name}"`] = cleanColumns
-          } 
+          }
           result[table.name] = cleanColumns
         })
         return { tables: result }
@@ -339,7 +340,7 @@
             if (origin === 'complete') {
               let [tableName, colName] = text[0].split('.');
               const newText = [[this.wrapIdentifier(tableName), this.wrapIdentifier(colName)].filter(s => s).join('.')]
-              co.update(from, to, newText, origin); 
+              co.update(from, to, newText, origin);
             }
           })
         }

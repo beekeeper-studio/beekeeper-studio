@@ -39,7 +39,7 @@
       }
     }
   }
-  .top-panel {  
+  .top-panel {
     .toolbar {
       box-shadow: inset 0 -1px $border-color;
       .btn {
@@ -76,6 +76,14 @@
       .btn {
         display: flex;
         align-items: center;
+      }
+      .result-selector {
+        padding-right: 10px;
+        select {
+          padding-left: 10px;
+          padding-right: 15px;
+        }
+
       }
       .affected-rows {
         padding-left: 10px;
