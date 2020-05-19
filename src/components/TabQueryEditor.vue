@@ -18,7 +18,7 @@
         </div>
       </header> -->
       <progress-bar v-if="running"></progress-bar>
-      <result-table ref="table" v-else-if="result && result.rowCount > 0" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
+      <result-table ref="table" v-else-if="rowCount > 0" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
       <div class="alert alert-info" v-else-if="result"><i class="material-icons">info</i>Query Executed Successfully. No Results</div>
       <div class="alert alert-danger" v-else-if="error"><i class="material-icons">warning</i>{{error}}</div>
       <div v-else><!-- No Data --></div>
@@ -26,7 +26,7 @@
       <footer class="status-bar row query-meta" v-bind:class="{'empty': !result}">
         <template v-if="result">
           <div class="row-counts">
-            <span class="num-rows" v-if="result.rowCount > 0">{{result.rowCount}} Results</span>
+            <span class="num-rows" v-if="rowCount > 0">{{rowCount}} Results</span>
             <span class="truncated-rows" v-if="result && result.truncated"> &middot; only {{result.truncatedRowCount}} shown.</span>
           </div>
           <span class="affected-rows" v-if="result && result.affectedRows">{{ affectedRowsText}}</span>
@@ -105,6 +105,9 @@
         }
         return `${this.result.affectedRows} ${Pluralize('row', this.result.affectedRows)} affected`
       },
+      rowCount() {
+        return this.result && this.result.rowCount ? this.result.rowCount : 0
+      },
       hasText() {
         return this.query.text && this.query.text.replace(/\s+/, '').length > 0
       },
@@ -133,7 +136,7 @@
           })
           if (this.connectionType === 'postgresql' && /[A-Z]/.test(table.name)) {
             result[`"${table.name}"`] = cleanColumns
-          } 
+          }
           result[table.name] = cleanColumns
         })
         return { tables: result }
@@ -202,7 +205,8 @@
 
           const runningQuery = this.connection.query(this.editor.getValue())
           const results = await runningQuery.execute()
-          const result = results[0]
+          const result = results[0] || {}
+          result.rowCount = result.rowCount || 0
           // TODO (matthew): remove truncation logic somewhere sensible
           if (result.rowCount > config.maxResults) {
             result.rows = _.take(result.rows, config.maxResults)
@@ -322,7 +326,7 @@
             if (origin === 'complete') {
               let [tableName, colName] = text[0].split('.');
               const newText = [[this.wrapIdentifier(tableName), this.wrapIdentifier(colName)].filter(s => s).join('.')]
-              co.update(from, to, newText, origin); 
+              co.update(from, to, newText, origin);
             }
           })
         }
