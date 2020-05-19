@@ -21,6 +21,9 @@ export class DbConnectionBase extends ApplicationEntity {
   username
 
   @Column({type: "varchar", nullable: true})
+  domain
+
+  @Column({type: "varchar", nullable: true})
   defaultDatabase
 
   @Column({type: "varchar", nullable: true})
@@ -53,7 +56,7 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'boolean', nullable: false, default: false})
   ssl
 
-  /* 
+  /*
     This unique hash is so that even if a user doesn't save
     the connection, we can still figure out if they're connected
     to the same database and keep track of queries against that connection

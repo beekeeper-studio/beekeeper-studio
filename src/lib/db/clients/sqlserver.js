@@ -464,8 +464,7 @@ function configDatabase(server, database) {
     database: database.database,
     port: server.config.port,
     requestTimeout: Infinity,
-    appName: server.config.applicationName || 'sqlectron',
-    domain: server.config.domain,
+    appName: server.config.applicationName || 'beekeeperstudio',
     pool: {
       max: 5,
     },
@@ -473,6 +472,9 @@ function configDatabase(server, database) {
       encrypt: server.config.ssl,
     },
   };
+  if (server.config.domain) {
+    config.domain = server.config.domain
+  }
 
   if (server.sshTunnel) {
     config.server = server.config.localHost;
