@@ -162,7 +162,7 @@ const store = new Vuex.Store({
         onlyTables.forEach((t) => {
           t.entityType = 'table'
         })
-        const views = await context.state.connection.listViews()
+        const views = await context.state.connection.listViews({ schema: null })
         views.forEach((v) => {
           v.entityType = 'view'
         })

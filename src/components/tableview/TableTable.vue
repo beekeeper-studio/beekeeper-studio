@@ -82,7 +82,8 @@ export default {
       tabulator: null,
       actualTableHeight: "100%",
       loading: false,
-      data: null
+      data: null,
+      response: null
     };
   },
   computed: {
@@ -201,6 +202,7 @@ export default {
             );
             const r = response.result;
             const totalRecords = response.totalRecords;
+            this.response = response
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data
             resolve({
