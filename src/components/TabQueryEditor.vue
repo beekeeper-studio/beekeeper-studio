@@ -15,13 +15,7 @@
       <result-table ref="table" v-else-if="result && result.rowCount > 0" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
       <div class="card" v-else-if="result">
         <div class="alert alert-info" ><i class="material-icons">info</i>Query Executed Successfully. No Results</div>
-        <ul>
-          <li v-for="(result, idx) in results" v-bind:key="idx">
-            Query {{idx + 1}}: {{ result.affectedRows ? result.affectedRows : 'unknown'}} rows affected
-          </li>
-        </ul>
       </div>
-
       <div class="alert alert-danger" v-else-if="error"><i class="material-icons">warning</i>{{error}}</div>
       <div v-else><!-- No Data --></div>
       <span class="expand" v-if="!result"></span>
