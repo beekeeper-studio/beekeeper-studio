@@ -77,16 +77,11 @@
         display: flex;
         align-items: center;
       }
-      .result-selector {
-        padding-right: 10px;
-        select {
-          padding-left: 10px;
-          padding-right: 15px;
-        }
-
-      }
       .affected-rows {
         padding-left: 10px;
+      }
+      select {
+        height: ($input-height * 0.95);
       }
     }
     .alert {

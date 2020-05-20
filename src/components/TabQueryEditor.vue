@@ -13,16 +13,14 @@
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar v-if="running"></progress-bar>
       <result-table ref="table" v-else-if="result && result.rowCount > 0" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
-      <div class="card" v-else-if="result">
-        <div class="alert alert-info" ><i class="material-icons">info</i>Query Executed Successfully. No Results</div>
-      </div>
+      <div class="alert alert-info" v-else-if="result"><i class="material-icons">info</i>Query Executed Successfully. No Results</div>
       <div class="alert alert-danger" v-else-if="error"><i class="material-icons">warning</i>{{error}}</div>
       <div v-else><!-- No Data --></div>
       <span class="expand" v-if="!result"></span>
       <footer class="status-bar row query-meta" v-bind:class="{'empty': !result}">
         <template v-if="results.length > 0">
           <span v-show="results.length > 1" class="result-selector">
-            <div class="data-select-wrap">
+            <div class="select-wrap">
               <select name="resultSelector" id="resultSelector" v-model="selectedResult" class="form-control">
                 <option v-for="(result, index) in results" :selected="selectedResult == index" :key="index" :value="index">Result {{index + 1}}</option>
               </select>

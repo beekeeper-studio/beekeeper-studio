@@ -55,6 +55,7 @@
   display: flex;
   background: darken($theme-bg, 1.5%);
   max-height: 100vh;
+  padding: 0 $gutter-w;
   overflow-y: auto;
   align-items: center;
   -webkit-overflow-scrolling: touch;
