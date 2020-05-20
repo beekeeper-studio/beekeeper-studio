@@ -2,14 +2,16 @@
   <div class="core-tabs" v-hotkey="keymap">
     <div class="tabs-header">
       <ul class="nav-tabs nav">
-        <core-tab-header
-          v-for="tab in tabItems"
-          :key="tab.id"
-          :tab="tab"
-          :selected="activeTab === tab"
-          @click="click"
-          @close="close"
-          ></core-tab-header>
+        <perfect-scrollbar>
+          <core-tab-header
+            v-for="tab in tabItems"
+            :key="tab.id"
+            :tab="tab"
+            :selected="activeTab === tab"
+            @click="click"
+            @close="close"
+            ></core-tab-header>
+        </perfect-scrollbar>
       </ul>
       <span class="expand"></span>
       <span class="actions">
@@ -39,10 +41,11 @@
   import CoreTabHeader from './CoreTabHeader'
   import { uuidv4 } from '@/lib/crypto'
   import TableTable from './tableview/TableTable'
+  import { PerfectScrollbar } from 'vue2-perfect-scrollbar'
 
   export default {
     props: [ 'connection' ],
-    components: { QueryEditor, CoreTabHeader, TableTable },
+    components: { QueryEditor, CoreTabHeader, TableTable, PerfectScrollbar },
     data() {
       return {
         tabItems: [],
@@ -191,3 +194,12 @@
     }
   }
 </script>
+
+<style lang="scss" scoped>
+  .ps {
+    height: 36px;
+    width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+  }
+</style>

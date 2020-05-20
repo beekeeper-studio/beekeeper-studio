@@ -4,6 +4,8 @@ import VueHotkey from 'v-hotkey'
 import VTooltip from 'v-tooltip'
 import VModal from 'vue-js-modal'
 import Vueable from '@sagalbot/vueable'
+import PerfectScrollbar from 'vue2-perfect-scrollbar'
+import 'vue2-perfect-scrollbar/dist/vue2-perfect-scrollbar.css'
 import Tabulator from 'tabulator-tables'
 
 import App from './App.vue'
@@ -82,6 +84,7 @@ import Migration from './migration/index'
     Vue.use(VueHotkey)
     Vue.use(VTooltip)
     Vue.use(VModal)
+    Vue.use(PerfectScrollbar)
     Vue.component('toggle', Vueable.Toggle);
     Vue.component('target', Vueable.Target);
     Vue.use(VueNoty, {

@@ -174,10 +174,13 @@
   flex: 1 1 auto;
   height: 0;
   max-height: -webkit-fill-available;
-  padding: $gutter-h 0;
+  padding: 0;
   overflow: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch!important;
+  .ps {
+    padding: $gutter-h 0;
+  }
 }
 .list-group {
   flex: 1 1 100%;
@@ -203,6 +206,7 @@
     color: rgba($theme-base, 0.77);
     padding: ($gutter-h * 0.8);
     padding-left: $gutter-w;
+    padding-right: $gutter-w;
     line-height: 1.4;
     width: -webkit-fill-available;
     &:hover, &:focus {

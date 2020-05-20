@@ -3,7 +3,11 @@
   height: 0;
   max-height: -webkit-fill-available;
   overflow-x: hidden;
-  padding: $gutter-h 0 $gutter-w;
+  padding: 0;
+  .ps {
+    padding-top: $gutter-h;
+    padding-bottom: $gutter-w;
+  }
   .list-group {
     padding
     a {

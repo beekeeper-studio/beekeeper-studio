@@ -19,6 +19,7 @@
 
 <script>
 import {remote} from 'electron'
+
 export default {
     data() {
       return {

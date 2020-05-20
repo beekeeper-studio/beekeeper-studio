@@ -35,16 +35,18 @@
           </div> -->
         </div>
         <div class="list-body">
-          <table-list-item
-            v-for="table in pinned"
-            v-bind:key="table.name"
-            @selected="tableSelected"
-            :table="table"
-            :connection="connection"
-            :selected="table == selectedTable"
-            :forceExpand="allExpanded"
-            :forceCollapse="allCollapsed"
-          ></table-list-item>
+          <perfect-scrollbar>
+              <table-list-item
+                v-for="table in pinned"
+                v-bind:key="table.name"
+                @selected="tableSelected"
+                :table="table"
+                :connection="connection"
+                :selected="table == selectedTable"
+                :forceExpand="allExpanded"
+                :forceCollapse="allCollapsed"
+              ></table-list-item>
+          </perfect-scrollbar>
         </div>
       </nav>
     </div>
@@ -72,17 +74,31 @@
           </div>
         </div>
         <div class="list-body">
-          <div class="with-schemas" v-if="tablesHaveSchemas">
-            <TableListSchema 
-              v-for="(blob, index) in schemaTables"
-              :title="blob.schema"
-              :key="blob.schema"
-              :expandedInitially="index === 0"
-              :forceExpand="allExpanded || filterQuery"
-              :forceCollapse="allCollapsed"
-            >
+          <perfect-scrollbar>
+            <div class="with-schemas" v-if="tablesHaveSchemas">
+              <TableListSchema 
+                v-for="(blob, index) in schemaTables"
+                :title="blob.schema"
+                :key="blob.schema"
+                :expandedInitially="index === 0"
+                :forceExpand="allExpanded || filterQuery"
+                :forceCollapse="allCollapsed"
+              >
+                <table-list-item
+                  v-for="table in filter(blob.tables, filterQuery)"
+                  :key="table.name"
+                  @selected="tableSelected"
+                  :table="table"
+                  :connection="connection"
+                  :selected="table == selectedTable"
+                  :forceExpand="allExpanded"
+                  :forceCollapse="allCollapsed"
+                ></table-list-item>
+              </TableListSchema>
+            </div>
+            <div v-else>
               <table-list-item
-                v-for="table in filter(blob.tables, filterQuery)"
+                v-for="table in filteredTables"
                 :key="table.name"
                 @selected="tableSelected"
                 :table="table"
@@ -91,20 +107,8 @@
                 :forceExpand="allExpanded"
                 :forceCollapse="allCollapsed"
               ></table-list-item>
-            </TableListSchema>
-          </div>
-          <div v-else>
-            <table-list-item
-              v-for="table in filteredTables"
-              :key="table.name"
-              @selected="tableSelected"
-              :table="table"
-              :connection="connection"
-              :selected="table == selectedTable"
-              :forceExpand="allExpanded"
-              :forceCollapse="allCollapsed"
-            ></table-list-item>
-          </div>
+            </div>
+          </perfect-scrollbar>
         </div>
       </nav>
 
@@ -125,10 +129,11 @@
   import Split from 'split.js'
   import { mapState, mapGetters } from 'vuex'
   import TableFilter from '../mixins/table_filter'
+  import { PerfectScrollbar } from 'vue2-perfect-scrollbar'
 
   export default {
     mixins: [TableFilter],
-    components: { TableListItem, TableListSchema },
+    components: { TableListItem, TableListSchema, PerfectScrollbar },
     data() {
       return {
         tableLoadError: null,
@@ -209,3 +214,9 @@
     }
   }
 </script>
+
+<style scoped>
+  .ps {
+    height: 100%;
+  }
+</style>

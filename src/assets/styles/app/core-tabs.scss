@@ -30,15 +30,23 @@
     // height: $tab-height;
     background: rgba($theme-base, 0.035);
   }
+  .ps__rail-x,
+  .ps__thumb-x,
+  .ps__rail-x:hover > .ps__thumb-x,
+  .ps__rail-x:focus > .ps__thumb-x,
+  .ps__rail-x.ps--clicking .ps__thumb-x {
+    height: $gutter-h;
+  }
   .nav-tabs {
     position: relative;
     overflow: hidden;
+    overflow-x: auto;
     flex-wrap: nowrap;
     margin: 0;
     height: $tab-height;
     box-shadow: inset 1px 0 rgba($query-editor-bg, 0.9);
-    &:hover {
-      overflow-x: auto;
+    &::-webkit-scrollbar {
+      height: 6px;
     }
     .nav-item {
       max-width: 200px;
@@ -188,6 +196,14 @@
     }
     .btn-primary {
       min-width: auto;
+    }
+    @media (max-width: 850px) {
+      flex-wrap: nowrap;
+      .select-wrap {
+        > select {
+          min-width: 30px;
+        }
+      }
     }
   }
   .filter {

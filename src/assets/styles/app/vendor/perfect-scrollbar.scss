@@ -1,0 +1,94 @@
+// Container
+// --------------------------------
+// .ps {
+//   overflow: hidden !important;
+//   overflow-anchor: none;
+//   -ms-overflow-style: none;
+//   touch-action: auto;
+//   -ms-touch-action: auto;
+// }
+
+// Scrollbar Rail
+// --------------------------------
+.ps__rail-x {
+  // display: none;
+  // opacity: 0;
+  transition: opacity .2s ease-in-out;
+  height: ($gutter-w * 0.9);
+  // bottom: 0px; // there must be 'bottom' or 'top' for ps__rail-x
+  // position: absolute; // please don't change 'position
+}
+.ps__rail-y {
+  // display: none;
+  // opacity: 0;
+  transition: opacity .2s ease-in-out;
+  width: ($gutter-w * 0.9);
+  // right: 0; // there must be 'right' or 'left' for ps__rail-y
+  // position: absolute; // Please don't change position
+}
+.ps--active-x > .ps__rail-x,
+.ps--active-y > .ps__rail-y {
+  // display: block;
+  // background-color: transparent;
+}
+.ps:hover > .ps__rail-x,
+.ps:hover > .ps__rail-y,
+.ps--focus > .ps__rail-x,
+.ps--focus > .ps__rail-y,
+.ps--scrolling-x > .ps__rail-x,
+.ps--scrolling-y > .ps__rail-y {
+  opacity: 1;
+}
+
+.ps .ps__rail-x:hover,
+.ps .ps__rail-y:hover,
+.ps .ps__rail-x:focus,
+.ps .ps__rail-y:focus,
+.ps .ps__rail-x.ps--clicking,
+.ps .ps__rail-y.ps--clicking {
+  background: transparent;
+  opacity: 1;
+}
+
+// Scrollbar Thumb
+// -----------------------------------
+.ps__thumb-x {
+  background-color: rgba($theme-base, 0.12);
+  border-radius: 2px;
+  transition: background-color .2s ease-in-out;
+  height: ($gutter-w * 0.9);
+  bottom: 0; // there must be 'bottom' or 'top' for ps__rail-x
+  position: absolute; // please don't change 'position
+}
+.ps__thumb-y {
+  background-color: rgba($theme-base, 0.12);
+  border-radius: 2px;
+  transition: background-color .2s ease-in-out;
+  width: ($gutter-w * 0.9);
+  right: 0; // there must be 'right' or 'left' for ps__rail-y
+  position: absolute; // Please don't change position
+}
+.ps__rail-x:hover > .ps__thumb-x,
+.ps__rail-x:focus > .ps__thumb-x,
+.ps__rail-x.ps--clicking .ps__thumb-x {
+  background-color: rgba($theme-base, 0.2);
+  height: ($gutter-w * 0.9);
+}
+.ps__rail-y:hover > .ps__thumb-y,
+.ps__rail-y:focus > .ps__thumb-y,
+.ps__rail-y.ps--clicking .ps__thumb-y {
+  background-color: rgba($theme-base, 0.2);
+  width: ($gutter-w * 0.9);
+}
+
+/* MS supports */
+// @supports (-ms-overflow-style: none) {
+//   .ps {
+//     overflow: auto !important;
+//   }
+// }
+// @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+//   .ps {
+//     overflow: auto !important;
+//   }
+// }
