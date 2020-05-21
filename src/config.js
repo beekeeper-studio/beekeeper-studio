@@ -46,6 +46,7 @@ export default {
   encryptionKey: loadEncryptionKey(),
   environment: process.env.NODE_ENV,
   sshAuthSock: remote.process.env.SSH_AUTH_SOCK,
+  isSnap: remote.process.env.ELECTRON_SNAP,
   isMac: false,
   defaults: {
     connectionTypes: [

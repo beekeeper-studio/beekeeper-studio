@@ -4,6 +4,7 @@ import { Entity, Column, BeforeInsert, BeforeUpdate } from "typeorm"
 import {ApplicationEntity} from './application_entity'
 import {EncryptedColumn} from 'typeorm-encrypted-column'
 import config from '../config'
+import { resolveHomePathToAbsolute } from '../lib/utils'
 
 
 export class DbConnectionBase extends ApplicationEntity {
@@ -41,20 +42,35 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: "int", nullable: true})
   sshPort = 22
 
-  @Column({type: "varchar", length: "8", nullable: false, default: "keyfile"})
-  sshMode = "keyfile"
+  _sshMode = "agent"
+
+  @Column({name: "sshMode", type: "varchar", length: "8", nullable: false, default: "agent"})
+  set sshMode(value) {
+    this._sshMode = value
+    if (!this._sshMode != 'userpass') {
+      this.sshPassword = null
+    } else if (this._sshMode != 'keyfile') {
+      this.sshKeyfile = null
+      this.sshKeyfilePassword = null
+    }
+
+    if (this._sshMode === 'keyfile' && !this.sshKeyfile) {
+      this.sshKeyfile = resolveHomePathToAbsolute("~/.ssh/id_rsa")
+    }
+  }
+
+  get sshMode() {
+    return this._sshMode
+  }
 
   @Column({type: "varchar", nullable: true})
-  sshKeyfile = ""
+  sshKeyfile = null
 
   @Column({type: 'varchar', nullable: true})
   sshUsername
 
   @Column({type: 'varchar', nullable: true})
   sshBastionHost
-
-  @Column({type: 'boolean', nullable: false, default: false})
-  sshUseAgent = false
 
   @Column({type: 'boolean', nullable: false, default: false})
   ssl

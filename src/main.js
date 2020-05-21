@@ -67,8 +67,6 @@ import Migration from './migration/index'
           isMac: !!window.navigator.platform.match('Mac'),
           isWindows: !!window.navigator.platform.match('Win'),
           isLinux: !!window.navigator.userAgent.match("(Linux|X11)"),
-          packaging: process.env.ELECTRON_SNAP ? "snap" : "unknown",
-          isSnap: !!process.env.ELECTRON_SNAP,
           appConfig: config
         }
       },

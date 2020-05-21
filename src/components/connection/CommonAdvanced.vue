@@ -28,7 +28,29 @@
         </select>
       </div>
 
-
+      <div v-if="config.sshMode === 'agent'" class="agent gutter">
+        <div class="form-group">
+          <label for="sshUsername">SSH Username</label>
+          <input class="form-control" type="text" v-model="config.sshUsername">
+        </div>
+        <div class="alert alert-warning" v-if="appConfig.isSnap">
+          <i class="material-icons">warning</i>
+            SSH Agent Forwarding is not possible with the Snap version of Beekeeper Studio due to the security model of Snap apps.
+            <external-link href="https://docs.beekeeperstudio.io">Read more</external-link>
+        </div>
+        <div v-else-if="appConfig.sshAuthSock" class="alert alert-success">
+          <i class="material-icons">check</i>
+          We found your SSH Agent. You're good to go!
+        </div>
+        <div v-else-if="isWindows" class="alert alert-info">
+          <i class="material-icons">info</i>
+          We didn't find a *nix ssh-agent running, so we'll attempt to use the PuTTY agent, pageant.
+        </div>
+        <div v-else class="alert alert-warning">
+          <i class="material-icons">warning</i>
+          You don't seem to have an SSH agent running.
+        </div>
+      </div>
 
       <div v-if="config.sshMode === 'keyfile'" class="private-key gutter">
         <div class="row">
@@ -39,11 +61,7 @@
             </div>
           </div>
         </div>
-        <label for="sshAgent" class="checkbox-group row">
-          <input type="checkbox" name="sshAgent" id="sshAgent" class="form-control" v-model="config.sshUseAgent">           
-          <span>Use SSH Agent Forwarding</span>
-        </label>
-        <div v-show="!config.sshUseAgent" class="row">
+        <div class="row">
           <div class="col s6 form-group">
             <label for="sshKeyfile">Private Key File</label>
             <file-picker
@@ -80,6 +98,7 @@
 </template>
 <script>
   import FilePicker from '@/components/form/FilePicker'
+  import ExternalLink from '@/components/common/ExternalLink'
 
   import { remote } from 'electron'
   import { join as pathJoin } from 'path'
@@ -87,13 +106,14 @@
   export default {
     props: ['config'],
     components: {
-      FilePicker
+      FilePicker, ExternalLink
     },
     data() {
       return {
         sshModeOptions: [
           { label: "Key File", mode: 'keyfile' },
-          { label: "Username & Password", mode: "userpass" }
+          { label: "Username & Password", mode: "userpass" },
+          { label: "SSH Agent", mode: "agent" }
         ],
         filePickerDefaultPath: pathJoin(remote.app.getPath('home'), '.ssh')
       }

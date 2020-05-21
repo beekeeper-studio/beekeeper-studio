@@ -116,6 +116,7 @@
         this.activeItem = item;
       },
       async databaseSelected(db) {
+        console.log("database selected")
         await this.$store.dispatch('changeDatabase', db)
         this.allExpanded = false
       },
