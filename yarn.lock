@@ -5740,9 +5740,10 @@ node-sass@^4.12.0:
     stdout-stream "^1.4.0"
     "true-case-path" "^1.0.2"
 
-node-ssh-forward@beekeeper-studio/node-ssh-forward#built:
-  version "0.6.3"
-  resolved "https://codeload.github.com/beekeeper-studio/node-ssh-forward/tar.gz/159fc0bf8e99b42da1f195d0ed8123256e2a7918"
+node-ssh-forward@0.7.1:
+  version "0.7.1"
+  resolved "https://registry.yarnpkg.com/node-ssh-forward/-/node-ssh-forward-0.7.1.tgz#a0113d2406d2debf36c2732dc1c2551492d84e04"
+  integrity sha512-ciAhAFSJ5bzaq8rYeQ7+9fCfNQI6kMhYaxaVLqJpMz01wrYkrS0OhsZBBiJS3WUmzBrVW4DoiCs4f0XRxAQrnA==
   dependencies:
     debug "^4.1.1"
     ssh2 "^0.8.9"
