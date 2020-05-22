@@ -209,6 +209,7 @@
       },
       async submitQuery() {
         this.running = true
+        this.selectedResult = 0
         try {
 
           const runningQuery = this.connection.query(this.editor.getValue())
