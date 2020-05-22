@@ -9,7 +9,6 @@ import { UsedConnection } from '@/entity/used_connection'
 import { SavedConnection } from '@/entity/saved_connection'
 import { FavoriteQuery } from '@/entity/favorite_query'
 import { UsedQuery } from '@/entity/used_query'
-import config from '@/config'
 import ConnectionProvider from '@/lib/connection-provider'
 
 Vue.use(Vuex)
@@ -236,8 +235,7 @@ const store = new Vuex.Store({
       }
     }
   },
-  plugins: [],
-  devtools: config.environment == 'development'
+  plugins: []
 })
 
 export default store

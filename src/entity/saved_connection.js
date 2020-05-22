@@ -9,8 +9,25 @@ import { resolveHomePathToAbsolute } from '../lib/utils'
 
 export class DbConnectionBase extends ApplicationEntity {
 
-  @Column('varchar')
-  connectionType
+  _connectionType = null
+
+  @Column({ type: 'varchar', name: 'connectionType'})
+  set connectionType(value) {
+    this._connectionType = value
+    if (['mysql', 'mariadb'].includes(this._connectionType)) {
+      this.port = 3306
+    } else if (this._connectionType === 'postgresql') {
+      this.port = 5432
+    } else if (this._connectionType === 'sqlserver') {
+      this.port = 1433
+    } else if (this._connectionType === 'cockroachdb') {
+      this.port = 26257
+    }
+  }
+
+  get connectionType() {
+    return this._connectionType
+  }
 
   @Column({type:"varchar", nullable: true})
   host = 'localhost'

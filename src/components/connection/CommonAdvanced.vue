@@ -33,16 +33,16 @@
           <label for="sshUsername">SSH Username</label>
           <input class="form-control" type="text" v-model="config.sshUsername">
         </div>
-        <div class="alert alert-warning" v-if="appConfig.isSnap">
+        <div class="alert alert-warning" v-if="$config.isSnap">
           <i class="material-icons">warning</i>
             SSH Agent Forwarding is not possible with the Snap version of Beekeeper Studio due to the security model of Snap apps.
-            <external-link href="https://docs.beekeeperstudio.io">Read more</external-link>
+            <external-link :href="enableSshLink">Read more</external-link>
         </div>
-        <div v-else-if="appConfig.sshAuthSock" class="alert alert-success">
+        <div v-else-if="$config.sshAuthSock" class="alert alert-success">
           <i class="material-icons">check</i>
           We found your SSH Agent. You're good to go!
         </div>
-        <div v-else-if="isWindows" class="alert alert-info">
+        <div v-else-if="$config.isWindows" class="alert alert-info">
           <i class="material-icons">info</i>
           We didn't find a *nix ssh-agent running, so we'll attempt to use the PuTTY agent, pageant.
         </div>
@@ -59,6 +59,12 @@
               <label for="sshUsername">SSH Username</label>
               <input class="form-control" type="text" v-model="config.sshUsername">
             </div>
+          </div>
+        </div>
+        <div v-if="$config.isSnap && !$config.snapSshPlug" class="row">
+          <div class="alert alert-warning">
+            <i class="material-icons">warning</i>
+            Hey snap user! You need to <external-link :href="enableSshLink">enable SSH access</external-link> before Beekeeper can access your .ssh directory.
           </div>
         </div>
         <div class="row">
@@ -110,6 +116,7 @@
     },
     data() {
       return {
+        enableSshLink: "https://docs.beekeeperstudio.io/installation/#ssh-key-access-for-the-snap",
         sshModeOptions: [
           { label: "Key File", mode: 'keyfile' },
           { label: "Username & Password", mode: "userpass" },

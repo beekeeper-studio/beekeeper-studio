@@ -3108,6 +3108,11 @@ electron-download@^4.1.0:
     semver "^5.4.1"
     sumchecker "^2.0.2"
 
+electron-is-dev@^1.1.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/electron-is-dev/-/electron-is-dev-1.2.0.tgz#2e5cea0a1b3ccf1c86f577cee77363ef55deb05e"
+  integrity sha512-R1oD5gMBPS7PVU8gJwH6CtT0e6VSoD0+SzSnYpNm+dBkcijgA+K7VAMHDfnRq/lkKPZArpzplTW6jfiMYosdzw==
+
 electron-notarize@^0.2.0:
   version "0.2.1"
   resolved "https://registry.yarnpkg.com/electron-notarize/-/electron-notarize-0.2.1.tgz#759e8006decae19134f82996ed910db26d9192cc"
@@ -3161,6 +3166,14 @@ electron-updater@^4.2.5:
     lodash.isequal "^4.5.0"
     pako "^1.0.11"
     semver "^7.1.3"
+
+electron-util@^0.14.1:
+  version "0.14.1"
+  resolved "https://registry.yarnpkg.com/electron-util/-/electron-util-0.14.1.tgz#047095c9ac76582612e7e496b0b9c70b73e9ca6c"
+  integrity sha512-MvwYywBZ+8P3pSILIEuWHVcykxsaRZOE3iSfHZibfDem/lEK5L1V9UfykmCJJBVL2voJM0o+LdjfuKxtH5kjOQ==
+  dependencies:
+    electron-is-dev "^1.1.0"
+    new-github-issue-url "^0.2.1"
 
 electron@^6.0.0:
   version "6.1.9"
@@ -5608,6 +5621,11 @@ neo-async@^2.5.0, neo-async@^2.6.0, neo-async@^2.6.1:
   version "2.6.1"
   resolved "https://registry.yarnpkg.com/neo-async/-/neo-async-2.6.1.tgz#ac27ada66167fa8849a6addd837f6b189ad2081c"
 
+new-github-issue-url@^0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/new-github-issue-url/-/new-github-issue-url-0.2.1.tgz#e17be1f665a92de465926603e44b9f8685630c1d"
+  integrity sha512-md4cGoxuT4T4d/HDOXbrUHkTKrp/vp+m3aOA7XXVYwNsUNMK49g3SQicTSeV5GIz/5QVGAeYRAOlyp9OvlgsYA==
+
 nice-try@^1.0.4:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
@@ -7792,9 +7810,9 @@ ssh2-streams@~0.4.10:
     bcrypt-pbkdf "^1.0.2"
     streamsearch "~0.1.2"
 
-ssh2@^0.8.5, ssh2@^0.8.9:
+ssh2@^0.8.9, ssh2@beekeeper-studio/ssh2#electron-detection:
   version "0.8.9"
-  resolved "https://registry.yarnpkg.com/ssh2/-/ssh2-0.8.9.tgz#54da3a6c4ba3daf0d8477a538a481326091815f3"
+  resolved "https://codeload.github.com/beekeeper-studio/ssh2/tar.gz/7d4235c700723d44021db23d8297183e0df99c71"
   dependencies:
     ssh2-streams "~0.4.10"
 

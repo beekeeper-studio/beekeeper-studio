@@ -8,9 +8,6 @@ import {
 import { manageUpdates } from './background/update_manager'
 import { configureMenu } from './background/configure_menu'
 
-// import QueryRun from './models/query-run'
-// import ConnectionConfig from './models/connection-config'
-
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const debugMode = !!process.env.DEBUG
 const os = process.platform;
@@ -65,9 +62,6 @@ function createWindow () {
     if (debugMode) win.webContents.openDevTools();
     manageUpdates(win)
   }
-
-
-
 
   win.on('closed', () => {
     win = null

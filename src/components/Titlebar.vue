@@ -1,10 +1,10 @@
 <template>
-  <div class="titlebar" @dblclick.prevent.stop="maximizeWindow" :class="{windows: isWindows}">
-    <div class="titlebar-icon" v-if="!isMac">
+  <div class="titlebar" @dblclick.prevent.stop="maximizeWindow" :class="{windows: $config.isWindows}">
+    <div class="titlebar-icon" v-if="!$config.isMac">
       <img src="@/assets/logo.svg" />
     </div>
     <div class="titlebar-title noselect">Beekeeper Studio</div>
-    <div class="titlebar-actions" v-if="isWindows">
+    <div class="titlebar-actions" v-if="$config.isWindows">
       <template>
         <button class="btn btn-link" id="minimize" @click.prevent="minimizeWindow"><i class="material-icons">remove</i></button>
         <button class="btn btn-link" id="maximize" @click.prevent="maximizeWindow">
