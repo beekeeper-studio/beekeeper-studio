@@ -189,6 +189,14 @@
     .btn-primary {
       min-width: auto;
     }
+    @media (max-width: 850px) {
+      flex-wrap: nowrap;
+      .select-wrap {
+        > select {
+          min-width: 30px;
+        }
+      }
+    }
   }
   .filter {
     position: relative;
