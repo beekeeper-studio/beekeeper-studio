@@ -219,7 +219,6 @@
             result.truncatedRowCount = config.maxResults
           }
 
-          this.result = result
           this.results = results
           this.$store.dispatch('logQuery', { text: this.editor.getValue(), rowCount: result.rowCount})
         } catch (ex) {
