@@ -2,7 +2,7 @@
 
 import fs from 'fs'
 import path from 'path'
-import { getPort } from '../utils';
+import pf from 'portfinder'
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward'
 import appConfig from '../../config'
@@ -42,7 +42,9 @@ export default function(config) {
       const connection = new SSHConnection(sshConfig)
       logger().debug("connection created!")
 
-      const localPort = await getPort()
+      const localPort = await pf.getPortPromise({port: 10000, stopPort: 60000})
+      // workaround for `getPortPromise` not releasing the port quickly enough
+      await new Promise(resolve => setTimeout(resolve, 500));
       const tunnelConfig = {
         fromPort: localPort,
         toPort: config.port,
