@@ -9,7 +9,6 @@ import { UsedConnection } from '@/entity/used_connection'
 import { SavedConnection } from '@/entity/saved_connection'
 import { FavoriteQuery } from '@/entity/favorite_query'
 import { UsedQuery } from '@/entity/used_query'
-import config from '@/config'
 import ConnectionProvider from '@/lib/connection-provider'
 
 Vue.use(Vuex)
@@ -167,12 +166,23 @@ const store = new Vuex.Store({
           v.entityType = 'view'
         })
         const tables = onlyTables.concat(views)
-        for (let i = 0; i < tables.length; i++) {
-          const table = tables[i]
-          const columns = await context.state.connection.listTableColumns(table.name, table.schema)
-          context.commit("tablesLoading", `Loading ${i}/${tables.length} tables`)
-          tables[i].columns = columns
-        }
+
+        var processed = 0
+
+
+        await Promise.all(tables.map(table => {
+          return new Promise(async (resolve, reject) => {
+            try {
+              const columns = await context.state.connection.listTableColumns(table.name, table.schema)
+              processed += 1
+              context.commit("tablesLoading", `Loading ${processed}/${tables.length} tables`)
+              table.columns = columns
+              resolve()
+            } catch (error) {
+              reject(error)
+            }
+          })
+        }))
         context.commit('tables', tables)
 
       } finally {
@@ -225,8 +235,7 @@ const store = new Vuex.Store({
       }
     }
   },
-  plugins: [],
-  devtools: config.environment == 'development'
+  plugins: []
 })
 
 export default store

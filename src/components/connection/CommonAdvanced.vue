@@ -15,6 +15,12 @@
           <input type="number" v-model.number="config.sshPort">
         </div>
       </div>
+      <div class="row gutter">
+        <div class="col form-group">
+          <label for="bastionHost">Bastion Host (Jump Host)</label>
+          <input class="form-control" v-model="config.sshBastionHost" type="text" name="bastionHost">
+        </div>
+      </div>
       <div class="form-group">
         <label>SSH Authentication</label>
         <select class="form-control" v-model="config.sshMode">
@@ -22,31 +28,65 @@
         </select>
       </div>
 
+      <div v-if="config.sshMode === 'agent'" class="agent gutter">
+        <div class="form-group">
+          <label for="sshUsername">SSH Username</label>
+          <input class="form-control" type="text" v-model="config.sshUsername">
+        </div>
+        <div class="alert alert-warning" v-if="$config.isSnap">
+          <i class="material-icons">warning</i>
+          <p>
+            SSH Agent Forwarding is not possible with the Snap version of Beekeeper Studio due to the security model of Snap apps.
+            <external-link :href="enableSshLink">Read more</external-link>            
+          </p>
+        </div>
+        <div v-else-if="$config.sshAuthSock" class="alert alert-success">
+          <i class="material-icons">check</i>
+          We found your SSH Agent. You're good to go!
+        </div>
+        <div v-else-if="$config.isWindows" class="alert alert-info">
+          <i class="material-icons">info</i>
+          We didn't find a *nix ssh-agent running, so we'll attempt to use the PuTTY agent, pageant.
+        </div>
+        <div v-else class="alert alert-warning">
+          <i class="material-icons">warning</i>
+          You don't seem to have an SSH agent running.
+        </div>
+      </div>
 
-
-      <div v-if="config.sshMode === 'keyfile'" class="private-key row gutter">
-        <div class="col">
-          <div class="form-group">
-            <label for="sshUsername">SSH Username</label>
-            <input class="form-control" type="text" v-model="config.sshUsername">
+      <div v-if="config.sshMode === 'keyfile'" class="private-key gutter">
+        <div class="row">
+          <div class="col">
+            <div class="form-group">
+              <label for="sshUsername">SSH Username</label>
+              <input class="form-control" type="text" v-model="config.sshUsername">
+            </div>
           </div>
         </div>
-        <div class="col s6 form-group">
-          <label for="sshKeyfile">Private Key File</label>
-          <file-picker
-            v-model="config.sshKeyfile"
-            :show-hidden-files="true"
-            :default-path="filePickerDefaultPath">
-          </file-picker>
+        <div v-if="$config.isSnap && !$config.snapSshPlug" class="row">
+          <div class="alert alert-warning">
+            <i class="material-icons">warning</i>
+            <p>
+              Hey snap user! You need to <external-link :href="enableSshLink">enable SSH access</external-link> before Beekeeper can access your .ssh directory.
+            </p>
+
+          </div>
         </div>
-        <div class="col s6 form-group">
-          <label for="sshKeyfilePassword">Key File PassPhrase <span class="hint">(Optional)</span></label>
-          <input type="password" class="form-control" v-model="config.sshKeyfilePassword">
+        <div class="row">
+          <div class="col s6 form-group">
+            <label for="sshKeyfile">Private Key File</label>
+            <file-picker
+              v-model="config.sshKeyfile"
+              :show-hidden-files="true"
+              :default-path="filePickerDefaultPath">
+            </file-picker>
+          </div>
+          <div class="col s6 form-group">
+            <label for="sshKeyfilePassword">Key File PassPhrase <span class="hint">(Optional)</span></label>
+            <input type="password" class="form-control" v-model="config.sshKeyfilePassword">
+          </div>
         </div>
-        <!-- <div class="col form-group">
-          <input type="checkbox" name="rememberPassword" class="form-control" v-model="config.rememberSshKeyfilePassword">
-          <label for="rememberPassword">Save Password? <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help</i></label>
-        </div> -->
+
 
       </div>
       <div v-if="config.sshMode === 'userpass'" class="row gutter">
@@ -63,16 +103,13 @@
           </div>
         </div>
       </div>
-      <!-- <div class="col form-group">
-        <input type="checkbox" name="rememberPassword" class="form-control" v-model="config.rememberSshPassword">
-        <label for="rememberPassword">Save Password? <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help</i></label>
-      </div> -->
 
     </div>
   </div>
 </template>
 <script>
   import FilePicker from '@/components/form/FilePicker'
+  import ExternalLink from '@/components/common/ExternalLink'
 
   import { remote } from 'electron'
   import { join as pathJoin } from 'path'
@@ -80,13 +117,15 @@
   export default {
     props: ['config'],
     components: {
-      FilePicker
+      FilePicker, ExternalLink
     },
     data() {
       return {
+        enableSshLink: "https://docs.beekeeperstudio.io/installation/#ssh-key-access-for-the-snap",
         sshModeOptions: [
           { label: "Key File", mode: 'keyfile' },
-          { label: "Username & Password", mode: "userpass" }
+          { label: "Username & Password", mode: "userpass" },
+          { label: "SSH Agent", mode: "agent" }
         ],
         filePickerDefaultPath: pathJoin(remote.app.getPath('home'), '.ssh')
       }

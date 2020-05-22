@@ -597,6 +597,9 @@ input[type=file] {
     margin: 0.35rem 0;
     padding-left: 1.5rem;
   }
+  p {
+    margin: 0;
+  }
 }
 .alert-danger {
   color: lighten($brand-danger, 5%);

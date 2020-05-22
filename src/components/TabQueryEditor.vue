@@ -71,7 +71,6 @@
 
   import { mapState } from 'vuex'
 
-  import config from '@/config'
   import ProgressBar from './editor/ProgressBar'
   import ResultTable from './editor/ResultTable'
 
@@ -219,10 +218,10 @@
             result.rowCount = result.rowCount || 0
             // TODO (matthew): remove truncation logic somewhere sensible
             totalRows += result.rowCount
-            if (result.rowCount > config.maxResults) {
-              result.rows = _.take(result.rows, config.maxResults)
+            if (result.rowCount > this.$config.maxResults) {
+              result.rows = _.take(result.rows, this.$config.maxResults)
               result.truncated = true
-              result.truncatedRowCount = config.maxResults
+              result.truncatedRowCount = this.$config.maxResults
             }
           })
           this.results = results

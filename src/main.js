@@ -26,6 +26,7 @@ import {TypeOrmPlugin} from './lib/typeorm_plugin'
 import config from './config'
 import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
 import Migration from './migration/index'
+import ConfigPlugin from './plugins/ConfigPlugin'
 
 
 (async () => {
@@ -61,17 +62,9 @@ import Migration from './migration/index'
     Vue.config.devtools = process.env.NODE_ENV === 'development';
 
     Vue.mixin({
-      data: function() {
-        return {
-          platform: window.navigator.platform,
-          isMac: !!window.navigator.platform.match('Mac'),
-          isWindows: !!window.navigator.platform.match('Win'),
-          isLinux: !!window.navigator.userAgent.match("(Linux|X11)")
-        }
-      },
       methods: {
         ctrlOrCmd(key) {
-          if (this.isMac) return `meta+${key}`
+          if (this.$config.isMac) return `meta+${key}`
           return `ctrl+${key}`
         }
       }
@@ -82,6 +75,7 @@ import Migration from './migration/index'
     Vue.use(VueHotkey)
     Vue.use(VTooltip)
     Vue.use(VModal)
+    Vue.use(ConfigPlugin)
     Vue.component('toggle', Vueable.Toggle);
     Vue.component('target', Vueable.Target);
     Vue.use(VueNoty, {

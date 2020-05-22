@@ -20,7 +20,7 @@
             <form @action="submit" v-if="config">
               <div class="form-group">
                 <label for="connectionType">Connection Type</label>
-                <select name="connectionType" class="form-control custom-select" v-model="config.connectionType" @change="changeType" id="connection-select">
+                <select name="connectionType" class="form-control custom-select" v-model="config.connectionType" id="connection-select">
                   <option disabled value="null">Select a connection type...</option>
                   <option :key="t.value" v-for="t in connectionTypes" :value="t.value">{{t.name}}</option>
                 </select>
@@ -75,7 +75,6 @@
 
 <script>
   import os from 'os'
-  import config from '../config'
   import {SavedConnection} from '../entity/saved_connection'
   import ConnectionSidebar from './ConnectionSidebar'
   import MysqlForm from './connection/MysqlForm'
@@ -100,7 +99,7 @@
     },
     computed: {
       connectionTypes() {
-        return config.defaults.connectionTypes
+        return this.$config.defaults.connectionTypes
       },
       pageTitle() {
         if(_.isNull(this.config) || _.isUndefined(this.config.id)) {
@@ -138,17 +137,6 @@
     methods: {
       edit(config) {
         this.config = config
-      },
-      changeType() {
-        if(['mysql', 'mariadb'].includes(this.config.connectionType)) {
-          this.config.port = 3306
-        } else if(this.config.connectionType === 'postgresql') {
-          this.config.port = 5432
-        } else if(this.config.connectionType === 'sqlserver') {
-          this.config.port = 1433
-        } else if(this.config.connectionType === 'cockroachdb') {
-          this.config.port = 26257
-        }
       },
       async submit() {
         this.connectionError = null
