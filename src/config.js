@@ -19,7 +19,7 @@ const keyFile = path.join(userDirectory, '.key')
 
 function hasSshKeysPlug() {
   try {
-    const code = execSync('snapctl is_connected ssh-keys')
+    const code = execSync('snapctl is-connected ssh-keys')
     return code == 0
   } catch (error) {
     return false    
