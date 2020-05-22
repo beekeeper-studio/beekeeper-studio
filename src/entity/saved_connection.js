@@ -23,9 +23,6 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: "varchar", nullable: true})
   domain
 
-  @Column({type: "varchar", nullable: true, default: 'default'})
-  authenticationType = 'default'
-
   @Column({type: "varchar", nullable: true})
   defaultDatabase
 
