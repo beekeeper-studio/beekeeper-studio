@@ -213,17 +213,19 @@
 
           const runningQuery = this.connection.query(this.editor.getValue())
           const results = await runningQuery.execute()
-          const result = results[0] || {}
-          result.rowCount = result.rowCount || 0
-          // TODO (matthew): remove truncation logic somewhere sensible
-          if (result.rowCount > config.maxResults) {
-            result.rows = _.take(result.rows, config.maxResults)
-            result.truncated = true
-            result.truncatedRowCount = config.maxResults
-          }
-
+          let totalRows = 0
+          results.forEach(result => {
+            result.rowCount = result.rowCount || 0
+            // TODO (matthew): remove truncation logic somewhere sensible
+            totalRows += result.rowCount
+            if (result.rowCount > config.maxResults) {
+              result.rows = _.take(result.rows, config.maxResults)
+              result.truncated = true
+              result.truncatedRowCount = config.maxResults
+            }
+          })
           this.results = results
-          this.$store.dispatch('logQuery', { text: this.editor.getValue(), rowCount: result.rowCount})
+          this.$store.dispatch('logQuery', { text: this.editor.getValue(), rowCount: totalRows})
         } catch (ex) {
           this.error = ex
           this.result = null
