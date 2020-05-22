@@ -25,8 +25,8 @@ export default function(config) {
         passphrase: config.ssh.passphrase,
         username: config.ssh.user,
         password: config.ssh.password,
-        // this will try to read `id_rsa` just on its own. Don't do that.
-        skipAutoPrivateKey: true
+        skipAutoPrivateKey: true,
+        noReadline: true
       }
 
       if (config.ssh.useAgent && appConfig.sshAuthSock) {
@@ -38,6 +38,7 @@ export default function(config) {
       } else {
         sshConfig.privateKey = null
       }
+      console.log(sshConfig)
       const connection = new SSHConnection(sshConfig)
       logger().debug("connection created!")
 
@@ -57,6 +58,7 @@ export default function(config) {
       }
       resolve(result)
     } catch (error) {
+      console.log(error)
       reject(error)
     }
   })
