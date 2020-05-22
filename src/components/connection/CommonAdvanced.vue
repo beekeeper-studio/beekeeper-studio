@@ -33,7 +33,11 @@
         </div>
         <div class="col s6 form-group">
           <label for="sshKeyfile">Private Key File</label>
-          <input class="form-control" type="file" @change="setKeyfile">
+          <file-picker
+            v-model="config.sshKeyfile"
+            :show-hidden-files="true"
+            :default-path="filePickerDefaultPath">
+          </file-picker>
         </div>
         <div class="col s6 form-group">
           <label for="sshKeyfilePassword">Key File PassPhrase <span class="hint">(Optional)</span></label>
@@ -68,14 +72,23 @@
   </div>
 </template>
 <script>
+  import FilePicker from '@/components/form/FilePicker'
+
+  import { remote } from 'electron'
+  import { join as pathJoin } from 'path'
+
   export default {
     props: ['config'],
+    components: {
+      FilePicker
+    },
     data() {
       return {
         sshModeOptions: [
           { label: "Key File", mode: 'keyfile' },
           { label: "Username & Password", mode: "userpass" }
-        ]
+        ],
+        filePickerDefaultPath: pathJoin(remote.app.getPath('home'), '.ssh')
       }
     },
     computed: {
@@ -86,9 +99,6 @@
     methods: {
       setMode(option) {
         this.config.sshMode = option.mode
-      },
-      setKeyfile(e) {
-        this.config.sshKeyfile = e.target.files[0].path
       }
     }
   }

@@ -30,7 +30,6 @@ import Migration from './migration/index'
 
 (async () => {
   try {
-    process.env.PGPASSFILE = ".pgpass"
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
     const appDb = path.join(config.userDirectory, 'app.db')
     const connection = await createConnection({
@@ -68,6 +67,12 @@ import Migration from './migration/index'
           isMac: !!window.navigator.platform.match('Mac'),
           isWindows: !!window.navigator.platform.match('Win'),
           isLinux: !!window.navigator.userAgent.match("(Linux|X11)")
+        }
+      },
+      methods: {
+        ctrlOrCmd(key) {
+          if (this.isMac) return `meta+${key}`
+          return `ctrl+${key}`
         }
       }
     })

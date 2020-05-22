@@ -1,6 +1,6 @@
 const webpack = require('webpack');
 
-const externals = ['sqlite3', 'sequelize', 'mysql', 'typeorm', 'reflect-metadata', 'cassandra-driver']
+const externals = ['sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2']
 module.exports = {
   pluginOptions: {
     electronBuilder: {
@@ -48,11 +48,15 @@ module.exports = {
             'github',
             'snapStore'
           ],
-
+          plugs: ["default", "ssh-keys"]
         },
         win: {
-          icon: './public/icons/png/512x512.png'
-        }
+          icon: './public/icons/png/512x512.png',
+          target: ['nsis', 'portable']
+        },
+        portable: {
+          "artifactName": "${productName}-${version}-portable.exe",
+        },
       }
     }
   },

@@ -1,11 +1,13 @@
 'use strict'
-import { app, protocol, BrowserWindow, Menu} from 'electron'
+import { app, protocol, BrowserWindow} from 'electron'
+import path from 'path'
 import {
   createProtocol,
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib'
 
 import { manageUpdates } from './background/update_manager'
+import { configureMenu } from './background/configure_menu'
 
 // import QueryRun from './models/query-run'
 // import ConnectionConfig from './models/connection-config'
@@ -18,29 +20,17 @@ const isWindows = os === 'win32'
 const isMac = os === 'darwin'
 const isLinuxOrBSD = !isWindows && !isMac
 
-// Add onlyl for production -- need for dev
-if((isWindows || isLinuxOrBSD) && !isDevelopment && !debugMode) {
-  Menu.setApplicationMenu(null)
-}
-
+const platform = isMac ? 'mac' : (isLinuxOrBSD ? 'linux' : 'windows')
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win
 
-
-
-
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 
 function createWindow () {
-  if (!isDevelopment && !process.env.IS_TEST) {
-    console.log("no menu in production mode")
-    Menu.setApplicationMenu(null);
-  } else {
-    console.log("leaving the menu for development mode")
-  }
+  configureMenu(app, platform, isDevelopment || debugMode)
 
   // Create the browser window.
   win = new BrowserWindow({
@@ -53,7 +43,7 @@ function createWindow () {
     webPreferences: {
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
     },
-    icon: './public/icons/png/512x512.png'
+    icon: path.join(__dirname, '/icons/png/512x512.png')
   })
 
 
@@ -79,10 +69,14 @@ function createWindow () {
     manageUpdates(win)
   }
 
+
+
+
   win.on('closed', () => {
     win = null
   })
 }
+
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {

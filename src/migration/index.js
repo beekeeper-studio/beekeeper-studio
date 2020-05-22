@@ -2,6 +2,7 @@
 import a from './20200101'
 import b from './20200422'
 import dev1 from './dev-1'
+import dev2 from './dev-2'
 import createLogger from '../lib/logger'
 
 const logger = createLogger('migrations')()
@@ -14,7 +15,7 @@ const setupSQL = `
 `
 // put dev migrations at the end
 const migrations = [
-a, b, dev1
+a, b, dev1, dev2
 ]
 
 const Manager = {

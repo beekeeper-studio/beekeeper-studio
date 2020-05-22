@@ -38,7 +38,7 @@ export default async function (server, database) {
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
-    selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),    
+    selectTop: (table, offset, limit, orderBy, filters, schema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -53,14 +53,18 @@ export async function disconnect(conn) {
   connection.close();
 }
 
-export async function selectTop(conn, table, offset, limit, orderBy, filters) {
+function wrap(identifier) {
+  return `[${identifier}]`
+}
+
+export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
   let orderByString = ""
   let filterString = ""
 
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
-      if (Array.isArray(item)) {
-        return item.join(" ")
+      if (_.isObject(item)) {
+        return `${wrap(item.field)} ${item.dir}`
       } else {
         return item
       }
@@ -69,19 +73,19 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
 
   if (filters && filters.length > 0) {
     filterString = "WHERE " + filters.map((item) => {
-      return `${item.field} ${item.type} '${item.value}'`
+      return `${wrap(item.field)} ${item.type} '${item.value}'`
     }).join(" AND ")
   }
 
   let baseSQL = `
-    FROM ${table}
+    FROM ${wrap(schema)}.${wrap(table)}
     ${filterString}
   `
   let countQuery = `
     select count(*) as total ${baseSQL}
   `
   logger().debug(countQuery)
-  
+
   let query = `
     SELECT * ${baseSQL}
     ${orderByString}
@@ -91,6 +95,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   logger().debug(query)
   const countResults = await driverExecuteQuery(conn, { query: countQuery})
   const result = await driverExecuteQuery(conn, { query })
+  console.log(result)
   const rowWithTotal = countResults.data.recordset.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return {
@@ -242,6 +247,7 @@ export async function listTableColumns(conn, database, table) {
     SELECT column_name, data_type
     FROM information_schema.columns
     WHERE table_name = '${table}'
+    ORDER BY ordinal_position
   `;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });

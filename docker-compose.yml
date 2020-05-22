@@ -3,7 +3,9 @@ volumes:
   mssql:
   psql:
   mysql:
+  mysql8:
   mariadb:
+  cockroachdb:
 
 services:
   psql:
@@ -27,6 +29,18 @@ services:
       - 3307:3306
     volumes:
       - mariadb:/var/lib/mysql
+      - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
+  mysql8:
+    image: mysql:8.0.20
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: test
+    ports:
+      - 3308:3306
+    volumes:
+      - mysql8:/var/lib/mysql
       - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
   mysql:
     image: mysql:5.7.22
@@ -53,5 +67,12 @@ services:
     ports:
       - 1433:1433
     command: sh -c ' chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /opt/mssql/bin/sqlservr;'
+  cockroachdb:
+    image: cockroachdb/cockroach
+    volumes:
+      - cockroachdb:/cockroach/cockroach-data
+    ports:
+      - 26257:26257
+    command: start --insecure
 
 

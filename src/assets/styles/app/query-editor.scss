@@ -95,14 +95,6 @@
       padding: 0;
       background: transparent;
     }
-    .tabulator {
-      .tabulator-tableHolder {
-        overflow: hidden;
-        &:hover {
-          overflow: auto;
-        }
-      }
-    }
   }
 
   // Modal

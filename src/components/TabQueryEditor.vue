@@ -12,7 +12,7 @@
     </div>
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar v-if="running"></progress-bar>
-      <result-table ref="table" v-else-if="result && result.rowCount > 0" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
+      <result-table ref="table" v-else-if="rowCount > 0" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
       <div class="alert alert-info" v-else-if="result"><i class="material-icons">info</i>Query Executed Successfully. No Results</div>
       <div class="alert alert-danger" v-else-if="error"><i class="material-icons">warning</i>{{error}}</div>
       <div v-else><!-- No Data --></div>
@@ -27,7 +27,7 @@
             </div>
           </span>
           <div class="row-counts">
-            <span class="num-rows" v-if="result.rowCount > 0">{{result.rowCount}} Records</span>
+            <span class="num-rows" v-if="rowCount > 0">{{rowCount}} Records</span>
             <span class="truncated-rows" v-if="result && result.truncated"> &middot; only {{result.truncatedRowCount}} shown.</span>
           </div>
           <span class="affected-rows" v-if="affectedRowsText ">{{ affectedRowsText}}</span>
@@ -72,7 +72,6 @@
   import { mapState } from 'vuex'
 
   import config from '@/config'
-  import { ctrlOrCmd } from '@/lib/utils'
   import ProgressBar from './editor/ProgressBar'
   import ResultTable from './editor/ResultTable'
 
@@ -114,6 +113,9 @@
         const rows = this.result.affectedRows
         return `${rows} ${Pluralize('row', rows)} affected`
       },
+      rowCount() {
+        return this.result && this.result.rowCount ? this.result.rowCount : 0
+      },
       hasText() {
         return this.query.text && this.query.text.replace(/\s+/, '').length > 0
       },
@@ -128,7 +130,7 @@
       },
       keymap() {
         const result = {}
-        result[ctrlOrCmd('l')] = this.selectEditor
+        result[this.ctrlOrCmd('l')] = this.selectEditor
         return result
       },
       connectionType() {
@@ -211,7 +213,8 @@
 
           const runningQuery = this.connection.query(this.editor.getValue())
           const results = await runningQuery.execute()
-          const result = results[0]
+          const result = results[0] || {}
+          result.rowCount = result.rowCount || 0
           // TODO (matthew): remove truncation logic somewhere sensible
           if (result.rowCount > config.maxResults) {
             result.rows = _.take(result.rows, config.maxResults)
