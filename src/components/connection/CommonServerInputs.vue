@@ -24,13 +24,7 @@
         <input type="password" v-model="config.password" class="form-control">
       </div>
     </div>
-    <!-- <div class="save-password row gutter">
-      <div class="save-passowrd checkbox-group row">
-        <input type="checkbox" name="rememberPassword" class="form-control" v-model="config.rememberPassword">
-        <label for="rememberPassword">Save Password?</label>
-        <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help_outlined</i>
-      </div>
-    </div> -->
+    <slot></slot>
     <div class="form-group expand">
       <label for="defaultDatabase">Default Database</label>
       <input type="text" class="form-control" v-model="config.defaultDatabase">

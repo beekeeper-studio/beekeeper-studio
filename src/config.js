@@ -63,6 +63,7 @@ export default {
       user: null,
       password: null,
       defaultDatabase: null,
+      domain: null,
       ssh: {
         hostname: null,
         port: null,
