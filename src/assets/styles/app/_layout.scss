@@ -257,6 +257,15 @@ i {
   width: 100%;
   transition: border-color 0.15s ease-in-out;
 }
+
+label {
+  i {
+    margin: 0 ($gutter-h * 0.75);
+    font-size: 18px;
+    color: rgba($theme-base, 0.37);
+  }
+}
+
 input, select, textarea {
   @extend .form-control;
   &:focus {
@@ -318,11 +327,7 @@ select {
   span {
     font-size: 13px;
   }
-  i {
-    margin: 0 ($gutter-h * 0.75);
-    font-size: 18px;
-    color: rgba($theme-base, 0.37);
-  }
+
 }
 input[type="checkbox"] {
   $checkbox-size:     16px;
