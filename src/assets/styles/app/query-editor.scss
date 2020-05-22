@@ -39,7 +39,7 @@
       }
     }
   }
-  .top-panel {  
+  .top-panel {
     .toolbar {
       box-shadow: inset 0 -1px $border-color;
       .btn {
@@ -77,8 +77,14 @@
         display: flex;
         align-items: center;
       }
+      .result-selector {
+        margin-right: 10px;
+      }
       .affected-rows {
         padding-left: 10px;
+      }
+      select {
+        height: ($input-height * 0.95);
       }
     }
     .alert {

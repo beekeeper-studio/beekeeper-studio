@@ -6,10 +6,16 @@ $errorColor: $brand-danger;
   width: min-content;
   min-width: 100%;
   .tabulator-cell {
-    border-right: 0;
+    border: 1px solid transparent;
     padding: 4px 8px;
     height: 28px!important;
     line-height: 20px;
+
+    &.active-cell {
+      background: $selection;
+      border-color: $input-highlight;
+      color: $db-select-text;
+    }
   }
   &:nth-child(odd) {
     background: transparent;

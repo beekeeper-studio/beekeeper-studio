@@ -19,6 +19,7 @@ export default {
       client: config.connectionType,
       host: config.host.trim(),
       port: config.port,
+      domain: config.domain,
       socketPath: null,
       user: config.username ? config.username.trim() : null,
       osUser: osUsername,

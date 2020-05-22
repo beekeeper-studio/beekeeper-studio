@@ -11,25 +11,26 @@
       </div>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
-      <!-- <header class="toolbar row flex-middle" v-if="result">
-        <span class="title expand">Results</span>
-        <div class="actions btn-group">
-          <a class="btn btn-fab" @click.prevent="download" v-tooltip="'Download Query Results'"><i class="material-icons">save_alt</i></a>
-        </div>
-      </header> -->
       <progress-bar v-if="running"></progress-bar>
-      <result-table ref="table" v-else-if="result && result.rowCount > 0" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
+      <result-table ref="table" v-else-if="rowCount > 0" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
       <div class="alert alert-info" v-else-if="result"><i class="material-icons">info</i>Query Executed Successfully. No Results</div>
       <div class="alert alert-danger" v-else-if="error"><i class="material-icons">warning</i>{{error}}</div>
       <div v-else><!-- No Data --></div>
       <span class="expand" v-if="!result"></span>
       <footer class="status-bar row query-meta" v-bind:class="{'empty': !result}">
-        <template v-if="result">
+        <template v-if="results.length > 0">
+          <span v-show="results.length > 1" class="result-selector">
+            <div class="select-wrap">
+              <select name="resultSelector" id="resultSelector" v-model="selectedResult" class="form-control">
+                <option v-for="(result, index) in results" :selected="selectedResult == index" :key="index" :value="index">Result {{index + 1}}</option>
+              </select>
+            </div>
+          </span>
           <div class="row-counts">
-            <span class="num-rows" v-if="result.rowCount > 0">{{result.rowCount}} Results</span>
+            <span class="num-rows" v-if="rowCount > 0">{{rowCount}} Records</span>
             <span class="truncated-rows" v-if="result && result.truncated"> &middot; only {{result.truncatedRowCount}} shown.</span>
           </div>
-          <span class="affected-rows" v-if="result && result.affectedRows">{{ affectedRowsText}}</span>
+          <span class="affected-rows" v-if="affectedRowsText ">{{ affectedRowsText}}</span>
         </template>
         <template v-else>
           No Data
@@ -78,8 +79,10 @@
     props: ['tab', 'active'],
     data() {
       return {
-        result: null,
+        // result: null,
+        results: [],
         running: false,
+        selectedResult: 0,
         editor: null,
         runningQuery: null,
         error: null,
@@ -92,6 +95,9 @@
       }
     },
     computed: {
+      result() {
+        return this.results[this.selectedResult]
+      },
       query() {
         return this.tab.query
       },
@@ -100,9 +106,14 @@
       },
       affectedRowsText() {
         if (!this.result) {
-          return ""
+          return null
         }
-        return `${this.result.affectedRows} ${Pluralize('row', this.result.affectedRows)} affected`
+
+        const rows = this.result.affectedRows
+        return `${rows} ${Pluralize('row', rows)} affected`
+      },
+      rowCount() {
+        return this.result && this.result.rowCount ? this.result.rowCount : 0
       },
       hasText() {
         return this.query.text && this.query.text.replace(/\s+/, '').length > 0
@@ -132,7 +143,7 @@
           })
           if (this.connectionType === 'postgresql' && /[A-Z]/.test(table.name)) {
             result[`"${table.name}"`] = cleanColumns
-          } 
+          }
           result[table.name] = cleanColumns
         })
         return { tables: result }
@@ -197,20 +208,24 @@
       },
       async submitQuery() {
         this.running = true
+        this.selectedResult = 0
         try {
 
           const runningQuery = this.connection.query(this.editor.getValue())
           const results = await runningQuery.execute()
-          const result = results[0]
-          // TODO (matthew): remove truncation logic somewhere sensible
-          if (result.rowCount > this.$config.maxResults) {
-            result.rows = _.take(result.rows, this.$config.maxResults)
-            result.truncated = true
-            result.truncatedRowCount = this.$config.maxResults
-          }
-
-          this.result = result
-          this.$store.dispatch('logQuery', { text: this.editor.getValue(), rowCount: result.rowCount})
+          let totalRows = 0
+          results.forEach(result => {
+            result.rowCount = result.rowCount || 0
+            // TODO (matthew): remove truncation logic somewhere sensible
+            totalRows += result.rowCount
+            if (result.rowCount > config.maxResults) {
+              result.rows = _.take(result.rows, config.maxResults)
+              result.truncated = true
+              result.truncatedRowCount = config.maxResults
+            }
+          })
+          this.results = results
+          this.$store.dispatch('logQuery', { text: this.editor.getValue(), rowCount: totalRows})
         } catch (ex) {
           this.error = ex
           this.result = null
@@ -321,7 +336,7 @@
             if (origin === 'complete') {
               let [tableName, colName] = text[0].split('.');
               const newText = [[this.wrapIdentifier(tableName), this.wrapIdentifier(colName)].filter(s => s).join('.')]
-              co.update(from, to, newText, origin); 
+              co.update(from, to, newText, origin);
             }
           })
         }

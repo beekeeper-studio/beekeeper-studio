@@ -1,5 +1,6 @@
 'use strict'
 import { app, protocol, BrowserWindow} from 'electron'
+import path from 'path'
 import {
   createProtocol,
   installVueDevtools
@@ -32,12 +33,14 @@ function createWindow () {
   win = new BrowserWindow({
     width: 1200,
     height: 800,
+    minWidth: 800,
+    minHeight: 600,
     titleBarStyle: 'hidden',
     frame: isLinuxOrBSD,
     webPreferences: {
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
     },
-    icon: './public/icons/png/512x512.png'
+    icon: path.join(__dirname, '/icons/png/512x512.png')
   })
 
 
