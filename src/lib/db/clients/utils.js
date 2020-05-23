@@ -60,7 +60,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
 
   if (filters && filters.length > 0) {
     filterString = "WHERE " + filters.map((item) => {
-      return `${item.field} ${item.type} ?`
+      return `\`${item.field}\` ${item.type} ?`
     }).join(" AND ")
 
     filterParams = filters.map((item) => {
@@ -69,7 +69,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
   }
 
   let baseSQL = `
-    FROM ${table}
+    FROM \`${table}\`
     ${filterString}
   `
   let countSQL = `
