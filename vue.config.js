@@ -24,7 +24,10 @@ module.exports = {
             'snap',
             'deb',
             'appImage'
-          ]
+          ],
+          desktop: {
+            'StartupWMClass': 'beekeeper-studio'
+          },
         },
         deb: {
           publish: [
