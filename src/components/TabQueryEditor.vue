@@ -208,6 +208,7 @@
       },
       async submitQuery() {
         this.running = true
+        this.results = []
         this.selectedResult = 0
         try {
 
@@ -228,7 +229,6 @@
           this.$store.dispatch('logQuery', { text: this.editor.getValue(), rowCount: totalRows})
         } catch (ex) {
           this.error = ex
-          this.result = null
         } finally {
           this.running = false
         }
