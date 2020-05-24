@@ -1,8 +1,8 @@
 {
   "name": "beekeeper-studio",
-  "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "version": "1.4.0",
   "private": true,
+  "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "author": {
     "name": "Beekeeper Studio Team",
     "email": "matthew@rathbonelabs.com",
@@ -10,6 +10,8 @@
   },
   "scripts": {
     "serve": "vue-cli-service serve",
+    "test:unit": "vue-cli-service test:unit",
+    "test:integration": "vue-cli-service test:unit --config ./jest.integration.config.js",
     "lint": "vue-cli-service lint",
     "electron:build": "vue-cli-service electron:build",
     "electron:serve": "vue-cli-service electron:serve --host localhost",
@@ -64,7 +66,9 @@
     "@types/node": "^8.0.29",
     "@vue/cli-plugin-babel": "^4.1.2",
     "@vue/cli-plugin-eslint": "^4.1.2",
+    "@vue/cli-plugin-unit-jest": "~4.3.0",
     "@vue/cli-service": "^4.1.2",
+    "@vue/test-utils": "1.0.0-beta.31",
     "aws-sdk": "^2.645.0",
     "babel-eslint": "^10.0.1",
     "electron": "^6.0.0",
@@ -75,10 +79,6 @@
     "eslint-plugin-vue": "^5.0.0",
     "vue-cli-plugin-electron-builder": "^2.0.0-beta.6",
     "vue-template-compiler": "^2.6.10"
-  },
-  "resolutions": {
-    "pg/pgpass": "beekeeper-studio/pgpass#blank-home",
-    "node-ssh-forward/ssh2": "beekeeper-studio/ssh2#electron-detection"
   },
   "eslintConfig": {
     "root": true,
@@ -97,7 +97,18 @@
       "ecmaFeatures": {
         "legacyDecorators": true
       }
-    }
+    },
+    "overrides": [
+      {
+        "files": [
+          "**/__tests__/*.{j,t}s?(x)",
+          "**/tests/unit/**/*.spec.{j,t}s?(x)"
+        ],
+        "env": {
+          "jest": true
+        }
+      }
+    ]
   },
   "postcss": {
     "plugins": {
@@ -107,5 +118,9 @@
   "browserslist": [
     "> 1%",
     "last 2 versions"
-  ]
+  ],
+  "resolutions": {
+    "pg/pgpass": "beekeeper-studio/pgpass#blank-home",
+    "node-ssh-forward/ssh2": "beekeeper-studio/ssh2#electron-detection"
+  }
 }
