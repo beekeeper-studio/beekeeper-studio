@@ -51,7 +51,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
       if (_.isObject(item)) {
-        return `${item.field} ${item.dir}`
+        return `\`${item.field}\` ${item.dir}`
       } else {
         return item
       }

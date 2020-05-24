@@ -67,7 +67,7 @@
           <div class="alert alert-warning">
             <i class="material-icons">warning</i>
             <p>
-              Hey snap user! You need to <external-link :href="enableSshLink">enable SSH access</external-link> before Beekeeper can access your .ssh directory.
+              Hey snap user! You need to <external-link :href="enableSshLink">enable SSH access</external-link>, then restart Beekeeper to provide access to your .ssh directory.
             </p>
 
           </div>
