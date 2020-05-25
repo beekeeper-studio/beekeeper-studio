@@ -67,6 +67,7 @@ export default async function (server, database) {
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),
     listViews: (filter) => listViews(conn, filter),
+    listMaterializedViews: (filter) => listMaterializedViews(conn, filter),
     listRoutines: (filter) => listRoutines(conn, filter),
     listTableColumns: (db, table, schema = defaultSchema) => listTableColumns(conn, db, table, schema),
     listTableTriggers: (table, schema = defaultSchema) => listTableTriggers(conn, table, schema),
@@ -123,6 +124,20 @@ export async function listViews(conn, filter = { schema: 'public' }) {
 
   const data = await driverExecuteQuery(conn, { query: sql });
 
+  return data.rows;
+}
+
+export async function listMaterializedViews(conn, filter = { schema: 'public' }) {
+  const schemaFilter = buildSchemaFilter(filter, 'schemaname')
+  const sql = `
+    SELECT 
+      schemaname as schema,
+      matviewname as name,
+    FROM pg_matviews
+    ${schemaFilter ? `WHERE ${schemaFilter}`: ''}
+    order by schemaname, matviewname;
+  `
+  const data = await driverExecuteQuery(conn, {query: sql});
   return data.rows;
 }
 

@@ -470,6 +470,10 @@ input[type=file] {
   &.view-icon {
     color: $brand-secondary;
   }
+
+  &.materialized-view-icon {
+    color: $brand-info;
+  }
   &.query {
     color: $brand-pink;
   }

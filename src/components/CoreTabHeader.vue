@@ -36,10 +36,9 @@
         return result.length == 0 ? null : result
       },
       iconClass() {
-        return {
-          'view-icon': this.tab.table.entityType === 'view',
-          'table-icon': this.tab.table.entityType === 'table'
-        }
+        const result = {}
+        result[`${this.tab.table.entityType}-icon`] = true
+        return result
       },
       title() {
         if (this.tab.type === 'query') {
