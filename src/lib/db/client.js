@@ -24,6 +24,7 @@ export function createConnection(server, database) {
     listMaterializedViews: listMaterializedViews.bind(null, server, database),
     listRoutines: listRoutines.bind(null, server, database),
     listTableColumns: listTableColumns.bind(null, server, database),
+    listMaterializedViewColumns: listMaterializedViewColumns.bind(null, server, database),
     listTableTriggers: listTableTriggers.bind(null, server, database),
     listTableIndexes: listTableIndexes.bind(null, server, database),
     listSchemas: listSchemas.bind(null, server, database),
@@ -143,6 +144,11 @@ function listRoutines(server, database, filter) {
 function listTableColumns(server, database, table, schema) {
   checkIsConnected(server, database);
   return database.connection.listTableColumns(database.database, table, schema);
+}
+
+function listMaterializedViewColumns(server, database, table, schema) {
+  checkIsConnected(server, database);
+  return database.connection.listMaterializedViewColumns(database.database, table, schema)
 }
 
 function listTableTriggers(server, database, table, schema) {

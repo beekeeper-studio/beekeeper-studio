@@ -6,7 +6,6 @@ import _ from 'lodash';
 
 import { buildDatabseFilter, buildSchemaFilter } from './utils';
 import createLogger from '../../logger';
-import { listMaterializedViews } from './postgresql';
 
 const logger = createLogger('db:clients:sqlserver');
 
@@ -29,7 +28,7 @@ export default async function (server, database) {
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),
     listViews: (filter) => listViews(conn, filter),
-    listMateralizedViews(filter) => listMaterializedViews(conn, filter),
+    listMateralizedViews: (filter) => listMaterializedViews(conn, filter),
     listRoutines: (filter) => listRoutines(conn, filter),
     listTableColumns: (db, table) => listTableColumns(conn, db, table),
     listTableTriggers: (table) => listTableTriggers(conn, table),
@@ -222,7 +221,7 @@ export async function listViews(conn, filter) {
   }));
 }
 
-export async function listMateralizedViews(conn, filter) {
+export async function listMaterializedViews() {
   // const schemaFilter = buildSchemaFilter(filter, '')
   // TODO: materialized vies in SQL server
   return []
