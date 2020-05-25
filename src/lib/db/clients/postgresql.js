@@ -138,6 +138,12 @@ export async function listMaterializedViews(conn, filter = { schema: 'public' })
     ${schemaFilter ? `WHERE ${schemaFilter}`: ''}
     order by schemaname, matviewname;
   `
+
+  const versionData = (await driverExecuteQuery(conn, {query: "show server_version_num"})).rows[0]
+
+    if (!versionData.server_version_num || versionData.server_version_num.toLowerCase() < "090003") {
+    return []
+  }
   const data = await driverExecuteQuery(conn, {query: sql});
   return data.rows;
 }
