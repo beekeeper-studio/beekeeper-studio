@@ -83,7 +83,8 @@ export default {
       actualTableHeight: "100%",
       loading: false,
       data: null,
-      response: null
+      response: null,
+      limit: 100
     };
   },
   computed: {
@@ -172,17 +173,21 @@ export default {
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
       let offset = 0;
-      let limit = 100;
+      let limit = this.limit;
       let orderBy = null;
       let filters = null;
 
       if (params.sorters) {
         orderBy = params.sorters
       }
+      console.log(params)
 
-      if (params.page && params.size) {
-        limit = params.size;
-        offset = (params.page - 1) * params.size;
+      if (params.size) {
+        limit = params.size
+      }
+
+      if (params.page) {
+        offset = (params.page - 1) * limit;
       }
 
       if (params.filters) {
