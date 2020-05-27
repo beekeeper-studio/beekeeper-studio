@@ -140,6 +140,9 @@
       },
       async remove(config) {
         await this.$store.dispatch('removeConnectionConfig', config)
+        if (this.config === config) {
+          this.config = this.defaultConfig
+        }
         this.$noty.success(`${config.name} deleted`)
       },
       async submit() {
