@@ -109,11 +109,11 @@
           return null
         }
 
-        const rows = this.result.affectedRows
+        const rows = this.result.affectedRows || 0
         return `${rows} ${Pluralize('row', rows)} affected`
       },
       rowCount() {
-        return this.result && this.result.rowCount ? this.result.rowCount : 0
+        return this.result && this.result.rows ? this.result.rows.length : 0
       },
       hasText() {
         return this.query.text && this.query.text.replace(/\s+/, '').length > 0
@@ -211,12 +211,12 @@
         this.results = []
         this.selectedResult = 0
         try {
-
           const runningQuery = this.connection.query(this.editor.getValue())
           const results = await runningQuery.execute()
           let totalRows = 0
           results.forEach(result => {
             result.rowCount = result.rowCount || 0
+
             // TODO (matthew): remove truncation logic somewhere sensible
             totalRows += result.rowCount
             if (result.rowCount > this.$config.maxResults) {

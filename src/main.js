@@ -47,8 +47,7 @@ import ConfigPlugin from './plugins/ConfigPlugin'
       subscriptions: [
         EncryptedColumnSubscriber
       ],
-      logging: true,
-      logger: 'advanced-console',
+      logging: config.isDevelopment ? true : ['error']
     })
 
     const migrator = new Migration(connection, process.env.NODE_ENV)
