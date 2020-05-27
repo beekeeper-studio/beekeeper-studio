@@ -139,6 +139,12 @@ export async function listMaterializedViews(conn, filter = { schema: 'public' })
     order by schemaname, matviewname;
   `
 
+  const isPostgres = (await driverExecuteQuery(conn, {query: "select version()"})).rows[0]
+
+  if(!isPostgres.version || !isPostgres.version.toLowerCase().includes("postgresql")) {
+    return []
+  }
+
   const versionData = (await driverExecuteQuery(conn, {query: "show server_version_num"})).rows[0]
 
     if (!versionData.server_version_num || versionData.server_version_num.toLowerCase() < "090003") {
