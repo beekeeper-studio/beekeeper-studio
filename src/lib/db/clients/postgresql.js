@@ -67,8 +67,10 @@ export default async function (server, database) {
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),
     listViews: (filter) => listViews(conn, filter),
+    listMaterializedViews: (filter) => listMaterializedViews(conn, filter),
     listRoutines: (filter) => listRoutines(conn, filter),
     listTableColumns: (db, table, schema = defaultSchema) => listTableColumns(conn, db, table, schema),
+    listMaterializedViewColumns: (db, table, schema = defaultSchema) => listMaterializedViewColumns(conn, db, table, schema),
     listTableTriggers: (table, schema = defaultSchema) => listTableTriggers(conn, table, schema),
     listTableIndexes: (db, table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
     listSchemas: (db, filter) => listSchemas(conn, filter),
@@ -123,6 +125,32 @@ export async function listViews(conn, filter = { schema: 'public' }) {
 
   const data = await driverExecuteQuery(conn, { query: sql });
 
+  return data.rows;
+}
+
+export async function listMaterializedViews(conn, filter = { schema: 'public' }) {
+  const schemaFilter = buildSchemaFilter(filter, 'schemaname')
+  const sql = `
+    SELECT 
+      schemaname as schema,
+      matviewname as name
+    FROM pg_matviews
+    ${schemaFilter ? `WHERE ${schemaFilter}`: ''}
+    order by schemaname, matviewname;
+  `
+
+  const isPostgres = (await driverExecuteQuery(conn, {query: "select version()"})).rows[0]
+
+  if(!isPostgres.version || !isPostgres.version.toLowerCase().includes("postgresql")) {
+    return []
+  }
+
+  const versionData = (await driverExecuteQuery(conn, {query: "show server_version_num"})).rows[0]
+
+    if (!versionData.server_version_num || versionData.server_version_num.toLowerCase() < "090003") {
+    return []
+  }
+  const data = await driverExecuteQuery(conn, {query: sql});
   return data.rows;
 }
 
@@ -217,6 +245,29 @@ export async function listTableColumns(conn, database, table, schema) {
     dataType: row.data_type,
   }));
 }
+
+export async function listMaterializedViewColumns(conn, database, table, schema) {
+  const sql = `
+    SELECT a.attname,
+          pg_catalog.format_type(a.atttypid, a.atttypmod) as data_type,
+          a.attnotnull
+    FROM pg_attribute a
+      JOIN pg_class t on a.attrelid = t.oid
+      JOIN pg_namespace s on t.relnamespace = s.oid
+    WHERE a.attnum > 0 
+      AND NOT a.attisdropped
+      AND s.nspname = $1
+      AND t.relname = $2 
+    ORDER BY a.attnum;
+  `
+  const params = [schema, table]
+  const data = await driverExecuteQuery(conn, {query: sql, params});
+  return data.rows.map((row) => ({
+    columnName: row.attname,
+    dataType: row.data_type
+  }))
+}
+
 
 export async function listTableTriggers(conn, table, schema) {
   const sql = `

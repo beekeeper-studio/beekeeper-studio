@@ -1,6 +1,7 @@
 version: '3'
 volumes:
   mssql:
+  mssqllatin:
   psql:
   mysql:
   mysql8:

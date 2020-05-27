@@ -28,6 +28,7 @@ export default async function (server, database) {
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),
     listViews: (filter) => listViews(conn, filter),
+    listMaterializedViews: (filter) => listMaterializedViews(conn, filter),
     listRoutines: (filter) => listRoutines(conn, filter),
     listTableColumns: (db, table) => listTableColumns(conn, db, table),
     listTableTriggers: (table) => listTableTriggers(conn, table),
@@ -60,7 +61,9 @@ function wrap(identifier) {
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
   let orderByString = ""
   let filterString = ""
-
+  console.log({
+    table, offset, limit, orderBy, filters, schema
+  })
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
       if (_.isObject(item)) {
@@ -218,6 +221,12 @@ export async function listViews(conn, filter) {
     schema: item.table_schema,
     name: item.table_name,
   }));
+}
+
+export async function listMaterializedViews() {
+  // const schemaFilter = buildSchemaFilter(filter, '')
+  // TODO: materialized vies in SQL server
+  return []
 }
 
 export async function listRoutines(conn, filter) {

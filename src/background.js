@@ -29,6 +29,7 @@ protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true
 function createWindow () {
   configureMenu(app, platform, isDevelopment || debugMode)
 
+  const iconPrefix = isDevelopment ? 'public' : ''
   // Create the browser window.
   win = new BrowserWindow({
     width: 1200,
@@ -40,7 +41,7 @@ function createWindow () {
     webPreferences: {
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
     },
-    icon: path.join(__dirname, '/icons/png/512x512.png')
+    icon: path.join(__dirname, `${iconPrefix}/icons/png/512x512.png`)
   })
 
 

@@ -4,7 +4,6 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 
-
 const logger = createLogger('db');
 
 
@@ -22,8 +21,10 @@ export function createConnection(server, database) {
     end: disconnect.bind(null, server, database),
     listTables: listTables.bind(null, server, database),
     listViews: listViews.bind(null, server, database),
+    listMaterializedViews: listMaterializedViews.bind(null, server, database),
     listRoutines: listRoutines.bind(null, server, database),
     listTableColumns: listTableColumns.bind(null, server, database),
+    listMaterializedViewColumns: listMaterializedViewColumns.bind(null, server, database),
     listTableTriggers: listTableTriggers.bind(null, server, database),
     listTableIndexes: listTableIndexes.bind(null, server, database),
     listSchemas: listSchemas.bind(null, server, database),
@@ -130,6 +131,11 @@ function listViews(server, database, filter) {
   return database.connection.listViews(filter);
 }
 
+function listMaterializedViews(server, database, filter) {
+  checkIsConnected(server, database)
+  return database.connection.listMaterializedViews(filter)
+}
+
 function listRoutines(server, database, filter) {
   checkIsConnected(server, database);
   return database.connection.listRoutines(filter);
@@ -138,6 +144,11 @@ function listRoutines(server, database, filter) {
 function listTableColumns(server, database, table, schema) {
   checkIsConnected(server, database);
   return database.connection.listTableColumns(database.database, table, schema);
+}
+
+function listMaterializedViewColumns(server, database, table, schema) {
+  checkIsConnected(server, database);
+  return database.connection.listMaterializedViewColumns(database.database, table, schema)
 }
 
 function listTableTriggers(server, database, table, schema) {

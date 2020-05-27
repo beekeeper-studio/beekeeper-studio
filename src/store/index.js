@@ -165,15 +165,22 @@ const store = new Vuex.Store({
         views.forEach((v) => {
           v.entityType = 'view'
         })
-        const tables = onlyTables.concat(views)
 
+        const materialized = await context.state.connection.listMaterializedViews({schema: null})
+        materialized.forEach(v => v.entityType = 'materialized-view')
+        const tables = onlyTables.concat(views).concat(materialized)
         var processed = 0
-
 
         await Promise.all(tables.map(table => {
           return new Promise(async (resolve, reject) => {
             try {
-              const columns = await context.state.connection.listTableColumns(table.name, table.schema)
+              let columns = []
+              if (table.entityType === 'materialized-view') {
+                columns = await context.state.connection.listMaterializedViewColumns(table.name, table.schema)
+              } else {
+                columns = await context.state.connection.listTableColumns(table.name, table.schema)
+              }
+
               processed += 1
               context.commit("tablesLoading", `Loading ${processed}/${tables.length} tables`)
               table.columns = columns
