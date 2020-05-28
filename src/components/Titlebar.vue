@@ -2,6 +2,85 @@
   <div class="titlebar" @dblclick.prevent.stop="maximizeWindow" :class="{windows: $config.isWindows}">
     <div class="titlebar-icon" v-if="!$config.isMac">
       <img src="@/assets/logo.svg" />
+      <x-menubar>
+        <x-menuitem>
+          <x-label>File</x-label>
+          <x-menu>
+            <x-menuitem>
+              <x-label>New</x-label>
+              <x-shortcut value="Control+N"></x-shortcut>
+            </x-menuitem>
+            <x-menuitem>
+              <x-label>Open…</x-label>
+              <x-shortcut value="Control+O"></x-shortcut>
+            </x-menuitem>
+            <hr>
+            <x-menuitem>
+              <x-label>Save</x-label>
+              <x-shortcut value="Control+S"></x-shortcut>
+            </x-menuitem>
+            <x-menuitem>
+              <x-label>Save as…</x-label>
+              <x-shortcut value="Control+Shift+S"></x-shortcut>
+            </x-menuitem>
+          </x-menu>
+        </x-menuitem>
+
+        <x-menuitem>
+          <x-label>Edit</x-label>
+          <x-menu>
+            <x-menuitem>
+              <x-icon name="undo"></x-icon>
+              <x-label>Undo</x-label>
+              <x-shortcut value="Control+Z"></x-shortcut>
+            </x-menuitem>
+            <x-menuitem disabled>
+              <x-icon name="redo"></x-icon>
+              <x-label>Redo</x-label>
+              <x-shortcut value="Control+Shift+Z"></x-shortcut>
+            </x-menuitem>
+            <hr>
+            <x-menuitem>
+              <x-icon name="content-cut"></x-icon>
+              <x-label>Cut</x-label>
+              <x-shortcut value="Control+X"></x-shortcut>
+            </x-menuitem>
+            <x-menuitem>
+              <x-icon name="content-copy"></x-icon>
+              <x-label>Copy</x-label>
+              <x-shortcut value="Control+C"></x-shortcut>
+            </x-menuitem>
+            <x-menuitem>
+              <x-icon name="content-paste"></x-icon>
+              <x-label>Paste</x-label>
+              <x-shortcut value="Control+V"></x-shortcut>
+            </x-menuitem>
+          </x-menu>
+        </x-menuitem>
+
+        <x-menuitem>
+          <x-label>View</x-label>
+          <x-menu>
+            <x-menuitem togglable toggled>
+              <x-label>Show ruler</x-label>
+            </x-menuitem>
+            <x-menuitem togglable>
+              <x-label>Show spelling suggestions</x-label>
+            </x-menuitem>
+          </x-menu>
+        </x-menuitem>
+
+        <x-menuitem>
+          <x-label>Help</x-label>
+          <x-menu>
+            <x-menuitem>
+              <x-icon name="help"></x-icon>
+              <x-label>Documentation</x-label>
+            </x-menuitem>
+          </x-menu>
+        </x-menuitem>
+      </x-menubar>
+
     </div>
     <div class="titlebar-title noselect">Beekeeper Studio</div>
     <div class="titlebar-actions" v-if="$config.isWindows">

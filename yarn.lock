@@ -9254,6 +9254,11 @@ xdg-basedir@^4.0.0:
   resolved "https://registry.yarnpkg.com/xdg-basedir/-/xdg-basedir-4.0.0.tgz#4bc8d9984403696225ef83a1573cbbcb4e79db13"
   integrity sha512-PSNhEJDejZYV7h50BohL09Er9VaIefr2LMAf3OEmpCkjOi34eYyQYAXUTjEQtZJTKcF0E2UKTh+osDLsgNim9Q==
 
+xel@^0.0.220:
+  version "0.0.220"
+  resolved "https://registry.yarnpkg.com/xel/-/xel-0.0.220.tgz#41c1a6da17fa4c45587fe9a621822b3c97fcc01b"
+  integrity sha512-SUM88de9jpyMgKV4+HJ/aLQhQTTmuuRkNrRWLrW9vLBLrWwDIQR6jySgig0i58P8VJ3e64XPw9KY8Dj+Qs+mSA==
+
 xml2js@0.4.19:
   version "0.4.19"
   resolved "https://registry.yarnpkg.com/xml2js/-/xml2js-0.4.19.tgz#686c20f213209e94abf0d1bcf1efaa291c7827a7"
