@@ -4,6 +4,7 @@ import crypto from 'crypto'
 import Encryptor from 'simple-encryptor'
 import { remote } from 'electron'
 import { execSync } from 'child_process'
+import platformInfo from './common/platform_info'
 
 let userDirectory = remote.app.getPath('userData');
 if (remote.process.env.PORTABLE_EXECUTABLE_DIR) {
@@ -53,16 +54,11 @@ function loadEncryptionKey() {
 
 // this is available in vue as `this.$config`
 export default {
+  ...platformInfo,
   userDirectory,
   encryptionKey: loadEncryptionKey(),
-  environment: process.env.NODE_ENV,
-  sshAuthSock: remote.process.env.SSH_AUTH_SOCK,
-  isSnap: remote.process.env.ELECTRON_SNAP,
   snapSshPlug: hasSshKeysPlug(),
-  platform: window.navigator.platform,
-  isMac: !!window.navigator.platform.match('Mac'),
-  isWindows: !!window.navigator.platform.match('Win'),
-  isLinux: !!window.navigator.userAgent.match("(Linux|X11)"),
+
   defaults: {
     connectionTypes: [
       { name: 'MySQL', value: 'mysql' },
