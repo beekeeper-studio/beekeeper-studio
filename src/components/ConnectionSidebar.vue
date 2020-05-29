@@ -21,8 +21,7 @@
           <toggle class="dropdown right">
               <a class="btn-fab dropdown-toggle"><i class="material-icons">more_horiz</i></a>
               <target class="dropdown-menu show">
-                <a class="dropdown-item">Rename</a>
-                <a class="dropdown-item text-danger">Remove</a>
+                <a @click.prevent.stop="remove(c)" class="dropdown-item text-danger">Remove</a>
               </target>
             </toggle>
         </a>
@@ -56,6 +55,9 @@
       },
       connect(config) {
         this.$emit('connect', config)
+      },
+      remove(config) {
+        this.$emit('remove', config)
       }
     }
   }
