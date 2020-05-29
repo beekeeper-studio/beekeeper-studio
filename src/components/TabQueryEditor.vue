@@ -6,7 +6,9 @@
       <div class="toolbar text-right">
         <div class="actions btn-group" ref="actions">
           <a @click.prevent="triggerSave" class="btn btn-flat">Save</a>
-          <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitQuery" class="btn btn-primary">Run</a>
+          <a href="" v-tooltip="'(shift + ctrl + enter)'" @click.prevent="submitCurrentQuery" class="btn btn-primary btn-disabled">Run Current</a>
+          <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitTabQuery" class="btn btn-primary">Run</a>
+          <a href="" v-tooltip="'(ctrl + alt + enter)'" :disabled="!hasSelectedText" @click.prevent="submitSelectedQuery" class="btn btn-primary btn-disabled">Run Selection</a>
         </div>
       </div>
     </div>
@@ -95,6 +97,9 @@
       }
     },
     computed: {
+      hasSelectedText() {
+        return this.editor ? !!this.editor.getSelection() : false
+      },
       result() {
         return this.results[this.selectedResult]
       },
@@ -206,12 +211,41 @@
           this.tab.unsavedChanges = false
         }
       },
-      async submitQuery() {
+      async submitCurrentQuery() {
+        const queries = this.editor.getValue()
+        const cursorIndex = this.editor.getDoc().indexFromPos(this.editor.getCursor(true))
+
+        let startSc = 0
+        let endSc = 0
+        for (let i = 0; i < queries.length; i++) {
+          if (i < cursorIndex && queries[i] == ";") {
+            startSc = i
+          }
+
+          if (i > cursorIndex && queries[i] == ";" && endSc === 0) {
+            endSc = i
+            break
+          }
+        }
+
+        const currentQuery = queries.slice(startSc > 0 ? startSc +1 : startSc, endSc).trim()
+        this.submitQuery(currentQuery)
+
+      },
+      async submitSelectedQuery() {
+        if (this.hasSelectedText) {
+          this.submitQuery(this.editor.getSelection())
+        }
+      },
+      async submitTabQuery() {
+        this.submitQuery(this.editor.getValue())
+      },
+      async submitQuery(query) {
         this.running = true
         this.results = []
         this.selectedResult = 0
         try {
-          const runningQuery = this.connection.query(this.editor.getValue())
+          const runningQuery = this.connection.query(query)
           const results = await runningQuery.execute()
           let totalRows = 0
           results.forEach(result => {
@@ -309,6 +343,10 @@
         })
 
         const runQueryKeyMap = {
+          "Shift-Ctrl-Enter": this.submitCurrentQuery,
+          "Shift-Cmd-Enter": this.submitCurrentQuery,
+          "Ctrl-Alt-Enter": this.submitSelectedQuery,
+          "Cmd-Alt-Enter": this.submitSelectedQuery,
           "Ctrl-Enter": this.submitQuery,
           "Cmd-Enter": this.submitQuery,
           "Ctrl-S": this.triggerSave,
