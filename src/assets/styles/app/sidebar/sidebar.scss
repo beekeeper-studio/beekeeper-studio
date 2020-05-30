@@ -225,6 +225,9 @@
     .item-text {
       font-size: 0.95rem;
     }
+    .title {
+      @extend .truncate;
+    }
     .badge {
       display: inline-flex;
       direction: rtl;

@@ -16,9 +16,15 @@ const setupSQL = `
  )
 `
 // put dev migrations at the end
-const migrations = [
-a, b, c, dev1, dev2, domains
+const realMigrations = [
+a, b, c, domains
 ]
+
+const devMigrations = [
+  dev1, dev2
+]
+
+const migrations = realMigrations.concat(devMigrations)
 
 const Manager = {
   ceQuery: "select name from bk_migrations where name = ?",

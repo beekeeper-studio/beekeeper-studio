@@ -27,23 +27,18 @@
     },
     computed: {
       expanded() {
-        return (this.manuallyExpanded || !!this.forceExpand) && !this.forceCollapse
+        return this.manuallyExpanded
       }
     },
     watch: {
       forceExpand() {
-        if (this.forceExpand) {
-          this.showColumns = true
-        }
+        this.manuallyExpanded = this.forceExpand
       },
       forceCollapse() {
         if (this.forceCollapse) {
-          this.showColumns = false
+          this.manuallyExpanded = false
         }
       },
-      showColumns() {
-        this.table.showColumns = this.showColumns
-      }
     },
     methods: {
       tableSelected(table) {
