@@ -20,6 +20,7 @@
   --accent-color: $theme-base;
   --link-color: lighten($theme-primary);
   --text-color: $text;
+
   --transition-fn1: cubic-bezier(0.4, 0, 0.2, 1);
   --elevation-1: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
   --elevation-1a: 0px 2px 1px -1px rgba(0, 0, 0, 0.1), 0px 1px 1px 0px rgba(0, 0, 0, 0.05), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
@@ -773,21 +774,23 @@ x-doctab {
  */
 
 x-menu {
-  background: lighten($theme-base, 10%)!important;
-  padding: 8px 0;
-  border-radius: 2px;
+  background: lighten($theme-bg, 5%);
+  padding: $gutter-h 0;
+  border-radius: 6px;
   box-shadow: var(--elevation-5);
   font-size: 0.85rem;
   text-transform: none;
   font-weight: 400;
+  @extend .card-shadow-hover;
   // --open-transition: 100 transform var(--transition-fn1);
   --open-transition: none;
   > hr {
     width: 100%;
     height: 1px;
-    margin: 2px 0px 2px 0;
+    margin: ($gutter-h * 0.5) 0;
     box-sizing: border-box;
-    border-color: $border-color;
+    background: $border-color;
+    border: 0;
     + hr, &:last-child {
       display: none;
     }
@@ -804,10 +807,10 @@ x-menuitem {
   padding: 0 $gutter-w;
   font-size: 0.9rem;
   min-height: 38px;
-  color: rgba($theme-base, 0.44);
+  color: $text;
   // --trigger-effect: ripple;
   &:focus, &[expanded] {
-    background: rgba(0, 0, 0, 0.07);
+    background: rgba($theme-base, 0.05);
   }
   img {
     width: 24px;
@@ -824,7 +827,7 @@ x-menuitem {
   }
   x-shortcut {
     margin-left: auto;
-    color: #212121;
+    color: $text-dark;
     opacity: 0.75;
   }
   img + x-label, x-swatch + x-label, x-icon + x-label, x-label + x-shortcut {
@@ -843,9 +846,13 @@ x-menubar {
   background: transparent;
   -webkit-app-region: no-drag;
   > x-menuitem {
+    color: rgba($theme-base, 0.44);
     padding: 0 $gutter-w;
     height: 100%;
     min-height: 0;
+    &:focus, &[expanded] {
+      color: $text-dark;
+    }
   }
 }
 

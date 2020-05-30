@@ -30,28 +30,23 @@
           <x-label>Edit</x-label>
           <x-menu>
             <x-menuitem>
-              <x-icon name="undo"></x-icon>
               <x-label>Undo</x-label>
               <x-shortcut value="Control+Z"></x-shortcut>
             </x-menuitem>
             <x-menuitem disabled>
-              <x-icon name="redo"></x-icon>
               <x-label>Redo</x-label>
               <x-shortcut value="Control+Shift+Z"></x-shortcut>
             </x-menuitem>
             <hr>
             <x-menuitem>
-              <x-icon name="content-cut"></x-icon>
               <x-label>Cut</x-label>
               <x-shortcut value="Control+X"></x-shortcut>
             </x-menuitem>
             <x-menuitem>
-              <x-icon name="content-copy"></x-icon>
               <x-label>Copy</x-label>
               <x-shortcut value="Control+C"></x-shortcut>
             </x-menuitem>
             <x-menuitem>
-              <x-icon name="content-paste"></x-icon>
               <x-label>Paste</x-label>
               <x-shortcut value="Control+V"></x-shortcut>
             </x-menuitem>
