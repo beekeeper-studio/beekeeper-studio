@@ -6,7 +6,9 @@
       <div class="toolbar text-right">
         <div class="actions btn-group" ref="actions">
           <a @click.prevent="triggerSave" class="btn btn-flat">Save</a>
-          <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitQuery" class="btn btn-primary">Run</a>
+
+          <a href="" v-tooltip="'(shift + ctrl + enter)'" @click.prevent="submitCurrentQuery" class="btn btn-primary btn-disabled">Run Current</a>
+          <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitTabQuery" class="btn run-btn btn-primary btn-disabled">{{hasSelectedText ? 'Run Selected' : 'Run'}}</a>
         </div>
       </div>
     </div>
@@ -95,6 +97,9 @@
       }
     },
     computed: {
+      hasSelectedText() {
+        return this.editor ? !!this.editor.getSelection() : false
+      },
       result() {
         return this.results[this.selectedResult]
       },
@@ -206,12 +211,57 @@
           this.tab.unsavedChanges = false
         }
       },
-      async submitQuery() {
+      async submitCurrentQuery() {
+        // Regex test: https://regex101.com/r/nnJdre
+        const regex = /^(?:[\n|\t])*.+?(?:[^;']|(?:'[^']+'))+;?$/gm
+        const cursorIndex = this.editor.getDoc().indexFromPos(this.editor.getCursor(true))
+
+        let value = this.editor.getValue()
+        
+        if (!value.trim().endsWith(';')) {
+          value += ';'
+        }
+
+        let m
+        let queries = []
+        while((m = regex.exec(value)) !== null) {
+          if (m.index === regex.lastIndex) {
+            regex.lastIndex++
+          }
+
+          m.forEach((matched) => {
+            queries = [...queries, matched]
+          })
+        }
+
+        let currentQuery
+        let currentPos = 0
+        for (let i = 0; i < queries.length; i++) {
+          currentPos += i == 0 ? queries[i].length : queries[i].length + 1
+          if (currentPos > cursorIndex) {
+            currentQuery = queries[i]
+            break
+          }
+        }
+
+        // TODO: Not sure if need to throw error in case no current query has been found
+        if (currentQuery) {
+          this.submitQuery(currentQuery)
+        } else {
+          this.results = []
+          this.error = 'No query to run'
+        }
+      },
+      async submitTabQuery() {
+        const text = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
+        this.submitQuery(text)
+      },
+      async submitQuery(query) {
         this.running = true
         this.results = []
         this.selectedResult = 0
         try {
-          const runningQuery = this.connection.query(this.editor.getValue())
+          const runningQuery = this.connection.query(query)
           const results = await runningQuery.execute()
           let totalRows = 0
           results.forEach(result => {
@@ -226,7 +276,7 @@
             }
           })
           this.results = results
-          this.$store.dispatch('logQuery', { text: this.editor.getValue(), rowCount: totalRows})
+          this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
         } catch (ex) {
           this.error = ex
         } finally {
@@ -309,8 +359,10 @@
         })
 
         const runQueryKeyMap = {
-          "Ctrl-Enter": this.submitQuery,
-          "Cmd-Enter": this.submitQuery,
+          "Shift-Ctrl-Enter": this.submitCurrentQuery,
+          "Shift-Cmd-Enter": this.submitCurrentQuery,
+          "Ctrl-Enter": this.submitTabQuery,
+          "Cmd-Enter": this.submitTabQuery,
           "Ctrl-S": this.triggerSave,
           "Cmd-S": this.triggerSave
         }
