@@ -216,9 +216,9 @@
         const regex = /^(?:[\n|\t])*.+?(?:[^;']|(?:'[^']+'))+;?$/gm
         const cursorIndex = this.editor.getDoc().indexFromPos(this.editor.getCursor(true))
 
-        let value = this.editor.getValue().trim()
+        let value = this.editor.getValue()
         
-        if (value[value.length - 1] !== ';') {
+        if (!value.trim().endsWith(';')) {
           value += ';'
         }
 
