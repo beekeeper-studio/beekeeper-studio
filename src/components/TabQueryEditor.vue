@@ -7,8 +7,30 @@
         <div class="actions btn-group" ref="actions">
           <a @click.prevent="triggerSave" class="btn btn-flat">Save</a>
 
-          <a href="" v-tooltip="'(shift + ctrl + enter)'" @click.prevent="submitCurrentQuery" class="btn btn-primary btn-disabled">Run Current</a>
-          <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitTabQuery" class="btn run-btn btn-primary btn-disabled">{{hasSelectedText ? 'Run Selected' : 'Run'}}</a>
+          <!-- <a href="" v-tooltip="'(shift + ctrl + enter)'" @click.prevent="submitCurrentQuery" class="btn btn-primary btn-disabled">Run Current</a>
+          <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitTabQuery" class="btn run-btn btn-primary btn-disabled">{{hasSelectedText ? 'Run Selected' : 'Run'}}</a> -->
+
+          <x-buttons>
+            <x-button v-tooltip="'Ctrl+Enter'" @click.prevent="submitCurrentQuery" primary>
+              <x-label>{{hasSelectedText ? 'Run Selected' : 'Run All'}}</x-label>
+            </x-button>
+            <x-button menu primary>
+              <x-menu>
+                <x-menuitem>
+                  <x-label>{{hasSelectedText ? 'Run Selected' : 'Run All'}}</x-label>
+                  <x-shortcut value="Control+Enter"></x-shortcut>
+                </x-menuitem>
+                <hr>
+                <x-menuitem>
+                  <x-label>Run Current</x-label>
+                  <x-shortcut value="Control+Shift+Enter"></x-shortcut>
+                </x-menuitem>
+                <x-menuitem>
+                  <x-label>Switch Default</x-label>
+                </x-menuitem>
+              </x-menu>
+            </x-button>
+          </x-buttons>
         </div>
       </div>
     </div>

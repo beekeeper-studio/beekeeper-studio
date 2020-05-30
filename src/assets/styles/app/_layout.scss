@@ -82,7 +82,7 @@ i {
 // Buttons
 // ---------------------------------------
 .btn {
-  display: inline-block;
+  display: inline-flex;
   font-size: 12px;
   line-height: $input-height;
   height: $input-height;
@@ -190,7 +190,7 @@ i {
 .btn-group {
   margin-left: -0.25rem;
   margin-right: -0.25rem;
-  .btn {
+  > .btn, > x-buttons, > x-button {
     margin-left: 0.25rem;
     margin-right: 0.25rem;
   }

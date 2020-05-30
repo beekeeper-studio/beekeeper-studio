@@ -22,7 +22,7 @@
     align-items: center;
     justify-content: flex-end;
     background: $query-editor-bg;
-    padding: $gutter-h;
+    padding: $gutter-h $gutter-w;
     z-index: 1;
     .title {
       line-height: 1;
@@ -42,15 +42,14 @@
   .top-panel {
     .toolbar {
       box-shadow: inset 0 -1px $border-color;
-      .btn {
+      .btn, x-button {
         height: 24px;
         line-height: 24px;
         padding: 0 $gutter-w;
         font-size: 0.85rem;
-        min-width: 48px;
-
-        &.run-btn {
-          min-width: 100px;
+        min-width: 0;
+        &[menu] {
+          padding: 0 ($gutter-w * 0.65) 0 ($gutter-h * 0.5);
         }
       } 
     }
