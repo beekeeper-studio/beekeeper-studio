@@ -806,7 +806,7 @@ x-menu {
 x-menuitem {
   padding: 0 $gutter-w;
   font-size: 0.9rem;
-  min-height: 38px;
+  min-height: 32px;
   color: $text;
   // --trigger-effect: ripple;
   &:focus, &[expanded] {
@@ -1639,38 +1639,4 @@ x-progressbar {
   height: 5px;
   --bar-background:#3B99FB;
   --bar-box-shadow:0px 0px 0px 1px #4392F9;
-}
-
-/*****************************************************************************************************************/
-
-/**
- * Demo site
- */
-
-xel-codeview {
-  box-shadow: var(--elevation-1);
-}
-
-x-card xel-codeview {
-  background: #fbfbfb;
-}
-
-:host(xel-app) {
-  #sidebar {
-    h1 {
-      color: #009788;
-    }
-
-    #nav .external-link-icon {
-      color: var(--primary-color);
-    }
-  }
-
-  #about-view {
-    background: #009788;
-  }
-
-  #setup-view h3 x-icon, #faq-view h4 {
-    color: #009788;
-  }
 }
