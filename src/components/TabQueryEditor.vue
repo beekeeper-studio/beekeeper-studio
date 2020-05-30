@@ -6,9 +6,9 @@
       <div class="toolbar text-right">
         <div class="actions btn-group" ref="actions">
           <a @click.prevent="triggerSave" class="btn btn-flat">Save</a>
+
           <a href="" v-tooltip="'(shift + ctrl + enter)'" @click.prevent="submitCurrentQuery" class="btn btn-primary btn-disabled">Run Current</a>
-          <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitTabQuery" class="btn btn-primary">Run</a>
-          <a href="" v-tooltip="'(ctrl + alt + enter)'" :disabled="!hasSelectedText" @click.prevent="submitSelectedQuery" class="btn btn-primary btn-disabled">Run Selection</a>
+          <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitTabQuery" class="btn run-btn btn-primary btn-disabled">{{hasSelectedText ? 'Run Selected' : 'Run'}}</a>
         </div>
       </div>
     </div>
@@ -213,10 +213,11 @@
       },
       async submitCurrentQuery() {
         // Regex test: https://regex101.com/r/nnJdre
-        const regex = /^(?:[\n|\t])*.+?(?:[^;']|(?:'[^']+'))+;$/gm
+        const regex = /^(?:[\n|\t])*.+?(?:[^;']|(?:'[^']+'))+;?$/gm
         const cursorIndex = this.editor.getDoc().indexFromPos(this.editor.getCursor(true))
 
         let value = this.editor.getValue().trim()
+        
         if (value[value.length - 1] !== ';') {
           value += ';'
         }
@@ -246,15 +247,14 @@
         // TODO: Not sure if need to throw error in case no current query has been found
         if (currentQuery) {
           this.submitQuery(currentQuery)
-        }
-      },
-      async submitSelectedQuery() {
-        if (this.hasSelectedText) {
-          this.submitQuery(this.editor.getSelection())
+        } else {
+          this.results = []
+          this.error = 'No query to run'
         }
       },
       async submitTabQuery() {
-        this.submitQuery(this.editor.getValue())
+        const text = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
+        this.submitQuery(text)
       },
       async submitQuery(query) {
         this.running = true
@@ -361,10 +361,8 @@
         const runQueryKeyMap = {
           "Shift-Ctrl-Enter": this.submitCurrentQuery,
           "Shift-Cmd-Enter": this.submitCurrentQuery,
-          "Ctrl-Alt-Enter": this.submitSelectedQuery,
-          "Cmd-Alt-Enter": this.submitSelectedQuery,
-          "Ctrl-Enter": this.submitQuery,
-          "Cmd-Enter": this.submitQuery,
+          "Ctrl-Enter": this.submitTabQuery,
+          "Cmd-Enter": this.submitTabQuery,
           "Ctrl-S": this.triggerSave,
           "Cmd-S": this.triggerSave
         }

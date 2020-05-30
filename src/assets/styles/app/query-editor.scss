@@ -48,7 +48,11 @@
         padding: 0 $gutter-w;
         font-size: 0.85rem;
         min-width: 48px;
-      }
+
+        &.run-btn {
+          min-width: 100px;
+        }
+      } 
     }
   }
   .bottom-panel {
