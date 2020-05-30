@@ -32,6 +32,10 @@
         }
       }
     }
+    .actions {
+      display: flex;
+      align-items: center;
+    }
   }
   .tab-content {
     flex: 1 1 100%;

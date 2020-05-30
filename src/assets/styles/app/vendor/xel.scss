@@ -385,6 +385,7 @@ x-button {
   padding: 0 1rem;
   box-shadow: inset 0 0 0 1px rgba(white, 0.025);
   border-radius: $btn-border-radius;
+  justify-content: center;
   cursor: pointer;
   transition: background 0.15s ease-in-out,
               color 0.15s ease-in-out,;
@@ -452,7 +453,7 @@ x-buttons {
   > x-button {
     &[menu] {
       border-left: 1px solid rgba($theme-bg, 0.5);
-      padding: 0;
+      padding: 0 ($gutter-h * 0.5)!important;
       .material-icons {
         font-size: 20px;
       }
@@ -468,18 +469,7 @@ x-buttons {
   }
 }
 
-/* @skin "textured" */
-
 x-button {
-  &[skin="textured"] {
-    color: rgba(0, 0, 0, 0.5);
-    background-image: linear-gradient(to bottom, #FCFCFC, #F1F1F1);
-
-    &[toggled] {
-      color: rgba(0, 0, 0, 0.7);
-      background: rgba(0, 0, 0, 0.08);
-    }
-  }
   &[skin="flat"] {
     color: var(--primary-color);
     background: none;
@@ -502,8 +492,12 @@ x-button {
     padding: 6px;
     color: $text-dark;
     border-radius: 2px;
-    --trigger-effect: unbounded-ripple;
+    --trigger-effect: ripple;
     --ripple-opacity: 0.1;
+    &.btn-fab {
+      background: transparent;
+      border-radius: 40px;
+    }
     &[expanded], &[toggled] {
       color: var(--secondary-color);
     }
@@ -514,7 +508,7 @@ x-button {
       width: 100%;
       height: 100%;
       display: block;
-      background: currentColor;
+      background: transparent;
       border-radius: 999px;
       opacity: 0.1;
       transform: scale(1.3);

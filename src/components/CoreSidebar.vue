@@ -22,18 +22,12 @@
             <span>Connection</span>
           </div>
           <span class="expand"></span>
-          <div class="actions flex-middle">
-            <!-- <toggle class="dropdown right">
-              <a class="btn-fab dropdown-toggle"><i class="material-icons">more_horiz</i></a>
-              <target class="dropdown-menu show">
-                <a class="dropdown-item text-danger" @click.prevent="disconnect">Disconnect</a>
-              </target>
-            </toggle> -->
-            <x-button skin="iconic">
+          <div class="actions">
+            <x-button class="btn-fab" skin="iconic">
               <i class="material-icons">more_horiz</i>
-              <x-menu>
+              <x-menu style="--target-align: right; --v-target-align: top;">
                 <x-menuitem @click.prevent="disconnect">
-                  <x-label>Disconnect</x-label>
+                  <x-label class="text-danger">Disconnect</x-label>
                 </x-menuitem>
               </x-menu>
             </x-button>

@@ -48,9 +48,9 @@
         padding: 0 $gutter-w;
         font-size: 0.85rem;
         min-width: 0;
-        &[menu] {
-          padding: 0 ($gutter-w * 0.65) 0 ($gutter-h * 0.5);
-        }
+        // &[menu] {
+        //   padding: 0;
+        // }
       } 
     }
   }
