@@ -17,7 +17,7 @@
           @dblclick.prevent="connect(c)"
         >
           <span class="title expand">{{c.name}} </span>
-          <span class="badge">{{c.connectionType}}</span>
+          <span class="badge"><span>{{c.connectionType}}</span></span>
           <toggle class="dropdown right">
               <a class="btn-fab dropdown-toggle"><i class="material-icons">more_horiz</i></a>
               <target class="dropdown-menu show">

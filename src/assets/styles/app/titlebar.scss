@@ -53,6 +53,9 @@
       i {
         font-size: 16px;
       }
+      .maximized {
+        transform: rotate(180deg);
+      }
       &:hover {
         background: $brand-info;
       }
