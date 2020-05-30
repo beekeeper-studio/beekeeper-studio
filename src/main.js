@@ -4,7 +4,7 @@ import VueHotkey from 'v-hotkey'
 import VTooltip from 'v-tooltip'
 import VModal from 'vue-js-modal'
 import Vueable from '@sagalbot/vueable'
-import Xel from 'xel/xel.js'
+import 'xel/xel.js'
 import Tabulator from 'tabulator-tables'
 
 import App from './App.vue'
@@ -78,7 +78,6 @@ import ConfigPlugin from './plugins/ConfigPlugin'
     Vue.use(ConfigPlugin)
     Vue.component('toggle', Vueable.Toggle);
     Vue.component('target', Vueable.Target);
-    Vue.prototype.$Xel = Xel
     Vue.use(VueNoty, {
       timeout: 2300,
       progressBar: true,
