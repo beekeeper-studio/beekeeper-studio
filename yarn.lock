@@ -10650,7 +10650,7 @@ xdg-basedir@^4.0.0:
 
 xel@beekeeper-studio/xel:
   version "0.0.220"
-  resolved "https://codeload.github.com/beekeeper-studio/xel/tar.gz/2e6c03de0238741c63d1feacba0869da20102b28"
+  resolved "https://codeload.github.com/beekeeper-studio/xel/tar.gz/90adec38f2e092822dc7739fe3618bf27cd869f4"
 
 xml2js@0.4.19:
   version "0.4.19"

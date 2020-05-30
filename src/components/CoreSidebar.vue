@@ -22,13 +22,21 @@
             <span>Connection</span>
           </div>
           <span class="expand"></span>
-          <div class="actions">
-            <toggle class="dropdown right">
+          <div class="actions flex-middle">
+            <!-- <toggle class="dropdown right">
               <a class="btn-fab dropdown-toggle"><i class="material-icons">more_horiz</i></a>
               <target class="dropdown-menu show">
                 <a class="dropdown-item text-danger" @click.prevent="disconnect">Disconnect</a>
               </target>
-            </toggle>
+            </toggle> -->
+            <x-button skin="iconic">
+              <i class="material-icons">more_horiz</i>
+              <x-menu>
+                <x-menuitem @click.prevent="disconnect">
+                  <x-label>Disconnect</x-label>
+                </x-menuitem>
+              </x-menu>
+            </x-button>
           </div>
         </div>
         <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>

@@ -15,6 +15,7 @@
               <x-label>{{hasSelectedText ? 'Run Selected' : 'Run All'}}</x-label>
             </x-button>
             <x-button menu primary>
+            <i class="material-icons">arrow_drop_down</i>
               <x-menu>
                 <x-menuitem>
                   <x-label>{{hasSelectedText ? 'Run Selected' : 'Run All'}}</x-label>

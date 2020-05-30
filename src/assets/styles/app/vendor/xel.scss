@@ -389,9 +389,6 @@ x-button {
   transition: background 0.15s ease-in-out,
               color 0.15s ease-in-out,;
   --trigger-effect: ripple;
-  --arrow-width: 10px;
-  --arrow-height: 6px;
-  --arrow-d:path("M 0.736 20.365 L 49.999 87.922 L 99.264 20.365 Z");
   &:focus::before {
     position: absolute;
     top: 0;
@@ -455,7 +452,10 @@ x-buttons {
   > x-button {
     &[menu] {
       border-left: 1px solid rgba($theme-bg, 0.5);
-      padding: 0 0.5rem 0 0.25rem;
+      padding: 0;
+      .material-icons {
+        font-size: 20px;
+      }
     }
     &:not(:first-child) {
       border-top-left-radius: 0;
@@ -500,11 +500,10 @@ x-button {
     background: none;
     box-shadow: none;
     padding: 6px;
-    color: rgba(0, 0, 0, 0.55);
+    color: $text-dark;
     border-radius: 2px;
-    --trigger-effect:unbounded-ripple;
-    --ripple-opacity:0.1;
-    --arrow-margin:0 0 0 2px;
+    --trigger-effect: unbounded-ripple;
+    --ripple-opacity: 0.1;
     &[expanded], &[toggled] {
       color: var(--secondary-color);
     }
