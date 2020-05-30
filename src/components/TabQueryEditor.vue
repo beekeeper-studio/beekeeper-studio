@@ -212,25 +212,41 @@
         }
       },
       async submitCurrentQuery() {
-        const queries = this.editor.getValue()
+        // Regex test: https://regex101.com/r/nnJdre
+        const regex = /^(?:[\n|\t])*.+?(?:[^;']|(?:'[^']+'))+;$/gm
         const cursorIndex = this.editor.getDoc().indexFromPos(this.editor.getCursor(true))
 
-        let startSc = 0
-        let endSc = 0
-        for (let i = 0; i < queries.length; i++) {
-          if (i < cursorIndex && queries[i] == ";") {
-            startSc = i
+        let value = this.editor.getValue().trim()
+        if (value[value.length - 1] !== ';') {
+          value += ';'
+        }
+
+        let m
+        let queries = []
+        while((m = regex.exec(value)) !== null) {
+          if (m.index === regex.lastIndex) {
+            regex.lastIndex++
           }
 
-          if (i > cursorIndex && queries[i] == ";" && endSc === 0) {
-            endSc = i
+          m.forEach((matched) => {
+            queries = [...queries, matched]
+          })
+        }
+
+        let currentQuery
+        let currentPos = 0
+        for (let i = 0; i < queries.length; i++) {
+          currentPos += i == 0 ? queries[i].length : queries[i].length + 1
+          if (currentPos > cursorIndex) {
+            currentQuery = queries[i]
             break
           }
         }
 
-        const currentQuery = queries.slice(startSc > 0 ? startSc +1 : startSc, endSc).trim()
-        this.submitQuery(currentQuery)
-
+        // TODO: Not sure if need to throw error in case no current query has been found
+        if (currentQuery) {
+          this.submitQuery(currentQuery)
+        }
       },
       async submitSelectedQuery() {
         if (this.hasSelectedText) {
