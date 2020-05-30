@@ -276,7 +276,7 @@
             }
           })
           this.results = results
-          this.$store.dispatch('logQuery', { text: this.editor.getValue(), rowCount: totalRows})
+          this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
         } catch (ex) {
           this.error = ex
         } finally {
