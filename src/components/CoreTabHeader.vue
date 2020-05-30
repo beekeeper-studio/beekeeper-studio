@@ -3,6 +3,7 @@
     <a
       class="nav-link"
       @click.prevent.stop="$emit('click', tab)"
+      @click.middle.prevent.stop="$emit('close', tab)"
       :class="{ active: selected }"
     >
       <i v-if="tab.type === 'table'" :class="iconClass" class="material-icons item-icon table">grid_on</i>
