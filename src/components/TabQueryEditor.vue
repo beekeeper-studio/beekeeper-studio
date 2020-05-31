@@ -60,7 +60,7 @@
     </modal>
 
     <!-- Parameter modal -->
-    <modal class="vue-dialog beekeeper-modal" name="parameters-modal" @closed="selectEditor" height="auto" :scrollable="true">
+    <modal class="vue-dialog beekeeper-modal" name="parameters-modal" @opened="selectFirstParameter" @closed="selectEditor" height="auto" :scrollable="true">
       <form @submit.prevent="deparameterizeQueryResolve">
         <div class="dialog-content">
           <div class="dialog-c-title">Provide parameter values</div>
@@ -69,7 +69,7 @@
                 <div v-for="(param, index) in queryParameterPlaceholders" v-bind:key="index">
                   <div class="form-group row">
                     <label>{{param}}</label>
-                    <input type="text" class="form-control" v-model="queryParameterValues[param]" autofocus>
+                    <input type="text" class="form-control" v-model="queryParameterValues[param]" autofocus ref="paramInput">
                   </div>
                 </div>
             </div>
@@ -238,6 +238,9 @@
       },
       selectTitleInput() {
         this.$refs.titleInput.select()
+      },
+      selectFirstParameter() {
+        this.$refs['paramInput'][0].select()        
       },
       updateEditorHeight() {
         let height = this.$refs.topPanel.clientHeight
