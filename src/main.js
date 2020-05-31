@@ -12,7 +12,7 @@ import path from 'path'
 import 'typeface-roboto'
 import 'typeface-source-code-pro'
 import './assets/styles/app.scss'
-import $ from 'jquery';
+import $ from 'jquery'
 import SQL from 'codemirror/mode/sql/sql'
 import Hint from 'codemirror/addon/hint/show-hint.js'
 import SQLHint from 'codemirror/addon/hint/sql-hint.js'
@@ -66,7 +66,7 @@ import ConfigPlugin from './plugins/ConfigPlugin'
         ctrlOrCmd(key) {
           if (this.$config.isMac) return `meta+${key}`
           return `ctrl+${key}`
-        }
+        },
       }
     })
 

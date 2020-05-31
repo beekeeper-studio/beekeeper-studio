@@ -9,22 +9,18 @@
 
           <x-buttons>
             <x-button v-tooltip="'Ctrl+Enter'" @click.prevent="submitTabQuery" primary>
-              <x-label>{{hasSelectedText ? 'Run Selected' : 'Run All'}}</x-label>
+              <x-label>{{hasSelectedText ? 'Run Selection' : 'Run'}}</x-label>
             </x-button>
             <x-button menu primary>
             <i class="material-icons">arrow_drop_down</i>
               <x-menu>
                 <x-menuitem @click.prevent="submitTabQuery">
-                  <x-label>{{hasSelectedText ? 'Run Selected' : 'Run All'}}</x-label>
+                  <x-label>{{hasSelectedText ? 'Run Selection' : 'Run'}}</x-label>
                   <x-shortcut value="Control+Enter"></x-shortcut>
                 </x-menuitem>
-                <hr>
                 <x-menuitem @click.prevent="submitCurrentQuery">
-                  <x-label>Run Current</x-label>
+                  <x-label>Run Query Under Cursor</x-label>
                   <x-shortcut value="Control+Shift+Enter"></x-shortcut>
-                </x-menuitem>
-                <x-menuitem>
-                  <x-label>Switch Default</x-label>
                 </x-menuitem>
               </x-menu>
             </x-button>
