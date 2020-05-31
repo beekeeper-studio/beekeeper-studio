@@ -18,7 +18,6 @@
   },
   "main": "background.js",
   "dependencies": {
-    "@sagalbot/vueable": "^0.0.3",
     "cassandra-driver": "^4.4.0",
     "cli-highlight": "2.0.0",
     "codemirror": "^5.48.2",
