@@ -11,6 +11,11 @@
     border: 0;
     outline: none;
   }
+  .CodeMirror-code {
+    .highlight {
+      background-color: blue;
+    }
+  }
   .top-panel, .bottom-panel {
     overflow: hidden;
     display: flex;
