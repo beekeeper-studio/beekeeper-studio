@@ -3,7 +3,6 @@ import VueNoty from 'vuejs-noty'
 import VueHotkey from 'v-hotkey'
 import VTooltip from 'v-tooltip'
 import VModal from 'vue-js-modal'
-import Vueable from '@sagalbot/vueable'
 import 'xel/xel.js'
 import Tabulator from 'tabulator-tables'
 
@@ -76,8 +75,6 @@ import ConfigPlugin from './plugins/ConfigPlugin'
     Vue.use(VTooltip)
     Vue.use(VModal)
     Vue.use(ConfigPlugin)
-    Vue.component('toggle', Vueable.Toggle);
-    Vue.component('target', Vueable.Target);
     Vue.use(VueNoty, {
       timeout: 2300,
       progressBar: true,
