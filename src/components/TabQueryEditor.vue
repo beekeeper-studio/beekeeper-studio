@@ -7,22 +7,19 @@
         <div class="actions btn-group" ref="actions">
           <a @click.prevent="triggerSave" class="btn btn-flat">Save</a>
 
-          <!-- <a href="" v-tooltip="'(shift + ctrl + enter)'" @click.prevent="submitCurrentQuery" class="btn btn-primary btn-disabled">Run Current</a>
-          <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitTabQuery" class="btn run-btn btn-primary btn-disabled">{{hasSelectedText ? 'Run Selected' : 'Run'}}</a> -->
-
           <x-buttons>
-            <x-button v-tooltip="'Ctrl+Enter'" @click.prevent="submitCurrentQuery" primary>
+            <x-button v-tooltip="'Ctrl+Enter'" @click.prevent="submitTabQuery" primary>
               <x-label>{{hasSelectedText ? 'Run Selected' : 'Run All'}}</x-label>
             </x-button>
             <x-button menu primary>
             <i class="material-icons">arrow_drop_down</i>
               <x-menu>
-                <x-menuitem>
+                <x-menuitem @click.prevent="submitTabQuery">
                   <x-label>{{hasSelectedText ? 'Run Selected' : 'Run All'}}</x-label>
                   <x-shortcut value="Control+Enter"></x-shortcut>
                 </x-menuitem>
                 <hr>
-                <x-menuitem>
+                <x-menuitem @click.prevent="submitCurrentQuery">
                   <x-label>Run Current</x-label>
                   <x-shortcut value="Control+Shift+Enter"></x-shortcut>
                 </x-menuitem>
@@ -90,16 +87,19 @@
 <script>
 
   import _ from 'lodash'
+  import 'codemirror/addon/search/searchcursor'
   import CodeMirror from 'codemirror'
   import Split from 'split.js'
   import Pluralize from 'pluralize'
 
   import { mapState } from 'vuex'
 
+  import { splitQueries } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar'
   import ResultTable from './editor/ResultTable'
 
   export default {
+    // this.queryText holds the current editor value, always
     components: { ResultTable, ProgressBar },
     props: ['tab', 'active'],
     data() {
@@ -117,6 +117,8 @@
         unsavedText: null,
         saveError: null,
         lastWord: null,
+        cursorIndex: null,
+        marker: null
       }
     },
     computed: {
@@ -131,6 +133,33 @@
       },
       queryText() {
         return this.tab.query.text
+      },
+      individualQueries() {
+        return splitQueries(this.queryText)
+      },
+      currentlySelectedQuery() {
+        let currentPos = 0
+        const queries = this.individualQueries
+        for (let i = 0; i < queries.length; i++) {
+          currentPos += i == 0 ? queries[i].length : queries[i].length + 1
+          if (currentPos > this.cursorIndex) {
+            return queries[i]
+          }
+        }
+        return null
+      },
+      currentQueryPosition() {
+        if(!this.editor || !this.currentlySelectedQuery) {
+          return null
+        }
+        const cursor = this.editor.getSearchCursor(this.currentlySelectedQuery)
+        if (cursor.findNext()) {
+          return {
+            from: cursor.from(),
+            to: cursor.to()
+          }
+        }
+        return null
       },
       affectedRowsText() {
         if (!this.result) {
@@ -187,6 +216,21 @@
           this.$modal.hide('save-modal')
         }
       },
+      currentQueryPosition() {
+        if (this.marker){
+          this.marker.clear()
+        }
+
+        if(this.individualQueries.length < 2) {
+          return;
+        }
+
+        if (!this.currentQueryPosition) {
+          return
+        }
+        const { from, to } = this.currentQueryPosition
+        this.marker = this.editor.getDoc().markText(from, to, {className: 'highlight'})
+      },
       hintOptions() {
         this.editor.setOption('hintOptions',this.hintOptions)
         // this.editor.setOptions('hint', CodeMirror.hint.sql)
@@ -235,41 +279,8 @@
         }
       },
       async submitCurrentQuery() {
-        // Regex test: https://regex101.com/r/nnJdre
-        const regex = /^(?:[\n|\t])*.+?(?:[^;']|(?:'[^']+'))+;?$/gm
-        const cursorIndex = this.editor.getDoc().indexFromPos(this.editor.getCursor(true))
-
-        let value = this.editor.getValue()
-        
-        if (!value.trim().endsWith(';')) {
-          value += ';'
-        }
-
-        let m
-        let queries = []
-        while((m = regex.exec(value)) !== null) {
-          if (m.index === regex.lastIndex) {
-            regex.lastIndex++
-          }
-
-          m.forEach((matched) => {
-            queries = [...queries, matched]
-          })
-        }
-
-        let currentQuery
-        let currentPos = 0
-        for (let i = 0; i < queries.length; i++) {
-          currentPos += i == 0 ? queries[i].length : queries[i].length + 1
-          if (currentPos > cursorIndex) {
-            currentQuery = queries[i]
-            break
-          }
-        }
-
-        // TODO: Not sure if need to throw error in case no current query has been found
-        if (currentQuery) {
-          this.submitQuery(currentQuery)
+        if (this.currentlySelectedQuery) {
+          this.submitQuery(this.currentlySelectedQuery)
         } else {
           this.results = []
           this.error = 'No query to run'
@@ -316,7 +327,6 @@
         return value;
       },
       maybeAutoComplete(editor, e) {
-        // Currently this doesn't do anything.
         // BUGS:
         // 1. only on periods if not in a quote
         // 2. post-space trigger after a few SQL keywords
@@ -402,6 +412,7 @@
         this.editor.addKeyMap(runQueryKeyMap)
 
         this.editor.on("change", (cm) => {
+          // this also updates `this.queryText`
           this.tab.query.text = cm.getValue()
         })
 
@@ -418,9 +429,12 @@
 
         // TODO: make this not suck
         this.editor.on('keyup', this.maybeAutoComplete)
+        this.editor.on('cursorActivity', (editor) => this.cursorIndex = editor.getDoc().indexFromPos(editor.getCursor(true)))
         this.editor.focus()
 
         setTimeout(() => {
+          // this fixes the editor not showing because it doesn't think it's dom element is in view.
+          // its a hit and miss error
           this.editor.refresh()
         }, 1)
 
