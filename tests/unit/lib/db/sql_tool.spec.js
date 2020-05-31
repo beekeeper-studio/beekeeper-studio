@@ -1,4 +1,4 @@
-import { splitQueries } from "../../../../src/lib/db/sql_tools";
+import { splitQueries, extractParams } from "../../../../src/lib/db/sql_tools";
 
 const testCases = {
   "select* from foo; select * from bar": 2,
@@ -16,8 +16,23 @@ describe("Query Splitter", () => {
     Object.keys(testCases).forEach(query => {
       const expected = testCases[query]
       const result = splitQueries(query)
-      console.log(result)
       expect(result.length).toBe(expected)
     });
+  })
+})
+
+describe("extractParams", () => {
+  it("should extract params", () => {
+    const testCases = {
+      ":foo": [":foo"],
+      "$1, $2": ["$1", "$2"],
+      "select * from :bar": [":bar"],
+      "select * from :bananas where :bananas": [":bananas"]
+    }
+
+    Object.keys(testCases).forEach(query => {
+      const expected = testCases[query]
+      expect(extractParams(query)).toStrictEqual(expected)
+    })
   })
 })
