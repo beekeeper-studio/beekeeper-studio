@@ -99,6 +99,47 @@
   import ProgressBar from './editor/ProgressBar'
   import ResultTable from './editor/ResultTable'
 
+  const getCurrentQuery = (cm) => {
+    // Regex test: https://regex101.com/r/nnJdre
+    const regex = /^(?:[\n|\t])*.+?(?:[^;']|(?:'[^']+'))+;$/gm
+    const cursorIndex = cm.getDoc().indexFromPos(cm.getCursor(true))
+
+    let value = cm.getValue()
+
+    if (!value.trim().endsWith(';')) {
+      value += ';'
+    }
+
+    let m
+    let queries = []
+    while((m = regex.exec(value)) !== null) {
+      if (m.index === regex.lastIndex) {
+        regex.lastIndex++
+      }
+
+      m.forEach((matched) => {
+        queries = [...queries, matched]
+      })
+    }
+
+    let fromPos, toPos = 0, currentQuery
+    for (let i = 0; i < queries.length; i++) {
+      toPos += i == 0 ? queries[i].length : queries[i].length + 1
+      if (toPos > cursorIndex) {
+        fromPos = toPos - (queries[i].length - queries[i].search(/\S/))
+        currentQuery = queries[i]
+        break
+      }
+    }
+
+    return {
+      fromPos,
+      toPos,
+      query: currentQuery,
+    }
+  }
+
+
   export default {
     components: { ResultTable, ProgressBar },
     props: ['tab', 'active'],
@@ -117,6 +158,8 @@
         unsavedText: null,
         saveError: null,
         lastWord: null,
+        currentQuery: null,
+        lastHightlighted: null,
       }
     },
     computed: {
@@ -235,41 +278,8 @@
         }
       },
       async submitCurrentQuery() {
-        // Regex test: https://regex101.com/r/nnJdre
-        const regex = /^(?:[\n|\t])*.+?(?:[^;']|(?:'[^']+'))+;?$/gm
-        const cursorIndex = this.editor.getDoc().indexFromPos(this.editor.getCursor(true))
-
-        let value = this.editor.getValue()
-        
-        if (!value.trim().endsWith(';')) {
-          value += ';'
-        }
-
-        let m
-        let queries = []
-        while((m = regex.exec(value)) !== null) {
-          if (m.index === regex.lastIndex) {
-            regex.lastIndex++
-          }
-
-          m.forEach((matched) => {
-            queries = [...queries, matched]
-          })
-        }
-
-        let currentQuery
-        let currentPos = 0
-        for (let i = 0; i < queries.length; i++) {
-          currentPos += i == 0 ? queries[i].length : queries[i].length + 1
-          if (currentPos > cursorIndex) {
-            currentQuery = queries[i]
-            break
-          }
-        }
-
-        // TODO: Not sure if need to throw error in case no current query has been found
-        if (currentQuery) {
-          this.submitQuery(currentQuery)
+        if (this.currentQuery) {
+          this.submitQuery(this.currentQuery.query)
         } else {
           this.results = []
           this.error = 'No query to run'
@@ -403,6 +413,19 @@
 
         this.editor.on("change", (cm) => {
           this.tab.query.text = cm.getValue()
+        })
+
+        this.editor.on("cursorActivity", (cm) => {
+          if (this.lastHightlighted) {
+            this.lastHightlighted.clear()
+          }
+
+          this.currentQuery = getCurrentQuery(this.editor)
+          this.lastHightlighted = cm.markText(
+            cm.posFromIndex(this.currentQuery.fromPos),
+            cm.posFromIndex(this.currentQuery.toPos),
+            {className: "current-query-highlight"}
+          )
         })
 
         if (this.connectionType === 'postgresql')  {

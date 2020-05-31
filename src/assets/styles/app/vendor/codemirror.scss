@@ -11,6 +11,12 @@
   background: transparent!important;
 }
 
+.CodeMirror-line {
+  .current-query-highlight {
+    background: rgba($selection, 0.09)
+  }
+}
+
 // Monokai
 // ---------------------------------------
 .cm-s-monokai {
