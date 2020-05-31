@@ -6,7 +6,25 @@
       <div class="toolbar text-right">
         <div class="actions btn-group" ref="actions">
           <a @click.prevent="triggerSave" class="btn btn-flat">Save</a>
-          <a href="" v-tooltip="'(ctrl + enter)'" @click.prevent="submitQuery" class="btn btn-primary">Run</a>
+
+          <x-buttons>
+            <x-button v-tooltip="'Ctrl+Enter'" @click.prevent="submitTabQuery" primary>
+              <x-label>{{hasSelectedText ? 'Run Selection' : 'Run'}}</x-label>
+            </x-button>
+            <x-button menu primary>
+            <i class="material-icons">arrow_drop_down</i>
+              <x-menu>
+                <x-menuitem @click.prevent="submitTabQuery">
+                  <x-label>{{hasSelectedText ? 'Run Selection' : 'Run'}}</x-label>
+                  <x-shortcut value="Control+Enter"></x-shortcut>
+                </x-menuitem>
+                <x-menuitem @click.prevent="submitCurrentQuery">
+                  <x-label>Run Query Under Cursor</x-label>
+                  <x-shortcut value="Control+Shift+Enter"></x-shortcut>
+                </x-menuitem>
+              </x-menu>
+            </x-button>
+          </x-buttons>
         </div>
       </div>
     </div>
@@ -61,9 +79,10 @@
 
     <!-- Parameter modal -->
     <modal class="vue-dialog beekeeper-modal" name="parameters-modal" @opened="selectFirstParameter" @closed="selectEditor" height="auto" :scrollable="true">
-      <form @submit.prevent="deparameterizeQueryResolve">
+      <form @submit.prevent="submitQuery(queryForExecution, true)">
         <div class="dialog-content">
           <div class="dialog-c-title">Provide parameter values</div>
+          <div class="dialog-c-subtitle">Don't forget to use single quotes around string values</div>
           <div class="modal-form">
             <div class="form-group">
                 <div v-for="(param, index) in queryParameterPlaceholders" v-bind:key="index">
@@ -89,16 +108,19 @@
 <script>
 
   import _ from 'lodash'
+  import 'codemirror/addon/search/searchcursor'
   import CodeMirror from 'codemirror'
   import Split from 'split.js'
   import Pluralize from 'pluralize'
 
   import { mapState } from 'vuex'
 
+  import { splitQueries, extractParams } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar'
   import ResultTable from './editor/ResultTable'
 
   export default {
+    // this.queryText holds the current editor value, always
     components: { ResultTable, ProgressBar },
     props: ['tab', 'active'],
     data() {
@@ -116,12 +138,17 @@
         unsavedText: null,
         saveError: null,
         lastWord: null,
-
+        cursorIndex: null,
+        marker: null,
         queryParameterValues: {},
-        deparameterizeQueryResolve: null,
+        queryForExecution: null
+
       }
     },
     computed: {
+      hasSelectedText() {
+        return this.editor ? !!this.editor.getSelection() : false
+      },
       result() {
         return this.results[this.selectedResult]
       },
@@ -130,6 +157,33 @@
       },
       queryText() {
         return this.tab.query.text
+      },
+      individualQueries() {
+        return splitQueries(this.queryText)
+      },
+      currentlySelectedQuery() {
+        let currentPos = 0
+        const queries = this.individualQueries
+        for (let i = 0; i < queries.length; i++) {
+          currentPos += i == 0 ? queries[i].length : queries[i].length + 1
+          if (currentPos >= this.cursorIndex) {
+            return queries[i]
+          }
+        }
+        return null
+      },
+      currentQueryPosition() {
+        if(!this.editor || !this.currentlySelectedQuery) {
+          return null
+        }
+        const cursor = this.editor.getSearchCursor(this.currentlySelectedQuery)
+        if (cursor.findNext()) {
+          return {
+            from: cursor.from(),
+            to: cursor.to()
+          }
+        }
+        return null
       },
       affectedRowsText() {
         if (!this.result) {
@@ -176,25 +230,11 @@
         return { tables: result }
       },
       queryParameterPlaceholders() {
-        let query = _.get(this.query, 'text');
-        if (_.isEmpty(query)) {
-          return query;
-        }
-
-        // Get parameter placeholders that follow the patterns:
-        // :project_id, :user_id
-        // $1, $2
-        // Positional ? parameters are not yet supported
-        const namedAndNumberedParams = Array.from(query.matchAll(/(?:\W|^)(:\w+|\$\d+)(?:\W|$)/g)).map(match => match[1])
-
-        if (!namedAndNumberedParams.length) {
-          return null;
-        }
-
-        return _.uniq(namedAndNumberedParams);
+        let query = this.queryForExecution
+        return extractParams(query)
       },
       deparameterizedQuery() {
-        let query = _.get(this.query, 'text');
+        let query = this.queryForExecution
         if (_.isEmpty(query)) {
           return query;
         }
@@ -214,6 +254,21 @@
         } else {
           this.$modal.hide('save-modal')
         }
+      },
+      currentQueryPosition() {
+        if (this.marker){
+          this.marker.clear()
+        }
+
+        if(this.individualQueries.length < 2) {
+          return;
+        }
+
+        if (!this.currentQueryPosition) {
+          return
+        }
+        const { from, to } = this.currentQueryPosition
+        this.marker = this.editor.getDoc().markText(from, to, {className: 'highlight'})
       },
       hintOptions() {
         this.editor.setOption('hintOptions',this.hintOptions)
@@ -240,6 +295,7 @@
         this.$refs.titleInput.select()
       },
       selectFirstParameter() {
+        if (!this.$refs['paramInput'] || this.$refs['paramInput'].length == 0) return
         this.$refs['paramInput'][0].select()        
       },
       updateEditorHeight() {
@@ -268,19 +324,32 @@
       escapeRegExp(string) {
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
-      async submitQuery() {
+      async submitCurrentQuery() {
+        if (this.currentlySelectedQuery) {
+          this.submitQuery(this.currentlySelectedQuery)
+        } else {
+          this.results = []
+          this.error = 'No query to run'
+        }
+      },
+      async submitTabQuery() {
+        const text = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
+        this.submitQuery(text)
+      },
+      async submitQuery(rawQuery, skipModal) {
         this.running = true
+        this.queryForExecution = rawQuery
         this.results = []
         this.selectedResult = 0
-        try {
-          let query = this.query;
 
-          if (this.queryParameterPlaceholders) {
+        try {
+          if (this.queryParameterPlaceholders.length > 0 && !skipModal) {
             this.$modal.show('parameters-modal')
-            await new Promise(resolve => this.deparameterizeQueryResolve = resolve);
-            this.$modal.hide('parameters-modal')
-            query = this.deparameterizedQuery;
+            return
           }
+
+          const query = this.deparameterizedQuery
+          this.$modal.hide('parameters-modal')
 
           const runningQuery = this.connection.query(query);
           const results = await runningQuery.execute()
@@ -297,7 +366,7 @@
             }
           })
           this.results = results
-          this.$store.dispatch('logQuery', { text: this.editor.getValue(), rowCount: totalRows})
+          this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
         } catch (ex) {
           this.error = ex
         } finally {
@@ -314,7 +383,6 @@
         return value;
       },
       maybeAutoComplete(editor, e) {
-        // Currently this doesn't do anything.
         // BUGS:
         // 1. only on periods if not in a quote
         // 2. post-space trigger after a few SQL keywords
@@ -378,8 +446,10 @@
         })
 
         const runQueryKeyMap = {
-          "Ctrl-Enter": this.submitQuery,
-          "Cmd-Enter": this.submitQuery,
+          "Shift-Ctrl-Enter": this.submitCurrentQuery,
+          "Shift-Cmd-Enter": this.submitCurrentQuery,
+          "Ctrl-Enter": this.submitTabQuery,
+          "Cmd-Enter": this.submitTabQuery,
           "Ctrl-S": this.triggerSave,
           "Cmd-S": this.triggerSave
         }
@@ -396,6 +466,7 @@
         this.editor.addKeyMap(runQueryKeyMap)
 
         this.editor.on("change", (cm) => {
+          // this also updates `this.queryText`
           this.tab.query.text = cm.getValue()
         })
 
@@ -412,9 +483,12 @@
 
         // TODO: make this not suck
         this.editor.on('keyup', this.maybeAutoComplete)
+        this.editor.on('cursorActivity', (editor) => this.cursorIndex = editor.getDoc().indexFromPos(editor.getCursor(true)))
         this.editor.focus()
 
         setTimeout(() => {
+          // this fixes the editor not showing because it doesn't think it's dom element is in view.
+          // its a hit and miss error
           this.editor.refresh()
         }, 1)
 

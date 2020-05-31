@@ -32,6 +32,10 @@
         }
       }
     }
+    .actions {
+      display: flex;
+      align-items: center;
+    }
   }
   .tab-content {
     flex: 1 1 100%;
@@ -224,6 +228,9 @@
     }
     .item-text {
       font-size: 0.95rem;
+    }
+    .title {
+      @extend .truncate;
     }
     .badge {
       display: inline-flex;

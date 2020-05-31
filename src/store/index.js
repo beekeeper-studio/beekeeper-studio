@@ -95,6 +95,9 @@ const store = new Vuex.Store({
         state.connectionConfigs.push(newConfig)
       }
     },
+    removeConfig(state, config) {
+      state.connectionConfigs = _.without(state.connectionConfigs, config)
+    },
     configs(state, configs){
       state.connectionConfigs = configs
     },
@@ -208,6 +211,10 @@ const store = new Vuex.Store({
     async saveConnectionConfig(context, newConfig) {
       await newConfig.save()
       context.commit('config', newConfig)
+    },
+    async removeConnectionConfig(context, config) {
+      await config.remove()
+      context.commit('removeConfig', config)
     },
     async loadSavedConfigs(context) {
       let configs = await SavedConnection.find()

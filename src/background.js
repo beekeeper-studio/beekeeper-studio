@@ -8,16 +8,14 @@ import {
 
 import { manageUpdates } from './background/update_manager'
 import { configureMenu } from './background/configure_menu'
+import platformInfo from './common/platform_info'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const debugMode = !!process.env.DEBUG
-const os = process.platform;
 
-const isWindows = os === 'win32'
-const isMac = os === 'darwin'
-const isLinuxOrBSD = !isWindows && !isMac
+const { isWindows, isMac, isLinux } = platformInfo
 
-const platform = isMac ? 'mac' : (isLinuxOrBSD ? 'linux' : 'windows')
+const platform = isMac ? 'mac' : (isLinux ? 'linux' : 'windows')
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -37,7 +35,7 @@ function createWindow () {
     minWidth: 800,
     minHeight: 600,
     titleBarStyle: 'hidden',
-    frame: isLinuxOrBSD,
+    frame: isLinux,
     webPreferences: {
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
     },

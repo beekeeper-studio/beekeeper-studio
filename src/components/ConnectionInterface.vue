@@ -2,7 +2,7 @@
   <div class="interface connection-interface">
     <div class="interface-wrap row">
       <sidebar class="connection-sidebar" ref="sidebar">
-        <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @edit="edit" @connect="handleConnect"></connection-sidebar>
+        <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @remove="remove" @edit="edit" @connect="handleConnect"></connection-sidebar>
       </sidebar>
       <div ref="content" class="connection-main page-content" id="page-content">
         <div class="small-wrap">
@@ -137,6 +137,13 @@
     methods: {
       edit(config) {
         this.config = config
+      },
+      async remove(config) {
+        await this.$store.dispatch('removeConnectionConfig', config)
+        if (this.config === config) {
+          this.config = this.defaultConfig
+        }
+        this.$noty.success(`${config.name} deleted`)
       },
       async submit() {
         this.connectionError = null
