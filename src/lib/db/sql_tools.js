@@ -1,3 +1,4 @@
+import _ from 'lodash'
 
 export function splitQueries(queryText) {
   if (!queryText) return []
@@ -21,4 +22,14 @@ export function splitQueries(queryText) {
     })
   }
   return queries
+}
+
+export function extractParams(query) {
+  if (!query) return []
+  
+  const result = Array.from(query.matchAll(/(?:\W|^)(:\w+|\$\d+)(?:\W|$)/g)).map(match => match[1])
+  if (!result || result.length == 0) {
+    return []
+  }
+  return _.uniq(result)
 }

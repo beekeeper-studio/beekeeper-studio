@@ -77,6 +77,31 @@
       </form>
     </modal>
 
+    <!-- Parameter modal -->
+    <modal class="vue-dialog beekeeper-modal" name="parameters-modal" @opened="selectFirstParameter" @closed="selectEditor" height="auto" :scrollable="true">
+      <form @submit.prevent="submitQuery(queryForExecution, true)">
+        <div class="dialog-content">
+          <div class="dialog-c-title">Provide parameter values</div>
+          <div class="dialog-c-subtitle">Don't forget to use single quotes around string values</div>
+          <div class="modal-form">
+            <div class="form-group">
+                <div v-for="(param, index) in queryParameterPlaceholders" v-bind:key="index">
+                  <div class="form-group row">
+                    <label>{{param}}</label>
+                    <input type="text" class="form-control" v-model="queryParameterValues[param]" autofocus ref="paramInput">
+                  </div>
+                </div>
+            </div>
+          </div>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('parameters-modal')">Cancel</button>
+          <button class="btn btn-primary" type="submit">Run</button>
+        </div>
+      </form>
+    </modal>
+
+
   </div>
 </template>
 
@@ -90,7 +115,7 @@
 
   import { mapState } from 'vuex'
 
-  import { splitQueries } from '../lib/db/sql_tools'
+  import { splitQueries, extractParams } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar'
   import ResultTable from './editor/ResultTable'
 
@@ -114,7 +139,10 @@
         saveError: null,
         lastWord: null,
         cursorIndex: null,
-        marker: null
+        marker: null,
+        queryParameterValues: {},
+        queryForExecution: null
+
       }
     },
     computed: {
@@ -201,6 +229,21 @@
         })
         return { tables: result }
       },
+      queryParameterPlaceholders() {
+        let query = this.queryForExecution
+        return extractParams(query)
+      },
+      deparameterizedQuery() {
+        let query = this.queryForExecution
+        if (_.isEmpty(query)) {
+          return query;
+        }
+        _.each(this.queryParameterPlaceholders, param => {
+          query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`), `$1${this.queryParameterValues[param]}$2`)
+        });
+        return query;
+      },
+
       ...mapState(['usedConfig', 'connection', 'database', 'tables'])
     },
     watch: {
@@ -251,6 +294,10 @@
       selectTitleInput() {
         this.$refs.titleInput.select()
       },
+      selectFirstParameter() {
+        if (!this.$refs['paramInput'] || this.$refs['paramInput'].length == 0) return
+        this.$refs['paramInput'][0].select()        
+      },
       updateEditorHeight() {
         let height = this.$refs.topPanel.clientHeight
         height -= this.$refs.actions.clientHeight
@@ -274,6 +321,9 @@
           this.tab.unsavedChanges = false
         }
       },
+      escapeRegExp(string) {
+        return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
+      },
       async submitCurrentQuery() {
         if (this.currentlySelectedQuery) {
           this.submitQuery(this.currentlySelectedQuery)
@@ -286,12 +336,22 @@
         const text = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
         this.submitQuery(text)
       },
-      async submitQuery(query) {
+      async submitQuery(rawQuery, skipModal) {
         this.running = true
+        this.queryForExecution = rawQuery
         this.results = []
         this.selectedResult = 0
+
         try {
-          const runningQuery = this.connection.query(query)
+          if (this.queryParameterPlaceholders.length > 0 && !skipModal) {
+            this.$modal.show('parameters-modal')
+            return
+          }
+
+          const query = this.deparameterizedQuery
+          this.$modal.hide('parameters-modal')
+
+          const runningQuery = this.connection.query(query);
           const results = await runningQuery.execute()
           let totalRows = 0
           results.forEach(result => {
@@ -352,7 +412,7 @@
             console.log('no keyup space autocomplete')
           }
         }
-      }
+      },
     },
     mounted() {
       const $editor = this.$refs.editor
@@ -370,8 +430,6 @@
       }
 
       this.$nextTick(() => {
-
-
         this.split = Split(this.splitElements, {
           elementStyle: (dimension, size) => ({
               'flex-basis': `calc(${size}%)`,
@@ -440,9 +498,7 @@
           this.tableHeight = this.$refs.bottomPanel.clientHeight
           this.updateEditorHeight()
         }, 1)
-
       })
-
     },
     beforeDestroy() {
       if(this.split) {
