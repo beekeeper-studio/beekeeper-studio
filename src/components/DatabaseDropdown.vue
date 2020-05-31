@@ -6,6 +6,9 @@
         <option selected :value="selectedDatabase">{{selectedDatabase}}</option>
         <option v-for="db in availableDatabases" v-bind:key="db" :value="db">{{db}}</option>
       </select>
+      <a @click.prevent="refreshDatabases" v-tooltip="'Refresh'">
+        <i class="material-icons">refresh</i>
+      </a>
     </div>
   </div>
 </template>
@@ -20,6 +23,11 @@
         currentDatabase: null,
         selectedDatabase: null,
         dbs: [],
+      }
+    },
+    methods: {
+      async refreshDatabases() {
+        this.dbs = await this.connection.listDatabases()
       }
     },
     async mounted() {
