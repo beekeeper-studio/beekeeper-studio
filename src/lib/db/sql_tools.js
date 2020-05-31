@@ -1,7 +1,7 @@
 
 export function splitQueries(queryText) {
   if (!queryText) return []
-  const regex = /(?:[\n|\t])*.+?(?:[^;']|(?:'[^']+'))+;/gm
+  const regex = /(?:[^;']|(?:'[^']+'))+;/gm
   let value = queryText
   if (!queryText.trim().endsWith(';')) {
     value += ';'

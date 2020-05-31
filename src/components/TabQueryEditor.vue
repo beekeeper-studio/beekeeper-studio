@@ -142,7 +142,7 @@
         const queries = this.individualQueries
         for (let i = 0; i < queries.length; i++) {
           currentPos += i == 0 ? queries[i].length : queries[i].length + 1
-          if (currentPos > this.cursorIndex) {
+          if (currentPos >= this.cursorIndex) {
             return queries[i]
           }
         }
