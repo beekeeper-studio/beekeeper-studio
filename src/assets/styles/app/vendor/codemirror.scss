@@ -5,6 +5,7 @@
   background: $query-editor-bg!important;
   color: $text-dark!important;
   padding: 0.75rem 0;
+  z-index: 1;
 }
 .CodeMirror-gutters {
   border: 0!important;

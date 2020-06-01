@@ -407,6 +407,7 @@ x-button {
     box-shadow: var(--elevation-1a);
   }
   > x-label {
+    line-height: 1;
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -453,7 +454,7 @@ x-buttons {
   > x-button {
     &[menu] {
       border-left: 1px solid rgba($theme-bg, 0.5);
-      padding: 0 ($gutter-h * 0.5)!important;
+      padding: 0!important;
       .material-icons {
         font-size: 20px;
       }

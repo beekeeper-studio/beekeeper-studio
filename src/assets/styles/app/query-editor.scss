@@ -13,7 +13,7 @@
   }
   .CodeMirror-code {
     .highlight {
-      background-color: blue;
+      background-color: rgba($brand-secondary, 0.2);
     }
   }
   .top-panel, .bottom-panel {
@@ -95,13 +95,17 @@
         height: ($input-height * 0.95);
       }
     }
-    .alert {
+    .message {
       display: flex;
       align-items: center;
       justify-content: center;
       flex: 1 1 100%;
-      padding: 0;
+      padding: 0 $gutter-w;
       background: transparent;
+    }
+    .alert {
+      max-width: 70%;
+      margin: 0 auto;
     }
   }
 

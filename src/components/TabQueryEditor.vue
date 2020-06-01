@@ -5,7 +5,7 @@
       <span class="expand"></span>
       <div class="toolbar text-right">
         <div class="actions btn-group" ref="actions">
-          <a @click.prevent="triggerSave" class="btn btn-flat">Save</a>
+          <x-button @click.prevent="triggerSave" class="btn btn-flat">Save</x-button>
 
           <x-buttons>
             <x-button v-tooltip="'Ctrl+Enter'" @click.prevent="submitTabQuery" primary>
@@ -19,7 +19,7 @@
                   <x-shortcut value="Control+Enter"></x-shortcut>
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQuery">
-                  <x-label>Run Query Under Cursor</x-label>
+                  <x-label>Run Current</x-label>
                   <x-shortcut value="Control+Shift+Enter"></x-shortcut>
                 </x-menuitem>
               </x-menu>
@@ -31,8 +31,8 @@
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar v-if="running"></progress-bar>
       <result-table ref="table" v-else-if="rowCount > 0" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
-      <div class="alert alert-info" v-else-if="result"><i class="material-icons">info</i>Query Executed Successfully. No Results</div>
-      <div class="alert alert-danger" v-else-if="error"><i class="material-icons">warning</i>{{error}}</div>
+      <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results</span></div></div>
+      <div class="message" v-else-if="error"><div class="alert alert-danger"><i class="material-icons">warning</i><span>{{error}}</span></div></div>
       <div v-else><!-- No Data --></div>
       <span class="expand" v-if="!result"></span>
       <footer class="status-bar row query-meta" v-bind:class="{'empty': !result}">

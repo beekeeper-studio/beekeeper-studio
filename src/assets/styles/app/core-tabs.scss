@@ -28,7 +28,7 @@
     display: flex;
     align-items: center;
     // height: $tab-height;
-    background: rgba($theme-base, 0.035);
+    background: rgba($theme-base, 0.03);
   }
   .nav-tabs {
     position: relative;
@@ -46,7 +46,7 @@
     .nav-link {
       display: flex;
       align-items: center;
-      background: rgba($theme-base, 0.05);
+      background: rgba($theme-base, 0.035);
       padding: 0 $tab-padding-w;
       height: $tab-height;
       min-width: 110px;
