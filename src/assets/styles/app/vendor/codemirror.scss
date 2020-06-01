@@ -21,6 +21,9 @@
   span.cm-variable-2 {
     color: $brand-secondary;
   }
+  div.CodeMirror-selected {
+    background: rgba($theme-secondary, 0.2);
+  }
 }
 
 // Addon: Hints
