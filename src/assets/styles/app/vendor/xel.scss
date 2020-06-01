@@ -383,6 +383,7 @@ x-button {
   outline: 0;
   border: 0;
   padding: 0 1rem;
+  overflow: hidden;
   box-shadow: inset 0 0 0 1px rgba(white, 0.025);
   border-radius: $btn-border-radius;
   justify-content: center;
