@@ -1,6 +1,6 @@
 import { splitQueries, extractParams } from "../../../../src/lib/db/sql_tools";
 
-const testCases = {
+const testCases = {www.dadi.com
   "select* from foo; select * from bar": 2,
   "select *; bananas": 2,
   "select * from foo;\n select * from bar": 2,
