@@ -22,3 +22,5 @@ Beekeeper allows you to:
 1. Run everything (this is the default)
 2. Run only the 'current' query (Beekeeper highlights this query for you so you know what will run)
 3. Run only what you have selected.
+
+![demo](../assets/bks-editor-runs.gif)
