@@ -4,8 +4,10 @@ export function splitQueries(queryText) {
   if (!queryText) return []
   const regex = /(?:[^;']|(?:'[^']+'))+;/gm
   let value = queryText
+  let fakeSemiColon = false
   if (!queryText.trim().endsWith(';')) {
     value += ';'
+    fakeSemiColon = true
   }
 
   let m
@@ -17,9 +19,14 @@ export function splitQueries(queryText) {
 
     m.forEach((matched) => {
 
-      const toPush = matched.endsWith(';') ? matched.slice(0, matched.length-1) : matched
-      queries.push(toPush)
+      // const toPush = matched.endsWith(';') ? matched.slice(0, matched.length-1) : matched
+      queries.push(matched)
+      // queries.push(toPush)
     })
+  }
+  if (fakeSemiColon) {
+    const last = queries.length - 1
+    queries[last] = queries[last].slice(0, queries[last].length -1)
   }
   return queries
 }

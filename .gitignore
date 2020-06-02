@@ -7,6 +7,7 @@ temp/
 test.db
 *.sqlite
 dist_electron/
+docs/.vuepress/dist/
 .DS_Store
 yarn-error.log
 .history

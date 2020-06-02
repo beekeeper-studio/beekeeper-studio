@@ -161,29 +161,38 @@
       individualQueries() {
         return splitQueries(this.queryText)
       },
-      currentlySelectedQuery() {
+      currentlySelectedQueryIndex() {
         let currentPos = 0
         const queries = this.individualQueries
         for (let i = 0; i < queries.length; i++) {
-          currentPos += i == 0 ? queries[i].length : queries[i].length + 1
+          currentPos += queries[i].length
+          // currentPos += i == 0 ? queries[i].length : queries[i].length + 1
           if (currentPos >= this.cursorIndex) {
-            return queries[i]
+            return i
           }
         }
         return null
+      },
+      currentlySelectedQuery() {
+        if (this.currentlySelectedQueryIndex == null) return null
+        return this.individualQueries[this.currentlySelectedQueryIndex]
       },
       currentQueryPosition() {
         if(!this.editor || !this.currentlySelectedQuery) {
           return null
         }
+        const otherCandidates = this.individualQueries.slice(0, this.currentlySelectedQueryIndex).filter((query) => query.includes(this.currentlySelectedQuery))
+        let i = 0
         const cursor = this.editor.getSearchCursor(this.currentlySelectedQuery)
-        if (cursor.findNext()) {
-          return {
-            from: cursor.from(),
-            to: cursor.to()
-          }
+        while(i < otherCandidates.length + 1) {
+          i ++
+          if (!cursor.findNext()) return null
         }
-        return null
+        return {
+          from: cursor.from(),
+          to: cursor.to()
+        }
+
       },
       affectedRowsText() {
         if (!this.result) {
