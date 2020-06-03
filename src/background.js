@@ -35,7 +35,7 @@ function createWindow () {
     minWidth: 800,
     minHeight: 600,
     titleBarStyle: 'hidden',
-    frame: isLinux,
+    frame: isLinux || (isWindows && isDevelopment),
     webPreferences: {
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
     },

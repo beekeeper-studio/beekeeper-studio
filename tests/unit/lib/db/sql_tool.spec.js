@@ -12,12 +12,18 @@ const testCases = {
 }
 
 describe("Query Splitter", () => {
-  it("should split SQL correctly", () => {
+  it("should split SQL into the correct number of parts", () => {
     Object.keys(testCases).forEach(query => {
       const expected = testCases[query]
       const result = splitQueries(query)
       expect(result.length).toBe(expected)
     });
+  })
+
+  it("should not add a semi-colon to the end of the last query", () => {
+    const expected = " select * from bar"
+    const result = splitQueries(Object.keys(testCases)[0])
+    expect(result[1]).toBe(expected)
   })
 })
 
