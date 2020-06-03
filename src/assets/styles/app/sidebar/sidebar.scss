@@ -86,6 +86,14 @@
       padding-right: 1.5rem;
       cursor: pointer;
     }
+    > a {
+      display: inline-flex;
+      margin-left: $gutter-h;
+      .material-icons {
+        font-size: 16px;
+        color: $text-light;
+      }
+    }
   }
   .database-select {
     display: block;
