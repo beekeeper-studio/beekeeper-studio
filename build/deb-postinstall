@@ -1,0 +1,12 @@
+#! /bin/bash
+
+available()
+{
+        command -v "$1" >/dev/null 2>&1
+}
+
+if available apt-key
+then
+    apt-key add build/deb-public-key
+    \cp -f build/beekeeper-studio.list /etc/apt/sources.list.d/beekeeper-studio.list
+fi

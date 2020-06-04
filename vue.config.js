@@ -41,6 +41,9 @@ module.exports = {
               distribution: 'disco',
               component: 'main'
             },
+          ],
+          fpm: [
+            "--afterInstall=build/deb-postinstall.sh"
           ]
         },
         appImage: {
