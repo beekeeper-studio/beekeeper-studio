@@ -43,7 +43,7 @@ module.exports = {
             },
           ],
           fpm: [
-            "--afterInstall=build/deb-postinstall.sh"
+            "--after-install=build/deb-postinstall.sh"
           ]
         },
         appImage: {
