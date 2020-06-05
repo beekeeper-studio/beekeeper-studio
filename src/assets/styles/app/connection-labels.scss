@@ -1,0 +1,61 @@
+$color-defaults: (
+  red:          $brand-danger,
+  orange:       $brand-warning,
+  yellow:       $brand-primary,
+  green:        $brand-success,
+  blue:         $brand-info,
+  purple:       $brand-purple,
+  pink:         $brand-pink,
+);
+
+.connection-label {
+  $label-size:     16px;
+
+  position: relative;
+  display: inline-flex;
+  -webkit-appearance: none;
+  background-color: transparent;
+  height: $label-size;
+  line-height: 1;
+  width: $label-size;
+  padding: 0;
+  border: 0;
+  margin-top: -1px;
+  margin-right: $gutter-h;
+  border-radius: 5px;
+  transition: background 0.2s ease-in-out;
+  cursor: pointer;
+
+  &.connection-label-color-none {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2);
+  }
+
+  @each $key, $val in $color-defaults {
+    &.connection-label-color-#{$key} {
+      background-color: nth($val, 1);
+
+      &:checked {
+        background-color: nth($val, 1);
+      }
+    }
+  }
+}
+
+input[type="radio"].connection-label {
+  box-shadow: none;
+
+  &:checked {
+    border: 0.2rem solid $text-dark;
+    box-shadow: none;
+  }
+
+  &.connection-label-color-none {
+    box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2);
+
+    &:checked {
+      background-color: transparent;
+      box-shadow: none;
+    }
+  }
+}

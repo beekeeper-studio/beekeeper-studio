@@ -16,6 +16,7 @@
           @click.prevent="edit(c)"
           @dblclick.prevent="connect(c)"
         >
+          <span v-if="c.labelColor" :class="`connection-label connection-label-color-${c.labelColor}`"></span>
           <span class="title expand">{{c.name}} </span>
           <span class="badge"><span>{{c.connectionType}}</span></span>
           <x-button class="btn-fab" skin="iconic">
@@ -60,6 +61,9 @@
       },
       remove(config) {
         this.$emit('remove', config)
+      },
+      getLabelClass(color) {
+        return `label-${color}`
       }
     }
   }

@@ -57,6 +57,12 @@
                     <span>Save Passwords</span>
                     <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help_outlined</i>
                   </label>
+
+                  <!-- Label Color Selection -->
+                  <div class="row">
+                    <div class="expand"></div>
+                    <ColorPicker :value="config.labelColor" v-model="config.labelColor"></ColorPicker>
+                  </div>
                 </div>
               </div>
 
@@ -76,6 +82,7 @@
 <script>
   import os from 'os'
   import {SavedConnection} from '../entity/saved_connection'
+  import ColorPicker from './form/ColorPicker'
   import ConnectionSidebar from './ConnectionSidebar'
   import MysqlForm from './connection/MysqlForm'
   import PostgresForm from './connection/PostgresForm'
@@ -86,7 +93,7 @@
   import _ from 'lodash'
 
   export default {
-    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, ColorPicker },
     data() {
       return {
         defaultConfig: new SavedConnection(),

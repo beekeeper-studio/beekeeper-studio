@@ -116,6 +116,13 @@ export class SavedConnection extends DbConnectionBase {
   @Column("varchar")
   name
 
+  @Column({
+    type: 'varchar',
+    nullable: true,
+    default: null
+  })
+  labelColor = null
+
   @Column({type: 'boolean', default: true})
   rememberPassword = true
 
