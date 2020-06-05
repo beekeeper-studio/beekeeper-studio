@@ -1,3 +1,5 @@
+For those looking to contribute, check out [Milestone 1.6](https://github.com/beekeeper-studio/beekeeper-studio/issues?q=is%3Aopen+is%3Aissue+milestone%3A%22V1.6+-+Smooth+out+features%22) for a mix of easy, medium, and hard issues.
+
 # Beekeeper Studio
 
 Beekeeper Studio is a free and open source SQL editor and database manager. Beekeeper Studio is cross-platform, and available for Linux, Mac, and Windows.
