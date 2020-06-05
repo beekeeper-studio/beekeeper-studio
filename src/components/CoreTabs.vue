@@ -1,7 +1,7 @@
 <template>
   <div class="core-tabs" v-hotkey="keymap">
     <div class="tabs-header">
-      <ul class="nav-tabs nav">
+      <!-- <ul class="nav-tabs nav">
         <core-tab-header
           v-for="tab in tabItems"
           :key="tab.id"
@@ -14,7 +14,17 @@
       <span class="expand"></span>
       <span class="actions">
         <a @click.prevent="createQuery(null)" class="btn-fab add-query"><i class=" material-icons">add</i></a>
-      </span>
+      </span> -->
+      <x-doctabs>
+        <core-tab-header
+          v-for="tab in tabItems"
+          :key="tab.id"
+          :tab="tab"
+          :selected="activeTab === tab"
+          @click="click"
+          @close="close"
+          ></core-tab-header>
+      </x-doctabs>
     </div>
     <div class="tab-content">
       <div

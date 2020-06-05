@@ -573,7 +573,7 @@ x-tab {
   min-height: 52px;
   color: rgba(255, 255, 255, 0.7);
   --trigger-effect:ripple;
-  --menu-position:over;
+  --menu-position: over;
   --arrow-width: 10px;
   --arrow-height: 6px;
   --arrow-margin:0 0 1px 5px;
@@ -700,47 +700,70 @@ x-tabs {
  */
 
 x-doctabs {
-  background: var(--primary-color);
-  color: white;
-  height: 46px;
+  height: $tab-height;
   --open-button-path-d:path("M 80 11 L 20 12 C 15 12 12 15 12 20 L 12 80 C 12 85 15 88 20 88 L 80 88 C 85 88 88 85 88 80 L 88 20 C 88 15 85 12 80 12 Z M 71 54 L 54 54 L 54 71 L 46 71 L 46 54 L 29 54 L 29 46 L 46 46 L 46 29 L 54 29 L 54 46 L 71 46 L 71 54 Z");
 }
 
 x-doctab {
-  font-size: 14px;
-  font-weight: 500;
-  --ripple-type:bounded;
-
+  background: rgba($theme-base, 0.04);
+  box-shadow: inset -1px 0 rgba($query-editor-bg, 0.5);
+  font-weight: normal;
+  padding: 0 $gutter-h 0 $gutter-w;
+  --ripple-type: bounded;
+  --ripple-opacity: 0.06;
   img {
     margin-right: 8px;
     width: 20px;
     height: 20px;
   }
-
-  x-icon {
-    margin-right: 8px;
-  }
-
   x-label {
     flex: 1;
     width: 0;
+    font-weight: inherit;
+    font-size: 0.95rem;
+    padding-left: $gutter-h;
 
     /* https://lists.w3.org/Archives/Public/www-style/2011Jan/0201.html */
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    &:before {
+      display: block;
+      content: attr(title);
+      font-weight: 600;
+      height: 0;
+      overflow: hidden;
+      visibility: hidden;
+    }
   }
-
+  .item-icon {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: none;
+  }
   > * {
     opacity: 0.75;
   }
-
+  &[selected] {
+    border: 0;
+    background: $query-editor-bg;
+    font-weight: 600;
+    color: $text-dark;
+    &:hover {
+      background: $query-editor-bg;
+    }
+    #ripples {
+      display: none;
+    }
+  }
   &[selected] > *, &:focus > * {
     opacity: 1;
   }
-
   &[disabled] > * {
     opacity: 0.5;
+  }
+  #close-button {
+    min-width: var(--close-button-width)!important;
   }
 }
 
