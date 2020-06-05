@@ -31,7 +31,7 @@ A repo is provided for Ubuntu 18.04+. To install the repo:
 wget --quiet -O - https://bintray.com/user/downloadSubjectPublicKey?username=bintray | sudo apt-key add -
 
 # add our repo to your apt lists directory
-echo "deb https://dl.bintray.com/beekeeper-studio/releases disco main" | sudo tee /etc/apt/sources.list.d/beekeeper-studio.list
+echo "deb https://dl.bintray.com/beekeeper-studio/releases $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/beekeeper-studio.list
 
 # Update apt and install
 sudo apt update
