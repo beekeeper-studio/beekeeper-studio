@@ -61,14 +61,7 @@
                   <!-- Label Color Selection -->
                   <div class="row">
                     <div class="expand"></div>
-                    <ConnectionLabel type="radio" :color="''" :checked="!config.labelColor" v-model="config.labelColor"></ConnectionLabel>
-                    <ConnectionLabel type="radio" :color="'red'" :checked="config.labelColor == 'red'" v-model="config.labelColor"></ConnectionLabel>
-                    <ConnectionLabel type="radio" :color="'orange'" :checked="config.labelColor == 'orange'" v-model="config.labelColor"></ConnectionLabel>
-                    <ConnectionLabel type="radio" :color="'yellow'" :checked="config.labelColor == 'yellow'" v-model="config.labelColor"></ConnectionLabel>
-                    <ConnectionLabel type="radio" :color="'green'" :checked="config.labelColor == 'green'" v-model="config.labelColor"></ConnectionLabel>
-                    <ConnectionLabel type="radio" :color="'blue'" :checked="config.labelColor == 'blue'" v-model="config.labelColor"></ConnectionLabel>
-                    <ConnectionLabel type="radio" :color="'purple'" :checked="config.labelColor == 'purple'" v-model="config.labelColor"></ConnectionLabel>
-                    <ConnectionLabel type="radio" :color="'pink'" :checked="config.labelColor == 'pink'" v-model="config.labelColor"></ConnectionLabel>
+                    <ColorPicker :value="config.labelColor" v-model="config.labelColor"></ColorPicker>
                   </div>
                 </div>
               </div>
@@ -89,8 +82,8 @@
 <script>
   import os from 'os'
   import {SavedConnection} from '../entity/saved_connection'
+  import ColorPicker from './form/ColorPicker'
   import ConnectionSidebar from './ConnectionSidebar'
-  import ConnectionLabel from './connection/ConnectionLabel'
   import MysqlForm from './connection/MysqlForm'
   import PostgresForm from './connection/PostgresForm'
   import Sidebar from './Sidebar'
@@ -100,7 +93,7 @@
   import _ from 'lodash'
 
   export default {
-    components: { ConnectionSidebar, ConnectionLabel, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, ColorPicker },
     data() {
       return {
         defaultConfig: new SavedConnection(),
