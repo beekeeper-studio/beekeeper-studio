@@ -1,0 +1,20 @@
+.sidebar-models {
+  flex: 1 1 auto;
+  height: 0;
+  max-height: -webkit-fill-available;
+  overflow-x: hidden;
+  padding: $gutter-h 0 $gutter-w;
+  .list-group {
+    a {
+      overflow: hidden;
+      font-size: 0.9rem;
+      color: $text
+    }
+    .item-text {
+      padding-right: $gutter-w;
+    }
+    .list-item-btn {
+      padding: $gutter-h $gutter-w;
+    }
+  }
+}

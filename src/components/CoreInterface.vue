@@ -36,6 +36,7 @@
     mounted() {
       this.$store.dispatch('updateHistory')
       this.$store.dispatch('updateFavorites')
+      this.$store.dispatch('updateModels')
 
       this.$nextTick(() => {
         this.split = Split(this.splitElements, {

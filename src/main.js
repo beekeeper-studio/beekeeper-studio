@@ -13,6 +13,7 @@ import 'typeface-roboto'
 import 'typeface-source-code-pro'
 import './assets/styles/app.scss'
 import $ from 'jquery'
+import 'vuerd'
 import SQL from 'codemirror/mode/sql/sql'
 import Hint from 'codemirror/addon/hint/show-hint.js'
 import SQLHint from 'codemirror/addon/hint/sql-hint.js'
@@ -23,6 +24,7 @@ import {SavedConnection} from './entity/saved_connection'
 import {UsedConnection} from './entity/used_connection'
 import {UsedQuery} from './entity/used_query'
 import {FavoriteQuery} from './entity/favorite_query'
+import {ModelERD} from './entity/model_erd'
 import {TypeOrmPlugin} from './lib/typeorm_plugin'
 import config from './config'
 import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
@@ -43,7 +45,8 @@ import ConfigPlugin from './plugins/ConfigPlugin'
           SavedConnection,
           UsedConnection,
           UsedQuery,
-          FavoriteQuery
+          FavoriteQuery,
+          ModelERD
       ],
       subscriptions: [
         EncryptedColumnSubscriber

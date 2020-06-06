@@ -25,6 +25,7 @@
         :class="{show: (activeTab === tab), active: (activeTab === tab)}"
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab == tab" :tab="tab" :connection="connection"></QueryEditor>
+        <ModelEditor v-if="tab.type === 'model'" :active="activeTab == tab" :tab="tab" :connection="connection"></ModelEditor>
         <TableTable v-if="tab.type === 'table'" :connection="tab.connection" :table="tab.table"></TableTable>
       </div>
     </div>
@@ -35,14 +36,16 @@
 
   import _ from 'lodash'
   import {FavoriteQuery} from '../entity/favorite_query'
+  import {ModelERD} from '../entity/model_erd'
   import QueryEditor from './TabQueryEditor'
+  import ModelEditor from './TabModelEditor'
   import CoreTabHeader from './CoreTabHeader'
   import { uuidv4 } from '@/lib/crypto'
   import TableTable from './tableview/TableTable'
 
   export default {
     props: [ 'connection' ],
-    components: { QueryEditor, CoreTabHeader, TableTable },
+    components: { QueryEditor, ModelEditor, CoreTabHeader, TableTable },
     data() {
       return {
         tabItems: [],
@@ -120,6 +123,22 @@
         this.addTab(result)
 
       },
+      createModel(optionalText = '') {
+        const erd = new ModelERD()
+        erd.text = optionalText
+
+        const result = {
+          id: uuidv4(),
+          type: "model",
+          title: "Model #" + this.newTabId,
+          connection: this.connection,
+          query: erd,
+          unsavedChanges: true
+        }
+
+        this.addTab(result)
+
+      },
       openTable(table) {
         // todo (matthew): trigger this from a vuex event
         const t = {
@@ -186,6 +205,32 @@
         }
 
 
+      })
+
+      this.$root.$on('modelClick', (item) => {
+        if (item) {
+
+          const queriesOnly = this.tabItems.map((item) => {
+            return item.query
+          })
+
+          if (queriesOnly.includes(item)) {
+            this.click(this.tabItems[queriesOnly.indexOf(item)])
+          } else {
+            const result = {
+              id: uuidv4(),
+              type: 'model',
+              title: item.title,
+              connection: this.connection,
+              query: item,
+              unsavedChanges: false
+            }
+            this.addTab(result)
+          }
+
+        } else {
+          this.createModel()
+        }
       })
 
     }

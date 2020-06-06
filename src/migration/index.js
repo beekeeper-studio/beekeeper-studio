@@ -6,6 +6,7 @@ import d from './20200517'
 import dev1 from './dev-1'
 import dev2 from './dev-2'
 import domains from './20200519'
+import models from './20200606'
 import createLogger from '../lib/logger'
 
 const logger = createLogger('migrations')()
@@ -17,7 +18,7 @@ const setupSQL = `
  )
 `
 const realMigrations = [
-  a, b, c, d, domains
+  a, b, c, d, domains, models
 ]
 
 const devMigrations = [

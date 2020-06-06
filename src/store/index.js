@@ -8,6 +8,7 @@ import username from 'username'
 import { UsedConnection } from '@/entity/used_connection'
 import { SavedConnection } from '@/entity/saved_connection'
 import { FavoriteQuery } from '@/entity/favorite_query'
+import { ModelERD } from '@/entity/model_erd'
 import { UsedQuery } from '@/entity/used_query'
 import ConnectionProvider from '@/lib/connection-provider'
 
@@ -26,6 +27,7 @@ const store = new Vuex.Store({
     connectionConfigs: [],
     history: [],
     favorites: [],
+    models: [],
     username: null
   },
   getters: {
@@ -112,6 +114,12 @@ const store = new Vuex.Store({
     },
     favoritesAdd(state, query) {
       state.favorites.unshift(query)
+    },
+    models(state, list) {
+      state.models = list
+    },
+    modelsAdd(state, erd) {
+      state.models.unshift(erd)
     }
 
   },
@@ -246,6 +254,19 @@ const store = new Vuex.Store({
       // otherwise it's already there!
       if (!context.state.favorites.includes(query)) {
         context.commit('favoritesAdd', query)
+      }
+    },
+
+    async updateModels(context) {
+      const items = await ModelERD.find({order: { createdAt: 'DESC'}})
+      context.commit('models', items)
+    },
+    async saveModel(context, erd) {
+      erd.database = context.state.database
+      erd.connectionHash = context.state.usedConfig.uniqueHash
+      await erd.save()
+      if (!context.state.models.includes(erd)) {
+        context.commit('modelsAdd', erd)
       }
     }
   },

@@ -12556,6 +12556,11 @@ vuepress@^1.5.0:
     opencollective-postinstall "^2.0.2"
     update-notifier "^4.0.0"
 
+vuerd@^1.1.6:
+  version "1.1.6"
+  resolved "https://registry.yarnpkg.com/vuerd/-/vuerd-1.1.6.tgz#0ffba71ac9c66665b096bca45f6e9f46bca8510b"
+  integrity sha512-j3AWBoL5Ap7narMCTqrcTXm1Es/GbmKbgsSvP6VCItQbgz3W9rhOcjsg4D6bRh1YXPYcq/XmFRD+xyLZP2HpLw==
+
 vuex-persist@^2.0.1:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/vuex-persist/-/vuex-persist-2.2.0.tgz#4acec75562896b045c43d319690b93d6bc1b2bbc"

@@ -64,6 +64,23 @@
         </div>
         <favorite-list></favorite-list>
       </div>
+
+      <!-- Models -->
+      <div
+        class="tab-pane"
+        id="tab-models"
+        :class="tabClasses('models')"
+        v-show="activeItem === 'models'"
+      >
+        <div class="sidebar-heading">
+          <span class="sidebar-title">Saved Models</span>
+          <span class="expand"></span>
+          <span class="actions">
+            <a @click.prevent="$root.$emit('modelClick', null)" class="btn-fab add-query"><i class=" material-icons">add</i></a>
+          </span>
+        </div>
+        <model-list></model-list>
+      </div>
     </div>
 
   </div>
@@ -75,12 +92,13 @@
   import TableList from './TableList'
   import HistoryList from './HistoryList'
   import FavoriteList from './FavoriteList'
+  import ModelList from './ModelList'
   import DatabaseDropdown from './DatabaseDropdown'
 
   import { mapState } from 'vuex'
 
   export default {
-    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList },
+    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList, ModelList },
     data() {
       return {
         tableLoadError: null,

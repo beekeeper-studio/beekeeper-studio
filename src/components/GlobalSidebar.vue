@@ -27,6 +27,15 @@
       >
         <span class="material-icons">history</span>
       </a>
+      <a
+        href=""
+        @click.prevent="click('models')"
+        class="nav-item"
+        :class="{ active: activeItem === 'models'}"
+        v-tooltip="modelsTooltip"
+      >
+        <span class="material-icons">device_hub</span>
+      </a>
     </div>
 </template>
 
@@ -46,6 +55,10 @@
         queriesTooltip: {
           placement: 'right',
           content: "Saved Queries"
+        },
+        modelsTooltip: {
+          placement: 'right',
+          content: "Saved Models"
         }
       }
     },
