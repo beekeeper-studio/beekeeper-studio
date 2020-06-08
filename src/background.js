@@ -25,7 +25,8 @@ let win
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 
 function createWindow () {
-  configureMenu(app, platform, isDevelopment || debugMode)
+  
+  configureMenu(app, win, {}, platform, isDevelopment || debugMode)
 
   const iconPrefix = isDevelopment ? 'public' : ''
   // Create the browser window.
@@ -42,6 +43,7 @@ function createWindow () {
     icon: path.join(__dirname, `${iconPrefix}/icons/png/512x512.png`)
   })
 
+  
 
   const finishLoadListener = () => {
     win.webContents.reload()
