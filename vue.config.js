@@ -11,6 +11,13 @@ module.exports = {
         productName: "Beekeeper Studio",
         files: ['**/*', 'public/icons/**/*'],
         afterSign: "electron-builder-notarize",
+        afterPack: "./build/afterPack.js",
+        extraResources: [
+          {
+            from: 'build/launcher-script.sh',
+            to: 'build/launcher-script.sh'
+          }
+        ],
         mac: {
           entitlements: "./build/entitlements.mac.plist",
           icon: './public/icons/mac/bk-icon.icns',
