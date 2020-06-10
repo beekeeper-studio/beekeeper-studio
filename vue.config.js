@@ -15,7 +15,7 @@ module.exports = {
         extraResources: [
           {
             from: 'build/launcher-script.sh',
-            to: 'build/launcher-script.sh'
+            to: 'launcher-script.sh'
           }
         ],
         mac: {

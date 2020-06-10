@@ -21,7 +21,6 @@ module.exports = async function (context) {
     'resources',
     'launcher-script.sh'
   )
-  const chromeSandbox = path.join(context.appOutDir, 'chrome-sandbox')
 
   return Promise.all([
     // rename cozydrive to cozydrive-bin
@@ -29,8 +28,5 @@ module.exports = async function (context) {
 
     // rename launcher script to cozydrive
     renameAsync(launcherScript, sourceExecutable),
-
-    // remove the chrome-sandbox file since we explicitly disable it
-    unlinkAsync(chromeSandbox)
   ])
 }
