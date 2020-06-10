@@ -69,6 +69,17 @@ Run `sudo snap connect beekeeper-studio:ssh-keys :ssh-keys`.
 
 - **SSH Agent**: Unfortunately, Snaps have no way to access your SSH Agent, so if you need to use the SSH agent we recommend you use the `deb` or `AppImage` version of the app.
 
+### Debian 10 Issues
+By default `beekeeper-studio` will not launch on Debian 10. See [this Electron issue](https://github.com/electron/electron/issues/17972).
+
+The easiest way to get Beekeeper working is to run with the `--no-sandbox` flag. 
+
+```bash
+beekeeper-studio --no-sandbox
+```
+
+I'll work to make this the default in future.
+
 
 ## Automatic Updates
 
