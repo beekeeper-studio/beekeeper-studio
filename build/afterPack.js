@@ -21,12 +21,8 @@ module.exports = async function (context) {
     'resources',
     'launcher-script.sh'
   )
-
-  return Promise.all([
-    // rename cozydrive to cozydrive-bin
-    renameAsync(sourceExecutable, targetExecutable),
-
-    // rename launcher script to cozydrive
-    renameAsync(launcherScript, sourceExecutable),
-  ])
+  // rename cozydrive to cozydrive-bin
+  await renameAsync(sourceExecutable, targetExecutable)
+  // rename launcher script to cozydrive
+  await renameAsync(launcherScript, sourceExecutable)
 }
