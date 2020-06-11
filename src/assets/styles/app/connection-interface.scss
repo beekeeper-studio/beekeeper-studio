@@ -93,7 +93,7 @@
   flex-direction: column;
   background: darken($theme-bg, 1%);
   border-radius: 8px;
-  margin: ($gutter-w * 1.5) 0;
+  margin: $gutter-w 0;
   padding: $gutter-w ($gutter-w * 1.25);
 }
 .advanced-heading {
