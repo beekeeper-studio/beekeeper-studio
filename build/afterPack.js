@@ -1,3 +1,5 @@
+// This file is (mostly) Copyright Cozy Labs
+// taken from https://github.com/cozy-labs/cozy-desktop
 const path = require('path')
 const fs = require('fs')
 const util = require('util')
@@ -21,8 +23,8 @@ module.exports = async function (context) {
     'resources',
     'launcher-script.sh'
   )
-  // rename cozydrive to cozydrive-bin
+  // rename beekeeper-studio to beekeeper-studio-bin
   await renameAsync(sourceExecutable, targetExecutable)
-  // rename launcher script to cozydrive
+  // rename launcher script to beekeeper-studio
   await renameAsync(launcherScript, sourceExecutable)
 }
