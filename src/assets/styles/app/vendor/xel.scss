@@ -888,16 +888,20 @@ x-notification {
  */
 
 x-checkbox {
-  color: #6d6d6d;
-  border: 3px solid currentColor;
-  border-radius: 3px;
+  color: $text;
+  height: 18px;
+  width: 18px;
+  border: 0;
+  box-shadow: inset 0 0 0 2px $text-lighter;
+  border-radius: 6px;
   transition: color 0.2s var(--transition-fn1);
-  --ripple-type:none;
-
+  overflow: hidden;
+  --ripple-type: none;
   &[toggled] {
-    color: var(--primary-color);
+    color: $theme-primary;
+    box-shadow: inset 0 0 0 2px $theme-primary;
+    border-radius: 6px;
   }
-
   &::before {
     position: absolute;
     width: 100%;
@@ -913,12 +917,10 @@ x-checkbox {
     transition: transform 0.15s var(--transition-fn1);
     transform: scale(0);
   }
-
   &:focus::before {
     transform: scale(2.6);
   }
 }
-
 @media (pointer: coarse) {
   x-checkbox {
     --ripple-type:unbounded;
@@ -975,22 +977,19 @@ x-radio {
  */
 
 x-switch {
-  color: var(--primary-color);
+  color: $theme-primary;
   transition: filter 0.2s var(--transition-fn1);
   filter: saturate(0%);
   --ripple-type:none;
-
   &[toggled] {
     filter: none;
   }
-
   &[skin="big"] {
     width: 40px;
     --thumb-size:22px;
     --track-height:80%;
   }
 }
-
 @media (pointer: coarse) {
   x-switch {
     --ripple-type:unbounded;

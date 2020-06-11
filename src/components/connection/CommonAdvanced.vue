@@ -2,7 +2,7 @@
   <div class="advanced-connection-settings">
     <h4 class="advanced-heading flex" :class="{enabled: config.sshEnabled}">
       <span class="expand">SSH Tunnel</span>
-      <i class="material-icons" @click.prevent="config.sshEnabled = !config.sshEnabled">{{icon}}</i>
+      <x-switch @click.prevent="config.sshEnabled = !config.sshEnabled"></x-switch>
     </h4>
     <div class="advanced-body" v-show="config.sshEnabled">
       <div class="row gutter">
@@ -15,11 +15,9 @@
           <input type="number" v-model.number="config.sshPort">
         </div>
       </div>
-      <div class="row gutter">
-        <div class="col form-group">
-          <label for="bastionHost">Bastion Host (Jump Host)</label>
-          <input class="form-control" v-model="config.sshBastionHost" type="text" name="bastionHost">
-        </div>
+      <div class="form-group">
+        <label for="bastionHost">Bastion Host (Jump Host)</label>
+        <input class="form-control" v-model="config.sshBastionHost" type="text" name="bastionHost">
       </div>
       <div class="form-group">
         <label>SSH Authentication</label>
@@ -28,7 +26,7 @@
         </select>
       </div>
 
-      <div v-if="config.sshMode === 'agent'" class="agent gutter">
+      <div v-if="config.sshMode === 'agent'" class="agent flex-col">
         <div class="form-group">
           <label for="sshUsername">SSH Username</label>
           <input class="form-control" type="text" v-model="config.sshUsername">
@@ -72,7 +70,7 @@
 
           </div>
         </div>
-        <div class="row">
+        <div class="row gutter">
           <div class="col s6 form-group">
             <label for="sshKeyfile">Private Key File</label>
             <file-picker
@@ -128,11 +126,6 @@
           { label: "SSH Agent", mode: "agent" }
         ],
         filePickerDefaultPath: pathJoin(remote.app.getPath('home'), '.ssh')
-      }
-    },
-    computed: {
-      icon() {
-        return this.config.sshEnabled ? 'toggle_on' : 'toggle_off'
       }
     },
     methods: {

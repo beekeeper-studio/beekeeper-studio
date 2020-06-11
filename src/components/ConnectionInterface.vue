@@ -45,23 +45,24 @@
 
                 <!-- Save Connection -->
                 <div class="save-connection expand">
-                  <h3>Save Connection</h3>
-                  <div class="row">
-                    <div class="expand"><input class="form-control" @keydown.enter.prevent.stop="save" type="text" v-model="config.name" placeholder="Connection Name"></div>
-                    <div><button class="btn btn-flat" @click.prevent="save">Save</button></div>
+                  <h3 class="expand">Save Connection</h3>
+                  <div class="form-group">
+                    <input class="form-control" @keydown.enter.prevent.stop="save" type="text" v-model="config.name" placeholder="Connection Name">
                   </div>
 
-                  <!-- TODO MATTHEW: Not sure if this breaks this -->
-                  <label for="rememberPassword" class="checkbox-group row">
-                    <input id="rememberPassword" type="checkbox" name="rememberPassword" class="form-control" v-model="config.rememberPassword">
-                    <span>Save Passwords</span>
-                    <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help_outlined</i>
-                  </label>
-
-                  <!-- Label Color Selection -->
-                  <div class="row">
-                    <div class="expand"></div>
+                  <div class="row flex-middle">
+                    <label class="checkbox-group" for="rememberPassword">
+                      <input class="form-control" id="rememberPassword" type="checkbox" name="rememberPassword" v-model="config.rememberPassword">
+                      <span>Save Passwords</span>
+                      <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help_outlined</i>
+                    </label>
+                    <span class="expand"></span>
                     <ColorPicker :value="config.labelColor" v-model="config.labelColor"></ColorPicker>
+                  </div>
+
+                  <div class="save-actions row">
+                    <div class="expand"></div>
+                    <button class="btn btn-flat" @click.prevent="save">Save</button>
                   </div>
                 </div>
               </div>

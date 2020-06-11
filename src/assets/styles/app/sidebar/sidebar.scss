@@ -15,7 +15,7 @@
   .sidebar-heading {
     display: flex;
     align-items: center;
-    background: rgba($theme-base, 0.05);
+    background: rgba($theme-base, 0.035);
     box-shadow: 0 1px 2px rgba(black, 0.2);
     padding: $gutter-h $gutter-h $gutter-h $gutter-w;
     height: $tab-height;
@@ -214,7 +214,8 @@
   .list-item-btn {
     color: rgba($theme-base, 0.77);
     padding: ($gutter-h * 0.8);
-    padding-left: $gutter-w;
+    padding-right: $gutter-h;
+    // padding-left: $gutter-w;
     line-height: 1.4;
     width: -webkit-fill-available;
     &:hover, &:focus {
