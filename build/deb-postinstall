@@ -5,6 +5,10 @@ available()
         command -v "$1" >/dev/null 2>&1
 }
 
+if [ -f /etc/apt/sources.list.d/beekeeper-studio.list ]; then
+  exit 0
+fi
+
 if available apt-key
 then
       apt-key add - >/dev/null <<EOF
