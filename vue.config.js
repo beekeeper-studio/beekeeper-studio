@@ -9,6 +9,9 @@ module.exports = {
       builderOptions: {
         appId: "io.beekeeperstudio.desktop",
         productName: "Beekeeper Studio",
+        releaseInfo: {
+          releaseNotesFile: "build/release-notes.md"
+        },
         files: ['**/*', 'public/icons/**/*'],
         afterSign: "electron-builder-notarize",
         afterPack: "./build/afterPack.js",
