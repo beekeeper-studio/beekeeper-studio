@@ -1,5 +1,5 @@
 <template>
-    <form @submit.prevent="parseUrl">
+    <form @submit.prevent="parseUrl(connectionUrl)">
         <div class="row gutter">
             <div class="col s9 form-group">
                 <label for="connectionUrl">Connection URL</label>
@@ -8,7 +8,7 @@
             </div>
             <div class="col s3 form-group">
                 <div class="flex flex-bottom">
-                    <button class="btn btn-primary btn-block" type="submit">Import</button>
+                    <button class="btn btn-primary btn-block" type="submit" :disabled="!connectionUrl">Import</button>
                 </div>
             </div>
         </div>
@@ -23,12 +23,20 @@
         connectionUrl: null,
       };
     },
+    watch: {
+      config: {
+        handler: function(config) {
+          this.parseUrl(config.host)
+        },
+        deep: true
+      }
+    },
     methods: {
-      parseUrl() {
-        if (this.connectionUrl.indexOf('://') < 0){
-          this.connectionUrl = 'https://' + this.connectionUrl
+      parseUrl(connectionUrl) {
+        if (!connectionUrl.includes('://')){
+          return;
         }
-        let url = new URL(this.connectionUrl);
+        let url = new URL(connectionUrl);
         this.config.connectionType = this.protocol(url.protocol)
         // set https as the protocol so URL interface can
         // correctly parse all necessary information
@@ -40,7 +48,7 @@
         this.config.password = url.password
       },
       protocol(protocol){
-        // Set MySQL as default when dealing with a http connection.
+        // Set MySQL as default when dealing with a http/s connections.
         if (protocol.startsWith('http')){
           return 'mysql';
         }
