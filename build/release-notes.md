@@ -35,6 +35,8 @@ Label your saved connections with a color. Now you can easily tell `production` 
 - Postgres versions before 8.3 are now supported
 - Redshift errors are fixed
 - Close tabs with a middle mouse button click
+- Electron Updated to 8.2.5
+- Deb package now adds the Beekeeper Studio repo if downloaded directly
 
 Most of these enhancements came from you, the community.
 
