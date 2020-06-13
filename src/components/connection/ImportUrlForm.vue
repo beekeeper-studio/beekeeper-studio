@@ -1,5 +1,5 @@
 <template>
-    <form @submit.prevent="parseUrl(connectionUrl)">
+    <form :class="{hide: hide}" @submit.prevent="parseUrl(connectionUrl)">
         <div class="row gutter">
             <div class="col s9 form-group">
                 <label for="connectionUrl">Connection URL</label>
@@ -17,7 +17,13 @@
 <script>
   export default {
     name: 'ImportUrlForm',
-    props: ['config'],
+    props: {
+      config: Object,
+      hide: {
+        type: Boolean,
+        default: false
+      }
+    },
     data() {
       return {
         connectionUrl: null,
@@ -60,3 +66,8 @@
     },
   };
 </script>
+<style scoped>
+    .hide {
+        display: none;
+    }
+</style>
