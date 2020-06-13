@@ -26,7 +26,7 @@ jobs:
       - name: Publish
         uses: netlify/actions/cli@master
         with:
-          args: deploy --dir=docs/.vuepress/dist
+          args: deploy --dir=docs/.vuepress/dist --prod
         env:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
