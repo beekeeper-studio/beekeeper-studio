@@ -32,26 +32,31 @@
     watch: {
       config: {
         handler: function(config) {
-          this.parseUrl(config.host)
+          if (config.host.includes('://')){
+            this.parseUrl(config.host)
+          }
         },
         deep: true
       }
     },
     methods: {
       parseUrl(connectionUrl) {
-        if (!connectionUrl.includes('://')){
-          return;
+        try {
+          let url = new URL(connectionUrl);
+          this.config.connectionType = this.protocol(url.protocol);
+          // set https as the protocol so URL interface can
+          // correctly parse all necessary information
+          url.protocol = 'https';
+          this.config.host = url.hostname;
+          this.config.port = url.port;
+          this.config.defaultDatabase = url.pathname.slice(1, -1);
+          this.config.username = url.username;
+          this.config.password = url.password;
+          this.config.ssl = url.search.includes('sslmode=require') || url.search.includes('sslmode=prefer');
+          this.$emit('handleErrorMessage', null)
+        } catch (e) {
+          this.$emit('handleErrorMessage', e.message)
         }
-        let url = new URL(connectionUrl);
-        this.config.connectionType = this.protocol(url.protocol)
-        // set https as the protocol so URL interface can
-        // correctly parse all necessary information
-        url.protocol = 'https'
-        this.config.host = url.hostname
-        this.config.port = url.port
-        this.config.defaultDatabase = url.pathname.slice(1, -1)
-        this.config.username = url.username
-        this.config.password = url.password
       },
       protocol(protocol){
         // Set MySQL as default when dealing with a http/s connections.
