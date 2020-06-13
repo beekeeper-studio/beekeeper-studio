@@ -22,7 +22,7 @@
                 </ul>
               </div>
             </div>
-            <ImportUrlForm :hide="!showImportUrl" :config="config"/>
+            <ImportUrlForm :hide="!showImportUrl" :config="config" @handleErrorMessage="handleErrorMessage"/>
             <form @action="submit" v-if="config">
               <div class="form-group">
                 <label for="connectionType">Connection Type</label>
@@ -204,6 +204,14 @@
         } catch (ex) {
           this.errors = [ex.message]
           this.$noty.error("Could not save connection information")
+        }
+      },
+      handleErrorMessage(message){
+        if (message){
+          this.errors = [message]
+          this.$noty.error("Could not parse connection URL.")
+        }else{
+          this.errors = null
         }
       }
     },
