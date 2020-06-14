@@ -7,7 +7,12 @@
       <div ref="content" class="connection-main page-content" id="page-content">
         <div class="small-wrap">
           <div class="card-flat padding">
-            <h3 class="card-title">{{pageTitle}}</h3>
+            <div class="flex flex-between">
+              <h3 class="card-title">{{pageTitle}}</h3>
+                <button class="btn btn-small btn-flat" @click.prevent="showImportUrl = !showImportUrl">
+                  <i class="material-icons">add</i>
+                </button>
+            </div>
             <div class="alert alert-danger" v-show="errors">
               <i class="material-icons">warning</i>
               <div>
@@ -17,6 +22,7 @@
                 </ul>
               </div>
             </div>
+            <ImportUrlForm :hide="!showImportUrl" :config="config" @handleErrorMessage="handleErrorMessage"/>
             <form @action="submit" v-if="config">
               <div class="form-group">
                 <label for="connectionType">Connection Type</label>
@@ -81,20 +87,21 @@
 </template>
 
 <script>
-  import os from 'os'
-  import {SavedConnection} from '../entity/saved_connection'
-  import ColorPicker from './form/ColorPicker'
-  import ConnectionSidebar from './ConnectionSidebar'
-  import MysqlForm from './connection/MysqlForm'
-  import PostgresForm from './connection/PostgresForm'
-  import Sidebar from './Sidebar'
-  import SqliteForm from './connection/SqliteForm'
-  import SqlServerForm from './connection/SqlServerForm'
-  import Split from 'split.js'
-  import _ from 'lodash'
+  import os from 'os';
+  import {SavedConnection} from '../entity/saved_connection';
+  import ColorPicker from './form/ColorPicker';
+  import ConnectionSidebar from './ConnectionSidebar';
+  import MysqlForm from './connection/MysqlForm';
+  import PostgresForm from './connection/PostgresForm';
+  import Sidebar from './Sidebar';
+  import SqliteForm from './connection/SqliteForm';
+  import SqlServerForm from './connection/SqlServerForm';
+  import Split from 'split.js';
+  import _ from 'lodash';
+  import ImportUrlForm from './connection/ImportUrlForm';
 
   export default {
-    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, ColorPicker },
+    components: {ImportUrlForm, ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, ColorPicker },
     data() {
       return {
         defaultConfig: new SavedConnection(),
@@ -102,7 +109,8 @@
         errors: null,
         connectionError: null,
         testing: false,
-        split: null
+        split: null,
+        showImportUrl: false
       }
     },
     computed: {
@@ -197,9 +205,15 @@
           this.errors = [ex.message]
           this.$noty.error("Could not save connection information")
         }
+      },
+      handleErrorMessage(message){
+        if (message){
+          this.errors = [message]
+          this.$noty.error("Could not parse connection URL.")
+        }else{
+          this.errors = null
+        }
       }
     },
-
-
   }
 </script>
