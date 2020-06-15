@@ -22,7 +22,7 @@
                 </ul>
               </div>
             </div>
-            <ImportUrlForm :hide="!showImportUrl" :config="config" @handleErrorMessage="handleErrorMessage"/>
+            <!-- <ImportUrlForm :hide="!showImportUrl" :config="config" @handleErrorMessage="handleErrorMessage"/> -->
             <form @action="submit" v-if="config">
               <div class="form-group">
                 <label for="connectionType">Connection Type</label>
@@ -98,10 +98,10 @@
   import SqlServerForm from './connection/SqlServerForm';
   import Split from 'split.js';
   import _ from 'lodash';
-  import ImportUrlForm from './connection/ImportUrlForm';
+  // import ImportUrlForm from './connection/ImportUrlForm';
 
   export default {
-    components: {ImportUrlForm, ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, ColorPicker },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, ColorPicker },
     data() {
       return {
         defaultConfig: new SavedConnection(),

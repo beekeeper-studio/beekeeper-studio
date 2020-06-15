@@ -6,7 +6,7 @@
         <footer class="statusbar">
           <a class="database-connection btn btn-icon" @click.prevent="disconnect" v-tooltip="'Disconnect'">
             <i class="material-icons">link</i>
-            <span>Connection Name</span>
+            <span class="truncate">{{ usedConfig.defaultDatabase }}</span>
           </a>
         </footer>
       </sidebar>
@@ -23,6 +23,8 @@
   import CoreTabs from './CoreTabs'
   import Split from 'split.js'
 
+  import { mapState } from 'vuex'
+
   export default {
     components: { CoreSidebar, CoreTabs, Sidebar },
     props: [ 'connection' ],
@@ -32,6 +34,7 @@
       }
     },
     computed: {
+      ...mapState(['usedConfig']),
       splitElements() {
         return [
           this.$refs.sidebar.$refs.sidebar,
@@ -69,7 +72,7 @@
       async disconnect() {
         await this.$store.dispatch('disconnect')
         this.$noty.success("Successfully Disconnected")
-      },
+      }
     }
   }
 

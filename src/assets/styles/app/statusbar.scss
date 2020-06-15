@@ -10,8 +10,14 @@
   line-height: $statusbar-height;
   font-size: 0.85rem;
   padding: 0 $gutter-h;
+  overflow: hidden;
   > span {
     padding: 0 $gutter-h;
+  }
+  .database-connection {
+    span {
+      direction: rtl;
+    }
   }
   .btn {
     color: $statusbar-text;
