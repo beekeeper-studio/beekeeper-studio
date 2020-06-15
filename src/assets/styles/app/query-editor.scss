@@ -75,26 +75,6 @@
     .not-run-yet {
       padding: 0.5rem 0.75rem;
     }
-    .status-bar {
-      background: rgba($theme-base,0.065);
-      color: $text-light;
-      &.empty {
-        background: transparent;
-      }
-      .btn {
-        display: flex;
-        align-items: center;
-      }
-      .result-selector {
-        margin-right: 10px;
-      }
-      .affected-rows {
-        padding-left: 10px;
-      }
-      select {
-        height: ($input-height * 0.95);
-      }
-    }
     .message {
       display: flex;
       align-items: center;

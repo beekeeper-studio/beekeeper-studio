@@ -35,8 +35,9 @@
       <div class="message" v-else-if="error"><div class="alert alert-danger"><i class="material-icons">warning</i><span>{{error}}</span></div></div>
       <div v-else><!-- No Data --></div>
       <span class="expand" v-if="!result"></span>
-      <footer class="status-bar row query-meta" v-bind:class="{'empty': !result}">
+      <footer class="statusbar query-meta" v-bind:class="{'empty': !result}">
         <template v-if="results.length > 0">
+          <span class="expand"></span>
           <span v-show="results.length > 1" class="result-selector">
             <div class="select-wrap">
               <select name="resultSelector" id="resultSelector" v-model="selectedResult" class="form-control">
@@ -46,15 +47,15 @@
           </span>
           <div class="row-counts">
             <span class="num-rows" v-if="rowCount > 0">{{rowCount}} Records</span>
-            <span class="truncated-rows" v-if="result && result.truncated"> &middot; only {{result.truncatedRowCount}} shown.</span>
+            <span class="truncated-rows" v-if="result && result.truncated"> ({{result.truncatedRowCount}} shown)</span>
           </div>
           <span class="affected-rows" v-if="affectedRowsText ">{{ affectedRowsText}}</span>
         </template>
         <template v-else>
-          No Data
+          <span class="expand"></span>
+          <span>No Data</span>
         </template>
-        <span class="expand"></span>
-        <a class="btn btn-fab" v-if="result" @click.prevent="download" v-tooltip="'Download Query Results'"><i class="material-icons">save_alt</i></a>
+        <a class="btn btn-link" v-if="result"  @click.prevent="download" v-tooltip="'Download Query Results'"><i class="material-icons">save_alt</i></a>
       </footer>
     </div>
 

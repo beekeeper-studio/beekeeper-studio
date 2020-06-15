@@ -1,0 +1,51 @@
+.statusbar {
+  // $statusbar-bg: darken($brand-pink, 55%);
+
+  display: flex;
+  align-items: center;
+  background: $statusbar-bg;
+  color: rgba($statusbar-text, 0.57);
+  min-height: $statusbar-height;
+  height: $statusbar-height;
+  line-height: $statusbar-height;
+  font-size: 0.85rem;
+  padding: 0 $gutter-h;
+  > span {
+    padding: 0 $gutter-h;
+  }
+  .btn {
+    color: $statusbar-text;
+    font-weight: normal;
+    height: $statusbar-height;
+    line-height: $statusbar-height;
+    min-width: auto;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0 $gutter-h;
+    transition: background 0.15s ease-in-out;
+    &:hover {
+      background: rgba($statusbar-text, 0.15);
+    }
+    .material-icons {
+      height: $statusbar-height;
+      line-height: $statusbar-height;
+      font-size: 18px;
+    }
+  }
+  a {
+    color: $statusbar-text;
+  }
+  .select-wrap {
+    box-shadow: none;
+    border-radius: 0;
+    background: rgba($statusbar-text, 0.1);
+    &:hover {
+      background: rgba($statusbar-text, 0.15);
+    }
+  }
+  select {
+    color: $statusbar-text;
+    height: $statusbar-height;
+    line-height: $statusbar-height;
+  }
+}

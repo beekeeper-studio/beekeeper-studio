@@ -3,6 +3,12 @@
     <div class="interface-wrap row">
       <sidebar ref="sidebar">
         <core-sidebar @databaseSelected="databaseSelected" :connection="connection"></core-sidebar>
+        <footer class="statusbar">
+          <a class="database-connection btn btn-icon" @click.prevent="disconnect" v-tooltip="'Disconnect'">
+            <i class="material-icons">link</i>
+            <span>Connection Name</span>
+          </a>
+        </footer>
       </sidebar>
       <div ref="content" class="page-content flex-col" id="page-content">
         <core-tabs :connection="connection"></core-tabs>
@@ -59,7 +65,11 @@
     methods: {
       databaseSelected(database) {
         this.$emit('databaseSelected', database)
-      }
+      },
+      async disconnect() {
+        await this.$store.dispatch('disconnect')
+        this.$noty.success("Successfully Disconnected")
+      },
     }
   }
 

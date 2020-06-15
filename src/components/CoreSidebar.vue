@@ -18,11 +18,11 @@
       >
         <div class="sidebar-heading">
           <div class="status connected sidebar-title row flex-middle">
-            <i class="material-icons">fiber_manual_record</i>
+            <!-- <i class="material-icons">fiber_manual_record</i> -->
             <span>Connection</span>
           </div>
           <span class="expand"></span>
-          <div class="actions">
+          <!-- <div class="actions">
             <x-button class="btn-fab" skin="iconic">
               <i class="material-icons">more_horiz</i>
               <x-menu style="--target-align: right; --v-target-align: top;">
@@ -31,7 +31,7 @@
                 </x-menuitem>
               </x-menu>
             </x-button>
-          </div>
+          </div> -->
         </div>
         <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
         <table-list></table-list>

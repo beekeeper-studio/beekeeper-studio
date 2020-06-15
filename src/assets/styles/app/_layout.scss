@@ -1,5 +1,5 @@
 // Global
-// ------------------------
+// ------------------------------------
 a {
   display: inline-block;
   align-items: center;
@@ -137,6 +137,11 @@ i {
   box-shadow: none;
   &:hover, &:focus {
     background: rgba($theme-base, 0.06);
+  }
+}
+.btn-icon {
+  .material-icons {
+    margin-right: $gutter-h;
   }
 }
 .btn-info {
@@ -334,6 +339,7 @@ select {
   > select {
     border: 0;
     padding-right: 1.25rem;
+    cursor: pointer;
   }
 }
 

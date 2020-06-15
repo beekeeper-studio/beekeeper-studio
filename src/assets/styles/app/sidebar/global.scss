@@ -2,7 +2,7 @@
   .global-items {
     display: flex;
     flex-direction: column;
-    background: rgba($theme-base, 0.1);
+    background: $global-sidebar-bg;
     .nav-item {
       display: flex;
       align-items: center;
