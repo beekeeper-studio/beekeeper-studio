@@ -62,7 +62,6 @@ export default {
   props: ["table", "connection"],
   data() {
     return {
-      currentCell: null, // Last clicked cell
       filterTypes: {
         equals: "=",
         "does not equal": "!=",
@@ -117,9 +116,6 @@ export default {
         this.clearFilter();
       }
     },
-    response() {
-      this.clearCell()
-    }
   },
   async mounted() {
     this.tabulator = new Tabulator(this.$refs.table, {
@@ -196,7 +192,6 @@ export default {
             const r = response.result;
             const totalRecords = response.totalRecords;
             this.response = response
-            this.currentCell = null
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data
             resolve({
