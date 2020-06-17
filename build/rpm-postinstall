@@ -13,7 +13,7 @@ fi
 # Checking for the package manager
 if is_available yum || is_available dnf then
     # Adding the repository configuration
-    cat <<EOF
+    cat <<< ' > /etc/yum.repos.d/beekeeper-studio.repo
 [beekeeper-studio]
 name=beekeeper-studio
 baseurl=https://mirror.beekeeper-studio.io/$releasever/$basearch
@@ -22,8 +22,8 @@ protect=0
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-beekeeper-studio
 skip_if_unavailable = 1
-keepcache = 0
-EOF
+keepcache = 0'
+
     # yum cannot be used to add the key, because yum already holds the lock
     cp ./beekeeper.studio.asc /etc/pki/rpm-gpg/RPM-GPG-KEY-beekeeper-studio
     # TODO: eventual SE Linux labeling goes into here.
