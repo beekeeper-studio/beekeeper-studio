@@ -55,7 +55,7 @@
 <script>
 import Tabulator from "tabulator-tables";
 import data_converter from "../../mixins/data_converter";
-import DataMutators from '../../mixins/data_mutators'
+import DataMutators from '../../mixins/data_mutators';
 
 export default {
   mixins: [data_converter, DataMutators],
@@ -116,6 +116,9 @@ export default {
       if (this.filter.value === "") {
         this.clearFilter();
       }
+    },
+    response() {
+      this.clearCell()
     }
   },
   async mounted() {
@@ -130,28 +133,13 @@ export default {
       pagination: "remote",
       paginationSize: this.limit,
       initialSort: this.initialSort,
-      cellClick: (e, cell) => {
-        // Remove focus and listener on other cell, if any
-        if (this.currentCell) {
-          this.currentCell.getElement().classList.remove('active-cell')
-          this.currentCell.getElement().removeEventListener('copy', () => {})
-        }
-
-        // Set cell style
-        cell.getElement().classList.add('active-cell')
-
-        // Connect listener
-        cell.getElement().addEventListener('copy', event => {
-          event.clipboardData.setData('text/plain', cell.getValue())
-          event.preventDefault()
-        })
-
-        // Override current cell
-        this.currentCell = cell
-      }
+      cellClick: this.cellClick
     });
   },
   methods: {
+    cellClick(e, cell) {
+      this.selectChildren(cell.getElement())
+    },
     triggerFilter() {
       if (this.filter.type && this.filter.field) {
         if (this.filter.value) {
@@ -208,6 +196,7 @@ export default {
             const r = response.result;
             const totalRecords = response.totalRecords;
             this.response = response
+            this.currentCell = null
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data
             resolve({
