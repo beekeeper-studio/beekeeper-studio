@@ -1,0 +1,36 @@
+#! /bin/bash
+# post-install script for yum
+
+is_available() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+# Checking if the repository configuration had already been added
+if [ -f /etc/yum.repos.d/beekeeper-studio.repo ]; then
+    exit 0
+fi
+
+# Checking for the package manager
+if is_available yum || is_available dnf then
+    # Adding the repository configuration
+    cat <<EOF
+[beekeeper-studio]
+name=beekeeper-studio
+baseurl=https://mirror.beekeeper-studio.io/$releasever/$basearch
+enabled=1
+protect=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-beekeeper-studio
+skip_if_unavailable = 1
+keepcache = 0
+EOF
+    # yum cannot be used to add the key, because yum already holds the lock
+    cp ./beekeeper.studio.asc /etc/pki/rpm-gpg/RPM-GPG-KEY-beekeeper-studio
+    # TODO: eventual SE Linux labeling goes into here.
+    exit 1
+else
+    echo "No supported package manager has been found"
+    echo "Only YUM and DNF are being supported"
+    exit 0
+fi
+
