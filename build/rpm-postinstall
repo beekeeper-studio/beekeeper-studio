@@ -16,7 +16,7 @@ if is_available yum || is_available dnf then
     cat <<< ' > /etc/yum.repos.d/beekeeper-studio.repo
 [beekeeper-studio]
 name=beekeeper-studio
-baseurl=https://mirror.beekeeper-studio.io/$releasever/$basearch
+baseurl=https://mirror.beekeeper-studio.io/$basearch
 enabled=1
 protect=0
 gpgcheck=1
