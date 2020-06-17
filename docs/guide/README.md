@@ -42,6 +42,20 @@ Beekeeper allows you to:
 ![sql editor](../assets/img/bks-editor-runs.gif)
 
 
+### Query Parameters
+
+You can parameterize your queries and Beekeeper will prompt you for values when you run it.
+
+You can use two types of syntax `:variable`, or `$1`
+
+```sql
+select * from table where foo = :one and bar = :two
+
+select * from table where foo = $1 and bar = $2
+```
+![Query parameters gif](../assets/img/bks-editor-params.gif)
+
+
 ## Table Explorer
 
 Click the little `open` button next to a table name to open the table in a table-tab.
