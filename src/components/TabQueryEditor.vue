@@ -7,12 +7,12 @@
         <div class="actions btn-group" ref="actions">
           <x-button @click.prevent="triggerSave" class="btn btn-flat">Save</x-button>
 
-          <x-buttons>
+          <x-buttons class="">
             <x-button v-tooltip="'Ctrl+Enter'" @click.prevent="submitTabQuery" primary>
               <x-label>{{hasSelectedText ? 'Run Selection' : 'Run'}}</x-label>
             </x-button>
             <x-button menu primary>
-            <i class="material-icons">arrow_drop_down</i>
+              <i class="material-icons">arrow_drop_down</i>
               <x-menu>
                 <x-menuitem @click.prevent="submitTabQuery">
                   <x-label>{{hasSelectedText ? 'Run Selection' : 'Run'}}</x-label>
@@ -54,7 +54,25 @@
           No Data
         </template>
         <span class="expand"></span>
-        <a class="btn btn-fab" v-if="result" @click.prevent="download" v-tooltip="'Download Query Results'"><i class="material-icons">save_alt</i></a>
+        <x-buttons v-if="result">
+          <x-button v-tooltip="'download results (csv)'" @click.prevent="download('csv')" primary>
+            <i class="material-icons">save_alt</i>
+          </x-button>
+          <x-button menu primary>
+            <i class="material-icons">arrow_drop_down</i>
+            <x-menu>
+              <x-menuitem @click.prevent="download('csv')">
+                <x-label>CSV</x-label>
+              </x-menuitem>
+              <x-menuitem @click.prevent="download('xlsx')">
+                <x-label>Excel</x-label>
+              </x-menuitem>
+              <x-menuitem @click.prevent="download('json')">
+                <x-label>JSON</x-label>
+              </x-menuitem>
+            </x-menu>
+          </x-button>
+        </x-buttons>
       </footer>
     </div>
 
@@ -294,8 +312,8 @@
       }
     },
     methods: {
-      download() {
-        this.$refs.table.download();
+      download(format) {
+        this.$refs.table.download(format);
       },
       selectEditor() {
         this.editor.focus()

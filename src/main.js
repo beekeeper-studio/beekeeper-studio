@@ -28,6 +28,7 @@ import config from './config'
 import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
 import Migration from './migration/index'
 import ConfigPlugin from './plugins/ConfigPlugin'
+import xlsx from 'xlsx'
 
 
 (async () => {
@@ -59,6 +60,7 @@ import ConfigPlugin from './plugins/ConfigPlugin'
     window.sql = SQL
     window.hint = Hint
     window.SQLHint = SQLHint
+    window.XLSX = xlsx
     Vue.config.devtools = process.env.NODE_ENV === 'development';
 
     Vue.mixin({
