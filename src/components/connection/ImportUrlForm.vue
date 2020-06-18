@@ -1,78 +1,92 @@
 <template>
-    <form :class="{hide: hide}" @submit.prevent="parseUrl(connectionUrl)">
-        <div class="row gutter">
-            <div class="col s9 form-group">
-                <label for="connectionUrl">Connection URL</label>
-                <input type="text" name="connectionUrl" id="connectionUrl"
-                       class="form-control" v-model="connectionUrl">
-            </div>
-            <div class="col s3 form-group">
-                <div class="flex flex-bottom">
-                    <button class="btn btn-primary btn-block" type="submit" :disabled="!connectionUrl">Import</button>
+  <div class="import-url-form">
+    <a @click.prevent="openModal">Import from URL</a>
+    <modal
+      class="vue-dialog beekeeper-modal"
+      name="import-modal"
+      @opened="selectInput"
+      height="auto"
+      :scrollable="true"
+    >
+        <form :class="{hide: hide}" @submit.prevent="submit">
+          <div class="dialog-content">
+              <div class="dialog-c-title">Enter Database URL</div>
+              <div class="alert alert-danger" v-show="errors">
+                <i class="material-icons">warning</i>
+                <div>
+                  <span>Please fix the following errors:</span>
+                  <ul>
+                    <li v-for="(e, i) in errors" :key="i">{{e}}</li>
+                  </ul>
                 </div>
-            </div>
-        </div>
-    </form>
+              </div>
+              <div class="form-group">
+                <label for="connectionUrl">Connection URL</label>
+                <input ref="input" placeholder="eg postgres://user:password@server:port/database" type="text" name="connectionUrl" id="connectionUrl" class="form-control" v-model="connectionUrl" />
+              </div>
+          </div>
+          <div class="vue-dialog-buttons">
+            <button class="btn btn-flat" type="button" @click.prevent="closeModal">Cancel</button>
+            <button
+              class="btn btn-primary"
+              type="submit"
+              :disabled="!connectionUrl"
+            >Submit</button>
+          </div>
+        </form>
+
+
+    </modal>
+  </div>
 </template>
 <script>
-  export default {
-    name: 'ImportUrlForm',
-    props: {
-      config: Object,
-      hide: {
-        type: Boolean,
-        default: false
+import _ from 'lodash'
+import { parseConnectionUrl } from '../../lib/db/sql_tools';
+
+export default {
+  name: "ImportUrlForm",
+  props: {
+    config: Object,
+    hide: {
+      type: Boolean,
+      default: false
+    }
+  },
+  data() {
+    return {
+      connectionUrl: null,
+      errors: null
+    };
+  },
+  watch: {
+  },
+  methods: {
+    selectInput() {
+      this.$refs.input.select()
+    },
+    openModal() {
+      this.$modal.show('import-modal')
+    },
+    closeModal() {
+      this.$modal.hide('import-modal')
+    },
+    submit() {
+      this.errors = null
+      try {
+        const result = parseConnectionUrl(this.connectionUrl)
+        console.log(result)
+        this.config.connectionType = result.connectionType
+        Object.assign(this.config, _.pick(result, ['host', 'port', 'defaultDatabase', 'username', 'password', 'ssl']))
+        this.closeModal()
+      } catch (ex) {
+        this.errors = [ex.message]
       }
-    },
-    data() {
-      return {
-        connectionUrl: null,
-      };
-    },
-    watch: {
-      config: {
-        handler: function(config) {
-          if (config.host.includes('://')){
-            this.parseUrl(config.host)
-          }
-        },
-        deep: true
-      }
-    },
-    methods: {
-      parseUrl(connectionUrl) {
-        try {
-          let url = new URL(connectionUrl);
-          this.config.connectionType = this.protocol(url.protocol);
-          // set https as the protocol so URL interface can
-          // correctly parse all necessary information
-          url.protocol = 'https';
-          this.config.host = url.hostname;
-          this.config.port = url.port;
-          this.config.defaultDatabase = url.pathname.slice(1, -1);
-          this.config.username = url.username;
-          this.config.password = url.password;
-          this.config.ssl = url.search.includes('sslmode=require') || url.search.includes('sslmode=prefer');
-          this.$emit('handleErrorMessage', null)
-        } catch (e) {
-          this.$emit('handleErrorMessage', e.message)
-        }
-      },
-      protocol(protocol){
-        // Set MySQL as default when dealing with a http/s connections.
-        if (protocol.startsWith('http')){
-          return 'mysql';
-        }
-        if (protocol.startsWith('postgres')){
-          return 'postgresql';
-        }
-        return protocol;
-      }
-    },
-  };
+    }
+  }
+};
 </script>
 <style scoped>
-    .hide {
-        display: none;
-    }
+.hide {
+  display: none;
+}
 </style>

@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import config from '../../config'
 
 export function splitQueries(queryText) {
   if (!queryText) return []
@@ -39,4 +40,35 @@ export function extractParams(query) {
     return []
   }
   return _.uniq(result)
+}
+
+function resolveProtocol(protocol) {
+  if (protocol.startsWith("http")) {
+    return "mysql";
+  }
+  if (protocol.startsWith("postgres")) {
+    return "postgresql";
+  }
+  let result = null
+  config.defaults.connectionTypes.forEach( t => {
+    if(protocol.includes(t.value)) result = t.value
+  })
+
+  if (result) return result
+  throw new Error(`Unknown database protocol ${protocol}`)
+}
+
+export function parseConnectionUrl(connectionUrl) {
+  console.log(connectionUrl)
+  const url = new URL(connectionUrl)
+  return {
+    connectionType: resolveProtocol(url.protocol),
+    host: url.hostname,
+    port: parseInt(url.port),
+    defaultDatabase: url.pathname.substr(1),
+    username: url.username,
+    password: url.password,
+    ssl: url.search.includes("sslmode=require") || url.search.includes("sslmode=prefer"),
+  }
+
 }

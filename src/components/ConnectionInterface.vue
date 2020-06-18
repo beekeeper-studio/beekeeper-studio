@@ -9,9 +9,7 @@
           <div class="card-flat padding">
             <div class="flex flex-between">
               <h3 class="card-title">{{pageTitle}}</h3>
-                <button class="btn btn-small btn-flat" @click.prevent="showImportUrl = !showImportUrl">
-                  <i class="material-icons">add</i>
-                </button>
+                <ImportUrlForm :config="config"></ImportUrlForm>
             </div>
             <div class="alert alert-danger" v-show="errors">
               <i class="material-icons">warning</i>
@@ -22,7 +20,6 @@
                 </ul>
               </div>
             </div>
-            <ImportUrlForm :hide="!showImportUrl" :config="config" @handleErrorMessage="handleErrorMessage"/>
             <form @action="submit" v-if="config">
               <div class="form-group">
                 <label for="connectionType">Connection Type</label>
@@ -110,7 +107,6 @@
         connectionError: null,
         testing: false,
         split: null,
-        showImportUrl: false
       }
     },
     computed: {

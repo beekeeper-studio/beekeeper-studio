@@ -1,4 +1,4 @@
-import { splitQueries, extractParams } from "../../../../src/lib/db/sql_tools";
+import { splitQueries, extractParams, parseConnectionUrl } from "../../../../src/lib/db/sql_tools";
 
 const testCases = {
   "select* from foo; select * from bar": 2,
@@ -40,5 +40,38 @@ describe("extractParams", () => {
       const expected = testCases[query]
       expect(extractParams(query)).toStrictEqual(expected)
     })
+  })
+})
+
+describe('parseConnectionUrl', () => {
+  it("should parse a url", () => {
+    const url = "postgres://a:b@foo:123/bar"
+    const result = parseConnectionUrl(url)
+    const expected = {
+      connectionType: 'postgresql',
+      host: 'foo',
+      port: 123,
+      defaultDatabase: 'bar',
+      username: 'a',
+      password: 'b',
+      ssl: false
+    }
+    expect(result).toStrictEqual(expected)
+  })
+
+  it('should parse another valid URL', () => {
+    const url = 'postgres://user:password@server:123/default'
+    const expected = {
+      connectionType: 'postgresql',
+      host: 'server',
+      port: 123,
+      defaultDatabase: 'default',
+      username: 'user',
+      password: 'password',
+      ssl: false
+    }
+    const result = parseConnectionUrl(url)
+    console.log(result)
+    expect(result).toStrictEqual(expected)
   })
 })

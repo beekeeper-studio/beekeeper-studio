@@ -10,7 +10,7 @@
   },
   "scripts": {
     "serve": "vue-cli-service serve",
-    "test:unit": "vue-cli-service test:unit",
+    "test:unit": "IS_TEST=1 vue-cli-service test:unit",
     "lint": "vue-cli-service lint",
     "electron:build": "vue-cli-service electron:build",
     "electron:serve": "vue-cli-service electron:serve --host localhost",

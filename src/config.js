@@ -6,13 +6,16 @@ import { remote } from 'electron'
 import { execSync } from 'child_process'
 import platformInfo from './common/platform_info'
 
-let userDirectory = remote.app.getPath('userData');
-if (remote.process.env.PORTABLE_EXECUTABLE_DIR) {
-  userDirectory = path.join(remote.process.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
-}
+let userDirectory = './'
 
-if (remote.process.env.DEBUG) {
-  localStorage.debug = remote.process.env.DEBUG
+if (!process.env.IS_TEST) {
+  userDirectory = remote.app.getPath('userData');
+  if (remote.process.env.PORTABLE_EXECUTABLE_DIR) {
+    userDirectory = path.join(remote.process.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
+  }  
+  if (remote.process.env.DEBUG) {
+    localStorage.debug = remote.process.env.DEBUG
+  } 
 }
 
 const defaultEncryptionKey = "38782F413F442A472D4B6150645367566B59703373367639792442264529482B"
