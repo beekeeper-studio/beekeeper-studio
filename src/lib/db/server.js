@@ -43,7 +43,7 @@ export function createServer(serverConfig) {
 
       // close SSH tunnel
       if (server.sshTunnel) {
-        server.sshTunnel.close();
+        server.sshTunnel.connection.shutdown();
         server.sshTunnel = null;
       }
     },

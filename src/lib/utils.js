@@ -4,7 +4,6 @@ import fs from 'fs';
 import {homedir} from 'os';
 import path from 'path';
 import mkdirp from 'mkdirp';
-import pf from 'portfinder';
 import envPaths from 'env-paths';
 
 
@@ -108,15 +107,6 @@ export function resolveHomePathToAbsolute(filename) {
   return path.join(homedir(), filename.substring(2));
 }
 
-
-export function getPort() {
-  return new Promise((resolve, reject) => {
-    pf.getPort({ host: 'localhost' }, (err, port) => {
-      if (err) return reject(err);
-      resolve(port);
-    });
-  });
-}
 
 export function createCancelablePromise(error, timeIdle = 100) {
   let canceled = false;

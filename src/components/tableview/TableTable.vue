@@ -55,14 +55,13 @@
 <script>
 import Tabulator from "tabulator-tables";
 import data_converter from "../../mixins/data_converter";
-import DataMutators from '../../mixins/data_mutators'
+import DataMutators from '../../mixins/data_mutators';
 
 export default {
   mixins: [data_converter, DataMutators],
   props: ["table", "connection"],
   data() {
     return {
-      currentCell: null, // Last clicked cell
       filterTypes: {
         equals: "=",
         "does not equal": "!=",
@@ -83,7 +82,8 @@ export default {
       actualTableHeight: "100%",
       loading: false,
       data: null,
-      response: null
+      response: null,
+      limit: 100
     };
   },
   computed: {
@@ -115,7 +115,7 @@ export default {
       if (this.filter.value === "") {
         this.clearFilter();
       }
-    }
+    },
   },
   async mounted() {
     this.tabulator = new Tabulator(this.$refs.table, {
@@ -129,28 +129,13 @@ export default {
       pagination: "remote",
       paginationSize: this.limit,
       initialSort: this.initialSort,
-      cellClick: (e, cell) => {
-        // Remove focus and listener on other cell, if any
-        if (this.currentCell) {
-          this.currentCell.getElement().classList.remove('active-cell')
-          this.currentCell.getElement().removeEventListener('copy', () => {})
-        }
-
-        // Set cell style
-        cell.getElement().classList.add('active-cell')
-
-        // Connect listener
-        cell.getElement().addEventListener('copy', event => {
-          event.clipboardData.setData('text/plain', cell.getValue())
-          event.preventDefault()
-        })
-
-        // Override current cell
-        this.currentCell = cell
-      }
+      cellClick: this.cellClick
     });
   },
   methods: {
+    cellClick(e, cell) {
+      this.selectChildren(cell.getElement())
+    },
     triggerFilter() {
       if (this.filter.type && this.filter.field) {
         if (this.filter.value) {
@@ -172,17 +157,21 @@ export default {
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
       let offset = 0;
-      let limit = 100;
+      let limit = this.limit;
       let orderBy = null;
       let filters = null;
 
       if (params.sorters) {
         orderBy = params.sorters
       }
+      console.log(params)
 
-      if (params.page && params.size) {
-        limit = params.size;
-        offset = (params.page - 1) * params.size;
+      if (params.size) {
+        limit = params.size
+      }
+
+      if (params.page) {
+        offset = (params.page - 1) * limit;
       }
 
       if (params.filters) {

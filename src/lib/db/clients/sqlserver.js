@@ -28,6 +28,7 @@ export default async function (server, database) {
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),
     listViews: (filter) => listViews(conn, filter),
+    listMaterializedViews: (filter) => listMaterializedViews(conn, filter),
     listRoutines: (filter) => listRoutines(conn, filter),
     listTableColumns: (db, table) => listTableColumns(conn, db, table),
     listTableTriggers: (table) => listTableTriggers(conn, table),
@@ -60,7 +61,9 @@ function wrap(identifier) {
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
   let orderByString = ""
   let filterString = ""
-
+  console.log({
+    table, offset, limit, orderBy, filters, schema
+  })
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
       if (_.isObject(item)) {
@@ -187,7 +190,7 @@ export async function listTables(conn, filter) {
     SELECT
       table_schema,
       table_name
-    FROM information_schema.tables
+    FROM INFORMATION_SCHEMA.TABLES
     WHERE table_type NOT LIKE '%VIEW%'
     ${schemaFilter ? `AND ${schemaFilter}` : ''}
     ORDER BY table_schema, table_name
@@ -207,7 +210,7 @@ export async function listViews(conn, filter) {
     SELECT
       table_schema,
       table_name
-    FROM information_schema.views
+    FROM INFORMATION_SCHEMA.VIEWS
     ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
     ORDER BY table_schema, table_name
   `;
@@ -220,6 +223,12 @@ export async function listViews(conn, filter) {
   }));
 }
 
+export async function listMaterializedViews() {
+  // const schemaFilter = buildSchemaFilter(filter, '')
+  // TODO: materialized vies in SQL server
+  return []
+}
+
 export async function listRoutines(conn, filter) {
   const schemaFilter = buildSchemaFilter(filter, 'routine_schema');
   const sql = `
@@ -227,7 +236,7 @@ export async function listRoutines(conn, filter) {
       routine_schema,
       routine_name,
       routine_type
-    FROM information_schema.routines
+    FROM INFORMATION_SCHEMA.ROUTINES
     ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
     GROUP BY routine_schema, routine_name, routine_type
     ORDER BY routine_schema, routine_name
@@ -245,7 +254,7 @@ export async function listRoutines(conn, filter) {
 export async function listTableColumns(conn, database, table) {
   const sql = `
     SELECT column_name, data_type
-    FROM information_schema.columns
+    FROM INFORMATION_SCHEMA.COLUMNS
     WHERE table_name = '${table}'
     ORDER BY ordinal_position
   `;
@@ -282,7 +291,7 @@ export async function listSchemas(conn, filter) {
   const schemaFilter = buildSchemaFilter(filter);
   const sql = `
     SELECT schema_name
-    FROM information_schema.schemata
+    FROM INFORMATION_SCHEMA.SCHEMATA
     ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
     ORDER BY schema_name
   `;
@@ -327,8 +336,8 @@ export async function getTableKeys(conn, database, table) {
       ELSE NULL
       END AS referenced_table_name,
       tc.constraint_type
-    FROM information_schema.table_constraints AS tc
-    JOIN information_schema.key_column_usage AS kcu
+    FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
+    JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS kcu
       ON tc.constraint_name = kcu.constraint_name
     JOIN sys.foreign_keys as sfk
       ON sfk.parent_object_id = OBJECT_ID(tc.table_name)
@@ -352,10 +361,10 @@ export async function getTableCreateScript(conn, table) {
     SELECT  ('CREATE TABLE ' + so.name + ' (' +
       CHAR(13)+CHAR(10) + REPLACE(o.list, '&#x0D;', CHAR(13)) +
       ')' + CHAR(13)+CHAR(10) +
-      CASE WHEN tc.Constraint_Name IS NULL THEN ''
+      CASE WHEN tc.constraint_name IS NULL THEN ''
            ELSE + CHAR(13)+CHAR(10) + 'ALTER TABLE ' + so.Name +
-           ' ADD CONSTRAINT ' + tc.Constraint_Name  +
-           ' PRIMARY KEY ' + '(' + LEFT(j.List, Len(j.List)-1) + ')'
+           ' ADD CONSTRAINT ' + tc.constraint_name  +
+           ' PRIMARY KEY ' + '(' + LEFT(j.list, Len(j.list)-1) + ')'
       END) AS createtable
     FROM sysobjects so
     CROSS APPLY
@@ -385,26 +394,26 @@ export async function getTableCreateScript(conn, table) {
             cast(ident_incr(so.name) AS varchar) + ')'
           ELSE ''
           END + ' ' +
-           (CASE WHEN IS_NULLABLE = 'No'
+           (CASE WHEN UPPER(IS_NULLABLE) = 'NO'
                  THEN 'NOT '
                  ELSE ''
           END ) + 'NULL' +
-          CASE WHEN information_schema.columns.COLUMN_DEFAULT IS NOT NULL
-               THEN 'DEFAULT '+ information_schema.columns.COLUMN_DEFAULT
+          CASE WHEN INFORMATION_SCHEMA.COLUMNS.column_default IS NOT NULL
+               THEN 'DEFAULT '+ INFORMATION_SCHEMA.COLUMNS.column_default
                ELSE ''
           END + ',' + CHAR(13)+CHAR(10)
-       FROM information_schema.columns WHERE table_name = so.name
+       FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = so.name
        ORDER BY ordinal_position
        FOR XML PATH('')
     ) o (list)
-    LEFT JOIN information_schema.table_constraints tc
-    ON  tc.Table_name       = so.Name
-    AND tc.Constraint_Type  = 'PRIMARY KEY'
+    LEFT JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+    ON  tc.table_name       = so.name
+    AND tc.constraint_type  = 'PRIMARY KEY'
     CROSS APPLY
-        (SELECT Column_Name + ', '
-         FROM   information_schema.key_column_usage kcu
-         WHERE  kcu.Constraint_Name = tc.Constraint_Name
-         ORDER BY ORDINAL_POSITION
+        (SELECT column_name + ', '
+         FROM   INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu
+         WHERE  kcu.constraint_name = tc.constraint_name
+         ORDER BY ordinal_position
          FOR XML PATH('')
         ) j (list)
     WHERE   xtype = 'U'
@@ -428,7 +437,7 @@ export async function getViewCreateScript(conn, view) {
 export async function getRoutineCreateScript(conn, routine) {
   const sql = `
     SELECT routine_definition
-    FROM information_schema.routines
+    FROM INFORMATION_SCHEMA.ROUTINES
     WHERE routine_name = '${routine}'
   `;
 
@@ -444,7 +453,7 @@ export async function truncateAllTables(conn) {
 
     const sql = `
       SELECT table_name
-      FROM information_schema.tables
+      FROM INFORMATION_SCHEMA.TABLES
       WHERE table_schema = '${schema}'
       AND table_type NOT LIKE '%VIEW%'
     `;
@@ -469,8 +478,7 @@ function configDatabase(server, database) {
     database: database.database,
     port: server.config.port,
     requestTimeout: Infinity,
-    appName: server.config.applicationName || 'sqlectron',
-    domain: server.config.domain,
+    appName: server.config.applicationName || 'beekeeperstudio',
     pool: {
       max: 5,
     },
@@ -478,6 +486,9 @@ function configDatabase(server, database) {
       encrypt: server.config.ssl,
     },
   };
+  if (server.config.domain) {
+    config.domain = server.config.domain
+  }
 
   if (server.sshTunnel) {
     config.server = server.config.localHost;

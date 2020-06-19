@@ -3,14 +3,29 @@ import fs from 'fs'
 import crypto from 'crypto'
 import Encryptor from 'simple-encryptor'
 import { remote } from 'electron'
+import { execSync } from 'child_process'
+import platformInfo from './common/platform_info'
 
 let userDirectory = remote.app.getPath('userData');
 if (remote.process.env.PORTABLE_EXECUTABLE_DIR) {
   userDirectory = path.join(remote.process.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
 }
 
+if (remote.process.env.DEBUG) {
+  localStorage.debug = remote.process.env.DEBUG
+}
+
 const defaultEncryptionKey = "38782F413F442A472D4B6150645367566B59703373367639792442264529482B"
 const keyFile = path.join(userDirectory, '.key')
+
+function hasSshKeysPlug() {
+  try {
+    const code = execSync('snapctl is-connected ssh-keys')
+    return code == 0
+  } catch (error) {
+    return false    
+  }
+}
 
 function initUserDirectory() {
   if (!fs.existsSync(userDirectory)) {
@@ -37,11 +52,13 @@ function loadEncryptionKey() {
   }
 }
 
+// this is available in vue as `this.$config`
 export default {
+  ...platformInfo,
   userDirectory,
   encryptionKey: loadEncryptionKey(),
-  environment: process.env.NODE_ENV,
-  isMac: false,
+  snapSshPlug: hasSshKeysPlug(),
+
   defaults: {
     connectionTypes: [
       { name: 'MySQL', value: 'mysql' },
@@ -52,26 +69,6 @@ export default {
       { name: 'Amazon Redshift', value: 'redshift' },
       { name: 'CockroachDB', value: 'cockroachdb' }
     ],
-    ports: {
-      'mysql': 3306,
-      'psql': 5432
-    },
-    connectionConfig: {
-      connectionType: null,
-      host: 'localhost',
-      port: null,
-      user: null,
-      password: null,
-      defaultDatabase: null,
-      ssh: {
-        hostname: null,
-        port: null,
-        user: null,
-        password: null,
-        keyfile: null,
-        mode: "keyfile"
-      }
-    }
   },
   maxResults: 50000
 }

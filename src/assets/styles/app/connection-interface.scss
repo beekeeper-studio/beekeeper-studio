@@ -12,7 +12,7 @@
         display: none;
       }
       .btn-fab {
-        display: inline-block;
+        display: inline-flex;
       }
     }
     .btn-fab {
@@ -55,6 +55,7 @@
   display: flex;
   background: darken($theme-bg, 1.5%);
   max-height: 100vh;
+  padding: 0 $gutter-w;
   overflow-y: auto;
   align-items: center;
   -webkit-overflow-scrolling: touch;
@@ -66,12 +67,21 @@
     margin: $gutter-w 0;
   }
   .save-connection {
+    margin-top: ($gutter-w * 2);
+    padding-top: ($gutter-w * 2);
+    border-top: 1px solid $border-color;
     h3 {
-      margin-top: 1.5rem;
-      margin-bottom: 0.75rem;
+      margin: 0 0 $gutter-h;
     }
     .btn {
       margin-left: 0.5rem;
+    }
+    .has-tooltip {
+      color: $text-lighter;
+      margin-left: $gutter-h;
+    }
+    .save-actions {
+      padding-top: $gutter-h;
     }
   }
 }
@@ -83,8 +93,8 @@
   flex-direction: column;
   background: darken($theme-bg, 1%);
   border-radius: 8px;
-  margin: ($gutter-w * 1.5) 0;
-  padding: 0 ($gutter-w * 1.25);
+  margin: $gutter-w 0;
+  padding: $gutter-w ($gutter-w * 1.25);
 }
 .advanced-heading {
   display: flex;
@@ -103,6 +113,7 @@
   }
 }
 .advanced-body {
+  padding-top: 0.8rem;
   .private-key {
     margin-bottom: $gutter-h;
   }

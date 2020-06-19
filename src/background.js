@@ -8,19 +8,14 @@ import {
 
 import { manageUpdates } from './background/update_manager'
 import { configureMenu } from './background/configure_menu'
-
-// import QueryRun from './models/query-run'
-// import ConnectionConfig from './models/connection-config'
+import platformInfo from './common/platform_info'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const debugMode = !!process.env.DEBUG
-const os = process.platform;
 
-const isWindows = os === 'win32'
-const isMac = os === 'darwin'
-const isLinuxOrBSD = !isWindows && !isMac
+const { isWindows, isMac, isLinux } = platformInfo
 
-const platform = isMac ? 'mac' : (isLinuxOrBSD ? 'linux' : 'windows')
+const platform = isMac ? 'mac' : (isLinux ? 'linux' : 'windows')
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -32,16 +27,19 @@ protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true
 function createWindow () {
   configureMenu(app, platform, isDevelopment || debugMode)
 
+  const iconPrefix = isDevelopment ? 'public' : ''
   // Create the browser window.
   win = new BrowserWindow({
     width: 1200,
     height: 800,
+    minWidth: 800,
+    minHeight: 600,
     titleBarStyle: 'hidden',
-    frame: isLinuxOrBSD,
+    frame: isLinux || (isWindows && isDevelopment),
     webPreferences: {
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
     },
-    icon: path.join(__dirname, '/icons/png/512x512.png')
+    icon: path.join(__dirname, `${iconPrefix}/icons/png/512x512.png`)
   })
 
 
@@ -66,9 +64,6 @@ function createWindow () {
     if (debugMode) win.webContents.openDevTools();
     manageUpdates(win)
   }
-
-
-
 
   win.on('closed', () => {
     win = null
@@ -97,9 +92,10 @@ app.on('activate', () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
-  if (isDevelopment && !process.env.IS_TEST && !isWindows) {
+  if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
     try {
+      console.log("installing vue devtools")
       await installVueDevtools()
     } catch (e) {
       console.error('Vue Devtools failed to install:', e.toString())

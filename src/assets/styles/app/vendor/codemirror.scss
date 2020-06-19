@@ -5,6 +5,7 @@
   background: $query-editor-bg!important;
   color: $text-dark!important;
   padding: 0.75rem 0;
+  z-index: 1;
 }
 .CodeMirror-gutters {
   border: 0!important;
@@ -19,6 +20,9 @@
   }
   span.cm-variable-2 {
     color: $brand-secondary;
+  }
+  div.CodeMirror-selected {
+    background: rgba($theme-secondary, 0.2);
   }
 }
 

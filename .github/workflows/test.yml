@@ -1,4 +1,4 @@
-name: Lint
+name: Unit Tests
 
 on: push
 
@@ -17,10 +17,7 @@ jobs:
           node-version: 10
 
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --frozen-lockfile
 
-      - name: Run linters
-        uses: samuelmeuli/lint-action@v1
-        with:
-          github_token: ${{ secrets.github_token }}
-          eslint: true
+      - run: yarn run lint
+      - run: yarn run test:unit

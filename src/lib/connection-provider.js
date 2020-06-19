@@ -1,9 +1,7 @@
-
-
 import { createServer } from './db/index.js'
 
 export default {
-
+  
   convertConfig(config, osUsername) {
     const ssh = config.sshEnabled ? {} : null
     if (ssh) {
@@ -13,12 +11,15 @@ export default {
       ssh.password = config.sshPassword
       ssh.privateKey = config.sshKeyfile
       ssh.passphrase = config.sshKeyfilePassword
+      ssh.bastionHost = config.sshBastionHost
+      ssh.useAgent = config.sshMode == 'agent'
     }
 
     return {
       client: config.connectionType,
       host: config.host.trim(),
       port: config.port,
+      domain: config.domain,
       socketPath: null,
       user: config.username ? config.username.trim() : null,
       osUser: osUsername,

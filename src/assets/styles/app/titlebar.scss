@@ -22,6 +22,9 @@
       width: 32px;
     }
   }
+  x-menubar {
+    margin: -11px 0;
+  }
   .titlebar-title {
     color: $text-light;
     font-size: 0.85rem;
@@ -52,6 +55,9 @@
     #maximize {
       i {
         font-size: 16px;
+      }
+      .maximized {
+        transform: rotate(180deg);
       }
       &:hover {
         background: $brand-info;

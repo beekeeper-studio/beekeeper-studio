@@ -9,7 +9,6 @@ import { UsedConnection } from '@/entity/used_connection'
 import { SavedConnection } from '@/entity/saved_connection'
 import { FavoriteQuery } from '@/entity/favorite_query'
 import { UsedQuery } from '@/entity/used_query'
-import config from '@/config'
 import ConnectionProvider from '@/lib/connection-provider'
 
 Vue.use(Vuex)
@@ -96,6 +95,9 @@ const store = new Vuex.Store({
         state.connectionConfigs.push(newConfig)
       }
     },
+    removeConfig(state, config) {
+      state.connectionConfigs = _.without(state.connectionConfigs, config)
+    },
     configs(state, configs){
       state.connectionConfigs = configs
     },
@@ -166,13 +168,31 @@ const store = new Vuex.Store({
         views.forEach((v) => {
           v.entityType = 'view'
         })
-        const tables = onlyTables.concat(views)
-        for (let i = 0; i < tables.length; i++) {
-          const table = tables[i]
-          const columns = await context.state.connection.listTableColumns(table.name, table.schema)
-          context.commit("tablesLoading", `Loading ${i}/${tables.length} tables`)
-          tables[i].columns = columns
-        }
+
+        const materialized = await context.state.connection.listMaterializedViews({schema: null})
+        materialized.forEach(v => v.entityType = 'materialized-view')
+        const tables = onlyTables.concat(views).concat(materialized)
+        var processed = 0
+
+        await Promise.all(tables.map(table => {
+          return new Promise(async (resolve, reject) => {
+            try {
+              let columns = []
+              if (table.entityType === 'materialized-view') {
+                columns = await context.state.connection.listMaterializedViewColumns(table.name, table.schema)
+              } else {
+                columns = await context.state.connection.listTableColumns(table.name, table.schema)
+              }
+
+              processed += 1
+              context.commit("tablesLoading", `Loading ${processed}/${tables.length} tables`)
+              table.columns = columns
+              resolve()
+            } catch (error) {
+              reject(error)
+            }
+          })
+        }))
         context.commit('tables', tables)
 
       } finally {
@@ -191,6 +211,10 @@ const store = new Vuex.Store({
     async saveConnectionConfig(context, newConfig) {
       await newConfig.save()
       context.commit('config', newConfig)
+    },
+    async removeConnectionConfig(context, config) {
+      await config.remove()
+      context.commit('removeConfig', config)
     },
     async loadSavedConfigs(context) {
       let configs = await SavedConnection.find()
@@ -225,8 +249,7 @@ const store = new Vuex.Store({
       }
     }
   },
-  plugins: [],
-  devtools: config.environment == 'development'
+  plugins: []
 })
 
 export default store

@@ -4,7 +4,6 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 
-
 const logger = createLogger('db');
 
 
@@ -22,8 +21,10 @@ export function createConnection(server, database) {
     end: disconnect.bind(null, server, database),
     listTables: listTables.bind(null, server, database),
     listViews: listViews.bind(null, server, database),
+    listMaterializedViews: listMaterializedViews.bind(null, server, database),
     listRoutines: listRoutines.bind(null, server, database),
     listTableColumns: listTableColumns.bind(null, server, database),
+    listMaterializedViewColumns: listMaterializedViewColumns.bind(null, server, database),
     listTableTriggers: listTableTriggers.bind(null, server, database),
     listTableIndexes: listTableIndexes.bind(null, server, database),
     listSchemas: listSchemas.bind(null, server, database),
@@ -72,44 +73,24 @@ async function connect(server, database) {
       logger().debug('creating ssh tunnel');
       server.sshTunnel = await connectTunnel(server.config);
 
-      const { address, port } = server.sshTunnel.address();
+      const { address, port } = server.sshTunnel
       logger().debug('ssh forwarding through local connection %s:%d', address, port);
 
-      server.config.localHost = address;
-      server.config.localPort = port;
+      server.config.localHost = server.sshTunnel.localHost
+      server.config.localPort = server.sshTunnel.localPort
     }
 
     const driver = clients[server.config.client];
 
-    const [connection] = await Promise.all([
-      driver(server, database),
-      handleSSHError(server.sshTunnel),
-    ]);
-
+    const connection = await driver(server, database)
     database.connection = connection;
   } catch (err) {
     logger().error('Connection error %j', err);
-    console.log("connection error")
     disconnect(server, database);
     throw err;
   } finally {
     database.connecting = false;
   }
-}
-
-
-function handleSSHError(sshTunnel) {
-  return new Promise((resolve, reject) => {
-    if (!sshTunnel) {
-      return resolve();
-    }
-
-    sshTunnel.on('success', resolve);
-    sshTunnel.on('error', (error) => {
-      logger().error('ssh error %j', error);
-      reject(error);
-    });
-  });
 }
 
 
@@ -119,6 +100,10 @@ function disconnect(server, database) {
   if (database.connection) {
     database.connection.disconnect();
     database.connection = null;
+  }
+
+  if(server.sshTunnel) {
+    server.sshTunnel.connection.shutdown()
   }
 
   if (server.db[database.database]) {
@@ -146,6 +131,11 @@ function listViews(server, database, filter) {
   return database.connection.listViews(filter);
 }
 
+function listMaterializedViews(server, database, filter) {
+  checkIsConnected(server, database)
+  return database.connection.listMaterializedViews(filter)
+}
+
 function listRoutines(server, database, filter) {
   checkIsConnected(server, database);
   return database.connection.listRoutines(filter);
@@ -154,6 +144,11 @@ function listRoutines(server, database, filter) {
 function listTableColumns(server, database, table, schema) {
   checkIsConnected(server, database);
   return database.connection.listTableColumns(database.database, table, schema);
+}
+
+function listMaterializedViewColumns(server, database, table, schema) {
+  checkIsConnected(server, database);
+  return database.connection.listMaterializedViewColumns(database.database, table, schema)
 }
 
 function listTableTriggers(server, database, table, schema) {

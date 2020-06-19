@@ -1,6 +1,6 @@
 <template>
   <div class="input-group" @click.prevent.stop="openFilePickerDialog">
-    <input type="text" class="form-control clickable" placeholder="No file selected" :value="value" readonly>
+    <input type="text" class="form-control clickable" placeholder="No file selected" :title="value" :value="value" readonly>
     <div class="input-group-append">
       <button class="btn btn-small btn-flat">Choose file</button>
     </div>

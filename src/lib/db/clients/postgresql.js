@@ -19,7 +19,7 @@ let dataTypes = {}
 
 /**
  * Do not convert DATE types to JS date.
- * It gnores of applying a wrong timezone to the date.
+ * It ignores of applying a wrong timezone to the date.
  * TODO: do not convert as well these same types with array (types 1115, 1182, 1185)
  */
 pg.types.setTypeParser(1082, 'text', (val) => val); // date
@@ -27,18 +27,64 @@ pg.types.setTypeParser(1114, 'text', (val) => val); // timestamp without timezon
 pg.types.setTypeParser(1184, 'text', (val) => val); // timestamp
 
 
+/**
+ * Gets the version details for the connection.
+ *
+ * Example version strings:
+ * CockroachDB CCL v1.1.0 (linux amd64, built 2017/10/12 14:50:18, go1.8.3)
+ * CockroachDB CCL v20.1.1 (x86_64-unknown-linux-gnu, built 2020/05/19 14:46:06, go1.13.9)
+ *
+ * PostgreSQL 9.4.26 on x86_64-pc-linux-gnu (Debian 9.4.26-1.pgdg90+1), compiled by gcc (Debian 6.3.0-18+deb9u1) 6.3.0 20170516, 64-bit
+ * PostgreSQL 12.3 (Debian 12.3-1.pgdg100+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 8.3.0-6) 8.3.0, 64-bit
+ *
+ * PostgreSQL 8.0.2 on i686-pc-linux-gnu, compiled by GCC gcc (GCC) 3.4.2 20041017 (Red Hat 3.4.2-6.fc3), Redshift 1.0.12103
+ */
+async function getVersion(conn) {
+  const { version } = (await driverExecuteQuery(conn, {query: "select version()"})).rows[0]
+  if (!version) {
+    return {
+      version: '',
+      isPostgres: false,
+      number: 0
+    }
+  }
+
+  const isPostgres = version.toLowerCase().includes('postgresql')
+  return {
+    version,
+    isPostgres,
+    number: parseInt(
+      version.split(" ")[isPostgres ? 1 : 2].replace(/^v/i, '').split(".").map(s => s.padStart(2, "0")).join("").padEnd(6, "0"),
+      10
+    )
+  }
+}
 
 async function getTypes(conn) {
-  const sql = `
-    SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
-    FROM        pg_type t
-    LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
-    WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
-    AND     NOT EXISTS(SELECT 1 FROM pg_catalog.pg_type el WHERE el.oid = t.typelem AND el.typarray = t.oid)
-    AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
-  `
-  const result = {}
+  const version = await getVersion(conn)
+  let sql
+  if (version.isPostgres && version.number < 80300) {
+    sql = `
+      SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
+      FROM        pg_type t
+      LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+      WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
+      AND     t.typname !~ '^_'
+      AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
+    `
+  } else {
+    sql = `
+      SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
+      FROM        pg_type t
+      LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+      WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid))
+      AND     NOT EXISTS(SELECT 1 FROM pg_catalog.pg_type el WHERE el.oid = t.typelem AND el.typarray = t.oid)
+      AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
+    `
+  }
+
   const data = await driverExecuteQuery(conn, { query: sql })
+  const result = {}
   data.rows.forEach((row) => {
     result[row.typeid] = row.typename
   })
@@ -67,8 +113,10 @@ export default async function (server, database) {
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),
     listViews: (filter) => listViews(conn, filter),
+    listMaterializedViews: (filter) => listMaterializedViews(conn, filter),
     listRoutines: (filter) => listRoutines(conn, filter),
     listTableColumns: (db, table, schema = defaultSchema) => listTableColumns(conn, db, table, schema),
+    listMaterializedViewColumns: (db, table, schema = defaultSchema) => listMaterializedViewColumns(conn, db, table, schema),
     listTableTriggers: (table, schema = defaultSchema) => listTableTriggers(conn, table, schema),
     listTableIndexes: (db, table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
     listSchemas: (db, filter) => listSchemas(conn, filter),
@@ -123,6 +171,26 @@ export async function listViews(conn, filter = { schema: 'public' }) {
 
   const data = await driverExecuteQuery(conn, { query: sql });
 
+  return data.rows;
+}
+
+export async function listMaterializedViews(conn, filter = { schema: 'public' }) {
+  const version = await getVersion(conn);
+  if (!version.isPostgres || version.number < 90003) {
+    return []
+  }
+
+  const schemaFilter = buildSchemaFilter(filter, 'schemaname')
+  const sql = `
+    SELECT
+      schemaname as schema,
+      matviewname as name
+    FROM pg_matviews
+    ${schemaFilter ? `WHERE ${schemaFilter}`: ''}
+    order by schemaname, matviewname;
+  `
+
+  const data = await driverExecuteQuery(conn, {query: sql});
   return data.rows;
 }
 
@@ -217,6 +285,29 @@ export async function listTableColumns(conn, database, table, schema) {
     dataType: row.data_type,
   }));
 }
+
+export async function listMaterializedViewColumns(conn, database, table, schema) {
+  const sql = `
+    SELECT a.attname,
+          pg_catalog.format_type(a.atttypid, a.atttypmod) as data_type,
+          a.attnotnull
+    FROM pg_attribute a
+      JOIN pg_class t on a.attrelid = t.oid
+      JOIN pg_namespace s on t.relnamespace = s.oid
+    WHERE a.attnum > 0
+      AND NOT a.attisdropped
+      AND s.nspname = $1
+      AND t.relname = $2
+    ORDER BY a.attnum;
+  `
+  const params = [schema, table]
+  const data = await driverExecuteQuery(conn, {query: sql, params});
+  return data.rows.map((row) => ({
+    columnName: row.attname,
+    dataType: row.data_type
+  }))
+}
+
 
 export async function listTableTriggers(conn, table, schema) {
   const sql = `

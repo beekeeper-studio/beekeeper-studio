@@ -16,15 +16,17 @@
           @click.prevent="edit(c)"
           @dblclick.prevent="connect(c)"
         >
+          <span :class="`connection-label connection-label-color-${c.labelColor}`"></span>
           <span class="title expand">{{c.name}} </span>
-          <span class="badge">{{c.connectionType}}</span>
-          <toggle class="dropdown right">
-              <a class="btn-fab dropdown-toggle"><i class="material-icons">more_horiz</i></a>
-              <target class="dropdown-menu show">
-                <a class="dropdown-item">Rename</a>
-                <a class="dropdown-item text-danger">Remove</a>
-              </target>
-            </toggle>
+          <span class="badge"><span>{{c.connectionType}}</span></span>
+          <x-button class="btn-fab" skin="iconic">
+            <i class="material-icons">more_horiz</i>
+            <x-menu style="--target-align: right; --v-target-align: top;">
+              <x-menuitem @click.prevent.stop="remove(c)">
+                <x-label class="text-danger">Remove</x-label>
+              </x-menuitem>
+            </x-menu>
+          </x-button>
         </a>
       </div>
     </nav>
@@ -56,6 +58,12 @@
       },
       connect(config) {
         this.$emit('connect', config)
+      },
+      remove(config) {
+        this.$emit('remove', config)
+      },
+      getLabelClass(color) {
+        return `label-${color}`
       }
     }
   }

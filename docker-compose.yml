@@ -1,6 +1,7 @@
 version: '3'
 volumes:
   mssql:
+  mssqllatin:
   psql:
   mysql:
   mysql8:
@@ -66,6 +67,19 @@ services:
       SA_PASSWORD: "Example@1"
     ports:
       - 1433:1433
+    command: sh -c ' chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /opt/mssql/bin/sqlservr;'
+  sqlserverlatin:
+    image: 'mcr.microsoft.com/mssql/server:2017-latest-ubuntu'
+    volumes:
+    - mssqllatin:/var/opt/mssql/data
+    - ./dev/docker_sqlserver:/docker_init
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: Example@1"
+      MSSQL_COLLATION: Latin1_General_CS_AS
+      MSSQL_PID: "Express"
+    ports:
+      - 1434:1433
     command: sh -c ' chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /opt/mssql/bin/sqlservr;'
   cockroachdb:
     image: cockroachdb/cockroach

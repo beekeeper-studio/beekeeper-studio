@@ -1,6 +1,6 @@
 const webpack = require('webpack');
 
-const externals = ['sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2']
+const externals = ['sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2', 'ssh2']
 module.exports = {
   pluginOptions: {
     electronBuilder: {
@@ -9,8 +9,18 @@ module.exports = {
       builderOptions: {
         appId: "io.beekeeperstudio.desktop",
         productName: "Beekeeper Studio",
+        releaseInfo: {
+          releaseNotesFile: "build/release-notes.md"
+        },
         files: ['**/*', 'public/icons/**/*'],
         afterSign: "electron-builder-notarize",
+        afterPack: "./build/afterPack.js",
+        extraResources: [
+          {
+            from: 'build/launcher-script.sh',
+            to: 'launcher-script.sh'
+          }
+        ],
         mac: {
           entitlements: "./build/entitlements.mac.plist",
           icon: './public/icons/mac/bk-icon.icns',
@@ -24,7 +34,10 @@ module.exports = {
             'snap',
             'deb',
             'appImage'
-          ]
+          ],
+          desktop: {
+            'StartupWMClass': 'beekeeper-studio'
+          },
         },
         deb: {
           publish: [
@@ -38,7 +51,12 @@ module.exports = {
               distribution: 'disco',
               component: 'main'
             },
-          ]
+          ],
+          fpm: [
+            "--after-install=build/deb-postinstall"
+          ],
+          // when we upgrade Electron we need to check these
+          depends: ["libgtk-3-0, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1, libappindicator3-1, libsecret-1-0", "gnupg"]
         },
         appImage: {
           publish: ['github']
@@ -48,6 +66,9 @@ module.exports = {
             'github',
             'snapStore'
           ],
+          environment: {
+            "ELECTRON_SNAP": "true"
+          },
           plugs: ["default", "ssh-keys"]
         },
         win: {

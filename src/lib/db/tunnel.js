@@ -1,94 +1,67 @@
 // Copyright (c) 2015 The SQLECTRON Team
 
-import net from 'net';
-import { Client } from 'ssh2';
-import { getPort, readFile } from '../utils';
+import fs from 'fs'
+import path from 'path'
+import pf from 'portfinder'
 import createLogger from '../logger';
+import { SSHConnection } from 'node-ssh-forward'
+import appConfig from '../../config'
+
+import { resolveHomePathToAbsolute } from '../utils'
 
 const logger = createLogger('db:tunnel');
 
-export default function (serverInfo) {
+export default function(config) {
+  logger().debug('setting up ssh tunnel')
+
   return new Promise(async (resolve, reject) => {
-    logger().debug('configuring tunnel');
-    const config = await configTunnel(serverInfo);
+    try {
 
-    const connections = [];
-
-    logger().debug('creating ssh tunnel server');
-    const server = net.createServer(async (conn) => {
-      conn.on('error', (err) => server.emit('error', err));
-
-      logger().debug('creating ssh tunnel client');
-      const client = new Client();
-      connections.push(conn);
-
-      client.on('error', (err) => server.emit('error', err));
-
-      client.on('ready', () => {
-        logger().debug('connected ssh tunnel client');
-        connections.push(client);
-
-        logger().debug('forwarding ssh tunnel client output');
-        client.forwardOut(
-          config.srcHost,
-          config.srcPort,
-          config.dstHost,
-          config.dstPort,
-          (err, sshStream) => {
-            if (err) {
-              logger().error('error ssh connection %j', err);
-              server.close();
-              server.emit('error', err);
-              return;
-            }
-            server.emit('success');
-            conn.pipe(sshStream).pipe(conn);
-          });
-      });
-
-      try {
-        const localPort = await getPort();
-
-        logger().debug('connecting ssh tunnel client');
-        client.connect({ ...config, localPort });
-      } catch (err) {
-        server.emit('error', err);
+      const sshConfig = {
+        endHost: config.ssh.host,
+        endPort: config.ssh.port,
+        bastionHost: config.ssh.bastionHost,
+        agentForward: config.ssh.useAgent,
+        passphrase: config.ssh.passphrase,
+        username: config.ssh.user,
+        password: config.ssh.password,
+        skipAutoPrivateKey: true,
+        noReadline: true
       }
-    });
 
-    server.once('close', () => {
-      logger().debug('close ssh tunnel server');
-      connections.forEach((conn) => conn.end());
-    });
+      if (config.ssh.useAgent && appConfig.sshAuthSock) {
+        sshConfig.agentSocket = appConfig.sshAuthSock
+      }
 
-    logger().debug('connecting ssh tunnel server');
-    server.listen(config.localPort, config.localHost, (err) => {
-      if (err) return reject(err);
+      if (config.ssh.privateKey && !config.ssh.useAgent) {
+        sshConfig.privateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.privateKey)))
+      } else {
+        sshConfig.privateKey = null
+      }
+      console.log(sshConfig)
+      const connection = new SSHConnection(sshConfig)
+      logger().debug("connection created!")
 
-      logger().debug('connected ssh tunnel server');
-      resolve(server);
-    });
-  });
-}
-
-
-async function configTunnel(serverInfo) {
-  const config = {
-    username: serverInfo.ssh.user,
-    port: serverInfo.ssh.port,
-    host: serverInfo.ssh.host,
-    dstPort: serverInfo.port,
-    dstHost: serverInfo.host,
-    sshPort: 22,
-    srcPort: 0,
-    srcHost: 'localhost',
-    localHost: 'localhost',
-    localPort: await getPort(),
-  };
-  if (serverInfo.ssh.password) config.password = serverInfo.ssh.password;
-  if (serverInfo.ssh.passphrase) config.passphrase = serverInfo.ssh.passphrase;
-  if (serverInfo.ssh.privateKey) {
-    config.privateKey = await readFile(serverInfo.ssh.privateKey);
-  }
-  return config;
+      const localPort = await pf.getPortPromise({port: 10000, stopPort: 60000})
+      // workaround for `getPortPromise` not releasing the port quickly enough
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const tunnelConfig = {
+        fromPort: localPort,
+        toPort: config.port,
+        toHost: config.host
+      }
+      const tunnel = await connection.forward(tunnelConfig)
+      logger().debug('tunnel created!')
+      const result = {
+        connection: connection,
+        localHost: '127.0.0.1',
+        localPort: localPort,
+        tunnel: tunnel
+      }
+      resolve(result)
+    } catch (error) {
+      console.log(error)
+      reject(error)
+    }
+  })
 }

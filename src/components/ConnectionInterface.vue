@@ -2,12 +2,14 @@
   <div class="interface connection-interface">
     <div class="interface-wrap row">
       <sidebar class="connection-sidebar" ref="sidebar">
-        <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @edit="edit" @connect="handleConnect"></connection-sidebar>
+        <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @remove="remove" @edit="edit" @connect="handleConnect"></connection-sidebar>
       </sidebar>
       <div ref="content" class="connection-main page-content" id="page-content">
         <div class="small-wrap">
           <div class="card-flat padding">
-            <h3 class="card-title">{{pageTitle}}</h3>
+            <div class="flex flex-between">
+              <h3 class="card-title">{{pageTitle}}</h3>
+            </div>
             <div class="alert alert-danger" v-show="errors">
               <i class="material-icons">warning</i>
               <div>
@@ -20,7 +22,7 @@
             <form @action="submit" v-if="config">
               <div class="form-group">
                 <label for="connectionType">Connection Type</label>
-                <select name="connectionType" class="form-control custom-select" v-model="config.connectionType" @change="changeType" id="connection-select">
+                <select name="connectionType" class="form-control custom-select" v-model="config.connectionType" id="connection-select">
                   <option disabled value="null">Select a connection type...</option>
                   <option :key="t.value" v-for="t in connectionTypes" :value="t.value">{{t.name}}</option>
                 </select>
@@ -45,18 +47,25 @@
 
                 <!-- Save Connection -->
                 <div class="save-connection expand">
-                  <h3>Save Connection</h3>
-                  <div class="row">
-                    <div class="expand"><input class="form-control" @keydown.enter.prevent.stop="save" type="text" v-model="config.name" placeholder="Connection Name"></div>
-                    <div><button class="btn btn-flat" @click.prevent="save">Save</button></div>
+                  <h3 class="expand">Save Connection</h3>
+                  <div class="form-group">
+                    <input class="form-control" @keydown.enter.prevent.stop="save" type="text" v-model="config.name" placeholder="Connection Name">
                   </div>
 
-                  <!-- TODO MATTHEW: Not sure if this breaks this -->
-                  <label for="rememberPassword" class="checkbox-group row">
-                    <input id="rememberPassword" type="checkbox" name="rememberPassword" class="form-control" v-model="config.rememberPassword">
-                    <span>Save Passwords</span>
-                    <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help_outlined</i>
-                  </label>
+                  <div class="row flex-middle">
+                    <label class="checkbox-group" for="rememberPassword">
+                      <input class="form-control" id="rememberPassword" type="checkbox" name="rememberPassword" v-model="config.rememberPassword">
+                      <span>Save Passwords</span>
+                      <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help_outlined</i>
+                    </label>
+                    <span class="expand"></span>
+                    <ColorPicker :value="config.labelColor" v-model="config.labelColor"></ColorPicker>
+                  </div>
+
+                  <div class="save-actions row">
+                    <div class="expand"></div>
+                    <button class="btn btn-flat" @click.prevent="save">Save</button>
+                  </div>
                 </div>
               </div>
 
@@ -74,20 +83,21 @@
 </template>
 
 <script>
-  import os from 'os'
-  import config from '../config'
-  import {SavedConnection} from '../entity/saved_connection'
-  import ConnectionSidebar from './ConnectionSidebar'
-  import MysqlForm from './connection/MysqlForm'
-  import PostgresForm from './connection/PostgresForm'
-  import Sidebar from './Sidebar'
-  import SqliteForm from './connection/SqliteForm'
-  import SqlServerForm from './connection/SqlServerForm'
-  import Split from 'split.js'
-  import _ from 'lodash'
+  import os from 'os';
+  import {SavedConnection} from '../entity/saved_connection';
+  import ColorPicker from './form/ColorPicker';
+  import ConnectionSidebar from './ConnectionSidebar';
+  import MysqlForm from './connection/MysqlForm';
+  import PostgresForm from './connection/PostgresForm';
+  import Sidebar from './Sidebar';
+  import SqliteForm from './connection/SqliteForm';
+  import SqlServerForm from './connection/SqlServerForm';
+  import Split from 'split.js';
+  import _ from 'lodash';
+  // import ImportUrlForm from './connection/ImportUrlForm';
 
   export default {
-    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm },
+    components: {ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, ColorPicker },
     data() {
       return {
         defaultConfig: new SavedConnection(),
@@ -100,7 +110,7 @@
     },
     computed: {
       connectionTypes() {
-        return config.defaults.connectionTypes
+        return this.$config.defaults.connectionTypes
       },
       pageTitle() {
         if(_.isNull(this.config) || _.isUndefined(this.config.id)) {
@@ -139,16 +149,12 @@
       edit(config) {
         this.config = config
       },
-      changeType() {
-        if(['mysql', 'mariadb'].includes(this.config.connectionType)) {
-          this.config.port = 3306
-        } else if(this.config.connectionType === 'postgresql') {
-          this.config.port = 5432
-        } else if(this.config.connectionType === 'sqlserver') {
-          this.config.port = 1433
-        } else if(this.config.connectionType === 'cockroachdb') {
-          this.config.port = 26257
+      async remove(config) {
+        await this.$store.dispatch('removeConnectionConfig', config)
+        if (this.config === config) {
+          this.config = this.defaultConfig
         }
+        this.$noty.success(`${config.name} deleted`)
       },
       async submit() {
         this.connectionError = null
@@ -194,9 +200,15 @@
           this.errors = [ex.message]
           this.$noty.error("Could not save connection information")
         }
+      },
+      handleErrorMessage(message){
+        if (message){
+          this.errors = [message]
+          this.$noty.error("Could not parse connection URL.")
+        }else{
+          this.errors = null
+        }
       }
     },
-
-
   }
 </script>
