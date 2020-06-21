@@ -49,6 +49,7 @@
             <span class="truncated-rows" v-if="result && result.truncated"> &middot; only {{result.truncatedRowCount}} shown.</span>
           </div>
           <span class="affected-rows" v-if="affectedRowsText ">{{ affectedRowsText}}</span>
+          <span class="affected-rows" v-if="executeTimeText">{{executeTimeText}}</span>
         </template>
         <template v-else>
           No Data
@@ -201,6 +202,13 @@
 
         const rows = this.result.affectedRows || 0
         return `${rows} ${Pluralize('row', rows)} affected`
+      },
+      executeTimeText() {
+        if (!this.result) {
+          return null
+        }
+        const executeTime = this.result.executeTime || 0
+        return `${executeTime} ms`
       },
       rowCount() {
         return this.result && this.result.rows ? this.result.rows.length : 0
@@ -361,9 +369,13 @@
           this.$modal.hide('parameters-modal')
 
           const runningQuery = this.connection.query(query);
-          const results = await runningQuery.execute()
+          const queryStartTime = +new Date();
+          const results = await runningQuery.execute();
+          const queryEndTime = +new Date();
+          const queryExecutionTime = queryEndTime - queryStartTime;
           let totalRows = 0
           results.forEach(result => {
+            result.executeTime = queryExecutionTime;
             result.rowCount = result.rowCount || 0
 
             // TODO (matthew): remove truncation logic somewhere sensible
