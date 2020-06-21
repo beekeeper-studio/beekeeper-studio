@@ -368,14 +368,14 @@
           const query = this.deparameterizedQuery
           this.$modal.hide('parameters-modal')
 
-          const runningQuery = this.connection.query(query);
-          const queryStartTime = +new Date();
-          const results = await runningQuery.execute();
-          const queryEndTime = +new Date();
-          const queryExecutionTime = queryEndTime - queryStartTime;
+          const runningQuery = this.connection.query(query)
+          const queryStartTime = +new Date()
+          const results = await runningQuery.execute()
+          const queryEndTime = +new Date()
+          const queryExecutionTime = queryEndTime - queryStartTime
           let totalRows = 0
           results.forEach(result => {
-            result.executeTime = queryExecutionTime;
+            result.executeTime = queryExecutionTime
             result.rowCount = result.rowCount || 0
 
             // TODO (matthew): remove truncation logic somewhere sensible
