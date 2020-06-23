@@ -1,5 +1,6 @@
 'use strict'
 import { app, protocol, BrowserWindow} from 'electron'
+import electron from 'electron'
 import path from 'path'
 import {
   createProtocol,
@@ -7,26 +8,30 @@ import {
 } from 'vue-cli-plugin-electron-builder/lib'
 
 import { manageUpdates } from './background/update_manager'
-import { configureMenu } from './background/configure_menu'
+
 import platformInfo from './common/platform_info'
+import MenuHandler from './background/MenuHandler'
+import Settings from './common/Settings'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const debugMode = !!process.env.DEBUG
 
-const { isWindows, isMac, isLinux } = platformInfo
+const { isWindows, isLinux, userDirectory } = platformInfo
 
-const platform = isMac ? 'mac' : (isLinux ? 'linux' : 'windows')
+const userSettings = new Settings(userDirectory, true)
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win
+let menuHandler
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 
+
 function createWindow () {
-  
-  configureMenu(app, win, {}, platform, isDevelopment || debugMode)
+  menuHandler = new MenuHandler(app, userSettings, electron)
+  menuHandler.initialize()
 
   const iconPrefix = isDevelopment ? 'public' : ''
   // Create the browser window.

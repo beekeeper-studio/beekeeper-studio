@@ -4,6 +4,17 @@ const externals = ['sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassa
 module.exports = {
   pluginOptions: {
     electronBuilder: {
+      chainWebpackMainProcess: config => {
+        config.module
+          .rule('babel')
+          .test(/\.js$/)
+          .use('babel')
+          .loader('babel-loader')
+          .options({
+            presets: [['@babel/preset-env', { modules: false }]],
+            plugins: ['@babel/plugin-proposal-class-properties']
+          })
+      },
       nodeIntegration: true,
       externals,
       builderOptions: {

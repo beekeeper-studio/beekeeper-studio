@@ -1,4 +1,4 @@
-import { Menu, ipcMain} from 'electron'
+import Settings from '../../common/Settings'
 
 // TODO (matthew): When multi-window
 // use menu switching to switch menus on the fly
@@ -6,16 +6,19 @@ import { Menu, ipcMain} from 'electron'
 export default class {
 
   app = null
-    settings
 
-  constructor(app, settings) {
+  /** @type {Settings} */
+  settings = {}
+
+  constructor(electron, app, settings) {
+    this.electron = electron
     this.app = app
     this.settings = settings
-    this.menu = Menu.buildFromTemplate(this.buildTemplate())
-    ipcMain.on('core-loaded', () => {
+    this.menu = electron.Menu.buildFromTemplate(this.buildTemplate())
+    electron.ipcMain.on('core-loaded', () => {
       this.menuItems.newQuery.enabled = true
     }),
-    ipcMain.on('connection-loaded', () => {
+    electron.ipcMain.on('connection-loaded', () => {
       this.menuItems.newQuery.enabled = false
     })
   }
@@ -27,52 +30,65 @@ export default class {
   triggers = {
     newQuery: (menuItem, win) => win.webContents.send('trigger-new-query'),
     switchTheme: (menuItem, win) => {
-      this.settings.update({theme: menuItem.label.toLowerCase()})
+      this.settings.theme = menuItem.label.toLowerCase()
       win.webContents.send('trigger-switch-theme', this.settings.theme)
+    },
+    switchMenuStyle: (menuItem, win) => {
+      this.settings.menuStyle = menuItem.label.toLowerCase()
+      win.webContents.send('trigger-switch-menustyle', this.settings.menuStyle)
     }
   }
 
   menuItems = {
-    newQuery: {
-      id: "new-query-menu",
-      label: "New Query",
-      accelerator: "CommandOrControl+T",
-      click: this.triggers.newQuery,
-      enabled: false
+    newQuery: () => {
+      return {
+        id: "new-query-menu",
+        label: "New Query",
+        accelerator: "CommandOrControl+T",
+        click: this.triggers.newQuery,
+        enabled: false
+      }
     },
-    themeToggle: {
-      id: "theme-toggle-menu",
-      label: "Theme",
-      submenu: [
-        {
-          type: "radio",
-          label: "Light",
-          click: this.triggers.switchTheme,
-          checked: this.settings.theme === 'light'
-        },
-        {
-          type: 'radio',
-          label: "Dark",
-          click: this.triggers.switchTheme,
-          checked: this.settings.theme === 'dark'
-        }
-      ]
+    menuStyleToggle: () => {
+      return {
+        id: 'menu-style-toggle-menu',
+          label: "Menu Style",
+            submenu: [
+              {
+                type: 'radio',
+                label: 'Native',
+                click: this.triggers.switchMenuStyle,
+                checked: this.settings.menuStyle === 'native'
+              },
+              {
+                type: 'radio',
+                label: 'Client',
+                click: this.triggers.switchMenuStyle,
+                checked: this.settings.menuStyle === 'client'
+              }
+            ]
+      }
+    } ,
+    themeToggle: () => {
+      return {
+        id: "theme-toggle-menu",
+        label: "Theme",
+        submenu: [
+          {
+            type: "radio",
+            label: "Light",
+            click: this.triggers.switchTheme,
+            checked: this.settings.theme === 'light'
+          },
+          {
+            type: 'radio',
+            label: "Dark",
+            click: this.triggers.switchTheme,
+            checked: this.settings.theme === 'dark'
+          }
+        ]
+      }
     }
-  }
-  
-
-
-
-
-  fileMenu = {
-    label: "File",
-    submenu: {
-
-    }
-  }
-
-  editMenu = {
-
   }
 
 }

@@ -28,12 +28,15 @@ import config from './config'
 import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
 import Migration from './migration/index'
 import ConfigPlugin from './plugins/ConfigPlugin'
+import Settings from './common/Settings'
 
 
 (async () => {
   try {
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
     const appDb = path.join(config.userDirectory, 'app.db')
+    const settings = new Settings(config.userDirectory)
+    await settings.reload()
     const connection = await createConnection({
       database: appDb,
       type: 'sqlite',

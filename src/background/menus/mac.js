@@ -2,8 +2,8 @@ import DefaultMenu from './default'
 
 export default class extends DefaultMenu {
 
-  constructor(app, settings) {
-    super(app, settings)
+  constructor(electron, app, settings) {
+    super(electron, app, settings)
   }
 
   buildTemplate() {
@@ -26,7 +26,7 @@ export default class extends DefaultMenu {
       {
         label: 'File',
         submenu: [
-          this.menuItems.newQuery
+          this.menuItems.newQuery()
         ]
       },
       {
@@ -52,7 +52,7 @@ export default class extends DefaultMenu {
           { role: 'zoomout' },
           { type: 'separator' },
           { role: 'togglefullscreen' },
-          this.menuItems.themeToggle
+          this.menuItems.themeToggle()
         ]
       },
       {
