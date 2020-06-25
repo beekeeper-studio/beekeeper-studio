@@ -80,7 +80,6 @@ JESa2SNRfw==
 =EI0Z
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
-    # TODO: eventual SE Linux labeling goes into here.
     exit 0
 else
     echo "No supported package manager found."
