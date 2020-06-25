@@ -53,7 +53,7 @@
 // --------------------------------
 .connection-main {
   display: flex;
-  background: darken($theme-bg, 1.5%);
+  background: $query-editor-bg;
   max-height: 100vh;
   padding: 0 $gutter-w;
   overflow-y: auto;

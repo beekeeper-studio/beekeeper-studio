@@ -3,7 +3,7 @@
     <div class="interface-wrap row">
       <sidebar ref="sidebar">
         <core-sidebar @databaseSelected="databaseSelected" :connection="connection"></core-sidebar>
-        <footer class="statusbar">
+        <footer class="statusbar" :class="usedConfig.labelColor">
           <a class="database-connection btn btn-icon" @click.prevent="disconnect" v-tooltip="'Disconnect'">
             <i class="material-icons">link</i>
             <span class="truncate">{{ usedConfig.defaultDatabase }}</span>
