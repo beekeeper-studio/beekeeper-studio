@@ -75,8 +75,8 @@ module.exports = {
           fpm: [
             "--after-install=build/rpm-postinstall"
           ],
-          // when we upgrade Electron we need to check these
-          depends: ["xdg-utils, gnupg"]
+          // when we upgrade Electron we need to check these (libxss1 & libatspi2.0-0 not found)
+          depends: ["gtk3, libnotify, nss, libXtst, xdg-utils, libuuid, libappindicator-gtk3, libsecret, gnupg"]
         },
         appImage: {
           publish: ['github']
