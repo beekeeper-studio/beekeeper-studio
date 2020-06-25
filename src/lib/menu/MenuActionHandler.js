@@ -1,4 +1,4 @@
-import MenuActions from "../../common/MenuActions"
+import MenuActions from "../../common/Events"
 
 export default class {
 

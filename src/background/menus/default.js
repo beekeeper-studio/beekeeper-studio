@@ -1,5 +1,5 @@
 import Settings from '../../common/Settings'
-import MenuActions from '../../common/MenuActions'
+import MenuActions from '../../common/Events'
 
 // TODO (matthew): When multi-window
 // use menu switching to switch menus on the fly

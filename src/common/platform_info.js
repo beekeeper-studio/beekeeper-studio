@@ -13,20 +13,21 @@ if (electron.remote) {
   windowPrefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 
+let userDirectory =  testMode ? './' : e.app.getPath("userData")
+if (p.env.PORTABLE_EXECUTABLE_DIR) {
+  userDirectory = path.join(remote.process.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
+}
 const platformInfo = {
   isWindows, isMac,
   isLinux: !isWindows && !isMac,
   isSnap: p.env.ELECTRON_SNAP,
   sshAuthSock: p.env.SSH_AUTH_SOCK,
-  environment: process.env.NODE_END,
-  userDirectory: testMode ? './' : e.app.getPath('userData'),
+  environment: process.env.NODE_ENV,
   platform: easyPlatform,
   darkMode: e.nativeTheme.shouldUseDarkColors || windowPrefersDarkMode,
-  isDarkMode() {
-    return e.nativeTheme.shouldUseDarkColors || windowPrefersDarkMode
-  },
-  testMode
-  
+  userDirectory,
+  testMode,
+  appDbPath: path.join(userDirectory, 'app.db')
 }
 
 export default platformInfo

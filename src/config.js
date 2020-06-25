@@ -7,9 +7,6 @@ import { execSync } from 'child_process'
 import platformInfo from './common/platform_info'
 
 let userDirectory = platformInfo.userDirectory
-if (remote.process.env.PORTABLE_EXECUTABLE_DIR) {
-  userDirectory = path.join(remote.process.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
-}
 
 if (remote.process.env.DEBUG) {
   localStorage.debug = remote.process.env.DEBUG
