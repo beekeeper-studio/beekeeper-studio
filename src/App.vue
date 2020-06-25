@@ -31,8 +31,10 @@ export default {
       return this.$store.state.connection
     }
   },
-  mounted() {
+  async mounted() {
+    await this.$store.dispatch('initializeSettings')
     this.$nextTick(() => {
+
       ipcRenderer.send('ready')
     })
   },

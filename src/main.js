@@ -29,7 +29,10 @@ import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
 import Migration from './migration/index'
 import ConfigPlugin from './plugins/ConfigPlugin'
 import Settings from './common/Settings'
-
+import { ipcRenderer } from 'electron'
+import MenuActionHandler from './lib/menu/MenuActionHandler'
+import platform_info from './common/platform_info'
+import { UserSetting } from './entity/user_setting'
 
 (async () => {
   try {
@@ -37,6 +40,9 @@ import Settings from './common/Settings'
     const appDb = path.join(config.userDirectory, 'app.db')
     const settings = new Settings(config.userDirectory)
     await settings.reload()
+    console.log(platform_info)
+    console.log(settings)
+    document.body.className = `theme-${settings.theme}`
     const connection = await createConnection({
       database: appDb,
       type: 'sqlite',
@@ -46,7 +52,8 @@ import Settings from './common/Settings'
           SavedConnection,
           UsedConnection,
           UsedQuery,
-          FavoriteQuery
+          FavoriteQuery,
+          UserSetting
       ],
       subscriptions: [
         EncryptedColumnSubscriber
@@ -87,10 +94,13 @@ import Settings from './common/Settings'
       closeWith: ['button', 'click'],
     })
 
-    new Vue({
+    const app = new Vue({
       render: h => h(App),
       store,
-    }).$mount('#app')
+    })
+    const menuHandler = new MenuActionHandler(ipcRenderer, app, settings)
+    menuHandler.registerCallbacks()
+    app.$mount('#app')
   } catch (err) {
     throw err
     // console.error(err)

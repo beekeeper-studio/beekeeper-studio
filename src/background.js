@@ -17,7 +17,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 const debugMode = !!process.env.DEBUG
 
 const { isWindows, isLinux, userDirectory } = platformInfo
-
+console.log(platformInfo)
 const userSettings = new Settings(userDirectory, true)
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -40,6 +40,7 @@ function createWindow () {
     height: 800,
     minWidth: 800,
     minHeight: 600,
+    backgroundColor: userSettings.theme === 'dark' ? "#000000" : '#ffffff',
     titleBarStyle: 'hidden',
     frame: isLinux || (isWindows && isDevelopment),
     webPreferences: {

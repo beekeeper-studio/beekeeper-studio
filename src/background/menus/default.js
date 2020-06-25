@@ -1,4 +1,5 @@
 import Settings from '../../common/Settings'
+import MenuActions from '../../common/MenuActions'
 
 // TODO (matthew): When multi-window
 // use menu switching to switch menus on the fly
@@ -31,11 +32,11 @@ export default class {
     newQuery: (menuItem, win) => win.webContents.send('trigger-new-query'),
     switchTheme: (menuItem, win) => {
       this.settings.theme = menuItem.label.toLowerCase()
-      win.webContents.send('trigger-switch-theme', this.settings.theme)
+      win.webContents.send(MenuActions.THEME, this.settings.theme)
     },
     switchMenuStyle: (menuItem, win) => {
       this.settings.menuStyle = menuItem.label.toLowerCase()
-      win.webContents.send('trigger-switch-menustyle', this.settings.menuStyle)
+      win.webContents.send(MenuActions.MENU_STYLE, this.settings.menuStyle)
     }
   }
 
@@ -74,6 +75,12 @@ export default class {
         id: "theme-toggle-menu",
         label: "Theme",
         submenu: [
+          {
+            type: "radio",
+            label: "System",
+            click: this.triggers.switchTheme,
+            checked: this.settings.theme === 'system'
+          },
           {
             type: "radio",
             label: "Light",

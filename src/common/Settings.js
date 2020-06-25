@@ -1,4 +1,4 @@
-import { promises, readFileSync, existsSync } from "fs";
+import { promises, readFileSync, existsSync, writeFileSync } from "fs";
 import platformInfo from './platform_info'
 import path from 'path'
 
@@ -27,9 +27,9 @@ class JsonLoader {
     }
   }
 
-  async save() {
+  save() {
     console.log("saving to file ", this.filePath)
-    await promises.writeFile(this.filePath, JSON.stringify(this.data))
+    writeFileSync(this.filePath, JSON.stringify(this.data))
   }
 }
 
@@ -41,11 +41,13 @@ export default class extends JsonLoader {
   }
 
   get theme() {
-    return this.data.theme || 'dark'
+    const defaultTheme = platformInfo.darkMode ? 'dark' : 'light'
+    if (this.data.theme === 'system') return defaultTheme
+    return this.data.theme || defaultTheme
   }
 
   set theme(updated) {
-    if(['light', 'dark'].includes(updated)) this.data.theme = updated
+    if(['light', 'dark', 'system'].includes(updated)) this.data.theme = updated
     this.save()
   }
 

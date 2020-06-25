@@ -10,11 +10,15 @@ import { SavedConnection } from '@/entity/saved_connection'
 import { FavoriteQuery } from '@/entity/favorite_query'
 import { UsedQuery } from '@/entity/used_query'
 import ConnectionProvider from '@/lib/connection-provider'
+import SettingStoreModule from './modules/settings/SettingStoreModule'
 
 Vue.use(Vuex)
 // const vuexFile = new VueXPersistence()
 
 const store = new Vuex.Store({
+  modules: {
+    settings: SettingStoreModule
+  },
   state: {
     usedConfig: null,
     server: null,
