@@ -80,9 +80,29 @@ JESa2SNRfw==
 =EI0Z
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
-    # This is required for permitting user namespace cloning:
-    echo "user.max_user_namespaces=15000" >> /etc/sysctl.d/99-sysctl.conf
-    sysctl -p
+    # permit user name-space cloning:
+    CONFIG="user.max_user_namespaces=15000"
+    DFILE=/etc/sysctl.d/98-userns.conf
+    if [ ! -f "${DFILE}" ]; then
+        touch ${DFILE}
+    fi
+    if grep -Fxq "${CONFIG}" "${DFILE}" ; then
+        echo "setting user.max_user_namespaces=15000 found."
+    else
+        echo "setting user.max_user_namespaces changed from 0 to 15000"
+        echo "${CONFIG}" >> "${DFILE}"
+        sysctl -p
+    fi
+
+    # change sandbox permissions
+    SANDBOX=/opt/Beekeeper\ Studio/chrome-sandbox
+    if [ -f "${SANDBOX}" ]; then
+        chown root:root "${SANDBOX}"
+        chmod 4755 "${SANDBOX}"
+
+        # probably would need to be added into ~/.bashrc
+        export CHROME_DEVEL_SANDBOX="${SANDBOX}"
+    fi
     exit 0
 else
     echo "No supported package manager found."
