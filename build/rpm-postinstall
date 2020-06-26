@@ -99,9 +99,6 @@ EOF
     if [ -f "${SANDBOX}" ]; then
         chown root:root "${SANDBOX}"
         chmod 4755 "${SANDBOX}"
-
-        # probably would need to be added into ~/.bashrc
-        export CHROME_DEVEL_SANDBOX="${SANDBOX}"
     fi
     exit 0
 else
