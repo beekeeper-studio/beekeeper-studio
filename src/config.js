@@ -1,10 +1,7 @@
-import path from 'path'
-import fs from 'fs'
-import crypto from 'crypto'
-import Encryptor from 'simple-encryptor'
 import { remote } from 'electron'
 import { execSync } from 'child_process'
 import platformInfo from './common/platform_info'
+import { loadEncryptionKey } from './common/encryption_key'
 
 let userDirectory = platformInfo.userDirectory
 
@@ -12,40 +9,12 @@ if (remote.process.env.DEBUG) {
   localStorage.debug = remote.process.env.DEBUG
 }
 
-const defaultEncryptionKey = "38782F413F442A472D4B6150645367566B59703373367639792442264529482B"
-const keyFile = path.join(userDirectory, '.key')
-
 function hasSshKeysPlug() {
   try {
     const code = execSync('snapctl is-connected ssh-keys')
     return code == 0
   } catch (error) {
     return false    
-  }
-}
-
-function initUserDirectory() {
-  if (!fs.existsSync(userDirectory)) {
-    fs.mkdirSync(userDirectory, { recursive: true })
-  }
-}
-
-function loadEncryptionKey() {
-  initUserDirectory();
-  const encryptor = Encryptor(defaultEncryptionKey)
-
-  if(!fs.existsSync(keyFile)) {
-    const generatedKey = crypto.randomBytes(32)
-    const newKey = generatedKey.toString('hex')
-    const result = {
-      'encryptionKey': newKey
-    }
-    fs.writeFileSync(keyFile, encryptor.encrypt(result), 'UTF8')
-    return newKey
-  } else {
-    const encryptedData = fs.readFileSync(keyFile, 'UTF8')
-    const data = encryptor.decrypt(encryptedData)
-    return data['encryptionKey']
   }
 }
 

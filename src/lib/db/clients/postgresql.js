@@ -6,7 +6,7 @@ import _ from 'lodash'
 
 import { buildDatabseFilter, buildSchemaFilter } from './utils';
 import createLogger from '../../logger';
-import { createCancelablePromise } from '../../utils';
+import { createCancelablePromise } from '../../../common/utils';
 import errors from '../../errors';
 
 const logger = createLogger('db:clients:postgresql');

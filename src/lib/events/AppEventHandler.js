@@ -1,4 +1,5 @@
-import MenuActions from "../../common/Events"
+import MenuActions from "../../common/AppEvent"
+import AppEvent from "../../common/AppEvent"
 
 export default class {
 
@@ -15,14 +16,12 @@ export default class {
   }
 
   registerCallbacks() {
-    this.ipcRenderer.on(MenuActions.THEME, this.theme.bind(this))
-    this.ipcRenderer.on(MenuActions.MENU_STYLE, this.menuStyle.bind(this))
+    this.ipcRenderer.on(AppEvent.settingsChanged, this.settingsChanged.bind(this))
+    this.ipcRenderer.on(AppEvent.menuStyleChanged, this.menuStyle.bind(this))
   }
 
-  theme() {
-    this.settings.reload().then(() => {
-      document.body.className = `theme-${this.settings.theme}`
-    })
+  settingsChanged() {
+    this.vueApp.$store.dispatch("initializeSettings")
   }
 
   menuStyle() {

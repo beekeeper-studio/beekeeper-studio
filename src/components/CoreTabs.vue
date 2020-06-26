@@ -34,7 +34,7 @@
 <script>
 
   import _ from 'lodash'
-  import {FavoriteQuery} from '../entity/favorite_query'
+  import {FavoriteQuery} from '../common/appdb/models/favorite_query'
   import QueryEditor from './TabQueryEditor'
   import CoreTabHeader from './CoreTabHeader'
   import { uuidv4 } from '@/lib/crypto'

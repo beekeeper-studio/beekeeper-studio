@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
+import globals from '../common/globals'
 
 autoUpdater.autoDownload = false
 
@@ -45,5 +46,9 @@ export function manageUpdates(win, debug) {
   ipcMain.on('install-update', () => {
     autoUpdater.quitAndInstall()
   })
+
+  setInterval(() => {
+    autoUpdater.checkforUpdates()
+  }, globals.updateCheckInterval)
 
 }

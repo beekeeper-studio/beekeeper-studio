@@ -4,7 +4,7 @@ import mysql from 'mysql2';
 import { identify } from 'sql-query-identifier';
 
 import createLogger from '../../logger';
-import { createCancelablePromise } from '../../utils';
+import { createCancelablePromise } from '../../../common/utils';
 import errors from '../../errors';
 import { genericSelectTop } from './utils';
 

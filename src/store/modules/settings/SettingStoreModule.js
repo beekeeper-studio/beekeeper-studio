@@ -1,14 +1,6 @@
-import platformInfo from "../../../common/platform_info"
-import { UserSetting } from "../../../entity/user_setting"
+import { UserSetting } from '../../../common/appdb/models/user_setting'
 import _ from 'lodash'
 
-const globalDefaults = {
-  theme: 'system'
-}
-
-const osDefaults = platformInfo.isLinux ? {
-  theme: 'dark'
-} : {}
 const M = {
   ADD: 'addSetting',
   REPLACEALL: 'replaceSettings'
@@ -41,10 +33,8 @@ const SettingStoreModule = {
     }
   },
   getters: {
-    setting(state) {
-      return key => {
-        return state.settings[key] || osDefaults[key] || globalDefaults[key]
-      }
+    themeValue(state) {
+      return state.settings.theme.value
     }
   }
 }

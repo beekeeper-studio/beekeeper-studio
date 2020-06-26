@@ -1,5 +1,5 @@
 import { createConnection } from "typeorm"
-import { SavedConnection } from ".models/saved_connection"
+import { SavedConnection } from "./models/saved_connection"
 import { UsedConnection } from "./models/used_connection"
 import { UsedQuery } from './models/used_query'
 import { FavoriteQuery } from './models/favorite_query'

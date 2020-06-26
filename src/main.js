@@ -18,52 +18,20 @@ import Hint from 'codemirror/addon/hint/show-hint.js'
 import SQLHint from 'codemirror/addon/hint/sql-hint.js'
 import store from './store/index'
 import 'reflect-metadata'
-import {createConnection} from "typeorm";
-import {SavedConnection} from './entity/saved_connection'
-import {UsedConnection} from './entity/used_connection'
-import {UsedQuery} from './entity/used_query'
-import {FavoriteQuery} from './entity/favorite_query'
 import {TypeOrmPlugin} from './lib/typeorm_plugin'
 import config from './config'
-import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
-import Migration from './migration/index'
 import ConfigPlugin from './plugins/ConfigPlugin'
-import Settings from './common/Settings'
 import { ipcRenderer } from 'electron'
-import MenuActionHandler from './lib/menu/MenuActionHandler'
 import platform_info from './common/platform_info'
-import { UserSetting } from './entity/user_setting'
-
+import AppEventHandler from './lib/events/AppEventHandler'
+import Connection from './common/appdb/Connection'
 (async () => {
   try {
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
     const appDb = path.join(config.userDirectory, 'app.db')
-    const settings = new Settings(config.userDirectory)
-    await settings.reload()
     console.log(platform_info)
-    console.log(settings)
-    document.body.className = `theme-${settings.theme}`
-    const connection = await createConnection({
-      database: appDb,
-      type: 'sqlite',
-      synchronize: false,
-      migrationsRun: false,
-      entities: [
-          SavedConnection,
-          UsedConnection,
-          UsedQuery,
-          FavoriteQuery,
-          UserSetting
-      ],
-      subscriptions: [
-        EncryptedColumnSubscriber
-      ],
-      logging: config.isDevelopment ? true : ['error']
-    })
-
-    const migrator = new Migration(connection, process.env.NODE_ENV)
-    await migrator.run()
-
+    const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])
+    
     window.$ = $
     window.jQuery = $
     window.sql = SQL
@@ -98,8 +66,8 @@ import { UserSetting } from './entity/user_setting'
       render: h => h(App),
       store,
     })
-    const menuHandler = new MenuActionHandler(ipcRenderer, app, settings)
-    menuHandler.registerCallbacks()
+    const handler = new AppEventHandler(ipcRenderer, app)
+    handler.registerCallbacks()
     app.$mount('#app')
   } catch (err) {
     throw err

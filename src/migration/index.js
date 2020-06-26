@@ -50,7 +50,7 @@ export default class {
 
   async run() {
     console.log("running migrations")
-    const runner = this.connection.createQueryRunner()
+    const runner = this.connection.connection.createQueryRunner()
     await runner.query(setupSQL)
     try  {
       // await runner.startTransaction()

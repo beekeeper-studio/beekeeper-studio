@@ -1,6 +1,6 @@
 import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash'
-import platformInfo from "../common/platform_info";
+import platformInfo from '../../platform_info';
 
 const { Entity, Column } = require("typeorm");
 
@@ -42,6 +42,27 @@ function setValue(updated) {
 
 @Entity({name: 'user_setting'})
 export class UserSetting extends ApplicationEntity {
+
+
+  static THEME = 'theme'
+  static MenuStyle = 'menuStyle'
+
+  static async all() {
+    const settings = await UserSetting.find()
+    return _(settings).groupBy('key').mapValues(vs => vs[0]).result()
+  }
+
+  static async set(key, value) {
+    let existing = await UserSetting.findOne({ key });
+    if (!existing) {
+      existing = new UserSetting()
+      existing.key = key
+      existing.defaultValue = value
+    }
+    existing.userValue = value
+    await existing.save()
+  }
+
 
   @Column({type: 'varchar', nullable: false, unique: true})
   key

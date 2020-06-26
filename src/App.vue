@@ -12,6 +12,7 @@
 
 <script>
 import { ipcRenderer } from 'electron'
+import { mapGetters } from 'vuex'
 import Titlebar from './components/Titlebar'
 import CoreInterface from './components/CoreInterface'
 import ConnectionInterface from './components/ConnectionInterface'
@@ -29,6 +30,12 @@ export default {
   computed: {
     connection() {
       return this.$store.state.connection
+    },
+    ...mapGetters('themeValue')
+  },
+  watch: {
+    themeValue() {
+      document.body.className = `theme-${this.themeValue}`
     }
   },
   async mounted() {

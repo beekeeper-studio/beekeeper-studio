@@ -1,5 +1,6 @@
-import Settings from '../../common/Settings'
-import MenuActions from '../../common/Events'
+import MenuActions from '../../common/AppEvent'
+import { UserSetting } from '../../common/appdb/models/user_setting'
+import AppEvent from '../../common/AppEvent'
 
 // TODO (matthew): When multi-window
 // use menu switching to switch menus on the fly
@@ -7,14 +8,11 @@ import MenuActions from '../../common/Events'
 export default class {
 
   app = null
-
-  /** @type {Settings} */
   settings = {}
-
   constructor(electron, app, settings) {
     this.electron = electron
-    this.app = app
     this.settings = settings
+    this.app = app
     this.menu = electron.Menu.buildFromTemplate(this.buildTemplate())
     electron.ipcMain.on('core-loaded', () => {
       this.menuItems.newQuery.enabled = true
@@ -30,13 +28,15 @@ export default class {
 
   triggers = {
     newQuery: (menuItem, win) => win.webContents.send('trigger-new-query'),
-    switchTheme: (menuItem, win) => {
-      this.settings.theme = menuItem.label.toLowerCase()
-      win.webContents.send(MenuActions.THEME, this.settings.theme)
+    switchTheme: async (menuItem, win) => {
+      this.settings.theme.userValue = menuItem.label.toLowerCase()
+      await this.settings.theme.save()
+      win.webContents.send(AppEvent.settingsChanged)
     },
-    switchMenuStyle: (menuItem, win) => {
-      this.settings.menuStyle = menuItem.label.toLowerCase()
-      win.webContents.send(MenuActions.MENU_STYLE, this.settings.menuStyle)
+    switchMenuStyle: async (menuItem, win) => {
+      this.settings.menuStyle.value = menuItem.label.toLowerCase()
+      await this.settings.menuStyle.save()
+      win.webContents.send(AppEvent.menuStyleChanged, this.settings.menuStyle)
     }
   }
 
@@ -59,13 +59,13 @@ export default class {
                 type: 'radio',
                 label: 'Native',
                 click: this.triggers.switchMenuStyle,
-                checked: this.settings.menuStyle === 'native'
+                checked: this.settings.menuStyle.value === 'native'
               },
               {
                 type: 'radio',
                 label: 'Client',
                 click: this.triggers.switchMenuStyle,
-                checked: this.settings.menuStyle === 'client'
+                checked: this.settings.menuStyle.value === 'client'
               }
             ]
       }
@@ -79,19 +79,19 @@ export default class {
             type: "radio",
             label: "System",
             click: this.triggers.switchTheme,
-            checked: this.settings.theme === 'system'
+            checked: this.settings.theme.value === 'system'
           },
           {
             type: "radio",
             label: "Light",
             click: this.triggers.switchTheme,
-            checked: this.settings.theme === 'light'
+            checked: this.settings.theme.value === 'light'
           },
           {
             type: 'radio',
             label: "Dark",
             click: this.triggers.switchTheme,
-            checked: this.settings.theme === 'dark'
+            checked: this.settings.theme.value === 'dark'
           }
         ]
       }

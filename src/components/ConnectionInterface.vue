@@ -81,7 +81,7 @@
 
 <script>
   import os from 'os'
-  import {SavedConnection} from '../entity/saved_connection'
+  import {SavedConnection} from '../common/appdb/models/saved_connection'
   import ColorPicker from './form/ColorPicker'
   import ConnectionSidebar from './ConnectionSidebar'
   import MysqlForm from './connection/MysqlForm'

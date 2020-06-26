@@ -23,6 +23,13 @@ export default {
     `INSERT INTO user_setting(key, defaultValue, linuxDefault, windowsDefault) VALUES
     ('theme', 'system', 'dark', null),
     ('menuStyle', 'native', null, 'client')
+    `,
+    `
+      CREATE TRIGGER prevent_settings_deletion
+      BEFORE DELETE ON user_setting
+      BEGIN
+          SELECT RAISE(ABORT, 'You cannot delete records from this table');
+      END
     `
     ]
     for (let i = 0; i < queries.length; i++) {

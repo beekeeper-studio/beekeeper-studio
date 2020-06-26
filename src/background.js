@@ -1,4 +1,5 @@
 'use strict'
+import fs from 'fs'
 import { app, protocol, BrowserWindow} from 'electron'
 import electron from 'electron'
 import path from 'path'
@@ -10,15 +11,14 @@ import {
 import { manageUpdates } from './background/update_manager'
 
 import platformInfo from './common/platform_info'
-import MenuHandler from './background/MenuHandler'
+import MenuHandler from './background/MenuBuilder'
 import { UserSetting } from './common/appdb/models/user_setting'
 import Connection from './common/appdb/Connection'
-
+import Migration from './migration/index'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const debugMode = !!process.env.DEBUG
-const dbConnection = new AppDbConnection()
 
-const { isWindows, isLinux, userDirectory } = platformInfo
+const { isWindows, isLinux } = platformInfo
 console.log(platformInfo)
 const ormConnection = new Connection(platformInfo.appDbPath, false)
 
@@ -30,10 +30,22 @@ let menuHandler
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 
+function initUserDirectory(d) {
+  if (!fs.existsSync(d)) {
+    fs.mkdirSync(d, { recursive: true })
+  }
+}
+
+initUserDirectory(platformInfo.userDirectory)
+
 
 async function createWindow () {
+  const migrator = new Migration(ormConnection, process.env.NODE_ENV)
+  await migrator.run()
+
+  const settings = await UserSetting.all()
   const theme = await UserSetting.findOne({'key': 'theme'})
-  menuHandler = new MenuHandler(app, userSettings, electron)
+  menuHandler = new MenuHandler(app, electron, settings)
   menuHandler.initialize()
 
   const iconPrefix = isDevelopment ? 'public' : ''
