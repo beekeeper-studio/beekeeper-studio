@@ -80,6 +80,9 @@ JESa2SNRfw==
 =EI0Z
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
+    # This is required for permitting user namespace cloning:
+    echo "user.max_user_namespaces=15000" >> /etc/sysctl.d/99-sysctl.conf
+    sysctl -p
     exit 0
 else
     echo "No supported package manager found."
