@@ -5,9 +5,9 @@
 // Connection Sidebar
 // --------------------------------
 .connection-sidebar {
-  padding: 0 $gutter-w $gutter-w;
+  padding: 0 0 $gutter-w;
   .list-group {
-    padding: $gutter-h 0;
+    padding: $gutter-h $gutter-w;
   }
   .list-item-btn {
     position: relative;
@@ -36,6 +36,9 @@
       top: 0.32rem;
       right: 0.4rem;
     }
+  }
+  .quick-connect {
+    padding: 0 $gutter-w;
   }
 }
 
@@ -81,7 +84,7 @@
 .advanced-connection-settings {
   display: flex;
   flex-direction: column;
-  background: darken($theme-bg, 1%);
+  background: darken($theme-bg, 5%);
   border-radius: 8px;
   margin: $gutter-w 0;
   padding: $gutter-w ($gutter-w * 1.25);

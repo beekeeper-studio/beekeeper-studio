@@ -55,7 +55,7 @@
           <span class="expand"></span>
           <span>No Data</span>
         </template>
-        <a class="btn btn-link" v-if="result"  @click.prevent="download" v-tooltip="'Download Query Results'"><i class="material-icons">save_alt</i></a>
+        <a class="btn btn-fab tex" v-if="result"  @click.prevent="download" v-tooltip="'Download Query Results'"><i class="material-icons text-primary">save_alt</i></a>
       </footer>
     </div>
 

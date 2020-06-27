@@ -33,7 +33,6 @@
                 type="button" 
                 class="clear btn-link" 
                 @click.prevent="filter.value = ''"
-                v-show="filter.value.length > 0"
               >
                 <i class="material-icons">cancel</i>
               </button>

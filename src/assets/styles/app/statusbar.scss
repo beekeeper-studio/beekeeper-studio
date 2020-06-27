@@ -20,23 +20,30 @@
       direction: rtl;
     }
   }
+  .text-primary {
+    color: $theme-primary;
+  }
   .btn {
     color: $statusbar-text;
     font-weight: normal;
-    height: $statusbar-height;
-    line-height: $statusbar-height;
+    height: $statusbar-height * 0.85;
+    line-height: $statusbar-height * 0.85;
     min-width: auto;
     box-shadow: none;
-    border-radius: 0;
+    border-radius: 6px;
     padding: 0 $gutter-h;
     transition: background 0.15s ease-in-out;
     &:hover {
-      background: rgba($statusbar-text, 0.15);
+      background: rgba($statusbar-text, 0.1);
     }
     .material-icons {
       height: $statusbar-height;
       line-height: $statusbar-height;
-      font-size: 18px;
+      font-size: 16px;
+    }
+    &.btn-fab {
+      width: $statusbar-height * 0.85;
+      height: $statusbar-height * 0.85;
     }
   }
   a {
