@@ -3,10 +3,10 @@
     <div class="interface-wrap row">
       <sidebar ref="sidebar">
         <core-sidebar @databaseSelected="databaseSelected" :connection="connection"></core-sidebar>
-        <footer class="statusbar" :class="usedConfig.labelColor">
+        <footer class="statusbar">
           <a class="database-connection btn btn-icon" @click.prevent="disconnect" v-tooltip="'Disconnect'">
             <i class="material-icons">link</i>
-            <span class="truncate">{{ usedConfig.defaultDatabase }}</span>
+            <span class="truncate">Connected</span>
           </a>
         </footer>
       </sidebar>
@@ -23,7 +23,7 @@
   import CoreTabs from './CoreTabs'
   import Split from 'split.js'
 
-  import { mapState } from 'vuex'
+  // import { mapState } from 'vuex'
 
   export default {
     components: { CoreSidebar, CoreTabs, Sidebar },
@@ -34,7 +34,7 @@
       }
     },
     computed: {
-      ...mapState(['usedConfig']),
+      // ...mapState(['usedConfig']),
       splitElements() {
         return [
           this.$refs.sidebar.$refs.sidebar,
