@@ -198,11 +198,16 @@
       border-radius: $input-radius;
       overflow: hidden;
       width: 100%;
-      box-shadow: inset 0 0 0 1px $border-color;
+      // box-shadow: inset 0 0 0 1px $border-color;
+      box-shadow: none;
+      border: 0;
+      // border-radius: 0;
+      background: rgba($theme-base, 0.05);
+      // border-bottom: 1px solid $border-color;
       transition: background 0.15s ease-in-out;
       cursor: pointer;
       &:hover {
-        background: rgba($theme-base, 0.025);
+        background: rgba($theme-base, 0.05);
       }
       > select {
         border: 0;
@@ -231,7 +236,12 @@
       width: 100%;
     }
     input {
+      background: rgba($theme-base, 0.05);
       padding-right: 26px;
+      box-shadow: none;
+      border: 0;
+      // border-radius: 0;
+      // border-bottom: 1px solid $border-color;
     }
     .clear {
       position: absolute;
