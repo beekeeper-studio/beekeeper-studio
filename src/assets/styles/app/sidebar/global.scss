@@ -17,7 +17,20 @@
       }
       &.active {
         color: $text-dark;
-        box-shadow: inset 2px 0 $text-dark;
+        // box-shadow: inset 2px 0 $text-dark;
+        > span {
+          // background: darken($theme-bg, 6%);
+          background: rgba($theme-base, 0.1);
+        }
+      }
+      > span {  
+        height: 36px;
+        width: 36px;
+        border-radius: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s ease-in-out;
       }
       .material-icons {
         font-size: 24px;

@@ -33,7 +33,7 @@
     <div class="btn-wrap quick-connect">
       <a
         href=""
-        class="btn btn-link btn-block"
+        class="btn btn-flat btn-icon btn-block"
         :class="{'active': defaultConfig == selectedConfig }"
         @click.prevent="edit(defaultConfig)"
       >

@@ -49,6 +49,8 @@
       </nav>
     </div>
 
+    <hr v-show="pinned.length > 0"> <!-- Fake splitjs Gutter styling -->
+
     <!-- Tables -->
     <div v-if="!tablesLoading" class="table-list flex-col" ref="tables">
       <nav class="list-group flex-col">

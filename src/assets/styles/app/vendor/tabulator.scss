@@ -120,6 +120,8 @@ $errorColor: $brand-danger;
   
   .tabulator-footer {
     border: 0;
+    height: $statusbar-height;
+    padding: 0 $gutter-h;
     background: rgba($theme-base, 0.06);
     .tabulator-page {
       color: $theme-base;

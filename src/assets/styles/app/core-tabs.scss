@@ -29,7 +29,6 @@
     align-items: center;
     // height: $tab-height;
     background: $tabs-bg;
-    // box-shadow: inset 0 -1px $border-color;
     .add-query {
       i {
         color: $text-lighter;
@@ -49,52 +48,38 @@
     flex-wrap: nowrap;
     margin: 0;
     height: $tab-height;
-    &:hover {
-      overflow-x: auto;
-    }
     .nav-item {
       max-width: 200px;    
-      min-width: 10px;
+      min-width: 28px;
+      overflow: hidden;
     }
     .nav-link {
+      position: relative;
       display: flex;
       align-items: center;
-      background: transparent;
-      padding: 0 $tab-padding-w;
-      padding-left: ($gutter-w * 0.75);
+      background: lighten($theme-bg, 3%);
+      padding: 0;
+      // padding-left: ($gutter-w * 0.75);
+      // padding-right: 28px;
       height: $tab-height;
       font-size: 0.85rem;
       font-weight: normal;
       color: $text;
-      transition: background 0.15s ease-in-out,
-                  box-shadow 0.15s ease-in-out;
       border: 0;
       border-radius: 6px 6px 0 0;
-      &:hover {
-        box-shadow: inset 0 -1px rgba($theme-base, 0.5);
-        color: $text-dark;
-      }
-      .tab-title {
-        &:before {
-          display: block;
-          content: attr(title);
-          font-weight: 600;
-          height: 0;
-          overflow: hidden;
-          visibility: hidden;
-        }
-      }
+      border-right: 1px solid $theme-bg;
+      overflow: hidden;
+      // transition: background 0.15s ease-in-out;
       &.active {
-        border: 0;
         background: $query-editor-bg;
         font-weight: 600;
         color: $text-dark;
-        // box-shadow: inset 0 -1px $theme-primary;
         box-shadow: none;
         &:hover {
           background: $query-editor-bg;
         }
         .tab-close {
+          background: linear-gradient(-90deg, rgba($query-editor-bg, 100%) 80%, rgba($query-editor-bg, 0) 100%);
           .close {
             display: inline-block;
           }
@@ -110,8 +95,10 @@
           }
         }
       }
-      &:hover { 
+      &:hover {
+        // background: lighten($theme-bg, 5%);
         .tab-close {
+          // background: linear-gradient(-90deg, rgba(lighten($theme-bg, 5%), 100%) 80%, rgba(lighten($theme-bg, 5%), 0) 100%);
           .close {
             display: inline-block;
           }
@@ -133,19 +120,37 @@
         }
       } 
     }
+    .tab-title {
+      text-overflow: initial;
+      padding-right: 28px;
+      &:before {
+        display: block;
+        content: attr(title);
+        font-weight: 600;
+        height: 0;
+        overflow: hidden;
+        visibility: hidden;
+      }
+    }
     .item-icon {
       font-size: 12px;
-      margin-right: ($gutter-h * 1.25);
+      padding-left: ($gutter-w * 0.75);
+      padding-right: ($gutter-h * 1.25);
     }
     .tab-close {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 16px;
-      min-width: 16px;
-      border-radius: 50%;
-      margin-left: ($gutter-h*0.35);
-      margin-right: -($tab-padding-w * 0.5);
+      height: 100%;
+      min-width: 28px;
+      // border-radius: 50%;
+      // margin-left: ($gutter-h*0.35);
+      // margin-right: -($tab-padding-w * 0.5);
+      background: linear-gradient(-90deg, rgba(lighten($theme-bg, 3%), 100%) 80%, rgba(lighten($theme-bg, 3%), 0) 100%);
       i {
         position: absolute;
         display: none;

@@ -11,21 +11,31 @@
         top: -5px;
       }
     }
-    // .tab-pane {
-    //   background: $sidebar-bg;
-    // }
+    .tab-pane {
+      // background: $sidebar-bg;
+      padding: 0 ($gutter-w * 0.75);
+    }
+    hr {
+      border: 0;
+      border-bottom: 1px solid darken($theme-bg, 6%);
+      margin: 0 $gutter-h;
+    }
   }
   .sidebar-heading {
     display: flex;
     align-items: center;
-    background: $sidebar-heading-bg;
-    box-shadow: inset 0 -1px $border-color;
+    // background: $theme-bg;
+    // box-shadow: inset 0 -1px $border-color;
     padding: $gutter-h $gutter-h $gutter-h $gutter-w;
     height: $tab-height;
     font-size: 14px;
     line-height: 28px;
+    border-bottom: 1px solid darken($theme-bg, 6%);
     .sidebar-title {
-      color: $theme-primary;
+      flex: 0 1 100%;
+      color: $text-dark;    
+      font-weight: 500;
+      letter-spacing: 0.05rem;
     }
   }
   .tab-content {
@@ -109,7 +119,7 @@
   // ---------------------------------
   .filter {
     position: relative;
-    margin-bottom: $gutter-w;
+    margin-bottom: $gutter-h;
     .filter-wrap {
       position: relative;
       display: flex;
@@ -147,14 +157,12 @@
 
   display: flex;
   align-items: center;
-  height: $list-heading-height;
-  padding: 0 $gutter-w;
+  padding: $gutter-w $gutter-w ($gutter-h * 0.5);
   padding-right: $gutter-h;
-  background: rgba($theme-base, 0.03);
-  border-radius: 4px 0 0 4px;
-  // border-bottom: 1px solid $border-color;
+  background: transparent;
+  // border-top: 1px solid $border-color;
   .sub {
-    line-height: $list-heading-height;
+    line-height: 1;
     div {
       padding-top: 1px;
       color: $text-dark;
@@ -211,9 +219,9 @@
     line-height: 1.8rem;
     height: 1.8rem;
     width: -webkit-fill-available;
-    border-radius: 4px 0 0 4px;
+    border-radius: 4px;
     &:hover, &:focus {
-      background: rgba($theme-base, 0.025);
+      background: rgba($theme-base, 0.035);
       .actions {
         display: flex;
         .btn-fab {
