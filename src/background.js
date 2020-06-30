@@ -1,6 +1,7 @@
 'use strict'
 import fs from 'fs'
 import { app, protocol, BrowserWindow} from 'electron'
+import _ from 'lodash'
 import electron from 'electron'
 import path from 'path'
 import {
@@ -40,12 +41,16 @@ initUserDirectory(platformInfo.userDirectory)
 
 
 async function createWindow () {
+  await ormConnection.connect()
   const migrator = new Migration(ormConnection, process.env.NODE_ENV)
   await migrator.run()
 
   const settings = await UserSetting.all()
-  const theme = await UserSetting.findOne({'key': 'theme'})
-  menuHandler = new MenuHandler(app, electron, settings)
+  console.log("SETTINGS", settings)
+  const theme = settings.theme
+  const showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ?  true : false
+
+  menuHandler = new MenuHandler(electron, settings)
   menuHandler.initialize()
 
   const iconPrefix = isDevelopment ? 'public' : ''
@@ -57,7 +62,7 @@ async function createWindow () {
     minHeight: 600,
     backgroundColor: theme.value === 'dark' ? "#000000" : '#ffffff',
     titleBarStyle: 'hidden',
-    frame: isLinux || (isWindows && isDevelopment),
+    frame: showFrame,
     webPreferences: {
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
     },

@@ -1,8 +1,8 @@
 import DefaultMenu from './default'
 
 export default class extends DefaultMenu {
-  constructor(electron, app, settings) {
-    super(electron, app, settings)
+  constructor(settings) {
+    super(settings)
   }
 
   buildTemplate() {

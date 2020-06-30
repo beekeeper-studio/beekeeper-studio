@@ -31,6 +31,7 @@ import Connection from './common/appdb/Connection'
     const appDb = path.join(config.userDirectory, 'app.db')
     console.log(platform_info)
     const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])
+    await connection.connect()
     
     window.$ = $
     window.jQuery = $

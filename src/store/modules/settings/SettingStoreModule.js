@@ -1,5 +1,6 @@
 import { UserSetting } from '../../../common/appdb/models/user_setting'
 import _ from 'lodash'
+import Vue from 'vue'
 
 const M = {
   ADD: 'addSetting',
@@ -7,6 +8,7 @@ const M = {
 }
 
 const SettingStoreModule = {
+  namespaced: true,
   state: () => ({
     settings: {}
   }),
@@ -17,7 +19,7 @@ const SettingStoreModule = {
     },
     addsetting(state, newSetting) {
       if (!state.settings[newSetting.key]) {
-        state.settings.push(newSetting)
+        Vue.set(state.settings, newSetting.key, newSetting)
       }
     }
   },
@@ -34,7 +36,12 @@ const SettingStoreModule = {
   },
   getters: {
     themeValue(state) {
+      if (!state.settings.theme) return null
       return state.settings.theme.value
+    },
+    menuStyle(state) {
+      if (!state.settings.menuStyle) return 'native'
+      return state.settings.menuStyle.value
     }
   }
 }

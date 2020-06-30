@@ -1,7 +1,7 @@
 <template>
 <div class="style-wrapper">
     <div class="beekeeper-studio-wrapper">
-      <titlebar v-if="$config.isWindows || $config.isMac"></titlebar>      
+      <titlebar v-if="$config.isWindows || $config.isMac || menuStyle === 'client'"></titlebar>
       <connection-interface v-if="!connection"></connection-interface>
       <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
       <auto-updater></auto-updater>
@@ -31,7 +31,10 @@ export default {
     connection() {
       return this.$store.state.connection
     },
-    ...mapGetters('themeValue')
+    ...mapGetters({
+      'themeValue': 'settings/themeValue',
+      'menuStyle': 'settings/menuStyle'
+    })
   },
   watch: {
     themeValue() {
@@ -39,11 +42,13 @@ export default {
     }
   },
   async mounted() {
-    await this.$store.dispatch('initializeSettings')
+    await this.$store.dispatch('settings/initializeSettings')
     this.$nextTick(() => {
-
       ipcRenderer.send('ready')
     })
+    if (this.themeValue) {
+      document.body.className = `theme-${this.themeValue}`
+    }
   },
   methods: {
     databaseSelected(db) {

@@ -7,13 +7,12 @@ import platformInfo from '../common/platform_info'
 
 export default class {
   builder = null
-  handler = null
   electron = null
 
-  constructor(app, electron, menuStyle){
+  constructor(electron, settings){
     this.electron = electron
-    if (menuStyle === 'native') {
-      this.builder = platformInfo.platform === 'mac' ? new MacMenuBuilder(electron, app) : new LinuxMenuBuilder(electron, app)
+    if (!settings.menuStyle || settings.menuStyle.value === 'native') {
+      this.builder = platformInfo.platform === 'mac' ? new MacMenuBuilder(settings) : new LinuxMenuBuilder(settings)
     }
   }
 
@@ -24,7 +23,7 @@ export default class {
       this.electron.Menu.setApplicationMenu(this.menu)
     } else {
       this.electron.Menu.setApplicationMenu(null)
-      this.handler.initialize()
+      // this.handler.initialize()
     }
   }
 }

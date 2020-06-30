@@ -2,10 +2,12 @@ import crypto from 'crypto'
 import Encryptor from 'simple-encryptor'
 import fs from 'fs'
 import path from 'path'
-import { userDirectory } from './platform_info'
+import platformInfo from './platform_info'
 
+const userDirectory = platformInfo.userDirectory
 
 const defaultEncryptionKey = "38782F413F442A472D4B6150645367566B59703373367639792442264529482B"
+console.log(`path: ${userDirectory}/.key`)
 const keyFile = path.join(userDirectory, '.key')
 
 let _encryptionKey = null
@@ -23,11 +25,10 @@ export function loadEncryptionKey() {
       'encryptionKey': newKey
     }
     fs.writeFileSync(keyFile, encryptor.encrypt(result), 'UTF8')
-    return newKey
-  } else {
-    const encryptedData = fs.readFileSync(keyFile, 'UTF8')
-    const data = encryptor.decrypt(encryptedData)
-    _encryptionKey = data['encryptionKey']
-    return _encryptionKey
   }
+
+  const encryptedData = fs.readFileSync(keyFile, 'UTF8')
+  const data = encryptor.decrypt(encryptedData)
+  _encryptionKey = data['encryptionKey']
+  return _encryptionKey
 }

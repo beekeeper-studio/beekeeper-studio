@@ -1,5 +1,3 @@
-import MenuActions from '../../common/AppEvent'
-import { UserSetting } from '../../common/appdb/models/user_setting'
 import AppEvent from '../../common/AppEvent'
 
 // TODO (matthew): When multi-window
@@ -9,17 +7,8 @@ export default class {
 
   app = null
   settings = {}
-  constructor(electron, app, settings) {
-    this.electron = electron
+  constructor(settings) {
     this.settings = settings
-    this.app = app
-    this.menu = electron.Menu.buildFromTemplate(this.buildTemplate())
-    electron.ipcMain.on('core-loaded', () => {
-      this.menuItems.newQuery.enabled = true
-    }),
-    electron.ipcMain.on('connection-loaded', () => {
-      this.menuItems.newQuery.enabled = false
-    })
   }
 
   buildTemplate() {
@@ -36,7 +25,8 @@ export default class {
     switchMenuStyle: async (menuItem, win) => {
       this.settings.menuStyle.value = menuItem.label.toLowerCase()
       await this.settings.menuStyle.save()
-      win.webContents.send(AppEvent.menuStyleChanged, this.settings.menuStyle)
+      console.log("sending event", AppEvent.menuStyleChanged)
+      win.webContents.send(AppEvent.menuStyleChanged)
     }
   }
 
@@ -47,7 +37,7 @@ export default class {
         label: "New Query",
         accelerator: "CommandOrControl+T",
         click: this.triggers.newQuery,
-        enabled: false
+        enabled: true
       }
     },
     menuStyleToggle: () => {

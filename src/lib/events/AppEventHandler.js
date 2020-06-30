@@ -1,17 +1,13 @@
-import MenuActions from "../../common/AppEvent"
 import AppEvent from "../../common/AppEvent"
 
 export default class {
 
   vueApp
-  settings
   ipcRenderer
 
-  constructor(ipcRenderer, vueApp, settings) {
-    this.vueapp = vueApp
+  constructor(ipcRenderer, vueApp) {
+    this.vueApp = vueApp
     this.ipcRenderer = ipcRenderer
-    this.settings = settings
-    console.log('this settings', this.settings)
     this.registerCallbacks()
   }
 
@@ -21,7 +17,7 @@ export default class {
   }
 
   settingsChanged() {
-    this.vueApp.$store.dispatch("initializeSettings")
+    this.vueApp.$store.dispatch("settings/initializeSettings")
   }
 
   menuStyle() {

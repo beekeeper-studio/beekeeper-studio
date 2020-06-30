@@ -23,6 +23,7 @@ const TypeConversion = {
 }
 
 function getValue(valueType, valueString) {
+  if(_.isNull(valueString)) return valueString
   try {
     const result = TypeConversion[valueType](valueString)
     return _.isNil(result) ? TypeDefaults[valueType] : result
@@ -33,6 +34,7 @@ function getValue(valueType, valueString) {
 }
 
 function setValue(updated) {
+  if (_.isNull(updated)) return null
   if (_.isString(updated)) {
     return updated
   }
@@ -49,7 +51,7 @@ export class UserSetting extends ApplicationEntity {
 
   static async all() {
     const settings = await UserSetting.find()
-    return _(settings).groupBy('key').mapValues(vs => vs[0]).result()
+    return _(settings).groupBy('key').mapValues(vs => vs[0]).value()
   }
 
   static async set(key, value) {
