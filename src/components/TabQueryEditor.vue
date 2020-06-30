@@ -49,7 +49,7 @@
             <span class="truncated-rows" v-if="result && result.truncated"> &middot; only {{result.truncatedRowCount}} shown.</span>
           </div>
           <span class="affected-rows" v-if="affectedRowsText ">{{ affectedRowsText}}</span>
-          <span class="affected-rows" v-if="executeTimeText">{{executeTimeText}}</span>
+          <span class="execute-time" v-if="executeTimeText">{{executeTimeText}}</span>
         </template>
         <template v-else>
           No Data
