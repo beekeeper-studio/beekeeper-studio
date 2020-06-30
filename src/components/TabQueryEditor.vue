@@ -142,7 +142,8 @@
         cursorIndex: null,
         marker: null,
         queryParameterValues: {},
-        queryForExecution: null
+        queryForExecution: null,
+        executeTime: 0
 
       }
     },
@@ -204,10 +205,10 @@
         return `${rows} ${Pluralize('row', rows)} affected`
       },
       executeTimeText() {
-        if (!this.result) {
+        if (!this.executeTime) {
           return null
         }
-        const executeTime = this.result.executeTime || 0
+        const executeTime = this.executeTime || 0
         return `${executeTime} ms`
       },
       rowCount() {
@@ -372,10 +373,9 @@
           const queryStartTime = +new Date()
           const results = await runningQuery.execute()
           const queryEndTime = +new Date()
-          const queryExecutionTime = queryEndTime - queryStartTime
+          this.executeTime = queryEndTime - queryStartTime
           let totalRows = 0
           results.forEach(result => {
-            result.executeTime = queryExecutionTime
             result.rowCount = result.rowCount || 0
 
             // TODO (matthew): remove truncation logic somewhere sensible
