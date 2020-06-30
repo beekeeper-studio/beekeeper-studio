@@ -119,6 +119,7 @@
   import { splitQueries, extractParams } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar'
   import ResultTable from './editor/ResultTable'
+  import humanizeDuration from 'humanize-duration'
 
   export default {
     // this.queryText holds the current editor value, always
@@ -209,7 +210,7 @@
           return null
         }
         const executeTime = this.executeTime || 0
-        return `${executeTime} ms`
+        return humanizeDuration(executeTime)
       },
       rowCount() {
         return this.result && this.result.rows ? this.result.rows.length : 0
