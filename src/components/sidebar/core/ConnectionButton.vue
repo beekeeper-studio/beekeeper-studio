@@ -3,7 +3,7 @@
   <x-button class="btn btn-link btn-icon" menu>
     <i class="material-icons">check_circle</i>
     <span class="connection-name truncate">{{connectionName}}</span>
-    <span class="connection-type truncate">{{connectionType}}</span>
+    <span class="connection-type badge truncate">{{connectionType}}</span>
     <x-menu>
       <x-menuitem @click.prevent="disconnect" class="red">
         <x-label>Disconnect</x-label>
@@ -53,7 +53,7 @@ export default {
         return name
       },
       connectionType() {
-        return `(${this.config.connectionType})`
+        return `${this.config.connectionType}`
       }
   },
   methods: {
