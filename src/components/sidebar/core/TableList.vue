@@ -122,11 +122,11 @@
 </template>
 
 <script>
-  import TableListItem from './TableListItem'
-  import TableListSchema from './TableListSchema'
+  import TableListItem from './table_list/TableListItem'
+  import TableListSchema from './table_list/TableListSchema'
   import Split from 'split.js'
   import { mapState, mapGetters } from 'vuex'
-  import TableFilter from '../mixins/table_filter'
+  import TableFilter from '../../../mixins/table_filter'
 
   export default {
     mixins: [TableFilter],

@@ -119,38 +119,41 @@ $errorColor: $brand-danger;
 		}
   }
   
-  .tabulator-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
+}
+
+
+.tabulator-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border: 0;
+  height: $statusbar-height;
+  padding: 0 $gutter-h;
+  background: rgba($theme-base, 0.06);
+  .tabulator-page {
+    color: $theme-base;
+    background: transparent;
+    color: $text;
     border: 0;
-    height: $statusbar-height;
-    padding: 0 $gutter-h;
-    background: rgba($theme-base, 0.06);
-    .tabulator-page {
-      color: $theme-base;
+    box-shadow: none;
+    font-size: 0.8rem;
+    padding-bottom: 1px;
+    font-weight: normal;
+    border-radius: $statusbar-height;
+    cursor: pointer;
+    &:hover, &:focus {
       background: transparent;
-      color: $text;
-      border: 0;
-      box-shadow: none;
-      font-size: 0.8rem;
-      padding-bottom: 1px;
-      font-weight: normal;
-      border-radius: $statusbar-height;
+      color: $text-dark;
+    }
+    &.active {
+      color: $text-dark;
+      background: rgba($theme-base, 0.1); 
+    }
+    &:disabled {
+      opacity: 0.35;
       &:hover, &:focus {
+        color: $text;
         background: transparent;
-        color: $text-dark;
-      }
-      &.active {
-        color: $text-dark;
-        background: rgba($theme-base, 0.1); 
-      }
-      &:disabled {
-        opacity: 0.35;
-        &:hover, &:focus {
-          color: $text;
-          background: transparent;
-        }
       }
     }
   }

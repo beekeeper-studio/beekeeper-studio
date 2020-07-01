@@ -35,7 +35,7 @@
       <div class="message" v-else-if="error"><div class="alert alert-danger"><i class="material-icons">warning</i><span>{{error}}</span></div></div>
       <div v-else><!-- No Data --></div>
       <span class="expand" v-if="!result"></span>
-      <footer class="statusbar query-meta" v-bind:class="{'empty': !result}">
+      <statusbar :class="{'empty': !result, 'query-meta': true}">
         <template v-if="results.length > 0">
           <span class="expand"></span>
           <span v-show="results.length > 1" class="result-selector">
@@ -56,7 +56,7 @@
           <span>No Data</span>
         </template>
         <a class="btn btn-fab tex" v-if="result"  @click.prevent="download" v-tooltip="'Download Query Results'"><i class="material-icons text-primary">save_alt</i></a>
-      </footer>
+      </statusbar>
     </div>
 
     <!-- Save Modal -->
@@ -119,10 +119,11 @@
   import { splitQueries, extractParams } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar'
   import ResultTable from './editor/ResultTable'
+  import Statusbar from './common/StatusBar'
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar },
+    components: { ResultTable, ProgressBar, Statusbar },
     props: ['tab', 'active'],
     data() {
       return {
