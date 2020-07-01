@@ -1,7 +1,11 @@
 <template>
 <div v-if="config">
   <x-button menu>
-    <x-label class="truncate">{{connectionName}}</x-label>
+    <x-label class="truncate">
+      <i class="material-icons">check_circle</i>
+      <span class="connection-name">{{connectionName}}</span>
+      <span class="connection-type">{{connectionType}}</span>
+      </x-label>
     <x-menu>
       <x-menuitem @click.prevent="disconnect" class="red">
         <x-label>Disconnect</x-label>
@@ -48,7 +52,10 @@ export default {
         const config = this.config
         if (!config) return 'Connection'
         const name = config.name ? config.name : 'Connection'
-        return `${name} (${config.connectionType})`
+        return name
+      },
+      connectionType() {
+        return `(${this.config.connectionType})`
       }
   },
   methods: {

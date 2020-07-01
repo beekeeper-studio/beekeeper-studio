@@ -19,10 +19,6 @@
                 </ul>
               </div>
             </div>
-<<<<<<< HEAD
-            <!-- <ImportUrlForm :hide="!showImportUrl" :config="config" @handleErrorMessage="handleErrorMessage"/> -->
-=======
->>>>>>> origin/master
             <form @action="submit" v-if="config">
               <div class="form-group">
                 <label for="connectionType">Connection Type</label>
