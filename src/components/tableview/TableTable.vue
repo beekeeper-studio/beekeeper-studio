@@ -139,6 +139,7 @@ export default {
       ajaxFiltering: true,
       pagination: "remote",
       paginationSize: this.limit,
+      paginationElement: this.$refs.paginationArea,
       initialSort: this.initialSort,
       cellClick: this.cellClick
     });
