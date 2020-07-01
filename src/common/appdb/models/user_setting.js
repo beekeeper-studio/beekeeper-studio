@@ -19,7 +19,7 @@ const TypeConversion = {
   2: v => parseFloat(v), // float
   3: v => JSON.parse(v), // object
   4: v => JSON.parse(v), // array
-  5: v => v.toLowerCase() === 'true' // boolean
+  5: v => v && v.toLowerCase() === 'true' // boolean
 }
 
 function getValue(valueType, valueString) {
