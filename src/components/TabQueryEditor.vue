@@ -49,6 +49,7 @@
             <span class="truncated-rows" v-if="result && result.truncated"> &middot; only {{result.truncatedRowCount}} shown.</span>
           </div>
           <span class="affected-rows" v-if="affectedRowsText ">{{ affectedRowsText}}</span>
+          <span class="execute-time" v-if="executeTimeText">{{executeTimeText}}</span>
         </template>
         <template v-else>
           No Data
@@ -118,6 +119,7 @@
   import { splitQueries, extractParams } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar'
   import ResultTable from './editor/ResultTable'
+  import humanizeDuration from 'humanize-duration'
 
   export default {
     // this.queryText holds the current editor value, always
@@ -141,7 +143,8 @@
         cursorIndex: null,
         marker: null,
         queryParameterValues: {},
-        queryForExecution: null
+        queryForExecution: null,
+        executeTime: 0
 
       }
     },
@@ -201,6 +204,13 @@
 
         const rows = this.result.affectedRows || 0
         return `${rows} ${Pluralize('row', rows)} affected`
+      },
+      executeTimeText() {
+        if (!this.executeTime) {
+          return null
+        }
+        const executeTime = this.executeTime || 0
+        return humanizeDuration(executeTime)
       },
       rowCount() {
         return this.result && this.result.rows ? this.result.rows.length : 0
@@ -360,8 +370,11 @@
           const query = this.deparameterizedQuery
           this.$modal.hide('parameters-modal')
 
-          const runningQuery = this.connection.query(query);
+          const runningQuery = this.connection.query(query)
+          const queryStartTime = +new Date()
           const results = await runningQuery.execute()
+          const queryEndTime = +new Date()
+          this.executeTime = queryEndTime - queryStartTime
           let totalRows = 0
           results.forEach(result => {
             result.rowCount = result.rowCount || 0
