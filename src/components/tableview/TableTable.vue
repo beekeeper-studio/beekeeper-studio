@@ -66,13 +66,13 @@ import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
 import Statusbar from '../common/StatusBar'
 
+
 export default {
   components: { Statusbar },
   mixins: [data_converter, DataMutators],
   props: ["table", "connection"],
   data() {
     return {
-      currentCell: null, // Last clicked cell
       filterTypes: {
         equals: "=",
         "does not equal": "!=",
@@ -126,7 +126,7 @@ export default {
       if (this.filter.value === "") {
         this.clearFilter();
       }
-    }
+    },
   },
   async mounted() {
     this.tabulator = new Tabulator(this.$refs.table, {
@@ -140,29 +140,13 @@ export default {
       pagination: "remote",
       paginationSize: this.limit,
       initialSort: this.initialSort,
-      paginationElement: this.$refs.paginationArea,
-      cellClick: (e, cell) => {
-        // Remove focus and listener on other cell, if any
-        if (this.currentCell) {
-          this.currentCell.getElement().classList.remove('active-cell')
-          this.currentCell.getElement().removeEventListener('copy', () => {})
-        }
-
-        // Set cell style
-        cell.getElement().classList.add('active-cell')
-
-        // Connect listener
-        cell.getElement().addEventListener('copy', event => {
-          event.clipboardData.setData('text/plain', cell.getValue())
-          event.preventDefault()
-        })
-
-        // Override current cell
-        this.currentCell = cell
-      }
+      cellClick: this.cellClick
     });
   },
   methods: {
+    cellClick(e, cell) {
+      this.selectChildren(cell.getElement())
+    },
     triggerFilter() {
       if (this.filter.type && this.filter.field) {
         if (this.filter.value) {

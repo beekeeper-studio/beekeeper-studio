@@ -1,5 +1,7 @@
 import _ from 'lodash'
 
+
+
 export function splitQueries(queryText) {
   if (!queryText) return []
   const regex = /(?:[^;']|(?:'[^']+'))+;/gm
@@ -31,10 +33,11 @@ export function splitQueries(queryText) {
   return queries
 }
 
+const extractRegex = /(?:[^a-zA-Z0-9_:]|^)(:\w+|\$\d+)(?:[^:]*?$)/g
 export function extractParams(query) {
   if (!query) return []
-  
-  const result = Array.from(query.matchAll(/(?:\W|^)(:\w+|\$\d+)(?:\W|$)/g)).map(match => match[1])
+
+  const result = Array.from(query.matchAll(extractRegex)).map(match => match[1])
   if (!result || result.length == 0) {
     return []
   }

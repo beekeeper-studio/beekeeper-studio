@@ -41,4 +41,28 @@ describe("extractParams", () => {
       expect(extractParams(query)).toStrictEqual(expected)
     })
   })
+
+  it("shouldn't extract typecast params", () => {
+    const testCases = {
+      ":: foo": [],
+      "Something :: float": [],
+      "select lifetime_session_count / days_since_birth ::float as avg_daily_sessions": []
+    }
+    Object.keys(testCases).forEach(query => {
+      const expected = testCases[query]
+      expect(extractParams(query)).toStrictEqual(expected)
+    })
+  })
+
+  it("shouldn't extract character class params", () => {
+    const testCases = {
+      ":foo:": [],
+      ": foo :": [],
+      "SELECT 'a' REGEXP '^[[:alpha:]]'": []
+    }
+    Object.keys(testCases).forEach(query => {
+      const expected = testCases[query]
+      expect(extractParams(query)).toStrictEqual(expected)
+    })
+  })
 })

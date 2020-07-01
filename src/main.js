@@ -67,6 +67,11 @@ import ConfigPlugin from './plugins/ConfigPlugin'
           if (this.$config.isMac) return `meta+${key}`
           return `ctrl+${key}`
         },
+        selectChildren(element) {
+          window.getSelection().selectAllChildren(
+            element
+          );
+        }
       }
     })
 
