@@ -1,4 +1,4 @@
-import DefaultMenu from './default'
+import DefaultMenu from './BaseMenuBuilder'
 
 export default class extends DefaultMenu {
   constructor(settings) {

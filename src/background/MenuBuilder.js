@@ -1,7 +1,6 @@
 
-import MacMenuBuilder from './menus/mac'
-import LinuxMenuBuilder from './menus/linux'
-// import ClientMenuHandler from './menus/ClientMenuHandler'
+import MacMenuBuilder from './menus/MacMenuBuilder'
+import NativeMenuBuilder from './menus/NativeMenuBuilder'
 import platformInfo from '../common/platform_info'
 
 
@@ -12,7 +11,7 @@ export default class {
   constructor(electron, settings){
     this.electron = electron
     if (!settings.menuStyle || settings.menuStyle.value === 'native') {
-      this.builder = platformInfo.platform === 'mac' ? new MacMenuBuilder(settings) : new LinuxMenuBuilder(settings)
+      this.builder = platformInfo.platform === 'mac' ? new MacMenuBuilder(settings) : new NativeMenuBuilder(settings)
     }
   }
 
@@ -23,7 +22,6 @@ export default class {
       this.electron.Menu.setApplicationMenu(this.menu)
     } else {
       this.electron.Menu.setApplicationMenu(null)
-      // this.handler.initialize()
     }
   }
 }
