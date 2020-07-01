@@ -758,6 +758,7 @@ x-menu {
   font-size: 0.85rem;
   text-transform: none;
   font-weight: 400;
+  min-width: 150px;
   @extend .card-shadow-hover;
   // --open-transition: 100 transform var(--transition-fn1);
   --open-transition: none;
@@ -801,7 +802,8 @@ x-menuitem {
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+    text-overflow: ellipsis;    
+    text-align: left;
   }
   x-shortcut {
     font-size: 0.9rem;

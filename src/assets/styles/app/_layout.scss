@@ -609,7 +609,7 @@ input[type=file] {
   display: inline-block;
   padding: 0 0.35rem;
   border-radius: 4px;
-  font-size: 80%;
+  font-size: 90%;
   font-weight: normal;
   line-height: 1.4;
   text-align: center;
@@ -617,6 +617,7 @@ input[type=file] {
   vertical-align: baseline;
   background: rgba($theme-base, 0.2);
   color: $theme-base;
+  margin: 0 ($gutter-h * 0.75);
   transition: color 0.15s ease-in-out,
               background-color 0.15s ease-in-out,
               border-color 0.15s ease-in-out,

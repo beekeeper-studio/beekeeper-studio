@@ -74,8 +74,31 @@
       margin-left: $gutter-h;
     }
     .save-actions {
-      padding-top: $gutter-h;
+      .save {
+        @extend .btn-flat;
+      }
     }
+  }
+}
+
+// Connection View & Modal
+.save-connection {
+  .save-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0;
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+    .btn {
+      margin-left: 0.25rem;
+      margin-right: 0.25rem;
+    }
+  }
+}
+
+.save-connection-modal {
+  .v--modal-box {
+    max-width: 500px;
   }
 }
 

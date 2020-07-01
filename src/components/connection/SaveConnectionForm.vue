@@ -1,6 +1,6 @@
 <template>
   <div class="save-connection expand">
-    <h3 class="expand">Save Connection</h3>
+    <h3 class="dialog-c-title">Save Connection</h3>
     <div class="form-group">
       <input class="form-control" ref="nameInput" @keydown.enter.prevent.stop="save" type="text" v-model="config.name" placeholder="Connection Name">
     </div>
@@ -15,10 +15,9 @@
       <ColorPicker :value="config.labelColor" v-model="config.labelColor"></ColorPicker>
     </div>
 
-    <div class="save-actions row">
-      <div class="expand"></div>
+    <div class="save-actions">
       <button v-if="canCancel" class="btn btn-flat" @click.prevent="$emit('cancel')">Cancel</button>
-      <button class="btn btn-primary" @click.prevent="save">Save</button>
+      <button class="btn btn-primary save" @click.prevent="save">Save</button>
     </div>
   </div>
 </template>

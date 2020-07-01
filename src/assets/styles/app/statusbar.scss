@@ -11,7 +11,9 @@
   font-size: 0.85rem;
   padding: 0 $gutter-h;
   overflow: hidden;
-  > span {
+  .row-counts, 
+  .affected-rows, 
+  .execute-time {
     padding: 0 $gutter-h;
   }
   .database-connection {
@@ -23,14 +25,15 @@
   .text-primary {
     color: $theme-primary;
   }
-  .btn {
+  .btn-link {
     color: $statusbar-text;
     font-weight: normal;
-    height: $statusbar-height * 0.85;
+    height: $statusbar-height * 0.8;
     line-height: $statusbar-height * 0.85;
     min-width: auto;
     box-shadow: none;
     border-radius: 6px;
+    // border-radius: 0;
     padding: 0 $gutter-h;
     transition: background 0.15s ease-in-out;
     &:hover {
@@ -41,9 +44,18 @@
       line-height: $statusbar-height;
       font-size: 16px;
     }
-    &.btn-fab {
-      width: $statusbar-height * 0.85;
-      height: $statusbar-height * 0.85;
+  }
+  .download-results {
+    height: $statusbar-height;
+    line-height: $statusbar-height;
+    border-radius: 0;
+    padding: 0 $gutter-w;
+    background: rgba($theme-base, 0.1);
+    margin-left: $gutter-h;
+    margin-right: -$gutter-h;
+    color: $text-dark;
+    .material-icons {
+      color: $text-dark;
     }
   }
   a {
@@ -51,7 +63,7 @@
   }
   .select-wrap {
     box-shadow: none;
-    border-radius: 0;
+    // border-radius: 0;
     background: rgba($statusbar-text, 0.1);
     &:hover {
       background: rgba($statusbar-text, 0.15);
@@ -59,7 +71,7 @@
   }
   select {
     color: $statusbar-text;
-    height: $statusbar-height;
-    line-height: $statusbar-height;
+    height: $statusbar-height * 0.8;
+    line-height: $statusbar-height * 0.8;
   }
 }

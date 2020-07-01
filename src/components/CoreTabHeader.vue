@@ -10,10 +10,12 @@
       <i v-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
       <i v-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
       <span class="tab-title truncate" :title="title">{{title}}</span>
-      <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @click.prevent.stop="$emit('close', tab)">
-        <i class="material-icons close">close</i>
-        <i class="material-icons unsaved-icon" >fiber_manual_record</i>
-      </span>
+      <div class="tab-action">
+        <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @click.prevent.stop="$emit('close', tab)">
+          <i class="material-icons close">close</i>
+          <i class="material-icons unsaved-icon" >fiber_manual_record</i>
+        </span>
+      </div>
     </a>
   </li>
 </template>

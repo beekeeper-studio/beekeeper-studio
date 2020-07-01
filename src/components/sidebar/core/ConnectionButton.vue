@@ -1,11 +1,9 @@
 <template>
-<div v-if="config">
-  <x-button menu>
-    <x-label class="truncate">
-      <i class="material-icons">check_circle</i>
-      <span class="connection-name">{{connectionName}}</span>
-      <span class="connection-type">{{connectionType}}</span>
-      </x-label>
+<div class="flex flex-middle" v-if="config">
+  <x-button class="btn btn-link btn-icon" menu>
+    <i class="material-icons">check_circle</i>
+    <span class="connection-name truncate">{{connectionName}}</span>
+    <span class="connection-type truncate">{{connectionType}}</span>
     <x-menu>
       <x-menuitem @click.prevent="disconnect" class="red">
         <x-label>Disconnect</x-label>
@@ -17,7 +15,7 @@
     </x-menu>
   </x-button>
 
-  <modal class="vue-dialog beekeeper-modal" name="config-save-modal" height="auto" :scrollable="true">
+  <modal class="vue-dialog beekeeper-modal save-connection-modal" name="config-save-modal" height="auto" :scrollable="true">
     <div class="dialog-content">
       <div v-if="errors" class="alart alert-danger">
         <i class="material-icons">warning</i>

@@ -20,7 +20,7 @@
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <div>Pinned <span>({{pinned.length}})</span></div>
+            <div>Pinned <span class="badge">{{pinned.length}}</span></div>
           </div>
           <!-- <div class="actions">
             <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
@@ -59,7 +59,7 @@
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <div>Tables & Views <span>({{tables.length}})</span></div>
+            <div>Tables & Views <span class="badge">{{tables.length}}</span></div>
           </div>
           <div class="actions">
             <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">

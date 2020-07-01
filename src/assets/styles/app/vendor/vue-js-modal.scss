@@ -130,12 +130,16 @@
 .vue-dialog .dialog-content {
   flex: 1 0 auto;
   width: 100%;
-  padding: $gutter-w $gutter-w * 1.5;
+  padding: $gutter-w * 1.5;
+  padding-bottom: $gutter-w;
   // font-size: 14px;
 }
 .vue-dialog .dialog-c-title {
+  font-size: 1.1rem;
+  line-height: 1;
   font-weight: 500;
   padding-bottom: $gutter-w;
+  margin: 0;
 }
 
 .vue-dialog .dialog-c-subtitle {

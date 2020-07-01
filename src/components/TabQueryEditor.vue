@@ -45,9 +45,9 @@
               </select>
             </div>
           </span>
-          <div class="row-counts">
-            <span class="num-rows" v-if="rowCount > 0">{{rowCount}} Records</span>
-            <span class="truncated-rows" v-if="result && result.truncated"> ({{result.truncatedRowCount}} shown)</span>
+          <div class="row-counts row flex-middle">
+            <span class="num-rows" v-if="rowCount > 0">{{rowCount}} Records</span>&nbsp;
+            <span class="badge truncated-rows" v-if="result && result.truncated">{{result.truncatedRowCount}} shown</span>
           </div>
           <span class="affected-rows" v-if="affectedRowsText ">{{ affectedRowsText}}</span>
           <span class="execute-time" v-if="executeTimeText">{{executeTimeText}}</span>
@@ -56,7 +56,10 @@
           <span class="expand"></span>
           <span>No Data</span>
         </template>
-        <a class="btn btn-fab tex" v-if="result"  @click.prevent="download" v-tooltip="'Download Query Results'"><i class="material-icons text-primary">save_alt</i></a>
+        <a class="btn btn-link btn-icon download-results" v-if="result"  @click.prevent="download" v-tooltip="'Download Query Results'">
+          <i class="material-icons">save_alt</i>
+          <span>Download</span>
+        </a>
       </statusbar>
     </div>
 

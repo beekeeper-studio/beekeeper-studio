@@ -59,8 +59,6 @@
       align-items: center;
       background: lighten($theme-bg, 3%);
       padding: 0;
-      // padding-left: ($gutter-w * 0.75);
-      // padding-right: 28px;
       height: $tab-height;
       font-size: 0.85rem;
       font-weight: normal;
@@ -69,7 +67,6 @@
       border-radius: 6px 6px 0 0;
       border-right: 1px solid $theme-bg;
       overflow: hidden;
-      // transition: background 0.15s ease-in-out;
       &.active {
         background: $query-editor-bg;
         font-weight: 600;
@@ -78,8 +75,10 @@
         &:hover {
           background: $query-editor-bg;
         }
-        .tab-close {
+        .tab-action {
           background: linear-gradient(-90deg, rgba($query-editor-bg, 100%) 80%, rgba($query-editor-bg, 0) 100%);
+        }
+        .tab-close {
           .close {
             display: inline-block;
           }
@@ -96,9 +95,7 @@
         }
       }
       &:hover {
-        // background: lighten($theme-bg, 5%);
         .tab-close {
-          // background: linear-gradient(-90deg, rgba(lighten($theme-bg, 5%), 100%) 80%, rgba(lighten($theme-bg, 5%), 0) 100%);
           .close {
             display: inline-block;
           }
@@ -137,7 +134,7 @@
       padding-left: ($gutter-w * 0.75);
       padding-right: ($gutter-h * 1.25);
     }
-    .tab-close {
+    .tab-action {
       position: absolute;
       top: 0;
       bottom: 0;
@@ -146,18 +143,21 @@
       align-items: center;
       justify-content: center;
       height: 100%;
-      min-width: 28px;
-      // border-radius: 50%;
-      // margin-left: ($gutter-h*0.35);
-      // margin-right: -($tab-padding-w * 0.5);
+      min-width: 24px;
       background: linear-gradient(-90deg, rgba(lighten($theme-bg, 3%), 100%) 80%, rgba(lighten($theme-bg, 3%), 0) 100%);
+    }
+    .tab-close {
+      position: absolute;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
       i {
         position: absolute;
         display: none;
         font-size: 12px;
         font-weight: bold;
-        height: $tab-height;
-        line-height: $tab-height;
         color: $text-dark;
         transition: none;
       }

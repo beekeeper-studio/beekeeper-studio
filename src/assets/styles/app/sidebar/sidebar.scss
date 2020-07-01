@@ -68,7 +68,7 @@
     height: $input-height;
     min-height: $input-height;
     padding: 0 $gutter-h 0 0;
-    margin-top: $gutter-w;
+    margin-top: ($gutter-w * 0.75);
     margin-bottom: $gutter-h;
     background: rgba($theme-base, 0.08);
     transition: background 0.15s ease-in-out;
@@ -159,12 +159,17 @@
   .sub {
     line-height: 1;
     div {
+      display: flex;
+      align-items: center;
       padding-top: 1px;
       color: $text-dark;
     }
-    span {
+    .badge {
+      font-size: 90%;
       font-weight: normal;
-      color: $text-light;
+      margin-left: ($gutter-h * 0.75);
+      border-radius: $list-heading-height;
+      background: $border-color;
     }
   }
   .actions {
