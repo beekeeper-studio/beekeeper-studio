@@ -194,7 +194,7 @@
 }
 .list-group {
   flex: 1 1 100%;
-  padding: 0 $gutter-h;
+  padding: 0;
   &:hover{
     .list-heading .actions {
       visibility: visible;
