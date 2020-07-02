@@ -13,6 +13,9 @@
   .list-group {
     padding: $gutter-h $gutter-w;
   }
+  .list-item {
+    padding: 0;
+  }
   .list-item-btn {
     position: relative;
     margin-right: 0;
