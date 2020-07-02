@@ -454,19 +454,20 @@ x-button {
 x-buttons {
   > x-button {
     &[menu] {
-      border-left: 1px solid rgba($theme-bg, 0.5);
+      border-left: 1px solid rgba($theme-bg, 0.5)!important;
       padding: 0!important;
       .material-icons {
         font-size: 20px;
+        width: 20px;
       }
     }
-    &:not(:first-child) {
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
-    }
-    &:not(:last-child) {
+    &:first-of-type {
       border-top-right-radius: 0;
       border-bottom-right-radius: 0;
+    }
+    &:last-of-type{
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
     }
   }
 }
@@ -803,7 +804,7 @@ x-menuitem {
     line-height: 24px!important;
     width: 24px;
     opacity: 0.6;
-    margin-right: 0!important;
+    margin-right: $gutter-h!important;
   }
   x-label {
     display: flex;

@@ -5,13 +5,13 @@
       <span class="expand"></span>
       <div class="toolbar text-right">
         <div class="actions btn-group" ref="actions">
-          <x-button @click.prevent="triggerSave" class="btn btn-flat">Save</x-button>
+          <x-button @click.prevent="triggerSave" class="btn btn-flat btn-small">Save</x-button>
 
           <x-buttons class="">
-            <x-button v-tooltip="'Ctrl+Enter'" @click.prevent="submitTabQuery" primary>
+            <x-button class="btn btn-primary btn-small" v-tooltip="'Ctrl+Enter'" @click.prevent="submitTabQuery">
               <x-label>{{hasSelectedText ? 'Run Selection' : 'Run'}}</x-label>
             </x-button>
-            <x-button menu primary>
+            <x-button class="btn btn-primary btn-small" menu>
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
                 <x-menuitem @click.prevent="submitTabQuery">
@@ -60,11 +60,11 @@
           <span class="expand"></span>
           <span class="empty">No Data</span>
         </template>
-        <x-buttons v-if="result">
-          <x-button v-tooltip="'download results (csv)'" @click.prevent="download('csv')" primary>
-            <i class="material-icons">save_alt</i>
+        <x-buttons class="download-results" v-if="result">
+          <x-button class="btn btn-link btn-small" v-tooltip="'Download Results (CSV)'" @click.prevent="download('csv')">
+            Download
           </x-button>
-          <x-button menu primary>
+          <x-button class="btn btn-link btn-small" menu>
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
               <x-menuitem @click.prevent="download('csv')">

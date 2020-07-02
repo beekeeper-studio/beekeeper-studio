@@ -162,9 +162,12 @@ i {
   max-width: 250px;
 }
 .btn-small {
-  font-size: 10px;
-  padding: 0 .7rem;
+  font-size: 0.85rem;
+  padding: 0 .65rem;
   min-width: 0;
+  height: 24px;
+  line-height: 24px;
+  border-radius: $btn-border-radius-small;
 }
 .btn-block {
   display: flex;
