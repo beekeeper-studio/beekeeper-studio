@@ -17,14 +17,14 @@
       }
       &.active {
         color: $text-dark;
-        // box-shadow: inset 2px 0 $text-dark;
         > span {
-          // background: darken($theme-bg, 6%);
-          background: rgba($theme-base, 0.1);
+          background: rgba($theme-base, 0.08);
         }
       }
       > span {  
         height: 36px;
+        // width: 100%;
+        // border-radius: 0 36px 36px 0;
         width: 36px;
         border-radius: 36px;
         display: flex;

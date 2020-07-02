@@ -37,26 +37,30 @@
       <span class="expand" v-if="!result"></span>
       <statusbar :class="{'empty': !result, 'query-meta': true}">
         <template v-if="results.length > 0">
-          <span class="expand"></span>
-          <span v-show="results.length > 1" class="result-selector">
+          <span v-show="results.length > 1" class="result-selector" :title="'Results'">
             <div class="select-wrap">
               <select name="resultSelector" id="resultSelector" v-model="selectedResult" class="form-control">
                 <option v-for="(result, index) in results" :selected="selectedResult == index" :key="index" :value="index">Result {{index + 1}}</option>
               </select>
             </div>
           </span>
-          <div class="row-counts row flex-middle">
-            <span class="num-rows" v-if="rowCount > 0">{{rowCount}} Records</span>&nbsp;
-            <span class="badge truncated-rows" v-if="result && result.truncated">{{result.truncatedRowCount}} shown</span>
+          <div class="row-counts row flex-middle" v-if="rowCount > 0" :title="'Records Displayed'">
+            <span class="num-rows">{{rowCount}}</span>
+            <span class="truncated-rows" v-if="result && result.truncated">/&nbsp;{{result.truncatedRowCount}}</span>
+            <span class="records">records</span>
           </div>
-          <span class="affected-rows" v-if="affectedRowsText ">{{ affectedRowsText}}</span>
-          <span class="execute-time" v-if="executeTimeText">{{executeTimeText}}</span>
+          <span class="affected-rows" v-if="affectedRowsText " :title="'Rows Affected'">{{ affectedRowsText}}</span>
+          <span class="execute-time row flex-middle" v-if="executeTimeText" :title="'Execution Time'">
+            <i class="material-icons">query_builder</i>
+            <span>{{executeTimeText}}</span>
+          </span>
+          <span class="expand"></span>
         </template>
         <template v-else>
           <span class="expand"></span>
-          <span>No Data</span>
+          <span class="empty">No Data</span>
         </template>
-        <a class="btn btn-link btn-icon download-results" v-if="result"  @click.prevent="download" v-tooltip="'Download Query Results'">
+        <a class="btn btn-link btn-icon download-results" v-if="result"  @click.prevent="download" :title="'Download Query Results'">
           <i class="material-icons">save_alt</i>
           <span>Download</span>
         </a>

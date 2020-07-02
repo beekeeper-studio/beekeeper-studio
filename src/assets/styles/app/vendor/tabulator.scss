@@ -131,6 +131,14 @@ $errorColor: $brand-danger;
   height: $statusbar-height;
   padding: 0 $gutter-h;
   background: rgba($theme-base, 0.06);
+  .tabulator-paginator,
+  .tabulator-pages {
+    display: flex;
+    align-items: center;
+  }
+  .tabulator-pages {
+    margin: 0 ($gutter-h * 0.5);
+  }
   .tabulator-page {
     color: $theme-base;
     background: transparent;
@@ -139,7 +147,7 @@ $errorColor: $brand-danger;
     box-shadow: none;
     font-size: 0.8rem;
     padding-bottom: 1px;
-    font-weight: normal;
+    font-weight: bold;
     border-radius: $statusbar-height;
     cursor: pointer;
     &:hover, &:focus {
@@ -148,7 +156,7 @@ $errorColor: $brand-danger;
     }
     &.active {
       color: $text-dark;
-      background: rgba($theme-base, 0.1); 
+      background: rgba($theme-base, 0.2);
     }
     &:disabled {
       opacity: 0.35;
@@ -156,6 +164,37 @@ $errorColor: $brand-danger;
         color: $text;
         background: transparent;
       }
+    }
+
+    // Replacing text with Material Icons
+    &[data-page="first"],
+    &[data-page="prev"],
+    &[data-page="next"],
+    &[data-page="last"] {
+      visibility: hidden;
+      width: 24px;
+      padding: 0;
+      overflow: hidden;
+      &:before {
+        font-family: 'Material Icons';
+        visibility: visible;
+        font-size: 18px;
+        line-height: 24px;
+        font-weight: normal;
+        text-align: center;
+      }
+    }
+    &[data-page="first"]:before {
+      content: '\e5dc';
+    }
+    &[data-page="prev"]:before {
+      content: '\e408';
+    }
+    &[data-page="next"]:before {
+      content: '\e409';
+    }
+    &[data-page="last"]:before {
+      content: '\e5dd';
     }
   }
 }

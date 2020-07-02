@@ -28,7 +28,7 @@ $color-defaults: (
 .statusbar {
   @each $key, $val in $color-defaults {
     &.#{$key} {
-      background-color: rgba(nth($val, 1), 0.4);
+      background-color: rgba(nth($val, 1), 0.25);
     }
   }
 }

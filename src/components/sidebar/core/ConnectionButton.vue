@@ -1,16 +1,16 @@
 <template>
-<div class="flex flex-middle" v-if="config">
+<div class="connection-button flex flex-middle" v-if="config" :title="'Connected: Edit / Disconnect'">
   <x-button class="btn btn-link btn-icon" menu>
     <i class="material-icons">check_circle</i>
-    <span class="connection-name truncate">{{connectionName}}</span>
+    <span class="connection-name truncate expand">{{connectionName}}</span>
     <span class="connection-type badge truncate">{{connectionType}}</span>
     <x-menu>
       <x-menuitem @click.prevent="disconnect" class="red">
-        <x-label>Disconnect</x-label>
+        <x-label><i class="material-icons">power_settings_new</i>Disconnect</x-label>
       </x-menuitem>
       <x-menuitem @click.prevent="$modal.show('config-save-modal')">
-        <x-label v-if="config.id">Edit Connection</x-label>
-        <x-label v-else>Save Connection</x-label>
+        <x-label v-if="config.id"><i class="material-icons">edit</i>Edit Connection</x-label>
+        <x-label v-else><i class="material-icons">save</i>Save Connection</x-label>
       </x-menuitem>
     </x-menu>
   </x-button>

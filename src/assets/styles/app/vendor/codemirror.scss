@@ -27,6 +27,9 @@
   .CodeMirror-linenumber {
     color: rgba($theme-base, 0.25);
   }
+  .CodeMirror-line .cm-number {
+    color: $brand-info;
+  }
 }
 
 // Addon: Hints
