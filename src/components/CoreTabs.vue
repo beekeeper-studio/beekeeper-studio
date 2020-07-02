@@ -11,9 +11,8 @@
           @close="close"
           ></core-tab-header>
       </ul>
-      <span class="expand"></span>
       <span class="actions">
-        <a @click.prevent="createQuery(null)" class="btn-fab add-query"><i class=" material-icons">add</i></a>
+        <a @click.prevent="createQuery(null)" class="btn-fab add-query"><i class=" material-icons">add_circle</i></a>
       </span>
     </div>
     <div class="tab-content">

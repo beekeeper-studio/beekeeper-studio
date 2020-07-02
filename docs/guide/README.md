@@ -1,5 +1,6 @@
 ---
 title: User Guide
+sidebarDepth: 2
 ---
 
 Once you are connected to your database Beekeeper Studio allows you to open tabs to do the following things:

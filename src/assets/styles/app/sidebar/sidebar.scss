@@ -11,30 +11,28 @@
         top: -5px;
       }
     }
+    hr {
+      border: 0;
+      margin: 0 $gutter-w;
+      // border-top: 1px solid darken($theme-bg, 6%);
+      border-top: 1px solid $border-color;
+    }
   }
   .sidebar-heading {
     display: flex;
     align-items: center;
-    background: rgba($theme-base, 0.035);
-    box-shadow: 0 1px 2px rgba(black, 0.2);
-    padding: $gutter-h $gutter-h $gutter-h $gutter-w;
+    padding: $gutter-h $gutter-w;
     height: $tab-height;
     font-size: 14px;
     line-height: 28px;
-    .status {
-      .material-icons {
-        font-size: 11px;
-        margin-right: 0.25rem;
-      }
-      &.connected {
-        .material-icons {
-          color: $brand-success;
-        }
-      }
-    }
-    .actions {
-      display: flex;
-      align-items: center;
+    .sidebar-title {
+      flex: 0 1 100%;
+      color: $text-dark;    
+      font-weight: 500;
+      letter-spacing: 0.05rem;
+      padding: 0 $gutter-h;
+      // box-shadow: 0 1px darken($theme-bg, 6%);
+      box-shadow: 0 1px $border-color;
     }
   }
   .tab-content {
@@ -51,7 +49,7 @@
         display: flex;
       }
       .fixed {
-        padding: 0 ($gutter-h * 1.25);
+        padding: 0 $gutter-w;
       }
     }
   }
@@ -72,7 +70,7 @@
     height: $input-height;
     min-height: $input-height;
     padding: 0 $gutter-h 0 0;
-    margin-top: $gutter-w;
+    margin-top: ($gutter-w * 0.75);
     margin-bottom: $gutter-h;
     background: rgba($theme-base, 0.08);
     transition: background 0.15s ease-in-out;
@@ -118,7 +116,7 @@
   // ---------------------------------
   .filter {
     position: relative;
-    margin-bottom: $gutter-w;
+    margin-bottom: $gutter-h;
     .filter-wrap {
       position: relative;
       display: flex;
@@ -156,22 +154,30 @@
 
   display: flex;
   align-items: center;
-  height: $list-heading-height;
-  padding: 0 $gutter-w;
+  padding: $gutter-w $gutter-w ($gutter-h * 0.5);
   padding-right: $gutter-h;
-  background: rgba($theme-base, 0.06);
+  background: transparent;
+  // border-top: 1px solid $border-color;
   .sub {
-    line-height: $list-heading-height;
+    line-height: 1;
+    padding: 0 $gutter-h;
     div {
+      display: flex;
+      align-items: center;
       padding-top: 1px;
       color: $text-dark;
     }
-    span {
+    .badge {
+      font-size: 90%;
       font-weight: normal;
-      color: $text-light;
+      color: $text;
+      margin-left: ($gutter-h * 0.75);
+      border-radius: $list-heading-height;
+      background: $border-color;
     }
   }
   .actions {
+    padding-right: $gutter-h;
     a {
       margin: 0 ($gutter-h * 0.5);
       margin-right: 0;
@@ -193,6 +199,7 @@
 }
 .list-group {
   flex: 1 1 100%;
+  padding: 0;
   &:hover{
     .list-heading .actions {
       visibility: visible;
@@ -211,15 +218,19 @@
     align-items: center;
     flex: 0 1 100%;
   }
+  .list-item {
+    padding: 0 $gutter-w;
+  }
   .list-item-btn {
     color: rgba($theme-base, 0.77);
-    padding: ($gutter-h * 0.8);
-    padding-right: $gutter-h;
-    // padding-left: $gutter-w;
-    line-height: 1.4;
+    padding: 0 ($gutter-w * 0.8);
+    // margin-right: $gutter-h;
+    line-height: 1.8rem;
+    height: 1.8rem;
     width: -webkit-fill-available;
+    border-radius: 4px;
     &:hover, &:focus {
-      background: rgba($theme-base, 0.03);
+      background: rgba($theme-base, 0.035);
       .actions {
         display: flex;
         .btn-fab {
@@ -230,13 +241,13 @@
       }
     }
     &.open {
-      background: rgba($theme-base, 0.03);
+      // background: rgba($theme-base, 0.03);
       .open-close {
         transform: rotate(90deg);
       }
     }
     .item-text {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
     .title {
       @extend .truncate;
@@ -247,6 +258,7 @@
       max-width: 50%;
       overflow: hidden;
       font-size: 0.8rem;
+      margin: 0;
       span {
         @extend .truncate;
       }
@@ -285,20 +297,32 @@
     }
   }
   .sub-items {
+    position: relative;
     display: flex;
     flex-direction: column;
     color: $text;
     padding: ($gutter-h * 0.5) 0;
+    &:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 14px;
+      border-left: 1px solid rgba(255,255,255,0.08);
+    }
     .title {
       flex-grow: 1;
       font-size: 90%;
+    }
+    .badge {
+      margin-right: 0;
     }
   }
   .sub-item {
     color: $text;
     padding: ($gutter-h * 0.5);
     padding-right: $gutter-w;
-    padding-left: $gutter-w + ($sidebar-icon-w * 1.35);
+    padding-left: $gutter-w * 2.5;
   }
   .btn-fab {
     min-width: 18px;

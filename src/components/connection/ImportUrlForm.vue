@@ -1,28 +1,30 @@
 <template>
-    <form :class="{hide: hide}" @submit.prevent="parseUrl(connectionUrl)">
-        <div class="row gutter">
-            <div class="col s9 form-group">
-                <label for="connectionUrl">Connection URL</label>
-                <input type="text" name="connectionUrl" id="connectionUrl"
-                       class="form-control" v-model="connectionUrl">
-            </div>
-            <div class="col s3 form-group">
-                <div class="flex flex-bottom">
-                    <button class="btn btn-primary btn-block" type="submit" :disabled="!connectionUrl">Import</button>
-                </div>
-            </div>
-        </div>
-    </form>
+  <form @submit.prevent="parseUrl(connectionUrl)">
+    <div class="dialog-content">
+      <div class="dialog-c-title">Import from URL</div>
+      <div class="alert alert-danger" v-show="errors">
+        <i class="material-icons">warning</i>
+        <strong>Please fix the following errors:</strong>
+        <ul>
+          <li v-for="(e, i) in errors" :key="i">{{e}}</li>
+        </ul>
+      </div>
+      <div class="form-group">
+        <label for="connectionUrl">Connection URL</label>
+        <input type="text" name="connectionUrl" id="connectionUrl" class="form-control" v-model="connectionUrl">
+      </div>
+    </div>
+    <div class="vue-dialog-buttons">
+      <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('importUrlModal')">Cancel</button>
+      <button class="btn btn-primary" type="submit" :disabled="!connectionUrl">Import</button>
+    </div>
+  </form>
 </template>
 <script>
   export default {
     name: 'ImportUrlForm',
     props: {
-      config: Object,
-      hide: {
-        type: Boolean,
-        default: false
-      }
+      config: Object
     },
     data() {
       return {
@@ -71,8 +73,3 @@
     },
   };
 </script>
-<style scoped>
-    .hide {
-        display: none;
-    }
-</style>

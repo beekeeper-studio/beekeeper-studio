@@ -28,7 +28,19 @@
     display: flex;
     align-items: center;
     // height: $tab-height;
-    background: rgba($theme-base, 0.03);
+    background: $tabs-bg;
+    .add-query {
+      i {
+        color: $text-lighter;
+        transition: all 0.2s ease-in-out;
+      }
+      &:hover {
+        background: none;
+        i {
+          color: $text-dark;
+        }
+      }
+    }
   }
   .nav-tabs {
     position: relative;
@@ -36,44 +48,35 @@
     flex-wrap: nowrap;
     margin: 0;
     height: $tab-height;
-    box-shadow: inset 1px 0 rgba($query-editor-bg, 0.9);
-    &:hover {
-      overflow-x: auto;
-    }
     .nav-item {
-      max-width: 200px;
+      max-width: 200px;    
+      min-width: 28px;
+      overflow: hidden;
     }
     .nav-link {
+      position: relative;
       display: flex;
       align-items: center;
-      background: rgba($theme-base, 0.035);
-      padding: 0 $tab-padding-w;
+      background: lighten($theme-bg, 3%);
+      padding: 0;
       height: $tab-height;
-      min-width: 110px;
       font-size: 0.85rem;
       font-weight: normal;
       color: $text;
-      transition: background 0.15s ease-in-out;
       border: 0;
-      border-radius: 0;
-      box-shadow: inset -1px 0 rgba($query-editor-bg, 0.5);
-      .tab-title {
-        &:before {
-          display: block;
-          content: attr(title);
-          font-weight: 600;
-          height: 0;
-          overflow: hidden;
-          visibility: hidden;
-        }
-      }
+      border-radius: 6px 6px 0 0;
+      border-right: 1px solid $theme-bg;
+      overflow: hidden;
       &.active {
-        border: 0;
         background: $query-editor-bg;
         font-weight: 600;
         color: $text-dark;
+        box-shadow: none;
         &:hover {
           background: $query-editor-bg;
+        }
+        .tab-action {
+          background: linear-gradient(-90deg, rgba($query-editor-bg, 100%) 80%, rgba($query-editor-bg, 0) 100%);
         }
         .tab-close {
           .close {
@@ -91,7 +94,7 @@
           }
         }
       }
-      &:hover { 
+      &:hover {
         .tab-close {
           .close {
             display: inline-block;
@@ -114,26 +117,47 @@
         }
       } 
     }
+    .tab-title {
+      text-overflow: initial;
+      padding-right: 28px;
+      &:before {
+        display: block;
+        content: attr(title);
+        font-weight: 600;
+        height: 0;
+        overflow: hidden;
+        visibility: hidden;
+      }
+    }
     .item-icon {
       font-size: 12px;
-      margin-right: ($gutter-h * 1.25);
+      padding-left: ($gutter-w * 0.75);
+      padding-right: ($gutter-h * 1.25);
     }
-    .tab-close {
+    .tab-action {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 16px;
-      min-width: 16px;
-      border-radius: 50%;
-      margin-left: $gutter-h;
-      margin-right: -($tab-padding-w * 0.5);
+      height: 100%;
+      min-width: 24px;
+      background: linear-gradient(-90deg, rgba(lighten($theme-bg, 3%), 100%) 80%, rgba(lighten($theme-bg, 3%), 0) 100%);
+    }
+    .tab-close {
+      position: absolute;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
       i {
         position: absolute;
         display: none;
         font-size: 12px;
         font-weight: bold;
-        height: $tab-height;
-        line-height: $tab-height;
         color: $text-dark;
         transition: none;
       }
@@ -174,11 +198,16 @@
       border-radius: $input-radius;
       overflow: hidden;
       width: 100%;
-      box-shadow: inset 0 0 0 1px $border-color;
+      // box-shadow: inset 0 0 0 1px $border-color;
+      box-shadow: none;
+      border: 0;
+      // border-radius: 0;
+      background: rgba($theme-base, 0.05);
+      // border-bottom: 1px solid $border-color;
       transition: background 0.15s ease-in-out;
       cursor: pointer;
       &:hover {
-        background: rgba($theme-base, 0.025);
+        background: rgba($theme-base, 0.05);
       }
       > select {
         border: 0;
@@ -207,7 +236,12 @@
       width: 100%;
     }
     input {
+      background: rgba($theme-base, 0.05);
       padding-right: 26px;
+      box-shadow: none;
+      border: 0;
+      // border-radius: 0;
+      // border-bottom: 1px solid $border-color;
     }
     .clear {
       position: absolute;

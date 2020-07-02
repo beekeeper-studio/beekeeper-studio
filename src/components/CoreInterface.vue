@@ -3,6 +3,9 @@
     <div class="interface-wrap row">
       <sidebar ref="sidebar">
         <core-sidebar @databaseSelected="databaseSelected" :connection="connection"></core-sidebar>
+        <statusbar>
+          <ConnectionButton></ConnectionButton>
+        </statusbar>
       </sidebar>
       <div ref="content" class="page-content flex-col" id="page-content">
         <core-tabs :connection="connection"></core-tabs>
@@ -12,13 +15,14 @@
 </template>
 
 <script>
-  import Sidebar from './Sidebar'
-  import CoreSidebar from './CoreSidebar'
+  import Sidebar from './common/Sidebar'
+  import CoreSidebar from './sidebar/CoreSidebar'
   import CoreTabs from './CoreTabs'
   import Split from 'split.js'
-
+  import Statusbar from './common/StatusBar'
+  import ConnectionButton from './sidebar/core/ConnectionButton'
   export default {
-    components: { CoreSidebar, CoreTabs, Sidebar },
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton },
     props: [ 'connection' ],
     data() {
       return {
@@ -31,7 +35,8 @@
           this.$refs.sidebar.$refs.sidebar,
           this.$refs.content
         ]
-      }
+      },
+
     },
     mounted() {
       this.$store.dispatch('updateHistory')

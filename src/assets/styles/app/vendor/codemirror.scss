@@ -24,6 +24,12 @@
   div.CodeMirror-selected {
     background: rgba($theme-secondary, 0.2);
   }
+  .CodeMirror-linenumber {
+    color: rgba($theme-base, 0.25);
+  }
+  .CodeMirror-line .cm-number {
+    color: $brand-info;
+  }
 }
 
 // Addon: Hints

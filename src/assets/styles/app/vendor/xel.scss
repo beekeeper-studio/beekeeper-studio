@@ -758,6 +758,7 @@ x-menu {
   font-size: 0.85rem;
   text-transform: none;
   font-weight: 400;
+  min-width: 150px;
   @extend .card-shadow-hover;
   // --open-transition: 100 transform var(--transition-fn1);
   --open-transition: none;
@@ -795,13 +796,27 @@ x-menuitem {
     height: 24px;
   }
   x-icon {
-    opacity: 0.7;
+    opacity: 0.6;
+  }
+  .material-icons {
+    height: 24px!important;
+    line-height: 24px!important;
+    width: 24px;
+    opacity: 0.6;
+    margin-right: 0!important;
   }
   x-label {
+    display: flex;
     flex: 1;
+    align-items: center;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+    text-overflow: ellipsis;    
+    text-align: left;
+    span {
+      display: inline-flex;
+      align-items: center;
+    }
   }
   x-shortcut {
     font-size: 0.9rem;

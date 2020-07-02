@@ -9,24 +9,12 @@ $color-defaults: (
 );
 
 .connection-label {
-  $label-size:     10px;
-
-  position: relative;
   display: inline-flex;
-  -webkit-appearance: none;
   background-color: transparent;
-  height: $label-size;
-  width: $label-size;
-  padding: 0;
-  border: 0;
-  margin: 0 ($gutter-w * 0.75) 0 ($gutter-h * 0.5);
-  border-radius: $label-size;
-  transition: background 0.2s ease-in-out;
-  cursor: pointer;
-  &.connection-label-color-default {
-    background-color: transparent;
-    box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2);
-  }
+  height: 16px;
+  width: 4px;
+  border-radius: 4px;
+  margin-right: $gutter-w;
 
   @each $key, $val in $color-defaults {
     &.connection-label-color-#{$key} {
@@ -34,6 +22,13 @@ $color-defaults: (
       &:checked {
         background-color: nth($val, 1);
       }
+    }
+  }
+}
+.statusbar {
+  @each $key, $val in $color-defaults {
+    &.#{$key} {
+      background-color: rgba(nth($val, 1), 0.25);
     }
   }
 }

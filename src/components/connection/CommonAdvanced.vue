@@ -106,7 +106,7 @@
   </div>
 </template>
 <script>
-  import FilePicker from '@/components/form/FilePicker'
+  import FilePicker from '@/components/common/form/FilePicker'
   import ExternalLink from '@/components/common/ExternalLink'
 
   import { remote } from 'electron'
