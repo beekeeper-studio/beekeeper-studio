@@ -24,6 +24,7 @@ const platformInfo = {
   isSnap: p.env.ELECTRON_SNAP,
   sshAuthSock: p.env.SSH_AUTH_SOCK,
   environment: process.env.NODE_ENV,
+  debugEnabled: !!process.env.DEBUG,
   platform: easyPlatform,
   darkMode: e.nativeTheme.shouldUseDarkColors || windowPrefersDarkMode,
   userDirectory,

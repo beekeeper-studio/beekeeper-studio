@@ -1,3 +1,4 @@
+
 import { UserSetting } from '../../../common/appdb/models/user_setting'
 import _ from 'lodash'
 import Vue from 'vue'
@@ -37,7 +38,10 @@ const SettingStoreModule = {
   getters: {
     themeValue(state) {
       if (!state.settings.theme) return null
-      return state.settings.theme.value
+      if (['dark', 'light'].includes(state.settings.theme.value)) {
+        return state.settings.theme.value
+      }
+      return state.settings.theme.platformDefault || state.settings.theme.defaultValue
     },
     menuStyle(state) {
       if (!state.settings.menuStyle) return 'native'

@@ -39,6 +39,7 @@
   import CoreTabHeader from './CoreTabHeader'
   import { uuidv4 } from '@/lib/crypto'
   import TableTable from './tableview/TableTable'
+  import AppEvent from '../common/AppEvent'
 
   export default {
     props: [ 'connection' ],
@@ -62,15 +63,10 @@
         return _.indexOf(this.tabItems, this.activeTab)
       },
       keymap() {
-
-        const newTab = this.ctrlOrCmd('t')
-        const closeTab = this.ctrlOrCmd('w')
         const result = {
           'ctrl+tab': this.nextTab,
           'ctrl+shift+tab': this.previousTab
         }
-        result[newTab] = this.handleCreateTab
-        result[closeTab] = this.closeTab
         return result
       }
     },
@@ -159,6 +155,8 @@
     },
     mounted() {
       this.createQuery()
+      this.$root.$on(AppEvent.closeTab, () => { this.closeTab() })
+      this.$root.$on(AppEvent.newTab, () => { this.createQuery() })
       this.$root.$on('historyClick', (item) => {
         this.createQuery(item.text)
       })
