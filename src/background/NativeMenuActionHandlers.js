@@ -54,9 +54,7 @@ export default class {
 
   newWindow = () => buildWindow(this.settings)
 
-
   newQuery = (menuItem, win) => {
-    console.log("new tab")
     win.webContents.send(AppEvent.newTab)
   }
 
@@ -73,7 +71,6 @@ export default class {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
     this.settings.menuStyle.value = label.toLowerCase()
     await this.settings.menuStyle.save()
-    console.log("sending event", AppEvent.menuStyleChanged)
     win.webContents.send(AppEvent.menuStyleChanged)
   }
 

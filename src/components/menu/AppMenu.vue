@@ -43,7 +43,7 @@ export default {
       return shortcut.replace("CommandOrControl", "Control")
     },
     itemKeymap(item) {
-      if (!item.click || !item.accelerator) return
+      if (!item.click || !item.accelerator || item.registerAccelerator === false) return {}
       const ctrlKey = platformInfo.isMac ? 'meta' : 'ctrl'
       const keymap = item.accelerator.replace('CommandOrControl', ctrlKey)
       const result = {}
@@ -51,7 +51,7 @@ export default {
       return result
     },
     noop() {
-      console.log("noop")
+      
     }
   },
   mounted() {
