@@ -31,7 +31,7 @@ export default class {
   listenForClicks() {
     ipcMain.on(AppEvent.menuClick, (event, actionName, arg) => {
       try {
-        const func = this.handler[actionName]
+        const func = this.handler[actionName].bind(this.handler)
         func(arg || null, BrowserWindow.fromWebContents(event.sender))
       } catch (e) {
         console.error(`Couldn't trigger action ${actionName}(${arg || ""}), ${e.message}`)

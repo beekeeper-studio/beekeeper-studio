@@ -1,9 +1,11 @@
 
+
 import a from './20200101'
 import b from './20200422'
 import c from './20200514'
 import d from './20200517'
 import createSettings from './20200624_create_settings'
+import addZoom from './20200703_add_zoom_to_settings'
 import dev1 from './dev-1'
 import dev2 from './dev-2'
 import domains from './20200519'
@@ -18,7 +20,7 @@ const setupSQL = `
  )
 `
 const realMigrations = [
-  a, b, c, d, domains, createSettings
+  a, b, c, d, domains, createSettings, addZoom
 ]
 
 const devMigrations = [

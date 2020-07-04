@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import AppEvent from '../common/AppEvent'
-import { buildWindow } from './WindowBuilder'
+import { buildWindow, getActiveWindows } from './WindowBuilder'
 import { app } from 'electron'
 
 
@@ -31,14 +31,22 @@ export default class {
     w.webContents.paste()
   }
 
-  zoomreset(m,w) {
-    w.webContents.zoomLevel = 0
+  setZoom = async (level) => {
+    getActiveWindows().forEach(window => {
+      window.win.webContents.zoomLevel = level
+    })
+    this.settings.zoomLevel.userValue = level
+    await this.settings.zoomLevel.save()
   }
-  zoomin(m,w) {
-    w.webContents.zoomLevel += 0.5
+
+  zoomreset = async () => {
+    await this.setZoom(0)
   }
-  zoomout(m,w) {
-    w.webContents.zoomLevel -= 0.5
+  zoomin = async (m,w) => {
+    await this.setZoom(w.webContents.zoomLevel + 0.5)
+  }
+  zoomout = async (m,w) => {
+    await this.setZoom(w.webContents.zoomLevel - 0.5)
   }
 
   fullscreen(m,w) {
@@ -65,13 +73,17 @@ export default class {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
     this.settings.theme.userValue = label.toLowerCase()
     await this.settings.theme.save()
-    win.webContents.send(AppEvent.settingsChanged)
+    getActiveWindows().forEach( window => {
+      window.win.webContents.send(AppEvent.settingsChanged)
+    })
   }
   switchMenuStyle = async (menuItem, win) => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
     this.settings.menuStyle.value = label.toLowerCase()
     await this.settings.menuStyle.save()
-    win.webContents.send(AppEvent.menuStyleChanged)
+    getActiveWindows().forEach( window => {
+      window.win.webContents.send(AppEvent.menuStyleChanged)
+    })
   }
 
 }

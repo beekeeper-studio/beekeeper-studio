@@ -32,6 +32,9 @@ class BeekeeperWindow {
       },
       icon: path.join(__dirname, `${iconPrefix}/icons/png/512x512.png`)
     })
+
+    this.win.webContents.zoomLevel = settings.zoomLevel.value || 0
+
     if (process.env.WEBPACK_DEV_SERVER_URL) {
       // Load the url of the dev server if in development mode
       this.win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
