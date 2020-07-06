@@ -28,7 +28,10 @@ export default {
   props: ['config', 'canCancel', 'selectInput'],
   mounted(){
     if(this.selectInput) {
-      this.$refs.nameInput.select()
+      const $input = this.$refs.nameInput
+      $input.focus()
+      const len = $input.value.length
+      $input.setSelectionRange(len, len)
     }
   },
   methods: {
