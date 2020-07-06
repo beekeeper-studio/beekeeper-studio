@@ -82,7 +82,7 @@ $editor-statusbar:         rgba($theme-base, 0.035);
 // ---------------------------------------
 .core-tabs {
   .tabs-header {
-    background: $tabs-heading;
+    background: $tabs-bg;
   }
   .nav-tabs {
     .nav-link {
@@ -97,11 +97,6 @@ $editor-statusbar:         rgba($theme-base, 0.035);
 }
 .query-editor {
   background: $theme-bg;
-  .bottom-panel {
-    .status-bar {
-      background: $editor-statusbar;
-    }
-  }
 }
 
 // Tabulator

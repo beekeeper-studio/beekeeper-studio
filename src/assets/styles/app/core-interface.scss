@@ -25,6 +25,7 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
+  padding-top: $gutter-h;
   .interface-wrap {
     display: flex;
     flex-wrap: nowrap;
@@ -34,31 +35,10 @@
     width: $sidebar-w;
     min-width: $sidebar-min-w;
     max-width: $sidebar-max-w;
-    .status-bar {
-      padding-right: 0;
-    }
   }
   .page-content {
     flex: 1 1 auto;
     min-width: 350px;
     z-index: 1;
-  }
-  
-  // Status
-  .status-bar {
-    display: flex;
-    align-items: center;
-    font-size: 11px;
-    height: $status-bar-height;
-    padding: ($gutter-h / 2) $gutter-w;
-    padding-right: $gutter-h;
-    .btn {
-      .material-icons {
-        height: ($status-bar-height - $gutter-h);
-        width: ($status-bar-height - $gutter-h);
-        line-height: ($status-bar-height - $gutter-h);
-        font-size: 18px;
-      }
-    }
   }
 }

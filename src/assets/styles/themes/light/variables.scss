@@ -19,7 +19,7 @@ $brand-success:      #15db95;
 $brand-warning:      #ff8d21;
 $brand-danger:       #ff5d59;
 $brand-default:      rgba($theme-base, 0.57);
-$brand-purple:       #9b59b6;
+$brand-purple:       #9858ff;
 $brand-pink:         #ff00f0;
 $brand-primary:      $theme-primary;
 $brand-secondary:    $theme-secondary;
@@ -32,30 +32,3 @@ $selection:          rgba($theme-primary, 0.2);
 $db-select-text:     white;
 $query-editor-bg:    white;
 $input-highlight:     rgba($theme-base, 0.27);
-
-// Layout
-// -----------------------------
-  
-// Buttons
-$btn-border-radius:   0.65em;
-
-// Inputs
-$input-padding-h:     0;
-$input-height:        26px;
-$input-padding-w:     0.75rem;
-$input-radius:        4px;
-
-// Padding
-$gutter-w:            0.8rem;
-$gutter-h:            0.4rem;
-
-// Sidebar
-$sidebar-w:           400px;
-$sidebar-min-w:       300px;
-$sidebar-max-w:       90%;
-$sidebar-icon-w:      1.4rem;
-$status-bar-height:   2.4rem;
-
-// Query Editor
-$tab-height:          36px;
-$tab-padding-w:       1rem;

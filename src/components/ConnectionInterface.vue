@@ -44,29 +44,7 @@
                     <button :disabled="testing" class="btn btn-primary" @click.prevent="submit">Connect</button>
                   </div>
                 </div>
-
-                <!-- Save Connection -->
-                <div class="save-connection expand">
-                  <h3 class="expand">Save Connection</h3>
-                  <div class="form-group">
-                    <input class="form-control" @keydown.enter.prevent.stop="save" type="text" v-model="config.name" placeholder="Connection Name">
-                  </div>
-
-                  <div class="row flex-middle">
-                    <label class="checkbox-group" for="rememberPassword">
-                      <input class="form-control" id="rememberPassword" type="checkbox" name="rememberPassword" v-model="config.rememberPassword">
-                      <span>Save Passwords</span>
-                      <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help_outlined</i>
-                    </label>
-                    <span class="expand"></span>
-                    <ColorPicker :value="config.labelColor" v-model="config.labelColor"></ColorPicker>
-                  </div>
-
-                  <div class="save-actions row">
-                    <div class="expand"></div>
-                    <button class="btn btn-flat" @click.prevent="save">Save</button>
-                  </div>
-                </div>
+                <SaveConnectionForm :config="config" @save="save"></SaveConnectionForm>
               </div>
 
             </form>
@@ -83,21 +61,22 @@
 </template>
 
 <script>
-  import os from 'os';
-  import {SavedConnection} from '../entity/saved_connection';
-  import ColorPicker from './form/ColorPicker';
-  import ConnectionSidebar from './ConnectionSidebar';
-  import MysqlForm from './connection/MysqlForm';
-  import PostgresForm from './connection/PostgresForm';
-  import Sidebar from './Sidebar';
-  import SqliteForm from './connection/SqliteForm';
-  import SqlServerForm from './connection/SqlServerForm';
-  import Split from 'split.js';
-  import _ from 'lodash';
+  import os from 'os'
+  import {SavedConnection} from '../entity/saved_connection'
+  import ConnectionSidebar from './sidebar/ConnectionSidebar'
+  import MysqlForm from './connection/MysqlForm'
+  import PostgresForm from './connection/PostgresForm'
+  import Sidebar from './common/Sidebar'
+  import SqliteForm from './connection/SqliteForm'
+  import SqlServerForm from './connection/SqlServerForm'
+  import SaveConnectionForm from './connection/SaveConnectionForm'
+  import Split from 'split.js'
+  import _ from 'lodash'
   // import ImportUrlForm from './connection/ImportUrlForm';
 
   export default {
-    components: {ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, ColorPicker },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm },
+
     data() {
       return {
         defaultConfig: new SavedConnection(),
@@ -191,11 +170,11 @@
         try {
           this.errors = null
           this.connectionError = null
-          this.$store.dispatch('saveConnectionConfig', this.config)
+          await this.$store.dispatch('saveConnectionConfig', this.config)
           if(this.config === this.defaultConfig) {
             this.defaultConfig = new SavedConnection()
           }
-          this.$noty.success("Connection Information Saved")
+          this.$noty.success("Connection Saved")
         } catch (ex) {
           this.errors = [ex.message]
           this.$noty.error("Could not save connection information")

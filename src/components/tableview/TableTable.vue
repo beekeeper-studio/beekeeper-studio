@@ -29,7 +29,11 @@
                 v-model="filter.value"
                 placeholder="Enter Value"
               />
-              <button type="button" class="clear btn-link" @click.prevent="filter.value = ''">
+              <button 
+                type="button" 
+                class="clear btn-link" 
+                @click.prevent="filter.value = ''"
+              >
                 <i class="material-icons">cancel</i>
               </button>
             </div>
@@ -41,6 +45,10 @@
       </form>
     </div>
     <div ref="table"></div>
+    <statusbar class="tabulator-footer">
+
+      <span ref="paginationArea" class="tabulator-paginator"></span>
+    </statusbar>
   </div>
 </template>
 
@@ -55,9 +63,12 @@
 <script>
 import Tabulator from "tabulator-tables";
 import data_converter from "../../mixins/data_converter";
-import DataMutators from '../../mixins/data_mutators';
+import DataMutators from '../../mixins/data_mutators'
+import Statusbar from '../common/StatusBar'
+
 
 export default {
+  components: { Statusbar },
   mixins: [data_converter, DataMutators],
   props: ["table", "connection"],
   data() {
@@ -128,6 +139,7 @@ export default {
       ajaxFiltering: true,
       pagination: "remote",
       paginationSize: this.limit,
+      paginationElement: this.$refs.paginationArea,
       initialSort: this.initialSort,
       cellClick: this.cellClick
     });

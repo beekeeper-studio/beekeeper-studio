@@ -20,7 +20,7 @@
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <div>Pinned <span>({{pinned.length}})</span></div>
+            <div>Pinned <span class="badge">{{pinned.length}}</span></div>
           </div>
           <!-- <div class="actions">
             <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
@@ -49,6 +49,8 @@
       </nav>
     </div>
 
+    <hr v-show="pinned.length > 0"> <!-- Fake splitjs Gutter styling -->
+
     <!-- Tables -->
     <div v-if="!tablesLoading" class="table-list flex-col" ref="tables">
       <nav class="list-group flex-col">
@@ -57,7 +59,7 @@
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <div>Tables & Views <span>({{tables.length}})</span></div>
+            <div>Tables & Views <span class="badge">{{tables.length}}</span></div>
           </div>
           <div class="actions">
             <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
@@ -120,11 +122,11 @@
 </template>
 
 <script>
-  import TableListItem from './TableListItem'
-  import TableListSchema from './TableListSchema'
+  import TableListItem from './table_list/TableListItem'
+  import TableListSchema from './table_list/TableListSchema'
   import Split from 'split.js'
   import { mapState, mapGetters } from 'vuex'
-  import TableFilter from '../mixins/table_filter'
+  import TableFilter from '../../../mixins/table_filter'
 
   export default {
     mixins: [TableFilter],

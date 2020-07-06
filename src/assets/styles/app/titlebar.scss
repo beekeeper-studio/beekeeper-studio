@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba($theme-base, 0.1);
+  background: $titlebar-bg;
   padding: $gutter-h;
   margin: 0;
   z-index: 100;

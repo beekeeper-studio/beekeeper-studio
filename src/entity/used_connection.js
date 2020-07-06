@@ -13,6 +13,8 @@ export class UsedConnection extends DbConnectionBase {
       this.uri = other.uri
       this.port = other.port
       this.host = other.host
+      this.labelColor = other.labelColor
+      this.name = other.name
     }
 
   }

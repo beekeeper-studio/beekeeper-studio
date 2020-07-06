@@ -48,6 +48,9 @@ const store = new Vuex.Store({
     },
     tablesHaveSchemas(state, getters) {
       return getters.schemaTables.length > 1
+    },
+    connectionColor(state) {
+      return state.usedConfig ? state.usedConfig.labelColor : 'default'
     }
   },
   mutations: {
@@ -136,7 +139,7 @@ const store = new Vuex.Store({
       connection.connectionType = config.connectionType;
       const usedConfig = new UsedConnection(config)
       await usedConfig.save()
-      context.commit('newConnection', {config: usedConfig, server, connection})
+      context.commit('newConnection', {config: config, server, connection})
     },
     async disconnect(context) {
       const server = context.state.server
