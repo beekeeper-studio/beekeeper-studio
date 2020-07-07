@@ -13,6 +13,7 @@ class BeekeeperWindow {
   active = true
   win = null
   actionHandler = null
+  reloaded = false
   constructor(settings) {
     const theme = settings.theme
     const showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
@@ -50,7 +51,7 @@ class BeekeeperWindow {
 
   initializeCallbacks() {
     if (process.env.WEBPACK_DEV_SERVER_URL && platformInfo.isWindows) {
-      this.win.webContents.on('did-finish-load', this.finishLoadListener)
+      this.win.webContents.on('did-finish-load', this.finishLoadListener.bind(this))
     }
     this.win.on('closed', (e, cmd) => {
       this.win = null
@@ -59,8 +60,10 @@ class BeekeeperWindow {
   }
 
   finishLoadListener() {
-    this.win.webContents.reload()
-    this.win.webContents.removeListener('did-finish-load', this.finishLoadListener)
+    if(!this.reloaded) {
+      this.win.webContents.reload()
+    }
+    this.reloaded = true
   }
 
 }
