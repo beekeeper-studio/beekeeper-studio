@@ -1,3 +1,4 @@
+import path from 'path'
 import Crypto from 'crypto'
 import { Entity, Column, BeforeInsert, BeforeUpdate } from "typeorm"
 
@@ -112,7 +113,12 @@ export class DbConnectionBase extends ApplicationEntity {
 
 
   get simpleConnectionString() {
-    return `${this.host}:${this.port}/${this.defaultDatabase}`
+    if (this.connectionType === 'sqlite') {
+      return path.basename(this.defaultDatabase)
+    } else {
+      return `${this.host}:${this.port}/${this.defaultDatabase}`
+    }
+    
   }
 
   get fullConnectionString() {

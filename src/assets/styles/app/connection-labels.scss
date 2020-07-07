@@ -12,6 +12,7 @@ $color-defaults: (
   display: inline-flex;
   background-color: transparent;
   height: 16px;
+  min-width: 4px;
   width: 4px;
   border-radius: 4px;
   margin-right: $gutter-w;

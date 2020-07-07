@@ -8,12 +8,13 @@
       @dblclick.prevent="doubleClick(config)"
     >
       <span :class="`connection-label connection-label-color-${labelColor}`"></span>
-      <span class="title expand" :title="c.title">{{label}} </span>
-      <span class="badge"><span>{{c.connectionType}}</span></span>
+      <span class="title expand" :title="title">{{label}} </span>
+      <span class="subtitle">{{subtitle}}</span>
+      <span class="badge"><span>{{config.connectionType}}</span></span>
       <x-button class="btn-fab" skin="iconic">
         <i class="material-icons">more_horiz</i>
         <x-menu style="--target-align: right; --v-target-align: top;">
-          <x-menuitem @click.prevent.stop="remove(c)">
+          <x-menuitem @click.prevent.stop="remove(config)">
             <x-label class="text-danger">Remove</x-label>
           </x-menuitem>
         </x-menu>
@@ -23,10 +24,15 @@
 </template>
 <script>
 import path from 'path'
+import TimeAgo from 'javascript-time-ago'
 export default {
   // recent list is 'recent connections'
   // if that is true, we need to find the companion saved connection
   props: ['config', 'isRecentList', 'selectedConfig'],
+  data: () => ({
+    timeAgo: new TimeAgo('en-US'),
+    split: null
+  }),
   computed: {
     labelColor() {
       return this.savedConnection.labelColor || 'default'
@@ -42,6 +48,13 @@ export default {
       }
       
     },
+    subtitle() {
+      if (this.isRecentList) {
+        return this.timeAgo.format(this.config.updatedAt)
+      } else {
+        return this.config.simpleConnectionString
+      }
+    },
     title() {
       return this.config.title
     },
@@ -53,14 +66,23 @@ export default {
       } else {
         return this.config
       }
-    }
+    },
+  },
+  mounted() {
+
   },
   methods: {
     click() {
-      this.$emit('click', this.config)
+      if (this.savedConnection) {
+        this.$emit('edit', this.savedConnection)
+      } else {
+        this.$emit('copyToNew', this.config)
+      }
     },
     doubleClick() {
-      this.$emit('doubleClick', this.config)
+      if (this.savedConnection) {
+        this.$emit('doubleClick', this.savedConnection)
+      }
     },
     remove() {
       this.$emit('remove', this.config)
