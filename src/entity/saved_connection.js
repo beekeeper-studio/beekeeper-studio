@@ -51,7 +51,7 @@ export class DbConnectionBase extends ApplicationEntity {
   uri
 
   @Column({type: "varchar", length: 500, nullable: false})
-  uniqueHash
+  uniqueHash = "DEPRECATED"
 
   @Column({type: 'boolean', nullable: false, default: false})
   sshEnabled = false
@@ -95,18 +95,39 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'boolean', nullable: false, default: false})
   ssl
 
-  /*
-    This unique hash is so that even if a user doesn't save
-    the connection, we can still figure out if they're connected
-    to the same database and keep track of queries against that connection
-    and possibly do stuff like keep tabs open
-  */
-  @BeforeInsert()
-  @BeforeUpdate()
-  setUniqueHashCode() {
-    let str = `${this.host}${this.port}${this.path}${this.uri}${this.sshHost}${this.sshPort}`
-    this.uniqueHash = Crypto.createHash('md5').update(str).digest('hex')
+  // GETTERS
+  get hash() {
+    const str = [
+      this.host,
+      this.port,
+      this.path,
+      this.uri,
+      this.sshHost,
+      this.sshPort,
+      this.defaultDatabase,
+      this.sshBastionHost
+    ].map(part => part || "").join("")
+    return Crypto.createHash('md5').update(str).digest('hex')
   }
+
+
+  get simpleConnectionString() {
+    return `${this.host}:${this.port}/${this.defaultDatabase}`
+  }
+
+  get fullConnectionString() {
+    if (this.connectionType === 'sqlite') {
+      return this.defaultDatabase
+    } else {
+      let result = `${this.username || 'user'}@${this.host}:${this.port}/${this.defaultDatabase}`
+      if (this.sshHost) {
+        result += ` via ${this.sshUsername}@${this.sshHost}`
+        if (this.sshBastionHost) result += ` jump(${this.sshBastionHost})`
+      }
+      return result
+    }
+  }
+
 
 }
 

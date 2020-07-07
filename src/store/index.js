@@ -17,6 +17,7 @@ Vue.use(Vuex)
 const store = new Vuex.Store({
   state: {
     usedConfig: null,
+    usedConfigs: [],
     server: null,
     connection: null,
     database: null,
@@ -29,6 +30,9 @@ const store = new Vuex.Store({
     username: null
   },
   getters: {
+    orderedUsedConfigs(state) {
+      return _.sortBy(state.usedConfigs, 'updatedAt').reverse()
+    },
     pinned(state) {
       const result = state.pinStore[state.database]
       return _.isNil(result) ? [] : result
@@ -101,8 +105,14 @@ const store = new Vuex.Store({
     removeConfig(state, config) {
       state.connectionConfigs = _.without(state.connectionConfigs, config)
     },
+    removeUsedConfig(state, config) {
+      state.usedConfigs = _.without(state.usedConfigs, config)
+    },
     configs(state, configs){
-      state.connectionConfigs = configs
+      Vue.set(state, 'connectionConfigs', configs)
+    },
+    usedConfigs(state, configs) {
+      Vue.set(state, 'usedConfigs', configs)
     },
     history(state, history) {
       state.history = history
@@ -137,8 +147,17 @@ const store = new Vuex.Store({
       const connection = await server.createConnection(config.defaultDatabase)
       await connection.connect()
       connection.connectionType = config.connectionType;
-      const usedConfig = new UsedConnection(config)
-      await usedConfig.save()
+      const lastUsedConnection = context.state.usedConfigs.find(c => c.hash === config.hash)
+      if (!lastUsedConnection || lastUsedConnection.hash !== config.hash) {
+        const usedConfig = new UsedConnection(config)
+        await usedConfig.save()
+      } else {
+        lastUsedConnection.updatedAt = new Date()
+        if (config.id) {
+          lastUsedConnection.savedConnection = config
+        }
+        await lastUsedConnection.save()
+      }
       context.commit('newConnection', {config: config, server, connection})
     },
     async disconnect(context) {
@@ -219,9 +238,17 @@ const store = new Vuex.Store({
       await config.remove()
       context.commit('removeConfig', config)
     },
+    async removeUsedConfig(context, config) {
+      await config.remove()
+      context.commit('removeUsedConfig', config)
+    },
     async loadSavedConfigs(context) {
       let configs = await SavedConnection.find()
       context.commit('configs', configs)
+    },
+    async loadUsedConfigs(context) {
+      let configs = await UsedConnection.find({take: 10, order: {createdAt: 'DESC'}})
+      context.commit('usedConfigs', configs)
     },
     async updateHistory(context) {
       let historyItems = await UsedQuery.find({ take: 100, order: { createdAt: 'DESC' } });

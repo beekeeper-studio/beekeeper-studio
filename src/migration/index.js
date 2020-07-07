@@ -3,6 +3,7 @@ import a from './20200101'
 import b from './20200422'
 import c from './20200514'
 import d from './20200517'
+import addSc from './20200707-add-sc-to-used-connections'
 import dev1 from './dev-1'
 import dev2 from './dev-2'
 import domains from './20200519'
@@ -17,7 +18,7 @@ const setupSQL = `
  )
 `
 const realMigrations = [
-  a, b, c, d, domains
+  a, b, c, d, domains, addSc
 ]
 
 const devMigrations = [
