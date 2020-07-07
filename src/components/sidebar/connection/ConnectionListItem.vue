@@ -1,15 +1,17 @@
 <template>
-  <div class="list-item">
+  <div class="list-item" :title="title">
     <a
       href=""
       class="list-item-btn"
       :class="classList"
       @click.prevent="click(config)"
-      @dblclick.prevent="doubleClick(config)"
+      @dblclick.prevent="doubleClick(config)" 
     >
       <span :class="`connection-label connection-label-color-${labelColor}`"></span>
-      <span class="title expand" :title="title">{{label}} </span>
-      <span class="subtitle">{{subtitle}}</span>
+      <div class="connection-title flex-col expand">
+        <span class="title">{{label}}</span>
+        <span class="subtitle">{{subtitle}}</span>
+      </div>
       <span class="badge"><span>{{config.connectionType}}</span></span>
       <x-button class="btn-fab" skin="iconic">
         <i class="material-icons">more_horiz</i>
@@ -61,7 +63,7 @@ export default {
       }
     },
     title() {
-      return this.config.title
+      return this.config.fullConnectionString
     },
     savedConnection() {
 

@@ -1,14 +1,27 @@
 <template>
   <div class="sidebar-wrap flex-col">
 
+    <!-- QUICK CONNECT -->
+    <div class="btn-wrap quick-connect">
+      <a
+        href=""
+        class="btn btn-flat btn-icon btn-block"
+        :class="{'active': defaultConfig == selectedConfig }"
+        @click.prevent="edit(defaultConfig)"
+      >
+      <i class="material-icons">offline_bolt</i>
+      <span>Quick Connect</span>
+      </a>
+    </div>
+
     <!-- Saved Connections -->
-    <div class="saved-connection-list" ref="savedConnectionList">
-      <div class="sidebar-heading">
-        <div class="status connected sidebar-title row flex-middle noselect">
-          <span>Saved Connections <span class="badge">{{connectionConfigs.length}}</span></span>
+    <div class="list-group saved-connection-list" ref="savedConnectionList">
+      <div class="list-heading">
+        <div class="sub row flex-middle noselect">
+          Saved Connections <span class="badge">{{connectionConfigs.length}}</span>
         </div>
       </div>
-      <nav class="list-group expand">
+      <nav class="list-body">
         <connection-list-item
           v-for="c in connectionConfigs"
           :key="c.id"
@@ -19,19 +32,19 @@
           @doubleClick="connect"
         >
         </connection-list-item>
-
       </nav>
-
     </div>
 
+    <hr> <!-- Fake gutter for split.js -->
+
     <!-- Recent Connections -->
-    <div class="recent-connection-list" ref="recentConnectionList">
-      <div class="sidebar-heading">
-        <div class="status connected sidebar-title row flex-middle noselect">
-          <span>Recent Connections <span class="badge">{{usedConfigs.length}}</span></span>
+    <div class="list-group recent-connection-list" ref="recentConnectionList">
+      <div class="list-heading">
+        <div class="sub row flex-middle noselect">
+          Recent Connections <span class="badge">{{usedConfigs.length}}</span>
         </div>
       </div>
-      <nav class="list-group expand">
+      <nav class="list-body">
         <connection-list-item
           v-for="c in usedConfigs"
           :key="c.id"
@@ -44,20 +57,6 @@
         >
         </connection-list-item>
       </nav>
-
-
-    </div>
-    <!-- QUICK CONNECT -->
-    <div class="btn-wrap quick-connect">
-      <a
-        href=""
-        class="btn btn-flat btn-icon btn-block"
-        :class="{'active': defaultConfig == selectedConfig }"
-        @click.prevent="edit(defaultConfig)"
-      >
-      <i class="material-icons">offline_bolt</i>
-      <span>Quick Connect</span>
-      </a>
     </div>
   </div>
 </template>
