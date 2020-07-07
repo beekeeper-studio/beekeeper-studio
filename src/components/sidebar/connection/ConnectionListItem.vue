@@ -3,7 +3,7 @@
     <a
       href=""
       class="list-item-btn"
-      :class="{'active': selectedConfig && savedConnection.id === selectedConfig.id }"
+      :class="classList"
       @click.prevent="click(config)"
       @dblclick.prevent="doubleClick(config)"
     >
@@ -34,8 +34,13 @@ export default {
     split: null
   }),
   computed: {
+    classList() {
+      return {
+        'active': this.savedConnection && this.selectedConfig ? this.savedConnection.id === this.selectedConfig.id : false
+      }
+    },
     labelColor() {
-      return this.savedConnection.labelColor || 'default'
+      return this.savedConnection ? this.savedConnection.labelColor : 'default'
     },
     label() {
       if (this.savedConnection) {
@@ -61,7 +66,7 @@ export default {
     savedConnection() {
 
       if (this.isRecentList) {
-        if (!this.config.savedConnectionId) return {}
+        if (!this.config.savedConnectionId) return null
         return this.$store.state.connectionConfigs.find(c => c.id === this.config.savedConnectionId)
       } else {
         return this.config
@@ -76,12 +81,14 @@ export default {
       if (this.savedConnection) {
         this.$emit('edit', this.savedConnection)
       } else {
-        this.$emit('copyToNew', this.config)
+        this.$emit('edit', this.config.toNewConnection())
       }
     },
     doubleClick() {
       if (this.savedConnection) {
         this.$emit('doubleClick', this.savedConnection)
+      } else {
+        this.$emit('doubleClick', this.config.toNewConnection())
       }
     },
     remove() {

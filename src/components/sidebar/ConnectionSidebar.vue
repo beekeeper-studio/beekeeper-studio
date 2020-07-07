@@ -41,7 +41,6 @@
           @edit="edit"
           @remove="removeUsedConfig"
           @doubleClick="connect"
-          @copyToNew="copyToNew"
         >
         </connection-list-item>
       </nav>
@@ -105,10 +104,6 @@
       },
       removeUsedConfig(config) {
         this.$store.dispatch('removeUsedConfig', config)
-      },
-      copyToNew(config) {
-        const newConfig = config.toNewConnection()
-        this.$emit('edit', newConfig)
       },
       getLabelClass(color) {
         return `label-${color}`

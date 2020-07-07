@@ -154,7 +154,7 @@ const store = new Vuex.Store({
       } else {
         lastUsedConnection.updatedAt = new Date()
         if (config.id) {
-          lastUsedConnection.savedConnection = config
+          lastUsedConnection.savedConnectionId = config.id
         }
         await lastUsedConnection.save()
       }
