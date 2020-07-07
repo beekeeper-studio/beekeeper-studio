@@ -20,7 +20,7 @@
 
 <script>
 import {remote} from 'electron'
-import AppMenu from './menu/AppMenu'
+import AppMenu from './menu/NewAppMenu'
 export default {
   components: { AppMenu },
   data() {
