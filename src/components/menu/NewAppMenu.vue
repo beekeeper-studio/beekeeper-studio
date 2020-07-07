@@ -3,7 +3,7 @@
 <nav class="flyout-nav">
   <ul class="menu-bar">
     <li class="top-menu-item" v-for="menu in menus" :key="menu.label">
-      <a href=""><span class="label">{{menu.label}}</span></a>
+      <a @mousedown.prevent="noop"><span class="label">{{menu.label}}</span></a>
       <ul>
         <li class="menu-item" :class="{'has-children': !!item.submenu}" v-for="(item, idx) in menu.submenu" :key="item.id || idx">
           <a @mousedown.prevent="handle(item)">
