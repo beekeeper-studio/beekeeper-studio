@@ -148,7 +148,7 @@ const store = new Vuex.Store({
       await connection.connect()
       connection.connectionType = config.connectionType;
       const lastUsedConnection = context.state.usedConfigs.find(c => c.hash === config.hash)
-      if (!lastUsedConnection || lastUsedConnection.hash !== config.hash) {
+      if (!lastUsedConnection) {
         const usedConfig = new UsedConnection(config)
         await usedConfig.save()
       } else {

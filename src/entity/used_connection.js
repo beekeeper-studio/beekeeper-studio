@@ -16,6 +16,7 @@ export class UsedConnection extends DbConnectionBase {
       this.port = other.port
       this.host = other.host
       this.sshHost = other.sshHost
+      this.sshPort = other.sshPort
       this.sshBastionHost = other.sshBastionHost
       this.name = other.name
       if (other.id) {
