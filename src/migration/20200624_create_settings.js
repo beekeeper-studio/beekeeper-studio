@@ -21,7 +21,7 @@ export default {
       )
     `,
     `INSERT INTO user_setting(key, defaultValue, linuxDefault, windowsDefault) VALUES
-    ('theme', 'system', 'dark', null),
+    ('theme', 'dark', 'dark', null),
     ('menuStyle', 'native', null, 'client')
     `,
     `

@@ -67,6 +67,7 @@ import Connection from './common/appdb/Connection'
       render: h => h(App),
       store,
     })
+    await app.$store.dispatch('settings/initializeSettings')
     const handler = new AppEventHandler(ipcRenderer, app)
     handler.registerCallbacks()
     app.$mount('#app')

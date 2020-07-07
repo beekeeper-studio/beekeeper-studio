@@ -42,7 +42,6 @@ export default {
     }
   },
   async mounted() {
-    await this.$store.dispatch('settings/initializeSettings')
     this.$nextTick(() => {
       ipcRenderer.send('ready')
     })
