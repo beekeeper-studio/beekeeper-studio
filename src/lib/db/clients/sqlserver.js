@@ -252,16 +252,18 @@ export async function listRoutines(conn, filter) {
 }
 
 export async function listTableColumns(conn, database, table) {
+  const clause = table ? `WHERE table_name = "${table}"` : ""
   const sql = `
-    SELECT column_name, data_type
+    SELECT table_name, column_name, data_type
     FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE table_name = '${table}'
+    ${clause}
     ORDER BY ordinal_position
   `;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
   return data.recordset.map((row) => ({
+    tableName: row.table_name,
     columnName: row.column_name,
     dataType: row.data_type,
   }));

@@ -148,7 +148,11 @@ function listTableColumns(server, database, table, schema) {
 
 function listMaterializedViewColumns(server, database, table, schema) {
   checkIsConnected(server, database);
-  return database.connection.listMaterializedViewColumns(database.database, table, schema)
+  if (database.connection.listMaterializedViewColumns) {
+    return database.connection.listMaterializedViewColumns(database.database, table, schema)
+  } else {
+    return []
+  }
 }
 
 function listTableTriggers(server, database, table, schema) {

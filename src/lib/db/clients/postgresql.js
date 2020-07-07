@@ -265,30 +265,36 @@ export async function listRoutines(conn, filter) {
 }
 
 export async function listTableColumns(conn, database, table, schema) {
+  // if you provide table, you have to provide schema
+  const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : ""
+  const params = table ? [schema, table] : []
+  if (table && !schema) {
+    throw new Error("Table '${table}' provided for listTableColumns, but no schema name")
+  }
   const sql = `
-    SELECT column_name, data_type
+    SELECT table_name, column_name, data_type
     FROM information_schema.columns
-    WHERE table_schema = $1
-    AND table_name = $2
-    ORDER BY ordinal_position
+    ${clause}
+    ORDER BY table_schema, table_name, ordinal_position
   `;
-
-  const params = [
-    schema,
-    table,
-  ];
 
   const data = await driverExecuteQuery(conn, { query: sql, params });
 
   return data.rows.map((row) => ({
+    schemaName: row.table_schema,
+    tableName: row.table_name,
     columnName: row.column_name,
     dataType: row.data_type,
   }));
 }
 
 export async function listMaterializedViewColumns(conn, database, table, schema) {
+  const clause = table ? `AND s.nspname = $1 AND t.relname = $2` : ''
+  if (table && !schema) {
+    throw new Error("Cannot get columns for '${table}, no schema provided'")
+  }
   const sql = `
-    SELECT a.attname,
+    SELECT a.relname, a.attname,
           pg_catalog.format_type(a.atttypid, a.atttypmod) as data_type,
           a.attnotnull
     FROM pg_attribute a
@@ -296,13 +302,14 @@ export async function listMaterializedViewColumns(conn, database, table, schema)
       JOIN pg_namespace s on t.relnamespace = s.oid
     WHERE a.attnum > 0
       AND NOT a.attisdropped
-      AND s.nspname = $1
-      AND t.relname = $2
+      ${clause}
     ORDER BY a.attnum;
   `
-  const params = [schema, table]
+  const params = table ? [schema, table] : []
   const data = await driverExecuteQuery(conn, {query: sql, params});
   return data.rows.map((row) => ({
+    schemaName: row.nspname,
+    tableName: row.relname,
     columnName: row.attname,
     dataType: row.data_type
   }))
