@@ -272,7 +272,7 @@ export async function listTableColumns(conn, database, table, schema) {
     throw new Error("Table '${table}' provided for listTableColumns, but no schema name")
   }
   const sql = `
-    SELECT table_name, column_name, data_type
+    SELECT table_schema, table_name, column_name, udt_name as data_type
     FROM information_schema.columns
     ${clause}
     ORDER BY table_schema, table_name, ordinal_position
