@@ -1,25 +1,30 @@
+$titlebar-actions-height:   30px;
+
 .titlebar {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba($theme-base, 0.1);
-  padding: $gutter-h;
+  padding: 0 $gutter-h;
   margin: 0;
   z-index: 100;
-  -webkit-app-region: drag;
   .titlebar-icon {
     position: absolute;
     top: 0;
     left: 0;
     bottom: 0;
-
     display: flex;
-    align-items: center;
+    -webkit-app-region: no-drag;
     // width: 120px;
     img {
-      height: 18px;
+      height: 30px;
       width: 32px;
+      padding: $gutter-h 0;
+      -webkit-app-region: drag;
+    }
+    .flyout-nav {
+      z-index: 1;
     }
   }
   x-menubar {
@@ -43,7 +48,7 @@
       color: $text-light;
       margin: 0;
       padding: 0 0.75rem;
-      height: 30px;
+      height: $titlebar-actions-height;
       z-index: 10;
       &:hover {
         color: $text-dark;
@@ -74,7 +79,7 @@
   &.windows {
     justify-content: space-between;
     .titlebar-icon {
-      position: initial;
+      position: relative;
       top: initial;
       left: initial;
       bottom: initial;

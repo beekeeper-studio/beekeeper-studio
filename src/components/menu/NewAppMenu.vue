@@ -9,17 +9,16 @@
           <a @mousedown.prevent="handle(item)">
             <span class="label">{{item.label}}</span>
             <span class="shortcut">{{item.accelerator}}</span>
-
           </a>
           <ul v-if="item.submenu">
             <li class="menu-item" v-for="subitem in item.submenu" :key="subitem.label">
               <a @mousedown.prevent="handle(subitem)">
                 <span class="label">
                   <span class="material-icons" v-if="subitem.checked">done</span>
-                  {{subitem.label}}
-                </span></a>
+                  <span>{{subitem.label}}</span>
+                </span>
+              </a>
             </li>
-
           </ul>
         </li>
       </ul>

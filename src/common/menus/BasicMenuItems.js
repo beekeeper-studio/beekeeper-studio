@@ -6,25 +6,25 @@ export function basicMenuItems(actionHandler) {
     quit: {
       id: 'quit',
       label: platformInfo.isMac ? 'Quit' : 'Exit',
-      accelerator: platformInfo.isMac ? 'CommandOrControl+Q' : undefined,
+      accelerator: platformInfo.isMac ? 'Ctrl+Q' : undefined,
       click: actionHandler.quit
     },
     undo: {
       id: 'undo',
       label: "Undo",
-      accelerator: "CommandOrControl+Z",
+      accelerator: "Ctrl+Z",
       click: actionHandler.undo
     },
     redo: {
       id: "redo",
       label: "Redo",
-      accelerator: platformInfo.isWindows ? 'Control+Y' : 'Shift+CommandOrControl+Z',
+      accelerator: platformInfo.isWindows ? 'Ctrl+Y' : 'Shift+Ctrl+Z',
       click: actionHandler.redo
     },
     cut: {
       id: 'cut',
       label: 'Cut',
-      accelerator: 'CommandOrControl+X',
+      accelerator: 'Ctrl+X',
       click: actionHandler.cut,
       registerAccelerator: false
 
@@ -32,14 +32,14 @@ export function basicMenuItems(actionHandler) {
     copy: {
       id: 'copy',
       label: 'Copy',
-      accelerator: 'CommandOrControl+C',
+      accelerator: 'Ctrl+C',
       click: actionHandler.copy,
       registerAccelerator: false
     },
     paste: {
       id: 'paste',
       label: 'Paste',
-      accelerator: 'CommandOrControl+V',
+      accelerator: 'Ctrl+V',
       click: actionHandler.paste,
       registerAccelerator: false
     },
@@ -47,32 +47,32 @@ export function basicMenuItems(actionHandler) {
     selectAll: {
       id: 'select-all',
       label: 'Select All',
-      accelerator: 'CommandOrControl+A',
+      accelerator: 'Ctrl+A',
       click: actionHandler.selectAll
     },
     // view
     zoomreset: {
       id: 'zoom-reset',
       label: "Reset Zoom",
-      accelerator: "CommandOrControl+0",
+      accelerator: "Ctrl+0",
       click: actionHandler.zoomreset
     },
     zoomin: {
       id: 'zoom-in',
       label: "Zoom In",
-      accelerator: 'CommandOrControl+Plus',
+      accelerator: 'Ctrl+Plus',
       click: actionHandler.zoomin
     },
     zoomout: {
       id: 'zoom-out',
       label: "Zoom Out",
-      accelerator: "CommandOrControl+-",
+      accelerator: "Ctrl+-",
       click: actionHandler.zoomout
     },
     fullscreen: {
       id: 'fullscreen',
       label: "Toggle Full Screen",
-      accelerator: platformInfo.isMac ? 'Control+Command+F' : 'F11',
+      accelerator: platformInfo.isMac ? 'Ctrl+F' : 'F11',
       click: actionHandler.fullscreen
     },
     // help

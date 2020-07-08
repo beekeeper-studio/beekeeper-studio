@@ -22,19 +22,19 @@ export default class {
       newWindow: {
         id: 'new-window',
         label: "New Window",
-        accelerator: "CommandOrControl+Shift+N",
+        accelerator: "Ctrl+Shift+N",
         click: this.actionHandlers.newWindow
       },
       newTab: {
         id: "new-query-menu",
         label: "New Tab",
-        accelerator: "CommandOrControl+T",
+        accelerator: "Ctrl+T",
         click: this.actionHandlers.newQuery,
       },
       closeTab: {
         id: 'close-tab',
         label: "Close Tab",
-        accelerator: "CommandOrControl+W",
+        accelerator: "Ctrl+W",
         click: this.actionHandlers.closeTab
       },
       menuStyleToggle: {
