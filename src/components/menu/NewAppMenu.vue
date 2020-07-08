@@ -1,9 +1,9 @@
 
 <template>
-<nav class="flyout-nav">
+<nav class="flyout-nav" :class="{active: menuActive}">
   <ul class="menu-bar">
     <li class="top-menu-item" v-for="menu in menus" :key="menu.label">
-      <a @mousedown.prevent="noop"><span class="label">{{menu.label}}</span></a>
+      <a @mousedown.prevent="setActive"><span class="label">{{menu.label}}</span></a>
       <ul>
         <li class="menu-item" :class="{'has-children': !!item.submenu}" v-for="(item, idx) in menu.submenu" :key="item.id || idx">
           <a @mousedown.prevent="handle(item)">
@@ -42,9 +42,13 @@ export default {
       menuBuilder: null,
       actionHandler: null,
       menus: [],
+      menuActive: false
     }
   },
   methods: {
+    setActive() {
+      this.menuActive = !this.menuActive
+    },
     handle(item) {
       return item.click && !item.submenu ? item.click(item.label) : null
     },

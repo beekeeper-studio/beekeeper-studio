@@ -19,6 +19,14 @@ function dealWithAppImage() {
   }
 }
 
+function checkForUpdates() {
+  try {
+    autoUpdater.checkForUpdates()
+  } catch (error) {
+    console.error(`Could not check for updates: ${error.message}`)
+  }
+}
+
 export function manageUpdates(debug) {
   dealWithAppImage();
 
@@ -26,7 +34,7 @@ export function manageUpdates(debug) {
   // HACK(mc, 2019-09-10): work around https://github.com/electron-userland/electron-builder/issues/4046
 
   ipcMain.on('updater-ready', () => {
-    autoUpdater.checkForUpdates()
+    checkForUpdates()
     if (debug) {
       getActiveWindows().forEach(win => win.webContents.send('update-available'))
     }
@@ -49,6 +57,6 @@ export function manageUpdates(debug) {
   })
 
   setInterval(() => {
-    autoUpdater.checkforUpdates()
+    checkForUpdates()
   }, globals.updateCheckInterval)
 }
