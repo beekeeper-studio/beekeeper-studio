@@ -56,8 +56,8 @@ describe("extractParams", () => {
 
   it("shouldn't extract character class params", () => {
     const testCases = {
-      ":foo:": [],
-      ": foo :": [],
+      ":one:": [],
+      ": two :": [],
       "SELECT 'a' REGEXP '^[[:alpha:]]'": []
     }
     Object.keys(testCases).forEach(query => {
