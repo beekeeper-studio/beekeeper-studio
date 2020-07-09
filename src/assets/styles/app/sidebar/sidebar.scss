@@ -57,7 +57,7 @@
   // Empty
   // ---------------------------------
   .empty {
-    padding: $gutter-w;
+    padding: $gutter-h ($gutter-w + $gutter-h);
     color: $text;
     font-size: 90%;
   }

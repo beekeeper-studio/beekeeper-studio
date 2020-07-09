@@ -11,6 +11,9 @@
   }
   .list-item {
     border-bottom: 1px solid $theme-bg;
+    .badge {
+      min-width: fit-content;
+    }
   }
   .saved-connection-list {
     padding: 0;
