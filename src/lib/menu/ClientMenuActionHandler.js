@@ -7,9 +7,7 @@ function send(name, arg) {
 
 export default class {
 
-  constructor(vueApp, settings) {
-    this.vueApp = vueApp
-    this.settings = settings
+  constructor() {
   }
 
 
@@ -32,5 +30,6 @@ export default class {
   closeTab = () => send('closeTab')
   switchTheme = (theme) => send('switchTheme', theme)
   switchMenuStyle = (style) => send('switchMenuStyle', style)
+  reload = () => send('reload')
 
 }

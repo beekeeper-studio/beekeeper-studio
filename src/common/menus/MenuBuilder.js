@@ -20,6 +20,7 @@ export default class extends DefaultMenu {
         ]
     }
     if(!platformInfo.isMac) result.submenu.push(this.menuItems.menuStyleToggle)
+    if (platformInfo.environment === 'development') result.submenu.push(this.menuItems.reload)
     return result
   }
 

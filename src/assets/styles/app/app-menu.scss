@@ -8,7 +8,7 @@
     list-style-type: none;
     white-space: nowrap;
     background: lighten($theme-bg, 5%);
-    border-radius: 8px;
+    border-radius: 0;
     min-width: 150px;
     @extend .card-shadow-hover;
   }
@@ -59,7 +59,7 @@
           padding: $gutter-h * 0.5;
         }
       }
-      &:hover, &:focus {
+      &.hovered {
         background: rgba($theme-base, 0.05);
       }
     }
@@ -82,7 +82,7 @@
         opacity: 0.5;
       }
     }
-    &:hover {
+    &.hovered {
       > ul {
         // display: block;
         display: none;
@@ -92,7 +92,7 @@
     }
   }
   &.active {
-    li.menu-item:hover {
+    li.menu-item.hovered {
       > ul {
         display: block;
         top: 0;
@@ -127,7 +127,7 @@
           padding: 0 ($gutter-w * 0.85);
           height: $titlebar-actions-height;
         }
-        &:hover {
+        &.selected {
           background: transparent;
           .label {
             color: $text-dark;

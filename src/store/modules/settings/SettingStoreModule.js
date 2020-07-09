@@ -5,13 +5,13 @@ import Vue from 'vue'
 
 const M = {
   ADD: 'addSetting',
-  REPLACEALL: 'replaceSettings'
+  REPLACEALL: 'replaceSettings',
 }
 
 const SettingStoreModule = {
   namespaced: true,
   state: () => ({
-    settings: {}
+    settings: {},
   }),
   mutations: {
     replaceSettings(state, newSettings) {
@@ -33,9 +33,12 @@ const SettingStoreModule = {
     async saveSetting(context, setting) {
       await setting.save()
       context.commit(M.ADD, setting)
-    }
+    },
   },
   getters: {
+    settings(state) {
+      return state.settings
+    },
     themeValue(state) {
       if (!state.settings.theme) return null
       if (['dark', 'light'].includes(state.settings.theme.value)) {

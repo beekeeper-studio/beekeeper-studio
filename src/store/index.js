@@ -30,7 +30,8 @@ const store = new Vuex.Store({
     connectionConfigs: [],
     history: [],
     favorites: [],
-    username: null
+    username: null,
+    menuActive: false
   },
   getters: {
     pinned(state) {
@@ -55,6 +56,9 @@ const store = new Vuex.Store({
     }
   },
   mutations: {
+    menuActive(state, value) {
+      state.menuActive = !!value
+    },
     setUsername(state, name) {
       state.username = name
     },
@@ -251,6 +255,9 @@ const store = new Vuex.Store({
       if (!context.state.favorites.includes(query)) {
         context.commit('favoritesAdd', query)
       }
+    },
+    async menuActive(context, value) {
+      context.commit('menuActive', value)
     }
   },
   plugins: []

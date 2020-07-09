@@ -473,6 +473,11 @@
         })
         this.editor.setValue(startingValue)
         this.editor.addKeyMap(runQueryKeyMap)
+        this.editor.on("keydown", (cm, e) => {
+          if (this.$store.state.menuActive) {
+            e.preventDefault()
+          }
+        })
 
         this.editor.on("change", (cm) => {
           // this also updates `this.queryText`

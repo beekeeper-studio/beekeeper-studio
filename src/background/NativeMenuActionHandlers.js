@@ -49,6 +49,10 @@ export default class {
     await this.setZoom(w.webContents.zoomLevel - 0.5)
   }
 
+  reload = async (m,w) => {
+    await w.webContents.reloadIgnoringCache()
+  }
+
   fullscreen(m,w) {
     w.setFullScreen(!w.isFullScreen())
   }

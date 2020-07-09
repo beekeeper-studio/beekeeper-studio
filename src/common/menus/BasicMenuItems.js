@@ -88,6 +88,12 @@ export function basicMenuItems(actionHandler) {
       nonNativeMacOSRole: true,
       click: actionHandler.devtools
     },
+    reload: {
+      id: 'reload-window',
+      label: "Force Reload",
+      accelerator: "Ctrl+Shift+R",
+      click: actionHandler.reload
+    }
 
   }
 }
