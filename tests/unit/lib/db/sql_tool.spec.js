@@ -53,4 +53,16 @@ describe("extractParams", () => {
       expect(extractParams(query)).toStrictEqual(expected)
     })
   })
+
+  it("shouldn't extract character class params", () => {
+    const testCases = {
+      ":one:": [],
+      ": two :": [],
+      "SELECT 'a' REGEXP '^[[:alpha:]]'": []
+    }
+    Object.keys(testCases).forEach(query => {
+      const expected = testCases[query]
+      expect(extractParams(query)).toStrictEqual(expected)
+    })
+  })
 })
