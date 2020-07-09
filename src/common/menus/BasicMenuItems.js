@@ -84,6 +84,7 @@ export function basicMenuItems(actionHandler) {
     devtools: {
       id: 'dev-tools',
       label: "Show Developer Tools",
+      accelerator: 'F12',
       nonNativeMacOSRole: true,
       click: actionHandler.devtools
     },

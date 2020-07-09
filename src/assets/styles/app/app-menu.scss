@@ -92,7 +92,7 @@
     }
   }
   &.active {
-    li:hover {
+    li.menu-item:hover {
       > ul {
         display: block;
         top: 0;
@@ -100,6 +100,7 @@
       }
     }
   }
+
 
   // First Level Menu
   // ---------------------------------
@@ -116,12 +117,7 @@
     min-width: 0;
     border-radius: 0;
     .top-menu-item {
-      &:hover {
-        > ul {
-          top: 100%;
-          left: 0;
-        }
-      }
+
       > a {
         > .label {
           display: inline-flex;
@@ -136,6 +132,18 @@
           .label {
             color: $text-dark;
           }
+        }
+      }
+    }
+  }
+
+  &.active {
+    .top-menu-item {
+      &.selected {
+        > ul {
+          top: 100%;
+          left: 0;
+          display: block;
         }
       }
     }
