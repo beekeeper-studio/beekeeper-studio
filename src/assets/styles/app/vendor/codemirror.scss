@@ -30,6 +30,9 @@
   .CodeMirror-line .cm-number {
     color: $brand-info;
   }
+  .CodeMirror-cursor {
+    border-color: $text-dark;
+  }
 }
 
 // Addon: Hints

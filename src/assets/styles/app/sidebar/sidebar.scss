@@ -159,6 +159,7 @@
   background: transparent;
   // border-top: 1px solid $border-color;
   .sub {
+    color: $text-dark;
     line-height: 1;
     padding: 0 $gutter-h;
     div {
@@ -315,13 +316,14 @@
       font-size: 90%;
     }
     .badge {
+      font-size: 80%;
       margin-right: 0;
     }
   }
   .sub-item {
     color: $text;
     padding: ($gutter-h * 0.5);
-    padding-right: $gutter-w;
+    padding-right: $gutter-h * 0.5;
     padding-left: $gutter-w * 2.5;
   }
   .btn-fab {
