@@ -1,6 +1,6 @@
 <template>
   <div class="sidebar-wrap flex-col">
-
+  
     <!-- QUICK CONNECT -->
     <div class="btn-wrap quick-connect">
       <a
@@ -14,49 +14,56 @@
       </a>
     </div>
 
-    <!-- Saved Connections -->
-    <div class="list-group saved-connection-list" ref="savedConnectionList">
-      <div class="list-heading">
-        <div class="sub row flex-middle noselect">
-          Saved Connections <span class="badge">{{connectionConfigs.length}}</span>
+    <div class="expand flex-col">
+  
+      <!-- Saved Connections -->
+      <div class="list saved-connection-list expand" ref="savedConnectionList">
+        <div class="list-group">
+          <div class="list-heading">
+            <div class="sub row flex-middle noselect">
+              Saved Connections <span class="badge">{{connectionConfigs.length}}</span>
+            </div>
+          </div>
+          <nav class="list-body">
+              <connection-list-item
+                v-for="c in connectionConfigs"
+                :key="c.id"
+                :config="c"
+                :selectedConfig="selectedConfig"
+                @edit="edit"
+                @remove="remove"
+                @doubleClick="connect"
+              >
+              </connection-list-item>
+          </nav>
         </div>
       </div>
-      <nav class="list-body">
-        <connection-list-item
-          v-for="c in connectionConfigs"
-          :key="c.id"
-          :config="c"
-          :selectedConfig="selectedConfig"
-          @edit="edit"
-          @remove="remove"
-          @doubleClick="connect"
-        >
-        </connection-list-item>
-      </nav>
-    </div>
-
-    <hr> <!-- Fake gutter for split.js -->
-
-    <!-- Recent Connections -->
-    <div class="list-group recent-connection-list" ref="recentConnectionList">
-      <div class="list-heading">
-        <div class="sub row flex-middle noselect">
-          Recent Connections <span class="badge">{{usedConfigs.length}}</span>
+  
+      <hr> <!-- Fake gutter for split.js -->
+  
+      <!-- Recent Connections -->
+      <div class="list recent-connection-list expand" ref="recentConnectionList">
+        <div class="list-group">
+          <div class="list-heading">
+            <div class="sub row flex-middle noselect">
+              Recent Connections <span class="badge">{{usedConfigs.length}}</span>
+            </div>
+          </div>
+          <nav class="list-body">
+              <connection-list-item
+                v-for="c in usedConfigs"
+                :key="c.id"
+                :config="c"
+                :selectedConfig="selectedConfig"
+                :isRecentList="true"
+                @edit="edit"
+                @remove="removeUsedConfig"
+                @doubleClick="connect"
+              >
+              </connection-list-item>
+          </nav>
         </div>
       </div>
-      <nav class="list-body">
-        <connection-list-item
-          v-for="c in usedConfigs"
-          :key="c.id"
-          :config="c"
-          :selectedConfig="selectedConfig"
-          :isRecentList="true"
-          @edit="edit"
-          @remove="removeUsedConfig"
-          @doubleClick="connect"
-        >
-        </connection-list-item>
-      </nav>
     </div>
   </div>
 </template>

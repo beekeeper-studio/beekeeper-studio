@@ -20,6 +20,7 @@
 }
 .table-list {
   .list-group {
+    min-height: 105px;
     .list-item-btn {
       padding: 0 ($gutter-h * 0.8);
     }

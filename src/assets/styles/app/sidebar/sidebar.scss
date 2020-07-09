@@ -199,7 +199,9 @@
   -webkit-overflow-scrolling: touch!important;
 }
 .list-group {
-  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   padding: 0;
   &:hover{
     .list-heading .actions {
@@ -309,7 +311,7 @@
       top: 0;
       bottom: 0;
       left: 14px;
-      border-left: 1px solid rgba(255,255,255,0.08);
+      border-left: 1px solid rgba($theme-base,0.08);
     }
     .title {
       flex-grow: 1;
