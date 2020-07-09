@@ -1,25 +1,7 @@
-/** variables **/
-$page-bg: #607d8b;
-$base-font-size: 16px; // becomes 1rem
-$menu-silver: #eee;
-$menu-border: #dedede;
-$menu-focused: #1e88e5;
-$menu-separator: #ccc;
-$menu-text-color: #333;
-$menu-shortcut-color: #999;
-$menu-focused-text-color: #fff;
-$menu-text-color-disabled: #999;
-$menu-border-width: 1px;
-$menu-shadow: 2px 2px 3px -3px $menu-text-color;
-$menu-content-padding: 0.5rem 1rem 0.5rem 1.75rem;
-$menu-border-radius: 0.5rem;
-$menu-top-padding: 0.25rem;
 
 .flyout-nav {
   ul {
     position: absolute;
-    // top: 0;
-    // left: 40px;
     margin: 0;
     padding: $gutter-h 0;
     display: none;
@@ -101,6 +83,16 @@ $menu-top-padding: 0.25rem;
       }
     }
     &:hover {
+      > ul {
+        // display: block;
+        display: none;
+        top: 0;
+        left: 100%;
+      }
+    }
+  }
+  &.active {
+    li:hover {
       > ul {
         display: block;
         top: 0;
