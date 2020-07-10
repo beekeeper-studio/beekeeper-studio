@@ -1,10 +1,9 @@
 import _ from 'lodash'
 import path from 'path'
-import { BrowserWindow, ipcMain } from "electron"
+import { BrowserWindow } from "electron"
 import { createProtocol } from "vue-cli-plugin-electron-builder/lib"
 import platformInfo from '../common/platform_info'
 import NativeMenuActionHandlers from './NativeMenuActionHandlers'
-import AppEvent from '../common/AppEvent'
 
 const windows = []
 
@@ -53,7 +52,7 @@ class BeekeeperWindow {
     if (process.env.WEBPACK_DEV_SERVER_URL && platformInfo.isWindows) {
       this.win.webContents.on('did-finish-load', this.finishLoadListener.bind(this))
     }
-    this.win.on('closed', (e, cmd) => {
+    this.win.on('closed', () => {
       this.win = null
       this.active = false
     })

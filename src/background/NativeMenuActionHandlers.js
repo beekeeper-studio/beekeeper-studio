@@ -73,7 +73,7 @@ export default class {
   newTab = this.newQuery
   closeTab = (menuItem, win) => win.webContents.send(AppEvent.closeTab)
 
-  switchTheme = async (menuItem, win) => {
+  switchTheme = async (menuItem) => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
     this.settings.theme.userValue = label.toLowerCase()
     await this.settings.theme.save()
@@ -81,7 +81,7 @@ export default class {
       window.win.webContents.send(AppEvent.settingsChanged)
     })
   }
-  switchMenuStyle = async (menuItem, win) => {
+  switchMenuStyle = async (menuItem) => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
     this.settings.menuStyle.value = label.toLowerCase()
     await this.settings.menuStyle.save()

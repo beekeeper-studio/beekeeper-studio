@@ -1,7 +1,6 @@
 'use strict'
 import fs from 'fs'
 import { app, protocol } from 'electron'
-import _ from 'lodash'
 import electron from 'electron'
 import {
   installVueDevtools
