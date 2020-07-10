@@ -3,7 +3,7 @@
 <nav class="flyout-nav" v-hotkey="allHotkeys"  :class="{active: menuActive}" ref="nav">
   <!-- TOP MENU, eg File, Edit -->
   <ul class="menu-bar">
-    <li @mouseover.prevent="setSelected(menu)" @mouseleave.prevent="unselect(menu)" class="top-menu-item" :class="{selected: menu === selected}" v-for="menu in menus" :key="menu.label">
+    <li @mouseover.prevent="setSelected(menu)" @dblclick.stop="noop()" @mouseleave.prevent="unselect(menu)" class="top-menu-item" :class="{selected: menu === selected}" v-for="menu in menus" :key="menu.label">
       <a :class="{selected: menu === selected}" @mousedown.prevent="setActive(menu)"><span class="label">{{menu.label}}</span></a>
       <!-- FIRST LEVEL MENU, eg New Window, New Tab -->
       <ul>

@@ -9,6 +9,7 @@ $titlebar-actions-height:   30px;
   padding: 0 $gutter-h;
   margin: 0;
   z-index: 100;
+  -webkit-app-region: drag;
   .titlebar-icon {
     position: absolute;
     top: 0;
@@ -25,6 +26,10 @@ $titlebar-actions-height:   30px;
     }
     .flyout-nav {
       z-index: 1;
+      -webkit-app-region: no-drag;
+      li > a {
+        -webkit-app-region: no-drag;
+      }
     }
   }
   x-menubar {
