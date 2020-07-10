@@ -6,7 +6,7 @@
       @change="$emit('input', color)"
       :key="color"
       :value="color"
-      :checked="color == value"
+      :checked="color == (value || 'default')"
       :class="['connection-label', getColorClass(color)]">
   </div>
 </template>
