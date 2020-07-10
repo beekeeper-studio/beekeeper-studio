@@ -1,6 +1,6 @@
 
 <template>
-<nav class="flyout-nav" v-hotkey="navigationHotkeys"  :class="{active: menuActive}" ref="nav">
+<nav class="flyout-nav" v-hotkey="allHotkeys"  :class="{active: menuActive}" ref="nav">
   <!-- TOP MENU, eg File, Edit -->
   <ul class="menu-bar">
     <li @mouseover.prevent="setSelected(menu)" @mouseleave.prevent="unselect(menu)" class="top-menu-item" :class="{selected: menu === selected}" v-for="menu in menus" :key="menu.label">
@@ -8,14 +8,14 @@
       <!-- FIRST LEVEL MENU, eg New Window, New Tab -->
       <ul>
         <li v-hotkey="shortcut(item)"  class="menu-item" :class="{'has-children': !!item.submenu, ...hoverClass(item)}" v-for="(item, idx) in menu.submenu" :key="item.id || idx">
-          <a @mousedown.prevent="handle(item)" @mouseover.prevent="setHover(item)" :class="hoverClass(item)">
+          <a  @mousedown.prevent="noop()" @mouseup.prevent="handle(item)" @mouseover.prevent="setHover(item)" :class="hoverClass(item)">
             <span class="label">{{item.label}}</span>
             <span class="shortcut">{{item.accelerator}}</span>
           </a>
           <!-- Second Level Menu, eg Dark Theme, Light Theme -->
           <ul v-if="item.submenu">
             <li v-hotkey="shortcut(item)" class="menu-item" v-for="subitem in item.submenu" :key="subitem.label">
-              <a  @mouseover.prevent="setHover(subitem, item)" :class="hoverClass(subitem)"  @mousedown.prevent="handle(subitem)">
+              <a  @mouseover.prevent="setHover(subitem, item)" :class="hoverClass(subitem)" @mousedown.prevent="noop()"  @mouseup.prevent="handle(subitem)">
                 <span class="label">
                   <span class="material-icons" v-if="subitem.checked">done</span>
                   <span>{{subitem.label}}</span>
@@ -50,19 +50,28 @@ export default {
       menuActive: false,
       selected: null,
       hovered: null,
-      hoveredParent: null
+      hoveredParent: null,
+      navigationKeys: {
+        "ArrowUp": this.moveUp,
+        "ArrowDown": this.moveDown,
+        "ArrowLeft": this.moveLeft,
+        "ArrorRight": this.moveRight,
+        "Escape": this.closeMenu,
+        "Enter": this.clickHovered
+      }
     }
   },
   computed: {
-    navigationHotkeys() {
-      return {
-        "esc": this.closeMenu,
-        "up": this.moveUp,
-        "down": this.moveDown,
-        "left": this.moveLeft,
-        "right": this.moveRight,
-        "enter": this.clickHovered,
-      }
+    allHotkeys() {
+      const result = {}
+      this.menus.forEach(menu => {
+        menu.submenu.forEach(item => {
+          if (item.accelerator && item.click) {
+            result[this.shortcut(item)] = item.click
+          }
+        })
+      })
+      return result
     },
     menuElements() {
       return Array.from(this.$refs.nav.getElementsByTagName("*"))
@@ -73,7 +82,6 @@ export default {
     settings: {
       deep: true,
       handler() {
-        console.log('updating the menu')
         this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler)
         this.menus = this.menuBuilder.buildTemplate()
       }
@@ -101,17 +109,12 @@ export default {
       return array[newIndex]
     },
     maybeCaptureKeydown(e) {
+      
+      if (!this.menuActive || !this.selected) return
 
-      const okKeys = ["ArrowUp", "ArrowDown"]
-      if (this.menuActive && this.selected) {
-        console.log("capturing key! ", e.key)
-        if (okKeys.includes(e.key)) {
-          e.preventDefault()
-          e.stopPropagation()
-          if (e.key === "ArrowUp") this.moveUp(e)
-          if (e.key === "ArrowDown") this.moveDown(e)
-        }
-      }
+      e.preventDefault()
+      const func = this.navigationKeys[e.key]
+      return func && func(e)
     },
     moveUp(e) {
       if (!this.menuActive && !this.selected) {
@@ -172,10 +175,10 @@ export default {
     shortcut(item) {
       if (!item.click || !item.accelerator || item.registerAccelerator === false) return {}
       const ctrlKey = platformInfo.isMac ? 'meta' : 'ctrl'
-      const keymap = item.accelerator.replace('CommandOrControl', ctrlKey)
-      const result = {}
-      result[keymap] = item.click
-      return result
+      return item.accelerator
+        .replace('CommandOrControl', ctrlKey)
+        .replace('Plus', 'numpad +')
+        .toLowerCase()
     },
     setActive(item) {
       this.menuActive = !this.menuActive
@@ -194,22 +197,10 @@ export default {
     maybeHideMenu(event) {
       if (this.menuActive) {
         const target = event.target
-        if (this.menuElements.includes(target)) {
-          console.log("Hide: not doing anything, menu click")
-        } else {
+        if (!this.menuElements.includes(target)) {
           this.menuActive = false
         }
-      } else {
-        console.log("Hide: not doing anything, menu not active")
       }
-
-      // check if the item clicked was a part of the menu
-      // if (item === this.selected) {
-      //   console.log("clicked away", item, this.selected)
-      //   setTimeout(() => {
-      //     this.menuActive = false
-      //   }, 500)
-      // }
     },
     handle(item) {
       if (item.click && !item.submenu) {
@@ -236,7 +227,7 @@ export default {
     this.menuBuilder = new MenuBuilder(this.$store.state.settings.settings, this.actionHandler)
     this.menus = this.menuBuilder.buildTemplate()
     document.addEventListener('click', this.maybeHideMenu)
-    // window.addEventListener('keydown', this.maybeCaptureKeydown, false)
+    window.addEventListener('keydown', this.maybeCaptureKeydown, false)
   },
 
 

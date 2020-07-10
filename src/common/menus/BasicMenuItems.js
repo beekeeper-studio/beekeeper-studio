@@ -60,7 +60,7 @@ export function basicMenuItems(actionHandler) {
     zoomin: {
       id: 'zoom-in',
       label: "Zoom In",
-      accelerator: 'Ctrl+Plus',
+      accelerator: 'Ctrl+Shift+=',
       click: actionHandler.zoomin
     },
     zoomout: {
@@ -90,7 +90,7 @@ export function basicMenuItems(actionHandler) {
     },
     reload: {
       id: 'reload-window',
-      label: "Force Reload",
+      label: "DEV Force Reload",
       accelerator: "Ctrl+Shift+R",
       click: actionHandler.reload
     }
