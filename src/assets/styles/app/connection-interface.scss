@@ -1,11 +1,24 @@
+.interface.connection-interface {
+  padding-top: 0;
+}
+.connection-interface,
+.interface-wrap {
+  overflow: hidden;
+}
+
 // Connection Sidebar
 // --------------------------------
 .connection-sidebar {
+  padding: 0 0 $gutter-w;
   .list-group {
-    padding: $gutter-h 0;
+    padding: $gutter-h $gutter-w;
+  }
+  .list-item {
+    padding: 0;
   }
   .list-item-btn {
     position: relative;
+    margin-right: 0;
     &:hover {
       transition: display 0.15s ease-in-out;
       .badge {
@@ -33,19 +46,7 @@
     }
   }
   .quick-connect {
-    border-top: 1px solid $border-color;
-    .list-item-btn {
-      padding: $gutter-h $gutter-w;
-    }
-    .btn {
-      // color: $theme-primary;
-      height: initial;
-      border-radius: 0;
-      padding: $gutter-w;
-    }
-    i {
-      margin-right: 0.5rem;
-    }
+    padding: 0 $gutter-w;
   }
 }
 
@@ -53,7 +54,8 @@
 // --------------------------------
 .connection-main {
   display: flex;
-  background: darken($theme-bg, 1.5%);
+  background: $query-editor-bg;    
+  height: 100%;
   max-height: 100vh;
   padding: 0 $gutter-w;
   overflow-y: auto;
@@ -64,16 +66,52 @@
     max-height: -webkit-fill-available;
   }
   .card-flat {
+    background: $theme-bg;
     margin: $gutter-w 0;
   }
+  .sqlite-form {
+    margin-bottom: $gutter-h;
+  }
   .save-connection {
+    margin-top: ($gutter-w * 1.25);
+    padding-top: ($gutter-w * 1.25);
+    border-top: 1px solid $border-color;
     h3 {
-      margin-top: 1.5rem;
-      margin-bottom: 0.75rem;
+      margin: 0 0 $gutter-h;
     }
     .btn {
       margin-left: 0.5rem;
     }
+    .has-tooltip {
+      color: $text-lighter;
+      margin-left: $gutter-h;
+    }
+    .save-actions {
+      margin-top: $gutter-h;
+      .save {
+        @extend .btn-flat;
+      }
+    }
+  }
+}
+
+// Connection View & Modal
+.save-connection {
+  .save-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0;
+    margin-left: -($gutter-h * 0.65);
+    margin-right: -($gutter-h * 0.65);
+    .btn {
+      margin-left: ($gutter-h * 0.65);
+      margin-right: ($gutter-h * 0.65);
+    }
+  }
+}
+.save-connection-modal {
+  .v--modal-box {
+    max-width: 500px;
   }
 }
 
@@ -82,10 +120,10 @@
 .advanced-connection-settings {
   display: flex;
   flex-direction: column;
-  background: darken($theme-bg, 1%);
+  background: darken($theme-bg, 4%);
   border-radius: 8px;
-  margin: ($gutter-w * 1.5) 0;
-  padding: 0 ($gutter-w * 1.25);
+  margin: $gutter-w 0;
+  padding: $gutter-w ($gutter-w * 1.25);
 }
 .advanced-heading {
   display: flex;
@@ -104,6 +142,7 @@
   }
 }
 .advanced-body {
+  padding-top: 0.8rem;
   .private-key {
     margin-bottom: $gutter-h;
   }

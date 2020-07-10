@@ -12,11 +12,11 @@
           class="list-item-btn"
           v-for="c in connectionConfigs"
           :key="c.id"
-          :class="{'active': c == selectedConfig }"
+          :class="{'active': c == selectedConfig,  }"
           @click.prevent="edit(c)"
           @dblclick.prevent="connect(c)"
         >
-          <span v-if="c.labelColor" :class="`connection-label connection-label-color-${c.labelColor}`"></span>
+          <span :class="`connection-label connection-label-color-${c.labelColor}`"></span>
           <span class="title expand">{{c.name}} </span>
           <span class="badge"><span>{{c.connectionType}}</span></span>
           <x-button class="btn-fab" skin="iconic">
@@ -33,7 +33,7 @@
     <div class="btn-wrap quick-connect">
       <a
         href=""
-        class="btn btn-link btn-block"
+        class="btn btn-flat btn-icon btn-block"
         :class="{'active': defaultConfig == selectedConfig }"
         @click.prevent="edit(defaultConfig)"
       >

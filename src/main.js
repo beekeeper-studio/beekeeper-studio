@@ -25,6 +25,8 @@ import { ipcRenderer } from 'electron'
 import platform_info from './common/platform_info'
 import AppEventHandler from './lib/events/AppEventHandler'
 import Connection from './common/appdb/Connection'
+import xlsx from 'xlsx'
+
 (async () => {
   try {
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
@@ -38,6 +40,7 @@ import Connection from './common/appdb/Connection'
     window.sql = SQL
     window.hint = Hint
     window.SQLHint = SQLHint
+    window.XLSX = xlsx
     Vue.config.devtools = process.env.NODE_ENV === 'development';
 
     Vue.mixin({
@@ -46,6 +49,11 @@ import Connection from './common/appdb/Connection'
           if (this.$config.isMac) return `meta+${key}`
           return `ctrl+${key}`
         },
+        selectChildren(element) {
+          window.getSelection().selectAllChildren(
+            element
+          );
+        }
       }
     })
 

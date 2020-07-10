@@ -23,8 +23,18 @@ module.exports = {
       builderOptions: {
         appId: "io.beekeeperstudio.desktop",
         productName: "Beekeeper Studio",
+        releaseInfo: {
+          releaseNotesFile: "build/release-notes.md"
+        },
         files: ['**/*', 'public/icons/**/*'],
         afterSign: "electron-builder-notarize",
+        afterPack: "./build/afterPack.js",
+        extraResources: [
+          {
+            from: 'build/launcher-script.sh',
+            to: 'launcher-script.sh'
+          }
+        ],
         mac: {
           entitlements: "./build/entitlements.mac.plist",
           icon: './public/icons/mac/bk-icon.icns',
@@ -55,7 +65,12 @@ module.exports = {
               distribution: 'disco',
               component: 'main'
             },
-          ]
+          ],
+          fpm: [
+            "--after-install=build/deb-postinstall"
+          ],
+          // when we upgrade Electron we need to check these
+          depends: ["libgtk-3-0, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1, libappindicator3-1, libsecret-1-0", "gnupg"]
         },
         appImage: {
           publish: ['github']

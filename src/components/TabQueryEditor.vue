@@ -5,14 +5,14 @@
       <span class="expand"></span>
       <div class="toolbar text-right">
         <div class="actions btn-group" ref="actions">
-          <x-button @click.prevent="triggerSave" class="btn btn-flat">Save</x-button>
+          <x-button @click.prevent="triggerSave" class="btn btn-flat btn-small">Save</x-button>
 
-          <x-buttons>
-            <x-button v-tooltip="'Ctrl+Enter'" @click.prevent="submitTabQuery" primary>
+          <x-buttons class="">
+            <x-button class="btn btn-primary btn-small" v-tooltip="'Ctrl+Enter'" @click.prevent="submitTabQuery">
               <x-label>{{hasSelectedText ? 'Run Selection' : 'Run'}}</x-label>
             </x-button>
-            <x-button menu primary>
-            <i class="material-icons">arrow_drop_down</i>
+            <x-button class="btn btn-primary btn-small" menu>
+              <i class="material-icons">arrow_drop_down</i>
               <x-menu>
                 <x-menuitem @click.prevent="submitTabQuery">
                   <x-label>{{hasSelectedText ? 'Run Selection' : 'Run'}}</x-label>
@@ -35,27 +35,51 @@
       <div class="message" v-else-if="error"><div class="alert alert-danger"><i class="material-icons">warning</i><span>{{error}}</span></div></div>
       <div v-else><!-- No Data --></div>
       <span class="expand" v-if="!result"></span>
-      <footer class="status-bar row query-meta" v-bind:class="{'empty': !result}">
+      <statusbar :class="{'empty': !result, 'query-meta': true}">
         <template v-if="results.length > 0">
-          <span v-show="results.length > 1" class="result-selector">
+          <span v-show="results.length > 1" class="result-selector" :title="'Results'">
             <div class="select-wrap">
               <select name="resultSelector" id="resultSelector" v-model="selectedResult" class="form-control">
                 <option v-for="(result, index) in results" :selected="selectedResult == index" :key="index" :value="index">Result {{index + 1}}</option>
               </select>
             </div>
           </span>
-          <div class="row-counts">
-            <span class="num-rows" v-if="rowCount > 0">{{rowCount}} Records</span>
-            <span class="truncated-rows" v-if="result && result.truncated"> &middot; only {{result.truncatedRowCount}} shown.</span>
+          <div class="row-counts row flex-middle" v-if="rowCount > 0" :title="'Records Displayed'">
+            <span class="num-rows">{{rowCount}}</span>
+            <span class="truncated-rows" v-if="result && result.truncated">/&nbsp;{{result.truncatedRowCount}}</span>
+            <span class="records">records</span>
           </div>
-          <span class="affected-rows" v-if="affectedRowsText ">{{ affectedRowsText}}</span>
+          <span class="affected-rows" v-if="affectedRowsText " :title="'Rows Affected'">{{ affectedRowsText}}</span>
+          <span class="execute-time row flex-middle" v-if="executeTimeText" :title="'Execution Time'">
+            <i class="material-icons">query_builder</i>
+            <span>{{executeTimeText}}</span>
+          </span>
+          <span class="expand"></span>
         </template>
         <template v-else>
-          No Data
+          <span class="expand"></span>
+          <span class="empty">No Data</span>
         </template>
-        <span class="expand"></span>
-        <a class="btn btn-fab" v-if="result" @click.prevent="download" v-tooltip="'Download Query Results'"><i class="material-icons">save_alt</i></a>
-      </footer>
+        <x-buttons class="download-results" v-if="result">
+          <x-button class="btn btn-link btn-small" v-tooltip="'Download Results (CSV)'" @click.prevent="download('csv')">
+            Download
+          </x-button>
+          <x-button class="btn btn-link btn-small" menu>
+            <i class="material-icons">arrow_drop_down</i>
+            <x-menu>
+              <x-menuitem @click.prevent="download('csv')">
+                <x-label>CSV</x-label>
+              </x-menuitem>
+              <x-menuitem @click.prevent="download('xlsx')">
+                <x-label>Excel</x-label>
+              </x-menuitem>
+              <x-menuitem @click.prevent="download('json')">
+                <x-label>JSON</x-label>
+              </x-menuitem>
+            </x-menu>
+          </x-button>
+        </x-buttons>
+      </statusbar>
     </div>
 
     <!-- Save Modal -->
@@ -118,10 +142,12 @@
   import { splitQueries, extractParams } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar'
   import ResultTable from './editor/ResultTable'
+  import Statusbar from './common/StatusBar'
+  import humanizeDuration from 'humanize-duration'
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar },
+    components: { ResultTable, ProgressBar, Statusbar },
     props: ['tab', 'active'],
     data() {
       return {
@@ -141,7 +167,8 @@
         cursorIndex: null,
         marker: null,
         queryParameterValues: {},
-        queryForExecution: null
+        queryForExecution: null,
+        executeTime: 0
 
       }
     },
@@ -201,6 +228,13 @@
 
         const rows = this.result.affectedRows || 0
         return `${rows} ${Pluralize('row', rows)} affected`
+      },
+      executeTimeText() {
+        if (!this.executeTime) {
+          return null
+        }
+        const executeTime = this.executeTime || 0
+        return humanizeDuration(executeTime)
       },
       rowCount() {
         return this.result && this.result.rows ? this.result.rows.length : 0
@@ -294,8 +328,8 @@
       }
     },
     methods: {
-      download() {
-        this.$refs.table.download();
+      download(format) {
+        this.$refs.table.download(format);
       },
       selectEditor() {
         this.editor.focus()
@@ -360,8 +394,11 @@
           const query = this.deparameterizedQuery
           this.$modal.hide('parameters-modal')
 
-          const runningQuery = this.connection.query(query);
+          const runningQuery = this.connection.query(query)
+          const queryStartTime = +new Date()
           const results = await runningQuery.execute()
+          const queryEndTime = +new Date()
+          this.executeTime = queryEndTime - queryStartTime
           let totalRows = 0
           results.forEach(result => {
             result.rowCount = result.rowCount || 0

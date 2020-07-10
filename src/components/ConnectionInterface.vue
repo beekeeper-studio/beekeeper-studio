@@ -7,7 +7,9 @@
       <div ref="content" class="connection-main page-content" id="page-content">
         <div class="small-wrap">
           <div class="card-flat padding">
-            <h3 class="card-title">{{pageTitle}}</h3>
+            <div class="flex flex-between">
+              <h3 class="card-title">{{pageTitle}}</h3>
+            </div>
             <div class="alert alert-danger" v-show="errors">
               <i class="material-icons">warning</i>
               <div>
@@ -42,28 +44,7 @@
                     <button :disabled="testing" class="btn btn-primary" @click.prevent="submit">Connect</button>
                   </div>
                 </div>
-
-                <!-- Save Connection -->
-                <div class="save-connection expand">
-                  <h3>Save Connection</h3>
-                  <div class="row">
-                    <div class="expand"><input class="form-control" @keydown.enter.prevent.stop="save" type="text" v-model="config.name" placeholder="Connection Name"></div>
-                    <div><button class="btn btn-flat" @click.prevent="save">Save</button></div>
-                  </div>
-
-                  <!-- TODO MATTHEW: Not sure if this breaks this -->
-                  <label for="rememberPassword" class="checkbox-group row">
-                    <input id="rememberPassword" type="checkbox" name="rememberPassword" class="form-control" v-model="config.rememberPassword">
-                    <span>Save Passwords</span>
-                    <i class="material-icons" v-tooltip="'Passwords are encrypted when saved'">help_outlined</i>
-                  </label>
-
-                  <!-- Label Color Selection -->
-                  <div class="row">
-                    <div class="expand"></div>
-                    <ColorPicker :value="config.labelColor" v-model="config.labelColor"></ColorPicker>
-                  </div>
-                </div>
+                <SaveConnectionForm :config="config" @save="save"></SaveConnectionForm>
               </div>
 
             </form>
@@ -82,18 +63,20 @@
 <script>
   import os from 'os'
   import {SavedConnection} from '../common/appdb/models/saved_connection'
-  import ColorPicker from './form/ColorPicker'
   import ConnectionSidebar from './ConnectionSidebar'
   import MysqlForm from './connection/MysqlForm'
   import PostgresForm from './connection/PostgresForm'
-  import Sidebar from './Sidebar'
+  import Sidebar from './common/Sidebar'
   import SqliteForm from './connection/SqliteForm'
   import SqlServerForm from './connection/SqlServerForm'
+  import SaveConnectionForm from './connection/SaveConnectionForm'
   import Split from 'split.js'
   import _ from 'lodash'
+  // import ImportUrlForm from './connection/ImportUrlForm';
 
   export default {
-    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, ColorPicker },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm },
+
     data() {
       return {
         defaultConfig: new SavedConnection(),
@@ -187,18 +170,24 @@
         try {
           this.errors = null
           this.connectionError = null
-          this.$store.dispatch('saveConnectionConfig', this.config)
+          await this.$store.dispatch('saveConnectionConfig', this.config)
           if(this.config === this.defaultConfig) {
             this.defaultConfig = new SavedConnection()
           }
-          this.$noty.success("Connection Information Saved")
+          this.$noty.success("Connection Saved")
         } catch (ex) {
           this.errors = [ex.message]
           this.$noty.error("Could not save connection information")
         }
+      },
+      handleErrorMessage(message){
+        if (message){
+          this.errors = [message]
+          this.$noty.error("Could not parse connection URL.")
+        }else{
+          this.errors = null
+        }
       }
     },
-
-
   }
 </script>

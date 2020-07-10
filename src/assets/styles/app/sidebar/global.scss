@@ -2,7 +2,7 @@
   .global-items {
     display: flex;
     flex-direction: column;
-    background: rgba($theme-base, 0.1);
+    background: $global-sidebar-bg;
     .nav-item {
       display: flex;
       align-items: center;
@@ -17,7 +17,20 @@
       }
       &.active {
         color: $text-dark;
-        box-shadow: inset 2px 0 $text-dark;
+        > span {
+          background: rgba($theme-base, 0.08);
+        }
+      }
+      > span {  
+        height: 36px;
+        // width: 100%;
+        // border-radius: 0 36px 36px 0;
+        width: 36px;
+        border-radius: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s ease-in-out;
       }
       .material-icons {
         font-size: 24px;

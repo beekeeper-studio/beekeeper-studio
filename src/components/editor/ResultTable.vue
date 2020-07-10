@@ -66,14 +66,18 @@
         data: this.tableData, //link data to table
         columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,
-        nestedFieldSeparator: false
+        nestedFieldSeparator: false,
+        cellClick: this.cellClick
       });
     },
     methods: {
-      download() {
+      cellClick(e, cell) {
+        this.selectChildren(cell.getElement())
+      },
+      download(format) {
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
-        this.tabulator.download('csv', `${title}-${dateString}.csv`, 'all')
+        this.tabulator.download(format, `${title}-${dateString}.${format}`, 'all')
       }
     }
 

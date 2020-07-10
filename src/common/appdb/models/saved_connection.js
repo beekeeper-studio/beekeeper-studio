@@ -121,7 +121,7 @@ export class SavedConnection extends DbConnectionBase {
     nullable: true,
     default: null
   })
-  labelColor = null
+  labelColor = 'default'
 
   @Column({type: 'boolean', default: true})
   rememberPassword = true

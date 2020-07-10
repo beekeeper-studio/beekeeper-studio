@@ -17,7 +17,7 @@
     data: function() {
       return {
         colors: [
-          '',
+          'default',
           'red',
           'orange',
           'yellow',
@@ -30,7 +30,7 @@
     },
     methods: {
       getColorClass: function(color) {
-        const suffix = color ? color : 'none';
+        const suffix = color ? color : 'default';
         return `connection-label-color-${suffix}`;
       }
     }

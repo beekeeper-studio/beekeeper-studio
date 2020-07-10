@@ -1,5 +1,5 @@
 // Global
-// ------------------------
+// ------------------------------------
 a {
   display: inline-block;
   align-items: center;
@@ -110,6 +110,7 @@ i {
     align-items: center;
     i {
       font-size: 1rem;
+      padding-top: 1px;
     }
   }
 }
@@ -139,6 +140,11 @@ i {
     background: rgba($theme-base, 0.06);
   }
 }
+.btn-icon {
+  .material-icons {
+    margin-right: $gutter-h;
+  }
+}
 .btn-info {
   background: $brand-info;
   color: white;
@@ -156,9 +162,12 @@ i {
   max-width: 250px;
 }
 .btn-small {
-  font-size: 10px;
-  padding: 0 .7rem;
+  font-size: 0.85rem;
+  padding: 0 .65rem;
   min-width: 0;
+  height: 24px;
+  line-height: 24px;
+  border-radius: $btn-border-radius-small;
 }
 .btn-block {
   display: flex;
@@ -220,16 +229,21 @@ i {
 
 // Inputs
 // -----------------------
+.row.gutter > .form-group {
+  margin-top: 0;
+  margin-bottom: 0;
+}
 .form-group {
   display: flex;
   flex-direction: column;
-  margin-top: 6px;
-  margin-bottom: 6px;
+  padding-top: $gutter-h;
+  padding-bottom: $gutter-h;
   label {
     display: flex;
     align-items: center;
     font-size: 0.85rem;
     line-height: 1.5;
+    padding: 0 ($gutter-h * 0.5);
     margin-bottom: 2px;
     .hint {
       margin: 0 0 0 0.25rem;
@@ -329,6 +343,7 @@ select {
   > select {
     border: 0;
     padding-right: 1.25rem;
+    cursor: pointer;
   }
 }
 
@@ -337,18 +352,17 @@ select {
 .checkbox-group {
   display: inline-flex;
   align-items: center;
-  padding-left: 0.25rem;
-  padding-right: 0.25rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
+  padding: ($gutter-h * 0.5);
   cursor: pointer;
   span {
     font-size: 13px;
   }
-
+  .has-tooltip {
+    color: $text-lighter;
+  }
 }
 input[type="checkbox"] {
-  $checkbox-size:     16px;
+  $checkbox-size:     18px;
 
   position: relative;
   display: inline-flex;
@@ -361,7 +375,7 @@ input[type="checkbox"] {
 	padding: 0;
   border: 0;
   margin-top: -1px;
-  margin-right: $gutter-h;
+  margin-right: ($gutter-w * 0.8);
 	border-radius: 5px;
   transition: background 0.2s ease-in-out;
   cursor: pointer;
@@ -376,9 +390,10 @@ input[type="checkbox"] {
     font-family: 'Material Icons';
     content: '\e5ca';
     font-size: $checkbox-size;
+    font-weight: bold;
     position: absolute;
-    height: $checkbox-size;
-    width: $checkbox-size;
+    height: 100%;
+    width: 100%;
     color: rgba(black, 0.87);
   }
 }
@@ -598,7 +613,7 @@ input[type=file] {
   display: inline-block;
   padding: 0 0.35rem;
   border-radius: 4px;
-  font-size: 80%;
+  font-size: 90%;
   font-weight: normal;
   line-height: 1.4;
   text-align: center;
@@ -606,6 +621,7 @@ input[type=file] {
   vertical-align: baseline;
   background: rgba($theme-base, 0.2);
   color: $theme-base;
+  margin: 0 ($gutter-h * 0.75);
   transition: color 0.15s ease-in-out,
               background-color 0.15s ease-in-out,
               border-color 0.15s ease-in-out,
@@ -621,10 +637,10 @@ input[type=file] {
   background: rgba($theme-base, 0.035);
   margin: 0.5rem 0;
   font-size: 0.85rem;
-  line-height: 1.4rem;
+  line-height: 1.1rem;
   > i {
     font-size: 18px;
-    line-height: 1.4rem;
+    line-height: 1.1rem;
     margin-right: 1rem;
   }
   ul {

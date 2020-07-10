@@ -1,5 +1,6 @@
 ---
 title: User Guide
+sidebarDepth: 2
 ---
 
 Once you are connected to your database Beekeeper Studio allows you to open tabs to do the following things:
@@ -40,6 +41,20 @@ Beekeeper allows you to:
 3. Run only what you have selected.
 
 ![sql editor](../assets/img/bks-editor-runs.gif)
+
+
+### Query Parameters
+
+You can parameterize your queries and Beekeeper will prompt you for values when you run it.
+
+You can use two types of syntax `:variable`, or `$1`
+
+```sql
+select * from table where foo = :one and bar = :two
+
+select * from table where foo = $1 and bar = $2
+```
+![Query parameters gif](../assets/img/bks-editor-params.gif)
 
 
 ## Table Explorer

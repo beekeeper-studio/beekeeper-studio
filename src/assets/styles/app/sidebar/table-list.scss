@@ -18,3 +18,10 @@
     }
   }
 }
+.table-list {
+  .list-group {
+    .list-item-btn {
+      padding: 0 ($gutter-h * 0.8);
+    }
+  }
+}

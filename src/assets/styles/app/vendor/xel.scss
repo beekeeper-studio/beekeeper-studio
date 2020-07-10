@@ -454,19 +454,20 @@ x-button {
 x-buttons {
   > x-button {
     &[menu] {
-      border-left: 1px solid rgba($theme-bg, 0.5);
+      border-left: 1px solid rgba($theme-bg, 0.5)!important;
       padding: 0!important;
       .material-icons {
         font-size: 20px;
+        width: 20px;
       }
     }
-    &:not(:first-child) {
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
-    }
-    &:not(:last-child) {
+    &:first-of-type {
       border-top-right-radius: 0;
       border-bottom-right-radius: 0;
+    }
+    &:last-of-type{
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
     }
   }
 }
@@ -758,6 +759,7 @@ x-menu {
   font-size: 0.85rem;
   text-transform: none;
   font-weight: 400;
+  min-width: 150px;
   @extend .card-shadow-hover;
   // --open-transition: 100 transform var(--transition-fn1);
   --open-transition: none;
@@ -795,13 +797,27 @@ x-menuitem {
     height: 24px;
   }
   x-icon {
-    opacity: 0.7;
+    opacity: 0.6;
+  }
+  .material-icons {
+    height: 24px!important;
+    line-height: 24px!important;
+    width: 24px;
+    opacity: 0.6;
+    margin-right: $gutter-h!important;
   }
   x-label {
+    display: flex;
     flex: 1;
+    align-items: center;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+    text-overflow: ellipsis;    
+    text-align: left;
+    span {
+      display: inline-flex;
+      align-items: center;
+    }
   }
   x-shortcut {
     font-size: 0.9rem;
@@ -888,16 +904,20 @@ x-notification {
  */
 
 x-checkbox {
-  color: #6d6d6d;
-  border: 3px solid currentColor;
-  border-radius: 3px;
+  color: $text;
+  height: 18px;
+  width: 18px;
+  border: 0;
+  box-shadow: inset 0 0 0 2px $text-lighter;
+  border-radius: 6px;
   transition: color 0.2s var(--transition-fn1);
-  --ripple-type:none;
-
+  overflow: hidden;
+  --ripple-type: none;
   &[toggled] {
-    color: var(--primary-color);
+    color: $theme-primary;
+    box-shadow: inset 0 0 0 2px $theme-primary;
+    border-radius: 6px;
   }
-
   &::before {
     position: absolute;
     width: 100%;
@@ -913,12 +933,10 @@ x-checkbox {
     transition: transform 0.15s var(--transition-fn1);
     transform: scale(0);
   }
-
   &:focus::before {
     transform: scale(2.6);
   }
 }
-
 @media (pointer: coarse) {
   x-checkbox {
     --ripple-type:unbounded;
@@ -975,22 +993,19 @@ x-radio {
  */
 
 x-switch {
-  color: var(--primary-color);
+  color: $theme-primary;
   transition: filter 0.2s var(--transition-fn1);
   filter: saturate(0%);
   --ripple-type:none;
-
   &[toggled] {
     filter: none;
   }
-
   &[skin="big"] {
     width: 40px;
     --thumb-size:22px;
     --track-height:80%;
   }
 }
-
 @media (pointer: coarse) {
   x-switch {
     --ripple-type:unbounded;

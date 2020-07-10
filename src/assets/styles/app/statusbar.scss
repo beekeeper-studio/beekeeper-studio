@@ -1,0 +1,120 @@
+.statusbar {
+  // $statusbar-bg: darken($brand-pink, 55%);
+
+  display: flex;
+  align-items: center;
+  background: $statusbar-bg;
+  color: rgba($statusbar-text, 0.57);
+  min-height: $statusbar-height;
+  height: $statusbar-height;
+  line-height: $statusbar-height;
+  font-size: 0.85rem;
+  padding: 0 $gutter-h;
+  overflow: hidden;
+  .btn {
+    color: $statusbar-text;
+    height: $statusbar-height * 0.8;
+    line-height: $statusbar-height * 0.8;
+    transition: background 0.15s ease-in-out;
+    &:hover {
+      background: rgba($statusbar-text, 0.1);
+    }
+    .material-icons {
+      font-size: 16px;
+    }
+  }
+  a {
+    color: $statusbar-text;
+  }
+  span.row {
+    .material-icons {
+      font-size: 16px;
+      margin-right: $gutter-h * 0.5;
+    }
+  }
+
+  // Connection Status
+  // ---------------------------
+  .connection-button, 
+  .connection-button > .btn {
+    height: $statusbar-height;
+    line-height: $statusbar-height;
+    margin: -$gutter-h;
+    padding: 0 $gutter-h;
+    flex: 1 1 100%;
+    overflow: hidden;
+  }
+  .connection-name {
+    font-size: 0.85rem;
+  }
+  .connection-button {
+    position: relative;
+    .material-icons {
+      font-size: 16px;
+    }
+    > .btn {
+      text-align: left;
+      border-radius: 0;
+      --trigger-effect: none;
+    }
+    .badge {
+      min-width: fit-content;
+    }
+    x-menu {
+      width: 286px;
+    }
+  }
+
+  // No Data
+  // -----------------------
+  .empty {
+    padding: 0 $gutter-h;
+  }
+
+  // Download Results
+  // -----------------------------
+  .download-results {
+    .btn-link {
+      background: rgba($theme-base, 0.1);
+      color: $text-dark;
+      box-shadow: inset 0 0 0 1px rgba($theme-base, 0.05);
+      height: $statusbar-height * 0.8;
+      line-height: $statusbar-height * 0.8;
+    }
+    .material-icons {
+      color: $text-dark;
+      font-size: 14px;
+    }
+  }
+
+  // Results Select
+  // -------------------------
+  .result-selector {
+    margin-right: $gutter-h;
+  }
+  .select-wrap {
+    box-shadow: none;
+    background: rgba($statusbar-text, 0.1);
+    &:hover {
+      background: rgba($statusbar-text, 0.15);
+    }
+  }
+  select {
+    color: $statusbar-text;
+    height: $statusbar-height * 0.8;
+    line-height: $statusbar-height * 0.8;
+  }
+
+  // Query Status
+  // ----------------------------
+  .row-counts, 
+  .affected-rows, 
+  .execute-time {
+    padding: 0 $gutter-h;
+  }
+  .row-counts {
+    .truncated-rows, .records {
+      margin-left: $gutter-h * 0.5;
+    }
+  }
+}

@@ -29,7 +29,11 @@
                 v-model="filter.value"
                 placeholder="Enter Value"
               />
-              <button type="button" class="clear btn-link" @click.prevent="filter.value = ''">
+              <button 
+                type="button" 
+                class="clear btn-link" 
+                @click.prevent="filter.value = ''"
+              >
                 <i class="material-icons">cancel</i>
               </button>
             </div>
@@ -41,6 +45,10 @@
       </form>
     </div>
     <div ref="table"></div>
+    <statusbar class="tabulator-footer">
+
+      <span ref="paginationArea" class="tabulator-paginator"></span>
+    </statusbar>
   </div>
 </template>
 
@@ -56,13 +64,15 @@
 import Tabulator from "tabulator-tables";
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
+import Statusbar from '../common/StatusBar'
+
 
 export default {
+  components: { Statusbar },
   mixins: [data_converter, DataMutators],
   props: ["table", "connection"],
   data() {
     return {
-      currentCell: null, // Last clicked cell
       filterTypes: {
         equals: "=",
         "does not equal": "!=",
@@ -116,7 +126,7 @@ export default {
       if (this.filter.value === "") {
         this.clearFilter();
       }
-    }
+    },
   },
   async mounted() {
     this.tabulator = new Tabulator(this.$refs.table, {
@@ -129,29 +139,15 @@ export default {
       ajaxFiltering: true,
       pagination: "remote",
       paginationSize: this.limit,
+      paginationElement: this.$refs.paginationArea,
       initialSort: this.initialSort,
-      cellClick: (e, cell) => {
-        // Remove focus and listener on other cell, if any
-        if (this.currentCell) {
-          this.currentCell.getElement().classList.remove('active-cell')
-          this.currentCell.getElement().removeEventListener('copy', () => {})
-        }
-
-        // Set cell style
-        cell.getElement().classList.add('active-cell')
-
-        // Connect listener
-        cell.getElement().addEventListener('copy', event => {
-          event.clipboardData.setData('text/plain', cell.getValue())
-          event.preventDefault()
-        })
-
-        // Override current cell
-        this.currentCell = cell
-      }
+      cellClick: this.cellClick
     });
   },
   methods: {
+    cellClick(e, cell) {
+      this.selectChildren(cell.getElement())
+    },
     triggerFilter() {
       if (this.filter.type && this.filter.field) {
         if (this.filter.value) {
