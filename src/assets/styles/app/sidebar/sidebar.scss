@@ -84,12 +84,15 @@
       padding-right: 1.5rem;
       cursor: pointer;
     }
-    > a {
+    .refresh {
       display: inline-flex;
       margin-left: $gutter-h;
       .material-icons {
         font-size: 16px;
         color: $text-light;
+        &:hover {
+          color: $text-dark;
+        }
       }
     }
   }
@@ -186,6 +189,10 @@
     }
     .material-icons {
       font-size: 16px;
+      color: $text-light;
+      &:hover {
+        color: $text-dark;
+      }
     }
   }
 }
@@ -226,7 +233,7 @@
   }
   .list-item-btn {
     color: rgba($theme-base, 0.77);
-    padding: 0 ($gutter-w * 0.8);
+    padding: 0 $gutter-h;
     // margin-right: $gutter-h;
     line-height: 1.8rem;
     height: 1.8rem;
@@ -310,7 +317,7 @@
       position: absolute;
       top: 0;
       bottom: 0;
-      left: 14px;
+      left: 9px;
       border-left: 1px solid rgba($theme-base,0.08);
     }
     .title {
