@@ -63,7 +63,7 @@
 <script>
   import os from 'os'
   import {SavedConnection} from '../common/appdb/models/saved_connection'
-  import ConnectionSidebar from './ConnectionSidebar'
+  import ConnectionSidebar from './sidebar/ConnectionSidebar'
   import MysqlForm from './connection/MysqlForm'
   import PostgresForm from './connection/PostgresForm'
   import Sidebar from './common/Sidebar'
