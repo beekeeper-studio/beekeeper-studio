@@ -15,7 +15,6 @@ export default class extends DefaultMenu {
           this.menuItems.zoomin,
           this.menuItems.zoomout,
           this.menuItems.fullscreen,
-          { type: 'separator' },
           this.menuItems.themeToggle,
         ]
     }
@@ -31,13 +30,10 @@ export default class extends DefaultMenu {
         label: "Beekeeper Studio",
         submenu: [
           { role: 'about' },
-          { type: 'separator' },
           { role: 'services' },
-          { type: 'separator' },
           { role: 'hide' },
           { role: 'hideothers' },
           { role: 'unhide' },
-          { type: 'separator' },
           { role: 'quit' }
         ]
       })
@@ -61,7 +57,6 @@ export default class extends DefaultMenu {
         submenu: [
           this.menuItems.undo,
           this.menuItems.redo,
-          { type: 'separator' },
           this.menuItems.cut,
           this.menuItems.copy,
           this.menuItems.paste,

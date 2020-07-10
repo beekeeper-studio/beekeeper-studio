@@ -55,7 +55,7 @@ export default {
         "ArrowUp": this.moveUp,
         "ArrowDown": this.moveDown,
         "ArrowLeft": this.moveLeft,
-        "ArrorRight": this.moveRight,
+        "ArrowRight": this.moveRight,
         "Escape": this.closeMenu,
         "Enter": this.clickHovered
       }
@@ -188,7 +188,7 @@ export default {
       this.selected = item
     },
     unselect(item) {
-      if (this.selected === item) this.selected = null
+      if (!this.menuActive && this.selected === item) this.selected = null
     },
     setHover(item, parent) {
       this.hovered = item
