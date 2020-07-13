@@ -6,7 +6,7 @@ $titlebar-actions-height:   30px;
   align-items: center;
   justify-content: center;
   background: $titlebar-bg;
-  padding: $gutter-h;
+  padding: 0 $gutter-h;
   margin: 0;
   z-index: 100;
   -webkit-app-region: drag;
@@ -27,7 +27,7 @@ $titlebar-actions-height:   30px;
     .flyout-nav {
       z-index: 1;
       -webkit-app-region: no-drag;
-      li > a {
+      li > a, .menu-item {
         -webkit-app-region: no-drag;
       }
     }
