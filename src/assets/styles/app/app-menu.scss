@@ -1,0 +1,151 @@
+
+.flyout-nav {
+  ul {
+    position: absolute;
+    margin: 0;
+    padding: $gutter-h 0;
+    display: none;
+    list-style-type: none;
+    white-space: nowrap;
+    background: lighten($theme-bg, 5%);
+    border-radius: 6px;
+    min-width: 150px;
+    @extend .card-shadow-hover;
+  }
+  li {
+    position: relative;
+    display: block;
+    &.separator {
+      margin-bottom: $gutter-h;
+      padding-bottom: $gutter-h;
+      border-bottom: 1px solid $border-color;
+    }
+    a {
+      text-decoration: none;
+      color: $text;
+      position: relative;
+      display: table;
+      width: 100%;
+      .label,
+      .shortcut {
+        position: relative;
+        display: table-cell;
+        padding: $gutter-h $gutter-w;
+      }
+      .shortcut {
+        font-size: 90%;
+        text-align: right;
+        color: $text-lighter;
+      }
+      .label {
+        font-size: 95%;
+        padding-left: $gutter-w * 2.6;
+        cursor: pointer;
+        .material-icons {
+          position: absolute;
+          left: $gutter-h;
+        }
+      }
+      input[type='checkbox'] {
+        display: none;
+      }
+      input[type='checkbox']:checked+.label {
+        &:before {
+          font-family: 'Material Icons';
+          content: '\e5ca';
+          position: absolute;
+          top: 0;
+          left: $gutter-h * 0.5;
+          padding: $gutter-h * 0.5;
+        }
+      }
+      &.hovered {
+        background: rgba($theme-base, 0.05);
+      }
+    }
+    &.has-children > a {
+      margin-right: 2.5rem;
+      &:after {
+        font-family: 'Material Icons';
+        content: '\e315';
+        text-align: right;
+        position: absolute;
+        right: 0;
+        padding: $gutter-h $gutter-w;
+        padding-left: $gutter-w * 2;
+      }
+    }
+    &.disabled {
+      pointer-events: none;
+      .label,
+      .shortcut {
+        opacity: 0.5;
+      }
+    }
+    &.hovered {
+      > ul {
+        // display: block;
+        display: none;
+        top: 0;
+        left: 100%;
+      }
+    }
+  }
+  &.active {
+    li.menu-item.hovered {
+      > ul {
+        display: block;
+        top: 0;
+        left: 100%;
+      }
+    }
+  }
+
+
+  // First Level Menu
+  // ---------------------------------
+  > .menu-bar {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+    width: auto;
+    background: transparent;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    border-radius: 0;
+    .top-menu-item {
+
+      > a {
+        > .label {
+          display: inline-flex;
+          align-items: center;
+          font-size: 85%;
+          color: $text-lighter;
+          padding: 0 ($gutter-w * 0.85);
+          height: $titlebar-actions-height;
+        }
+        &.selected {
+          background: transparent;
+          .label {
+            color: $text-dark;
+          }
+        }
+      }
+    }
+  }
+
+  &.active {
+    .top-menu-item {
+      &.selected {
+        > ul {
+          top: 100%;
+          left: 0;
+          display: block;
+        }
+      }
+    }
+  }
+}

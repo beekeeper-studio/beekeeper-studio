@@ -1,15 +1,15 @@
 <template>
   <div class="list-item">
-    <a class="list-item-btn" role="button" v-bind:class="{'active': selected,'open': showColumns }" @click="toggleColumns" @click.prevent="$emit('selected', table)">
+    <a class="list-item-btn" role="button" v-bind:class="{'active': selected,'open': showColumns }" @mousedown.prevent="toggleColumns">
       <span class="btn-fab open-close" >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
       <i :title="title" :class="iconClass" class="item-icon material-icons">grid_on</i>
       <span class="table-name truncate expand">{{table.name}}</span>
       <span class="actions" v-bind:class="{'pinned': pinned.includes(table)}">
-        <span class="btn-fab launch" title="Open in a new tab" @click.prevent.stop="openTable"><i class="material-icons">launch</i></span>
-        <span v-if="!pinned.includes(table)" @click.prevent.stop="pin" class="btn-fab pin" :title="'Pin'"><i class="bk-pin"></i></span>
-        <span v-if="pinned.includes(table)" @click.prevent.stop="unpin" class="btn-fab unpin" :title="'Unpin'"><i class="material-icons">clear</i></span>
+        <span class="btn-fab launch" title="Open in a new tab" @mousedown.prevent.stop="openTable"><i class="material-icons">launch</i></span>
+        <span v-if="!pinned.includes(table)" @mousedown.prevent.stop="pin" class="btn-fab pin" :title="'Pin'"><i class="bk-pin"></i></span>
+        <span v-if="pinned.includes(table)" @mousedown.prevent.stop="unpin" class="btn-fab unpin" :title="'Unpin'"><i class="material-icons">clear</i></span>
         <span v-if="pinned.includes(table)" class="btn-fab pinned"><i class="bk-pin" :title="'Unpin'"></i></span>
       </span>
     </a>
@@ -76,6 +76,7 @@
         this.selectChildren(this.$refs.title[i])
       },
       async toggleColumns() {
+        this.$emit('selected', this.table)
         this.showColumns = !this.showColumns
       },
       openTable() {

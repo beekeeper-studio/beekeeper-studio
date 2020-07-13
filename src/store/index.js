@@ -5,16 +5,20 @@ import Vuex from 'vuex'
 import username from 'username'
 // import VueXPersistence from 'vuex-persist'
 
-import { UsedConnection } from '@/entity/used_connection'
-import { SavedConnection } from '@/entity/saved_connection'
-import { FavoriteQuery } from '@/entity/favorite_query'
-import { UsedQuery } from '@/entity/used_query'
+import { UsedConnection } from '../common/appdb/models/used_connection'
+import { SavedConnection } from '../common/appdb/models/saved_connection'
+import { FavoriteQuery } from '../common/appdb/models/favorite_query'
+import { UsedQuery } from '../common/appdb/models/used_query'
 import ConnectionProvider from '@/lib/connection-provider'
+import SettingStoreModule from './modules/settings/SettingStoreModule'
 
 Vue.use(Vuex)
 // const vuexFile = new VueXPersistence()
 
 const store = new Vuex.Store({
+  modules: {
+    settings: SettingStoreModule
+  },
   state: {
     usedConfig: null,
     usedConfigs: [],
@@ -27,7 +31,8 @@ const store = new Vuex.Store({
     connectionConfigs: [],
     history: [],
     favorites: [],
-    username: null
+    username: null,
+    menuActive: false
   },
   getters: {
     orderedUsedConfigs(state) {
@@ -58,6 +63,9 @@ const store = new Vuex.Store({
     }
   },
   mutations: {
+    menuActive(state, value) {
+      state.menuActive = !!value
+    },
     setUsername(state, name) {
       state.username = name
     },
@@ -271,6 +279,9 @@ const store = new Vuex.Store({
       if (!context.state.favorites.includes(query)) {
         context.commit('favoritesAdd', query)
       }
+    },
+    async menuActive(context, value) {
+      context.commit('menuActive', value)
     }
   },
   plugins: []

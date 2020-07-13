@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { SavedConnection } from "../entity/saved_connection"
+import { SavedConnection } from '../common/appdb/models/saved_connection'
 
 
 export default {

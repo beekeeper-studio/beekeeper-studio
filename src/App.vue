@@ -1,7 +1,7 @@
 <template>
 <div class="style-wrapper">
     <div class="beekeeper-studio-wrapper">
-      <titlebar v-if="$config.isWindows || $config.isMac"></titlebar>      
+      <titlebar v-if="$config.isWindows || $config.isMac || menuStyle === 'client'"></titlebar>
       <connection-interface v-if="!connection"></connection-interface>
       <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
       <auto-updater></auto-updater>
@@ -12,6 +12,7 @@
 
 <script>
 import { ipcRenderer } from 'electron'
+import { mapGetters } from 'vuex'
 import Titlebar from './components/Titlebar'
 import CoreInterface from './components/CoreInterface'
 import ConnectionInterface from './components/ConnectionInterface'
@@ -29,12 +30,24 @@ export default {
   computed: {
     connection() {
       return this.$store.state.connection
+    },
+    ...mapGetters({
+      'themeValue': 'settings/themeValue',
+      'menuStyle': 'settings/menuStyle'
+    })
+  },
+  watch: {
+    themeValue() {
+      document.body.className = `theme-${this.themeValue}`
     }
   },
-  mounted() {
+  async mounted() {
     this.$nextTick(() => {
       ipcRenderer.send('ready')
     })
+    if (this.themeValue) {
+      document.body.className = `theme-${this.themeValue}`
+    }
   },
   methods: {
     databaseSelected(db) {

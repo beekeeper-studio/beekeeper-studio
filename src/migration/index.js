@@ -1,8 +1,11 @@
 
+
 import a from './20200101'
 import b from './20200422'
 import c from './20200514'
 import d from './20200517'
+import createSettings from './20200624_create_settings'
+import addZoom from './20200703_add_zoom_to_settings'
 import addSc from './20200707-add-sc-to-used-connections'
 import dev1 from './dev-1'
 import dev2 from './dev-2'
@@ -18,7 +21,7 @@ const setupSQL = `
  )
 `
 const realMigrations = [
-  a, b, c, d, domains, addSc
+  a, b, c, d, domains, createSettings, addZoom, addSc
 ]
 
 const devMigrations = [
@@ -50,7 +53,7 @@ export default class {
 
   async run() {
     console.log("running migrations")
-    const runner = this.connection.createQueryRunner()
+    const runner = this.connection.connection.createQueryRunner()
     await runner.query(setupSQL)
     try  {
       // await runner.startTransaction()

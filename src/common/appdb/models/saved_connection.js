@@ -4,8 +4,8 @@ import { Entity, Column, BeforeInsert, BeforeUpdate } from "typeorm"
 
 import {ApplicationEntity} from './application_entity'
 import {EncryptedColumn} from 'typeorm-encrypted-column'
-import config from '../config'
-import { resolveHomePathToAbsolute } from '../lib/utils'
+import { resolveHomePathToAbsolute } from '../../utils'
+import { loadEncryptionKey } from '../../encryption_key'
 
 
 export class DbConnectionBase extends ApplicationEntity {
@@ -157,7 +157,7 @@ export class SavedConnection extends DbConnectionBase {
     type: 'varchar',
     nullable: true,
     encrypt: {
-      key: config.encryptionKey,
+      key: loadEncryptionKey(),
       algorithm: 'aes-256-cbc',
       ivLength: 16,
       looseMatching: false
@@ -169,7 +169,7 @@ export class SavedConnection extends DbConnectionBase {
     type: "varchar",
     nullable: true,
     encrypt: {
-      key: config.encryptionKey,
+      key: loadEncryptionKey(),
       algorithm: 'aes-256-cbc',
       ivLength: 16,
       looseMatching: false
@@ -181,7 +181,7 @@ export class SavedConnection extends DbConnectionBase {
     type: 'varchar',
     nullable: true,
     encrypt: {
-      key: config.encryptionKey,
+      key: loadEncryptionKey(),
       algorithm: 'aes-256-cbc',
       ivLength: 16,
       looseMatching: false

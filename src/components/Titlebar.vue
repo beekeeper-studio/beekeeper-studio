@@ -1,10 +1,11 @@
 <template>
-  <div class="titlebar" @dblclick.prevent.stop="maximizeWindow" :class="{windows: $config.isWindows}">
+  <div class="titlebar" @dblclick.prevent.stop="maximizeWindow" :class="{windows: !$config.isMac}">
     <div class="titlebar-icon" v-if="!$config.isMac">
       <img src="@/assets/logo.svg" />
+      <AppMenu></AppMenu>
     </div>
     <div class="titlebar-title noselect">Beekeeper Studio</div>
-    <div class="titlebar-actions" v-if="$config.isWindows">
+    <div class="titlebar-actions" v-if="!$config.isMac">
       <template>
         <button class="btn btn-link" id="minimize" @click.prevent="minimizeWindow"><i class="material-icons">remove</i></button>
         <button class="btn btn-link" id="maximize" @click.prevent="maximizeWindow">
@@ -19,38 +20,40 @@
 
 <script>
 import {remote} from 'electron'
+import AppMenu from './menu/NewAppMenu'
 export default {
-    data() {
-      return {
-        window: remote.getCurrentWindow(),
-        maximized: remote.getCurrentWindow().isMaximized()
-      }
-    },
-    mounted() {
-      this.window.on('maximize', () => {
-        this.maximized = true
-      })
+  components: { AppMenu },
+  data() {
+    return {
+      window: remote.getCurrentWindow(),
+      maximized: remote.getCurrentWindow().isMaximized()
+    }
+  },
+  mounted() {
+    this.window.on('maximize', () => {
+      this.maximized = true
+    })
 
-      this.window.on('unmaximize', () => {
-        this.maximized = false
-      })
+    this.window.on('unmaximize', () => {
+      this.maximized = false
+    })
+  },
+  methods: {
+    minimizeWindow() {
+      this.window.minimize();
     },
-    methods: {
-      minimizeWindow() {
-        this.window.minimize();
-      },
-      maximizeWindow() {
-        if (this.window.isMaximized()) {
-          this.window.unmaximize();
-        } else {
-          this.window.maximize();
-        }
-      },
-      closeWindow() {
-        window.close()
+    maximizeWindow() {
+      if (this.window.isMaximized()) {
+        this.window.unmaximize();
+      } else {
+        this.window.maximize();
       }
+    },
+    closeWindow() {
+      window.close()
     }
   }
+}
 </script>
 
 <style>

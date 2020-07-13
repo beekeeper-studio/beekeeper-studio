@@ -7,7 +7,7 @@ import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward'
 import appConfig from '../../config'
 
-import { resolveHomePathToAbsolute } from '../utils'
+import { resolveHomePathToAbsolute } from '../../common/utils'
 
 const logger = createLogger('db:tunnel');
 

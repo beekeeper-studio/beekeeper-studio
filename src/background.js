@@ -1,73 +1,50 @@
 'use strict'
-import { app, protocol, BrowserWindow} from 'electron'
-import path from 'path'
+import fs from 'fs'
+import { app, protocol } from 'electron'
+import electron from 'electron'
 import {
-  createProtocol,
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib'
 
 import { manageUpdates } from './background/update_manager'
-import { configureMenu } from './background/configure_menu'
+
 import platformInfo from './common/platform_info'
-
+import MenuHandler from './background/NativeMenuBuilder'
+import { UserSetting } from './common/appdb/models/user_setting'
+import Connection from './common/appdb/Connection'
+import Migration from './migration/index'
+import { buildWindow } from './background/WindowBuilder'
 const isDevelopment = process.env.NODE_ENV !== 'production'
-const debugMode = !!process.env.DEBUG
-
-const { isWindows, isMac, isLinux } = platformInfo
-
-const platform = isMac ? 'mac' : (isLinux ? 'linux' : 'windows')
+const ormConnection = new Connection(platformInfo.appDbPath, false)
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win
+let menuHandler
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 
-function createWindow () {
-  configureMenu(app, platform, isDevelopment || debugMode)
-
-  const iconPrefix = isDevelopment ? 'public' : ''
-  // Create the browser window.
-  win = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    minWidth: 800,
-    minHeight: 600,
-    titleBarStyle: 'hidden',
-    frame: isLinux || (isWindows && isDevelopment),
-    webPreferences: {
-      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-    },
-    icon: path.join(__dirname, `${iconPrefix}/icons/png/512x512.png`)
-  })
-
-
-  const finishLoadListener = () => {
-    win.webContents.reload()
-    win.webContents.removeListener('did-finish-load', finishLoadListener)
+function initUserDirectory(d) {
+  if (!fs.existsSync(d)) {
+    fs.mkdirSync(d, { recursive: true })
   }
-  if(process.env.WEBPACK_DEV_SERVER_URL && isWindows) {
-    win.webContents.on('did-finish-load', finishLoadListener)
-  }
+}
+
+initUserDirectory(platformInfo.userDirectory)
 
 
-  if (process.env.WEBPACK_DEV_SERVER_URL) {
-    // Load the url of the dev server if in development mode
-    win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
-    if (!process.env.IS_TEST) win.webContents.openDevTools();
-    console.log("not checking for package updates in dev mode")
-  } else {
-    createProtocol('app')
-    // Load the index.html when not in development
-    win.loadURL('app://./index.html')
-    if (debugMode) win.webContents.openDevTools();
-    manageUpdates(win)
-  }
+async function createFirstWindow () {
+  await ormConnection.connect()
+  const migrator = new Migration(ormConnection, process.env.NODE_ENV)
+  await migrator.run()
 
-  win.on('closed', () => {
-    win = null
-  })
+  const settings = await UserSetting.all()
+
+  menuHandler = new MenuHandler(electron, settings)
+  menuHandler.initialize()
+  buildWindow(settings)
+  manageUpdates()
 }
 
 
@@ -77,6 +54,7 @@ app.on('window-all-closed', () => {
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
     app.quit()
+
   }
 })
 
@@ -84,7 +62,7 @@ app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (win === null) {
-    createWindow()
+    createFirstWindow()
   }
 })
 
@@ -101,7 +79,7 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
-  createWindow()
+  createFirstWindow()
 })
 
 // Exit cleanly on request from parent process in development mode.
