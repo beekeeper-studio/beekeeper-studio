@@ -162,7 +162,7 @@ const store = new Vuex.Store({
       // however running through an SSH tunnel doesn't work
       // it only supports one query at a time.
       try {
-        context.commit("tablesLoading", "finding tables")
+        context.commit("tablesLoading", "Finding tables")
         const onlyTables = await context.state.connection.listTables({ schema: null })
         onlyTables.forEach((t) => {
           t.entityType = 'table'
@@ -175,27 +175,21 @@ const store = new Vuex.Store({
         const materialized = await context.state.connection.listMaterializedViews({schema: null})
         materialized.forEach(v => v.entityType = 'materialized-view')
         const tables = onlyTables.concat(views).concat(materialized)
-        var processed = 0
+        context.commit("tablesLoading", `Loading ${tables.length} tables`)
 
-        await Promise.all(tables.map(table => {
-          return new Promise(async (resolve, reject) => {
-            try {
-              let columns = []
-              if (table.entityType === 'materialized-view') {
-                columns = await context.state.connection.listMaterializedViewColumns(table.name, table.schema)
-              } else {
-                columns = await context.state.connection.listTableColumns(table.name, table.schema)
-              }
+        const tableColumns = await context.state.connection.listTableColumns()
+        const viewColumns = materialized.length > 0 ? await context.state.connection.listMaterializedViewColumns() : []
+        
+        const allColumns = tableColumns.concat(viewColumns)
 
-              processed += 1
-              context.commit("tablesLoading", `Loading ${processed}/${tables.length} tables`)
-              table.columns = columns
-              resolve()
-            } catch (error) {
-              reject(error)
-            }
+        tables.forEach((table) => {
+          const query = { tableName: table.name }
+          if (table.schema) query.schemaName = table.schema
+          table.columns = allColumns.filter(row => {
+            return row.tableName === table.name && (!table.schema || table.schema === row.schemaName)
           })
-        }))
+        })
+
         context.commit('tables', tables)
 
       } finally {
