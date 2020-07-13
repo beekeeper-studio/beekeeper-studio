@@ -29,10 +29,12 @@ import {Subscriber as EncryptedColumnSubscriber} from 'typeorm-encrypted-column'
 import Migration from './migration/index'
 import ConfigPlugin from './plugins/ConfigPlugin'
 import xlsx from 'xlsx'
-
+import TimeAgo from 'javascript-time-ago'
+import en from 'javascript-time-ago/locale/en'
 
 (async () => {
   try {
+    TimeAgo.addLocale(en)
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
     const appDb = path.join(config.userDirectory, 'app.db')
     const connection = await createConnection({

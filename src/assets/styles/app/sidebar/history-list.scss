@@ -5,14 +5,13 @@
   overflow-x: hidden;
   padding: $gutter-h 0 $gutter-w;
   .list-group {
-    padding
     a {
       overflow: hidden;
       font-size: 0.9rem;
       color: $text
     }
     .item-text {
-      padding-right: $gutter-w;
+      padding-right: $gutter-h;
     }
     // .list-item-btn {
     //   padding: $gutter-h $gutter-w;

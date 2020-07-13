@@ -11,10 +11,12 @@ $color-defaults: (
 .connection-label {
   display: inline-flex;
   background-color: transparent;
-  height: 16px;
+  height: 30px;
+  min-width: 4px;
   width: 4px;
   border-radius: 4px;
-  margin-right: $gutter-w;
+  margin-right: $gutter-w * 0.85;
+  background-color: rgba($theme-base, 0.08);
 
   @each $key, $val in $color-defaults {
     &.connection-label-color-#{$key} {

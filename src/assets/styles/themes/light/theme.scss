@@ -1,21 +1,19 @@
 @import "~codemirror/theme/xq-light";
 @import "./app/vendor/codemirror";
 
-$titlebar-bg:              darken($theme-bg, 2.5%);
-$connection-main-bg:       white;
+
+// Global
+$badge-bg:                 rgba($theme-base, 0.1);
 
 // Sidebar
-$sidebar-bg:               rgba($theme-base, 0.06);
-$sidebar-heading:          darken($theme-bg, 4.5%);
 $sidebar-list-icons:       darken($theme-primary, 15%);
-$sidebar-badge:            rgba($theme-base, 0.1);
 
 // Editor
 $tabs-heading:             rgba($theme-base, 0.08);
-$tab-link:                 rgba($theme-bg, 0.2);
+$tab-link:                 darken($theme-bg, 4%);
 $codemirror-hint-bg:       darken($theme-bg, 2%);
-$tabulator-heading:        rgba($theme-base, 0.025);
 $editor-statusbar:         rgba($theme-base, 0.035);
+
 
 // Base Styles
 // -----------------------------------------
@@ -29,15 +27,15 @@ $editor-statusbar:         rgba($theme-base, 0.035);
 .btn-link, .btn-fab {
   box-shadow: none;
 }
-.form-control, input, select, textarea {
-  background: rgba($theme-bg, 0.1);
-}
 .list-group {
   .item-icon {
     color: $sidebar-list-icons;
   }
   .list-item-btn {
     .actions {
+      i {
+        color: $text-light;
+      }
       .btn-fab.pinned {
         i {
           color: $text-dark;
@@ -46,34 +44,19 @@ $editor-statusbar:         rgba($theme-base, 0.035);
     }
   }
 }
+.badge {
+  background: $badge-bg;
+  color: $text-dark;
+}
+.text-danger {
+  color: $brand-danger!important;
+}
 
 // Layout
 // ---------------------------------------
-.titlebar {
-  background: $titlebar-bg;
-}
-.connection-main {
-  background: $connection-main-bg;
-}
 
 // Sidebar
 // ---------------------------------------
-#sidebar {
-  background: $sidebar-bg;
-  .global-items {
-    background: darken($theme-bg, 2.5%);
-    .nav-item {
-      color: $text-light;
-    }
-  }
-  .sidebar-heading {
-    background: $sidebar-heading;
-    color: $text-dark;
-  }
-}
-.badge {
-  background: $sidebar-badge;
-}
 .advanced-connection-settings {
   background: rgba($theme-base, 0.05);
 }
@@ -87,26 +70,34 @@ $editor-statusbar:         rgba($theme-base, 0.035);
   .nav-tabs {
     .nav-link {
       background: $tab-link;
+      // &.active {
+      //   box-shadow: inset 0 1px $theme-primary;
+      // }
     }
-    .tab-close.unsaved {
-      .unsaved-icon {
+    .tab-action {
+      background: linear-gradient(-90deg, $tab-link 80%, $tab-link 100%);
+    }
+    .tab-close {
+      .material-icons {
         color: $text-lighter;
+        &.close {
+          color: $text-dark;
+        }
       }
     }
-  }
-}
-.query-editor {
-  background: $theme-bg;
-}
-
-// Tabulator
-.tabulator {
-  .tabulator-header {
-    background: $tabulator-heading;
   }
 }
 
 // CodeMirror
 .CodeMirror-hints {
   background: $codemirror-hint-bg;
+}
+
+// Statusbar
+.statusbar {
+  @each $key, $val in $color-defaults {
+    &.#{$key} {
+      background-color: rgba(nth($val, 1), 0.5);
+    }
+  }
 }

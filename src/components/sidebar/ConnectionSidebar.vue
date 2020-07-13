@@ -1,35 +1,7 @@
 <template>
   <div class="sidebar-wrap flex-col">
-    <div class="sidebar-heading">
-      <div class="status connected sidebar-title row flex-middle noselect">
-        <span>Saved Connections</span>
-      </div>
-    </div>
-    <nav class="list-group expand">
-      <div class="list-item">
-        <a
-          href=""
-          class="list-item-btn"
-          v-for="c in connectionConfigs"
-          :key="c.id"
-          :class="{'active': c == selectedConfig,  }"
-          @click.prevent="edit(c)"
-          @dblclick.prevent="connect(c)"
-        >
-          <span :class="`connection-label connection-label-color-${c.labelColor}`"></span>
-          <span class="title expand">{{c.name}} </span>
-          <span class="badge"><span>{{c.connectionType}}</span></span>
-          <x-button class="btn-fab" skin="iconic">
-            <i class="material-icons">more_horiz</i>
-            <x-menu style="--target-align: right; --v-target-align: top;">
-              <x-menuitem @click.prevent.stop="remove(c)">
-                <x-label class="text-danger">Remove</x-label>
-              </x-menuitem>
-            </x-menu>
-          </x-button>
-        </a>
-      </div>
-    </nav>
+  
+    <!-- QUICK CONNECT -->
     <div class="btn-wrap quick-connect">
       <a
         href=""
@@ -41,16 +13,90 @@
       <span>Quick Connect</span>
       </a>
     </div>
+
+    <div class="expand flex-col">
+  
+      <!-- Saved Connections -->
+      <div class="list saved-connection-list expand" ref="savedConnectionList">
+        <div class="list-group">
+          <div class="list-heading">
+            <div class="sub row flex-middle noselect">
+              Saved Connections <span class="badge">{{connectionConfigs.length}}</span>
+            </div>
+          </div>
+          <nav class="list-body">
+              <connection-list-item
+                v-for="c in connectionConfigs"
+                :key="c.id"
+                :config="c"
+                :selectedConfig="selectedConfig"
+                @edit="edit"
+                @remove="remove"
+                @doubleClick="connect"
+              >
+              </connection-list-item>
+          </nav>
+        </div>
+      </div>
+  
+      <hr> <!-- Fake gutter for split.js -->
+  
+      <!-- Recent Connections -->
+      <div class="list recent-connection-list expand" ref="recentConnectionList">
+        <div class="list-group">
+          <div class="list-heading">
+            <div class="sub row flex-middle noselect">
+              Recent Connections <span class="badge">{{usedConfigs.length}}</span>
+            </div>
+          </div>
+          <nav class="list-body">
+              <connection-list-item
+                v-for="c in usedConfigs"
+                :key="c.id"
+                :config="c"
+                :selectedConfig="selectedConfig"
+                :isRecentList="true"
+                @edit="edit"
+                @remove="removeUsedConfig"
+                @doubleClick="connect"
+              >
+              </connection-list-item>
+          </nav>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
+  import { mapState, mapGetters } from 'vuex'
+  import ConnectionListItem from './connection/ConnectionListItem'
+  import Split from 'split.js'
   export default {
+    components: { ConnectionListItem },
     props: ['defaultConfig', 'selectedConfig'],
+    data: () => ({
+      split: null,
+      sizes: [60, 40],
+    }),
     computed: {
-      connectionConfigs() {
-        return this.$store.state.connectionConfigs
+      ...mapState(['connectionConfigs']),
+      ...mapGetters({'usedConfigs': 'orderedUsedConfigs'}),
+      components() {
+        return [
+          this.$refs.savedConnectionList,
+          this.$refs.recentConnectionList
+        ]
       }
+    },
+    mounted() {
+      this.split = Split(this.components, {
+        elementStyle: (dim, size) => ({
+          'flex-basis': `calc(${size}%)`
+        }),
+        direction: 'vertical',
+        sizes: this.sizes
+      })
     },
     methods: {
       edit(config) {
@@ -61,6 +107,9 @@
       },
       remove(config) {
         this.$emit('remove', config)
+      },
+      removeUsedConfig(config) {
+        this.$store.dispatch('removeUsedConfig', config)
       },
       getLabelClass(color) {
         return `label-${color}`

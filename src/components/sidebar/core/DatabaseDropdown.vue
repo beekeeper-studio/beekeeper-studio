@@ -2,11 +2,11 @@
   <!-- TODO (matthew): either not use select or find good library for dropdowns, this is hideous -- no way to style currently -->
   <div class="fixed">
     <div class="data-select-wrap">
-      <select v-tooltip="'Database'" class="database-select" v-model="selectedDatabase">
+      <select :title="'Database: ' + selectedDatabase" class="database-select" v-model="selectedDatabase">
         <option selected :value="selectedDatabase">{{selectedDatabase}}</option>
         <option v-for="db in availableDatabases" v-bind:key="db" :value="db">{{db}}</option>
       </select>
-      <a @click.prevent="refreshDatabases" v-tooltip="'Refresh Databases'">
+      <a class="refresh" @click.prevent="refreshDatabases" :title="'Refresh Databases'">
         <i class="material-icons">refresh</i>
       </a>
     </div>

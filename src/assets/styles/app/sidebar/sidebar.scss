@@ -57,7 +57,7 @@
   // Empty
   // ---------------------------------
   .empty {
-    padding: $gutter-w;
+    padding: $gutter-h ($gutter-w + $gutter-h);
     color: $text;
     font-size: 90%;
   }
@@ -84,12 +84,15 @@
       padding-right: 1.5rem;
       cursor: pointer;
     }
-    > a {
+    .refresh {
       display: inline-flex;
       margin-left: $gutter-h;
       .material-icons {
         font-size: 16px;
         color: $text-light;
+        &:hover {
+          color: $text-dark;
+        }
       }
     }
   }
@@ -159,6 +162,7 @@
   background: transparent;
   // border-top: 1px solid $border-color;
   .sub {
+    color: $text-dark;
     line-height: 1;
     padding: 0 $gutter-h;
     div {
@@ -185,6 +189,10 @@
     }
     .material-icons {
       font-size: 16px;
+      color: $text-light;
+      &:hover {
+        color: $text-dark;
+      }
     }
   }
 }
@@ -198,7 +206,9 @@
   -webkit-overflow-scrolling: touch!important;
 }
 .list-group {
-  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   padding: 0;
   &:hover{
     .list-heading .actions {
@@ -223,7 +233,7 @@
   }
   .list-item-btn {
     color: rgba($theme-base, 0.77);
-    padding: 0 ($gutter-w * 0.8);
+    padding: 0 $gutter-h;
     // margin-right: $gutter-h;
     line-height: 1.8rem;
     height: 1.8rem;
@@ -307,21 +317,22 @@
       position: absolute;
       top: 0;
       bottom: 0;
-      left: 14px;
-      border-left: 1px solid rgba(255,255,255,0.08);
+      left: 9px;
+      border-left: 1px solid rgba($theme-base,0.08);
     }
     .title {
       flex-grow: 1;
       font-size: 90%;
     }
     .badge {
+      font-size: 80%;
       margin-right: 0;
     }
   }
   .sub-item {
     color: $text;
     padding: ($gutter-h * 0.5);
-    padding-right: $gutter-w;
+    padding-right: $gutter-h * 0.5;
     padding-left: $gutter-w * 2.5;
   }
   .btn-fab {
