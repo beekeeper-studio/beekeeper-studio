@@ -17,10 +17,10 @@ $errorColor: $brand-danger;
       color: $db-select-text;
     }
   }
-  &:nth-child(odd) {
+  &:nth-child(even) {
     background: transparent;
   }
-  &:nth-child(even) {
+  &:nth-child(odd) {
     background: rgba($theme-base, 0.025);
   }
   &.tabulator-selectable:hover {
