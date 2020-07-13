@@ -1,6 +1,6 @@
 <template>
   <div class="sidebar-favorites">
-    <nav class="list-group" v-if="favorites">
+    <nav class="list-group" v-if="favorites.length > 0">
       <div class="list-item" v-for="item in favorites" v-bind:key="item.id">
         <a class="list-item-btn" @click.prevent="click(item)">
           <i class="item-icon query material-icons">code</i>

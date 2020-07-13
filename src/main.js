@@ -26,9 +26,12 @@ import platform_info from './common/platform_info'
 import AppEventHandler from './lib/events/AppEventHandler'
 import Connection from './common/appdb/Connection'
 import xlsx from 'xlsx'
+import TimeAgo from 'javascript-time-ago'
+import en from 'javascript-time-ago/locale/en'
 
 (async () => {
   try {
+    TimeAgo.addLocale(en)
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
     const appDb = path.join(config.userDirectory, 'app.db')
     console.log(platform_info)

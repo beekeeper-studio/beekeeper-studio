@@ -153,12 +153,12 @@
       align-items: center;
       justify-content: center;
       min-width: 24px;
-      i {
+      .material-icons {
         position: absolute;
         display: none;
         font-size: 12px;
         font-weight: bold;
-        color: $text-dark;
+        color: $text;
         transition: none;
       }
       &.unsaved {

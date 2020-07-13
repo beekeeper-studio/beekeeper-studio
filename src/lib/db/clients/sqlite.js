@@ -1,5 +1,6 @@
 // Copyright (c) 2015 The SQLECTRON Team
 
+import _ from 'lodash'
 import sqlite3 from 'sqlite3';
 import { identify } from 'sql-query-identifier';
 
@@ -143,15 +144,42 @@ export function listRoutines() {
   return Promise.resolve([]); // DOES NOT SUPPORT IT
 }
 
-export async function listTableColumns(conn, database, table) {
+async function listTableColumnsSimple(conn, database, table) {
   const sql = `PRAGMA table_info('${table}')`;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
   return data.map((row) => ({
+    tableName: table,
     columnName: row.name,
     dataType: row.type,
   }));
+
+}
+
+export async function listTableColumns(conn, database, table) {
+  if (table) {
+    return await listTableColumnsSimple(conn, database, table)
+  }
+  const allTables = (await listTables(conn)) || []
+  const allViews = (await listViews(conn)) || []
+  const tables = allTables.concat(allViews)
+  const sql = tables.map(table => {
+    return `PRAGMA table_info(${table.name})`
+  }).join(";")
+
+
+  const results = await driverExecuteQuery(conn, {query: sql, multiple: true});
+  const final = _.flatMap(results, (result, idx) => {
+    console.log(`mapping: ${result}, ${idx}`)
+    return result.data.map(row => ({
+      tableName: tables[idx].name,
+      columnName: row.name,
+      dataType: row.type
+    }))
+  })
+  console.log(final)
+  return final
 }
 
 export async function listTableTriggers(conn, table) {

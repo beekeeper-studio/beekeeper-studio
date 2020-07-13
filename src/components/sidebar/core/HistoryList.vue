@@ -1,6 +1,6 @@
 <template>
   <div class="sidebar-history">
-    <nav class="list-group" v-if="history">
+    <nav class="list-group" v-if="history.length > 0">
       <div class="list-item" v-for="item in history" v-bind:key="item.id">
         <a class="list-item-btn" @click.prevent="click(item)">
           <span class="item-text expand truncate">

@@ -99,11 +99,12 @@
         }
       }
     },
-    mounted() {
+    async mounted() {
       this.config = this.defaultConfig
       this.config.sshUsername = os.userInfo().username
-      this.$store.dispatch('loadSavedConfigs')
-      this.$store.dispatch('fetchUsername')
+      await this.$store.dispatch('loadSavedConfigs')
+      await this.$store.dispatch('loadUsedConfigs')
+      await this.$store.dispatch('fetchUsername')
       this.$nextTick(() => {
         const components = [
           this.$refs.sidebar.$refs.sidebar,

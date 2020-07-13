@@ -1,5 +1,5 @@
 // Theme
-// ---------------------------
+// -----------------------------
 $theme-bg:           white;
 $theme-base:         black;
 $theme-primary:      #fad83b;
@@ -25,10 +25,20 @@ $brand-primary:      $theme-primary;
 $brand-secondary:    $theme-secondary;
 
 // App
-$border-color:       rgba($theme-base, 0.1);
-$link-color:         $text-dark;
-$placeholder:        $text-hint;
-$selection:          rgba($theme-primary, 0.2);
-$db-select-text:     white;
-$query-editor-bg:    white;
-$input-highlight:     rgba($theme-base, 0.27);
+$border-color:              rgba($theme-base, 0.15);
+$link-color:                $text-dark;
+$placeholder:               $text-hint;
+$selection:                 rgba($theme-primary, 0.2);
+$input-highlight:           rgba($theme-base, 0.27);
+
+$db-select-text:            white;
+$query-editor-bg:           darken($theme-bg, 7%);
+
+$titlebar-bg:               transparent;
+$global-sidebar-bg:         transparent;
+$sidebar-bg:                darken($theme-bg, 3%);
+$sidebar-heading-bg:        $theme-bg;
+$tabs-bg:                   transparent;
+$statusbar-bg:              rgba($theme-base, 0.1);
+// $statusbar-bg:             rgba($theme-primary, 0.4);
+$statusbar-text:            $theme-base;

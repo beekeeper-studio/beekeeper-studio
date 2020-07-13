@@ -55,6 +55,7 @@ $titlebar-actions-height:   30px;
       padding: 0 0.75rem;
       height: $titlebar-actions-height;
       z-index: 10;
+      box-shadow: none;
       &:hover {
         color: $text-dark;
       }

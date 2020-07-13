@@ -28,6 +28,7 @@
     "dateformat": "^3.0.3",
     "electron-util": "^0.14.1",
     "humanize-duration": "^3.23.1",
+    "javascript-time-ago": "^2.0.8",
     "jquery": "^3.5.0",
     "lodash": "^4.17.15",
     "material-icons": "^0.3.1",

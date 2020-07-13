@@ -51,7 +51,7 @@
           height: 50px;
           width: 50px;
           border-radius: 50%;
-          box-shadow: 2px 2px #fad83b,
+          box-shadow: 1px 1px #fad83b,
                       0 3px rgba(0, 0, 0 , 0.25);
           transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg);
         }
@@ -65,7 +65,7 @@
           margin-top: 10px;
         }
         .preloader .layer:nth-of-type(3) {
-          background: rgba(250, 216, 59, 0.65);
+          background: rgba(250, 216, 59, 0.75);
           animation: moveup  0.8s cubic-bezier(0.39, 0.575, 0.565, 1) infinite normal;
         }
         @keyframes moveup {
@@ -99,6 +99,17 @@
               rotateZ(45deg)
               translateZ(-5px);
           }
+        }
+
+        body.light-, .light-theme .app-loading {
+          background: white;
+        }
+        .light-theme .preloader-wrap {
+          color: rgba(0,0,0,0.87);
+        }
+        .light-theme .preloader .layer {
+          box-shadow: inset 2px 2px #fad83b,
+                      inset -3px -3px rgba(0, 0, 0 , 0.1);
         }
       </style>
       <div class="preloader-wrap">

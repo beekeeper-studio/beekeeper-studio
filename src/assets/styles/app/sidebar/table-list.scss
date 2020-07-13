@@ -20,8 +20,10 @@
 }
 .table-list {
   .list-group {
+    min-height: 105px;
     .list-item-btn {
-      padding: 0 ($gutter-h * 0.8);
+      padding: 0;
+      padding-right: $gutter-h * 0.5;
     }
   }
 }

@@ -6,49 +6,6 @@
   overflow: hidden;
 }
 
-// Connection Sidebar
-// --------------------------------
-.connection-sidebar {
-  padding: 0 0 $gutter-w;
-  .list-group {
-    padding: $gutter-h $gutter-w;
-  }
-  .list-item {
-    padding: 0;
-  }
-  .list-item-btn {
-    position: relative;
-    margin-right: 0;
-    &:hover {
-      transition: display 0.15s ease-in-out;
-      .badge {
-        display: none;
-      }
-      .btn-fab {
-        display: inline-flex;
-      }
-    }
-    .btn-fab {
-      display: none;
-      flex: 0;
-      &:hover, &:focus {
-        i {
-          color: white;
-        }
-      }
-    }
-    .dropdown {
-      position: initial;
-    }
-    .dropdown-menu {
-      top: 0.32rem;
-      right: 0.4rem;
-    }
-  }
-  .quick-connect {
-    padding: 0 $gutter-w;
-  }
-}
 
 // Connection Body
 // --------------------------------
@@ -77,6 +34,7 @@
     padding-top: ($gutter-w * 1.25);
     border-top: 1px solid $border-color;
     h3 {
+      color: $text-dark;
       margin: 0 0 $gutter-h;
     }
     .btn {

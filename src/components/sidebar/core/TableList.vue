@@ -62,13 +62,13 @@
             <div>Tables & Views <span class="badge">{{tables.length}}</span></div>
           </div>
           <div class="actions">
-            <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
+            <a @click.prevent="collapseAll" :title="'Collapse All'">
               <i class="material-icons">unfold_less</i>
             </a>
-            <a @click.prevent="expandAll" v-tooltip="'Expand All'">
+            <a @click.prevent="expandAll" :title="'Expand All'">
               <i class="material-icons">unfold_more</i>
             </a>
-            <a @click.prevent="refreshTables" v-tooltip="'Refresh'">
+            <a @click.prevent="refreshTables" :title="'Refresh'">
               <i class="material-icons">refresh</i>
             </a>
           </div>

@@ -21,6 +21,7 @@ const store = new Vuex.Store({
   },
   state: {
     usedConfig: null,
+    usedConfigs: [],
     server: null,
     connection: null,
     database: null,
@@ -34,6 +35,9 @@ const store = new Vuex.Store({
     menuActive: false
   },
   getters: {
+    orderedUsedConfigs(state) {
+      return _.sortBy(state.usedConfigs, 'updatedAt').reverse()
+    },
     pinned(state) {
       const result = state.pinStore[state.database]
       return _.isNil(result) ? [] : result
@@ -109,8 +113,14 @@ const store = new Vuex.Store({
     removeConfig(state, config) {
       state.connectionConfigs = _.without(state.connectionConfigs, config)
     },
+    removeUsedConfig(state, config) {
+      state.usedConfigs = _.without(state.usedConfigs, config)
+    },
     configs(state, configs){
-      state.connectionConfigs = configs
+      Vue.set(state, 'connectionConfigs', configs)
+    },
+    usedConfigs(state, configs) {
+      Vue.set(state, 'usedConfigs', configs)
     },
     history(state, history) {
       state.history = history
@@ -145,8 +155,17 @@ const store = new Vuex.Store({
       const connection = await server.createConnection(config.defaultDatabase)
       await connection.connect()
       connection.connectionType = config.connectionType;
-      const usedConfig = new UsedConnection(config)
-      await usedConfig.save()
+      const lastUsedConnection = context.state.usedConfigs.find(c => c.hash === config.hash)
+      if (!lastUsedConnection) {
+        const usedConfig = new UsedConnection(config)
+        await usedConfig.save()
+      } else {
+        lastUsedConnection.updatedAt = new Date()
+        if (config.id) {
+          lastUsedConnection.savedConnectionId = config.id
+        }
+        await lastUsedConnection.save()
+      }
       context.commit('newConnection', {config: config, server, connection})
     },
     async disconnect(context) {
@@ -170,7 +189,7 @@ const store = new Vuex.Store({
       // however running through an SSH tunnel doesn't work
       // it only supports one query at a time.
       try {
-        context.commit("tablesLoading", "finding tables")
+        context.commit("tablesLoading", "Finding tables")
         const onlyTables = await context.state.connection.listTables({ schema: null })
         onlyTables.forEach((t) => {
           t.entityType = 'table'
@@ -183,27 +202,21 @@ const store = new Vuex.Store({
         const materialized = await context.state.connection.listMaterializedViews({schema: null})
         materialized.forEach(v => v.entityType = 'materialized-view')
         const tables = onlyTables.concat(views).concat(materialized)
-        var processed = 0
+        context.commit("tablesLoading", `Loading ${tables.length} tables`)
 
-        await Promise.all(tables.map(table => {
-          return new Promise(async (resolve, reject) => {
-            try {
-              let columns = []
-              if (table.entityType === 'materialized-view') {
-                columns = await context.state.connection.listMaterializedViewColumns(table.name, table.schema)
-              } else {
-                columns = await context.state.connection.listTableColumns(table.name, table.schema)
-              }
+        const tableColumns = await context.state.connection.listTableColumns()
+        const viewColumns = materialized.length > 0 ? await context.state.connection.listMaterializedViewColumns() : []
+        
+        const allColumns = tableColumns.concat(viewColumns)
 
-              processed += 1
-              context.commit("tablesLoading", `Loading ${processed}/${tables.length} tables`)
-              table.columns = columns
-              resolve()
-            } catch (error) {
-              reject(error)
-            }
+        tables.forEach((table) => {
+          const query = { tableName: table.name }
+          if (table.schema) query.schemaName = table.schema
+          table.columns = allColumns.filter(row => {
+            return row.tableName === table.name && (!table.schema || table.schema === row.schemaName)
           })
-        }))
+        })
+
         context.commit('tables', tables)
 
       } finally {
@@ -227,9 +240,17 @@ const store = new Vuex.Store({
       await config.remove()
       context.commit('removeConfig', config)
     },
+    async removeUsedConfig(context, config) {
+      await config.remove()
+      context.commit('removeUsedConfig', config)
+    },
     async loadSavedConfigs(context) {
       let configs = await SavedConnection.find()
       context.commit('configs', configs)
+    },
+    async loadUsedConfigs(context) {
+      let configs = await UsedConnection.find({take: 10, order: {createdAt: 'DESC'}})
+      context.commit('usedConfigs', configs)
     },
     async updateHistory(context) {
       let historyItems = await UsedQuery.find({ take: 100, order: { createdAt: 'DESC' } });
