@@ -5,5 +5,7 @@ export default {
   settingsChanged: "sc-refresh",
   menuStyleChanged: 'mc-style',
   newTab: 'nt',
-  closeTab: 'ct'
+  closeTab: 'ct',
+  disconnect: 'dc',
+  beekeeperAdded: 'bkadd'
 }

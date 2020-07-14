@@ -14,6 +14,8 @@ export default class {
   registerCallbacks() {
     this.ipcRenderer.on(AppEvent.settingsChanged, this.settingsChanged.bind(this))
     this.ipcRenderer.on(AppEvent.menuStyleChanged, this.menuStyle.bind(this))
+    this.ipcRenderer.on(AppEvent.disconnect, this.disconnect.bind(this))
+    this.ipcRenderer.on(AppEvent.beekeeperAdded, this.addBeekeeper.bind(this))
     this.forward(AppEvent.closeTab)
     this.forward(AppEvent.newTab)
   }
@@ -30,6 +32,15 @@ export default class {
     this.vueApp.$emit(AppEvent.closeTab)
   }
 
+  addBeekeeper() {
+    this.vueApp.$noty.success("Beekeeper's Database has been added to your Saved Connections")
+    this.vueApp.$store.dispatch('loadSavedConfigs')
+  }
+
+  disconnect() {
+    this.vueApp.$store.dispatch('disconnect')
+  }
+
   settingsChanged() {
     this.vueApp.$store.dispatch("settings/initializeSettings")
   }
@@ -37,6 +48,8 @@ export default class {
   menuStyle() {
     this.vueApp.$noty.success("Restart Beekeeper for the change to take effect")
   }
+
+
 
 
 

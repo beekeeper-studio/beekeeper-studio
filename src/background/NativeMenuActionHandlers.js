@@ -4,6 +4,7 @@ import { buildWindow, getActiveWindows } from './WindowBuilder'
 import { app } from 'electron'
 import platformInfo from '../common/platform_info'
 import path from 'path'
+import { SavedConnection } from '../common/appdb/models/saved_connection'
 
 function getIcon() {
   const iconPrefix = platformInfo.environment === 'development' ? 'public' : ''
@@ -95,6 +96,20 @@ export default class {
       window.win.webContents.send(AppEvent.settingsChanged)
     })
   }
+
+  addBeekeeper = async (menuItem, win) => {
+    const existing = await SavedConnection.findOne({ defaultDatabase: platformInfo.appDbPath })
+    if (!existing) {
+      const nu = new SavedConnection()
+      nu.connectionType = 'sqlite'
+      nu.defaultDatabase = platformInfo.appDbPath
+      nu.name = "Beekeeper's Database"
+      nu.labelColor = 'orange'
+      await nu.save()
+    }
+    win.webContents.send(AppEvent.beekeeperAdded)
+  }
+
   switchMenuStyle = async (menuItem) => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
     this.settings.menuStyle.value = label.toLowerCase()
@@ -102,6 +117,10 @@ export default class {
     getActiveWindows().forEach( window => {
       window.win.webContents.send(AppEvent.menuStyleChanged)
     })
+  }
+
+  disconnect = (menuItem, win) => {
+    win.webContents.send(AppEvent.disconnect)
   }
 
 }

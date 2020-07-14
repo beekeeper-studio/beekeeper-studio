@@ -45,6 +45,7 @@ export default class extends DefaultMenu {
         this.menuItems.newWindow,
         this.menuItems.newTab,
         this.menuItems.closeTab,
+        this.menuItems.disconnect,
         this.menuItems.quit
       ]
     }
@@ -67,7 +68,8 @@ export default class extends DefaultMenu {
         label: "Help",
         submenu: [
           this.menuItems.about,
-          this.menuItems.devtools
+          this.menuItems.addBeekeeper,
+          this.menuItems.devtools,
         ]
       }
     ]

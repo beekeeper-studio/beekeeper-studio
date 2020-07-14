@@ -31,5 +31,7 @@ export default class {
   switchTheme = (theme) => send('switchTheme', theme)
   switchMenuStyle = (style) => send('switchMenuStyle', style)
   reload = () => send('reload')
+  disconnect = () => send('disconnect')
+  addBeekeeper = () => send('addBeekeeper')
 
 }
