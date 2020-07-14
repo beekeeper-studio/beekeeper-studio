@@ -60,7 +60,7 @@ export function basicMenuItems(actionHandler) {
     zoomin: {
       id: 'zoom-in',
       label: "Zoom In",
-      accelerator: 'Ctrl+Shift+=',
+      accelerator: 'Ctrl+Shift+',
       click: actionHandler.zoomin
     },
     zoomout: {
