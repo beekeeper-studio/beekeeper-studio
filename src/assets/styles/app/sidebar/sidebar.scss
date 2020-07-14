@@ -79,6 +79,10 @@
     &:hover {
       background: rgba($theme-base, 0.1);
     }
+    .select-wrap {
+      border: 0;
+      box-shadow: none;
+    }
     select {
       color: $text-dark;
       padding-right: 1.5rem;
@@ -100,7 +104,7 @@
     display: block;
     font-size: 100%;
     margin: 0;
-    width: 100%;
+    // width: 100%;
     border: 0;
     .selectise-trigger {
       color: $db-select-text;

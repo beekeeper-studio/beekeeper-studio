@@ -2,10 +2,12 @@
   <!-- TODO (matthew): either not use select or find good library for dropdowns, this is hideous -- no way to style currently -->
   <div class="fixed">
     <div class="data-select-wrap">
-      <select :title="'Database: ' + selectedDatabase" class="database-select" v-model="selectedDatabase">
-        <option selected :value="selectedDatabase">{{selectedDatabase}}</option>
-        <option v-for="db in availableDatabases" v-bind:key="db" :value="db">{{db}}</option>
-      </select>
+      <div class="select-wrap">
+        <select :title="'Database: ' + selectedDatabase" class="database-select" v-model="selectedDatabase">
+          <option selected :value="selectedDatabase">{{selectedDatabase}}</option>
+          <option v-for="db in availableDatabases" v-bind:key="db" :value="db">{{db}}</option>
+        </select>
+      </div>
       <a class="refresh" @click.prevent="refreshDatabases" :title="'Refresh Databases'">
         <i class="material-icons">refresh</i>
       </a>

@@ -10,7 +10,7 @@ $sidebar-list-icons:       darken($theme-primary, 15%);
 
 // Editor
 $tabs-heading:             rgba($theme-base, 0.08);
-$tab-link:                 darken($theme-bg, 4%);
+$tab-link:                 darken($theme-bg, 9%);
 $codemirror-hint-bg:       darken($theme-bg, 2%);
 $editor-statusbar:         rgba($theme-base, 0.035);
 
@@ -20,6 +20,9 @@ $editor-statusbar:         rgba($theme-base, 0.035);
 & {
   background: $theme-bg;
   color: $text;
+}
+::selection {
+  background: rgba($brand-info, 0.25);
 }
 .btn {
   box-shadow: inset 0 0 0 1px rgba($theme-base, 0.035);
@@ -52,8 +55,19 @@ $editor-statusbar:         rgba($theme-base, 0.035);
   color: $brand-danger!important;
 }
 
-// Layout
+// File-Menu
 // ---------------------------------------
+.flyout-nav {
+  > .menu-bar {
+    .top-menu-item {
+      > a {
+        > .label {
+          color: $text-light;
+        }
+      }
+    }
+  }
+}
 
 // Sidebar
 // ---------------------------------------
@@ -87,9 +101,11 @@ $editor-statusbar:         rgba($theme-base, 0.035);
     }
   }
 }
+
+// Tabulator
 .tabulator-row {
   &:nth-child(odd) {
-    background: rgba(white, 0.4);
+    background: rgba(white, 0.45);
   }
 }
 
