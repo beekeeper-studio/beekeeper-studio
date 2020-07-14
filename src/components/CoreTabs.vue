@@ -74,9 +74,7 @@ import { mapGetters } from 'vuex'
 
         // This is a hack becuase codemirror steals the shortcut
         // when the shortcut is captured on the electron side
-        if (this.menuStyle === 'native') {
-          result[closeTab] = this.closeTab
-        }
+        result[closeTab] = this.closeTab
         
         return result
       }

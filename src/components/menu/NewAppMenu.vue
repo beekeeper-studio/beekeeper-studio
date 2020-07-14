@@ -172,6 +172,11 @@ export default {
     hoverClass(item) {
       return {hovered: [this.hovered, this.hoveredParent].includes(item)}
     },
+    shortcutText(item) {
+      if (!item.accelerator) return ""
+      const meta = platformInfo.isMac ? 'Cmd' : 'Ctrl'
+      return item.accelerator.replace('CommandOrControl', meta)
+    },
     shortcut(item) {
       if (!item.click || !item.accelerator || item.registerAccelerator === false) return {}
       const ctrlKey = platformInfo.isMac ? 'meta' : 'ctrl'
@@ -207,18 +212,6 @@ export default {
         item.click(item.label)
         this.menuActive = false
       }
-    },
-    shortcutText(item) {
-      const meta = platformInfo.isMac ? 'Cmd' : 'Ctrl'
-      return item.accelerator.replace('CommandOrControl', meta)
-    },
-    itemKeymap(item) {
-      if (!item.click || !item.accelerator || item.registerAccelerator === false) return {}
-      const ctrlKey = platformInfo.isMac ? 'meta' : 'ctrl'
-      const keymap = item.accelerator.replace('CommandOrControl', ctrlKey)
-      const result = {}
-      result[keymap] = item.click
-      return result
     },
     noop() {
       

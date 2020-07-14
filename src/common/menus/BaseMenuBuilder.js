@@ -40,7 +40,8 @@ export default class {
         id: 'close-tab',
         label: "Close Tab",
         accelerator: "CommandOrControl+W",
-        click: this.actionHandlers.closeTab
+        click: this.actionHandlers.closeTab,
+        registerAccelerator: false
       },
       disconnect: {
         id: 'disconnect',
