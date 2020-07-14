@@ -29,7 +29,7 @@ class BeekeeperWindow {
       height: 800,
       minWidth: 800,
       minHeight: 600,
-      backgroundColor: theme.value === 'dark' ? "#000000" : '#ffffff',
+      backgroundColor: theme.value === 'dark' ? "#252525" : '#ffffff',
       titleBarStyle: 'hidden',
       frame: showFrame,
       webPreferences: {

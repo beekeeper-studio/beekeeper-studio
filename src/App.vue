@@ -46,6 +46,7 @@ export default {
       ipcRenderer.send('ready')
     })
     if (this.themeValue) {
+      console.log("setting background to ", this.themeValue)
       document.body.className = `theme-${this.themeValue}`
     }
   },
