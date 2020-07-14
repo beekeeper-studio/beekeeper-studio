@@ -171,14 +171,12 @@ export async function listTableColumns(conn, database, table) {
 
   const results = await driverExecuteQuery(conn, {query: sql, multiple: true});
   const final = _.flatMap(results, (result, idx) => {
-    console.log(`mapping: ${result}, ${idx}`)
     return result.data.map(row => ({
       tableName: tables[idx].name,
       columnName: row.name,
       dataType: row.type
     }))
   })
-  console.log(final)
   return final
 }
 

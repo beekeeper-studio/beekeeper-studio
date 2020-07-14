@@ -121,7 +121,6 @@
     },
     beforeDestroy() {
       if(this.split) {
-        console.log("destroying split")
         this.split.destroy()
       }
     },

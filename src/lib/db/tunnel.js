@@ -38,7 +38,6 @@ export default function(config) {
       } else {
         sshConfig.privateKey = null
       }
-      console.log(sshConfig)
       const connection = new SSHConnection(sshConfig)
       logger().debug("connection created!")
 
@@ -60,7 +59,6 @@ export default function(config) {
       }
       resolve(result)
     } catch (error) {
-      console.log(error)
       reject(error)
     }
   })

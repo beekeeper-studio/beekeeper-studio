@@ -26,7 +26,7 @@ export default {
     {
       name: "[DEV] local Sqlite",
       connectionType: 'sqlite',
-      path: './dev/sakila.db',
+      defaultDatabase: './dev/sakila.db',
     },
     {
       name: "[DEV] Docker PSQL",

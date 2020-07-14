@@ -27,7 +27,6 @@ const SettingStoreModule = {
   actions: {
     async initializeSettings(context) {
       const settings = await UserSetting.find()
-      console.log('loaded settings', settings)
       context.commit(M.REPLACEALL, settings)
     },
     async saveSetting(context, setting) {

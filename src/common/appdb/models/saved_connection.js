@@ -46,9 +46,6 @@ export class DbConnectionBase extends ApplicationEntity {
   defaultDatabase
 
   @Column({type: "varchar", nullable: true})
-  path
-
-  @Column({type: "varchar", nullable: true})
   uri
 
   @Column({type: "varchar", length: 500, nullable: false})
@@ -114,16 +111,15 @@ export class DbConnectionBase extends ApplicationEntity {
 
   get simpleConnectionString() {
     if (this.connectionType === 'sqlite') {
-      return path.basename(this.defaultDatabase)
+      return path.basename(this.defaultDatabase || "./unknown.db")
     } else {
       return `${this.host}:${this.port}/${this.defaultDatabase}`
     }
-    
   }
 
   get fullConnectionString() {
     if (this.connectionType === 'sqlite') {
-      return this.defaultDatabase
+      return this.defaultDatabase || "./unknown.db"
     } else {
       let result = `${this.username || 'user'}@${this.host}:${this.port}/${this.defaultDatabase}`
       if (this.sshHost) {
@@ -189,10 +185,18 @@ export class SavedConnection extends DbConnectionBase {
   })
   sshPassword
 
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  checkSqlite() {
+    if (this.connectionType === 'sqlite' && !this.defaultDatabase) {
+      throw new Error("database path must be set for SQLite databases")
+    }
+  }
+
   @BeforeInsert()
   @BeforeUpdate()
   maybeClearPasswords() {
-    console.log("checking password settings")
     if (!this.rememberPassword) {
       this.password = null
       this.sshPassword = null
