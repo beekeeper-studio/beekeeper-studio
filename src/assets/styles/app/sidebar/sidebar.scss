@@ -260,8 +260,11 @@
         transform: rotate(90deg);
       }
     }
+    .table-name {
+      font-size: 0.95rem;
+    }
     .item-text {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
     }
     .title {
       @extend .truncate;

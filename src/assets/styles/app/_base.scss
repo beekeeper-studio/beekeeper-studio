@@ -2,7 +2,7 @@
 $material-icons-font-path: '~material-icons/iconfont/';
 $font-family:        'Roboto';
 $font-family-mono:   'Source Code Pro';
-$base-font-size:      0.875rem;
+$base-font-size:      0.875rem; // ~14px
 
 @import '~material-icons/iconfont/material-icons.scss';
 @import "./vendor/custom-icons.scss";
@@ -10,14 +10,12 @@ $base-font-size:      0.875rem;
 *, *:after, *:before {
   box-sizing: border-box;
 }
-:root, body {
+:root {
+  font-size: $base-font-size;
   font-family: $font-family, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   font-weight: normal;
   -webkit-user-select: none; 
-}
-:root {
-  font-size: $base-font-size;
 }
 body {
   font-size: 1rem;
