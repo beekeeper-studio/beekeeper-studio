@@ -6,6 +6,14 @@
           <i class="item-icon query material-icons">code</i>
           <span class="item-text title truncate expand" :title="item.title">{{item.title}}</span>
           <span class="badge database"><span :title="item.database" >{{item.database}}</span></span>
+          <x-button class="btn-fab" skin="iconic">
+            <i class="material-icons">more_horiz</i>
+            <x-menu style="--target-align: right; --v-target-align: top;">
+              <x-menuitem >
+                <x-label class="text-danger">Remove</x-label>
+              </x-menuitem>
+            </x-menu>
+          </x-button>
         </a>
       </div>
     </nav>

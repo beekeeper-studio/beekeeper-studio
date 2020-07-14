@@ -16,5 +16,21 @@
     // .list-item-btn {
     //   padding: $gutter-h $gutter-w;
     // }
+    .btn-fab {
+      display: none;
+      .material-icons {
+        color: $text-dark;
+      }
+    }
+    .list-item {
+      &:hover {
+        .btn-fab {
+          display: inline-flex;
+        }
+        .badge {
+          display: none;
+        }
+      }
+    }
   }
 }
