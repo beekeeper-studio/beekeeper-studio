@@ -25,6 +25,11 @@ export default class {
         accelerator: "Ctrl+Shift+N",
         click: this.actionHandlers.newWindow
       },
+      addBeekeeper: {
+        id: 'add-beekeeper',
+        label: "Add Beekeeper's Database",
+        click: this.actionHandlers.addBeekeeper
+      },
       newTab: {
         id: "new-query-menu",
         label: "New Tab",
@@ -36,6 +41,11 @@ export default class {
         label: "Close Tab",
         accelerator: "Ctrl+W",
         click: this.actionHandlers.closeTab
+      },
+      disconnect: {
+        id: 'disconnect',
+        label: "Disconnect",
+        click: this.actionHandlers.disconnect
       },
       menuStyleToggle: {
         id: 'menu-style-toggle-menu',

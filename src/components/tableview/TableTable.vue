@@ -176,7 +176,6 @@ export default {
       if (params.sorters) {
         orderBy = params.sorters
       }
-      console.log(params)
 
       if (params.size) {
         limit = params.size

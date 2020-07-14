@@ -61,9 +61,6 @@ function wrap(identifier) {
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
   let orderByString = ""
   let filterString = ""
-  console.log({
-    table, offset, limit, orderBy, filters, schema
-  })
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
       if (_.isObject(item)) {
@@ -98,7 +95,6 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
   logger().debug(query)
   const countResults = await driverExecuteQuery(conn, { query: countQuery})
   const result = await driverExecuteQuery(conn, { query })
-  console.log(result)
   const rowWithTotal = countResults.data.recordset.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return {

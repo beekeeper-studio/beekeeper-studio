@@ -22,7 +22,6 @@ import {TypeOrmPlugin} from './lib/typeorm_plugin'
 import config from './config'
 import ConfigPlugin from './plugins/ConfigPlugin'
 import { ipcRenderer } from 'electron'
-import platform_info from './common/platform_info'
 import AppEventHandler from './lib/events/AppEventHandler'
 import Connection from './common/appdb/Connection'
 import xlsx from 'xlsx'
@@ -34,7 +33,6 @@ import en from 'javascript-time-ago/locale/en'
     TimeAgo.addLocale(en)
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
     const appDb = path.join(config.userDirectory, 'app.db')
-    console.log(platform_info)
     const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])
     await connection.connect()
     

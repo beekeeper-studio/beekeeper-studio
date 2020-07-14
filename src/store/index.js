@@ -260,7 +260,6 @@ const store = new Vuex.Store({
       const run = new UsedQuery()
       run.text = details.text
       run.database = context.state.database
-      run.connectionHash = context.state.usedConfig.uniqueHash
       run.status = 'completed'
       run.numberOfRecords = details.rowCount
       await run.save()
@@ -273,7 +272,6 @@ const store = new Vuex.Store({
     },
     async saveFavorite(context, query) {
       query.database = context.state.database
-      query.connectionHash = context.state.usedConfig.uniqueHash
       await query.save()
       // otherwise it's already there!
       if (!context.state.favorites.includes(query)) {
