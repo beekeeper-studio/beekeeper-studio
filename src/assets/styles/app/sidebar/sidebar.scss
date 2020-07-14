@@ -104,7 +104,7 @@
     display: block;
     font-size: 100%;
     margin: 0;
-    // width: 100%;
+    width: 100%;
     border: 0;
     .selectise-trigger {
       color: $db-select-text;
@@ -337,7 +337,7 @@
     color: $text;
     padding: ($gutter-h * 0.5);
     padding-right: $gutter-h * 0.5;
-    padding-left: $gutter-w * 2.5;
+    padding-left: $gutter-w * 2;
   }
   .btn-fab {
     min-width: 18px;
