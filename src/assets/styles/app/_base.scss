@@ -2,7 +2,7 @@
 $material-icons-font-path: '~material-icons/iconfont/';
 $font-family:        'Roboto';
 $font-family-mono:   'Source Code Pro';
-$base-font-size:      0.875em;
+$base-font-size:      0.875rem;
 
 @import '~material-icons/iconfont/material-icons.scss';
 @import "./vendor/custom-icons.scss";
@@ -13,7 +13,12 @@ $base-font-size:      0.875em;
 :root, body {
   font-family: $font-family, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
-  font-size: $base-font-size;
   font-weight: normal;
   -webkit-user-select: none; 
+}
+:root {
+  font-size: 100%;
+}
+body {
+  font-size: $base-font-size;
 }
