@@ -15,7 +15,7 @@
     </a>
     <div v-show="showColumns" class="sub-items">
       <span v-bind:key="c.columnName" v-for="(c, i) in table.columns" class="sub-item">
-        <span class="title" ref="title" @click="selectColumn(i)">{{c.columnName}}</span>
+        <span class="title truncate" ref="title" @click="selectColumn(i)">{{c.columnName}}</span>
         <span class="badge" v-bind:class="c.dataType"><span>{{c.dataType}}</span></span>
       </span>
     </div>
