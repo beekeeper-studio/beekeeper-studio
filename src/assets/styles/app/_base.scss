@@ -17,8 +17,8 @@ $base-font-size:      0.875rem;
   -webkit-user-select: none; 
 }
 :root {
-  font-size: 100%;
+  font-size: $base-font-size;
 }
 body {
-  font-size: $base-font-size;
+  font-size: 1rem;
 }
