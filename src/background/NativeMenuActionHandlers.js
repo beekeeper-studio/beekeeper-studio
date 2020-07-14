@@ -2,7 +2,13 @@ import _ from 'lodash'
 import AppEvent from '../common/AppEvent'
 import { buildWindow, getActiveWindows } from './WindowBuilder'
 import { app } from 'electron'
+import platformInfo from '../common/platform_info'
+import path from 'path'
 
+function getIcon() {
+  const iconPrefix = platformInfo.environment === 'development' ? 'public' : ''
+  return path.resolve(path.join(__dirname, '..', `${iconPrefix}/icons/png/512x512.png`))
+}
 
 export default class {
   constructor(settings) {
@@ -57,6 +63,14 @@ export default class {
     w.setFullScreen(!w.isFullScreen())
   }
   about() {
+    app.setAboutPanelOptions({
+      applicationName: "Beekeeper Studio",
+      applicationVersion: app.getVersion(),
+      copyright: "Beekeeper Studio Team",
+      authors: ["Matthew Rathbone", "Gregory Garden", "All the wonderful Github contributors"],
+      website: "https://beekeeperstudio.io",
+      iconPath: getIcon()
+    })
     app.showAboutPanel()
   }
 

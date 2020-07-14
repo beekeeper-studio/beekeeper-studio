@@ -8,6 +8,12 @@ import NativeMenuActionHandlers from './NativeMenuActionHandlers'
 const windows = []
 
 
+function getIcon() {
+  const iconPrefix = platformInfo.environment === 'development' ? 'public' : ''
+  return path.resolve(path.join(__dirname, '..', `${iconPrefix}/icons/png/512x512.png`))
+}
+
+
 class BeekeeperWindow {
   active = true
   win = null
@@ -16,7 +22,6 @@ class BeekeeperWindow {
   constructor(settings) {
     const theme = settings.theme
     const showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
-    const iconPrefix = platformInfo.environment === 'development' ? 'public' : ''
     this.settings = settings
     this.actionHandler = new NativeMenuActionHandlers(this.settings)
     this.win = new BrowserWindow({
@@ -30,7 +35,7 @@ class BeekeeperWindow {
       webPreferences: {
         nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
       },
-      icon: path.join(__dirname, `${iconPrefix}/icons/png/512x512.png`)
+      icon: getIcon()
     })
 
     this.win.webContents.zoomLevel = settings.zoomLevel.value || 0
