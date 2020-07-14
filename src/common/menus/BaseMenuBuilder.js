@@ -22,7 +22,7 @@ export default class {
       newWindow: {
         id: 'new-window',
         label: "New Window",
-        accelerator: "Ctrl+Shift+N",
+        accelerator: "CommandOrControl+Shift+N",
         click: this.actionHandlers.newWindow
       },
       addBeekeeper: {
@@ -33,13 +33,13 @@ export default class {
       newTab: {
         id: "new-query-menu",
         label: "New Tab",
-        accelerator: "Ctrl+T",
+        accelerator: "CommandOrControl+T",
         click: this.actionHandlers.newQuery,
       },
       closeTab: {
         id: 'close-tab',
         label: "Close Tab",
-        accelerator: "Ctrl+W",
+        accelerator: "CommandOrControl+W",
         click: this.actionHandlers.closeTab
       },
       disconnect: {

@@ -10,7 +10,7 @@
         <li v-hotkey="shortcut(item)"  class="menu-item" :class="{'has-children': !!item.submenu, ...hoverClass(item)}" v-for="(item, idx) in menu.submenu" :key="item.id || idx">
           <a  @mousedown.prevent="noop()" @mouseup.prevent="handle(item)" @mouseover.prevent="setHover(item)" :class="hoverClass(item)">
             <span class="label">{{item.label}}</span>
-            <span class="shortcut">{{item.accelerator}}</span>
+            <span class="shortcut">{{shortcutText(item.accelerator)}}</span>
           </a>
           <!-- Second Level Menu, eg Dark Theme, Light Theme -->
           <ul v-if="item.submenu">
@@ -208,8 +208,9 @@ export default {
         this.menuActive = false
       }
     },
-    xelShortcut(shortcut) {
-      return shortcut.replace("CommandOrControl", "Control")
+    shortcutText(item) {
+      const meta = platformInfo.isMac ? 'Cmd' : 'Ctrl'
+      return item.accelerator.replace('CommandOrControl', meta)
     },
     itemKeymap(item) {
       if (!item.click || !item.accelerator || item.registerAccelerator === false) return {}

@@ -1,5 +1,5 @@
 <template>
-  <div class="core-tabs" v-hotkey="keymap">
+  <div  class="core-tabs" v-hotkey="keymap">
     <div class="tabs-header">
       <ul class="nav-tabs nav">
         <core-tab-header
@@ -39,6 +39,8 @@
   import { uuidv4 } from '@/lib/crypto'
   import TableTable from './tableview/TableTable'
   import AppEvent from '../common/AppEvent'
+import platformInfo from '../common/platform_info'
+import { mapGetters } from 'vuex'
 
   export default {
     props: [ 'connection' ],
@@ -52,6 +54,7 @@
       }
     },
     computed: {
+      ...mapGetters({ 'menuStyle': 'settings/menuStyle' }),
       lastTab() {
         return this.tabItems[this.tabItems.length - 1];
       },
@@ -62,10 +65,19 @@
         return _.indexOf(this.tabItems, this.activeTab)
       },
       keymap() {
+        const meta = platformInfo.isMac ? 'meta' : 'ctrl'
+        const closeTab = `${meta}+w`
         const result = {
           'ctrl+tab': this.nextTab,
-          'ctrl+shift+tab': this.previousTab
+          'ctrl+shift+tab': this.previousTab,
         }
+
+        // This is a hack becuase codemirror steals the shortcut
+        // when the shortcut is captured on the electron side
+        if (this.menuStyle === 'native') {
+          result[closeTab] = this.closeTab
+        }
+        
         return result
       }
     },
