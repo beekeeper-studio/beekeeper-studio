@@ -35,7 +35,11 @@ $titlebar-actions-height:   30px;
   x-menubar {
     margin: -11px 0;
   }
-  .titlebar-title {
+  .titlebar-title {    
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
     color: $text-light;
     font-size: 0.85rem;
     line-height: 2;
