@@ -133,7 +133,10 @@ const store = new Vuex.Store({
     },
     favoritesAdd(state, query) {
       state.favorites.unshift(query)
-    }
+    },
+    removeUsedFavorite(state, favorite) {
+      state.favorites = _.without(state.favorites, favorite)
+    },
 
   },
   actions: {
@@ -277,6 +280,10 @@ const store = new Vuex.Store({
       if (!context.state.favorites.includes(query)) {
         context.commit('favoritesAdd', query)
       }
+    },
+    async removeFavorite(context, favorite) {
+      await favorite.remove()
+      context.commit('removeUsedFavorite', favorite)
     },
     async menuActive(context, value) {
       context.commit('menuActive', value)

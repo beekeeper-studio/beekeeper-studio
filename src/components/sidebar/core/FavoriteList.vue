@@ -9,7 +9,7 @@
           <x-button class="btn-fab" skin="iconic">
             <i class="material-icons">more_horiz</i>
             <x-menu style="--target-align: right; --v-target-align: top;">
-              <x-menuitem >
+              <x-menuitem @click="remove(item)">
                 <x-label class="text-danger">Remove</x-label>
               </x-menuitem>
             </x-menu>
@@ -32,6 +32,9 @@
     methods: {
       click(item) {
         this.$root.$emit('favoriteClick', item)
+      },
+      async remove(favorite) {
+        await this.$store.dispatch('removeFavorite', favorite)
       }
     }
 
