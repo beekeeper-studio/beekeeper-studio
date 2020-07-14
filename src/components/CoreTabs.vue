@@ -74,7 +74,12 @@ import { mapGetters } from 'vuex'
 
         // This is a hack becuase codemirror steals the shortcut
         // when the shortcut is captured on the electron side
-        result[closeTab] = this.closeTab
+        // but not on mac, on mac we don't wanna capture it. Because reasons.
+        // 'registerAccelerator' doesn't disable shortcuts on mac.
+        if (!platformInfo.isMac) {
+          result[closeTab] = this.closeTab
+        }
+
         
         return result
       }

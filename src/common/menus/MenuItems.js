@@ -1,7 +1,7 @@
 import platformInfo from "../platform_info";
 
 
-export function basicMenuItems(actionHandler) {
+export function menuItems(actionHandler, settings) {
   return {
     quit: {
       id: 'quit',
@@ -92,7 +92,73 @@ export function basicMenuItems(actionHandler) {
       label: "DEV Force Reload",
       accelerator: "CommandOrControl+Shift+R",
       click: actionHandler.reload
+    },
+    newWindow: {
+      id: 'new-window',
+      label: "New Window",
+      accelerator: "CommandOrControl+Shift+N",
+      click: actionHandler.newWindow
+    },
+    addBeekeeper: {
+      id: 'add-beekeeper',
+      label: "Add Beekeeper's Database",
+      click: actionHandler.addBeekeeper
+    },
+    newTab: {
+      id: "new-query-menu",
+      label: "New Tab",
+      accelerator: "CommandOrControl+T",
+      click: actionHandler.newQuery,
+    },
+    closeTab: {
+      id: 'close-tab',
+      label: "Close Tab",
+      accelerator: "CommandOrControl+W",
+      click: actionHandler.closeTab,
+      registerAccelerator: false
+    },
+    disconnect: {
+      id: 'disconnect',
+      label: "Disconnect",
+      click: actionHandler.disconnect
+    },
+    menuStyleToggle: {
+      id: 'menu-style-toggle-menu',
+      label: "Menu Style",
+      submenu: [
+        {
+          id: "ms-native",
+          type: 'radio',
+          label: 'Native',
+          click: actionHandler.switchMenuStyle,
+          checked: settings.menuStyle.value === 'native'
+        },
+        {
+          id: "ms-client",
+          type: 'radio',
+          label: 'Client',
+          click: actionHandler.switchMenuStyle,
+          checked: settings.menuStyle.value === 'client'
+        }
+      ]
+    },
+    themeToggle: {
+      id: "theme-toggle-menu",
+      label: "Theme",
+      submenu: [
+        {
+          type: "radio",
+          label: "Light",
+          click: actionHandler.switchTheme,
+          checked: settings.theme.value === 'light'
+        },
+        {
+          type: 'radio',
+          label: "Dark",
+          click: actionHandler.switchTheme,
+          checked: settings.theme.value === 'dark'
+        }
+      ]
     }
-
   }
 }

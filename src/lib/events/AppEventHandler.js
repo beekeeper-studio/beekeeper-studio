@@ -22,7 +22,6 @@ export default class {
 
   forward(event) {
     const emit = () => {
-      console.log("forwarding", event)
       this.vueApp.$emit(event)
     }
     this.ipcRenderer.on(event, emit.bind(this))

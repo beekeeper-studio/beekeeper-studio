@@ -1,4 +1,4 @@
-import { basicMenuItems } from './BasicMenuItems'
+import { menuItems } from './MenuItems'
 // TODO (matthew): When multi-window
 // use menu switching to switch menus on the fly
 //https://stackoverflow.com/questions/58044322/how-do-i-make-a-separate-menu-for-a-specific-window-in-electron
@@ -18,74 +18,7 @@ export default class {
 
   get menuItems() {
     return {
-      ...basicMenuItems(this.actionHandlers),
-      newWindow: {
-        id: 'new-window',
-        label: "New Window",
-        accelerator: "CommandOrControl+Shift+N",
-        click: this.actionHandlers.newWindow
-      },
-      addBeekeeper: {
-        id: 'add-beekeeper',
-        label: "Add Beekeeper's Database",
-        click: this.actionHandlers.addBeekeeper
-      },
-      newTab: {
-        id: "new-query-menu",
-        label: "New Tab",
-        accelerator: "CommandOrControl+T",
-        click: this.actionHandlers.newQuery,
-      },
-      closeTab: {
-        id: 'close-tab',
-        label: "Close Tab",
-        accelerator: "CommandOrControl+W",
-        click: this.actionHandlers.closeTab,
-        registerAccelerator: false
-      },
-      disconnect: {
-        id: 'disconnect',
-        label: "Disconnect",
-        click: this.actionHandlers.disconnect
-      },
-      menuStyleToggle: {
-        id: 'menu-style-toggle-menu',
-        label: "Menu Style",
-        submenu: [
-          {
-            id: "ms-native",
-            type: 'radio',
-            label: 'Native',
-            click: this.actionHandlers.switchMenuStyle,
-            checked: this.settings.menuStyle.value === 'native'
-          },
-          {
-            id: "ms-client",
-            type: 'radio',
-            label: 'Client',
-            click: this.actionHandlers.switchMenuStyle,
-            checked: this.settings.menuStyle.value === 'client'
-          }
-        ]
-      },
-      themeToggle: {
-        id: "theme-toggle-menu",
-        label: "Theme",
-        submenu: [
-          {
-            type: "radio",
-            label: "Light",
-            click: this.actionHandlers.switchTheme,
-            checked: this.settings.theme.value === 'light'
-          },
-          {
-            type: 'radio',
-            label: "Dark",
-            click: this.actionHandlers.switchTheme,
-            checked: this.settings.theme.value === 'dark'
-          }
-        ]
-      }
+      ...menuItems(this.actionHandlers, this.settings),
     }
 }
 

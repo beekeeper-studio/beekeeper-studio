@@ -29,7 +29,7 @@ export default class extends DefaultMenu {
       appMenu.push({
         label: "Beekeeper Studio",
         submenu: [
-          { role: 'about' },
+          this.menuItems.about,
           { role: 'services' },
           { role: 'hide' },
           { role: 'hideothers' },
