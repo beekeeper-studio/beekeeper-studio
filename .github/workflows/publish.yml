@@ -29,7 +29,11 @@ jobs:
         with:
           snapcraft_token: ${{ secrets.snapcraft_token }}
       - name: Remove dist directory
+        if: matrix.os != 'windows-latest'
         run: rm -rf ./dist_electron
+      - name: Remove dist directory windows
+        if: maxtrix.os == 'windows-latest'
+        run: if exists dist_electron rmdir /q /s dist_electron
       - name: Prepare for app notarization
         if: startsWith(matrix.os, 'macos')
         # Import Apple API key for app notarization on macOS
