@@ -1,4 +1,5 @@
 'use strict'
+// import '@babel/polyfill'
 import fs from 'fs'
 import { app, protocol } from 'electron'
 import electron from 'electron'

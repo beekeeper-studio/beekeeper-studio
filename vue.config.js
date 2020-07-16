@@ -11,10 +11,17 @@ module.exports = {
           .use('babel')
           .loader('babel-loader')
           .options({
-            presets: [['@babel/preset-env', { modules: false }]],
+            presets: [
+              ['@babel/preset-env', { 
+                modules: false,
+                targets: {
+                    esmodules: true
+                  }
+              }],
+          ],
             plugins: [
               ['@babel/plugin-proposal-decorators', {legacy: true}],
-              ['@babel/plugin-proposal-class-properties', {loose: true}]
+              ['@babel/plugin-proposal-class-properties', {loose: true}],
             ]
           })
       },
