@@ -15,7 +15,14 @@ import { UserSetting } from './common/appdb/models/user_setting'
 import Connection from './common/appdb/Connection'
 import Migration from './migration/index'
 import { buildWindow } from './background/WindowBuilder'
+function initUserDirectory(d) {
+  if (!fs.existsSync(d)) {
+    fs.mkdirSync(d, { recursive: true })
+  }
+}
+
 const isDevelopment = process.env.NODE_ENV !== 'production'
+initUserDirectory(platformInfo.userDirectory)
 const ormConnection = new Connection(platformInfo.appDbPath, false)
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -25,14 +32,6 @@ let menuHandler
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
-
-function initUserDirectory(d) {
-  if (!fs.existsSync(d)) {
-    fs.mkdirSync(d, { recursive: true })
-  }
-}
-
-initUserDirectory(platformInfo.userDirectory)
 
 
 async function createFirstWindow () {
