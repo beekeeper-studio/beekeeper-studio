@@ -31,7 +31,7 @@
     "humanize-duration": "^3.23.1",
     "javascript-time-ago": "^2.0.8",
     "jquery": "^3.5.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "material-icons": "^0.3.1",
     "mssql": "^6.2.0",
     "mysql2": "^2.1.0",
