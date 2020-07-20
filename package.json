@@ -22,12 +22,12 @@
   },
   "main": "background.js",
   "dependencies": {
-
     "cassandra-driver": "^4.4.0",
     "cli-highlight": "2.0.0",
     "codemirror": "^5.48.2",
     "core-js": "3",
     "dateformat": "^3.0.3",
+    "electron-log": "^4.2.2",
     "electron-util": "^0.14.1",
     "humanize-duration": "^3.23.1",
     "javascript-time-ago": "^2.0.8",

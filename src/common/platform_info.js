@@ -15,9 +15,13 @@ if (electron.remote) {
 const updatesDisabled = !!p.env.BEEKEEPER_DISABLE_UPDATES
 
 let userDirectory =  testMode ? './' : e.app.getPath("userData")
+let logDirectory = testMode ? './' : e.app.getPath('logs')
+
 if (p.env.PORTABLE_EXECUTABLE_DIR) {
   userDirectory = path.join(p.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
+  logDirectory = path.join(p.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
 }
+
 const platformInfo = {
   isWindows, isMac,
   isLinux: !isWindows && !isMac,
@@ -28,6 +32,7 @@ const platformInfo = {
   platform: easyPlatform,
   darkMode: e.nativeTheme.shouldUseDarkColors || windowPrefersDarkMode,
   userDirectory,
+  logDirectory,
   testMode,
   appDbPath: path.join(userDirectory, 'app.db'),
   updatesDisabled

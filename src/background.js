@@ -6,6 +6,20 @@ import electron from 'electron'
 import {
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib'
+import log from 'electron-log'
+
+log.catchErrors({
+  showDialog: false,
+  onError(error) {
+    electron.dialog.showMessageBoxSync({
+      title: "ERROR",
+      message: error.message,
+      detail: error.stack,
+      type: 'error',
+      buttons: ['Oh']
+    })
+  }
+})
 
 import { manageUpdates } from './background/update_manager'
 
@@ -21,8 +35,11 @@ function initUserDirectory(d) {
   }
 }
 
+
+log.info("Starting background.js")
 const isDevelopment = process.env.NODE_ENV !== 'production'
 initUserDirectory(platformInfo.userDirectory)
+log.info("making ORM connection")
 const ormConnection = new Connection(platformInfo.appDbPath, false)
 
 // Keep a global reference of the window object, if you don't, the window will
