@@ -17,7 +17,8 @@
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
     "docs:dev": "vuepress dev docs",
-    "docs:build": "vuepress build docs"
+    "docs:build": "vuepress build docs",
+    "release:prs": "./build/get-prs.sh"
   },
   "main": "background.js",
   "dependencies": {
