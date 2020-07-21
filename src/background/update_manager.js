@@ -2,8 +2,10 @@ import { ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import globals from '../common/globals'
 import { getActiveWindows } from './WindowBuilder'
+import log from 'electron-log'
 
 autoUpdater.autoDownload = false
+autoUpdater.logger = log
 
 function dealWithAppImage() {
   if (process.env.DESKTOPINTEGRATION === 'AppImageLauncher') {

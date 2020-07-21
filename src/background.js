@@ -2,10 +2,13 @@
 // import '@babel/polyfill'
 import fs from 'fs'
 import { app, protocol } from 'electron'
+import log from 'electron-log'
 import electron from 'electron'
 import {
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib'
+log.transports.file.level = "debug"
+log.info("initializing background")
 
 import { manageUpdates } from './background/update_manager'
 
@@ -22,28 +25,36 @@ function initUserDirectory(d) {
 }
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
+
 initUserDirectory(platformInfo.userDirectory)
+log.info("initializing user ORM connection")
 const ormConnection = new Connection(platformInfo.appDbPath, false)
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win
 let menuHandler
-
+log.info("registering schema")
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 
 
 async function createFirstWindow () {
+  log.info("Creating first window")
   await ormConnection.connect()
+  log.info("running migrations")
   const migrator = new Migration(ormConnection, process.env.NODE_ENV)
   await migrator.run()
 
+  log.info("getting settings")
   const settings = await UserSetting.all()
 
+  log.info("setting up the menu")
   menuHandler = new MenuHandler(electron, settings)
   menuHandler.initialize()
+  log.info("Building the window")
   buildWindow(settings)
+  log.info("managing updates")
   manageUpdates()
 }
 
