@@ -272,7 +272,17 @@ export async function listTableColumns(conn, database, table, schema) {
     throw new Error("Table '${table}' provided for listTableColumns, but no schema name")
   }
   const sql = `
-    SELECT table_schema, table_name, column_name, udt_name as data_type
+    SELECT 
+      table_schema,
+      table_name,
+      column_name,
+      CASE 
+        WHEN character_maximum_length is not null 
+          THEN CONCAT(udt_name, '(', character_maximum_length, ')')
+        WHEN datetime_precision is not null THEN
+          CONCAT(udt_name, '(', datetime_precision, ')')
+        ELSE udt_name
+      END as data_type
     FROM information_schema.columns
     ${clause}
     ORDER BY table_schema, table_name, ordinal_position
@@ -294,7 +304,7 @@ export async function listMaterializedViewColumns(conn, database, table, schema)
     throw new Error("Cannot get columns for '${table}, no schema provided'")
   }
   const sql = `
-    SELECT a.relname, a.attname,
+    SELECT s.nspname, t.relname, a.attname,
           pg_catalog.format_type(a.atttypid, a.atttypmod) as data_type,
           a.attnotnull
     FROM pg_attribute a

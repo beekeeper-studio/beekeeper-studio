@@ -208,7 +208,12 @@ const store = new Vuex.Store({
         context.commit("tablesLoading", `Loading ${tables.length} tables`)
 
         const tableColumns = await context.state.connection.listTableColumns()
-        const viewColumns = materialized.length > 0 ? await context.state.connection.listMaterializedViewColumns() : []
+        let viewColumns = []
+        for (let index = 0; index < materialized.length; index++) {
+          const view = materialized[index]
+          const columns = await context.state.connection.listMaterializedViewColumns(view.name, view.schema)
+          viewColumns = viewColumns.concat(columns)
+        }
         
         const allColumns = tableColumns.concat(viewColumns)
 
