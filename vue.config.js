@@ -10,6 +10,7 @@ module.exports = {
           .test(/\.js$/)
           .use('babel')
           .loader('babel-loader')
+
           .options({
             presets: [
               ['@babel/preset-env', { 
@@ -24,6 +25,9 @@ module.exports = {
               ['@babel/plugin-proposal-class-properties', {loose: true}],
             ]
           })
+        config.externals({
+          typeorm: 'typeorm'
+        })
       },
       nodeIntegration: true,
       externals,
