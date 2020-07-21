@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-18.04, windows-latest]
+        os: [macos-latest]
 
     steps:
       - name: Check out Git repository
@@ -42,7 +42,7 @@ jobs:
           echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
 
       - name: Build/release Electron app
-        uses: beekeeper-studio/action-electron-builder@v1
+        uses: beekeeper-studio/action-electron-builder@master
         with:
           # GitHub token, automatically provided to the action
           # (No need to define this secret in the repo settings)

@@ -8,6 +8,7 @@ import {
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib'
 log.transports.file.level = "debug"
+log.catchErrors({ showDialog: true})
 log.info("initializing background")
 
 import { manageUpdates } from './background/update_manager'
