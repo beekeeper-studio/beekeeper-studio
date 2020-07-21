@@ -250,7 +250,14 @@ export async function listRoutines(conn, filter) {
 export async function listTableColumns(conn, database, table) {
   const clause = table ? `WHERE table_name = "${table}"` : ""
   const sql = `
-    SELECT table_schema, table_name, column_name, data_type
+    SELECT table_schema, table_name, column_name, 
+      CASE 
+        WHEN character_maximum_length is not null AND data_type != 'text'
+          THEN CONCAT(data_type, '(', character_maximum_length, ')')
+        WHEN datetime_precision is not null THEN
+          CONCAT(data_type, '(', datetime_precision, ')')
+        ELSE data_type
+      END as data_type
     FROM INFORMATION_SCHEMA.COLUMNS
     ${clause}
     ORDER BY table_schema, table_name, ordinal_position

@@ -277,7 +277,7 @@ export async function listTableColumns(conn, database, table, schema) {
       table_name,
       column_name,
       CASE 
-        WHEN character_maximum_length is not null 
+        WHEN character_maximum_length is not null  and udt_name != 'text'
           THEN CONCAT(udt_name, '(', character_maximum_length, ')')
         WHEN datetime_precision is not null THEN
           CONCAT(udt_name, '(', datetime_precision, ')')
