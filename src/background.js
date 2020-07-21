@@ -33,7 +33,6 @@ const ormConnection = new Connection(platformInfo.appDbPath, false)
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let win
 let menuHandler
 log.info("registering schema")
 // Scheme must be registered before the app is ready
@@ -69,11 +68,12 @@ app.on('window-all-closed', () => {
   }
 })
 
-app.on('activate', () => {
+app.on('activate', (event, hasVisibleWindows) => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  if (win === null) {
-    createFirstWindow()
+  if (!hasVisibleWindows) {
+    const settings = await UserSetting.all()
+    buildWindow(settings)
   }
 })
 
