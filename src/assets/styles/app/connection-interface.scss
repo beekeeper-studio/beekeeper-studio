@@ -67,7 +67,16 @@
     }
   }
 }
+
+// Save Connection Modal
 .save-connection-modal {
+  .v--modal-box {
+    max-width: 500px;
+  }
+}
+
+// Import URL Modal
+.import-modal {
   .v--modal-box {
     max-width: 500px;
   }
