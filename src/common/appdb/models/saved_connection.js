@@ -6,7 +6,32 @@ import {ApplicationEntity} from './application_entity'
 import {EncryptedColumn} from 'typeorm-encrypted-column'
 import { resolveHomePathToAbsolute } from '../../utils'
 import { loadEncryptionKey } from '../../encryption_key'
+import { ConnectionString } from 'connection-string'
+import log from 'electron-log'
 
+export const ConnectionTypes = [
+  { name: 'MySQL', value: 'mysql' },
+  { name: 'MariaDB', value: 'mariadb' },
+  { name: 'Postgres', value: 'postgresql' },
+  { name: 'SQLite', value: 'sqlite' },
+  { name: 'SQL Server', value: 'sqlserver' },
+  { name: 'Amazon Redshift', value: 'redshift' },
+  { name: 'CockroachDB', value: 'cockroachdb' }
+]
+
+function parseConnectionType(t) {
+  if (!t) return null
+
+  const mapping = {
+    psql: 'postgresql',
+    postgres: 'postgresql',
+    mssql: 'sqlserver',
+  }
+  const allowed = ConnectionTypes.map(c => c.value)
+  const result = mapping[t] || t
+  if (!allowed.includes(result)) return null
+  return result
+}
 
 export class DbConnectionBase extends ApplicationEntity {
 
@@ -14,7 +39,7 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({ type: 'varchar', name: 'connectionType'})
   set connectionType(value) {
-    this._connectionType = value
+    this._connectionType = parseConnectionType(value)
     if (['mysql', 'mariadb'].includes(this._connectionType)) {
       this.port = 3306
     } else if (this._connectionType === 'postgresql') {
@@ -185,6 +210,25 @@ export class SavedConnection extends DbConnectionBase {
   })
   sshPassword
 
+
+  parse(url) {
+    try {
+      const parsed = new ConnectionString(url)
+      this.connectionType = parsed.protocol || this.connectionType
+      if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
+        this.connectionType = 'redshift'
+      }
+      this.host = parsed.hostname || this.host
+      this.port = parsed.port || this.port
+      this.username = parsed.user || this.username
+      this.password = parsed.password || this.password
+      this.defaultDatabase = parsed.path ? parsed.path[0] : null || this.defaultDatabase
+      return true
+    } catch (ex) {
+      log.error("SavedConnection unable to parse connection string", url, ex)
+      return false
+    }
+  }
 
   @BeforeInsert()
   @BeforeUpdate()

@@ -8,7 +8,7 @@
         <div class="small-wrap">
           <div class="card-flat padding">
             <div class="flex flex-between">
-              <h3 class="card-title">{{pageTitle}}</h3>
+              <h3 class="card-title">{{pageTitle}} <a style="color:pink;" @click.prevent="$modal.show('import-modal')">Import from URL</a></h3>
             </div>
             <div class="alert alert-danger" v-show="errors">
               <i class="material-icons">warning</i>
@@ -57,6 +57,27 @@
         </div>
       </div>
     </div>
+    <modal 
+      class="vue-dialog beekeeper-modal import-modal"
+      name="import-modal"
+      height="auto"
+      :scrollable="true"
+      @opened="$refs.importInput.select()"
+    >
+      <div class="dialog-content">
+        <form @submit.prevent="importFromUrl">
+          <div v-if="importError" class="alert alert-error">{{importError}}</div>
+          <div class="form-group">
+            <label for="url">Paste URL</label>
+            <input class="form-control" ref="importInput" type="text" v-model="url">
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn-flat" @click.prevent="$modal.hide('import-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary" @click.prevent="importFromUrl">Import</button>
+          </div>
+        </form>
+      </div>
+    </modal>
   </div>
 </template>
 
@@ -84,7 +105,9 @@
         errors: null,
         connectionError: null,
         testing: false,
-        split: null
+        split: null,
+        url: null,
+        importError: null
       }
     },
     computed: {
@@ -125,6 +148,14 @@
       }
     },
     methods: {
+      importFromUrl() {
+        if(this.config.parse(this.url)) {
+          this.url = null
+          this.$modal.hide('import-modal')
+        } else {
+          this.importError = "Unable to parse url"
+        }
+      },
       edit(config) {
         this.config = config
       },

@@ -1,4 +1,5 @@
-import { splitQueries, extractParams } from "../../../../src/lib/db/sql_tools";
+import _ from 'lodash'
+import { splitQueries, extractParams, urlToObject } from "../../../../src/lib/db/sql_tools";
 
 const testCases = {
   "select* from foo; select * from bar": 2,
