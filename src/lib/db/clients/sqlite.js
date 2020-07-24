@@ -215,8 +215,17 @@ export function getTableReferences() {
   return Promise.resolve([]); // TODO: not implemented yet
 }
 
-export function getTableKeys() {
-  return Promise.resolve([]); // TODO: not implemented yet
+export function getTableKeys(conn, database, table) {
+  const sql = `pragma foreign_key_list('${table}')`
+  const { data } = await driverExecuteQuery(conn, { query: sql });
+  return data.map(row => ({
+    toTable: row.table,
+    fromTable: table,
+    fromColumn: row.from,
+    toColumn: row.to,
+    onUpdate: row.on_update,
+    onDelete: row.on_delete
+  }))
 }
 
 export async function getTableCreateScript(conn, table) {
