@@ -226,7 +226,4 @@
 </script>
 
 <style>
-  .import-modal .v--modal-box {
-    max-width: 500px;
-  }
 </style>

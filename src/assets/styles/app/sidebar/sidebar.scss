@@ -334,6 +334,9 @@
     .badge {
       font-size: 80%;
       margin-right: 0;
+      max-width: 50%;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
   .sub-item {
