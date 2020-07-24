@@ -26,7 +26,7 @@ const platformInfo = {
   environment: process.env.NODE_ENV,
   debugEnabled: !!process.env.DEBUG,
   platform: easyPlatform,
-  darkMode: e.nativeTheme.shouldUseDarkColors || windowPrefersDarkMode,
+  darkMode: testMode? true : e.nativeTheme.shouldUseDarkColors || windowPrefersDarkMode,
   userDirectory,
   testMode,
   appDbPath: path.join(userDirectory, 'app.db'),

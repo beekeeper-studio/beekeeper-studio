@@ -3591,6 +3591,11 @@ connect-history-api-fallback@^1.5.0, connect-history-api-fallback@^1.6.0:
   resolved "https://registry.yarnpkg.com/connect-history-api-fallback/-/connect-history-api-fallback-1.6.0.tgz#8b32089359308d111115d81cad3fceab888f97bc"
   integrity sha512-e54B99q/OUoH64zYYRf3HBP5z24G38h5D3qXu23JGRoigpX5Ss4r9ZnDk3g0Z8uQC2x2lPaJ+UlWBc1ZWBWdLg==
 
+connection-string@^3.4.2:
+  version "3.4.2"
+  resolved "https://registry.yarnpkg.com/connection-string/-/connection-string-3.4.2.tgz#278e7f3673752e78675e5eb2647816a4b3c64d73"
+  integrity sha512-t6LmVNKVn6ynMHewmTDxP+D+Rxt/Tx86KvUilPPTAYgJlVOMWcOJO01J6pu7qnwfOZru2ynsUETF44bTrggaHg==
+
 consola@^2.6.0:
   version "2.12.2"
   resolved "https://registry.yarnpkg.com/consola/-/consola-2.12.2.tgz#9610f158e7b0a9ecc8f8bb0c4fc8e7c52bf41d05"

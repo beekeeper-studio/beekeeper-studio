@@ -8,7 +8,7 @@
         <div class="small-wrap">
           <div class="card-flat padding">
             <div class="flex flex-between">
-              <h3 class="card-title">{{pageTitle}}</h3>
+              <h3 class="card-title">{{pageTitle}} <a @click.prevent="$modal.show('import-modal')">Import from URL</a></h3>
             </div>
             <div class="alert alert-danger" v-show="errors">
               <i class="material-icons">warning</i>
@@ -57,6 +57,20 @@
         </div>
       </div>
     </div>
+    <modal class="vue-dialog beekeeper-modal import-modal" name="import-modal" height="auto" :scrollable="true">
+      <div class="dialog-content">
+        <form @submit="importFromUrl">
+          <div class="form-group">
+            <label for="url">Paste URL</label>
+            <input class="form-control" type="text" v-model="url">
+          </div>
+          <div class="actions">
+            <button class="btn btn-flat" @click.prevent="$modal.hide('import-modal')">Cancel</button>
+            <button class="btn btn-primary" @click.prevent="importFromUrl">Import</button>
+          </div>
+        </form>
+      </div>
+    </modal>
   </div>
 </template>
 
@@ -125,6 +139,9 @@
       }
     },
     methods: {
+      openImportModal() {
+
+      },
       edit(config) {
         this.config = config
       },
