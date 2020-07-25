@@ -3,7 +3,7 @@
     <div class="row gutter">
       <div class="col s9 form-group">
         <label for="Host">Host</label>
-        <input type="text" class="form-control" name="host" v-model="config.host">
+        <input type="text" class="form-control" @paste="onPaste" name="host" v-model="config.host">
       </div>
       <div class="col s3 form-group">
         <label for="port">Port</label>
@@ -33,7 +33,16 @@
 </template>
 
 <script>
+
   export default {
-    props: ['config']
+    props: ['config'],
+    methods: {
+      onPaste(event) {
+          const data = event.clipboardData.getData('text')
+          if (this.config.parse(data)) {
+            event.preventDefault()
+          }
+      }
+    }
   }
 </script>

@@ -3,10 +3,10 @@
     <nav class="list-group" v-if="history.length > 0">
       <div class="list-item" v-for="item in history" v-bind:key="item.id">
         <a class="list-item-btn" @click.prevent="click(item)">
-          <span class="item-text expand truncate">
-            {{nicelySized(item.text)}}
-          </span>
-          <span class="badge"><span>{{item.database}}</span></span>
+          <div class="list-title flex-col">
+            <span class="item-text expand truncate">{{nicelySized(item.text)}}</span>
+            <span class="subtitle"><span>{{item.database}}</span></span>
+          </div>
         </a>
       </div>
     </nav>

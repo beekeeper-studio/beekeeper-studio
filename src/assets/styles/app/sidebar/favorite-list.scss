@@ -5,32 +5,70 @@
   overflow-x: hidden;
   padding: $gutter-h 0 $gutter-w;
   .list-group {
+    padding: $gutter-h 0;
+    min-height: 105px;
+  }
+  .list-item {
+    border-bottom: 1px solid $theme-bg;
+    .badge {
+      min-width: fit-content;
+    }
+  }
+  .saved-connection-list {
+    padding: 0;
+    margin-bottom: $gutter-h * 0.5;
     a {
-      overflow: hidden;
-      font-size: 0.9rem;
-      color: $text
+      &.active {
+        background-color: rgba($theme-base, 0.06);
+      }
     }
-    .item-text {
-      padding-right: $gutter-h;
+  }
+  .item-icon {
+    align-self: flex-start;
+    line-height: 1.4rem;
+  }
+  .list-title {
+    flex-grow: 1;
+    overflow: hidden;
+    padding-right: ($gutter-h * 0.75);
+    .subtitle {
+      font-size: 80%;
+      color: $text-lighter;
+      @extend .truncate;
     }
-    // .list-item-btn {
-    //   padding: $gutter-h $gutter-w;
-    // }
+  }
+  .list-item-btn {
+    position: relative;
+    margin-right: 0;
+    height: initial;
+    line-height: initial;
+    padding: $gutter-h ($gutter-w * 0.75);
+    &:hover {
+      transition: display 0.15s ease-in-out;
+      .badge {
+        display: none;
+      }
+      .btn-fab {
+        display: inline-flex;
+      }
+    }
     .btn-fab {
       display: none;
+      flex: 0;
+      min-width: 24px;
+      width: 24px;
+      height: 24px;
+      transition: all 0.15s ease-in-out;
       .material-icons {
         color: $text-dark;
       }
     }
-    .list-item {
-      &:hover {
-        .btn-fab {
-          display: inline-flex;
-        }
-        .badge {
-          display: none;
-        }
-      }
+    .dropdown {
+      position: initial;
+    }
+    .dropdown-menu {
+      top: 0.32rem;
+      right: 0.4rem;
     }
   }
 }

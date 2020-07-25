@@ -4,8 +4,10 @@
       <div class="list-item" v-for="item in favorites" v-bind:key="item.id">
         <a class="list-item-btn" @click.prevent="click(item)">
           <i class="item-icon query material-icons">code</i>
-          <span class="item-text title truncate expand" :title="item.title">{{item.title}}</span>
-          <span class="badge database"><span :title="item.database" >{{item.database}}</span></span>
+          <div class="list-title flex-col">
+            <span class="item-text title truncate expand" :title="item.title">{{item.title}}</span>
+            <span class="database subtitle"><span :title="item.database" >{{item.database}}</span></span>
+          </div>
           <x-button class="btn-fab" skin="iconic">
             <i class="material-icons">more_horiz</i>
             <x-menu style="--target-align: right; --v-target-align: top;">
