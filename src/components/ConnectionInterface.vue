@@ -9,7 +9,7 @@
           <div class="card-flat padding">
             <div class="flex flex-between">
               <h3 class="card-title">{{pageTitle}}</h3>
-              <a class="btn btn-link btn-small" @click.prevent="$modal.show('import-modal')">Import from URL</a>
+              <ImportButton :config="config">Import from URL</ImportButton>
             </div>
             <div class="alert alert-danger" v-show="errors">
               <i class="material-icons">warning</i>
@@ -58,28 +58,6 @@
         </div>
       </div>
     </div>
-    <modal 
-      class="vue-dialog beekeeper-modal import-modal"
-      name="import-modal"
-      height="auto"
-      :scrollable="true"
-      @opened="$refs.importInput.select()"
-    >
-      <form @submit.prevent="importFromUrl">
-        <div class="dialog-content">
-          <div class="dialog-c-title">Import from URL</div>
-          <div v-if="importError" class="alert alert-error">{{importError}}</div>
-          <div class="form-group">
-            <label for="url">Paste URL</label>
-            <input class="form-control" ref="importInput" type="text" v-model="url">
-          </div>
-        </div>
-        <div class="vue-dialog-buttons">
-          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('import-modal')">Cancel</button>
-          <button class="btn btn-primary" type="submit" @click.prevent="importFromUrl">Import</button>
-        </div>
-      </form>
-    </modal>
   </div>
 </template>
 
@@ -94,11 +72,12 @@
   import SqlServerForm from './connection/SqlServerForm'
   import SaveConnectionForm from './connection/SaveConnectionForm'
   import Split from 'split.js'
+  import ImportButton from './connection/ImportButton'
   import _ from 'lodash'
   // import ImportUrlForm from './connection/ImportUrlForm';
 
   export default {
-    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton },
 
     data() {
       return {
@@ -150,14 +129,7 @@
       }
     },
     methods: {
-      importFromUrl() {
-        if(this.config.parse(this.url)) {
-          this.url = null
-          this.$modal.hide('import-modal')
-        } else {
-          this.importError = "Unable to parse url"
-        }
-      },
+
       edit(config) {
         this.config = config
       },
