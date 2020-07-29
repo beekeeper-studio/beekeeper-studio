@@ -104,7 +104,7 @@ export async function listRoutines(conn) {
 export async function listTableColumns(conn, database, table) {
   const clause = table ? `AND table_name = ?` : ''
   const sql = `
-    SELECT table_name, column_name AS 'column_name', column_type AS 'data_type'
+    SELECT table_name AS 'table_name', column_name AS 'column_name', column_type AS 'data_type'
     FROM information_schema.columns
     WHERE table_schema = database()
     ${clause}

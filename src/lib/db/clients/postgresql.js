@@ -278,9 +278,9 @@ export async function listTableColumns(conn, database, table, schema) {
       column_name,
       CASE 
         WHEN character_maximum_length is not null  and udt_name != 'text'
-          THEN CONCAT(udt_name, '(', character_maximum_length, ')')
+          THEN CONCAT(udt_name, concat('(', concat(character_maximum_length::varchar(255), ')')))
         WHEN datetime_precision is not null THEN
-          CONCAT(udt_name, '(', datetime_precision, ')')
+          CONCAT(udt_name, concat('(', concat(datetime_precision::varchar(255), ')')))
         ELSE udt_name
       END as data_type
     FROM information_schema.columns

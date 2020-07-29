@@ -37,9 +37,12 @@
   export default {
     props: ['config'],
     methods: {
-      onPaste: (event) => {
-        const data = event.clipboardData.getData('text')
-        this.config.parse(data)
+      onPaste(event) {
+          const data = event.clipboardData.getData('text')
+          if (this.config.parse(data)) {
+            event.preventDefault()
+          }
+      }
     }
   }
 </script>

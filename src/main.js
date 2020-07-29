@@ -1,3 +1,4 @@
+import tls from 'tls'
 import Vue from 'vue'
 import VueNoty from 'vuejs-noty'
 import VueHotkey from 'v-hotkey'
@@ -30,6 +31,7 @@ import en from 'javascript-time-ago/locale/en'
 
 (async () => {
   try {
+    tls.DEFAULT_MIN_VERSION = "TLSv1"
     TimeAgo.addLocale(en)
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
     const appDb = path.join(config.userDirectory, 'app.db')

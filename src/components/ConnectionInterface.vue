@@ -8,7 +8,8 @@
         <div class="small-wrap">
           <div class="card-flat padding">
             <div class="flex flex-between">
-              <h3 class="card-title">{{pageTitle}} <a @click.prevent="$modal.show('import-modal')">Import from URL</a></h3>
+              <h3 class="card-title">{{pageTitle}}</h3>
+              <ImportButton :config="config">Import from URL</ImportButton>
             </div>
             <div class="alert alert-danger" v-show="errors">
               <i class="material-icons">warning</i>
@@ -85,11 +86,12 @@
   import SqlServerForm from './connection/SqlServerForm'
   import SaveConnectionForm from './connection/SaveConnectionForm'
   import Split from 'split.js'
+  import ImportButton from './connection/ImportButton'
   import _ from 'lodash'
   // import ImportUrlForm from './connection/ImportUrlForm';
 
   export default {
-    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton },
 
     data() {
       return {
@@ -98,7 +100,9 @@
         errors: null,
         connectionError: null,
         testing: false,
-        split: null
+        split: null,
+        url: null,
+        importError: null
       }
     },
     computed: {
@@ -139,9 +143,13 @@
       }
     },
     methods: {
+<<<<<<< HEAD
       openImportModal() {
 
       },
+=======
+
+>>>>>>> master
       edit(config) {
         this.config = config
       },
@@ -208,3 +216,6 @@
     },
   }
 </script>
+
+<style>
+</style>
