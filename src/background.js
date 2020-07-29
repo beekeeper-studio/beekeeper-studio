@@ -7,6 +7,7 @@ import electron from 'electron'
 import {
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib'
+
 log.transports.file.level = "info"
 log.catchErrors({ showDialog: false})
 log.info("initializing background")
@@ -23,6 +24,10 @@ function initUserDirectory(d) {
   if (!fs.existsSync(d)) {
     fs.mkdirSync(d, { recursive: true })
   }
+}
+
+if (platformInfo.isDevelopment) {
+  log.transports.console.level = "debug"
 }
 
 const isDevelopment = process.env.NODE_ENV !== 'production'

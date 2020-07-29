@@ -65,12 +65,14 @@ import Tabulator from "tabulator-tables";
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
 import Statusbar from '../common/StatusBar'
-
+import rawLog from 'electron-log'
+import _ from 'lodash'
+const log = rawLog.scope('TableTable')
 
 export default {
   components: { Statusbar },
   mixins: [data_converter, DataMutators],
-  props: ["table", "connection"],
+  props: ["table", "connection", "initialFilter"],
   data() {
     return {
       filterTypes: {
@@ -94,20 +96,52 @@ export default {
       loading: false,
       data: null,
       response: null,
-      limit: 100
+      limit: 100,
+      rawTableKeys: []
     };
   },
   computed: {
+    tableKeys() {
+      const result = {}
+      this.rawTableKeys.forEach((item) => {
+        result[item.fromColumn] = item
+      })
+      return result
+    },
     tableColumns() {
-      return this.table.columns.map(column => {
+      const results = []
+      this.table.columns.forEach(column => {
+
+        const keyData = this.tableKeys[column.columnName]
+
         const result = {
           title: column.columnName,
           field: column.columnName,
           mutatorData: this.resolveDataMutator(column.dataType),
-          dataType: column.dataType
+          dataType: column.dataType,
+          cellClick: this.cellClick
         }
-        return result
+        results.push(result)
+        
+
+        if (keyData) {
+          const icon = () => "<i class='material-icons fk-link'>launch</i>"
+          const tooltip = (cell) => {
+            return `View records in ${keyData.toTable} with ${keyData.toColumn} = ${cell._cell.value}`
+          }
+          const keyResult = {
+            headerSort: false,
+            field: column.columnName,
+            title: "",
+            cellClick: this.fkClick,
+            formatter: icon,
+            tooltip
+          }
+          results.push(keyResult)
+        }
+        
       });
+      return results
     },
     filterValue() {
       return this.filter.value;
@@ -129,6 +163,10 @@ export default {
     },
   },
   async mounted() {
+    if (this.initialFilter) {
+      this.filter = _.clone(this.initialFilter)
+    }
+    this.rawTableKeys = await this.connection.getTableKeys(this.table.name)
     this.tabulator = new Tabulator(this.$refs.table, {
       height: this.actualTableHeight,
       columns: this.tableColumns,
@@ -141,10 +179,33 @@ export default {
       paginationSize: this.limit,
       paginationElement: this.$refs.paginationArea,
       initialSort: this.initialSort,
-      cellClick: this.cellClick
+      initialFilter: [this.initialFilter || {}]
     });
+
   },
   methods: {
+    fkClick(e, cell) {
+      log.info('fk-click', cell)
+      const value = cell._cell.value
+      const fromColumn = cell._cell.column.field
+      const keyData = this.tableKeys[fromColumn]
+      const tableName = keyData.toTable
+      const table = this.$store.state.tables.find(t => t.name === tableName)
+      if (!table) {
+        log.error("fk-click: unable to find destination table", tableName)
+        return
+      }
+      const filter = {
+        value,
+        type: '=',
+        field: keyData.toColumn
+      }
+      const payload = {
+        table, filter
+      }
+      log.debug('fk-click: clicked ', value, keyData)
+      this.$root.$emit('loadTable', payload)
+    },
     cellClick(e, cell) {
       this.selectChildren(cell.getElement())
     },

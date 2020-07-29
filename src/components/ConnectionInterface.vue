@@ -58,20 +58,6 @@
         </div>
       </div>
     </div>
-    <modal class="vue-dialog beekeeper-modal import-modal" name="import-modal" height="auto" :scrollable="true">
-      <div class="dialog-content">
-        <form @submit="importFromUrl">
-          <div class="form-group">
-            <label for="url">Paste URL</label>
-            <input class="form-control" type="text" v-model="url">
-          </div>
-          <div class="actions">
-            <button class="btn btn-flat" @click.prevent="$modal.hide('import-modal')">Cancel</button>
-            <button class="btn btn-primary" @click.prevent="importFromUrl">Import</button>
-          </div>
-        </form>
-      </div>
-    </modal>
   </div>
 </template>
 
@@ -143,13 +129,6 @@
       }
     },
     methods: {
-<<<<<<< HEAD
-      openImportModal() {
-
-      },
-=======
-
->>>>>>> master
       edit(config) {
         this.config = config
       },

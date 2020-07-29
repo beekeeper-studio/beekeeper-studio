@@ -3,11 +3,11 @@
 import _ from 'lodash'
 import sqlite3 from 'sqlite3';
 import { identify } from 'sql-query-identifier';
-
-import createLogger from '../../logger';
+import rawLog from 'electron-log'
 import { genericSelectTop } from './utils';
 
-const logger = createLogger('db:clients:sqlite');
+const log = rawLog.scope('sqlite')
+const logger = () => log
 
 const sqliteErrors = {
   CANCELED: 'SQLITE_INTERRUPT',
@@ -215,9 +215,12 @@ export function getTableReferences() {
   return Promise.resolve([]); // TODO: not implemented yet
 }
 
-export function getTableKeys(conn, database, table) {
+export async function getTableKeys(conn, database, table) {
+  console.log("table keys")
   const sql = `pragma foreign_key_list('${table}')`
+  log.debug("running SQL", sql)
   const { data } = await driverExecuteQuery(conn, { query: sql });
+  log.debug("response", data)
   return data.map(row => ({
     toTable: row.table,
     fromTable: table,
@@ -320,16 +323,14 @@ export function driverExecuteQuery(conn, queryArgs) {
   const identifyStatementsRunQuery = async (connection) => {
     const statements = identifyCommands(queryArgs.query);
 
-    const results = await Promise.all(
-      statements.map(async (statement) => {
-        const result = await runQuery(connection, statement);
+    const results = []
 
-        return {
-          ...result,
-          statement,
-        };
-      })
-    );
+    // we do it this way to ensure the queries are run IN ORDER
+    for (let index = 0; index < statements.length; index++) {
+      const statement = statements[index];
+      const r = await runQuery(connection, statement)
+      results.push({...r, statement})
+    }
 
     return queryArgs.multiple ? results : results[0];
   };

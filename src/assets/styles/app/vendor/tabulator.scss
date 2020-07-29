@@ -11,6 +11,11 @@ $errorColor: $brand-danger;
     height: 28px!important;
     line-height: 20px;
 
+    i.fk-link {
+      display:none;
+      color: teal;
+    }
+
     &.active-cell {
       background: $selection;
       border-color: $input-highlight;
@@ -25,6 +30,12 @@ $errorColor: $brand-danger;
   }
   &.tabulator-selectable:hover {
     background: rgba($theme-base, 0.065);
+    i.fk-link {
+      display: inline-block;
+      &:hover {
+        color: white;
+      }
+    }
   }
 }
 .tabulator {

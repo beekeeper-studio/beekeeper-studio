@@ -24,7 +24,7 @@
         :class="{show: (activeTab === tab), active: (activeTab === tab)}"
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab == tab" :tab="tab" :connection="connection"></QueryEditor>
-        <TableTable v-if="tab.type === 'table'" :connection="tab.connection" :table="tab.table"></TableTable>
+        <TableTable v-if="tab.type === 'table'" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
       </div>
     </div>
   </div>
@@ -130,13 +130,20 @@ import { mapGetters } from 'vuex'
         this.addTab(result)
 
       },
-      openTable(table) {
-        // todo (matthew): trigger this from a vuex event
+      openTable({ table, filter, tableName }) {
+        
+        let resolvedTable = null
+
+        if (!table && tableName) {
+          resolvedTable = this.$store.state.tables.find(t => t.name === tableName)
+        }
+
         const t = {
           id: uuidv4(),
           type: 'table',
-          table: table,
-          connection: this.connection
+          table: resolvedTable || table,
+          connection: this.connection,
+          initialFilter: filter
         }
         this.addTab(t)
       },
