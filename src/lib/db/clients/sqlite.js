@@ -35,6 +35,7 @@ export default async function (server, database) {
     listTableIndexes: (db, table) => listTableIndexes(conn, db, table),
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table) => getTableReferences(conn, table),
+    getPrimaryKey: (db, table) => getPrimaryKey(conn, db, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
@@ -215,6 +216,14 @@ export function getTableReferences() {
   return Promise.resolve([]); // TODO: not implemented yet
 }
 
+export async function getPrimaryKey(conn, database, table) {
+  log.debug('finding foreign key for', database, table)
+  const sql = `pragma table_info('${table}')`
+  const { data } = await driverExecuteQuery(conn, { query: sql })
+  const found = data.find(r => r.pk === 1)
+  return found ? found.name : null
+}
+
 export async function getTableKeys(conn, database, table) {
   console.log("table keys")
   const sql = `pragma foreign_key_list('${table}')`
@@ -222,6 +231,7 @@ export async function getTableKeys(conn, database, table) {
   const { data } = await driverExecuteQuery(conn, { query: sql });
   log.debug("response", data)
   return data.map(row => ({
+    constraintType: 'FOREIGN',
     toTable: row.table,
     fromTable: table,
     fromColumn: row.from,

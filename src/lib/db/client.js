@@ -29,6 +29,7 @@ export function createConnection(server, database) {
     listTableIndexes: listTableIndexes.bind(null, server, database),
     listSchemas: listSchemas.bind(null, server, database),
     getTableReferences: getTableReferences.bind(null, server, database),
+    getPrimaryKey: getPrimaryKey.bind(null, server, database),
     getTableKeys: getTableKeys.bind(null, server, database),
     query: query.bind(null, server, database),
     executeQuery: executeQuery.bind(null, server, database),
@@ -168,6 +169,11 @@ function listTableIndexes(server, database, table, schema) {
 function getTableReferences(server, database, table, schema) {
   checkIsConnected(server, database);
   return database.connection.getTableReferences(table, schema);
+}
+
+function getPrimaryKey(server, database, table, schema) {
+  checkIsConnected(server, database)
+  return database.connection.getPrimaryKey(database.database, table, schema)
 }
 
 function getTableKeys(server, database, table, schema) {

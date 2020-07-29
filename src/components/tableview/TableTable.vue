@@ -97,7 +97,8 @@ export default {
       data: null,
       response: null,
       limit: 100,
-      rawTableKeys: []
+      rawTableKeys: [],
+      primaryKey: null
     };
   },
   computed: {
@@ -168,6 +169,8 @@ export default {
       this.filter = _.clone(this.initialFilter)
     }
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name)
+    // TODO (matthew): re-enable after implementing for all DBs
+    // this.primaryKey = await this.connection.getPrimaryKey(this.table.name)
     this.tabulator = new Tabulator(this.$refs.table, {
       height: this.actualTableHeight,
       columns: this.tableColumns,
