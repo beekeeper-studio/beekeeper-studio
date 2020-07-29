@@ -131,6 +131,7 @@ export default {
           }
           const keyResult = {
             headerSort: false,
+            download: false,
             field: column.columnName,
             title: "",
             cellClick: this.fkClick,
