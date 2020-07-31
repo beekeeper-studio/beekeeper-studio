@@ -7,13 +7,18 @@
 <script>
 import { mapGetters } from 'vuex'
 export default {
+  props: ['mode'],
   computed: {
     ...mapGetters(['connectionColor']),
     classes() {
         const result = {
           'statusbar': true
         }
-        result[this.connectionColor] = true
+        if (this.mode) {
+          result[this.mode] = true
+        } else {
+          result[this.connectionColor] = true
+        }
         return result
     }
   }

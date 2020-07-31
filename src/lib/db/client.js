@@ -35,6 +35,7 @@ export function createConnection(server, database) {
     executeQuery: executeQuery.bind(null, server, database),
     listDatabases: listDatabases.bind(null, server, database),
     selectTop: selectTop.bind(null, server, database),
+    updateValues: updateValues.bind(null, server, database),
     getQuerySelectTop: getQuerySelectTop.bind(null, server, database),
     getTableCreateScript: getTableCreateScript.bind(null, server, database),
     getTableSelectScript: getTableSelectScript.bind(null, server, database),
@@ -184,6 +185,11 @@ function getTableKeys(server, database, table, schema) {
 function query(server, database, queryText) {
   checkIsConnected(server, database);
   return database.connection.query(queryText);
+}
+
+function updateValues(server, database, updates) {
+  checkIsConnected(server, database)
+  return database.connection.updateValues(updates)
 }
 
 function executeQuery(server, database, queryText) {

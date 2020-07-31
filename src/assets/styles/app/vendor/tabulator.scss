@@ -21,6 +21,20 @@ $errorColor: $brand-danger;
       border-color: $input-highlight;
       color: $db-select-text;
     }
+
+    &.tabulator-editing {
+      border-color: blue;
+    }
+
+    &.edited {
+      background: $selection;
+      border-color: $input-highlight;
+      color: $db-select-text;
+    }
+
+    &.edit-success {
+      background-color: green;
+    }
   }
   &:nth-child(even) {
     background: transparent;
@@ -142,6 +156,11 @@ $errorColor: $brand-danger;
   height: $statusbar-height;
   padding: 0 $gutter-h;
   background: rgba($theme-base, 0.06);
+
+  .pending-edits {
+    margin-right: auto;
+  }
+
   .tabulator-paginator,
   .tabulator-pages {
     display: flex;

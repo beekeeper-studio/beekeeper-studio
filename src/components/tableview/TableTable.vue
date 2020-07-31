@@ -45,8 +45,18 @@
       </form>
     </div>
     <div ref="table"></div>
-    <statusbar class="tabulator-footer">
-
+    <statusbar :mode="statusbarMode" class="tabulator-footer">
+      <span v-if="missingPrimaryKey" class="pending-edits">
+        <i 
+        class="material-icons"
+        v-tooltip="'No primary key detected, table editing is disabled.'"
+        >warning</i>
+      </span>
+      <span v-if="pendingEdits.length > 0" class="pending-edits">
+        {{pendingEdits.length}} pending edits
+        <a @click.prevent="saveChanges" class="btn btn-link">Commit</a>
+        <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
+      </span>
       <span ref="paginationArea" class="tabulator-paginator"></span>
     </statusbar>
   </div>
@@ -98,10 +108,24 @@ export default {
       response: null,
       limit: 100,
       rawTableKeys: [],
-      primaryKey: null
+      primaryKey: null,
+      pendingEdits: [],
+      editError: null
     };
   },
   computed: {
+    editable() {
+      return this.primaryKey && this.table.entityType === 'table'
+    },
+    // it's a table, but there's no primary key
+    missingPrimaryKey() {
+      return this.table.entityType === 'table' && !this.primaryKey
+    },
+    statusbarMode() {
+      if (this.pendingEdits.length > 0) return 'editing'
+      if (this.editError) return 'failure'
+      return null
+    },
     tableKeys() {
       const result = {}
       this.rawTableKeys.forEach((item) => {
@@ -120,7 +144,16 @@ export default {
           field: column.columnName,
           mutatorData: this.resolveDataMutator(column.dataType),
           dataType: column.dataType,
-          cellClick: this.cellClick
+          cellClick: this.cellClick,
+          editable: this.editable,
+          editor: this.editable ? 'input' : undefined,
+          editorParams: {
+            search: true,
+            // elementAttributes: {
+            //   maxLength: column.columnLength // TODO
+            // }
+          },
+          cellEdited: this.cellEdited
         }
         results.push(result)
         
@@ -128,7 +161,7 @@ export default {
         if (keyData) {
           const icon = () => "<i class='material-icons fk-link'>launch</i>"
           const tooltip = (cell) => {
-            return `View records in ${keyData.toTable} with ${keyData.toColumn} = ${cell._cell.value}`
+            return `View records in ${keyData.toTable} with ${keyData.toColumn} = ${cell.getValue()}`
           }
           const keyResult = {
             headerSort: false,
@@ -170,12 +203,11 @@ export default {
     }
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name)
     // TODO (matthew): re-enable after implementing for all DBs
-    // this.primaryKey = await this.connection.getPrimaryKey(this.table.name)
+    this.primaryKey = await this.connection.getPrimaryKey(this.table.name)
     this.tabulator = new Tabulator(this.$refs.table, {
       height: this.actualTableHeight,
       columns: this.tableColumns,
       nestedFieldSeparator: false,
-      ajaxRequestFunc: this.dataFetch,
       ajaxURL: "http://fake",
       ajaxSorting: true,
       ajaxFiltering: true,
@@ -183,15 +215,18 @@ export default {
       paginationSize: this.limit,
       paginationElement: this.$refs.paginationArea,
       initialSort: this.initialSort,
-      initialFilter: [this.initialFilter || {}]
+      initialFilter: [this.initialFilter || {}],
+      // callbacks
+      ajaxRequestFunc: this.dataFetch,
+      index: this.primaryKey
     });
 
   },
   methods: {
     fkClick(e, cell) {
       log.info('fk-click', cell)
-      const value = cell._cell.value
-      const fromColumn = cell._cell.column.field
+      const value = cell.getValue()
+      const fromColumn = cell.getField()
       const keyData = this.tableKeys[fromColumn]
       const tableName = keyData.toTable
       const table = this.$store.state.tables.find(t => t.name === tableName)
@@ -211,7 +246,59 @@ export default {
       this.$root.$emit('loadTable', payload)
     },
     cellClick(e, cell) {
-      this.selectChildren(cell.getElement())
+      // this makes it easier to select text if not editing
+      if (!this.editable) {
+        this.selectChildren(cell.getElement())
+      }
+
+    },
+    cellEdited(cell) {
+      log.info('edit', cell)
+      cell.getElement().classList.add('edited')
+      const pkCell = cell.getRow().getCells().find(c => c.getField() === this.primaryKey)
+      if (!pkCell) {
+        this.$noty.error("Can't edit column -- couldn't figure out primary key")
+        // cell.setValue(cell.getOldValue())
+        cell.restoreOldValue()
+        console.log(cell)
+        return
+      }
+      const payload = {
+        table: this.table.name,
+        column: cell.getField(),
+        pkColumn: this.primaryKey,
+        primaryKey: pkCell.getValue(),
+        oldValue: cell.getOldValue(),
+        value: cell.getValue(),
+        cell: cell
+      }
+      this.pendingEdits.push(payload)
+    },
+    async saveChanges() {
+      try {
+        const newData = await this.connection.updateValues(this.pendingEdits)
+        log.info("new Data: ", newData)
+        this.tabulator.updateData(newData)
+        this.pendingEdits.forEach(edit => {
+          edit.cell.getElement().classList.remove('edited')
+          edit.cell.getElement().classList.add('edit-success')
+          setTimeout(() => {
+            edit.cell.getElement().classList.remove('edit-success')
+          }, 1000)
+        })
+        this.pendingEdits = []
+      } catch (ex) {
+        this.editError = ex.message
+        this.$noty.error(`Unable to save edits: ${ex.message}`)
+      }
+
+    },
+    discardChanges() {
+      this.pendingEdits.forEach(edit => {
+        edit.cell.restoreOldValue()
+        edit.cell.getElement().classList.remove('edited')
+      })
+      this.pendingEdits = []
     },
     triggerFilter() {
       if (this.filter.type && this.filter.field) {
@@ -268,6 +355,7 @@ export default {
             const r = response.result;
             const totalRecords = response.totalRecords;
             this.response = response
+            this.pendingEdits = []
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data
             resolve({

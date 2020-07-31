@@ -38,6 +38,7 @@ export default async function (server, database) {
     getPrimaryKey: (db, table) => getPrimaryKey(conn, db, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
+    updateValues: (updates) => updateValues(conn, updates),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: () => listDatabases(conn),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
@@ -106,6 +107,48 @@ export function query(conn, queryText) {
       queryConnection.interrupt();
     },
   };
+}
+
+export async function updateValues(conn, updates) {
+  const updateCommands = updates.map(update => {
+    return {
+      query: `UPDATE ${update.table} SET ${update.column} = ? WHERE ${update.pkColumn} = ?`,
+      params: [update.value, update.primaryKey]
+    }
+  })
+
+  const commands = [{ query: 'BEGIN'}, ...updateCommands, {query: 'COMMIT'}];
+  const results = []
+  // TODO: this should probably return the updated values
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    try {
+      for (let index = 0; index < commands.length; index++) {
+        const blob = commands[index];
+        await driverExecuteQuery(cli, blob)
+      }
+
+      const returnQueries = updates.map(update => {
+        return {
+          query: `select * from "${update.table}" where "${update.pkColumn}" = ?`,
+          params: [
+            update.primaryKey
+          ]
+        }
+      })
+
+      for (let index = 0; index < returnQueries.length; index++) {
+        const blob = returnQueries[index];
+        const r = await driverExecuteQuery(cli, blob)
+        if (r.data[0]) results.push(r.data[0])
+      }
+    } catch (ex) {
+      log.error("query exception: ", ex)
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
+      throw ex
+    }
+  })
+  return results
 }
 
 

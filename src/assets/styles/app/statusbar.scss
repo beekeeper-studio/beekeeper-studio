@@ -11,6 +11,15 @@
   font-size: 0.85rem;
   padding: 0 $gutter-h;
   overflow: hidden;
+
+  &.editing {
+    background-color: blue;
+  }
+
+  &.failure {
+    background-color: red;
+  }
+
   .btn {
     color: $statusbar-text;
     height: $statusbar-height * 0.8;
