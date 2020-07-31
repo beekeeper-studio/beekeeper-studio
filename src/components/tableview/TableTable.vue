@@ -53,9 +53,13 @@
         >warning</i>
       </span>
       <span v-if="pendingEdits.length > 0" class="pending-edits">
+        <span v-if="editError" class="edit-error">
+          <i v-tooltip="editError" class="material-icons">error</i>
+        </span>
         {{pendingEdits.length}} pending edits
         <a @click.prevent="saveChanges" class="btn btn-link">Commit</a>
         <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
+
       </span>
       <span ref="paginationArea" class="tabulator-paginator"></span>
     </statusbar>
@@ -122,8 +126,8 @@ export default {
       return this.table.entityType === 'table' && !this.primaryKey
     },
     statusbarMode() {
-      if (this.pendingEdits.length > 0) return 'editing'
       if (this.editError) return 'failure'
+      if (this.pendingEdits.length > 0) return 'editing'
       return null
     },
     tableKeys() {
@@ -135,9 +139,13 @@ export default {
     },
     tableColumns() {
       const results = []
+      // 1. add a column for a real column
+      // if a FK, add another column with the link
+      // to the FK table.
       this.table.columns.forEach(column => {
 
         const keyData = this.tableKeys[column.columnName]
+        const editable = this.editable && column.columnName !== this.primaryKey
 
         const result = {
           title: column.columnName,
@@ -145,8 +153,8 @@ export default {
           mutatorData: this.resolveDataMutator(column.dataType),
           dataType: column.dataType,
           cellClick: this.cellClick,
-          editable: this.editable,
-          editor: this.editable ? 'input' : undefined,
+          editable: editable,
+          editor: editable ? 'input' : undefined,
           editorParams: {
             search: true,
             // elementAttributes: {
@@ -168,10 +176,12 @@ export default {
             download: false,
             field: column.columnName,
             title: "",
+            cssClass: "foreign-key-button",
             cellClick: this.fkClick,
             formatter: icon,
             tooltip
           }
+          result.cssClass = 'foreign-key'
           results.push(keyResult)
         }
         
@@ -276,6 +286,7 @@ export default {
     },
     async saveChanges() {
       try {
+        // throw new Error("This is an error")
         const newData = await this.connection.updateValues(this.pendingEdits)
         log.info("new Data: ", newData)
         this.tabulator.updateData(newData)
@@ -288,12 +299,15 @@ export default {
         })
         this.pendingEdits = []
       } catch (ex) {
+        this.pendingEdits.forEach(edit => {
+          edit.cell.getElement().classList.add('edit-error')
+        })
         this.editError = ex.message
-        this.$noty.error(`Unable to save edits: ${ex.message}`)
       }
 
     },
     discardChanges() {
+      this.editError = null
       this.pendingEdits.forEach(edit => {
         edit.cell.restoreOldValue()
         edit.cell.getElement().classList.remove('edited')
@@ -356,6 +370,7 @@ export default {
             const totalRecords = response.totalRecords;
             this.response = response
             this.pendingEdits = []
+            this.editError = null
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data
             resolve({

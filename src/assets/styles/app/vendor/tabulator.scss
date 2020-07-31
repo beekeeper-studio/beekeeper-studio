@@ -32,6 +32,11 @@ $errorColor: $brand-danger;
       color: $db-select-text;
     }
 
+    &.edit-error {
+      background-color: red;
+      color: white;
+    }
+
     &.edit-success {
       background-color: green;
     }
