@@ -12,21 +12,42 @@
   padding: 0 $gutter-h;
   overflow: hidden;
 
-  &.editing {
-    background-color: blue;
-  }
+  // &.editing {
+    // background: $statusbar-bg;
+  // }
+  // &.failure {
+  //   background-color: red;
+  // }
 
-  &.failure {
-    background-color: red;
+  .badge {
+    border-radius: 1.8rem;
   }
-
   .btn {
     color: $statusbar-text;
     height: $statusbar-height * 0.8;
     line-height: $statusbar-height * 0.8;
     transition: background 0.15s ease-in-out;
+    min-width: 0;
+    margin-left: 0.15rem;
+    margin-right: 0.15rem;
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
     &:hover {
       background: rgba($statusbar-text, 0.1);
+    }
+    &.btn-primary {
+      background: rgba($theme-base, 0.1);
+      // color: rgba(black, 0.87);
+      transition: background 0.15s ease-in-out;
+      &:hover {
+        background: rgba($theme-base, 0.15);
+      }
+      .badge {
+        font-size: 85%;
+        margin-right: 0;
+        margin-left: 0.25rem;
+        padding: 0 0.3rem;
+      }
     }
     .material-icons {
       font-size: 16px;

@@ -46,22 +46,22 @@
     </div>
     <div ref="table"></div>
     <statusbar :mode="statusbarMode" class="tabulator-footer">
-      <span v-if="missingPrimaryKey" class="pending-edits">
-        <i 
-        class="material-icons"
-        v-tooltip="'No primary key detected, table editing is disabled.'"
-        >warning</i>
-      </span>
-      <span v-if="pendingEdits.length > 0" class="pending-edits">
+      <div class="col x4">
+        <span v-if="missingPrimaryKey" class="col s4pending-edits">
+          <i 
+          class="material-icons"
+          v-tooltip="'No primary key detected, table editing is disabled.'"
+          >warning</i>
+        </span>
+      </div>
+      <span ref="paginationArea" class="col x4 flex flex-center tabulator-paginator"></span>
+      <div v-if="pendingEdits.length > 0" class="col x4 pending-edits flex flex-right">
         <span v-if="editError" class="edit-error">
           <i v-tooltip="editError" class="material-icons">error</i>
         </span>
-        {{pendingEdits.length}} pending edits
-        <a @click.prevent="saveChanges" class="btn btn-link">Commit</a>
         <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
-
-      </span>
-      <span ref="paginationArea" class="tabulator-paginator"></span>
+        <a @click.prevent="saveChanges" class="btn btn-primary" :title="pendingEdits.length + ' ' + 'pending edits'">Commit <span class="badge">{{pendingEdits.length}}</span></a>
+      </div>
     </statusbar>
   </div>
 </template>
