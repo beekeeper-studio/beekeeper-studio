@@ -377,7 +377,11 @@
       },
       async submitTabQuery() {
         const text = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
-        this.submitQuery(text)
+        if (text.trim()) {
+          this.submitQuery(text)
+        } else {
+          this.error = 'No query to run'
+        }
       },
       async submitQuery(rawQuery, skipModal) {
         this.running = true
