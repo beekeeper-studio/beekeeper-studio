@@ -11,14 +11,24 @@
       <a class="refresh" @click.prevent="refreshDatabases" :title="'Refresh Databases'">
         <i class="material-icons">refresh</i>
       </a>
+      <a class="refresh" @click.prevent="$modal.show('config-add-database')" :title="'Add Database'">
+        <i class="material-icons">add</i>
+      </a>
     </div>
+    <modal class="vue-dialog beekeeper-modal save-add-database" name="config-add-database" height="auto" :scrollable="true">
+      <div class="dialog-content">
+        <AddDatabaseForm :connection="connection" @databaseCreated="databaseCreated" @cancel="$modal.hide('config-add-database')"></AddDatabaseForm>
+      </div>
+    </modal>
   </div>
 </template>
 
 <script type="text/javascript">
   import _ from 'lodash'
+  import AddDatabaseForm from "@/components/connection/AddDatabaseForm";
 
   export default {
+    components: { AddDatabaseForm },
     props: [ 'connection' ],
     data() {
       return {
@@ -30,7 +40,13 @@
     methods: {
       async refreshDatabases() {
         this.dbs = await this.connection.listDatabases()
-      }
+      },
+      async databaseCreated(db) {
+        this.$modal.hide('config-add-database')
+        await this.refreshDatabases()
+        this.selectedDatabase = db
+        this.$emit('databaseSelected', db)
+      },
     },
     async mounted() {
       this.selectedDatabase = await this.connection.currentDatabase()

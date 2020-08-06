@@ -33,6 +33,10 @@ export function createConnection(server, database) {
     query: query.bind(null, server, database),
     executeQuery: executeQuery.bind(null, server, database),
     listDatabases: listDatabases.bind(null, server, database),
+    listCharsets: listCharsets.bind(null, server, database),
+    getDefaultCharSet: getDefaultCharSet.bind(null, server, database),
+    listCollations: listCollations.bind(null, server, database),
+    createDatabase: createDatabase.bind(null, server, database),
     selectTop: selectTop.bind(null, server, database),
     getQuerySelectTop: getQuerySelectTop.bind(null, server, database),
     getTableCreateScript: getTableCreateScript.bind(null, server, database),
@@ -191,6 +195,25 @@ function listDatabases(server, database, filter) {
   return database.connection.listDatabases(filter);
 }
 
+function listCharsets(server, database) {
+  checkIsConnected(server, database);
+  return database.connection.listCharsets();
+}
+
+function getDefaultCharSet(server, database) {
+  checkIsConnected(server, database);
+  return database.connection.getDefaultCharSet();
+}
+
+function listCollations(server, database, filter) {
+  checkIsConnected(server, database);
+  return database.connection.listCollations(filter);
+}
+
+function createDatabase(server, database, databaseName, charset, collation) {
+  checkIsConnected(server, database);
+  return database.connection.createDatabase(databaseName, charset, collation);
+}
 
 async function getQuerySelectTop(server, database, table, schema, limit) {
   checkIsConnected(server, database);

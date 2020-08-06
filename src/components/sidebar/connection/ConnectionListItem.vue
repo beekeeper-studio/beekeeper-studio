@@ -5,7 +5,7 @@
       class="list-item-btn"
       :class="classList"
       @click.prevent="click(config)"
-      @dblclick.prevent="doubleClick(config)" 
+      @dblclick.prevent="doubleClick(config)"
     >
       <span :class="`connection-label connection-label-color-${labelColor}`"></span>
       <div class="connection-title flex-col expand">
@@ -56,7 +56,7 @@ export default {
       } else {
         return this.config.simpleConnectionString
       }
-      
+
     },
     subtitle() {
       if (this.isRecentList) {
