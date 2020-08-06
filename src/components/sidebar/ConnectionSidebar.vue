@@ -56,6 +56,7 @@
                 :config="c"
                 :selectedConfig="selectedConfig"
                 :isRecentList="true"
+                :showDuplicate="false"
                 @edit="edit"
                 @remove="removeUsedConfig"
                 @doubleClick="connect"
@@ -107,6 +108,9 @@
       },
       remove(config) {
         this.$emit('remove', config)
+      },
+      duplicate(config) {
+        this.$emit('duplicate', config)
       },
       removeUsedConfig(config) {
         this.$store.dispatch('removeUsedConfig', config)

@@ -2,7 +2,7 @@
   <div class="interface connection-interface">
     <div class="interface-wrap row">
       <sidebar class="connection-sidebar" ref="sidebar">
-        <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @remove="remove" @edit="edit" @connect="handleConnect"></connection-sidebar>
+        <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @remove="remove" @duplicate="duplicate" @edit="edit" @connect="handleConnect"></connection-sidebar>
       </sidebar>
       <div ref="content" class="connection-main page-content" id="page-content">
         <div class="small-wrap">
@@ -139,6 +139,19 @@
           this.config = this.defaultConfig
         }
         this.$noty.success(`${config.name} deleted`)
+      },
+      async duplicate(config) {
+        const duplicateConfig = Object.assign( Object.create( Object.getPrototypeOf(config)), config);
+        duplicateConfig.id = null
+        duplicateConfig.name += ' (copy)'
+
+        try {
+          await this.$store.dispatch('saveConnectionConfig', duplicateConfig)
+          this.$noty.success(`The connection was successfully duplicated!`)
+        } catch (ex) {
+          this.$noty.error(`Could not duplicate Connection: ${ex.message}`)
+        }
+
       },
       async submit() {
         this.connectionError = null
