@@ -262,6 +262,7 @@
       keymap() {
         const result = {}
         result[this.ctrlOrCmd('l')] = this.selectEditor
+        result[this.ctrlOrCmd('alt+f')] = this.formatSql
         return result
       },
       connectionType() {
