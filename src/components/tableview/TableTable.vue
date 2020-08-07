@@ -2,41 +2,57 @@
   <div class="tabletable flex-col">
     <div class="table-filter">
       <form @submit.prevent="triggerFilter">
-        <div class="filter-group row gutter">
+        <div class="filter-group row gutter" v-bind:key="index" v-for="(item, index) in filter">
           <div>
             <div class="select-wrap">
-              <select name="Filter Field" class="form-control" v-model="filter.field">
+              <select name="Filter Field" class="form-control" v-model="item.field">
                 <option
-                  v-for="column in table.columns"
-                  v-bind:key="column.columnName"
-                  :value="column.columnName"
-                >{{column.columnName}}</option>
+                    v-for="column in table.columns"
+                    v-bind:key="column.columnName"
+                    :value="column.columnName"
+                >{{ column.columnName }}
+                </option>
               </select>
             </div>
           </div>
           <div>
             <div class="select-wrap">
-              <select name="Filter Type" class="form-control" v-model="filter.type">
-                <option v-for="(v, k) in filterTypes" v-bind:key="k" :value="v">{{k}}</option>
+              <select name="Filter Type" class="form-control" v-model="item.type">
+                <option v-for="(v, k) in filterTypes" v-bind:key="k" :value="v">{{ k }}</option>
               </select>
             </div>
           </div>
           <div class="expand filter">
             <div class="filter-wrap">
               <input
-                class="form-control"
-                type="text"
-                v-model="filter.value"
-                placeholder="Enter Value"
+                  class="form-control"
+                  type="text"
+                  v-model="item.value"
+                  placeholder="Enter Value"
               />
-              <button 
-                type="button" 
-                class="clear btn-link" 
-                @click.prevent="filter.value = ''"
+              <button
+                  type="button"
+                  class="clear btn-link"
+                  @click.prevent="item.value = ''"
               >
                 <i class="material-icons">cancel</i>
               </button>
             </div>
+          </div>
+          <div class="btn-wrap" v-if="index === filter.length -1">
+            <button class="btn btn-small btn-filter" type="button" @click.prevent="addFilter">
+              <i class="material-icons">add</i>
+            </button>
+          </div>
+          <div class="btn-wrap" v-if="index !== filter.length -1">
+            <button class="btn btn-small btn-filter" type="button" @click.prevent="removeFilter(index)">
+              <i class="material-icons">remove</i>
+            </button>
+          </div>
+        </div>
+        <div class="filter-group ro gutter">
+          <div class="btn-wrap">
+            <button class="btn" type="button" @click.prevent="resetFilter">Clear filter</button>
           </div>
           <div class="btn-wrap">
             <button class="btn btn-primary" type="submit">Search</button>
@@ -46,7 +62,6 @@
     </div>
     <div ref="table"></div>
     <statusbar class="tabulator-footer">
-
       <span ref="paginationArea" class="tabulator-paginator"></span>
     </statusbar>
   </div>
@@ -68,7 +83,7 @@ import Statusbar from '../common/StatusBar'
 
 
 export default {
-  components: { Statusbar },
+  components: {Statusbar},
   mixins: [data_converter, DataMutators],
   props: ["table", "connection"],
   data() {
@@ -82,11 +97,7 @@ export default {
         "greater than": ">",
         "greater than or equal": ">="
       },
-      filter: {
-        value: null,
-        type: "=",
-        field: this.table.columns[0].columnName
-      },
+      filter: [],
       headerFilter: true,
       columnsSet: false,
       tabulator: null,
@@ -143,22 +154,42 @@ export default {
       initialSort: this.initialSort,
       cellClick: this.cellClick
     });
+
+    this.addFilter()
   },
   methods: {
     cellClick(e, cell) {
       this.selectChildren(cell.getElement())
     },
+    addFilter() {
+      this.filter.push({
+        value: null,
+        type: "=",
+        field: this.table.columns[0].columnName
+      })
+    },
+    removeFilter(index) {
+      this.filter.splice(index, 1)
+    },
+    resetFilter() {
+      this.filter = []
+      this.addFilter()
+      this.clearFilter()
+    },
     triggerFilter() {
-      if (this.filter.type && this.filter.field) {
-        if (this.filter.value) {
-          this.tabulator.setFilter(
-            this.filter.field,
-            this.filter.type,
-            this.filter.value
-          );
-        } else {
-          this.tabulator.clearFilter();
+      const filterArray = JSON.parse(JSON.stringify(this.filter));
+      let filterValid = true;
+
+      filterArray.forEach(filter => {
+        if (!filter.type || !filter.field || !filter.value) {
+          filterValid = false;
         }
+      })
+
+      if (filterValid) {
+        this.tabulator.setFilter(filterArray);
+      } else {
+        this.tabulator.clearFilter();
       }
     },
     clearFilter() {
@@ -193,12 +224,12 @@ export default {
         (async () => {
           try {
             const response = await this.connection.selectTop(
-              this.table.name,
-              offset,
-              limit,
-              orderBy,
-              filters,
-              this.table.schema
+                this.table.name,
+                offset,
+                limit,
+                orderBy,
+                filters,
+                this.table.schema
             );
             const r = response.result;
             const totalRecords = response.totalRecords;
