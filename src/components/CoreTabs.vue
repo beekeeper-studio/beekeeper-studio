@@ -11,6 +11,7 @@
           @close="close"
           @closeAll="closeAll"
           @closeOther="closeOther"
+          @duplicate="duplicate"
           ></core-tab-header>
       </ul>
       <span class="actions">
@@ -175,6 +176,13 @@
           tab.query.reload()
         }
       },
+      duplicate(tab) {
+        let duplicatedTab = Object.assign( Object.create( Object.getPrototypeOf(tab)), tab)
+        duplicatedTab.id = uuidv4()
+        duplicatedTab.title = "Query #" + this.newTabId
+
+        this.addTab(duplicatedTab)
+      }
     },
     mounted() {
       this.createQuery()

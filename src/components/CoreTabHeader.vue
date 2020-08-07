@@ -30,6 +30,10 @@
       <li>
         <a href="#" @click.prevent.stop="$emit('closeAll')">Close All</a>
       </li>
+      <li class="separator"></li>
+      <li>
+        <a href="#" @click.prevent.stop="$emit('duplicate', tab)">Duplicate</a>
+      </li>
     </vue-context>
   </div>
 </template>

@@ -50,3 +50,10 @@
 .v-context__sub > ul {
   display: none
 }
+
+.v-context li.separator {
+  height: 0;
+  margin: .5rem 0;
+  overflow: hidden;
+  border-top: 1px solid $text;
+}
