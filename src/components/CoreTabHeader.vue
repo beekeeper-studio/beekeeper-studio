@@ -43,8 +43,17 @@
         result[`${this.tab.table.entityType}-icon`] = true
         return result
       },
-      title() {
-        if (this.tab.type === 'query') {
+      tableTabTitle() {
+        if (!this.tab.type === 'table') return null;
+
+        let result = this.tab.table.name
+        if (this.tab.titleScope) {
+          result = result + ` [${this.tab.titleScope}]`
+        } 
+        return result
+      },
+      queryTabTitle() {
+        if (!this.tab.type === 'query') return null
           if (this.tab.query && this.tab.query.title) {
             return this.tab.query.title
           }
@@ -57,13 +66,11 @@
           } else {
             return this.tab.query.text
           }
-        } else if (this.tab.type === 'table') {
-          return this.tab.table.name;
-        }
-        return this.tab.title
-      }
+      },
+      title() {
+        return this.queryTabTitle || this.tableTabTitle || "Unknown"
     },
-
   }
+}
 
 </script>

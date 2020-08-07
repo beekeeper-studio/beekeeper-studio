@@ -47,6 +47,9 @@
     <div ref="table"></div>
     <statusbar :mode="statusbarMode" class="tabulator-footer">
       <div class="col x4">
+        <span v-if="lastUpdatedText">Updated {{lastUpdatedText}}</span>
+      </div>
+      <div class="col x4">
         <span v-if="missingPrimaryKey" class="col s4pending-edits">
           <i 
           class="material-icons"
@@ -55,12 +58,14 @@
         </span>
       </div>
       <span ref="paginationArea" class="col x4 flex flex-center tabulator-paginator"></span>
-      <div v-if="pendingEdits.length > 0" class="col x4 pending-edits flex flex-right">
-        <span v-if="editError" class="edit-error">
-          <i v-tooltip="editError" class="material-icons">error</i>
-        </span>
-        <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
-        <a @click.prevent="saveChanges" class="btn btn-primary" :title="pendingEdits.length + ' ' + 'pending edits'">Commit <span class="badge">{{pendingEdits.length}}</span></a>
+      <div class="col x4 pending-edits flex flex-right">
+        <div v-if="pendingEdits.length > 0">
+          <span v-if="editError" class="edit-error">
+            <i v-tooltip="editError" class="material-icons">error</i>
+          </span>
+          <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
+          <a @click.prevent="saveChanges" class="btn btn-primary" :title="pendingEdits.length + ' ' + 'pending edits'">Commit <span class="badge">{{pendingEdits.length}}</span></a>
+        </div>
       </div>
     </statusbar>
   </div>
@@ -81,12 +86,13 @@ import DataMutators from '../../mixins/data_mutators'
 import Statusbar from '../common/StatusBar'
 import rawLog from 'electron-log'
 import _ from 'lodash'
+import TimeAgo from 'javascript-time-ago'
 const log = rawLog.scope('TableTable')
 
 export default {
   components: { Statusbar },
   mixins: [data_converter, DataMutators],
-  props: ["table", "connection", "initialFilter"],
+  props: ["table", "connection", "initialFilter", "tabId"],
   data() {
     return {
       filterTypes: {
@@ -114,7 +120,11 @@ export default {
       rawTableKeys: [],
       primaryKey: null,
       pendingEdits: [],
-      editError: null
+      editError: null,
+      timeAgo: new TimeAgo('en-US'),
+      lastUpdated: null,
+      lastUpdatedText: null,
+      interval: setInterval(this.setlastUpdatedText, 10000)
     };
   },
   computed: {
@@ -206,6 +216,20 @@ export default {
         this.clearFilter();
       }
     },
+    lastUpdated() {
+      this.setlastUpdatedText()
+      let result = 'all'
+      if (this.primaryKey && this.filter.value && this.filter.type === '=' && this.filter.field === this.primaryKey) {
+        log.info("setting scope", this.filter.value)
+        result = this.filter.value
+      } else {
+        if (this.filter.value) result = 'filtered'
+      }
+      this.$emit('setTabTitleScope', this.tabId, result)
+    }
+  },
+  beforeDestroy() {
+    if(this.interval) clearInterval(this.interval)
   },
   async mounted() {
     if (this.initialFilter) {
@@ -226,6 +250,7 @@ export default {
       paginationElement: this.$refs.paginationArea,
       initialSort: this.initialSort,
       initialFilter: [this.initialFilter || {}],
+      lastUpdated: null,
       // callbacks
       ajaxRequestFunc: this.dataFetch,
       index: this.primaryKey
@@ -250,7 +275,7 @@ export default {
         field: keyData.toColumn
       }
       const payload = {
-        table, filter
+        table, filter, titleScope: value
       }
       log.debug('fk-click: clicked ', value, keyData)
       this.$root.$emit('loadTable', payload)
@@ -373,6 +398,7 @@ export default {
             this.editError = null
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data
+            this.lastUpdated = Date.now()
             resolve({
               last_page: Math.ceil(totalRecords / limit),
               data
@@ -384,7 +410,12 @@ export default {
         })();
       });
       return result;
-    }
+    },
+    setlastUpdatedText() {
+      if (!this.lastUpdated) return null
+      this.lastUpdatedText = this.timeAgo.format(this.lastUpdated)
+    },
+
   }
 };
 </script>
