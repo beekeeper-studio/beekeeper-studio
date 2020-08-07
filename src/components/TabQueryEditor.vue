@@ -1,6 +1,6 @@
 <template>
   <div class="query-editor" v-hotkey="keymap">
-    <div class="top-panel" ref="topPanel">
+    <div class="top-panel" ref="topPanel" @contextmenu.prevent="$refs.topPanelMenu.open">
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
       <div class="toolbar text-right">
@@ -27,6 +27,12 @@
           </x-buttons>
         </div>
       </div>
+
+      <vue-context ref="topPanelMenu" :close-on-click="true">
+        <li>
+          <a href="#" @click.prevent.stop="formatSql">Format</a>
+        </li>
+      </vue-context>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar v-if="running"></progress-bar>
@@ -144,10 +150,12 @@
   import ResultTable from './editor/ResultTable'
   import Statusbar from './common/StatusBar'
   import humanizeDuration from 'humanize-duration'
+  import VueContext from 'vue-context';
+  import sqlFormatter from 'sql-formatter';
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, Statusbar },
+    components: { ResultTable, ProgressBar, Statusbar, VueContext },
     props: ['tab', 'active'],
     data() {
       return {
@@ -339,7 +347,7 @@
       },
       selectFirstParameter() {
         if (!this.$refs['paramInput'] || this.$refs['paramInput'].length == 0) return
-        this.$refs['paramInput'][0].select()        
+        this.$refs['paramInput'][0].select()
       },
       updateEditorHeight() {
         let height = this.$refs.topPanel.clientHeight
@@ -463,6 +471,9 @@
           }
         }
       },
+      formatSql() {
+        this.editor.setValue(sqlFormatter.format(this.editor.getValue()))
+      }
     },
     mounted() {
       const $editor = this.$refs.editor
