@@ -47,9 +47,10 @@
     <div ref="table"></div>
     <statusbar :mode="statusbarMode" class="tabulator-footer">
       <div class="col x4">
-        <span v-if="lastUpdatedText">Updated {{lastUpdatedText}}</span>
-      </div>
-      <div class="col x4">
+        <span class="statusbar-item flex flex-middle" v-if="lastUpdatedText" :title="'Updated' + ' ' + lastUpdatedText">
+          <i class="material-icons">update</i> 
+          <span>{{lastUpdatedText}}</span>
+        </span>
         <span v-if="missingPrimaryKey" class="col s4pending-edits">
           <i 
           class="material-icons"

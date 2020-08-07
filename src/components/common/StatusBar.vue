@@ -16,6 +16,7 @@ export default {
         }
         if (this.mode) {
           result[this.mode] = true
+          result[this.connectionColor] = true
         } else {
           result[this.connectionColor] = true
         }

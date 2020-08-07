@@ -12,13 +12,6 @@
   padding: 0 $gutter-h;
   overflow: hidden;
 
-  // &.editing {
-    // background: $statusbar-bg;
-  // }
-  // &.failure {
-  //   background-color: red;
-  // }
-
   .badge {
     border-radius: 1.8rem;
   }
@@ -30,8 +23,8 @@
     min-width: 0;
     margin-left: 0.15rem;
     margin-right: 0.15rem;
-    padding-left: 0.8rem;
-    padding-right: 0.8rem;
+    padding-left: 0.7rem;
+    padding-right: 0.7rem;
     &:hover {
       background: rgba($statusbar-text, 0.1);
     }
@@ -47,6 +40,7 @@
         margin-right: 0;
         margin-left: 0.25rem;
         padding: 0 0.3rem;
+        background: rgba($theme-base, 0.2);
       }
     }
     .material-icons {
@@ -137,10 +131,13 @@
 
   // Query Status
   // ----------------------------
-  .row-counts, 
-  .affected-rows, 
-  .execute-time {
+  .statusbar-item {
     padding: 0 $gutter-h;
+    .material-icons {
+      font-size: 16px;
+      margin-right: 0.25rem;
+      opacity: 0.65;
+    }
   }
   .row-counts {
     .truncated-rows, .records {
