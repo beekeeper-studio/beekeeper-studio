@@ -30,7 +30,7 @@
 
       <vue-context ref="topPanelMenu" :close-on-click="true">
         <li>
-          <a href="#" @click.prevent.stop="formatSql">Format</a>
+          <a href="#" @click.prevent="formatSql">Format</a>
         </li>
       </vue-context>
     </div>

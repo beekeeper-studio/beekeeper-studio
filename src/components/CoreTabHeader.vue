@@ -22,17 +22,17 @@
 
     <vue-context ref="menu" :close-on-click="true">
       <li>
-        <a href="#" @click.prevent.stop="$emit('close', tab)">Close</a>
+        <a href="#" @click.prevent="$emit('close', tab)">Close</a>
       </li>
       <li v-if="this.tabsCount > 1">
-        <a href="#" @click.prevent.stop="$emit('closeOther', tab)">Close Others</a>
+        <a href="#" @click.prevent="$emit('closeOther', tab)">Close Others</a>
       </li>
       <li v-if="this.tabsCount > 1">
-        <a href="#" @click.prevent.stop="$emit('closeAll')">Close All</a>
+        <a href="#" @click.prevent="$emit('closeAll')">Close All</a>
       </li>
       <li class="separator"></li>
       <li>
-        <a href="#" @click.prevent.stop="$emit('duplicate', tab)">Duplicate</a>
+        <a href="#" @click.prevent="$emit('duplicate', tab)">Duplicate</a>
       </li>
     </vue-context>
   </div>
