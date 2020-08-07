@@ -1,27 +1,44 @@
 <template>
-  <li class="nav-item" :title="title" >
-    <a
-      class="nav-link"
-      @click.prevent.stop="$emit('click', tab)"
-      @click.middle.prevent.stop="$emit('close', tab)"
-      :class="{ active: selected }"
-    >
-      <i v-if="tab.type === 'table'" :class="iconClass" class="material-icons item-icon table">grid_on</i>
-      <i v-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
-      <i v-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
-      <span class="tab-title truncate">{{title}}</span>
-      <div class="tab-action">
+  <div>
+    <li class="nav-item" :title="title" @contextmenu.prevent="$refs.menu.open">
+      <a
+          class="nav-link"
+          @click.prevent.stop="$emit('click', tab)"
+          @click.middle.prevent.stop="$emit('close', tab)"
+          :class="{ active: selected }"
+      >
+        <i v-if="tab.type === 'table'" :class="iconClass" class="material-icons item-icon table">grid_on</i>
+        <i v-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
+        <i v-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
+        <span class="tab-title truncate">{{title}}</span>
+        <div class="tab-action">
         <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @click.prevent.stop="$emit('close', tab)">
           <i class="material-icons close">close</i>
           <i class="material-icons unsaved-icon" >fiber_manual_record</i>
         </span>
-      </div>
-    </a>
-  </li>
+        </div>
+      </a>
+    </li>
+
+    <vue-context ref="menu" :close-on-click="true">
+      <li>
+        <a href="#" @click.prevent.stop="$emit('close', tab)">Close</a>
+      </li>
+      <li>
+        <a href="#" @click.prevent.stop="$emit('closeOther', tab)">Close Others</a>
+      </li>
+      <li>
+        <a href="#" @click.prevent.stop="$emit('closeAll')">Close All</a>
+      </li>
+    </vue-context>
+  </div>
 </template>
 <script>
+  import VueContext from 'vue-context';
+
   export default {
     props: ['tab', 'selected'],
+    components: { VueContext },
     data() {
       return {
         unsaved: false,

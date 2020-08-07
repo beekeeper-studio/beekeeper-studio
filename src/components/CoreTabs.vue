@@ -9,6 +9,8 @@
           :selected="activeTab === tab"
           @click="click"
           @close="close"
+          @closeAll="closeAll"
+          @closeOther="closeOther"
           ></core-tab-header>
       </ul>
       <span class="actions">
@@ -39,8 +41,8 @@
   import { uuidv4 } from '@/lib/crypto'
   import TableTable from './tableview/TableTable'
   import AppEvent from '../common/AppEvent'
-import platformInfo from '../common/platform_info'
-import { mapGetters } from 'vuex'
+  import platformInfo from '../common/platform_info'
+  import { mapGetters } from 'vuex'
 
   export default {
     props: [ 'connection' ],
@@ -72,7 +74,7 @@ import { mapGetters } from 'vuex'
           'ctrl+shift+tab': this.previousTab,
         }
 
-        // This is a hack becuase codemirror steals the shortcut
+        // This is a hack because codemirror steals the shortcut
         // when the shortcut is captured on the electron side
         // but not on mac, on mac we don't wanna capture it. Because reasons.
         // 'registerAccelerator' doesn't disable shortcuts on mac.
@@ -80,7 +82,6 @@ import { mapGetters } from 'vuex'
           result[closeTab] = this.closeTab
         }
 
-        
         return result
       }
     },
@@ -128,7 +129,6 @@ import { mapGetters } from 'vuex'
         }
 
         this.addTab(result)
-
       },
       openTable(table) {
         // todo (matthew): trigger this from a vuex event
@@ -152,7 +152,6 @@ import { mapGetters } from 'vuex'
         this.activeTab = tab
       },
       close(tab) {
-
         if (this.activeTab === tab) {
           if(tab === this.lastTab) {
             this.previousTab()
@@ -160,12 +159,22 @@ import { mapGetters } from 'vuex'
             this.nextTab()
           }
         }
+
         this.tabItems = _.without(this.tabItems, tab)
         if (tab.query && tab.query.id) {
           tab.query.reload()
         }
       },
-
+      closeAll() {
+        this.tabItems = []
+      },
+      closeOther(tab) {
+        this.tabItems = [tab]
+        this.activeTab = tab;
+        if (tab.query && tab.query.id) {
+          tab.query.reload()
+        }
+      },
     },
     mounted() {
       this.createQuery()
@@ -178,7 +187,6 @@ import { mapGetters } from 'vuex'
       this.$root.$on('loadTable', this.openTable)
       this.$root.$on('loadSettings', this.openSettings)
       this.$root.$on('favoriteClick', (item) => {
-
         const queriesOnly = this.tabItems.map((item) => {
           return item.query
         })
@@ -196,10 +204,7 @@ import { mapGetters } from 'vuex'
           }
           this.addTab(result)
         }
-
-
       })
-
     }
   }
 </script>
