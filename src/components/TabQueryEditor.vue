@@ -205,7 +205,7 @@
         return this.individualQueries[this.currentlySelectedQueryIndex]
       },
       currentQueryPosition() {
-        if(!this.editor || !this.currentlySelectedQuery) {
+        if(!this.editor || !this.currentlySelectedQuery || !this.individualQueries) {
           return null
         }
         const otherCandidates = this.individualQueries.slice(0, this.currentlySelectedQueryIndex).filter((query) => query.includes(this.currentlySelectedQuery))

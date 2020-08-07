@@ -26,7 +26,7 @@ export function splitQueries(queryText) {
       // queries.push(toPush)
     })
   }
-  if (fakeSemiColon) {
+  if (fakeSemiColon && queries.length > 0) {
     const last = queries.length - 1
     queries[last] = queries[last].slice(0, queries[last].length -1)
   }
