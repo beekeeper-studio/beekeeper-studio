@@ -24,10 +24,10 @@
       <li>
         <a href="#" @click.prevent.stop="$emit('close', tab)">Close</a>
       </li>
-      <li>
+      <li v-if="this.tabsCount > 1">
         <a href="#" @click.prevent.stop="$emit('closeOther', tab)">Close Others</a>
       </li>
-      <li>
+      <li v-if="this.tabsCount > 1">
         <a href="#" @click.prevent.stop="$emit('closeAll')">Close All</a>
       </li>
       <li class="separator"></li>
@@ -41,7 +41,7 @@
   import VueContext from 'vue-context';
 
   export default {
-    props: ['tab', 'selected'],
+    props: ['tab', 'tabsCount', 'selected'],
     components: { VueContext },
     data() {
       return {

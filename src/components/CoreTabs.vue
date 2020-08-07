@@ -6,6 +6,7 @@
           v-for="tab in tabItems"
           :key="tab.id"
           :tab="tab"
+          :tabsCount="tabItems.length"
           :selected="activeTab === tab"
           @click="click"
           @close="close"
