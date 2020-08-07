@@ -39,8 +39,10 @@ export default async function (server, database) {
     listTableIndexes: (db, table) => listTableIndexes(conn, db, table),
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table) => getTableReferences(conn, table),
+    getPrimaryKey: (db, table) => getPrimaryKey(conn, db, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
+    updateValues: (updates) => updateValues(conn, updates),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
@@ -178,6 +180,13 @@ export async function getTableReferences(conn, table) {
   return data.map((row) => row.referenced_table_name);
 }
 
+export async function getPrimaryKey(conn, database, table) {
+  logger().debug('finding foreign key for', database, table)
+  const sql = `SHOW KEYS FROM ${table} WHERE Key_name = 'PRIMARY'`
+  const { data } = await driverExecuteQuery(conn, { query: sql })
+  return data[0] ? data[0].Column_name : null
+}
+
 export async function getTableKeys(conn, database, table) {
   const sql = `
     SELECT constraint_name as 'constraint_name', column_name as 'column_name', referenced_table_name as 'referenced_table_name',
@@ -263,6 +272,50 @@ export function query(conn, queryText) {
       }
     },
   };
+}
+
+export async function updateValues(conn, updates) {
+  const updateCommands = updates.map(update => {
+    return {
+      query: `UPDATE \`${update.table}\` SET \`${update.column}\` = ? WHERE \`${update.pkColumn}\` = ?`,
+      params: [update.value, update.primaryKey]
+    }
+  })
+
+  const commands = [{ query: 'START TRANSACTION'}, ...updateCommands];
+  const results = []
+  // TODO: this should probably return the updated values
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    try {
+      for (let index = 0; index < commands.length; index++) {
+        const blob = commands[index];
+        await driverExecuteQuery(cli, blob)
+      }
+
+      const returnQueries = updates.map(update => {
+        return {
+          query: `select * from \`${update.table}\` where \`${update.pkColumn}\` = ?`,
+          params: [
+            update.primaryKey
+          ]
+        }
+      })
+
+      for (let index = 0; index < returnQueries.length; index++) {
+        const blob = returnQueries[index];
+        const r = await driverExecuteQuery(cli, blob)
+        if (r.data[0]) results.push(r.data[0])
+      }
+      await driverExecuteQuery(cli,{ query: 'COMMIT'})
+    } catch (ex) {
+      logger().error("query exception: ", ex)
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
+
+      throw ex
+    }
+  })
+  return results
 }
 
 
