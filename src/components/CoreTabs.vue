@@ -178,10 +178,23 @@
         }
       },
       duplicate(tab) {
-        let duplicatedTab = Object.assign( Object.create( Object.getPrototypeOf(tab)), tab)
-        duplicatedTab.id = uuidv4()
-        duplicatedTab.title = "Query #" + this.newTabId
+        let duplicatedTab = {
+            id: uuidv4(),
+            type: tab.type,
+            connection: tab.connection,
+            unsavedChanges: true
+        }
 
+        if(tab.type === 'query') {
+          const query = new FavoriteQuery()
+          query.text = tab.query.text
+
+          duplicatedTab['title'] = "Query #" + this.newTabId
+          duplicatedTab['unsavedChanges'] = true
+          duplicatedTab['query'] = query
+        } else if(tab.type === 'table') {
+          duplicatedTab['table'] = tab.table
+        }
         this.addTab(duplicatedTab)
       }
     },
