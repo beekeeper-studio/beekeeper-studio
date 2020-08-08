@@ -58,7 +58,7 @@
           >warning</i>
         </span>
       </div>
-      <span ref="paginationArea" class="col x4 flex flex-center tabulator-paginator"></span>
+      <span ref="paginationArea" class="col x4 flex flex-center tabulator-paginator" v-show="this.totalRecords > this.limit"></span>
       <div class="col x4 pending-edits flex flex-right">
         <div v-if="pendingEdits.length > 0">
           <span v-if="editError" class="edit-error">
@@ -124,6 +124,7 @@ export default {
       pendingEdits: [],
       editError: null,
       timeAgo: new TimeAgo('en-US'),
+      totalRecords: null,
       lastUpdated: null,
       lastUpdatedText: null,
       interval: setInterval(this.setlastUpdatedText, 10000)
@@ -412,6 +413,7 @@ export default {
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data
             this.lastUpdated = Date.now()
+            this.totalRecords = totalRecords
             resolve({
               last_page: Math.ceil(totalRecords / limit),
               data
