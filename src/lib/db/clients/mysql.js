@@ -190,9 +190,9 @@ export async function getPrimaryKey(conn, database, table) {
 export async function getTableKeys(conn, database, table) {
   const sql = `
     SELECT constraint_name as 'constraint_name', column_name as 'column_name', referenced_table_name as 'referenced_table_name',
-      CASE WHEN (referenced_table_name IS NOT NULL) THEN 'FOREIGN'
-      ELSE constraint_name
-      END as key_type
+      IF(referenced_table_name IS NOT NULL, 'FOREIGN', constraint_name) as key_type,
+      REFERENCED_TABLE_NAME as referenced_table,
+      REFERENCED_COLUMN_NAME as referenced_column
     FROM information_schema.key_column_usage
     WHERE table_schema = database()
     AND table_name = ?
@@ -207,7 +207,10 @@ export async function getTableKeys(conn, database, table) {
 
   return data.map((row) => ({
     constraintName: `${row.constraint_name} KEY`,
-    columnName: row.column_name,
+    toTable: row.referenced_table,
+    toColumn: row.referenced_column,
+    fromTable: table,
+    fromColumn: row.column_name,
     referencedTable: row.referenced_table_name,
     keyType: `${row.key_type} KEY`,
   }));

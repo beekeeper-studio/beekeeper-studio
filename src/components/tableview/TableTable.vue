@@ -29,9 +29,9 @@
                 v-model="filter.value"
                 placeholder="Enter Value"
               />
-              <button 
-                type="button" 
-                class="clear btn-link" 
+              <button
+                type="button"
+                class="clear btn-link"
                 @click.prevent="filter.value = ''"
               >
                 <i class="material-icons">cancel</i>
@@ -48,11 +48,11 @@
     <statusbar :mode="statusbarMode" class="tabulator-footer">
       <div class="col x4">
         <span class="statusbar-item flex flex-middle" v-if="lastUpdatedText" :title="'Updated' + ' ' + lastUpdatedText">
-          <i class="material-icons">update</i> 
+          <i class="material-icons">update</i>
           <span>{{lastUpdatedText}}</span>
         </span>
         <span v-if="missingPrimaryKey" class="col s4pending-edits">
-          <i 
+          <i
           class="material-icons"
           v-tooltip="'No primary key detected, table editing is disabled.'"
           >warning</i>
@@ -175,7 +175,6 @@ export default {
           cellEdited: this.cellEdited
         }
         results.push(result)
-        
 
         if (keyData) {
           const icon = () => "<i class='material-icons fk-link'>launch</i>"
@@ -195,7 +194,7 @@ export default {
           result.cssClass = 'foreign-key'
           results.push(keyResult)
         }
-        
+
       });
       return results
     },
@@ -296,7 +295,6 @@ export default {
         this.$noty.error("Can't edit column -- couldn't figure out primary key")
         // cell.setValue(cell.getOldValue())
         cell.restoreOldValue()
-        console.log(cell)
         return
       }
       const payload = {
