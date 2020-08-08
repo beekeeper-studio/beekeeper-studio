@@ -80,10 +80,5 @@
         this.tabulator.download(format, `${title}-${dateString}.${format}`, 'all')
       }
     }
-
-
-
 	}
-
-
 </script>

@@ -88,6 +88,7 @@ import Statusbar from '../common/StatusBar'
 import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
+import { NULL } from "../../mixins/data_mutators";
 const log = rawLog.scope('TableTable')
 
 export default {
@@ -175,10 +176,19 @@ export default {
           cellEdited: this.cellEdited
         }
         results.push(result)
-
         if (keyData) {
-          const icon = () => "<i class='material-icons fk-link'>launch</i>"
+          const icon = (cell) => {
+            if (cell.getValue() === NULL) {
+              return null
+            }
+
+            return "<i class='material-icons fk-link'>launch</i>"
+          }
           const tooltip = (cell) => {
+            if (cell.getValue() === NULL) {
+              return false
+            }
+
             return `View records in ${keyData.toTable} with ${keyData.toColumn} = ${cell.getValue()}`
           }
           const keyResult = {
@@ -259,6 +269,10 @@ export default {
   },
   methods: {
     fkClick(e, cell) {
+      if (cell.getValue() === NULL) {
+        return false
+      }
+
       log.info('fk-click', cell)
       const value = cell.getValue()
       const fromColumn = cell.getField()

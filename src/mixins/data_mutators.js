@@ -1,5 +1,5 @@
 import _ from 'lodash'
-const NULL = '(NULL)'
+export const NULL = '(NULL)'
 
 export default {
 
