@@ -160,6 +160,10 @@ export default {
         const keyData = this.tableKeys[column.columnName]
         const editable = this.editable && column.columnName !== this.primaryKey
 
+        const headerTooltip = (cell) => {
+          return `${cell.getDefinition().title}: ${column.dataType}`
+        }
+
         const result = {
           title: column.columnName,
           field: column.columnName,
@@ -174,7 +178,8 @@ export default {
             //   maxLength: column.columnLength // TODO
             // }
           },
-          cellEdited: this.cellEdited
+          cellEdited: this.cellEdited,
+          headerTooltip
         }
         results.push(result)
         if (keyData) {
