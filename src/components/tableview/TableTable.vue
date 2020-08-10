@@ -55,7 +55,7 @@
             <button class="btn" type="button" @click.prevent="resetFilter">Clear filter</button>
           </div>
           <div class="btn-wrap">
-            <button class="btn btn-primary" type="submit">Search</button>
+            <button class="btn btn-primary" type="submit" :disabled="this.checkedFilter === false">Search</button>
           </div>
         </div>
       </form>
@@ -109,6 +109,16 @@ export default {
     };
   },
   computed: {
+    checkedFilter() {
+      let filterValid = true;
+      this.filter.forEach(filter => {
+        if (!filter.type || !filter.field || !filter.value) {
+          filterValid = false
+        }
+      })
+
+      return filterValid ? this.filter : false
+    },
     tableColumns() {
       return this.table.columns.map(column => {
         const result = {
@@ -177,17 +187,10 @@ export default {
       this.clearFilter()
     },
     triggerFilter() {
-      const filterArray = JSON.parse(JSON.stringify(this.filter));
-      let filterValid = true;
+      const filter = this.checkedFilter;
 
-      filterArray.forEach(filter => {
-        if (!filter.type || !filter.field || !filter.value) {
-          filterValid = false;
-        }
-      })
-
-      if (filterValid) {
-        this.tabulator.setFilter(filterArray);
+      if (filter) {
+        this.tabulator.setFilter(filter);
       } else {
         this.tabulator.clearFilter();
       }
