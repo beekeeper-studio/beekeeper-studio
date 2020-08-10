@@ -196,7 +196,7 @@ export async function getTableKeys(conn, database, table) {
     FROM information_schema.key_column_usage
     WHERE table_schema = database()
     AND table_name = ?
-    AND ((referenced_table_name IS NOT NULL) OR constraint_name LIKE '%PRIMARY%')
+    AND referenced_table_name IS NOT NULL
   `;
 
   const params = [
