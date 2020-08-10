@@ -1,7 +1,5 @@
 import _ from 'lodash'
 
-
-
 export function splitQueries(queryText) {
   if (!queryText) return []
   const regex = /(?:[^;']|(?:'[^']+'))+;/gm
@@ -47,7 +45,6 @@ export function extractParams(query) {
   if (!result || result.length == 0) {
     return []
   }
-
 
   return _.uniq(result)
 }

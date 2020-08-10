@@ -1,4 +1,3 @@
-
 import * as yup from 'yup'
 
 let configSchema = yup.object().shape({
@@ -9,7 +8,6 @@ let configSchema = yup.object().shape({
   password: yup.string().nullable().label("Password")
 })
 
-
 export default {
   async config(connectionConfig) {
     try {
@@ -18,7 +16,5 @@ export default {
     } catch(ex) {
       return { result: null, errors: ex.errors, valid: false }
     }
-
   }
-
 }

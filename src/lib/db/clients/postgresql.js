@@ -272,11 +272,11 @@ export async function listTableColumns(conn, database, table, schema) {
     throw new Error("Table '${table}' provided for listTableColumns, but no schema name")
   }
   const sql = `
-    SELECT 
+    SELECT
       table_schema,
       table_name,
       column_name,
-      CASE 
+      CASE
         WHEN character_maximum_length is not null  and udt_name != 'text'
           THEN CONCAT(udt_name, concat('(', concat(character_maximum_length::varchar(255), ')')))
         WHEN datetime_precision is not null THEN

@@ -1,8 +1,6 @@
 // Copyright (c) 2015 The SQLECTRON Team
-
 import { createConnection } from './client';
 import { CLIENTS } from './clients';
-
 
 export function createServer(serverConfig) {
   if (!serverConfig) {

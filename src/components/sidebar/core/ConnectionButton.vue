@@ -72,6 +72,6 @@ export default {
     disconnect() {
       this.$store.dispatch('disconnect')
     }
-  }  
+  }
 }
 </script>
