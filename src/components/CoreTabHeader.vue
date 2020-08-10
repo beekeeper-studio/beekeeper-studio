@@ -10,6 +10,7 @@
       <i v-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
       <i v-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
       <span class="tab-title truncate">{{title}}</span>
+      <span v-if="scope" class="tab-title-scope">{{scope}}</span>
       <div class="tab-action">
         <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @click.prevent.stop="$emit('close', tab)">
           <i class="material-icons close">close</i>
@@ -43,13 +44,12 @@
         result[`${this.tab.table.entityType}-icon`] = true
         return result
       },
+      scope() {
+        return this.tab.titleScope
+      },
       tableTabTitle() {
         if (!this.tab.type === 'table') return null;
-
         let result = this.tab.table.name
-        if (this.tab.titleScope) {
-          result = result + ` [${this.tab.titleScope}]`
-        } 
         return result
       },
       queryTabTitle() {
