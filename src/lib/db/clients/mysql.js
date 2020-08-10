@@ -277,7 +277,7 @@ export function query(conn, queryText) {
 export async function updateValues(conn, updates) {
   const updateCommands = updates.map(update => {
     return {
-      query: `UPDATE \`${update.table}\` SET \`${update.column}\` = ? WHERE \`${update.pkColumn}\` = ?`,
+      query: `UPDATE ${wrapIdentifier(update.table)} SET ${wrapIdentifier(update.column)} = ? WHERE ${wrapIdentifier(update.pkColumn)} = ?`,
       params: [update.value, update.primaryKey]
     }
   })
@@ -295,7 +295,7 @@ export async function updateValues(conn, updates) {
 
       const returnQueries = updates.map(update => {
         return {
-          query: `select * from \`${update.table}\` where \`${update.pkColumn}\` = ?`,
+          query: `select * from ${wrapIdentifier(update.table)} where ${wrapIdentifier(update.pkColumn)} = ?`,
           params: [
             update.primaryKey
           ]

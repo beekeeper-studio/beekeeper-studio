@@ -11,6 +11,7 @@ export default {
 
     genericMutator(value) {
       if (_.isNil(value)) return NULL
+      if (_.isDate(value)) return value.toISOString()
       if (_.isObject(value)) return JSON.stringify(value)
       if (_.isArray(value)) return JSON.stringify(value)
       return value

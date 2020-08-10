@@ -117,7 +117,7 @@ export async function updateValues(conn, updates) {
     }
   })
 
-  const commands = [{ query: 'BEGIN'}, ...updateCommands, {query: 'COMMIT'}];
+  const commands = [{ query: 'BEGIN'}, ...updateCommands];
   const results = []
   // TODO: this should probably return the updated values
   await runWithConnection(conn, async (connection) => {
@@ -142,6 +142,7 @@ export async function updateValues(conn, updates) {
         const r = await driverExecuteQuery(cli, blob)
         if (r.data[0]) results.push(r.data[0])
       }
+      await driverExecuteQuery(cli, { query: 'COMMIT'})
     } catch (ex) {
       log.error("query exception: ", ex)
       await driverExecuteQuery(cli, { query: 'ROLLBACK' });

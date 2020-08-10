@@ -143,6 +143,7 @@ export default {
     },
     tableKeys() {
       const result = {}
+      console.log(this.rawTableKeys)
       this.rawTableKeys.forEach((item) => {
         result[item.fromColumn] = item
       })
@@ -236,9 +237,9 @@ export default {
     if (this.initialFilter) {
       this.filter = _.clone(this.initialFilter)
     }
-    this.rawTableKeys = await this.connection.getTableKeys(this.table.name)
+    this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
     // TODO (matthew): re-enable after implementing for all DBs
-    this.primaryKey = await this.connection.getPrimaryKey(this.table.name)
+    this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
     this.tabulator = new Tabulator(this.$refs.table, {
       height: this.actualTableHeight,
       columns: this.tableColumns,
