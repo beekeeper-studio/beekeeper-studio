@@ -29,9 +29,9 @@
                 v-model="filter.value"
                 placeholder="Enter Value"
               />
-              <button 
-                type="button" 
-                class="clear btn-link" 
+              <button
+                type="button"
+                class="clear btn-link"
                 @click.prevent="filter.value = ''"
               >
                 <i class="material-icons">cancel</i>
@@ -48,17 +48,17 @@
     <statusbar :mode="statusbarMode" class="tabulator-footer">
       <div class="col x4">
         <span class="statusbar-item flex flex-middle" v-if="lastUpdatedText" :title="'Updated' + ' ' + lastUpdatedText">
-          <i class="material-icons">update</i> 
+          <i class="material-icons">update</i>
           <span>{{lastUpdatedText}}</span>
         </span>
         <span v-if="missingPrimaryKey" class="col s4pending-edits">
-          <i 
+          <i
           class="material-icons"
           v-tooltip="'No primary key detected, table editing is disabled.'"
           >warning</i>
         </span>
       </div>
-      <span ref="paginationArea" class="col x4 flex flex-center tabulator-paginator"></span>
+      <span ref="paginationArea" class="col x4 flex flex-center tabulator-paginator" v-show="this.totalRecords > this.limit"></span>
       <div class="col x4 pending-edits flex flex-right">
         <div v-if="pendingEdits.length > 0">
           <span v-if="editError" class="edit-error">
@@ -88,6 +88,7 @@ import Statusbar from '../common/StatusBar'
 import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
+import { NULL } from "../../mixins/data_mutators";
 const log = rawLog.scope('TableTable')
 
 export default {
@@ -123,6 +124,7 @@ export default {
       pendingEdits: [],
       editError: null,
       timeAgo: new TimeAgo('en-US'),
+      totalRecords: null,
       lastUpdated: null,
       lastUpdatedText: null,
       interval: setInterval(this.setlastUpdatedText, 10000)
@@ -159,6 +161,10 @@ export default {
         const keyData = this.tableKeys[column.columnName]
         const editable = this.editable && column.columnName !== this.primaryKey
 
+        const headerTooltip = (cell) => {
+          return `${cell.getDefinition().title}: ${column.dataType}`
+        }
+
         const result = {
           title: column.columnName,
           field: column.columnName,
@@ -173,14 +179,23 @@ export default {
             //   maxLength: column.columnLength // TODO
             // }
           },
-          cellEdited: this.cellEdited
+          cellEdited: this.cellEdited,
+          headerTooltip
         }
         results.push(result)
-        
-
         if (keyData) {
-          const icon = () => "<i class='material-icons fk-link'>launch</i>"
+          const icon = (cell) => {
+            if (cell.getValue() === NULL) {
+              return null
+            }
+
+            return "<i class='material-icons fk-link'>launch</i>"
+          }
           const tooltip = (cell) => {
+            if (cell.getValue() === NULL) {
+              return false
+            }
+
             return `View records in ${keyData.toTable} with ${keyData.toColumn} = ${cell.getValue()}`
           }
           const keyResult = {
@@ -196,7 +211,7 @@ export default {
           result.cssClass = 'foreign-key'
           results.push(keyResult)
         }
-        
+
       });
       return results
     },
@@ -261,6 +276,10 @@ export default {
   },
   methods: {
     fkClick(e, cell) {
+      if (cell.getValue() === NULL) {
+        return false
+      }
+
       log.info('fk-click', cell)
       const value = cell.getValue()
       const fromColumn = cell.getField()
@@ -297,7 +316,6 @@ export default {
         this.$noty.error("Can't edit column -- couldn't figure out primary key")
         // cell.setValue(cell.getOldValue())
         cell.restoreOldValue()
-        console.log(cell)
         return
       }
       const payload = {
@@ -401,6 +419,7 @@ export default {
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data
             this.lastUpdated = Date.now()
+            this.totalRecords = totalRecords
             resolve({
               last_page: Math.ceil(totalRecords / limit),
               data

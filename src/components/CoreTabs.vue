@@ -80,7 +80,7 @@ import { mapGetters } from 'vuex'
           result[closeTab] = this.closeTab
         }
 
-        
+
         return result
       }
     },
@@ -108,7 +108,7 @@ import { mapGetters } from 'vuex'
         }
       },
       setTabTitleScope(id, value) {
-        console.log("setting tab title")
+        console.info("setting tab title")
         this.tabItems.filter(t => t.id === id).forEach(t => t.titleScope = value)
       },
       closeTab() {
@@ -135,7 +135,7 @@ import { mapGetters } from 'vuex'
 
       },
       openTable({ table, filter, tableName }) {
-        
+
         let resolvedTable = null
 
         if (!table && tableName) {

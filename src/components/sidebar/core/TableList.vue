@@ -75,7 +75,7 @@
         </div>
         <div class="list-body">
           <div class="with-schemas" v-if="tablesHaveSchemas">
-            <TableListSchema 
+            <TableListSchema
               v-for="(blob, index) in schemaTables"
               :title="blob.schema"
               :key="blob.schema"
