@@ -37,7 +37,7 @@ import en from 'javascript-time-ago/locale/en'
     const appDb = path.join(config.userDirectory, 'app.db')
     const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])
     await connection.connect()
-    
+
     window.$ = $
     window.jQuery = $
     window.sql = SQL

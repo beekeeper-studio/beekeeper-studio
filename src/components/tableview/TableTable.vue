@@ -29,9 +29,9 @@
                 v-model="filter.value"
                 placeholder="Enter Value"
               />
-              <button 
-                type="button" 
-                class="clear btn-link" 
+              <button
+                type="button"
+                class="clear btn-link"
                 @click.prevent="filter.value = ''"
               >
                 <i class="material-icons">cancel</i>
@@ -65,7 +65,6 @@ import Tabulator from "tabulator-tables";
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
 import Statusbar from '../common/StatusBar'
-
 
 export default {
   components: { Statusbar },

@@ -4,9 +4,7 @@
     <div v-show="active">
       <slot></slot>
     </div>
-
   </div>
-
 </template>
 <script>
 export default {

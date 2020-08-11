@@ -80,7 +80,6 @@ import { mapGetters } from 'vuex'
           result[closeTab] = this.closeTab
         }
 
-        
         return result
       }
     },

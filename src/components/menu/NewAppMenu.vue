@@ -109,7 +109,7 @@ export default {
       return array[newIndex]
     },
     maybeCaptureKeydown(e) {
-      
+
       if (!this.menuActive || !this.selected) return
 
       e.preventDefault()
@@ -214,7 +214,7 @@ export default {
       }
     },
     noop() {
-      
+
     }
   },
   mounted() {

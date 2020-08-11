@@ -339,7 +339,7 @@
       },
       selectFirstParameter() {
         if (!this.$refs['paramInput'] || this.$refs['paramInput'].length == 0) return
-        this.$refs['paramInput'][0].select()        
+        this.$refs['paramInput'][0].select()
       },
       updateEditorHeight() {
         let height = this.$refs.topPanel.clientHeight

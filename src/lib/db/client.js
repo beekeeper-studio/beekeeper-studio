@@ -1,15 +1,11 @@
 // Copyright (c) 2015 The SQLECTRON Team
-
 import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 
 const logger = createLogger('db');
-
-
 const DEFAULT_LIMIT = 1000;
 let limitSelect = null;
-
 
 export function createConnection(server, database) {
   /**

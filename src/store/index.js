@@ -1,4 +1,3 @@
-
 import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
@@ -214,7 +213,7 @@ const store = new Vuex.Store({
           const columns = await context.state.connection.listMaterializedViewColumns(view.name, view.schema)
           viewColumns = viewColumns.concat(columns)
         }
-        
+
         const allColumns = tableColumns.concat(viewColumns)
 
         tables.forEach((table) => {

@@ -10,7 +10,6 @@ export default class {
   constructor() {
   }
 
-
   quit = () => send('quit')
   undo = () => send('undo')
   redo = () => send('redo')
@@ -33,5 +32,4 @@ export default class {
   reload = () => send('reload')
   disconnect = () => send('disconnect')
   addBeekeeper = () => send('addBeekeeper')
-
 }

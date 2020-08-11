@@ -4,7 +4,7 @@
       <div class="form-group">
         <label for="domain">
           Domain
-          <i class="material-icons" v-tooltip="'Set \'domain\' to be logged in using Windows Integrated Authentication (NTLM)'">help_outlined</i>        
+          <i class="material-icons" v-tooltip="'Set \'domain\' to be logged in using Windows Integrated Authentication (NTLM)'">help_outlined</i>
           </label>
         <input type="text" v-model="config.domain" class="form-control">
       </div>
