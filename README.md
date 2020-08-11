@@ -33,19 +33,11 @@ Beekeeper Studio supports connecting to the following databases:
 
 Download the latest release from the [releases page](https://github.com/beekeeper-studio/beekeeper-studio/releases), or from [our website](https://beekeeperstudio.io)
 
-## Contributing
-
-Please feel free to file issues, open pull requests, or comment on existing issues with feedback.
-
-Building an inclusive and welcoming community is important to us, so please follow our code of conduct as you engage with the project.
-
-
-## Big Thanks
-
-Beekeeper Studio wouldn't exist without [Sqlectron-core](https://github.com/sqlectron/sqlectron-core), the core database libraries from the (now unmaintained) Sqlectron project. Beekeeper Studio started as an experimental fork of that repository. A big thanks to @maxcnunes and the rest of the Sqlectron community.
-
 ## Contributing to Beekeeper Studio
 
+We love *any* community engagement. Even if you're complaining becuase you don't like something about the app!
+
+Because building an inclusive and welcoming community is important to us, please follow our code of conduct as you engage with the project.
 
 ### Starting the Dev version of Beekeeper Studio
 
@@ -104,4 +96,10 @@ Post Release:
 2. Tweet link
 3. Share on LinkedIn
 4. Send to mailing list on SendInBlue
+
+
+## Big Thanks
+
+Beekeeper Studio wouldn't exist without [Sqlectron-core](https://github.com/sqlectron/sqlectron-core), the core database libraries from the (now unmaintained) Sqlectron project. Beekeeper Studio started as an experimental fork of that repository. A big thanks to @maxcnunes and the rest of the Sqlectron community.
+
 
