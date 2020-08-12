@@ -336,18 +336,18 @@ export default {
     },
     async saveChanges() {
       try {
-        throw new Error("This is an error")
-        // const newData = await this.connection.updateValues(this.pendingEdits)
-        // log.info("new Data: ", newData)
-        // this.tabulator.updateData(newData)
-        // this.pendingEdits.forEach(edit => {
-        //   edit.cell.getElement().classList.remove('edited')
-        //   edit.cell.getElement().classList.add('edit-success')
-        //   setTimeout(() => {
-        //     edit.cell.getElement().classList.remove('edit-success')
-        //   }, 1000)
-        // })
-        // this.pendingEdits = []
+        // throw new Error("This is an error")
+        const newData = await this.connection.updateValues(this.pendingEdits)
+        log.info("new Data: ", newData)
+        this.tabulator.updateData(newData)
+        this.pendingEdits.forEach(edit => {
+          edit.cell.getElement().classList.remove('edited')
+          edit.cell.getElement().classList.add('edit-success')
+          setTimeout(() => {
+            edit.cell.getElement().classList.remove('edit-success')
+          }, 1000)
+        })
+        this.pendingEdits = []
       } catch (ex) {
         this.pendingEdits.forEach(edit => {
           edit.cell.getElement().classList.add('edit-error')
