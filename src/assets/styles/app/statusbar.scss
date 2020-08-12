@@ -37,11 +37,19 @@
       }
       .badge {
         font-size: 85%;
-        margin-right: 0;
-        margin-left: 0.25rem;
+        margin-left: 0;
         padding: 0 0.3rem;
         background: rgba($theme-base, 0.2);
       }
+      .material-icons {
+        font-size: 14px;
+      }
+    }
+    &.error, &.error:hover {
+      background: rgba($theme-base, 0.1);
+      cursor: not-allowed;
+      pointer-events: all !important;
+      opacity: 0.5;
     }
     .material-icons {
       font-size: 16px;
@@ -132,11 +140,19 @@
   // Query Status
   // ----------------------------
   .statusbar-item {
+    display: flex;
+    align-items: center;
     padding: 0 $gutter-h;
     .material-icons {
       font-size: 16px;
       margin-right: 0.25rem;
       opacity: 0.65;
+    }
+    &.error {
+      color: $text-dark;
+      .material-icons {
+        color: $theme-base;
+      }
     }
   }
   .row-counts {

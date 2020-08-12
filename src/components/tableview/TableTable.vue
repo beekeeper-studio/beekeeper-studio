@@ -47,25 +47,30 @@
     <div ref="table"></div>
     <statusbar :mode="statusbarMode" class="tabulator-footer">
       <div class="col x4">
-        <span class="statusbar-item flex flex-middle" v-if="lastUpdatedText" :title="'Updated' + ' ' + lastUpdatedText">
+        <span class="statusbar-item flex flex-middle" v-if="lastUpdatedText && !editError" :title="'Updated' + ' ' + lastUpdatedText">
           <i class="material-icons">update</i>
           <span>{{lastUpdatedText}}</span>
         </span>
-        <span v-if="missingPrimaryKey" class="col s4pending-edits">
+        <span v-if="missingPrimaryKey" class="statusbar-item">
           <i
           class="material-icons"
           v-tooltip="'No primary key detected, table editing is disabled.'"
           >warning</i>
         </span>
+        <span v-if="editError" class="statusbar-item error" :title="'Error message'">
+          <i class="material-icons">error</i>
+          <span class="">Error editing</span>
+        </span>
       </div>
       <span ref="paginationArea" class="col x4 flex flex-center tabulator-paginator" v-show="this.totalRecords > this.limit"></span>
       <div class="col x4 pending-edits flex flex-right">
-        <div v-if="pendingEdits.length > 0">
-          <span v-if="editError" class="edit-error">
-            <i v-tooltip="editError" class="material-icons">error</i>
-          </span>
+        <div v-if="pendingEdits.length > 0" class="flex flex-right">
           <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
-          <a @click.prevent="saveChanges" class="btn btn-primary" :title="pendingEdits.length + ' ' + 'pending edits'">Commit <span class="badge">{{pendingEdits.length}}</span></a>
+          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingEdits.length + ' ' + 'pending edits'" :class="{'error': editError}">
+            <!-- <i v-if="editError" class="material-icons">error</i> -->
+            <span class="badge">{{pendingEdits.length}}</span>
+            <span>Commit</span>
+          </a>
         </div>
       </div>
     </statusbar>
@@ -331,18 +336,18 @@ export default {
     },
     async saveChanges() {
       try {
-        // throw new Error("This is an error")
-        const newData = await this.connection.updateValues(this.pendingEdits)
-        log.info("new Data: ", newData)
-        this.tabulator.updateData(newData)
-        this.pendingEdits.forEach(edit => {
-          edit.cell.getElement().classList.remove('edited')
-          edit.cell.getElement().classList.add('edit-success')
-          setTimeout(() => {
-            edit.cell.getElement().classList.remove('edit-success')
-          }, 1000)
-        })
-        this.pendingEdits = []
+        throw new Error("This is an error")
+        // const newData = await this.connection.updateValues(this.pendingEdits)
+        // log.info("new Data: ", newData)
+        // this.tabulator.updateData(newData)
+        // this.pendingEdits.forEach(edit => {
+        //   edit.cell.getElement().classList.remove('edited')
+        //   edit.cell.getElement().classList.add('edit-success')
+        //   setTimeout(() => {
+        //     edit.cell.getElement().classList.remove('edit-success')
+        //   }, 1000)
+        // })
+        // this.pendingEdits = []
       } catch (ex) {
         this.pendingEdits.forEach(edit => {
           edit.cell.getElement().classList.add('edit-error')
