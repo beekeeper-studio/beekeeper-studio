@@ -125,10 +125,17 @@
       &:before {
         display: block;
         content: attr(title);
-        font-weight: 600;
+        font-weight: 600!important;
         height: 0;
         overflow: hidden;
         visibility: hidden;
+      }
+      .tab-title-scope {
+        position: relative;
+        color: $text-lighter;
+        font-size: 95%;
+        font-style: italic;
+        font-weight: normal!important;
       }
     }
     .item-icon {
