@@ -29,9 +29,9 @@
                 v-model="filter.value"
                 placeholder="Enter Value"
               />
-              <button
-                type="button"
-                class="clear btn-link"
+              <button 
+                type="button" 
+                class="clear btn-link" 
                 @click.prevent="filter.value = ''"
               >
                 <i class="material-icons">cancel</i>
@@ -53,6 +53,7 @@
         </span>
         <span v-if="missingPrimaryKey" class="statusbar-item">
           <i
+
           class="material-icons"
           v-tooltip="'No primary key detected, table editing is disabled.'"
           >warning</i>
@@ -64,13 +65,14 @@
       </div>
       <span ref="paginationArea" class="col x4 flex flex-center tabulator-paginator" v-show="this.totalRecords > this.limit"></span>
       <div class="col x4 pending-edits flex flex-right">
-        <div v-if="pendingEdits.length > 0" class="flex flex-right">
+        <div v-if="pendingEditList.length > 0" class="flex flex-right">
           <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
-          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingEdits.length + ' ' + 'pending edits'" :class="{'error': editError}">
+          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingEditList.length + ' ' + 'pending edits'" :class="{'error': !!editError}">
             <!-- <i v-if="editError" class="material-icons">error</i> -->
-            <span class="badge">{{pendingEdits.length}}</span>
+            <span class="badge">{{pendingEditList.length}}</span>
             <span>Commit</span>
           </a>
+
         </div>
       </div>
     </statusbar>
@@ -93,7 +95,6 @@ import Statusbar from '../common/StatusBar'
 import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
-import { NULL } from "../../mixins/data_mutators";
 const log = rawLog.scope('TableTable')
 
 export default {
@@ -126,16 +127,19 @@ export default {
       limit: 100,
       rawTableKeys: [],
       primaryKey: null,
-      pendingEdits: [],
+      pendingEdits: {},
       editError: null,
       timeAgo: new TimeAgo('en-US'),
-      totalRecords: null,
       lastUpdated: null,
       lastUpdatedText: null,
-      interval: setInterval(this.setlastUpdatedText, 10000)
+      interval: setInterval(this.setlastUpdatedText, 10000),
+      totalRecords: 0
     };
   },
   computed: {
+    pendingEditList() {
+      return Object.values(this.pendingEdits)
+    },
     editable() {
       return this.primaryKey && this.table.entityType === 'table'
     },
@@ -166,10 +170,6 @@ export default {
         const keyData = this.tableKeys[column.columnName]
         const editable = this.editable && column.columnName !== this.primaryKey
 
-        const headerTooltip = (cell) => {
-          return `${cell.getDefinition().title}: ${column.dataType}`
-        }
-
         const result = {
           title: column.columnName,
           field: column.columnName,
@@ -184,23 +184,14 @@ export default {
             //   maxLength: column.columnLength // TODO
             // }
           },
-          cellEdited: this.cellEdited,
-          headerTooltip
+          cellEdited: this.cellEdited
         }
         results.push(result)
+        
+
         if (keyData) {
-          const icon = (cell) => {
-            if (cell.getValue() === NULL) {
-              return null
-            }
-
-            return "<i class='material-icons fk-link'>launch</i>"
-          }
+          const icon = () => "<i class='material-icons fk-link'>launch</i>"
           const tooltip = (cell) => {
-            if (cell.getValue() === NULL) {
-              return false
-            }
-
             return `View records in ${keyData.toTable} with ${keyData.toColumn} = ${cell.getValue()}`
           }
           const keyResult = {
@@ -216,7 +207,7 @@ export default {
           result.cssClass = 'foreign-key'
           results.push(keyResult)
         }
-
+        
       });
       return results
     },
@@ -281,16 +272,15 @@ export default {
   },
   methods: {
     fkClick(e, cell) {
-      if (cell.getValue() === NULL) {
-        return false
-      }
-
       log.info('fk-click', cell)
       const value = cell.getValue()
       const fromColumn = cell.getField()
       const keyData = this.tableKeys[fromColumn]
       const tableName = keyData.toTable
-      const table = this.$store.state.tables.find(t => t.name === tableName)
+      const schemaName = keyData.toSchema
+      const table = this.$store.state.tables.find(t => {
+        return (!schemaName || schemaName === t.schema) && t.name === tableName
+      })
       if (!table) {
         log.error("fk-click: unable to find destination table", tableName)
         return
@@ -321,10 +311,12 @@ export default {
         this.$noty.error("Can't edit column -- couldn't figure out primary key")
         // cell.setValue(cell.getOldValue())
         cell.restoreOldValue()
+        console.log(cell)
         return
       }
       const payload = {
         table: this.table.name,
+        schema: this.table.schema,
         column: cell.getField(),
         pkColumn: this.primaryKey,
         primaryKey: pkCell.getValue(),
@@ -332,24 +324,24 @@ export default {
         value: cell.getValue(),
         cell: cell
       }
-      this.pendingEdits.push(payload)
+      this.$set(this.pendingEdits, pkCell.getValue(), payload)
     },
     async saveChanges() {
       try {
         // throw new Error("This is an error")
-        const newData = await this.connection.updateValues(this.pendingEdits)
+        const newData = await this.connection.updateValues(this.pendingEditList)
         log.info("new Data: ", newData)
         this.tabulator.updateData(newData)
-        this.pendingEdits.forEach(edit => {
+        this.pendingEditList.forEach(edit => {
           edit.cell.getElement().classList.remove('edited')
           edit.cell.getElement().classList.add('edit-success')
           setTimeout(() => {
             edit.cell.getElement().classList.remove('edit-success')
           }, 1000)
         })
-        this.pendingEdits = []
+        this.pendingEdits = {}
       } catch (ex) {
-        this.pendingEdits.forEach(edit => {
+        this.pendingEditList.forEach(edit => {
           edit.cell.getElement().classList.add('edit-error')
         })
         this.editError = ex.message
@@ -358,11 +350,11 @@ export default {
     },
     discardChanges() {
       this.editError = null
-      this.pendingEdits.forEach(edit => {
+      this.pendingEditList.forEach(edit => {
         edit.cell.restoreOldValue()
         edit.cell.getElement().classList.remove('edited')
       })
-      this.pendingEdits = []
+      this.pendingEdits = {}
     },
     triggerFilter() {
       if (this.filter.type && this.filter.field) {
@@ -417,16 +409,15 @@ export default {
               this.table.schema
             );
             const r = response.result;
-            const totalRecords = response.totalRecords;
+            this.totalRecords = response.totalRecords;
             this.response = response
             this.pendingEdits = []
             this.editError = null
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data
             this.lastUpdated = Date.now()
-            this.totalRecords = totalRecords
             resolve({
-              last_page: Math.ceil(totalRecords / limit),
+              last_page: Math.ceil(this.totalRecords / limit),
               data
             });
           } catch (error) {

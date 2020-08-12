@@ -5,7 +5,7 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _ from 'lodash';
 
-import { buildDatabseFilter, buildSchemaFilter } from './utils';
+import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
 import logRaw from 'electron-log'
 const log = logRaw.scope('sql-server')
 
@@ -401,30 +401,8 @@ export async function getPrimaryKey(conn, database, table, schema) {
 
 export async function updateValues(conn, updates) {
 
-  const updateCommands = updates.map(update => {
-    const where = {}
-    const updateblob = {}
-    where[update.pkColumn] = update.primaryKey
-    updateblob[update.column] = update.value
-
-    const query = knex(update.table)
-    .where(where)
-    .update(updateblob)
-    .toQuery()
-    return query
-  })
-
-  const selectQueries = updates.map(update => {
-    const where = {}
-    where[update.pkColumn] = update.primaryKey
-
-    const query = knex(update.table)
-    .where(where)
-    .select('*')
-    .toQuery()
-    return { query }
-  })
-  const sql = ['set xact_abort on', 'BEGIN TRANSACTION', ...updateCommands, 'COMMIT'].join(";")
+  const { updateQueries, selectQueries } = buildUpdateAndSelectQueries(knex, updates)
+  const sql = ['set xact_abort on', 'BEGIN TRANSACTION', ...updateQueries, 'COMMIT'].join(";")
   const results = []
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
