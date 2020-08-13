@@ -51,20 +51,24 @@
           <i class="material-icons">update</i>
           <span>{{lastUpdatedText}}</span>
         </span>
-        <span v-if="missingPrimaryKey" class="statusbar-item">
-          <i
-
-          class="material-icons"
-          v-tooltip="'No primary key detected, table editing is disabled.'"
-          >warning</i>
-        </span>
         <span v-if="editError" class="statusbar-item error" :title="editError">
           <i class="material-icons">error</i>
           <span class="">Error Saving Changes</span>
         </span>
       </div>
-      <span ref="paginationArea" class="col x4 flex flex-center tabulator-paginator" v-show="this.totalRecords > this.limit"></span>
+      <div class="col x4 flex flex-center">
+        <span ref="paginationArea" class="tabulator-paginator" v-if="this.totalRecords > this.limit"></span>
+      </div>
+
       <div class="col x4 pending-edits flex flex-right">
+        <div v-if="missingPrimaryKey" class="flex flex-right">
+          <span class="statusbar-item">
+            <i
+            class="material-icons"
+            v-tooltip="'No primary key detected, table editing is disabled.'"
+            >warning</i>
+          </span>
+        </div>
         <div v-if="pendingEditList.length > 0" class="flex flex-right">
           <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
           <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingEditList.length + ' ' + 'pending edits'" :class="{'error': !!editError}">
