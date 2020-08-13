@@ -129,7 +129,6 @@
       }
     },
     methods: {
-
       edit(config) {
         this.config = config
       },

@@ -25,11 +25,13 @@ export function createConnection(server, database) {
     listTableIndexes: listTableIndexes.bind(null, server, database),
     listSchemas: listSchemas.bind(null, server, database),
     getTableReferences: getTableReferences.bind(null, server, database),
+    getPrimaryKey: getPrimaryKey.bind(null, server, database),
     getTableKeys: getTableKeys.bind(null, server, database),
     query: query.bind(null, server, database),
     executeQuery: executeQuery.bind(null, server, database),
     listDatabases: listDatabases.bind(null, server, database),
     selectTop: selectTop.bind(null, server, database),
+    updateValues: updateValues.bind(null, server, database),
     getQuerySelectTop: getQuerySelectTop.bind(null, server, database),
     getTableCreateScript: getTableCreateScript.bind(null, server, database),
     getTableSelectScript: getTableSelectScript.bind(null, server, database),
@@ -166,6 +168,11 @@ function getTableReferences(server, database, table, schema) {
   return database.connection.getTableReferences(table, schema);
 }
 
+function getPrimaryKey(server, database, table, schema) {
+  checkIsConnected(server, database)
+  return database.connection.getPrimaryKey(database.database, table, schema)
+}
+
 function getTableKeys(server, database, table, schema) {
   checkIsConnected(server, database);
   return database.connection.getTableKeys(database.database, table, schema);
@@ -174,6 +181,11 @@ function getTableKeys(server, database, table, schema) {
 function query(server, database, queryText) {
   checkIsConnected(server, database);
   return database.connection.query(queryText);
+}
+
+function updateValues(server, database, updates) {
+  checkIsConnected(server, database)
+  return database.connection.updateValues(updates)
 }
 
 function executeQuery(server, database, queryText) {

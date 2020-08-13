@@ -1,5 +1,6 @@
 
-$errorColor: $brand-danger;
+$errorColor:             $brand-danger;
+$foreign-key-width:      24px;
 
 .tabulator-row {
   background: transparent;
@@ -11,10 +12,60 @@ $errorColor: $brand-danger;
     height: 28px!important;
     line-height: 20px;
 
+    i.fk-link {
+      display:none;
+      color: teal;
+    }
+
     &.active-cell {
       background: $selection;
       border-color: $input-highlight;
       color: $db-select-text;
+    }
+
+    &.tabulator-editing {
+      display: inline-flex;
+      align-items: center;
+      border-color: $theme-base!important;
+      border-radius: 3px!important;
+      padding-left: 4px!important;
+    }
+
+    &.edited, &.edit-error, &.edit-success {
+      border-color: $border-color;
+      border-radius: 2px;
+      color: $db-select-text;
+    }
+    &.edited {
+      background: rgba($theme-primary, 0.05);
+      border-color: rgba($brand-primary,0.8);
+    }
+    &.edit-error {
+      background: rgba($brand-danger, 0.05);
+      border-color: rgba($brand-danger, 0.8);
+    }
+    &.edit-success {
+      background: rgba($brand-success, 0.05);
+      border-color: rgba($brand-success, 0.8);
+    }
+
+    &.foreign-key {
+      padding-right: $foreign-key-width - 6px;
+    }
+    &.foreign-key-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      width: $foreign-key-width!important;
+      min-width: $foreign-key-width!important;
+      padding-left: 0!important;
+      padding-right: 0.35rem!important;
+      margin-left: -$foreign-key-width;
+      .material-icons {
+        font-size: 14px;
+        line-height: 20px;
+        color: $text-light;
+      }
     }
   }
   &:nth-child(even) {
@@ -25,6 +76,12 @@ $errorColor: $brand-danger;
   }
   &.tabulator-selectable:hover {
     background: rgba($theme-base, 0.065);
+    i.fk-link {
+      display: inline-block;
+      &:hover {
+        color: white;
+      }
+    }
   }
 }
 .tabulator {
@@ -76,6 +133,27 @@ $errorColor: $brand-danger;
             border-bottom-color: rgba($theme-base, 0.35);
           }
         }
+      }
+      &.foreign-key {
+        padding-left: $foreign-key-width!important;
+        &:before{
+          content: 'vpn_key';
+          font-family: 'Material Icons';
+          font-size: 13px;
+          position: absolute;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          display: inline-flex;
+          align-items: center;
+          justify-content: flex-end;
+          color: $theme-primary;
+          width: $foreign-key-width;
+
+        }
+      }
+      &.foreign-key-button {
+        display: none;
       }
       .tabulator-col-content {
         padding: 0 8px;
@@ -131,6 +209,11 @@ $errorColor: $brand-danger;
   height: $statusbar-height;
   padding: 0 $gutter-h;
   background: rgba($theme-base, 0.06);
+
+  .pending-edits {
+    margin-right: auto;
+  }
+
   .tabulator-paginator,
   .tabulator-pages {
     display: flex;

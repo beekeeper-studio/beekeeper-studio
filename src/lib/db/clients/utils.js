@@ -96,3 +96,33 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
     totalRecords
   }
 }
+
+export function buildUpdateAndSelectQueries(knex, updates) {
+
+  const updateQueries = updates.map(update => {
+    const where = {}
+    const updateblob = {}
+    where[update.pkColumn] = update.primaryKey
+    updateblob[update.column] = update.value
+
+    const query = knex(update.table)
+      .withSchema(update.schema)
+      .where(where)
+      .update(updateblob)
+      .toQuery()
+    return query
+  })
+
+  const selectQueries = updates.map(update => {
+    const where = {}
+    where[update.pkColumn] = update.primaryKey
+
+    const query = knex(update.table)
+      .withSchema(update.schema)
+      .where(where)
+      .select('*')
+      .toQuery()
+    return query
+  })
+  return { updateQueries, selectQueries }
+}

@@ -29,6 +29,7 @@
     align-items: center;
     // height: $tab-height;
     background: $tabs-bg;
+    -webkit-app-region: drag;
     .add-query {
       i {
         color: $text-lighter;
@@ -48,6 +49,7 @@
     flex-wrap: nowrap;
     margin: 0;
     height: $tab-height;
+    -webkit-app-region: no-drag;
     .nav-item {
       max-width: 200px;    
       min-width: 28px;
@@ -123,10 +125,17 @@
       &:before {
         display: block;
         content: attr(title);
-        font-weight: 600;
+        font-weight: 600!important;
         height: 0;
         overflow: hidden;
         visibility: hidden;
+      }
+      .tab-title-scope {
+        position: relative;
+        color: $text-lighter;
+        font-size: 95%;
+        font-style: italic;
+        font-weight: normal!important;
       }
     }
     .item-icon {
@@ -170,6 +179,7 @@
   }
   .actions {
     padding: 0 $gutter-h;
+    -webkit-app-region: no-drag;
   }
 }
 

@@ -1,5 +1,5 @@
 <template>
-  <li class="nav-item" :title="title" >
+  <li class="nav-item" :title="title + scope">
     <a
       class="nav-link"
       @click.prevent.stop="$emit('click', tab)"
@@ -9,7 +9,7 @@
       <i v-if="tab.type === 'table'" :class="iconClass" class="material-icons item-icon table">grid_on</i>
       <i v-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
       <i v-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
-      <span class="tab-title truncate">{{title}}</span>
+      <span class="tab-title truncate" :title="title + scope">{{title}} <span v-if="scope" class="tab-title-scope">{{scope}}</span></span>
       <div class="tab-action">
         <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @click.prevent.stop="$emit('close', tab)">
           <i class="material-icons close">close</i>
@@ -43,8 +43,20 @@
         result[`${this.tab.table.entityType}-icon`] = true
         return result
       },
-      title() {
-        if (this.tab.type === 'query') {
+      scope() {
+        if (this.tab.titleScope) {
+          return ' ' + '[' + this.tab.titleScope + ']'
+        } else {
+          return ''
+        }
+      },
+      tableTabTitle() {
+        if (!this.tab.type === 'table') return null;
+        let result = this.tab.table.name
+        return result
+      },
+      queryTabTitle() {
+        if (!this.tab.type === 'query') return null
           if (this.tab.query && this.tab.query.title) {
             return this.tab.query.title
           }
@@ -57,13 +69,11 @@
           } else {
             return this.tab.query.text
           }
-        } else if (this.tab.type === 'table') {
-          return this.tab.table.name;
-        }
-        return this.tab.title
-      }
+      },
+      title() {
+        return this.queryTabTitle || this.tableTabTitle || "Unknown"
     },
-
   }
+}
 
 </script>

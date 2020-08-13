@@ -33,6 +33,13 @@ $color-defaults: (
       background-color: rgba(nth($val, 1), 0.25);
     }
   }
+  &.editing, &.failure {
+    @each $key, $val in $color-defaults {
+      &.#{$key} {
+        background-color: rgba(nth($val, 1), 0.15);
+      }
+    }
+  }
 }
 
 input[type="radio"].connection-label {
