@@ -57,7 +57,7 @@
         </span>
       </div>
       <div class="col x4 flex flex-center">
-        <span ref="paginationArea" class="tabulator-paginator" v-if="this.totalRecords > this.limit"></span>
+        <span ref="paginationArea" class="tabulator-paginator" v-show="this.totalRecords > this.limit"></span>
       </div>
 
       <div class="col x4 pending-edits flex flex-right">
@@ -252,6 +252,7 @@ export default {
     if (this.initialFilter) {
       this.filter = _.clone(this.initialFilter)
     }
+    
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
     // TODO (matthew): re-enable after implementing for all DBs
     this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
