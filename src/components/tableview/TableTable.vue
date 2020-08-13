@@ -58,9 +58,9 @@
           v-tooltip="'No primary key detected, table editing is disabled.'"
           >warning</i>
         </span>
-        <span v-if="editError" class="statusbar-item error" :title="'Error message'">
+        <span v-if="editError" class="statusbar-item error" :title="editError">
           <i class="material-icons">error</i>
-          <span class="">Error editing</span>
+          <span class="">Error Saving Changes</span>
         </span>
       </div>
       <span ref="paginationArea" class="col x4 flex flex-center tabulator-paginator" v-show="this.totalRecords > this.limit"></span>
@@ -324,7 +324,8 @@ export default {
         value: cell.getValue(),
         cell: cell
       }
-      this.$set(this.pendingEdits, pkCell.getValue(), payload)
+      const key = `${payload.primaryKey}-${payload.column}`
+      this.$set(this.pendingEdits, key, payload)
     },
     async saveChanges() {
       try {
@@ -353,6 +354,7 @@ export default {
       this.pendingEditList.forEach(edit => {
         edit.cell.restoreOldValue()
         edit.cell.getElement().classList.remove('edited')
+        edit.cell.getElement().classList.remove('edit-error')
       })
       this.pendingEdits = {}
     },

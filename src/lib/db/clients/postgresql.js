@@ -243,6 +243,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
   const result = await driverExecuteQuery(conn, { query, params })
   const rowWithTotal = countResults.rows.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
+  log.debug("selectTop:", result.rows)
   return {
     result: result.rows,
     totalRecords
