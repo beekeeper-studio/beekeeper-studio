@@ -3,7 +3,6 @@
 </template>
 
 <script type="text/javascript">
-
 import { ipcRenderer } from 'electron'
 import Noty from 'noty'
 
@@ -59,5 +58,5 @@ export default {
     }
   }
 }
-  
+
 </script>

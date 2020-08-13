@@ -29,9 +29,9 @@
                 v-model="filter.value"
                 placeholder="Enter Value"
               />
-              <button 
-                type="button" 
-                class="clear btn-link" 
+              <button
+                type="button"
+                class="clear btn-link"
                 @click.prevent="filter.value = ''"
               >
                 <i class="material-icons">cancel</i>

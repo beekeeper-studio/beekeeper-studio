@@ -1,4 +1,3 @@
-
 import AppEvent from "../../common/AppEvent"
 
 export default class {

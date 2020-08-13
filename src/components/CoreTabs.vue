@@ -79,8 +79,6 @@ import { mapGetters } from 'vuex'
         if (!platformInfo.isMac) {
           result[closeTab] = this.closeTab
         }
-
-
         return result
       }
     },

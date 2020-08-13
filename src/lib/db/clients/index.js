@@ -6,7 +6,6 @@ import sqlserver from './sqlserver';
 import sqlite from './sqlite';
 import cassandra from './cassandra';
 
-
 /**
  * List of supported database clients
  */

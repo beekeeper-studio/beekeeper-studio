@@ -4,7 +4,7 @@
         class="btn btn-link btn-small"
         @click.prevent="$modal.show('import-modal')"
       ><slot></slot></a>
-      <modal 
+      <modal
         class="vue-dialog beekeeper-modal import-modal"
         name="import-modal"
         height="auto"

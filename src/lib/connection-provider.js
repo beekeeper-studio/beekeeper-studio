@@ -1,7 +1,7 @@
 import { createServer } from './db/index.js'
 
 export default {
-  
+
   convertConfig(config, osUsername) {
     const ssh = config.sshEnabled ? {} : null
     if (ssh) {

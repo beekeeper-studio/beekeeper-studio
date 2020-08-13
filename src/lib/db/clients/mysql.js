@@ -15,7 +15,6 @@ const mysqlErrors = {
   CONNECTION_LOST: 'PROTOCOL_CONNECTION_LOST',
 };
 
-
 export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
   logger().debug('create driver client for mysql with config %j', dbConfig);

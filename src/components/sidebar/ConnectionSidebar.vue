@@ -1,6 +1,6 @@
 <template>
   <div class="sidebar-wrap flex-col">
-  
+
     <!-- QUICK CONNECT -->
     <div class="btn-wrap quick-connect">
       <a
@@ -15,7 +15,7 @@
     </div>
 
     <div class="expand flex-col">
-  
+
       <!-- Saved Connections -->
       <div class="list saved-connection-list expand" ref="savedConnectionList">
         <div class="list-group">
@@ -30,17 +30,19 @@
                 :key="c.id"
                 :config="c"
                 :selectedConfig="selectedConfig"
+                :showDuplicate="true"
                 @edit="edit"
                 @remove="remove"
+                @duplicate="duplicate"
                 @doubleClick="connect"
               >
               </connection-list-item>
           </nav>
         </div>
       </div>
-  
+
       <hr> <!-- Fake gutter for split.js -->
-  
+
       <!-- Recent Connections -->
       <div class="list recent-connection-list expand" ref="recentConnectionList">
         <div class="list-group">
@@ -56,6 +58,7 @@
                 :config="c"
                 :selectedConfig="selectedConfig"
                 :isRecentList="true"
+                :showDuplicate="false"
                 @edit="edit"
                 @remove="removeUsedConfig"
                 @doubleClick="connect"
@@ -107,6 +110,9 @@
       },
       remove(config) {
         this.$emit('remove', config)
+      },
+      duplicate(config) {
+        this.$emit('duplicate', config)
       },
       removeUsedConfig(config) {
         this.$store.dispatch('removeUsedConfig', config)

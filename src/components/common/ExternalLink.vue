@@ -4,7 +4,7 @@
 <script>
 import { remote } from 'electron'
 export default {
-  
+
   props: ['href'],
   methods: {
     click() {

@@ -5,7 +5,7 @@
       class="list-item-btn"
       :class="classList"
       @click.prevent="click(config)"
-      @dblclick.prevent="doubleClick(config)" 
+      @dblclick.prevent="doubleClick(config)"
     >
       <span :class="`connection-label connection-label-color-${labelColor}`"></span>
       <div class="connection-title flex-col expand">
@@ -16,7 +16,10 @@
       <x-button class="btn-fab" skin="iconic">
         <i class="material-icons">more_horiz</i>
         <x-menu style="--target-align: right; --v-target-align: top;">
-          <x-menuitem @click.prevent.stop="remove(config)">
+          <x-menuitem v-if="showDuplicate" @click.prevent.stop="duplicate">
+            <x-label class="text-">Duplicate</x-label>
+          </x-menuitem>
+          <x-menuitem @click.prevent.stop="remove">
             <x-label class="text-danger">Remove</x-label>
           </x-menuitem>
         </x-menu>
@@ -30,7 +33,7 @@ import TimeAgo from 'javascript-time-ago'
 export default {
   // recent list is 'recent connections'
   // if that is true, we need to find the companion saved connection
-  props: ['config', 'isRecentList', 'selectedConfig'],
+  props: ['config', 'isRecentList', 'selectedConfig', 'showDuplicate'],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
     split: null
@@ -53,7 +56,7 @@ export default {
       } else {
         return this.config.simpleConnectionString
       }
-      
+
     },
     subtitle() {
       if (this.isRecentList) {
@@ -95,6 +98,9 @@ export default {
     },
     remove() {
       this.$emit('remove', this.config)
+    },
+    duplicate() {
+      this.$emit('duplicate', this.config)
     }
   }
 

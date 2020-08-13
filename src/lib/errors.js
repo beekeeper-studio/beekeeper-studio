@@ -1,5 +1,4 @@
 // Copyright (c) 2015 The SQLECTRON Team
-
 export default {
   CANCELED_BY_USER: {
     code: 'CANCELED_BY_USER',

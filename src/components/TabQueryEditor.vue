@@ -205,7 +205,7 @@
         return this.individualQueries[this.currentlySelectedQueryIndex]
       },
       currentQueryPosition() {
-        if(!this.editor || !this.currentlySelectedQuery) {
+        if(!this.editor || !this.currentlySelectedQuery || !this.individualQueries) {
           return null
         }
         const otherCandidates = this.individualQueries.slice(0, this.currentlySelectedQueryIndex).filter((query) => query.includes(this.currentlySelectedQuery))
@@ -339,7 +339,7 @@
       },
       selectFirstParameter() {
         if (!this.$refs['paramInput'] || this.$refs['paramInput'].length == 0) return
-        this.$refs['paramInput'][0].select()        
+        this.$refs['paramInput'][0].select()
       },
       updateEditorHeight() {
         let height = this.$refs.topPanel.clientHeight
@@ -377,7 +377,11 @@
       },
       async submitTabQuery() {
         const text = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
-        this.submitQuery(text)
+        if (text.trim()) {
+          this.submitQuery(text)
+        } else {
+          this.error = 'No query to run'
+        }
       },
       async submitQuery(rawQuery, skipModal) {
         this.running = true

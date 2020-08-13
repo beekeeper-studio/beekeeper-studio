@@ -33,16 +33,44 @@ Beekeeper Studio supports connecting to the following databases:
 
 Download the latest release from the [releases page](https://github.com/beekeeper-studio/beekeeper-studio/releases), or from [our website](https://beekeeperstudio.io)
 
-## Contributing
+## Contributing to Beekeeper Studio
 
-Please feel free to file issues, open pull requests, or comment on existing issues with feedback.
+We love *any* community engagement. Even if you're complaining becuase you don't like something about the app!
 
-Building an inclusive and welcoming community is important to us, so please follow our code of conduct as you engage with the project.
+Because building an inclusive and welcoming community is important to us, please follow our code of conduct as you engage with the project.
 
+### Starting the Dev version of Beekeeper Studio
 
-## Big Thanks
+Want to write some code and improve Beekeeper Studio? Getting set-up is easy on Mac, Linux, or Windows.
 
-Beekeeper Studio wouldn't exist without [Sqlectron-core](https://github.com/sqlectron/sqlectron-core), the core database libraries from the (now unmaintained) Sqlectron project. Beekeeper Studio started as an experimental fork of that repository. A big thanks to @maxcnunes and the rest of the Sqlectron community.
+```bash
+# First: Install NodeJS 12+, NPM, and Yarn
+# ...
+
+# 1. Fork the Beekeeper Studio Repo (click fork button at top right of this screen)
+# 2. Check out your fork:
+git clone git@github.com:<your-username>/beekeeper-studio.git beekeeper-studio
+cd beekeeper-studio/
+yarn install # installs dependencies
+
+# Now you can start the app:
+yarn run electron:serve ## the app will now start
+```
+
+### Where to make changes?
+
+Beekeeper Studio has two entry points:
+- background.js - this is the electron-side code that controls native things like showing windows.
+- main.js - this is the entry point for the Vue.js app. You can follow the Vue component breadcrumbs here to find the screen you need.
+
+**Generally we have two 'screens':**
+- ConnectionInterface - connecting to a DB
+- CoreInterface - interacting with a database
+
+### How to submit a change?
+
+- Push your changes to your repository and open a Pull Request from our github page (this page)
+- Make sure to write some notes about what your change does! A gif is always welcome for visual changes.
 
 ## Maintainer notes (casual readers can ignore this stuff)
 
@@ -68,4 +96,10 @@ Post Release:
 2. Tweet link
 3. Share on LinkedIn
 4. Send to mailing list on SendInBlue
+
+
+## Big Thanks
+
+Beekeeper Studio wouldn't exist without [Sqlectron-core](https://github.com/sqlectron/sqlectron-core), the core database libraries from the (now unmaintained) Sqlectron project. Beekeeper Studio started as an experimental fork of that repository. A big thanks to @maxcnunes and the rest of the Sqlectron community.
+
 

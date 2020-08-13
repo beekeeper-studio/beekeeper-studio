@@ -138,7 +138,11 @@ export class DbConnectionBase extends ApplicationEntity {
     if (this.connectionType === 'sqlite') {
       return path.basename(this.defaultDatabase || "./unknown.db")
     } else {
-      return `${this.host}:${this.port}/${this.defaultDatabase}`
+      let connectionString = `${this.host}:${this.port}`;
+      if (this.defaultDatabase) {
+        connectionString += `/${this.defaultDatabase}`
+      }
+      return connectionString
     }
   }
 

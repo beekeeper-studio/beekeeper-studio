@@ -1,5 +1,4 @@
 // Copyright (c) 2015 The SQLECTRON Team
-
 import fs from 'fs'
 import path from 'path'
 import pf from 'portfinder'
@@ -10,7 +9,6 @@ import appConfig from '../../config'
 import { resolveHomePathToAbsolute } from '../../common/utils'
 
 const logger = createLogger('db:tunnel');
-
 export default function(config) {
   logger().debug('setting up ssh tunnel')
 
