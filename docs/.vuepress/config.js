@@ -8,12 +8,14 @@ module.exports = {
       { text: 'Overview', link: '/' },
       { text: 'Installation', link: '/installation/' },
       { text: 'User Guide', link: '/guide/' },
+      { text: 'Troubleshooting', link: '/troubleshooting/' },
       { text: 'Homepage', link: 'https://www.beekeeperstudio.io' }
     ],
     sidebar: [
       ['/', 'Overview'],
       '/installation/',
-      '/guide/'
+      '/guide/',
+      '/troubleshooting/'
     ]
   }
 }
