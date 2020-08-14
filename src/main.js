@@ -29,6 +29,7 @@ import xlsx from 'xlsx'
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en'
 import log from 'electron-log'
+import VueClipboard from 'vue-clipboard2'
 
 (async () => {
   try {
@@ -67,6 +68,7 @@ import log from 'electron-log'
     Vue.use(VueHotkey)
     Vue.use(VTooltip)
     Vue.use(VModal)
+    Vue.use(VueClipboard)
     Vue.use(ConfigPlugin)
     Vue.use(VueNoty, {
       timeout: 2300,
