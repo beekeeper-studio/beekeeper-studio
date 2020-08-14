@@ -111,13 +111,13 @@ export default {
     duplicate() {
       this.$emit('duplicate', this.config)
     },
-    copyUrl() {
-      this.close()
-      this.$copyText(this.config.fullConnectionString)
-        .then(
-          () => {this.$noty.success(`The ${this.connectionType} was successfully copied!`)},
-          () => {this.$noty.success(`The ${this.connectionType} could not be copied!`)}
-        )
+    async copyUrl() {
+      try {
+        await this.$copyText(this.config.fullConnectionString)
+        this.$noty.success(`The ${this.connectionType} was successfully copied!`)
+      } catch (err) {
+        this.$noty.success(`The ${this.connectionType} could not be copied!`)
+      }
     }
   }
 
