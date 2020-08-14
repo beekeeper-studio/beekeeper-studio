@@ -129,7 +129,6 @@
       }
     },
     methods: {
-
       edit(config) {
         this.config = config
       },
@@ -141,9 +140,10 @@
         this.$noty.success(`${config.name} deleted`)
       },
       async duplicate(config) {
+        // Duplicates ES 6 class of the connection, without any reference to the old one.
         const duplicateConfig = Object.assign( Object.create( Object.getPrototypeOf(config)), config);
         duplicateConfig.id = null
-        duplicateConfig.name += ' (copy)'
+        duplicateConfig.name = 'Copy of ' + duplicateConfig.name
 
         try {
           await this.$store.dispatch('saveConnectionConfig', duplicateConfig)

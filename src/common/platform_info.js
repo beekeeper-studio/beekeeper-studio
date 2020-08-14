@@ -22,6 +22,7 @@ const platformInfo = {
   isWindows, isMac,
   isLinux: !isWindows && !isMac,
   isSnap: p.env.ELECTRON_SNAP,
+  isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
   sshAuthSock: p.env.SSH_AUTH_SOCK,
   environment: process.env.NODE_ENV,
   debugEnabled: !!process.env.DEBUG,

@@ -1,11 +1,9 @@
-
-
 export default {
     dataToTabulator() {
 
     },
 
     dataToColumns() {
-        
+
     }
 }

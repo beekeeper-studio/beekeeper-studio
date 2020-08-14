@@ -1,7 +1,5 @@
 import _ from 'lodash'
 
-
-
 export function splitQueries(queryText) {
   if (!queryText) return []
   const regex = /(?:[^;']|(?:'[^']+'))+;/gm
@@ -26,7 +24,7 @@ export function splitQueries(queryText) {
       // queries.push(toPush)
     })
   }
-  if (fakeSemiColon) {
+  if (fakeSemiColon && queries.length > 0) {
     const last = queries.length - 1
     queries[last] = queries[last].slice(0, queries[last].length -1)
   }
@@ -47,7 +45,6 @@ export function extractParams(query) {
   if (!result || result.length == 0) {
     return []
   }
-
 
   return _.uniq(result)
 }

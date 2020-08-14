@@ -28,16 +28,18 @@ import Connection from './common/appdb/Connection'
 import xlsx from 'xlsx'
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en'
+import log from 'electron-log'
 
 (async () => {
   try {
+    log.info("starting logging")
     tls.DEFAULT_MIN_VERSION = "TLSv1"
     TimeAgo.addLocale(en)
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
     const appDb = path.join(config.userDirectory, 'app.db')
     const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])
     await connection.connect()
-    
+
     window.$ = $
     window.jQuery = $
     window.sql = SQL

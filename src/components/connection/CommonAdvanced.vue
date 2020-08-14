@@ -35,7 +35,7 @@
           <i class="material-icons">warning</i>
           <p>
             SSH Agent Forwarding is not possible with the Snap version of Beekeeper Studio due to the security model of Snap apps.
-            <external-link :href="enableSshLink">Read more</external-link>            
+            <external-link :href="enableSshLink">Read more</external-link>
           </p>
         </div>
         <div v-else-if="$config.sshAuthSock" class="alert alert-success">

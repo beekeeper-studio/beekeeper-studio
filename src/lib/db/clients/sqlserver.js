@@ -2,13 +2,17 @@
 
 import { ConnectionPool } from 'mssql';
 import { identify } from 'sql-query-identifier';
+import knexlib from 'knex'
 import _ from 'lodash';
 
-import { buildDatabseFilter, buildSchemaFilter } from './utils';
-import createLogger from '../../logger';
+import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
+import logRaw from 'electron-log'
+const log = logRaw.scope('sql-server')
 
-const logger = createLogger('db:clients:sqlserver');
-
+const logger = () => log;
+const knex = knexlib({
+  client: 'mssql'
+})
 const mmsqlErrors = {
   CANCELED: 'ECANCEL',
 };
@@ -35,7 +39,9 @@ export default async function (server, database) {
     listTableIndexes: (db, table) => listTableIndexes(conn, db, table),
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table) => getTableReferences(conn, table),
-    getTableKeys: (db, table) => getTableKeys(conn, db, table),
+    getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
+    getPrimaryKey: (db, table, schema) => getPrimaryKey(conn, db, table, schema),
+    updateValues: (updates) => updateValues(conn, updates),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
@@ -54,17 +60,13 @@ export async function disconnect(conn) {
   connection.close();
 }
 
-function wrap(identifier) {
-  return `[${identifier}]`
-}
-
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
   let orderByString = ""
   let filterString = ""
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
       if (_.isObject(item)) {
-        return `${wrap(item.field)} ${item.dir}`
+        return `${wrapIdentifier(item.field)} ${item.dir}`
       } else {
         return item
       }
@@ -73,12 +75,12 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
 
   if (filters && filters.length > 0) {
     filterString = "WHERE " + filters.map((item) => {
-      return `${wrap(item.field)} ${item.type} '${item.value}'`
+      return `${wrapIdentifier(item.field)} ${item.type} '${item.value}'`
     }).join(" AND ")
   }
 
   let baseSQL = `
-    FROM ${wrap(schema)}.${wrap(table)}
+    FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)}
     ${filterString}
   `
   let countQuery = `
@@ -95,6 +97,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
   logger().debug(query)
   const countResults = await driverExecuteQuery(conn, { query: countQuery})
   const result = await driverExecuteQuery(conn, { query })
+  logger().debug(result)
   const rowWithTotal = countResults.data.recordset.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return {
@@ -106,6 +109,10 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
 
 export function wrapIdentifier(value) {
   return (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*');
+}
+
+export function wrapValue(value) {
+  return `'${value.replace(/'/g, "''")}'`
 }
 
 
@@ -248,10 +255,10 @@ export async function listRoutines(conn, filter) {
 }
 
 export async function listTableColumns(conn, database, table) {
-  const clause = table ? `WHERE table_name = "${table}"` : ""
+  const clause = table ? `WHERE table_name = ${wrapValue(table)}` : ""
   const sql = `
-    SELECT table_schema, table_name, column_name, 
-      CASE 
+    SELECT table_schema, table_name, column_name,
+      CASE
         WHEN character_maximum_length is not null AND data_type != 'text'
           THEN CONCAT(data_type, '(', character_maximum_length, ')')
         WHEN datetime_precision is not null THEN
@@ -333,33 +340,83 @@ export async function getTableReferences(conn, table) {
   return data.recordset.map((row) => row.referenced_table_name);
 }
 
-export async function getTableKeys(conn, database, table) {
+export async function getTableKeys(conn, database, table, schema) {
   const sql = `
     SELECT
-      tc.constraint_name,
-      kcu.column_name,
-      CASE WHEN tc.constraint_type LIKE '%FOREIGN%' THEN OBJECT_NAME(sfk.referenced_object_id)
-      ELSE NULL
-      END AS referenced_table_name,
-      tc.constraint_type
-    FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
-    JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS kcu
-      ON tc.constraint_name = kcu.constraint_name
-    JOIN sys.foreign_keys as sfk
-      ON sfk.parent_object_id = OBJECT_ID(tc.table_name)
-    WHERE tc.table_name = '${table}'
-    AND tc.constraint_type IN ('PRIMARY KEY', 'FOREIGN KEY')
+        from_table = FK.TABLE_NAME,
+        from_column = CU.COLUMN_NAME,
+        to_table = PK.TABLE_NAME,
+        to_column = PT.COLUMN_NAME,
+        constraint_name = C.CONSTRAINT_NAME
+    FROM
+        INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
+    INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
+        ON C.CONSTRAINT_NAME = FK.CONSTRAINT_NAME
+    INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS PK
+        ON C.UNIQUE_CONSTRAINT_NAME = PK.CONSTRAINT_NAME
+    INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE CU
+        ON C.CONSTRAINT_NAME = CU.CONSTRAINT_NAME
+    INNER JOIN (
+                SELECT
+                    i1.TABLE_NAME,
+                    i2.COLUMN_NAME
+                FROM
+                    INFORMATION_SCHEMA.TABLE_CONSTRAINTS i1
+                INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE i2
+                    ON i1.CONSTRAINT_NAME = i2.CONSTRAINT_NAME
+                WHERE
+                    i1.CONSTRAINT_TYPE = 'PRIMARY KEY'
+              ) PT
+        ON PT.TABLE_NAME = PK.TABLE_NAME
+
+    WHERE FK.TABLE_NAME = ${wrapValue(table)} AND FK.TABLE_SCHEMA =${wrapValue(schema)}
   `;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.recordset.map((row) => ({
-    constraintName: row.constraint_name,
-    columnName: row.column_name,
-    referencedTable: row.referenced_table_name,
-    keyType: row.constraint_type,
+  const result = data.recordset.map((row) => ({
+    toTable: row.to_table,
+    toColumn: row.to_column,
+    fromTable: row.from_table,
+    fromColumn: row.from_column,
+    onUpdate: null,
+    onDelete: null
   }));
+  log.debug("tableKeys result", result)
+  return result
 }
+
+export async function getPrimaryKey(conn, database, table, schema) {
+  logger().debug('finding foreign key for', database, table)
+  const sql = `
+  SELECT COLUMN_NAME
+  FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+  WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + QUOTENAME(CONSTRAINT_NAME)), 'IsPrimaryKey') = 1
+  AND TABLE_NAME = ${wrapValue(table)} AND TABLE_SCHEMA = ${wrapValue(schema)}
+  `
+  const { data } = await driverExecuteQuery(conn, { query: sql})
+  logger().debug('primary key results:', data)
+  return data.recordset && data.recordset[0] ? data.recordset[0].COLUMN_NAME : null
+}
+
+export async function updateValues(conn, updates) {
+
+  const { updateQueries, selectQueries } = buildUpdateAndSelectQueries(knex, updates)
+  const sql = ['set xact_abort on', 'BEGIN TRANSACTION', ...updateQueries, 'COMMIT'].join(";")
+  const results = []
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    await driverExecuteQuery(cli, { query: sql })
+
+    for (let index = 0; index < selectQueries.length; index++) {
+      const element = selectQueries[index];
+      const r = await driverExecuteQuery(cli, element)
+      if (r.data[0]) results.push(r.data[0])
+    }
+  })
+  return results
+}
+
 
 export async function getTableCreateScript(conn, table) {
   // Reference http://stackoverflow.com/a/317864
@@ -528,6 +585,7 @@ function identifyCommands(queryText) {
 }
 
 export async function driverExecuteQuery(conn, queryArgs) {
+  logger().debug('Running query', queryArgs)
   const runQuery = async (connection) => {
     const request = connection.request();
     const data = await request.query(queryArgs.query)

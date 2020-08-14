@@ -14,7 +14,7 @@ function hasSshKeysPlug() {
     const code = execSync('snapctl is-connected ssh-keys')
     return code == 0
   } catch (error) {
-    return false    
+    return false
   }
 }
 

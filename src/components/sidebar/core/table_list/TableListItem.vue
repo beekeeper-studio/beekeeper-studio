@@ -80,7 +80,7 @@
         this.showColumns = !this.showColumns
       },
       openTable() {
-        this.$root.$emit("loadTable", this.table);
+        this.$root.$emit("loadTable", {table: this.table});
       },
       pin() {
         this.$store.dispatch('pinTable', this.table)

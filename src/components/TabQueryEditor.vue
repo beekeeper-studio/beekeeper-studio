@@ -45,21 +45,21 @@
       <span class="expand" v-if="!result"></span>
       <statusbar :class="{'empty': !result, 'query-meta': true}">
         <template v-if="results.length > 0">
-          <span v-show="results.length > 1" class="result-selector" :title="'Results'">
+          <span v-show="results.length > 1" class="statusbar-item result-selector" :title="'Results'">
             <div class="select-wrap">
               <select name="resultSelector" id="resultSelector" v-model="selectedResult" class="form-control">
                 <option v-for="(result, index) in results" :selected="selectedResult == index" :key="index" :value="index">Result {{index + 1}}</option>
               </select>
             </div>
           </span>
-          <div class="row-counts row flex-middle" v-if="rowCount > 0" :title="'Records Displayed'">
+          <div class="statusbar-item row-counts row flex-middle" v-if="rowCount > 0" :title="'Records Displayed'">
             <span class="num-rows">{{rowCount}}</span>
             <span class="truncated-rows" v-if="result && result.truncated">/&nbsp;{{result.truncatedRowCount}}</span>
             <span class="records">records</span>
           </div>
-          <span class="affected-rows" v-if="affectedRowsText " :title="'Rows Affected'">{{ affectedRowsText}}</span>
-          <span class="execute-time row flex-middle" v-if="executeTimeText" :title="'Execution Time'">
-            <i class="material-icons">query_builder</i>
+          <span class="statusbar-item affected-rows" v-if="affectedRowsText " :title="'Rows Affected'">{{ affectedRowsText}}</span>
+          <span class="statusbar-item execute-time row flex-middle" v-if="executeTimeText" :title="'Execution Time'">
+            <i class="material-icons">update</i>
             <span>{{executeTimeText}}</span>
           </span>
           <span class="expand"></span>
@@ -214,7 +214,7 @@
         return this.individualQueries[this.currentlySelectedQueryIndex]
       },
       currentQueryPosition() {
-        if(!this.editor || !this.currentlySelectedQuery) {
+        if(!this.editor || !this.currentlySelectedQuery || !this.individualQueries) {
           return null
         }
         const otherCandidates = this.individualQueries.slice(0, this.currentlySelectedQueryIndex).filter((query) => query.includes(this.currentlySelectedQuery))

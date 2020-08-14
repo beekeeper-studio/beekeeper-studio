@@ -27,8 +27,8 @@
         :key="tab.id"
         :class="{show: (activeTab === tab), active: (activeTab === tab)}"
       >
-        <QueryEditor v-if="tab.type === 'query'" :active="activeTab == tab" :tab="tab" :connection="connection"></QueryEditor>
-        <TableTable v-if="tab.type === 'table'" :connection="tab.connection" :table="tab.table"></TableTable>
+        <QueryEditor v-if="tab.type === 'query'" :active="activeTab == tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
+        <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
       </div>
     </div>
   </div>
@@ -83,7 +83,6 @@
         if (!platformInfo.isMac) {
           result[closeTab] = this.closeTab
         }
-
         return result
       }
     },
@@ -110,6 +109,10 @@
           this.activeTab = this.tabItems[this.activeIdx - 1]
         }
       },
+      setTabTitleScope(id, value) {
+        console.info("setting tab title")
+        this.tabItems.filter(t => t.id === id).forEach(t => t.titleScope = value)
+      },
       closeTab() {
         this.close(this.activeTab)
       },
@@ -132,13 +135,20 @@
 
         this.addTab(result)
       },
-      openTable(table) {
-        // todo (matthew): trigger this from a vuex event
+      openTable({ table, filter, tableName }) {
+
+        let resolvedTable = null
+
+        if (!table && tableName) {
+          resolvedTable = this.$store.state.tables.find(t => t.name === tableName)
+        }
         const t = {
           id: uuidv4(),
           type: 'table',
-          table: table,
-          connection: this.connection
+          table: resolvedTable || table,
+          connection: this.connection,
+          initialFilter: filter,
+          titleScope: "all"
         }
         this.addTab(t)
       },

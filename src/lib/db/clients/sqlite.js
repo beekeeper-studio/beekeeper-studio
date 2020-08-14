@@ -3,11 +3,11 @@
 import _ from 'lodash'
 import sqlite3 from 'sqlite3';
 import { identify } from 'sql-query-identifier';
-
-import createLogger from '../../logger';
+import rawLog from 'electron-log'
 import { genericSelectTop } from './utils';
 
-const logger = createLogger('db:clients:sqlite');
+const log = rawLog.scope('sqlite')
+const logger = () => log
 
 const sqliteErrors = {
   CANCELED: 'SQLITE_INTERRUPT',
@@ -35,8 +35,10 @@ export default async function (server, database) {
     listTableIndexes: (db, table) => listTableIndexes(conn, db, table),
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table) => getTableReferences(conn, table),
+    getPrimaryKey: (db, table) => getPrimaryKey(conn, db, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
+    updateValues: (updates) => updateValues(conn, updates),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: () => listDatabases(conn),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
@@ -105,6 +107,49 @@ export function query(conn, queryText) {
       queryConnection.interrupt();
     },
   };
+}
+
+export async function updateValues(conn, updates) {
+  const updateCommands = updates.map(update => {
+    return {
+      query: `UPDATE ${update.table} SET ${update.column} = ? WHERE ${update.pkColumn} = ?`,
+      params: [update.value, update.primaryKey]
+    }
+  })
+
+  const commands = [{ query: 'BEGIN'}, ...updateCommands];
+  const results = []
+  // TODO: this should probably return the updated values
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    try {
+      for (let index = 0; index < commands.length; index++) {
+        const blob = commands[index];
+        await driverExecuteQuery(cli, blob)
+      }
+
+      const returnQueries = updates.map(update => {
+        return {
+          query: `select * from "${update.table}" where "${update.pkColumn}" = ?`,
+          params: [
+            update.primaryKey
+          ]
+        }
+      })
+
+      for (let index = 0; index < returnQueries.length; index++) {
+        const blob = returnQueries[index];
+        const r = await driverExecuteQuery(cli, blob)
+        if (r.data[0]) results.push(r.data[0])
+      }
+      await driverExecuteQuery(cli, { query: 'COMMIT'})
+    } catch (ex) {
+      log.error("query exception: ", ex)
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
+      throw ex
+    }
+  })
+  return results
 }
 
 
@@ -215,8 +260,29 @@ export function getTableReferences() {
   return Promise.resolve([]); // TODO: not implemented yet
 }
 
-export function getTableKeys() {
-  return Promise.resolve([]); // TODO: not implemented yet
+export async function getPrimaryKey(conn, database, table) {
+  log.debug('finding foreign key for', database, table)
+  const sql = `pragma table_info('${table}')`
+  const { data } = await driverExecuteQuery(conn, { query: sql })
+  const found = data.find(r => r.pk === 1)
+  return found ? found.name : null
+}
+
+export async function getTableKeys(conn, database, table) {
+  console.log("table keys")
+  const sql = `pragma foreign_key_list('${table}')`
+  log.debug("running SQL", sql)
+  const { data } = await driverExecuteQuery(conn, { query: sql });
+  log.debug("response", data)
+  return data.map(row => ({
+    constraintType: 'FOREIGN',
+    toTable: row.table,
+    fromTable: table,
+    fromColumn: row.from,
+    toColumn: row.to,
+    onUpdate: row.on_update,
+    onDelete: row.on_delete
+  }))
 }
 
 export async function getTableCreateScript(conn, table) {
@@ -311,16 +377,14 @@ export function driverExecuteQuery(conn, queryArgs) {
   const identifyStatementsRunQuery = async (connection) => {
     const statements = identifyCommands(queryArgs.query);
 
-    const results = await Promise.all(
-      statements.map(async (statement) => {
-        const result = await runQuery(connection, statement);
+    const results = []
 
-        return {
-          ...result,
-          statement,
-        };
-      })
-    );
+    // we do it this way to ensure the queries are run IN ORDER
+    for (let index = 0; index < statements.length; index++) {
+      const statement = statements[index];
+      const r = await runQuery(connection, statement)
+      results.push({...r, statement})
+    }
 
     return queryArgs.multiple ? results : results[0];
   };

@@ -3,13 +3,17 @@
 import pg from 'pg';
 import { identify } from 'sql-query-identifier';
 import _ from 'lodash'
+import knexlib from 'knex'
+import logRaw from 'electron-log'
 
-import { buildDatabseFilter, buildSchemaFilter } from './utils';
-import createLogger from '../../logger';
+import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import errors from '../../errors';
 
-const logger = createLogger('db:clients:postgresql');
+const log = logRaw.scope('postgresql')
+const logger = () => log
+
+const knex = knexlib({ client: 'pg'})
 
 const pgErrors = {
   CANCELED: '57014',
@@ -121,7 +125,10 @@ export default async function (server, database) {
     listTableIndexes: (db, table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
     listSchemas: (db, filter) => listSchemas(conn, filter),
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
+    // TODO
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
+    getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
+    updateValues: (updates) => updateValues(conn, updates),
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
     executeQuery: (queryText, schema = defaultSchema) => executeQuery(conn, queryText, schema),
     listDatabases: (filter) => listDatabases(conn, filter),
@@ -236,6 +243,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
   const result = await driverExecuteQuery(conn, { query, params })
   const rowWithTotal = countResults.rows.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
+  log.debug("selectTop:", result.rows)
   return {
     result: result.rows,
     totalRecords
@@ -272,11 +280,11 @@ export async function listTableColumns(conn, database, table, schema) {
     throw new Error("Table '${table}' provided for listTableColumns, but no schema name")
   }
   const sql = `
-    SELECT 
+    SELECT
       table_schema,
       table_name,
       column_name,
-      CASE 
+      CASE
         WHEN character_maximum_length is not null  and udt_name != 'text'
           THEN CONCAT(udt_name, concat('(', concat(character_maximum_length::varchar(255), ')')))
         WHEN datetime_precision is not null THEN
@@ -398,21 +406,23 @@ export async function getTableReferences(conn, table, schema) {
 export async function getTableKeys(conn, database, table, schema) {
   const sql = `
     SELECT
-      tc.constraint_name,
-      kcu.column_name,
-      CASE WHEN tc.constraint_type LIKE '%FOREIGN%' THEN ctu.table_name
-      ELSE NULL
-      END AS referenced_table_name,
-      tc.constraint_type
-    FROM information_schema.table_constraints AS tc
-    JOIN information_schema.key_column_usage AS kcu
-      USING (constraint_schema, constraint_name)
-    JOIN information_schema.constraint_table_usage as ctu
-      USING (constraint_schema, constraint_name)
-    WHERE tc.table_name = $1
-    AND tc.table_schema = $2
-    AND tc.constraint_type IN ('PRIMARY KEY', 'FOREIGN KEY')
-
+        tc.table_schema as from_schema, 
+        tc.table_name as from_table, 
+        kcu.column_name as from_column, 
+        ccu.table_schema AS to_schema,
+        ccu.table_name AS to_table,
+        ccu.column_name AS to_column,
+        tc.constraint_name
+    FROM 
+        information_schema.table_constraints AS tc 
+        JOIN information_schema.key_column_usage AS kcu
+          ON tc.constraint_name = kcu.constraint_name
+          AND tc.table_schema = kcu.table_schema
+        JOIN information_schema.constraint_column_usage AS ccu
+          ON ccu.constraint_name = tc.constraint_name
+          AND ccu.table_schema = tc.table_schema
+    WHERE tc.constraint_type = 'FOREIGN KEY' 
+    AND tc.table_name=$1 and tc.table_schema = $2;
   `;
 
   const params = [
@@ -423,13 +433,56 @@ export async function getTableKeys(conn, database, table, schema) {
   const data = await driverExecuteQuery(conn, { query: sql, params });
 
   return data.rows.map((row) => ({
+    toTable: row.to_table,
+    toSchema: row.to_schema,
+    toColumn: row.to_column,
+    fromTable: row.from_table,
+    fromSchema: row.from_schema,
+    fromColumn: row.from_column,
     constraintName: row.constraint_name,
-    columnName: row.column_name,
-    referencedTable: row.referenced_table_name,
-    keyType: row.constraint_type,
+    onUpdate: null,
+    onDelete: null
   }));
 }
 
+export async function getPrimaryKey(conn, database, table, schema) {
+  const query = `
+    SELECT c.column_name
+    FROM information_schema.key_column_usage AS c
+    LEFT JOIN information_schema.table_constraints AS t
+    ON t.constraint_name = c.constraint_name
+    WHERE t.table_name = $1 and t.table_schema = $2 
+    AND t.constraint_type = 'PRIMARY KEY'
+  `
+  const params = [table, schema]
+  const data = await driverExecuteQuery(conn, { query, params })
+  return data.rows && data.rows[0] ? data.rows[0].column_name : null
+}
+
+export async function updateValues(conn, updates) {
+  const { updateQueries, selectQueries } = buildUpdateAndSelectQueries(knex, updates)
+  let results = []
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    try {
+      await driverExecuteQuery(cli, { query: 'BEGIN' })
+      await driverExecuteQuery(cli, { query: updateQueries.join(";") })
+      const data = await driverExecuteQuery(cli, { query: selectQueries.join(";"), multiple: true })
+      if (data.rows) {
+        results = [data.rows[0]]
+      } else {
+        results = data.map(x => x.rows[0])
+      }
+
+      await driverExecuteQuery(cli, { query: 'COMMIT' })
+    } catch (ex) {
+      log.error('update error: ', ex)
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' })
+      throw ex
+    }
+  })
+  return results
+}
 
 export function query(conn, queryText) {
   let pid = null;

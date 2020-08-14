@@ -4,11 +4,13 @@ import globals from '../common/globals'
 import { getActiveWindows } from './WindowBuilder'
 import log from 'electron-log'
 
+import platformInfo from '../common/platform_info'
+
 autoUpdater.autoDownload = false
 autoUpdater.logger = log
 
 function dealWithAppImage() {
-  if (process.env.DESKTOPINTEGRATION === 'AppImageLauncher') {
+  if (platformInfo.isAppImage) {
     // remap temporary running AppImage to actual source
     // THIS IS PROBABLY SUPER BRITTLE AND MAKES ME WANT TO STOP USING APPIMAGE
     autoUpdater.logger.info('rewriting $APPIMAGE', {
@@ -30,7 +32,11 @@ function checkForUpdates() {
 }
 
 export function manageUpdates(debug) {
-  dealWithAppImage();
+
+  if (platformInfo.environment === 'development' || platformInfo.isSnap || (platformInfo.isLinux && !platformInfo.isAppImage)) {
+    return
+  }
+  dealWithAppImage();  
 
   autoUpdater.logger.debug(process.env)
   // HACK(mc, 2019-09-10): work around https://github.com/electron-userland/electron-builder/issues/4046
