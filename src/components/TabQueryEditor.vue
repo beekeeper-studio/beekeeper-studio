@@ -471,7 +471,7 @@
 
         this.editor = CodeMirror.fromTextArea($editor, {
           lineNumbers: true,
-          mode: "text/x-sql",
+          mode: this.connection.connectionType === 'sqlserver' ? 'text/x-mssql' : "text/x-sql",
           theme: 'monokai',
           extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete"},
           hint: CodeMirror.hint.sql,
