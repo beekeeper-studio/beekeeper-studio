@@ -65,7 +65,7 @@ yarn run electron:serve ## the app will now start
 
 Beekeeper Studio has two entry points:
 - background.js - this is the electron-side code that controls native things like showing windows.
-- main.js - this is the entry point for the Vue.js app. You can follow the Vue component breadcrumbs here to find the screen you need.
+- main.js - this is the entry point for the Vue.js app. You can follow the Vue component breadcrumbs from `App.vue` to find the screen you need.
 
 **Generally we have two 'screens':**
 - ConnectionInterface - connecting to a DB
