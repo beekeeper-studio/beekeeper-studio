@@ -10,6 +10,8 @@ Love Beekeeper Studio and want to help, but can't write code? [We have some idea
 
 ## Features
 
+Top feature: It's smooth 🍫, fast 🏎, and you'll actually enjoy using it 🥰
+
 - Autocomplete SQL query editor with syntax highlighting
 - Tabbed interface, so you can multitask
 - Sort and filter table data to find just what you need
