@@ -50,6 +50,7 @@
     "shortid": "^2.2.14",
     "simple-encryptor": "^3.0.0",
     "split.js": "^1.5.11",
+    "sql-formatter": "^2.3.3",
     "sql-query-identifier": "^1.1.0",
     "sqlite3": "^4.1.1",
     "ssh2": "beekeeper-studio/ssh2#electron-detection",

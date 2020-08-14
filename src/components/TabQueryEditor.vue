@@ -1,6 +1,6 @@
 <template>
   <div class="query-editor" v-hotkey="keymap">
-    <div class="top-panel" ref="topPanel">
+    <div class="top-panel" ref="topPanel" >
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
       <div class="toolbar text-right">
@@ -27,6 +27,14 @@
           </x-buttons>
         </div>
       </div>
+      <x-contextmenu>
+        <x-menu>
+          <x-menuitem @click.prevent="formatSql">
+            <x-label>Format Query</x-label>
+            <x-shortcut value="Control+Shift+F"></x-shortcut>
+          </x-menuitem>
+        </x-menu>
+      </x-contextmenu>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar v-if="running"></progress-bar>
@@ -144,10 +152,11 @@
   import ResultTable from './editor/ResultTable'
   import Statusbar from './common/StatusBar'
   import humanizeDuration from 'humanize-duration'
+  import sqlFormatter from 'sql-formatter';
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, Statusbar },
+    components: { ResultTable, ProgressBar, Statusbar},
     props: ['tab', 'active'],
     data() {
       return {
@@ -463,6 +472,10 @@
           }
         }
       },
+      formatSql() {
+        this.editor.setValue(sqlFormatter.format(this.editor.getValue()))
+        this.selectEditor()
+      }
     },
     mounted() {
       const $editor = this.$refs.editor
@@ -501,7 +514,9 @@
           "Ctrl-Enter": this.submitTabQuery,
           "Cmd-Enter": this.submitTabQuery,
           "Ctrl-S": this.triggerSave,
-          "Cmd-S": this.triggerSave
+          "Cmd-S": this.triggerSave,
+          "Ctrl+Shift+F": this.formatSql,
+          "Cmd+Shift+F": this.formatSql
         }
 
         this.editor = CodeMirror.fromTextArea($editor, {

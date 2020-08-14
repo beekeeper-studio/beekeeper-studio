@@ -1,27 +1,48 @@
 <template>
-  <li class="nav-item" :title="title + scope">
-    <a
-      class="nav-link"
-      @click.prevent.stop="$emit('click', tab)"
-      @click.middle.prevent.stop="$emit('close', tab)"
-      :class="{ active: selected }"
-    >
-      <i v-if="tab.type === 'table'" :class="iconClass" class="material-icons item-icon table">grid_on</i>
-      <i v-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
-      <i v-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
-      <span class="tab-title truncate" :title="title + scope">{{title}} <span v-if="scope" class="tab-title-scope">{{scope}}</span></span>
-      <div class="tab-action">
-        <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @click.prevent.stop="$emit('close', tab)">
-          <i class="material-icons close">close</i>
-          <i class="material-icons unsaved-icon" >fiber_manual_record</i>
-        </span>
-      </div>
-    </a>
-  </li>
+  <div>
+    <li class="nav-item" :title="title + scope">
+      <a
+        class="nav-link"
+        @click.prevent.stop="$emit('click', tab)"
+        @click.middle.prevent.stop="$emit('close', tab)"
+        :class="{ active: selected }"
+      >
+        <i v-if="tab.type === 'table'" :class="iconClass" class="material-icons item-icon table">grid_on</i>
+        <i v-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
+        <i v-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
+        <span class="tab-title truncate" :title="title + scope">{{title}} <span v-if="scope" class="tab-title-scope">{{scope}}</span></span>
+        <div class="tab-action">
+          <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @click.prevent.stop="$emit('close', tab)">
+            <i class="material-icons close">close</i>
+            <i class="material-icons unsaved-icon" >fiber_manual_record</i>
+          </span>
+        </div>
+      </a>
+    </li>
+    <x-contextmenu>
+      <x-menu>
+        <x-menuitem @click.prevent="$emit('close', tab)">
+          <x-label>Close</x-label>
+          <x-shortcut value="Control+W"></x-shortcut>
+        </x-menuitem>
+        <x-menuitem @click.prevent="$emit('closeOther', tab)">
+          <x-label>Close Others</x-label>
+        </x-menuitem>
+        <x-menuitem @click.prevent="$emit('closeAll', tab)">
+          <x-label>Close All</x-label>
+        </x-menuitem>
+        <hr>
+        <x-menuitem @click.prevent="$emit('duplicate', tab)">
+          <x-label>Duplicate</x-label>
+        </x-menuitem>
+      </x-menu>
+    </x-contextmenu>
+  </div>
 </template>
 <script>
+
   export default {
-    props: ['tab', 'selected'],
+    props: ['tab', 'tabsCount', 'selected'],
     data() {
       return {
         unsaved: false,
