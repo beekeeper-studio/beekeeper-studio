@@ -469,9 +469,14 @@
           "Cmd+Shift+F": this.formatSql
         }
 
+        const modes = {
+          'mysql': 'text/x-mysql',
+          'postgresql': 'text/x-pgsql',
+          'sqlserver': 'text/x-mssql',
+        };
         this.editor = CodeMirror.fromTextArea($editor, {
           lineNumbers: true,
-          mode: this.connection.connectionType === 'sqlserver' ? 'text/x-mssql' : "text/x-sql",
+          mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
           theme: 'monokai',
           extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete"},
           hint: CodeMirror.hint.sql,
