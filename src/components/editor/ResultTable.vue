@@ -78,6 +78,10 @@
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
         this.tabulator.download(format, `${title}-${dateString}.${format}`, 'all')
+      },
+      clipboard() {
+        this.tabulator.copyToClipboard("table", true)
+        this.$noty.info("Table data copied to clipboard")
       }
     }
 	}
