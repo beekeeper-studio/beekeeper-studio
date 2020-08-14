@@ -1,6 +1,6 @@
 <template>
   <div class="query-editor" v-hotkey="keymap">
-    <div class="top-panel" ref="topPanel" @contextmenu.prevent="$refs.topPanelMenu.open">
+    <div class="top-panel" ref="topPanel" >
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
       <div class="toolbar text-right">
@@ -27,12 +27,14 @@
           </x-buttons>
         </div>
       </div>
-
-      <vue-context ref="topPanelMenu" :close-on-click="true">
-        <li>
-          <a href="#" @click.prevent="formatSql">Format</a>
-        </li>
-      </vue-context>
+      <x-contextmenu>
+        <x-menu>
+          <x-menuitem @click.prevent="formatSql">
+            <x-label>Format Query</x-label>
+            <x-shortcut value="Control+Shift+F"></x-shortcut>
+          </x-menuitem>
+        </x-menu>
+      </x-contextmenu>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar v-if="running"></progress-bar>
@@ -150,12 +152,11 @@
   import ResultTable from './editor/ResultTable'
   import Statusbar from './common/StatusBar'
   import humanizeDuration from 'humanize-duration'
-  import VueContext from 'vue-context';
   import sqlFormatter from 'sql-formatter';
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, Statusbar, VueContext },
+    components: { ResultTable, ProgressBar, Statusbar},
     props: ['tab', 'active'],
     data() {
       return {
@@ -262,7 +263,6 @@
       keymap() {
         const result = {}
         result[this.ctrlOrCmd('l')] = this.selectEditor
-        result[this.ctrlOrCmd('alt+f')] = this.formatSql
         return result
       },
       connectionType() {
@@ -474,6 +474,7 @@
       },
       formatSql() {
         this.editor.setValue(sqlFormatter.format(this.editor.getValue()))
+        this.selectEditor()
       }
     },
     mounted() {
@@ -513,7 +514,9 @@
           "Ctrl-Enter": this.submitTabQuery,
           "Cmd-Enter": this.submitTabQuery,
           "Ctrl-S": this.triggerSave,
-          "Cmd-S": this.triggerSave
+          "Cmd-S": this.triggerSave,
+          "Ctrl+Shift+F": this.formatSql,
+          "Cmd+Shift+F": this.formatSql
         }
 
         this.editor = CodeMirror.fromTextArea($editor, {

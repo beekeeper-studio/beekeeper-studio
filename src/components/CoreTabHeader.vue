@@ -1,6 +1,6 @@
 <template>
   <div>
-    <li class="nav-item" :title="title" @contextmenu.prevent="$refs.menu.open">
+    <li class="nav-item" :title="title">
       <a
           class="nav-link"
           @click.prevent.stop="$emit('click', tab)"
@@ -19,30 +19,30 @@
         </div>
       </a>
     </li>
-
-    <vue-context ref="menu" :close-on-click="true">
-      <li>
-        <a href="#" @click.prevent="$emit('close', tab)">Close</a>
-      </li>
-      <li v-if="this.tabsCount > 1">
-        <a href="#" @click.prevent="$emit('closeOther', tab)">Close Others</a>
-      </li>
-      <li v-if="this.tabsCount > 1">
-        <a href="#" @click.prevent="$emit('closeAll')">Close All</a>
-      </li>
-      <li class="separator"></li>
-      <li>
-        <a href="#" @click.prevent="$emit('duplicate', tab)">Duplicate</a>
-      </li>
-    </vue-context>
+    <x-contextmenu>
+      <x-menu>
+        <x-menuitem @click.prevent="$emit('close', tab)">
+          <x-label>Close</x-label>
+          <x-shortcut value="Control+W"></x-shortcut>
+        </x-menuitem>
+        <x-menuitem @click.prevent="$emit('closeOther', tab)">
+          <x-label>Close Others</x-label>
+        </x-menuitem>
+        <x-menuitem @click.prevent="$emit('closeAll', tab)">
+          <x-label>Close All</x-label>
+        </x-menuitem>
+        <hr>
+        <x-menuitem @click.prevent="$emit('duplicate', tab)">
+          <x-label>Duplicate</x-label>
+        </x-menuitem>
+      </x-menu>
+    </x-contextmenu>
   </div>
 </template>
 <script>
-  import VueContext from 'vue-context';
 
   export default {
     props: ['tab', 'tabsCount', 'selected'],
-    components: { VueContext },
     data() {
       return {
         unsaved: false,

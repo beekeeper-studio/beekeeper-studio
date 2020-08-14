@@ -7851,7 +7851,7 @@ long@^4.0.0:
   resolved "https://registry.yarnpkg.com/long/-/long-4.0.0.tgz#9a7b71cfb7d361a194ea555241c92f7468d5bf28"
   integrity sha512-XsP+KhQif4bjX1kbuSiySJFNAehNxgLb6hPRGJ9QsUr8ajHkuXGdrHmFUTUUXhDwVX2R5bY4JNZEwbUiMhV+MA==
 
-loose-envify@^1.0.0, loose-envify@^1.2.0:
+loose-envify@^1.0.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/loose-envify/-/loose-envify-1.4.0.tgz#71ee51fa7be4caec1a63839f7e682d8132d30caf"
   integrity sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==
@@ -12506,20 +12506,6 @@ vue-cli-plugin-electron-builder@^2.0.0-rc.1:
     webpack-chain "^6.0.0"
     webpack-merge "^4.2.2"
     yargs "^14.0.0"
-
-vue-clickaway@^2.2.2:
-  version "2.2.2"
-  resolved "https://registry.yarnpkg.com/vue-clickaway/-/vue-clickaway-2.2.2.tgz#cecf6839575e8b2afc5d3edb3efb616d293dbb44"
-  integrity sha512-25SpjXKetL06GLYoLoC8pqAV6Cur9cQ//2g35GRFBV4FgoljbZZjTINR8g2NuVXXDMLSUXaKx5dutgO4PaDE7A==
-  dependencies:
-    loose-envify "^1.2.0"
-
-vue-context@^6.0.0:
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/vue-context/-/vue-context-6.0.0.tgz#97a1a423fc86fb7a54f46d1567670aba281a5970"
-  integrity sha512-x8gO6xgj0MtTCWcYbDjO/7VJ/gT+nV+unqICvsN0hwqqBzft31eYyExYqrSvfDCRI7ixxObu5tbl7BQAKge7eg==
-  dependencies:
-    vue-clickaway "^2.2.2"
 
 vue-eslint-parser@^5.0.0:
   version "5.0.0"

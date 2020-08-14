@@ -178,11 +178,10 @@
         }
       },
       duplicate(tab) {
-        let duplicatedTab = {
+        const duplicatedTab = {
             id: uuidv4(),
             type: tab.type,
             connection: tab.connection,
-            unsavedChanges: true
         }
 
         if(tab.type === 'query') {
