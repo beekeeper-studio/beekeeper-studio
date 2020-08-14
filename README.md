@@ -6,6 +6,8 @@ Beekeeper Studio is MIT licensed so it is free (libre) and free (gratis).
 
 Download now [from our website](https://beekeeperstudio.io)
 
+Love Beekeeper Studio and want to help, but can't write code? [We have some ideas for you](https://github.com/beekeeper-studio/beekeeper-studio/issues/287).
+
 ## Features
 
 - Autocomplete SQL query editor with syntax highlighting
