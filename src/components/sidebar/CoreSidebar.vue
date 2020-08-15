@@ -16,7 +16,7 @@
         :class="tabClasses('tables')"
         v-show="activeItem === 'tables'"
       >
-        <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
+        <database-dropdown @databaseSelected="databaseSelected" @databaseCreated="databaseSelected" :connection="connection"></database-dropdown>
         <table-list></table-list>
       </div>
 
