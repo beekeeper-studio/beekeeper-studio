@@ -16,11 +16,15 @@
       <x-button class="btn-fab" skin="iconic">
         <i class="material-icons">more_horiz</i>
         <x-menu style="--target-align: right; --v-target-align: top;">
-          <x-menuitem v-if="showDuplicate" @click.prevent.stop="duplicate">
+          <x-menuitem v-if="showDuplicate" @click.prevent.stop="duplicate" title="Duplicate the connection with all settings">
             <x-label class="text-">Duplicate</x-label>
           </x-menuitem>
-          <x-menuitem @click.prevent.stop="remove">
+          <x-menuitem @click.prevent.stop="remove" title="Removes the connection">
             <x-label class="text-danger">Remove</x-label>
+          </x-menuitem>
+          <hr>
+          <x-menuitem @click.prevent.stop="copyUrl" v-bind:title="`Copy the ${this.connectionType} of the connection to the clipboard`">
+            <x-label class="text-">Copy {{this.connectionType}}</x-label>
           </x-menuitem>
         </x-menu>
       </x-button>
@@ -50,13 +54,18 @@ export default {
     label() {
       if (this.savedConnection) {
         return this.savedConnection.name
-      }
-      if (this.config.connectionType === 'sqlite') {
+      } else if (this.config.connectionType === 'sqlite') {
         return path.basename(this.config.defaultDatabase)
-      } else {
-        return this.config.simpleConnectionString
       }
 
+      return this.config.simpleConnectionString
+    },
+    connectionType() {
+      if (this.config.connectionType === 'sqlite') {
+        return 'path'
+      }
+
+      return 'Url'
     },
     subtitle() {
       if (this.isRecentList) {
@@ -101,6 +110,14 @@ export default {
     },
     duplicate() {
       this.$emit('duplicate', this.config)
+    },
+    async copyUrl() {
+      try {
+        await this.$copyText(this.config.fullConnectionString)
+        this.$noty.success(`The ${this.connectionType} was successfully copied!`)
+      } catch (err) {
+        this.$noty.success(`The ${this.connectionType} could not be copied!`)
+      }
     }
   }
 
