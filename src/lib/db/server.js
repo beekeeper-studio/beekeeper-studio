@@ -51,6 +51,10 @@ export function createServer(serverConfig) {
         return server.db[dbName];
       }
 
+      if(dbName === null) {
+        dbName = 'postgres'
+      }
+
       const database = {
         database: dbName,
         connection: null,
