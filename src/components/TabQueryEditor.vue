@@ -105,13 +105,14 @@
   import _ from 'lodash'
   import 'codemirror/addon/search/searchcursor'
   import CodeMirror from 'codemirror'
+  require('codemirror/addon/comment/comment')
   import Split from 'split.js'
   import { mapState } from 'vuex'
 
   import { splitQueries, extractParams } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar'
   import ResultTable from './editor/ResultTable'
-  
+
   import sqlFormatter from 'sql-formatter';
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar'
@@ -425,7 +426,16 @@
       formatSql() {
         this.editor.setValue(sqlFormatter.format(this.editor.getValue()))
         this.selectEditor()
-      }
+      },
+      toggleComment() {
+        const cursor = this.editor.getCursor();
+
+        this.editor.execCommand('toggleComment')
+        this.editor.setCursor({
+          line: cursor.line + 1,
+          char: 0
+        })
+      },
     },
     mounted() {
       const $editor = this.$refs.editor
@@ -465,8 +475,10 @@
           "Cmd-Enter": this.submitTabQuery,
           "Ctrl-S": this.triggerSave,
           "Cmd-S": this.triggerSave,
-          "Ctrl+Shift+F": this.formatSql,
-          "Cmd+Shift+F": this.formatSql
+          "Shift-Ctrl-F": this.formatSql,
+          "Shift-Cmd-F": this.formatSql,
+          "Ctrl-/": this.toggleComment,
+          "Cmd-/": this.toggleComment,
         }
 
         const modes = {
