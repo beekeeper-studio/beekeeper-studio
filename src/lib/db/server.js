@@ -51,7 +51,7 @@ export function createServer(serverConfig) {
         return server.db[dbName];
       }
 
-      if(dbName === null && server.config.client === 'postgresql') {
+      if(dbName === null && serverConfig.client === 'postgresql') {
         dbName = 'postgres'
       }
 
