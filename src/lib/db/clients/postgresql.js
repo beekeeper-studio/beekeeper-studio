@@ -406,22 +406,22 @@ export async function getTableReferences(conn, table, schema) {
 export async function getTableKeys(conn, database, table, schema) {
   const sql = `
     SELECT
-        tc.table_schema as from_schema, 
-        tc.table_name as from_table, 
-        kcu.column_name as from_column, 
+        tc.table_schema as from_schema,
+        tc.table_name as from_table,
+        kcu.column_name as from_column,
         ccu.table_schema AS to_schema,
         ccu.table_name AS to_table,
         ccu.column_name AS to_column,
         tc.constraint_name
-    FROM 
-        information_schema.table_constraints AS tc 
+    FROM
+        information_schema.table_constraints AS tc
         JOIN information_schema.key_column_usage AS kcu
           ON tc.constraint_name = kcu.constraint_name
           AND tc.table_schema = kcu.table_schema
         JOIN information_schema.constraint_column_usage AS ccu
           ON ccu.constraint_name = tc.constraint_name
           AND ccu.table_schema = tc.table_schema
-    WHERE tc.constraint_type = 'FOREIGN KEY' 
+    WHERE tc.constraint_type = 'FOREIGN KEY'
     AND tc.table_name=$1 and tc.table_schema = $2;
   `;
 
@@ -451,7 +451,7 @@ export async function getPrimaryKey(conn, database, table, schema) {
     FROM information_schema.key_column_usage AS c
     LEFT JOIN information_schema.table_constraints AS t
     ON t.constraint_name = c.constraint_name
-    WHERE t.table_name = $1 and t.table_schema = $2 
+    WHERE t.table_name = $1 and t.table_schema = $2
     AND t.constraint_type = 'PRIMARY KEY'
   `
   const params = [table, schema]
