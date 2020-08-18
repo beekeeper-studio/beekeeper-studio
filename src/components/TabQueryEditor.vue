@@ -105,7 +105,7 @@
   import _ from 'lodash'
   import 'codemirror/addon/search/searchcursor'
   import CodeMirror from 'codemirror'
-  require('codemirror/addon/comment/comment')
+  import 'codemirror/addon/comment/comment'
   import Split from 'split.js'
   import { mapState } from 'vuex'
 
