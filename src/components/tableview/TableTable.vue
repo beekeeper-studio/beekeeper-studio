@@ -173,16 +173,27 @@ export default {
 
         const keyData = this.tableKeys[column.columnName]
         const editable = this.editable && column.columnName !== this.primaryKey
+        const useTextarea = column.dataType === 'text'
+        const editorType = useTextarea ? 'textarea' : 'input'
+
+        const formatter = () => {
+          return `<span class="tabletable-title">${column.columnName} <span class="badge">${column.dataType}</span></span>`
+        }
 
         const result = {
           title: column.columnName,
           field: column.columnName,
+          titleFormatter: formatter,
           mutatorData: this.resolveDataMutator(column.dataType),
           dataType: column.dataType,
           cellClick: this.cellClick,
           editable: editable,
-          editor: editable ? 'input' : undefined,
+          editor: editable ? editorType : undefined,
+          variableHeight: true,
+          cellEditCancelled: cell => cell.getRow().normalizeHeight(),
+          formatter: (cell) => _.isNil(cell.getValue()) ? '(NULL)' : cell.getValue(),
           editorParams: {
+            verticalNavigation: useTextarea ? 'editor' : undefined,
             search: true,
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
@@ -276,6 +287,38 @@ export default {
 
   },
   methods: {
+    multilineEditor(cell, onRendered, success) {
+
+      //create and style editor
+      var editor = document.createElement("textarea");
+
+      //create and style input
+      editor.classList.add('bk-textarea')
+      editor.style.padding = "5px";
+      editor.style.width = "100%";
+      editor.style.height = "90px";
+
+      //Set value of editor to the current value of the cell
+      editor.value = cell.getValue()
+
+      //set focus on the select box when the editor is selected (timeout allows for editor to be added to DOM)
+      onRendered(function(){
+          editor.focus();
+          editor.style.css = "100%";
+      });
+
+      //when the value has been set, trigger the cell to update
+      function successFunc(){
+        success(editor.value)
+      }
+
+      editor.addEventListener("change", successFunc);
+      editor.addEventListener("blur", successFunc);
+
+      //return the editor element
+      return editor;
+
+    },
     fkClick(e, cell) {
       log.info('fk-click', cell)
       const value = cell.getValue()
@@ -305,6 +348,11 @@ export default {
       // this makes it easier to select text if not editing
       if (!this.editable) {
         this.selectChildren(cell.getElement())
+      } else {
+        setTimeout(() => {
+          cell.getRow().normalizeHeight();
+        }, 10)
+
       }
 
     },

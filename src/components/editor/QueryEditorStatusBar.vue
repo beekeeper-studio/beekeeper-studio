@@ -41,7 +41,7 @@
           <x-label>JSON</x-label>
         </x-menuitem>
         <hr>
-        <x-menuitem @click.prevent="copyToClipboard">
+        <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboard">
           <x-label>Copy to Clipboard</x-label>
         </x-menuitem>
       </x-menu>

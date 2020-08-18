@@ -9,7 +9,8 @@ $foreign-key-width:      24px;
   .tabulator-cell {
     border: 1px solid transparent;
     padding: 4px 8px;
-    height: 28px!important;
+    min-height: 28px;
+    // height: 28px!important;
     line-height: 20px;
 
     i.fk-link {

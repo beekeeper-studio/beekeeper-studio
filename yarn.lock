@@ -11907,10 +11907,10 @@ table@^5.2.3:
     slice-ansi "^2.1.0"
     string-width "^3.0.0"
 
-tabulator-tables@^4.6.2:
-  version "4.6.3"
-  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-4.6.3.tgz#3f85b7058b5faa0d55dc07e9d09214a532260650"
-  integrity sha512-e/SeG1jU5ryg0OlBpKo89ZmKTYdgfRYLRT366Vu17jIrTFxtyaAhgg95N7L0vzvnvQHuSATUY3UynHzYh2iDYw==
+tabulator-tables@^4.7.2:
+  version "4.7.2"
+  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-4.7.2.tgz#9897b123a9486692ed899c575ac04b672e16b831"
+  integrity sha512-UbG3/ylOfTmyJHk6EGpuO6hrTlfsKAmiNRz1hYZwhBzL2y9O3QnykVGhMTBSdaz4Cm38Ed4+Ez848dagzSg1qA==
 
 tapable@^1.0.0, tapable@^1.1.3:
   version "1.1.3"

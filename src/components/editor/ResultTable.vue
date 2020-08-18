@@ -67,7 +67,14 @@
         columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,
         nestedFieldSeparator: false,
-        cellClick: this.cellClick
+        cellClick: this.cellClick,
+        clipboard: true,
+        keybindings: {
+          copyToClipboard: false
+        },
+        downloadConfig: {
+          columnHeaders: true
+        }
       });
     },
     methods: {
