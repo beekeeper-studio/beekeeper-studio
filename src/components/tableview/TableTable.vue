@@ -47,13 +47,13 @@
     <div ref="table"></div>
     <statusbar :mode="statusbarMode" class="tabulator-footer">
       <div class="col x4">
-        <span class="statusbar-item flex flex-middle" v-if="lastUpdatedText && !editError" :title="'Updated' + ' ' + lastUpdatedText">
-          <i class="material-icons">update</i>
-          <span>{{lastUpdatedText}}</span>
-        </span>
         <span class="statusbar-item flex flex-middle" v-if="lastUpdatedText && !editError" :title="'Total records: ' + totalRecords">
           <i class="material-icons">list</i>
           <span>{{ totalRecords }} records</span>
+        </span>
+        <span class="statusbar-item flex flex-middle" v-if="lastUpdatedText && !editError" :title="'Updated' + ' ' + lastUpdatedText">
+          <i class="material-icons">update</i>
+          <span>{{lastUpdatedText}}</span>
         </span>
         <span v-if="editError" class="statusbar-item error" :title="editError">
           <i class="material-icons">error</i>
