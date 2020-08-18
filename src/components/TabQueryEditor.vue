@@ -47,6 +47,8 @@
       <query-editor-status-bar
         v-model="selectedResult"
         :results="results"
+        :running="running"
+        @cancelQuery="cancelQuery"
         @download="download"
         @clipboard="clipboard"
         :executeTime="executeTime"
@@ -285,6 +287,11 @@
       }
     },
     methods: {
+      cancelQuery() {
+        this.running = false
+        this.runningQuery.cancel()
+        this.runningQuery = null
+      },
       download(format) {
         this.$refs.table.download(format)
       },
@@ -358,9 +365,9 @@
           const query = this.deparameterizedQuery
           this.$modal.hide('parameters-modal')
 
-          const runningQuery = this.connection.query(query)
+          this.runningQuery = this.connection.query(query)
           const queryStartTime = +new Date()
-          const results = await runningQuery.execute()
+          const results = await this.runningQuery.execute()
           const queryEndTime = +new Date()
           this.executeTime = queryEndTime - queryStartTime
           let totalRows = 0
@@ -378,7 +385,9 @@
           this.results = results
           this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
         } catch (ex) {
-          this.error = ex
+          if(this.running) {
+            this.error = ex
+          }
         } finally {
           this.running = false
         }
