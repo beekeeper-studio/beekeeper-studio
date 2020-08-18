@@ -379,6 +379,19 @@
           results.forEach(result => {
             result.rowCount = result.rowCount || 0
 
+            let rows = []
+            result.rows.forEach(row => {
+              const tmpRow = {}
+              for (let [key, value] of Object.entries(row)) {
+                if(value instanceof Buffer) {
+                  value = value.toString()
+                }
+                tmpRow[key] = value
+              }
+              rows.push(tmpRow)
+            })
+            result.rows = rows
+
             // TODO (matthew): remove truncation logic somewhere sensible
             totalRows += result.rowCount
             if (result.rowCount > this.$config.maxResults) {
