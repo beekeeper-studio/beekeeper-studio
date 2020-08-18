@@ -290,10 +290,12 @@
     },
     methods: {
       cancelQuery() {
-        this.running = false
-        this.info = 'Query Execution Cancelled'
-        this.runningQuery.cancel()
-        this.runningQuery = null
+        if(this.running && this.runningQuery) {
+          this.running = false
+          this.info = 'Query Execution Cancelled'
+          this.runningQuery.cancel()
+          this.runningQuery = null
+        }
       },
       download(format) {
         this.$refs.table.download(format)
@@ -491,6 +493,8 @@
           "Shift-Cmd-F": this.formatSql,
           "Ctrl-/": this.toggleComment,
           "Cmd-/": this.toggleComment,
+          "Ctrl-C": this.cancelQuery,
+          "Cmd-C": this.cancelQuery
         }
 
         const modes = {
