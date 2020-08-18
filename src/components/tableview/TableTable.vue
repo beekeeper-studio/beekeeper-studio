@@ -358,7 +358,6 @@ export default {
     },
     cellEdited(cell) {
       log.info('edit', cell)
-      cell.getElement().classList.add('edited')
       const pkCell = cell.getRow().getCells().find(c => c.getField() === this.primaryKey)
       if (!pkCell) {
         this.$noty.error("Can't edit column -- couldn't figure out primary key")
@@ -367,17 +366,25 @@ export default {
         console.log(cell)
         return
       }
+
+      if (!cell.getValue() && _.isNil(cell.getOldValue())) {
+        cell.restoreOldValue()
+        return
+      }
+
+      cell.getElement().classList.add('edited')
+      const key = `${pkCell.getValue()}-${cell.getField()}`
+      const currentEdit = this.pendingEdits[key]
       const payload = {
         table: this.table.name,
         schema: this.table.schema,
         column: cell.getField(),
         pkColumn: this.primaryKey,
         primaryKey: pkCell.getValue(),
-        oldValue: cell.getOldValue(),
-        value: cell.getValue(),
-        cell: cell
+        oldValue: currentEdit ? currentEdit.oldValue : cell.getOldValue(),
+        cell: cell,
+        value: cell.getValue(0)
       }
-      const key = `${payload.primaryKey}-${payload.column}`
       this.$set(this.pendingEdits, key, payload)
     },
     async saveChanges() {
@@ -404,11 +411,19 @@ export default {
     },
     discardChanges() {
       this.editError = null
+      const updates = []
       this.pendingEditList.forEach(edit => {
-        edit.cell.restoreOldValue()
+        const update = {}
+        update[edit.pkColumn] = edit.primaryKey
+        update[edit.column] = edit.oldValue
+        updates.push(update)
+        // this.tabulator.updateData(update)
+        // edit.cell.restoreOldValue()
         edit.cell.getElement().classList.remove('edited')
         edit.cell.getElement().classList.remove('edit-error')
       })
+      log.debug('discarding -- applying update', updates)
+      this.tabulator.updateData(updates)
       this.pendingEdits = {}
     },
     triggerFilter() {
