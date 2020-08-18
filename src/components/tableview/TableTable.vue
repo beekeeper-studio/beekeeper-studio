@@ -51,6 +51,10 @@
           <i class="material-icons">update</i>
           <span>{{lastUpdatedText}}</span>
         </span>
+        <span class="statusbar-item flex flex-middle" v-if="lastUpdatedText && !editError" :title="'Total records: ' + totalRecords">
+          <i class="material-icons">list</i>
+          <span>{{ totalRecords }} records</span>
+        </span>
         <span v-if="editError" class="statusbar-item error" :title="editError">
           <i class="material-icons">error</i>
           <span class="">Error Saving Changes</span>
@@ -202,7 +206,7 @@ export default {
           cellEdited: this.cellEdited
         }
         results.push(result)
-        
+
 
         if (keyData) {
           const icon = () => "<i class='material-icons fk-link'>launch</i>"
@@ -222,7 +226,7 @@ export default {
           result.cssClass = 'foreign-key'
           results.push(keyResult)
         }
-        
+
       });
       return results
     },
@@ -263,7 +267,7 @@ export default {
     if (this.initialFilter) {
       this.filter = _.clone(this.initialFilter)
     }
-    
+
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
     // TODO (matthew): re-enable after implementing for all DBs
     this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
