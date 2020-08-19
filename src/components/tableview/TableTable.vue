@@ -286,7 +286,11 @@ export default {
       lastUpdated: null,
       // callbacks
       ajaxRequestFunc: this.dataFetch,
-      index: this.primaryKey
+      index: this.primaryKey,
+      keybindings: {
+        "scrollToEnd": false,
+        "scrollToStart": false,
+      }
     });
 
   },
