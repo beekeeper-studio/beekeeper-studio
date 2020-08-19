@@ -41,12 +41,15 @@
       <result-table ref="table" v-else-if="rowCount > 0" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
       <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results</span></div></div>
       <div class="message" v-else-if="error"><div class="alert alert-danger"><i class="material-icons">warning</i><span>{{error}}</span></div></div>
+      <div class="message" v-else-if="info"><div class="alert alert-info"><i class="material-icons">warning</i><span>{{info}}</span></div></div>
       <div v-else><!-- No Data --></div>
       <span class="expand" v-if="!result"></span>
       <!-- STATUS BAR -->
       <query-editor-status-bar
         v-model="selectedResult"
         :results="results"
+        :running="running"
+        @cancelQuery="cancelQuery"
         @download="download"
         @clipboard="clipboard"
         :executeTime="executeTime"
@@ -130,6 +133,7 @@
         editor: null,
         runningQuery: null,
         error: null,
+        info: null,
         split: null,
         tableHeight: 0,
         savePrompt: false,
@@ -285,6 +289,14 @@
       }
     },
     methods: {
+      cancelQuery() {
+        if(this.running && this.runningQuery) {
+          this.running = false
+          this.info = 'Query Execution Cancelled'
+          this.runningQuery.cancel()
+          this.runningQuery = null
+        }
+      },
       download(format) {
         this.$refs.table.download(format)
       },
@@ -358,9 +370,9 @@
           const query = this.deparameterizedQuery
           this.$modal.hide('parameters-modal')
 
-          const runningQuery = this.connection.query(query)
+          this.runningQuery = this.connection.query(query)
           const queryStartTime = +new Date()
-          const results = await runningQuery.execute()
+          const results = await this.runningQuery.execute()
           const queryEndTime = +new Date()
           this.executeTime = queryEndTime - queryStartTime
           let totalRows = 0
@@ -378,7 +390,9 @@
           this.results = results
           this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
         } catch (ex) {
-          this.error = ex
+          if(this.running) {
+            this.error = ex
+          }
         } finally {
           this.running = false
         }
@@ -479,6 +493,8 @@
           "Shift-Cmd-F": this.formatSql,
           "Ctrl-/": this.toggleComment,
           "Cmd-/": this.toggleComment,
+          "Ctrl-C": this.cancelQuery,
+          "Cmd-C": this.cancelQuery
         }
 
         const modes = {

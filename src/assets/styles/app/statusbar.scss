@@ -67,7 +67,7 @@
 
   // Connection Status
   // ---------------------------
-  .connection-button, 
+  .connection-button,
   .connection-button > .btn {
     height: $statusbar-height;
     line-height: $statusbar-height;
@@ -140,7 +140,7 @@
   // Query Status
   // ----------------------------
   .statusbar-item {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     padding: 0 $gutter-h;
     .material-icons {
