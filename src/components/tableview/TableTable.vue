@@ -49,7 +49,7 @@
       <div class="col x4">
         <span class="statusbar-item flex flex-middle" v-if="lastUpdatedText && !editError" :title="'Total records: ' + totalRecords">
           <i class="material-icons">list</i>
-          <span>{{ totalRecords }} records</span>
+          <span>{{ totalRecordsText }}</span>
         </span>
         <span class="statusbar-item flex flex-middle" v-if="lastUpdatedText && !editError" :title="'Updated' + ' ' + lastUpdatedText">
           <i class="material-icons">update</i>
@@ -97,6 +97,7 @@
 
 <script>
 import Tabulator from "tabulator-tables";
+import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
 import Statusbar from '../common/StatusBar'
@@ -145,6 +146,9 @@ export default {
     };
   },
   computed: {
+    totalRecordsText() {
+      return `${this.totalRecords} ${pluralize('record', this.totalRecords)}`
+    },
     pendingEditList() {
       return Object.values(this.pendingEdits)
     },
@@ -176,6 +180,9 @@ export default {
       this.table.columns.forEach(column => {
 
         const keyData = this.tableKeys[column.columnName]
+        // this needs fixing
+        // currently it doesn't fetch the right result if you update the PK
+        // because it uses the PK to fetch the result.
         const editable = this.editable && column.columnName !== this.primaryKey
         const useTextarea = column.dataType === 'text'
         const editorType = useTextarea ? 'textarea' : 'input'
@@ -269,7 +276,6 @@ export default {
     }
 
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
-    // TODO (matthew): re-enable after implementing for all DBs
     this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
     this.tabulator = new Tabulator(this.$refs.table, {
       height: this.actualTableHeight,
@@ -295,38 +301,6 @@ export default {
 
   },
   methods: {
-    multilineEditor(cell, onRendered, success) {
-
-      //create and style editor
-      var editor = document.createElement("textarea");
-
-      //create and style input
-      editor.classList.add('bk-textarea')
-      editor.style.padding = "5px";
-      editor.style.width = "100%";
-      editor.style.height = "90px";
-
-      //Set value of editor to the current value of the cell
-      editor.value = cell.getValue()
-
-      //set focus on the select box when the editor is selected (timeout allows for editor to be added to DOM)
-      onRendered(function(){
-          editor.focus();
-          editor.style.css = "100%";
-      });
-
-      //when the value has been set, trigger the cell to update
-      function successFunc(){
-        success(editor.value)
-      }
-
-      editor.addEventListener("change", successFunc);
-      editor.addEventListener("blur", successFunc);
-
-      //return the editor element
-      return editor;
-
-    },
     fkClick(e, cell) {
       log.info('fk-click', cell)
       const value = cell.getValue()
@@ -399,15 +373,20 @@ export default {
       try {
         // throw new Error("This is an error")
         const newData = await this.connection.updateValues(this.pendingEditList)
+        const updateIncludedPK = this.pendingEditList.find(e => e.column === e.pkColumn)
+        if (updateIncludedPK) {
+          this.tabulator.replaceData()
+        } else {
+          this.tabulator.updateData(newData)
+          this.pendingEditList.forEach(edit => {
+            edit.cell.getElement().classList.remove('edited')
+            edit.cell.getElement().classList.add('edit-success')
+            setTimeout(() => {
+              edit.cell.getElement().classList.remove('edit-success')
+            }, 1000)
+          })
+        }
         log.info("new Data: ", newData)
-        this.tabulator.updateData(newData)
-        this.pendingEditList.forEach(edit => {
-          edit.cell.getElement().classList.remove('edited')
-          edit.cell.getElement().classList.add('edit-success')
-          setTimeout(() => {
-            edit.cell.getElement().classList.remove('edit-success')
-          }, 1000)
-        })
         this.pendingEdits = {}
       } catch (ex) {
         this.pendingEditList.forEach(edit => {
@@ -487,7 +466,7 @@ export default {
               this.table.schema
             );
             const r = response.result;
-            this.totalRecords = response.totalRecords;
+            this.totalRecords = Number(response.totalRecords) || 0;
             this.response = response
             this.pendingEdits = []
             this.editError = null
