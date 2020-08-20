@@ -209,14 +209,11 @@ export default {
           variableHeight: true,
           headerTooltip: headerTooltip,
           cellEditCancelled: cell => cell.getRow().normalizeHeight(),
-          formatter: (cell) => _.isNil(cell.getValue()) ? '(NULL)' : cell.getValue(),
+          formatter: (cell) => _.isNull(cell.getValue()) ? '(NULL)' : cell.getValue(),
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             search: true,
-            ...(column.dataType === 'bool'
-              ? { values: ['true', 'false'] }
-              : {}
-            )
+            values: column.dataType === 'bool' ? [true, false] : undefined
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
             // }
@@ -378,7 +375,7 @@ export default {
         return
       }
 
-      if (!cell.getValue() && _.isNil(cell.getOldValue())) {
+      if (cell.getValue() === "" && _.isNil(cell.getOldValue())) {
         cell.restoreOldValue()
         return
       }
