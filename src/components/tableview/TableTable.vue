@@ -184,9 +184,10 @@ export default {
         // currently it doesn't fetch the right result if you update the PK
         // because it uses the PK to fetch the result.
         const editable = this.editable && column.columnName !== this.primaryKey
-        const useTextarea = column.dataType === 'text'
-        const editorType = useTextarea ? 'textarea' : 'input'
         const slimDataType = this.slimDataType(column.dataType)
+        const editorType = this.editorType(column.dataType)
+        const useVerticalNavigation = editorType === 'textarea'
+
         const formatter = () => {
           return `<span class="tabletable-title">${column.columnName} <span class="badge">${slimDataType}</span></span>`
         }
@@ -210,8 +211,12 @@ export default {
           cellEditCancelled: cell => cell.getRow().normalizeHeight(),
           formatter: (cell) => _.isNil(cell.getValue()) ? '(NULL)' : cell.getValue(),
           editorParams: {
-            verticalNavigation: useTextarea ? 'editor' : undefined,
+            verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             search: true,
+            ...(column.dataType === 'bool'
+              ? { values: ['true', 'false'] }
+              : {}
+            )
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
             // }
@@ -317,6 +322,13 @@ export default {
         return dt.split("(")[0]
       }
       return null
+    },
+    editorType(dt) {
+      switch (dt) {
+        case 'text': return 'textarea'
+        case 'bool': return 'select'
+        default: return 'input'
+      }
     },
     fkClick(e, cell) {
       log.info('fk-click', cell)
