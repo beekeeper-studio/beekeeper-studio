@@ -22,7 +22,7 @@
     watch: {
       tableData: {
         handler() {
-          this.tabulator.replaceData(this.tableData)
+          // this.tabulator.replaceData(this.tableData)
         }
       },
       tableColumns: {
@@ -61,9 +61,15 @@
         // return result
       },
     },
+    beforeDestroy() {
+      if (this.tabulator) {
+        this.tabulator.destroy()
+      }
+    },
     async mounted() {
       this.tabulator = new Tabulator(this.$refs.tabulator, {
         data: this.tableData, //link data to table
+        reactiveData: true,
         columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,
         nestedFieldSeparator: false,

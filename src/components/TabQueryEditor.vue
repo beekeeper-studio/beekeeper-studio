@@ -37,7 +37,7 @@
       </x-contextmenu>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
-      <progress-bar v-if="running"></progress-bar>
+      <progress-bar @cancel="cancelQuery" v-if="running"></progress-bar>
       <result-table ref="table" v-else-if="rowCount > 0" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
       <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results</span></div></div>
       <div class="message" v-else-if="error"><div class="alert alert-danger"><i class="material-icons">warning</i><span>{{error}}</span></div></div>
@@ -49,7 +49,6 @@
         v-model="selectedResult"
         :results="results"
         :running="running"
-        @cancelQuery="cancelQuery"
         @download="download"
         @clipboard="clipboard"
         :executeTime="executeTime"
@@ -145,7 +144,6 @@
         queryParameterValues: {},
         queryForExecution: null,
         executeTime: 0
-
       }
     },
     computed: {
@@ -289,11 +287,11 @@
       }
     },
     methods: {
-      cancelQuery() {
+      async cancelQuery() {
         if(this.running && this.runningQuery) {
           this.running = false
           this.info = 'Query Execution Cancelled'
-          this.runningQuery.cancel()
+          await this.runningQuery.cancel()
           this.runningQuery = null
         }
       },
@@ -493,8 +491,7 @@
           "Shift-Cmd-F": this.formatSql,
           "Ctrl-/": this.toggleComment,
           "Cmd-/": this.toggleComment,
-          "Ctrl-C": this.cancelQuery,
-          "Cmd-C": this.cancelQuery
+          "Esc": this.cancelQuery
         }
 
         const modes = {

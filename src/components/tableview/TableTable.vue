@@ -47,7 +47,7 @@
     <div ref="table"></div>
     <statusbar :mode="statusbarMode" class="tabulator-footer">
       <div class="col x4">
-        <span class="statusbar-item flex flex-middle" v-if="lastUpdatedText && !editError" :title="'Total records: ' + totalRecords">
+        <span class="statusbar-item flex flex-middle" v-if="lastUpdatedText && !editError" :title="`${totalRecordsText} Total Records`">
           <i class="material-icons">list</i>
           <span>{{ totalRecordsText }}</span>
         </span>
@@ -97,7 +97,7 @@
 
 <script>
 import Tabulator from "tabulator-tables";
-import pluralize from 'pluralize'
+// import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
 import Statusbar from '../common/StatusBar'
@@ -147,7 +147,7 @@ export default {
   },
   computed: {
     totalRecordsText() {
-      return `${this.totalRecords} ${pluralize('record', this.totalRecords)}`
+      return `${this.totalRecords.toLocaleString()}`
     },
     pendingEditList() {
       return Object.values(this.pendingEdits)
@@ -186,9 +186,14 @@ export default {
         const editable = this.editable && column.columnName !== this.primaryKey
         const useTextarea = column.dataType === 'text'
         const editorType = useTextarea ? 'textarea' : 'input'
-
+        const slimDataType = this.slimDataType(column.dataType)
         const formatter = () => {
-          return `<span class="tabletable-title">${column.columnName} <span class="badge">${column.dataType}</span></span>`
+          return `<span class="tabletable-title">${column.columnName} <span class="badge">${slimDataType}</span></span>`
+        }
+
+        let headerTooltip = `${column.columnName} ${column.dataType}`
+        if (keyData) {
+          headerTooltip += ` -> ${keyData.toTable}(${keyData.toColumn})`
         }
 
         const result = {
@@ -201,6 +206,7 @@ export default {
           editable: editable,
           editor: editable ? editorType : undefined,
           variableHeight: true,
+          headerTooltip: headerTooltip,
           cellEditCancelled: cell => cell.getRow().normalizeHeight(),
           formatter: (cell) => _.isNil(cell.getValue()) ? '(NULL)' : cell.getValue(),
           editorParams: {
@@ -269,6 +275,9 @@ export default {
   },
   beforeDestroy() {
     if(this.interval) clearInterval(this.interval)
+    if (this.tabulator) {
+      this.tabulator.destroy()
+    }
   },
   async mounted() {
     if (this.initialFilter) {
@@ -294,13 +303,21 @@ export default {
       ajaxRequestFunc: this.dataFetch,
       index: this.primaryKey,
       keybindings: {
-        "scrollToEnd": false,
-        "scrollToStart": false,
+        scrollToEnd: false,
+        scrollToStart: false,
+        scrollPageUp: false,
+        scrollPageDown: false
       }
     });
 
   },
   methods: {
+    slimDataType(dt) {
+      if (dt) {
+        return dt.split("(")[0]
+      }
+      return null
+    },
     fkClick(e, cell) {
       log.info('fk-click', cell)
       const value = cell.getValue()

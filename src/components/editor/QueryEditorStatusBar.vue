@@ -20,12 +20,6 @@
       </span>
       <span class="expand"></span>
     </template>
-    <template v-else-if="running">
-      <span class="expand"></span>
-      <x-buttons class="download-results">
-        <x-button class="btn btn-link btn-small" @click.stop.prevent="cancelQuery">Cancel Query</x-button>
-      </x-buttons>
-    </template>
     <template v-else>
       <span class="expand"></span>
       <span class="empty">No Data</span>
@@ -89,9 +83,6 @@ export default {
     mounted() {
     },
     methods: {
-      cancelQuery() {
-        this.$emit('cancelQuery')
-      },
       updateValue(event) {
         this.$emit('input', event.target.value)
       },
