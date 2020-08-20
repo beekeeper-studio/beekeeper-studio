@@ -198,9 +198,21 @@ $foreign-key-width:      24px;
 			}
 		}
   }
-  
+
 }
 
+.tabulator-edit-select-list {
+  background: $theme-bg;
+  color: white;
+  border-width: 1;
+  border-color: rgba($theme-base, 0.06);
+  border-radius: 2px;
+  margin-top: $gutter-h;
+
+	.tabulator-edit-select-list-item{
+    color: $text-dark;
+	}
+}
 
 .tabulator-footer {
   display: flex;
