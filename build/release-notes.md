@@ -1,59 +1,45 @@
-# V1.5 - Community Enhancement Megapack
 
-Hey everyone. Big release today, but not for the reasons we expected...
-
-We'd intended to build out a basic file menu to allow us to add a few settings, but so many of you in the community started building enhancements we're instead pushing a release with a whole bunch of amazing stuff we'd never thought of!
-
-## Big New Features in this release
-
-### Run Contexts
-
-Instead of running the entire query window, you can now selectively run whatever you wish:
-- Run All - run the whole editor
-- Run Current - If you have multiple queries (separated with `;`), you can run whichever query you're currently selecting (we'll highlight the query to let yo uknow)
-- Run Selection - Select some text and then you can just run whatever text you have highlighted.
-
-![SQL Run contexts](https://user-images.githubusercontent.com/279769/84578583-3423a780-ad8c-11ea-8fcc-6b6d6c740bc2.gif)
+## Table editing, Foreign Key Links, and other lovely things
 
 
-### Query Parameters
-
-Parameterize your SQL query with either `:variable` or `$1` and when you run the query Beekeeper will prompt you to enter values. Now you can re-use the same query easily without having to open a whole new tab.
-
-![SQL Parameters](https://camo.githubusercontent.com/6582a2b09ef9b567bb5470a76276daee5aa36765/68747470733a2f2f6d656469612e67697068792e636f6d2f6d656469612f5176644c45476b4c7a35706f5272547a6e592f67697068792e676966)
-
-### Connection Label Colors
-
-Label your saved connections with a color. Now you can easily tell `production` from `dev` connections.
-
-![Color Picker](https://user-images.githubusercontent.com/279769/84578500-7a2c3b80-ad8b-11ea-83ee-659a9fd999a3.gif)
 
 
-### Smaller Fixes and Enhancements
-- Refresh the database list with a new `refresh` button
-- Beekeeper Studio now works on Debian 10
-- Postgres versions before 8.3 are now supported
-- Redshift errors are fixed
-- Close tabs with a middle mouse button click
-- Electron Updated to 8.2.5
-- Deb package now adds the Beekeeper Studio repo if downloaded directly
+Some really big features in this release, but the headliners are:
+1. **Table Editing**: So long as your table has a `primary key` you can edit the values of the other columns right inside Beekeeper
 
-Most of these enhancements came from you, the community.
+2. **FK Links**: Click on a foreign key column to jump to that record in the foreign key table.
 
-## Merged Pull Requests
+This release would not be possible without some massive community contributions. MVP for this release goes to @UtechtDustin, who has contributed quite a number of Pull Requests.
 
-#183 from beekeeper-studio/deb-postinstall
-#196 from beekeeper-studio/launcher-linux
-#193 from JamesDBartlett/master
-#191 from beekeeper-studio/dependabot/npm_and_yarn/websocket-extensions-0.1.4
-#131 from mlebrun/connection-labels
-#181 from beekeeper-studio/highlight-fixes-and-docs
-#168 from aligoren/feature/refresh-button-for-databases
-#165 from MasterOdin/patch-3
-#99 from hillmanov/master
-#171 from beekeeper-studio/query-highlighting
-#167 from MasterOdin/master
-#161 from vuongggggg/feature/add-run-buttons
-#166 from beekeeper-studio/component-library
-#164 from strotgen/feature/close-tab-middle-button
-#156 from beekeeper-studio/connection-removal
+More features in this release:
+- Cancel long running queries
+- Query execution time
+- Table view now shows total records and last refresh time
+- Context menus (right click menus) for tabs
+- SQL formatter for the SQL editor
+- Added the option to copy a connection as a URL
+- Fixed HEX value display in table view
+- You can now toggle comments in the query editor as expected
+- SSH tunnel switch is fixed
+- There's a nice info message if you try and run a blank query
+- PSQL connections use a default database if none is specified
+
+
+### Pull Requests in this release
+
+94632cb Merge pull request #299 from geovannimp/add-select-to-bool-type-at-edit-mode
+2dffcf9 Merge pull request #296 from UtechtDustin/some-issues
+f3aeb03 Merge pull request #294 from UtechtDustin/feature/added-shortcut-for-toggling-comments
+2521b8c Merge pull request #293 from UtechtDustin/use-default-database-postgresql
+56589e2 Merge pull request #291 from UtechtDustin/fix-ssh-tunnel-switch-status
+dfb301f Merge pull request #289 from UtechtDustin/fix/199
+890c412 Merge pull request #288 from UtechtDustin/add-open-to-copy-connection-url
+41d83ba Merge pull request #285 from beekeeper-studio/context-menu
+25a0423 Merge pull request #276 from beekeeper-studio/foreign-key-lookups
+9ff3131 Merge pull request #282 from UtechtDustin/editorconfig
+1815116 Merge pull request #271 from UtechtDustin/fix/259
+86bdf4f Merge pull request #272 from UtechtDustin/fix/connectionString
+91c01a2 Merge pull request #264 from beekeeper-studio/dependabot/npm_and_yarn/elliptic-6.5.3
+9dfb1d6 Merge pull request #266 from UtechtDustin/show-no-query-message
+1901d2d Merge pull request #268 from UtechtDustin/feature/259
+Done in 0.06s.

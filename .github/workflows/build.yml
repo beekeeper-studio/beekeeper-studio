@@ -9,12 +9,12 @@ on:
       - "*"
 
 jobs:
-  release:
+  build:
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-18.04, windows-latest, ubuntu-16.04]
+        os: [macos-latest, ubuntu-18.04, windows-latest, ubuntu-arm64]
 
     steps:
       - name: Check out Git repository
