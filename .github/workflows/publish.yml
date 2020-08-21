@@ -29,10 +29,10 @@ jobs:
         with:
           snapcraft_token: ${{ secrets.snapcraft_token }}
       - name: Remove dist directory
-        if: matrix.os != 'windows-latest'
+        if: "!startsWith(matrix.os, 'windows')"
         run: rm -rf ./dist_electron
       - name: Remove dist directory windows
-        if: matrix.os == 'windows-latest'
+        if: startsWith(matrix.os, 'windows')
         run: Remove-Item dist_electron -Recurse -ErrorAction Ignore
       - name: Prepare for app notarization
         if: startsWith(matrix.os, 'macos')
@@ -41,13 +41,31 @@ jobs:
           mkdir -p ~/private_keys/
           echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
 
-      - name: Build/release Electron app
+      - name: Build and Publish (ARM Linux)
+        uses: samuelmeuli/action-electron-builder@v1
+        if: startsWith(matrix.os, 'ubuntu-arm64')
+        with:
+          # GitHub token, automatically provided to the action
+          # (No need to define this secret in the repo settings)
+          github_token: ${{ secrets.github_token }}
+          skip_build: true
+          use_vue_cli: true
+          max_attempts: 2
+          args: "--armv7l --arm64"
+
+          # If the commit is tagged with a version (e.g. "v1.0.0"),
+          # release the app after building
+          release: true
+        env:
+          BT_TOKEN: "${{secrets.bintray_apikey}}"
+
+      - name: Build and Publish
+        if: "!startsWith(matrix.os, 'ubuntu-arm64')"
         uses: samuelmeuli/action-electron-builder@v1
         with:
           # GitHub token, automatically provided to the action
           # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.github_token }}
-          args: "-c.releaseInfo.releaseNotesFile=./build/release-notes.md"
           skip_build: true
           use_vue_cli: true
           max_attempts: 2
@@ -64,11 +82,11 @@ jobs:
           API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
           BT_TOKEN: "${{secrets.bintray_apikey}}"
       - name: Cleanup artifacts
-        if: matrix.os != 'windows-latest'
+        if: "!startsWith(matrix.os, 'windows')"
         run: |
           npx rimraf "dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
       - name: Cleanup artifacts Win
-        if: matrix.os == 'windows-latest'
+        if: startsWith(matrix.os, 'windows')
         run: |
           npx rimraf "dist_electron/!(*.exe)"
       - name: Upload artifacts
