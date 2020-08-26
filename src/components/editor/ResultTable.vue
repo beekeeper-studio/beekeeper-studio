@@ -18,8 +18,19 @@
         tabulator: null
       }
     },
-    props: ['result', 'tableHeight', 'query'],
+    props: ['result', 'tableHeight', 'query', 'active'],
     watch: {
+      active() {
+        if (!this.tabulator) return;
+        if (this.active) {
+          this.tabulator.restoreRedraw()
+          this.$nextTick(() => {
+            this.tabulator.redraw()
+          })
+        } else {
+          this.tabulator.blockRedraw()
+        }
+      },
       tableData: {
         handler() {
           // this.tabulator.replaceData(this.tableData)

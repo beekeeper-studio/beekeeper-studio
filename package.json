@@ -74,6 +74,7 @@
   },
   "devDependencies": {
     "@types/node": "^8.0.29",
+    "@types/tabulator-tables": "^4.7.2",
     "@vue/cli-plugin-babel": "^4.1.2",
     "@vue/cli-plugin-eslint": "^4.1.2",
     "@vue/cli-plugin-unit-jest": "~4.4.0",
