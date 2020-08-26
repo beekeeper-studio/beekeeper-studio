@@ -4,7 +4,7 @@ title: Troubleshooting
 
 # Troubleshooting
 
-Hopefully you can solve your problems with the details below. If not please [open a ticket][newissue] on our issues page and we'll try our best to help you out.
+Hopefully you can solve your problems with the details below. If not please [contact us][/contact/] and we'll try our best to help.
 
 [[toc]]
 
@@ -18,6 +18,6 @@ If you're on Linux and using the `snap` version of Beekeeper you need to give th
 snap connect beekeeper-studio:removable-media
 ```
 
-If you're on another platform, please [open a ticket][newissue] and we'll try to help you debug the problem.
+If you're on another platform, please [open a ticket][bug] and we'll try to help you debug the problem.
 
-[newissue]: https://github.com/beekeeper-studio/beekeeper-studio/issues/new
+[bug]: https://github.com/beekeeper-studio/beekeeper-studio/issues/new?template=bug_report.md&title=BUG:
