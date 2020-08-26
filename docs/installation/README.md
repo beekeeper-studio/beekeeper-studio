@@ -70,13 +70,6 @@ Run `sudo snap connect beekeeper-studio:ssh-keys :ssh-keys`.
 - **SSH Agent**: Unfortunately, Snaps have no way to access your SSH Agent, so if you need to use the SSH agent we recommend you use the `deb` or `AppImage` version of the app.
 
 
-## Raspberry Pi
-
-Beekeeper Studio publishes binaries for both `armv7l` and `arm64` architectures. That means you can use it on any Raspberry Pi 2 Model B or greater. It will unfortunately not work on any model of the Raspberry Pi Zero, as that runs on the `armv6` architecture.
-
-To install on Raspberry Pi simply follow the [Linux installation instructions above](#linux-installation)
-
-
 ## Automatic Updates
 
 The apps for all platforms support automatic app updates, either via store updates, or through the app itself.
