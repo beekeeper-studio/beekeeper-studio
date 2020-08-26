@@ -204,6 +204,7 @@ export default {
           mutatorData: this.resolveDataMutator(column.dataType),
           dataType: column.dataType,
           cellClick: this.cellClick,
+          cssClass: this.primaryKey && column.columnName === this.primaryKey ? 'primary-key' : '',
           editable: editable,
           editor: editable ? editorType : undefined,
           variableHeight: true,
@@ -231,7 +232,7 @@ export default {
           const keyResult = {
             headerSort: false,
             download: false,
-            field: column.columnName,
+            field: column.columnName + '-link',
             title: "",
             cssClass: "foreign-key-button",
             cellClick: this.fkClick,
@@ -334,15 +335,21 @@ export default {
     editorType(dt) {
       switch (dt) {
         case 'text': return 'textarea'
+        case 'json': return 'textarea'
+        case 'jsonb': return 'textarea'
         case 'bool': return 'select'
         default: return 'input'
       }
     },
     fkClick(e, cell) {
       log.info('fk-click', cell)
-      const value = cell.getValue()
-      const fromColumn = cell.getField()
+      const fromColumn = cell.getField().replace(/-link$/g, "")
+      const valueCell = cell.getRow().getCell(fromColumn)
+      const value = valueCell.getValue()
+
+      console.log(cell.getField(), fromColumn)
       const keyData = this.tableKeys[fromColumn]
+      console.log("keydata", keyData)
       const tableName = keyData.toTable
       const schemaName = keyData.toSchema
       const table = this.$store.state.tables.find(t => {
