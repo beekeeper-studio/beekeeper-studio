@@ -21,12 +21,14 @@
     props: ['result', 'tableHeight', 'query', 'active'],
     watch: {
       active() {
-        if (this.active && this.tabulator) {
-          console.log('redrawing')
+        if (!this.tabulator) return;
+        if (this.active) {
+          this.tabulator.restoreRedraw()
           this.$nextTick(() => {
             this.tabulator.redraw()
-            window.tabulator = this.tabulator
           })
+        } else {
+          this.tabulator.blockRedraw()
         }
       },
       tableData: {

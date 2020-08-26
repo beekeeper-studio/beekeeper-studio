@@ -27,8 +27,8 @@
         :key="tab.id"
         :class="{show: (activeTab === tab), active: (activeTab === tab)}"
       >
-        <QueryEditor v-if="tab.type === 'query'" :active="activeTab == tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
-        <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
+        <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
+        <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
       </div>
     </div>
   </div>
@@ -56,6 +56,9 @@
         activeItem: 0,
         newTabId: 1
       }
+    },
+    watch: {
+
     },
     computed: {
       ...mapGetters({ 'menuStyle': 'settings/menuStyle' }),
@@ -110,7 +113,6 @@
         }
       },
       setTabTitleScope(id, value) {
-        console.info("setting tab title")
         this.tabItems.filter(t => t.id === id).forEach(t => t.titleScope = value)
       },
       closeTab() {

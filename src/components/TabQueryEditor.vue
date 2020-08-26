@@ -251,8 +251,10 @@
     watch: {
       active() {
         if(this.active && this.editor) {
-          this.editor.refresh()
-          this.editor.focus()
+          this.$nextTick(() => {
+            this.editor.refresh()
+            this.editor.focus()
+          })
         } else {
           this.$modal.hide('save-modal')
         }
@@ -450,7 +452,6 @@
       },
     },
     mounted() {
-      console.log('mounted tab editor')
       const $editor = this.$refs.editor
       // TODO (matthew): Add hint options for all tables and columns
       let startingValue = ""

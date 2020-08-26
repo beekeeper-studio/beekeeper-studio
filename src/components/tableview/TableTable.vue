@@ -109,7 +109,7 @@ const log = rawLog.scope('TableTable')
 export default {
   components: { Statusbar },
   mixins: [data_converter, DataMutators],
-  props: ["table", "connection", "initialFilter", "tabId"],
+  props: ["table", "connection", "initialFilter", "tabId", "active"],
   data() {
     return {
       filterTypes: {
@@ -258,6 +258,17 @@ export default {
   },
 
   watch: {
+    active() {
+      if (!this.tabulator) return;
+      if (this.active) {
+        this.tabulator.restoreRedraw()
+        this.$nextTick(() => {
+          this.tabulator.redraw()
+        })
+      } else {
+        this.tabulator.blockRedraw()
+      }
+    },
     filterValue() {
       if (this.filter.value === "") {
         this.clearFilter();
