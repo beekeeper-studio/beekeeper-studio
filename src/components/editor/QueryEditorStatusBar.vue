@@ -8,12 +8,15 @@
         </select>
       </div>
       </span>
-      <div class="statusbar-item row-counts row flex-middle" v-if="rowCount > 0" :title="'Records Displayed'">
-      <span class="num-rows">{{rowCount}}</span>
-      <span class="truncated-rows" v-if="result && result.truncated">/&nbsp;{{result.truncatedRowCount}}</span>
-      <span class="records">records</span>
+      <div class="statusbar-item row-counts row flex-middle" v-if="rowCount > 0" :title="rowCount + ' ' + 'Total Records'">
+        <i class="material-icons">list_alt</i>
+        <span class="num-rows">{{rowCount}}</span>
+        <span class="truncated-rows" v-if="result && result.truncated">/&nbsp;{{result.truncatedRowCount}}</span>
       </div>
-      <span class="statusbar-item affected-rows" v-if="affectedRowsText " :title="'Rows Affected'">{{ affectedRowsText}}</span>
+      <div class="statusbar-item affected-rows" v-if="affectedRowsText " :title="affectedRowsText + ' ' + 'Rows Affected'">
+        <i class="material-icons">clear_all</i>
+        <span>{{ affectedRowsText }}</span>
+      </div>
       <span class="statusbar-item execute-time row flex-middle" v-if="executeTimeText" :title="'Execution Time'">
       <i class="material-icons">update</i>
       <span>{{executeTimeText}}</span>
@@ -50,7 +53,7 @@
   </statusbar>
 </template>
 <script>
-import Pluralize from 'pluralize'
+// import Pluralize from 'pluralize'
 import humanizeDuration from 'humanize-duration'
 import Statusbar from '../common/StatusBar'
 
@@ -70,7 +73,7 @@ export default {
           return null
         }
         const rows = this.result.affectedRows || 0
-        return `${rows} ${Pluralize('row', rows)} affected`
+        return `${rows}`
       },
       executeTimeText() {
         if (!this.executeTime) {
