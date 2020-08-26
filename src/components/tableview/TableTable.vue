@@ -187,6 +187,7 @@ export default {
         const slimDataType = this.slimDataType(column.dataType)
         const editorType = this.editorType(column.dataType)
         const useVerticalNavigation = editorType === 'textarea'
+        const isPK = this.primaryKey && this.primaryKey === column.columnName
 
         const formatter = () => {
           return `<span class="tabletable-title">${column.columnName} <span class="badge">${slimDataType}</span></span>`
@@ -195,7 +196,12 @@ export default {
         let headerTooltip = `${column.columnName} ${column.dataType}`
         if (keyData) {
           headerTooltip += ` -> ${keyData.toTable}(${keyData.toColumn})`
+        } else if (isPK) {
+          headerTooltip += ' [Primary Key]'
         }
+
+
+        
 
         const result = {
           title: column.columnName,
@@ -204,7 +210,7 @@ export default {
           mutatorData: this.resolveDataMutator(column.dataType),
           dataType: column.dataType,
           cellClick: this.cellClick,
-          cssClass: this.primaryKey && column.columnName === this.primaryKey ? 'primary-key' : '',
+          cssClass: isPK ? 'primary-key' : '',
           editable: editable,
           editor: editable ? editorType : undefined,
           variableHeight: true,
