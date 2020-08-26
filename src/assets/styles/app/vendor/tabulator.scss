@@ -18,11 +18,13 @@ $foreign-key-width:      24px;
     }
     input {
       font-size: 0.85rem;
-      max-height: 28px;
+      height: 28px;
       padding: 4px 4px 4px 8px!important;
     }
     textarea {
       border-color: transparent;
+      padding: 4px 6px!important;
+      line-height: 20px;
     }
     &.active-cell {
       background: $selection;
