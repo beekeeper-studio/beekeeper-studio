@@ -232,8 +232,8 @@ export default {
 
         if (keyData) {
           const icon = () => "<i class='material-icons fk-link'>launch</i>"
-          const tooltip = (cell) => {
-            return `View records in ${keyData.toTable} with ${keyData.toColumn} = ${cell.getValue()}`
+          const tooltip = () => {
+            return `View record in ${keyData.toTable}`
           }
           const keyResult = {
             headerSort: false,
@@ -332,6 +332,11 @@ export default {
 
   },
   methods: {
+    valueCellFor(cell) {
+      const fromColumn = cell.getField().replace(/-link$/g, "")
+      const valueCell = cell.getRow().getCell(fromColumn)
+      return valueCell
+    },
     slimDataType(dt) {
       if (dt) {
         return dt.split("(")[0]
@@ -350,7 +355,7 @@ export default {
     fkClick(e, cell) {
       log.info('fk-click', cell)
       const fromColumn = cell.getField().replace(/-link$/g, "")
-      const valueCell = cell.getRow().getCell(fromColumn)
+      const valueCell = this.valueCellFor(cell)
       const value = valueCell.getValue()
 
       console.log(cell.getField(), fromColumn)
