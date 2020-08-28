@@ -41,7 +41,7 @@ $foreign-key-width:      24px;
     &.edited, &.edit-error, &.edit-success {
       border-color: $border-color;
       border-radius: 2px;
-      color: $db-select-text;
+      color: $theme-base;
     }
     &.edited {
       background: rgba($theme-primary, 0.05);
@@ -126,14 +126,14 @@ $foreign-key-width:      24px;
       &.tabulator-sortable[aria-sort="asc"] {
         .tabulator-col-content {
           .tabulator-arrow {
-            border-bottom-color: $brand-primary;
+            border-bottom-color: $theme-base;
           }
         }
       }
       &.tabulator-sortable[aria-sort="desc"] {
         .tabulator-col-content {
           .tabulator-arrow {
-            border-top-color: $brand-primary;
+            border-top-color: $theme-base;
           }
         }
       }
@@ -191,11 +191,10 @@ $foreign-key-width:      24px;
   }
 
   //holding div that contains loader and covers tabulator element to prevent interaction
-	.tabulator-loader{
-		background:rgba(black,.4);
+	.tabulator-loader {
 		.tabulator-loader-msg{
 			border-radius: 8px;
-			background:transparent;
+			background: transparent;
 			font-weight: normal;
 			font-size: 1rem;
 
