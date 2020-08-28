@@ -343,6 +343,9 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .list-item {
+      padding-left: 0;
+    }
   }
   .sub-item {
     color: $text;
