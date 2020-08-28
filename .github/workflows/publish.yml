@@ -28,6 +28,7 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         with:
           snapcraft_token: ${{ secrets.snapcraft_token }}
+          skip_install: ${{ matrix.os == 'ubuntu-arm64' }}
       - name: Remove dist directory
         if: "!startsWith(matrix.os, 'windows')"
         run: rm -rf ./dist_electron

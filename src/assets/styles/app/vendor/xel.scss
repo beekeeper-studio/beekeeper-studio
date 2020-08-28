@@ -998,6 +998,7 @@ x-radio {
 x-switch {
   color: $theme-primary;
   transition: filter 0.2s var(--transition-fn1);
+  cursor: pointer;
   filter: saturate(0%);
   --ripple-type:none;
   &[toggled] {
