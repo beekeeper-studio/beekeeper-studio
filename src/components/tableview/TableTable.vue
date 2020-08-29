@@ -166,7 +166,6 @@ export default {
     },
     tableKeys() {
       const result = {}
-      console.log(this.rawTableKeys)
       this.rawTableKeys.forEach((item) => {
         result[item.fromColumn] = item
       })
@@ -338,7 +337,7 @@ export default {
       }
 
       let cellValue = cell.getValue().toString();
-      cellValue =  cellValue.replace(/\n/g, ' ↩s ');
+      cellValue =  cellValue.replace(/\n/g, ' ↩ ');
       return cellValue;
     },
     valueCellFor(cell) {
@@ -367,9 +366,7 @@ export default {
       const valueCell = this.valueCellFor(cell)
       const value = valueCell.getValue()
 
-      console.log(cell.getField(), fromColumn)
       const keyData = this.tableKeys[fromColumn]
-      console.log("keydata", keyData)
       const tableName = keyData.toTable
       const schemaName = keyData.toSchema
       const table = this.$store.state.tables.find(t => {
@@ -409,7 +406,6 @@ export default {
         this.$noty.error("Can't edit column -- couldn't figure out primary key")
         // cell.setValue(cell.getOldValue())
         cell.restoreOldValue()
-        console.log(cell)
         return
       }
 
