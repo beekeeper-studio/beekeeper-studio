@@ -201,7 +201,7 @@ export default {
         }
 
 
-        
+
 
         const result = {
           title: column.columnName,
@@ -216,7 +216,7 @@ export default {
           variableHeight: true,
           headerTooltip: headerTooltip,
           cellEditCancelled: cell => cell.getRow().normalizeHeight(),
-          formatter: (cell) => _.isNull(cell.getValue()) ? '(NULL)' : cell.getValue(),
+          formatter: this.cellFormatter,
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             search: true,
@@ -332,6 +332,15 @@ export default {
 
   },
   methods: {
+    cellFormatter(cell) {
+      if (_.isNil(cell.getValue())) {
+        return '(NULL)'; //TODO: Make this configurable as soon we have a configuration window
+      }
+
+      let cellValue = cell.getValue().toString();
+      cellValue =  cellValue.replace(/\n/g, ' ↩s ');
+      return cellValue;
+    },
     valueCellFor(cell) {
       const fromColumn = cell.getField().replace(/-link$/g, "")
       const valueCell = cell.getRow().getCell(fromColumn)
