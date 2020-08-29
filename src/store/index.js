@@ -127,6 +127,9 @@ const store = new Vuex.Store({
     historyAdd(state, run) {
       state.history.unshift(run)
     },
+    historyRemove(state, historyQuery) {
+      state.history = _.without(state.favorites, historyQuery)
+    },
     favorites(state, list) {
       state.favorites = list
     },
@@ -288,6 +291,10 @@ const store = new Vuex.Store({
     async removeFavorite(context, favorite) {
       await favorite.remove()
       context.commit('removeUsedFavorite', favorite)
+    },
+    async removeHistoryQuery(context, historyQuery) {
+      await historyQuery.remove()
+      context.commit('historyRemove', historyQuery)
     },
     async menuActive(context, value) {
       context.commit('menuActive', value)
