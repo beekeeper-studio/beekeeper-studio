@@ -40,7 +40,7 @@ import VueClipboard from 'vue-clipboard2'
     TimeAgo.addLocale(en)
     // @ts-ignore
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
-    const appDb = path.join(config.userDirectory, 'app.db')
+    const appDb = path.join(config.userDirectory, process.env.NODE_ENV === 'production' ? 'app.db' : 'app-dev.db')
     const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])
     await connection.connect();
 

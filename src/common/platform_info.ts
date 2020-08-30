@@ -31,7 +31,7 @@ const platformInfo = {
   darkMode: testMode? true : e.nativeTheme.shouldUseDarkColors || windowPrefersDarkMode,
   userDirectory,
   testMode,
-  appDbPath: path.join(userDirectory, 'app.db'),
+  appDbPath: path.join(userDirectory, process.env.NODE_ENV === 'production' ? 'app.db' : 'app-dev.db'),
   updatesDisabled
 }
 
