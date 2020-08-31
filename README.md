@@ -1,3 +1,7 @@
+**Attention Existing MacOS, Windows, and AppImage users:**
+
+- Automatic update functionality was broken before version 1.7.5. Please update manually from the releases section on the right.
+
 # Beekeeper Studio
 
 Beekeeper Studio is a cross-platform SQL editor and database manager available for Linux, Mac, and Windows.
