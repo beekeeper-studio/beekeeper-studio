@@ -2,7 +2,9 @@ import { ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import globals from '../common/globals'
 import { getActiveWindows } from './WindowBuilder'
-import log from 'electron-log'
+import rawlog from 'electron-log'
+
+const log = rawlog.scope('update-manager')
 
 import platformInfo from '../common/platform_info'
 
@@ -24,16 +26,18 @@ function dealWithAppImage() {
 }
 
 function checkForUpdates() {
+  log.info('checking for updates right now')
   try {
     autoUpdater.checkForUpdates()
   } catch (error) {
-    console.error(`Could not check for updates: ${error.message}`)
+    log.error(`Could not check for updates: ${error.message}`)
   }
 }
 
 export function manageUpdates(debug) {
 
   if (platformInfo.environment === 'development' || platformInfo.isSnap || (platformInfo.isLinux && !platformInfo.isAppImage)) {
+    log.info("not doing any updates, didn't meet conditional")
     return
   }
   dealWithAppImage();  

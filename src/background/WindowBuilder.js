@@ -19,6 +19,11 @@ class BeekeeperWindow {
   win = null
   actionHandler = null
   reloaded = false
+
+  get webContents() {
+    return this.win ? this.win.webContents : null
+  }
+
   constructor(settings) {
     const theme = settings.theme
     const showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
