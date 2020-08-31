@@ -144,7 +144,8 @@ export class DbConnectionBase extends ApplicationEntity {
       this.sshHost,
       this.sshPort,
       this.defaultDatabase,
-      this.sshBastionHost
+      this.sshBastionHost,
+      this.socketPath
     ].map(part => part || "").join("")
     return Crypto.createHash('md5').update(str).digest('hex')
   }
