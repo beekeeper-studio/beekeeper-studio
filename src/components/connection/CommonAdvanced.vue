@@ -1,5 +1,5 @@
 <template>
-  <div class="advanced-connection-settings">
+  <div class="advanced-connection-settings" v-show="config.connectionMethod === 'default'">
     <h4 class="advanced-heading flex" :class="{enabled: config.sshEnabled}">
       <span class="expand">SSH Tunnel</span>
       <x-switch @click.prevent="config.sshEnabled = !config.sshEnabled" :toggled="config.sshEnabled"></x-switch>

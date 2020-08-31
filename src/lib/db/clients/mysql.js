@@ -422,6 +422,7 @@ function configDatabase(server, database) {
     password: server.config.password,
     database: database.database,
     multipleStatements: true,
+    socketPath: server.config.socketPath,
     dateStrings: true,
     supportBigNumbers: true,
     bigNumberStrings: true,

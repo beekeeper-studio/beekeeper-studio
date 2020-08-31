@@ -36,6 +36,7 @@ function parseConnectionType(t) {
 export class DbConnectionBase extends ApplicationEntity {
 
   _connectionType = null
+  _connectionMethod = 'default'
 
   @Column({ type: 'varchar', name: 'connectionType'})
   set connectionType(value) {
@@ -49,14 +50,29 @@ export class DbConnectionBase extends ApplicationEntity {
     } else if (this._connectionType === 'cockroachdb') {
       this.port = 26257
     }
+
+    this.updateSocketPath()
   }
 
   get connectionType() {
     return this._connectionType
   }
 
+  @Column({ type: 'varchar', name: 'connectionMethod'})
+  set connectionMethod(value) {
+    this._connectionMethod = value
+    this.updateSocketPath()
+  }
+
+  get connectionMethod() {
+    return this._connectionMethod
+  }
+
   @Column({type:"varchar", nullable: true})
-  host = 'localhost'
+  socketPath
+
+  @Column({type:"varchar", nullable: true})
+  host
 
   @Column({type: "int", nullable: true})
   port
@@ -137,6 +153,8 @@ export class DbConnectionBase extends ApplicationEntity {
   get simpleConnectionString() {
     if (this.connectionType === 'sqlite') {
       return path.basename(this.defaultDatabase || "./unknown.db")
+    } else if (this._connectionMethod === 'socket') {
+      return this.socketPath;
     } else {
       let connectionString = `${this.host}:${this.port}`;
       if (this.defaultDatabase) {
@@ -164,7 +182,15 @@ export class DbConnectionBase extends ApplicationEntity {
     }
   }
 
-
+  updateSocketPath() {
+    if (this._connectionMethod === 'socket') {
+      if (['mysql', 'mariadb'].includes(this._connectionType)) {
+        this.socketPath = '/var/run/mysqld/mysqld.sock'
+      } else if (this._connectionType === 'postgresql') {
+        this.socketPath = '/var/run/postgresql'
+      }
+    }
+  }
 }
 
 @Entity({ name: 'saved_connection'} )

@@ -9,6 +9,7 @@ export class UsedConnection extends DbConnectionBase {
     super()
     if (other) {
       this.connectionType = other.connectionType
+      this.connectionMethod = other.connectionMethod
       this.defaultDatabase = other.defaultDatabase
       this.username = other.username
       this.path = other.path

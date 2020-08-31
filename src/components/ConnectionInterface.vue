@@ -22,7 +22,7 @@
             </div>
             <form @action="submit" v-if="config">
               <div class="form-group">
-                <label for="connectionType">Connection Type</label>
+                <label for="connection-select">Connection Type</label>
                 <select name="connectionType" class="form-control custom-select" v-model="config.connectionType" id="connection-select">
                   <option disabled value="null">Select a connection type...</option>
                   <option :key="t.value" v-for="t in connectionTypes" :value="t.value">{{t.name}}</option>

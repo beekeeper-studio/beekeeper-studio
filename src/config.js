@@ -35,6 +35,10 @@ export default {
       { name: 'Amazon Redshift', value: 'redshift' },
       { name: 'CockroachDB', value: 'cockroachdb' }
     ],
+    connectionMethods: [
+      { name: 'Default', value: 'default' },
+      { name: 'Socket', value: 'socket' }
+    ]
   },
   maxResults: 50000
 }

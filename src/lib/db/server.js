@@ -19,7 +19,7 @@ export function createServer(serverConfig) {
 
     config: {
       ...serverConfig,
-      host: serverConfig.host || serverConfig.socketPath,
+      host: serverConfig._connectionMethod === 'default' ? serverConfig.host : serverConfig.socketPath,
     },
   };
 

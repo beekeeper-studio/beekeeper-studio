@@ -722,7 +722,7 @@ export async function truncateAllTables(conn, schema) {
 
 function configDatabase(server, database) {
   const config = {
-    host: server.config.host,
+    host: server.config.host || server.config.socketPath,
     port: server.config.port,
     password: server.config.password,
     database: database.database,

@@ -17,10 +17,10 @@ export default {
 
     return {
       client: config.connectionType,
-      host: config.host.trim(),
+      host: config.host ? config.host.trim() : null,
       port: config.port,
       domain: config.domain,
-      socketPath: null,
+      socketPath: config.socketPath,
       user: config.username ? config.username.trim() : null,
       osUser: osUsername,
       password: config.password,
