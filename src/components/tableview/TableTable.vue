@@ -53,7 +53,7 @@
         </span>
         <span class="statusbar-item" v-if="lastUpdatedText && !editError" :title="'Updated' + ' ' + lastUpdatedText">
           <i class="material-icons">update</i>
-          <span>{{lastUpdatedText}}</span>
+          <span>{{lastUpdatedText}} - load time: {{loadTime}}</span>
         </span>
         <span v-if="editError" class="statusbar-item error" :title="editError">
           <i class="material-icons">error</i>
@@ -142,10 +142,16 @@ export default {
       lastUpdated: null,
       lastUpdatedText: null,
       interval: setInterval(this.setlastUpdatedText, 10000),
-      totalRecords: 0
+      totalRecords: 0,
+      startLoadTime: null,
+      endLoadTime: null
     };
   },
   computed: {
+    loadTime() {
+      if (!this.startLoadTime || !this.endLoadTime) return '-'
+      return Math.abs((this.endLoadTime.getTime() - this.startLoadTime.getTime()) / 1000);
+    },
     totalRecordsText() {
       return `${this.totalRecords.toLocaleString()}`
     },
@@ -207,13 +213,14 @@ export default {
           title: column.columnName,
           field: column.columnName,
           titleFormatter: formatter,
+          width: 100,
           mutatorData: this.resolveDataMutator(column.dataType),
           dataType: column.dataType,
           cellClick: this.cellClick,
           cssClass: isPK ? 'primary-key' : '',
           editable: editable,
           editor: editable ? editorType : undefined,
-          variableHeight: true,
+          variableHeight: false,
           headerTooltip: headerTooltip,
           cellEditCancelled: cell => cell.getRow().normalizeHeight(),
           formatter: (cell) => _.isNull(cell.getValue()) ? '(NULL)' : cell.getValue(),
@@ -328,6 +335,10 @@ export default {
         scrollToStart: false,
         scrollPageUp: false,
         scrollPageDown: false
+      },
+      dataLoaded: () => {
+        log.info('table built')
+        this.endLoadTime = new Date()
       }
     });
 
@@ -509,6 +520,8 @@ export default {
       if (params.filters) {
         filters = params.filters;
       }
+      log.info('load begins')
+      this.startLoadTime = new Date()
 
       const result = new Promise((resolve, reject) => {
         (async () => {
