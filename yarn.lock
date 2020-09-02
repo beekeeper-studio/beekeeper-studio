@@ -11912,10 +11912,8 @@ table@^5.2.3:
     slice-ansi "^2.1.0"
     string-width "^3.0.0"
 
-tabulator-tables@^4.7.2:
-  version "4.7.2"
-  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-4.7.2.tgz#9897b123a9486692ed899c575ac04b672e16b831"
-  integrity sha512-UbG3/ylOfTmyJHk6EGpuO6hrTlfsKAmiNRz1hYZwhBzL2y9O3QnykVGhMTBSdaz4Cm38Ed4+Ez848dagzSg1qA==
+"tabulator-tables@file:../../oss/tabulator":
+  version "4.8.1"
 
 tapable@^1.0.0, tapable@^1.1.3:
   version "1.1.3"

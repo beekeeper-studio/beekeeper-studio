@@ -307,6 +307,7 @@ export default {
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
     this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
     this.tabulator = new Tabulator(this.$refs.table, {
+      virtualDomHoz:true,
       height: this.actualTableHeight,
       columns: this.tableColumns,
       nestedFieldSeparator: false,
@@ -520,6 +521,7 @@ export default {
               filters,
               this.table.schema
             );
+            log.info('table data loaded')
             const r = response.result;
             this.totalRecords = Number(response.totalRecords) || 0;
             this.response = response
