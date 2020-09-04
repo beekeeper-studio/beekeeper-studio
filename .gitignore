@@ -2,6 +2,7 @@
 .vscode/
 data/
 node_modules/
+dist/
 tmp/
 temp/
 test.db
