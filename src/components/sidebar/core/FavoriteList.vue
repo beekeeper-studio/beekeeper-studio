@@ -19,10 +19,10 @@
           </x-button>
         </a>
       </div>
-      <div class="toolbar" v-show="this.checkedFavorites.length > 0">
+      <div class="toolbar" v-show="checkedFavorites.length > 0">
         <div class="flex flex-right">
           <a class="btn btn-link" @click="discardCheckedFavorites">Discard</a>
-          <a :title="this.removeTitle" class="btn btn-primary" @click="removeCheckFavorites">Remove</a>
+          <a :title="removeTitle" class="btn btn-primary" @click="removeCheckedFavorites">Remove</a>
         </div>
       </div>
     </nav>
@@ -53,16 +53,15 @@
       async remove(favorite) {
         await this.$store.dispatch('removeFavorite', favorite)
       },
-      async removeCheckFavorites() {
-        this.checkedFavorites.forEach(favorite => {
-          this.remove(favorite)
-        })
+      async removeCheckedFavorites() {
+        for(let i = 0; i < this.checkedFavorites.length; i++) {
+          await this.remove(this.checkedFavorites[i])
+        }
         this.checkedFavorites = [];
       },
       discardCheckedFavorites() {
         this.checkedFavorites = [];
       }
     }
-
   }
 </script>
