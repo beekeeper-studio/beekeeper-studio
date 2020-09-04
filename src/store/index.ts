@@ -10,8 +10,8 @@ import { FavoriteQuery } from '../common/appdb/models/favorite_query'
 import { UsedQuery } from '../common/appdb/models/used_query'
 import ConnectionProvider from '../lib/connection-provider'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
-import { DBConnection, IDbColumn } from 'lib/db/client'
-import { IDbConnectionPublicServer } from 'lib/db/server'
+import { DBConnection, IDbColumn } from '../lib/db/client'
+import { IDbConnectionPublicServer } from '../lib/db/server'
 
 interface IDbEntityWithColumns {
   columns: IDbColumn[]
@@ -151,6 +151,9 @@ const store = new Vuex.Store<State>({
     historyAdd(state: State, run: UsedQuery) {
       state.history.unshift(run)
     },
+    historyRemove(state, historyQuery) {
+      state.history = _.without(state.history, historyQuery)
+    },
     favorites(state: State, list) {
       state.favorites = list
     },
@@ -179,7 +182,6 @@ const store = new Vuex.Store<State>({
     },
 
     async connect(context, config: SavedConnection) {
-      console.log('connect', config.defaultDatabase, context.state.username)
       if (context.state.username) {
         const server = ConnectionProvider.for(config, context.state.username)
         // TODO: Check case connection is been created with undefined as key
@@ -329,6 +331,10 @@ const store = new Vuex.Store<State>({
     async removeFavorite(context, favorite) {
       await favorite.remove()
       context.commit('removeUsedFavorite', favorite)
+    },
+    async removeHistoryQuery(context, historyQuery) {
+      await historyQuery.remove()
+      context.commit('historyRemove', historyQuery)
     },
     async menuActive(context, value) {
       context.commit('menuActive', value)
