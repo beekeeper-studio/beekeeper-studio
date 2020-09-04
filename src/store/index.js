@@ -128,7 +128,7 @@ const store = new Vuex.Store({
       state.history.unshift(run)
     },
     historyRemove(state, historyQuery) {
-      state.history = _.without(state.favorites, historyQuery)
+      state.history = _.without(state.history, historyQuery)
     },
     favorites(state, list) {
       state.favorites = list
