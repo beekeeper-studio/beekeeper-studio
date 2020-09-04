@@ -5,6 +5,7 @@ const e = electron.remote ? electron.remote : electron
 const p = electron.remote ? electron.remote.process : process
 const platform = p.env.OS_OVERRIDE ? p.env.OS_OVERRIDE : p.platform
 const testMode = p.env.TEST_MODE ? true : false
+const isDevEnv = e.app.isPackaged;
 const isWindows = platform === 'win32'
 const isMac = platform === 'darwin'
 const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
@@ -24,6 +25,7 @@ const platformInfo = {
   isSnap: p.env.ELECTRON_SNAP,
   isDevelopment: process.env.NODE_ENV !== 'production',
   isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
+  isDevEnv: isDevEnv,
   sshAuthSock: p.env.SSH_AUTH_SOCK,
   environment: process.env.NODE_ENV,
   debugEnabled: !!process.env.DEBUG,
@@ -31,7 +33,7 @@ const platformInfo = {
   darkMode: testMode? true : e.nativeTheme.shouldUseDarkColors || windowPrefersDarkMode,
   userDirectory,
   testMode,
-  appDbPath: path.join(userDirectory, process.env.NODE_ENV === 'production' ? 'app.db' : 'app-dev.db'),
+  appDbPath: path.join(userDirectory, isDevEnv ? 'app.db' : 'app-dev.db'),
   updatesDisabled
 }
 

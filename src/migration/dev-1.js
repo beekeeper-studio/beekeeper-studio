@@ -48,7 +48,7 @@ export default {
     {
       name: "Beekeeper's Database",
       connectionType: "sqlite",
-      defaultDatabase: path.join(platformInfo.userDirectory, process.env.NODE_ENV === 'production' ? 'app.db' : 'app-dev.db')
+      defaultDatabase: path.join(platformInfo.userDirectory, platformInfo.isDevEnv ? 'app-dev.db' : 'app.db')
     }
   ],
 
