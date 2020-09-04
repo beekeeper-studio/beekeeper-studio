@@ -1,6 +1,6 @@
 **Attention Existing MacOS, Windows, and AppImage users:**
 
-- Automatic update functionality was broken before version 1.7.5. Please update manually from the releases section on the right.
+- Automatic update functionality was broken before version 1.7.5. Please update manually from the releases section on the right. From 1.7.5 the app will automatically update (like it was supposed to).
 
 # Beekeeper Studio
 
