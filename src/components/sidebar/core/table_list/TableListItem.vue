@@ -1,6 +1,6 @@
 <template>
   <div class="list-item">
-    <a class="list-item-btn" role="button" v-bind:class="{'active': selected,'open': showColumns }" @mousedown.prevent="toggleColumns">
+    <a class="list-item-btn" role="button" @dblclick="openTable()" v-bind:class="{'active': selected,'open': showColumns }" @mousedown.prevent="toggleColumns">
       <span class="btn-fab open-close" >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
