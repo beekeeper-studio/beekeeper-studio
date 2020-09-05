@@ -144,15 +144,22 @@
         if (!table && tableName) {
           resolvedTable = this.$store.state.tables.find(t => t.name === tableName)
         }
-        const t = {
-          id: uuidv4(),
-          type: 'table',
-          table: resolvedTable || table,
-          connection: this.connection,
-          initialFilter: filter,
-          titleScope: "all"
+
+        const tableTab = this.tabItems.find(tab => tab.table === (resolvedTable || table) && tab.titleScope === "all")
+
+        if (tableTab) {
+          this.activeTab = tableTab
+        } else {
+          const t = {
+            id: uuidv4(),
+            type: 'table',
+            table: resolvedTable || table,
+            connection: this.connection,
+            initialFilter: filter,
+            titleScope: "all"
+          }
+          this.addTab(t)
         }
-        this.addTab(t)
       },
       openSettings(settings) {
         const t = {
