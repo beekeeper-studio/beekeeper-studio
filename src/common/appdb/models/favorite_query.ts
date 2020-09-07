@@ -10,8 +10,8 @@ export class FavoriteQuery extends ApplicationEntity {
   @Column({type: "text", nullable: false})
   text!: string
 
-  @Column("varchar")
-  database!: string
+  @Column({type: "varchar", nullable: true})
+  database: Nullable<string> = null
 
   @Index()
   @Column({type: "varchar", nullable: false})

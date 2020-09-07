@@ -39,7 +39,6 @@ import VueClipboard from 'vue-clipboard2'
     tls.DEFAULT_MIN_VERSION = "TLSv1"
     TimeAgo.addLocale(en)
     // @ts-ignore
-    // TODO: Check cause I dint find documentation
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
     const appDb = path.join(config.userDirectory, 'app.db')
     const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])

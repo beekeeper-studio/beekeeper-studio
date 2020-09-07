@@ -86,31 +86,6 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: "int", nullable: true})
   sshPort: number = 22
 
-  _sshMode: string = "agent"
-
-  @Column({name: "sshMode", type: "varchar", length: "8", nullable: false, default: "agent"})
-  set sshMode(value: string) {
-    this._sshMode = value
-    // TODO: This code dont make sense, have to be refactored
-    // @ts-ignore
-    if (!this._sshMode !== 'userpass') {
-      // TODO: sshPassword exist only at SavedConnection, it should moved here or this method moved to SavedConnection
-      // this.sshPassword = null
-    } else if (this._sshMode !== 'keyfile') {
-      this.sshKeyfile = null
-      // TODO: sshKeyfilePassword exist only at SavedConnection, it should moved here or this method moved to SavedConnection
-      // this.sshKeyfilePassword = null
-    }
-
-    if (this._sshMode === 'keyfile' && !this.sshKeyfile) {
-      this.sshKeyfile = resolveHomePathToAbsolute("~/.ssh/id_rsa")
-    }
-  }
-
-  get sshMode() {
-    return this._sshMode
-  }
-
   @Column({type: "varchar", nullable: true})
   sshKeyfile: Nullable<string> = null
 
@@ -128,8 +103,6 @@ export class DbConnectionBase extends ApplicationEntity {
     const str = [
       this.host,
       this.port,
-      // TODO: Check case path is not implemented
-      // this.path,
       this.uri,
       this.sshHost,
       this.sshPort,
@@ -226,6 +199,31 @@ export class SavedConnection extends DbConnectionBase {
   sshPassword: Nullable<string> = null
 
 
+
+  _sshMode: string = "agent"
+
+  @Column({name: "sshMode", type: "varchar", length: "8", nullable: false, default: "agent"})
+  set sshMode(value: string) {
+    this._sshMode = value
+    // TODO: This code dont make sense, have to be refactored
+    // @ts-ignore
+    if (!this._sshMode !== 'userpass') {
+      this.sshPassword = null
+    } else if (this._sshMode !== 'keyfile') {
+      this.sshKeyfile = null
+      this.sshKeyfilePassword = null
+    }
+
+    if (this._sshMode === 'keyfile' && !this.sshKeyfile) {
+      this.sshKeyfile = resolveHomePathToAbsolute("~/.ssh/id_rsa")
+    }
+  }
+
+  get sshMode() {
+    return this._sshMode
+  }
+
+
   parse(url: string) {
     try {
       const parsed = new ConnectionString(url)
@@ -259,8 +257,6 @@ export class SavedConnection extends DbConnectionBase {
     if (!this.rememberPassword) {
       this.password = null
       this.sshPassword = null
-      // TODO: Check the following column case its not implemented
-      // this.rememberSshKeyfilePassword = null
     }
   }
 

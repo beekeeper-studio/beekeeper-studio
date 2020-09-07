@@ -49,11 +49,9 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
       await new Promise(resolve => setTimeout(resolve, 500));
       const tunnelConfig = {
         fromPort: localPort,
-        toPort: config.port,
+        toPort: config.port || 22,
         toHost: config.host
       }
-      // TODO: Check case toPort can be null, but connection.forward don't accept null
-      // @ts-ignore
       const tunnel = await connection.forward(tunnelConfig)
       logger().debug('tunnel created!')
       const result = {

@@ -242,8 +242,6 @@ const store = new Vuex.Store<State>({
           const tables = onlyTables.concat(views).concat(materialized)
           context.commit("tablesLoading", `Loading ${tables.length} tables`)
 
-          // TODO: I think a the table parameter is missing
-          // @ts-ignore
           const tableColumns = await context.state.connection.listTableColumns()
           let viewColumns: IDbColumn[] = []
           for (let index = 0; index < materialized.length; index++) {

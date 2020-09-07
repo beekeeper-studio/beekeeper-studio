@@ -45,7 +45,7 @@ export interface IDbConnection {
   listViews: (filter?: IDbFilter) => Promise<IDbEntity[]>,
   listRoutines: (filter?: IDbFilter) => void,
   listMaterializedViewColumns: (db: string, table: string, schema?: string) => Promise<IDbColumn[]>
-  listTableColumns: (db: string, table: string, schema?: string) => Promise<IDbColumn[]>,
+  listTableColumns: (db: string, table?: string, schema?: string) => Promise<IDbColumn[]>,
   listTableTriggers: (table: string, schema?: string) => void,
   listTableIndexes: (db: string, table: string, schema?: string) => void,
   listSchemas: (db: string, filter?: IDbFilter) => void,
@@ -255,7 +255,7 @@ function listRoutines(server: IDbConnectionServer, database: IDbConnectionDataba
   return database.connection?.listRoutines(filter);
 }
 
-async function listTableColumns(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema?: string) {
+async function listTableColumns(server: IDbConnectionServer, database: IDbConnectionDatabase, table?: string, schema?: string) {
   checkIsConnected(server , database);
   return await database.connection?.listTableColumns(database.database, table, schema) || [];
 }
