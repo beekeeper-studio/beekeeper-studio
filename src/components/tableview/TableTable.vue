@@ -309,6 +309,7 @@ export default {
       height: this.actualTableHeight,
       columns: this.tableColumns,
       nestedFieldSeparator: false,
+      virtualDomHoz: true,
       ajaxURL: "http://fake",
       ajaxSorting: true,
       ajaxFiltering: true,
