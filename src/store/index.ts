@@ -184,7 +184,7 @@ const store = new Vuex.Store<State>({
     async connect(context, config: SavedConnection) {
       if (context.state.username) {
         const server = ConnectionProvider.for(config, context.state.username)
-        // TODO: Check case connection is been created with undefined as key
+        // TODO: (geovannimp) Check case connection is been created with undefined as key
         const connection = server.createConnection(config.defaultDatabase || undefined)
         await connection.connect()
         connection.connectionType = config.connectionType;
@@ -253,7 +253,7 @@ const store = new Vuex.Store<State>({
           const allColumns = tableColumns.concat(viewColumns)
 
           tables.forEach((table) => {
-            // TODO: Check the following 2 lines case is not been used
+            // TODO: (geovannimp) Check the following 2 lines case is not been used
             // const query = { tableName: table.name }
             // if (table.schema) query.schemaName = table.schema
             table.columns = allColumns.filter(row => {

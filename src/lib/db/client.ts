@@ -184,7 +184,7 @@ async function connect(server: IDbConnectionServer, database: IDbConnectionDatab
       logger().debug('creating ssh tunnel');
       server.sshTunnel = await connectTunnel(server.config);
 
-      // TODO: address and port dont exist at sshTunnel
+      // TODO: (geovannimp) address and port dont exist at sshTunnel
       // const { address, port } = server.sshTunnel
       // logger().debug('ssh forwarding through local connection %s:%d', address, port);
 
@@ -319,11 +319,11 @@ function listDatabases(server: IDbConnectionServer, database: IDbConnectionDatab
 async function getQuerySelectTop(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string, limit: number) {
   checkIsConnected(server , database);
   let limitValue = limit;
-  // TODO: _limit is not declared
+  // TODO: (geovannimp) _limit is not declared
   // @ts-ignore
   if (typeof _limit === 'undefined') {
     // await loadConfigLimit();
-    // TODO: limitSelect is null by default and never changes
+    // TODO: (geovannimp) limitSelect is null by default and never changes
     // @ts-ignore
     limitValue = typeof limitSelect !== 'undefined' ? limitSelect : DEFAULT_LIMIT;
   }
