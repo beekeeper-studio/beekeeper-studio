@@ -100,9 +100,7 @@ export default class NativeMenuActionHandlers implements IClientMenuActionHandle
   }
 
   addBeekeeper = async (_1: Electron.MenuItem, win: Electron.BrowserWindow) => {
-    // TODO: Check defaultDatabase cause it's not even typed and documentation was not found
-    // @ts-ignore
-    const existing = await SavedConnection.findOne({ defaultDatabase: platformInfo.appDbPath })
+    const existing = await SavedConnection.findOne({where: { defaultDatabase: platformInfo.appDbPath }})
     if (!existing) {
       const nu = new SavedConnection()
       nu.connectionType = 'sqlite'
