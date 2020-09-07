@@ -41,7 +41,6 @@ export default {
       await runner.dropColumns('saved_connection', temp_columns)
       await runner.commitTransaction()
     } catch (e) {
-      console.error(e)
       await runner.rollbackTransaction()
       throw e;
     }
