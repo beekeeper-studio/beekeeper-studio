@@ -1,5 +1,4 @@
 import { SavedConnection } from "../common/appdb/models/saved_connection";
-import { TableColumn } from 'typeorm';
 
 export default {
   name: "20200907-add_encrypted-columns",
