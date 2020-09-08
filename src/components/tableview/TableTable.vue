@@ -338,15 +338,6 @@ export default {
 
   },
   methods: {
-    cellFormatter(cell) {
-      if (_.isNil(cell.getValue())) {
-        return '(NULL)'; //TODO: Make this configurable as soon we have a configuration window
-      }
-
-      let cellValue = cell.getValue().toString();
-      cellValue =  cellValue.replace(/\n/g, ' ↩ ');
-      return cellValue;
-    },
     valueCellFor(cell) {
       const fromColumn = cell.getField().replace(/-link$/g, "")
       const valueCell = cell.getRow().getCell(fromColumn)
