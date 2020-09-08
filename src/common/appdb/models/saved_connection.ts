@@ -205,11 +205,11 @@ export class SavedConnection extends DbConnectionBase {
   @Column({name: "sshMode", type: "varchar", length: "8", nullable: false, default: "agent"})
   set sshMode(value: string) {
     this._sshMode = value
-    // TODO: (geovannimp) This code dont make sense, have to be refactored
-    // @ts-ignore
-    if (!this._sshMode !== 'userpass') {
+    if (this._sshMode !== 'userpass') {
       this.sshPassword = null
-    } else if (this._sshMode !== 'keyfile') {
+    }
+
+    if (this._sshMode !== 'keyfile') {
       this.sshKeyfile = null
       this.sshKeyfilePassword = null
     }

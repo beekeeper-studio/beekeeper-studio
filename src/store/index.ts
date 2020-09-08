@@ -253,9 +253,6 @@ const store = new Vuex.Store<State>({
           const allColumns = tableColumns.concat(viewColumns)
 
           tables.forEach((table) => {
-            // TODO: (geovannimp) Check the following 2 lines case is not been used
-            // const query = { tableName: table.name }
-            // if (table.schema) query.schemaName = table.schema
             table.columns = allColumns.filter(row => {
               return row.tableName === table.name && (!table.schema || table.schema === row.schemaName)
             })
