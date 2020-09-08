@@ -16,7 +16,7 @@ export default {
         e.sshPassword = original_connections.find(c => c.id == e.id).sshPassword
       });
 
-      SavedConnection.save(entities);
+      await SavedConnection.save(entities);
 
       await runner.commitTransaction()
     } catch (e) {
