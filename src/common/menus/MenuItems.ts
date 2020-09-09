@@ -1,4 +1,4 @@
-import { IClientMenuActionHandler } from '../../lib/menu/ClientMenuActionHandler';
+import { IMenuActionHandler } from 'common/interfaces/IMenuActionHandler';
 import { IGroupedUserSettings } from '../appdb/models/user_setting';
 import platformInfo from "../platform_info";
 
@@ -6,7 +6,7 @@ interface IMenuItems {
   [x: string]: Electron.MenuItemConstructorOptions
 }
 
-export function menuItems(actionHandler: IClientMenuActionHandler, settings: IGroupedUserSettings): IMenuItems {
+export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedUserSettings): IMenuItems {
   return {
     quit: {
       id: 'quit',

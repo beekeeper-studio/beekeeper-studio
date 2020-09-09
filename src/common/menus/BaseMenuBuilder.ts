@@ -1,5 +1,5 @@
 
-import { IClientMenuActionHandler } from '../../lib/menu/ClientMenuActionHandler'
+import { IMenuActionHandler } from 'common/interfaces/IMenuActionHandler'
 import { IGroupedUserSettings } from '../appdb/models/user_setting'
 import { menuItems } from './MenuItems'
 // TODO (matthew): When multi-window
@@ -9,7 +9,7 @@ export default class BaseMenuBuilder {
 
   app = "Beekeeper Studio"
 
-  constructor(private settings: IGroupedUserSettings, private actionHandlers: IClientMenuActionHandler) {}
+  constructor(private settings: IGroupedUserSettings, private actionHandlers: IMenuActionHandler) {}
 
   buildTemplate() {
     throw new Error("Must implement buildTemplate for your platform")

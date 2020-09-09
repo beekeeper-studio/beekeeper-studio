@@ -6,14 +6,14 @@ import platformInfo from '../common/platform_info'
 import path from 'path'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
-import { IClientMenuActionHandler } from '../lib/menu/ClientMenuActionHandler'
+import { IMenuActionHandler } from 'common/interfaces/IMenuActionHandler'
 
 function getIcon() {
   const iconPrefix = platformInfo.environment === 'development' ? 'public' : ''
   return path.resolve(path.join(__dirname, '..', `${iconPrefix}/icons/png/512x512.png`))
 }
 
-export default class NativeMenuActionHandlers implements IClientMenuActionHandler {
+export default class NativeMenuActionHandlers implements IMenuActionHandler {
   constructor(private settings: IGroupedUserSettings) {}
 
   quit() {
