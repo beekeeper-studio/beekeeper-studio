@@ -211,6 +211,7 @@
         ]
       },
       keymap() {
+        if (!this.active) return {}
         const result = {}
         result[this.ctrlOrCmd('l')] = this.selectEditor
         return result

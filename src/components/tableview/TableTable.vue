@@ -172,6 +172,8 @@ export default {
       return result
     },
     tableColumns() {
+      const columnWidth = this.table.columns.length > 20 ? 125 : undefined
+      const keyWidth = 40
       const results = []
       // 1. add a column for a real column
       // if a FK, add another column with the link
@@ -209,6 +211,7 @@ export default {
           mutatorData: this.resolveDataMutator(column.dataType),
           dataType: column.dataType,
           cellClick: this.cellClick,
+          width: columnWidth,
           cssClass: isPK ? 'primary-key' : '',
           editable: editable,
           editor: editable ? editorType : undefined,
@@ -237,6 +240,8 @@ export default {
           const keyResult = {
             headerSort: false,
             download: false,
+            width: keyWidth,
+            resizable: false,
             field: column.columnName + '-link',
             title: "",
             cssClass: "foreign-key-button",
@@ -303,12 +308,14 @@ export default {
       this.filter = _.clone(this.initialFilter)
     }
 
+
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
     this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
     this.tabulator = new Tabulator(this.$refs.table, {
       height: this.actualTableHeight,
       columns: this.tableColumns,
       nestedFieldSeparator: false,
+      virtualDomHoz: true,
       ajaxURL: "http://fake",
       ajaxSorting: true,
       ajaxFiltering: true,
@@ -331,15 +338,6 @@ export default {
 
   },
   methods: {
-    cellFormatter(cell) {
-      if (_.isNil(cell.getValue())) {
-        return '(NULL)'; //TODO: Make this configurable as soon we have a configuration window
-      }
-
-      let cellValue = cell.getValue().toString();
-      cellValue =  cellValue.replace(/\n/g, ' ↩ ');
-      return cellValue;
-    },
     valueCellFor(cell) {
       const fromColumn = cell.getField().replace(/-link$/g, "")
       const valueCell = cell.getRow().getCell(fromColumn)
