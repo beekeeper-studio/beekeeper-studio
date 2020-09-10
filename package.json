@@ -12,12 +12,12 @@
     "serve": "vue-cli-service serve",
     "test:unit": "TEST_MODE=1 vue-cli-service test:unit",
     "lint": "vue-cli-service lint",
+    "docs:build": "vuepress build docs",
+    "docs:dev": "vuepress dev docs",
     "electron:build": "vue-cli-service electron:build",
     "electron:serve": "vue-cli-service electron:serve --host localhost",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
-    "docs:dev": "vuepress dev docs",
-    "docs:build": "vuepress build docs",
     "release:prs": "./build/get-prs.sh"
   },
   "main": "background.js",
@@ -36,6 +36,7 @@
     "knex": "^0.21.2",
     "lodash": "^4.17.19",
     "material-icons": "^0.3.1",
+    "mkdirp": "^1.0.4",
     "mssql": "^6.2.0",
     "mysql2": "^2.1.0",
     "node-sass": "^4.12.0",
@@ -63,8 +64,10 @@
     "v-hotkey": "^0.8.0",
     "v-tooltip": "^2.0.2",
     "vue": "^2.6.10",
+    "vue-class-component": "^7.2.3",
     "vue-clipboard2": "^0.3.1",
     "vue-js-modal": "^1.3.33",
+    "vue-property-decorator": "^8.4.2",
     "vuejs-noty": "^0.1.3",
     "vuex": "^3.1.1",
     "vuex-persist": "^2.0.1",
@@ -73,12 +76,22 @@
     "yup": "^0.27.0"
   },
   "devDependencies": {
-    "@types/node": "^8.0.29",
+    "@types/codemirror": "^0.0.97",
+    "@types/javascript-time-ago": "^2.0.1",
+    "@types/jest": "^24.0.19",
+    "@types/jquery": "^3.5.1",
+    "@types/lodash": "^4.14.159",
+    "@types/mkdirp": "^1.0.1",
+    "@types/node": "^12.12.54",
     "@types/tabulator-tables": "^4.7.2",
+    "@typescript-eslint/eslint-plugin": "^3.9.1",
+    "@typescript-eslint/parser": "^3.9.1",
     "@vue/cli-plugin-babel": "^4.1.2",
     "@vue/cli-plugin-eslint": "^4.1.2",
+    "@vue/cli-plugin-typescript": "~4.5.4",
     "@vue/cli-plugin-unit-jest": "~4.4.0",
     "@vue/cli-service": "^4.1.2",
+    "@vue/eslint-config-typescript": "^5.0.2",
     "@vue/test-utils": "^1.0.3",
     "aws-sdk": "^2.645.0",
     "babel-eslint": "^10.0.1",
@@ -88,6 +101,7 @@
     "electron-updater": "^4.2.5",
     "eslint": "^5.16.0",
     "eslint-plugin-vue": "^5.0.0",
+    "typescript": "^3.9.7",
     "vue-cli-plugin-electron-builder": "^2.0.0-rc.1",
     "vue-template-compiler": "^2.6.10",
     "vuepress": "^1.5.0"
@@ -99,13 +113,14 @@
     },
     "extends": [
       "plugin:vue/essential",
-      "eslint:recommended"
+      "eslint:recommended",
+      "@vue/typescript"
     ],
     "rules": {
       "no-console": "off"
     },
     "parserOptions": {
-      "parser": "babel-eslint",
+      "parser": "@typescript-eslint/parser",
       "ecmaFeatures": {
         "legacyDecorators": true
       }
