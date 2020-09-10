@@ -314,8 +314,7 @@ function listDatabases(server: IDbConnectionServer, database: IDbConnectionDatab
 
 async function getQuerySelectTop(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string, limit: number) {
   checkIsConnected(server , database);
-  let limitValue = limit;
-  return database.connection?.getQuerySelectTop(table, limitValue, schema);
+  return database.connection?.getQuerySelectTop(table, limit, schema);
 }
 
 function getTableCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {
