@@ -1,3 +1,5 @@
 #! /bin/bash
 
-yarn run electron:serve --linux deb snap --arm64 --armv7l --publish always
+set -euxo pipefail
+
+yarn run electron:build --arm64 --armv7l --publish always
