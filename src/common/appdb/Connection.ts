@@ -22,8 +22,6 @@ export default class Connection {
   constructor(private path: string, private logging: LoggerOptions) {}
 
   async connect() {
-    // TODO: (geovannimp) Check subscriptions cause it's not even typed and documentation was not found (fixed by https://github.com/beekeeper-studio/beekeeper-studio/pull/322)
-    // @ts-ignore
     this.connection = await createConnection({
       database: this.path,
       type: 'sqlite',
