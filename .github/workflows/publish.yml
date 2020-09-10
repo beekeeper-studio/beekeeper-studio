@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-18.04, windows-latest]
+        os: [macos-latest, ubuntu-18.04, windows-latest, ubuntu-arm64]
 
     steps:
       - name: Check out Git repository
@@ -43,22 +43,13 @@ jobs:
           echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
 
       - name: Build and Publish (ARM Linux)
-        uses: samuelmeuli/action-electron-builder@v1
+        run: ./build/arm-publish.sh
         if: startsWith(matrix.os, 'ubuntu-arm64')
-        with:
-          # GitHub token, automatically provided to the action
-          # (No need to define this secret in the repo settings)
-          github_token: ${{ secrets.github_token }}
-          skip_build: true
-          use_vue_cli: true
-          max_attempts: 2
-          args: "--armv7l --arm64"
-
-          # If the commit is tagged with a version (e.g. "v1.0.0"),
-          # release the app after building
-          release: true
         env:
-          BT_TOKEN: "${{secrets.bintray_apikey}}"
+          GH_TOKEN: ${{ secrets.github_token }}
+          BT_TOKEN: ${{ secrets.bintray_apikey }}
+          USE_SYSTEM_FPM: true
+          SNAPCRAFT_BUILD_ENVIRONMENT: host
 
       - name: Build and Publish
         if: "!startsWith(matrix.os, 'ubuntu-arm64')"
