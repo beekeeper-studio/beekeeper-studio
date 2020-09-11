@@ -1,6 +1,7 @@
 
 $errorColor:             $brand-danger;
 $foreign-key-width:      24px;
+$cell-max-width: 300px;
 
 .tabulator-row {
   background: transparent;
@@ -10,6 +11,7 @@ $foreign-key-width:      24px;
     border: 1px solid transparent;
     padding: 4px 8px;
     min-height: 28px;
+    max-width: $cell-max-width;
     height: 28px;
     line-height: 20px;
     i.fk-link {
@@ -173,6 +175,7 @@ $foreign-key-width:      24px;
       .tabulator-col-content {
         padding: 0 8px;
         line-height: 32px;
+        max-width: $cell-max-width;
         .tabulator-arrow {
           top: 14px;
           border-width: 4px!important;
