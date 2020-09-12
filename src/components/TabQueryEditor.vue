@@ -222,12 +222,19 @@
       hintOptions() {
         const result = {}
         this.tables.forEach(table => {
-          const cleanColumns = table.columns.map(col => {
-            return col.columnName
-          })
-          if (this.connectionType === 'postgresql' && /[A-Z]/.test(table.name)) {
+          const cleanColumns = table.columns
+            .filter(col => !/[A-Z .]/.test(col.columnName))
+            .map(col => { return col.columnName })
+
+          const quotedColumns = table.columns
+            .filter(col => /[A-Z .]/.test(col.columnName))
+            .map(col => { return `"${col.columnName}"` })
+
+          cleanColumns.push(...quotedColumns)
+
+          if (this.connectionType === 'postgresql' && /[A-Z .]/.test(table.name))
             result[`"${table.name}"`] = cleanColumns
-          }
+          
           result[table.name] = cleanColumns
         })
         return { tables: result }
@@ -402,9 +409,8 @@
         return false
       },
       wrapIdentifier(value) {
-        if (value && this.connectionType === 'postgresql' && /[A-Z]/.test(value)) {
-          return `"${value.replace(/^"|"$/g, '')}"`
-        }
+        if (value && this.connectionType === 'postgresql' && /[A-Z. ]/.test(value) && !/["]/.test(value))
+          return `"${value}"`
         return value;
       },
       maybeAutoComplete(editor, e) {
@@ -526,9 +532,12 @@
         if (this.connectionType === 'postgresql')  {
           this.editor.on("beforeChange", (cm, co) => {
             const { to, from, origin, text } = co;
-            if (origin === 'complete') {
-              let [tableName, colName] = text[0].split('.');
-              const newText = [[this.wrapIdentifier(tableName), this.wrapIdentifier(colName)].filter(s => s).join('.')]
+            
+            const keys = Object.keys(CodeMirror.resolveMode(this.editor.options.mode).keywords)
+            const keywords = keys.map(k => {return k.toUpperCase()})
+            
+            if (origin === 'complete' && !keywords.includes(text[0])) {
+              const newText = [this.wrapIdentifier(text[0])]
               co.update(from, to, newText, origin);
             }
           })
