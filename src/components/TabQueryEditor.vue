@@ -409,7 +409,7 @@
         return false
       },
       wrapIdentifier(value) {
-        if (value && this.connectionType === 'postgresql' && /[A-Z. ]/.test(value) && !/["]/.test(value))
+        if (value && this.connectionType === 'postgresql' && /[A-Z ]/.test(value) && !/["]/.test(value))
           return `"${value}"`
         return value;
       },
