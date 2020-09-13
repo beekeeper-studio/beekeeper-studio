@@ -533,10 +533,9 @@
           this.editor.on("beforeChange", (cm, co) => {
             const { to, from, origin, text } = co;
             
-            const keys = Object.keys(CodeMirror.resolveMode(this.editor.options.mode).keywords)
-            const keywords = keys.map(k => {return k.toUpperCase()})
+            const keywords = CodeMirror.resolveMode(this.editor.options.mode).keywords
             
-            if (origin === 'complete' && !keywords.includes(text[0])) {
+            if (origin === 'complete' && keywords[text[0].toLowerCase()] != true) {
               const newText = [this.wrapIdentifier(text[0])]
               co.update(from, to, newText, origin);
             }
