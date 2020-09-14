@@ -222,20 +222,17 @@
       hintOptions() {
         const result = {}
         this.tables.forEach(table => {
-          const cleanColumns = table.columns
-            .filter(col => !/[A-Z .]/.test(col.columnName))
-            .map(col => { return col.columnName })
+          const cleanColumns = table.columns.map(col => {
+            return /\./.test(col.columnName) ? `"${col.columnName}"` : col.columnName
+          })
 
-          const quotedColumns = table.columns
-            .filter(col => /[A-Z .]/.test(col.columnName))
-            .map(col => { return `"${col.columnName}"` })
-
-          cleanColumns.push(...quotedColumns)
-
-          if (this.connectionType === 'postgresql' && /[A-Z .]/.test(table.name))
+          // add quoted option for everyone that needs to be quoted
+          if (this.connectionType === 'postgresql' && /[^a-z0-9_]/.test(table.name))
             result[`"${table.name}"`] = cleanColumns
           
-          result[table.name] = cleanColumns
+          // don't add table names that can get in conflict with database schema 
+          if (!/\./.test(table.name))
+            result[table.name] = cleanColumns
         })
         return { tables: result }
       },
@@ -408,11 +405,6 @@
       inQuote() {
         return false
       },
-      wrapIdentifier(value) {
-        if (value && this.connectionType === 'postgresql' && /[A-Z ]/.test(value) && !/["]/.test(value))
-          return `"${value}"`
-        return value;
-      },
       maybeAutoComplete(editor, e) {
         // BUGS:
         // 1. only on periods if not in a quote
@@ -532,12 +524,18 @@
         if (this.connectionType === 'postgresql')  {
           this.editor.on("beforeChange", (cm, co) => {
             const { to, from, origin, text } = co;
-            
+
             const keywords = CodeMirror.resolveMode(this.editor.options.mode).keywords
-            
+
+            // quote names when needed
             if (origin === 'complete' && keywords[text[0].toLowerCase()] != true) {
-              const newText = [this.wrapIdentifier(text[0])]
-              co.update(from, to, newText, origin);
+              const names = text[0]
+                .match(/("[^"]*"|[^.]+)/g)
+                .map(n => /[^a-z0-9_]/.test(n) && !/"/.test(n) ? `"${n}"` : n)
+                .join('.')
+              console.log(names)
+  
+              co.update(from, to, [names], origin)
             }
           })
         }
