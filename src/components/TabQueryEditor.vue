@@ -227,7 +227,7 @@
           })
 
           // add quoted option for everyone that needs to be quoted
-          if (this.connectionType === 'postgresql' && /[^a-z0-9_]/.test(table.name))
+          if (this.connectionType === 'postgresql' && (/[^a-z0-9_]/.test(table.name) || /^\d/.test(table.name)))
             result[`"${table.name}"`] = cleanColumns
           
           // don't add table names that can get in conflict with database schema 
@@ -531,9 +531,9 @@
             if (origin === 'complete' && keywords[text[0].toLowerCase()] != true) {
               const names = text[0]
                 .match(/("[^"]*"|[^.]+)/g)
+                .map(n => /^\d/.test(n) ? `"${n}"` : n)
                 .map(n => /[^a-z0-9_]/.test(n) && !/"/.test(n) ? `"${n}"` : n)
                 .join('.')
-              console.log(names)
   
               co.update(from, to, [names], origin)
             }
