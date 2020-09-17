@@ -3,6 +3,11 @@
 // ----------------------------------
 .pinned {
   .list-group {
+    .list-item {
+      span.item-wrapper {
+        display: flex;
+      }
+    }
     .list-item-btn {
       .actions {
         display: flex;
