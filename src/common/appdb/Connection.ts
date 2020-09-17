@@ -28,9 +28,6 @@ export default class Connection {
       synchronize: false,
       migrationsRun: false,
       entities: models,
-      subscriptions: [
-        EncryptedColumnSubscriber
-      ],
       logging: this.logging,
     })
     return this.connection

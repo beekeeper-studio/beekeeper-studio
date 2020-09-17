@@ -259,10 +259,12 @@
           }
         }
       }
-      &.active {
-        background-color: blue;
-      }
     }
+
+    &.active {
+      background-color: rgba($theme-base, 0.1);
+    }
+
     &.open {
       // background: rgba($theme-base, 0.03);
       .open-close {

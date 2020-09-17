@@ -30,7 +30,7 @@
       <x-contextmenu>
         <x-menu>
           <x-menuitem @click.prevent="formatSql">
-            <x-label>Format Query</x-label>
+            <x-label>Format query</x-label>
             <x-shortcut value="Control+Shift+F"></x-shortcut>
           </x-menuitem>
         </x-menu>

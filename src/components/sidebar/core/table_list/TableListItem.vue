@@ -4,7 +4,7 @@
       <span class="btn-fab open-close" @mousedown.prevent="toggleColumns" >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
-      <span class="item-wrapper" @mousedown.prevent="$emit('selected', table)" @dblclick.prevent="openTable">
+      <span class="item-wrapper" @mousedown.prevent="selectTable" @dblclick.prevent="openTable">
         <i :title="title" :class="iconClass" class="item-icon material-icons">grid_on</i>
         <span class="table-name truncate expand">{{table.name}}</span>
       </span>
@@ -13,6 +13,19 @@
         <span v-if="pinned.includes(table)" @mousedown.prevent.stop="unpin" class="btn-fab unpin" :title="'Unpin'"><i class="material-icons">clear</i></span>
         <span v-if="pinned.includes(table)" class="btn-fab pinned"><i class="bk-pin" :title="'Unpin'"></i></span>
       </span>
+          <x-contextmenu>
+      <x-menu>
+        <x-menuitem @click.prevent="copyTable">
+          <x-label>Copy table name</x-label>
+        </x-menuitem>
+        <x-menuitem @click.prevent="openTable">
+          <x-label>Open table</x-label>
+        </x-menuitem>
+        <x-menuitem @click.prevent="toggleColumns">
+          <x-label>Toggle columns</x-label>
+        </x-menuitem>
+      </x-menu>
+    </x-contextmenu>
     </a>
     <div v-show="showColumns" class="sub-items">
       <span v-bind:key="c.columnName" v-for="(c, i) in table.columns" class="sub-item">
@@ -20,6 +33,7 @@
         <span class="badge" v-bind:class="c.dataType"><span>{{c.dataType}}</span></span>
       </span>
     </div>
+
   </div>
 </template>
 
@@ -73,6 +87,12 @@
       ...mapGetters(['pinned'])
     },
     methods: {
+      copyTable() {
+        this.$copyText(this.table.name)
+      },
+      selectTable() {
+        this.$emit('selected', this.table)
+      },
       selectColumn(i) {
         this.selectChildren(this.$refs.title[i])
       },
