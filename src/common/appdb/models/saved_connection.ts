@@ -3,12 +3,15 @@ import Crypto from 'crypto'
 import { Entity, Column, BeforeInsert, BeforeUpdate } from "typeorm"
 
 import {ApplicationEntity} from './application_entity'
-import {EncryptedColumn} from 'typeorm-encrypted-column'
 import { resolveHomePathToAbsolute } from '../../utils'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
 import log from 'electron-log'
 import { IDbClients } from 'lib/db/client'
+import { EncryptTransformer } from '../transformers/Transformers'
+
+
+const encrypt = new EncryptTransformer(loadEncryptionKey())
 
 export const ConnectionTypes = [
   { name: 'MySQL', value: 'mysql' },
@@ -162,40 +165,13 @@ export class SavedConnection extends DbConnectionBase {
   @Column({type: 'boolean', default: true})
   rememberPassword: boolean = true
 
-  @EncryptedColumn({
-    type: 'varchar',
-    nullable: true,
-    encrypt: {
-      key: loadEncryptionKey(),
-      algorithm: 'aes-256-cbc',
-      ivLength: 16,
-      looseMatching: false
-    }
-  })
+  @Column({type: 'varchar', nullable: true, transformer: [encrypt]})
   password: Nullable<string> = null
 
-  @EncryptedColumn({
-    type: "varchar",
-    nullable: true,
-    encrypt: {
-      key: loadEncryptionKey(),
-      algorithm: 'aes-256-cbc',
-      ivLength: 16,
-      looseMatching: false
-    }
-  })
+  @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshKeyfilePassword: Nullable<string> = null
 
-  @EncryptedColumn({
-    type: 'varchar',
-    nullable: true,
-    encrypt: {
-      key: loadEncryptionKey(),
-      algorithm: 'aes-256-cbc',
-      ivLength: 16,
-      looseMatching: false
-    }
-  })
+  @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshPassword: Nullable<string> = null
 
 
@@ -222,7 +198,6 @@ export class SavedConnection extends DbConnectionBase {
   get sshMode() {
     return this._sshMode
   }
-
 
   parse(url: string) {
     try {
@@ -257,6 +232,7 @@ export class SavedConnection extends DbConnectionBase {
     if (!this.rememberPassword) {
       this.password = null
       this.sshPassword = null
+      this.sshKeyfilePassword = null
     }
   }
 
