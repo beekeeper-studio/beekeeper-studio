@@ -17,22 +17,8 @@
       <nav class="list-group flex-col">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
-            <!-- <span class="btn-fab open">
-              <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
-            </span> -->
             <div>Pinned <span class="badge">{{pinned.length}}</span></div>
           </div>
-          <!-- <div class="actions">
-            <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
-              <i class="material-icons">unfold_less</i>
-            </a>
-            <a @click.prevent="expandAll" v-tooltip="'Expand All'">
-              <i class="material-icons">unfold_more</i>
-            </a>
-            <a @click.prevent="refreshTables" v-tooltip="'Refresh'">
-              <i class="material-icons">refresh</i>
-            </a>
-          </div> -->
         </div>
         <div class="list-body">
           <table-list-item
@@ -93,6 +79,12 @@
                 :forceExpand="allExpanded"
                 :forceCollapse="allCollapsed"
               ></table-list-item>
+              <routine-item
+                v-for="routine in filter(blob.routines, filterQuery)"
+                :key="routine.routineName"
+                :routine="routine"
+              >
+                </routine-item>
             </TableListSchema>
           </div>
           <div v-else>
@@ -106,6 +98,12 @@
               :forceExpand="allExpanded"
               :forceCollapse="allCollapsed"
             ></table-list-item>
+              <routine-item
+                v-for="routine in filter(blob.routines, filterQuery)"
+                :key="routine.routineName"
+                :routine="routine"
+              >
+              </routine-item>
           </div>
         </div>
       </nav>
@@ -115,7 +113,8 @@
         There are no tables in <span class="truncate">{{database}}</span>
       </div>
     </div>
-    <div class="empty" v-else>
+
+    <div class="empty" v-if="tablesLoading">
       {{tablesLoading}}
     </div>
   </div>
@@ -151,7 +150,7 @@
           this.$refs.tables
         ]
       },
-      ...mapState(['tables', 'connection', 'database', 'tablesLoading']),
+      ...mapState(['tables', 'connection', 'database', 'tablesLoading', 'routines']),
       ...mapGetters(['pinned', 'schemaTables', 'tablesHaveSchemas']),
     },
     watch: {

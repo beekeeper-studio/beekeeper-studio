@@ -17,7 +17,13 @@
         v-show="activeItem === 'tables'"
       >
         <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
-        <table-list></table-list>
+        <div class="split-wrapper">
+          <pinned-list></pinned-list>
+          <table-list></table-list>
+          <!-- TODO - Build these lists -->
+          <function-list></function-list>
+          <procedure-list></procedure-list>
+        </div>
       </div>
 
       <!-- History -->
@@ -59,11 +65,17 @@
   import HistoryList from './core/HistoryList'
   import FavoriteList from './core/FavoriteList'
   import DatabaseDropdown from './core/DatabaseDropdown'
+  import FunctionList from './core/FunctionList'
+  import PinnedList from './core/PinnedList'
+  import ProcedureList from './core/ProcedureList'
 
   import { mapState } from 'vuex'
 
   export default {
-    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList },
+    components: { TableList, DatabaseDropdown, HistoryList, 
+      GlobalSidebar, FavoriteList, PinnedList, FunctionList,
+      ProcedureList
+    },
     data() {
       return {
         tableLoadError: null,

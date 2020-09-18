@@ -39,11 +39,17 @@ export interface IDbUpdate {
   schema?: string
 }
 
+export interface IDbRoutine {
+  schema?: string
+  routineName: string
+  routineType: string
+}
+
 export interface IDbConnection {
   disconnect: () => void,
   listTables: (db: string, filter?: IDbFilter) => Promise<IDbEntity[]>,
   listViews: (filter?: IDbFilter) => Promise<IDbEntity[]>,
-  listRoutines: (filter?: IDbFilter) => void,
+  listRoutines: (filter?: IDbFilter) => Promise<IDbRoutine[]>,
   listMaterializedViewColumns: (db: string, table: string, schema?: string) => Promise<IDbColumn[]>
   listTableColumns: (db: string, table?: string, schema?: string) => Promise<IDbColumn[]>,
   listTableTriggers: (table: string, schema?: string) => void,

@@ -10,7 +10,7 @@ import { FavoriteQuery } from '../common/appdb/models/favorite_query'
 import { UsedQuery } from '../common/appdb/models/used_query'
 import ConnectionProvider from '../lib/connection-provider'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
-import { DBConnection, IDbColumn } from '../lib/db/client'
+import { DBConnection, IDbColumn, IDbRoutine } from '../lib/db/client'
 import { IDbConnectionPublicServer } from '../lib/db/server'
 
 interface IDbEntityWithColumns {
@@ -24,6 +24,7 @@ interface State {
   connection: Nullable<DBConnection>,
   database: Nullable<string>,
   tables: IDbEntityWithColumns[],
+  routines: IDbRoutine[],
   tablesLoading: string,
   pinStore: {
     [x: string]: string[]
@@ -110,6 +111,9 @@ const store = new Vuex.Store<State>({
     },
     tables(state, tables) {
       state.tables = tables
+    },
+    routines(state, routines) {
+      state.routines = routines
     },
     tablesLoading(state, value: string) {
       state.tablesLoading = value
@@ -218,6 +222,7 @@ const store = new Vuex.Store<State>({
         }
         context.commit('updateConnection', {connection, database: newDatabase})
         await context.dispatch('updateTables')
+        await context.dispatch('updateRoutines')
       }
     },
     async updateTables(context) {
@@ -264,6 +269,13 @@ const store = new Vuex.Store<State>({
           context.commit("tablesLoading", null)
         }
       }
+    },
+
+    async updateRoutines(context) {
+      if (!context.state.connection) return;
+      const connection = context.state.connection
+      const routines = await connection.listRoutines({ schema: null })
+      context.commit('routines', routines)
     },
 
     async pinTable(context, table) {
