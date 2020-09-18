@@ -443,13 +443,7 @@
         this.selectEditor()
       },
       toggleComment() {
-        const cursor = this.editor.getCursor();
-
         this.editor.execCommand('toggleComment')
-        this.editor.setCursor({
-          line: cursor.line + 1,
-          char: 0
-        })
       },
     },
     mounted() {
