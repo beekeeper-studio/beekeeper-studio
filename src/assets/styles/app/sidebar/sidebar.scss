@@ -150,9 +150,27 @@
       }
     }
   }
+  
+  .toolbar {
+    // position: absolute;
+    // bottom: 5px;
+    // left: 0;
+    // width: 100%;
+    margin-right: 0;
+    margin-left: 0;
+    // background: darken($theme-bg, 3%);
+    padding: $gutter-h ($gutter-h * 0.5);
+    .btn {
+      min-width: 0;
+    }
+  }
 }
-.table-list {
+.table-list, 
+.sidebar-list {
   flex-grow: 1;
+}
+.sidebar-list {
+  flex: 1 1 100%;
 }
 
 .badge {
@@ -184,6 +202,7 @@
       font-size: 90%;
       font-weight: normal;
       color: $text;
+      margin-top: -0.1rem;
       margin-left: ($gutter-h * 0.75);
       border-radius: $list-heading-height;
       background: $border-color;
@@ -208,7 +227,7 @@
 .list-body {
   flex: 1 1 auto;
   height: 0;
-  max-height: -webkit-fill-available;
+  // max-height: -webkit-fill-available;
   padding: $gutter-h 0;
   overflow: hidden;
   overflow-y: auto;
@@ -217,8 +236,8 @@
 .list-group {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  padding: 0;
+  padding: 0;    
+  flex: 1 1 auto;
   &:hover{
     .list-heading .actions {
       visibility: visible;
@@ -261,9 +280,9 @@
       }
     }
 
-    &.active {
-      background-color: rgba($theme-base, 0.1);
-    }
+    // &.active {
+    //   background-color: rgba($theme-base, 0.1);
+    // }
 
     &.open {
       // background: rgba($theme-base, 0.03);
@@ -323,6 +342,24 @@
         transition: color 0.15s ease-in-out;
       }
     }
+    .delete-checkbox {
+      display: none;
+      position: absolute;
+      // background: $theme-bg;
+      top: $gutter-h * 1.35;
+      left: $gutter-h * 1.2;
+      // margin-top: 0.025rem;
+      height: 16px;
+      min-width: 16px;
+      width: 16px;
+      &:after {
+        font-size: 15px;
+        line-height: 16px;
+      }
+      &.shown {
+        display: block !important;
+      }
+    }
   }
   .sub-items {
     position: relative;
@@ -369,6 +406,11 @@
       color: $text-dark;
       background: transparent;
     }
+    .dropdown-icon {
+      &:hover, &:focus {
+        color: $text-dark;
+      }
+    }
     .material-icons {
       color: rgba($theme-base, 0.37);
       font-size: 18px;
@@ -378,6 +420,9 @@
     width: $sidebar-icon-w;
     min-width: $sidebar-icon-w;
     transition: transform 0.15s ease-in;
+    &.hidden {
+      visibility: hidden;
+    }
   }
   .badge-info {
     background: $brand-info;

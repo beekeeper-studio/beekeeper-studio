@@ -4,9 +4,9 @@
       <span class="btn-fab open-close" @mousedown.prevent="toggleColumns" >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
-      <span class="item-wrapper" @mousedown.prevent="selectTable" @dblclick.prevent="openTable">
+      <span class="item-wrapper expand" @mousedown.prevent="selectTable" @dblclick.prevent="openTable">
         <i :title="title" :class="iconClass" class="item-icon material-icons">grid_on</i>
-        <span class="table-name truncate expand">{{table.name}}</span>
+        <span class="table-name truncate">{{table.name}}</span>
       </span>
       <span class="actions" v-bind:class="{'pinned': pinned.includes(table)}">
         <span v-if="!pinned.includes(table)" @mousedown.prevent.stop="pin" class="btn-fab pin" :title="'Pin'"><i class="bk-pin"></i></span>
