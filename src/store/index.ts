@@ -115,15 +115,14 @@ const store = new Vuex.Store<State>({
       state.tablesLoading = value
     },
     addPinned(state, table: string) {
-      if (state.database && state.pinStore[state.database] === null) {
-        Vue.set(state.pinStore, state.database, [])
-      }
-      if (state.database && !state.pinStore[state.database].includes(table)) {
+      if (state.database && !state.pinStore[state.database]) {
+        Vue.set(state.pinStore, state.database, [table])
+      } else if (state.database && !state.pinStore[state.database].includes(table)) {
         state.pinStore[state.database].push(table)
       }
     },
     removePinned(state, table) {
-      if (state.database === null || state.pinStore[state.database] === null) {
+      if (!state.database || !state.pinStore[state.database]) {
         return
       }
       Vue.set(state.pinStore, state.database, _.without(state.pinStore[state.database], table))

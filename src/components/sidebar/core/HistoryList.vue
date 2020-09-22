@@ -1,32 +1,33 @@
 <template>
-  <div class="sidebar-history">
-    <nav class="list-group" v-if="history.length > 0">
-      <div class="list-item" v-for="item in history" v-bind:key="item.id">
-        <a class="list-item-btn" @click.prevent="click(item)">
-          <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedHistoryQueries" v-bind:class="{ shown: checkedHistoryQueries.length > 0 }">
-          <div class="list-title flex-col">
-            <span class="item-text expand truncate">{{nicelySized(item.text)}}</span>
-            <span class="subtitle"><span>{{item.database}}</span></span>
-          </div>
-          <x-button class="btn-fab" skin="iconic">
-            <i class="material-icons">more_horiz</i>
-            <x-menu style="--target-align: right; --v-target-align: top;">
-              <x-menuitem @click="remove(item)">
-                <x-label class="text-danger">Remove</x-label>
-              </x-menuitem>
-            </x-menu>
-          </x-button>
-        </a>
-      </div>
-      <div class="toolbar" v-show="checkedHistoryQueries.length > 0">
-        <div class="flex flex-right">
-          <a class="btn btn-link" @click="discardCheckedHistoryQueries">Discard</a>
-          <a :title="removeTitle" class="btn btn-primary" @click="removeCheckedHistoryQueries">Remove</a>
+  <div class="sidebar-history flex-col expand">
+    <div class="sidebar-list">
+      <nav class="list-group" v-if="history.length > 0">
+        <div class="list-item" v-for="item in history" v-bind:key="item.id">
+          <a class="list-item-btn" @click.prevent="click(item)">
+            <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedHistoryQueries" v-bind:class="{ shown: checkedHistoryQueries.length > 0 }">
+            <i class="item-icon query material-icons" v-bind:class="{ hidden: checkedHistoryQueries.length > 0 }">code</i>
+            <div class="list-title flex-col">
+              <span class="item-text expand truncate">{{nicelySized(item.text)}}</span>
+              <span class="subtitle"><span>{{item.database}}</span></span>
+            </div>
+            <x-button class="btn-fab" skin="iconic">
+              <i class="material-icons">more_horiz</i>
+              <x-menu style="--target-align: right; --v-target-align: top;">
+                <x-menuitem @click="remove(item)">
+                  <x-label class="text-danger">Remove</x-label>
+                </x-menuitem>
+              </x-menu>
+            </x-button>
+          </a>
         </div>
+      </nav>
+      <div class="empty" v-if="history.length === 0">
+        <span>No Recent Queries</span>
       </div>
-    </nav>
-    <div class="empty" v-if="history.length === 0">
-      <span>No Recent Queries</span>
+    </div>
+    <div class="toolbar btn-group row flex-right" v-show="checkedHistoryQueries.length > 0">
+      <a class="btn btn-link" @click="discardCheckedHistoryQueries">Cancel</a>
+      <a class="btn btn-primary" :title="removeTitle" @click="removeCheckedHistoryQueries">Remove</a>
     </div>
   </div>
 </template>
