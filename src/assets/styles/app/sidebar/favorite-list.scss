@@ -1,10 +1,16 @@
 .sidebar-favorites {
   position: relative;
-  flex: 1 1 auto;
-  height: 0;
-  max-height: -webkit-fill-available;
-  overflow-x: hidden;
-  padding: $gutter-h 0 $gutter-w;
+  // height: 100%;
+  // display: flex;
+  // flex-direction: column;
+  .sidebar-list {
+    position: relative;
+    flex: 1 1 auto;
+    height: 0;
+    max-height: -webkit-fill-available;
+    overflow-x: hidden;
+    padding: $gutter-h 0;
+  }
   .list-group {
     padding: $gutter-h 0;
     min-height: 105px;
@@ -27,6 +33,9 @@
   .item-icon {
     align-self: flex-start;
     line-height: 1.4rem;
+    &.hidden {
+      visibility: hidden;
+    }
   }
   .list-title {
     flex-grow: 1;
@@ -45,11 +54,6 @@
     line-height: initial;
     padding: $gutter-h ($gutter-w * 0.75);
     &:hover {
-      .delete-checkbox {
-        display: block;
-      }
-    }
-    &:hover {
       transition: display 0.15s ease-in-out;
       .badge {
         display: none;
@@ -57,14 +61,11 @@
       .btn-fab {
         display: inline-flex;
       }
-    }
-    .delete-checkbox {
-      display: none;
-      height: 15px;
-      width: 15px;
-
-      &.shown {
-        display: block !important;
+      .delete-checkbox {
+        display: block;
+      }
+      .item-icon {
+        visibility: hidden;
       }
     }
     .btn-fab {
@@ -85,11 +86,5 @@
       top: 0.32rem;
       right: 0.4rem;
     }
-  }
-  .toolbar {
-    position: absolute;
-    bottom: 5px;
-    left: 0;
-    width: 100%;
   }
 }

@@ -514,7 +514,9 @@ input[type=file] {
   &.view-icon {
     color: $brand-secondary;
   }
-
+  &.function-icon {
+    color: $brand-success;
+  }
   &.materialized-view-icon {
     color: $brand-success;
   }
