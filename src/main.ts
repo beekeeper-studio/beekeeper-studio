@@ -41,7 +41,7 @@ import platformInfo from './common/platform_info'
     TimeAgo.addLocale(en)
     // @ts-ignore
     Tabulator.prototype.defaultOptions.layout = "fitDataFill";
-    const appDb = path.join(config.userDirectory, platformInfo.isDevEnv ? 'app-dev.db' : 'app.db')
+    const appDb = platformInfo.appDbPath
     const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])
     await connection.connect();
 
@@ -51,7 +51,7 @@ import platformInfo from './common/platform_info'
     (window as any).hint = Hint;
     (window as any).SQLHint = SQLHint;
     (window as any).XLSX = xlsx;
-    Vue.config.devtools = platformInfo.isDevEnv;
+    Vue.config.devtools = platformInfo.isDevelopment;
 
     Vue.mixin({
       methods: {
