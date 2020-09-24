@@ -43,6 +43,7 @@ export interface IDbRoutine {
   schema?: string
   routineName: string
   routineType: string
+  returnType: string
 }
 
 export interface IDbConnection {

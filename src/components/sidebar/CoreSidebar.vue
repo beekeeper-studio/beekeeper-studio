@@ -17,13 +17,7 @@
         v-show="activeItem === 'tables'"
       >
         <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
-        <div class="split-wrapper">
-          <pinned-list></pinned-list>
-          <table-list></table-list>
-          <!-- TODO - Build these lists -->
-          <function-list></function-list>
-          <procedure-list></procedure-list>
-        </div>
+        <sidebar-tables-pane></sidebar-tables-pane>
       </div>
 
       <!-- History -->
@@ -59,22 +53,17 @@
 </template>
 
 <script>
-  import _ from 'lodash'
-  import GlobalSidebar from './GlobalSidebar'
-  import TableList from './core/TableList'
+    import GlobalSidebar from './GlobalSidebar'
   import HistoryList from './core/HistoryList'
   import FavoriteList from './core/FavoriteList'
   import DatabaseDropdown from './core/DatabaseDropdown'
-  import FunctionList from './core/FunctionList'
-  import PinnedList from './core/PinnedList'
-  import ProcedureList from './core/ProcedureList'
+  import SidebarTablesPane from './core/SidebarTablesPane'
 
   import { mapState } from 'vuex'
 
   export default {
-    components: { TableList, DatabaseDropdown, HistoryList, 
-      GlobalSidebar, FavoriteList, PinnedList, FunctionList,
-      ProcedureList
+    components: { DatabaseDropdown, HistoryList, 
+      GlobalSidebar, FavoriteList, SidebarTablesPane
     },
     data() {
       return {
@@ -87,19 +76,6 @@
       }
     },
     computed: {
-      filteredTables() {
-        if (!this.filterQuery) {
-          return this.tables
-        }
-        const startsWithFilter = _(this.tables)
-          .filter((item) => _.startsWith(item.name, this.filterQuery))
-          .value()
-        const containsFilter = _(this.tables)
-          .difference(startsWithFilter)
-          .filter((item) => item.name.includes(this.filterQuery))
-          .value()
-        return _.concat(startsWithFilter, containsFilter)
-      },
       ...mapState(['tables', 'connection', 'database']),
     },
     methods: {

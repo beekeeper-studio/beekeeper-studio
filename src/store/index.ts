@@ -24,7 +24,7 @@ interface State {
   connection: Nullable<DBConnection>,
   database: Nullable<string>,
   tables: IDbEntityWithColumns[],
-  routines: IDbRoutine[],
+  functions: IDbRoutine[],
   tablesLoading: string,
   pinStore: {
     [x: string]: string[]
@@ -50,6 +50,7 @@ const store = new Vuex.Store<State>({
     connection: null,
     database: null,
     tables: [],
+    functions: [],
     tablesLoading: "loading tables...",
     pinStore: {},
     connectionConfigs: [],
@@ -75,6 +76,18 @@ const store = new Vuex.Store<State>({
         }
       }).orderBy(o => {
         // TODO: have the connection provide the default schema, hard-coded to public by default
+        if (o.schema === 'public') return '0'
+        return o.schema
+      }).value()
+    },
+    schemaFunctions(state) {
+      const obj = _.chain(state.functions).groupBy('schema').value()
+      return _(obj).keys().map(k => {
+        return {
+          schema: k,
+          functions: obj[k]
+        }
+      }).orderBy(o => {
         if (o.schema === 'public') return '0'
         return o.schema
       }).value()
@@ -113,7 +126,7 @@ const store = new Vuex.Store<State>({
       state.tables = tables
     },
     routines(state, routines) {
-      state.routines = routines
+      state.functions = routines
     },
     tablesLoading(state, value: string) {
       state.tablesLoading = value

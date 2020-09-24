@@ -40,11 +40,6 @@
         }
       },
     },
-    methods: {
-      tableSelected(table) {
-        this.$emit("tableSelected", table)
-      }
-    }
 	}
 </script>
 

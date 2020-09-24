@@ -1,42 +1,6 @@
 <template>
   <div class="flex-col expand">
-
-    <!-- Filter -->
-    <div class="fixed">
-      <div class="filter">
-        <div class="filter-wrap">
-          <input type="text" placeholder="Filter" v-model="filterQuery">
-          <!-- TODO (matthew): clear icon needs to hide when input has no value also. ie. Type then delete characters and still shows currently -->
-          <i class="clear material-icons" @click="clearFilter" v-if="filterQuery">cancel</i>
-        </div>
-      </div>
-    </div>
-
-    <!-- Pinned -->
-    <div v-show="pinned.length > 0" class="table-list pinned flex-col" ref="pinned">
-      <nav class="list-group flex-col">
-        <div class="list-heading row">
-          <div class="sub row flex-middle expand">
-            <div>Pinned <span class="badge">{{pinned.length}}</span></div>
-          </div>
-        </div>
-        <div class="list-body">
-          <table-list-item
-            v-for="table in pinned"
-            v-bind:key="table.name"
-            @selected="tableSelected"
-            :table="table"
-            :connection="connection"
-            :selected="table == selectedTable"
-            :forceExpand="allExpanded"
-            :forceCollapse="allCollapsed"
-          ></table-list-item>
-        </div>
-      </nav>
-    </div>
-
     <!-- Tables -->
-    <hr v-show="pinned.length > 0"> <!-- Fake splitjs Gutter styling -->
     <div v-if="!tablesLoading" class="table-list flex-col" ref="tables">
       <nav class="list-group flex-col">
         <div class="list-heading row">
@@ -119,51 +83,13 @@
 
     <!-- Functions -->
     <hr> <!-- Fake splitjs Gutter styling -->
-    <div class="table-list functions flex-col" ref="pinned">
-      <nav class="list-group flex-col">
-        <div class="list-heading row">
-          <div class="sub row flex-middle expand">
-            <!-- <span class="btn-fab open">
-              <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
-            </span> -->
-            <div>Functions <span class="badge">{{pinned.length}}</span></div>
-          </div>
-        </div>
-        <div class="list-body">
-          <div class="list-item">
-            <a class="list-item-btn" role="button" >
-              <span class="btn-fab open-close" >
-                <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
-              </span>
-              <span class="item-wrapper flex flex-middle expand">
-                <i :title="title" :class="iconClass" class="item-icon function-icon material-icons">functions</i>
-                <span class="table-name truncate">Function Name</span>
-              </span>
-              <span class="actions" >
-                <span class="btn-fab pin" :title="'Pin'"><i class="bk-pin"></i></span>
-                <span class="btn-fab unpin" :title="'Unpin'"><i class="material-icons">clear</i></span>
-                <!-- <span class="btn-fab pinned"><i class="bk-pin" :title="'Unpin'"></i></span> -->
-              </span>
-            </a>
-            <!-- <div  class="sub-items">
-              <span class="sub-item">
-                <span class="title truncate" ref="title" @click="selectColumn(i)">Sub Name</span>
-                <span class="badge" v-bind:class="c.dataType"><span>Type</span></span>
-              </span>
-            </div> -->
-
-          </div>
-        </div>
-      </nav>
-    </div>
 
   </div>
 </template>
 
 <script>
   import TableListItem from './table_list/TableListItem'
-  import TableListSchema from './table_list/TableListSchema'
-  import Split from 'split.js'
+  import TableListSchema from './SchemaContainer'
   import { mapState, mapGetters } from 'vuex'
   import TableFilter from '../../../mixins/table_filter'
 
@@ -177,10 +103,6 @@
         filterQuery: null,
         allExpanded: null,
         allCollapsed: null,
-        activeItem: 'tables',
-        split: null,
-        sizes: [25,75],
-        lastPinnedSize: 0
       }
     },
     computed: {
@@ -192,35 +114,6 @@
       },
       ...mapState(['tables', 'connection', 'database', 'tablesLoading', 'routines']),
       ...mapGetters(['pinned', 'schemaTables', 'tablesHaveSchemas']),
-    },
-    watch: {
-      pinned: {
-        deep: true,
-        handler(newPinned) {
-          if (newPinned.length > 0 && this.lastPinnedSize === 0) {
-            this.$nextTick(() => {
-              this.split.setSizes(this.sizes);
-            });
-          } else if (newPinned.length === 0) {
-            // this.split.destroy();
-          }
-          this.lastPinnedSize = newPinned.length
-        }
-      },
-      tablesLoading() {
-        if (!this.tablesLoading) {
-          this.$nextTick(() => {
-            this.split = Split(this.components, {
-              elementStyle: (dimension, size) => ({
-                  'flex-basis': `calc(${size}%)`,
-              }),
-              direction: 'vertical',
-              sizes: this.sizes,
-            })
-
-          })
-        }
-      }
     },
     methods: {
       tableSelected(table) {
