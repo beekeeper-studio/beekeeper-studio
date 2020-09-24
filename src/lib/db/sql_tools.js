@@ -1,34 +1,10 @@
 import _ from 'lodash'
+import { identify } from 'sql-query-identifier'
 
 export function splitQueries(queryText) {
-  if (!queryText) return []
-  const regex = /(?:[^;']|(?:'[^']+'))+;/gm
-  let value = queryText
-  let fakeSemiColon = false
-  if (!queryText.trim().endsWith(';')) {
-    value += ';'
-    fakeSemiColon = true
-  }
-
-  let m
-  const queries = []
-  while ((m = regex.exec(value)) !== null) {
-    if (m.index === regex.lastIndex) {
-      regex.lastIndex++
-    }
-
-    m.forEach((matched) => {
-
-      // const toPush = matched.endsWith(';') ? matched.slice(0, matched.length-1) : matched
-      queries.push(matched)
-      // queries.push(toPush)
-    })
-  }
-  if (fakeSemiColon && queries.length > 0) {
-    const last = queries.length - 1
-    queries[last] = queries[last].slice(0, queries[last].length -1)
-  }
-  return queries
+  const result = identify(queryText, { strict: false })
+  console.log(result)
+  return result
 }
 
 const badMatch = /(:\w+:)/g
