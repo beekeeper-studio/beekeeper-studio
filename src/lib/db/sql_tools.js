@@ -3,7 +3,6 @@ import { identify } from 'sql-query-identifier'
 
 export function splitQueries(queryText) {
   const result = identify(queryText, { strict: false })
-  console.log(result)
   return result
 }
 

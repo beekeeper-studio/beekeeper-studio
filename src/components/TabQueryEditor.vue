@@ -163,14 +163,9 @@
         return splitQueries(this.queryText)
       },
       currentlySelectedQueryIndex() {
-        let currentPos = 0
         const queries = this.individualQueries
         for (let i = 0; i < queries.length; i++) {
-          currentPos += queries[i].length
-          // currentPos += i == 0 ? queries[i].length : queries[i].length + 1
-          if (currentPos >= this.cursorIndex) {
-            return i
-          }
+          if (this.cursorIndex <= queries[i].end + 1) return i
         }
         return null
       },
@@ -182,16 +177,15 @@
         if(!this.editor || !this.currentlySelectedQuery || !this.individualQueries) {
           return null
         }
-        const otherCandidates = this.individualQueries.slice(0, this.currentlySelectedQueryIndex).filter((query) => query.includes(this.currentlySelectedQuery))
-        let i = 0
-        const cursor = this.editor.getSearchCursor(this.currentlySelectedQuery)
-        while(i < otherCandidates.length + 1) {
-          i ++
-          if (!cursor.findNext()) return null
-        }
+        const qi = this.currentlySelectedQueryIndex
+        const previousQuery = qi === 0 ? null : this.individualQueries[qi - 1]
+        // adding 1 to account for semicolon
+        const start = previousQuery ? previousQuery.end + 1: 0
+        const end = this.currentlySelectedQuery.end
+
         return {
-          from: cursor.from(),
-          to: cursor.to()
+          from: start,
+          to: end + 1
         }
 
       },
@@ -246,7 +240,6 @@
         });
         return query;
       },
-
       ...mapState(['usedConfig', 'connection', 'database', 'tables'])
     },
     watch: {
@@ -265,7 +258,7 @@
           this.marker.clear()
         }
 
-        if(this.individualQueries.length < 2) {
+        if(!this.individualQueries || this.individualQueries.length < 2) {
           return;
         }
 
@@ -273,7 +266,36 @@
           return
         }
         const { from, to } = this.currentQueryPosition
-        this.marker = this.editor.getDoc().markText(from, to, {className: 'highlight'})
+
+        const editorText = this.editor.getValue()
+        const lines = editorText.split(/\n/)
+
+        const markStart = {
+          line: null,
+          ch: null
+        }
+        const markEnd = {
+          line: null,
+          ch: null
+        }
+        let startMarked = false
+        let endMarked = false
+        let startOfLine = 0
+        lines.forEach((line, idx) => {
+          const eol = startOfLine + line.length + 1
+          if (startOfLine <= from && from <= eol && !startMarked) {
+            markStart.line = idx
+            markStart.ch = from - startOfLine
+            startMarked = true
+          }
+          if (startOfLine <= to && to <= eol && !endMarked) {
+            markEnd.line = idx
+            markEnd.ch = to - startOfLine
+            endMarked = true
+          }
+          startOfLine += line.length + 1
+        })
+        this.marker = this.editor.getDoc().markText(markStart, markEnd, {className: 'highlight'})
       },
       hintOptions() {
         this.editor.setOption('hintOptions',this.hintOptions)
@@ -342,7 +364,7 @@
       },
       async submitCurrentQuery() {
         if (this.currentlySelectedQuery) {
-          this.submitQuery(this.currentlySelectedQuery)
+          this.submitQuery(this.currentlySelectedQuery.text)
         } else {
           this.results = []
           this.error = 'No query to run'
