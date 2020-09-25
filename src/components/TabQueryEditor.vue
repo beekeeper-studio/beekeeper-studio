@@ -217,12 +217,16 @@
         const result = {}
         this.tables.forEach(table => {
           const cleanColumns = table.columns.map(col => {
-            return col.columnName
+            return /\./.test(col.columnName) ? `"${col.columnName}"` : col.columnName
           })
-          if (this.connectionType === 'postgresql' && /[A-Z]/.test(table.name)) {
+
+          // add quoted option for everyone that needs to be quoted
+          if (this.connectionType === 'postgresql' && (/[^a-z0-9_]/.test(table.name) || /^\d/.test(table.name)))
             result[`"${table.name}"`] = cleanColumns
-          }
-          result[table.name] = cleanColumns
+          
+          // don't add table names that can get in conflict with database schema 
+          if (!/\./.test(table.name))
+            result[table.name] = cleanColumns
         })
         return { tables: result }
       },
@@ -423,12 +427,6 @@
       inQuote() {
         return false
       },
-      wrapIdentifier(value) {
-        if (value && this.connectionType === 'postgresql' && /[A-Z]/.test(value)) {
-          return `"${value.replace(/^"|"$/g, '')}"`
-        }
-        return value;
-      },
       maybeAutoComplete(editor, e) {
         // BUGS:
         // 1. only on periods if not in a quote
@@ -542,10 +540,18 @@
         if (this.connectionType === 'postgresql')  {
           this.editor.on("beforeChange", (cm, co) => {
             const { to, from, origin, text } = co;
-            if (origin === 'complete') {
-              let [tableName, colName] = text[0].split('.');
-              const newText = [[this.wrapIdentifier(tableName), this.wrapIdentifier(colName)].filter(s => s).join('.')]
-              co.update(from, to, newText, origin);
+
+            const keywords = CodeMirror.resolveMode(this.editor.options.mode).keywords
+
+            // quote names when needed
+            if (origin === 'complete' && keywords[text[0].toLowerCase()] != true) {
+              const names = text[0]
+                .match(/("[^"]*"|[^.]+)/g)
+                .map(n => /^\d/.test(n) ? `"${n}"` : n)
+                .map(n => /[^a-z0-9_]/.test(n) && !/"/.test(n) ? `"${n}"` : n)
+                .join('.')
+  
+              co.update(from, to, [names], origin)
             }
           })
         }
