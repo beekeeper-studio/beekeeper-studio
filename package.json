@@ -100,6 +100,7 @@
     "electron-updater": "^4.2.5",
     "eslint": "^5.16.0",
     "eslint-plugin-vue": "^5.0.0",
+    "testcontainers": "^4.1.0",
     "typescript": "^3.9.7",
     "vue-cli-plugin-electron-builder": "^2.0.0-rc.1",
     "vue-template-compiler": "^2.6.10",

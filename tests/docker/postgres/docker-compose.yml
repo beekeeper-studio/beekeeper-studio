@@ -1,0 +1,17 @@
+version: '3'
+
+volumes:
+  psql:
+
+services:
+  psql:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: saklia
+    volumes:
+      - psql:/var/lib/postgresql/data
+      - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
+    ports:
+      - 5432
