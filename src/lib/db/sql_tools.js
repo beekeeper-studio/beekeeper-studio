@@ -6,7 +6,7 @@ export function splitQueries(queryText) {
   return result
 }
 
-const badMatch = /(:\w+:)/g
+const badMatch = /(:\w+:)|(:\s*null)/g
 const extractRegex = /(?:[^a-zA-Z0-9_:]|^)(:\w+:?|\$\d+)(?:\W|$)/g
 
 export function extractParams(query) {

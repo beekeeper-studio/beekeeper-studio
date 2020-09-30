@@ -55,11 +55,13 @@ describe("extractParams", () => {
     })
   })
 
-  it("shouldn't extract character class params", () => {
+  it("shouldn't extract these params", () => {
     const testCases = {
       ":one:": [],
       ": two :": [],
-      "SELECT 'a' REGEXP '^[[:alpha:]]'": []
+      "SELECT 'a' REGEXP '^[[:alpha:]]'": [],
+      "update products set title='{\"desc\":null}' where id='aa';": [], // literal JSON null
+      "update products set title='{\"desc\": null}' where id='aa';": [], // literal JSON null
     }
     Object.keys(testCases).forEach(query => {
       const expected = testCases[query]
