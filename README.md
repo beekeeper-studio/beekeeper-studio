@@ -44,7 +44,7 @@ Download the latest release from the [releases page](https://github.com/beekeepe
 
 ## Contributing to Beekeeper Studio
 
-We love *any* community engagement. Even if you're complaining becuase you don't like something about the app!
+We love *any* community engagement. Even if you're complaining because you don't like something about the app!
 
 Because building an inclusive and welcoming community is important to us, please follow our code of conduct as you engage with the project.
 
@@ -69,8 +69,8 @@ yarn run electron:serve ## the app will now start
 ### Where to make changes?
 
 Beekeeper Studio has two entry points:
-- background.js - this is the electron-side code that controls native things like showing windows.
-- main.js - this is the entry point for the Vue.js app. You can follow the Vue component breadcrumbs from `App.vue` to find the screen you need.
+- `background.js` - this is the electron-side code that controls native things like showing windows.
+- `main.js` - this is the entry point for the Vue.js app. You can follow the Vue component breadcrumbs from `App.vue` to find the screen you need.
 
 **Generally we have two 'screens':**
 - ConnectionInterface - connecting to a DB
@@ -88,7 +88,7 @@ Beekeeper Studio has two entry points:
 
 1. Up the version number in package.json
 2. Replace `build/release-notes.md` with the latest release notes. Follow the format that is there.
-  - run `git log <last-tag>..HEAD --oneline | grep 'Merge pull' to find PRs merged
+  - run `git log <last-tag>..HEAD --oneline | grep 'Merge pull'` to find PRs merged
 2. Commit
 3. Push to master
 4. Create a tag `git tag v<version>`. It must start with a 'v'
