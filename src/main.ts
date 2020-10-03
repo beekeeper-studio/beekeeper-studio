@@ -5,7 +5,6 @@ import VueHotkey from 'v-hotkey'
 import VTooltip from 'v-tooltip'
 import VModal from 'vue-js-modal'
 import 'xel/xel'
-import 'codemirror/addon/search/searchcursor'
 import Tabulator from 'tabulator-tables'
 
 import App from './App.vue'
@@ -14,11 +13,6 @@ import 'typeface-roboto'
 import 'typeface-source-code-pro'
 import './assets/styles/app.scss'
 import $ from 'jquery'
-// @ts-ignore
-import SQL from 'codemirror/mode/sql/sql'
-import Hint from 'codemirror/addon/hint/show-hint.js'
-// @ts-ignore
-import SQLHint from 'codemirror/addon/hint/sql-hint.js'
 import store from './store/index'
 import 'reflect-metadata'
 import {TypeOrmPlugin} from './lib/typeorm_plugin'
@@ -47,9 +41,6 @@ import platformInfo from './common/platform_info'
 
     (window as any).$ = $;
     (window as any).jQuery = $;
-    (window as any).sql = SQL;
-    (window as any).hint = Hint;
-    (window as any).SQLHint = SQLHint;
     (window as any).XLSX = xlsx;
     Vue.config.devtools = platformInfo.isDevelopment;
 

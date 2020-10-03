@@ -1,4 +1,5 @@
 const webpack = require('webpack');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
 
 const fpmOptions = [
   "--after-install=build/deb-postinstall"
@@ -14,6 +15,12 @@ module.exports = {
   pluginOptions: {
     electronBuilder: {
       chainWebpackMainProcess: config => {
+        config.plugin('monaco-editor').use(MonacoWebpackPlugin, [
+          {
+            // Languages are loaded on demand at runtime
+            languages: ['sql']
+          }
+        ])
         config.module
           .rule('babel')
           .test(/\.js$/)
@@ -22,7 +29,7 @@ module.exports = {
 
           .options({
             presets: [
-              ['@babel/preset-env', { 
+              ['@babel/preset-env', {
                 modules: false,
                 targets: {
                     esmodules: true

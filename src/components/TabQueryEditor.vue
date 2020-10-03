@@ -1,10 +1,18 @@
 <template>
-  <div class="query-editor" v-hotkey="keymap">
+  <div class="query-editor">
     <div class="top-panel" ref="topPanel" >
-      <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
+      <MonacoEditor
+        class="editor"
+        v-model="queryText"
+        :options="options"
+        theme="vs-dark"
+        language="sql"
+        @editorWillMount="editorWillMount"
+        @editorDidMount="editorDidMount"
+      />
       <span class="expand"></span>
-      <div class="toolbar text-right">
-        <div class="actions btn-group" ref="actions">
+      <div class="toolbar text-right" ref="toolbar">
+        <div class="actions btn-group">
           <x-button @click.prevent="triggerSave" class="btn btn-flat btn-small">Save</x-button>
 
           <x-buttons class="">
@@ -102,372 +110,409 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+  import Vue from 'vue'
+  import { Component, Prop, Watch } from 'vue-property-decorator'
 
   import _ from 'lodash'
-  import 'codemirror/addon/search/searchcursor'
-  import CodeMirror from 'codemirror'
-  import 'codemirror/addon/comment/comment'
+
+  //@ts-ignore
+  import MonacoEditor from 'vue-monaco'
+  import * as monaco from 'monaco-editor';
+  import * as NodeSQLParser from 'node-sql-parser'
+  import { languages, KeyCode, KeyMod } from 'monaco-editor';
   import Split from 'split.js'
   import { mapState } from 'vuex'
 
   import { splitQueries, extractParams } from '../lib/db/sql_tools'
+  import { sqlMonacoDotSuggestion, sqlMonacoSuggestion } from '../lib/monaco-sql-suggestion'
+
+  //@ts-ignore
   import ProgressBar from './editor/ProgressBar'
+  //@ts-ignore
   import ResultTable from './editor/ResultTable'
 
   import sqlFormatter from 'sql-formatter';
 
+  //@ts-ignore
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar'
 
-  export default {
-    // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, QueryEditorStatusBar},
+  type IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor
+  type CompletionItemProvider = monaco.languages.CompletionItemProvider
+
+  const parser = new NodeSQLParser.Parser()
+
+  @Component({
+    components: { MonacoEditor, ResultTable, ProgressBar, QueryEditorStatusBar},
     props: ['tab', 'active'],
-    data() {
-      return {
-        // result: null,
-        results: [],
-        running: false,
-        selectedResult: 0,
-        editor: null,
-        runningQuery: null,
-        error: null,
-        info: null,
-        split: null,
-        tableHeight: 0,
-        savePrompt: false,
-        unsavedText: null,
-        saveError: null,
-        lastWord: null,
-        cursorIndex: null,
-        marker: null,
-        queryParameterValues: {},
-        queryForExecution: null,
-        executeTime: 0
+    computed: mapState(['usedConfig', 'connection', 'database', 'tables']),
+  })
+  export default class TabQueryEditor extends Vue {
+    @Prop()
+    tab!: any
+
+    @Prop()
+    active!: boolean
+
+    // Data
+    results: any[] = []
+    queryText = ""
+    currentQueryAST?: NodeSQLParser.AST
+    individualQueries: string[] = [];
+    running = false
+    selectedResult = 0
+    editor?: IStandaloneCodeEditor
+    runningQuery?: any
+    error: Nullable<string> = null
+    info?: Nullable<string> = null
+    split?: any
+    tableHeight = 0
+    savePrompt = false
+    unsavedText = null
+    saveError?: Nullable<string> = null
+    lastWord = null
+    cursorPosition: monaco.Position = new monaco.Position(0, 0)
+    queryParameterValues: {[key: string]: string} = {}
+    queryForExecution = ""
+    executeTime = 0
+    currentDecorations: string[] = []
+    options = {
+      quickSuggestions: true,
+      wordBasedSuggestions: true,
+      suggestOnTriggerCharacters: true,
+    }
+
+    // Computed
+    usedConfig!: any
+    connection!: any
+    database!: string
+    tables!: any[]
+
+    get hasSelectedText() {
+      return this.editor ? !!this.editor.getSelection() : false
+    }
+
+    get result() {
+      return this.results[this.selectedResult]
+    }
+
+    get query() {
+      return this.tab.query
+    }
+
+    get queryRanges() {
+      const model = this.editor?.getModel()
+      if (model) {
+        return this.individualQueries.map(query => {
+          const matches = model.findMatches(query, true, false, true, null, true)
+          const match = _.last(matches)
+          return match?.range!
+        }).filter(range => !!range)
       }
-    },
-    computed: {
-      hasSelectedText() {
-        return this.editor ? !!this.editor.getSelection() : false
-      },
-      result() {
-        return this.results[this.selectedResult]
-      },
-      query() {
-        return this.tab.query
-      },
-      queryText() {
-        return this.tab.query.text
-      },
-      individualQueries() {
-        return splitQueries(this.queryText)
-      },
-      currentlySelectedQueryIndex() {
-        const queries = this.individualQueries
-        for (let i = 0; i < queries.length; i++) {
-          if (this.cursorIndex <= queries[i].end + 1) return i
-        }
-        return null
-      },
-      currentlySelectedQuery() {
-        if (this.currentlySelectedQueryIndex == null) return null
-        return this.individualQueries[this.currentlySelectedQueryIndex]
-      },
-      currentQueryPosition() {
-        if(!this.editor || !this.currentlySelectedQuery || !this.individualQueries) {
-          return null
-        }
-        const qi = this.currentlySelectedQueryIndex
-        const previousQuery = qi === 0 ? null : this.individualQueries[qi - 1]
-        // adding 1 to account for semicolon
-        const start = previousQuery ? previousQuery.end + 1: 0
-        const end = this.currentlySelectedQuery.end
 
-        return {
-          from: start,
-          to: end + 1
-        }
+      return []
+    }
 
-      },
-      rowCount() {
-        return this.result && this.result.rows ? this.result.rows.length : 0
-      },
-      hasText() {
-        return this.query.text && this.query.text.replace(/\s+/, '').length > 0
-      },
-      hasTitle() {
-        return this.query.title && this.query.title.replace(/\s+/, '').length > 0
-      },
-      splitElements() {
-        return [
-          this.$refs.topPanel,
-          this.$refs.bottomPanel,
-        ]
-      },
-      keymap() {
-        if (!this.active) return {}
-        const result = {}
-        result[this.ctrlOrCmd('l')] = this.selectEditor
-        return result
-      },
-      connectionType() {
-        return this.connection.connectionType;
-      },
-      hintOptions() {
-        const result = {}
-        this.tables.forEach(table => {
-          const cleanColumns = table.columns.map(col => {
-            return /\./.test(col.columnName) ? `"${col.columnName}"` : col.columnName
-          })
+    get currentlySelectedQuery() {
+      const i = this.queryRanges.findIndex(range => range.containsPosition(this.cursorPosition))
+      return this.individualQueries[i]
+    }
 
-          // add quoted option for everyone that needs to be quoted
-          if (this.connectionType === 'postgresql' && (/[^a-z0-9_]/.test(table.name) || /^\d/.test(table.name)))
-            result[`"${table.name}"`] = cleanColumns
-          
-          // don't add table names that can get in conflict with database schema 
-          if (!/\./.test(table.name))
-            result[table.name] = cleanColumns
+    get currentQueryRange() {
+      return this.queryRanges.find(p => p.containsPosition(this.cursorPosition))
+    }
+
+    get rowCount() {
+      return this.result && this.result.rows ? this.result.rows.length : 0
+    }
+
+    get hasText() {
+      return this.query.text && this.query.text.replace(/\s+/, '').length > 0
+    }
+
+    get hasTitle() {
+      return this.query.title && this.query.title.replace(/\s+/, '').length > 0
+    }
+
+    get splitElements() {
+      return [
+        this.$refs.topPanel,
+        this.$refs.bottomPanel,
+      ]
+    }
+
+    get connectionType() {
+      return this.connection.connectionType;
+    }
+
+    get hintOptions(): { tables: {
+      [table: string]: string[]
+    } } {
+      const result: any = {}
+      this.tables.forEach(table => {
+        const cleanColumns = table.columns.map((col: any) => {
+          return col.columnName
         })
-        return { tables: result }
-      },
-      queryParameterPlaceholders() {
-        let query = this.queryForExecution
-        return extractParams(query)
-      },
-      deparameterizedQuery() {
-        let query = this.queryForExecution
-        if (_.isEmpty(query)) {
-          return query;
+        if (this.connectionType === 'postgresql' && /[A-Z]/.test(table.name)) {
+          result[`"${table.name}"`] = cleanColumns
         }
-        _.each(this.queryParameterPlaceholders, param => {
-          query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`), `$1${this.queryParameterValues[param]}$2`)
-        });
+        result[table.name] = cleanColumns
+      })
+      return { tables: result }
+    }
+
+    get queryParameterPlaceholders() {
+      let query = this.queryForExecution
+      return extractParams(query)
+    }
+
+    get deparameterizedQuery() {
+      let query = this.queryForExecution
+      if (_.isEmpty(query)) {
         return query;
-      },
-      ...mapState(['usedConfig', 'connection', 'database', 'tables'])
-    },
-    watch: {
-      active() {
-        if(this.active && this.editor) {
-          this.$nextTick(() => {
-            this.editor.refresh()
-            this.editor.focus()
-          })
-        } else {
-          this.$modal.hide('save-modal')
-        }
-      },
-      currentQueryPosition() {
-        if (this.marker){
-          this.marker.clear()
-        }
+      }
+      _.each(this.queryParameterPlaceholders, param => {
+        query = query?.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`), `$1${this.queryParameterValues[param]}$2`)
+      });
+      return query;
+    }
 
-        if(!this.individualQueries || this.individualQueries.length < 2) {
-          return;
-        }
-
-        if (!this.currentQueryPosition) {
-          return
-        }
-        const { from, to } = this.currentQueryPosition
-
-        const editorText = this.editor.getValue()
-        const lines = editorText.split(/\n/)
-
-        const markStart = {
-          line: null,
-          ch: null
-        }
-        const markEnd = {
-          line: null,
-          ch: null
-        }
-        let startMarked = false
-        let endMarked = false
-        let startOfLine = 0
-        lines.forEach((line, idx) => {
-          const eol = startOfLine + line.length + 1
-          if (startOfLine <= from && from <= eol && !startMarked) {
-            markStart.line = idx
-            markStart.ch = from - startOfLine
-            startMarked = true
-          }
-          if (startOfLine <= to && to <= eol && !endMarked) {
-            markEnd.line = idx
-            markEnd.ch = to - startOfLine
-            endMarked = true
-          }
-          startOfLine += line.length + 1
+    @Watch('active')
+    onActiveChange() {
+      if(this.active && this.editor) {
+        this.$nextTick(() => {
+          this.editor?.focus()
+          this.editor?.layout()
         })
-        this.marker = this.editor.getDoc().markText(markStart, markEnd, {className: 'highlight'})
-      },
-      hintOptions() {
-        this.editor.setOption('hintOptions',this.hintOptions)
-        // this.editor.setOptions('hint', CodeMirror.hint.sql)
-        // this.editor.refresh()
-      },
-      queryText() {
-        if (this.query.id && this.unsavedText === this.queryText) {
-          this.tab.unsavedChanges = false
-          return
+      } else {
+        this.$modal.hide('save-modal')
+      }
+    }
+
+    @Watch('queryText')
+    onQueryTextChange() {
+      this.individualQueries = splitQueries(this.queryText).map(s => s.trim())
+      this.parseQuery()
+      if (this.query.id && this.unsavedText === this.queryText) {
+        this.tab.unsavedChanges = false
+        return
+      } else {
+        this.tab.unsavedChanges = true
+      }
+    }
+
+    parseQuery() {
+      try {
+        const { ast } = parser.parse(this.currentlySelectedQuery);
+        if (ast instanceof Array) {
+          this.currentQueryAST = _.first(ast);
         } else {
-          this.tab.unsavedChanges = true
+          this.currentQueryAST = ast;
+        }
+      } catch {
+        // If error is because query is incomplete
+      }
+    }
+
+    highlightCurrentQuery() {
+      if (!this.currentQueryRange) {
+        this.currentDecorations = this.editor?.deltaDecorations(this.currentDecorations, []) || []
+      } else {
+        this.currentDecorations = this.editor?.deltaDecorations(this.currentDecorations, [{
+          range: this.currentQueryRange,
+          options: {
+            isWholeLine: true,
+            className: 'highlight'
+          }
+        }]) || []
+      }
+    }
+
+    async cancelQuery() {
+      if(this.running && this.runningQuery) {
+        this.running = false
+        this.info = 'Query Execution Cancelled'
+        await this.runningQuery.cancel()
+        this.runningQuery = undefined
+      }
+    }
+
+    download(format: string) {
+      // @ts-ignore
+      this.$refs.table.download(format)
+    }
+
+    clipboard() {
+      // @ts-ignore
+      this.$refs.table.clipboard()
+    }
+
+    selectEditor() {
+      this.editor?.focus()
+    }
+
+    selectTitleInput() {
+      // @ts-ignore
+      this.$refs.titleInput.select()
+    }
+
+    selectFirstParameter() {
+      // @ts-ignore
+      if (!this.$refs['paramInput'] || this.$refs['paramInput'].length == 0) return
+      // @ts-ignore
+      this.$refs['paramInput'][0].select()
+    }
+
+    triggerSave() {
+      if (this.query.id) {
+        this.saveQuery()
+      } else {
+        this.$modal.show('save-modal')
+      }
+    }
+
+    async saveQuery() {
+      if (!this.hasTitle || !this.hasText) {
+        this.saveError = "You need both a title, and some query text."
+      } else {
+        await this.$store.dispatch('saveFavorite', this.query)
+        this.$modal.hide('save-modal')
+        //@ts-ignore
+        this.$noty.success('Saved')
+        this.unsavedText = this.tab.query.text
+        this.tab.unsavedChanges = false
+      }
+    }
+
+    escapeRegExp(s: string) {
+      return s.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    async submitCurrentQuery() {
+      if (this.currentlySelectedQuery) {
+        this.submitQuery(this.currentlySelectedQuery)
+      } else {
+        this.results = []
+        this.error = 'No query to run'
+      }
+    }
+
+    async submitTabQuery() {
+      const model = this.editor?.getModel()
+      const selection = this.editor?.getSelection()
+      const selectedText = model && selection ? model.getValueInRange(selection) : undefined
+      const text = selectedText || this.editor?.getValue() || ''
+      if (text.trim()) {
+        this.submitQuery(text)
+      } else {
+        this.error = 'No query to run'
+      }
+    }
+
+    async submitQuery(rawQuery: string, skipModal = false) {
+      this.running = true
+      this.queryForExecution = rawQuery
+      this.results = []
+      this.selectedResult = 0
+
+      try {
+        if (this.queryParameterPlaceholders.length > 0 && !skipModal) {
+          this.$modal.show('parameters-modal')
+          return
+        }
+
+        const query = this.deparameterizedQuery
+        this.$modal.hide('parameters-modal')
+
+        this.runningQuery = this.connection.query(query)
+        const queryStartTime = +new Date()
+        const results = await this.runningQuery.execute()
+        const queryEndTime = +new Date()
+        this.executeTime = queryEndTime - queryStartTime
+        let totalRows = 0
+        results.forEach((result: any) => {
+          result.rowCount = result.rowCount || 0
+
+          // TODO (matthew): remove truncation logic somewhere sensible
+          totalRows += result.rowCount
+          if (result.rowCount > this.$config.maxResults) {
+            result.rows = _.take(result.rows, this.$config.maxResults)
+            result.truncated = true
+            result.truncatedRowCount = this.$config.maxResults
+          }
+        })
+        this.results = results
+        this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
+      } catch (ex) {
+        if(this.running) {
+          this.error = ex
+        }
+      } finally {
+        this.running = false
+      }
+    }
+
+    inQuote() {
+      return false
+    }
+
+    formatSql() {
+      this.editor?.setValue(sqlFormatter.format(this.editor.getValue()))
+      this.selectEditor()
+    }
+
+    toggleComment() {
+      this.editor?.trigger('', 'editor.action.commentLine', null)
+    }
+
+    editorWillMount() {
+      languages.registerCompletionItemProvider("sql", this.getSqlCompletionProvider())
+    }
+
+    editorDidMount(editor: IStandaloneCodeEditor) {
+      this.editor = editor
+      this.editor.onDidChangeCursorPosition((event) => {
+        this.cursorPosition = event.position.delta(undefined , -1)
+        this.highlightCurrentQuery()
+      })
+      this.editor.addCommand(KeyMod.CtrlCmd | KeyCode.Shift | KeyCode.Enter, this.submitCurrentQuery)
+      this.editor.addCommand(KeyMod.CtrlCmd | KeyCode.Enter, this.submitCurrentQuery)
+      this.editor.addCommand(KeyMod.CtrlCmd | KeyCode.KEY_S, this.triggerSave)
+      this.editor.addCommand(KeyMod.CtrlCmd | KeyCode.Shift | KeyCode.KEY_F, this.formatSql)
+      this.editor.addCommand(KeyMod.CtrlCmd | KeyCode.US_SLASH, this.toggleComment)
+      this.editor.addCommand(KeyCode.Escape, this.cancelQuery)
+    }
+
+    getSqlCompletionProvider(): CompletionItemProvider {
+      return {
+        triggerCharacters: [' ', '.'],
+        provideCompletionItems: (model, position, context) => {
+          const textUntilPosition = model.getValueInRange({startLineNumber: 1, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column})
+          const range = new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column)
+          switch (context.triggerCharacter) {
+            case '.': return sqlMonacoDotSuggestion(this.connectionType, textUntilPosition, range, this.hintOptions.tables, this.currentQueryAST)
+            case ' ': return sqlMonacoSuggestion(this.connectionType, textUntilPosition, range, this.hintOptions.tables, this.currentQueryAST)
+            default: return {
+              suggestions: []
+            }
+          }
         }
       }
-    },
-    methods: {
-      async cancelQuery() {
-        if(this.running && this.runningQuery) {
-          this.running = false
-          this.info = 'Query Execution Cancelled'
-          await this.runningQuery.cancel()
-          this.runningQuery = null
-        }
-      },
-      download(format) {
-        this.$refs.table.download(format)
-      },
-      clipboard() {
-        this.$refs.table.clipboard()
-      },
-      selectEditor() {
-        this.editor.focus()
-      },
-      selectTitleInput() {
-        this.$refs.titleInput.select()
-      },
-      selectFirstParameter() {
-        if (!this.$refs['paramInput'] || this.$refs['paramInput'].length == 0) return
-        this.$refs['paramInput'][0].select()
-      },
-      updateEditorHeight() {
-        let height = this.$refs.topPanel.clientHeight
-        height -= this.$refs.actions.clientHeight
-        this.editor.setSize(null, height)
-      },
-      triggerSave() {
-        if (this.query.id) {
-          this.saveQuery()
-        } else {
-          this.$modal.show('save-modal')
-        }
-      },
-      async saveQuery() {
-        if (!this.hasTitle || !this.hasText) {
-          this.saveError = "You need both a title, and some query text."
-        } else {
-          await this.$store.dispatch('saveFavorite', this.query)
-          this.$modal.hide('save-modal')
-          this.$noty.success('Saved')
-          this.unsavedText = this.tab.query.text
-          this.tab.unsavedChanges = false
-        }
-      },
-      escapeRegExp(string) {
-        return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
-      },
-      async submitCurrentQuery() {
-        if (this.currentlySelectedQuery) {
-          this.submitQuery(this.currentlySelectedQuery.text)
-        } else {
-          this.results = []
-          this.error = 'No query to run'
-        }
-      },
-      async submitTabQuery() {
-        const text = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
-        if (text.trim()) {
-          this.submitQuery(text)
-        } else {
-          this.error = 'No query to run'
-        }
-      },
-      async submitQuery(rawQuery, skipModal) {
-        this.running = true
-        this.queryForExecution = rawQuery
-        this.results = []
-        this.selectedResult = 0
+    }
 
-        try {
-          if (this.queryParameterPlaceholders.length > 0 && !skipModal) {
-            this.$modal.show('parameters-modal')
-            return
-          }
+    updateEditorHeight() {
+      //@ts-ignore
+      let height = this.$refs.topPanel.clientHeight
+      //@ts-ignore
+      height -= this.$refs.toolbar.clientHeight
+      Array.from(document.getElementsByClassName('editor')).forEach(e => {
+        // @ts-ignore
+        e.style.height = `${height}px`
+      })
+      this.editor?.layout()
+    }
 
-          const query = this.deparameterizedQuery
-          this.$modal.hide('parameters-modal')
-
-          this.runningQuery = this.connection.query(query)
-          const queryStartTime = +new Date()
-          const results = await this.runningQuery.execute()
-          const queryEndTime = +new Date()
-          this.executeTime = queryEndTime - queryStartTime
-          let totalRows = 0
-          results.forEach(result => {
-            result.rowCount = result.rowCount || 0
-
-            // TODO (matthew): remove truncation logic somewhere sensible
-            totalRows += result.rowCount
-            if (result.rowCount > this.$config.maxResults) {
-              result.rows = _.take(result.rows, this.$config.maxResults)
-              result.truncated = true
-              result.truncatedRowCount = this.$config.maxResults
-            }
-          })
-          this.results = results
-          this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
-        } catch (ex) {
-          if(this.running) {
-            this.error = ex
-          }
-        } finally {
-          this.running = false
-        }
-      },
-      inQuote() {
-        return false
-      },
-      maybeAutoComplete(editor, e) {
-        // BUGS:
-        // 1. only on periods if not in a quote
-        // 2. post-space trigger after a few SQL keywords
-        //    - from, join
-        const triggerWords = ['from', 'join']
-        const triggers = {
-          '190': 'period'
-        }
-        const space = 32
-        if (editor.state.completionActive) return;
-        if (triggers[e.keyCode] && !this.inQuote(editor, e)) {
-          CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
-          // return
-        }
-        if (e.keyCode === space) {
-          try {
-            const pos = _.clone(editor.getCursor());
-            if (pos.ch > 0) {
-              pos.ch = pos.ch - 2
-            }
-            const word = editor.findWordAt(pos)
-            const lastWord = editor.getRange(word.anchor, word.head)
-            if (!triggerWords.includes(lastWord.toLowerCase())) return;
-            CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
-
-          } catch (ex) {
-            console.log('no keyup space autocomplete')
-          }
-        }
-      },
-      formatSql() {
-        this.editor.setValue(sqlFormatter.format(this.editor.getValue()))
-        this.selectEditor()
-      },
-      toggleComment() {
-        this.editor.execCommand('toggleComment')
-      },
-    },
     mounted() {
-      const $editor = this.$refs.editor
       // TODO (matthew): Add hint options for all tables and columns
       let startingValue = ""
       if (this.query.text) {
@@ -482,6 +527,7 @@
       }
 
       this.$nextTick(() => {
+        // @ts-ignore
         this.split = Split(this.splitElements, {
           elementStyle: (dimension, size) => ({
               'flex-basis': `calc(${size}%)`,
@@ -491,95 +537,22 @@
           direction: 'vertical',
           onDragEnd: () => {
             this.$nextTick(() => {
+              // @ts-ignore
               this.tableHeight = this.$refs.bottomPanel.clientHeight
               this.updateEditorHeight()
             })
           }
         })
 
-        const runQueryKeyMap = {
-          "Shift-Ctrl-Enter": this.submitCurrentQuery,
-          "Shift-Cmd-Enter": this.submitCurrentQuery,
-          "Ctrl-Enter": this.submitTabQuery,
-          "Cmd-Enter": this.submitTabQuery,
-          "Ctrl-S": this.triggerSave,
-          "Cmd-S": this.triggerSave,
-          "Shift-Ctrl-F": this.formatSql,
-          "Shift-Cmd-F": this.formatSql,
-          "Ctrl-/": this.toggleComment,
-          "Cmd-/": this.toggleComment,
-          "Esc": this.cancelQuery
-        }
-
-        const modes = {
-          'mysql': 'text/x-mysql',
-          'postgresql': 'text/x-pgsql',
-          'sqlserver': 'text/x-mssql',
-        };
-        this.editor = CodeMirror.fromTextArea($editor, {
-          lineNumbers: true,
-          mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
-          theme: 'monokai',
-          extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete"},
-          hint: CodeMirror.hint.sql,
-          hintOptions: this.hintOptions
-        })
-        this.editor.setValue(startingValue)
-        this.editor.addKeyMap(runQueryKeyMap)
-        this.editor.on("keydown", (cm, e) => {
-          if (this.$store.state.menuActive) {
-            e.preventDefault()
-          }
-        })
-
-        this.editor.on("change", (cm) => {
-          // this also updates `this.queryText`
-          this.tab.query.text = cm.getValue()
-        })
-
-        if (this.connectionType === 'postgresql')  {
-          this.editor.on("beforeChange", (cm, co) => {
-            const { to, from, origin, text } = co;
-
-            const keywords = CodeMirror.resolveMode(this.editor.options.mode).keywords
-
-            // quote names when needed
-            if (origin === 'complete' && keywords[text[0].toLowerCase()] != true) {
-              const names = text[0]
-                .match(/("[^"]*"|[^.]+)/g)
-                .map(n => /^\d/.test(n) ? `"${n}"` : n)
-                .map(n => /[^a-z0-9_]/.test(n) && !/"/.test(n) ? `"${n}"` : n)
-                .join('.')
-  
-              co.update(from, to, [names], origin)
-            }
-          })
-        }
-
-        // TODO: make this not suck
-        this.editor.on('keyup', this.maybeAutoComplete)
-        this.editor.on('cursorActivity', (editor) => this.cursorIndex = editor.getDoc().indexFromPos(editor.getCursor(true)))
-        this.editor.focus()
-
-        setTimeout(() => {
-          // this fixes the editor not showing because it doesn't think it's dom element is in view.
-          // its a hit and miss error
-          this.editor.refresh()
-        }, 1)
-
-        // this gives the dom a chance to kick in and render these
-        // before we try to read their heights
-        setTimeout(() => {
-          this.tableHeight = this.$refs.bottomPanel.clientHeight
-          this.updateEditorHeight()
-        }, 1)
+        this.queryText = startingValue
       })
-    },
+    }
+
     beforeDestroy() {
       if(this.split) {
         this.split.destroy()
       }
-    },
+    }
   }
 </script>
 
