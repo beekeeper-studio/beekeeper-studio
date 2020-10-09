@@ -101,6 +101,15 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'boolean', nullable: false, default: false})
   ssl: boolean = false
 
+  @Column({type: 'varchar', nullable: true})
+  sslCaFile: Nullable<string> = null
+
+  @Column({type: 'varchar', nullable: true})
+  sslCertFile: Nullable<string> = null
+
+  @Column({type: 'varchar', nullable: true})
+  sslKeyFile: Nullable<string> = null
+
   // GETTERS
   get hash() {
     const str = [
@@ -110,7 +119,10 @@ export class DbConnectionBase extends ApplicationEntity {
       this.sshHost,
       this.sshPort,
       this.defaultDatabase,
-      this.sshBastionHost
+      this.sshBastionHost,
+      this.sslCaFile,
+      this.sslCertFile,
+      this.sslKeyFile
     ].map(part => part || "").join("")
     return Crypto.createHash('md5').update(str).digest('hex')
   }

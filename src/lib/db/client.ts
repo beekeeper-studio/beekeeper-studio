@@ -89,6 +89,9 @@ export interface IDbConnectionServerConfig {
   osUser: string,
   password: Nullable<string>,
   ssh: Nullable<IDbConnectionServerSSHConfig>,
+  sslCaFile: Nullable<string>,
+  sslCertFile: Nullable<string>,
+  sslKeyFile: Nullable<string>,
   ssl: boolean
   localHost?: string,
   localPort?: number,

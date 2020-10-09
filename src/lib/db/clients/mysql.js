@@ -1,4 +1,5 @@
 // Copyright (c) 2015 The SQLECTRON Team
+import { readFileSync } from 'fs'
 
 import mysql from 'mysql2';
 import { identify } from 'sql-query-identifier';
@@ -435,11 +436,20 @@ function configDatabase(server, database) {
 
   if (server.config.ssl) {
     config.ssl = {
-      // It is not the best recommend way to use SSL with node-mysql
-      // https://github.com/felixge/node-mysql#ssl-options
-      // But this way we have compatibility with all clients.
-      rejectUnauthorized: false,
-    };
+      rejectUnauthorized: !server.config.sslCaFile && !server.config.sslCertFile && !server.config.sslKeyFile
+    }
+
+    if (server.config.sslCaFile) {
+      config.ssl.ca = readFileSync(server.config.sslCaFile);
+    }
+
+    if (server.config.sslCertFile) {
+      config.ssl.cert = readFileSync(server.config.sslCertFile);
+    }
+
+    if (server.config.sslKeyFile) {
+      config.ssl.key = readFileSync(server.config.sslKeyFile);
+    }
   }
 
   return config;

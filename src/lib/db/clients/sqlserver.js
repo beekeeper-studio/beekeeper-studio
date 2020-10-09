@@ -1,5 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 
+import { readFileSync } from 'fs';
+
 import { ConnectionPool } from 'mssql';
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
@@ -544,10 +546,7 @@ function configDatabase(server, database) {
     appName: server.config.applicationName || 'beekeeperstudio',
     pool: {
       max: 5,
-    },
-    options: {
-      encrypt: server.config.ssl,
-    },
+    }
   };
   if (server.config.domain) {
     config.domain = server.config.domain
@@ -556,6 +555,28 @@ function configDatabase(server, database) {
   if (server.sshTunnel) {
     config.server = server.config.localHost;
     config.port = server.config.localPort;
+  }
+
+  if (server.config.ssl) {
+    const options = {
+      encrypt: server.config.ssl,
+      cryptoCredentialsDetails: {}
+    }
+
+    if (server.config.sslCaFile) {
+      options.trustServerCertificate = false
+      options.cryptoCredentialsDetails.ca = readFileSync(server.config.sslCaFile);
+    }
+
+    if (server.config.sslCertFile) {
+      options.cryptoCredentialsDetails.cert = readFileSync(server.config.sslCertFile);
+    }
+
+    if (server.config.sslKeyFile) {
+      options.cryptoCredentialsDetails.key = readFileSync(server.config.sslKeyFile);
+    }
+
+    config.options = options;
   }
 
   return config;

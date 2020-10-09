@@ -11,6 +11,7 @@ import dev1 from './dev-1'
 import dev2 from './dev-2'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
+import sslFiles from './20201008-add-ssl-files'
 import createLogger from '../lib/logger'
 
 const logger = createLogger('migrations')()
@@ -22,7 +23,7 @@ const setupSQL = `
  )
 `
 const realMigrations = [
-  a, b, c, d, domains, createSettings, addZoom, addSc, encrypt
+  a, b, c, d, domains, createSettings, addZoom, addSc, sslFiles, encrypt
 ]
 
 const devMigrations = [
