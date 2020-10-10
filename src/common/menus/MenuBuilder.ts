@@ -64,7 +64,6 @@ export default class extends DefaultMenu {
           this.menuItems.cut,
           this.menuItems.copy,
           this.menuItems.paste,
-          { type: 'separator' },
           this.menuItems.selectAll,
         ]
       },
