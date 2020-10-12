@@ -1,5 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 
+import { readFileSync } from 'fs';
+
 import * as cassandra from 'cassandra-driver';
 import { identify } from 'sql-query-identifier';
 
@@ -234,10 +236,23 @@ function configDatabase(server, database) {
   }
 
   if (server.config.ssl) {
-    // TODO: sslOptions
+    const sslOptions = {};
+
+    if (server.config.sslCaFile) {
+      sslOptions.ca = [readFileSync(server.config.sslCaFile)];
+    }
+
+    if (server.config.sslCertFile) {
+      sslOptions.cert = readFileSync(server.config.sslCertFile);
+    }
+
+    if (server.config.sslKeyFile) {
+      sslOptions.key = readFileSync(server.config.sslKeyFile);
+    }
+
+    config.sslOptions = sslOptions;
   }
 
-  // client authentication
   if (server.config.user && server.config.password) {
     const user = server.config.user;
     const password = server.config.password;
