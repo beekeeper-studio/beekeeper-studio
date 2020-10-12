@@ -19,6 +19,7 @@ export class UsedConnection extends DbConnectionBase {
       this.sshHost = other.sshHost
       this.sshPort = other.sshPort
       this.sshBastionHost = other.sshBastionHost
+      this.ssl = other.ssl
       this.sslCaFile = other.sslCaFile
       this.sslCertFile = other.sslCertFile
       this.sslKeyFile = other.sslKeyFile
