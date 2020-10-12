@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import * as monaco from 'monaco-editor';
 import * as NodeSQLParser from 'node-sql-parser'
+import { IDbClients } from './db/client';
 
 type tableMap = {
   [table: string]: string[]
@@ -21,7 +22,7 @@ function getUserQueryColumnsFromAST(queryAST?: NodeSQLParser.AST) {
     : []
 }
 
-export const sqlMonacoDotSuggestion = (databaseType: string, queryUntilCursor: string, range: monaco.Range, databaseTables: tableMap, queryAST?: NodeSQLParser.AST) => {
+export const sqlMonacoDotSuggestion = (databaseType: IDbClients, queryUntilCursor: string, range: monaco.Range, databaseTables: tableMap, queryAST?: NodeSQLParser.AST) => {
   const tablesName = queryAST?.type === 'select' && queryAST.from
     ? queryAST.from.filter(f => !!f).map((f) => (f as NodeSQLParser.From).table)
     : []
@@ -49,7 +50,7 @@ export const sqlMonacoDotSuggestion = (databaseType: string, queryUntilCursor: s
   }
 }
 
-export const sqlMonacoSuggestion = (databaseType: string, queryUntilCursor: string, range: monaco.Range, databaseTables: tableMap, queryAST?: NodeSQLParser.AST) => {
+export const sqlMonacoSuggestion = (databaseType: IDbClients, queryUntilCursor: string, range: monaco.Range, databaseTables: tableMap, queryAST?: NodeSQLParser.AST) => {
   const tablesName = queryAST?.type === 'select' && queryAST.from
     ? queryAST.from.filter(f => !!f).map((f) => (f as NodeSQLParser.From).table)
     : []

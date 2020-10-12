@@ -242,7 +242,7 @@
     }
 
     get connectionType() {
-      return this.connection.connectionType;
+      return this.connection.connectionType || 'sqlite';
     }
 
     get hintOptions(): { tables: {
