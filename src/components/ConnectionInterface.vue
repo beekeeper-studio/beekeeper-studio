@@ -38,7 +38,7 @@
                 <sql-server-form v-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"></sql-server-form>
 
                 <!-- TEST AND CONNECT -->
-                <div class="row flex-middle">
+                <div class="test-connect row flex-middle">
                   <span class="expand"></span>
                   <div class="btn-group">
                     <button :disabled="testing" class="btn btn-flat" @click.prevent="testConnection">Test</button>

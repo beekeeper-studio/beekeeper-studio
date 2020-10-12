@@ -14,9 +14,7 @@
     <div class="advanced-connection-settings">
       <h4 class="advanced-heading flex" :class="{enabled: config.ssl}">
         <span class="expand">Enable SSL</span>
-        <i class="material-icons" @click.prevent="toggleSsl">
-          {{ config.ssl ? 'toggle_on' : 'toggle_off' }}
-        </i>
+        <x-switch @click.prevent="config.ssl = !config.ssl" :toggled="config.ssl"></x-switch>
       </h4>
       <div class="advanced-body" v-show="config.ssl">
         <div class="row gutter">
@@ -26,14 +24,14 @@
           </div>
         </div>
 
-        <div class="row gutter private-key">
+        <div class="row gutter">
           <div class="col form-group">
             <label>Certificate</label>
             <file-picker v-model="config.sslCertFile"></file-picker>
           </div>
         </div>
 
-        <div class="row gutter private-key">
+        <div class="row gutter">
           <div class="col form-group">
             <label>Key File</label>
             <file-picker v-model="config.sslKeyFile"></file-picker>
