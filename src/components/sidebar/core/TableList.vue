@@ -110,8 +110,8 @@
       </nav>
 
       <!-- TODO (gregory): Make the 'no tables div nicer' -->
-      <div class="empty" v-if="!tables || tables.length == 0">
-        There are no tables in <span class="truncate">{{database}}</span>
+      <div class="empty truncate" v-if="!tables || tables.length == 0">
+        There are no tables in<br> <span>{{database}}</span>
       </div>
     </div>
     <div class="empty" v-else>
