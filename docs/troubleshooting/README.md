@@ -15,7 +15,7 @@ Hopefully you can solve your problems with the details below. If not please [con
 If you're on Linux and using the `snap` version of Beekeeper you need to give the app an extra permission.
 
 ```bash
-snap connect beekeeper-studio:removable-media
+sudo snap connect beekeeper-studio:removable-media :removable-media
 ```
 
 If you're on another platform, please [open a ticket][bug] and we'll try to help you debug the problem.
