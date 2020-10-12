@@ -1,5 +1,5 @@
 
 
 export default {
-  updateCheckInterval: 14400 * 1000 // 4 hours
+  updateCheckInterval: 1000 * 60 * 60 * 24 // 24 hours
 }
