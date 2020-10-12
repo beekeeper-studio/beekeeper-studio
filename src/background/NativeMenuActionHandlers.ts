@@ -37,6 +37,9 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   paste(_1: Electron.MenuItem, win: Electron.BrowserWindow) {
     win.webContents.paste()
   }
+  selectAll(_1: Electron.MenuItem, win: Electron.BrowserWindow) {
+    win.webContents.selectAll()
+  }
 
   setZoom = async (level: number) => {
     getActiveWindows().forEach(window => {
