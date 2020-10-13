@@ -3,7 +3,7 @@
     <div class="sidebar-list">
       <nav class="list-group" v-if="favorites.length > 0">
         <div class="list-item" v-for="item in favorites" v-bind:key="item.id">
-          <a class="list-item-btn" @click.prevent="click(item)">
+          <a class="list-item-btn" @click.prevent="click(item)" :class="{active: selected(item)}">
             <i class="item-icon query material-icons" :class="{ hidden: checkedFavorites.length > 0 }">code</i>
             <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedFavorites" :class="{ shown: checkedFavorites.length > 0 }">
             <div class="list-title flex-col">
@@ -41,12 +41,16 @@
       }
     },
     computed: {
-      ...mapState(['favorites']),
+      ...mapState(['favorites', 'activeTab']),
       removeTitle() {
         return `Remove ${this.checkedFavorites.length} saved queries`;
       }
     },
     methods: {
+      selected(item) {
+        return this.activeTab && this.activeTab.query &&
+          this.activeTab.query.id === item.id
+      },
       click(item) {
         this.$root.$emit('favoriteClick', item)
       },

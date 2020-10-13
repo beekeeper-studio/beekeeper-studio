@@ -41,9 +41,9 @@
             @selected="tableSelected"
             :table="table"
             :connection="connection"
-            :selected="table == selectedTable"
             :forceExpand="allExpanded"
             :forceCollapse="allCollapsed"
+            :noSelect="true"
           ></table-list-item>
         </div>
       </nav>
@@ -88,7 +88,6 @@
                 @selected="tableSelected"
                 :table="table"
                 :connection="connection"
-                :selected="table == selectedTable"
                 :forceExpand="allExpanded"
                 :forceCollapse="allCollapsed"
               ></table-list-item>
@@ -101,7 +100,6 @@
               @selected="tableSelected"
               :table="table"
               :connection="connection"
-              :selected="table == selectedTable"
               :forceExpand="allExpanded"
               :forceCollapse="allCollapsed"
             ></table-list-item>
@@ -135,7 +133,6 @@
     data() {
       return {
         tableLoadError: null,
-        selectedTable: null,
         filterQuery: null,
         allExpanded: null,
         allCollapsed: null,
@@ -185,8 +182,8 @@
       }
     },
     methods: {
-      tableSelected(table) {
-        this.selectedTable = table
+      tableSelected() {
+        // this.selectedTable = table
       },
       clearFilter() {
         this.filterQuery = null

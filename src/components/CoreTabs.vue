@@ -44,7 +44,7 @@
   import TableTable from './tableview/TableTable'
   import AppEvent from '../common/AppEvent'
   import platformInfo from '../common/platform_info'
-  import { mapGetters } from 'vuex'
+  import { mapGetters, mapState } from 'vuex'
 
   export default {
     props: [ 'connection' ],
@@ -52,7 +52,6 @@
     data() {
       return {
         tabItems: [],
-        activeTab: null,
         activeItem: 0,
         newTabId: 1
       }
@@ -61,6 +60,7 @@
 
     },
     computed: {
+      ...mapState(["activeTab"]),
       ...mapGetters({ 'menuStyle': 'settings/menuStyle' }),
       lastTab() {
         return this.tabItems[this.tabItems.length - 1];
@@ -90,6 +90,9 @@
       }
     },
     methods: {
+      async setActiveTab(tab) {
+        await this.$store.dispatch('tabActive', tab)
+      },
       addTab(item) {
         this.tabItems.push(item)
         this.newTabId += 1
@@ -99,17 +102,17 @@
       },
       nextTab() {
         if(this.activeTab == this.lastTab) {
-          this.activeTab = this.firstTab
+          this.setActiveTab(this.firstTab)
         } else {
-          this.activeTab = this.tabItems[this.activeIdx + 1]
+          this.setActiveTab(this.tabItems[this.activeIdx + 1])
         }
       },
 
       previousTab() {
         if(this.activeTab == this.firstTab) {
-          this.activeTab = this.lastTab
+          this.setActiveTab(this.lastTab)
         } else {
-          this.activeTab = this.tabItems[this.activeIdx - 1]
+          this.setActiveTab(this.tabItems[this.activeIdx - 1])
         }
       },
       setTabTitleScope(id, value) {
@@ -162,8 +165,9 @@
         }
         this.addTab(t)
       },
-      click(tab) {
-        this.activeTab = tab
+      async click(tab) {
+        await this.setActiveTab(tab)
+
       },
       close(tab) {
         if (this.activeTab === tab) {
@@ -181,10 +185,11 @@
       },
       closeAll() {
         this.tabItems = []
+        this.setActiveTab(null)
       },
       closeOther(tab) {
         this.tabItems = [tab]
-        this.activeTab = tab;
+        this.setActiveTab(tab)
         if (tab.query && tab.query.id) {
           tab.query.reload()
         }

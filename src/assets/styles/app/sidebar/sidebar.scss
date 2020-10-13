@@ -280,9 +280,9 @@
       }
     }
 
-    // &.active {
-    //   background-color: rgba($theme-base, 0.1);
-    // }
+    &.active {
+      background-color: rgba($theme-base, 0.1);
+    }
 
     &.open {
       // background: rgba($theme-base, 0.03);

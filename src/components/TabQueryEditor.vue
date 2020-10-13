@@ -160,6 +160,7 @@
         return this.tab.query.text
       },
       individualQueries() {
+        if (!this.queryText) return []
         return splitQueries(this.queryText)
       },
       currentlySelectedQueryIndex() {

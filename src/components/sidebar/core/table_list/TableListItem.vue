@@ -4,7 +4,7 @@
       <span class="btn-fab open-close" @mousedown.prevent="toggleColumns" >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
-      <span class="item-wrapper flex flex-middle expand" @mousedown.prevent="selectTable" @dblclick.prevent="openTable">
+      <span class="item-wrapper flex flex-middle expand" @click.prevent="openTable" @dblclick.prevent="openTable">
         <i :title="title" :class="iconClass" class="item-icon material-icons">grid_on</i>
         <span class="table-name truncate">{{table.name}}</span>
       </span>
@@ -48,10 +48,10 @@
 
 <script type="text/javascript">
 
-  import { mapGetters } from 'vuex'
+  import { mapGetters, mapState } from 'vuex'
   import _ from 'lodash'
 	export default {
-		props: ["connection", "table", "selected", "forceExpand", "forceCollapse"],
+		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse"],
     mounted() {
       this.showColumns = !!this.table.showColumns
     },
@@ -73,6 +73,11 @@
       },
       showColumns() {
         this.table.showColumns = this.showColumns
+      },
+      selected() {
+        if (this.selected && !this.noSelect) {
+          this.$el.scrollIntoView()
+        }
       }
     },
     computed: {
@@ -84,7 +89,13 @@
       title() {
         return _.startCase(this.table.entityType)
       },
-      ...mapGetters(['pinned'])
+      selected() {
+        return this.activeTab && this.activeTab.table &&
+          this.activeTab.table.name === this.table.name &&
+          this.activeTab.table.schema === this.table.schema
+      },
+      ...mapGetters(['pinned']),
+      ...mapState(['activeTab'])
     },
     methods: {
       copyTable() {

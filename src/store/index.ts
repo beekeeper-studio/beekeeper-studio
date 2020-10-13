@@ -12,10 +12,7 @@ import ConnectionProvider from '../lib/connection-provider'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { DBConnection, IDbColumn } from '../lib/db/client'
 import { IDbConnectionPublicServer } from '../lib/db/server'
-
-interface IDbEntityWithColumns {
-  columns: IDbColumn[]
-}
+import { CoreTab, IDbEntityWithColumns, QueryTab, TableTab } from './models'
 
 interface State {
   usedConfig: Nullable<SavedConnection>,
@@ -32,7 +29,8 @@ interface State {
   history: UsedQuery[],
   favorites: UsedQuery[],
   username: Nullable<string>,
-  menuActive: boolean
+  menuActive: boolean,
+  activeTab: Nullable<CoreTab>
 }
 
 Vue.use(Vuex)
@@ -55,7 +53,8 @@ const store = new Vuex.Store<State>({
     history: [],
     favorites: [],
     username: null,
-    menuActive: false
+    menuActive: false,
+    activeTab: null
   },
   getters: {
     orderedUsedConfigs(state) {
@@ -86,6 +85,9 @@ const store = new Vuex.Store<State>({
     }
   },
   mutations: {
+    tabActive(state, tab: CoreTab) {
+      state.activeTab = tab
+    },
     menuActive(state, value) {
       state.menuActive = !!value
     },
@@ -332,7 +334,10 @@ const store = new Vuex.Store<State>({
     },
     async menuActive(context, value) {
       context.commit('menuActive', value)
-    }
+    },
+    async tabActive(context, value: CoreTab) {
+      context.commit('tabActive', value)
+    } 
   },
   plugins: []
 })
