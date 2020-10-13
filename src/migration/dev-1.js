@@ -1,7 +1,6 @@
 import _ from 'lodash'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
 import platformInfo from '../common/platform_info'
-import path from 'path'
 
 export default {
   name: 'dev-1-fixtures',
