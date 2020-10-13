@@ -19,21 +19,21 @@
       <div class="advanced-body" v-show="config.ssl">
         <div class="row gutter">
           <div class="col form-group">
-            <label>CA Cert</label>
+            <label>CA Cert (optional)</label>
             <file-picker v-model="config.sslCaFile"></file-picker>
           </div>
         </div>
 
         <div class="row gutter">
           <div class="col form-group">
-            <label>Certificate</label>
+            <label>Certificate (optional)</label>
             <file-picker v-model="config.sslCertFile"></file-picker>
           </div>
         </div>
 
         <div class="row gutter">
           <div class="col form-group">
-            <label>Key File</label>
+            <label>Key File (optional)</label>
             <file-picker v-model="config.sslKeyFile"></file-picker>
           </div>
         </div>
