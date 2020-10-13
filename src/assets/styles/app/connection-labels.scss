@@ -30,13 +30,20 @@ $color-defaults: (
 .statusbar {
   @each $key, $val in $color-defaults {
     &.#{$key} {
-      background-color: rgba(nth($val, 1), 0.25);
+      background-color: rgba(nth($val, 1), 0.6);
+    }
+  }
+  &.query-meta {
+    @each $key, $val in $color-defaults {
+      &.#{$key} {
+        background-color: rgba(nth($val, 1), 0.5);
+      }
     }
   }
   &.editing, &.failure {
     @each $key, $val in $color-defaults {
       &.#{$key} {
-        background-color: rgba(nth($val, 1), 0.15);
+        background-color: rgba(nth($val, 1), 0.4);
       }
     }
   }
