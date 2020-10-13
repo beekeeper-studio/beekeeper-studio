@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="nav-item-wrap">
     <li class="nav-item" :title="title + scope">
       <a
         class="nav-link"

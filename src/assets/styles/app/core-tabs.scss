@@ -50,6 +50,10 @@
     margin: 0;
     height: $tab-height;
     -webkit-app-region: no-drag;
+    .nav-item-wrap {    
+      min-width: 28px;
+      overflow: hidden;
+    }
     .nav-item {
       max-width: 200px;    
       min-width: 28px;
