@@ -1,7 +1,14 @@
 import _ from 'lodash';
-import * as monaco from 'monaco-editor';
 import * as NodeSQLParser from 'node-sql-parser'
 import { IDbClients } from './db/client';
+
+export enum SQLSuggestionKind {
+  Column,
+  Table,
+  Command,
+  Clause,
+  Statement,
+}
 
 type tableMap = {
   [table: string]: string[]
@@ -22,7 +29,7 @@ function getUserQueryColumnsFromAST(queryAST?: NodeSQLParser.AST) {
     : []
 }
 
-export const sqlMonacoDotSuggestion = (databaseType: IDbClients, queryUntilCursor: string, range: monaco.Range, databaseTables: tableMap, queryAST?: NodeSQLParser.AST) => {
+export const sqlDotSuggestion = (databaseType: IDbClients, queryUntilCursor: string, databaseTables: tableMap, queryAST?: NodeSQLParser.AST) => {
   const tablesName = queryAST?.type === 'select' && queryAST.from
     ? queryAST.from.filter(f => !!f).map((f) => (f as NodeSQLParser.From).table)
     : []
@@ -39,8 +46,7 @@ export const sqlMonacoDotSuggestion = (databaseType: IDbClients, queryUntilCurso
       suggestions: tablesName.flatMap(tableName => databaseTables[tableName].map((columnName: string) => ({
         label: `${tableName}.${columnName}`,
         insertText: wrapIdentifier(databaseType, columnName),
-        kind: monaco.languages.CompletionItemKind.Field,
-        range: range
+        kind: SQLSuggestionKind.Column,
       })))
     }
   }
@@ -50,7 +56,7 @@ export const sqlMonacoDotSuggestion = (databaseType: IDbClients, queryUntilCurso
   }
 }
 
-export const sqlMonacoSuggestion = (databaseType: IDbClients, queryUntilCursor: string, range: monaco.Range, databaseTables: tableMap, queryAST?: NodeSQLParser.AST) => {
+export const sqlSuggestion = (databaseType: IDbClients, queryUntilCursor: string, databaseTables: tableMap, queryAST?: NodeSQLParser.AST) => {
   const tablesName = queryAST?.type === 'select' && queryAST.from
     ? queryAST.from.filter(f => !!f).map((f) => (f as NodeSQLParser.From).table)
     : []
@@ -59,11 +65,9 @@ export const sqlMonacoSuggestion = (databaseType: IDbClients, queryUntilCursor: 
     return {
       suggestions: [{
         label: 'select * from $1',
-        kind: monaco.languages.CompletionItemKind.Snippet,
+        kind: SQLSuggestionKind.Statement,
         insertText: 'select ${0:*} from $1',
-        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
         documentation: 'SELECT Statement',
-        range,
       }]
     }
   } else if (queryUntilCursor.endsWith("from ")) {
@@ -71,8 +75,7 @@ export const sqlMonacoSuggestion = (databaseType: IDbClients, queryUntilCursor: 
       suggestions: Object.keys(databaseTables).map(tableName => ({
         label: tableName,
         insertText: `${wrapIdentifier(databaseType, tableName)} `,
-        kind: monaco.languages.CompletionItemKind.Field,
-        range,
+        kind: SQLSuggestionKind.Table,
       }))
     }
   } else if (queryUntilCursor.endsWith(", ")) {
@@ -82,8 +85,7 @@ export const sqlMonacoSuggestion = (databaseType: IDbClients, queryUntilCursor: 
       suggestions: tablesName.flatMap(tableName => databaseTables[tableName].filter(columnName => !usedColumns.includes(columnName)).map(columnName => ({
         label: columnName,
         insertText: wrapIdentifier(databaseType, columnName),
-        kind: monaco.languages.CompletionItemKind.Field,
-        range,
+        kind: SQLSuggestionKind.Column,
       })))
     }
   } else if (
@@ -94,8 +96,7 @@ export const sqlMonacoSuggestion = (databaseType: IDbClients, queryUntilCursor: 
       suggestions: tablesName.flatMap(tableName => databaseTables[tableName].map((columnName: string) => ({
         label: columnName,
         insertText: wrapIdentifier(databaseType, columnName),
-        kind: monaco.languages.CompletionItemKind.Field,
-        range,
+        kind: SQLSuggestionKind.Column,
       })))
     }
   } else if (!queryAST) {
@@ -103,8 +104,7 @@ export const sqlMonacoSuggestion = (databaseType: IDbClients, queryUntilCursor: 
       suggestions: [{
         label: 'select',
         insertText: 'select',
-        kind: monaco.languages.CompletionItemKind.Keyword,
-        range: range
+        kind: SQLSuggestionKind.Command,
       }]
     }
   } else if (queryAST?.type === 'select' && !queryAST.from) {
@@ -112,8 +112,7 @@ export const sqlMonacoSuggestion = (databaseType: IDbClients, queryUntilCursor: 
       suggestions: [{
         label: 'from',
         insertText: 'from ',
-        kind: monaco.languages.CompletionItemKind.Keyword,
-        range,
+        kind: SQLSuggestionKind.Clause,
       }]
     }
   } else if (queryAST?.type === 'select' && !queryAST.where) {
@@ -121,8 +120,7 @@ export const sqlMonacoSuggestion = (databaseType: IDbClients, queryUntilCursor: 
       suggestions: [{
         label: 'where',
         insertText: 'where ',
-        kind: monaco.languages.CompletionItemKind.Keyword,
-        range,
+        kind: SQLSuggestionKind.Clause,
       }]
     }
   } else {
@@ -130,8 +128,7 @@ export const sqlMonacoSuggestion = (databaseType: IDbClients, queryUntilCursor: 
       suggestions: [{
         label: 'order by',
         insertText: 'order by ',
-        kind: monaco.languages.CompletionItemKind.Keyword,
-        range,
+        kind: SQLSuggestionKind.Clause,
       }]
     }
   }

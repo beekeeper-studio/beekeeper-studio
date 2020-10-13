@@ -125,7 +125,7 @@
   import { mapState } from 'vuex'
 
   import { splitQueries, extractParams } from '../lib/db/sql_tools'
-  import { sqlMonacoDotSuggestion, sqlMonacoSuggestion } from '../lib/monaco-sql-suggestion'
+  import { sqlMonacoDotSuggestion, sqlMonacoSuggestion } from '../lib/monaco-sql-suggestions'
 
   //@ts-ignore
   import ProgressBar from './editor/ProgressBar'
