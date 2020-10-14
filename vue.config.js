@@ -99,7 +99,7 @@ module.exports = {
           environment: {
             "ELECTRON_SNAP": "true"
           },
-          plugs: ["default", "ssh-keys"]
+          plugs: ["default", "ssh-keys", "removable-media", "mount-observe"]
         },
         win: {
           icon: './public/icons/png/512x512.png',
