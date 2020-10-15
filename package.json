@@ -82,6 +82,7 @@
     "@types/lodash": "^4.14.159",
     "@types/mkdirp": "^1.0.1",
     "@types/node": "^12.12.54",
+    "@types/sql-query-identifier": "^1.1.0",
     "@types/tabulator-tables": "^4.7.2",
     "@typescript-eslint/eslint-plugin": "^4.1.0",
     "@typescript-eslint/parser": "^4.1.0",
