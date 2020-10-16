@@ -157,7 +157,7 @@ export default {
       return Object.values(this.pendingDeletes)
     },
     pendingChangesCount() {
-      return Object.values(this.pendingEdits).length + Object.values(this.pendingDeletes).length
+      return this.pendingEditList.length + this.pendingDeleteList.length
     },
     editable() {
       return this.primaryKey && this.table.entityType === 'table'
