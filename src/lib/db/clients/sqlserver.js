@@ -44,6 +44,7 @@ export default async function (server, database) {
     getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema) => getPrimaryKey(conn, db, table, schema),
     updateValues: (updates) => updateValues(conn, updates),
+    deleteRows: (updates) => deleteRows(conn, updates),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
@@ -417,6 +418,28 @@ export async function updateValues(conn, updates) {
     }
   })
   return results
+}
+
+export async function deleteRows(conn, updates) {
+
+  const deleteQueries = updates.map(update => {
+    const where = {}
+    where[update.pkColumn] = update.primaryKey
+
+    const query = knex(update.table)
+      .withSchema(update.schema)
+      .where(where)
+      .delete()
+      .toQuery()
+    return query
+  })
+
+  const sql = ['set xact_abort on', 'BEGIN TRANSACTION', ...deleteQueries, 'COMMIT'].join(";")
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    await driverExecuteQuery(cli, { query: sql })
+  })
+  return true
 }
 
 

@@ -461,14 +461,6 @@ export default {
 
       this.$set(this.pendingDeletes, pkCell.getValue(), payload)
     },
-    addSelectionToPendingDeletes() {
-
-      this.tabulator.getSelectedRows().forEach(row => {
-        this.addRowToPendingDeletes(row)
-      })
-
-      this.tabulator.deselectRow()
-    },
     async saveChanges() {
       try {
         let replaceData = false
