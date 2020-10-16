@@ -39,6 +39,7 @@ export default async function (server, database) {
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
     updateValues: (updates) => updateValues(conn, updates),
+    deleteRows: (updates) => deleteRows(conn, updates),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: () => listDatabases(conn),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
@@ -152,6 +153,33 @@ export async function updateValues(conn, updates) {
   return results
 }
 
+export async function deleteRows(conn, updates) {
+  const deleteCommands = updates.map(update => {
+    return {
+      query: `DELETE FROM ${update.table} WHERE ${update.pkColumn} = ?`,
+      params: [update.primaryKey]
+    }
+  })
+
+  const commands = [{ query: 'BEGIN'}, ...deleteCommands];
+  // TODO: this should probably return the updated values
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    try {
+      for (let index = 0; index < commands.length; index++) {
+        const blob = commands[index];
+        await driverExecuteQuery(cli, blob)
+      }
+      await driverExecuteQuery(cli, { query: 'COMMIT'})
+    } catch (ex) {
+      log.error("query exception: ", ex)
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
+      throw ex
+    }
+  })
+
+  return true
+}
 
 export async function executeQuery(conn, queryText) {
   const result = await driverExecuteQuery(conn, { query: queryText, multiple: true });

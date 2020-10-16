@@ -73,11 +73,11 @@
             >warning</i>
           </span>
         </div>
-        <div v-if="pendingEditList.length > 0" class="flex flex-right">
+        <div v-if="pendingChangesCount > 0" class="flex flex-right">
           <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
-          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingEditList.length + ' ' + 'pending edits'" :class="{'error': !!editError}">
+          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingChangesCount + ' ' + 'pending edits'" :class="{'error': !!editError}">
             <!-- <i v-if="editError" class="material-icons">error</i> -->
-            <span class="badge">{{pendingEditList.length}}</span>
+            <span class="badge">{{pendingChangesCount}}</span>
             <span>Commit</span>
           </a>
 
@@ -137,6 +137,7 @@ export default {
       rawTableKeys: [],
       primaryKey: null,
       pendingEdits: {},
+      pendingDeletes: {},
       editError: null,
       timeAgo: new TimeAgo('en-US'),
       lastUpdated: null,
@@ -152,6 +153,12 @@ export default {
     pendingEditList() {
       return Object.values(this.pendingEdits)
     },
+    pendingDeleteList() {
+      return Object.values(this.pendingDeletes)
+    },
+    pendingChangesCount() {
+      return Object.values(this.pendingEdits).length + Object.values(this.pendingDeletes).length
+    },
     editable() {
       return this.primaryKey && this.table.entityType === 'table'
     },
@@ -161,7 +168,7 @@ export default {
     },
     statusbarMode() {
       if (this.editError) return 'failure'
-      if (this.pendingEdits.length > 0) return 'editing'
+      if (this.pendingChangesCount) return 'editing'
       return null
     },
     tableKeys() {
@@ -333,7 +340,15 @@ export default {
         scrollToStart: false,
         scrollPageUp: false,
         scrollPageDown: false
-      }
+      },
+      rowContextMenu:[
+        {
+          label: "Delete Row",
+          action: (e, row) => {
+            this.addRowToPendingDeletes(row)
+          }
+        },
+      ]
     });
 
   },
@@ -427,25 +442,70 @@ export default {
       }
       this.$set(this.pendingEdits, key, payload)
     },
+    addRowToPendingDeletes(row) {
+      row.getElement().classList.add('deleted')
+      const pkCell = row.getCells().find(c => c.getField() === this.primaryKey)
+
+      if (!pkCell) {
+        this.$noty.error("Can't delete row -- couldn't figure out primary key")       
+        return
+      }
+
+      const payload = {
+        table: this.table.name,
+        row: row,
+        schema: this.table.schema,
+        pkColumn: this.primaryKey,
+        primaryKey: pkCell.getValue()
+      }
+
+      this.$set(this.pendingDeletes, pkCell.getValue(), payload)
+    },
+    addSelectionToPendingDeletes() {
+
+      this.tabulator.getSelectedRows().forEach(row => {
+        this.addRowToPendingDeletes(row)
+      })
+
+      this.tabulator.deselectRow()
+    },
     async saveChanges() {
       try {
-        // throw new Error("This is an error")
-        const newData = await this.connection.updateValues(this.pendingEditList)
-        const updateIncludedPK = this.pendingEditList.find(e => e.column === e.pkColumn)
-        if (updateIncludedPK) {
-          this.tabulator.replaceData()
-        } else {
-          this.tabulator.updateData(newData)
-          this.pendingEditList.forEach(edit => {
-            edit.cell.getElement().classList.remove('edited')
-            edit.cell.getElement().classList.add('edit-success')
-            setTimeout(() => {
-              edit.cell.getElement().classList.remove('edit-success')
-            }, 1000)
-          })
+        let replaceData = false
+
+        // Commit Deletes
+        if (this.pendingDeleteList.length > 0) {
+          const deleteSuccess = await this.connection.deleteRows(this.pendingDeleteList)
+          if (deleteSuccess) {
+            replaceData = true
+          } else {
+            this.$noty.error("Error deleting rows")
+          }
         }
-        log.info("new Data: ", newData)
-        this.pendingEdits = {}
+
+        if (this.pendingEditList.length > 0) {
+          // Commit Updates
+          const newData = await this.connection.updateValues(this.pendingEditList)
+          const updateIncludedPK = this.pendingEditList.find(e => e.column === e.pkColumn)
+          if (updateIncludedPK) {
+            replaceData = true
+          } else {
+            this.tabulator.updateData(newData)
+            this.pendingEditList.forEach(edit => {
+              edit.cell.getElement().classList.remove('edited')
+              edit.cell.getElement().classList.add('edit-success')
+              setTimeout(() => {
+                edit.cell.getElement().classList.remove('edit-success')
+              }, 1000)
+            })
+          }
+          log.info("new Data: ", newData)
+          this.pendingEdits = {}
+        }
+
+        if (replaceData) {
+          this.tabulator.replaceData()
+        }
       } catch (ex) {
         this.pendingEditList.forEach(edit => {
           edit.cell.getElement().classList.add('edit-error')
@@ -467,9 +527,13 @@ export default {
         edit.cell.getElement().classList.remove('edited')
         edit.cell.getElement().classList.remove('edit-error')
       })
+      this.pendingDeleteList.forEach(pendingDelete => {
+        pendingDelete.row.getElement().classList.remove('deleted')
+      })
       log.debug('discarding -- applying update', updates)
       this.tabulator.updateData(updates)
       this.pendingEdits = {}
+      this.pendingDeletes = {}
     },
     triggerFilter() {
       if (this.filter.type && this.filter.field) {
@@ -526,7 +590,8 @@ export default {
             const r = response.result;
             this.totalRecords = Number(response.totalRecords) || 0;
             this.response = response
-            this.pendingEdits = []
+            this.pendingEdits = {}
+            this.pendingDeletes = {}
             this.editError = null
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data
