@@ -32,11 +32,34 @@ export interface IDbQueryFilter {
   value: string
 }
 
+export interface IDbInsertValue {
+  column: IDbColumn[],
+  value: string
+}
+
+export interface IDbInsert {
+  table: string,
+  values: IDbInsertValue[],
+}
+
 export interface IDbUpdate {
   table: string
   column: string
   pkColumn: string
   schema?: string
+}
+
+export interface IDbDelete {
+  table: string,
+  pkColumn: string,
+  schema?: string,
+  primaryKey: string
+}
+
+export interface IDbChanges {
+  inserts: IDbInsert[],
+  updates: IDbUpdate[],
+  deletes: IDbDelete[]
 }
 
 export interface IDbConnection {
@@ -56,6 +79,7 @@ export interface IDbConnection {
   listDatabases: (filter?: IDbFilter) => void,
   updateValues: (updates: IDbUpdate[]) => void,
   deleteRows: (updates: IDbUpdate[]) => void,
+  applyChanges: (changes: IDbChanges) => void,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableCreateScript: (table: string, schema?: string) => void,
   getViewCreateScript: (view: string) => void,
@@ -143,6 +167,7 @@ export class DBConnection {
   selectTop = selectTop.bind(null, this.server, this.database)
   updateValues = updateValues.bind(null, this.server, this.database)
   deleteRows = deleteRows.bind(null, this.server, this.database)
+  applyChanges = applyChanges.bind(null, this.server, this.database)
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
   getTableCreateScript = getTableCreateScript.bind(null, this.server, this.database)
   getTableSelectScript = getTableSelectScript.bind(null, this.server, this.database)
@@ -304,6 +329,11 @@ function updateValues(server: IDbConnectionServer, database: IDbConnectionDataba
 function deleteRows(server: IDbConnectionServer, database: IDbConnectionDatabase, updates: IDbUpdate[]) {
   checkIsConnected(server, database)
   return database.connection?.deleteRows(updates)
+}
+
+function applyChanges(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: IDbChanges) {
+  checkIsConnected(server, database)
+  return database.connection?.applyChanges(changes)
 }
 
 function executeQuery(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string) {

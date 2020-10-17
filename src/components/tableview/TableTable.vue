@@ -104,6 +104,11 @@ import Statusbar from '../common/StatusBar'
 import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
+
+//const CHANGE_TYPE_INSERT = 'insert'
+const CHANGE_TYPE_UPDATE = 'update'
+const CHANGE_TYPE_DELETE = 'delete'
+
 const log = rawLog.scope('TableTable')
 
 export default {
@@ -136,8 +141,11 @@ export default {
       limit: 100,
       rawTableKeys: [],
       primaryKey: null,
-      pendingEdits: {},
-      pendingDeletes: {},
+      pendingChanges: {
+        inserts: [],
+        updates: [],
+        deletes: []
+      },
       editError: null,
       timeAgo: new TimeAgo('en-US'),
       lastUpdated: null,
@@ -150,14 +158,13 @@ export default {
     totalRecordsText() {
       return `${this.totalRecords.toLocaleString()}`
     },
-    pendingEditList() {
-      return Object.values(this.pendingEdits)
-    },
-    pendingDeleteList() {
-      return Object.values(this.pendingDeletes)
-    },
     pendingChangesCount() {
-      return this.pendingEditList.length + this.pendingDeleteList.length
+      return this.pendingChanges.inserts.length 
+             + this.pendingChanges.updates.length 
+             + this.pendingChanges.deletes.length
+    },
+    hasPendingChanges() {
+        return this.pendingChangesCount > 0
     },
     editable() {
       return this.primaryKey && this.table.entityType === 'table'
@@ -220,7 +227,7 @@ export default {
           cellClick: this.cellClick,
           width: columnWidth,
           cssClass: isPK ? 'primary-key' : '',
-          editable: editable,
+          editable: this.cellEditCheck,
           editor: editable ? editorType : undefined,
           variableHeight: true,
           headerTooltip: headerTooltip,
@@ -315,6 +322,7 @@ export default {
       this.filter = _.clone(this.initialFilter)
     }
 
+    this.resetPendingChanges()
 
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
     this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
@@ -410,10 +418,16 @@ export default {
         }, 10)
 
       }
+    },
+    cellEditCheck(cell) {
+      const primaryKey = cell.getRow().getCells().find(c => c.getField() === this.primaryKey).getValue()
+      const pendingDelete = _.find(this.pendingChanges.deletes, { primaryKey: primaryKey })
 
+      return this.editable && cell.getColumn.title !== this.primaryKey && !pendingDelete
     },
     cellEdited(cell) {
       log.info('edit', cell)
+
       const pkCell = cell.getRow().getCells().find(c => c.getField() === this.primaryKey)
       if (!pkCell) {
         this.$noty.error("Can't edit column -- couldn't figure out primary key")
@@ -429,8 +443,9 @@ export default {
 
       cell.getElement().classList.add('edited')
       const key = `${pkCell.getValue()}-${cell.getField()}`
-      const currentEdit = this.pendingEdits[key]
+      const currentEdit = _.find(this.pendingChanges.updates, { key: key })
       const payload = {
+        key: key,
         table: this.table.name,
         schema: this.table.schema,
         column: cell.getField(),
@@ -440,7 +455,8 @@ export default {
         cell: cell,
         value: cell.getValue(0)
       }
-      this.$set(this.pendingEdits, key, payload)
+
+      this.addPendingChange(CHANGE_TYPE_UPDATE, payload)
     },
     addRowToPendingDeletes(row) {
       row.getElement().classList.add('deleted')
@@ -459,31 +475,58 @@ export default {
         primaryKey: pkCell.getValue()
       }
 
-      this.$set(this.pendingDeletes, pkCell.getValue(), payload)
+      this.addPendingChange(CHANGE_TYPE_DELETE, payload)
+    },
+    addPendingChange(changeType, payload) {
+      if (changeType === CHANGE_TYPE_UPDATE) {
+        // remove existing pending updates with identical pKey-column combo
+        let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
+        pendingUpdates.push(payload)
+
+        this.$set(this.pendingChanges, 'updates', pendingUpdates)
+      }
+
+      if (changeType === CHANGE_TYPE_DELETE) {
+        // remove pending updates for the row marked for deletion
+        let filter = { 'primaryKey': payload.primaryKey }
+        let discardedUpdates = _.filter(this.pendingChanges.updates, filter)
+        let pendingUpdates = _.reject(this.pendingChanges.updates, filter)
+
+        discardedUpdates.forEach(update => this.discardColumnUpdate(update))
+
+        this.$set(this.pendingChanges, 'updates', pendingUpdates)
+
+        if (!_.find(this.pendingChanges.deletes, { 'primaryKey': payload.primaryKey })) {
+          this.pendingChanges.deletes.push(payload)
+        }
+      }
+    },
+    resetPendingChanges() {
+      this.pendingChanges = {
+        inserts: [],
+        updates: [],
+        deletes: []
+      }
     },
     async saveChanges() {
       try {
         let replaceData = false
 
-        // Commit Deletes
-        if (this.pendingDeleteList.length > 0) {
-          const deleteSuccess = await this.connection.deleteRows(this.pendingDeleteList)
-          if (deleteSuccess) {
-            replaceData = true
-          } else {
-            this.$noty.error("Error deleting rows")
-          }
+        const result = await this.connection.applyChanges(this.pendingChanges)
+
+        // handle delete result
+        if (this.pendingChanges.deletes.length > 0) {
+          replaceData = true
         }
 
-        if (this.pendingEditList.length > 0) {
-          // Commit Updates
-          const newData = await this.connection.updateValues(this.pendingEditList)
-          const updateIncludedPK = this.pendingEditList.find(e => e.column === e.pkColumn)
+        // handle update result
+        if (this.pendingChanges.updates.length > 0) {
+          const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
           if (updateIncludedPK) {
             replaceData = true
           } else {
-            this.tabulator.updateData(newData)
-            this.pendingEditList.forEach(edit => {
+            this.tabulator.updateData(result.updates)
+            this.pendingChanges.updates.forEach(edit => {
               edit.cell.getElement().classList.remove('edited')
               edit.cell.getElement().classList.add('edit-success')
               setTimeout(() => {
@@ -491,15 +534,17 @@ export default {
               }, 1000)
             })
           }
-          log.info("new Data: ", newData)
-          this.pendingEdits = {}
+          log.info("new Data: ", result.updates)
         }
 
         if (replaceData) {
           this.tabulator.replaceData()
+        } else {
+          this.resetPendingChanges()
         }
+
       } catch (ex) {
-        this.pendingEditList.forEach(edit => {
+        this.pendingChanges.updates.forEach(edit => {
           edit.cell.getElement().classList.add('edit-error')
         })
         this.editError = ex.message
@@ -508,24 +553,25 @@ export default {
     },
     discardChanges() {
       this.editError = null
-      const updates = []
-      this.pendingEditList.forEach(edit => {
-        const update = {}
-        update[edit.pkColumn] = edit.primaryKey
-        update[edit.column] = edit.oldValue
-        updates.push(update)
-        // this.tabulator.updateData(update)
-        // edit.cell.restoreOldValue()
-        edit.cell.getElement().classList.remove('edited')
-        edit.cell.getElement().classList.remove('edit-error')
+
+      this.pendingChanges.updates.forEach(edit => {
+        this.discardColumnUpdate(edit)
       })
-      this.pendingDeleteList.forEach(pendingDelete => {
+
+      this.pendingChanges.deletes.forEach(pendingDelete => {
         pendingDelete.row.getElement().classList.remove('deleted')
       })
-      log.debug('discarding -- applying update', updates)
-      this.tabulator.updateData(updates)
-      this.pendingEdits = {}
-      this.pendingDeletes = {}
+
+      this.resetPendingChanges()
+    },
+    discardColumnUpdate(pendingUpdate) {
+      const update = {}
+      update[pendingUpdate.pkColumn] = pendingUpdate.primaryKey
+      update[pendingUpdate.column] = pendingUpdate.oldValue
+      pendingUpdate.cell.getElement().classList.remove('edited')
+      pendingUpdate.cell.getElement().classList.remove('edit-error')
+
+      this.tabulator.updateData([update])
     },
     triggerFilter() {
       if (this.filter.type && this.filter.field) {
@@ -582,8 +628,7 @@ export default {
             const r = response.result;
             this.totalRecords = Number(response.totalRecords) || 0;
             this.response = response
-            this.pendingEdits = {}
-            this.pendingDeletes = {}
+            this.resetPendingChanges()
             this.editError = null
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data

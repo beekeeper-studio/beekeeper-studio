@@ -44,6 +44,7 @@ export default async function (server, database) {
     query: (queryText) => query(conn, queryText),
     updateValues: (updates) => updateValues(conn, updates),
     deleteRows: (updates) => deleteRows(conn, updates),
+    applyChanges: (changes) => applyChanges(conn, changes),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
@@ -348,6 +349,29 @@ export async function deleteRows(conn, updates) {
   })
 
   return true
+}
+
+export async function applyChanges(conn, changes) {
+  
+  let result = {
+    inserts: null,
+    updates: null,
+    deletes: null
+  }
+
+  // TODO Execute inserts
+
+  // Execute updates
+  if (changes.updates.length > 0) {
+    result.updates = await updateValues(conn, changes.updates)
+  }
+
+  // Execute deletes
+  if (changes.deletes.length > 0) {
+    result.deletes = await deleteRows(conn, changes.deletes)
+  }
+
+  return result
 }
 
 

@@ -45,6 +45,7 @@ export default async function (server, database) {
     getPrimaryKey: (db, table, schema) => getPrimaryKey(conn, db, table, schema),
     updateValues: (updates) => updateValues(conn, updates),
     deleteRows: (updates) => deleteRows(conn, updates),
+    applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
@@ -442,6 +443,28 @@ export async function deleteRows(conn, updates) {
   return true
 }
 
+export async function applyChanges(conn, changes) {
+  
+  let result = {
+    inserts: null,
+    updates: null,
+    deletes: null
+  }
+
+  // TODO Execute inserts
+
+  // Execute updates
+  if (changes.updates.length > 0) {
+    result.updates = await updateValues(conn, changes.updates)
+  }
+
+  // Execute deletes
+  if (changes.deletes.length > 0) {
+    result.deletes = await deleteRows(conn, changes.deletes)
+  }
+
+  return result
+}
 
 export async function getTableCreateScript(conn, table) {
   // Reference http://stackoverflow.com/a/317864
