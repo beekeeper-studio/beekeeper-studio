@@ -1,9 +1,9 @@
-name: Build
+name: Pull Request & Branch Build
 
-on: 
+on:
   push:
-    branches:
-      - "*"
+    branches-ignore: master
+    tags-ignore: "v*"
   pull_request:
     branches:
       - "*"
@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-18.04, windows-latest, ubuntu-arm64]
+        os: [macos-latest, ubuntu-18.04, windows-latest]
 
     steps:
       - name: Check out Git repository
