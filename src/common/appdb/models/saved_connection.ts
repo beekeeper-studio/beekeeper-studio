@@ -227,7 +227,7 @@ export class SavedConnection extends DbConnectionBase {
       this.port = parsed.port
       this.username = parsed.user
       this.password = parsed.password
-      this.defaultDatabase = parsed.path?.[0]
+      this.defaultDatabase = parsed.path?.[0] ?? null
       return true
     } catch (ex) {
       log.error("SavedConnection unable to parse connection string", url, ex)
