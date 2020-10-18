@@ -41,6 +41,29 @@
           <div class="btn-wrap">
             <button class="btn btn-primary" type="submit">Search</button>
           </div>
+          <div class="btn-wrap">
+            <x-button class="btn" :class="{'btn-flat': allColumnsSelected, 'btn-info': !allColumnsSelected}">
+              <span>Columns</span>
+              <x-popover modal style="--align: left;">
+                <main>
+                  <div v-for="column in table.columns" :key="column.columnName" class="row gutter">
+                    <label class="checkbox-group">
+                      <input type="checkbox" v-model="visibleColumns" :value="column.columnName" class="form-control" />
+                      <span>{{ column.columnName }}</span>
+                    </label>
+                  </div>
+                  <div class="row gutter">
+                    <div class="col x6">
+                      <x-button class="btn btn-primary btn-block" @click="showAllColumns">All</x-button>
+                    </div>
+                    <div class="col x6">
+                      <x-button class="btn btn-primary btn-block" @click="hideAllColumns">None</x-button>
+                    </div>
+                  </div>
+                </main>
+              </x-popover>
+            </x-button>
+          </div>
         </div>
       </form>
     </div>
@@ -142,7 +165,8 @@ export default {
       lastUpdated: null,
       lastUpdatedText: null,
       interval: setInterval(this.setlastUpdatedText, 10000),
-      totalRecords: 0
+      totalRecords: 0,
+      visibleColumns: []
     };
   },
   computed: {
@@ -265,6 +289,9 @@ export default {
       }
 
       return [{ column: this.table.columns[0].columnName, dir: "asc" }];
+    },
+    allColumnsSelected() {
+      return this.visibleColumns.length === this.table.columns.length
     }
   },
 
@@ -295,6 +322,19 @@ export default {
         if (this.filter.value) result = 'filtered'
       }
       this.$emit('setTabTitleScope', this.tabId, result)
+    },
+    visibleColumns() {
+      if (!this.tabulator) {
+        return
+      }
+
+      this.tabulator.getColumns().forEach(column => {
+        if (this.visibleColumns.indexOf(column.getField()) === -1) {
+          column.hide()
+        } else {
+          column.show()
+        } 
+      })
     }
   },
   beforeDestroy() {
@@ -308,7 +348,7 @@ export default {
       this.filter = _.clone(this.initialFilter)
     }
 
-
+    this.showAllColumns()
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
     this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
     this.tabulator = new Tabulator(this.$refs.table, {
@@ -547,7 +587,12 @@ export default {
       if (!this.lastUpdated) return null
       this.lastUpdatedText = this.timeAgo.format(this.lastUpdated)
     },
-
+    showAllColumns() {
+      this.visibleColumns = _.map(this.table.columns, 'columnName')
+    },
+    hideAllColumns() {
+      this.visibleColumns = []
+    }
   }
 };
 </script>
