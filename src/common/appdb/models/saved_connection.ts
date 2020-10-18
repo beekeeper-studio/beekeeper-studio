@@ -213,16 +213,21 @@ export class SavedConnection extends DbConnectionBase {
 
   parse(url: string) {
     try {
-      const parsed = new ConnectionString(url)
+      const parsed = new ConnectionString(url, {
+        hosts: [{name: this.host, port: this.port}],
+        user: this.username,
+        password: this.password,
+        path: [this.defaultDatabase]
+      })
       this.connectionType = parsed.protocol as IDbClients || this.connectionType
-      if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
+      if (parsed.hostname?.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
       }
-      this.host = parsed.hostname || this.host
-      this.port = parsed.port || this.port
-      this.username = parsed.user || this.username
-      this.password = parsed.password || this.password
-      this.defaultDatabase = parsed.path ? parsed.path[0] : null || this.defaultDatabase
+      this.host = parsed.hostname
+      this.port = parsed.port
+      this.username = parsed.user
+      this.password = parsed.password
+      this.defaultDatabase = parsed.path?.[0]
       return true
     } catch (ex) {
       log.error("SavedConnection unable to parse connection string", url, ex)
