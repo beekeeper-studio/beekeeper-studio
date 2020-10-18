@@ -38,6 +38,7 @@ export default async function (server, database) {
     getPrimaryKey: (db, table) => getPrimaryKey(conn, db, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
+    insertRows: (inserts) => insertRows(conn, inserts),
     updateValues: (updates) => updateValues(conn, updates),
     deleteRows: (updates) => deleteRows(conn, updates),
     applyChanges: (changes) => applyChanges(conn, changes),
@@ -109,6 +110,43 @@ export function query(conn, queryText) {
       queryConnection.interrupt();
     },
   };
+}
+
+export async function insertRows(conn, inserts) {
+  const insertCommands = inserts.map(insert => {
+    // remove empty pkColumn data if present
+    const rowData = _.omitBy(insert.row.getData(), (value, key) => {
+      return (key === insert.pkColumn && !value)
+    })
+    const columns = Object.keys(rowData)
+    const values = Object.values(rowData)
+
+    const placeholders = values.map(() => '?')
+
+    return {
+      query: `INSERT INTO ${insert.table}(${columns.join(',')}) VALUES (${placeholders.join(',')})`,
+      params: values
+    }
+  })
+  
+  const commands = [{ query: 'BEGIN'}, ...insertCommands];
+
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    try {
+      for (let index = 0; index < commands.length; index++) {
+        const blob = commands[index];
+        await driverExecuteQuery(cli, blob)
+      }
+      await driverExecuteQuery(cli, { query: 'COMMIT'})
+    } catch (ex) {
+      log.error("query exception: ", ex)
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
+      throw ex
+    }
+  })
+
+  return true
 }
 
 export async function updateValues(conn, updates) {
@@ -190,7 +228,10 @@ export async function applyChanges(conn, changes) {
     deletes: null
   }
 
-  // TODO Execute inserts
+  // Execute inserts
+  if (changes.inserts.length > 0) {
+    result.inserts = await insertRows(conn, changes.inserts)
+  }
 
   // Execute updates
   if (changes.updates.length > 0) {

@@ -98,7 +98,10 @@ $cell-max-width: 300px;
   &.tabulator-selected {
     background: rgba($theme-base, 0.1);
   }
-  &.deleted {
+  &.inserted, &.inserted:hover {
+    background: rgba($brand-success, 0.8);
+  }
+  &.deleted, &.deleted:hover {
     background: rgba($brand-danger, 0.8);
   }
 }
