@@ -84,7 +84,7 @@
         defaultConfig: new SavedConnection(),
         config: null,
         errors: null,
-        connectionError: null,
+        connectionErrors: {},
         testing: false,
         split: null,
         url: null,
@@ -100,6 +100,20 @@
           return "Quick Connect"
         } else {
           return this.config.name
+        }
+      },
+      connectionError: {
+        get() {
+          if(_.isNull(this.config) || _.isUndefined(this.config.id)) {
+            return null
+          }
+
+          const key = this.config.id || -1
+          return this.connectionErrors[key] || null
+        },
+        set(value) {
+          const key = this.config.id || -1
+          this.$set(this.connectionErrors, key, value)
         }
       }
     },
