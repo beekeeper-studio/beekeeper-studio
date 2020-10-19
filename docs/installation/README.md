@@ -23,7 +23,7 @@ There are several ways to install Beekeeper Studio on Linux systems. We recommen
 
 Supported Architectures: x86-64, ARM64, Raspberry Pi (armhf)
 
-### DEB
+### Apt / DEB
 
 A repo is provided for Debian and Ubuntu 16.04+. To install the repo:
 
@@ -80,7 +80,7 @@ Beekeeper Studio supports armhf/armv7l and arm64 which means you can run Beekeep
 
 To install Beekeeper Studio on Raspberry Pi do one of the following:
 
-- Install [using apt](#deb)
+- Install [using apt](#apt-deb)
 - Download the AppImage [from GitHub](https://github.com/beekeeper-studio/beekeeper-studio/releases/latest). You want the `armhf` version or the `arm64` version if you are running a 64bit OS on your pi. (If you don't know which you are running, use `armhf`)
 - Use Snap, and simply `snap install beekeeper-studio`
 
