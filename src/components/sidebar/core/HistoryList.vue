@@ -4,20 +4,19 @@
       <nav class="list-group" v-if="history.length > 0">
         <div class="list-item" v-for="item in history" v-bind:key="item.id">
           <a class="list-item-btn" @click.prevent="click(item)">
-            <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedHistoryQueries" v-bind:class="{ shown: checkedHistoryQueries.length > 0 }">
-            <i class="item-icon query material-icons" v-bind:class="{ hidden: checkedHistoryQueries.length > 0 }">code</i>
+            <i class="item-icon query material-icons">code</i>
+            <!-- <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedHistoryQueries" v-bind:class="{ shown: checkedHistoryQueries.length > 0 }"> -->
             <div class="list-title flex-col">
               <span class="item-text expand truncate">{{nicelySized(item.text)}}</span>
               <span class="subtitle"><span>{{item.database}}</span></span>
             </div>
-            <x-button class="btn-fab" skin="iconic">
-              <i class="material-icons">more_horiz</i>
+            <x-contextmenu>
               <x-menu style="--target-align: right; --v-target-align: top;">
                 <x-menuitem @click="remove(item)">
                   <x-label class="text-danger">Remove</x-label>
                 </x-menuitem>
               </x-menu>
-            </x-button>
+            </x-contextmenu>
           </a>
         </div>
       </nav>
@@ -25,10 +24,10 @@
         <span>No Recent Queries</span>
       </div>
     </div>
-    <div class="toolbar btn-group row flex-right" v-show="checkedHistoryQueries.length > 0">
+    <!-- <div class="toolbar btn-group row flex-right" v-show="checkedHistoryQueries.length > 0">
       <a class="btn btn-link" @click="discardCheckedHistoryQueries">Cancel</a>
       <a class="btn btn-primary" :title="removeTitle" @click="removeCheckedHistoryQueries">Remove</a>
-    </div>
+    </div> -->
   </div>
 </template>
 
