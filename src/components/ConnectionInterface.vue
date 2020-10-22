@@ -103,6 +103,14 @@
         }
       }
     },
+    watch: {
+      config: {
+        deep: true,
+        handler() {
+          this.connectionError = null
+        }
+      }
+    },
     async mounted() {
       this.config = this.defaultConfig
       this.config.sshUsername = os.userInfo().username
