@@ -3,6 +3,7 @@ import { readFileSync } from 'fs'
 
 import mysql from 'mysql2';
 import { identify } from 'sql-query-identifier';
+import knexlib from 'knex'
 
 import createLogger from '../../logger';
 import { createCancelablePromise } from '../../../common/utils';
@@ -10,6 +11,8 @@ import errors from '../../errors';
 import { genericSelectTop } from './utils';
 
 const logger = createLogger('db:clients:mysql');
+
+const knex = knexlib({ client: 'mysql2' })
 
 const mysqlErrors = {
   EMPTY_QUERY: 'ER_EMPTY_QUERY',
@@ -325,10 +328,13 @@ export async function updateValues(conn, updates) {
 
 export async function deleteRows(conn, updates) {
   const deleteCommands = updates.map(update => {
-    return {
-      query: `DELETE FROM ${wrapIdentifier(update.table)} WHERE ${wrapIdentifier(update.pkColumn)} = ?`,
-      params: [update.primaryKey]
-    }
+    let where = {}
+    where[update.pkColumn] = update.primaryKey
+    return knex(update.table)
+      .withSchema(update.schema)
+      .where(where)
+      .delete()
+      .toQuery()
   })
 
   const commands = [{ query: 'START TRANSACTION'}, ...deleteCommands];

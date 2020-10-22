@@ -3,15 +3,18 @@
 import _ from 'lodash'
 import sqlite3 from 'sqlite3';
 import { identify } from 'sql-query-identifier';
+import knexlib from 'knex'
 import rawLog from 'electron-log'
 import { genericSelectTop } from './utils';
 
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
+const knex = knexlib({ client: 'sqlite3'})
+
 const sqliteErrors = {
   CANCELED: 'SQLITE_INTERRUPT',
-};
+}; 
 
 
 export default async function (server, database) {
@@ -156,12 +159,15 @@ export async function updateValues(conn, updates) {
 
 export async function deleteRows(conn, updates) {
   const deleteCommands = updates.map(update => {
-    return {
-      query: `DELETE FROM ${update.table} WHERE ${update.pkColumn} = ?`,
-      params: [update.primaryKey]
-    }
+    let where = {}
+    where[update.pkColumn] = update.primaryKey
+    return knex(update.table)
+      .withSchema(update.schema)
+      .where(where)
+      .delete()
+      .toQuery()
   })
-
+  
   const commands = [{ query: 'BEGIN'}, ...deleteCommands];
   // TODO: this should probably return the updated values
   await runWithConnection(conn, async (connection) => {
