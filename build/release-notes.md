@@ -11,6 +11,8 @@ Fortunately, the community has been on a tear and this release comes with a bunc
 
 
 1. You can now provided your own certificates for SSL connections
+2. We've changed how the sidebar works a little bit - click the arrow to expand the table, click the table name to open the table.
+3. If you are in a table view, the currently open table will be highlighted in the sidebar.
 2. HTML is escaped properly in query results and table views
 3. Connection passwords are now appropriately encrypted in the local database again
 4. Loads of app code has moved to typescript (!). This was a massive piece of work, and 100% a community contribution. :heart:
