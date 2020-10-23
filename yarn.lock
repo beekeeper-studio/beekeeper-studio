@@ -12361,9 +12361,9 @@ table@^5.2.3:
     string-width "^3.0.0"
 
 tabulator-tables@^4.8.0:
-  version "4.8.0"
-  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-4.8.0.tgz#b760759c51ef0cd65d786e8b1d362b96fe11fbc9"
-  integrity sha512-BNPciIEWukpg3qjLirBaD0+K5EiGHkacEjF9moRmKNg6x05UAJkNDLZowNlG2Grn0WAF6ap55f7VLFEg8ZBXVg==
+  version "4.8.2"
+  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-4.8.2.tgz#c1246652955ba1e98336e35d83343f7102aa6443"
+  integrity sha512-yTK2gl2dUlJhuIMzBP1tAjF5nmc9KMWSDw6wmMmMHT/ucoHWmIuRYXqqm6wAAq0bC0B1/QDyITEJv4tJ673pMg==
 
 tapable@^1.0.0, tapable@^1.1.3:
   version "1.1.3"
