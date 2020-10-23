@@ -10,7 +10,7 @@ Fortunately, the community has been on a tear and this release comes with a bunc
 **Headline Feature**: We now build for arm64 and armhf on Linux, which means you can run Beekeeper Studio on any Raspberry Pi 2B+! While probably a small userbase, we love the Raspberry Pi and think it is important to support such a pivotal learning platform.
 
 
-1. You can now provided your own certificates for SSL connections
+1. You can now provide your own certificates for SSL connections
 2. Wide tables are much more performant, thanks to Oli, the creator of Tabulator who worked with us to figure out a horizontal virtual dom implementation.
 2. We've changed how the sidebar works a little bit - click the arrow to expand the table, click the table name to open the table.
 3. If you are in a table view, the currently open table will be highlighted in the sidebar.
