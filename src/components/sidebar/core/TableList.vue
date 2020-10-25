@@ -52,7 +52,7 @@
     <!-- Tables -->
     <hr v-show="pinned.length > 0"> <!-- Fake splitjs Gutter styling -->
     <div v-if="!tablesLoading" class="table-list flex-col" ref="tables">
-      <nav class="list-group flex-col" v-show="tables.length > 0">
+      <nav class="list-group flex-col">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
             <!-- <span class="btn-fab open">
@@ -72,7 +72,8 @@
             </a>
           </div>
         </div>
-        <div class="list-body">
+
+        <div class="list-body" v-show="tables.length > 0">
           <div class="with-schemas" v-if="tablesHaveSchemas">
             <TableListSchema
               v-for="(blob, index) in schemaTables"
@@ -105,13 +106,14 @@
             ></table-list-item>
           </div>
         </div>
-      </nav>
 
-      <!-- TODO (gregory): Make the 'no tables div nicer' -->
-      <div class="empty truncate" v-if="!tables || tables.length == 0">
-        There are no tables in<br> <span>{{database}}</span>
-      </div>
+        <!-- TODO (gregory): Make the 'no tables div nicer' -->
+        <div class="empty truncate" v-if="!tables || tables.length == 0">
+          There are no tables in<br> <span>{{database}}</span>
+        </div>
+      </nav>
     </div>
+
     <div class="empty" v-else>
       {{tablesLoading}}
     </div>
