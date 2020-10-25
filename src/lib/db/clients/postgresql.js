@@ -744,8 +744,8 @@ function configDatabase(server, database) {
   }
 
   if (server.config.ssl) {
+
     config.ssl = {
-      rejectUnauthorized: !server.config.sslCaFile && !server.config.sslCertFile && !server.config.sslKeyFile
     }
 
     if (server.config.sslCaFile) {
@@ -758,6 +758,16 @@ function configDatabase(server, database) {
 
     if (server.config.sslKeyFile) {
       config.ssl.key = readFileSync(server.config.sslKeyFile);
+    }
+    if (!config.ssl.key && !config.ssl.ca && !config.ssl.cert) {
+      // TODO: provide this as an option in settings
+      // not per-connection
+      // How it works:
+      // if false, cert can be self-signed
+      // if true, has to be from a public CA
+      // Heroku certs are self-signed.
+      // if you provide ca/cert/key files, it overrides this
+      config.ssl.rejectUnauthorized = false
     }
   }
 
