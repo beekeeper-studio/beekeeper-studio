@@ -126,3 +126,16 @@ export function buildUpdateAndSelectQueries(knex, updates) {
   })
   return { updateQueries, selectQueries }
 }
+
+export function buildDeleteQueries(knex, deletes) {
+  return deletes.map(deleteRow => {
+    let where = {}
+    where[deleteRow.pkColumn] = deleteRow.primaryKey
+    
+    return knex(deleteRow.table)
+      .withSchema(deleteRow.schema)
+      .where(where)
+      .delete()
+      .toQuery()
+  })
+}

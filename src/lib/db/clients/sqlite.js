@@ -5,7 +5,7 @@ import sqlite3 from 'sqlite3';
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import rawLog from 'electron-log'
-import { genericSelectTop } from './utils';
+import { buildDeleteQueries, genericSelectTop } from './utils';
 
 const log = rawLog.scope('sqlite')
 const logger = () => log
@@ -42,8 +42,7 @@ export default async function (server, database) {
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
     updateValues: (updates) => updateValues(conn, updates),
-    deleteRows: (updates) => deleteRows(conn, updates),
-    applyChanges: (changes) => applyChanges(conn, changes),
+    deleteRows: (deletes) => deleteRows(conn, deletes),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: () => listDatabases(conn),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
@@ -157,58 +156,26 @@ export async function updateValues(conn, updates) {
   return results
 }
 
-export async function deleteRows(conn, updates) {
-  const deleteCommands = updates.map(update => {
-    let where = {}
-    where[update.pkColumn] = update.primaryKey
-    return knex(update.table)
-      .withSchema(update.schema)
-      .where(where)
-      .delete()
-      .toQuery()
-  })
+export async function deleteRows(conn, deletes) {
+  const deleteCommands = buildDeleteQueries(knex, deletes)
+  const commands = ['BEGIN', ...deleteCommands]
   
-  const commands = [{ query: 'BEGIN'}, ...deleteCommands];
-  // TODO: this should probably return the updated values
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
     try {
       for (let index = 0; index < commands.length; index++) {
         const blob = commands[index];
-        await driverExecuteQuery(cli, blob)
+        await driverExecuteQuery(cli, { query: blob })
       }
       await driverExecuteQuery(cli, { query: 'COMMIT'})
     } catch (ex) {
       log.error("query exception: ", ex)
-      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' })
       throw ex
     }
   })
 
   return true
-}
-
-export async function applyChanges(conn, changes) {
-  
-  let result = {
-    inserts: null,
-    updates: null,
-    deletes: null
-  }
-
-  // TODO Execute inserts
-
-  // Execute updates
-  if (changes.updates.length > 0) {
-    result.updates = await updateValues(conn, changes.updates)
-  }
-
-  // Execute deletes
-  if (changes.deletes.length > 0) {
-    result.deletes = await deleteRows(conn, changes.deletes)
-  }
-
-  return result
 }
 
 export async function executeQuery(conn, queryText) {

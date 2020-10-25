@@ -8,7 +8,7 @@ import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import errors from '../../errors';
 
@@ -131,8 +131,7 @@ export default async function (server, database) {
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
     updateValues: (updates) => updateValues(conn, updates),
-    deleteRows: (updates) => deleteRows(conn, updates),
-    applyChanges: (changes) => applyChanges(conn, changes),
+    deleteRows: (deletes) => deleteRows(conn, deletes),
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
     executeQuery: (queryText, schema = defaultSchema) => executeQuery(conn, queryText, schema),
     listDatabases: (filter) => listDatabases(conn, filter),
@@ -488,18 +487,9 @@ export async function updateValues(conn, updates) {
   return results
 }
 
-export async function deleteRows(conn, updates) {
-  const deleteQueries = updates.map(update => {
-    let where = {}
-    where[update.pkColumn] = update.primaryKey
-    return knex(update.table)
-      .withSchema(update.schema)
-      .where(where)
-      .delete()
-      .toQuery()
-  })
+export async function deleteRows(conn, deletes) {
+  const deleteQueries = buildDeleteQueries(knex, deletes)
 
-  // TODO: this should probably return the updated values
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
     try {
@@ -514,29 +504,6 @@ export async function deleteRows(conn, updates) {
   })
 
   return true
-}
-
-export async function applyChanges(conn, changes) {
-  
-  let result = {
-    inserts: null,
-    updates: null,
-    deletes: null
-  }
-
-  // TODO Execute inserts
-
-  // Execute updates
-  if (changes.updates.length > 0) {
-    result.updates = await updateValues(conn, changes.updates)
-  }
-
-  // Execute deletes
-  if (changes.deletes.length > 0) {
-    result.deletes = await deleteRows(conn, changes.deletes)
-  }
-
-  return result
 }
 
 export function query(conn, queryText) {

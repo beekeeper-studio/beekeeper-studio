@@ -164,7 +164,13 @@ export default {
              + this.pendingChanges.deletes.length
     },
     hasPendingChanges() {
-        return this.pendingChangesCount > 0
+      return this.pendingChangesCount > 0
+    },
+    hasPendingUpdates() {
+      return this.pendingChanges.updates.length > 0
+    },
+    hasPendingDeletes() {
+      return this.pendingChanges.deletes.length > 0
     },
     editable() {
       return this.primaryKey && this.table.entityType === 'table'
@@ -509,47 +515,59 @@ export default {
       }
     },
     async saveChanges() {
-      try {
         let replaceData = false
 
-        const result = await this.connection.applyChanges(this.pendingChanges)
+        // handle updates
+        if (this.hasPendingUpdates) {
+          try {
+            const result = await this.connection.updateValues(this.pendingChanges.updates)
+            const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
 
-        // handle delete result
-        if (this.pendingChanges.deletes.length > 0) {
-          replaceData = true
+            if (updateIncludedPK) {
+              replaceData = true
+            } else {
+              this.tabulator.updateData(result)
+              this.pendingChanges.updates.forEach(edit => {
+                edit.cell.getElement().classList.remove('edited')
+                edit.cell.getElement().classList.add('edit-success')
+                setTimeout(() => {
+                  if (edit.cell.getElement()) {
+                    edit.cell.getElement().classList.remove('edit-success')
+                  }
+                }, 1000)
+              })
+            }
+
+            this.pendingChanges.updates = []
+            log.info("new Data: ", result)
+          } catch (ex) {
+            this.pendingChanges.updates.forEach(edit => {
+              edit.cell.getElement().classList.add('edit-error')
+            })
+            this.editError = ex.message
+            this.$noty.error("Error updating rows")
+
+            return
+          }
         }
 
-        // handle update result
-        if (this.pendingChanges.updates.length > 0) {
-          const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
-          if (updateIncludedPK) {
+        // handle deletes
+        if (this.hasPendingDeletes) {
+          try {
+            await this.connection.deleteRows(this.pendingChanges.deletes)
             replaceData = true
-          } else {
-            this.tabulator.updateData(result.updates)
-            this.pendingChanges.updates.forEach(edit => {
-              edit.cell.getElement().classList.remove('edited')
-              edit.cell.getElement().classList.add('edit-success')
-              setTimeout(() => {
-                edit.cell.getElement().classList.remove('edit-success')
-              }, 1000)
-            })
+            this.pendingChanges.deletes = []
+          } catch (ex) {
+            this.editError = ex.message
+            this.$noty.error("Error deleting rows")
+
+            return
           }
-          log.info("new Data: ", result.updates)
         }
 
         if (replaceData) {
           this.tabulator.replaceData()
-        } else {
-          this.resetPendingChanges()
         }
-
-      } catch (ex) {
-        this.pendingChanges.updates.forEach(edit => {
-          edit.cell.getElement().classList.add('edit-error')
-        })
-        this.editError = ex.message
-      }
-
     },
     discardChanges() {
       this.editError = null
