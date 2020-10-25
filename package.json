@@ -95,7 +95,7 @@
     "@vue/test-utils": "^1.0.3",
     "aws-sdk": "^2.645.0",
     "babel-eslint": "^10.0.1",
-    "electron": "8.2.5",
+    "electron": "8.5.2",
     "electron-builder-notarize": "beekeeper-studio/electron-builder-notarize#master",
     "electron-rebuild": "^1.8.5",
     "electron-updater": "^4.2.5",
