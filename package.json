@@ -148,7 +148,6 @@
   ],
   "resolutions": {
     "watchpack": "1.6.1",
-    "pg/pgpass": "beekeeper-studio/pgpass#blank-home",
     "node-ssh-forward/ssh2": "beekeeper-studio/ssh2#electron-detection"
   }
 }
