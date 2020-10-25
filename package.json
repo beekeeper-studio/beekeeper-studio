@@ -1,6 +1,6 @@
 {
   "name": "beekeeper-studio",
-  "version": "1.7.5",
+  "version": "1.8.5",
   "private": true,
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "author": {
@@ -38,7 +38,7 @@
     "material-icons": "^0.3.1",
     "mkdirp": "^1.0.4",
     "mssql": "^6.2.0",
-    "mysql2": "^2.1.0",
+    "mysql2": "^2.2.0",
     "node-sass": "^4.12.0",
     "node-ssh-forward": "^0.7.2",
     "pg": "^7.12.1",
@@ -82,6 +82,7 @@
     "@types/lodash": "^4.14.159",
     "@types/mkdirp": "^1.0.1",
     "@types/node": "^12.12.54",
+    "@types/sql-query-identifier": "^1.1.0",
     "@types/tabulator-tables": "^4.7.2",
     "@typescript-eslint/eslint-plugin": "^4.1.0",
     "@typescript-eslint/parser": "^4.1.0",

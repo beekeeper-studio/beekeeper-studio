@@ -170,10 +170,12 @@ const store = new Vuex.Store<State>({
 
     async test(context, config: SavedConnection) {
       // TODO (matthew): fix this mess.
-      if (context.state.username && config.defaultDatabase) {
+      if (context.state.username) {
         const server = ConnectionProvider.for(config, context.state.username)
-        await server?.createConnection(config.defaultDatabase).connect()
+        await server?.createConnection(config.defaultDatabase || undefined).connect()
         server.disconnect()
+      } else {
+        throw "No username provided"
       }
     },
 
@@ -201,6 +203,8 @@ const store = new Vuex.Store<State>({
           await lastUsedConnection.save()
         }
         context.commit('newConnection', {config: config, server, connection})
+      } else {
+        throw "No username provided"
       }
     },
     async disconnect(context) {
