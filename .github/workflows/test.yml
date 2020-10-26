@@ -10,7 +10,7 @@ on:
 
 
 jobs:
-  run-linters:
+  testing:
     name: Run linters
     runs-on: ubuntu-latest
 
