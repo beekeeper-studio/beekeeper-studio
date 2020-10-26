@@ -42,9 +42,9 @@ export class DBTestUtil {
   async setupdb() {
     await this.connection.connect()
     await this.createTables()
-    const address = await this.knex("addresses").insert({country: "US", id: 1})
-    const people = await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0]})
-    const jobs = await this.knex("jobs").insert({job_name: "Programmer"})
+    const address = await this.knex("addresses").insert({country: "US", id: 1}).returning("id")
+    const people = await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0]}).returning("id")
+    const jobs = await this.knex("jobs").insert({job_name: "Programmer"}).returning("id")
     await this.knex("people_jobs").insert({job_id: jobs[0], person_id: people[0] })
   }
 
