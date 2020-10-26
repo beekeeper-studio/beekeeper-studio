@@ -24,7 +24,7 @@ describe("Postgres Tests", () => {
       .start()
     
     const config = {
-      client: 'postgres',
+      client: 'postgresql',
       host: container.getContainerIpAddress(),
       port: container.getMappedPort(5432),
       user: 'test',
