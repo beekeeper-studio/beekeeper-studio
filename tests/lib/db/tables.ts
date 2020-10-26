@@ -20,7 +20,8 @@ export function tableStatements(knex: Knex): string[] {
     table.string("firstname")
     table.string("lastname")
     table.string("email").notNullable()
-    table.foreign("address_id").references("addresses.id").notNullable()
+    table.integer("address_id").notNullable()
+    table.foreign("address_id").references("addresses.id")
   }).toQuery())
 
   results.push(knex.schema.createTable("jobs", (table) => {
@@ -31,6 +32,8 @@ export function tableStatements(knex: Knex): string[] {
   }).toQuery())
 
   results.push(knex.schema.createTable("people_jobs", (table) => {
+    table.integer("job_id").notNullable()
+    table.integer("person_id").notNullable()
     table.foreign("person_id").references("people.id")
     table.foreign("job_id").references("jobs.id")
     table.primary(['job_id', "person_id"])
