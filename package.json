@@ -11,6 +11,7 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "test:unit": "TEST_MODE=1 vue-cli-service test:unit",
+    "test:integration": "TEST_MODE=1 vue-cli-service test:unit --config ./jest.integration.config.js",
     "lint": "vue-cli-service lint",
     "docs:build": "vuepress build docs",
     "docs:dev": "vuepress dev docs",
@@ -101,6 +102,7 @@
     "electron-updater": "^4.2.5",
     "eslint": "^5.16.0",
     "eslint-plugin-vue": "^5.0.0",
+    "testcontainers": "^4.6.0",
     "typescript": "^3.9.7",
     "vue-cli-plugin-electron-builder": "^2.0.0-rc.1",
     "vue-template-compiler": "^2.6.10",

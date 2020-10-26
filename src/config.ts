@@ -5,7 +5,7 @@ import { loadEncryptionKey } from './common/encryption_key'
 
 const userDirectory = platformInfo.userDirectory
 
-if (remote.process.env.DEBUG) {
+if (remote?.process?.env?.DEBUG) {
   localStorage.debug = remote.process.env.DEBUG
 }
 
