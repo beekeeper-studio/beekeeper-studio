@@ -23,6 +23,6 @@ export class DBTestUtil {
     const tables = await this.connection.listTables("public")
     expect(tables.length).toBe(this.tables.length)
     const columns = await this.connection.listTableColumns("people", "public")
-    expect(columns.length).toBe(6)  
+    expect(columns.length).toBe(7)
   }
 }
