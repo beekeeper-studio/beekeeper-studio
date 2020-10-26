@@ -7,9 +7,6 @@ import { Duration, TemporalUnit } from "node-duration"
 describe("Postgres Tests", () => {
 
   let container;
-  let server;
-  let connection;
-  let knex;
   let util
 
   beforeAll(async () => {
@@ -30,19 +27,14 @@ describe("Postgres Tests", () => {
       user: 'test',
       password: 'test'
     }
-
-    server = createServer(config)
-    connection = server.createConnection("test")
-    await connection.connect()
-    knex = knexlib({client: 'pg'})
-    util = new DBTestUtil(knex, connection)
+    util = new DBTestUtil(config, "test")
     await util.setupdb()
 
   })
 
   afterAll(async() => {
-    if (connection) {
-      await connection.disconnect()
+    if (util.connection) {
+      await util.connection.disconnect()
     }
     if (container) {
       await container.stop()
