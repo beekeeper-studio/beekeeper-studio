@@ -1,7 +1,7 @@
 import knexlib from 'knex'
 import { GenericContainer } from 'testcontainers'
 import { createServer } from '../../../../../src/lib/db/index'
-import { setupdb, testdb, dbtimeout } from '../../../../lib/db'
+import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
 
 describe("MySQL Tests", () => {
@@ -10,6 +10,7 @@ describe("MySQL Tests", () => {
   let server;
   let connection;
   let knex;
+  let util
 
   beforeAll(async () => {
     jest.setTimeout(dbtimeout)
@@ -33,7 +34,9 @@ describe("MySQL Tests", () => {
     connection = server.createConnection("test")
     await connection.connect()
     knex = knexlib({client: 'mysql'})
-    await setupdb(knex, connection)
+    util = new DBTestUtil(knex, connection)
+    await util.setupdb()
+
   })
 
   afterAll(async() => {
@@ -46,6 +49,6 @@ describe("MySQL Tests", () => {
   })
 
   it("Should pass standard tests", async () => {
-    await testdb(knex, connection)
+    await util.testdb()
   })
 })

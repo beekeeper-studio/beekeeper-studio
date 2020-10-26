@@ -1,26 +1,28 @@
 import Knex from 'knex'
+import { tableStatements } from './db/tables'
+
 
 export const dbtimeout = 120000
 
-export async function setupdb(knex: Knex, connection: any) {
-  const query = knex.schema.createTableIfNotExists("people", (table) => {
-    table.increments()
-    table.timestamps()
-    table.string("firstname")
-    table.string("lastname")
-    table.string("email").notNullable()
-  }).toQuery()  
-  await connection.executeQuery(query)
-  knex("people").insert({ email: "foo@bar.com"})
-}
+export class DBTestUtil {
+  private knex: Knex
+  private connection: any
+  private tables: string[]
+  constructor(knex: Knex, connection: any) {
+    this.knex = knex
+    this.connection = connection
+    this.tables = tableStatements(this.knex)
+  }
 
-export async function dropdb(knex: Knex, connection: any) {
-  
-}
+  async setupdb() {
+    await this.connection.executeQuery(this.tables.join(";"))
+    await this.connection.executeQuery(this.knex("people").insert({ email: "foo@bar.com"}).toQuery())
+  }
 
-export async function testdb(knex: Knex, connection: any) {
-  const tables = await connection.listTables("public")
-  expect(tables.length).toBe(1)
-  const columns = await connection.listTableColumns("people", "public")
-  expect(columns.length).toBe(6)
+  async testdb() {
+    const tables = await this.connection.listTables("public")
+    expect(tables.length).toBe(this.tables.length)
+    const columns = await this.connection.listTableColumns("people", "public")
+    expect(columns.length).toBe(6)  
+  }
 }
