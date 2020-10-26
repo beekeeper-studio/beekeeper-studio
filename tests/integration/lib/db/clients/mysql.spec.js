@@ -1,6 +1,4 @@
-import knexlib from 'knex'
 import { GenericContainer } from 'testcontainers'
-import { createServer } from '../../../../../src/lib/db/index'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
 
@@ -27,7 +25,6 @@ describe("MySQL Tests", () => {
       password: 'test'
     }
     util = new DBTestUtil(config, "test")
-    connection = util.connection
     await util.setupdb()
   })
 
