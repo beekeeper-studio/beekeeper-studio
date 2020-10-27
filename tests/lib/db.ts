@@ -6,7 +6,8 @@ import { createServer } from '../../src/lib/db/index'
 export const dbtimeout = 120000
 
 const KnexTypes: any = {
-  postgresql: 'pg'
+  postgresql: 'pg',
+  'mysql': 'mysql2'
 }
 
 export class DBTestUtil {

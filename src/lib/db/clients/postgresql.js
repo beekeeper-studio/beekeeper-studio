@@ -11,6 +11,7 @@ import logRaw from 'electron-log'
 import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import errors from '../../errors';
+import globals from '../../../common/globals';
 
 const log = logRaw.scope('postgresql')
 const logger = () => log
@@ -110,7 +111,7 @@ export default async function (server, database) {
 
   logger().debug('connected');
   const defaultSchema = await getSchema(conn);
-
+  logger().debut(`loaded schema ${defaultSchema}`)
   dataTypes = await getTypes(conn)
 
   return {
@@ -729,6 +730,7 @@ function configDatabase(server, database) {
     password: server.config.password,
     database: database.database,
     max: 5, // max idle connections per time (30 secs)
+    connectionTimeoutMillis: globals.psqlTimeout
   };
 
   if (server.config.user) {
@@ -770,6 +772,8 @@ function configDatabase(server, database) {
       config.ssl.rejectUnauthorized = false
     }
   }
+
+  logger().debug('connection config', config)
 
   return config;
 }

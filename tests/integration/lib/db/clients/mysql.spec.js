@@ -10,7 +10,7 @@ describe("MySQL Tests", () => {
   beforeAll(async () => {
     jest.setTimeout(dbtimeout)
     container = await new GenericContainer("mysql")
-    .withName("testmysql")
+      .withName("testmysql")
       .withEnv("MYSQL_ROOT_PASSWORD", "test")
       .withEnv("MYSQL_DATABASE", "test")
       .withExposedPorts(3306)
