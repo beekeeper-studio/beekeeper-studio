@@ -12,13 +12,6 @@ describe("Postgres Tests", () => {
     jest.setTimeout(dbtimeout)
     // environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
     // container = environment.getContainer("psql_1")
-    async function sleep(ms) {
-      await _sleep(ms);
-    }
-
-    function _sleep(ms) {
-      return new Promise((resolve) => setTimeout(resolve, ms));
-    }
 
     container = await new GenericContainer("postgres")
       .withEnv("POSTGRES_PASSWORD", "example")
@@ -26,8 +19,6 @@ describe("Postgres Tests", () => {
       .withExposedPorts(5432)
       .withStartupTimeout(new Duration(dbtimeout, TemporalUnit.MILLISECONDS))
       .start()
-    jest.setTimeout(timeoutDefault)
-    await sleep(5000)
     const config = {
       client: 'postgresql',
       host: container.getContainerIpAddress(),

@@ -111,7 +111,7 @@ export default async function (server, database) {
 
   logger().debug('connected');
   const defaultSchema = await getSchema(conn);
-  logger().debut(`loaded schema ${defaultSchema}`)
+  logger().debug(`loaded schema ${defaultSchema}`)
   dataTypes = await getTypes(conn)
 
   return {

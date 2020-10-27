@@ -42,7 +42,7 @@
     "mysql2": "^2.2.0",
     "node-sass": "^4.12.0",
     "node-ssh-forward": "^0.7.2",
-    "pg": "^7.12.1",
+    "pg": "^8.4.2",
     "pg-hstore": "^2.3.3",
     "pluralize": "^8.0.0",
     "popper.js": "^1.15.0",
