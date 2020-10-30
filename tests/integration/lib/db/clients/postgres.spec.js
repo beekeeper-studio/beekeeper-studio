@@ -1,9 +1,8 @@
-import { GenericContainer, Wait, DockerComposeEnvironment } from 'testcontainers'
+import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
 
 describe("Postgres Tests", () => {
-  let environment;
   let container;
   let util
 
@@ -19,6 +18,7 @@ describe("Postgres Tests", () => {
       .withExposedPorts(5432)
       .withStartupTimeout(new Duration(dbtimeout, TemporalUnit.MILLISECONDS))
       .start()
+    jest.setTimeout(timeoutDefault)
     const config = {
       client: 'postgresql',
       host: container.getContainerIpAddress(),

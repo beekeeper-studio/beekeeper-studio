@@ -52,7 +52,7 @@ export class DBTestUtil {
   async testdb() {
     // SIMPLE TABLE CREATION TEST
     const tables = await this.connection.listTables({ schema: "public" })
-    expect(tables.length).toBe(4)
+    expect(tables.length).toBe(5)
     const columns = await this.connection.listTableColumns("people", "public")
     expect(columns.length).toBe(7)
 
@@ -60,7 +60,31 @@ export class DBTestUtil {
     // TODO: update this to support composite keys
     const pk = await this.connection.getPrimaryKey("people", "public")
     expect(pk).toBe("id")
+
+    await this.tableViewTests()
+
   }
+
+  /**
+   * Tests related to the table view
+   * fetching PK, selecting data, etc.
+   */ 
+  async tableViewTests() {
+    // reserved word as table name
+    expect(await this.connection.getPrimaryKey("group", "public"))
+      .toBe("id");
+    
+    expect(await this.connection.selectTop("group", 0, 10, ["select"]))
+      .toStrictEqual({ "result": [], "totalRecords": "0" })
+    
+    await this.knex("group").insert([{select: "bar"}, {select: "abc"}])
+
+    const r = await this.connection.selectTop("group", 0, 10, ["select"])
+    const result = r.result.map((r: any) => r.select)
+    expect(result).toStrictEqual(["abc", "bar"])
+
+  }
+
 
   private async createTables() {
 
@@ -73,6 +97,10 @@ export class DBTestUtil {
       table.string("country").notNullable()
     })
 
+    await this.knex.schema.createTable('group', (table) => {
+      table.increments().primary()
+      table.string("select")
+    })
 
     await this.knex.schema.createTable("people", (table) => {
       table.increments().primary()
