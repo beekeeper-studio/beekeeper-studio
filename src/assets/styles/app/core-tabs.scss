@@ -58,13 +58,6 @@
       background: lighten($theme-bg, 3%);
       opacity: 0.5;
     }
-    .sortable-drag {
-      border: none !important;
-      transform: translate(0,0);
-      position: relative;
-      margin: -1px;
-      background-clip: content-box;
-    }
     .nav-item {
       max-width: 200px;    
       min-width: 28px;
