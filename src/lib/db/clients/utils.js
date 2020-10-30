@@ -1,5 +1,8 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
+import logRaw from 'electron-log'
+
+const log = logRaw.scope('db/util')
 
 export function buildSchemaFilter({ schema } = {}, schemaField = 'schema_name') {
   if (!schema) { return null; }
@@ -53,7 +56,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
       if (_.isObject(item)) {
         return `\`${item.field}\` ${item.dir}`
       } else {
-        return item
+        return `\`${item}\``
       }
     })).join(",")
   }
@@ -86,14 +89,14 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
 
 export async function genericSelectTop(conn, table, offset, limit, orderBy, filters, executor){
   const { query, countQuery, params } = buildSelectTopQuery(table, offset, limit, orderBy, filters)
-
+  log.debug("selectTop queries", query, countQuery, params)
   const countResults = await executor(conn, { query: countQuery, params })
   const result = await executor(conn, { query, params })
   const rowWithTotal = countResults.data.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return {
     result: result.data,
-    totalRecords
+    totalRecords: Number(totalRecords)
   }
 }
 

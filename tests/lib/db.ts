@@ -7,13 +7,17 @@ export const dbtimeout = 120000
 
 const KnexTypes: any = {
   postgresql: 'pg',
-  'mysql': 'mysql2'
+  'mysql': 'mysql2',
+  "mariadb": "mysql2",
+  "sqlite": "sqlite3",
+  "sqlserver": "mssql"
 }
 
 export class DBTestUtil {
   public knex: Knex
   public server: any
   public connection: any
+  public expectedTables: number = 5
   constructor(config: IDbConnectionServerConfig, database: string) {
 
     if (config.client === 'sqlite') {
@@ -52,7 +56,7 @@ export class DBTestUtil {
   async testdb() {
     // SIMPLE TABLE CREATION TEST
     const tables = await this.connection.listTables({ schema: "public" })
-    expect(tables.length).toBe(5)
+    expect(tables.length).toBe(this.expectedTables)
     const columns = await this.connection.listTableColumns("people", "public")
     expect(columns.length).toBe(7)
 
@@ -75,13 +79,26 @@ export class DBTestUtil {
       .toBe("id");
     
     expect(await this.connection.selectTop("group", 0, 10, ["select"]))
-      .toStrictEqual({ "result": [], "totalRecords": "0" })
+      .toStrictEqual({ "result": [], "totalRecords": 0 })
     
     await this.knex("group").insert([{select: "bar"}, {select: "abc"}])
 
-    const r = await this.connection.selectTop("group", 0, 10, ["select"])
-    const result = r.result.map((r: any) => r.select)
+    let r = await this.connection.selectTop("group", 0, 10, ["select"])
+    let result = r.result.map((r: any) => r.select)
     expect(result).toStrictEqual(["abc", "bar"])
+
+    r = await this.connection.selectTop("group", 0, 10, [{field: 'select', dir: 'desc'}])
+    result = r.result.map((r: any) => r.select)
+    expect(result).toStrictEqual(['bar', 'abc'])
+
+    r = await this.connection.selectTop("group", 0, 1, [{ field: 'select', dir: 'desc' }])
+    result = r.result.map((r: any) => r.select)
+    expect(result).toStrictEqual(['bar'])
+
+    r = await this.connection.selectTop("group", 1, 10, [{ field: 'select', dir: 'desc' }])
+    result = r.result.map((r: any) => r.select)
+    expect(result).toStrictEqual(['abc'])
+    
 
   }
 

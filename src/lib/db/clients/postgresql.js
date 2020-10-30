@@ -249,7 +249,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
   log.debug("selectTop:", result.rows)
   return {
     result: result.rows,
-    totalRecords
+    totalRecords: Number(totalRecords)
   }
 }
 

@@ -2,7 +2,7 @@ import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
 
-describe("MySQL Tests", () => {
+describe("MariaDB Tests", () => {
 
   let container;
   let util
@@ -10,8 +10,8 @@ describe("MySQL Tests", () => {
   beforeAll(async () => {
     const timeoutDefault = 5000
     jest.setTimeout(dbtimeout)
-    container = await new GenericContainer("mysql")
-      .withName("testmysql")
+    container = await new GenericContainer("mariadb")
+      .withName("maria")
       .withEnv("MYSQL_ROOT_PASSWORD", "test")
       .withEnv("MYSQL_DATABASE", "test")
       .withExposedPorts(3306)
@@ -19,7 +19,7 @@ describe("MySQL Tests", () => {
       .start()
     jest.setTimeout(timeoutDefault)
     const config = {
-      client: 'mysql',
+      client: 'mariadb',
       host: container.getContainerIpAddress(),
       port: container.getMappedPort(3306),
       user: 'root',
@@ -29,7 +29,7 @@ describe("MySQL Tests", () => {
     await util.setupdb()
   })
 
-  afterAll(async() => {
+  afterAll(async () => {
     if (util.connection) {
       await util.connection.disconnect()
     }

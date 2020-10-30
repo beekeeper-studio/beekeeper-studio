@@ -4,12 +4,12 @@ import { readFileSync } from 'fs'
 import mysql from 'mysql2';
 import { identify } from 'sql-query-identifier';
 
-import createLogger from '../../logger';
 import { createCancelablePromise } from '../../../common/utils';
 import errors from '../../errors';
 import { genericSelectTop } from './utils';
-
-const logger = createLogger('db:clients:mysql');
+import rawLog from 'electron-log'
+const log = rawLog.scope('mysql')
+const logger = () => log
 
 const mysqlErrors = {
   EMPTY_QUERY: 'ER_EMPTY_QUERY',
@@ -471,6 +471,7 @@ function configDatabase(server, database) {
 function getRealError(conn, err) {
   /* eslint no-underscore-dangle:0 */
   if (conn && conn._protocol && conn._protocol._fatalError) {
+    logger().warn("Query error", err, conn._protocol._fatalError)
     return conn._protocol._fatalError;
   }
   return err;
