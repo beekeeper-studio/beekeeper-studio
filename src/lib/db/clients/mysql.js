@@ -182,8 +182,11 @@ export async function getTableReferences(conn, table) {
 
 export async function getPrimaryKey(conn, database, table) {
   logger().debug('finding foreign key for', database, table)
-  const sql = `SHOW KEYS FROM ${table} WHERE Key_name = 'PRIMARY'`
-  const { data } = await driverExecuteQuery(conn, { query: sql })
+  const sql = `SHOW KEYS FROM ?? WHERE Key_name = 'PRIMARY'`
+  const params = [
+    table,
+  ];
+  const { data } = await driverExecuteQuery(conn, { query: sql, params })
   return data[0] ? data[0].Column_name : null
 }
 
