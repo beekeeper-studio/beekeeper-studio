@@ -70,7 +70,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
       if (_.isObject(item)) {
         return `${wrapIdentifier(item.field)} ${item.dir}`
       } else {
-        return item
+        return wrapIdentifier(item)
       }
     })).join(",")
   }

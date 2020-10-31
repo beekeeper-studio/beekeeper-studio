@@ -13,12 +13,18 @@ const KnexTypes: any = {
   "sqlserver": "mssql"
 }
 
+interface Options {
+  defaultSchema?: string
+}
+
 export class DBTestUtil {
   public knex: Knex
   public server: any
   public connection: any
   public expectedTables: number = 5
-  constructor(config: IDbConnectionServerConfig, database: string) {
+  public preInitCmd: string | undefined
+  public defaultSchema: string = 'public'
+  constructor(config: IDbConnectionServerConfig, database: string, options?: Options) {
 
     if (config.client === 'sqlite') {
       this.knex = Knex({
@@ -39,15 +45,17 @@ export class DBTestUtil {
         }
       })
     }
-
+    this.defaultSchema = options?.defaultSchema || this.defaultSchema
     this.server = createServer(config)
     this.connection = this.server.createConnection(database)
+
   }
 
   async setupdb() {
+
     await this.connection.connect()
     await this.createTables()
-    const address = await this.knex("addresses").insert({country: "US", id: 1}).returning("id")
+    const address = await this.knex("addresses").insert({country: "US"}).returning("id")
     const people = await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0]}).returning("id")
     const jobs = await this.knex("jobs").insert({job_name: "Programmer"}).returning("id")
     await this.knex("people_jobs").insert({job_id: jobs[0], person_id: people[0] })
@@ -55,14 +63,14 @@ export class DBTestUtil {
 
   async testdb() {
     // SIMPLE TABLE CREATION TEST
-    const tables = await this.connection.listTables({ schema: "public" })
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
     expect(tables.length).toBe(this.expectedTables)
-    const columns = await this.connection.listTableColumns("people", "public")
+    const columns = await this.connection.listTableColumns("people", this.defaultSchema)
     expect(columns.length).toBe(7)
 
     // PRIMARY KEY TESTS
     // TODO: update this to support composite keys
-    const pk = await this.connection.getPrimaryKey("people", "public")
+    const pk = await this.connection.getPrimaryKey("people", this.defaultSchema)
     expect(pk).toBe("id")
 
     await this.tableViewTests()
@@ -75,27 +83,27 @@ export class DBTestUtil {
    */ 
   async tableViewTests() {
     // reserved word as table name
-    expect(await this.connection.getPrimaryKey("group", "public"))
+    expect(await this.connection.getPrimaryKey("group", this.defaultSchema))
       .toBe("id");
     
-    expect(await this.connection.selectTop("group", 0, 10, ["select"]))
+    expect(await this.connection.selectTop("group", 0, 10, ["select"], null, this.defaultSchema))
       .toStrictEqual({ "result": [], "totalRecords": 0 })
     
     await this.knex("group").insert([{select: "bar"}, {select: "abc"}])
 
-    let r = await this.connection.selectTop("group", 0, 10, ["select"])
+    let r = await this.connection.selectTop("group", 0, 10, ["select"], null, this.defaultSchema)
     let result = r.result.map((r: any) => r.select)
     expect(result).toStrictEqual(["abc", "bar"])
 
-    r = await this.connection.selectTop("group", 0, 10, [{field: 'select', dir: 'desc'}])
+    r = await this.connection.selectTop("group", 0, 10, [{field: 'select', dir: 'desc'}], null, this.defaultSchema)
     result = r.result.map((r: any) => r.select)
     expect(result).toStrictEqual(['bar', 'abc'])
 
-    r = await this.connection.selectTop("group", 0, 1, [{ field: 'select', dir: 'desc' }])
+    r = await this.connection.selectTop("group", 0, 1, [{ field: 'select', dir: 'desc' }], null, this.defaultSchema)
     result = r.result.map((r: any) => r.select)
     expect(result).toStrictEqual(['bar'])
 
-    r = await this.connection.selectTop("group", 1, 10, [{ field: 'select', dir: 'desc' }])
+    r = await this.connection.selectTop("group", 1, 10, [{ field: 'select', dir: 'desc' }], null, this.defaultSchema)
     result = r.result.map((r: any) => r.select)
     expect(result).toStrictEqual(['abc'])
     
