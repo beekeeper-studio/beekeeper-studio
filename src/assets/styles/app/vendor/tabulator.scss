@@ -321,7 +321,7 @@ $cell-max-width: 300px;
 }
 
 .tabulator-menu {
-  background: lighten($theme-bg, 5%);
+  background: $theme-bg;
   border: none;
   border-radius: 6px;
   min-width: 150px;
@@ -335,5 +335,14 @@ $cell-max-width: 300px;
     font-size: 0.9rem;
     color: $text-dark;
     cursor: pointer;
+
+    .item-icon {
+      padding-right: 6px;
+      vertical-align: top;
+    }
+  }
+
+  .tabulator-menu-separator {
+    border-top-color: rgba($theme-base, 0.07);
   }
 }

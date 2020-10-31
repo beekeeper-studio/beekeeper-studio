@@ -166,6 +166,9 @@ export default {
     hasPendingChanges() {
       return this.pendingChangesCount > 0
     },
+    hasPendingInserts() {
+      return this.pendingChanges.inserts.length > 0
+    },
     hasPendingUpdates() {
       return this.pendingChanges.updates.length > 0
     },
@@ -356,7 +359,7 @@ export default {
       },
       rowContextMenu:[
         {
-          label: "Add row",
+          label: '<i class="item-icon material-icons">add_circle_outline</i> Add row',
           action: () => {
             this.tabulator.addRow({}, false).then(row => { 
               this.addRowToPendingInserts(row)
@@ -365,13 +368,19 @@ export default {
           }
         },
         {
-          label: "Clone row",
+          label: '<i class="item-icon material-icons">content_copy</i> Clone row',
           action: (e, row) => {
-            this.tabulator.addRow(row.getData(), false).then(row => this.addRowToPendingInserts(row))
+            this.tabulator.addRow(row.getData(), false).then(row => {
+              this.addRowToPendingInserts(row)
+              this.tabulator.scrollToRow(row, 'bottom', false)
+            })
           }
         },
         {
-          label: "Delete Row",
+          separator:true,
+        },
+        {
+          label: '<i class="item-icon material-icons">delete_outline</i> Delete row',
           action: (e, row) => {
             this.addRowToPendingDeletes(row)
           }
@@ -502,13 +511,20 @@ export default {
       this.addPendingChange(CHANGE_TYPE_INSERT, payload)
     },
     addRowToPendingDeletes(row) {
-      row.getElement().classList.add('deleted')
       const pkCell = row.getCells().find(c => c.getField() === this.primaryKey)
 
       if (!pkCell) {
         this.$noty.error("Can't delete row -- couldn't figure out primary key")       
         return
       }
+
+      if (this.hasPendingInserts && _.find(this.pendingChanges.inserts, { row: row })) {
+        this.$set(this.pendingChanges, 'inserts', _.reject(this.pendingChanges.inserts, { row: row }))
+        this.tabulator.deleteRow(row)
+        return
+      }
+
+      row.getElement().classList.add('deleted')
 
       const payload = {
         table: this.table.name,
@@ -587,6 +603,20 @@ export default {
             })
             this.editError = ex.message
             this.$noty.error("Error updating rows")
+
+            return
+          }
+        }
+
+        // handle inserts
+        if (this.hasPendingInserts) {
+          try {
+            await this.connection.insertRows(this.pendingChanges.inserts)
+            replaceData = true
+            this.pendingChanges.inserts = []
+          } catch (ex) {
+            this.editError = ex.message
+            this.$noty.error("Error inserting rows")
 
             return
           }

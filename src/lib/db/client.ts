@@ -71,6 +71,7 @@ export interface IDbConnection {
   query: (queryText: string) => void,
   executeQuery: (queryText: string) => void,
   listDatabases: (filter?: IDbFilter) => void,
+  insertRows: (inserts: IDbInsert[]) => void,
   updateValues: (updates: IDbUpdate[]) => void,
   deleteRows: (deletes: IDbDelete[]) => void,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
@@ -158,6 +159,7 @@ export class DBConnection {
   executeQuery = executeQuery.bind(null, this.server, this.database)
   listDatabases = listDatabases.bind(null, this.server, this.database)
   selectTop = selectTop.bind(null, this.server, this.database)
+  insertRows = insertRows.bind(null, this.server, this.database)
   updateValues = updateValues.bind(null, this.server, this.database)
   deleteRows = deleteRows.bind(null, this.server, this.database)
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
@@ -311,6 +313,11 @@ function getTableKeys(server: IDbConnectionServer, database: IDbConnectionDataba
 function query(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string) {
   checkIsConnected(server , database);
   return database.connection?.query(queryText);
+}
+
+function insertRows(server: IDbConnectionServer, database: IDbConnectionDatabase, inserts: IDbInsert[]) {
+  checkIsConnected(server, database)
+  return database.connection?.insertRows(inserts)
 }
 
 function updateValues(server: IDbConnectionServer, database: IDbConnectionDatabase, updates: IDbUpdate[]) {
