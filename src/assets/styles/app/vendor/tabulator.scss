@@ -1,7 +1,6 @@
 
 $errorColor:             $brand-danger;
 $foreign-key-width:      24px;
-$cell-max-width: 300px;
 
 .tabulator-row {
   background: transparent;
@@ -11,7 +10,6 @@ $cell-max-width: 300px;
     border: 1px solid transparent;
     padding: 4px 8px;
     min-height: 28px;
-    max-width: $cell-max-width;
     height: 28px;
     line-height: 20px;
     i.fk-link {
@@ -63,7 +61,6 @@ $cell-max-width: 300px;
     }
     &.foreign-key-button {
       display: inline-flex;
-      // align-items: center;
       justify-content: flex-end;
       width: $foreign-key-width!important;
       min-width: $foreign-key-width!important;
@@ -104,14 +101,12 @@ $cell-max-width: 300px;
   background: transparent;
   background: lighte($query-editor-bg, 1%);
   .tabulator-header {
-    // background: lighten($query-editor-bg, 8%);
     background: transparent;
     border: 0;
     box-shadow: inset 0 -1px $border-color;
     width: -webkit-fill-available;
     .tabulator-col {
       background: transparent;
-      // border-color: $query-editor-bg;
       border-color: transparent;
       height: 32px!important;
       font-size: 90%;
@@ -175,7 +170,6 @@ $cell-max-width: 300px;
       .tabulator-col-content {
         padding: 0 8px;
         line-height: 32px;
-        max-width: $cell-max-width;
         .tabulator-arrow {
           top: 14px;
           border-width: 4px!important;
