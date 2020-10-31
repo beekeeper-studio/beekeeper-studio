@@ -1,7 +1,7 @@
 <template>
 <div class="style-wrapper">
     <div class="beekeeper-studio-wrapper">
-      <titlebar v-if="$config.isWindows || $config.isMac || menuStyle === 'client'"></titlebar>
+      <titlebar v-if="$config.isMac || menuStyle === 'client'"></titlebar>
       <connection-interface v-if="!connection"></connection-interface>
       <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
       <auto-updater></auto-updater>

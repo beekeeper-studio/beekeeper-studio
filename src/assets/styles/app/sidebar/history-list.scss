@@ -1,10 +1,13 @@
 .sidebar-history {
-  flex: 1 1 auto;
-  height: 0;
-  max-height: -webkit-fill-available;
-  overflow-x: hidden;
-  padding: $gutter-h 0 $gutter-w;
-
+  position: relative;
+  .sidebar-list {
+    position: relative;
+    flex: 1 1 auto;
+    height: 0;
+    max-height: -webkit-fill-available;
+    overflow-x: hidden;
+    padding: $gutter-h 0;
+  }
   .list-group {
     padding: $gutter-h 0;
     min-height: 105px;
@@ -52,6 +55,12 @@
       .btn-fab {
         display: inline-flex;
       }
+      // .delete-checkbox {
+      //   display: block;
+      // }
+      // .item-icon {
+      //   visibility: hidden;
+      // }
     }
     .btn-fab {
       display: none;

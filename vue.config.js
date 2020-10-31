@@ -1,5 +1,14 @@
 const webpack = require('webpack');
 
+const fpmOptions = [
+  "--after-install=build/deb-postinstall"
+]
+
+if (  process.env.PI_BUILD ) {
+  fpmOptions.push("--architecture")
+  fpmOptions.push("armhf")
+}
+
 const externals = ['sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2', 'ssh2']
 module.exports = {
   pluginOptions: {
@@ -75,9 +84,7 @@ module.exports = {
               component: 'main'
             },
           ],
-          fpm: [
-            "--after-install=build/deb-postinstall"
-          ],
+          fpm: fpmOptions,
           // when we upgrade Electron we need to check these
           depends: ["libgtk-3-0, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1, libappindicator3-1, libsecret-1-0", "gnupg"]
         },
@@ -92,7 +99,7 @@ module.exports = {
           environment: {
             "ELECTRON_SNAP": "true"
           },
-          plugs: ["default", "ssh-keys"]
+          plugs: ["default", "ssh-keys", "removable-media", "mount-observe"]
         },
         win: {
           icon: './public/icons/png/512x512.png',

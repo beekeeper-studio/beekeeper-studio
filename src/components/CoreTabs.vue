@@ -6,9 +6,13 @@
           v-for="tab in tabItems"
           :key="tab.id"
           :tab="tab"
+          :tabsCount="tabItems.length"
           :selected="activeTab === tab"
           @click="click"
           @close="close"
+          @closeAll="closeAll"
+          @closeOther="closeOther"
+          @duplicate="duplicate"
           ></core-tab-header>
       </ul>
       <span class="actions">
@@ -23,8 +27,8 @@
         :key="tab.id"
         :class="{show: (activeTab === tab), active: (activeTab === tab)}"
       >
-        <QueryEditor v-if="tab.type === 'query'" :active="activeTab == tab" :tab="tab" :connection="connection"></QueryEditor>
-        <TableTable v-if="tab.type === 'table'" :connection="tab.connection" :table="tab.table"></TableTable>
+        <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
+        <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
       </div>
     </div>
   </div>
@@ -39,8 +43,8 @@
   import { uuidv4 } from '@/lib/crypto'
   import TableTable from './tableview/TableTable'
   import AppEvent from '../common/AppEvent'
-import platformInfo from '../common/platform_info'
-import { mapGetters } from 'vuex'
+  import platformInfo from '../common/platform_info'
+  import { mapGetters, mapState } from 'vuex'
 
   export default {
     props: [ 'connection' ],
@@ -48,12 +52,15 @@ import { mapGetters } from 'vuex'
     data() {
       return {
         tabItems: [],
-        activeTab: null,
         activeItem: 0,
         newTabId: 1
       }
     },
+    watch: {
+
+    },
     computed: {
+      ...mapState(["activeTab"]),
       ...mapGetters({ 'menuStyle': 'settings/menuStyle' }),
       lastTab() {
         return this.tabItems[this.tabItems.length - 1];
@@ -72,19 +79,20 @@ import { mapGetters } from 'vuex'
           'ctrl+shift+tab': this.previousTab,
         }
 
-        // This is a hack becuase codemirror steals the shortcut
+        // This is a hack because codemirror steals the shortcut
         // when the shortcut is captured on the electron side
         // but not on mac, on mac we don't wanna capture it. Because reasons.
         // 'registerAccelerator' doesn't disable shortcuts on mac.
         if (!platformInfo.isMac) {
           result[closeTab] = this.closeTab
         }
-
-        
         return result
       }
     },
     methods: {
+      async setActiveTab(tab) {
+        await this.$store.dispatch('tabActive', tab)
+      },
       addTab(item) {
         this.tabItems.push(item)
         this.newTabId += 1
@@ -94,18 +102,21 @@ import { mapGetters } from 'vuex'
       },
       nextTab() {
         if(this.activeTab == this.lastTab) {
-          this.activeTab = this.firstTab
+          this.setActiveTab(this.firstTab)
         } else {
-          this.activeTab = this.tabItems[this.activeIdx + 1]
+          this.setActiveTab(this.tabItems[this.activeIdx + 1])
         }
       },
 
       previousTab() {
         if(this.activeTab == this.firstTab) {
-          this.activeTab = this.lastTab
+          this.setActiveTab(this.lastTab)
         } else {
-          this.activeTab = this.tabItems[this.activeIdx - 1]
+          this.setActiveTab(this.tabItems[this.activeIdx - 1])
         }
+      },
+      setTabTitleScope(id, value) {
+        this.tabItems.filter(t => t.id === id).forEach(t => t.titleScope = value)
       },
       closeTab() {
         this.close(this.activeTab)
@@ -128,15 +139,21 @@ import { mapGetters } from 'vuex'
         }
 
         this.addTab(result)
-
       },
-      openTable(table) {
-        // todo (matthew): trigger this from a vuex event
+      openTable({ table, filter, tableName }) {
+
+        let resolvedTable = null
+
+        if (!table && tableName) {
+          resolvedTable = this.$store.state.tables.find(t => t.name === tableName)
+        }
         const t = {
           id: uuidv4(),
           type: 'table',
-          table: table,
-          connection: this.connection
+          table: resolvedTable || table,
+          connection: this.connection,
+          initialFilter: filter,
+          titleScope: "all"
         }
         this.addTab(t)
       },
@@ -148,11 +165,12 @@ import { mapGetters } from 'vuex'
         }
         this.addTab(t)
       },
-      click(tab) {
-        this.activeTab = tab
+      async click(tab) {
+        await this.setActiveTab(tab)
+
       },
       close(tab) {
-
+        console.log('closing tab', tab.title)
         if (this.activeTab === tab) {
           if(tab === this.lastTab) {
             this.previousTab()
@@ -160,16 +178,48 @@ import { mapGetters } from 'vuex'
             this.nextTab()
           }
         }
+
         this.tabItems = _.without(this.tabItems, tab)
         if (tab.query && tab.query.id) {
           tab.query.reload()
         }
       },
+      closeAll() {
+        this.tabItems = []
+        this.setActiveTab(null)
+      },
+      closeOther(tab) {
+        this.tabItems = [tab]
+        this.setActiveTab(tab)
+        if (tab.query && tab.query.id) {
+          tab.query.reload()
+        }
+      },
+      duplicate(tab) {
+        const duplicatedTab = {
+            id: uuidv4(),
+            type: tab.type,
+            connection: tab.connection,
+        }
 
+        if(tab.type === 'query') {
+          const query = new FavoriteQuery()
+          query.text = tab.query.text
+
+          duplicatedTab['title'] = "Query #" + this.newTabId
+          duplicatedTab['unsavedChanges'] = true
+          duplicatedTab['query'] = query
+        } else if(tab.type === 'table') {
+          duplicatedTab['table'] = tab.table
+        }
+        this.addTab(duplicatedTab)
+      }
     },
     mounted() {
       this.createQuery()
-      this.$root.$on(AppEvent.closeTab, () => { this.closeTab() })
+      this.$root.$on(AppEvent.closeTab, () => { 
+        this.closeTab() 
+      })
       this.$root.$on(AppEvent.newTab, () => { this.createQuery() })
       this.$root.$on('historyClick', (item) => {
         this.createQuery(item.text)
@@ -178,7 +228,6 @@ import { mapGetters } from 'vuex'
       this.$root.$on('loadTable', this.openTable)
       this.$root.$on('loadSettings', this.openSettings)
       this.$root.$on('favoriteClick', (item) => {
-
         const queriesOnly = this.tabItems.map((item) => {
           return item.query
         })
@@ -196,10 +245,7 @@ import { mapGetters } from 'vuex'
           }
           this.addTab(result)
         }
-
-
       })
-
     }
   }
 </script>

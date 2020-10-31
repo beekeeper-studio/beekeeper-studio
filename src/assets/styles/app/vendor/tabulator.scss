@@ -1,5 +1,6 @@
 
-$errorColor: $brand-danger;
+$errorColor:             $brand-danger;
+$foreign-key-width:      24px;
 
 .tabulator-row {
   background: transparent;
@@ -8,13 +9,72 @@ $errorColor: $brand-danger;
   .tabulator-cell {
     border: 1px solid transparent;
     padding: 4px 8px;
-    height: 28px!important;
+    min-height: 28px;
+    height: 28px;
     line-height: 20px;
-
+    i.fk-link {
+      display:none;
+      color: teal;
+    }
+    input {
+      font-size: 0.85rem;
+      height: 28px;
+      padding: 4px 4px 4px 8px!important;
+    }
+    textarea {
+      border-color: transparent;
+      padding: 4px 6px!important;
+      line-height: 20px;
+    }
     &.active-cell {
       background: $selection;
       border-color: $input-highlight;
       color: $db-select-text;
+    }
+    &.tabulator-editing {
+      border-color: $theme-base!important;
+      border-radius: 2px!important;
+      padding: 0;
+      min-height: 28px;
+      height: auto;
+    }
+    &.edited, &.edit-error, &.edit-success {
+      border-color: $border-color;
+      border-radius: 2px;
+      color: $theme-base;
+    }
+    &.edited {
+      background: rgba($theme-primary, 0.05);
+      border-color: rgba($brand-primary,0.8);
+    }
+    &.edit-error {
+      background: rgba($brand-danger, 0.05);
+      border-color: rgba($brand-danger, 0.8);
+    }
+    &.edit-success {
+      background: rgba($brand-success, 0.05);
+      border-color: rgba($brand-success, 0.8);
+    }
+
+    &.foreign-key {
+      padding-right: $foreign-key-width - 6px;
+    }
+    &.foreign-key-button {
+      display: inline-flex;
+      justify-content: flex-end;
+      width: $foreign-key-width!important;
+      min-width: $foreign-key-width!important;
+      padding-left: 0!important;
+      padding-right: 0.35rem!important;
+      margin-left: -$foreign-key-width;
+      .material-icons {
+        font-size: 14px;
+        line-height: 20px;
+        color: $text-light;
+      }
+      .tabulator-col-resize-handle.prev {
+        display: none;
+      }
     }
   }
   &:nth-child(even) {
@@ -25,6 +85,12 @@ $errorColor: $brand-danger;
   }
   &.tabulator-selectable:hover {
     background: rgba($theme-base, 0.065);
+    i.fk-link {
+      display: inline-block;
+      &:hover {
+        color: white;
+      }
+    }
   }
 }
 .tabulator {
@@ -35,14 +101,12 @@ $errorColor: $brand-danger;
   background: transparent;
   background: lighte($query-editor-bg, 1%);
   .tabulator-header {
-    // background: lighten($query-editor-bg, 8%);
     background: transparent;
     border: 0;
     box-shadow: inset 0 -1px $border-color;
     width: -webkit-fill-available;
     .tabulator-col {
       background: transparent;
-      // border-color: $query-editor-bg;
       border-color: transparent;
       height: 32px!important;
       font-size: 90%;
@@ -59,14 +123,14 @@ $errorColor: $brand-danger;
       &.tabulator-sortable[aria-sort="asc"] {
         .tabulator-col-content {
           .tabulator-arrow {
-            border-bottom-color: $brand-primary;
+            border-bottom-color: $theme-base;
           }
         }
       }
       &.tabulator-sortable[aria-sort="desc"] {
         .tabulator-col-content {
           .tabulator-arrow {
-            border-top-color: $brand-primary;
+            border-top-color: $theme-base;
           }
         }
       }
@@ -76,6 +140,32 @@ $errorColor: $brand-danger;
             border-bottom-color: rgba($theme-base, 0.35);
           }
         }
+      }
+      &.foreign-key, &.primary-key {
+        padding-left: $foreign-key-width!important;
+        &:before{
+          content: 'vpn_key';
+          font-family: 'Material Icons';
+          font-size: 13px;
+          position: absolute;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          display: inline-flex;
+          align-items: center;
+          justify-content: flex-end;
+          color: $theme-primary;
+          width: $foreign-key-width;
+
+        }
+      }
+      &.primary-key {
+        &:before {
+          color: $theme-secondary;
+        }
+      }
+      &.foreign-key-button {
+        display: none;
       }
       .tabulator-col-content {
         padding: 0 8px;
@@ -98,11 +188,10 @@ $errorColor: $brand-danger;
   }
 
   //holding div that contains loader and covers tabulator element to prevent interaction
-	.tabulator-loader{
-		background:rgba(black,.4);
+	.tabulator-loader {
 		.tabulator-loader-msg{
 			border-radius: 8px;
-			background:transparent;
+			background: transparent;
 			font-weight: normal;
 			font-size: 1rem;
 
@@ -119,9 +208,21 @@ $errorColor: $brand-danger;
 			}
 		}
   }
-  
+
 }
 
+.tabulator-edit-select-list {
+  background: $theme-bg;
+  color: white;
+  border-width: 1;
+  border-color: rgba($theme-base, 0.06);
+  border-radius: 2px;
+  margin-top: $gutter-h;
+
+	.tabulator-edit-select-list-item{
+    color: $text-dark;
+	}
+}
 
 .tabulator-footer {
   display: flex;
@@ -131,6 +232,11 @@ $errorColor: $brand-danger;
   height: $statusbar-height;
   padding: 0 $gutter-h;
   background: rgba($theme-base, 0.06);
+
+  .pending-edits {
+    margin-right: auto;
+  }
+
   .tabulator-paginator,
   .tabulator-pages {
     display: flex;

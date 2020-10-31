@@ -38,7 +38,7 @@
                 <sql-server-form v-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"></sql-server-form>
 
                 <!-- TEST AND CONNECT -->
-                <div class="row flex-middle">
+                <div class="test-connect row flex-middle">
                   <span class="expand"></span>
                   <div class="btn-group">
                     <button :disabled="testing" class="btn btn-flat" @click.prevent="testConnection">Test</button>
@@ -103,6 +103,14 @@
         }
       }
     },
+    watch: {
+      config: {
+        deep: true,
+        handler() {
+          this.connectionError = null
+        }
+      }
+    },
     async mounted() {
       this.config = this.defaultConfig
       this.config.sshUsername = os.userInfo().username
@@ -129,7 +137,6 @@
       }
     },
     methods: {
-
       edit(config) {
         this.config = config
       },
@@ -141,9 +148,10 @@
         this.$noty.success(`${config.name} deleted`)
       },
       async duplicate(config) {
+        // Duplicates ES 6 class of the connection, without any reference to the old one.
         const duplicateConfig = Object.assign( Object.create( Object.getPrototypeOf(config)), config);
         duplicateConfig.id = null
-        duplicateConfig.name += ' (copy)'
+        duplicateConfig.name = 'Copy of ' + duplicateConfig.name
 
         try {
           await this.$store.dispatch('saveConnectionConfig', duplicateConfig)

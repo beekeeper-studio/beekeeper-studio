@@ -1,4 +1,5 @@
 // Copyright (c) 2015 The SQLECTRON Team
+import { readFileSync } from 'fs'
 
 import mysql from 'mysql2';
 import { identify } from 'sql-query-identifier';
@@ -14,7 +15,6 @@ const mysqlErrors = {
   EMPTY_QUERY: 'ER_EMPTY_QUERY',
   CONNECTION_LOST: 'PROTOCOL_CONNECTION_LOST',
 };
-
 
 export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
@@ -39,8 +39,10 @@ export default async function (server, database) {
     listTableIndexes: (db, table) => listTableIndexes(conn, db, table),
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table) => getTableReferences(conn, table),
+    getPrimaryKey: (db, table) => getPrimaryKey(conn, db, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
+    updateValues: (updates) => updateValues(conn, updates),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
@@ -178,16 +180,26 @@ export async function getTableReferences(conn, table) {
   return data.map((row) => row.referenced_table_name);
 }
 
+export async function getPrimaryKey(conn, database, table) {
+  logger().debug('finding foreign key for', database, table)
+  const sql = `SHOW KEYS FROM ?? WHERE Key_name = 'PRIMARY'`
+  const params = [
+    table,
+  ];
+  const { data } = await driverExecuteQuery(conn, { query: sql, params })
+  return data[0] ? data[0].Column_name : null
+}
+
 export async function getTableKeys(conn, database, table) {
   const sql = `
     SELECT constraint_name as 'constraint_name', column_name as 'column_name', referenced_table_name as 'referenced_table_name',
-      CASE WHEN (referenced_table_name IS NOT NULL) THEN 'FOREIGN'
-      ELSE constraint_name
-      END as key_type
+      IF(referenced_table_name IS NOT NULL, 'FOREIGN', constraint_name) as key_type,
+      REFERENCED_TABLE_NAME as referenced_table,
+      REFERENCED_COLUMN_NAME as referenced_column
     FROM information_schema.key_column_usage
     WHERE table_schema = database()
     AND table_name = ?
-    AND ((referenced_table_name IS NOT NULL) OR constraint_name LIKE '%PRIMARY%')
+    AND referenced_table_name IS NOT NULL
   `;
 
   const params = [
@@ -198,7 +210,10 @@ export async function getTableKeys(conn, database, table) {
 
   return data.map((row) => ({
     constraintName: `${row.constraint_name} KEY`,
-    columnName: row.column_name,
+    toTable: row.referenced_table,
+    toColumn: row.referenced_column,
+    fromTable: table,
+    fromColumn: row.column_name,
     referencedTable: row.referenced_table_name,
     keyType: `${row.key_type} KEY`,
   }));
@@ -263,6 +278,50 @@ export function query(conn, queryText) {
       }
     },
   };
+}
+
+export async function updateValues(conn, updates) {
+  const updateCommands = updates.map(update => {
+    return {
+      query: `UPDATE ${wrapIdentifier(update.table)} SET ${wrapIdentifier(update.column)} = ? WHERE ${wrapIdentifier(update.pkColumn)} = ?`,
+      params: [update.value, update.primaryKey]
+    }
+  })
+
+  const commands = [{ query: 'START TRANSACTION'}, ...updateCommands];
+  const results = []
+  // TODO: this should probably return the updated values
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    try {
+      for (let index = 0; index < commands.length; index++) {
+        const blob = commands[index];
+        await driverExecuteQuery(cli, blob)
+      }
+
+      const returnQueries = updates.map(update => {
+        return {
+          query: `select * from ${wrapIdentifier(update.table)} where ${wrapIdentifier(update.pkColumn)} = ?`,
+          params: [
+            update.primaryKey
+          ]
+        }
+      })
+
+      for (let index = 0; index < returnQueries.length; index++) {
+        const blob = returnQueries[index];
+        const r = await driverExecuteQuery(cli, blob)
+        if (r.data[0]) results.push(r.data[0])
+      }
+      await driverExecuteQuery(cli,{ query: 'COMMIT'})
+    } catch (ex) {
+      logger().error("query exception: ", ex)
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
+
+      throw ex
+    }
+  })
+  return results
 }
 
 
@@ -380,11 +439,29 @@ function configDatabase(server, database) {
 
   if (server.config.ssl) {
     config.ssl = {
-      // It is not the best recommend way to use SSL with node-mysql
-      // https://github.com/felixge/node-mysql#ssl-options
-      // But this way we have compatibility with all clients.
-      rejectUnauthorized: false,
-    };
+    }
+
+    if (server.config.sslCaFile) {
+      config.ssl.ca = readFileSync(server.config.sslCaFile);
+    }
+
+    if (server.config.sslCertFile) {
+      config.ssl.cert = readFileSync(server.config.sslCertFile);
+    }
+
+    if (server.config.sslKeyFile) {
+      config.ssl.key = readFileSync(server.config.sslKeyFile);
+    }
+    if (!config.ssl.key && !config.ssl.ca && !config.ssl.cert) {
+      // TODO: provide this as an option in settings
+      // or per-connection as 'reject self-signed certs'
+      // How it works:
+      // if false, cert can be self-signed
+      // if true, has to be from a public CA
+      // Heroku certs are self-signed.
+      // if you provide ca/cert/key files, it overrides this
+      config.ssl.rejectUnauthorized = false
+    }
   }
 
   return config;

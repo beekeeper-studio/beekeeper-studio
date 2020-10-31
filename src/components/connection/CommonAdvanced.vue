@@ -2,7 +2,7 @@
   <div class="advanced-connection-settings">
     <h4 class="advanced-heading flex" :class="{enabled: config.sshEnabled}">
       <span class="expand">SSH Tunnel</span>
-      <x-switch @click.prevent="config.sshEnabled = !config.sshEnabled"></x-switch>
+      <x-switch @click.prevent="config.sshEnabled = !config.sshEnabled" :toggled="config.sshEnabled"></x-switch>
     </h4>
     <div class="advanced-body" v-show="config.sshEnabled">
       <div class="row gutter">
@@ -35,7 +35,7 @@
           <i class="material-icons">warning</i>
           <p>
             SSH Agent Forwarding is not possible with the Snap version of Beekeeper Studio due to the security model of Snap apps.
-            <external-link :href="enableSshLink">Read more</external-link>            
+            <external-link :href="enableSshLink">Read more</external-link>
           </p>
         </div>
         <div v-else-if="$config.sshAuthSock" class="alert alert-success">

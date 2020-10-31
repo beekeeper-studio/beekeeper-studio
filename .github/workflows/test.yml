@@ -1,6 +1,13 @@
 name: Unit Tests
 
-on: push
+on: 
+  push:
+    branches:
+    - "*"
+  pull_request:
+    branches:
+      - "*"
+
 
 jobs:
   run-linters:

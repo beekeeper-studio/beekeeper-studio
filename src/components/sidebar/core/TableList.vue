@@ -41,17 +41,16 @@
             @selected="tableSelected"
             :table="table"
             :connection="connection"
-            :selected="table == selectedTable"
             :forceExpand="allExpanded"
             :forceCollapse="allCollapsed"
+            :noSelect="true"
           ></table-list-item>
         </div>
       </nav>
     </div>
 
-    <hr v-show="pinned.length > 0"> <!-- Fake splitjs Gutter styling -->
-
     <!-- Tables -->
+    <hr v-show="pinned.length > 0"> <!-- Fake splitjs Gutter styling -->
     <div v-if="!tablesLoading" class="table-list flex-col" ref="tables">
       <nav class="list-group flex-col">
         <div class="list-heading row">
@@ -73,9 +72,10 @@
             </a>
           </div>
         </div>
-        <div class="list-body">
+
+        <div class="list-body" v-show="tables.length > 0">
           <div class="with-schemas" v-if="tablesHaveSchemas">
-            <TableListSchema 
+            <TableListSchema
               v-for="(blob, index) in schemaTables"
               :title="blob.schema"
               :key="blob.schema"
@@ -89,7 +89,6 @@
                 @selected="tableSelected"
                 :table="table"
                 :connection="connection"
-                :selected="table == selectedTable"
                 :forceExpand="allExpanded"
                 :forceCollapse="allCollapsed"
               ></table-list-item>
@@ -102,22 +101,24 @@
               @selected="tableSelected"
               :table="table"
               :connection="connection"
-              :selected="table == selectedTable"
               :forceExpand="allExpanded"
               :forceCollapse="allCollapsed"
             ></table-list-item>
           </div>
         </div>
-      </nav>
 
-      <!-- TODO (gregory): Make the 'no tables div nicer' -->
-      <div class="empty" v-if="!tables || tables.length == 0">
-        There are no tables in <span class="truncate">{{database}}</span>
-      </div>
+        <!-- TODO (gregory): Make the 'no tables div nicer' -->
+        <div class="empty truncate" v-if="!tables || tables.length == 0">
+          There are no tables in<br> <span>{{database}}</span>
+        </div>
+      </nav>
     </div>
+
     <div class="empty" v-else>
       {{tablesLoading}}
     </div>
+
+
   </div>
 </template>
 
@@ -134,7 +135,6 @@
     data() {
       return {
         tableLoadError: null,
-        selectedTable: null,
         filterQuery: null,
         allExpanded: null,
         allCollapsed: null,
@@ -184,8 +184,8 @@
       }
     },
     methods: {
-      tableSelected(table) {
-        this.selectedTable = table
+      tableSelected() {
+        // this.selectedTable = table
       },
       clearFilter() {
         this.filterQuery = null

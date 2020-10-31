@@ -105,7 +105,16 @@ select {
 // Tabulator
 .tabulator-row {
   &:nth-child(odd) {
-    background: rgba(white, 0.45);
+    background: rgba(white, 0.42);
+  }
+}
+.tabulator {
+  .tabulator-header {
+    .tabulator-col.foreign-key {
+      &:before {
+        color: darken($brand-primary, 15%);
+      }
+    }
   }
 }
 
@@ -116,9 +125,15 @@ select {
 
 // Statusbar
 .statusbar {
+  color: $text;
   @each $key, $val in $color-defaults {
     &.#{$key} {
-      background-color: rgba(nth($val, 1), 0.5);
+      background-color: rgba(nth($val, 1), 0.45);
     }
   }
+}
+
+// Switch
+x-switch {
+  color: darken($theme-primary, 10%);
 }

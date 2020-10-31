@@ -102,4 +102,7 @@
   align-items: center;
   justify-content: center;
   flex: 1 1 100%;
+  .cancel-query {
+    margin-top: $gutter-h;
+  }
 }

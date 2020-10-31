@@ -46,8 +46,10 @@
       >
         <h2>{{ feature.title }}</h2>
         <p>{{ feature.details }}</p>
+        <NavLink v-if="feature.link" class="action-button" :item="feature.link"></NavLink>
       </div>
     </div>
+
 
     <Content class="theme-default-content custom" />
 

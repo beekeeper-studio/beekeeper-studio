@@ -3,6 +3,12 @@
 // ----------------------------------
 .pinned {
   .list-group {
+    .list-item {
+      span.item-wrapper {
+        display: flex;
+        align-items: center;
+      }
+    }
     .list-item-btn {
       .actions {
         display: flex;
@@ -21,9 +27,17 @@
 .table-list {
   .list-group {
     min-height: 105px;
+    // height: 100%;
     .list-item-btn {
       padding: 0;
       padding-right: $gutter-h * 0.5;
     }
+  }
+  .list-body {
+    padding-bottom: $gutter-w;
+  }
+  .empty {
+    padding-top: $gutter-w;
+    padding-bottom: $gutter-w;
   }
 }

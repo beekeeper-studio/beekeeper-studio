@@ -1,9 +1,16 @@
 .sidebar-favorites {
-  flex: 1 1 auto;
-  height: 0;
-  max-height: -webkit-fill-available;
-  overflow-x: hidden;
-  padding: $gutter-h 0 $gutter-w;
+  position: relative;
+  // height: 100%;
+  // display: flex;
+  // flex-direction: column;
+  .sidebar-list {
+    position: relative;
+    flex: 1 1 auto;
+    height: 0;
+    max-height: -webkit-fill-available;
+    overflow-x: hidden;
+    padding: $gutter-h 0;
+  }
   .list-group {
     padding: $gutter-h 0;
     min-height: 105px;
@@ -26,6 +33,9 @@
   .item-icon {
     align-self: flex-start;
     line-height: 1.4rem;
+    &.hidden {
+      visibility: hidden;
+    }
   }
   .list-title {
     flex-grow: 1;
@@ -51,6 +61,12 @@
       .btn-fab {
         display: inline-flex;
       }
+      // .delete-checkbox {
+      //   display: block;
+      // }
+      // .item-icon {
+      //   visibility: hidden;
+      // }
     }
     .btn-fab {
       display: none;

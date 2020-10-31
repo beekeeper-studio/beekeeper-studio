@@ -57,12 +57,71 @@
           <div class="btn-wrap">
             <button class="btn btn-primary" type="submit" :disabled="this.checkedFilter === false">Search</button>
           </div>
+          <div class="btn-wrap">
+            <x-button class="btn" :class="{'btn-flat': allColumnsSelected, 'btn-info': !allColumnsSelected}">
+              <span>Columns</span>
+              <x-popover modal style="--align: left;">
+                <main>
+                  <div v-for="column in table.columns" :key="column.columnName" class="row gutter">
+                    <label class="checkbox-group">
+                      <input type="checkbox" v-model="visibleColumns" :value="column.columnName" class="form-control" />
+                      <span>{{ column.columnName }}</span>
+                    </label>
+                  </div>
+                  <div class="row gutter">
+                    <div class="col x6">
+                      <x-button class="btn btn-primary btn-block" @click="showAllColumns">All</x-button>
+                    </div>
+                    <div class="col x6">
+                      <x-button class="btn btn-primary btn-block" @click="hideAllColumns">None</x-button>
+                    </div>
+                  </div>
+                </main>
+              </x-popover>
+            </x-button>
+          </div>
         </div>
       </form>
     </div>
     <div ref="table"></div>
-    <statusbar class="tabulator-footer">
-      <span ref="paginationArea" class="tabulator-paginator"></span>
+    <statusbar :mode="statusbarMode" class="tabulator-footer">
+      <div class="col x4">
+        <span class="statusbar-item" v-if="lastUpdatedText && !editError" :title="`${totalRecordsText} Total Records`">
+          <i class="material-icons">list_alt</i>
+          <span>{{ totalRecordsText }}</span>
+        </span>
+        <span class="statusbar-item" v-if="lastUpdatedText && !editError" :title="'Updated' + ' ' + lastUpdatedText">
+          <i class="material-icons">update</i>
+          <span>{{lastUpdatedText}}</span>
+        </span>
+        <span v-if="editError" class="statusbar-item error" :title="editError">
+          <i class="material-icons">error</i>
+          <span class="">Error Saving Changes</span>
+        </span>
+      </div>
+      <div class="col x4 flex flex-center">
+        <span ref="paginationArea" class="tabulator-paginator" v-show="this.totalRecords > this.limit"></span>
+      </div>
+
+      <div class="col x4 pending-edits flex flex-right">
+        <div v-if="missingPrimaryKey" class="flex flex-right">
+          <span class="statusbar-item">
+            <i
+            class="material-icons"
+            v-tooltip="'No primary key detected, table editing is disabled.'"
+            >warning</i>
+          </span>
+        </div>
+        <div v-if="pendingEditList.length > 0" class="flex flex-right">
+          <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
+          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingEditList.length + ' ' + 'pending edits'" :class="{'error': !!editError}">
+            <!-- <i v-if="editError" class="material-icons">error</i> -->
+            <span class="badge">{{pendingEditList.length}}</span>
+            <span>Commit</span>
+          </a>
+
+        </div>
+      </div>
     </statusbar>
   </div>
 </template>
@@ -77,15 +136,19 @@
 
 <script>
 import Tabulator from "tabulator-tables";
+// import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
 import Statusbar from '../common/StatusBar'
-
+import rawLog from 'electron-log'
+import _ from 'lodash'
+import TimeAgo from 'javascript-time-ago'
+const log = rawLog.scope('TableTable')
 
 export default {
   components: {Statusbar},
   mixins: [data_converter, DataMutators],
-  props: ["table", "connection"],
+  props: ["table", "connection", "initialFilter", "tabId", "active"],
   data() {
     return {
       filterTypes: {
@@ -105,7 +168,17 @@ export default {
       loading: false,
       data: null,
       response: null,
-      limit: 100
+      limit: 100,
+      rawTableKeys: [],
+      primaryKey: null,
+      pendingEdits: {},
+      editError: null,
+      timeAgo: new TimeAgo('en-US'),
+      lastUpdated: null,
+      lastUpdatedText: null,
+      interval: setInterval(this.setlastUpdatedText, 10000),
+      totalRecords: 0,
+      visibleColumns: []
     };
   },
   computed: {
@@ -119,16 +192,115 @@ export default {
 
       return filterValid ? this.filter : false
     },
+    totalRecordsText() {
+      return `${this.totalRecords.toLocaleString()}`
+    },
+    pendingEditList() {
+      return Object.values(this.pendingEdits)
+    },
+    editable() {
+      return this.primaryKey && this.table.entityType === 'table'
+    },
+    // it's a table, but there's no primary key
+    missingPrimaryKey() {
+      return this.table.entityType === 'table' && !this.primaryKey
+    },
+    statusbarMode() {
+      if (this.editError) return 'failure'
+      if (this.pendingEdits.length > 0) return 'editing'
+      return null
+    },
+    tableKeys() {
+      const result = {}
+      this.rawTableKeys.forEach((item) => {
+        result[item.fromColumn] = item
+      })
+      return result
+    },
     tableColumns() {
-      return this.table.columns.map(column => {
+      const columnWidth = this.table.columns.length > 20 ? 125 : undefined
+      const keyWidth = 40
+      const results = []
+      // 1. add a column for a real column
+      // if a FK, add another column with the link
+      // to the FK table.
+      this.table.columns.forEach(column => {
+
+        const keyData = this.tableKeys[column.columnName]
+        // this needs fixing
+        // currently it doesn't fetch the right result if you update the PK
+        // because it uses the PK to fetch the result.
+        const editable = this.editable && column.columnName !== this.primaryKey
+        const slimDataType = this.slimDataType(column.dataType)
+        const editorType = this.editorType(column.dataType)
+        const useVerticalNavigation = editorType === 'textarea'
+        const isPK = this.primaryKey && this.primaryKey === column.columnName
+
+        const formatter = () => {
+          return `<span class="tabletable-title">${column.columnName} <span class="badge">${slimDataType}</span></span>`
+        }
+
+        let headerTooltip = `${column.columnName} ${column.dataType}`
+        if (keyData) {
+          headerTooltip += ` -> ${keyData.toTable}(${keyData.toColumn})`
+        } else if (isPK) {
+          headerTooltip += ' [Primary Key]'
+        }
+
+
+
+
         const result = {
           title: column.columnName,
           field: column.columnName,
+          titleFormatter: formatter,
           mutatorData: this.resolveDataMutator(column.dataType),
-          dataType: column.dataType
+          dataType: column.dataType,
+          cellClick: this.cellClick,
+          width: columnWidth,
+          cssClass: isPK ? 'primary-key' : '',
+          editable: editable,
+          editor: editable ? editorType : undefined,
+          variableHeight: true,
+          headerTooltip: headerTooltip,
+          cellEditCancelled: cell => cell.getRow().normalizeHeight(),
+          formatter: this.cellFormatter,
+          editorParams: {
+            verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
+            search: true,
+            values: column.dataType === 'bool' ? [true, false] : undefined
+            // elementAttributes: {
+            //   maxLength: column.columnLength // TODO
+            // }
+          },
+          cellEdited: this.cellEdited
         }
-        return result
+        results.push(result)
+
+
+        if (keyData) {
+          const icon = () => "<i class='material-icons fk-link'>launch</i>"
+          const tooltip = () => {
+            return `View record in ${keyData.toTable}`
+          }
+          const keyResult = {
+            headerSort: false,
+            download: false,
+            width: keyWidth,
+            resizable: false,
+            field: column.columnName + '-link',
+            title: "",
+            cssClass: "foreign-key-button",
+            cellClick: this.fkClick,
+            formatter: icon,
+            tooltip
+          }
+          result.cssClass = 'foreign-key'
+          results.push(keyResult)
+        }
+
       });
+      return results
     },
     filterValue() {
       return this.filter.value;
@@ -139,22 +311,73 @@ export default {
       }
 
       return [{ column: this.table.columns[0].columnName, dir: "asc" }];
+    },
+    allColumnsSelected() {
+      return this.visibleColumns.length === this.table.columns.length
     }
   },
 
   watch: {
+    active() {
+      if (!this.tabulator) return;
+      if (this.active) {
+        this.tabulator.restoreRedraw()
+        this.$nextTick(() => {
+          this.tabulator.redraw()
+        })
+      } else {
+        this.tabulator.blockRedraw()
+      }
+    },
     filterValue() {
       if (this.filter.value === "") {
         this.clearFilter();
       }
     },
+    lastUpdated() {
+      this.setlastUpdatedText()
+      let result = 'all'
+      if (this.primaryKey && this.filter.value && this.filter.type === '=' && this.filter.field === this.primaryKey) {
+        log.info("setting scope", this.filter.value)
+        result = this.filter.value
+      } else {
+        if (this.filter.value) result = 'filtered'
+      }
+      this.$emit('setTabTitleScope', this.tabId, result)
+    },
+    visibleColumns() {
+      if (!this.tabulator) {
+        return
+      }
+
+      this.tabulator.getColumns().forEach(column => {
+        if (this.visibleColumns.indexOf(column.getField()) === -1) {
+          column.hide()
+        } else {
+          column.show()
+        } 
+      })
+    }
+  },
+  beforeDestroy() {
+    if(this.interval) clearInterval(this.interval)
+    if (this.tabulator) {
+      this.tabulator.destroy()
+    }
   },
   async mounted() {
+    if (this.initialFilter) {
+      this.filter = _.clone(this.initialFilter)
+    }
+
+    this.showAllColumns()
+    this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
+    this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
     this.tabulator = new Tabulator(this.$refs.table, {
       height: this.actualTableHeight,
       columns: this.tableColumns,
       nestedFieldSeparator: false,
-      ajaxRequestFunc: this.dataFetch,
+      virtualDomHoz: true,
       ajaxURL: "http://fake",
       ajaxSorting: true,
       ajaxFiltering: true,
@@ -162,14 +385,153 @@ export default {
       paginationSize: this.limit,
       paginationElement: this.$refs.paginationArea,
       initialSort: this.initialSort,
-      cellClick: this.cellClick
+      initialFilter: [this.initialFilter || {}],
+      lastUpdated: null,
+      // callbacks
+      ajaxRequestFunc: this.dataFetch,
+      index: this.primaryKey,
+      keybindings: {
+        scrollToEnd: false,
+        scrollToStart: false,
+        scrollPageUp: false,
+        scrollPageDown: false
+      }
     });
-
     this.addFilter()
   },
   methods: {
+    valueCellFor(cell) {
+      const fromColumn = cell.getField().replace(/-link$/g, "")
+      const valueCell = cell.getRow().getCell(fromColumn)
+      return valueCell
+    },
+    slimDataType(dt) {
+      if (dt) {
+        return dt.split("(")[0]
+      }
+      return null
+    },
+    editorType(dt) {
+      switch (dt) {
+        case 'text': return 'textarea'
+        case 'json': return 'textarea'
+        case 'jsonb': return 'textarea'
+        case 'bool': return 'select'
+        default: return 'input'
+      }
+    },
+    fkClick(e, cell) {
+      log.info('fk-click', cell)
+      const fromColumn = cell.getField().replace(/-link$/g, "")
+      const valueCell = this.valueCellFor(cell)
+      const value = valueCell.getValue()
+
+      const keyData = this.tableKeys[fromColumn]
+      const tableName = keyData.toTable
+      const schemaName = keyData.toSchema
+      const table = this.$store.state.tables.find(t => {
+        return (!schemaName || schemaName === t.schema) && t.name === tableName
+      })
+      if (!table) {
+        log.error("fk-click: unable to find destination table", tableName)
+        return
+      }
+      const filter = {
+        value,
+        type: '=',
+        field: keyData.toColumn
+      }
+      const payload = {
+        table, filter, titleScope: value
+      }
+      log.debug('fk-click: clicked ', value, keyData)
+      this.$root.$emit('loadTable', payload)
+    },
     cellClick(e, cell) {
-      this.selectChildren(cell.getElement())
+      // this makes it easier to select text if not editing
+      if (!this.editable) {
+        this.selectChildren(cell.getElement())
+      } else {
+        setTimeout(() => {
+          cell.getRow().normalizeHeight();
+        }, 10)
+
+      }
+
+    },
+    cellEdited(cell) {
+      log.info('edit', cell)
+      const pkCell = cell.getRow().getCells().find(c => c.getField() === this.primaryKey)
+      if (!pkCell) {
+        this.$noty.error("Can't edit column -- couldn't figure out primary key")
+        // cell.setValue(cell.getOldValue())
+        cell.restoreOldValue()
+        return
+      }
+
+      if (cell.getValue() === "" && _.isNil(cell.getOldValue())) {
+        cell.restoreOldValue()
+        return
+      }
+
+      cell.getElement().classList.add('edited')
+      const key = `${pkCell.getValue()}-${cell.getField()}`
+      const currentEdit = this.pendingEdits[key]
+      const payload = {
+        table: this.table.name,
+        schema: this.table.schema,
+        column: cell.getField(),
+        pkColumn: this.primaryKey,
+        primaryKey: pkCell.getValue(),
+        oldValue: currentEdit ? currentEdit.oldValue : cell.getOldValue(),
+        cell: cell,
+        value: cell.getValue(0)
+      }
+      this.$set(this.pendingEdits, key, payload)
+    },
+    async saveChanges() {
+      try {
+        // throw new Error("This is an error")
+        const newData = await this.connection.updateValues(this.pendingEditList)
+        const updateIncludedPK = this.pendingEditList.find(e => e.column === e.pkColumn)
+        if (updateIncludedPK) {
+          this.tabulator.replaceData()
+        } else {
+          this.tabulator.updateData(newData)
+          this.pendingEditList.forEach(edit => {
+            edit.cell.getElement().classList.remove('edited')
+            edit.cell.getElement().classList.add('edit-success')
+            setTimeout(() => {
+              edit.cell.getElement().classList.remove('edit-success')
+            }, 1000)
+          })
+        }
+        log.info("new Data: ", newData)
+        this.pendingEdits = {}
+      } catch (ex) {
+        this.pendingEditList.forEach(edit => {
+          edit.cell.getElement().classList.add('edit-error')
+        })
+        this.editError = ex.message
+      }
+
+    },
+    discardChanges() {
+      this.editError = null
+      const updates = []
+      this.pendingEditList.forEach(edit => {
+        const update = {}
+        update[edit.pkColumn] = edit.primaryKey
+        update[edit.column] = edit.oldValue
+        updates.push(update)
+        // this.tabulator.updateData(update)
+        // edit.cell.restoreOldValue()
+        edit.cell.getElement().classList.remove('edited')
+        edit.cell.getElement().classList.remove('edit-error')
+      })
+      log.debug('discarding -- applying update', updates)
+      this.tabulator.updateData(updates)
+      this.pendingEdits = {}
     },
     addFilter() {
       this.filter.push({
@@ -235,12 +597,15 @@ export default {
                 this.table.schema
             );
             const r = response.result;
-            const totalRecords = response.totalRecords;
+            this.totalRecords = Number(response.totalRecords) || 0;
             this.response = response
+            this.pendingEdits = []
+            this.editError = null
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data
+            this.lastUpdated = Date.now()
             resolve({
-              last_page: Math.ceil(totalRecords / limit),
+              last_page: Math.ceil(this.totalRecords / limit),
               data
             });
           } catch (error) {
@@ -250,6 +615,16 @@ export default {
         })();
       });
       return result;
+    },
+    setlastUpdatedText() {
+      if (!this.lastUpdated) return null
+      this.lastUpdatedText = this.timeAgo.format(this.lastUpdated)
+    },
+    showAllColumns() {
+      this.visibleColumns = _.map(this.table.columns, 'columnName')
+    },
+    hideAllColumns() {
+      this.visibleColumns = []
     }
   }
 };

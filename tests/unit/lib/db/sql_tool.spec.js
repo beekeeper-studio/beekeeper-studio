@@ -8,7 +8,8 @@ const testCases = {
   "select foo, bar, from table where bar like '%;';\n INSERT INTO table(foo, bar) VALUES(a,'b;')": 2,
   "select; select; select;": 3,
   "a;b;c;d;e;f;g": 7,
-  "INSERT INTO\n table_name\n VALUES\n (value1,'value which contains semicolon ;;;;', value3); select * from foo": 2
+  "INSERT INTO\n table_name\n VALUES\n (value1,'value which contains semicolon ;;;;', value3); select * from foo": 2,
+  "select * from wp_usermeta where meta_key='test' and meta_value <> ''; show processlist; select count(*) from wp_usermeta; show processlist;": 4
 }
 
 describe("Query Splitter", () => {
@@ -21,9 +22,9 @@ describe("Query Splitter", () => {
   })
 
   it("should not add a semi-colon to the end of the last query", () => {
-    const expected = " select * from bar"
+    const expected = "select * from bar"
     const result = splitQueries(Object.keys(testCases)[0])
-    expect(result[1]).toBe(expected)
+    expect(result[1].text).toBe(expected)
   })
 })
 
@@ -54,11 +55,13 @@ describe("extractParams", () => {
     })
   })
 
-  it("shouldn't extract character class params", () => {
+  it("shouldn't extract these params", () => {
     const testCases = {
       ":one:": [],
       ": two :": [],
-      "SELECT 'a' REGEXP '^[[:alpha:]]'": []
+      "SELECT 'a' REGEXP '^[[:alpha:]]'": [],
+      "update products set title='{\"desc\":null}' where id='aa';": [], // literal JSON null
+      "update products set title='{\"desc\": null}' where id='aa';": [], // literal JSON null
     }
     Object.keys(testCases).forEach(query => {
       const expected = testCases[query]

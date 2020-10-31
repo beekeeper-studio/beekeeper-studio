@@ -10,10 +10,36 @@
         <input type="number" class="form-control" name="port" v-model.number="config.port">
       </div>
     </div>
-    <label for="ssl" class="checkbox-group row">
-      <input id="ssl" type="checkbox" name="ssl" class="form-control" v-model="config.ssl" >
-      <span>Enable SSL</span>
-    </label>
+
+    <div class="advanced-connection-settings">
+      <h4 class="advanced-heading flex" :class="{enabled: config.ssl}">
+        <span class="expand">Enable SSL</span>
+        <x-switch @click.prevent="config.ssl = !config.ssl" :toggled="config.ssl"></x-switch>
+      </h4>
+      <div class="advanced-body" v-show="config.ssl">
+        <div class="row gutter">
+          <div class="col form-group">
+            <label>CA Cert (optional)</label>
+            <file-picker v-model="config.sslCaFile"></file-picker>
+          </div>
+        </div>
+
+        <div class="row gutter">
+          <div class="col form-group">
+            <label>Certificate (optional)</label>
+            <file-picker v-model="config.sslCertFile"></file-picker>
+          </div>
+        </div>
+
+        <div class="row gutter">
+          <div class="col form-group">
+            <label>Key File (optional)</label>
+            <file-picker v-model="config.sslKeyFile"></file-picker>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="row gutter">
       <div class="col s6 form-group">
         <label for="user">User</label>
@@ -33,15 +59,29 @@
 </template>
 
 <script>
+  import FilePicker from '@/components/common/form/FilePicker'
 
   export default {
     props: ['config'],
+    components: {
+      FilePicker
+    },
     methods: {
       onPaste(event) {
           const data = event.clipboardData.getData('text')
           if (this.config.parse(data)) {
             event.preventDefault()
           }
+      },
+      toggleSsl() {
+        this.config.ssl = !this.config.ssl
+
+        // Remove CA file when disabling ssl
+        if (!this.config.ssl) {
+          this.config.sslCaFile = null
+          this.config.sslCertFile = null
+          this.config.sslKeyFile = null
+        }
       }
     }
   }
