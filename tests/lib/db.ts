@@ -10,11 +10,12 @@ const KnexTypes: any = {
   'mysql': 'mysql2',
   "mariadb": "mysql2",
   "sqlite": "sqlite3",
-  "sqlserver": "mssql"
+  "sqlserver": "mssql",
+  "cockroachdb": "pg"
 }
 
 interface Options {
-  defaultSchema?: string
+  defaultSchema: string | null
 }
 
 export class DBTestUtil {
@@ -23,7 +24,7 @@ export class DBTestUtil {
   public connection: any
   public expectedTables: number = 5
   public preInitCmd: string | undefined
-  public defaultSchema: string = 'public'
+  public defaultSchema: string | null = 'public'
   constructor(config: IDbConnectionServerConfig, database: string, options?: Options) {
 
     if (config.client === 'sqlite') {
@@ -42,19 +43,18 @@ export class DBTestUtil {
           user: config.user || undefined,
           password: config.password || undefined,
           database
-        }
+        },
+        pool: { min: 0, max: 50 }
       })
     }
-    this.defaultSchema = options?.defaultSchema || this.defaultSchema
+    this.defaultSchema = options?.defaultSchema === undefined ? this.defaultSchema : options?.defaultSchema
     this.server = createServer(config)
     this.connection = this.server.createConnection(database)
-
   }
 
   async setupdb() {
-
-    await this.connection.connect()
     await this.createTables()
+    await this.connection.connect()
     const address = await this.knex("addresses").insert({country: "US"}).returning("id")
     const people = await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0]}).returning("id")
     const jobs = await this.knex("jobs").insert({job_name: "Programmer"}).returning("id")
