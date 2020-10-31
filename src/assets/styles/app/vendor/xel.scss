@@ -860,7 +860,8 @@ x-menubar {
  */
 
 x-popover {
-  color: var(--text-color);
+  color: $theme-base !important;
+  background: $theme-bg;
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 2px;
   box-shadow: var(--elevation-5);
