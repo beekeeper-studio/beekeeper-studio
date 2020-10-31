@@ -56,12 +56,6 @@ export interface IDbDelete {
   primaryKey: string
 }
 
-export interface IDbChanges {
-  inserts: IDbInsert[],
-  updates: IDbUpdate[],
-  deletes: IDbDelete[]
-}
-
 export interface IDbConnection {
   disconnect: () => void,
   listTables: (db: string, filter?: IDbFilter) => Promise<IDbEntity[]>,
@@ -78,8 +72,7 @@ export interface IDbConnection {
   executeQuery: (queryText: string) => void,
   listDatabases: (filter?: IDbFilter) => void,
   updateValues: (updates: IDbUpdate[]) => void,
-  deleteRows: (updates: IDbUpdate[]) => void,
-  applyChanges: (changes: IDbChanges) => void,
+  deleteRows: (deletes: IDbDelete[]) => void,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableCreateScript: (table: string, schema?: string) => void,
   getViewCreateScript: (view: string) => void,
@@ -167,7 +160,6 @@ export class DBConnection {
   selectTop = selectTop.bind(null, this.server, this.database)
   updateValues = updateValues.bind(null, this.server, this.database)
   deleteRows = deleteRows.bind(null, this.server, this.database)
-  applyChanges = applyChanges.bind(null, this.server, this.database)
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
   getTableCreateScript = getTableCreateScript.bind(null, this.server, this.database)
   getTableSelectScript = getTableSelectScript.bind(null, this.server, this.database)
@@ -326,14 +318,9 @@ function updateValues(server: IDbConnectionServer, database: IDbConnectionDataba
   return database.connection?.updateValues(updates)
 }
 
-function deleteRows(server: IDbConnectionServer, database: IDbConnectionDatabase, updates: IDbUpdate[]) {
+function deleteRows(server: IDbConnectionServer, database: IDbConnectionDatabase, deletes: IDbDelete[]) {
   checkIsConnected(server, database)
-  return database.connection?.deleteRows(updates)
-}
-
-function applyChanges(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: IDbChanges) {
-  checkIsConnected(server, database)
-  return database.connection?.applyChanges(changes)
+  return database.connection?.deleteRows(deletes)
 }
 
 function executeQuery(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string) {

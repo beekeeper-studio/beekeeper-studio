@@ -7,7 +7,7 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _ from 'lodash';
 
-import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
 import logRaw from 'electron-log'
 const log = logRaw.scope('sql-server')
 
@@ -44,8 +44,7 @@ export default async function (server, database) {
     getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema) => getPrimaryKey(conn, db, table, schema),
     updateValues: (updates) => updateValues(conn, updates),
-    deleteRows: (updates) => deleteRows(conn, updates),
-    applyChanges: (changes) => applyChanges(conn, changes),
+    deleteRows: (deletes) => deleteRows(conn, deletes),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
@@ -421,49 +420,15 @@ export async function updateValues(conn, updates) {
   return results
 }
 
-export async function deleteRows(conn, updates) {
+export async function deleteRows(conn, deletes) {
 
-  const deleteQueries = updates.map(update => {
-    const where = {}
-    where[update.pkColumn] = update.primaryKey
-
-    const query = knex(update.table)
-      .withSchema(update.schema)
-      .where(where)
-      .delete()
-      .toQuery()
-    return query
-  })
-
+  const deleteQueries = buildDeleteQueries(knex, deletes)
   const sql = ['set xact_abort on', 'BEGIN TRANSACTION', ...deleteQueries, 'COMMIT'].join(";")
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
     await driverExecuteQuery(cli, { query: sql })
   })
   return true
-}
-
-export async function applyChanges(conn, changes) {
-  
-  let result = {
-    inserts: null,
-    updates: null,
-    deletes: null
-  }
-
-  // TODO Execute inserts
-
-  // Execute updates
-  if (changes.updates.length > 0) {
-    result.updates = await updateValues(conn, changes.updates)
-  }
-
-  // Execute deletes
-  if (changes.deletes.length > 0) {
-    result.deletes = await deleteRows(conn, changes.deletes)
-  }
-
-  return result
 }
 
 export async function getTableCreateScript(conn, table) {

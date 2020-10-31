@@ -3,13 +3,17 @@ import { readFileSync } from 'fs'
 
 import mysql from 'mysql2';
 import { identify } from 'sql-query-identifier';
+import knexlib from 'knex'
 
 import createLogger from '../../logger';
 import { createCancelablePromise } from '../../../common/utils';
 import errors from '../../errors';
-import { genericSelectTop } from './utils';
+import { buildDeleteQueries, genericSelectTop } from './utils';
+
 
 const logger = createLogger('db:clients:mysql');
+
+const knex = knexlib({ client: 'mysql2' })
 
 const mysqlErrors = {
   EMPTY_QUERY: 'ER_EMPTY_QUERY',
@@ -43,8 +47,7 @@ export default async function (server, database) {
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
     updateValues: (updates) => updateValues(conn, updates),
-    deleteRows: (updates) => deleteRows(conn, updates),
-    applyChanges: (changes) => applyChanges(conn, changes),
+    deleteRows: (deletes) => deleteRows(conn, deletes),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
@@ -323,22 +326,16 @@ export async function updateValues(conn, updates) {
   return results
 }
 
-export async function deleteRows(conn, updates) {
-  const deleteCommands = updates.map(update => {
-    return {
-      query: `DELETE FROM ${wrapIdentifier(update.table)} WHERE ${wrapIdentifier(update.pkColumn)} = ?`,
-      params: [update.primaryKey]
-    }
-  })
+export async function deleteRows(conn, deletes) {
+  const deleteCommands = buildDeleteQueries(knex, deletes)
 
-  const commands = [{ query: 'START TRANSACTION'}, ...deleteCommands];
-  // TODO: this should probably return the updated values
+  const commands = ['START TRANSACTION', ...deleteCommands];
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
     try {
       for (let index = 0; index < commands.length; index++) {
         const blob = commands[index];
-        await driverExecuteQuery(cli, blob)
+        await driverExecuteQuery(cli, { query: blob })
       }
       await driverExecuteQuery(cli, { query: 'COMMIT'})
     } catch (ex) {
@@ -350,30 +347,6 @@ export async function deleteRows(conn, updates) {
 
   return true
 }
-
-export async function applyChanges(conn, changes) {
-  
-  let result = {
-    inserts: null,
-    updates: null,
-    deletes: null
-  }
-
-  // TODO Execute inserts
-
-  // Execute updates
-  if (changes.updates.length > 0) {
-    result.updates = await updateValues(conn, changes.updates)
-  }
-
-  // Execute deletes
-  if (changes.deletes.length > 0) {
-    result.deletes = await deleteRows(conn, changes.deletes)
-  }
-
-  return result
-}
-
 
 export async function executeQuery(conn, queryText) {
   const { fields, data } = await driverExecuteQuery(conn, { query: queryText });
