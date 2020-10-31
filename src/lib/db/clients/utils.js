@@ -57,8 +57,9 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
       }
     })).join(",")
   }
-
-  if (filters && filters.length > 0) {
+  if (filters && filters.length === 1 && filters[0].type === 'raw') {
+    filterString = "WHERE " + filters[0].value
+  } else if (filters && filters.length > 0) {
     filterString = "WHERE " + filters.map((item) => {
       return `\`${item.field}\` ${item.type} ?`
     }).join(" AND ")

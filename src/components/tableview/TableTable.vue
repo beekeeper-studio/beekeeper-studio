@@ -2,7 +2,39 @@
   <div class="tabletable flex-col">
     <div class="table-filter">
       <form @submit.prevent="triggerFilter">
-        <div class="filter-group row gutter">
+        <div v-if="filterMode === 'raw'" class="filter-group row gutter">
+          <div class="btn-wrap">
+            <button class="btn btn-primary" type="button" @click.stop="filterMode = 'builder'">
+              <i class="material-icons">list</i>
+            </button>
+          </div>
+          <div class="expand filter">
+            <div class="filter-wrap">
+              <input
+                class="form-control"
+                type="text"
+                v-model="filterRaw.value"
+                placeholder="Enter raw where condition"
+              />
+              <button
+                type="button"
+                class="clear btn-link"
+                @click.prevent="filterRaw.value = ''"
+              >
+                <i class="material-icons">cancel</i>
+              </button>
+            </div>
+          </div>
+          <div class="btn-wrap">
+            <button class="btn btn-primary" type="submit">Search</button>
+          </div>
+        </div>
+        <div v-else-if="filterMode === 'builder'" class="filter-group row gutter">
+          <div class="btn-wrap">
+            <button class="btn btn-primary" type="button" @click.stop="filterMode = 'raw'">
+              <i class="material-icons">code</i>
+            </button>
+          </div>
           <div>
             <div class="select-wrap">
               <select name="Filter Field" class="form-control" v-model="filter.field">
@@ -105,6 +137,8 @@ import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 const log = rawLog.scope('TableTable')
+const FILTER_MODE_BUILDER = 'builder'
+const FILTER_MODE_RAW = 'raw'
 
 export default {
   components: { Statusbar },
@@ -126,6 +160,11 @@ export default {
         type: "=",
         field: this.table.columns[0].columnName
       },
+      filterRaw: {
+        value: '',
+        type: FILTER_MODE_RAW
+      },
+      filterMode: FILTER_MODE_BUILDER,
       headerFilter: true,
       columnsSet: false,
       tabulator: null,
@@ -295,6 +334,9 @@ export default {
         if (this.filter.value) result = 'filtered'
       }
       this.$emit('setTabTitleScope', this.tabId, result)
+    },
+    filterMode() {
+      this.triggerFilter()
     }
   },
   beforeDestroy() {
@@ -508,7 +550,9 @@ export default {
         offset = (params.page - 1) * limit;
       }
 
-      if (params.filters) {
+      if (this.filterMode === FILTER_MODE_RAW && this.filterRaw.value) {
+        filters = [this.filterRaw]
+      } else if (this.filterMode === FILTER_MODE_BUILDER && params.filters) {
         filters = params.filters;
       }
 
