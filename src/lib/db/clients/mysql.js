@@ -4,12 +4,12 @@ import { readFileSync } from 'fs'
 import mysql from 'mysql2';
 import { identify } from 'sql-query-identifier';
 
-import createLogger from '../../logger';
 import { createCancelablePromise } from '../../../common/utils';
 import errors from '../../errors';
 import { genericSelectTop } from './utils';
-
-const logger = createLogger('db:clients:mysql');
+import rawLog from 'electron-log'
+const log = rawLog.scope('mysql')
+const logger = () => log
 
 const mysqlErrors = {
   EMPTY_QUERY: 'ER_EMPTY_QUERY',
@@ -46,7 +46,7 @@ export default async function (server, database) {
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
-    w: (table, limit) => getQuerySelectTop(conn, table, limit),
+    getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
     getRoutineCreateScript: (routine, type) => getRoutineCreateScript(conn, routine, type),
@@ -187,6 +187,7 @@ export async function getPrimaryKey(conn, database, table) {
     table,
   ];
   const { data } = await driverExecuteQuery(conn, { query: sql, params })
+  if (data.length !== 1) return null
   return data[0] ? data[0].Column_name : null
 }
 
@@ -471,6 +472,7 @@ function configDatabase(server, database) {
 function getRealError(conn, err) {
   /* eslint no-underscore-dangle:0 */
   if (conn && conn._protocol && conn._protocol._fatalError) {
+    logger().warn("Query error", err, conn._protocol._fatalError)
     return conn._protocol._fatalError;
   }
   return err;
