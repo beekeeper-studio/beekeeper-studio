@@ -187,6 +187,7 @@ export async function getPrimaryKey(conn, database, table) {
     table,
   ];
   const { data } = await driverExecuteQuery(conn, { query: sql, params })
+  if (data.length !== 1) return null
   return data[0] ? data[0].Column_name : null
 }
 

@@ -449,17 +449,18 @@ export async function getTableKeys(conn, database, table, schema) {
 }
 
 export async function getPrimaryKey(conn, database, table, schema) {
+  
+  const tablename = schema ? `${schema}.${table}` : table
   const query = `
-    SELECT c.column_name
-    FROM information_schema.key_column_usage AS c
-    LEFT JOIN information_schema.table_constraints AS t
-    ON t.constraint_name = c.constraint_name
-    WHERE t.table_name = $1 and t.table_schema = $2
-    AND t.constraint_type = 'PRIMARY KEY'
+    SELECT a.attname as column_name, format_type(a.atttypid, a.atttypmod) AS data_type
+    FROM   pg_index i
+    JOIN   pg_attribute a ON a.attrelid = i.indrelid
+                        AND a.attnum = ANY(i.indkey)
+    WHERE  i.indrelid = '${tablename}'::regclass
+    AND    i.indisprimary;
   `
-  const params = [table, schema]
-  const data = await driverExecuteQuery(conn, { query, params })
-  return data.rows && data.rows[0] ? data.rows[0].column_name : null
+  const data = await driverExecuteQuery(conn, { query })
+  return data.rows && data.rows[0] && data.rows.length === 1 ? data.rows[0].column_name : null
 }
 
 export async function updateValues(conn, updates) {

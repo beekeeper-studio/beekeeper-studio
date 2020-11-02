@@ -264,8 +264,9 @@ export async function getPrimaryKey(conn, database, table) {
   log.debug('finding foreign key for', database, table)
   const sql = `pragma table_info('${table}')`
   const { data } = await driverExecuteQuery(conn, { query: sql })
-  const found = data.find(r => r.pk === 1)
-  return found ? found.name : null
+  const found = data.filter(r => r.pk > 0)
+  if (found.length !== 1) return null
+  return found[0].name
 }
 
 export async function getTableKeys(conn, database, table) {

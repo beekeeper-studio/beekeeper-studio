@@ -12,7 +12,7 @@ describe("Sqlite Tests", () => {
       client: 'sqlite',
     }
     util = new DBTestUtil(config, dbfile.name)
-    util.expectedTables = 6
+    util.expectedTables = 7
     await util.setupdb()
 
   })

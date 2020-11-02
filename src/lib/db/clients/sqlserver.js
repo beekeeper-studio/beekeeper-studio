@@ -398,7 +398,7 @@ export async function getPrimaryKey(conn, database, table, schema) {
   `
   const { data } = await driverExecuteQuery(conn, { query: sql})
   logger().debug('primary key results:', data)
-  return data.recordset && data.recordset[0] ? data.recordset[0].COLUMN_NAME : null
+  return data.recordset && data.recordset[0] && data.recordset.length === 1 ? data.recordset[0].COLUMN_NAME : null
 }
 
 export async function updateValues(conn, updates) {

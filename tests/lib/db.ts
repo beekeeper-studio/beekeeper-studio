@@ -21,7 +21,7 @@ export class DBTestUtil {
   public knex: Knex
   public server: any
   public connection: any
-  public expectedTables: number = 5
+  public expectedTables: number = 6
   public preInitCmd: string | undefined
   public defaultSchema: string | null = 'public'
   constructor(config: IDbConnectionServerConfig, database: string, options?: Options) {
@@ -111,6 +111,9 @@ export class DBTestUtil {
     expect(result).toMatchObject(['abc'])
     
 
+    // composite primary key tests. Just disable them for now
+    r = await this.connection.getPrimaryKey('with_composite_pk', this.defaultSchema)
+    expect(r).toBeNull()
   }
 
 
@@ -154,6 +157,12 @@ export class DBTestUtil {
       table.foreign("job_id").references("jobs.id")
       table.primary(['person_id', "job_id"])
       table.timestamps()
+    })
+
+    await this.knex.schema.createTable('with_composite_pk', (table) => {
+      table.integer("id1").notNullable().unsigned()
+      table.integer("id2").notNullable().unsigned()
+      table.primary(["id1", "id2"])
     })
   }
 }
