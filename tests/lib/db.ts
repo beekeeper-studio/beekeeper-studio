@@ -87,26 +87,28 @@ export class DBTestUtil {
     expect(await this.connection.getPrimaryKey("group", this.defaultSchema))
       .toBe("id");
     
-    expect(await this.connection.selectTop("group", 0, 10, ["select"], null, this.defaultSchema))
-      .toStrictEqual({ "result": [], "totalRecords": 0 })
+    const stR = await this.connection.selectTop("group", 0, 10, ["select"], null, this.defaultSchema)
+    console.log("STR", stR)
+    expect(stR)
+      .toMatchObject({ result: [], totalRecords: 0 })
     
     await this.knex("group").insert([{select: "bar"}, {select: "abc"}])
 
     let r = await this.connection.selectTop("group", 0, 10, ["select"], null, this.defaultSchema)
     let result = r.result.map((r: any) => r.select)
-    expect(result).toStrictEqual(["abc", "bar"])
+    expect(result).toMatchObject(["abc", "bar"])
 
     r = await this.connection.selectTop("group", 0, 10, [{field: 'select', dir: 'desc'}], null, this.defaultSchema)
     result = r.result.map((r: any) => r.select)
-    expect(result).toStrictEqual(['bar', 'abc'])
+    expect(result).toMatchObject(['bar', 'abc'])
 
     r = await this.connection.selectTop("group", 0, 1, [{ field: 'select', dir: 'desc' }], null, this.defaultSchema)
     result = r.result.map((r: any) => r.select)
-    expect(result).toStrictEqual(['bar'])
+    expect(result).toMatchObject(['bar'])
 
     r = await this.connection.selectTop("group", 1, 10, [{ field: 'select', dir: 'desc' }], null, this.defaultSchema)
     result = r.result.map((r: any) => r.select)
-    expect(result).toStrictEqual(['abc'])
+    expect(result).toMatchObject(['abc'])
     
 
   }

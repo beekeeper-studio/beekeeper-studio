@@ -1,5 +1,4 @@
-import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { Duration, TemporalUnit } from "node-duration"
+import { DBTestUtil } from '../../../../lib/db'
 import tmp from 'tmp'
 
 describe("Sqlite Tests", () => {
