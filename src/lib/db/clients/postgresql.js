@@ -242,6 +242,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
     LIMIT ${limit}
     OFFSET ${offset}
     `
+  log.debug("select Top query & params", countQuery, query, params)
   const countResults = await driverExecuteQuery(conn, { query: countQuery, params })
   const result = await driverExecuteQuery(conn, { query, params })
   const rowWithTotal = countResults.rows.find((row) => { return row.total })
@@ -450,7 +451,7 @@ export async function getTableKeys(conn, database, table, schema) {
 
 export async function getPrimaryKey(conn, database, table, schema) {
   
-  const tablename = schema ? `${schema}.${table}` : table
+  const tablename = escapeString(schema ? `${schema}.${table}` : table)
   const query = `
     SELECT a.attname as column_name, format_type(a.atttypid, a.atttypmod) AS data_type
     FROM   pg_index i
@@ -459,6 +460,7 @@ export async function getPrimaryKey(conn, database, table, schema) {
     WHERE  i.indrelid = '${tablename}'::regclass
     AND    i.indisprimary;
   `
+  log.debug('getPrimaryKey', query, tablename)
   const data = await driverExecuteQuery(conn, { query })
   return data.rows && data.rows[0] && data.rows.length === 1 ? data.rows[0].column_name : null
 }
@@ -687,6 +689,10 @@ export function wrapIdentifier(value) {
   const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
   if (matched) return wrapIdentifier(matched[1]) + matched[2];
   return `"${value.replace(/"/g, '""')}"`;
+}
+
+function escapeString(value) {
+  return value.replace("'", "''")
 }
 
 

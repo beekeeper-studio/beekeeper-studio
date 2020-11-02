@@ -1,4 +1,5 @@
 import Knex from 'knex'
+import { exit } from 'process'
 import { IDbConnectionServerConfig } from '../../src/lib/db/client'
 import { createServer } from '../../src/lib/db/index'
 export const dbtimeout = 120000
@@ -14,18 +15,26 @@ const KnexTypes: any = {
 
 interface Options {
   defaultSchema?: string
-  version?: string
+  version?: string,
+  skipPkQuote?: boolean
 }
 
 export class DBTestUtil {
   public knex: Knex
   public server: any
   public connection: any
-  public expectedTables: number = 6
+  public extraTables: number = 0
+  private options: Options
+  
   public preInitCmd: string | undefined
   public defaultSchema: string | null = 'public'
-  constructor(config: IDbConnectionServerConfig, database: string, options?: Options) {
+  
+  get expectedTables() {
+    return this.extraTables + 7
+  }
 
+  constructor(config: IDbConnectionServerConfig, database: string, options: Options = {}) {
+    this.options = options
     if (config.client === 'sqlite') {
       this.knex = Knex({
         client: "sqlite3",
@@ -65,15 +74,11 @@ export class DBTestUtil {
   async testdb() {
     // SIMPLE TABLE CREATION TEST
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
+    console.log(tables)
     expect(tables.length).toBe(this.expectedTables)
     const columns = await this.connection.listTableColumns("people", this.defaultSchema)
     expect(columns.length).toBe(7)
-
-    // PRIMARY KEY TESTS
-    // TODO: update this to support composite keys
-    const pk = await this.connection.getPrimaryKey("people", this.defaultSchema)
-    expect(pk).toBe("id")
-
+    console.log("loading columns...")
     await this.tableViewTests()
 
   }
@@ -83,12 +88,13 @@ export class DBTestUtil {
    * fetching PK, selecting data, etc.
    */ 
   async tableViewTests() {
+
+    console.log("table tests")
     // reserved word as table name
     expect(await this.connection.getPrimaryKey("group", this.defaultSchema))
       .toBe("id");
     
     const stR = await this.connection.selectTop("group", 0, 10, ["select"], null, this.defaultSchema)
-    console.log("STR", stR)
     expect(stR)
       .toMatchObject({ result: [], totalRecords: 0 })
     
@@ -109,7 +115,17 @@ export class DBTestUtil {
     r = await this.connection.selectTop("group", 1, 10, [{ field: 'select', dir: 'desc' }], null, this.defaultSchema)
     result = r.result.map((r: any) => r.select)
     expect(result).toMatchObject(['abc'])
-    
+
+    console.log("pk tests")
+    // primary key tests
+    let pk = await this.connection.getPrimaryKey("people", this.defaultSchema)
+    expect(pk).toBe("id")
+
+    if (!this.options.skipPkQuote) {
+      console.log("quoted table PK")
+      pk = await this.connection.getPrimaryKey("tablewith'char", this.defaultSchema)
+      expect(pk).toBe("one")
+    }
 
     // composite primary key tests. Just disable them for now
     r = await this.connection.getPrimaryKey('with_composite_pk', this.defaultSchema)
@@ -163,6 +179,10 @@ export class DBTestUtil {
       table.integer("id1").notNullable().unsigned()
       table.integer("id2").notNullable().unsigned()
       table.primary(["id1", "id2"])
+    })
+
+    await this.knex.schema.createTable("tablewith'char", (table) => {
+      table.integer("one").unsigned().notNullable().primary()
     })
   }
 }

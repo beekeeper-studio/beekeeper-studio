@@ -67,6 +67,10 @@ export function wrapIdentifier(value) {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
+function escapeString(value) {
+  return value.replace("'", "''")
+}
+
 
 export function getQuerySelectTop(client, table, limit) {
   return `SELECT * FROM ${wrapIdentifier(table)} LIMIT ${limit}`;
@@ -261,17 +265,16 @@ export function getTableReferences() {
 }
 
 export async function getPrimaryKey(conn, database, table) {
-  log.debug('finding foreign key for', database, table)
-  const sql = `pragma table_info('${table}')`
-  const { data } = await driverExecuteQuery(conn, { query: sql })
+  log.debug('finding primary key for', database, table)
+  const sql = `pragma table_info('${escapeString(table)}')`
+  const { data } = await driverExecuteQuery(conn, { query: sql})
   const found = data.filter(r => r.pk > 0)
   if (found.length !== 1) return null
   return found[0].name
 }
 
 export async function getTableKeys(conn, database, table) {
-  console.log("table keys")
-  const sql = `pragma foreign_key_list('${table}')`
+  const sql = `pragma foreign_key_list('${escapeString(table)}')`
   log.debug("running SQL", sql)
   const { data } = await driverExecuteQuery(conn, { query: sql });
   log.debug("response", data)
