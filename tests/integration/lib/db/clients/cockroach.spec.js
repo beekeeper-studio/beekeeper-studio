@@ -6,6 +6,7 @@ describe("CockroachDB Tests", () => {
   let container;
   let util
   let environment
+  const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
 
   beforeAll(async () => {
     const timeoutDefault = 5000
@@ -26,7 +27,7 @@ describe("CockroachDB Tests", () => {
       port: container.getMappedPort(26257),
       user: 'root',
     }
-    util = new DBTestUtil(config, "defaultdb")
+    util = new DBTestUtil(config, "defaultdb", {version: '7.2'})
     await util.setupdb()
 
   })

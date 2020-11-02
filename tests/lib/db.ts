@@ -1,8 +1,6 @@
 import Knex from 'knex'
 import { IDbConnectionServerConfig } from '../../src/lib/db/client'
 import { createServer } from '../../src/lib/db/index'
-
-
 export const dbtimeout = 120000
 
 const KnexTypes: any = {
@@ -15,7 +13,8 @@ const KnexTypes: any = {
 }
 
 interface Options {
-  defaultSchema: string | null
+  defaultSchema?: string
+  version?: string
 }
 
 export class DBTestUtil {
@@ -37,17 +36,19 @@ export class DBTestUtil {
     } else {
       this.knex = Knex({
         client: KnexTypes[config.client || ""] || config.client,
+        version: options?.version,
         connection: {
           host: config.host,
           port: config.port || undefined,
           user: config.user || undefined,
           password: config.password || undefined,
-          database
+          database,
         },
         pool: { min: 0, max: 50 }
       })
     }
-    this.defaultSchema = options?.defaultSchema === undefined ? this.defaultSchema : options?.defaultSchema
+    
+    this.defaultSchema = options?.defaultSchema || this.defaultSchema
     this.server = createServer(config)
     this.connection = this.server.createConnection(database)
   }
