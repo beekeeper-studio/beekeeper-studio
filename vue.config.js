@@ -116,6 +116,18 @@ module.exports = {
       new webpack.IgnorePlugin(/pg-native/, /pg/),
       new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/)
     ],
+    // externals: {
+    //   // Possible drivers for knex - we'll ignore them
+    //   // 'sqlite3': 'sqlite3',
+    //   'mariasql': 'mariasql',
+    //   // 'mssql': 'mssql',
+    //   'mysql': 'mysql',
+    //   'oracle': 'oracle',
+    //   'strong-oracle': 'strong-oracle',
+    //   'oracledb': 'oracledb',
+    //   // 'pg': 'pg',
+    //   // 'pg-query-stream': 'pg-query-stream'
+    // },
     node: {
       dns: 'mock'
     },
@@ -130,6 +142,5 @@ module.exports = {
       ]
     }
 
-    // externals
   }
 }

@@ -4,12 +4,12 @@ import { readFileSync } from 'fs'
 import mysql from 'mysql2';
 import { identify } from 'sql-query-identifier';
 
-import createLogger from '../../logger';
 import { createCancelablePromise } from '../../../common/utils';
 import errors from '../../errors';
 import { genericSelectTop } from './utils';
-
-const logger = createLogger('db:clients:mysql');
+import rawLog from 'electron-log'
+const log = rawLog.scope('mysql')
+const logger = () => log
 
 const mysqlErrors = {
   EMPTY_QUERY: 'ER_EMPTY_QUERY',
@@ -46,7 +46,7 @@ export default async function (server, database) {
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
-    w: (table, limit) => getQuerySelectTop(conn, table, limit),
+    getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
     getRoutineCreateScript: (routine, type) => getRoutineCreateScript(conn, routine, type),
@@ -182,8 +182,12 @@ export async function getTableReferences(conn, table) {
 
 export async function getPrimaryKey(conn, database, table) {
   logger().debug('finding foreign key for', database, table)
-  const sql = `SHOW KEYS FROM ${table} WHERE Key_name = 'PRIMARY'`
-  const { data } = await driverExecuteQuery(conn, { query: sql })
+  const sql = `SHOW KEYS FROM ?? WHERE Key_name = 'PRIMARY'`
+  const params = [
+    table,
+  ];
+  const { data } = await driverExecuteQuery(conn, { query: sql, params })
+  if (data.length !== 1) return null
   return data[0] ? data[0].Column_name : null
 }
 
@@ -436,7 +440,6 @@ function configDatabase(server, database) {
 
   if (server.config.ssl) {
     config.ssl = {
-      rejectUnauthorized: !server.config.sslCaFile && !server.config.sslCertFile && !server.config.sslKeyFile
     }
 
     if (server.config.sslCaFile) {
@@ -450,6 +453,16 @@ function configDatabase(server, database) {
     if (server.config.sslKeyFile) {
       config.ssl.key = readFileSync(server.config.sslKeyFile);
     }
+    if (!config.ssl.key && !config.ssl.ca && !config.ssl.cert) {
+      // TODO: provide this as an option in settings
+      // or per-connection as 'reject self-signed certs'
+      // How it works:
+      // if false, cert can be self-signed
+      // if true, has to be from a public CA
+      // Heroku certs are self-signed.
+      // if you provide ca/cert/key files, it overrides this
+      config.ssl.rejectUnauthorized = false
+    }
   }
 
   return config;
@@ -459,6 +472,7 @@ function configDatabase(server, database) {
 function getRealError(conn, err) {
   /* eslint no-underscore-dangle:0 */
   if (conn && conn._protocol && conn._protocol._fatalError) {
+    logger().warn("Query error", err, conn._protocol._fatalError)
     return conn._protocol._fatalError;
   }
   return err;

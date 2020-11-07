@@ -8,6 +8,9 @@ import { SavedConnection } from '../common/appdb/models/saved_connection'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import { IMenuActionHandler } from 'common/interfaces/IMenuActionHandler'
 
+
+type ElectronWindow = Electron.BrowserWindow | undefined
+
 function getIcon() {
   const iconPrefix = platformInfo.environment === 'development' ? 'public' : ''
   return path.resolve(path.join(__dirname, '..', `${iconPrefix}/icons/png/512x512.png`))
@@ -20,25 +23,26 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     app.quit()
   }
 
-  undo(_1: Electron.MenuItem, win: Electron.BrowserWindow) {
-    win.webContents.undo()
+  undo(_1: Electron.MenuItem, win: ElectronWindow) {
+    if (win) {
+      win.webContents.undo()
+    }
+    
   }
-  redo(_1: Electron.MenuItem, win: Electron.BrowserWindow) {
-    win.webContents.redo()
+  redo(_1: Electron.MenuItem, win: ElectronWindow) {
+    if (win) win.webContents.redo()
   }
-  cut(_1: Electron.MenuItem, win: Electron.BrowserWindow) {
-    win.webContents.cut()
+  cut(_1: Electron.MenuItem, win: ElectronWindow) {
+    if (win) win.webContents.cut()
   }
-  copy(_1: Electron.MenuItem, win: Electron.BrowserWindow) {
-    win.webContents.copy()
-
-
+  copy(_1: Electron.MenuItem, win: ElectronWindow) {
+    if (win) win.webContents.copy()
   }
-  paste(_1: Electron.MenuItem, win: Electron.BrowserWindow) {
-    win.webContents.paste()
+  paste(_1: Electron.MenuItem, win: ElectronWindow) {
+    if (win) win.webContents.paste()
   }
-  selectAll(_1: Electron.MenuItem, win: Electron.BrowserWindow) {
-    win.webContents.selectAll()
+  selectAll(_1: Electron.MenuItem, win: ElectronWindow) {
+    if (win) win.webContents.selectAll()
   }
 
   setZoom = async (level: number) => {
@@ -54,19 +58,19 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   zoomreset = async () => {
     await this.setZoom(0)
   }
-  zoomin = async (_1: Electron.MenuItem, win: Electron.BrowserWindow) => {
-    await this.setZoom(win.webContents.zoomLevel + 0.5)
+  zoomin = async (_1: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) await this.setZoom(win.webContents.zoomLevel + 0.5)
   }
-  zoomout = async (_1: Electron.MenuItem, win: Electron.BrowserWindow) => {
-    await this.setZoom(win.webContents.zoomLevel - 0.5)
-  }
-
-  reload = async (_1: Electron.MenuItem, win: Electron.BrowserWindow) => {
-    await win.webContents.reloadIgnoringCache()
+  zoomout = async (_1: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) await this.setZoom(win.webContents.zoomLevel - 0.5)
   }
 
-  fullscreen(_1: Electron.MenuItem, win: Electron.BrowserWindow) {
-    win.setFullScreen(!win.isFullScreen())
+  reload = async (_1: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) await win.webContents.reloadIgnoringCache()
+  }
+
+  fullscreen(_1: Electron.MenuItem, win: ElectronWindow) {
+    if (win) win.setFullScreen(!win.isFullScreen())
   }
   about() {
     app.setAboutPanelOptions({
@@ -80,18 +84,20 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     app.showAboutPanel()
   }
 
-  devtools(_1: Electron.MenuItem, win: Electron.BrowserWindow) {
-    win.webContents.toggleDevTools()
+  devtools(_1: Electron.MenuItem, win: ElectronWindow) {
+    if (win) win.webContents.toggleDevTools()
   }
 
   newWindow = () => buildWindow(this.settings)
 
-  newQuery = (_1: Electron.MenuItem, win: Electron.BrowserWindow) => {
-    win.webContents.send(AppEvent.newTab)
+  newQuery = (_1: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.newTab)
   }
 
   newTab = this.newQuery
-  closeTab = (_1: Electron.MenuItem, win: Electron.BrowserWindow) => win.webContents.send(AppEvent.closeTab)
+  closeTab = (_1: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.closeTab)
+  }
 
   switchTheme = async (menuItem: Electron.MenuItem) => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
@@ -102,7 +108,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     })
   }
 
-  addBeekeeper = async (_1: Electron.MenuItem, win: Electron.BrowserWindow) => {
+  addBeekeeper = async (_1: Electron.MenuItem, win: ElectronWindow) => {
     const existing = await SavedConnection.findOne({where: { defaultDatabase: platformInfo.appDbPath }})
     if (!existing) {
       const nu = new SavedConnection()
@@ -112,7 +118,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
       nu.labelColor = 'orange'
       await nu.save()
     }
-    win.webContents.send(AppEvent.beekeeperAdded)
+    if (win) win.webContents.send(AppEvent.beekeeperAdded)
   }
 
   switchMenuStyle = async (menuItem: Electron.MenuItem) => {
@@ -124,8 +130,8 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     })
   }
 
-  disconnect = (_1: Electron.MenuItem, win: Electron.BrowserWindow) => {
-    win.webContents.send(AppEvent.disconnect)
+  disconnect = (_1: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.disconnect)
   }
 
 }

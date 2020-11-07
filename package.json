@@ -1,6 +1,6 @@
 {
   "name": "beekeeper-studio",
-  "version": "1.8.5",
+  "version": "1.8.7",
   "private": true,
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "author": {
@@ -11,6 +11,7 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "test:unit": "TEST_MODE=1 vue-cli-service test:unit",
+    "test:integration": "TEST_MODE=1 vue-cli-service test:unit --config ./jest.integration.config.js",
     "lint": "vue-cli-service lint",
     "docs:build": "vuepress build docs",
     "docs:dev": "vuepress dev docs",
@@ -41,7 +42,7 @@
     "mysql2": "^2.2.0",
     "node-sass": "^4.12.0",
     "node-ssh-forward": "^0.7.2",
-    "pg": "^7.12.1",
+    "pg": "^8.4.2",
     "pg-hstore": "^2.3.3",
     "pluralize": "^8.0.0",
     "popper.js": "^1.15.0",
@@ -95,12 +96,13 @@
     "@vue/test-utils": "^1.0.3",
     "aws-sdk": "^2.645.0",
     "babel-eslint": "^10.0.1",
-    "electron": "8.2.5",
+    "electron": "8.5.2",
     "electron-builder-notarize": "beekeeper-studio/electron-builder-notarize#master",
     "electron-rebuild": "^1.8.5",
     "electron-updater": "^4.2.5",
     "eslint": "^5.16.0",
     "eslint-plugin-vue": "^5.0.0",
+    "testcontainers": "^4.6.0",
     "typescript": "^3.9.7",
     "vue-cli-plugin-electron-builder": "^2.0.0-rc.1",
     "vue-template-compiler": "^2.6.10",
@@ -128,8 +130,7 @@
     "overrides": [
       {
         "files": [
-          "**/__tests__/*.{j,t}s?(x)",
-          "**/tests/unit/**/*.spec.{j,t}s?(x)"
+          "tests/**/*.{j,t}s?(x)"
         ],
         "env": {
           "jest": true
@@ -148,7 +149,6 @@
   ],
   "resolutions": {
     "watchpack": "1.6.1",
-    "pg/pgpass": "beekeeper-studio/pgpass#blank-home",
     "node-ssh-forward/ssh2": "beekeeper-studio/ssh2#electron-detection"
   }
 }

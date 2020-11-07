@@ -10,7 +10,7 @@ on:
 
 
 jobs:
-  run-linters:
+  testing:
     name: Run linters
     runs-on: ubuntu-latest
 
@@ -26,5 +26,13 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - run: yarn run lint
-      - run: yarn run test:unit
+      - name: Lint
+        run: yarn run lint
+      
+      - name: Unit Tests
+        run: yarn run test:unit
+
+      - name: Integration Tests
+        run: yarn run test:integration
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: true
