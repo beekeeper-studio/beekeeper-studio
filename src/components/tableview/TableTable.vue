@@ -79,17 +79,17 @@
     <div ref="table"></div>
     <statusbar :mode="statusbarMode" class="tabulator-footer">
       <div class="col x4">
-        <span class="statusbar-item" v-if="lastUpdatedText && !editError" :title="`${totalRecordsText} Total Records`">
+        <span class="statusbar-item" v-if="lastUpdatedText && !queryError" :title="`${totalRecordsText} Total Records`">
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
         </span>
-        <span class="statusbar-item" v-if="lastUpdatedText && !editError" :title="'Updated' + ' ' + lastUpdatedText">
+        <span class="statusbar-item" v-if="lastUpdatedText && !queryError" :title="'Updated' + ' ' + lastUpdatedText">
           <i class="material-icons">update</i>
           <span>{{lastUpdatedText}}</span>
         </span>
-        <span v-if="editError" class="statusbar-item error" :title="editError">
+        <span v-if="queryError" class="statusbar-item error" :title="queryError.message">
           <i class="material-icons">error</i>
-          <span class="">Error Saving Changes</span>
+          <span class="">{{ queryError.title }}</span>
         </span>
       </div>
       <div class="col x4 flex flex-center">
@@ -107,8 +107,8 @@
         </div>
         <div v-if="pendingEditList.length > 0" class="flex flex-right">
           <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
-          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingEditList.length + ' ' + 'pending edits'" :class="{'error': !!editError}">
-            <!-- <i v-if="editError" class="material-icons">error</i> -->
+          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingEditList.length + ' ' + 'pending edits'" :class="{'error': !!queryError}">
+            <!-- <i v-if="queryError" class="material-icons">error</i> -->
             <span class="badge">{{pendingEditList.length}}</span>
             <span>Commit</span>
           </a>
@@ -176,7 +176,7 @@ export default {
       rawTableKeys: [],
       primaryKey: null,
       pendingEdits: {},
-      editError: null,
+      queryError: null,
       timeAgo: new TimeAgo('en-US'),
       lastUpdated: null,
       lastUpdatedText: null,
@@ -199,7 +199,7 @@ export default {
       return this.table.entityType === 'table' && !this.primaryKey
     },
     statusbarMode() {
-      if (this.editError) return 'failure'
+      if (this.queryError) return 'failure'
       if (this.pendingEdits.length > 0) return 'editing'
       return null
     },
@@ -492,12 +492,12 @@ export default {
         this.pendingEditList.forEach(edit => {
           edit.cell.getElement().classList.add('edit-error')
         })
-        this.editError = ex.message
+        this.setQueryError('Error Saving Changes', ex.message)
       }
 
     },
     discardChanges() {
-      this.editError = null
+      this.queryError = null
       const updates = []
       this.pendingEditList.forEach(edit => {
         const update = {}
@@ -571,7 +571,7 @@ export default {
             this.totalRecords = Number(response.totalRecords) || 0;
             this.response = response
             this.pendingEdits = []
-            this.editError = null
+            this.clearQueryError()
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data
             this.lastUpdated = Date.now()
@@ -581,7 +581,7 @@ export default {
             });
           } catch (error) {
             reject();
-            throw error;
+            this.setQueryError('Error applying filter', error.message)
           }
         })();
       });
@@ -591,7 +591,15 @@ export default {
       if (!this.lastUpdated) return null
       this.lastUpdatedText = this.timeAgo.format(this.lastUpdated)
     },
-
+    setQueryError(title, message) {
+      this.queryError = {
+        title: title,
+        message: message
+      }
+    },
+    clearQueryError() {
+      this.queryError = null
+    },
   }
 };
 </script>
