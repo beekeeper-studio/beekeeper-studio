@@ -424,6 +424,7 @@ function wrap(database: IDbConnectionDatabase, identifier: string | string[]): s
 
 function checkIsConnected(server: IDbConnectionServer, database: IDbConnectionDatabase) {
   if (database.connecting || !database.connection) {
+    console.log(database)
     throw new Error('There is no connection available.');
   }
 }

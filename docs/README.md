@@ -10,7 +10,7 @@ features:
 - title: Installing Beekeeper Studio
   details: Beekeeper Studio works across Linux, MacOS, and Windows. Learn how to install it.
   link:
-    link: /install/
+    link: /installation/
     text: Read
 - title: User Guide
   details: A walkthrough of how to use all major Beekeeper Studio features (many are awesome).

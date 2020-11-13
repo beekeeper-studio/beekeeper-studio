@@ -170,6 +170,7 @@
 
       },
       close(tab) {
+        console.log('closing tab', tab.title)
         if (this.activeTab === tab) {
           if(tab === this.lastTab) {
             this.previousTab()
@@ -216,7 +217,9 @@
     },
     mounted() {
       this.createQuery()
-      this.$root.$on(AppEvent.closeTab, () => { this.closeTab() })
+      this.$root.$on(AppEvent.closeTab, () => { 
+        this.closeTab() 
+      })
       this.$root.$on(AppEvent.newTab, () => { this.createQuery() })
       this.$root.$on('historyClick', (item) => {
         this.createQuery(item.text)

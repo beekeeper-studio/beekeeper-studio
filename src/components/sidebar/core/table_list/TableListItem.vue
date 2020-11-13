@@ -13,19 +13,19 @@
         <span v-if="pinned.includes(table)" @mousedown.prevent.stop="unpin" class="btn-fab unpin" :title="'Unpin'"><i class="material-icons">clear</i></span>
         <span v-if="pinned.includes(table)" class="btn-fab pinned"><i class="bk-pin" :title="'Unpin'"></i></span>
       </span>
-          <x-contextmenu>
-      <x-menu>
-        <x-menuitem @click.prevent="copyTable">
-          <x-label>Copy table name</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="openTable">
-          <x-label>Open table</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="toggleColumns">
-          <x-label>Toggle columns</x-label>
-        </x-menuitem>
-      </x-menu>
-    </x-contextmenu>
+      <x-contextmenu>
+        <x-menu>
+          <x-menuitem @click.prevent="copyTable">
+            <x-label>Copy table name</x-label>
+          </x-menuitem>
+          <x-menuitem @click.prevent="openTable">
+            <x-label>Open table</x-label>
+          </x-menuitem>
+          <x-menuitem @click.prevent="toggleColumns">
+            <x-label>Toggle columns</x-label>
+          </x-menuitem>
+        </x-menu>
+      </x-contextmenu>
     </a>
     <div v-show="showColumns" class="sub-items">
       <span v-bind:key="c.columnName" v-for="(c, i) in table.columns" class="sub-item">

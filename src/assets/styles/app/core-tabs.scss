@@ -194,6 +194,13 @@
   right: 0;
   bottom: 0;
   left: 0;
+  padding-bottom: $statusbar-height;
+  .statusbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
 }
 .table-filter {
   width: 100%;
