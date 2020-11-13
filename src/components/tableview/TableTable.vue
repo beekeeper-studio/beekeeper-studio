@@ -4,7 +4,7 @@
       <form @submit.prevent="triggerFilter">
         <div v-if="filterMode === 'raw'" class="filter-group row gutter">
           <div class="btn-wrap">
-            <button class="btn btn-primary" type="button" @click.stop="filterMode = 'builder'">
+            <button class="btn btn-primary" type="button" @click.stop="changeFilterMode('builder')">
               <i class="material-icons">list</i>
             </button>
           </div>
@@ -31,7 +31,7 @@
         </div>
         <div v-else-if="filterMode === 'builder'" class="filter-group row gutter">
           <div class="btn-wrap">
-            <button class="btn btn-primary" type="button" @click.stop="filterMode = 'raw'">
+            <button class="btn btn-primary" type="button" @click.stop="changeFilterMode('raw')">
               <i class="material-icons">code</i>
             </button>
           </div>
@@ -528,6 +528,19 @@ export default {
     },
     clearFilter() {
       this.tabulator.clearFilter();
+    },
+    changeFilterMode(filterMode) {
+      // Populate raw filter query with existing filter if raw filter is empty
+      if (
+        filterMode === FILTER_MODE_RAW &&
+        !_.isNil(this.filter.value) &&
+        _.isEmpty(this.filterRaw.value)
+      ) {
+        const rawFilter = _.join([this.filter.field, this.filter.type, this.filter.value], ' ')
+        this.$set(this.filterRaw, 'value', rawFilter)
+      }
+
+      this.filterMode = filterMode
     },
     dataFetch(url, config, params) {
       // this conforms to the Tabulator API
