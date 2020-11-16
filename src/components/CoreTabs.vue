@@ -40,7 +40,7 @@
   import {FavoriteQuery} from '../common/appdb/models/favorite_query'
   import QueryEditor from './TabQueryEditor'
   import CoreTabHeader from './CoreTabHeader'
-  import { uuidv4 } from '@/lib/crypto'
+  import { uuidv4 } from '@/lib/uuid'
   import TableTable from './tableview/TableTable'
   import AppEvent from '../common/AppEvent'
   import platformInfo from '../common/platform_info'
@@ -217,8 +217,8 @@
     },
     mounted() {
       this.createQuery()
-      this.$root.$on(AppEvent.closeTab, () => { 
-        this.closeTab() 
+      this.$root.$on(AppEvent.closeTab, () => {
+        this.closeTab()
       })
       this.$root.$on(AppEvent.newTab, () => { this.createQuery() })
       this.$root.$on('historyClick', (item) => {
