@@ -6,6 +6,8 @@
 import { ipcRenderer } from 'electron'
 import Noty from 'noty'
 
+import AppEvent from '../common/AppEvent'
+
 export default {
   data() {
     return {
@@ -64,7 +66,7 @@ export default {
       this.manualNotification.show()
     },
     linkToDownload() {
-      ipcRenderer.send('open-externally', ["https://beekeeperstudio.io/get"])
+      ipcRenderer.send(AppEvent.openExternally, ["https://beekeeperstudio.io/get"])
     },
     triggerInstall() {
       ipcRenderer.send('install-update')
