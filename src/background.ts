@@ -4,6 +4,7 @@ import * as fs from 'fs'
 import { app, protocol } from 'electron'
 import log from 'electron-log'
 import * as electron from 'electron'
+import { ipcMain } from 'electron'
 import {
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib'
@@ -61,6 +62,11 @@ async function createFirstWindow () {
   buildWindow(settings)
   log.info("managing updates")
   manageUpdates()
+  ipcMain.on('open-externally', (e: electron.IpcMainEvent, args: any[]) => {
+    const url = args[0]
+    if (!url) return
+    electron.shell.openExternal(url)
+  })
 }
 
 

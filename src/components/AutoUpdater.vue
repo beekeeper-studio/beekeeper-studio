@@ -9,6 +9,18 @@ import Noty from 'noty'
 export default {
   data() {
     return {
+      manualNotification: new Noty({
+        text: "A new version is available. Download from our website now.",
+        layout: 'bottomRight',
+        timeout: false,
+        closeWith: 'button',
+        buttons: [ 
+          Noty.button('Not now', 'btn btn-flat', () => {
+            this.manualNotification.close();
+          }),
+          Noty.button('Download', 'btn btn-primary', this.linkToDownload)
+        ]
+      }),
       downloadNotification: new Noty({
         text: 'A new version is availble. Download now?',
         layout: 'bottomRight',
@@ -38,6 +50,7 @@ export default {
   },
   mounted() {
     ipcRenderer.on('update-available', this.notifyUpdate)
+    ipcRenderer.on('manual-update', this.notifyManual)
     ipcRenderer.on('update-downloaded', this.notifyDownloaded)
     ipcRenderer.send('updater-ready')
   },
@@ -46,6 +59,12 @@ export default {
       ipcRenderer.send('download-update')
       this.downloadNotification.close()
       this.$noty.info("Hold tight! Downloading update...")
+    },
+    notifyManual() {
+      this.manualNotification.show()
+    },
+    linkToDownload() {
+      ipcRenderer.send('open-externally', ["https://beekeeperstudio.io/get"])
     },
     triggerInstall() {
       ipcRenderer.send('install-update')

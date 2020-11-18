@@ -7,7 +7,7 @@ import path from 'path'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import { IMenuActionHandler } from 'common/interfaces/IMenuActionHandler'
-
+import { shell } from 'electron'
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -27,7 +27,6 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) {
       win.webContents.undo()
     }
-    
   }
   redo(_1: Electron.MenuItem, win: ElectronWindow) {
     if (win) win.webContents.redo()

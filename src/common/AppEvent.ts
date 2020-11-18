@@ -5,5 +5,6 @@ export default {
   newTab: 'nt',
   closeTab: 'ct',
   disconnect: 'dc',
-  beekeeperAdded: 'bkadd'
+  beekeeperAdded: 'bkadd',
+  openExternally: 'oe'
 }
