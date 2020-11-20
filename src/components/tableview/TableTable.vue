@@ -69,7 +69,7 @@
           <span class="statusbar-item">
             <i
             class="material-icons"
-            v-tooltip="'No primary key detected, table editing is disabled.'"
+            v-tooltip="'Zero (or multiple) primary keys detected, table editing is disabled.'"
             >warning</i>
           </span>
         </div>
