@@ -23,6 +23,7 @@ const platformInfo = {
   isWindows, isMac,
   isLinux: !isWindows && !isMac,
   isSnap: p.env.ELECTRON_SNAP,
+  isPortable: isWindows && p.env.PORTABLE_EXECUTABLE_DIR,
   isDevelopment: isDevEnv,
   isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
   sshAuthSock: p.env.SSH_AUTH_SOCK,
