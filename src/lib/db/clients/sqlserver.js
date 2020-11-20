@@ -63,7 +63,7 @@ export async function disconnect(conn) {
 }
 
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
-  let orderByString = ""
+  let orderByString = "ORDER BY (SELECT NULL)"
   let filterString = ""
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {

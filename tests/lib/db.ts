@@ -152,8 +152,10 @@ export class DBTestUtil {
       table.string("country").notNullable()
     })
 
-    // create with mixed case
-    await this.knex.raw('create table "MixedCase"(id SERIAL primary key, bananas varchar(255))')
+    await this.knex.schema.createTable('MixedCase', (table) => {
+      table.increments().primary()
+      table.string("bananas")
+    })
 
     await this.knex.schema.createTable('group', (table) => {
       table.increments().primary()
