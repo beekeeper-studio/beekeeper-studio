@@ -30,7 +30,7 @@ export class DBTestUtil {
   public defaultSchema: string | null = 'public'
   
   get expectedTables() {
-    return this.extraTables + 7
+    return this.extraTables + 8
   }
 
   constructor(config: IDbConnectionServerConfig, database: string, options: Options = {}) {
@@ -66,6 +66,7 @@ export class DBTestUtil {
     await this.createTables()
     await this.connection.connect()
     const address = await this.knex("addresses").insert({country: "US"}).returning("id")
+    const mixed = await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
     const people = await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0]}).returning("id")
     const jobs = await this.knex("jobs").insert({job_name: "Programmer"}).returning("id")
     await this.knex("people_jobs").insert({job_id: jobs[0], person_id: people[0] })
@@ -116,6 +117,10 @@ export class DBTestUtil {
     result = r.result.map((r: any) => r.select)
     expect(result).toMatchObject(['abc'])
 
+    r = await this.connection.selectTop("MixedCase", 0, 1, [], null, this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas)
+    expect(result).toBe(["pears"])
+
     console.log("pk tests")
     // primary key tests
     let pk = await this.connection.getPrimaryKey("people", this.defaultSchema)
@@ -143,6 +148,8 @@ export class DBTestUtil {
       table.string("state")
       table.string("country").notNullable()
     })
+
+    await this.knex.raw('create table "MixedCase"(id SERIAL primary key, bananas varchar(255))')
 
     await this.knex.schema.createTable('group', (table) => {
       table.increments().primary()
