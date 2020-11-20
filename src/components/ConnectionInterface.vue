@@ -41,8 +41,8 @@
                 <div class="test-connect row flex-middle">
                   <span class="expand"></span>
                   <div class="btn-group">
-                    <button :disabled="testing" class="btn btn-flat" @click.prevent="testConnection">Test</button>
-                    <button :disabled="testing" class="btn btn-primary" @click.prevent="submit">Connect</button>
+                    <button :disabled="testing" class="btn btn-flat" type="button" @click.prevent="testConnection">Test</button>
+                    <button :disabled="testing" class="btn btn-primary" type="submit" @click.prevent="submit">Connect</button>
                   </div>
                 </div>
                 <SaveConnectionForm :config="config" @save="save"></SaveConnectionForm>
