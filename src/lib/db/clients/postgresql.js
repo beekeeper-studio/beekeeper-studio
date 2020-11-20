@@ -451,7 +451,7 @@ export async function getTableKeys(conn, database, table, schema) {
 
 export async function getPrimaryKey(conn, database, table, schema) {
   
-  const tablename = escapeString(schema ? `${schema}.${table}` : table)
+  const tablename = escapeString(schema ? `${wrapIdentifier(schema)}.${wrapIdentifier(table)}` : wrapIdentifier(table))
   const query = `
     SELECT a.attname as column_name, format_type(a.atttypid, a.atttypmod) AS data_type
     FROM   pg_index i
