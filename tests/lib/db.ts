@@ -95,6 +95,9 @@ export class DBTestUtil {
     expect(await this.connection.getPrimaryKey("group", this.defaultSchema))
       .toBe("id");
     
+    expect(await this.connection.getPrimaryKey("MixedCase", this.defaultSchema))
+      .toBe("id");
+    
     const stR = await this.connection.selectTop("group", 0, 10, ["select"], null, this.defaultSchema)
     expect(stR)
       .toMatchObject({ result: [], totalRecords: 0 })
@@ -119,7 +122,7 @@ export class DBTestUtil {
 
     r = await this.connection.selectTop("MixedCase", 0, 1, [], null, this.defaultSchema)
     result = r.result.map((r: any) => r.bananas)
-    expect(result).toBe(["pears"])
+    expect(result).toMatchObject(["pears"])
 
     console.log("pk tests")
     // primary key tests
@@ -149,6 +152,7 @@ export class DBTestUtil {
       table.string("country").notNullable()
     })
 
+    // create with mixed case
     await this.knex.raw('create table "MixedCase"(id SERIAL primary key, bananas varchar(255))')
 
     await this.knex.schema.createTable('group', (table) => {
