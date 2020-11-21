@@ -1,7 +1,7 @@
 <template>
   <div  class="core-tabs" v-hotkey="keymap">
     <div class="tabs-header">
-      <ul class="nav-tabs nav">
+      <Draggable v-model="tabItems" tag="ul" class="nav-tabs nav" chosen-class="nav-item-wrap-chosen">
         <core-tab-header
           v-for="tab in tabItems"
           :key="tab.id"
@@ -14,7 +14,7 @@
           @closeOther="closeOther"
           @duplicate="duplicate"
           ></core-tab-header>
-      </ul>
+      </Draggable>
       <span class="actions">
         <a @click.prevent="createQuery(null)" class="btn-fab add-query"><i class=" material-icons">add_circle</i></a>
       </span>
@@ -45,10 +45,11 @@
   import AppEvent from '../common/AppEvent'
   import platformInfo from '../common/platform_info'
   import { mapGetters, mapState } from 'vuex'
+  import Draggable from 'vuedraggable'
 
   export default {
     props: [ 'connection' ],
-    components: { QueryEditor, CoreTabHeader, TableTable },
+    components: { QueryEditor, CoreTabHeader, TableTable, Draggable },
     data() {
       return {
         tabItems: [],
