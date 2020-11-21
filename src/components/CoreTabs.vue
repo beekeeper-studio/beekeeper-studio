@@ -37,6 +37,7 @@
 <script>
 
   import _ from 'lodash'
+  import sqlFormatter from 'sql-formatter';
   import {FavoriteQuery} from '../common/appdb/models/favorite_query'
   import QueryEditor from './TabQueryEditor'
   import CoreTabHeader from './CoreTabHeader'
@@ -141,6 +142,18 @@
 
         this.addTab(result)
       },
+      async loadTableCreate(table) {
+        let method = null
+        if (table.entityType === 'table') method = this.connection.getTableCreateScript
+        if (table.entityType === 'view') method = this.connection.getViewCreateScript
+        if (!method) {
+          this.$noty.error(`Can't find script for ${table.name} (${table.entityType})`)
+          return
+        }
+        const result = await method(table.name, table.schema)
+        const stringResult = sqlFormatter.format(_.isArray(result) ? result[0] : result)
+        this.createQuery(stringResult)
+      },
       openTable({ table, filter, tableName }) {
 
         let resolvedTable = null
@@ -228,6 +241,7 @@
 
       this.$root.$on('loadTable', this.openTable)
       this.$root.$on('loadSettings', this.openSettings)
+      this.$root.$on('loadTableCreate', this.loadTableCreate)
       this.$root.$on('favoriteClick', (item) => {
         const queriesOnly = this.tabItems.map((item) => {
           return item.query

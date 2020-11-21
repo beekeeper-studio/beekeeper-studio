@@ -24,6 +24,10 @@
           <x-menuitem @click.prevent="toggleColumns">
             <x-label>Toggle columns</x-label>
           </x-menuitem>
+          <hr>
+          <x-menuitem @click.prevent="createTable" v-if="supportsDDL">
+            <x-label>SQL: Create {{table.entityType}}</x-label>
+          </x-menuitem>
         </x-menu>
       </x-contextmenu>
     </a>
@@ -81,6 +85,9 @@
       }
     },
     computed: {
+      supportsDDL() {
+        return ['table', 'view'].includes(this.table.entityType)
+      },
       iconClass() {
         const result = {}
         result[`${this.table.entityType}-icon`] = true
@@ -98,6 +105,9 @@
       ...mapState(['activeTab'])
     },
     methods: {
+      createTable() {
+        this.$root.$emit('loadTableCreate', this.table)
+      },
       copyTable() {
         this.$copyText(this.table.name)
       },
