@@ -13,13 +13,13 @@
               <input
                 class="form-control"
                 type="text"
-                v-model="filterRaw.value"
-                placeholder="Enter raw where condition"
+                v-model="filterRaw"
+                :placeholder=filterPlaceholder
               />
               <button
                 type="button"
                 class="clear btn-link"
-                @click.prevent="filterRaw.value = ''"
+                @click.prevent="filterRaw = ''"
               >
                 <i class="material-icons">cancel</i>
               </button>
@@ -160,10 +160,7 @@ export default {
         type: "=",
         field: this.table.columns[0].columnName
       },
-      filterRaw: {
-        value: '',
-        type: FILTER_MODE_RAW
-      },
+      filterRaw: null,
       filterMode: FILTER_MODE_BUILDER,
       headerFilter: true,
       columnsSet: false,
@@ -185,6 +182,9 @@ export default {
     };
   },
   computed: {
+    filterPlaceholder() {
+      return `Enter condition, eg: name like 'Matthew%'`
+    },
     totalRecordsText() {
       return `${this.totalRecords.toLocaleString()}`
     },
@@ -298,6 +298,18 @@ export default {
     filterValue() {
       return this.filter.value;
     },
+    filterForTabulator() {
+      if (this.filterMode === FILTER_MODE_RAW && this.filterRaw) {
+        return this.filterRaw
+      } else if (
+        this.filterMode === FILTER_MODE_BUILDER &&
+        this.filter.type && this.filter.field && this.filter.value
+      ) {
+        return [this.filter]
+      } else {
+        return null
+      }
+    },
     initialSort() {
       if (this.table.columns.length === 0) {
         return [];
@@ -322,6 +334,11 @@ export default {
     filterValue() {
       if (this.filter.value === "") {
         this.clearFilter();
+      }
+    },
+    filterRaw() {
+      if (this.filterRaw === '') {
+        this.clearFilter()
       }
     },
     lastUpdated() {
@@ -514,30 +531,20 @@ export default {
       this.pendingEdits = {}
     },
     triggerFilter() {
-      if (this.filter.type && this.filter.field) {
-        if (this.filter.value) {
-          this.tabulator.setFilter(
-            this.filter.field,
-            this.filter.type,
-            this.filter.value
-          );
-        } else {
-          this.tabulator.clearFilter();
-        }
-      }
+      this.tabulator.setData()
     },
     clearFilter() {
-      this.tabulator.clearFilter();
+      this.tabulator.setData();
     },
     changeFilterMode(filterMode) {
       // Populate raw filter query with existing filter if raw filter is empty
       if (
         filterMode === FILTER_MODE_RAW &&
         !_.isNil(this.filter.value) &&
-        _.isEmpty(this.filterRaw.value)
+        _.isEmpty(this.filterRaw)
       ) {
         const rawFilter = _.join([this.filter.field, this.filter.type, this.filter.value], ' ')
-        this.$set(this.filterRaw, 'value', rawFilter)
+        this.filterRaw = rawFilter
       }
 
       this.filterMode = filterMode
@@ -549,7 +556,7 @@ export default {
       let offset = 0;
       let limit = this.limit;
       let orderBy = null;
-      let filters = null;
+      let filters = this.filterForTabulator;
 
       if (params.sorters) {
         orderBy = params.sorters
@@ -562,12 +569,7 @@ export default {
       if (params.page) {
         offset = (params.page - 1) * limit;
       }
-
-      if (this.filterMode === FILTER_MODE_RAW && this.filterRaw.value) {
-        filters = [this.filterRaw]
-      } else if (this.filterMode === FILTER_MODE_BUILDER && params.filters) {
-        filters = params.filters;
-      }
+      log.info("filters", filters)
 
       const result = new Promise((resolve, reject) => {
         (async () => {
@@ -594,7 +596,10 @@ export default {
             });
           } catch (error) {
             reject();
-            this.setQueryError('Error applying filter', error.message)
+            this.setQueryError('Error loading data', error.message)
+            this.$nextTick(() => {
+              this.tabulator.clearData()
+            })
           }
         })();
       });

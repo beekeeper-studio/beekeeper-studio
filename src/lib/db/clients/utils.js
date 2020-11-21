@@ -46,10 +46,30 @@ export function buildDatabseFilter({ database } = {}, databaseField) {
   return where.join(' AND ');
 }
 
-export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
-  let orderByString = ""
+function wrapIdentifier(value) {
+  return (value !== '*' ? `\`${value.replace(/`/g, '``')}\`` : '*');
+}
+
+
+export function buildFilterString(filters) {
   let filterString = ""
   let filterParams = []
+  if (filters && _.isArray(filters) && filters.length > 0) {
+    filterString = "WHERE " + filters.map((item) => {
+      return `${wrapIdentifier(item.field)} ${item.type} ?`
+    }).join(" AND ")
+
+    filterParams = filters.map((item) => {
+      return item.value
+    })
+  }
+  return {
+    filterString, filterParams
+  }
+}
+
+export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
+  let orderByString = ""
 
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
@@ -60,16 +80,14 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
       }
     })).join(",")
   }
-  if (filters && filters.length === 1 && filters[0].type === 'raw') {
-    filterString = "WHERE " + filters[0].value
-  } else if (filters && filters.length > 0) {
-    filterString = "WHERE " + filters.map((item) => {
-      return `\`${item.field}\` ${item.type} ?`
-    }).join(" AND ")
-
-    filterParams = filters.map((item) => {
-      return item.value
-    })
+  let filterString = ""
+  let filterParams = []
+  if (_.isString(filters)) {
+    filterString = `WHERE ${filters}`
+  } else {
+    const filterBlob = buildFilterString(filters)
+    filterString = filterBlob.filterString
+    filterParams = filterBlob.filterParams
   }
 
   let baseSQL = `

@@ -124,6 +124,17 @@ export class DBTestUtil {
     result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(["pears"])
 
+    // filter test - builder
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'desc' }], [{field: 'bananas', type: '=', value: "pears"}], this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas)
+    expect(result).toMatchObject(['pears'])
+
+    // filter test - raw
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'desc' }], "bananas = 'pears'", this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas)
+    expect(result).toMatchObject(['pears'])
+
+
     console.log("pk tests")
     // primary key tests
     let pk = await this.connection.getPrimaryKey("people", this.defaultSchema)

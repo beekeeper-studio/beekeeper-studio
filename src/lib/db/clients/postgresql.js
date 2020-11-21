@@ -207,7 +207,7 @@ export async function listMaterializedViews(conn, filter = { schema: 'public' })
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema = 'public') {
   let orderByString = ""
   let filterString = ""
-  let params = null
+  let params = []
 
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
@@ -219,7 +219,9 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
     })).join(",")
   }
 
-  if (filters && filters.length > 0) {
+  if (_.isString(filters)) {
+    filterString = `WHERE ${filters}`
+  } else if (filters && filters.length > 0) {
     filterString = "WHERE " + filters.map((item, index) => {
       return `${wrapIdentifier(item.field)} ${item.type} $${index + 1}`
     }).join(" AND ")

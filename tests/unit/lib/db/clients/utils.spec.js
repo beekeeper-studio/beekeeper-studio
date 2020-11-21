@@ -13,7 +13,7 @@ describe("buildSelectTopQuery", () => {
         }
       },
       {
-        params: ['users', 10, 100, null, [{ type: 'raw', value: 'substr(name, 1, 4) = "john"'}]],
+        params: ['users', 10, 100, null, 'substr(name, 1, 4) = "john"'],
         result: {
           countQuery: 'select count(*) as total from `users` where substr(name, 1, 4) = "john"',
           query: 'select * from `users` where substr(name, 1, 4) = "john" limit 100 offset 10',
