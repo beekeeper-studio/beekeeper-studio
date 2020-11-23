@@ -208,7 +208,7 @@ export async function listMaterializedViews(conn, filter = { schema: 'public' })
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema = 'public') {
   let orderByString = ""
   let filterString = ""
-  let params = null
+  let params = []
 
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
@@ -220,7 +220,9 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
     })).join(",")
   }
 
-  if (filters && filters.length > 0) {
+  if (_.isString(filters)) {
+    filterString = `WHERE ${filters}`
+  } else if (filters && filters.length > 0) {
     filterString = "WHERE " + filters.map((item, index) => {
       return `${wrapIdentifier(item.field)} ${item.type} $${index + 1}`
     }).join(" AND ")
@@ -452,7 +454,7 @@ export async function getTableKeys(conn, database, table, schema) {
 
 export async function getPrimaryKey(conn, database, table, schema) {
   
-  const tablename = escapeString(schema ? `${schema}.${table}` : table)
+  const tablename = escapeString(schema ? `${wrapIdentifier(schema)}.${wrapIdentifier(table)}` : wrapIdentifier(table))
   const query = `
     SELECT a.attname as column_name, format_type(a.atttypid, a.atttypmod) AS data_type
     FROM   pg_index i

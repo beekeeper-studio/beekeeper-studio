@@ -319,13 +319,11 @@ const store = new Vuex.Store<State>({
       context.commit('favorites', items)
     },
     async saveFavorite(context, query: UsedQuery) {
-      if (context.state.database) {
-        query.database = context.state.database
-        await query.save()
-        // otherwise it's already there!
-        if (!context.state.favorites.includes(query)) {
-          context.commit('favoritesAdd', query)
-        }
+      query.database = context.state.database || 'default'
+      await query.save()
+      // otherwise it's already there!
+      if (!context.state.favorites.includes(query)) {
+        context.commit('favoritesAdd', query)
       }
     },
     async removeFavorite(context, favorite) {

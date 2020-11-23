@@ -54,7 +54,8 @@ export function manageUpdates(debug?: boolean) {
   })
 
   autoUpdater.on('update-available', () => {
-    getActiveWindows().forEach(beeWin => beeWin.send('update-available'))
+    const message = platformInfo.isPortable ? 'manual-update' : 'update-available'
+    getActiveWindows().forEach(beeWin => beeWin.send(message))
   })
 
   ipcMain.on('download-update', () => {

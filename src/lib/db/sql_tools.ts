@@ -2,6 +2,9 @@ import _ from 'lodash'
 import { identify } from 'sql-query-identifier'
 
 export function splitQueries(queryText: string) {
+  if(_.isEmpty(queryText.trim())) {
+    return []
+  }
   const result = identify(queryText, { strict: false })
   return result
 }

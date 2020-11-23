@@ -30,7 +30,7 @@ export class DBTestUtil {
   public defaultSchema: string | null = 'public'
   
   get expectedTables() {
-    return this.extraTables + 7
+    return this.extraTables + 8
   }
 
   constructor(config: IDbConnectionServerConfig, database: string, options: Options = {}) {
@@ -66,6 +66,7 @@ export class DBTestUtil {
     await this.createTables()
     await this.connection.connect()
     const address = await this.knex("addresses").insert({country: "US"}).returning("id")
+    const mixed = await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
     const people = await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0]}).returning("id")
     const jobs = await this.knex("jobs").insert({job_name: "Programmer"}).returning("id")
     await this.knex("people_jobs").insert({job_id: jobs[0], person_id: people[0] })
@@ -94,6 +95,9 @@ export class DBTestUtil {
     expect(await this.connection.getPrimaryKey("group", this.defaultSchema))
       .toBe("id");
     
+    expect(await this.connection.getPrimaryKey("MixedCase", this.defaultSchema))
+      .toBe("id");
+    
     const stR = await this.connection.selectTop("group", 0, 10, ["select"], null, this.defaultSchema)
     expect(stR)
       .toMatchObject({ result: [], totalRecords: 0 })
@@ -115,6 +119,21 @@ export class DBTestUtil {
     r = await this.connection.selectTop("group", 1, 10, [{ field: 'select', dir: 'desc' }], null, this.defaultSchema)
     result = r.result.map((r: any) => r.select)
     expect(result).toMatchObject(['abc'])
+
+    r = await this.connection.selectTop("MixedCase", 0, 1, [], null, this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas)
+    expect(result).toMatchObject(["pears"])
+
+    // filter test - builder
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'desc' }], [{field: 'bananas', type: '=', value: "pears"}], this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas)
+    expect(result).toMatchObject(['pears'])
+
+    // filter test - raw
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'desc' }], "bananas = 'pears'", this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas)
+    expect(result).toMatchObject(['pears'])
+
 
     console.log("pk tests")
     // primary key tests
@@ -142,6 +161,11 @@ export class DBTestUtil {
       table.string("city")
       table.string("state")
       table.string("country").notNullable()
+    })
+
+    await this.knex.schema.createTable('MixedCase', (table) => {
+      table.increments().primary()
+      table.string("bananas")
     })
 
     await this.knex.schema.createTable('group', (table) => {

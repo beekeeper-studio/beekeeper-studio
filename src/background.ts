@@ -4,6 +4,7 @@ import * as fs from 'fs'
 import { app, protocol } from 'electron'
 import log from 'electron-log'
 import * as electron from 'electron'
+import { ipcMain } from 'electron'
 import {
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib'
@@ -20,6 +21,8 @@ import { UserSetting } from './common/appdb/models/user_setting'
 import Connection from './common/appdb/Connection'
 import Migration from './migration/index'
 import { buildWindow } from './background/WindowBuilder'
+
+import AppEvent from './common/AppEvent'
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
     fs.mkdirSync(d, { recursive: true })
@@ -61,6 +64,11 @@ async function createFirstWindow () {
   buildWindow(settings)
   log.info("managing updates")
   manageUpdates()
+  ipcMain.on(AppEvent.openExternally, (e: electron.IpcMainEvent, args: any[]) => {
+    const url = args[0]
+    if (!url) return
+    electron.shell.openExternal(url)
+  })
 }
 
 

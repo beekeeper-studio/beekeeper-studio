@@ -63,9 +63,20 @@ export async function disconnect(conn) {
   connection.close();
 }
 
-export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
-  let orderByString = ""
+function buildFilterString(filters) {
   let filterString = ""
+  if (filters && filters.length > 0) {
+    filterString = "WHERE " + filters.map((item) => {
+      return `${wrapIdentifier(item.field)} ${item.type} '${item.value}'`
+    }).join(" AND ")
+  }
+  return filterString
+}
+
+export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
+  let orderByString = "ORDER BY (SELECT NULL)"
+  console.log("filters", filters)
+  const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
       if (_.isObject(item)) {
@@ -74,12 +85,6 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
         return wrapIdentifier(item)
       }
     })).join(",")
-  }
-
-  if (filters && filters.length > 0) {
-    filterString = "WHERE " + filters.map((item) => {
-      return `${wrapIdentifier(item.field)} ${item.type} '${item.value}'`
-    }).join(" AND ")
   }
 
   let baseSQL = `

@@ -54,6 +54,10 @@
       min-width: 28px;
       overflow: hidden;
     }
+    .nav-item-wrap-chosen {
+      background: lighten($theme-bg, 3%);
+      opacity: 0.5;
+    }
     .nav-item {
       max-width: 200px;    
       min-width: 28px;

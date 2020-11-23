@@ -2,7 +2,39 @@
   <div class="tabletable flex-col">
     <div class="table-filter">
       <form @submit.prevent="triggerFilter">
-        <div class="filter-group row gutter">
+        <div v-if="filterMode === 'raw'" class="filter-group row gutter">
+          <div class="btn-wrap">
+            <button class="btn btn-primary" type="button" @click.stop="changeFilterMode('builder')">
+              <i class="material-icons">list</i>
+            </button>
+          </div>
+          <div class="expand filter">
+            <div class="filter-wrap">
+              <input
+                class="form-control"
+                type="text"
+                v-model="filterRaw"
+                :placeholder=filterPlaceholder
+              />
+              <button
+                type="button"
+                class="clear btn-link"
+                @click.prevent="filterRaw = ''"
+              >
+                <i class="material-icons">cancel</i>
+              </button>
+            </div>
+          </div>
+          <div class="btn-wrap">
+            <button class="btn btn-primary" type="submit">Search</button>
+          </div>
+        </div>
+        <div v-else-if="filterMode === 'builder'" class="filter-group row gutter">
+          <div class="btn-wrap">
+            <button class="btn btn-primary" type="button" @click.stop="changeFilterMode('raw')">
+              <i class="material-icons">code</i>
+            </button>
+          </div>
           <div>
             <div class="select-wrap">
               <select name="Filter Field" class="form-control" v-model="filter.field">
@@ -47,17 +79,17 @@
     <div ref="table"></div>
     <statusbar :mode="statusbarMode" class="tabulator-footer">
       <div class="col x4">
-        <span class="statusbar-item" v-if="lastUpdatedText && !editError" :title="`${totalRecordsText} Total Records`">
+        <span class="statusbar-item" v-if="lastUpdatedText && !queryError" :title="`${totalRecordsText} Total Records`">
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
         </span>
-        <span class="statusbar-item" v-if="lastUpdatedText && !editError" :title="'Updated' + ' ' + lastUpdatedText">
+        <span class="statusbar-item" v-if="lastUpdatedText && !queryError" :title="'Updated' + ' ' + lastUpdatedText">
           <i class="material-icons">update</i>
           <span>{{lastUpdatedText}}</span>
         </span>
-        <span v-if="editError" class="statusbar-item error" :title="editError">
+        <span v-if="queryError" class="statusbar-item error" :title="queryError.message">
           <i class="material-icons">error</i>
-          <span class="">Error Saving Changes</span>
+          <span class="">{{ queryError.title }}</span>
         </span>
       </div>
       <div class="col x4 flex flex-center">
@@ -69,18 +101,17 @@
           <span class="statusbar-item">
             <i
             class="material-icons"
-            v-tooltip="'No primary key detected, table editing is disabled.'"
+            v-tooltip="'Zero (or multiple) primary keys detected, table editing is disabled.'"
             >warning</i>
           </span>
         </div>
         <div v-if="pendingChangesCount > 0" class="flex flex-right">
           <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
-          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingChangesCount + ' ' + 'pending edits'" :class="{'error': !!editError}">
-            <!-- <i v-if="editError" class="material-icons">error</i> -->
+          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingChangesCount + ' ' + 'pending edits'" :class="{'error': !!queryError}">
+            <!-- <i v-if="queryError" class="material-icons">error</i> -->
             <span class="badge">{{pendingChangesCount}}</span>
             <span>Commit</span>
           </a>
-
         </div>
       </div>
     </statusbar>
@@ -110,6 +141,8 @@ const CHANGE_TYPE_UPDATE = 'update'
 const CHANGE_TYPE_DELETE = 'delete'
 
 const log = rawLog.scope('TableTable')
+const FILTER_MODE_BUILDER = 'builder'
+const FILTER_MODE_RAW = 'raw'
 
 export default {
   components: { Statusbar },
@@ -131,6 +164,8 @@ export default {
         type: "=",
         field: this.table.columns[0].columnName
       },
+      filterRaw: null,
+      filterMode: FILTER_MODE_BUILDER,
       headerFilter: true,
       columnsSet: false,
       tabulator: null,
@@ -146,7 +181,7 @@ export default {
         updates: [],
         deletes: []
       },
-      editError: null,
+      queryError: null,
       timeAgo: new TimeAgo('en-US'),
       lastUpdated: null,
       lastUpdatedText: null,
@@ -155,6 +190,9 @@ export default {
     };
   },
   computed: {
+    filterPlaceholder() {
+      return `Enter condition, eg: name like 'Matthew%'`
+    },
     totalRecordsText() {
       return `${this.totalRecords.toLocaleString()}`
     },
@@ -180,7 +218,7 @@ export default {
       return this.table.entityType === 'table' && !this.primaryKey
     },
     statusbarMode() {
-      if (this.editError) return 'failure'
+      if (this.queryError) return 'failure'
       if (this.pendingChangesCount) return 'editing'
       return null
     },
@@ -279,6 +317,18 @@ export default {
     filterValue() {
       return this.filter.value;
     },
+    filterForTabulator() {
+      if (this.filterMode === FILTER_MODE_RAW && this.filterRaw) {
+        return this.filterRaw
+      } else if (
+        this.filterMode === FILTER_MODE_BUILDER &&
+        this.filter.type && this.filter.field && this.filter.value
+      ) {
+        return [this.filter]
+      } else {
+        return null
+      }
+    },
     initialSort() {
       if (this.table.columns.length === 0) {
         return [];
@@ -305,6 +355,11 @@ export default {
         this.clearFilter();
       }
     },
+    filterRaw() {
+      if (this.filterRaw === '') {
+        this.clearFilter()
+      }
+    },
     lastUpdated() {
       this.setlastUpdatedText()
       let result = 'all'
@@ -315,6 +370,9 @@ export default {
         if (this.filter.value) result = 'filtered'
       }
       this.$emit('setTabTitleScope', this.tabId, result)
+    },
+    filterMode() {
+      this.triggerFilter()
     }
   },
   beforeDestroy() {
@@ -544,7 +602,7 @@ export default {
             this.pendingChanges.updates.forEach(edit => {
               edit.cell.getElement().classList.add('edit-error')
             })
-            this.editError = ex.message
+            this.setQueryError('Error Saving Changes', ex.message)
             this.$noty.error("Error updating rows")
 
             return
@@ -558,7 +616,7 @@ export default {
             replaceData = true
             this.pendingChanges.deletes = []
           } catch (ex) {
-            this.editError = ex.message
+            this.setQueryError('Error Saving Changes', ex.message)
             this.$noty.error("Error deleting rows")
 
             return
@@ -570,7 +628,7 @@ export default {
         }
     },
     discardChanges() {
-      this.editError = null
+      this.queryError = null
 
       this.pendingChanges.updates.forEach(edit => {
         this.discardColumnUpdate(edit)
@@ -592,20 +650,23 @@ export default {
       this.tabulator.updateData([update])
     },
     triggerFilter() {
-      if (this.filter.type && this.filter.field) {
-        if (this.filter.value) {
-          this.tabulator.setFilter(
-            this.filter.field,
-            this.filter.type,
-            this.filter.value
-          );
-        } else {
-          this.tabulator.clearFilter();
-        }
-      }
+      this.tabulator.setData()
     },
     clearFilter() {
-      this.tabulator.clearFilter();
+      this.tabulator.setData();
+    },
+    changeFilterMode(filterMode) {
+      // Populate raw filter query with existing filter if raw filter is empty
+      if (
+        filterMode === FILTER_MODE_RAW &&
+        !_.isNil(this.filter.value) &&
+        _.isEmpty(this.filterRaw)
+      ) {
+        const rawFilter = _.join([this.filter.field, this.filter.type, this.filter.value], ' ')
+        this.filterRaw = rawFilter
+      }
+
+      this.filterMode = filterMode
     },
     dataFetch(url, config, params) {
       // this conforms to the Tabulator API
@@ -614,7 +675,7 @@ export default {
       let offset = 0;
       let limit = this.limit;
       let orderBy = null;
-      let filters = null;
+      let filters = this.filterForTabulator;
 
       if (params.sorters) {
         orderBy = params.sorters
@@ -627,10 +688,7 @@ export default {
       if (params.page) {
         offset = (params.page - 1) * limit;
       }
-
-      if (params.filters) {
-        filters = params.filters;
-      }
+      log.info("filters", filters)
 
       const result = new Promise((resolve, reject) => {
         (async () => {
@@ -647,7 +705,7 @@ export default {
             this.totalRecords = Number(response.totalRecords) || 0;
             this.response = response
             this.resetPendingChanges()
-            this.editError = null
+            this.clearQueryError()
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data
             this.lastUpdated = Date.now()
@@ -657,7 +715,10 @@ export default {
             });
           } catch (error) {
             reject();
-            throw error;
+            this.setQueryError('Error loading data', error.message)
+            this.$nextTick(() => {
+              this.tabulator.clearData()
+            })
           }
         })();
       });
@@ -667,7 +728,15 @@ export default {
       if (!this.lastUpdated) return null
       this.lastUpdatedText = this.timeAgo.format(this.lastUpdated)
     },
-
+    setQueryError(title, message) {
+      this.queryError = {
+        title: title,
+        message: message
+      }
+    },
+    clearQueryError() {
+      this.queryError = null
+    },
   }
 };
 </script>

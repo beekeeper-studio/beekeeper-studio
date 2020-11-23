@@ -110,6 +110,7 @@
   import 'codemirror/addon/comment/comment'
   import Split from 'split.js'
   import { mapState } from 'vuex'
+  import { identify } from 'sql-query-identifier'
 
   import { splitQueries, extractParams } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar'
@@ -118,6 +119,8 @@
   import sqlFormatter from 'sql-formatter';
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar'
+  import rawlog from 'electron-log'
+  const log = rawlog.scope('query-editor')
 
   export default {
     // this.queryText holds the current editor value, always
@@ -388,6 +391,12 @@
         this.queryForExecution = rawQuery
         this.results = []
         this.selectedResult = 0
+        let identification = []
+        try {
+          identification = identify(rawQuery)
+        } catch (ex) {
+          log.error("Unable to identify query", ex)
+        }
 
         try {
           if (this.queryParameterPlaceholders.length > 0 && !skipModal) {
@@ -416,7 +425,15 @@
             }
           })
           this.results = results
+
           this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
+          log.debug('identification', identification)
+          const found = identification.find(i => {
+            return i.type === 'CREATE_TABLE'
+          })
+          if (found) {
+            this.$store.dispatch('updateTables')
+          }
         } catch (ex) {
           if(this.running) {
             this.error = ex
