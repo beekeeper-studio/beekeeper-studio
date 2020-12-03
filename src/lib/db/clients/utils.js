@@ -25,7 +25,11 @@ export function buildSchemaFilter({ schema } = {}, schemaField = 'schema_name') 
   return where.join(' AND ');
 }
 
-export function buildDatabseFilter({ database } = {}, databaseField) {
+export function buildDatabseFilter(filter, databaseField) {
+  if (!filter) {
+    return null
+  }
+  const { only, ignore, database } = filter
   if (!database) { return null; }
 
   if (typeof database === 'string') {
@@ -33,7 +37,6 @@ export function buildDatabseFilter({ database } = {}, databaseField) {
   }
 
   const where = [];
-  const { only, ignore } = database;
 
   if (only && only.length) {
     where.push(`${databaseField} IN (${only.map((name) => `'${name}'`).join(',')})`);

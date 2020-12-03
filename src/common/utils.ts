@@ -5,6 +5,7 @@ import {homedir} from 'os';
 import path from 'path';
 import mkdirp from 'mkdirp';
 import envPaths from 'env-paths';
+import { Error } from '../lib/errors'
 
 
 let configPath = '';
