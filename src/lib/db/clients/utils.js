@@ -4,15 +4,15 @@ import logRaw from 'electron-log'
 
 const log = logRaw.scope('db/util')
 
-export function buildSchemaFilter({ schema } = {}, schemaField = 'schema_name') {
-  if (!schema) { return null; }
+export function buildSchemaFilter(filter, schemaField = 'schema_name') {
+  if (!filter) return null
+  const { schema, only, ignore } = filter
 
-  if (typeof schema === 'string') {
+  if (schema) {
     return `${schemaField} = '${schema}'`;
   }
 
   const where = [];
-  const { only, ignore } = schema;
 
   if (only && only.length) {
     where.push(`${schemaField} IN (${only.map((name) => `'${name}'`).join(',')})`);
@@ -30,9 +30,8 @@ export function buildDatabseFilter(filter, databaseField) {
     return null
   }
   const { only, ignore, database } = filter
-  if (!database) { return null; }
 
-  if (typeof database === 'string') {
+  if (database) {
     return `${databaseField} = '${database}'`;
   }
 

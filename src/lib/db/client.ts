@@ -27,6 +27,13 @@ export interface FilterOptions {
 }
 
 export interface DatabaseFilterOptions {
+  database?: string
+  only?: string[]
+  ignore?: string[]
+}
+
+export interface SchemaFilterOptions {
+  schema?: string
   only?: string[]
   ignore?: string[]
 }
@@ -54,7 +61,19 @@ export interface TableUpdate {
   schema?: string
 }
 
-type TableUpdateResult = any
+export interface TableKey {
+  toTable: string
+  toSchema: string
+  toColumn: string
+  fromTable: string
+  fromSchema: string
+  fromColumn: string
+  constraintName: string
+  onUpdate?: string
+  onDelete?: string
+}
+
+export type TableUpdateResult = any
 
 export interface Routine {
   schema: string,
@@ -71,12 +90,12 @@ export interface DatabaseClient {
   listTableColumns: (db: string, table?: string, schema?: string) => Promise<TableColumn[]>,
   listTableTriggers: (table: string, schema?: string) => void,
   listTableIndexes: (db: string, table: string, schema?: string) => void,
-  listSchemas: (db: string, filter?: FilterOptions) => void,
+  listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>,
   getTableReferences: (table: string, schema?: string) => void,
   getTableKeys: (db: string, table: string, schema?: string) => void,
   query: (queryText: string) => void,
   executeQuery: (queryText: string) => void,
-  listDatabases: (filter?: DatabaseFilterOptions) => void,
+  listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   updateValues: (updates: TableUpdate[]) => Promise<TableUpdateResult[]>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableCreateScript: (table: string, schema?: string) => void,
@@ -243,12 +262,12 @@ function disconnect(server: IDbConnectionServer, database: IDbConnectionDatabase
   }
 }
 
-function selectTop(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, offset: number, limit: number, orderBy: string, filters: TableFilter[], schema: string) {
+function selectTop(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[], schema: string) {
   checkIsConnected(server, database)
   return database.connection?.selectTop(table, offset, limit, orderBy, filters, schema);
 }
 
-function listSchemas(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: FilterOptions) {
+function listSchemas(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: SchemaFilterOptions) {
   checkIsConnected(server , database);
   return database.connection?.listSchemas(database.database, filter);
 }
@@ -328,7 +347,7 @@ function executeQuery(server: IDbConnectionServer, database: IDbConnectionDataba
 }
 
 
-function listDatabases(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: FilterOptions) {
+function listDatabases(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: DatabaseFilterOptions) {
   checkIsConnected(server , database);
   return database.connection?.listDatabases(filter);
 }

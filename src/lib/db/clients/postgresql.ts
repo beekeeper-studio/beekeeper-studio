@@ -2,16 +2,16 @@
 
 import { readFileSync } from 'fs';
 
-import pg, { PoolClient, QueryResult, Pool, QueryResultRow } from 'pg';
+import pg, { PoolClient, QueryResult, Pool, PoolConfig } from 'pg';
 import { identify } from 'sql-query-identifier';
 import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableResult, Routine, TableUpdate, TableUpdateResult, DatabaseFilterOptions } from '../client'
+import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableUpdate, DatabaseFilterOptions, TableKey, SchemaFilterOptions } from '../client'
 import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
-import errors from '../../errors';
+import { errors, Error as CustomError } from '../../errors';
 import globals from '../../../common/globals';
 
 
@@ -67,7 +67,7 @@ pg.types.setTypeParser(1184, 'text', (val) => val); // timestamp
  * PostgreSQL 8.0.2 on i686-pc-linux-gnu, compiled by GCC gcc (GCC) 3.4.2 20041017 (Red Hat 3.4.2-6.fc3), Redshift 1.0.12103
  */
 async function getVersion(conn: HasPool) {
-  const { version } = (await driverExecuteQuery(conn, {query: "select version()"})).rows[0]
+  const { version } = (await driverExecuteSingle(conn, {query: "select version()"})).rows[0]
   if (!version) {
     return {
       version: '',
@@ -111,7 +111,7 @@ async function getTypes(conn: HasPool): Promise<any> {
     `
   }
 
-  const data = await driverExecuteQuery(conn, { query: sql })
+  const data = await driverExecuteSingle(conn, { query: sql })
   const result: any = {}
   data.rows.forEach((row) => {
     result[row.typeid] = row.typename
@@ -147,15 +147,15 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     listMaterializedViewColumns: (db, table, schema = defaultSchema) => listMaterializedViewColumns(conn, db, table, schema),
     listTableTriggers: (table, schema = defaultSchema) => listTableTriggers(conn, table, schema),
     listTableIndexes: (db, table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
-    listSchemas: (db, filter) => listSchemas(conn, filter),
+    listSchemas: (db, filter?: SchemaFilterOptions) => listSchemas(conn, filter),
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
     // TODO
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
     updateValues: (updates) => updateValues(conn, updates),
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
-    executeQuery: (queryText, schema = defaultSchema) => executeQuery(conn, queryText, schema),
-    listDatabases: (filter) => listDatabases(conn, filter),
+    executeQuery: (queryText, schema = defaultSchema) => executeQuery(conn, queryText),
+    listDatabases: (filter?: DatabaseFilterOptions) => listDatabases(conn, filter),
     selectTop: (table: string, offset: Number, limit: Number, orderBy: OrderBy[], filters: TableFilter[], schema: string) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
     getTableCreateScript: (table, schema = defaultSchema) => getTableCreateScript(conn, table, schema),
@@ -184,7 +184,7 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
     ORDER BY table_schema, table_name
   `;
 
-  const data = await driverExecuteQuery(conn, { query: sql });
+  const data = await driverExecuteSingle(conn, { query: sql });
 
   return data.rows;
 }
@@ -200,7 +200,7 @@ export async function listViews(conn: HasPool, filter: FilterOptions = { schema:
     ORDER BY table_schema, table_name
   `;
 
-  const data = await driverExecuteQuery(conn, { query: sql });
+  const data = await driverExecuteSingle(conn, { query: sql });
 
   return data.rows;
 }
@@ -221,7 +221,7 @@ export async function listMaterializedViews(conn: HasPool, filter: FilterOptions
     order by schemaname, matviewname;
   `
 
-  const data = await driverExecuteQuery(conn, {query: sql});
+  const data = await driverExecuteSingle(conn, {query: sql});
   return data.rows;
 }
 
@@ -275,8 +275,8 @@ async function selectTop(
     OFFSET ${offset}
     `
   log.debug("select Top query & params", countQuery, query, params)
-  const countResults = await driverExecuteQuery(conn, { query: countQuery, params })
-  const result = await driverExecuteQuery(conn, { query, params })
+  const countResults = await driverExecuteSingle(conn, { query: countQuery, params })
+  const result = await driverExecuteSingle(conn, { query, params })
   const rowWithTotal = countResults.rows.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   log.debug("selectTop:", result.rows)
@@ -299,7 +299,7 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
     ORDER BY routine_schema, routine_name
   `;
 
-  const data = await driverExecuteQuery(conn, { query: sql });
+  const data = await driverExecuteSingle(conn, { query: sql });
 
   return data.rows.map((row) => ({
     schema: row.routine_schema,
@@ -308,7 +308,7 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
   }));
 }
 
-export async function listTableColumns(conn, database, table, schema) {
+export async function listTableColumns(conn: Conn, database: string, table?: string, schema?: string) {
   // if you provide table, you have to provide schema
   const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : ""
   const params = table ? [schema, table] : []
@@ -332,7 +332,7 @@ export async function listTableColumns(conn, database, table, schema) {
     ORDER BY table_schema, table_name, ordinal_position
   `;
 
-  const data = await driverExecuteQuery(conn, { query: sql, params });
+  const data = await driverExecuteSingle(conn, { query: sql, params });
 
   return data.rows.map((row) => ({
     schemaName: row.table_schema,
@@ -342,7 +342,7 @@ export async function listTableColumns(conn, database, table, schema) {
   }));
 }
 
-export async function listMaterializedViewColumns(conn, database, table, schema) {
+export async function listMaterializedViewColumns(conn: Conn, database: string, table: string, schema: string) {
   const clause = table ? `AND s.nspname = $1 AND t.relname = $2` : ''
   if (table && !schema) {
     throw new Error("Cannot get columns for '${table}, no schema provided'")
@@ -360,7 +360,7 @@ export async function listMaterializedViewColumns(conn, database, table, schema)
     ORDER BY a.attnum;
   `
   const params = table ? [schema, table] : []
-  const data = await driverExecuteQuery(conn, {query: sql, params});
+  const data = await driverExecuteSingle(conn, {query: sql, params});
   return data.rows.map((row) => ({
     schemaName: row.nspname,
     tableName: row.relname,
@@ -370,7 +370,7 @@ export async function listMaterializedViewColumns(conn, database, table, schema)
 }
 
 
-export async function listTableTriggers(conn, table, schema) {
+export async function listTableTriggers(conn: Conn, table: string, schema: string) {
   const sql = `
     SELECT trigger_name
     FROM information_schema.triggers
@@ -383,11 +383,11 @@ export async function listTableTriggers(conn, table, schema) {
     table,
   ];
 
-  const data = await driverExecuteQuery(conn, { query: sql, params });
+  const data = await driverExecuteSingle(conn, { query: sql, params });
 
   return data.rows.map((row) => row.trigger_name);
 }
-export async function listTableIndexes(conn, table, schema) {
+export async function listTableIndexes(conn: Conn, table: string, schema: string) {
   const sql = `
     SELECT indexname as index_name
     FROM pg_indexes
@@ -400,12 +400,12 @@ export async function listTableIndexes(conn, table, schema) {
     table,
   ];
 
-  const data = await driverExecuteQuery(conn, { query: sql, params });
+  const data = await driverExecuteSingle(conn, { query: sql, params });
 
   return data.rows.map((row) => row.index_name);
 }
 
-export async function listSchemas(conn, filter) {
+export async function listSchemas(conn: Conn, filter?: SchemaFilterOptions) {
   const schemaFilter = buildSchemaFilter(filter);
   const sql = `
     SELECT schema_name
@@ -414,12 +414,12 @@ export async function listSchemas(conn, filter) {
     ORDER BY schema_name
   `;
 
-  const data = await driverExecuteQuery(conn, { query: sql });
+  const data = await driverExecuteSingle(conn, { query: sql });
 
   return data.rows.map((row) => row.schema_name);
 }
 
-export async function getTableReferences(conn, table, schema) {
+export async function getTableReferences(conn: Conn, table: string, schema: string) {
   const sql = `
     SELECT ctu.table_name AS referenced_table_name
     FROM information_schema.table_constraints AS tc
@@ -434,12 +434,12 @@ export async function getTableReferences(conn, table, schema) {
     schema,
   ];
 
-  const data = await driverExecuteQuery(conn, { query: sql, params });
+  const data = await driverExecuteSingle(conn, { query: sql, params });
 
   return data.rows.map((row) => row.referenced_table_name);
 }
 
-export async function getTableKeys(conn, database, table, schema) {
+export async function getTableKeys(conn: Conn, database: string, table: string, schema: string): Promise<TableKey[]> {
   const sql = `
     SELECT
         tc.table_schema as from_schema,
@@ -466,7 +466,7 @@ export async function getTableKeys(conn, database, table, schema) {
     schema,
   ];
 
-  const data = await driverExecuteQuery(conn, { query: sql, params });
+  const data = await driverExecuteSingle(conn, { query: sql, params });
 
   return data.rows.map((row) => ({
     toTable: row.to_table,
@@ -476,8 +476,6 @@ export async function getTableKeys(conn, database, table, schema) {
     fromSchema: row.from_schema,
     fromColumn: row.from_column,
     constraintName: row.constraint_name,
-    onUpdate: null,
-    onDelete: null
   }));
 }
 
@@ -493,10 +491,8 @@ export async function getPrimaryKey(conn: Conn, database: string, table: string,
     AND    i.indisprimary;
   `
   log.debug('getPrimaryKey', query, tablename)
-  const data = await driverExecuteQuery(conn, { query })
-
-  const rows: QueryResultRow[] = isQueryResult(data) ? data.rows : data
-  return rows && rows[0] && rows.length === 1 ? rows[0].column_name : null
+  const data = await driverExecuteSingle(conn, { query })
+  return data.rows && data.rows[0] && data.rows.length === 1 ? data.rows[0].column_name : null
 }
 
 export async function updateValues(conn: Conn, updates: TableUpdate[]): Promise<TableUpdateResult[]> {
@@ -507,8 +503,8 @@ export async function updateValues(conn: Conn, updates: TableUpdate[]): Promise<
     try {
       await driverExecuteQuery(cli, { query: 'BEGIN' })
       await driverExecuteQuery(cli, { query: updateQueries.join(";") })
-      const data = await driverExecuteQuery(cli, { query: selectQueries.join(";"), multiple: true })
-      results = data.rows.map((x) => x[0])
+      const data = await driverExecuteSingle(cli, { query: selectQueries.join(";"), multiple: true })
+      results = [data.rows[0]]
 
       await driverExecuteQuery(cli, { query: 'COMMIT' })
     } catch (ex) {
@@ -530,7 +526,7 @@ export function query(conn: Conn, queryText: string, schema: string) {
       return runWithConnection(conn, async (connection) => {
         const connClient = { connection };
 
-        const dataPid = await driverExecuteQuery(connClient, {
+        const dataPid = await driverExecuteSingle(connClient, {
           query: 'SELECT pg_backend_pid() AS pid',
         });
         const rows = dataPid.rows
@@ -566,7 +562,7 @@ export function query(conn: Conn, queryText: string, schema: string) {
 
       canceling = true;
       try {
-        const data = await driverExecuteQuery(conn, {
+        const data = await driverExecuteSingle(conn, {
           query: `SELECT pg_cancel_backend(${pid});`,
         });
 
@@ -591,7 +587,7 @@ export async function executeQuery(conn: Conn, queryText: string) {
 
   const commands = identifyCommands(queryText).map((item) => item.type);
 
-  return data.rows.map((result, idx) => parseRowQueryResult(result, commands[idx]));
+  return data.map((result, idx) => parseRowQueryResult(result, commands[idx]));
 }
 
 
@@ -607,7 +603,7 @@ export async function listDatabases(conn: Conn, filter?: DatabaseFilterOptions) 
 
   const params = [false];
 
-  const data = await driverExecuteQuery(conn, { query: sql, params });
+  const data = await driverExecuteSingle(conn, { query: sql, params });
 
   return data.rows.map((row) => row.datname);
 }
@@ -675,7 +671,7 @@ export async function getTableCreateScript(conn: Conn, table: string, schema: st
     schema,
   ];
 
-  const data = await driverExecuteQuery(conn, { query: sql, params });
+  const data = await driverExecuteSingle(conn, { query: sql, params });
 
   return data.rows.map((row) => row.createtable);
 }
@@ -687,7 +683,7 @@ export async function getViewCreateScript(conn: Conn, view: string, schema: stri
 
   const params = [view];
 
-  const data = await driverExecuteQuery(conn, { query: sql, params });
+  const data = await driverExecuteSingle(conn, { query: sql, params });
 
   return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
 }
@@ -706,7 +702,7 @@ export async function getRoutineCreateScript(conn: Conn, routine: string, _: str
     schema,
   ];
 
-  const data = await driverExecuteQuery(conn, { query: sql, params });
+  const data = await driverExecuteSingle(conn, { query: sql, params });
 
   return data.rows.map((row) => row.pg_get_functiondef);
 }
@@ -727,7 +723,7 @@ async function getSchema(conn: Conn) {
   const sql = 'SELECT current_schema() AS schema';
 
   const data = await driverExecuteQuery(conn, { query: sql });
-  return data.rows[0].schema;
+  return data[0].rows[0].schema;
 }
 
 export async function truncateAllTables(conn: Conn, schema: string) {
@@ -745,7 +741,7 @@ export async function truncateAllTables(conn: Conn, schema: string) {
       schema,
     ];
 
-    const data = await driverExecuteQuery(connClient, { query: sql, params });
+    const data = await driverExecuteSingle(connClient, { query: sql, params });
     const rows = data.rows
 
     const truncateAll = rows.map((row) => `
@@ -757,19 +753,9 @@ export async function truncateAllTables(conn: Conn, schema: string) {
   });
 }
 
-interface PsqlConfig {
-  host: string
-  port: number
-  password?: string
-  database?: string
-  max: Number,
-  connectionTimeoutMillis: Number,
-  user?: string
-  ssl?: any
-}
 
 function configDatabase(server: any, database: { database: string}) {
-  const config: PsqlConfig = {
+  const config: PoolConfig = {
     host: server.config.host,
     port: server.config.port,
     password: server.config.password,
@@ -831,7 +817,7 @@ function parseFields(fields: any[]) {
 }
 
 
-function parseRowQueryResult(data: pg.QueryResultRow, command: string) {
+function parseRowQueryResult(data: QueryResult, command: string) {
 
   const isSelect = data.command === 'SELECT';
   return {
@@ -858,16 +844,18 @@ interface PostgresQueryArgs {
   multiple?: boolean
 }
 
-type QR = pg.QueryResult
+async function driverExecuteSingle(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult> {
+  return (await driverExecuteQuery(conn, queryArgs))[0]
+}
 
+function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult[]> {
 
-function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult> {
 
   function isQueryResult(x: any): x is QueryResult {
     return x.rows !== undefined
   }
 
-  const runQuery = (connection: pg.PoolClient): Promise<QueryResult> => {
+  const runQuery = (connection: pg.PoolClient): Promise<QueryResult[]> => {
     const args = {
       text: queryArgs.query,
       values: queryArgs.params,
@@ -877,16 +865,9 @@ function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQuery
     // node-postgres has support for Promise query
     // but that always returns the "fields" property empty
     return new Promise((resolve, reject) => {
-      connection.query(args, (err: Error, data: QR) => {
+      connection.query(args, (err: Error, data: QueryResult | QueryResult[]) => {
         if (err) return reject(err);
-        const qr = isQueryResult(data) ? data : {
-          rows: data,
-          rowCount: 0,
-          command: "unknown",
-          oid: 0,
-          fields: []
-
-        }
+        const qr = Array.isArray(data) ? data : [data]
         resolve(qr)
       });
     });
@@ -900,7 +881,7 @@ function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQuery
   }
 }
 
-async function runWithConnection(x: Conn, run: (p: PoolClient) => Promise<any>): Promise<QR> {
+async function runWithConnection<T>(x: Conn, run: (p: PoolClient) => Promise<T>): Promise<T> {
   const connection: PoolClient = isConnection(x) ? x.connection : await x.pool.connect()
   try {
     return await run(connection);
