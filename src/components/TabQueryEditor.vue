@@ -113,12 +113,12 @@
   import { identify } from 'sql-query-identifier'
 
   import { splitQueries, extractParams } from '../lib/db/sql_tools'
-  import ProgressBar from './editor/ProgressBar'
-  import ResultTable from './editor/ResultTable'
+  import ProgressBar from './editor/ProgressBar.vue'
+  import ResultTable from './editor/ResultTable.vue'
 
   import sqlFormatter from 'sql-formatter';
 
-  import QueryEditorStatusBar from './editor/QueryEditorStatusBar'
+  import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from 'electron-log'
   const log = rawlog.scope('query-editor')
 
@@ -128,7 +128,6 @@
     props: ['tab', 'active'],
     data() {
       return {
-        // result: null,
         results: [],
         running: false,
         selectedResult: 0,
