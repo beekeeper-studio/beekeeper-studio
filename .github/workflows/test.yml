@@ -12,9 +12,8 @@ on:
 
 jobs:
   testing:
-    name: Run linters
+    name: Test Suite
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v2
