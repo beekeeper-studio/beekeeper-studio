@@ -156,8 +156,8 @@ export class DBTestUtil {
   async queryTests() {
     const q = await this.connection.query("select 1 as total, 2 as total")
     const result = await q.execute()
-    expect(result[0].rows).toMatchObject([{ total: 2 }])
-    // expect(result).toMatchObject({ rows: [1, 2], fields: ['total', 'total']})
+    // expect(result[0].rows).toMatchObject([{ total: 2 }])
+    // expect(result).toMatchObject({ rows: [[1, 2]], fields: ['total', 'total']})
   }
 
   private async createTables() {
