@@ -21,7 +21,8 @@ export default {
             this.manualNotification.close();
           }),
           Noty.button('Download', 'btn btn-primary', this.linkToDownload)
-        ]
+        ],
+        queue: 'download'
       }),
       downloadNotification: new Noty({
         text: 'A new version is availble. Download now?',
@@ -33,7 +34,8 @@ export default {
               this.downloadNotification.close();
           }),
           Noty.button('Download', 'btn btn-primary', this.triggerDownload)
-        ]
+        ],
+        queue: 'download'
       }),
       installNotification: new Noty({
         text: "Update downloaded. Restart Beekeeper Studio to install",
@@ -45,10 +47,13 @@ export default {
             this.installNotification.close()
           }),
           Noty.button('Restart Now', 'btn btn-primary', this.triggerInstall)
-        ]
+        ],
+        queue: 'download'
       })
 
     }
+  },
+  computed: {
   },
   mounted() {
     ipcRenderer.on('update-available', this.notifyUpdate)
@@ -57,12 +62,16 @@ export default {
     ipcRenderer.send('updater-ready')
   },
   methods: {
+    closeAll() {
+      Noty.closeAll('download')
+    },
     triggerDownload() {
       ipcRenderer.send('download-update')
       this.downloadNotification.close()
       this.$noty.info("Hold tight! Downloading update...")
     },
     notifyManual() {
+      this.closeAll()
       this.manualNotification.show()
     },
     linkToDownload() {
@@ -72,9 +81,11 @@ export default {
       ipcRenderer.send('install-update')
     },
     notifyUpdate() {
-      this.downloadNotification.show();
+      this.closeAll()
+      this.downloadNotification.show()
     },
     notifyDownloaded() {
+      this.closeAll()
       this.installNotification.show();
     }
   }
