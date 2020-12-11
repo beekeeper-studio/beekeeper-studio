@@ -10,7 +10,7 @@ import { FavoriteQuery } from '../common/appdb/models/favorite_query'
 import { UsedQuery } from '../common/appdb/models/used_query'
 import ConnectionProvider from '../lib/connection-provider'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
-import { DBConnection, IDbColumn } from '../lib/db/client'
+import { DBConnection, TableColumn } from '../lib/db/client'
 import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, IDbEntityWithColumns, QueryTab, TableTab } from './models'
 
@@ -248,7 +248,7 @@ const store = new Vuex.Store<State>({
           context.commit("tablesLoading", `Loading ${tables.length} tables`)
 
           const tableColumns = await context.state.connection.listTableColumns()
-          let viewColumns: IDbColumn[] = []
+          let viewColumns: TableColumn[] = []
           for (let index = 0; index < materialized.length; index++) {
             const view = materialized[index]
             const columns = await context.state.connection.listMaterializedViewColumns(view.name, view.schema)
