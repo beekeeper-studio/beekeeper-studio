@@ -619,7 +619,9 @@ export default {
       this.queryError = null
     },
     refreshTable() {
+      const page = this.tabulator.getPage()
       this.tabulator.replaceData()
+      this.tabulator.setPage(page)
     },
   }
 };
