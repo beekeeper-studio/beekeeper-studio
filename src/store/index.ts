@@ -10,7 +10,7 @@ import { FavoriteQuery } from '../common/appdb/models/favorite_query'
 import { UsedQuery } from '../common/appdb/models/used_query'
 import ConnectionProvider from '../lib/connection-provider'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
-import { DBConnection, TableColumn } from '../lib/db/client'
+import { DBConnection, Routine, TableColumn } from '../lib/db/client'
 import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, IDbEntityWithColumns, QueryTab, TableTab } from './models'
 
@@ -21,6 +21,7 @@ interface State {
   connection: Nullable<DBConnection>,
   database: Nullable<string>,
   tables: IDbEntityWithColumns[],
+  routines: Routine[],
   tablesLoading: string,
   pinStore: {
     [x: string]: string[]
@@ -47,6 +48,7 @@ const store = new Vuex.Store<State>({
     connection: null,
     database: null,
     tables: [],
+    routines: [],
     tablesLoading: "loading tables...",
     pinStore: {},
     connectionConfigs: [],
@@ -66,10 +68,12 @@ const store = new Vuex.Store<State>({
     },
     schemaTables(state){
       const obj = _.chain(state.tables).groupBy('schema').value()
+      const routines = _.groupBy(state.routines, 'schema')
       return _(obj).keys().map(k => {
         return {
           schema: k,
-          tables: obj[k]
+          tables: obj[k],
+          routines: routines[k] || []
         }
       }).orderBy(o => {
         // TODO: have the connection provide the default schema, hard-coded to public by default
@@ -113,10 +117,13 @@ const store = new Vuex.Store<State>({
     tables(state, tables) {
       state.tables = tables
     },
+    routines(state, routines) {
+      state.routines = routines
+    },
     tablesLoading(state, value: string) {
       state.tablesLoading = value
     },
-    addPinned(state, table: string) {
+    addPinned(state, table: any) {
       if (state.database && !state.pinStore[state.database]) {
         Vue.set(state.pinStore, state.database, [table])
       } else if (state.database && !state.pinStore[state.database].includes(table)) {
@@ -223,6 +230,7 @@ const store = new Vuex.Store<State>({
         }
         context.commit('updateConnection', {connection, database: newDatabase})
         await context.dispatch('updateTables')
+        await context.dispatch('updateRoutines') 
       }
     },
     async updateTables(context) {
@@ -270,7 +278,12 @@ const store = new Vuex.Store<State>({
         }
       }
     },
-
+    async updateRoutines(context) {
+      if (!context.state.connection) return;
+      const connection = context.state.connection
+      const routines = await connection.listRoutines({ schema: null })
+      context.commit('routines', routines)
+    },
     async pinTable(context, table) {
       table.pinned = true
       context.commit('addPinned', table)
@@ -278,6 +291,14 @@ const store = new Vuex.Store<State>({
     async unpinTable(context, table) {
       table.pinned = false
       context.commit('removePinned', table)
+    },
+    async pinRoutine(context, routine: Routine) {
+      routine.pinned = true
+      context.commit('addPinned', routine)
+    },
+    async unpinRoutine(context, routine: Routine) {
+      routine.pinned = true
+      context.commit('addPinned', routine)
     },
     async saveConnectionConfig(context, newConfig) {
       await newConfig.save()

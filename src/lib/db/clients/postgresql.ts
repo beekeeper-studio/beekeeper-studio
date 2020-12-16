@@ -113,7 +113,7 @@ async function getTypes(conn: HasPool): Promise<any> {
 
   const data = await driverExecuteSingle(conn, { query: sql })
   const result: any = {}
-  data.rows.forEach((row) => {
+  data.rows.forEach((row: any) => {
     result[row.typeid] = row.typename
   })
   _.merge(result, _.invert(pg.types.builtins))
@@ -277,7 +277,7 @@ async function selectTop(
   log.debug("select Top query & params", countQuery, query, params)
   const countResults = await driverExecuteSingle(conn, { query: countQuery, params })
   const result = await driverExecuteSingle(conn, { query, params })
-  const rowWithTotal = countResults.rows.find((row) => { return row.total })
+  const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   log.debug("selectTop:", result.rows)
   return {
@@ -287,24 +287,38 @@ async function selectTop(
 }
 
 export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promise<Routine[]> {
-  const schemaFilter = buildSchemaFilter(filter, 'routine_schema');
-  const sql = `
-    SELECT
-      routine_schema,
-      routine_name,
-      routine_type
-    FROM information_schema.routines
-    ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
-    GROUP BY routine_schema, routine_name, routine_type
-    ORDER BY routine_schema, routine_name
-  `;
+  const betterFilter = { ignore: ['pg_catalog', 'information_schema'], ...filter}
+  const schemaFilter = buildSchemaFilter(betterFilter, 'n.nspname');
+  const sql = `  
+    SELECT n.nspname as schema, p.oid,
+      p.proname as routine_name,
+      pg_get_function_result(p.oid) as routine_type,
+      pg_get_function_identity_arguments(p.oid) as routine_args
 
+    FROM pg_catalog.pg_proc p
+        LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+    ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
+  `
   const data = await driverExecuteSingle(conn, { query: sql });
 
-  return data.rows.map((row) => ({
-    schema: row.routine_schema,
-    routineName: row.routine_name,
-    routineType: row.routine_type,
+  const parseParams = (args) => {
+    const items = args.split(",")
+    const result = items.map((arg, i) => {
+      const [a, b] = arg.split(/\s+/)
+      return {
+        name: a && b ? a : `arg${i+1}`,
+        type: a && b ? b : a
+      }
+    })
+    return result
+  }
+
+  return data.rows.map((row: any) => ({
+    id: row.specific_name,
+    schema: row.schema,
+    name: row.routine_name,
+    returnType: row.routine_type,
+    routineParams: parseParams(row.routine_args)
   }));
 }
 
@@ -334,7 +348,7 @@ export async function listTableColumns(conn: Conn, database: string, table?: str
 
   const data = await driverExecuteSingle(conn, { query: sql, params });
 
-  return data.rows.map((row) => ({
+  return data.rows.map((row: any) => ({
     schemaName: row.table_schema,
     tableName: row.table_name,
     columnName: row.column_name,

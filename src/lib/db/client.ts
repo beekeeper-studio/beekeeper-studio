@@ -75,10 +75,18 @@ export interface TableKey {
 
 export type TableUpdateResult = any
 
+export interface RoutineParam {
+  name: string
+  type: string
+}
+
 export interface Routine {
-  schema: string,
-  routineName: string,
-  routineType: string
+  id: string,
+  schema?: string,
+  name: string,
+  returnType: string,
+  routineParams?: RoutineParam[]
+  pinned?: boolean
 }
 
 export interface DatabaseClient {

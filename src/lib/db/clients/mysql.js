@@ -98,8 +98,8 @@ export async function listRoutines(conn) {
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
   return data.map((row) => ({
-    routineName: row.routine_name,
-    routineType: row.routine_type,
+    name: row.routine_name,
+    returnType: row.routine_type,
   }));
 }
 

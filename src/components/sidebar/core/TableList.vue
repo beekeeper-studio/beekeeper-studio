@@ -92,6 +92,15 @@
                 :forceExpand="allExpanded"
                 :forceCollapse="allCollapsed"
               ></table-list-item>
+              <routine-list-item
+                v-for="routine in filter(blob.routines, filterQuery)"
+                :key="routine.name"
+                :routine="routine"
+                :connection="connection"
+                :forceExpand="allExpanded"
+                :forceCollapse="allCollapsed"
+              >
+              </routine-list-item>
             </TableListSchema>
           </div>
           <div v-else>
@@ -104,6 +113,15 @@
               :forceExpand="allExpanded"
               :forceCollapse="allCollapsed"
             ></table-list-item>
+            <routine-list-item
+              v-for="routine in filteredRoutines"
+              :key="routine.name"
+              :routine="routine"
+              :connection="connection"
+              :forceExpand="allExpanded"
+              :forceCollapse="allCollapsed"
+            >
+            </routine-list-item>
           </div>
         </div>
 
@@ -124,6 +142,7 @@
 
 <script>
   import TableListItem from './table_list/TableListItem'
+  import RoutineListItem from './table_list/RoutineListItem'
   import TableListSchema from './table_list/TableListSchema'
   import Split from 'split.js'
   import { mapState, mapGetters } from 'vuex'
@@ -131,7 +150,7 @@
 
   export default {
     mixins: [TableFilter],
-    components: { TableListItem, TableListSchema },
+    components: { TableListItem, TableListSchema, RoutineListItem },
     data() {
       return {
         tableLoadError: null,
@@ -151,7 +170,7 @@
           this.$refs.tables
         ]
       },
-      ...mapState(['tables', 'connection', 'database', 'tablesLoading']),
+      ...mapState(['tables', 'routines', 'connection', 'database', 'tablesLoading']),
       ...mapGetters(['pinned', 'schemaTables', 'tablesHaveSchemas']),
     },
     watch: {

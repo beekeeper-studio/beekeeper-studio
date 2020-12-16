@@ -256,8 +256,8 @@ export async function listRoutines(conn, filter) {
 
   return data.recordset.map((row) => ({
     schema: row.routine_schema,
-    routineName: row.routine_name,
-    routineType: row.routine_type,
+    name: row.routine_name,
+    returnType: row.routine_type,
   }));
 }
 

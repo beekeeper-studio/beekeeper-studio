@@ -20,5 +20,8 @@ export default {
     filteredTables() {
       return this.filter(this.tables, this.filterQuery)
     },
+    filteredRoutines() {
+      return this.filter(this.routines, this.filterQuery)
+    }
   }
 }
