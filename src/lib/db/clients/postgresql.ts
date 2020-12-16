@@ -301,7 +301,7 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
   `
   const data = await driverExecuteSingle(conn, { query: sql });
 
-  const parseParams = (args) => {
+  const parseParams = (args: string) => {
     const items = args.split(",")
     const result = items.map((arg, i) => {
       const [a, b] = arg.split(/\s+/)
