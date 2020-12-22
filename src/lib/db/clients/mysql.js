@@ -6,7 +6,7 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 
 import { createCancelablePromise } from '../../../common/utils';
-import errors from '../../errors';
+import { errors } from '../../errors';
 import { buildDeleteQueries, genericSelectTop } from './utils';
 import rawLog from 'electron-log'
 const log = rawLog.scope('mysql')

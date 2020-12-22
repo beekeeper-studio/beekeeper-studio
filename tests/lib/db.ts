@@ -82,6 +82,8 @@ export class DBTestUtil {
     console.log("loading columns...")
     await this.tableViewTests()
 
+    await this.queryTests()
+
   }
 
   /**
@@ -151,6 +153,12 @@ export class DBTestUtil {
     expect(r).toBeNull()
   }
 
+  async queryTests() {
+    const q = await this.connection.query("select 1 as total, 2 as total")
+    const result = await q.execute()
+    // expect(result[0].rows).toMatchObject([{ total: 2 }])
+    // expect(result).toMatchObject({ rows: [[1, 2]], fields: ['total', 'total']})
+  }
 
   private async createTables() {
 

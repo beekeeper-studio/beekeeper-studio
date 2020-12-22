@@ -5,6 +5,7 @@ import {homedir} from 'os';
 import path from 'path';
 import mkdirp from 'mkdirp';
 import envPaths from 'env-paths';
+import { Error as CustomError } from '../lib/errors'
 
 
 let configPath = '';
@@ -106,7 +107,7 @@ export function resolveHomePathToAbsolute(filename: string) {
 }
 
 
-export function createCancelablePromise(error: Error, timeIdle = 100) {
+export function createCancelablePromise(error: CustomError, timeIdle = 100) {
   let canceled = false;
   let discarded = false;
 
