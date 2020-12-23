@@ -516,6 +516,18 @@ input[type=file] {
   }
   &.routine-icon {
     color: $brand-success;
+    &.routine-window-icon {
+      color: pink;
+    }
+    &.routine-function-icon {
+      color: purple;
+    }
+    &.routine-aggregate-icon {
+      color: lightgray;
+    }
+    &.routine-procedure-icon {
+      color: brown;
+    }
   }
   &.materialized-view-icon {
     color: $brand-success;

@@ -115,10 +115,10 @@ const store = new Vuex.Store<State>({
       state.database = database
     },
     tables(state, tables) {
-      state.tables = tables
+      state.tables = Object.freeze(tables)
     },
     routines(state, routines) {
-      state.routines = routines
+      state.routines = Object.freeze(routines)
     },
     tablesLoading(state, value: string) {
       state.tablesLoading = value

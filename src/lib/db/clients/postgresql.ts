@@ -8,7 +8,7 @@ import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableUpdate, DatabaseFilterOptions, TableKey, SchemaFilterOptions } from '../client'
+import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableUpdate, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam } from '../client'
 import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors, Error as CustomError } from '../../errors';
@@ -286,39 +286,63 @@ async function selectTop(
   }
 }
 
+export function parseRoutineParams(args: string): RoutineParam[] {
+  const items = args.split(/,\s+/)
+  const result = items.map((arg, i) => {
+    let ary = arg.split(/\s+/)
+    // dealing with output type
+    if(ary[0] && ary[0] === 'OUT' && ary[1] !== 'timestamp') {
+      ary = ary.slice(1)
+      ary[0] = `OUT ${ary[0]}`
+    }
+
+    // special case, it's a timestamp, no name. Really annoying
+    if (ary[0] === 'timestamp') {
+      return { name: `arg_${i+1}`, type: arg}
+    }
+
+    const name = ary.length > 1 ? ary[0] : `arg_${i + 1}`
+    const type = ary.length > 1 ? ary.slice(1).join(" ") : ary[0]
+    return { name, type }
+  })
+  return result
+}
+
 export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promise<Routine[]> {
   const betterFilter = { ignore: ['pg_catalog', 'information_schema'], ...filter}
   const schemaFilter = buildSchemaFilter(betterFilter, 'n.nspname');
-  const sql = `  
-    SELECT n.nspname as schema, p.oid,
-      p.proname as routine_name,
-      pg_get_function_result(p.oid) as routine_type,
-      pg_get_function_identity_arguments(p.oid) as routine_args
 
-    FROM pg_catalog.pg_proc p
-        LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-    ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
-  `
+  const sql = `
+    SELECT n.nspname as "schema",
+    p.oid,
+    p.proname as "name",
+    pg_catalog.pg_get_function_result(p.oid) as "result_type",
+    pg_catalog.pg_get_function_arguments(p.oid) as "args",
+  CASE p.prokind
+    WHEN 'a' THEN 'aggregate'
+    WHEN 'w' THEN 'window'
+    WHEN 'p' THEN 'procedure'
+    ELSE 'function'
+  END as "routine_type"
+  FROM pg_catalog.pg_proc p
+      LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+      ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
+  ORDER BY 1, 2, 4, 5;
+
+`
   const data = await driverExecuteSingle(conn, { query: sql });
 
   const parseParams = (args: string) => {
-    const items = args.split(",")
-    const result = items.map((arg, i) => {
-      const [a, b] = arg.split(/\s+/)
-      return {
-        name: a && b ? a : `arg${i+1}`,
-        type: a && b ? b : a
-      }
-    })
-    return result
+
   }
 
   return data.rows.map((row: any) => ({
-    id: row.specific_name,
+    id: row.oid,
     schema: row.schema,
-    name: row.routine_name,
-    returnType: row.routine_type,
-    routineParams: parseParams(row.routine_args)
+    name: row.name,
+    returnType: row.result_type,
+    routineParams: parseRoutineParams(row.args),
+    type: row.routine_type
   }));
 }
 

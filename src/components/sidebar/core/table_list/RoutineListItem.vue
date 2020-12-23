@@ -1,8 +1,11 @@
 <template>
   <div class="list-item">
     <a class="list-item-btn" role="button" v-bind:class="{'active': selected,'open': showArgs }">
+      <span class="btn-fab open-close" @mousedown.prevent="toggleArgs" >
+        <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
+      </span>      
       <span class="item-wrapper flex flex-middle expand">
-        <i :title="title" :class="iconClass" class="item-icon material-icons">grid_on</i>
+        <i :title="title" :class="iconClass" class="item-icon material-icons">help</i>
         <span class="table-name truncate">{{routine.name}}</span>
       </span>
       <span class="actions" v-bind:class="{'pinned': pinned.includes(routine)}">
@@ -15,10 +18,26 @@
           <x-menuitem @click.prevent="copyRoutine">
             <x-label>Copy routine name</x-label>
           </x-menuitem>
+          <x-menuitem @click.prevent="toggleArgs">
+            <x-label>Toggle arguments</x-label>
+          </x-menuitem>
           <hr>
+         <x-menuitem title="Open the 'create routine' sql in a new query tab" @click.prevent="createRoutine">
+            <x-label>SQL: Create Routine</x-label>
+          </x-menuitem>
         </x-menu>
       </x-contextmenu>
     </a>
+    <div v-show="showArgs" class="sub-items">
+      <span :key="param.name" v-for="(param) in routine.routineParams" class="sub-item">
+        <span class="title truncate" ref="title">{{param.name}}</span>
+        <span class="badge" :class="param.type">{{param.type}}</span>
+      </span>
+      <span class="sub-item">
+        <span class="title truncate">RETURN TYPE</span>
+        <span class="badge">{{routine.returnType}}</span>
+      </span>
+    </div>
   </div>
 </template>
 
@@ -66,21 +85,27 @@
     },
     computed: {
       iconClass() {
-        return {
-          'routine-icon': true
-        }
+        const result = { 'routine-icon': true }
+        result[`routine-${this.routine.type}-icon`] = true
+        return result
       },
       title() {
-        return 'Routine or Function'
+        return `Routine, type: ${this.routine.type}`
       },
       ...mapGetters(['pinned']),
     },
     methods: {
+      toggleArgs() {
+        this.showArgs = !this.showArgs
+      },
       pin() {
         this.$store.dispatch('pinRoutine', this.routine)
       },
       unpin() {
         this.$store.dispatch('unpinRoutine', this.routine)
+      },
+      createRoutine() {
+        this.$root.$emit('loadRoutineCreate', this.routine)
       }
     }
 	}

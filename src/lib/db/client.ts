@@ -80,13 +80,16 @@ export interface RoutineParam {
   type: string
 }
 
+export type RoutineType = 'function' | 'window' | 'aggregate' | 'procedure'
+
 export interface Routine {
-  id: string,
-  schema?: string,
-  name: string,
-  returnType: string,
+  id: string
+  schema?: string
+  name: string
+  returnType: string
   routineParams?: RoutineParam[]
   pinned?: boolean
+  type: RoutineType
 }
 
 export interface DatabaseClient {
