@@ -5,9 +5,40 @@
     <div class="fixed">
       <div class="filter">
         <div class="filter-wrap">
-          <input type="text" placeholder="Filter" v-model="filterQuery">
-          <!-- TODO (matthew): clear icon needs to hide when input has no value also. ie. Type then delete characters and still shows currently -->
-          <i class="clear material-icons" @click="clearFilter" v-if="filterQuery">cancel</i>
+          <input class="filter-input" type="text" placeholder="Filter" v-model="filterQuery">
+          <x-buttons class="filter-actions">
+            <x-button @click="clearFilter" v-if="filterQuery"><i class="clear material-icons">cancel</i></x-button>
+            <x-button class="btn btn-fab btn-link action-item" menu>
+              <i class="material-icons">filter_list</i>
+              <x-menu style="--target-align: right; --v-target-align: top;">
+                <label>
+                  <input type="checkbox">
+                  <span>Tables</span>
+                </label>
+                <label>
+                  <input type="checkbox">
+                  <span>Views</span>
+                </label>
+                <label>
+                  <input type="checkbox">
+                  <span>Functions</span>
+                </label>
+                <label>
+                  <input type="checkbox">
+                  <span>Windows</span>
+                </label>
+                <label>
+                  <input type="checkbox">
+                  <span>Agreggates</span>
+                </label>
+                <label>
+                  <input type="checkbox">
+                  <span>Routines</span>
+                </label>
+                <x-menuitem></x-menuitem>
+              </x-menu>
+            </x-button>
+          </x-buttons>
         </div>
       </div>
     </div>

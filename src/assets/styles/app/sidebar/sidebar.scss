@@ -133,20 +133,55 @@
       position: relative;
       display: flex;
       align-items: center;
+      border: 1px solid $border-color;
+      border-radius: 4px;
     }
-    input {
-      padding-right: 26px;
+    .filter-input {
+      border: 0;
+      padding-right: 0;
     }
-    .clear {
-      position: absolute;
-      right: 0;
-      font-size: 14px;
-      width: 26px;
-      padding: 0 $gutter-h;
-      color: rgba($theme-base, 0.5);
-      cursor: pointer;
-      &:hover {
-        color: $text-dark;
+    .filter-actions {
+      display: inline-flex;
+      padding: 0 0 0 ($gutter-h * 0.5);
+      x-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+        width: 26px;
+        cursor: pointer;
+        --trigger-effect: none;
+        &:before {
+          display: none!important;
+        }
+        &:hover, &:focus {
+          box-shadow: none;
+          .material-icons {
+            color: $text-dark;
+          }
+        }
+      }
+      x-menu {
+        padding: $gutter-h 0;
+        label {
+          display: flex;
+          justify-content: flex-start;
+          align-items: center;
+          padding: 0 $gutter-w;
+          min-height: $input-height;
+          cursor: pointer;
+        }
+        x-menuitem {
+          display: none;
+        }
+      }
+      .material-icons {
+        font-size: 14px;
+        line-height: 26px;
+        width: 14px;
+        color: rgba($theme-base, 0.5);
       }
     }
   }
@@ -366,6 +401,9 @@
     flex-direction: column;
     color: $text;
     padding: ($gutter-h * 0.5) 0;
+    &:empty {
+      padding: 0;
+    }
     &:before {
       content: '';
       position: absolute;

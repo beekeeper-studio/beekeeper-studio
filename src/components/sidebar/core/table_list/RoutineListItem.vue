@@ -5,7 +5,7 @@
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>      
       <span class="item-wrapper flex flex-middle expand">
-        <i :title="title" :class="iconClass" class="item-icon material-icons">help</i>
+        <i :title="title" :class="iconClass" class="item-icon material-icons">functions</i>
         <span class="table-name truncate">{{routine.name}}</span>
       </span>
       <span class="actions" v-bind:class="{'pinned': pinned.includes(routine)}">
