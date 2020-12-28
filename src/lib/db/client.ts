@@ -82,6 +82,13 @@ export interface RoutineParam {
 
 export type RoutineType = 'function' | 'window' | 'aggregate' | 'procedure'
 
+export const RoutineTypeNames = {
+  'function': "Function",
+  'window': "Window Function",
+  'aggregate': "Aggregate Function",
+  'procedure': "Stored Procedure"
+}
+
 export interface Routine {
   id: string
   schema?: string

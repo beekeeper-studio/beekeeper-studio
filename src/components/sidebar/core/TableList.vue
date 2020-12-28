@@ -12,28 +12,16 @@
               <i class="material-icons">filter_list</i>
               <x-menu style="--target-align: right; --v-target-align: top;">
                 <label>
-                  <input type="checkbox">
+                  <input type="checkbox" v-model="showTables">
                   <span>Tables</span>
                 </label>
                 <label>
-                  <input type="checkbox">
+                  <input type="checkbox" v-model="showViews">
                   <span>Views</span>
                 </label>
                 <label>
-                  <input type="checkbox">
-                  <span>Functions</span>
-                </label>
-                <label>
-                  <input type="checkbox">
-                  <span>Windows</span>
-                </label>
-                <label>
-                  <input type="checkbox">
-                  <span>Agreggates</span>
-                </label>
-                <label>
-                  <input type="checkbox">
-                  <span>Routines</span>
+                  <input type="checkbox" v-model="showRoutines">
+                  <span>Routines and Functions</span>
                 </label>
                 <x-menuitem></x-menuitem>
               </x-menu>
@@ -115,7 +103,8 @@
               :forceCollapse="allCollapsed"
             >
               <table-list-item
-                v-for="table in filter(blob.tables, filterQuery)"
+                
+                v-for="table in filter(blob.tables, allFilters)"
                 :key="table.name"
                 @selected="tableSelected"
                 :table="table"
@@ -124,7 +113,7 @@
                 :forceCollapse="allCollapsed"
               ></table-list-item>
               <routine-list-item
-                v-for="routine in filter(blob.routines, filterQuery)"
+                v-for="routine in filter(blob.routines, allFilters)"
                 :key="routine.name"
                 :routine="routine"
                 :connection="connection"
@@ -145,7 +134,7 @@
               :forceCollapse="allCollapsed"
             ></table-list-item>
             <routine-list-item
-              v-for="routine in filteredRoutines"
+              v-for="routine in filter(blob.routines, allFilters)"
               :key="routine.name"
               :routine="routine"
               :connection="connection"
@@ -191,7 +180,10 @@
         activeItem: 'tables',
         split: null,
         sizes: [25,75],
-        lastPinnedSize: 0
+        lastPinnedSize: 0,
+        showTables: true,
+        showViews: true,
+        showRoutines: true
       }
     },
     computed: {
@@ -200,6 +192,14 @@
           this.$refs.pinned,
           this.$refs.tables
         ]
+      },
+      allFilters() {
+        return {
+          filterQuery: this.filterQuery,
+          showTables: this.showTables,
+          showViews: this.showViews,
+          showRoutines: this.showRoutines
+        }
       },
       ...mapState(['tables', 'routines', 'connection', 'database', 'tablesLoading']),
       ...mapGetters(['pinned', 'schemaTables', 'tablesHaveSchemas']),

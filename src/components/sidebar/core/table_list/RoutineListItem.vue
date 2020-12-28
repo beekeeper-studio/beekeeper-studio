@@ -51,6 +51,7 @@
 </style>
 
 <script type="text/javascript">
+import { RoutineTypeNames } from '@/lib/db/client'
 
   import { mapGetters } from 'vuex'
 	export default {
@@ -90,7 +91,7 @@
         return result
       },
       title() {
-        return `Routine, type: ${this.routine.type}`
+        return RoutineTypeNames[this.routine.type]
       },
       ...mapGetters(['pinned']),
     },
