@@ -28,7 +28,7 @@
         </x-menu>
       </x-contextmenu>
     </a>
-    <div v-show="showArgs" class="sub-items">
+    <div v-if="showArgs" class="sub-items">
       <span :key="param.name" v-for="(param) in routine.routineParams" class="sub-item">
         <span class="title truncate" ref="title">{{param.name}}</span>
         <span class="badge" :class="param.type">{{param.type}}</span>

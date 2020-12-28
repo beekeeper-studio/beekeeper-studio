@@ -7,7 +7,7 @@
       <i title="Schema" class="schema-icon item-icon material-icons">folder</i>
       <span class="table-name truncate expand">{{title}}</span>
     </a>
-    <div v-show="expanded" class="sub-items">
+    <div v-if="expanded" class="sub-items">
       <slot></slot>
     </div>
   </div>
