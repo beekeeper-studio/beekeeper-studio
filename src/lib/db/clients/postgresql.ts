@@ -301,28 +301,6 @@ async function selectTop(
   }
 }
 
-export function parseRoutineParams(args: string): RoutineParam[] {
-  const items = args.split(/,\s+/)
-  const result = items.map((arg, i) => {
-    let ary = arg.split(/\s+/)
-    // dealing with output type
-    if(ary[0] && ary[0] === 'OUT' && ary[1] !== 'timestamp') {
-      ary = ary.slice(1)
-      ary[0] = `OUT ${ary[0]}`
-    }
-
-    // special case, it's a timestamp, no name. Really annoying
-    if (ary[0] === 'timestamp') {
-      return { name: `arg_${i+1}`, type: arg}
-    }
-
-    const name = ary.length > 1 ? ary[0] : `arg_${i + 1}`
-    const type = ary.length > 1 ? ary.slice(1).join(" ") : ary[0]
-    return { name, type }
-  })
-  return result
-}
-
 export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promise<Routine[]> {
   const version = await getVersion(conn)
   if (version.isCockroach) {
@@ -388,21 +366,6 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
       })
     }
   });
-
-  // const data = await driverExecuteSingle(conn, { query: sql });
-
-  // const parseParams = (args: string) => {
-
-  // }
-
-  // return data.rows.map((row: any) => ({
-  //   id: row.oid,
-  //   schema: row.schema,
-  //   name: row.name,
-  //   returnType: row.result_type,
-  //   routineParams: parseRoutineParams(row.args),
-  //   type: row.routine_type
-  // }));
 }
 
 export async function listTableColumns(conn: Conn, database: string, table?: string, schema?: string) {
