@@ -95,7 +95,8 @@ export async function listRoutines(conn) {
       r.specific_name as specific_name,
       r.routine_name as routine_name,
       r.routine_type as routine_type,
-      r.data_type as data_type
+      r.data_type as data_type,
+      r.character_maximum_length as length
     from information_schema.routines r
     where r.routine_schema not in ('sys', 'information_schema',
                                'mysql', 'performance_schema')
@@ -108,6 +109,7 @@ select
        r.routine_schema as routine_schema,
        r.specific_name as specific_name,
        p.parameter_name as parameter_name,
+       p.character_maximum_length as char_length,
        p.data_type as data_type
 from information_schema.routines r
 left join information_schema.parameters p
@@ -137,11 +139,13 @@ order by r.routine_schema,
       id: r.specific_name,
       name: r.specific_name,
       returnType: r.data_type,
+      returnTypeLength: r.length || undefined,
       type: r.routine_type ? r.routine_type.toLowerCase() : 'function',
       routineParams: params.map((p) => {
         return {
           name: p.parameter_name,
-          type: p.data_type
+          type: p.data_type,
+          length: p.char_length || undefined
         }
       })
 

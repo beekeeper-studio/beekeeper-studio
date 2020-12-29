@@ -1,7 +1,7 @@
 <template>
   <div class="list-item">
     <a class="list-item-btn" role="button" v-bind:class="{'active': selected,'open': showArgs }">
-      <span class="btn-fab open-close" @mousedown.prevent="toggleArgs" >
+      <span v-if="displayParams.length > 0" class="btn-fab open-close" @mousedown.prevent="toggleArgs" >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>      
       <span class="item-wrapper flex flex-middle expand">
@@ -29,13 +29,12 @@
       </x-contextmenu>
     </a>
     <div v-if="showArgs" class="sub-items">
-      <span :key="param.name" v-for="(param) in routine.routineParams" class="sub-item">
+      <!-- <span class="sub-item" v-if="displayParams.length === 0">
+        <span class="title truncate">No Parameters</span>
+      </span>       -->
+      <span :key="param.name" v-for="(param) in displayParams" class="sub-item">
         <span class="title truncate" ref="title">{{param.name}}</span>
-        <span class="badge" :class="param.type">{{param.type}}</span>
-      </span>
-      <span class="sub-item">
-        <span class="title truncate">RETURN</span>
-        <span class="badge">{{routine.returnType}}</span>
+        <span class="badge" :class="param.type">{{param.type}}<span v-if="param.length">({{param.length}})</span></span>
       </span>
     </div>
   </div>
@@ -85,6 +84,13 @@ import { RoutineTypeNames } from '@/lib/db/client'
       }
     },
     computed: {
+      displayParams() {
+        const result = this.routine.routineParams
+        if (this.routine.returnType) {
+          result.push({ name: 'RETURN', type: this.routine.returnType, length: this.routine.returnTypeLength })
+        }
+      return result
+      },
       iconClass() {
         const result = { 'routine-icon': true }
         result[`routine-${this.routine.type}-icon`] = true

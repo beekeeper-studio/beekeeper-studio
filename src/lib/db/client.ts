@@ -78,6 +78,7 @@ export type TableUpdateResult = any
 export interface RoutineParam {
   name: string
   type: string
+  length?: number
 }
 
 export type RoutineType = 'function' | 'window' | 'aggregate' | 'procedure'
@@ -94,6 +95,7 @@ export interface Routine {
   schema?: string
   name: string
   returnType: string
+  returnTypeLength?: number
   routineParams?: RoutineParam[]
   pinned?: boolean
   type: RoutineType
