@@ -133,7 +133,6 @@ order by r.routine_schema,
   const grouped = _.groupBy(paramsResult.data, 'specific_name')
 
   return routinesResult.data.map((r) => {
-    console.log(r)
     const params = grouped[r.specific_name] || []
     return {
       id: r.specific_name,
