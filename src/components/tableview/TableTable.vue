@@ -4,7 +4,7 @@
       <form @submit.prevent="triggerFilter">
         <div v-if="filterMode === 'raw'" class="filter-group row gutter">
           <div class="btn-wrap">
-            <button class="btn btn-primary" type="button" @click.stop="changeFilterMode('builder')">
+            <button class="btn btn-primary" title="Switch filter mode" type="button" @click.stop="changeFilterMode('builder')">
               <i class="material-icons">list</i>
             </button>
           </div>
@@ -31,7 +31,7 @@
         </div>
         <div v-else-if="filterMode === 'builder'" class="filter-group row gutter">
           <div class="btn-wrap">
-            <button class="btn btn-primary" type="button" @click.stop="changeFilterMode('raw')">
+            <button class="btn btn-primary" title="Switch filter mode" type="button" @click.stop="changeFilterMode('raw')">
               <i class="material-icons">code</i>
             </button>
           </div>
