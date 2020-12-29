@@ -8,8 +8,8 @@
           <input class="filter-input" type="text" placeholder="Filter" v-model="filterQuery">
           <x-buttons class="filter-actions">
             <x-button @click="clearFilter" v-if="filterQuery"><i class="clear material-icons">cancel</i></x-button>
-            <x-button class="btn btn-fab btn-link action-item" menu>
-              <i class="material-icons">filter_list</i>
+            <x-button :title="entitiesHidden ? 'Filter active' : 'No filters'" class="btn btn-fab btn-link action-item" menu>
+              <i :class="{active: entitiesHidden}" class="material-icons">filter_list</i>
               <x-menu style="--target-align: right; --v-target-align: top;">
                 <label>
                   <input type="checkbox" v-model="showTables">
@@ -88,7 +88,7 @@
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <div>Entities<span class="badge">{{filteredTables.length + filteredRoutines.length}}</span></div>
+            <div>Entities<span :title="`${hiddenEntities} hidden by filters`" class="badge">{{shownEntities}} / {{totalEntities}}</span></div>
           </div>
           <div class="actions">
             <a @click.prevent="collapseAll" :title="'Collapse All'">
@@ -176,6 +176,18 @@
       }
     },
     computed: {
+      totalEntities() {
+        return this.tables.length + this.routines.length
+      },
+      shownEntities() {
+        return this.filteredTables.length + this.filteredRoutines.length
+      },
+      hiddenEntities() {
+        return this.totalEntities - this.shownEntities
+      },
+      entitiesHidden() {
+        return !this.showTables || !this.showViews || !this.showRoutines
+      },
       filterQuery: {
         get() {
           return this.$store.state.entityFilter.filterQuery

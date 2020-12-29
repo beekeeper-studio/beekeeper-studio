@@ -162,6 +162,9 @@
             color: $text-dark;
           }
         }
+        .material-icons.active {
+          color:$theme-primary;
+        }
       }
       x-menu {
         padding: $gutter-h 0;
