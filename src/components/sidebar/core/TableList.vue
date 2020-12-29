@@ -88,7 +88,7 @@
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <div>Entities<span class="badge">{{tables.length + routines.length}}</span></div>
+            <div>Entities<span class="badge">{{filteredTables.length + filteredRoutines.length}}</span></div>
           </div>
           <div class="actions">
             <a @click.prevent="collapseAll" :title="'Collapse All'">
@@ -232,7 +232,7 @@
         return this.connection.supportedFeatures().customRoutines
       },
       ...mapState(['tables', 'routines', 'connection', 'database', 'tablesLoading']),
-      ...mapGetters(['pinned', 'schemaTables']),
+      ...mapGetters(['pinned', 'schemaTables', 'filteredTables', 'filteredRoutines']),
     },
     watch: {
       pinned: {
