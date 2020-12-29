@@ -21,7 +21,7 @@
                 </label>
                 <label v-if="supportsRoutines">
                   <input type="checkbox" v-model="showRoutines">
-                  <span>Routines and Functions</span>
+                  <span>Routines</span>
                 </label>
                 <x-menuitem></x-menuitem>
               </x-menu>

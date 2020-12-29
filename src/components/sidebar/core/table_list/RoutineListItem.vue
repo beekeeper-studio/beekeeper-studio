@@ -22,9 +22,6 @@
             <x-label>Toggle arguments</x-label>
           </x-menuitem>
           <hr>
-         <x-menuitem title="Open the 'create routine' sql in a new query tab" @click.prevent="createRoutine">
-            <x-label>SQL: Create Routine</x-label>
-          </x-menuitem>
         </x-menu>
       </x-contextmenu>
     </a>
@@ -85,7 +82,7 @@ import { RoutineTypeNames } from '@/lib/db/client'
     },
     computed: {
       displayParams() {
-        const result = this.routine.routineParams
+        const result = [...this.routine.routineParams]
         if (this.routine.returnType) {
           result.push({ name: 'RETURN', type: this.routine.returnType, length: this.routine.returnTypeLength })
         }
