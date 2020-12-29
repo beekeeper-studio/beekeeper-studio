@@ -81,6 +81,7 @@ export interface RoutineParam {
   length?: number
 }
 
+// TODO (matthew): Currently only supporting function and procedure
 export type RoutineType = 'function' | 'window' | 'aggregate' | 'procedure'
 
 export const RoutineTypeNames = {

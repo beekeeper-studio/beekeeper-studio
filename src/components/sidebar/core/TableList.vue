@@ -104,18 +104,19 @@
         </div>
 
         <div class="list-body" v-show="tables.length > 0">
-          <div class="with-schemas" v-if="tablesHaveSchemas">
+          <div class="with-schemas">
             <TableListSchema
               v-for="(blob, index) in schemaTables"
               :title="blob.schema"
               :key="blob.schema"
+              :skipSchemaDisplay="blob.skipSchemaDisplay"
               :expandedInitially="index === 0"
               :forceExpand="allExpanded || filterQuery"
               :forceCollapse="allCollapsed"
             >
               <table-list-item
                 
-                v-for="table in filter(blob.tables, allFilters)"
+                v-for="table in blob.tables"
                 :key="table.name"
                 @selected="tableSelected"
                 :table="table"
@@ -124,7 +125,7 @@
                 :forceCollapse="allCollapsed"
               ></table-list-item>
               <routine-list-item
-                v-for="routine in filter(blob.routines, allFilters)"
+                v-for="routine in blob.routines"
                 :key="routine.name"
                 :routine="routine"
                 :connection="connection"
@@ -134,31 +135,11 @@
               </routine-list-item>
             </TableListSchema>
           </div>
-          <div v-else>
-            <table-list-item
-              v-for="table in filter(tables, allFilters)"
-              :key="table.name"
-              @selected="tableSelected"
-              :table="table"
-              :connection="connection"
-              :forceExpand="allExpanded"
-              :forceCollapse="allCollapsed"
-            ></table-list-item>
-            <routine-list-item
-              v-for="routine in filter(routines, allFilters)"
-              :key="routine.name"
-              :routine="routine"
-              :connection="connection"
-              :forceExpand="allExpanded"
-              :forceCollapse="allCollapsed"
-            >
-            </routine-list-item>
-          </div>
         </div>
 
         <!-- TODO (gregory): Make the 'no tables div nicer' -->
         <div class="empty truncate" v-if="!tables || tables.length == 0">
-          There are no tables in<br> <span>{{database}}</span>
+          There are no entities in<br> <span>{{database}}</span>
         </div>
       </nav>
     </div>
@@ -186,19 +167,47 @@
     data() {
       return {
         tableLoadError: null,
-        filterQuery: null,
         allExpanded: null,
         allCollapsed: null,
         activeItem: 'tables',
         split: null,
         sizes: [25,75],
         lastPinnedSize: 0,
-        showTables: true,
-        showViews: true,
-        showRoutines: true
       }
     },
     computed: {
+      filterQuery: {
+        get() {
+          return this.$store.state.entityFilter.filterQuery
+        },
+        set(newFilter) {
+          this.$store.dispatch('setFilterQuery', newFilter)
+        }
+      },
+      showTables: {
+        get() {
+          return this.$store.state.entityFilter.showTables
+        },
+        set() {
+          this.$store.commit('showTables')
+        }
+      },
+      showViews: {
+        get() {
+          return this.$store.state.entityFilter.showViews
+        },
+        set() {
+          this.$store.commit('showViews')
+        }
+      },
+      showRoutines: {
+        get() {
+          return this.$store.state.entityFilter.showRoutines
+        },
+        set() {
+          this.$store.commit('showRoutines')
+        }
+      },
       orderedPins: {
         set(newPins) {
           this.$store.commit('setPinned', newPins)
@@ -219,19 +228,11 @@
           this.$refs.tables
         ]
       },
-      allFilters() {
-        return {
-          filterQuery: this.filterQuery,
-          showTables: this.showTables,
-          showViews: this.showViews,
-          showRoutines: this.showRoutines
-        }
-      },
       supportsRoutines() {
         return this.connection.supportedFeatures().customRoutines
       },
       ...mapState(['tables', 'routines', 'connection', 'database', 'tablesLoading']),
-      ...mapGetters(['pinned', 'schemaTables', 'tablesHaveSchemas']),
+      ...mapGetters(['pinned', 'schemaTables']),
     },
     watch: {
       pinned: {

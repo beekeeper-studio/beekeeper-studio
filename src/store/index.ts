@@ -12,7 +12,8 @@ import ConnectionProvider from '../lib/connection-provider'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { DBConnection, Routine, TableColumn } from '../lib/db/client'
 import { IDbConnectionPublicServer } from '../lib/db/server'
-import { CoreTab, IDbEntityWithColumns, QueryTab, TableTab } from './models'
+import { CoreTab, EntityFilter, IDbEntityWithColumns, QueryTab, TableTab } from './models'
+import { entityFilter } from '../lib/db/sql_tools'
 
 interface State {
   usedConfig: Nullable<SavedConnection>,
@@ -22,6 +23,7 @@ interface State {
   database: Nullable<string>,
   tables: IDbEntityWithColumns[],
   routines: Routine[],
+  entityFilter: EntityFilter,
   tablesLoading: string,
   pinStore: {
     [x: string]: string[]
@@ -49,6 +51,12 @@ const store = new Vuex.Store<State>({
     database: null,
     tables: [],
     routines: [],
+    entityFilter: {
+      filterQuery: undefined,
+      showTables: true,
+      showRoutines: true,
+      showViews: true
+    },
     tablesLoading: "loading tables...",
     pinStore: {},
     connectionConfigs: [],
@@ -66,9 +74,24 @@ const store = new Vuex.Store<State>({
       const result = state.database ? state.pinStore[state.database] : null
       return _.isNil(result) ? [] : result
     },
-    schemaTables(state){
-      const obj = _.chain(state.tables).groupBy('schema').value()
-      const routines = _.groupBy(state.routines, 'schema')
+    filteredTables(state) {
+      return entityFilter(state.tables, state.entityFilter)
+    },
+    filteredRoutines(state) {
+      return entityFilter(state.routines, state.entityFilter)
+    },
+    schemaTables(state, g){
+      // if no schemas, just return a single schema
+      if (_.chain(state.tables).map('schema').uniq().value().length <= 1) {
+        return [{
+          schema: null,
+          skipSchemaDisplay: true,
+          tables: g.filteredTables,
+          routines: g.filteredRoutines
+        }]
+      }
+      const obj = _.chain(g.filteredTables).groupBy('schema').value()
+      const routines = _.groupBy(g.filteredRoutines, 'schema')
       return _(obj).keys().map(k => {
         return {
           schema: k,
@@ -89,6 +112,21 @@ const store = new Vuex.Store<State>({
     }
   },
   mutations: {
+    entityFilter(state, filter) {
+      state.entityFilter = filter
+    },
+    filterQuery(state, str: string) {
+      state.entityFilter.filterQuery = str
+    },
+    showTables(state) {
+      state.entityFilter.showTables = !state.entityFilter.showTables
+    },
+    showViews(state) {
+      state.entityFilter.showViews = !state.entityFilter.showViews
+    },
+    showRoutines(state) {
+      state.entityFilter.showRoutines = !state.entityFilter.showRoutines
+    },
     tabActive(state, tab: CoreTab) {
       state.activeTab = tab
     },
@@ -109,6 +147,14 @@ const store = new Vuex.Store<State>({
       state.usedConfig = null
       state.connection = null
       state.database = null
+      state.tables = []
+      state.routines = []
+      state.entityFilter = {
+        filterQuery: undefined,
+        showTables: true,
+        showViews: true,
+        showRoutines: true
+      }
     },
     updateConnection(state, {connection, database}) {
       state.connection = connection
@@ -223,8 +269,6 @@ const store = new Vuex.Store<State>({
       const server = context.state.server
       server?.disconnect()
       context.commit('clearConnection')
-      context.commit('tables', [])
-      context.commit('routines', [])
     },
     async changeDatabase(context, newDatabase: string) {
       if (context.state.server) {
@@ -289,6 +333,9 @@ const store = new Vuex.Store<State>({
       const connection = context.state.connection
       const routines = await connection.listRoutines({ schema: null })
       context.commit('routines', routines)
+    },
+    async setFilterQuery(context, filterQuery) {
+      context.commit('filterQuery', filterQuery)
     },
     async pinTable(context, table) {
       table.pinned = true

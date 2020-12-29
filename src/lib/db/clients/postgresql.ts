@@ -22,6 +22,7 @@ interface HasPool {
 interface VersionInfo {
   isPostgres: boolean
   isCockroach: boolean
+  isRedshift: boolean
   number: number
   version: string
 }
@@ -80,16 +81,19 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
       version: '',
       isPostgres: false,
       isCockroach: false,
+      isRedshift: false,
       number: 0
     }
   }
 
   const isPostgres = version.toLowerCase().includes('postgresql')
   const isCockroach = version.toLowerCase().includes('cockroachdb')
+  const isRedshift = version.toLowerCase().includes('redshift')
   return {
     version,
     isPostgres,
     isCockroach,
+    isRedshift,
     number: parseInt(
       version.split(" ")[isPostgres ? 1 : 2].replace(/^v/i, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
       10
@@ -324,41 +328,81 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
   if (version.isCockroach) {
     return []
   }
-  const betterFilter = { ignore: ['pg_catalog', 'information_schema'], ...filter}
-  const schemaFilter = buildSchemaFilter(betterFilter, 'n.nspname');
 
+  const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema');
   const sql = `
-    SELECT n.nspname as "schema",
-    p.oid,
-    p.proname as "name",
-    pg_catalog.pg_get_function_result(p.oid) as "result_type",
-    pg_catalog.pg_get_function_arguments(p.oid) as "args",
-  CASE p.prokind
-    WHEN 'a' THEN 'aggregate'
-    WHEN 'w' THEN 'window'
-    WHEN 'p' THEN 'procedure'
-    ELSE 'function'
-  END as "routine_type"
-  FROM pg_catalog.pg_proc p
-      LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-      ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
-  ORDER BY 1, 2, 4, 5;
+    SELECT
+      r.specific_name as id,
+      r.routine_schema as routine_schema,
+      r.routine_name as name,
+      r.routine_type as routine_type,
+      r.data_type as data_type
+    FROM INFORMATION_SCHEMA.ROUTINES r
+    where r.routine_schema not in ('sys', 'information_schema',
+                                'pg_catalog', 'performance_schema')
+    ${schemaFilter ? `AND ${schemaFilter}` : ''}
+    ORDER BY routine_schema, routine_name
+  `;
 
-`
+  const paramsSQL = `
+    select 
+        r.routine_schema as routine_schema,
+        r.specific_name as specific_name,
+        p.parameter_name as parameter_name,
+        p.character_maximum_length as char_length,
+        p.data_type as data_type
+  from information_schema.routines r
+  left join information_schema.parameters p
+            on p.specific_schema = r.routine_schema
+            and p.specific_name = r.specific_name
+  where r.routine_schema not in ('sys', 'information_schema',
+                                'pg_catalog', 'performance_schema')
+    ${schemaFilter ? `AND ${schemaFilter}` : ''}
+
+      AND p.parameter_mode = 'IN'
+  order by r.routine_schema,
+          r.specific_name,
+          p.ordinal_position;
+
+  `
+
+
   const data = await driverExecuteSingle(conn, { query: sql });
+  const paramsData = await driverExecuteSingle(conn, { query: paramsSQL })
+  const grouped = _.groupBy(paramsData.rows, 'specific_name')
 
-  const parseParams = (args: string) => {
+  return data.rows.map((row) => {
+    const params = grouped[row.id] || []
+    return {
+      schema: row.routine_schema,
+      name: row.name,
+      type: row.routine_type ? row.routine_type.toLowerCase() : 'function',
+      returnType: row.data_type,
+      id: row.id,
+      routineParams: params.map((p, i) => {
+        return {
+          name: p.parameter_name || `arg${i+1}`,
+          type: p.data_type,
+          length: p.char_length || undefined
+        }
+      })
+    }
+  });
 
-  }
+  // const data = await driverExecuteSingle(conn, { query: sql });
 
-  return data.rows.map((row: any) => ({
-    id: row.oid,
-    schema: row.schema,
-    name: row.name,
-    returnType: row.result_type,
-    routineParams: parseRoutineParams(row.args),
-    type: row.routine_type
-  }));
+  // const parseParams = (args: string) => {
+
+  // }
+
+  // return data.rows.map((row: any) => ({
+  //   id: row.oid,
+  //   schema: row.schema,
+  //   name: row.name,
+  //   returnType: row.result_type,
+  //   routineParams: parseRoutineParams(row.args),
+  //   type: row.routine_type
+  // }));
 }
 
 export async function listTableColumns(conn: Conn, database: string, table?: string, schema?: string) {

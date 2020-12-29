@@ -250,7 +250,9 @@ export async function listRoutines(conn, filter) {
       r.routine_type as routine_type,
       r.data_type as data_type
     FROM INFORMATION_SCHEMA.ROUTINES r
-    ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
+    where r.routine_schema not in ('sys', 'information_schema',
+                                'mysql', 'performance_schema')
+    ${schemaFilter ? `AND ${schemaFilter}` : ''}
     ORDER BY routine_schema, routine_name
   `;
 

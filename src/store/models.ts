@@ -3,8 +3,15 @@ import { TableColumn } from '../lib/db/client'
 
 export interface IDbEntityWithColumns {
   columns: TableColumn[]
+  schema?: string
 }
 
+export interface EntityFilter {
+  filterQuery?: string
+  showTables: boolean
+  showViews: boolean
+  showRoutines: boolean
+}
 
 export enum TabType {
   query = 'query', table = 'table', settings = 'settings'
