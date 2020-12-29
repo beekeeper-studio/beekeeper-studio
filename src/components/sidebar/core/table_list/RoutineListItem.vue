@@ -34,7 +34,7 @@
         <span class="badge" :class="param.type">{{param.type}}</span>
       </span>
       <span class="sub-item">
-        <span class="title truncate">RETURN TYPE</span>
+        <span class="title truncate">RETURN</span>
         <span class="badge">{{routine.returnType}}</span>
       </span>
     </div>

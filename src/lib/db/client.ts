@@ -99,7 +99,12 @@ export interface Routine {
   type: RoutineType
 }
 
+export interface SupportedFeatures {
+  customRoutines: boolean,
+}
+
 export interface DatabaseClient {
+  supportedFeatures: () => SupportedFeatures
   disconnect: () => void,
   listTables: (db: string, filter?: FilterOptions) => Promise<TableOrView[]>,
   listViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
@@ -180,7 +185,7 @@ export interface IDbConnectionDatabase {
 
 export class DBConnection {
   constructor (private server: IDbConnectionServer, private database: IDbConnectionDatabase) {}
-
+  supportedFeatures = supportedFeatures.bind(null, this.server, this.database)
   connect = connect.bind(null, this.server, this.database)
   disconnect = disconnect.bind(null, this.server, this.database)
   end = disconnect.bind(null, this.server, this.database)
@@ -278,6 +283,11 @@ function disconnect(server: IDbConnectionServer, database: IDbConnectionDatabase
   if (server.db[database.database]) {
     delete server.db[database.database];
   }
+}
+
+function supportedFeatures(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+  checkIsConnected(server, database)
+  return database.connection?.supportedFeatures()
 }
 
 function selectTop(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[], schema: string) {

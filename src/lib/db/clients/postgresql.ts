@@ -137,6 +137,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
   return {
     /* eslint max-len:0 */
+    supportedFeatures: () => ({ customRoutines: true}),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: (db: string, filter: FilterOptions | undefined) => listTables(conn, filter),

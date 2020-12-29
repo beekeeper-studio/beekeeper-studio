@@ -130,6 +130,11 @@ const store = new Vuex.Store<State>({
         state.pinStore[state.database].push(table)
       }
     },
+    setPinned(state, pins) {
+      if (state.database) {
+        Vue.set(state.pinStore, state.database, pins)
+      }
+    },
     removePinned(state, table) {
       if (!state.database || !state.pinStore[state.database]) {
         return

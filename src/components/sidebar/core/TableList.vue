@@ -19,7 +19,7 @@
                   <input type="checkbox" v-model="showViews">
                   <span>Views</span>
                 </label>
-                <label>
+                <label v-if="supportsRoutines">
                   <input type="checkbox" v-model="showRoutines">
                   <span>Routines and Functions</span>
                 </label>
@@ -32,14 +32,14 @@
     </div>
 
     <!-- Pinned -->
-    <div v-show="pinned.length > 0" class="table-list pinned flex-col" ref="pinned">
+    <div v-show="orderedPins.length > 0" class="table-list pinned flex-col" ref="pinned">
       <nav class="list-group flex-col">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <div>Pinned <span class="badge">{{pinned.length}}</span></div>
+            <div>Pinned <span class="badge">{{orderedPins.length}}</span></div>
           </div>
           <!-- <div class="actions">
             <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
@@ -53,18 +53,29 @@
             </a>
           </div> -->
         </div>
-        <div class="list-body">
-          <table-list-item
-            v-for="table in pinned"
-            v-bind:key="table.name"
-            @selected="tableSelected"
-            :table="table"
-            :connection="connection"
-            :forceExpand="allExpanded"
-            :forceCollapse="allCollapsed"
-            :noSelect="true"
-          ></table-list-item>
-        </div>
+        <Draggable v-model="orderedPins" tag="div" class="list-body">
+          <div v-for="p in orderedPins" :key="p.id || p.name">
+            <table-list-item
+              v-if="p.entityType"
+              @selected="tableSelected"
+              :table="p"
+              :connection="connection"
+              :forceExpand="allExpanded"
+              :forceCollapse="allCollapsed"
+              :noSelect="true"
+            ></table-list-item>
+            <routine-list-item
+              v-else
+              :routine="p"
+              :forceExpand="allExpanded"
+              :forceCollapse="allCollapsed"
+              :connection="connection"
+            >
+            </routine-list-item>
+          </div>
+     
+
+        </Draggable>
       </nav>
     </div>
 
@@ -77,7 +88,7 @@
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <div>Tables & Views <span class="badge">{{tables.length}}</span></div>
+            <div>Entities<span class="badge">{{tables.length + routines.length}}</span></div>
           </div>
           <div class="actions">
             <a @click.prevent="collapseAll" :title="'Collapse All'">
@@ -125,7 +136,7 @@
           </div>
           <div v-else>
             <table-list-item
-              v-for="table in filteredTables"
+              v-for="table in filter(tables, allFilters)"
               :key="table.name"
               @selected="tableSelected"
               :table="table"
@@ -134,7 +145,7 @@
               :forceCollapse="allCollapsed"
             ></table-list-item>
             <routine-list-item
-              v-for="routine in filter(blob.routines, allFilters)"
+              v-for="routine in filter(routines, allFilters)"
               :key="routine.name"
               :routine="routine"
               :connection="connection"
@@ -167,10 +178,11 @@
   import Split from 'split.js'
   import { mapState, mapGetters } from 'vuex'
   import TableFilter from '../../../mixins/table_filter'
+  import Draggable from 'vuedraggable'
 
   export default {
     mixins: [TableFilter],
-    components: { TableListItem, TableListSchema, RoutineListItem },
+    components: { TableListItem, TableListSchema, RoutineListItem, Draggable },
     data() {
       return {
         tableLoadError: null,
@@ -187,6 +199,20 @@
       }
     },
     computed: {
+      orderedPins: {
+        set(newPins) {
+          this.$store.commit('setPinned', newPins)
+        },
+        get() {
+          return this.pinned
+        }
+      },
+      pinnedTables() {
+        return this.pinned.filter((p) => (p.entityType))
+      },
+      pinnedRoutines() {
+        return this.pinned.filter((p) => (p.type))
+      },
       components() {
         return [
           this.$refs.pinned,
@@ -200,6 +226,9 @@
           showViews: this.showViews,
           showRoutines: this.showRoutines
         }
+      },
+      supportsRoutines() {
+        return this.connection.supportedFeatures().customRoutines
       },
       ...mapState(['tables', 'routines', 'connection', 'database', 'tablesLoading']),
       ...mapGetters(['pinned', 'schemaTables', 'tablesHaveSchemas']),
@@ -248,6 +277,7 @@
       },
       refreshTables() {
         this.$store.dispatch('updateTables')
+        this.$store.dispatch('updateRoutines')
       }
     },
     mounted() {

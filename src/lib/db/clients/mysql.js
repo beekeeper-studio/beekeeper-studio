@@ -1,6 +1,6 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs'
-
+import _ from 'lodash'
 import mysql from 'mysql2';
 import { identify } from 'sql-query-identifier';
 
@@ -28,6 +28,7 @@ export default async function (server, database) {
   await driverExecuteQuery(conn, { query: 'select version();' });
 
   return {
+    supportedFeatures: () => ({ customRoutines: true }),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
@@ -88,19 +89,64 @@ export async function listViews(conn) {
 }
 
 export async function listRoutines(conn) {
-  const sql = `
-    SELECT routine_name as 'routine_name', routine_type as 'routine_type'
-    FROM information_schema.routines
-    WHERE routine_schema = database()
-    ORDER BY routine_name
+
+  const routinesSQL = `
+    select 
+      r.specific_name as specific_name,
+      r.routine_name as routine_name,
+      r.routine_type as routine_type,
+      r.data_type as data_type
+    from information_schema.routines r
+    where r.routine_schema not in ('sys', 'information_schema',
+                               'mysql', 'performance_schema')
+    and r.routine_schema = database()
+    order by r.specific_name
+  `
+
+  const paramsSQL = `
+select 
+       r.routine_schema as routine_schema,
+       r.specific_name as specific_name,
+       p.parameter_name as parameter_name,
+       p.data_type as data_type
+from information_schema.routines r
+left join information_schema.parameters p
+          on p.specific_schema = r.routine_schema
+          and p.specific_name = r.specific_name
+where r.routine_schema not in ('sys', 'information_schema',
+                               'mysql', 'performance_schema')
+    AND p.parameter_mode is not null
+    and r.routine_schema = database()
+order by r.routine_schema,
+         r.specific_name,
+         p.ordinal_position;
+
   `;
 
-  const { data } = await driverExecuteQuery(conn, { query: sql });
+  // this gives one row by parameter, so have to do a grouping
+  const routinesResult = await driverExecuteQuery(conn, { query: routinesSQL })
+  const paramsResult = await driverExecuteQuery(conn, { query: paramsSQL })
 
-  return data.map((row) => ({
-    name: row.routine_name,
-    returnType: row.routine_type,
-  }));
+    
+  const grouped = _.groupBy(paramsResult.data, 'specific_name')
+
+  return routinesResult.data.map((r) => {
+    console.log(r)
+    const params = grouped[r.specific_name] || []
+    return {
+      id: r.specific_name,
+      name: r.specific_name,
+      returnType: r.data_type,
+      type: r.routine_type ? r.routine_type.toLowerCase() : 'function',
+      routineParams: params.map((p) => {
+        return {
+          name: p.parameter_name,
+          type: p.data_type
+        }
+      })
+
+    }
+  })
 }
 
 export async function listTableColumns(conn, database, table) {
