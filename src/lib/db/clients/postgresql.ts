@@ -19,6 +19,13 @@ interface HasPool {
   pool: Pool
 }
 
+interface VersionInfo {
+  isPostgres: boolean
+  isCockroach: boolean
+  number: number
+  version: string
+}
+
 interface HasConnection {
   connection: PoolClient
 }
@@ -66,20 +73,23 @@ pg.types.setTypeParser(1184, 'text', (val) => val); // timestamp
  *
  * PostgreSQL 8.0.2 on i686-pc-linux-gnu, compiled by GCC gcc (GCC) 3.4.2 20041017 (Red Hat 3.4.2-6.fc3), Redshift 1.0.12103
  */
-async function getVersion(conn: HasPool) {
+async function getVersion(conn: HasPool): Promise<VersionInfo> {
   const { version } = (await driverExecuteSingle(conn, {query: "select version()"})).rows[0]
   if (!version) {
     return {
       version: '',
       isPostgres: false,
+      isCockroach: false,
       number: 0
     }
   }
 
   const isPostgres = version.toLowerCase().includes('postgresql')
+  const isCockroach = version.toLowerCase().includes('cockroachdb')
   return {
     version,
     isPostgres,
+    isCockroach,
     number: parseInt(
       version.split(" ")[isPostgres ? 1 : 2].replace(/^v/i, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
       10
@@ -310,6 +320,10 @@ export function parseRoutineParams(args: string): RoutineParam[] {
 }
 
 export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promise<Routine[]> {
+  const version = await getVersion(conn)
+  if (version.isCockroach) {
+    return []
+  }
   const betterFilter = { ignore: ['pg_catalog', 'information_schema'], ...filter}
   const schemaFilter = buildSchemaFilter(betterFilter, 'n.nspname');
 

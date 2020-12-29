@@ -224,6 +224,7 @@ const store = new Vuex.Store<State>({
       server?.disconnect()
       context.commit('clearConnection')
       context.commit('tables', [])
+      context.commit('routines', [])
     },
     async changeDatabase(context, newDatabase: string) {
       if (context.state.server) {

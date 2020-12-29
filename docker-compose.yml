@@ -87,6 +87,6 @@ services:
       - cockroachdb:/cockroach/cockroach-data
     ports:
       - 26257:26257
-    command: start --insecure
+    command: start-single-node --insecure
 
 
