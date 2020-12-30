@@ -496,6 +496,15 @@ export async function getPrimaryKey(conn: Conn, database: string, table: string,
 }
 
 export async function updateValues(conn: Conn, updates: TableUpdate[]): Promise<TableUpdateResult[]> {
+
+  // If a type starts with an underscore - it's an array
+  // so we need to turn the string representation back to an array
+  updates.forEach((update) => {
+    if (update.columnType?.startsWith('_')) {
+      update.value = JSON.parse(update.value)
+    }
+  })
+
   const { updateQueries, selectQueries } = buildUpdateAndSelectQueries(knex, updates)
   let results: TableUpdateResult[] = []
   await runWithConnection(conn, async (connection) => {
