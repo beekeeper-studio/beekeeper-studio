@@ -26,7 +26,7 @@
             </div>
           </div>
           <div class="btn-wrap">
-            <button class="btn btn-primary btn-fab" type="submit">Search</button>
+            <button class="btn btn-primary" type="submit">Search</button>
           </div>
         </div>
         <div v-else-if="filterMode === 'builder'" class="filter-group row gutter">

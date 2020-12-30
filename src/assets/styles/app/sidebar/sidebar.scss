@@ -162,8 +162,19 @@
             color: $text-dark;
           }
         }
-        .material-icons.active {
-          color:$theme-primary;
+        &.btn-fab {
+          margin-right: 2px;
+          line-height: 22px;
+          height: 22px;
+          width: 22px;
+          min-width: 22px;
+          border-radius: 22px;
+          &.active {
+            background: rgba($theme-base, 0.1);
+            .material-icons {
+              color: $theme-primary;
+            }
+          }
         }
       }
       x-menu {
@@ -244,6 +255,9 @@
       margin-left: ($gutter-h * 0.75);
       border-radius: $list-heading-height;
       background: $border-color;
+      &.active {
+        color: $theme-primary;
+      }
     }
   }
   .actions {
@@ -332,6 +346,7 @@
     }
     .item-text {
       font-size: 1rem;
+      padding-bottom: $gutter-h * 0.5;
     }
     .title {
       @extend .truncate;
@@ -423,11 +438,13 @@
       font-size: 80%;
       margin-right: 0;
       max-width: 50%;
+      min-width: fit-content;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .list-item {
       padding-left: 0;
+      padding-right: 0;
     }
   }
   .sub-item {

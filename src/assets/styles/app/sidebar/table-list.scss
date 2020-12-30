@@ -31,6 +31,9 @@
     .list-item-btn {
       padding: 0;
       padding-right: $gutter-h * 0.5;
+      .item-wrapper {
+        overflow: hidden;
+      }
     }
   }
   .list-body {
