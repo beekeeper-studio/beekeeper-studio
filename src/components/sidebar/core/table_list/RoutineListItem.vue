@@ -1,8 +1,8 @@
 <template>
   <div class="list-item">
     <a class="list-item-btn" role="button" v-bind:class="{'active': selected,'open': showArgs }">
-      <span v-if="displayParams.length > 0" class="btn-fab open-close" @mousedown.prevent="toggleArgs" >
-        <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
+      <span class="btn-fab open-close" @mousedown.prevent="toggleArgs" >
+        <i v-if="displayParams.length > 0" class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>      
       <span class="item-wrapper flex flex-middle expand">
         <i :title="title" :class="iconClass" class="item-icon material-icons">functions</i>
