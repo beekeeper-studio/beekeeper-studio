@@ -392,7 +392,7 @@
         this.selectedResult = 0
         let identification = []
         try {
-          identification = identify(rawQuery)
+          identification = identify(rawQuery, { strict: false })
         } catch (ex) {
           log.error("Unable to identify query", ex)
         }

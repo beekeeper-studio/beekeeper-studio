@@ -332,9 +332,16 @@ export function query(conn, queryText) {
 
 export async function updateValues(conn, updates) {
   const updateCommands = updates.map(update => {
+    let value = update.value
+    if (update.columnType === 'bit(1)') {
+      value = _.toNumber(update.value)
+    } else if (update.columnType.startsWith('bit(')) {
+      // value looks like this: b'00000001'
+      value = parseInt(update.value.split("'")[1], 2)
+    }
     return {
       query: `UPDATE ${wrapIdentifier(update.table)} SET ${wrapIdentifier(update.column)} = ? WHERE ${wrapIdentifier(update.pkColumn)} = ?`,
-      params: [update.value, update.primaryKey]
+      params: [value, update.primaryKey]
     }
   })
 
@@ -560,7 +567,7 @@ function driverExecuteQuery(conn, queryArgs) {
   logger().debug(`Running Query ${queryArgs.query}`)
   const runQuery = (connection) => new Promise((resolve, reject) => {
     connection.query(queryArgs.query, queryArgs.params, (err, data, fields) => {
-      logger().debug(`Resolving Query ${queryArgs.query}`)
+      logger().debug(`Resolving Query ${queryArgs.query}`, queryArgs.params)
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});
       if (err) return reject(getRealError(connection, err));
 

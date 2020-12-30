@@ -1,6 +1,7 @@
 import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
+import data_mutators from '../../../../../src/mixins/data_mutators';
 
 describe("MySQL Tests", () => {
 
@@ -90,4 +91,40 @@ describe("MySQL Tests", () => {
     expect(procedures.find((p) => (p.name === 'no_parameters')).routineParams.length).toBe(0)
     expect(functions.find((p) => (p.name === 'isEligible')).routineParams.length).toBe(2)
   })
+
+  it("Should update bit values properly", async () => {
+    await util.knex.schema.createTable("withbits", (table) => {
+      table.integer("id").primary()
+      table.specificType("thirtytwo", "bit(32)")
+      table.specificType("onebit", "bit(1)")
+    })
+
+    await util.knex("withbits").insert({id: 1, thirtytwo: 1, onebit: 1})
+
+    const basics = {
+      primaryKey: 1,
+      pkColumn: 'id',
+      table: 'withbits',
+    }
+
+    const values = [
+      {
+        value: '1',
+        column: 'onebit',
+        columnType: 'bit(1)',
+        ...basics
+      },
+      {
+        value: "b'00000000000000000000010000000000'",
+        column: 'thirtytwo',
+        columnType: 'bit(32)',
+        ...basics
+      }
+    ]
+    const results = await util.connection.updateValues(values)
+    expect(results.length).toBe(2)
+    const fixed = data_mutators.methods.bitMutator(results[1].thirtytwo)
+    expect(fixed).toBe("b'00000000000000000000010000000000'")
+  })
+
 })

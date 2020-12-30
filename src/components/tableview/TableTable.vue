@@ -403,10 +403,10 @@ export default {
       return valueCell
     },
     slimDataType(dt) {
-      if (dt) {
-        return dt.split("(")[0]
-      }
-      return null
+      if (!dt) return null
+      if(dt === 'bit(1)') return dt
+
+return dt.split("(")[0]
     },
     editorType(dt) {
       switch (dt) {
