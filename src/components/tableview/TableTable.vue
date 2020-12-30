@@ -459,6 +459,7 @@ export default {
     cellEdited(cell) {
       log.info('edit', cell)
       const pkCell = cell.getRow().getCells().find(c => c.getField() === this.primaryKey)
+      const column = this.table.columns.find(c => c.columnName === cell.getField())
       if (!pkCell) {
         this.$noty.error("Can't edit column -- couldn't figure out primary key")
         // cell.setValue(cell.getOldValue())
@@ -479,6 +480,7 @@ export default {
         schema: this.table.schema,
         column: cell.getField(),
         pkColumn: this.primaryKey,
+        columnType: column ? column.dataType : undefined,
         primaryKey: pkCell.getValue(),
         oldValue: currentEdit ? currentEdit.oldValue : cell.getOldValue(),
         cell: cell,

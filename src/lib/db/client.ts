@@ -58,7 +58,10 @@ export interface TableUpdate {
   table: string
   column: string
   pkColumn: string
+  primaryKey: any
   schema?: string
+  columnType?: string,
+  value: any
 }
 
 export interface TableKey {
