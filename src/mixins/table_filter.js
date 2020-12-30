@@ -1,8 +1,17 @@
 import _ from 'lodash'
+import { RoutineTypeNames } from '@/lib/db/client'
 
 export default {
   methods: {
-    filter(tables, filterQuery) {
+    filter(rawTables, allFilters) {
+      const tables = rawTables.filter((table) => {
+        return (table.entityType === 'table' && allFilters.showTables) ||
+          (table.entityType === 'view' && allFilters.showViews) ||
+          (table.entityType === 'materialized-view' && allFilters.showViews) ||
+          (Object.keys(RoutineTypeNames).includes(table.type) && allFilters.showRoutines)
+      })
+
+      const { filterQuery } = allFilters
       if (!filterQuery) {
         return tables
       }
@@ -20,5 +29,8 @@ export default {
     filteredTables() {
       return this.filter(this.tables, this.filterQuery)
     },
+    filteredRoutines() {
+      return this.filter(this.routines, this.filterQuery)
+    }
   }
 }

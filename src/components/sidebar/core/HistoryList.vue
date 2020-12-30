@@ -2,7 +2,7 @@
   <div class="sidebar-history flex-col expand">
     <div class="sidebar-list">
       <nav class="list-group" v-if="history.length > 0">
-        <div class="list-item" v-for="item in history" v-bind:key="item.id">
+        <div class="list-item" :title="item.text" v-for="item in history" v-bind:key="item.id">
           <a class="list-item-btn" @click.prevent="click(item)">
             <i class="item-icon query material-icons">code</i>
             <!-- <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedHistoryQueries" v-bind:class="{ shown: checkedHistoryQueries.length > 0 }"> -->

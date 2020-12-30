@@ -13,9 +13,8 @@
         <span class="subtitle">{{subtitle}}</span>
       </div>
       <span class="badge"><span>{{config.connectionType}}</span></span>
-      <x-button class="btn-fab" skin="iconic">
-        <i class="material-icons">more_horiz</i>
-        <x-menu style="--target-align: right; --v-target-align: top;">
+      <x-contextmenu>
+        <x-menu>
           <x-menuitem v-if="showDuplicate" @click.prevent="duplicate" title="Duplicate the connection with all settings">
             <x-label class="text-">Duplicate</x-label>
           </x-menuitem>
@@ -27,7 +26,7 @@
             <x-label class="text-">Copy {{this.connectionType}}</x-label>
           </x-menuitem>
         </x-menu>
-      </x-button>
+      </x-contextmenu>
     </a>
   </div>
 </template>

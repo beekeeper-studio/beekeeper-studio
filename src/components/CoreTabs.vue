@@ -154,6 +154,11 @@
         const stringResult = sqlFormatter.format(_.isArray(result) ? result[0] : result)
         this.createQuery(stringResult)
       },
+      async loadRoutineCreate(routine) {
+        const result = await this.connection.getRoutineCreateScript(routine.name, routine.schema)
+        const stringResult = sqlFormatter.format(_.isArray(result) ? result[0] : result)
+        this.createQuery(stringResult)
+      },
       openTable({ table, filter, tableName }) {
 
         let resolvedTable = null
@@ -242,6 +247,7 @@
       this.$root.$on('loadTable', this.openTable)
       this.$root.$on('loadSettings', this.openSettings)
       this.$root.$on('loadTableCreate', this.loadTableCreate)
+      this.$root.$on('loadRoutineCreate', this.loadRoutineCreate)
       this.$root.$on('favoriteClick', (item) => {
         const queriesOnly = this.tabItems.map((item) => {
           return item.query

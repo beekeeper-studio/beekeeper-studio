@@ -1,13 +1,18 @@
 <template>
-  <div class="list-item schema">
-    <a class="list-item-btn" v-bind:class="{'open': expanded}" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
-      <span class="btn-fab open-close" >
-        <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
-      </span>
-      <i title="Schema" class="schema-icon item-icon material-icons">folder</i>
-      <span class="table-name truncate expand">{{title}}</span>
-    </a>
-    <div v-show="expanded" class="sub-items">
+  <div class="schema-wrapper">
+    <div class="list-item schema" v-if="!skipSchemaDisplay">
+      <a class="list-item-btn" v-bind:class="{'open': expanded}" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
+        <span class="btn-fab open-close" >
+          <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
+        </span>
+        <i title="Schema" class="schema-icon item-icon material-icons">folder</i>
+        <span class="table-name truncate expand" :title="title">{{title}}</span>
+      </a>
+      <div v-if="expanded" class="sub-items">
+        <slot></slot>
+      </div>
+    </div>
+    <div v-else>
       <slot></slot>
     </div>
   </div>
@@ -16,7 +21,7 @@
 <script type="text/javascript">
 
 	export default {
-    props: ["title", "forceExpand", "forceCollapse", "expandedInitially"],
+    props: ["title", "forceExpand", "forceCollapse", "expandedInitially", "skipSchemaDisplay"],
     data() {
       return {
         manuallyExpanded: false,

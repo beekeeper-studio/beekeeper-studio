@@ -8,7 +8,7 @@ import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableUpdate, DatabaseFilterOptions, TableKey, SchemaFilterOptions } from '../client'
+import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableUpdate, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam } from '../client'
 import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors, Error as CustomError } from '../../errors';
@@ -17,6 +17,14 @@ import globals from '../../../common/globals';
 
 interface HasPool {
   pool: Pool
+}
+
+interface VersionInfo {
+  isPostgres: boolean
+  isCockroach: boolean
+  isRedshift: boolean
+  number: number
+  version: string
 }
 
 interface HasConnection {
@@ -66,20 +74,26 @@ pg.types.setTypeParser(1184, 'text', (val) => val); // timestamp
  *
  * PostgreSQL 8.0.2 on i686-pc-linux-gnu, compiled by GCC gcc (GCC) 3.4.2 20041017 (Red Hat 3.4.2-6.fc3), Redshift 1.0.12103
  */
-async function getVersion(conn: HasPool) {
+async function getVersion(conn: HasPool): Promise<VersionInfo> {
   const { version } = (await driverExecuteSingle(conn, {query: "select version()"})).rows[0]
   if (!version) {
     return {
       version: '',
       isPostgres: false,
+      isCockroach: false,
+      isRedshift: false,
       number: 0
     }
   }
 
   const isPostgres = version.toLowerCase().includes('postgresql')
+  const isCockroach = version.toLowerCase().includes('cockroachdb')
+  const isRedshift = version.toLowerCase().includes('redshift')
   return {
     version,
     isPostgres,
+    isCockroach,
+    isRedshift,
     number: parseInt(
       version.split(" ")[isPostgres ? 1 : 2].replace(/^v/i, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
       10
@@ -113,7 +127,7 @@ async function getTypes(conn: HasPool): Promise<any> {
 
   const data = await driverExecuteSingle(conn, { query: sql })
   const result: any = {}
-  data.rows.forEach((row) => {
+  data.rows.forEach((row: any) => {
     result[row.typeid] = row.typename
   })
   _.merge(result, _.invert(pg.types.builtins))
@@ -137,6 +151,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
   return {
     /* eslint max-len:0 */
+    supportedFeatures: () => ({ customRoutines: true}),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: (db: string, filter: FilterOptions | undefined) => listTables(conn, filter),
@@ -277,7 +292,7 @@ async function selectTop(
   log.debug("select Top query & params", countQuery, query, params)
   const countResults = await driverExecuteSingle(conn, { query: countQuery, params })
   const result = await driverExecuteSingle(conn, { query, params })
-  const rowWithTotal = countResults.rows.find((row) => { return row.total })
+  const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   log.debug("selectTop:", result.rows)
   return {
@@ -287,25 +302,70 @@ async function selectTop(
 }
 
 export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promise<Routine[]> {
-  const schemaFilter = buildSchemaFilter(filter, 'routine_schema');
+  const version = await getVersion(conn)
+  if (version.isCockroach) {
+    return []
+  }
+
+  const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema');
   const sql = `
     SELECT
-      routine_schema,
-      routine_name,
-      routine_type
-    FROM information_schema.routines
-    ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
-    GROUP BY routine_schema, routine_name, routine_type
+      r.specific_name as id,
+      r.routine_schema as routine_schema,
+      r.routine_name as name,
+      r.routine_type as routine_type,
+      r.data_type as data_type
+    FROM INFORMATION_SCHEMA.ROUTINES r
+    where r.routine_schema not in ('sys', 'information_schema',
+                                'pg_catalog', 'performance_schema')
+    ${schemaFilter ? `AND ${schemaFilter}` : ''}
     ORDER BY routine_schema, routine_name
   `;
 
-  const data = await driverExecuteSingle(conn, { query: sql });
+  const paramsSQL = `
+    select 
+        r.routine_schema as routine_schema,
+        r.specific_name as specific_name,
+        p.parameter_name as parameter_name,
+        p.character_maximum_length as char_length,
+        p.data_type as data_type
+  from information_schema.routines r
+  left join information_schema.parameters p
+            on p.specific_schema = r.routine_schema
+            and p.specific_name = r.specific_name
+  where r.routine_schema not in ('sys', 'information_schema',
+                                'pg_catalog', 'performance_schema')
+    ${schemaFilter ? `AND ${schemaFilter}` : ''}
 
-  return data.rows.map((row) => ({
-    schema: row.routine_schema,
-    routineName: row.routine_name,
-    routineType: row.routine_type,
-  }));
+      AND p.parameter_mode = 'IN'
+  order by r.routine_schema,
+          r.specific_name,
+          p.ordinal_position;
+
+  `
+
+
+  const data = await driverExecuteSingle(conn, { query: sql });
+  const paramsData = await driverExecuteSingle(conn, { query: paramsSQL })
+  const grouped = _.groupBy(paramsData.rows, 'specific_name')
+
+  return data.rows.map((row) => {
+    const params = grouped[row.id] || []
+    return {
+      schema: row.routine_schema,
+      name: row.name,
+      type: row.routine_type ? row.routine_type.toLowerCase() : 'function',
+      returnType: row.data_type,
+      id: row.id,
+      routineParams: params.map((p, i) => {
+        return {
+          name: p.parameter_name || `arg${i+1}`,
+          type: p.data_type,
+          length: p.char_length || undefined
+        }
+      })
+    }
+  });
 }
 
 export async function listTableColumns(conn: Conn, database: string, table?: string, schema?: string) {
@@ -334,7 +394,7 @@ export async function listTableColumns(conn: Conn, database: string, table?: str
 
   const data = await driverExecuteSingle(conn, { query: sql, params });
 
-  return data.rows.map((row) => ({
+  return data.rows.map((row: any) => ({
     schemaName: row.table_schema,
     tableName: row.table_name,
     columnName: row.column_name,

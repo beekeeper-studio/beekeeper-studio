@@ -4,8 +4,8 @@
       <form @submit.prevent="triggerFilter">
         <div v-if="filterMode === 'raw'" class="filter-group row gutter">
           <div class="btn-wrap">
-            <button class="btn btn-primary" title="Switch filter mode" type="button" @click.stop="changeFilterMode('builder')">
-              <i class="material-icons">list</i>
+            <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('builder')" title="Toggle Filter Type">
+              <i class="material-icons">sort</i>
             </button>
           </div>
           <div class="expand filter">
@@ -31,7 +31,7 @@
         </div>
         <div v-else-if="filterMode === 'builder'" class="filter-group row gutter">
           <div class="btn-wrap">
-            <button class="btn btn-primary" title="Switch filter mode" type="button" @click.stop="changeFilterMode('raw')">
+            <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('raw')" title="Toggle Filter Type">
               <i class="material-icons">code</i>
             </button>
           </div>
@@ -100,7 +100,7 @@
         <div v-if="missingPrimaryKey" class="flex flex-right">
           <span class="statusbar-item">
             <i
-            class="material-icons"
+            class="material-icons text-danger"
             v-tooltip="'Zero (or multiple) primary keys detected, table editing is disabled.'"
             >warning</i>
           </span>

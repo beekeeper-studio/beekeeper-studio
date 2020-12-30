@@ -10,9 +10,10 @@ import { FavoriteQuery } from '../common/appdb/models/favorite_query'
 import { UsedQuery } from '../common/appdb/models/used_query'
 import ConnectionProvider from '../lib/connection-provider'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
-import { DBConnection, TableColumn } from '../lib/db/client'
+import { DBConnection, Routine, TableColumn } from '../lib/db/client'
 import { IDbConnectionPublicServer } from '../lib/db/server'
-import { CoreTab, IDbEntityWithColumns, QueryTab, TableTab } from './models'
+import { CoreTab, EntityFilter, IDbEntityWithColumns, QueryTab, TableTab } from './models'
+import { entityFilter } from '../lib/db/sql_tools'
 
 interface State {
   usedConfig: Nullable<SavedConnection>,
@@ -21,6 +22,8 @@ interface State {
   connection: Nullable<DBConnection>,
   database: Nullable<string>,
   tables: IDbEntityWithColumns[],
+  routines: Routine[],
+  entityFilter: EntityFilter,
   tablesLoading: string,
   pinStore: {
     [x: string]: string[]
@@ -47,6 +50,13 @@ const store = new Vuex.Store<State>({
     connection: null,
     database: null,
     tables: [],
+    routines: [],
+    entityFilter: {
+      filterQuery: undefined,
+      showTables: true,
+      showRoutines: true,
+      showViews: true
+    },
     tablesLoading: "loading tables...",
     pinStore: {},
     connectionConfigs: [],
@@ -64,12 +74,29 @@ const store = new Vuex.Store<State>({
       const result = state.database ? state.pinStore[state.database] : null
       return _.isNil(result) ? [] : result
     },
-    schemaTables(state){
-      const obj = _.chain(state.tables).groupBy('schema').value()
+    filteredTables(state) {
+      return entityFilter(state.tables, state.entityFilter)
+    },
+    filteredRoutines(state) {
+      return entityFilter(state.routines, state.entityFilter)
+    },
+    schemaTables(state, g){
+      // if no schemas, just return a single schema
+      if (_.chain(state.tables).map('schema').uniq().value().length <= 1) {
+        return [{
+          schema: null,
+          skipSchemaDisplay: true,
+          tables: g.filteredTables,
+          routines: g.filteredRoutines
+        }]
+      }
+      const obj = _.chain(g.filteredTables).groupBy('schema').value()
+      const routines = _.groupBy(g.filteredRoutines, 'schema')
       return _(obj).keys().map(k => {
         return {
           schema: k,
-          tables: obj[k]
+          tables: obj[k],
+          routines: routines[k] || []
         }
       }).orderBy(o => {
         // TODO: have the connection provide the default schema, hard-coded to public by default
@@ -85,6 +112,21 @@ const store = new Vuex.Store<State>({
     }
   },
   mutations: {
+    entityFilter(state, filter) {
+      state.entityFilter = filter
+    },
+    filterQuery(state, str: string) {
+      state.entityFilter.filterQuery = str
+    },
+    showTables(state) {
+      state.entityFilter.showTables = !state.entityFilter.showTables
+    },
+    showViews(state) {
+      state.entityFilter.showViews = !state.entityFilter.showViews
+    },
+    showRoutines(state) {
+      state.entityFilter.showRoutines = !state.entityFilter.showRoutines
+    },
     tabActive(state, tab: CoreTab) {
       state.activeTab = tab
     },
@@ -105,22 +147,38 @@ const store = new Vuex.Store<State>({
       state.usedConfig = null
       state.connection = null
       state.database = null
+      state.tables = []
+      state.routines = []
+      state.entityFilter = {
+        filterQuery: undefined,
+        showTables: true,
+        showViews: true,
+        showRoutines: true
+      }
     },
     updateConnection(state, {connection, database}) {
       state.connection = connection
       state.database = database
     },
     tables(state, tables) {
-      state.tables = tables
+      state.tables = Object.freeze(tables)
+    },
+    routines(state, routines) {
+      state.routines = Object.freeze(routines)
     },
     tablesLoading(state, value: string) {
       state.tablesLoading = value
     },
-    addPinned(state, table: string) {
+    addPinned(state, table: any) {
       if (state.database && !state.pinStore[state.database]) {
         Vue.set(state.pinStore, state.database, [table])
       } else if (state.database && !state.pinStore[state.database].includes(table)) {
         state.pinStore[state.database].push(table)
+      }
+    },
+    setPinned(state, pins) {
+      if (state.database) {
+        Vue.set(state.pinStore, state.database, pins)
       }
     },
     removePinned(state, table) {
@@ -211,7 +269,6 @@ const store = new Vuex.Store<State>({
       const server = context.state.server
       server?.disconnect()
       context.commit('clearConnection')
-      context.commit('tables', [])
     },
     async changeDatabase(context, newDatabase: string) {
       if (context.state.server) {
@@ -223,6 +280,7 @@ const store = new Vuex.Store<State>({
         }
         context.commit('updateConnection', {connection, database: newDatabase})
         await context.dispatch('updateTables')
+        await context.dispatch('updateRoutines') 
       }
     },
     async updateTables(context) {
@@ -270,7 +328,15 @@ const store = new Vuex.Store<State>({
         }
       }
     },
-
+    async updateRoutines(context) {
+      if (!context.state.connection) return;
+      const connection = context.state.connection
+      const routines = await connection.listRoutines({ schema: null })
+      context.commit('routines', routines)
+    },
+    async setFilterQuery(context, filterQuery) {
+      context.commit('filterQuery', filterQuery)
+    },
     async pinTable(context, table) {
       table.pinned = true
       context.commit('addPinned', table)
@@ -278,6 +344,14 @@ const store = new Vuex.Store<State>({
     async unpinTable(context, table) {
       table.pinned = false
       context.commit('removePinned', table)
+    },
+    async pinRoutine(context, routine: Routine) {
+      routine.pinned = true
+      context.commit('addPinned', routine)
+    },
+    async unpinRoutine(context, routine: Routine) {
+      routine.pinned = true
+      context.commit('addPinned', routine)
     },
     async saveConnectionConfig(context, newConfig) {
       await newConfig.save()

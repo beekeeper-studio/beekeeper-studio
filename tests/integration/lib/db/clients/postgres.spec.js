@@ -2,7 +2,7 @@ import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
 
-describe("Postgres Tests", () => {
+describe("Postgres Integration Tests", () => {
   let container;
   let util
 

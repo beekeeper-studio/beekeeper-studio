@@ -24,6 +24,7 @@ export default async function (server, database) {
   await driverExecuteQuery(conn, { query: 'SELECT sqlite_version()' });
 
   return {
+    supportedFeatures: () => ({ customRoutines: false }),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),

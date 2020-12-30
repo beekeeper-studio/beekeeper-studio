@@ -133,20 +133,69 @@
       position: relative;
       display: flex;
       align-items: center;
+      border: 1px solid $border-color;
+      border-radius: 4px;
     }
-    input {
-      padding-right: 26px;
+    .filter-input {
+      border: 0;
+      padding-right: 0;
     }
-    .clear {
-      position: absolute;
-      right: 0;
-      font-size: 14px;
-      width: 26px;
-      padding: 0 $gutter-h;
-      color: rgba($theme-base, 0.5);
-      cursor: pointer;
-      &:hover {
-        color: $text-dark;
+    .filter-actions {
+      display: inline-flex;
+      padding: 0 0 0 ($gutter-h * 0.5);
+      x-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+        width: 26px;
+        cursor: pointer;
+        --trigger-effect: none;
+        &:before {
+          display: none!important;
+        }
+        &:hover, &:focus {
+          box-shadow: none;
+          .material-icons {
+            color: $text-dark;
+          }
+        }
+        &.btn-fab {
+          margin-right: 2px;
+          line-height: 22px;
+          height: 22px;
+          width: 22px;
+          min-width: 22px;
+          border-radius: 22px;
+          &.active {
+            background: rgba($theme-base, 0.1);
+            .material-icons {
+              color: $theme-primary;
+            }
+          }
+        }
+      }
+      x-menu {
+        padding: $gutter-h 0;
+        label {
+          display: flex;
+          justify-content: flex-start;
+          align-items: center;
+          padding: 0 $gutter-w;
+          min-height: $input-height;
+          cursor: pointer;
+        }
+        x-menuitem {
+          display: none;
+        }
+      }
+      .material-icons {
+        font-size: 14px;
+        line-height: 26px;
+        width: 14px;
+        color: rgba($theme-base, 0.5);
       }
     }
   }
@@ -206,6 +255,9 @@
       margin-left: ($gutter-h * 0.75);
       border-radius: $list-heading-height;
       background: $border-color;
+      &.active {
+        color: $theme-primary;
+      }
     }
   }
   .actions {
@@ -294,6 +346,7 @@
     }
     .item-text {
       font-size: 1rem;
+      padding-bottom: $gutter-h * 0.5;
     }
     .title {
       @extend .truncate;
@@ -366,6 +419,9 @@
     flex-direction: column;
     color: $text;
     padding: ($gutter-h * 0.5) 0;
+    &:empty {
+      padding: 0;
+    }
     &:before {
       content: '';
       position: absolute;
@@ -382,11 +438,13 @@
       font-size: 80%;
       margin-right: 0;
       max-width: 50%;
+      min-width: fit-content;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .list-item {
       padding-left: 0;
+      padding-right: 0;
     }
   }
   .sub-item {
