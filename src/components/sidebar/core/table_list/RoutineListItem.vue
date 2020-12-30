@@ -6,7 +6,7 @@
       </span>      
       <span class="item-wrapper flex flex-middle expand">
         <i :title="title" :class="iconClass" class="item-icon material-icons">functions</i>
-        <span class="table-name truncate">{{routine.name}}</span>
+        <span class="table-name truncate" :title="routine.name">{{routine.name}}</span>
       </span>
       <span class="actions" v-bind:class="{'pinned': pinned.includes(routine)}">
         <span v-if="!pinned.includes(routine)" @mousedown.prevent.stop="pin" class="btn-fab pin" :title="'Pin'"><i class="bk-pin"></i></span>

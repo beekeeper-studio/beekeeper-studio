@@ -6,7 +6,7 @@
           <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
         </span>
         <i title="Schema" class="schema-icon item-icon material-icons">folder</i>
-        <span class="table-name truncate expand">{{title}}</span>
+        <span class="table-name truncate expand" :title="title">{{title}}</span>
       </a>
       <div v-if="expanded" class="sub-items">
         <slot></slot>
