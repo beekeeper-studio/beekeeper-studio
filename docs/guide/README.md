@@ -13,8 +13,19 @@ Note - Beekeeper Studio does not support unix socket connections for PSQL or MYS
 
 There are three ways to connect to a database with SSL
 1. **Trust the server:** Connect with SSL without providing your own certificate.
-2. **Required Cert:** Connect with SSL, provide your own certs, and disable `rejectUnauthorized`. This is sometimes called `sslMode=require`
-3. **Verified Cert:** Connect with SSL, provide your own certs, and enable `rejectUnauthorized`. Ths is sometimes called `sslMode=verify`
+2. **Required Cert:** Connect with SSL, provide your own certs, and disable `rejectUnauthorized`.
+3. **Verified Cert:** Connect with SSL, provide your own certs, and enable `rejectUnauthorized`.
+
+Here's a table of how the various `sslmode` flags from command line clients map to Beekeeper:
+
+| sslmode | Will connection via SSL/TLS? | rejectUnauthorized |
+|------|-----|-----|
+| disable |	no | 	n/a |
+| allow |	no | 	n/a |
+| prefer |	no | 	n/a |
+| require |	yes | 	false |
+| verify-ca |	yes | 	false |
+| verify-full |	yes | 	true |
 
 
 Once you are connected to your database Beekeeper Studio allows you to open tabs to do the following things:
