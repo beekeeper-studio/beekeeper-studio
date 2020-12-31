@@ -18,7 +18,7 @@ There are three ways to connect to a database with SSL
 
 Here's a table of how the various `sslmode` flags from command line clients map to Beekeeper:
 
-| sslmode | Will connection via SSL/TLS? | rejectUnauthorized |
+| sslmode | Turn on SSL? | rejectUnauthorized |
 |------|-----|-----|
 | disable |	no | 	n/a |
 | allow |	no | 	n/a |
