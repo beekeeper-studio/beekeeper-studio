@@ -31,6 +31,7 @@ export default {
       sslCaFile: config.sslCaFile,
       sslCertFile: config.sslCertFile,
       sslKeyFile: config.sslKeyFile,
+      sslRejectUnauthorized: config.sslRejectUnauthorized,
     }
   },
 

@@ -163,6 +163,7 @@ export interface IDbConnectionServerConfig {
   sslCaFile: Nullable<string>,
   sslCertFile: Nullable<string>,
   sslKeyFile: Nullable<string>,
+  sslRejectUnauthorized: boolean,
   ssl: boolean
   localHost?: string,
   localPort?: number,

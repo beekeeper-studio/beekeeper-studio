@@ -110,6 +110,10 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'varchar', nullable: true})
   sslKeyFile: Nullable<string> = null
 
+  // this only takes effect if SSL certs are provided
+  @Column({type: 'boolean', nullable: false})
+  sslRejectUnauthorized: boolean = true
+
   // GETTERS
   get hash() {
     const str = [

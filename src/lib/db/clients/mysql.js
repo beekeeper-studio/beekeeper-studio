@@ -333,9 +333,9 @@ export function query(conn, queryText) {
 export async function updateValues(conn, updates) {
   const updateCommands = updates.map(update => {
     let value = update.value
-    if (update.columnType === 'bit(1)') {
+    if (update.columnType && update.columnType === 'bit(1)') {
       value = _.toNumber(update.value)
-    } else if (update.columnType.startsWith('bit(')) {
+    } else if (update.columnType && update.columnType.startsWith('bit(')) {
       // value looks like this: b'00000001'
       value = parseInt(update.value.split("'")[1], 2)
     }
@@ -518,6 +518,8 @@ function configDatabase(server, database) {
       // Heroku certs are self-signed.
       // if you provide ca/cert/key files, it overrides this
       config.ssl.rejectUnauthorized = false
+    } else {
+      config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized
     }
   }
 

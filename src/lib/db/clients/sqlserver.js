@@ -609,7 +609,6 @@ function configDatabase(server, database) {
     }
 
     if (server.config.sslCaFile) {
-      options.trustServerCertificate = false
       options.cryptoCredentialsDetails.ca = readFileSync(server.config.sslCaFile);
     }
 
@@ -619,6 +618,15 @@ function configDatabase(server, database) {
 
     if (server.config.sslKeyFile) {
       options.cryptoCredentialsDetails.key = readFileSync(server.config.sslKeyFile);
+    }
+
+    if (!server.config.sslCaFile && !server.config.sslCertFile && !server.config.sslKeyFile) {
+      options.trustServerCertificate = true
+    } else {
+      // trust = !reject
+      // mssql driver reverses this setting for no obvious reason
+      // other drivers simply pass through to the SSL library.
+      options.trustServerCertificate = !server.config.sslRejectUnauthorized
     }
 
     config.options = options;

@@ -8,7 +8,7 @@ import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableUpdate, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam } from '../client'
+import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableUpdate, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig } from '../client'
 import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors, Error as CustomError } from '../../errors';
@@ -823,11 +823,11 @@ export async function truncateAllTables(conn: Conn, schema: string) {
 }
 
 
-function configDatabase(server: any, database: { database: string}) {
+function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
   const config: PoolConfig = {
     host: server.config.host,
-    port: server.config.port,
-    password: server.config.password,
+    port: server.config.port || undefined,
+    password: server.config.password || undefined,
     database: database.database,
     max: 5, // max idle connections per time (30 secs)
     connectionTimeoutMillis: globals.psqlTimeout,
@@ -870,6 +870,8 @@ function configDatabase(server: any, database: { database: string}) {
       // Heroku certs are self-signed.
       // if you provide ca/cert/key files, it overrides this
       config.ssl.rejectUnauthorized = false
+    } else {
+      config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized
     }
   }
 
