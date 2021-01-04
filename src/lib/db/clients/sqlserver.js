@@ -251,7 +251,7 @@ export async function listRoutines(conn, filter) {
       r.data_type as data_type
     FROM INFORMATION_SCHEMA.ROUTINES r
     where r.routine_schema not in ('sys', 'information_schema',
-                                'mysql', 'performance_schema')
+                                'mysql', 'performance_schema', 'INFORMATION_SCHEMA')
     ${schemaFilter ? `AND ${schemaFilter}` : ''}
     ORDER BY routine_schema, routine_name
   `;
@@ -263,12 +263,12 @@ export async function listRoutines(conn, filter) {
         p.parameter_name as parameter_name,
         p.character_maximum_length as char_length,
         p.data_type as data_type
-  from information_schema.routines r
-  left join information_schema.parameters p
+  from INFORMATION_SCHEMA.ROUTINES r
+  left join INFORMATION_SCHEMA.PARAMETERS p
             on p.specific_schema = r.routine_schema
             and p.specific_name = r.specific_name
   where r.routine_schema not in ('sys', 'information_schema',
-                                'mysql', 'performance_schema')
+                                'mysql', 'performance_schema', 'INFORMATION_SCHEMA')
     ${schemaFilter ? `AND ${schemaFilter}` : ''}
 
       AND p.parameter_mode = 'IN'

@@ -36,7 +36,7 @@ const devMigrations = [
   dev1, dev2
 ]
 
-const migrations = [...realMigrations, ...devMigrations, ...fixtures]
+const migrations = [...realMigrations, ...fixtures, ...devMigrations]
 
 const Manager = {
   ceQuery: "select name from bk_migrations where name = ?",
