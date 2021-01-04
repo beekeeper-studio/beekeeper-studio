@@ -24,14 +24,19 @@ const setupSQL = `
  )
 `
 const realMigrations = [
-  a, b, c, d, domains, createSettings, addZoom, addSc, sslFiles, encrypt, sslReject
+  a, b, c, d, domains, createSettings, addZoom, addSc, sslFiles, sslReject
+]
+
+// fixtures require the models
+const fixtures = [
+  encrypt
 ]
 
 const devMigrations = [
   dev1, dev2
 ]
 
-const migrations = realMigrations.concat(devMigrations)
+const migrations = [...realMigrations, ...devMigrations, ...fixtures]
 
 const Manager = {
   ceQuery: "select name from bk_migrations where name = ?",
