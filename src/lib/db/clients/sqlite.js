@@ -359,7 +359,7 @@ function parseRowQueryResult({ data, statement, changes }) {
 
 function identifyCommands(queryText) {
   try {
-    return identify(queryText, { strict: false });
+    return identify(queryText, { strict: false, dialect: 'sqlite' });
   } catch (err) {
     return [];
   }

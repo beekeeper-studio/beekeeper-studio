@@ -2,7 +2,10 @@ import Knex from 'knex'
 import { exit } from 'process'
 import { IDbConnectionServerConfig } from '../../src/lib/db/client'
 import { createServer } from '../../src/lib/db/index'
+import log from 'electron-log'
+import platformInfo from '../../src/common/platform_info'
 export const dbtimeout = 120000
+
 
 const KnexTypes: any = {
   postgresql: 'pg',
@@ -34,6 +37,10 @@ export class DBTestUtil {
   }
 
   constructor(config: IDbConnectionServerConfig, database: string, options: Options = {}) {
+    log.transports.console.level = 'error'  
+    if (platformInfo.debugEnabled) {
+      log.transports.console.level = 'silly'
+    }
     this.options = options
     if (config.client === 'sqlite') {
       this.knex = Knex({

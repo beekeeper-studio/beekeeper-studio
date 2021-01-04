@@ -149,6 +149,14 @@
       }
     },
     computed: {
+      dialect() {
+        // dialect for sql-query-identifier
+        const mappings = {
+          'sqlserver': 'mssql',
+          'sqlite': 'sqlite'
+        }
+        return mappings[this.connectionType] || 'generic'
+      },
       hasSelectedText() {
         return this.editor ? !!this.editor.getSelection() : false
       },
@@ -392,7 +400,7 @@
         this.selectedResult = 0
         let identification = []
         try {
-          identification = identify(rawQuery, { strict: false })
+          identification = identify(rawQuery, { strict: false, dialect: this.dialect })
         } catch (ex) {
           log.error("Unable to identify query", ex)
         }
