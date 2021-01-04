@@ -3,6 +3,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import username from 'username'
 // import VueXPersistence from 'vuex-persist'
+import rawlog from 'electron-log'
 
 import { UsedConnection } from '../common/appdb/models/used_connection'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
@@ -14,6 +15,8 @@ import { DBConnection, Routine, TableColumn } from '../lib/db/client'
 import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, EntityFilter, IDbEntityWithColumns, QueryTab, TableTab } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
+
+const log = rawlog.scope('store/index')
 
 interface State {
   usedConfig: Nullable<SavedConnection>,
@@ -330,9 +333,13 @@ const store = new Vuex.Store<State>({
     },
     async updateRoutines(context) {
       if (!context.state.connection) return;
-      const connection = context.state.connection
-      const routines = await connection.listRoutines({ schema: null })
-      context.commit('routines', routines)
+      try {
+        const connection = context.state.connection
+        const routines = await connection.listRoutines({ schema: null })
+        context.commit('routines', routines)
+      } catch(ex){
+        log.error("error loading routines", ex)
+      }
     },
     async setFilterQuery(context, filterQuery) {
       context.commit('filterQuery', filterQuery)
