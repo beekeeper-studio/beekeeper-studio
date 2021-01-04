@@ -29,11 +29,14 @@ function initUserDirectory(d: string) {
   }
 }
 
-if (platformInfo.isDevelopment) {
-  log.transports.console.level = "debug"
+const transports = [log.transports.console, log.transports.file]
+if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
+  transports.forEach(t => t.level = 'debug')
+} else {
+  transports.forEach(t => t.level = 'warn')
 }
 
-const isDevelopment = process.env.NODE_ENV !== 'production'
+const isDevelopment = platformInfo.isDevelopment
 
 initUserDirectory(platformInfo.userDirectory)
 log.info("initializing user ORM connection")
