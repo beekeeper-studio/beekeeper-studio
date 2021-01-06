@@ -140,6 +140,13 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           checked: settings.menuStyle.value === 'native'
         },
         {
+          id: 'ms-native-hidden',
+          type: 'radio',
+          label: 'Native (hidden)',
+          click: actionHandler.switchMenuStyle,
+          checked: settings.menuStyle.value === 'native-hidden'
+        },
+        {
           id: "ms-client",
           type: 'radio',
           label: 'Client',

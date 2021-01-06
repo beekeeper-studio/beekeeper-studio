@@ -23,7 +23,8 @@ class BeekeeperWindow {
 
   constructor(private settings: IGroupedUserSettings) {
     const theme = settings.theme
-    const showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
+    const showFrame = settings.menuStyle && settings.menuStyle.value?.toString().includes('native')
+    const autoHide = settings.menuStyle && settings.menuStyle.value?.toString() === 'native-hidden'
     this.actionHandler = new NativeMenuActionHandlers(this.settings)
     this.win = new BrowserWindow({
       width: 1200,
@@ -33,6 +34,7 @@ class BeekeeperWindow {
       backgroundColor: theme.value === 'dark' ? "#252525" : '#ffffff',
       titleBarStyle: 'hidden',
       frame: showFrame,
+      autoHideMenuBar: autoHide,
       webPreferences: {
         nodeIntegration: Boolean(process.env.ELECTRON_NODE_INTEGRATION),
       },
