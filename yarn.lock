@@ -1389,11 +1389,6 @@
   resolved "https://registry.yarnpkg.com/@types/sql-formatter/-/sql-formatter-2.3.0.tgz#d2584c54f865fd57a7fe7e88ee8ed3623b23da33"
   integrity sha512-Xh9kEOaKWhm3vYD5lUjYFFiSfpN4y3/iQCJUAVwFaQ1rVvHs4WXTa5C8E7gyF3kxwsMS8KgttW7WBAPtFlsvAg==
 
-"@types/sql-query-identifier@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@types/sql-query-identifier/-/sql-query-identifier-1.1.0.tgz#921e81ee2cfae9b5fa7611b745ebcca969b90315"
-  integrity sha512-GupKQRKsB0TJLcvr3dt7FuOni1JrlGAXLw7cexXLVWT5L24UCwFc9daMyK4akav1Fbqlr76SReM7vvuY5Io04A==
-
 "@types/stack-utils@^1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@types/stack-utils/-/stack-utils-1.0.1.tgz#0a851d3bd96498fa25c33ab7278ed3bd65f06c3e"
