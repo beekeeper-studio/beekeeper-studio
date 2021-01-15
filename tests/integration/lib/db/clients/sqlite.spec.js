@@ -26,4 +26,23 @@ describe("Sqlite Tests", () => {
   it("Should pass standard tests", async () => {
     await util.testdb()
   })
+
+  it("Should allow me to create a trigger", async () => {
+    const trigger = `
+     CREATE TRIGGER sqlmods
+         AFTER UPDATE
+            ON addresses
+      FOR EACH ROW
+          WHEN old.state IS NULL
+      BEGIN
+          UPDATE addresses
+            SET state = 'NY'
+          WHERE rowid = NEW.rowid;
+      END; 
+    `
+    expect(async () => {
+      const q = await util.connection.query(trigger)
+      await q.execute()
+    }).not.toThrowError()
+  })
 })

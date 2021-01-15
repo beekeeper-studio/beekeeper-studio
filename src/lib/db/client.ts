@@ -68,7 +68,10 @@ export interface TableUpdate {
   table: string
   column: string
   pkColumn: string
+  primaryKey: any
   schema?: string
+  columnType?: string,
+  value: any
 }
 
 export interface IDbDelete {
@@ -92,13 +95,39 @@ export interface TableKey {
 
 export type TableUpdateResult = any
 
+export interface RoutineParam {
+  name: string
+  type: string
+  length?: number
+}
+
+// TODO (matthew): Currently only supporting function and procedure
+export type RoutineType = 'function' | 'window' | 'aggregate' | 'procedure'
+
+export const RoutineTypeNames = {
+  'function': "Function",
+  'window': "Window Function",
+  'aggregate': "Aggregate Function",
+  'procedure': "Stored Procedure"
+}
+
 export interface Routine {
-  schema: string,
-  routineName: string,
-  routineType: string
+  id: string
+  schema?: string
+  name: string
+  returnType: string
+  returnTypeLength?: number
+  routineParams?: RoutineParam[]
+  pinned?: boolean
+  type: RoutineType
+}
+
+export interface SupportedFeatures {
+  customRoutines: boolean,
 }
 
 export interface DatabaseClient {
+  supportedFeatures: () => SupportedFeatures
   disconnect: () => void,
   listTables: (db: string, filter?: FilterOptions) => Promise<TableOrView[]>,
   listViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
@@ -152,6 +181,7 @@ export interface IDbConnectionServerConfig {
   sslCaFile: Nullable<string>,
   sslCertFile: Nullable<string>,
   sslKeyFile: Nullable<string>,
+  sslRejectUnauthorized: boolean,
   ssl: boolean
   localHost?: string,
   localPort?: number,
@@ -180,7 +210,7 @@ export interface IDbConnectionDatabase {
 
 export class DBConnection {
   constructor (private server: IDbConnectionServer, private database: IDbConnectionDatabase) {}
-
+  supportedFeatures = supportedFeatures.bind(null, this.server, this.database)
   connect = connect.bind(null, this.server, this.database)
   disconnect = disconnect.bind(null, this.server, this.database)
   end = disconnect.bind(null, this.server, this.database)
@@ -279,6 +309,11 @@ function disconnect(server: IDbConnectionServer, database: IDbConnectionDatabase
   if (server.db[database.database]) {
     delete server.db[database.database];
   }
+}
+
+function supportedFeatures(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+  checkIsConnected(server, database)
+  return database.connection?.supportedFeatures()
 }
 
 function selectTop(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[], schema: string) {

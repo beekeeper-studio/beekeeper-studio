@@ -4,8 +4,8 @@
       <form @submit.prevent="triggerFilter">
         <div v-if="filterMode === 'raw'" class="filter-group row gutter">
           <div class="btn-wrap">
-            <button class="btn btn-primary" type="button" @click.stop="changeFilterMode('builder')">
-              <i class="material-icons">list</i>
+            <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('builder')" title="Toggle Filter Type">
+              <i class="material-icons">sort</i>
             </button>
           </div>
           <div class="expand filter">
@@ -31,7 +31,7 @@
         </div>
         <div v-else-if="filterMode === 'builder'" class="filter-group row gutter">
           <div class="btn-wrap">
-            <button class="btn btn-primary" type="button" @click.stop="changeFilterMode('raw')">
+            <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('raw')" title="Toggle Filter Type">
               <i class="material-icons">code</i>
             </button>
           </div>
@@ -83,7 +83,7 @@
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
         </span>
-        <span class="statusbar-item" v-if="lastUpdatedText && !queryError" :title="'Updated' + ' ' + lastUpdatedText">
+        <span @click="refreshTable" @keypress.enter="refreshTable" tabindex="0" role="button" class="statusbar-item hoverable" v-if="lastUpdatedText && !queryError" :title="'Updated' + ' ' + lastUpdatedText">
           <i class="material-icons">update</i>
           <span>{{lastUpdatedText}}</span>
         </span>
@@ -100,7 +100,7 @@
         <div v-if="missingPrimaryKey" class="flex flex-right">
           <span class="statusbar-item">
             <i
-            class="material-icons"
+            class="material-icons text-danger"
             v-tooltip="'Zero (or multiple) primary keys detected, table editing is disabled.'"
             >warning</i>
           </span>
@@ -431,10 +431,10 @@ export default {
       return valueCell
     },
     slimDataType(dt) {
-      if (dt) {
-        return dt.split("(")[0]
-      }
-      return null
+      if (!dt) return null
+      if(dt === 'bit(1)') return dt
+
+return dt.split("(")[0]
     },
     editorType(dt) {
       switch (dt) {
@@ -493,6 +493,7 @@ export default {
       log.info('edit', cell)
 
       const pkCell = cell.getRow().getCells().find(c => c.getField() === this.primaryKey)
+      const column = this.table.columns.find(c => c.columnName === cell.getField())
       if (!pkCell) {
         this.$noty.error("Can't edit column -- couldn't figure out primary key")
         // cell.setValue(cell.getOldValue())
@@ -514,6 +515,7 @@ export default {
         schema: this.table.schema,
         column: cell.getField(),
         pkColumn: this.primaryKey,
+        columnType: column ? column.dataType : undefined,
         primaryKey: pkCell.getValue(),
         oldValue: currentEdit ? currentEdit.oldValue : cell.getOldValue(),
         cell: cell,
@@ -736,6 +738,11 @@ export default {
     },
     clearQueryError() {
       this.queryError = null
+    },
+    refreshTable() {
+      const page = this.tabulator.getPage()
+      this.tabulator.replaceData()
+      this.tabulator.setPage(page)
     },
   }
 };

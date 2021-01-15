@@ -125,3 +125,6 @@ source /docker-entrypoint-initdb.d/load_salaries2.dump ;
 source /docker-entrypoint-initdb.d/load_salaries3.dump ;
 
 source /docker-entrypoint-initdb.d/show_elapsed.sql;
+
+source /docker-entrypoint-initdb.d/sakila/sakila-mv-schema.sql;
+source /docker-entrypoint-initdb.d/sakila/sakila-mv-data.sql;

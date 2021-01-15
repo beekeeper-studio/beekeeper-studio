@@ -205,6 +205,11 @@
     left: 0;
     right: 0;
   }
+  .btn-fab {
+    .material-icons {
+      font-size: 16px;
+    }
+  }
 }
 .table-filter {
   width: 100%;

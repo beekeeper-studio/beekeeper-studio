@@ -1,6 +1,6 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs'
-
+import _ from 'lodash'
 import mysql from 'mysql2';
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
@@ -31,6 +31,7 @@ export default async function (server, database) {
   await driverExecuteQuery(conn, { query: 'select version();' });
 
   return {
+    supportedFeatures: () => ({ customRoutines: true }),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
@@ -92,19 +93,67 @@ export async function listViews(conn) {
 }
 
 export async function listRoutines(conn) {
-  const sql = `
-    SELECT routine_name as 'routine_name', routine_type as 'routine_type'
-    FROM information_schema.routines
-    WHERE routine_schema = database()
-    ORDER BY routine_name
+
+  const routinesSQL = `
+    select 
+      r.specific_name as specific_name,
+      r.routine_name as routine_name,
+      r.routine_type as routine_type,
+      r.data_type as data_type,
+      r.character_maximum_length as length
+    from information_schema.routines r
+    where r.routine_schema not in ('sys', 'information_schema',
+                               'mysql', 'performance_schema')
+    and r.routine_schema = database()
+    order by r.specific_name
+  `
+
+  const paramsSQL = `
+select 
+       r.routine_schema as routine_schema,
+       r.specific_name as specific_name,
+       p.parameter_name as parameter_name,
+       p.character_maximum_length as char_length,
+       p.data_type as data_type
+from information_schema.routines r
+left join information_schema.parameters p
+          on p.specific_schema = r.routine_schema
+          and p.specific_name = r.specific_name
+where r.routine_schema not in ('sys', 'information_schema',
+                               'mysql', 'performance_schema')
+    AND p.parameter_mode is not null
+    and r.routine_schema = database()
+order by r.routine_schema,
+         r.specific_name,
+         p.ordinal_position;
+
   `;
 
-  const { data } = await driverExecuteQuery(conn, { query: sql });
+  // this gives one row by parameter, so have to do a grouping
+  const routinesResult = await driverExecuteQuery(conn, { query: routinesSQL })
+  const paramsResult = await driverExecuteQuery(conn, { query: paramsSQL })
 
-  return data.map((row) => ({
-    routineName: row.routine_name,
-    routineType: row.routine_type,
-  }));
+    
+  const grouped = _.groupBy(paramsResult.data, 'specific_name')
+
+  return routinesResult.data.map((r) => {
+    const params = grouped[r.specific_name] || []
+    return {
+      id: r.specific_name,
+      name: r.specific_name,
+      returnType: r.data_type,
+      returnTypeLength: r.length || undefined,
+      type: r.routine_type ? r.routine_type.toLowerCase() : 'function',
+      routineParams: params.map((p) => {
+        return {
+          name: p.parameter_name,
+          type: p.data_type,
+          length: p.char_length || undefined
+        }
+      })
+
+    }
+  })
 }
 
 export async function listTableColumns(conn, database, table) {
@@ -287,9 +336,16 @@ export function query(conn, queryText) {
 
 export async function updateValues(conn, updates) {
   const updateCommands = updates.map(update => {
+    let value = update.value
+    if (update.columnType && update.columnType === 'bit(1)') {
+      value = _.toNumber(update.value)
+    } else if (update.columnType && update.columnType.startsWith('bit(')) {
+      // value looks like this: b'00000001'
+      value = parseInt(update.value.split("'")[1], 2)
+    }
     return {
       query: `UPDATE ${wrapIdentifier(update.table)} SET ${wrapIdentifier(update.column)} = ? WHERE ${wrapIdentifier(update.pkColumn)} = ?`,
-      params: [update.value, update.primaryKey]
+      params: [value, update.primaryKey]
     }
   })
 
@@ -487,6 +543,8 @@ function configDatabase(server, database) {
       // Heroku certs are self-signed.
       // if you provide ca/cert/key files, it overrides this
       config.ssl.rejectUnauthorized = false
+    } else {
+      config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized
     }
   }
 
@@ -536,7 +594,7 @@ function driverExecuteQuery(conn, queryArgs) {
   logger().debug(`Running Query ${queryArgs.query}`)
   const runQuery = (connection) => new Promise((resolve, reject) => {
     connection.query(queryArgs.query, queryArgs.params, (err, data, fields) => {
-      logger().debug(`Resolving Query ${queryArgs.query}`)
+      logger().debug(`Resolving Query ${queryArgs.query}`, queryArgs.params)
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});
       if (err) return reject(getRealError(connection, err));
 

@@ -11,11 +11,20 @@
   .list-group {
     padding: $gutter-h 0;
     min-height: 105px;
+    height: 100%;
   }
   .list-item {
     border-bottom: 1px solid $theme-bg;
     .badge {
       min-width: fit-content;
+    }
+  }
+  .connection-wrap {
+    height: 100%;
+    overflow: hidden;
+    .list {
+      height: 100%;
+      overflow: hidden;
     }
   }
   .saved-connection-list {
@@ -42,15 +51,6 @@
     height: initial;
     line-height: initial;
     padding: $gutter-h ($gutter-w * 0.75);
-    &:hover {
-      transition: display 0.15s ease-in-out;
-      .badge {
-        display: none;
-      }
-      .btn-fab {
-        display: inline-flex;
-      }
-    }
     .btn-fab {
       display: none;
       flex: 0;

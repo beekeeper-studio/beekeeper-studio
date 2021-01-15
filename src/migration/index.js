@@ -12,6 +12,7 @@ import dev2 from './dev-2'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
+import sslReject from './20201231-ssl-reject-unauthorized'
 import createLogger from '../lib/logger'
 
 const logger = createLogger('migrations')()
@@ -23,14 +24,19 @@ const setupSQL = `
  )
 `
 const realMigrations = [
-  a, b, c, d, domains, createSettings, addZoom, addSc, sslFiles, encrypt
+  a, b, c, d, domains, createSettings, addZoom, addSc, sslFiles, sslReject
+]
+
+// fixtures require the models
+const fixtures = [
+  encrypt
 ]
 
 const devMigrations = [
   dev1, dev2
 ]
 
-const migrations = realMigrations.concat(devMigrations)
+const migrations = [...realMigrations, ...fixtures, ...devMigrations]
 
 const Manager = {
   ceQuery: "select name from bk_migrations where name = ?",

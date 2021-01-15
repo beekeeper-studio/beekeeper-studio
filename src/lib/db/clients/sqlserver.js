@@ -30,6 +30,7 @@ export default async function (server, database) {
   await driverExecuteQuery(conn, { query: 'SELECT 1' });
 
   return {
+    supportedFeatures: () => ({ customRoutines: true}),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),
@@ -241,25 +242,64 @@ export async function listMaterializedViews() {
 }
 
 export async function listRoutines(conn, filter) {
-  const schemaFilter = buildSchemaFilter(filter, 'routine_schema');
+  const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema');
   const sql = `
     SELECT
-      routine_schema,
-      routine_name,
-      routine_type
-    FROM INFORMATION_SCHEMA.ROUTINES
-    ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
-    GROUP BY routine_schema, routine_name, routine_type
+      r.specific_name as id,
+      r.routine_schema as routine_schema,
+      r.routine_name as name,
+      r.routine_type as routine_type,
+      r.data_type as data_type
+    FROM INFORMATION_SCHEMA.ROUTINES r
+    where r.routine_schema not in ('sys', 'information_schema',
+                                'mysql', 'performance_schema', 'INFORMATION_SCHEMA')
+    ${schemaFilter ? `AND ${schemaFilter}` : ''}
     ORDER BY routine_schema, routine_name
   `;
 
-  const { data } = await driverExecuteQuery(conn, { query: sql });
+  const paramsSQL = `
+    select 
+        r.routine_schema as routine_schema,
+        r.specific_name as specific_name,
+        p.parameter_name as parameter_name,
+        p.character_maximum_length as char_length,
+        p.data_type as data_type
+  from INFORMATION_SCHEMA.ROUTINES r
+  left join INFORMATION_SCHEMA.PARAMETERS p
+            on p.specific_schema = r.routine_schema
+            and p.specific_name = r.specific_name
+  where r.routine_schema not in ('sys', 'information_schema',
+                                'mysql', 'performance_schema', 'INFORMATION_SCHEMA')
+    ${schemaFilter ? `AND ${schemaFilter}` : ''}
 
-  return data.recordset.map((row) => ({
-    schema: row.routine_schema,
-    routineName: row.routine_name,
-    routineType: row.routine_type,
-  }));
+      AND p.parameter_mode = 'IN'
+  order by r.routine_schema,
+          r.specific_name,
+          p.ordinal_position;
+
+  `
+
+  const { data } = await driverExecuteQuery(conn, { query: sql });
+  const paramsResult = await driverExecuteQuery(conn, { query: paramsSQL })
+  const grouped = _.groupBy(paramsResult.data.recordset, 'specific_name')
+
+  return data.recordset.map((row) => {
+    const params = grouped[row.id] || []
+    return {
+      schema: row.routine_schema,
+      name: row.name,
+      type: row.routine_type ? row.routine_type.toLowerCase() : 'function',
+      returnType: row.data_type,
+      id: row.id,
+      routineParams: params.map((p) => {
+        return {
+          name: p.parameter_name,
+          type: p.data_type,
+          length: p.char_length || undefined
+        }
+      })
+    }
+  });
 }
 
 export async function listTableColumns(conn, database, table) {
@@ -561,7 +601,7 @@ function configDatabase(server, database) {
     requestTimeout: Infinity,
     appName: server.config.applicationName || 'beekeeperstudio',
     pool: {
-      max: 5,
+      max: 10,
     }
   };
   if (server.config.domain) {
@@ -580,7 +620,6 @@ function configDatabase(server, database) {
     }
 
     if (server.config.sslCaFile) {
-      options.trustServerCertificate = false
       options.cryptoCredentialsDetails.ca = readFileSync(server.config.sslCaFile);
     }
 
@@ -590,6 +629,15 @@ function configDatabase(server, database) {
 
     if (server.config.sslKeyFile) {
       options.cryptoCredentialsDetails.key = readFileSync(server.config.sslKeyFile);
+    }
+
+    if (!server.config.sslCaFile && !server.config.sslCertFile && !server.config.sslKeyFile) {
+      options.trustServerCertificate = true
+    } else {
+      // trust = !reject
+      // mssql driver reverses this setting for no obvious reason
+      // other drivers simply pass through to the SSL library.
+      options.trustServerCertificate = !server.config.sslRejectUnauthorized
     }
 
     config.options = options;
@@ -637,6 +685,6 @@ export async function driverExecuteQuery(conn, queryArgs) {
 
 async function runWithConnection(conn, run) {
   const connection = await new ConnectionPool(conn.dbConfig).connect();
-
+  conn.connection = connection
   return run(connection);
 }

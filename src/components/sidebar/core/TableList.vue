@@ -5,22 +5,41 @@
     <div class="fixed">
       <div class="filter">
         <div class="filter-wrap">
-          <input type="text" placeholder="Filter" v-model="filterQuery">
-          <!-- TODO (matthew): clear icon needs to hide when input has no value also. ie. Type then delete characters and still shows currently -->
-          <i class="clear material-icons" @click="clearFilter" v-if="filterQuery">cancel</i>
+          <input class="filter-input" type="text" placeholder="Filter" v-model="filterQuery">
+          <x-buttons class="filter-actions">
+            <x-button @click="clearFilter" v-if="filterQuery"><i class="clear material-icons">cancel</i></x-button>
+            <x-button :title="entitiesHidden ? 'Filter active' : 'No filters'" class="btn btn-fab btn-link action-item" :class="{active: entitiesHidden}" menu>
+              <i class="material-icons">filter_list</i>
+              <x-menu style="--target-align: right; --v-target-align: top;">
+                <label>
+                  <input type="checkbox" v-model="showTables">
+                  <span>Tables</span>
+                </label>
+                <label>
+                  <input type="checkbox" v-model="showViews">
+                  <span>Views</span>
+                </label>
+                <label v-if="supportsRoutines">
+                  <input type="checkbox" v-model="showRoutines">
+                  <span>Routines</span>
+                </label>
+                <x-menuitem></x-menuitem>
+              </x-menu>
+            </x-button>
+          </x-buttons>
         </div>
       </div>
     </div>
 
     <!-- Pinned -->
-    <div v-show="pinned.length > 0" class="table-list pinned flex-col" ref="pinned">
+    <div v-show="orderedPins.length > 0" class="table-list pinned flex-col" ref="pinned">
       <nav class="list-group flex-col">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <div>Pinned <span class="badge">{{pinned.length}}</span></div>
+            <div>Pinned <span class="badge">{{orderedPins.length}}</span></div>
           </div>
           <!-- <div class="actions">
             <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
@@ -34,18 +53,29 @@
             </a>
           </div> -->
         </div>
-        <div class="list-body">
-          <table-list-item
-            v-for="table in pinned"
-            v-bind:key="table.name"
-            @selected="tableSelected"
-            :table="table"
-            :connection="connection"
-            :forceExpand="allExpanded"
-            :forceCollapse="allCollapsed"
-            :noSelect="true"
-          ></table-list-item>
-        </div>
+        <Draggable v-model="orderedPins" tag="div" class="list-body">
+          <div v-for="p in orderedPins" :key="p.id || p.name">
+            <table-list-item
+              v-if="p.entityType"
+              @selected="tableSelected"
+              :table="p"
+              :connection="connection"
+              :forceExpand="allExpanded"
+              :forceCollapse="allCollapsed"
+              :noSelect="true"
+            ></table-list-item>
+            <routine-list-item
+              v-else
+              :routine="p"
+              :forceExpand="allExpanded"
+              :forceCollapse="allCollapsed"
+              :connection="connection"
+            >
+            </routine-list-item>
+          </div>
+     
+
+        </Draggable>
       </nav>
     </div>
 
@@ -58,7 +88,10 @@
             <!-- <span class="btn-fab open">
               <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
             </span> -->
-            <div>Tables & Views <span class="badge">{{tables.length}}</span></div>
+            <div>Entities
+              <span :title="`Total Entities`" class="badge" v-if="!hiddenEntities">{{totalEntities}}</span>
+              <span :title="`${hiddenEntities} hidden by filters`" class="badge" v-if="hiddenEntities" :class="{active: entitiesHidden}">{{shownEntities}} / {{totalEntities}}</span>
+            </div>
           </div>
           <div class="actions">
             <a @click.prevent="collapseAll" :title="'Collapse All'">
@@ -74,17 +107,19 @@
         </div>
 
         <div class="list-body" v-show="tables.length > 0">
-          <div class="with-schemas" v-if="tablesHaveSchemas">
+          <div class="with-schemas">
             <TableListSchema
               v-for="(blob, index) in schemaTables"
               :title="blob.schema"
               :key="blob.schema"
+              :skipSchemaDisplay="blob.skipSchemaDisplay"
               :expandedInitially="index === 0"
               :forceExpand="allExpanded || filterQuery"
               :forceCollapse="allCollapsed"
             >
               <table-list-item
-                v-for="table in filter(blob.tables, filterQuery)"
+                
+                v-for="table in blob.tables"
                 :key="table.name"
                 @selected="tableSelected"
                 :table="table"
@@ -92,24 +127,22 @@
                 :forceExpand="allExpanded"
                 :forceCollapse="allCollapsed"
               ></table-list-item>
+              <routine-list-item
+                v-for="routine in blob.routines"
+                :key="routine.name"
+                :routine="routine"
+                :connection="connection"
+                :forceExpand="allExpanded"
+                :forceCollapse="allCollapsed"
+              >
+              </routine-list-item>
             </TableListSchema>
-          </div>
-          <div v-else>
-            <table-list-item
-              v-for="table in filteredTables"
-              :key="table.name"
-              @selected="tableSelected"
-              :table="table"
-              :connection="connection"
-              :forceExpand="allExpanded"
-              :forceCollapse="allCollapsed"
-            ></table-list-item>
           </div>
         </div>
 
         <!-- TODO (gregory): Make the 'no tables div nicer' -->
         <div class="empty truncate" v-if="!tables || tables.length == 0">
-          There are no tables in<br> <span>{{database}}</span>
+          There are no entities in<br> <span>{{database}}</span>
         </div>
       </nav>
     </div>
@@ -124,35 +157,97 @@
 
 <script>
   import TableListItem from './table_list/TableListItem'
+  import RoutineListItem from './table_list/RoutineListItem'
   import TableListSchema from './table_list/TableListSchema'
   import Split from 'split.js'
   import { mapState, mapGetters } from 'vuex'
   import TableFilter from '../../../mixins/table_filter'
+  import Draggable from 'vuedraggable'
 
   export default {
     mixins: [TableFilter],
-    components: { TableListItem, TableListSchema },
+    components: { TableListItem, TableListSchema, RoutineListItem, Draggable },
     data() {
       return {
         tableLoadError: null,
-        filterQuery: null,
         allExpanded: null,
         allCollapsed: null,
         activeItem: 'tables',
         split: null,
         sizes: [25,75],
-        lastPinnedSize: 0
+        lastPinnedSize: 0,
       }
     },
     computed: {
+      totalEntities() {
+        return this.tables.length + this.routines.length
+      },
+      shownEntities() {
+        return this.filteredTables.length + this.filteredRoutines.length
+      },
+      hiddenEntities() {
+        return this.totalEntities - this.shownEntities
+      },
+      entitiesHidden() {
+        return !this.showTables || !this.showViews || !this.showRoutines
+      },
+      filterQuery: {
+        get() {
+          return this.$store.state.entityFilter.filterQuery
+        },
+        set(newFilter) {
+          this.$store.dispatch('setFilterQuery', newFilter)
+        }
+      },
+      showTables: {
+        get() {
+          return this.$store.state.entityFilter.showTables
+        },
+        set() {
+          this.$store.commit('showTables')
+        }
+      },
+      showViews: {
+        get() {
+          return this.$store.state.entityFilter.showViews
+        },
+        set() {
+          this.$store.commit('showViews')
+        }
+      },
+      showRoutines: {
+        get() {
+          return this.$store.state.entityFilter.showRoutines
+        },
+        set() {
+          this.$store.commit('showRoutines')
+        }
+      },
+      orderedPins: {
+        set(newPins) {
+          this.$store.commit('setPinned', newPins)
+        },
+        get() {
+          return this.pinned
+        }
+      },
+      pinnedTables() {
+        return this.pinned.filter((p) => (p.entityType))
+      },
+      pinnedRoutines() {
+        return this.pinned.filter((p) => (p.type))
+      },
       components() {
         return [
           this.$refs.pinned,
           this.$refs.tables
         ]
       },
-      ...mapState(['tables', 'connection', 'database', 'tablesLoading']),
-      ...mapGetters(['pinned', 'schemaTables', 'tablesHaveSchemas']),
+      supportsRoutines() {
+        return this.connection.supportedFeatures().customRoutines
+      },
+      ...mapState(['tables', 'routines', 'connection', 'database', 'tablesLoading']),
+      ...mapGetters(['pinned', 'schemaTables', 'filteredTables', 'filteredRoutines']),
     },
     watch: {
       pinned: {
@@ -198,6 +293,7 @@
       },
       refreshTables() {
         this.$store.dispatch('updateTables')
+        this.$store.dispatch('updateRoutines')
       }
     },
     mounted() {

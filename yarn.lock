@@ -1389,11 +1389,6 @@
   resolved "https://registry.yarnpkg.com/@types/sql-formatter/-/sql-formatter-2.3.0.tgz#d2584c54f865fd57a7fe7e88ee8ed3623b23da33"
   integrity sha512-Xh9kEOaKWhm3vYD5lUjYFFiSfpN4y3/iQCJUAVwFaQ1rVvHs4WXTa5C8E7gyF3kxwsMS8KgttW7WBAPtFlsvAg==
 
-"@types/sql-query-identifier@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@types/sql-query-identifier/-/sql-query-identifier-1.1.0.tgz#921e81ee2cfae9b5fa7611b745ebcca969b90315"
-  integrity sha512-GupKQRKsB0TJLcvr3dt7FuOni1JrlGAXLw7cexXLVWT5L24UCwFc9daMyK4akav1Fbqlr76SReM7vvuY5Io04A==
-
 "@types/stack-utils@^1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@types/stack-utils/-/stack-utils-1.0.1.tgz#0a851d3bd96498fa25c33ab7278ed3bd65f06c3e"
@@ -12029,9 +12024,9 @@ sql-formatter@^2.3.3:
     lodash "^4.16.0"
 
 sql-query-identifier@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-1.1.0.tgz#b5ff7904eb2d179ad71c92c176a827b86749add9"
-  integrity sha1-tf95BOstF5rXHJLBdqgnuGdJrdk=
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-1.2.0.tgz#a17f62fa1783c24e176d42099fb47634f2569263"
+  integrity sha512-adbLG/Se4YJ5fKANbD3TzYj+C0oi6L3FbfoSPqpTRZyywQRfH8hQZgQDBdFB24IixYnG8em3UeDmj+jiZ9hh8A==
 
 sqlite3@^5.0.0:
   version "5.0.0"
@@ -12489,9 +12484,9 @@ table@^5.2.3:
     string-width "^3.0.0"
 
 tabulator-tables@^4.9.1:
-  version "4.9.1"
-  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-4.9.1.tgz#69eae88e287cbb776ab473d42f306643cd1ca723"
-  integrity sha512-AljCGc7SClxfZDMEpqPhEAvJiLR3oSXhyG7i5cF3gyMoZ3bCPlPWb6k/0WrV53fOvp8B9Tb7IxgDosM9xuCXMw==
+  version "4.9.3"
+  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-4.9.3.tgz#89ea8f9bffc11ba9a789369b5165ac82da26f4f0"
+  integrity sha512-iwwQqAEGGxlgrBpcmJJvMJrfjGLcCXOB3AOb/DGkXqBy1YKoYA36hIl7qXGp6Jo8dSkzFAlDT6pKLZgyhs9OnQ==
 
 tapable@^1.0.0, tapable@^1.1.3:
   version "1.1.3"

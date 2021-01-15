@@ -27,6 +27,7 @@ export default async function (server, database) {
   await driverExecuteQuery(conn, { query: 'SELECT sqlite_version()' });
 
   return {
+    supportedFeatures: () => ({ customRoutines: false }),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
@@ -383,7 +384,7 @@ function parseRowQueryResult({ data, statement, changes }) {
 
 function identifyCommands(queryText) {
   try {
-    return identify(queryText, { strict: false });
+    return identify(queryText, { strict: false, dialect: 'sqlite' });
   } catch (err) {
     return [];
   }
