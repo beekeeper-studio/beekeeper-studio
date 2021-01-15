@@ -44,8 +44,7 @@ export default async function (server, database) {
     getTableReferences: (table) => getTableReferences(conn, table),
     getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema) => getPrimaryKey(conn, db, table, schema),
-    updateValues: (updates) => updateValues(conn, updates),
-    deleteRows: (deletes) => deleteRows(conn, deletes),
+    applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
@@ -447,32 +446,52 @@ export async function getPrimaryKey(conn, database, table, schema) {
   return data.recordset && data.recordset[0] && data.recordset.length === 1 ? data.recordset[0].COLUMN_NAME : null
 }
 
-export async function updateValues(conn, updates) {
+export async function applyChanges(conn, updates) {
+  let results = []
 
-  const { updateQueries, selectQueries } = buildUpdateAndSelectQueries(knex, updates)
-  const sql = ['set xact_abort on', 'BEGIN TRANSACTION', ...updateQueries, 'COMMIT'].join(";")
-  const results = []
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
-    await driverExecuteQuery(cli, { query: sql })
+    await driverExecuteQuery(cli, { query: 'set xact_abort on; BEGIN TRANSACTION' })
 
-    for (let index = 0; index < selectQueries.length; index++) {
-      const element = selectQueries[index];
-      const r = await driverExecuteQuery(cli, element)
-      if (r.data[0]) results.push(r.data[0])
+    try {
+      if (changes.updates) {
+        results = updateValues(cli, changes.updates)
+      }
+  
+      if (changes.deletes) {
+        deleteRows(cli, changes.updates)
+      }
+  
+      await driverExecuteQuery(cli, { query: 'COMMIT'})
+    } catch (ex) {
+      log.error("query exception: ", ex)
+      throw ex
     }
   })
+
   return results
 }
 
-export async function deleteRows(conn, deletes) {
+export async function updateValues(cli, updates) {
 
-  const deleteQueries = buildDeleteQueries(knex, deletes)
-  const sql = ['set xact_abort on', 'BEGIN TRANSACTION', ...deleteQueries, 'COMMIT'].join(";")
-  await runWithConnection(conn, async (connection) => {
-    const cli = { connection }
-    await driverExecuteQuery(cli, { query: sql })
-  })
+  const { updateQueries, selectQueries } = buildUpdateAndSelectQueries(knex, updates)
+
+  const results = []
+  await driverExecuteQuery(cli, { query: updateQueries.join(";") })
+
+  for (let index = 0; index < selectQueries.length; index++) {
+    const element = selectQueries[index];
+    const r = await driverExecuteQuery(cli, element)
+    if (r.data[0]) results.push(r.data[0])
+  }
+
+  return results
+}
+
+export async function deleteRows(cli, deletes) {
+
+  await driverExecuteQuery(cli, { query: buildDeleteQueries(knex, deletes).join(";") })
+
   return true
 }
 

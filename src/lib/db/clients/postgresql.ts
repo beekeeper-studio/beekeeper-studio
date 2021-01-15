@@ -8,7 +8,7 @@ import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableUpdate, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig } from '../client'
+import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig } from '../client'
 import { buildDatabseFilter, buildDeleteQueries, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors, Error as CustomError } from '../../errors';
@@ -167,8 +167,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     // TODO
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
-    updateValues: (updates) => updateValues(conn, updates),
-    deleteRows: (deletes) => deleteRows(conn, deletes),
+    applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
     executeQuery: (queryText, schema = defaultSchema) => executeQuery(conn, queryText),
     listDatabases: (filter?: DatabaseFilterOptions) => listDatabases(conn, filter),
@@ -556,7 +555,34 @@ export async function getPrimaryKey(conn: Conn, database: string, table: string,
   return data.rows && data.rows[0] && data.rows.length === 1 ? data.rows[0].column_name : null
 }
 
-export async function updateValues(conn: Conn, updates: TableUpdate[]): Promise<TableUpdateResult[]> {
+export async function applyChanges(conn: Conn, changes: TableChanges): Promise<TableUpdateResult[]> {
+  let results: TableUpdateResult[] = []
+
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    await driverExecuteQuery(cli, { query: 'BEGIN' })
+
+    try {
+      if (changes.updates) {
+        updateValues(cli, changes.updates)
+      }
+    
+      if (changes.deletes) {
+        deleteRows(cli, changes.deletes)
+      }
+
+      await driverExecuteQuery(cli, { query: 'COMMIT'})
+    } catch (ex) {
+      log.error("query exception: ", ex)
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
+      throw ex
+    }
+  })
+
+  return results
+}
+
+async function updateValues(cli: any, updates: TableUpdate[]): Promise<TableUpdateResult[]> {
 
   // If a type starts with an underscore - it's an array
   // so we need to turn the string representation back to an array
@@ -568,39 +594,15 @@ export async function updateValues(conn: Conn, updates: TableUpdate[]): Promise<
 
   const { updateQueries, selectQueries } = buildUpdateAndSelectQueries(knex, updates)
   let results: TableUpdateResult[] = []
-  await runWithConnection(conn, async (connection) => {
-    const cli = { connection }
-    try {
-      await driverExecuteQuery(cli, { query: 'BEGIN' })
-      await driverExecuteQuery(cli, { query: updateQueries.join(";") })
-      const data = await driverExecuteSingle(cli, { query: selectQueries.join(";"), multiple: true })
-      results = [data.rows[0]]
+  await driverExecuteQuery(cli, { query: updateQueries.join(";") })
+  const data = await driverExecuteSingle(cli, { query: selectQueries.join(";"), multiple: true })
+  results = [data.rows[0]]
 
-      await driverExecuteQuery(cli, { query: 'COMMIT' })
-    } catch (ex) {
-      log.error('update error: ', ex)
-      await driverExecuteQuery(cli, { query: 'ROLLBACK' })
-      throw ex
-    }
-  })
   return results
 }
 
-export async function deleteRows(conn: Conn, deletes) {
-  const deleteQueries = buildDeleteQueries(knex, deletes)
-
-  await runWithConnection(conn, async (connection) => {
-    const cli = { connection }
-    try {
-      await driverExecuteQuery(cli, { query: 'BEGIN' })
-      await driverExecuteQuery(cli, { query: deleteQueries.join(";") })
-      await driverExecuteQuery(cli, { query: 'COMMIT'})
-    } catch (ex) {
-      log.error("query exception: ", ex)
-      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
-      throw ex
-    }
-  })
+async function deleteRows(cli: any, deletes: TableDelete[]) {
+  await driverExecuteQuery(cli, { query: buildDeleteQueries(knex, deletes).join(";") })
 
   return true
 }

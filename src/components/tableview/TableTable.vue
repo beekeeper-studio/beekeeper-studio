@@ -575,12 +575,52 @@ return dt.split("(")[0]
       }
     },
     async saveChanges() {
+
+        let replaceData = false
+
+        try {
+          const result = await this.connection.applyChanges(this.pendingChanges)
+          const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
+
+          if (updateIncludedPK || this.hasPendingDeletes) {
+            replaceData = true
+          } else if (this.hasPendingUpdates) {
+            this.tabulator.updateData(result)
+            this.pendingChanges.updates.forEach(edit => {
+              edit.cell.getElement().classList.remove('edited')
+              edit.cell.getElement().classList.add('edit-success')
+              setTimeout(() => {
+                if (edit.cell.getElement()) {
+                  edit.cell.getElement().classList.remove('edit-success')
+                }
+              }, 1000)
+            })
+          }
+
+          this.resetPendingChanges()
+
+          if (replaceData) {
+            this.tabulator.replaceData()
+          }
+
+        } catch (ex) {
+          
+          this.pendingChanges.updates.forEach(edit => {
+              edit.cell.getElement().classList.add('edit-error')
+          })
+          
+          this.setQueryError('Error saving changes', ex.message)
+          this.$noty.error("Error saving changes")
+          
+          return
+        }
+
+        /** 
         let replaceData = false
 
         // handle updates
         if (this.hasPendingUpdates) {
           try {
-            const result = await this.connection.updateValues(this.pendingChanges.updates)
             const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
 
             if (updateIncludedPK) {
@@ -600,26 +640,15 @@ return dt.split("(")[0]
 
             this.pendingChanges.updates = []
             log.info("new Data: ", result)
-          } catch (ex) {
-            this.pendingChanges.updates.forEach(edit => {
-              edit.cell.getElement().classList.add('edit-error')
-            })
-            this.setQueryError('Error Saving Changes', ex.message)
-            this.$noty.error("Error updating rows")
-
-            return
           }
         }
 
         // handle deletes
         if (this.hasPendingDeletes) {
           try {
-            await this.connection.deleteRows(this.pendingChanges.deletes)
             replaceData = true
             this.pendingChanges.deletes = []
           } catch (ex) {
-            this.setQueryError('Error Saving Changes', ex.message)
-            this.$noty.error("Error deleting rows")
 
             return
           }
@@ -628,6 +657,7 @@ return dt.split("(")[0]
         if (replaceData) {
           this.tabulator.replaceData()
         }
+        */
     },
     discardChanges() {
       this.queryError = null
