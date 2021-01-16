@@ -446,7 +446,7 @@ export async function getPrimaryKey(conn, database, table, schema) {
   return data.recordset && data.recordset[0] && data.recordset.length === 1 ? data.recordset[0].COLUMN_NAME : null
 }
 
-export async function applyChanges(conn, updates) {
+export async function applyChanges(conn, changes) {
   let results = []
 
   await runWithConnection(conn, async (connection) => {
@@ -455,11 +455,11 @@ export async function applyChanges(conn, updates) {
 
     try {
       if (changes.updates) {
-        results = updateValues(cli, changes.updates)
+        results = await updateValues(cli, changes.updates)
       }
   
       if (changes.deletes) {
-        deleteRows(cli, changes.updates)
+        await deleteRows(cli, changes.updates)
       }
   
       await driverExecuteQuery(cli, { query: 'COMMIT'})

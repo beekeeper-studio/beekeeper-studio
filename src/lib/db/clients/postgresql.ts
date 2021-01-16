@@ -564,11 +564,11 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
 
     try {
       if (changes.updates) {
-        updateValues(cli, changes.updates)
+        results = await updateValues(cli, changes.updates)
       }
     
       if (changes.deletes) {
-        deleteRows(cli, changes.deletes)
+        await deleteRows(cli, changes.deletes)
       }
 
       await driverExecuteQuery(cli, { query: 'COMMIT'})

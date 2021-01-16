@@ -342,11 +342,11 @@ export async function applyChanges(conn, changes) {
 
     try {
       if (changes.updates) {
-        results = updateValues(cli, changes.updates)
+        results = await updateValues(cli, changes.updates)
       }
   
       if (changes.deletes) {
-        deleteRows(cli, changes.updates)
+        await deleteRows(cli, changes.updates)
       }
   
       await driverExecuteQuery(cli, { query: 'COMMIT'})
