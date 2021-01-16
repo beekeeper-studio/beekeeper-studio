@@ -180,13 +180,6 @@ export async function updateValues(cli, updates) {
 export async function deleteRows(cli, deletes) {
 
   buildDeleteQueries(knex, deletes).forEach(async command => await driverExecuteQuery(cli, { query: command }))
-  
-  /**
-  for (let index = 0; index < commands.length; index++) {
-    const blob = commands[index];
-    await driverExecuteQuery(cli, { query: blob })
-  }
-  */
 
   return true
 }

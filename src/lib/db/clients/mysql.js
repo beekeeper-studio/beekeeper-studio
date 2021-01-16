@@ -404,15 +404,6 @@ export async function deleteRows(cli, deletes) {
   buildDeleteQueries(knex, deletes).forEach(async command => await driverExecuteQuery(cli, { query: command }))
 
   return true
-
-  /**
-  const cli = { connection }
-  for (let index = 0; index < commands.length; index++) {
-    const blob = commands[index];
-    await driverExecuteQuery(cli, { query: blob })
-  }
-  */
-
 }
 
 export async function executeQuery(conn, queryText) {

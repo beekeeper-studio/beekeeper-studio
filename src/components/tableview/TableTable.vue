@@ -550,13 +550,11 @@ return dt.split("(")[0]
         pendingUpdates.push(payload)
 
         this.$set(this.pendingChanges, 'updates', pendingUpdates)
-      }
-
-      if (changeType === CHANGE_TYPE_DELETE) {
+      } else if (changeType === CHANGE_TYPE_DELETE) {
         // remove pending updates for the row marked for deletion
-        let filter = { 'primaryKey': payload.primaryKey }
-        let discardedUpdates = _.filter(this.pendingChanges.updates, filter)
-        let pendingUpdates = _.reject(this.pendingChanges.updates, filter)
+        const filter = { 'primaryKey': payload.primaryKey }
+        const discardedUpdates = _.filter(this.pendingChanges.updates, filter)
+        const pendingUpdates = _.reject(this.pendingChanges.updates, filter)
 
         discardedUpdates.forEach(update => this.discardColumnUpdate(update))
 
@@ -614,50 +612,6 @@ return dt.split("(")[0]
           
           return
         }
-
-        /** 
-        let replaceData = false
-
-        // handle updates
-        if (this.hasPendingUpdates) {
-          try {
-            const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
-
-            if (updateIncludedPK) {
-              replaceData = true
-            } else {
-              this.tabulator.updateData(result)
-              this.pendingChanges.updates.forEach(edit => {
-                edit.cell.getElement().classList.remove('edited')
-                edit.cell.getElement().classList.add('edit-success')
-                setTimeout(() => {
-                  if (edit.cell.getElement()) {
-                    edit.cell.getElement().classList.remove('edit-success')
-                  }
-                }, 1000)
-              })
-            }
-
-            this.pendingChanges.updates = []
-            log.info("new Data: ", result)
-          }
-        }
-
-        // handle deletes
-        if (this.hasPendingDeletes) {
-          try {
-            replaceData = true
-            this.pendingChanges.deletes = []
-          } catch (ex) {
-
-            return
-          }
-        }
-
-        if (replaceData) {
-          this.tabulator.replaceData()
-        }
-        */
     },
     discardChanges() {
       this.queryError = null
