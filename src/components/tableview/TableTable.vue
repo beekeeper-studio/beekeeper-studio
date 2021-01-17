@@ -415,6 +415,17 @@ export default {
         scrollPageUp: false,
         scrollPageDown: false
       },
+      tableContextMenu: [
+        {
+          label: '<i class="item-icon material-icons">add_circle_outline</i> Add row',
+          action: () => {
+            this.tabulator.addRow({}, false).then(row => { 
+              this.addRowToPendingInserts(row)
+              this.tabulator.scrollToRow(row, 'bottom', false)
+            })
+          }
+        }
+      ],
       rowContextMenu:[
         {
           label: '<i class="item-icon material-icons">add_circle_outline</i> Add row',

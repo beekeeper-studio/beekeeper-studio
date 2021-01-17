@@ -117,8 +117,8 @@ export function query(conn, queryText) {
   };
 }
 
-export async function insertRows(conn, inserts) {
-  const insertCommands = inserts.map(insert => {
+export async function insertRows(cli, inserts) {
+  const commands = inserts.map(insert => {
     // remove empty pkColumn data if present
     const rowData = _.omitBy(insert.row.getData(), (value, key) => {
       return (key === insert.pkColumn && !value)
@@ -134,22 +134,7 @@ export async function insertRows(conn, inserts) {
     }
   })
   
-  const commands = [{ query: 'BEGIN'}, ...insertCommands];
-
-  await runWithConnection(conn, async (connection) => {
-    const cli = { connection }
-    try {
-      for (let index = 0; index < commands.length; index++) {
-        const blob = commands[index];
-        await driverExecuteQuery(cli, blob)
-      }
-      await driverExecuteQuery(cli, { query: 'COMMIT'})
-    } catch (ex) {
-      log.error("query exception: ", ex)
-      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
-      throw ex
-    }
-  })
+  commands.forEach(async command => await driverExecuteQuery(cli, command))
 
   return true
 }
@@ -162,6 +147,10 @@ export async function applyChanges(conn, changes) {
     await driverExecuteQuery(cli, { query: 'BEGIN'})
 
     try {
+      if (changes.inserts) {
+        await insertRows(cli, changes.inserts)
+      }
+
       if (changes.updates) {
         results = await updateValues(cli, changes.updates)
       }
