@@ -1,15 +1,18 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
+import logRaw from 'electron-log'
 
-export function buildSchemaFilter({ schema } = {}, schemaField = 'schema_name') {
-  if (!schema) { return null; }
+const log = logRaw.scope('db/util')
 
-  if (typeof schema === 'string') {
+export function buildSchemaFilter(filter, schemaField = 'schema_name') {
+  if (!filter) return null
+  const { schema, only, ignore } = filter
+
+  if (schema) {
     return `${schemaField} = '${schema}'`;
   }
 
   const where = [];
-  const { only, ignore } = schema;
 
   if (only && only.length) {
     where.push(`${schemaField} IN (${only.map((name) => `'${name}'`).join(',')})`);
@@ -22,15 +25,17 @@ export function buildSchemaFilter({ schema } = {}, schemaField = 'schema_name') 
   return where.join(' AND ');
 }
 
-export function buildDatabseFilter({ database } = {}, databaseField) {
-  if (!database) { return null; }
+export function buildDatabseFilter(filter, databaseField) {
+  if (!filter) {
+    return null
+  }
+  const { only, ignore, database } = filter
 
-  if (typeof database === 'string') {
+  if (database) {
     return `${databaseField} = '${database}'`;
   }
 
   const where = [];
-  const { only, ignore } = database;
 
   if (only && only.length) {
     where.push(`${databaseField} IN (${only.map((name) => `'${name}'`).join(',')})`);
@@ -43,29 +48,48 @@ export function buildDatabseFilter({ database } = {}, databaseField) {
   return where.join(' AND ');
 }
 
-export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
-  let orderByString = ""
+function wrapIdentifier(value) {
+  return (value !== '*' ? `\`${value.replace(/`/g, '``')}\`` : '*');
+}
+
+
+export function buildFilterString(filters) {
   let filterString = ""
   let filterParams = []
+  if (filters && _.isArray(filters) && filters.length > 0) {
+    filterString = "WHERE " + filters.map((item) => {
+      return `${wrapIdentifier(item.field)} ${item.type} ?`
+    }).join(" AND ")
+
+    filterParams = filters.map((item) => {
+      return item.value
+    })
+  }
+  return {
+    filterString, filterParams
+  }
+}
+
+export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
+  let orderByString = ""
 
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
       if (_.isObject(item)) {
         return `\`${item.field}\` ${item.dir}`
       } else {
-        return item
+        return `\`${item}\``
       }
     })).join(",")
   }
-
-  if (filters && filters.length > 0) {
-    filterString = "WHERE " + filters.map((item) => {
-      return `\`${item.field}\` ${item.type} ?`
-    }).join(" AND ")
-
-    filterParams = filters.map((item) => {
-      return item.value
-    })
+  let filterString = ""
+  let filterParams = []
+  if (_.isString(filters)) {
+    filterString = `WHERE ${filters}`
+  } else {
+    const filterBlob = buildFilterString(filters)
+    filterString = filterBlob.filterString
+    filterParams = filterBlob.filterParams
   }
 
   let baseSQL = `
@@ -86,14 +110,15 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
 
 export async function genericSelectTop(conn, table, offset, limit, orderBy, filters, executor){
   const { query, countQuery, params } = buildSelectTopQuery(table, offset, limit, orderBy, filters)
-
+  log.debug("selectTop queries", query, countQuery, params)
   const countResults = await executor(conn, { query: countQuery, params })
   const result = await executor(conn, { query, params })
   const rowWithTotal = countResults.data.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
+  console.log('selectTop result', result, totalRecords)
   return {
     result: result.data,
-    totalRecords
+    totalRecords: Number(totalRecords)
   }
 }
 

@@ -16,7 +16,17 @@
         <span class="expand">Enable SSL</span>
         <x-switch @click.prevent="config.ssl = !config.ssl" :toggled="config.ssl"></x-switch>
       </h4>
+
       <div class="advanced-body" v-show="config.ssl">
+        <div class="row gutter">
+          <div class="alert alert-info">
+            <i class="material-icons">info</i>
+            <p>
+              Providing certificate files is optional. By default Beekeeper will just trust the server certificate.
+              <external-link href="https:/docs.beekeeperstudio.io/guide/#ssl">Read More</external-link>
+            </p>
+          </div>
+        </div>
         <div class="row gutter">
           <div class="col form-group">
             <label>CA Cert (optional)</label>
@@ -36,6 +46,17 @@
             <label>Key File (optional)</label>
             <file-picker v-model="config.sslKeyFile"></file-picker>
           </div>
+        </div>
+        <div class="row gutter">
+          <div class="col form-group">
+            <label class="checkbox-group" for="reject">
+              <input class="form-control" id="reject" type="checkbox" name="rememberPassword" v-model="config.sslRejectUnauthorized">
+              <span>Reject Unauthorized</span>
+              <i class="material-icons" v-tooltip="'This only takes effect if you provide certificate files'">help_outlined</i>
+            </label>
+
+          </div>
+
         </div>
       </div>
     </div>
@@ -59,12 +80,14 @@
 </template>
 
 <script>
-  import FilePicker from '@/components/common/form/FilePicker'
+import FilePicker from '@/components/common/form/FilePicker'
+import ExternalLink from '@/components/common/ExternalLink'
 
   export default {
     props: ['config'],
     components: {
-      FilePicker
+      FilePicker,
+      ExternalLink
     },
     methods: {
       onPaste(event) {

@@ -15,7 +15,7 @@ if (electron.remote) {
 }
 const updatesDisabled = !!p.env.BEEKEEPER_DISABLE_UPDATES
 
-let userDirectory =  testMode ? './' : e.app.getPath("userData")
+let userDirectory =  testMode ? './tmp' : e.app.getPath("userData")
 if (p.env.PORTABLE_EXECUTABLE_DIR) {
   userDirectory = path.join(p.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
 }
@@ -23,6 +23,7 @@ const platformInfo = {
   isWindows, isMac,
   isLinux: !isWindows && !isMac,
   isSnap: p.env.ELECTRON_SNAP,
+  isPortable: isWindows && p.env.PORTABLE_EXECUTABLE_DIR,
   isDevelopment: isDevEnv,
   isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
   sshAuthSock: p.env.SSH_AUTH_SOCK,

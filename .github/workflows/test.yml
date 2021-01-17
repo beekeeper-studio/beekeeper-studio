@@ -1,12 +1,19 @@
 name: Unit Tests
 
-on: push
+on: 
+  push:
+  pull_request:
+    branches:
+      # Branches from forks have the form 'user:branch-name' so we only run
+      # this job on pull_request events for branches that look like fork
+      # branches. Without this we would end up running this job twice for non
+      # forked PRs, once for the push and then once for opening the PR.
+    - '**:**'
 
 jobs:
-  run-linters:
-    name: Run linters
+  testing:
+    name: Test Suite
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v2
@@ -19,5 +26,13 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - run: yarn run lint
-      - run: yarn run test:unit
+      - name: Lint
+        run: yarn run lint
+      
+      - name: Unit Tests
+        run: yarn run test:unit
+
+      - name: Integration Tests
+        run: yarn run test:integration
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: true

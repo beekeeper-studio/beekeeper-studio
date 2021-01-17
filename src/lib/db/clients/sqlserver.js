@@ -30,6 +30,7 @@ export default async function (server, database) {
   await driverExecuteQuery(conn, { query: 'SELECT 1' });
 
   return {
+    supportedFeatures: () => ({ customRoutines: true}),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),
@@ -43,8 +44,7 @@ export default async function (server, database) {
     getTableReferences: (table) => getTableReferences(conn, table),
     getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema) => getPrimaryKey(conn, db, table, schema),
-    updateValues: (updates) => updateValues(conn, updates),
-    deleteRows: (deletes) => deleteRows(conn, deletes),
+    applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
@@ -63,23 +63,28 @@ export async function disconnect(conn) {
   connection.close();
 }
 
-export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
-  let orderByString = ""
+function buildFilterString(filters) {
   let filterString = ""
+  if (filters && filters.length > 0) {
+    filterString = "WHERE " + filters.map((item) => {
+      return `${wrapIdentifier(item.field)} ${item.type} '${item.value}'`
+    }).join(" AND ")
+  }
+  return filterString
+}
+
+export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
+  let orderByString = "ORDER BY (SELECT NULL)"
+  console.log("filters", filters)
+  const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
       if (_.isObject(item)) {
         return `${wrapIdentifier(item.field)} ${item.dir}`
       } else {
-        return item
+        return wrapIdentifier(item)
       }
     })).join(",")
-  }
-
-  if (filters && filters.length > 0) {
-    filterString = "WHERE " + filters.map((item) => {
-      return `${wrapIdentifier(item.field)} ${item.type} '${item.value}'`
-    }).join(" AND ")
   }
 
   let baseSQL = `
@@ -236,25 +241,64 @@ export async function listMaterializedViews() {
 }
 
 export async function listRoutines(conn, filter) {
-  const schemaFilter = buildSchemaFilter(filter, 'routine_schema');
+  const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema');
   const sql = `
     SELECT
-      routine_schema,
-      routine_name,
-      routine_type
-    FROM INFORMATION_SCHEMA.ROUTINES
-    ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
-    GROUP BY routine_schema, routine_name, routine_type
+      r.specific_name as id,
+      r.routine_schema as routine_schema,
+      r.routine_name as name,
+      r.routine_type as routine_type,
+      r.data_type as data_type
+    FROM INFORMATION_SCHEMA.ROUTINES r
+    where r.routine_schema not in ('sys', 'information_schema',
+                                'mysql', 'performance_schema', 'INFORMATION_SCHEMA')
+    ${schemaFilter ? `AND ${schemaFilter}` : ''}
     ORDER BY routine_schema, routine_name
   `;
 
-  const { data } = await driverExecuteQuery(conn, { query: sql });
+  const paramsSQL = `
+    select 
+        r.routine_schema as routine_schema,
+        r.specific_name as specific_name,
+        p.parameter_name as parameter_name,
+        p.character_maximum_length as char_length,
+        p.data_type as data_type
+  from INFORMATION_SCHEMA.ROUTINES r
+  left join INFORMATION_SCHEMA.PARAMETERS p
+            on p.specific_schema = r.routine_schema
+            and p.specific_name = r.specific_name
+  where r.routine_schema not in ('sys', 'information_schema',
+                                'mysql', 'performance_schema', 'INFORMATION_SCHEMA')
+    ${schemaFilter ? `AND ${schemaFilter}` : ''}
 
-  return data.recordset.map((row) => ({
-    schema: row.routine_schema,
-    routineName: row.routine_name,
-    routineType: row.routine_type,
-  }));
+      AND p.parameter_mode = 'IN'
+  order by r.routine_schema,
+          r.specific_name,
+          p.ordinal_position;
+
+  `
+
+  const { data } = await driverExecuteQuery(conn, { query: sql });
+  const paramsResult = await driverExecuteQuery(conn, { query: paramsSQL })
+  const grouped = _.groupBy(paramsResult.data.recordset, 'specific_name')
+
+  return data.recordset.map((row) => {
+    const params = grouped[row.id] || []
+    return {
+      schema: row.routine_schema,
+      name: row.name,
+      type: row.routine_type ? row.routine_type.toLowerCase() : 'function',
+      returnType: row.data_type,
+      id: row.id,
+      routineParams: params.map((p) => {
+        return {
+          name: p.parameter_name,
+          type: p.data_type,
+          length: p.char_length || undefined
+        }
+      })
+    }
+  });
 }
 
 export async function listTableColumns(conn, database, table) {
@@ -399,35 +443,55 @@ export async function getPrimaryKey(conn, database, table, schema) {
   `
   const { data } = await driverExecuteQuery(conn, { query: sql})
   logger().debug('primary key results:', data)
-  return data.recordset && data.recordset[0] ? data.recordset[0].COLUMN_NAME : null
+  return data.recordset && data.recordset[0] && data.recordset.length === 1 ? data.recordset[0].COLUMN_NAME : null
 }
 
-export async function updateValues(conn, updates) {
+export async function applyChanges(conn, changes) {
+  let results = []
 
-  const { updateQueries, selectQueries } = buildUpdateAndSelectQueries(knex, updates)
-  const sql = ['set xact_abort on', 'BEGIN TRANSACTION', ...updateQueries, 'COMMIT'].join(";")
-  const results = []
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
-    await driverExecuteQuery(cli, { query: sql })
+    await driverExecuteQuery(cli, { query: 'set xact_abort on; BEGIN TRANSACTION' })
 
-    for (let index = 0; index < selectQueries.length; index++) {
-      const element = selectQueries[index];
-      const r = await driverExecuteQuery(cli, element)
-      if (r.data[0]) results.push(r.data[0])
+    try {
+      if (changes.updates) {
+        results = await updateValues(cli, changes.updates)
+      }
+  
+      if (changes.deletes) {
+        await deleteRows(cli, changes.updates)
+      }
+  
+      await driverExecuteQuery(cli, { query: 'COMMIT'})
+    } catch (ex) {
+      log.error("query exception: ", ex)
+      throw ex
     }
   })
+
   return results
 }
 
-export async function deleteRows(conn, deletes) {
+export async function updateValues(cli, updates) {
 
-  const deleteQueries = buildDeleteQueries(knex, deletes)
-  const sql = ['set xact_abort on', 'BEGIN TRANSACTION', ...deleteQueries, 'COMMIT'].join(";")
-  await runWithConnection(conn, async (connection) => {
-    const cli = { connection }
-    await driverExecuteQuery(cli, { query: sql })
-  })
+  const { updateQueries, selectQueries } = buildUpdateAndSelectQueries(knex, updates)
+
+  const results = []
+  await driverExecuteQuery(cli, { query: updateQueries.join(";") })
+
+  for (let index = 0; index < selectQueries.length; index++) {
+    const element = selectQueries[index];
+    const r = await driverExecuteQuery(cli, element)
+    if (r.data[0]) results.push(r.data[0])
+  }
+
+  return results
+}
+
+export async function deleteRows(cli, deletes) {
+
+  await driverExecuteQuery(cli, { query: buildDeleteQueries(knex, deletes).join(";") })
+
   return true
 }
 
@@ -556,7 +620,7 @@ function configDatabase(server, database) {
     requestTimeout: Infinity,
     appName: server.config.applicationName || 'beekeeperstudio',
     pool: {
-      max: 5,
+      max: 10,
     }
   };
   if (server.config.domain) {
@@ -575,7 +639,6 @@ function configDatabase(server, database) {
     }
 
     if (server.config.sslCaFile) {
-      options.trustServerCertificate = false
       options.cryptoCredentialsDetails.ca = readFileSync(server.config.sslCaFile);
     }
 
@@ -585,6 +648,15 @@ function configDatabase(server, database) {
 
     if (server.config.sslKeyFile) {
       options.cryptoCredentialsDetails.key = readFileSync(server.config.sslKeyFile);
+    }
+
+    if (!server.config.sslCaFile && !server.config.sslCertFile && !server.config.sslKeyFile) {
+      options.trustServerCertificate = true
+    } else {
+      // trust = !reject
+      // mssql driver reverses this setting for no obvious reason
+      // other drivers simply pass through to the SSL library.
+      options.trustServerCertificate = !server.config.sslRejectUnauthorized
     }
 
     config.options = options;
@@ -632,6 +704,6 @@ export async function driverExecuteQuery(conn, queryArgs) {
 
 async function runWithConnection(conn, run) {
   const connection = await new ConnectionPool(conn.dbConfig).connect();
-
+  conn.connection = connection
   return run(connection);
 }

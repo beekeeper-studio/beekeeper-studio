@@ -1,45 +1,23 @@
 
-## Table editing, Foreign Key Links, and other lovely things
+## 1.9 Functions, Procedures, and SSL love
 
+Oh hey there lovely Beekeeper Studio users.
 
+This release adds a few nice things folks have been asking for, mostly little things, but you know it's the little things that make software nice to use.
 
+### In this release
 
-Some really big features in this release, but the headliners are:
-1. **Table Editing**: So long as your table has a `primary key` you can edit the values of the other columns right inside Beekeeper
+**Headline Feature**: We've added custom functions and procedures to the database UI sidebar. The UI shows argument types and return types, and allows you to pin them alongside tables and views.
 
-2. **FK Links**: Click on a foreign key column to jump to that record in the foreign key table.
-
-This release would not be possible without some massive community contributions. MVP for this release goes to @UtechtDustin, who has contributed quite a number of Pull Requests.
-
-More features in this release:
-- Cancel long running queries
-- Query execution time
-- Table view now shows total records and last refresh time
-- Context menus (right click menus) for tabs
-- SQL formatter for the SQL editor
-- Added the option to copy a connection as a URL
-- Fixed HEX value display in table view
-- You can now toggle comments in the query editor as expected
-- SSH tunnel switch is fixed
-- There's a nice info message if you try and run a blank query
-- PSQL connections use a default database if none is specified
-
+1. Reorder your pinned items!
+2. SSL connections now allow you to toggle `requireAuthorization` if you provide your own certificate, allowing both `sslMode=require` and `sslMode=verify`.
+3. Tab reordering - you can drag and drop your tabs to reorder them.
+4. Table tabs now allow you to filter with a SQL condition, so you can filter on multiple columns or do other, more complex things.
+5. Passwordless connections for PSQL/Cockroach - if you have to provide a client cert, but no password, you can now do this.
+6. Refresh a table tab by clicking on the last refresh time in the UI.
 
 ### Pull Requests in this release
-
-94632cb Merge pull request #299 from geovannimp/add-select-to-bool-type-at-edit-mode
-2dffcf9 Merge pull request #296 from UtechtDustin/some-issues
-f3aeb03 Merge pull request #294 from UtechtDustin/feature/added-shortcut-for-toggling-comments
-2521b8c Merge pull request #293 from UtechtDustin/use-default-database-postgresql
-56589e2 Merge pull request #291 from UtechtDustin/fix-ssh-tunnel-switch-status
-dfb301f Merge pull request #289 from UtechtDustin/fix/199
-890c412 Merge pull request #288 from UtechtDustin/add-open-to-copy-connection-url
-41d83ba Merge pull request #285 from beekeeper-studio/context-menu
-25a0423 Merge pull request #276 from beekeeper-studio/foreign-key-lookups
-9ff3131 Merge pull request #282 from UtechtDustin/editorconfig
-1815116 Merge pull request #271 from UtechtDustin/fix/259
-86bdf4f Merge pull request #272 from UtechtDustin/fix/connectionString
-91c01a2 Merge pull request #264 from beekeeper-studio/dependabot/npm_and_yarn/elliptic-6.5.3
-9dfb1d6 Merge pull request #266 from UtechtDustin/show-no-query-message
-1901d2d Merge pull request #268 from UtechtDustin/feature/259
-Done in 0.06s.
+e6e6215 Merge pull request #500 from beekeeper-studio/routines
+99ebb61 Merge pull request #459 from beekeeper-studio/dupe-column-results
+8b84c5a Merge pull request #425 from fabscav/feature/tab-reorder
+b371bb7 Merge pull request #427 from fabscav/feature/table-view-raw-search

@@ -1,0 +1,52 @@
+name: Pull Request & Branch Build
+
+on:
+  push:
+    branches-ignore: master
+    tags-ignore: "v*"
+  pull_request:
+    branches:
+      # Branches from forks have the form 'user:branch-name' so we only run
+      # this job on pull_request events for branches that look like fork
+      # branches. Without this we would end up running this job twice for non
+      # forked PRs, once for the push and then once for opening the PR.
+    - '**:**'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-18.04, windows-latest]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12
+
+      - name: Check dependencies
+        run: "yarn install --frozen-lockfile"
+
+      - name: Build Electron app
+        run: "yarn run electron:build --publish never"
+
+      - name: Cleanup artifacts
+        if: matrix.os != 'windows-latest'
+        run: |
+          npx rimraf "dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
+
+      - name: Cleanup artifacts Win
+        if: matrix.os == 'windows-latest'
+        run: |
+          npx rimraf "dist_electron/!(*.exe)"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}
+          path: dist_electron

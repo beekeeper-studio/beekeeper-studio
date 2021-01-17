@@ -1,17 +1,16 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs'
-
+import _ from 'lodash'
 import mysql from 'mysql2';
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 
-import createLogger from '../../logger';
 import { createCancelablePromise } from '../../../common/utils';
-import errors from '../../errors';
+import { errors } from '../../errors';
 import { buildDeleteQueries, genericSelectTop } from './utils';
-
-
-const logger = createLogger('db:clients:mysql');
+import rawLog from 'electron-log'
+const log = rawLog.scope('mysql')
+const logger = () => log
 
 const knex = knexlib({ client: 'mysql2' })
 
@@ -32,6 +31,7 @@ export default async function (server, database) {
   await driverExecuteQuery(conn, { query: 'select version();' });
 
   return {
+    supportedFeatures: () => ({ customRoutines: true }),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
@@ -46,12 +46,11 @@ export default async function (server, database) {
     getPrimaryKey: (db, table) => getPrimaryKey(conn, db, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
-    updateValues: (updates) => updateValues(conn, updates),
-    deleteRows: (deletes) => deleteRows(conn, deletes),
+    applyChanges: (changes) => applyChanges(conn, changes),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
-    w: (table, limit) => getQuerySelectTop(conn, table, limit),
+    getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
     getRoutineCreateScript: (routine, type) => getRoutineCreateScript(conn, routine, type),
@@ -93,19 +92,67 @@ export async function listViews(conn) {
 }
 
 export async function listRoutines(conn) {
-  const sql = `
-    SELECT routine_name as 'routine_name', routine_type as 'routine_type'
-    FROM information_schema.routines
-    WHERE routine_schema = database()
-    ORDER BY routine_name
+
+  const routinesSQL = `
+    select 
+      r.specific_name as specific_name,
+      r.routine_name as routine_name,
+      r.routine_type as routine_type,
+      r.data_type as data_type,
+      r.character_maximum_length as length
+    from information_schema.routines r
+    where r.routine_schema not in ('sys', 'information_schema',
+                               'mysql', 'performance_schema')
+    and r.routine_schema = database()
+    order by r.specific_name
+  `
+
+  const paramsSQL = `
+select 
+       r.routine_schema as routine_schema,
+       r.specific_name as specific_name,
+       p.parameter_name as parameter_name,
+       p.character_maximum_length as char_length,
+       p.data_type as data_type
+from information_schema.routines r
+left join information_schema.parameters p
+          on p.specific_schema = r.routine_schema
+          and p.specific_name = r.specific_name
+where r.routine_schema not in ('sys', 'information_schema',
+                               'mysql', 'performance_schema')
+    AND p.parameter_mode is not null
+    and r.routine_schema = database()
+order by r.routine_schema,
+         r.specific_name,
+         p.ordinal_position;
+
   `;
 
-  const { data } = await driverExecuteQuery(conn, { query: sql });
+  // this gives one row by parameter, so have to do a grouping
+  const routinesResult = await driverExecuteQuery(conn, { query: routinesSQL })
+  const paramsResult = await driverExecuteQuery(conn, { query: paramsSQL })
 
-  return data.map((row) => ({
-    routineName: row.routine_name,
-    routineType: row.routine_type,
-  }));
+    
+  const grouped = _.groupBy(paramsResult.data, 'specific_name')
+
+  return routinesResult.data.map((r) => {
+    const params = grouped[r.specific_name] || []
+    return {
+      id: r.specific_name,
+      name: r.specific_name,
+      returnType: r.data_type,
+      returnTypeLength: r.length || undefined,
+      type: r.routine_type ? r.routine_type.toLowerCase() : 'function',
+      routineParams: params.map((p) => {
+        return {
+          name: p.parameter_name,
+          type: p.data_type,
+          length: p.char_length || undefined
+        }
+      })
+
+    }
+  })
 }
 
 export async function listTableColumns(conn, database, table) {
@@ -187,8 +234,12 @@ export async function getTableReferences(conn, table) {
 
 export async function getPrimaryKey(conn, database, table) {
   logger().debug('finding foreign key for', database, table)
-  const sql = `SHOW KEYS FROM ${table} WHERE Key_name = 'PRIMARY'`
-  const { data } = await driverExecuteQuery(conn, { query: sql })
+  const sql = `SHOW KEYS FROM ?? WHERE Key_name = 'PRIMARY'`
+  const params = [
+    table,
+  ];
+  const { data } = await driverExecuteQuery(conn, { query: sql, params })
+  if (data.length !== 1) return null
   return data[0] ? data[0].Column_name : null
 }
 
@@ -282,61 +333,22 @@ export function query(conn, queryText) {
   };
 }
 
-export async function updateValues(conn, updates) {
-  const updateCommands = updates.map(update => {
-    return {
-      query: `UPDATE ${wrapIdentifier(update.table)} SET ${wrapIdentifier(update.column)} = ? WHERE ${wrapIdentifier(update.pkColumn)} = ?`,
-      params: [update.value, update.primaryKey]
-    }
-  })
+export async function applyChanges(conn, changes) {
+  let results = []
 
-  const commands = [{ query: 'START TRANSACTION'}, ...updateCommands];
-  const results = []
-  // TODO: this should probably return the updated values
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
+    await driverExecuteQuery(cli, { query: 'START TRANSACTION'})
+
     try {
-      for (let index = 0; index < commands.length; index++) {
-        const blob = commands[index];
-        await driverExecuteQuery(cli, blob)
+      if (changes.updates) {
+        results = await updateValues(cli, changes.updates)
       }
-
-      const returnQueries = updates.map(update => {
-        return {
-          query: `select * from ${wrapIdentifier(update.table)} where ${wrapIdentifier(update.pkColumn)} = ?`,
-          params: [
-            update.primaryKey
-          ]
-        }
-      })
-
-      for (let index = 0; index < returnQueries.length; index++) {
-        const blob = returnQueries[index];
-        const r = await driverExecuteQuery(cli, blob)
-        if (r.data[0]) results.push(r.data[0])
+  
+      if (changes.deletes) {
+        await deleteRows(cli, changes.updates)
       }
-      await driverExecuteQuery(cli,{ query: 'COMMIT'})
-    } catch (ex) {
-      logger().error("query exception: ", ex)
-      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
-
-      throw ex
-    }
-  })
-  return results
-}
-
-export async function deleteRows(conn, deletes) {
-  const deleteCommands = buildDeleteQueries(knex, deletes)
-
-  const commands = ['START TRANSACTION', ...deleteCommands];
-  await runWithConnection(conn, async (connection) => {
-    const cli = { connection }
-    try {
-      for (let index = 0; index < commands.length; index++) {
-        const blob = commands[index];
-        await driverExecuteQuery(cli, { query: blob })
-      }
+  
       await driverExecuteQuery(cli, { query: 'COMMIT'})
     } catch (ex) {
       logger().error("query exception: ", ex)
@@ -344,6 +356,52 @@ export async function deleteRows(conn, deletes) {
       throw ex
     }
   })
+
+  return results
+}
+
+export async function updateValues(cli, updates) {
+  const commands = updates.map(update => {
+    let value = update.value
+    if (update.columnType && update.columnType === 'bit(1)') {
+      value = _.toNumber(update.value)
+    } else if (update.columnType && update.columnType.startsWith('bit(')) {
+      // value looks like this: b'00000001'
+      value = parseInt(update.value.split("'")[1], 2)
+    }
+    return {
+      query: `UPDATE ${wrapIdentifier(update.table)} SET ${wrapIdentifier(update.column)} = ? WHERE ${wrapIdentifier(update.pkColumn)} = ?`,
+      params: [value, update.primaryKey]
+    }
+  })
+
+  const results = []
+  // TODO: this should probably return the updated values
+  for (let index = 0; index < commands.length; index++) {
+    const blob = commands[index];
+    await driverExecuteQuery(cli, blob)
+  }
+
+  const returnQueries = updates.map(update => {
+    return {
+      query: `select * from ${wrapIdentifier(update.table)} where ${wrapIdentifier(update.pkColumn)} = ?`,
+      params: [
+        update.primaryKey
+      ]
+    }
+  })
+
+  for (let index = 0; index < returnQueries.length; index++) {
+    const blob = returnQueries[index];
+    const r = await driverExecuteQuery(cli, blob)
+    if (r.data[0]) results.push(r.data[0])
+  }
+
+  return results
+}
+
+export async function deleteRows(cli, deletes) {
+  buildDeleteQueries(knex, deletes).forEach(async command => await driverExecuteQuery(cli, { query: command }))
 
   return true
 }
@@ -462,7 +520,6 @@ function configDatabase(server, database) {
 
   if (server.config.ssl) {
     config.ssl = {
-      rejectUnauthorized: !server.config.sslCaFile && !server.config.sslCertFile && !server.config.sslKeyFile
     }
 
     if (server.config.sslCaFile) {
@@ -476,6 +533,18 @@ function configDatabase(server, database) {
     if (server.config.sslKeyFile) {
       config.ssl.key = readFileSync(server.config.sslKeyFile);
     }
+    if (!config.ssl.key && !config.ssl.ca && !config.ssl.cert) {
+      // TODO: provide this as an option in settings
+      // or per-connection as 'reject self-signed certs'
+      // How it works:
+      // if false, cert can be self-signed
+      // if true, has to be from a public CA
+      // Heroku certs are self-signed.
+      // if you provide ca/cert/key files, it overrides this
+      config.ssl.rejectUnauthorized = false
+    } else {
+      config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized
+    }
   }
 
   return config;
@@ -485,6 +554,7 @@ function configDatabase(server, database) {
 function getRealError(conn, err) {
   /* eslint no-underscore-dangle:0 */
   if (conn && conn._protocol && conn._protocol._fatalError) {
+    logger().warn("Query error", err, conn._protocol._fatalError)
     return conn._protocol._fatalError;
   }
   return err;
@@ -523,7 +593,7 @@ function driverExecuteQuery(conn, queryArgs) {
   logger().debug(`Running Query ${queryArgs.query}`)
   const runQuery = (connection) => new Promise((resolve, reject) => {
     connection.query(queryArgs.query, queryArgs.params, (err, data, fields) => {
-      logger().debug(`Resolving Query ${queryArgs.query}`)
+      logger().debug(`Resolving Query ${queryArgs.query}`, queryArgs.params)
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});
       if (err) return reject(getRealError(connection, err));
 

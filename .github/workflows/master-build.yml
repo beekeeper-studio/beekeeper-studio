@@ -1,12 +1,9 @@
-name: Build
+name: Master Build
 
 on: 
   push:
     branches:
-      - "*"
-  pull_request:
-    branches:
-      - "*"
+      - "master"
 
 jobs:
   build:
@@ -14,7 +11,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-18.04, windows-latest, ubuntu-arm64]
+        os: [macos-latest, ubuntu-18.04, windows-latest]
 
     steps:
       - name: Check out Git repository

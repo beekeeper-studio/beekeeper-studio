@@ -54,6 +54,10 @@
       min-width: 28px;
       overflow: hidden;
     }
+    .nav-item-wrap-chosen {
+      background: lighten($theme-bg, 3%);
+      opacity: 0.5;
+    }
     .nav-item {
       max-width: 200px;    
       min-width: 28px;
@@ -194,6 +198,18 @@
   right: 0;
   bottom: 0;
   left: 0;
+  padding-bottom: $statusbar-height;
+  .statusbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+  .btn-fab {
+    .material-icons {
+      font-size: 16px;
+    }
+  }
 }
 .table-filter {
   width: 100%;

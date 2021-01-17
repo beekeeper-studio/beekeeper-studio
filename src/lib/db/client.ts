@@ -8,32 +8,49 @@ const logger = createLogger('db');
 const DEFAULT_LIMIT = 1000;
 const limitSelect: Nullable<number> = null;
 
-export interface IDbEntity {
+export interface TableOrView {
   schema: string,
   name: string,
   entityType?: 'table' | 'view' | 'materialized-view'
-  columns?: IDbColumn[]
+  columns?: TableColumn[]
 }
 
-export interface IDbColumn {
+export interface TableColumn {
   columnName: string,
   dataType: string,
   schemaName?: string,
   tableName?: string,
 }
 
-export interface IDbFilter {
+export interface FilterOptions {
   schema: Nullable<string>
 }
 
-export interface IDbQueryFilter {
+export interface DatabaseFilterOptions {
+  database?: string
+  only?: string[]
+  ignore?: string[]
+}
+
+export interface SchemaFilterOptions {
+  schema?: string
+  only?: string[]
+  ignore?: string[]
+}
+
+export interface OrderBy {
+  dir: 'ASC' | 'DESC',
+  field: string
+}
+
+export interface TableFilter {
   field: string
   type: string
   value: string
 }
 
 export interface IDbInsertValue {
-  column: IDbColumn[],
+  column: TableColumn[],
   value: string
 }
 
@@ -42,46 +59,103 @@ export interface IDbInsert {
   values: IDbInsertValue[],
 }
 
-export interface IDbUpdate {
+export interface TableResult {
+  result: any[],
+  totalRecords: Number
+}
+
+export interface TableChanges {
+  updates: TableUpdate[],
+  deletes: TableDelete[]
+}
+
+export interface TableUpdate {
   table: string
   column: string
   pkColumn: string
+  primaryKey: any
   schema?: string
+  columnType?: string,
+  value: any
 }
 
-export interface IDbDelete {
+export interface TableDelete {
   table: string,
   pkColumn: string,
   schema?: string,
   primaryKey: string
 }
 
-export interface IDbConnection {
+export interface TableKey {
+  toTable: string
+  toSchema: string
+  toColumn: string
+  fromTable: string
+  fromSchema: string
+  fromColumn: string
+  constraintName: string
+  onUpdate?: string
+  onDelete?: string
+}
+
+export type TableUpdateResult = any
+
+export interface RoutineParam {
+  name: string
+  type: string
+  length?: number
+}
+
+// TODO (matthew): Currently only supporting function and procedure
+export type RoutineType = 'function' | 'window' | 'aggregate' | 'procedure'
+
+export const RoutineTypeNames = {
+  'function': "Function",
+  'window': "Window Function",
+  'aggregate': "Aggregate Function",
+  'procedure': "Stored Procedure"
+}
+
+export interface Routine {
+  id: string
+  schema?: string
+  name: string
+  returnType: string
+  returnTypeLength?: number
+  routineParams?: RoutineParam[]
+  pinned?: boolean
+  type: RoutineType
+}
+
+export interface SupportedFeatures {
+  customRoutines: boolean,
+}
+
+export interface DatabaseClient {
+  supportedFeatures: () => SupportedFeatures
   disconnect: () => void,
-  listTables: (db: string, filter?: IDbFilter) => Promise<IDbEntity[]>,
-  listViews: (filter?: IDbFilter) => Promise<IDbEntity[]>,
-  listRoutines: (filter?: IDbFilter) => void,
-  listMaterializedViewColumns: (db: string, table: string, schema?: string) => Promise<IDbColumn[]>
-  listTableColumns: (db: string, table?: string, schema?: string) => Promise<IDbColumn[]>,
+  listTables: (db: string, filter?: FilterOptions) => Promise<TableOrView[]>,
+  listViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
+  listRoutines: (filter?: FilterOptions) => Promise<Routine[]>,
+  listMaterializedViewColumns: (db: string, table: string, schema?: string) => Promise<TableColumn[]>
+  listTableColumns: (db: string, table?: string, schema?: string) => Promise<TableColumn[]>,
   listTableTriggers: (table: string, schema?: string) => void,
   listTableIndexes: (db: string, table: string, schema?: string) => void,
-  listSchemas: (db: string, filter?: IDbFilter) => void,
+  listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>,
   getTableReferences: (table: string, schema?: string) => void,
   getTableKeys: (db: string, table: string, schema?: string) => void,
   query: (queryText: string) => void,
   executeQuery: (queryText: string) => void,
-  listDatabases: (filter?: IDbFilter) => void,
-  insertRows: (inserts: IDbInsert[]) => void,
-  updateValues: (updates: IDbUpdate[]) => void,
-  deleteRows: (deletes: IDbDelete[]) => void,
+  listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
+  applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableCreateScript: (table: string, schema?: string) => void,
   getViewCreateScript: (view: string) => void,
   getRoutineCreateScript: (routine: string, type: string, schema?: string) => void,
   truncateAllTables: (db: string, schema?: string) => void,
-  listMaterializedViews: (filter?: IDbFilter) => Promise<IDbEntity[]>,
-  getPrimaryKey: (db: string, table: string, schema?: string) => void,
-  selectTop: (table: string, offset: number, limit: number, orderBy: string, filters: IDbQueryFilter[], schema?: string) => void,
+  listMaterializedViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
+  getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string>,
+  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[], schema?: string): Promise<TableResult>,
   wrapIdentifier: (value: string) => string
 }
 
@@ -111,6 +185,7 @@ export interface IDbConnectionServerConfig {
   sslCaFile: Nullable<string>,
   sslCertFile: Nullable<string>,
   sslKeyFile: Nullable<string>,
+  sslRejectUnauthorized: boolean,
   ssl: boolean
   localHost?: string,
   localPort?: number,
@@ -133,13 +208,13 @@ export interface IDbConnectionServer {
 
 export interface IDbConnectionDatabase {
   database: string,
-  connection: Nullable<IDbConnection>,
+  connection: Nullable<DatabaseClient>,
   connecting: boolean,
 }
 
 export class DBConnection {
   constructor (private server: IDbConnectionServer, private database: IDbConnectionDatabase) {}
-
+  supportedFeatures = supportedFeatures.bind(null, this.server, this.database)
   connect = connect.bind(null, this.server, this.database)
   disconnect = disconnect.bind(null, this.server, this.database)
   end = disconnect.bind(null, this.server, this.database)
@@ -159,9 +234,7 @@ export class DBConnection {
   executeQuery = executeQuery.bind(null, this.server, this.database)
   listDatabases = listDatabases.bind(null, this.server, this.database)
   selectTop = selectTop.bind(null, this.server, this.database)
-  insertRows = insertRows.bind(null, this.server, this.database)
-  updateValues = updateValues.bind(null, this.server, this.database)
-  deleteRows = deleteRows.bind(null, this.server, this.database)
+  applyChanges = applyChanges.bind(null, this.server, this.database)
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
   getTableCreateScript = getTableCreateScript.bind(null, this.server, this.database)
   getTableSelectScript = getTableSelectScript.bind(null, this.server, this.database)
@@ -241,32 +314,37 @@ function disconnect(server: IDbConnectionServer, database: IDbConnectionDatabase
   }
 }
 
-function selectTop(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, offset: number, limit: number, orderBy: string, filters: IDbQueryFilter[], schema: string) {
+function supportedFeatures(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+  checkIsConnected(server, database)
+  return database.connection?.supportedFeatures()
+}
+
+function selectTop(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[], schema: string) {
   checkIsConnected(server, database)
   return database.connection?.selectTop(table, offset, limit, orderBy, filters, schema);
 }
 
-function listSchemas(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: IDbFilter) {
+function listSchemas(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: SchemaFilterOptions) {
   checkIsConnected(server , database);
   return database.connection?.listSchemas(database.database, filter);
 }
 
-async function listTables(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: IDbFilter) {
+async function listTables(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: FilterOptions) {
   checkIsConnected(server , database);
   return await database.connection?.listTables(database.database, filter) || [];
 }
 
-function listViews(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: IDbFilter) {
+function listViews(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: FilterOptions) {
   checkIsConnected(server , database);
   return database.connection?.listViews(filter) || [];
 }
 
-function listMaterializedViews(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: IDbFilter) {
+function listMaterializedViews(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: FilterOptions) {
   checkIsConnected(server, database)
   return database.connection?.listMaterializedViews(filter) || []
 }
 
-function listRoutines(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: IDbFilter) {
+function listRoutines(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: FilterOptions) {
   checkIsConnected(server , database);
   return database.connection?.listRoutines(filter);
 }
@@ -315,19 +393,9 @@ function query(server: IDbConnectionServer, database: IDbConnectionDatabase, que
   return database.connection?.query(queryText);
 }
 
-function insertRows(server: IDbConnectionServer, database: IDbConnectionDatabase, inserts: IDbInsert[]) {
+function applyChanges(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: TableChanges) {
   checkIsConnected(server, database)
-  return database.connection?.insertRows(inserts)
-}
-
-function updateValues(server: IDbConnectionServer, database: IDbConnectionDatabase, updates: IDbUpdate[]) {
-  checkIsConnected(server, database)
-  return database.connection?.updateValues(updates)
-}
-
-function deleteRows(server: IDbConnectionServer, database: IDbConnectionDatabase, deletes: IDbDelete[]) {
-  checkIsConnected(server, database)
-  return database.connection?.deleteRows(deletes)
+  return database.connection?.applyChanges(changes)
 }
 
 function executeQuery(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string) {
@@ -336,7 +404,7 @@ function executeQuery(server: IDbConnectionServer, database: IDbConnectionDataba
 }
 
 
-function listDatabases(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: IDbFilter) {
+function listDatabases(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: DatabaseFilterOptions) {
   checkIsConnected(server , database);
   return database.connection?.listDatabases(filter);
 }
@@ -431,6 +499,7 @@ function wrap(database: IDbConnectionDatabase, identifier: string | string[]): s
 
 function checkIsConnected(server: IDbConnectionServer, database: IDbConnectionDatabase) {
   if (database.connecting || !database.connection) {
+    console.log(database)
     throw new Error('There is no connection available.');
   }
 }

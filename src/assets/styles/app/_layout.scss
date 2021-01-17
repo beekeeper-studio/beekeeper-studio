@@ -514,8 +514,20 @@ input[type=file] {
   &.view-icon {
     color: $brand-secondary;
   }
-  &.function-icon {
+  &.routine-icon {
     color: $brand-success;
+    &.routine-window-icon {
+      color: $brand-pink;
+    }
+    &.routine-function-icon {
+      color: $brand-success;
+    }
+    &.routine-aggregate-icon {
+      color: $brand-warning;
+    }
+    &.routine-procedure-icon {
+      color: $brand-secondary;
+    }
   }
   &.materialized-view-icon {
     color: $brand-success;

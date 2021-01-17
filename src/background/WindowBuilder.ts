@@ -5,6 +5,7 @@ import { createProtocol } from "vue-cli-plugin-electron-builder/lib"
 import platformInfo from '../common/platform_info'
 import NativeMenuActionHandlers from './NativeMenuActionHandlers'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
+import AppEvent from 'common/AppEvent'
 
 
 const windows: BeekeeperWindow[] = []

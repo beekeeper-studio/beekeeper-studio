@@ -110,14 +110,17 @@
   import 'codemirror/addon/comment/comment'
   import Split from 'split.js'
   import { mapState } from 'vuex'
+  import { identify } from 'sql-query-identifier'
 
   import { splitQueries, extractParams } from '../lib/db/sql_tools'
-  import ProgressBar from './editor/ProgressBar'
-  import ResultTable from './editor/ResultTable'
+  import ProgressBar from './editor/ProgressBar.vue'
+  import ResultTable from './editor/ResultTable.vue'
 
   import sqlFormatter from 'sql-formatter';
 
-  import QueryEditorStatusBar from './editor/QueryEditorStatusBar'
+  import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
+  import rawlog from 'electron-log'
+  const log = rawlog.scope('query-editor')
 
   export default {
     // this.queryText holds the current editor value, always
@@ -125,7 +128,6 @@
     props: ['tab', 'active'],
     data() {
       return {
-        // result: null,
         results: [],
         running: false,
         selectedResult: 0,
@@ -147,6 +149,14 @@
       }
     },
     computed: {
+      dialect() {
+        // dialect for sql-query-identifier
+        const mappings = {
+          'sqlserver': 'mssql',
+          'sqlite': 'sqlite'
+        }
+        return mappings[this.connectionType] || 'generic'
+      },
       hasSelectedText() {
         return this.editor ? !!this.editor.getSelection() : false
       },
@@ -388,6 +398,12 @@
         this.queryForExecution = rawQuery
         this.results = []
         this.selectedResult = 0
+        let identification = []
+        try {
+          identification = identify(rawQuery, { strict: false, dialect: this.dialect })
+        } catch (ex) {
+          log.error("Unable to identify query", ex)
+        }
 
         try {
           if (this.queryParameterPlaceholders.length > 0 && !skipModal) {
@@ -416,7 +432,15 @@
             }
           })
           this.results = results
+
           this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
+          log.debug('identification', identification)
+          const found = identification.find(i => {
+            return i.type === 'CREATE_TABLE'
+          })
+          if (found) {
+            this.$store.dispatch('updateTables')
+          }
         } catch (ex) {
           if(this.running) {
             this.error = ex

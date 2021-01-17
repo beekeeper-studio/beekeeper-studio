@@ -3,6 +3,31 @@ title: User Guide
 sidebarDepth: 2
 ---
 
+## Connecting to a Database
+
+The connection screen allows you to enter connection information for your database.
+
+Note - Beekeeper Studio does not support unix socket connections for PSQL or MYSQL, only TCP connections.
+
+### SSL
+
+There are three ways to connect to a database with SSL
+1. **Trust the server:** Connect with SSL without providing your own certificate.
+2. **Required Cert:** Connect with SSL, provide your own certs, and disable `rejectUnauthorized`.
+3. **Verified Cert:** Connect with SSL, provide your own certs, and enable `rejectUnauthorized`.
+
+Here's a table of how the various `sslmode` flags from command line clients map to Beekeeper:
+
+| sslmode | Turn on SSL? | rejectUnauthorized |
+|------|-----|-----|
+| disable |	no | 	n/a |
+| allow |	no | 	n/a |
+| prefer |	no | 	n/a |
+| require |	yes | 	false |
+| verify-ca |	yes | 	false |
+| verify-full |	yes | 	true |
+
+
 Once you are connected to your database Beekeeper Studio allows you to open tabs to do the following things:
 
 1. SQL Editor: Write and execute SQL Queries (this is what tabs do by default)

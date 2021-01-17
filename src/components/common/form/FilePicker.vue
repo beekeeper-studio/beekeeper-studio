@@ -2,13 +2,14 @@
   <div class="input-group" @click.prevent.stop="openFilePickerDialog">
     <input type="text" class="form-control clickable" placeholder="No file selected" :title="value" :value="value" readonly>
     <div class="input-group-append">
-      <button class="btn btn-flat">Choose file</button>
+      <a type="buttom" class="btn btn-flat">Choose file</a>
     </div>
   </div>
 </template>
 
 <script>
 import { remote } from 'electron'
+
 
 export default {
   props: {

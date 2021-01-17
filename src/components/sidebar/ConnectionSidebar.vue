@@ -14,7 +14,7 @@
       </a>
     </div>
 
-    <div class="expand flex-col">
+    <div class="connection-wrap expand flex-col">
 
       <!-- Saved Connections -->
       <div class="list saved-connection-list expand" ref="savedConnectionList">

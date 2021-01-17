@@ -36,6 +36,14 @@ import platformInfo from './common/platform_info'
 
 (async () => {
   try {
+
+    const transports = [log.transports.console, log.transports.file]
+    if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
+      transports.forEach(t => t.level = 'silly')
+    } else {
+      transports.forEach(t => t.level = 'warn')
+    }
+
     log.info("starting logging")
     tls.DEFAULT_MIN_VERSION = "TLSv1"
     TimeAgo.addLocale(en)

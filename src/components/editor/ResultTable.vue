@@ -33,7 +33,7 @@
       },
       tableData: {
         handler() {
-          // this.tabulator.replaceData(this.tableData)
+          this.tabulator.replaceData(this.tableData)
         }
       },
       tableColumns: {

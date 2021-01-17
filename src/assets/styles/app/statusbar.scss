@@ -160,6 +160,11 @@
         color: $theme-base;
       }
     }
+    &.hoverable:hover, &.hoverable:focus {
+      color: $text-dark;
+      transition: color 0.15s ease-in-out;
+      outline: none;
+    }
   }
   .row-counts {
     .truncated-rows, .records {

@@ -1,10 +1,17 @@
 import { FavoriteQuery } from "common/appdb/models/favorite_query";
-import { DBConnection, IDbColumn } from '../lib/db/client'
+import { TableColumn } from '../lib/db/client'
 
 export interface IDbEntityWithColumns {
-  columns: IDbColumn[]
+  columns: TableColumn[]
+  schema?: string
 }
 
+export interface EntityFilter {
+  filterQuery?: string
+  showTables: boolean
+  showViews: boolean
+  showRoutines: boolean
+}
 
 export enum TabType {
   query = 'query', table = 'table', settings = 'settings'
