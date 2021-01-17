@@ -167,7 +167,7 @@ export async function applyChanges(conn, changes) {
       }
   
       if (changes.deletes) {
-        await deleteRows(cli, changes.updates)
+        await deleteRows(cli, changes.deletes)
       }
   
       await driverExecuteQuery(cli, { query: 'COMMIT'})
