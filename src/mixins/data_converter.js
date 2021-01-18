@@ -12,7 +12,7 @@ export default {
                 {id:5, name:"Margret Marmajuke", age:"16", col:"yellow", dob:"31/01/1999"},
               ];
             */
-          const columnNamesOnly = columns.map((c) => { return c.id || c.field })
+          const columnNamesOnly = columns.map((c) => c.field)
           return data.rows.map((row) => {
             if(_.isArray(row)) {
               const resultRow = {}
