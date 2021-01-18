@@ -12,9 +12,18 @@ export default {
                 {id:5, name:"Margret Marmajuke", age:"16", col:"yellow", dob:"31/01/1999"},
               ];
             */
-          const columnNamesOnly = columns.map((c) => { return c.field })
+          const columnNamesOnly = columns.map((c) => { return c.id || c.field })
           return data.rows.map((row) => {
-            return _.pick(row, columnNamesOnly)
+            if(_.isArray(row)) {
+              const resultRow = {}
+              row.forEach((r, idx) => {
+                resultRow[`f${idx}`] = r
+              })
+              return _.pick(resultRow, columnNamesOnly)
+            } else {
+              return _.pick(row, columnNamesOnly)
+            }
+
           })
         },
         extractColumns(data) {

@@ -109,6 +109,22 @@ export interface SupportedFeatures {
   customRoutines: boolean,
 }
 
+export interface LegacyQueryResult {
+  rows: object[]
+}
+
+export interface NgQueryResult {
+  fields: string[],
+  rows: any[]
+}
+
+export type QueryResult = NgQueryResult[] | LegacyQueryResult[]
+
+export interface CancelableQuery {
+  execute: () => Promise<QueryResult>
+  cancel: () => Promise<void>
+}
+
 export interface DatabaseClient {
   supportedFeatures: () => SupportedFeatures
   disconnect: () => void,

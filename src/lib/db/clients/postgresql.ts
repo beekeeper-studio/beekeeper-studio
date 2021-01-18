@@ -8,7 +8,7 @@ import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableUpdate, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig } from '../client'
+import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableUpdate, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig, NgQueryResult } from '../client'
 import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors, Error as CustomError } from '../../errors';
@@ -591,7 +591,7 @@ export function query(conn: Conn, queryText: string, schema: string) {
   const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
 
   return {
-    execute() {
+    execute(): Promise<NgQueryResult[]> {
       return runWithConnection(conn, async (connection) => {
         const connClient = { connection };
 
@@ -605,12 +605,32 @@ export function query(conn: Conn, queryText: string, schema: string) {
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            executeQuery(connClient, queryText),
+            executeQuery(connClient, queryText, true),
           ]);
 
           pid = null;
 
-          return data;
+          // log.debug('query result', data)
+
+          if(!data) {
+            return []
+          }
+
+          return data.map((result) => {
+            const niceFields = result.fields.map((f, idx) => {
+              return {
+                id: `f${idx}`,
+                ...f
+              }
+            })
+            return {
+              fields: niceFields,
+              rows: result.rows,
+              rowCount: result.rowCount,
+
+            }
+          })
+          // return data;
         } catch (err) {
           if (canceling && err.code === pgErrors.CANCELED) {
             canceling = false;
@@ -624,7 +644,7 @@ export function query(conn: Conn, queryText: string, schema: string) {
       });
     },
 
-    async cancel() {
+    async cancel(): Promise<void> {
       if (!pid) {
         throw new Error('Query not ready to be canceled');
       }
@@ -651,8 +671,8 @@ export function query(conn: Conn, queryText: string, schema: string) {
 }
 
 
-export async function executeQuery(conn: Conn, queryText: string) {
-  const data = await driverExecuteQuery(conn, { query: queryText, multiple: true });
+export async function executeQuery(conn: Conn, queryText: string, arrayMode: boolean = false) {
+  const data = await driverExecuteQuery(conn, { query: queryText, multiple: true, arrayMode });
 
   const commands = identifyCommands(queryText).map((item) => item.type);
 
@@ -913,6 +933,7 @@ interface PostgresQueryArgs {
   query: string
   params?: any[]
   multiple?: boolean
+  arrayMode?: boolean
 }
 
 async function driverExecuteSingle(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult> {
@@ -931,6 +952,7 @@ function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQuery
       text: queryArgs.query,
       values: queryArgs.params,
       multiResult: queryArgs.multiple,
+      rowMode: queryArgs.arrayMode ? 'array' : undefined
     };
 
     // node-postgres has support for Promise query
