@@ -20,7 +20,8 @@
     bottom: 0;
     background: $query-editor-bg;
     &.active {
-      display: flex;
+      display: block;
+      width: 100%;
       z-index: 1;
     }
   }

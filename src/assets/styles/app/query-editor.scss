@@ -67,8 +67,9 @@
       background: lighten($query-editor-bg, 1%);
     }
     .result-table {
-      display: flex;
-      flex-direction: column;
+      display: block;
+      height: 100%;
+      width: 100%;
       overflow: hidden;
     }
     .not-run-yet {
