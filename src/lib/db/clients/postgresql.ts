@@ -610,27 +610,11 @@ export function query(conn: Conn, queryText: string, schema: string) {
 
           pid = null;
 
-          // log.debug('query result', data)
-
           if(!data) {
             return []
           }
 
-          return data.map((result) => {
-            const niceFields = result.fields.map((f, idx) => {
-              return {
-                id: `f${idx}`,
-                ...f
-              }
-            })
-            return {
-              fields: niceFields,
-              rows: result.rows,
-              rowCount: result.rowCount,
-
-            }
-          })
-          // return data;
+          return data
         } catch (err) {
           if (canceling && err.code === pgErrors.CANCELED) {
             canceling = false;
@@ -901,20 +885,21 @@ function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServe
 }
 
 function parseFields(fields: any[]) {
-  return fields.map((field) => {
+  return fields.map((field, idx) => {
     field.dataType = dataTypes[field.dataTypeID] || 'user-defined'
+    field.id = `c${idx}`
     return field
   })
 }
 
-
 function parseRowQueryResult(data: QueryResult, command: string) {
-
+  const fields = parseFields(data.fields)
+  const fieldIds = fields.map(f => f.id)
   const isSelect = data.command === 'SELECT';
   return {
     command: command || data.command,
-    rows: data.rows,
-    fields: parseFields(data.fields),
+    rows: data.rows.map(r => _.zipObject(fieldIds, r)),
+    fields: fields,
     rowCount: isSelect ? (data.rowCount || data.rows.length) : undefined,
     affectedRows: !isSelect && !isNaN(data.rowCount) ? data.rowCount : undefined,
   };

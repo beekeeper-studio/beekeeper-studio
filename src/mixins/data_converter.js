@@ -14,16 +14,7 @@ export default {
             */
           const columnNamesOnly = columns.map((c) => c.field)
           return data.rows.map((row) => {
-            if(_.isArray(row)) {
-              const resultRow = {}
-              row.forEach((r, idx) => {
-                resultRow[`f${idx}`] = r
-              })
-              return _.pick(resultRow, columnNamesOnly)
-            } else {
-              return _.pick(row, columnNamesOnly)
-            }
-
+          return _.pick(row, columnNamesOnly)
           })
         },
         extractColumns(data) {
