@@ -102,6 +102,8 @@ Close Tab <kbd>Ctrl</kbd> + <kbd>W</kbd>
 
 Format Query <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd>
 
+Run Query <kbd>Ctrl</kbd> + <kbd>↩</kbd>
+
 ### Edit
 Undo       <kbd>Ctrl</kbd> + <kbd>Z</kbd>
 
