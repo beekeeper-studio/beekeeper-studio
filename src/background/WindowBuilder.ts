@@ -42,20 +42,18 @@ class BeekeeperWindow {
       icon: getIcon()
     })
 
-    this.win.webContents.zoomLevel = Number(settings.zoomLevel.value) || 0
-
-    if (platformInfo.runningInWebpack) {
-      // Load the url of the dev server if in development mode
-      if (!process.env.IS_TEST) this.win.webContents.openDevTools();
-    } else {
+    this.win.webContents.zoomLevel = Number(settings.zoomLevel?.value) || 0
+    if (!platformInfo.runningInWebpack) {
       createProtocol('app')
-      if (platformInfo.debugEnabled) this.win.webContents.openDevTools();
     }
     this.win.loadURL(platformInfo.appUrl)
+    if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
+      this.win.webContents.openDevTools()
+    }
+
     this.initializeCallbacks()
     this.win.webContents.on('will-navigate', (e, url) => {
       if (url === platformInfo.appUrl) return // this is good
-      
       log.info("navigate to", url)
       e.preventDefault()
       electron.shell.openExternal(url);
