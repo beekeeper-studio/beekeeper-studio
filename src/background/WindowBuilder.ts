@@ -1,12 +1,15 @@
 import _ from 'lodash'
 import path from 'path'
 import { BrowserWindow } from "electron"
+import electron from 'electron'
 import { createProtocol } from "vue-cli-plugin-electron-builder/lib"
 import platformInfo from '../common/platform_info'
 import NativeMenuActionHandlers from './NativeMenuActionHandlers'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import AppEvent from 'common/AppEvent'
+import rawLog from 'electron-log'
 
+const log = rawLog.scope('WindowBuilder')
 
 const windows: BeekeeperWindow[] = []
 
@@ -41,17 +44,22 @@ class BeekeeperWindow {
 
     this.win.webContents.zoomLevel = Number(settings.zoomLevel.value) || 0
 
-    if (process.env.WEBPACK_DEV_SERVER_URL) {
+    if (platformInfo.runningInWebpack) {
       // Load the url of the dev server if in development mode
-      this.win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
       if (!process.env.IS_TEST) this.win.webContents.openDevTools();
     } else {
       createProtocol('app')
-      // Load the index.html when not in development
-      this.win.loadURL('app://./index.html')
       if (platformInfo.debugEnabled) this.win.webContents.openDevTools();
     }
+    this.win.loadURL(platformInfo.appUrl)
     this.initializeCallbacks()
+    this.win.webContents.on('will-navigate', (e, url) => {
+      if (url === platformInfo.appUrl) return // this is good
+      
+      log.info("navigate to", url)
+      e.preventDefault()
+      electron.shell.openExternal(url);
+    })
   }
 
   get webContents() {

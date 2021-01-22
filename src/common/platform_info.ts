@@ -28,13 +28,20 @@ const platformInfo = {
   isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
   sshAuthSock: p.env.SSH_AUTH_SOCK,
   environment: process.env.NODE_ENV,
+  env: {
+    development: isDevEnv,
+    test: testMode,
+    production: !isDevEnv && !testMode && !p.env.WEBPACK_DEV_SERVER_URL
+  },
   debugEnabled: !!process.env.DEBUG,
   platform: easyPlatform,
   darkMode: testMode? true : e.nativeTheme.shouldUseDarkColors || windowPrefersDarkMode,
   userDirectory,
   testMode,
   appDbPath: path.join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
-  updatesDisabled
+  updatesDisabled,
+  runningInWebpack: !!p.env.WEBPACK_DEV_SERVER_URL,
+  appUrl: p.env.WEBPACK_DEV_SERVER_URL ? p.env.WEBPACK_DEV_SERVER_URL : 'app://./index.html'
 }
 
 export default platformInfo
