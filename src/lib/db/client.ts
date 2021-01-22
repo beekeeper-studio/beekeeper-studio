@@ -109,16 +109,21 @@ export interface SupportedFeatures {
   customRoutines: boolean,
 }
 
-export interface LegacyQueryResult {
-  rows: object[]
+export interface FieldDescriptor {
+  name: string
+  id: string
+  dataType?: string
 }
 
 export interface NgQueryResult {
-  fields: string[],
+  fields: FieldDescriptor[]
   rows: any[]
+  rowCount?: number
+  affectedRows?: number
+  command?: any
 }
 
-export type QueryResult = NgQueryResult[] | LegacyQueryResult[]
+export type QueryResult = NgQueryResult[]
 
 export interface CancelableQuery {
   execute: () => Promise<QueryResult>

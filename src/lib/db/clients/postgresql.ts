@@ -660,7 +660,7 @@ export async function executeQuery(conn: Conn, queryText: string, arrayMode: boo
 
   const commands = identifyCommands(queryText).map((item) => item.type);
 
-  return data.map((result, idx) => parseRowQueryResult(result, commands[idx]));
+  return data.map((result, idx) => parseRowQueryResult(result, commands[idx], arrayMode));
 }
 
 
@@ -884,21 +884,21 @@ function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServe
   return config;
 }
 
-function parseFields(fields: any[]) {
+function parseFields(fields: any[], rowResults: boolean) {
   return fields.map((field, idx) => {
     field.dataType = dataTypes[field.dataTypeID] || 'user-defined'
-    field.id = `c${idx}`
+    field.id = rowResults ? `c${idx}` : field.name
     return field
   })
 }
 
-function parseRowQueryResult(data: QueryResult, command: string) {
-  const fields = parseFields(data.fields)
+function parseRowQueryResult(data: QueryResult, command: string, rowResults: boolean): NgQueryResult {
+  const fields = parseFields(data.fields, rowResults)
   const fieldIds = fields.map(f => f.id)
   const isSelect = data.command === 'SELECT';
   return {
     command: command || data.command,
-    rows: data.rows.map(r => _.zipObject(fieldIds, r)),
+    rows: data.rows.map(r => rowResults ? _.zipObject(fieldIds, r) : r),
     fields: fields,
     rowCount: isSelect ? (data.rowCount || data.rows.length) : undefined,
     affectedRows: !isSelect && !isNaN(data.rowCount) ? data.rowCount : undefined,
@@ -966,4 +966,9 @@ async function runWithConnection<T>(x: Conn, run: (p: PoolClient) => Promise<T>)
   } finally {
     connection.release();
   }
+}
+
+
+export const testOnly = {
+  parseRowQueryResult
 }
