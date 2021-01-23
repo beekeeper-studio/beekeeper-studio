@@ -7,7 +7,7 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _ from 'lodash';
 
-import { buildDatabseFilter, buildDeleteQueries, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
+import { buildDatabseFilter, buildInsertQueries, buildDeleteQueries, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
 import logRaw from 'electron-log'
 const log = logRaw.scope('sql-server')
 
@@ -454,6 +454,10 @@ export async function applyChanges(conn, changes) {
     await driverExecuteQuery(cli, { query: 'set xact_abort on; BEGIN TRANSACTION' })
 
     try {
+      if (changes.inserts) {
+        await insertRows(cli, changes.inserts)
+      }
+
       if (changes.updates) {
         results = await updateValues(cli, changes.updates)
       }
@@ -470,6 +474,13 @@ export async function applyChanges(conn, changes) {
   })
 
   return results
+}
+
+export async function insertRows(cli, inserts) {
+
+  await driverExecuteQuery(cli, { query: buildInsertQueries(knex, inserts).join(";") })
+
+  return true
 }
 
 export async function updateValues(cli, updates) {

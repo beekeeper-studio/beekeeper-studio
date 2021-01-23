@@ -7,7 +7,7 @@ import knexlib from 'knex'
 
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
-import { buildDeleteQueries, genericSelectTop } from './utils';
+import { buildInsertQueries, buildDeleteQueries, genericSelectTop } from './utils';
 import rawLog from 'electron-log'
 const log = rawLog.scope('mysql')
 const logger = () => log
@@ -335,12 +335,16 @@ export function query(conn, queryText) {
 
 export async function applyChanges(conn, changes) {
   let results = []
-
+  
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
     await driverExecuteQuery(cli, { query: 'START TRANSACTION'})
-
+    
     try {
+      if (changes.inserts) {
+        await insertRows(cli, changes.inserts)
+      }
+
       if (changes.updates) {
         results = await updateValues(cli, changes.updates)
       }
@@ -358,6 +362,12 @@ export async function applyChanges(conn, changes) {
   })
 
   return results
+}
+
+export async function insertRows(cli, inserts) {
+  buildInsertQueries(knex, inserts).forEach(async command => await driverExecuteQuery(cli, { query: command }))
+  
+  return true
 }
 
 export async function updateValues(cli, updates) {

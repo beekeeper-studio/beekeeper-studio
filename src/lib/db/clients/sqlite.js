@@ -5,7 +5,7 @@ import sqlite3 from 'sqlite3';
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import rawLog from 'electron-log'
-import { buildDeleteQueries, genericSelectTop } from './utils';
+import { buildInsertQueries, buildDeleteQueries, genericSelectTop } from './utils';
 
 const log = rawLog.scope('sqlite')
 const logger = () => log
@@ -118,25 +118,9 @@ export function query(conn, queryText) {
 }
 
 export async function insertRows(cli, inserts) {
-  const commands = inserts.map(insert => {
-    // remove empty pkColumn data if present
-    const rowData = _.omitBy(insert.row.getData(), (value, key) => {
-      return (key === insert.pkColumn && !value)
-    })
-    const columns = Object.keys(rowData)
-    const values = Object.values(rowData)
+    buildInsertQueries(knex, inserts).forEach(async command => await driverExecuteQuery(cli, { query: command }))
 
-    const placeholders = values.map(() => '?')
-
-    return {
-      query: `INSERT INTO ${insert.table}(${columns.join(',')}) VALUES (${placeholders.join(',')})`,
-      params: values
-    }
-  })
-  
-  commands.forEach(async command => await driverExecuteQuery(cli, command))
-
-  return true
+    return true
 }
 
 export async function applyChanges(conn, changes) {

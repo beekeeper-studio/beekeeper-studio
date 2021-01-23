@@ -648,7 +648,7 @@ return dt.split("(")[0]
           const result = await this.connection.applyChanges(this.pendingChanges)
           const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
 
-          if (updateIncludedPK || this.hasPendingDeletes) {
+          if (updateIncludedPK || this.hasPendingInserts || this.hasPendingDeletes) {
             replaceData = true
           } else if (this.hasPendingUpdates) {
             this.tabulator.updateData(result)

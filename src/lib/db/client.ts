@@ -65,8 +65,15 @@ export interface TableResult {
 }
 
 export interface TableChanges {
+  inserts: TableInsert[],
   updates: TableUpdate[],
   deletes: TableDelete[]
+}
+
+export interface TableInsert {
+  table: string
+  row: any[]
+  data: any[]
 }
 
 export interface TableUpdate {
