@@ -10,6 +10,8 @@ import AppEvent from 'common/AppEvent'
 import rawLog from 'electron-log'
 
 const log = rawLog.scope('WindowBuilder')
+const runningInWebpack = !!process.env.WEBPACK_DEV_SERVER_URL
+const appUrl: string = process.env.WEBPACK_DEV_SERVER_URL ? process.env.WEBPACK_DEV_SERVER_URL : 'app://./index.html'
 
 const windows: BeekeeperWindow[] = []
 
@@ -43,17 +45,20 @@ class BeekeeperWindow {
     })
 
     this.win.webContents.zoomLevel = Number(settings.zoomLevel?.value) || 0
-    if (!platformInfo.runningInWebpack) {
+    if (!runningInWebpack) {
       createProtocol('app')
     }
-    this.win.loadURL(platformInfo.appUrl)
+    log.debug(platformInfo)
+    log.debug('env', )
+    log.info("app url", appUrl)
+    this.win.loadURL(appUrl)
     if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
       this.win.webContents.openDevTools()
     }
 
     this.initializeCallbacks()
     this.win.webContents.on('will-navigate', (e, url) => {
-      if (url === platformInfo.appUrl) return // this is good
+      if (url === appUrl) return // this is good
       log.info("navigate to", url)
       e.preventDefault()
       electron.shell.openExternal(url);

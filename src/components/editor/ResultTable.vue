@@ -89,6 +89,7 @@
         height: this.actualTableHeight,
         nestedFieldSeparator: false,
         cellClick: this.cellClick,
+        // columnMaxWidth: 300,
         clipboard: true,
         keybindings: {
           copyToClipboard: false
