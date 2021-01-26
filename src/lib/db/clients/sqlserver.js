@@ -661,7 +661,7 @@ function parseRowQueryResult(data, rowsAffected, command) {
   return {
     command: command || (isSelect && 'SELECT'),
     rows: data,
-    fields: Object.keys(data[0] || {}).map((name) => ({ name })),
+    fields: Object.keys(data[0] || {}).map((name) => ({ name, id: name })),
     rowCount: data.length,
     affectedRows: rowsAffected,
   };

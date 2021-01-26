@@ -10,6 +10,8 @@ if (remote?.process?.env?.DEBUG) {
 }
 
 function hasSshKeysPlug() {
+  if (!platformInfo.isSnap) return false;
+
   try {
     const code = execSync('snapctl is-connected ssh-keys')
     return Number(code) == 0
