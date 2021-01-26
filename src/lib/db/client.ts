@@ -138,6 +138,27 @@ export interface SupportedFeatures {
   customRoutines: boolean,
 }
 
+export interface FieldDescriptor {
+  name: string
+  id: string
+  dataType?: string
+}
+
+export interface NgQueryResult {
+  fields: FieldDescriptor[]
+  rows: any[]
+  rowCount?: number
+  affectedRows?: number
+  command?: any
+}
+
+export type QueryResult = NgQueryResult[]
+
+export interface CancelableQuery {
+  execute: () => Promise<QueryResult>
+  cancel: () => Promise<void>
+}
+
 export interface DatabaseClient {
   supportedFeatures: () => SupportedFeatures
   disconnect: () => void,

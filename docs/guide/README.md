@@ -89,3 +89,30 @@ Click the little `open` button next to a table name to open the table in a table
 Now you can filter, sort, and explore your table data all day.
 
 ![table tab](../assets/img/table-tab.png)
+
+## Keyboard Shortcuts
+
+### General Shortcuts
+
+New Window <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>N</kbd>
+
+New Tab <kbd>Ctrl</kbd> + <kbd>T</kbd>
+
+Close Tab <kbd>Ctrl</kbd> + <kbd>W</kbd>
+
+Format Query <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd>
+
+Run Query <kbd>Ctrl</kbd> + <kbd>↩</kbd>
+
+### Edit
+Undo       <kbd>Ctrl</kbd> + <kbd>Z</kbd>
+
+Redo       <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>Z</kbd>
+
+Cut        <kbd>Ctrl</kbd> + <kbd>X</kbd>
+
+Copy       <kbd>Ctrl</kbd> + <kbd>C</kbd>
+
+Paste      <kbd>Ctrl</kbd> + <kbd>V</kbd>
+
+Select All <kbd>Ctrl</kbd> + <kbd>A</kbd>

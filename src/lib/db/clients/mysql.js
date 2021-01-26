@@ -299,7 +299,6 @@ export function query(conn, queryText) {
           ]);
 
           pid = null;
-
           return data;
         } catch (err) {
           if (canceling && err.code === mysqlErrors.CONNECTION_LOST) {
@@ -574,10 +573,16 @@ function getRealError(conn, err) {
 function parseRowQueryResult(data, fields, command) {
   // Fallback in case the identifier could not reconize the command
   const isSelect = Array.isArray(data);
+  const niceFields = (fields || []).map((f) => {
+    return {
+      id: f.name,
+      ...f
+    }
+  })
   return {
     command: command || (isSelect && 'SELECT'),
     rows: isSelect ? data : [],
-    fields: fields || [],
+    fields: niceFields,
     rowCount: isSelect ? (data || []).length : undefined,
     affectedRows: !isSelect ? data.affectedRows : undefined,
   };
