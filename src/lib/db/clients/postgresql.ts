@@ -9,7 +9,7 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig } from '../client'
-import { buildDatabseFilter, buildDeleteQueries, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors, Error as CustomError } from '../../errors';
 import globals from '../../../common/globals';
@@ -592,10 +592,9 @@ async function updateValues(cli: any, updates: TableUpdate[]): Promise<TableUpda
     }
   })
 
-  const { updateQueries, selectQueries } = buildUpdateAndSelectQueries(knex, updates)
   let results: TableUpdateResult[] = []
-  await driverExecuteQuery(cli, { query: updateQueries.join(";") })
-  const data = await driverExecuteSingle(cli, { query: selectQueries.join(";"), multiple: true })
+  await driverExecuteQuery(cli, { query: buildUpdateQueries(knex, updates).join(";") })
+  const data = await driverExecuteSingle(cli, { query: buildSelectQueriesFromUpdates(knex, updates).join(";"), multiple: true })
   results = [data.rows[0]]
 
   return results
