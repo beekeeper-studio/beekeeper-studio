@@ -57,7 +57,7 @@
         return this.result.fields.map((column) => {
           const result = {
             title: column.name,
-            field: column.name,
+            field: column.id,
             dataType: column.dataType,
             width: columnWidth,
             mutatorData: this.resolveDataMutator(column.dataType),

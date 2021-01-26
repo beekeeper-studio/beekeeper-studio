@@ -8,7 +8,7 @@ import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableUpdate, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig } from '../client'
+import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableUpdate, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig, NgQueryResult } from '../client'
 import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors, Error as CustomError } from '../../errors';
@@ -591,7 +591,7 @@ export function query(conn: Conn, queryText: string, schema: string) {
   const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
 
   return {
-    execute() {
+    execute(): Promise<NgQueryResult[]> {
       return runWithConnection(conn, async (connection) => {
         const connClient = { connection };
 
@@ -605,12 +605,16 @@ export function query(conn: Conn, queryText: string, schema: string) {
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            executeQuery(connClient, queryText),
+            executeQuery(connClient, queryText, true),
           ]);
 
           pid = null;
 
-          return data;
+          if(!data) {
+            return []
+          }
+
+          return data
         } catch (err) {
           if (canceling && err.code === pgErrors.CANCELED) {
             canceling = false;
@@ -624,7 +628,7 @@ export function query(conn: Conn, queryText: string, schema: string) {
       });
     },
 
-    async cancel() {
+    async cancel(): Promise<void> {
       if (!pid) {
         throw new Error('Query not ready to be canceled');
       }
@@ -651,12 +655,12 @@ export function query(conn: Conn, queryText: string, schema: string) {
 }
 
 
-export async function executeQuery(conn: Conn, queryText: string) {
-  const data = await driverExecuteQuery(conn, { query: queryText, multiple: true });
+export async function executeQuery(conn: Conn, queryText: string, arrayMode: boolean = false) {
+  const data = await driverExecuteQuery(conn, { query: queryText, multiple: true, arrayMode });
 
   const commands = identifyCommands(queryText).map((item) => item.type);
 
-  return data.map((result, idx) => parseRowQueryResult(result, commands[idx]));
+  return data.map((result, idx) => parseRowQueryResult(result, commands[idx], arrayMode));
 }
 
 
@@ -880,21 +884,22 @@ function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServe
   return config;
 }
 
-function parseFields(fields: any[]) {
-  return fields.map((field) => {
+function parseFields(fields: any[], rowResults: boolean) {
+  return fields.map((field, idx) => {
     field.dataType = dataTypes[field.dataTypeID] || 'user-defined'
+    field.id = rowResults ? `c${idx}` : field.name
     return field
   })
 }
 
-
-function parseRowQueryResult(data: QueryResult, command: string) {
-
+function parseRowQueryResult(data: QueryResult, command: string, rowResults: boolean): NgQueryResult {
+  const fields = parseFields(data.fields, rowResults)
+  const fieldIds = fields.map(f => f.id)
   const isSelect = data.command === 'SELECT';
   return {
     command: command || data.command,
-    rows: data.rows,
-    fields: parseFields(data.fields),
+    rows: data.rows.map(r => rowResults ? _.zipObject(fieldIds, r) : r),
+    fields: fields,
     rowCount: isSelect ? (data.rowCount || data.rows.length) : undefined,
     affectedRows: !isSelect && !isNaN(data.rowCount) ? data.rowCount : undefined,
   };
@@ -913,6 +918,7 @@ interface PostgresQueryArgs {
   query: string
   params?: any[]
   multiple?: boolean
+  arrayMode?: boolean
 }
 
 async function driverExecuteSingle(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult> {
@@ -931,6 +937,7 @@ function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQuery
       text: queryArgs.query,
       values: queryArgs.params,
       multiResult: queryArgs.multiple,
+      rowMode: queryArgs.arrayMode ? 'array' : undefined
     };
 
     // node-postgres has support for Promise query
@@ -959,4 +966,9 @@ async function runWithConnection<T>(x: Conn, run: (p: PoolClient) => Promise<T>)
   } finally {
     connection.release();
   }
+}
+
+
+export const testOnly = {
+  parseRowQueryResult
 }

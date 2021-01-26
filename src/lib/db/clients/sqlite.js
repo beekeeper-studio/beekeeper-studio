@@ -92,7 +92,6 @@ export function query(conn, queryText) {
           queryConnection = connection;
 
           const result = await executeQuery({ connection }, queryText);
-
           return result;
         } catch (err) {
           if (err.code === sqliteErrors.CANCELED) {
@@ -350,7 +349,7 @@ function parseRowQueryResult({ data, statement, changes }) {
   return {
     command: statement.type || (isSelect && 'SELECT'),
     rows,
-    fields: Object.keys(rows[0] || {}).map((name) => ({ name })),
+    fields: Object.keys(rows[0] || {}).map((name) => ({ name, id: name })),
     rowCount: data && data.length,
     affectedRows: changes || 0,
   };
