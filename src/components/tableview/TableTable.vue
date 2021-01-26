@@ -439,7 +439,13 @@ export default {
         {
           label: '<i class="item-icon material-icons">content_copy</i> Clone row',
           action: (e, row) => {
-            this.tabulator.addRow(row.getData(), false).then(row => {
+            let data = { ...row.getData() }
+
+            if (this.primaryKey) {
+              data[this.primaryKey] = undefined
+            }
+
+            this.tabulator.addRow(data, false).then(row => {
               this.addRowToPendingInserts(row)
               this.tabulator.scrollToRow(row, 'bottom', false)
             })
