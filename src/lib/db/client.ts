@@ -24,6 +24,9 @@ export interface TableColumn {
 
 export interface FilterOptions {
   schema: Nullable<string>
+  only?: string[]
+  ignore?: string[]
+  tables?: string[]
 }
 
 export interface DatabaseFilterOptions {
