@@ -192,11 +192,12 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
   const sql = `
     SELECT
       table_schema as schema,
-      table_name as name
+      table_name as name,
+      table_schema IN ('pg_catalog','information_schema') as is_built_in
     FROM information_schema.tables
     WHERE table_type NOT LIKE '%VIEW%'
     ${schemaFilter ? `AND ${schemaFilter}` : ''}
-    ORDER BY table_schema, table_name
+    ORDER BY is_built_in ASC, table_schema, table_name
   `;
 
   const data = await driverExecuteSingle(conn, { query: sql });
@@ -209,10 +210,11 @@ export async function listViews(conn: HasPool, filter: FilterOptions = { schema:
   const sql = `
     SELECT
       table_schema as schema,
-      table_name as name
+      table_name as name,
+      table_schema IN ('pg_catalog','information_schema') as is_built_in
     FROM information_schema.views
     ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
-    ORDER BY table_schema, table_name
+    ORDER BY is_built_in ASC, table_schema, table_name
   `;
 
   const data = await driverExecuteSingle(conn, { query: sql });
