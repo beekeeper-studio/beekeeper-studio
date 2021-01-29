@@ -226,19 +226,15 @@
       },
       hintOptions() {
         const result = {}
+
         this.tables.forEach(table => {
           const cleanColumns = table.columns.map(col => {
             return /\./.test(col.columnName) ? `"${col.columnName}"` : col.columnName
           })
-
-          // add quoted option for everyone that needs to be quoted
-          if (this.connectionType === 'postgresql' && (/[^a-z0-9_]/.test(table.name) || /^\d/.test(table.name)))
-            result[`"${table.name}"`] = cleanColumns
-          
-          // don't add table names that can get in conflict with database schema 
-          if (!/\./.test(table.name))
-            result[table.name] = cleanColumns
+          var fullyQualifiedTableName = `"${table.schema}"."${table.name}"`
+          result[fullyQualifiedTableName] = cleanColumns
         })
+
         return { tables: result }
       },
       queryParameterPlaceholders() {
