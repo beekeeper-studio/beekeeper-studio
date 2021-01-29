@@ -415,20 +415,9 @@ export default {
         scrollPageUp: false,
         scrollPageDown: false
       },
-      tableContextMenu: [
-        {
-          label: '<i class="item-icon material-icons">add_circle_outline</i> Add row',
-          action: () => {
-            this.tabulator.addRow({}, false).then(row => { 
-              this.addRowToPendingInserts(row)
-              this.tabulator.scrollToRow(row, 'bottom', false)
-            })
-          }
-        }
-      ],
       rowContextMenu:[
         {
-          label: '<i class="item-icon material-icons">add_circle_outline</i> Add row',
+          label: '<x-menuitem><x-label><i class="material-icons">add_circle_outline</i> Add row</x-label></x-menuitem>',
           action: () => {
             this.tabulator.addRow({}, false).then(row => { 
               this.addRowToPendingInserts(row)
@@ -437,7 +426,7 @@ export default {
           }
         },
         {
-          label: '<i class="item-icon material-icons">content_copy</i> Clone row',
+          label: '<x-menuitem><x-label><i class="material-icons">content_copy</i> Clone row</x-label></x-menuitem>',
           action: (e, row) => {
             let data = { ...row.getData() }
 
@@ -455,7 +444,7 @@ export default {
           separator:true,
         },
         {
-          label: '<i class="item-icon material-icons">delete_outline</i> Delete row',
+          label: '<x-menuitem><x-label><i class="material-icons">delete_outline</i> Delete row</x-label></x-menuitem>',
           action: (e, row) => {
             this.addRowToPendingDeletes(row)
           }

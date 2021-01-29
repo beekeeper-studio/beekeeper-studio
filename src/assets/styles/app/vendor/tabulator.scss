@@ -96,10 +96,10 @@ $foreign-key-width:      24px;
     background: rgba($theme-base, 0.1);
   }
   &.inserted, &.inserted:hover {
-    background: rgba($brand-success, 0.8);
+    background: rgba($brand-success, 0.7);
   }
   &.deleted, &.deleted:hover {
-    background: rgba($brand-danger, 0.8);
+    background: rgba($brand-danger, 0.7);
   }
 }
 .tabulator {
@@ -315,7 +315,7 @@ $foreign-key-width:      24px;
 }
 
 .tabulator-menu {
-  background: $theme-bg;
+  background: lighten($theme-bg, 5%);
   border: none;
   border-radius: 6px;
   min-width: 150px;
@@ -323,15 +323,13 @@ $foreign-key-width:      24px;
 
   .tabulator-menu-item {
     &:hover {
-      background: rgba($theme-base, 0.035);
+      background: rgba($theme-base, 0.05);
     }
-    padding: 0.6rem 0.8rem;
-    font-size: 0.9rem;
     color: $text-dark;
     cursor: pointer;
+    padding: 0;
 
     .item-icon {
-      padding-right: 6px;
       vertical-align: top;
     }
   }
