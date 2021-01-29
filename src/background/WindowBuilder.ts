@@ -56,7 +56,7 @@ class BeekeeperWindow {
 
     this.initializeCallbacks()
     this.win.webContents.on('will-navigate', (e, url) => {
-      if (url === platformInfo.appUrl) return // this is good
+      if (url === appUrl) return // this is good
       log.info("navigate to", url)
       e.preventDefault()
       electron.shell.openExternal(url);
