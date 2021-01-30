@@ -40,8 +40,6 @@ const platformInfo = {
   testMode,
   appDbPath: path.join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
   updatesDisabled,
-  runningInWebpack: !!p.env.WEBPACK_DEV_SERVER_URL,
-  appUrl: p.env.WEBPACK_DEV_SERVER_URL ? p.env.WEBPACK_DEV_SERVER_URL : 'app://./index.html'
 }
 
 export default platformInfo
