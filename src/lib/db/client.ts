@@ -188,6 +188,7 @@ export interface IDbConnectionServerConfig {
   ssl: boolean
   localHost?: string,
   localPort?: number,
+  writeMode: string
 }
 
 export interface IDbSshTunnel {

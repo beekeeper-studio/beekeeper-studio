@@ -76,7 +76,7 @@
 
     <!-- Parameter modal -->
     <modal class="vue-dialog beekeeper-modal" name="parameters-modal" @opened="selectFirstParameter" @closed="selectEditor" height="auto" :scrollable="true">
-      <form @submit.prevent="submitQuery(queryForExecution, true)">
+      <form @submit.prevent="submitQuery(queryForExecution, true, true)">
         <div class="dialog-content">
           <div class="dialog-c-title">Provide parameter values</div>
           <div class="dialog-c-subtitle">Don't forget to use single quotes around string values</div>
@@ -98,6 +98,30 @@
       </form>
     </modal>
 
+    <!-- Confirm Write Modal -->
+    <modal class="vue-dialog beekeeper-modal" name="confirm-write-modal" @closed="selectEditor" height="auto" :scrollable="true">
+      <form @submit.prevent="submitQuery(queryForExecution, true, false)">      
+        <div class="dialog-content">
+          <div class="dialog-c-title">Confirm Write Query</div>
+          <div class="dialog-c-subtitle">The query you're trying to execute will alter the database or its data.</div>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('confirm-write-modal')">Cancel</button>
+          <button class="btn btn-danger" type="submit">Ok</button>
+        </div>
+      </form>
+    </modal>
+
+    <!-- Readonly Warning Modal -->
+    <modal class="vue-dialog beekeeper-modal" name="readonly-modal" @closed="selectEditor" height="auto" :scrollable="true">
+      <div class="dialog-content">
+        <div class="dialog-c-title">Readonly Connection</div>
+        <div class="dialog-c-subtitle">The query you're trying to execute would alter the database or its data and cannot be executed for read-only connections.</div>
+      </div>
+      <div class="vue-dialog-buttons">
+        <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('readonly-modal')">Ok</button>
+      </div>
+    </modal>
 
   </div>
 </template>
@@ -121,6 +145,7 @@
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from 'electron-log'
   const log = rawlog.scope('query-editor')
+  const writeVerbs = ["alter", "create", "delete", "drop", "insert", "rename", "truncate", "update", "upsert"]
 
   export default {
     // this.queryText holds the current editor value, always
@@ -254,6 +279,9 @@
           query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`), `$1${this.queryParameterValues[param]}$2`)
         });
         return query;
+      },
+      writeMode() {
+        return this.tab.connection.server.config.writeMode
       },
       ...mapState(['usedConfig', 'connection', 'database', 'tables'])
     },
@@ -393,12 +421,29 @@
           this.error = 'No query to run'
         }
       },
-      async submitQuery(rawQuery, skipModal) {
-        this.running = true
+      async submitQuery(rawQuery, skipWarnings, skipModal) {
+
         this.queryForExecution = rawQuery
+        
+        if (this.writeMode !== 'enabled' && this.containsWriteVerbs(rawQuery) && !skipWarnings) {
+          if (this.writeMode === 'readonly') {
+            this.$modal.show('readonly-modal')
+          }
+
+          if (this.writeMode === 'confirm') {
+            this.$modal.show('confirm-write-modal')
+          }
+
+          return 
+        }
+
+        this.$modal.hide('confirm-write-modal')
+
+        this.running = true
         this.results = []
         this.selectedResult = 0
         let identification = []
+
         try {
           identification = identify(rawQuery, { strict: false, dialect: this.dialect })
         } catch (ex) {
@@ -490,6 +535,9 @@
       toggleComment() {
         this.editor.execCommand('toggleComment')
       },
+      containsWriteVerbs(query) {
+        return _.findIndex(writeVerbs, v => query.indexOf(v + ' ') > -1) > -1
+      }
     },
     mounted() {
       const $editor = this.$refs.editor

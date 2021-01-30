@@ -211,6 +211,13 @@ export class SavedConnection extends DbConnectionBase {
     }
   }
 
+  @Column({
+    type: 'varchar',
+    nullable: false,
+    default: null
+  })
+  writeMode: string = 'enabled'
+
   get sshMode() {
     return this._sshMode
   }

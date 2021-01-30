@@ -36,7 +36,15 @@
                 <postgres-form v-if="config.connectionType === 'redshift'" :config="config" :testing="testing"></postgres-form>
                 <sqlite-form v-if="config.connectionType === 'sqlite'" :config="config" :testing="testing"></sqlite-form>
                 <sql-server-form v-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"></sql-server-form>
-
+                <!-- WRITE MODE -->
+                <div class="form-group write-mode-form">
+                  <label for="writeMode">Write Mode</label>
+                  <select name="writeMode" class="form-control custom-select" v-model="config.writeMode" id="write-mode-select">
+                    <option value="enabled">Enabled</option>
+                    <option value="confirm">Confirm</option>
+                    <option value="readonly">Read Only</option>
+                  </select>
+                </div>
                 <!-- TEST AND CONNECT -->
                 <div class="test-connect row flex-middle">
                   <span class="expand"></span>
