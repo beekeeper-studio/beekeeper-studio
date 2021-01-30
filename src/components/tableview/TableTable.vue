@@ -331,6 +331,12 @@ export default {
         this.tabulator.blockRedraw()
       }
     },
+    tableColumns: {
+      deep: true,
+      handler() {
+        this.tabulator.setColumns(this.tableColumns)
+      }
+    },
     filterValue() {
       if (this.filter.value === "") {
         this.clearFilter();
@@ -584,6 +590,12 @@ return dt.split("(")[0]
               filters,
               this.table.schema
             );
+            log.info('Update Fields', response.fields)
+            if (_.difference(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
+              log.info('table has changed, updating')
+              await this.$store.dispatch('updateTableColumns', this.table)
+            }
+
             const r = response.result;
             this.totalRecords = Number(response.totalRecords) || 0;
             this.response = response

@@ -118,7 +118,8 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
   console.log('selectTop result', result, totalRecords)
   return {
     result: result.data,
-    totalRecords: Number(totalRecords)
+    totalRecords: Number(totalRecords),
+    fields: Object.keys(result.data[0] || {})
   }
 }
 

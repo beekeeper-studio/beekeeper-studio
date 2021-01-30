@@ -160,9 +160,21 @@ const store = new Vuex.Store<State>({
       state.connection = connection
       state.database = database
     },
-    tables(state, tables) {
-      state.tables = Object.freeze(tables)
+    tables(state, tables: IDbEntityWithColumns[]) {
+      state.tables = tables
     },
+
+    updateTable(state, update: IDbEntityWithColumns) {
+      const index = state.tables.findIndex((t) => {
+        return update.name === t.name &&
+        update.schema === t.schema &&
+        update.entityType === t.entityType
+      })
+      const updated = [...state.tables]
+      updated[index] = update
+      state.tables = updated
+    },
+
     routines(state, routines) {
       state.routines = Object.freeze(routines)
     },
@@ -283,24 +295,37 @@ const store = new Vuex.Store<State>({
         await context.dispatch('updateRoutines') 
       }
     },
+
+    async updateTableColumns(context, table: IDbEntityWithColumns) {
+      
+      const connection = context.state.connection
+      table.columns = (table.entityType === 'materialized-view' ?
+        await connection?.listMaterializedViewColumns(table.name, table.schema) :
+        await connection?.listTableColumns(table.name, table.schema)) || []
+      
+        // context.commit('updateTable', )
+    },
+
     async updateTables(context) {
       // Ideally here we would run all queries in parallel
       // however running through an SSH tunnel doesn't work
       // it only supports one query at a time.
 
+      const schema = null
+
       if (context.state.connection) {
         try {
           context.commit("tablesLoading", "Finding tables")
-          const onlyTables = await context.state.connection.listTables({ schema: null })
+          const onlyTables = await context.state.connection.listTables({ schema })
           onlyTables.forEach((t) => {
             t.entityType = 'table'
           })
-          const views = await context.state.connection.listViews({ schema: null })
+          const views = await context.state.connection.listViews({ schema })
           views.forEach((v) => {
             v.entityType = 'view'
           })
 
-          const materialized = await context.state.connection.listMaterializedViews({schema: null})
+          const materialized = await context.state.connection.listMaterializedViews({ schema })
           materialized.forEach(v => v.entityType = 'materialized-view')
           const tables = onlyTables.concat(views).concat(materialized)
           context.commit("tablesLoading", `Loading ${tables.length} tables`)
