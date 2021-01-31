@@ -297,7 +297,8 @@ async function selectTop(
   log.debug("selectTop:", result.rows)
   return {
     result: result.rows,
-    totalRecords: Number(totalRecords)
+    totalRecords: Number(totalRecords),
+    fields: result.fields.map(f => f.name)
   }
 }
 
