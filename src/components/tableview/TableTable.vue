@@ -107,7 +107,7 @@
         </div>
         <div v-if="pendingEditList.length > 0" class="flex flex-right">
           <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
-          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingEditList.length + ' ' + 'pending edits'" :class="{'error': !!queryError}">
+          <a @click.prevent="saveChanges(false)" class="btn btn-primary btn-icon" :title="pendingEditList.length + ' ' + 'pending edits'" :class="{'error': !!queryError}">
             <!-- <i v-if="queryError" class="material-icons">error</i> -->
             <span class="badge">{{pendingEditList.length}}</span>
             <span>Commit</span>
@@ -116,6 +116,20 @@
         </div>
       </div>
     </statusbar>
+
+    <!-- Confirm Write Modal -->
+    <modal class="vue-dialog beekeeper-modal" name="confirm-write-modal" height="auto" :scrollable="true">
+      <form @submit.prevent="saveChanges(true)">      
+        <div class="dialog-content">
+          <div class="dialog-c-title">Confirm Changes</div>
+          <div class="dialog-c-subtitle">The changes you're about to commit will alter the table data.</div>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('confirm-write-modal')">Cancel</button>
+          <button class="btn btn-danger" type="submit">Commit</button>
+        </div>
+      </form>
+    </modal>
   </div>
 </template>
 
@@ -252,7 +266,7 @@ export default {
           cellClick: this.cellClick,
           width: columnWidth,
           cssClass: isPK ? 'primary-key' : '',
-          editable: editable,
+          editable: editable && !this.writeModeReadonly,
           editor: editable ? editorType : undefined,
           variableHeight: true,
           headerTooltip: headerTooltip,
@@ -316,6 +330,12 @@ export default {
       }
 
       return [{ column: this.table.columns[0].columnName, dir: "asc" }];
+    },
+    writeMode() {
+      return this.connection ? this.connection.server.config.writeMode : null
+    },
+    writeModeReadonly() {
+      return this.writeMode === 'readonly'
     }
   },
 
@@ -446,7 +466,7 @@ return dt.split("(")[0]
     },
     cellClick(e, cell) {
       // this makes it easier to select text if not editing
-      if (!this.editable) {
+      if (this.writeModeReadonly || !this.editable) {
         this.selectChildren(cell.getElement())
       } else {
         setTimeout(() => {
@@ -488,7 +508,15 @@ return dt.split("(")[0]
       }
       this.$set(this.pendingEdits, key, payload)
     },
-    async saveChanges() {
+    async saveChanges(skipWarnings) {
+
+      if (this.writeMode === 'confirm' && !skipWarnings) {
+        this.$modal.show('confirm-write-modal')
+        return 
+      }
+
+      this.$modal.hide('confirm-write-modal')
+
       try {
         // throw new Error("This is an error")
         const newData = await this.connection.updateValues(this.pendingEditList)

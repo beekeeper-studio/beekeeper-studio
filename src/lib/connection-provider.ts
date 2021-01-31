@@ -32,6 +32,7 @@ export default {
       sslCertFile: config.sslCertFile,
       sslKeyFile: config.sslKeyFile,
       sslRejectUnauthorized: config.sslRejectUnauthorized,
+      writeMode: config.writeMode
     }
   },
 
