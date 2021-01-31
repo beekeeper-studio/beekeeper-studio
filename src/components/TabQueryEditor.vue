@@ -536,7 +536,7 @@
         this.editor.execCommand('toggleComment')
       },
       containsWriteVerbs(query) {
-        return _.findIndex(writeVerbs, v => query.indexOf(v + ' ') > -1) > -1
+        return _.findIndex(writeVerbs, v => query.toLowerCase().indexOf(v + ' ') > -1) > -1
       }
     },
     mounted() {
