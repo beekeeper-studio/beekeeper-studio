@@ -187,17 +187,6 @@ const store = new Vuex.Store<State>({
       state.tables = result
     },
 
-    updateTable(state, update: IDbEntityWithColumns) {
-      const index = state.tables.findIndex((t) => {
-        return update.name === t.name &&
-        update.schema === t.schema &&
-        update.entityType === t.entityType
-      })
-      const updated = [...state.tables]
-      updated[index] = update
-      state.tables = updated
-    },
-
     routines(state, routines) {
       state.routines = Object.freeze(routines)
     },
@@ -321,12 +310,11 @@ const store = new Vuex.Store<State>({
 
     async updateTableColumns(context, table: IDbEntityWithColumns) {
 
+      // we don't need to commit to the store, it should already be in the store.
       const connection = context.state.connection
       table.columns = (table.entityType === 'materialized-view' ?
         await connection?.listMaterializedViewColumns(table.name, table.schema) :
         await connection?.listTableColumns(table.name, table.schema)) || []
-      
-        // context.commit('updateTable', )
     },
 
     async updateTables(context) {
