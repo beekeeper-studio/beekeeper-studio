@@ -377,7 +377,7 @@ export default {
       this.filter = _.clone(this.initialFilter)
     }
 
-    this.$store.dispatch('updateTableColumns', this.table)
+    await this.$store.dispatch('updateTableColumns', this.table)
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
     this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
     this.tabulator = new Tabulator(this.$refs.table, {
