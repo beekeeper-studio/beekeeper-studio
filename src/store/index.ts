@@ -161,7 +161,30 @@ const store = new Vuex.Store<State>({
       state.database = database
     },
     tables(state, tables: IDbEntityWithColumns[]) {
-      state.tables = tables
+
+      const tablesMatch = (t: IDbEntityWithColumns, t2: IDbEntityWithColumns) => {
+        return t2.name === t.name &&
+        t2.schema === t.schema &&
+        t2.entityType === t.entityType
+      }
+
+      if(state.tables.length === 0) {
+        state.tables = tables
+        return
+      }
+      
+      // TODO: make this not O(n^2)
+      const result = tables.map((t, idx) => {
+        const existingIdx = state.tables.findIndex((st) => tablesMatch(st, t))
+        if ( existingIdx >= 0) {
+          const existing = state.tables[existingIdx]
+          Object.assign(existing, t)
+          return existing
+        } else {
+          return t
+        }
+      })
+      state.tables = result
     },
 
     updateTable(state, update: IDbEntityWithColumns) {
@@ -297,7 +320,7 @@ const store = new Vuex.Store<State>({
     },
 
     async updateTableColumns(context, table: IDbEntityWithColumns) {
-      
+
       const connection = context.state.connection
       table.columns = (table.entityType === 'materialized-view' ?
         await connection?.listMaterializedViewColumns(table.name, table.schema) :

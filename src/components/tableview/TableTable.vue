@@ -333,8 +333,12 @@ export default {
     },
     tableColumns: {
       deep: true,
-      handler() {
-        this.tabulator.setColumns(this.tableColumns)
+      async handler() {
+        if(!this.tabulator) {
+          return
+        }
+        await this.tabulator.setColumns(this.tableColumns)
+        await this.refreshTable()
       }
     },
     filterValue() {
@@ -373,7 +377,7 @@ export default {
       this.filter = _.clone(this.initialFilter)
     }
 
-
+    this.$store.dispatch('updateTableColumns', this.table)
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
     this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
     this.tabulator = new Tabulator(this.$refs.table, {
@@ -590,9 +594,9 @@ return dt.split("(")[0]
               filters,
               this.table.schema
             );
-            log.info('Update Fields', response.fields)
+            log.debug('Update Fields', response.fields)
             if (_.difference(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
-              log.info('table has changed, updating')
+              log.debug('table has changed, updating')
               await this.$store.dispatch('updateTableColumns', this.table)
             }
 
@@ -632,9 +636,9 @@ return dt.split("(")[0]
     clearQueryError() {
       this.queryError = null
     },
-    refreshTable() {
+    async refreshTable() {
       const page = this.tabulator.getPage()
-      this.tabulator.replaceData()
+      await this.tabulator.replaceData()
       this.tabulator.setPage(page)
     },
   }
