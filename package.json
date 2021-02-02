@@ -80,6 +80,7 @@
   },
   "devDependencies": {
     "@types/codemirror": "^0.0.97",
+    "@types/electron-devtools-installer": "^2.2.0",
     "@types/javascript-time-ago": "^2.0.1",
     "@types/jest": "^24.0.19",
     "@types/jquery": "^3.5.1",
