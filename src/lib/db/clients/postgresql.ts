@@ -14,6 +14,7 @@ import { createCancelablePromise } from '../../../common/utils';
 import { errors, Error as CustomError } from '../../errors';
 import globals from '../../../common/globals';
 
+const base64 = require('base64-url');
 
 interface HasPool {
   pool: Pool
@@ -61,6 +62,10 @@ pg.types.setTypeParser(1082, 'text', (val) => val); // date
 pg.types.setTypeParser(1114, 'text', (val) => val); // timestamp without timezone
 pg.types.setTypeParser(1184, 'text', (val) => val); // timestamp
 
+/**
+ * Convert BYTEA type encoded to hex with '\x' prefix to BASE64 URL (without '+' and '=').
+ */
+pg.types.setTypeParser(17, 'text', (val) => val ? base64.encode(val.substring(2), 'hex') : '');
 
 /**
  * Gets the version details for the connection.
@@ -324,7 +329,7 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
   `;
 
   const paramsSQL = `
-    select 
+    select
         r.routine_schema as routine_schema,
         r.specific_name as specific_name,
         p.parameter_name as parameter_name,
@@ -541,7 +546,7 @@ export async function getTableKeys(conn: Conn, database: string, table: string, 
 }
 
 export async function getPrimaryKey(conn: Conn, database: string, table: string, schema: string): Promise<string> {
-  
+
   const tablename = escapeString(schema ? `${wrapIdentifier(schema)}.${wrapIdentifier(table)}` : wrapIdentifier(table))
   const query = `
     SELECT a.attname as column_name, format_type(a.atttypid, a.atttypmod) AS data_type
@@ -560,9 +565,12 @@ export async function updateValues(conn: Conn, updates: TableUpdate[]): Promise<
 
   // If a type starts with an underscore - it's an array
   // so we need to turn the string representation back to an array
+  // if a type is BYTEA, decodes BASE64 URL encoded to hex
   updates.forEach((update) => {
     if (update.columnType?.startsWith('_')) {
       update.value = JSON.parse(update.value)
+    } else if (update.columnType === 'bytea' && update.value) {
+        update.value = '\\x' + base64.decode(update.value, 'hex')
     }
   })
 
@@ -927,8 +935,6 @@ async function driverExecuteSingle(conn: Conn | HasConnection, queryArgs: Postgr
 }
 
 function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult[]> {
-
-
   function isQueryResult(x: any): x is QueryResult {
     return x.rows !== undefined
   }
@@ -952,7 +958,7 @@ function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQuery
     });
   };
 
-  
+
   if (isConnection(conn)) {
     return runQuery(conn.connection)
   } else {

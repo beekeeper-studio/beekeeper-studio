@@ -423,6 +423,7 @@ return dt.split("(")[0]
         case 'text': return 'textarea'
         case 'json': return 'textarea'
         case 'jsonb': return 'textarea'
+        case 'bytea': return 'textarea'
         case 'bool': return 'select'
         default: return 'input'
       }
