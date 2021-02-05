@@ -231,8 +231,12 @@
           const cleanColumns = table.columns.map(col => {
             return /\./.test(col.columnName) ? `"${col.columnName}"` : col.columnName
           })
-          var fullyQualifiedTableName = `"${table.schema}"."${table.name}"`
-          result[fullyQualifiedTableName] = cleanColumns
+          var autoCompleteName = `"${table.schema}"."${table.name}"`
+          result[autoCompleteName] = cleanColumns
+
+          if(table.schema == "public") {
+            result[table.name] = cleanColumns
+          }
         })
 
         return { tables: result }
