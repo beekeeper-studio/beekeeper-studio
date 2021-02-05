@@ -123,9 +123,8 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
   }
 }
 
-export function buildUpdateAndSelectQueries(knex, updates) {
-
-  const updateQueries = updates.map(update => {
+export function buildUpdateQueries(knex, updates) {
+  return updates.map(update => {
     const where = {}
     const updateblob = {}
     where[update.pkColumn] = update.primaryKey
@@ -138,8 +137,10 @@ export function buildUpdateAndSelectQueries(knex, updates) {
       .toQuery()
     return query
   })
+}
 
-  const selectQueries = updates.map(update => {
+export function buildSelectQueriesFromUpdates(knex, updates) {
+  return updates.map(update => {
     const where = {}
     where[update.pkColumn] = update.primaryKey
 
@@ -150,5 +151,17 @@ export function buildUpdateAndSelectQueries(knex, updates) {
       .toQuery()
     return query
   })
-  return { updateQueries, selectQueries }
+}
+
+export function buildDeleteQueries(knex, deletes) {
+  return deletes.map(deleteRow => {
+    let where = {}
+    where[deleteRow.pkColumn] = deleteRow.primaryKey
+    
+    return knex(deleteRow.table)
+      .withSchema(deleteRow.schema)
+      .where(where)
+      .delete()
+      .toQuery()
+  })
 }

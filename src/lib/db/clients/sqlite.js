@@ -3,15 +3,18 @@
 import _ from 'lodash'
 import sqlite3 from 'sqlite3';
 import { identify } from 'sql-query-identifier';
+import knexlib from 'knex'
 import rawLog from 'electron-log'
-import { genericSelectTop } from './utils';
+import { buildDeleteQueries, genericSelectTop } from './utils';
 
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
+const knex = knexlib({ client: 'sqlite3'})
+
 const sqliteErrors = {
   CANCELED: 'SQLITE_INTERRUPT',
-};
+}; 
 
 
 export default async function (server, database) {
@@ -39,7 +42,7 @@ export default async function (server, database) {
     getPrimaryKey: (db, table) => getPrimaryKey(conn, db, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
-    updateValues: (updates) => updateValues(conn, updates),
+    applyChanges: (changes) => applyChanges(conn, changes),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: () => listDatabases(conn),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
@@ -113,49 +116,72 @@ export function query(conn, queryText) {
   };
 }
 
-export async function updateValues(conn, updates) {
-  const updateCommands = updates.map(update => {
+export async function applyChanges(conn, changes) {
+  let results = []
+
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    await driverExecuteQuery(cli, { query: 'BEGIN'})
+
+    try {
+      if (changes.updates) {
+        results = await updateValues(cli, changes.updates)
+      }
+  
+      if (changes.deletes) {
+        await deleteRows(cli, changes.deletes)
+      }
+  
+      await driverExecuteQuery(cli, { query: 'COMMIT'})
+    } catch (ex) {
+      log.error("query exception: ", ex)
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' })
+      throw ex
+    }
+  })
+
+  return results
+}
+
+export async function updateValues(cli, updates) {
+  const commands = updates.map(update => {
     return {
       query: `UPDATE ${update.table} SET ${update.column} = ? WHERE ${update.pkColumn} = ?`,
       params: [update.value, update.primaryKey]
     }
   })
 
-  const commands = [{ query: 'BEGIN'}, ...updateCommands];
   const results = []
   // TODO: this should probably return the updated values
-  await runWithConnection(conn, async (connection) => {
-    const cli = { connection }
-    try {
-      for (let index = 0; index < commands.length; index++) {
-        const blob = commands[index];
-        await driverExecuteQuery(cli, blob)
-      }
+  for (let index = 0; index < commands.length; index++) {
+    const blob = commands[index];
+    await driverExecuteQuery(cli, blob)
+  }
 
-      const returnQueries = updates.map(update => {
-        return {
-          query: `select * from "${update.table}" where "${update.pkColumn}" = ?`,
-          params: [
-            update.primaryKey
-          ]
-        }
-      })
-
-      for (let index = 0; index < returnQueries.length; index++) {
-        const blob = returnQueries[index];
-        const r = await driverExecuteQuery(cli, blob)
-        if (r.data[0]) results.push(r.data[0])
-      }
-      await driverExecuteQuery(cli, { query: 'COMMIT'})
-    } catch (ex) {
-      log.error("query exception: ", ex)
-      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
-      throw ex
+  const returnQueries = updates.map(update => {
+    return {
+      query: `select * from "${update.table}" where "${update.pkColumn}" = ?`,
+      params: [
+        update.primaryKey
+      ]
     }
   })
+
+  for (let index = 0; index < returnQueries.length; index++) {
+    const blob = returnQueries[index];
+    const r = await driverExecuteQuery(cli, blob)
+    if (r.data[0]) results.push(r.data[0])
+  }
+
   return results
 }
 
+export async function deleteRows(cli, deletes) {
+
+  buildDeleteQueries(knex, deletes).forEach(async command => await driverExecuteQuery(cli, { query: command }))
+
+  return true
+}
 
 export async function executeQuery(conn, queryText) {
   const result = await driverExecuteQuery(conn, { query: queryText, multiple: true });
