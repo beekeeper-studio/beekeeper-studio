@@ -40,3 +40,26 @@ If you're on another platform, please [open a ticket][bug] and we'll try to help
 
 [bug]: https://github.com/beekeeper-studio/beekeeper-studio/issues/new?template=bug_report.md&title=BUG:
 
+## PostgreSQL
+
+### I get a `column does not exist` error, but the column does exist!
+
+Postgres is weird with case sensitivity. This is usually the cause of the dreaded `column does not exist` error.
+
+Postgres has two behaviors with column names:
+- If you define your column name without double quotes postgres downcases the name.
+- If you define your column name WITH double quotes, you need to use double quotes forever.
+
+For example:
+
+In this table:
+
+```sql
+CREATE table foo("myColumn" int);
+
+```
+
+- This won't work: `select myColumn from foo`
+- This will works: `select "myColumn" from foo`
+
+See [this StackOverflow answer](https://stackoverflow.com/a/20880247/18818) or [this section in the PostgreSQL manual](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS)
