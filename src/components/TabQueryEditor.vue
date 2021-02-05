@@ -145,7 +145,6 @@
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from 'electron-log'
   const log = rawlog.scope('query-editor')
-  const writeVerbs = ["alter", "create", "delete", "drop", "insert", "rename", "truncate", "update", "upsert"]
 
   export default {
     // this.queryText holds the current editor value, always
@@ -424,8 +423,17 @@
       async submitQuery(rawQuery, skipWarnings, skipModal) {
 
         this.queryForExecution = rawQuery
+        let identification = []
+        let containsModifications = false
+
+        try {
+          identification = identify(rawQuery, { strict: false, dialect: this.dialect })
+          containsModifications = _.find(identification, { executionType: 'MODIFICATION' })
+        } catch (ex) {
+          log.error("Unable to identify query", ex)
+        }
         
-        if (this.writeMode !== 'enabled' && this.containsWriteVerbs(rawQuery) && !skipWarnings) {
+        if (this.writeMode !== 'enabled' && containsModifications && !skipWarnings) {
           if (this.writeMode === 'readonly') {
             this.$modal.show('readonly-modal')
           }
@@ -442,13 +450,6 @@
         this.running = true
         this.results = []
         this.selectedResult = 0
-        let identification = []
-
-        try {
-          identification = identify(rawQuery, { strict: false, dialect: this.dialect })
-        } catch (ex) {
-          log.error("Unable to identify query", ex)
-        }
 
         try {
           if (this.queryParameterPlaceholders.length > 0 && !skipModal) {
@@ -534,9 +535,6 @@
       },
       toggleComment() {
         this.editor.execCommand('toggleComment')
-      },
-      containsWriteVerbs(query) {
-        return _.findIndex(writeVerbs, v => query.toLowerCase().indexOf(v + ' ') > -1) > -1
       }
     },
     mounted() {
