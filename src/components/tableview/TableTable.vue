@@ -352,6 +352,16 @@ export default {
         this.tabulator.blockRedraw()
       }
     },
+    tableColumns: {
+      deep: true,
+      async handler() {
+        if(!this.tabulator) {
+          return
+        }
+        await this.tabulator.setColumns(this.tableColumns)
+        await this.refreshTable()
+      }
+    },
     filterValue() {
       if (this.filter.value === "") {
         this.clearFilter();
@@ -387,9 +397,8 @@ export default {
     if (this.initialFilter) {
       this.filter = _.clone(this.initialFilter)
     }
-
     this.resetPendingChanges()
-
+    await this.$store.dispatch('updateTableColumns', this.table)
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
     this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
     this.tabulator = new Tabulator(this.$refs.table, {
@@ -470,6 +479,7 @@ return dt.split("(")[0]
         case 'text': return 'textarea'
         case 'json': return 'textarea'
         case 'jsonb': return 'textarea'
+        case 'bytea': return 'textarea'
         case 'bool': return 'select'
         default: return 'input'
       }
@@ -750,6 +760,12 @@ return dt.split("(")[0]
               filters,
               this.table.schema
             );
+            log.debug('Update Fields', response.fields)
+            if (_.difference(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
+              log.debug('table has changed, updating')
+              await this.$store.dispatch('updateTableColumns', this.table)
+            }
+
             const r = response.result;
             this.totalRecords = Number(response.totalRecords) || 0;
             this.response = response
@@ -786,9 +802,9 @@ return dt.split("(")[0]
     clearQueryError() {
       this.queryError = null
     },
-    refreshTable() {
+    async refreshTable() {
       const page = this.tabulator.getPage()
-      this.tabulator.replaceData()
+      await this.tabulator.replaceData()
       this.tabulator.setPage(page)
     },
   }

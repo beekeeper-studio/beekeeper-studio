@@ -5,9 +5,7 @@ import { app, protocol } from 'electron'
 import log from 'electron-log'
 import * as electron from 'electron'
 import { ipcMain } from 'electron'
-import {
-  installVueDevtools
-} from 'vue-cli-plugin-electron-builder/lib'
+import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 
 log.transports.file.level = "info"
 log.catchErrors({ showDialog: false})
@@ -101,7 +99,7 @@ app.on('ready', async () => {
     // Install Vue Devtools
     try {
       console.log("installing vue devtools")
-      await installVueDevtools()
+      await installExtension(VUEJS_DEVTOOLS)
     } catch (e) {
       console.error('Vue Devtools failed to install:', e.toString())
     }

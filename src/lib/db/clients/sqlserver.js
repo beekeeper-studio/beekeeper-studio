@@ -110,7 +110,8 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return {
     result: result.data.recordset,
-    totalRecords
+    totalRecords,
+    fields: Object.keys(result.data.recordset[0] || {})
   }
 }
 

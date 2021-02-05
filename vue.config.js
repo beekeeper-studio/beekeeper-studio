@@ -50,6 +50,10 @@ module.exports = {
           {
             from: 'build/launcher-script.sh',
             to: 'launcher-script.sh'
+          },
+          {
+            from: './public',
+            to: 'public'
           }
         ],
         mac: {

@@ -1,6 +1,6 @@
 {
   "name": "beekeeper-studio",
-  "version": "1.9.1",
+  "version": "1.9.2",
   "private": true,
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "author": {
@@ -25,6 +25,7 @@
   "dependencies": {
     "@types/pg": "^7.14.7",
     "@types/sql-formatter": "^2.3.0",
+    "base64-url": "^2.3.3",
     "cassandra-driver": "^4.4.0",
     "cli-highlight": "2.0.0",
     "codemirror": "^5.48.2",
@@ -80,6 +81,7 @@
   },
   "devDependencies": {
     "@types/codemirror": "^0.0.97",
+    "@types/electron-devtools-installer": "^2.2.0",
     "@types/javascript-time-ago": "^2.0.1",
     "@types/jest": "^24.0.19",
     "@types/jquery": "^3.5.1",
@@ -98,8 +100,9 @@
     "@vue/test-utils": "^1.0.3",
     "aws-sdk": "^2.645.0",
     "babel-eslint": "^10.0.1",
-    "electron": "8.5.2",
+    "electron": "~11.2.1",
     "electron-builder-notarize": "beekeeper-studio/electron-builder-notarize#master",
+    "electron-devtools-installer": "^3.1.1",
     "electron-rebuild": "^1.8.5",
     "electron-updater": "^4.2.5",
     "eslint": "^5.16.0",

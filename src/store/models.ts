@@ -2,6 +2,8 @@ import { FavoriteQuery } from "common/appdb/models/favorite_query";
 import { TableColumn } from '../lib/db/client'
 
 export interface IDbEntityWithColumns {
+  name: string
+  entityType: 'table' | 'view' | 'materialized-view'
   columns: TableColumn[]
   schema?: string
 }
