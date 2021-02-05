@@ -25,6 +25,7 @@
   "dependencies": {
     "@types/pg": "^7.14.7",
     "@types/sql-formatter": "^2.3.0",
+    "base64-url": "^2.3.3",
     "cassandra-driver": "^4.4.0",
     "cli-highlight": "2.0.0",
     "codemirror": "^5.48.2",
