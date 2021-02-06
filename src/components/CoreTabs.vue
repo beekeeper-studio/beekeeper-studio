@@ -25,7 +25,8 @@
         class="tab-pane"
         :id="'tab-' + idx"
         :key="tab.id"
-        :class="{show: (activeTab === tab), active: (activeTab === tab)}"
+        :class="{active: (activeTab === tab)}"
+        v-show="activeTab === tab"
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
         <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>

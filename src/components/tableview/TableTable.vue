@@ -344,7 +344,7 @@ export default {
       if (this.active) {
         this.tabulator.restoreRedraw()
         this.$nextTick(() => {
-          this.tabulator.redraw()
+          this.tabulator.redraw(true)
         })
       } else {
         this.tabulator.blockRedraw()
@@ -697,7 +697,6 @@ return dt.split("(")[0]
               filters,
               this.table.schema
             );
-            log.debug('Update Fields', response.fields)
             if (_.difference(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
               await this.$store.dispatch('updateTableColumns', this.table)
