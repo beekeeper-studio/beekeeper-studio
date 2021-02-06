@@ -26,7 +26,7 @@
         :id="'tab-' + idx"
         :key="tab.id"
         :class="{active: (activeTab === tab)}"
-        v-show="activeTab === tab"
+        v-show="activeTabShow === tab"
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
         <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
@@ -56,11 +56,16 @@
       return {
         tabItems: [],
         activeItem: 0,
-        newTabId: 1
+        newTabId: 1,
+        activeTabShow: null,
       }
     },
     watch: {
-
+      activeTab() {
+        this.$nextTick(() => {
+          this.activeTabShow = this.activeTab
+        })
+      }
     },
     computed: {
       ...mapState(["activeTab"]),

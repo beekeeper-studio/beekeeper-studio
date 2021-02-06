@@ -186,7 +186,10 @@ export default {
       lastUpdated: null,
       lastUpdatedText: null,
       interval: setInterval(this.setlastUpdatedText, 10000),
-      totalRecords: 0
+      totalRecords: 0,
+      firstActive: false,
+      forceRedraw: false,
+      activeActions: []
     };
   },
   computed: {
@@ -258,9 +261,6 @@ export default {
         } else if (isPK) {
           headerTooltip += ' [Primary Key]'
         }
-
-
-
 
         const result = {
           title: column.columnName,
@@ -339,16 +339,62 @@ export default {
   },
 
   watch: {
-    active() {
+    firstActive() {
+      this.tabulator = new Tabulator(this.$refs.table, {
+        height: this.actualTableHeight,
+        columns: this.tableColumns,
+        nestedFieldSeparator: false,
+        reactiveData: true,
+        virtualDomHoz: false,
+        ajaxURL: "http://fake",
+        ajaxSorting: true,
+        ajaxFiltering: true,
+        pagination: "remote",
+        paginationSize: this.limit,
+        paginationElement: this.$refs.paginationArea,
+        initialSort: this.initialSort,
+        initialFilter: [this.initialFilter || {}],
+        lastUpdated: null,
+        // callbacks
+        ajaxRequestFunc: this.dataFetch,
+        index: this.primaryKey,
+        keybindings: {
+          scrollToEnd: false,
+          scrollToStart: false,
+          scrollPageUp: false,
+          scrollPageDown: false
+        },
+        rowContextMenu:[
+          {
+            label: "Delete Row",
+            action: (e, row) => {
+              this.addRowToPendingDeletes(row)
+            }
+          },
+        ]
+      });
+    },
+    async active() {
+      if (!this.firstActive) this.firstActive = true
       if (!this.tabulator) return;
+
       if (this.active) {
         this.tabulator.restoreRedraw()
-        this.$nextTick(() => {
-          this.tabulator.redraw(true)
-        })
+        await this.runActions()
       } else {
         this.tabulator.blockRedraw()
       }
+
+      // stops columns squishing
+      if(this.forceRedraw) {
+        this.forceRedraw = false
+        this.$nextTick(() => {
+          console.log('redrawing')
+          this.tabulator.redraw(true)
+        })
+      }
+
+
     },
     tableColumns: {
       deep: true,
@@ -356,8 +402,16 @@ export default {
         if(!this.tabulator) {
           return
         }
-        await this.tabulator.setColumns(this.tableColumns)
-        await this.refreshTable()
+        
+        this.activeActions.push(async () => await this.tabulator.setColumns(this.tableColumns))
+        this.activeActions.push(async () => await this.refreshTable())
+        // await this.tabulator.setColumns(this.tableColumns)
+        // await this.refreshTable()
+        if(!this.active) {
+          this.forceRedraw = true
+        } else {
+          await this.runActions()
+        }
       }
     },
     filterValue() {
@@ -399,41 +453,17 @@ export default {
     await this.$store.dispatch('updateTableColumns', this.table)
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
     this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
-    this.tabulator = new Tabulator(this.$refs.table, {
-      height: this.actualTableHeight,
-      columns: this.tableColumns,
-      nestedFieldSeparator: false,
-      virtualDomHoz: false,
-      ajaxURL: "http://fake",
-      ajaxSorting: true,
-      ajaxFiltering: true,
-      pagination: "remote",
-      paginationSize: this.limit,
-      paginationElement: this.$refs.paginationArea,
-      initialSort: this.initialSort,
-      initialFilter: [this.initialFilter || {}],
-      lastUpdated: null,
-      // callbacks
-      ajaxRequestFunc: this.dataFetch,
-      index: this.primaryKey,
-      keybindings: {
-        scrollToEnd: false,
-        scrollToStart: false,
-        scrollPageUp: false,
-        scrollPageDown: false
-      },
-      rowContextMenu:[
-        {
-          label: "Delete Row",
-          action: (e, row) => {
-            this.addRowToPendingDeletes(row)
-          }
-        },
-      ]
-    });
+
 
   },
   methods: {
+    async runActions() {
+      for (let index = 0; index < this.activeActions.length; index++) {
+        const action = this.activeActions[index];
+        await action()
+      }
+      this.activeActions = []
+    },
     valueCellFor(cell) {
       const fromColumn = cell.getField().replace(/-link$/g, "")
       const valueCell = cell.getRow().getCell(fromColumn)
