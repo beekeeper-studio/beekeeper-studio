@@ -1,7 +1,8 @@
 <template>
   <div  class="core-tabs" v-hotkey="keymap">
     <div class="tabs-header">
-      <Draggable v-model="tabItems" tag="ul" class="nav-tabs nav" chosen-class="nav-item-wrap-chosen">
+      <!-- <div class="nav-tabs nav"> -->
+      <Draggable :options="dragOptions" v-model="tabItems" tag="ul" class="nav-tabs nav" chosen-class="nav-item-wrap-chosen">
         <core-tab-header
           v-for="tab in tabItems"
           :key="tab.id"
@@ -15,6 +16,7 @@
           @duplicate="duplicate"
           ></core-tab-header>
       </Draggable>
+      <!-- </div> -->
       <span class="actions">
         <a @click.prevent="createQuery(null)" class="btn-fab add-query"><i class=" material-icons">add_circle</i></a>
       </span>
@@ -56,7 +58,10 @@
       return {
         tabItems: [],
         activeItem: 0,
-        newTabId: 1
+        newTabId: 1,
+        dragOptions: {
+          handle: '.nav-item'
+        }
       }
     },
     watch: {

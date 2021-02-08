@@ -186,7 +186,8 @@ export default {
       lastUpdated: null,
       lastUpdatedText: null,
       interval: setInterval(this.setlastUpdatedText, 10000),
-      totalRecords: 0
+      totalRecords: 0,
+      forceRedraw: false
     };
   },
   computed: {
@@ -343,9 +344,13 @@ export default {
       if (!this.tabulator) return;
       if (this.active) {
         this.tabulator.restoreRedraw()
-        this.$nextTick(() => {
-          this.tabulator.redraw(true)
-        })
+        if (this.forceRedraw) {
+          this.forceRedraw = false
+          this.$nextTick(() => {
+            log.debug(`force redraw, table ${this.table.name}, tab ${this.tabId}`)
+            this.tabulator.redraw(true)
+          })
+        }
       } else {
         this.tabulator.blockRedraw()
       }
@@ -355,6 +360,9 @@ export default {
       async handler() {
         if(!this.tabulator) {
           return
+        }
+        if (!this.active) {
+          this.forceRedraw = true
         }
         await this.tabulator.setColumns(this.tableColumns)
         await this.refreshTable()
