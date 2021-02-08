@@ -105,14 +105,13 @@
             >warning</i>
           </span>
         </div>
-        <div v-if="pendingEditList.length > 0" class="flex flex-right">
+        <div v-if="pendingChangesCount > 0" class="flex flex-right">
           <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
-          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingEditList.length + ' ' + 'pending edits'" :class="{'error': !!queryError}">
+          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingChangesCount + ' ' + 'pending edits'" :class="{'error': !!queryError}">
             <!-- <i v-if="queryError" class="material-icons">error</i> -->
-            <span class="badge">{{pendingEditList.length}}</span>
+            <span class="badge">{{pendingChangesCount}}</span>
             <span>Commit</span>
           </a>
-
         </div>
       </div>
     </statusbar>
@@ -136,6 +135,11 @@ import Statusbar from '../common/StatusBar'
 import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
+
+//const CHANGE_TYPE_INSERT = 'insert'
+const CHANGE_TYPE_UPDATE = 'update'
+const CHANGE_TYPE_DELETE = 'delete'
+
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
@@ -172,7 +176,11 @@ export default {
       limit: 100,
       rawTableKeys: [],
       primaryKey: null,
-      pendingEdits: {},
+      pendingChanges: {
+        inserts: [],
+        updates: [],
+        deletes: []
+      },
       queryError: null,
       timeAgo: new TimeAgo('en-US'),
       lastUpdated: null,
@@ -189,8 +197,19 @@ export default {
     totalRecordsText() {
       return `${this.totalRecords.toLocaleString()}`
     },
-    pendingEditList() {
-      return Object.values(this.pendingEdits)
+    pendingChangesCount() {
+      return this.pendingChanges.inserts.length 
+             + this.pendingChanges.updates.length 
+             + this.pendingChanges.deletes.length
+    },
+    hasPendingChanges() {
+      return this.pendingChangesCount > 0
+    },
+    hasPendingUpdates() {
+      return this.pendingChanges.updates.length > 0
+    },
+    hasPendingDeletes() {
+      return this.pendingChanges.deletes.length > 0
     },
     editable() {
       return this.primaryKey && this.table.entityType === 'table'
@@ -201,7 +220,7 @@ export default {
     },
     statusbarMode() {
       if (this.queryError) return 'failure'
-      if (this.pendingEdits.length > 0) return 'editing'
+      if (this.pendingChangesCount) return 'editing'
       return null
     },
     tableKeys() {
@@ -253,7 +272,7 @@ export default {
           cellClick: this.cellClick,
           width: columnWidth,
           cssClass: isPK ? 'primary-key' : '',
-          editable: editable,
+          editable: this.cellEditCheck,
           editor: editable ? editorType : undefined,
           variableHeight: true,
           headerTooltip: headerTooltip,
@@ -384,7 +403,7 @@ export default {
     if (this.initialFilter) {
       this.filter = _.clone(this.initialFilter)
     }
-
+    this.resetPendingChanges()
     await this.$store.dispatch('updateTableColumns', this.table)
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
     this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
@@ -410,7 +429,15 @@ export default {
         scrollToStart: false,
         scrollPageUp: false,
         scrollPageDown: false
-      }
+      },
+      rowContextMenu:[
+        {
+          label: "Delete Row",
+          action: (e, row) => {
+            this.addRowToPendingDeletes(row)
+          }
+        },
+      ]
     });
 
   },
@@ -431,6 +458,7 @@ return dt.split("(")[0]
         case 'text': return 'textarea'
         case 'json': return 'textarea'
         case 'jsonb': return 'textarea'
+        case 'bytea': return 'textarea'
         case 'bool': return 'select'
         default: return 'input'
       }
@@ -472,10 +500,16 @@ return dt.split("(")[0]
         }, 10)
 
       }
+    },
+    cellEditCheck(cell) {
+      const primaryKey = cell.getRow().getCells().find(c => c.getField() === this.primaryKey).getValue()
+      const pendingDelete = _.find(this.pendingChanges.deletes, { primaryKey: primaryKey })
 
+      return this.editable && cell.getColumn.title !== this.primaryKey && !pendingDelete
     },
     cellEdited(cell) {
       log.info('edit', cell)
+
       const pkCell = cell.getRow().getCells().find(c => c.getField() === this.primaryKey)
       const column = this.table.columns.find(c => c.columnName === cell.getField())
       if (!pkCell) {
@@ -492,8 +526,9 @@ return dt.split("(")[0]
 
       cell.getElement().classList.add('edited')
       const key = `${pkCell.getValue()}-${cell.getField()}`
-      const currentEdit = this.pendingEdits[key]
+      const currentEdit = _.find(this.pendingChanges.updates, { key: key })
       const payload = {
+        key: key,
         table: this.table.name,
         schema: this.table.schema,
         column: cell.getField(),
@@ -504,51 +539,119 @@ return dt.split("(")[0]
         cell: cell,
         value: cell.getValue(0)
       }
-      this.$set(this.pendingEdits, key, payload)
+
+      this.addPendingChange(CHANGE_TYPE_UPDATE, payload)
     },
-    async saveChanges() {
-      try {
-        // throw new Error("This is an error")
-        const newData = await this.connection.updateValues(this.pendingEditList)
-        const updateIncludedPK = this.pendingEditList.find(e => e.column === e.pkColumn)
-        if (updateIncludedPK) {
-          this.tabulator.replaceData()
-        } else {
-          this.tabulator.updateData(newData)
-          this.pendingEditList.forEach(edit => {
-            edit.cell.getElement().classList.remove('edited')
-            edit.cell.getElement().classList.add('edit-success')
-            setTimeout(() => {
-              edit.cell.getElement().classList.remove('edit-success')
-            }, 1000)
-          })
-        }
-        log.info("new Data: ", newData)
-        this.pendingEdits = {}
-      } catch (ex) {
-        this.pendingEditList.forEach(edit => {
-          edit.cell.getElement().classList.add('edit-error')
-        })
-        this.setQueryError('Error Saving Changes', ex.message)
+    addRowToPendingDeletes(row) {
+      row.getElement().classList.add('deleted')
+      const pkCell = row.getCells().find(c => c.getField() === this.primaryKey)
+
+      if (!pkCell) {
+        this.$noty.error("Can't delete row -- couldn't figure out primary key")       
+        return
       }
 
+      const payload = {
+        table: this.table.name,
+        row: row,
+        schema: this.table.schema,
+        pkColumn: this.primaryKey,
+        primaryKey: pkCell.getValue()
+      }
+
+      this.addPendingChange(CHANGE_TYPE_DELETE, payload)
+    },
+    addPendingChange(changeType, payload) {
+      if (changeType === CHANGE_TYPE_UPDATE) {
+        // remove existing pending updates with identical pKey-column combo
+        let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
+        pendingUpdates.push(payload)
+
+        this.$set(this.pendingChanges, 'updates', pendingUpdates)
+      } else if (changeType === CHANGE_TYPE_DELETE) {
+        // remove pending updates for the row marked for deletion
+        const filter = { 'primaryKey': payload.primaryKey }
+        const discardedUpdates = _.filter(this.pendingChanges.updates, filter)
+        const pendingUpdates = _.reject(this.pendingChanges.updates, filter)
+
+        discardedUpdates.forEach(update => this.discardColumnUpdate(update))
+
+        this.$set(this.pendingChanges, 'updates', pendingUpdates)
+
+        if (!_.find(this.pendingChanges.deletes, { 'primaryKey': payload.primaryKey })) {
+          this.pendingChanges.deletes.push(payload)
+        }
+      }
+    },
+    resetPendingChanges() {
+      this.pendingChanges = {
+        inserts: [],
+        updates: [],
+        deletes: []
+      }
+    },
+    async saveChanges() {
+
+        let replaceData = false
+
+        try {
+          const result = await this.connection.applyChanges(this.pendingChanges)
+          const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
+
+          if (updateIncludedPK || this.hasPendingDeletes) {
+            replaceData = true
+          } else if (this.hasPendingUpdates) {
+            this.tabulator.updateData(result)
+            this.pendingChanges.updates.forEach(edit => {
+              edit.cell.getElement().classList.remove('edited')
+              edit.cell.getElement().classList.add('edit-success')
+              setTimeout(() => {
+                if (edit.cell.getElement()) {
+                  edit.cell.getElement().classList.remove('edit-success')
+                }
+              }, 1000)
+            })
+          }
+
+          this.resetPendingChanges()
+
+          if (replaceData) {
+            this.tabulator.replaceData()
+          }
+
+        } catch (ex) {
+          
+          this.pendingChanges.updates.forEach(edit => {
+              edit.cell.getElement().classList.add('edit-error')
+          })
+          
+          this.setQueryError('Error saving changes', ex.message)
+          this.$noty.error("Error saving changes")
+          
+          return
+        }
     },
     discardChanges() {
       this.queryError = null
-      const updates = []
-      this.pendingEditList.forEach(edit => {
-        const update = {}
-        update[edit.pkColumn] = edit.primaryKey
-        update[edit.column] = edit.oldValue
-        updates.push(update)
-        // this.tabulator.updateData(update)
-        // edit.cell.restoreOldValue()
-        edit.cell.getElement().classList.remove('edited')
-        edit.cell.getElement().classList.remove('edit-error')
+
+      this.pendingChanges.updates.forEach(edit => {
+        this.discardColumnUpdate(edit)
       })
-      log.debug('discarding -- applying update', updates)
-      this.tabulator.updateData(updates)
-      this.pendingEdits = {}
+
+      this.pendingChanges.deletes.forEach(pendingDelete => {
+        pendingDelete.row.getElement().classList.remove('deleted')
+      })
+
+      this.resetPendingChanges()
+    },
+    discardColumnUpdate(pendingUpdate) {
+      const update = {}
+      update[pendingUpdate.pkColumn] = pendingUpdate.primaryKey
+      update[pendingUpdate.column] = pendingUpdate.oldValue
+      pendingUpdate.cell.getElement().classList.remove('edited')
+      pendingUpdate.cell.getElement().classList.remove('edit-error')
+
+      this.tabulator.updateData([update])
     },
     triggerFilter() {
       this.tabulator.setData()
@@ -602,7 +705,6 @@ return dt.split("(")[0]
               filters,
               this.table.schema
             );
-            log.debug('Update Fields', response.fields)
             if (_.difference(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
               await this.$store.dispatch('updateTableColumns', this.table)
@@ -611,7 +713,7 @@ return dt.split("(")[0]
             const r = response.result;
             this.totalRecords = Number(response.totalRecords) || 0;
             this.response = response
-            this.pendingEdits = []
+            this.resetPendingChanges()
             this.clearQueryError()
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = data

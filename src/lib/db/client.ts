@@ -52,10 +52,25 @@ export interface TableFilter {
   value: string
 }
 
+export interface IDbInsertValue {
+  column: TableColumn[],
+  value: string
+}
+
+export interface IDbInsert {
+  table: string,
+  values: IDbInsertValue[],
+}
+
 export interface TableResult {
   result: any[],
   fields: string[]
   totalRecords: Number
+}
+
+export interface TableChanges {
+  updates: TableUpdate[],
+  deletes: TableDelete[]
 }
 
 export interface TableUpdate {
@@ -66,6 +81,13 @@ export interface TableUpdate {
   schema?: string
   columnType?: string,
   value: any
+}
+
+export interface TableDelete {
+  table: string,
+  pkColumn: string,
+  schema?: string,
+  primaryKey: string
 }
 
 export interface TableKey {
@@ -150,7 +172,7 @@ export interface DatabaseClient {
   query: (queryText: string) => void,
   executeQuery: (queryText: string) => void,
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
-  updateValues: (updates: TableUpdate[]) => Promise<TableUpdateResult[]>,
+  applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableCreateScript: (table: string, schema?: string) => void,
   getViewCreateScript: (view: string) => void,
@@ -237,7 +259,7 @@ export class DBConnection {
   executeQuery = executeQuery.bind(null, this.server, this.database)
   listDatabases = listDatabases.bind(null, this.server, this.database)
   selectTop = selectTop.bind(null, this.server, this.database)
-  updateValues = updateValues.bind(null, this.server, this.database)
+  applyChanges = applyChanges.bind(null, this.server, this.database)
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
   getTableCreateScript = getTableCreateScript.bind(null, this.server, this.database)
   getTableSelectScript = getTableSelectScript.bind(null, this.server, this.database)
@@ -413,9 +435,9 @@ function query(server: IDbConnectionServer, database: IDbConnectionDatabase, que
   return database.connection?.query(queryText);
 }
 
-function updateValues(server: IDbConnectionServer, database: IDbConnectionDatabase, updates: TableUpdate[]) {
+function applyChanges(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: TableChanges) {
   checkIsConnected(server, database)
-  return database.connection?.updateValues(updates)
+  return database.connection?.applyChanges(changes)
 }
 
 function executeQuery(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string) {

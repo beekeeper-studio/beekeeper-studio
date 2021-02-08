@@ -9,7 +9,7 @@ export default class NativeMenuBuilder {
   private handler: NativeMenuActionHandlers
   private menu?: Electron.Menu
 
-  constructor(private electron: Electron.CommonInterface, settings: IGroupedUserSettings){
+  constructor(private electron: any, settings: IGroupedUserSettings){
     this.handler = new NativeMenuActionHandlers(settings)
     if (!settings.menuStyle || settings.menuStyle.value === 'native') {
       this.builder = new MenuBuilder(settings, this.handler)

@@ -92,6 +92,12 @@ $foreign-key-width:      24px;
       }
     }
   }
+  &.tabulator-selected {
+    background: rgba($theme-base, 0.1);
+  }
+  &.deleted {
+    background: rgba($brand-danger, 0.8);
+  }
 }
 .tabulator {
   position: relative;
@@ -302,5 +308,23 @@ $foreign-key-width:      24px;
     &[data-page="last"]:before {
       content: '\e5dd';
     }
+  }
+}
+
+.tabulator-menu {
+  background: lighten($theme-bg, 5%);
+  border: none;
+  border-radius: 6px;
+  min-width: 150px;
+  padding: 0.3rem 0;
+
+  .tabulator-menu-item {
+    &:hover {
+      background: rgba($theme-base, 0.035);
+    }
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+    color: $text-dark;
+    cursor: pointer;
   }
 }

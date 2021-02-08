@@ -7,7 +7,7 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _ from 'lodash';
 
-import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 import logRaw from 'electron-log'
 const log = logRaw.scope('sql-server')
 
@@ -44,7 +44,7 @@ export default async function (server, database) {
     getTableReferences: (table) => getTableReferences(conn, table),
     getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema) => getPrimaryKey(conn, db, table, schema),
-    updateValues: (updates) => updateValues(conn, updates),
+    applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
@@ -447,24 +447,42 @@ export async function getPrimaryKey(conn, database, table, schema) {
   return data.recordset && data.recordset[0] && data.recordset.length === 1 ? data.recordset[0].COLUMN_NAME : null
 }
 
-export async function updateValues(conn, updates) {
+export async function applyChanges(conn, changes) {
+  let results = []
+  let sql = ['SET XACT_ABORT ON', 'BEGIN TRANSACTION']
 
-  const { updateQueries, selectQueries } = buildUpdateAndSelectQueries(knex, updates)
-  const sql = ['set xact_abort on', 'BEGIN TRANSACTION', ...updateQueries, 'COMMIT'].join(";")
-  const results = []
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
-    await driverExecuteQuery(cli, { query: sql })
 
-    for (let index = 0; index < selectQueries.length; index++) {
-      const element = selectQueries[index];
-      const r = await driverExecuteQuery(cli, element)
-      if (r.data[0]) results.push(r.data[0])
+    try {
+      if (changes.updates) {
+        sql = sql.concat(buildUpdateQueries(knex, changes.updates))
+      }
+  
+      if (changes.deletes) {
+        sql = sql.concat(buildDeleteQueries(knex, changes.deletes))
+      }
+  
+      sql.push('COMMIT')
+
+      await driverExecuteQuery(cli, { query: sql.join(';')})
+      
+      if (changes.updates) {
+        const selectQueries = buildSelectQueriesFromUpdates(knex, changes.updates)
+        for (let index = 0; index < selectQueries.length; index++) {
+          const element = selectQueries[index];
+          const r = await driverExecuteQuery(cli, element)
+          if (r.data[0]) results.push(r.data[0])
+        }
+      }
+    } catch (ex) {
+      log.error("query exception: ", ex)
+      throw ex
     }
   })
+
   return results
 }
-
 
 export async function getTableCreateScript(conn, table) {
   // Reference http://stackoverflow.com/a/317864
