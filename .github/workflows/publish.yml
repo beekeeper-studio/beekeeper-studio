@@ -15,6 +15,12 @@ jobs:
         os: [macos-latest, ubuntu-18.04, windows-latest, ubuntu-arm64]
 
     steps:
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v3
+        with:
+          gpg-private-key: ${{ secrets.gpg_key }}
+
       - name: Check out Git repository
         uses: actions/checkout@v1
       - uses: ruby/setup-ruby@v1
@@ -78,7 +84,14 @@ jobs:
           API_KEY_ID: ${{ secrets.apple_key_id }}
           API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
           BT_TOKEN: "${{secrets.bintray_apikey}}"
-      - name: Publish deb to s3 repo
+
+      - name: Publish DEB to S3
+        if: startsWith(matrix.os, 'ubuntu')
+        run: deb-s3 upload dist_electron/*.deb --bucket=deb.beekeeperstudio.io --lock --sign=${{steps.import_gpg.outputs.keyid}} --preserve-versions
+        env:
+          AWS_ACCESS_KEY_ID: "${{secrets.aws_access_key_id}}"
+          AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
+
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
         run: |

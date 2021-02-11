@@ -1,69 +1,69 @@
 #! /bin/bash
 
+OLD_FILE=/etc/apt/sources.list.d/beekeeper-studio.list
+NEW_FILE=/etc/apt/sources.list.d/beekeeper-studio-app.list
+
 available()
 {
         command -v "$1" >/dev/null 2>&1
 }
 
-if [ -f /etc/apt/sources.list.d/beekeeper-studio.list ]; then
+if [ -f $NEW_FILE ]; then
   exit 0
+fi
+
+if [ -f $OLD_FILE ]; then
+  echo "--> Beekeeper Studio has migrated to a new apt repo, adding it, and removing the old one"
+  echo "--> For more information see https://docs.beekeeperstudio.io/installation"
+  rm -f $OLD_FILE
+  rm -f $OLD_FILE.save
 fi
 
 if available apt-key
 then
       apt-key add - >/dev/null <<EOF
 -----BEGIN PGP PUBLIC KEY BLOCK-----
-Version: GnuPG v1
 
-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
-JESa2SNRfw==
-=EI0Z
+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
+=+l7u
 -----END PGP PUBLIC KEY BLOCK-----
+
 EOF
-    echo "deb https://dl.bintray.com/beekeeper-studio/releases disco main" > /etc/apt/sources.list.d/beekeeper-studio.list
+    echo "deb https://deb.beekeeperstudio.io stable main" > $NEW_FILE
 fi

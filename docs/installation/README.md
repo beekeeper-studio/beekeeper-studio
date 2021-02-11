@@ -27,18 +27,30 @@ Supported Architectures: x86-64, ARM64, armv7l, and a special build for the Rasp
 
 A repo is provided for Debian and Ubuntu 16.04+. To install the repo:
 
+
 ```bash
 # Install our GPG key
-wget --quiet -O - https://bintray.com/user/downloadSubjectPublicKey?username=bintray | sudo apt-key add -
+wget --quiet -O - https://deb.beekeeperstudio.io/beekeeper.key | sudo apt-key add -
 
 # add our repo to your apt lists directory
-echo "deb https://dl.bintray.com/beekeeper-studio/releases disco main" | sudo tee /etc/apt/sources.list.d/beekeeper-studio.list
+echo "deb https://deb.beekeeperstudio.io stable main" | sudo tee /etc/apt/sources.list.d/beekeeper-studio-app.list
 
 # Update apt and install
 sudo apt update
 sudo apt install beekeeper-studio
 
 ```
+
+#### Migrating from Bintray
+
+In Febrary 2021, JFrog announced they were turning off Bintray.
+If you installed Beekeeper Studio prior to that date, you'll need to upgrade your repository setting.
+
+From release 1.9.5 our deb post-install script should do this automatically, if that didn't work for some reason do this:
+
+1. `sudo rm /etc/apt/sources.list.d/beekeeper-studio.list`
+2. Follow the install instructions above
+
 
 ### AppImage
 
