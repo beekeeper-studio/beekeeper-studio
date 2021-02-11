@@ -91,7 +91,16 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: "${{secrets.aws_access_key_id}}"
           AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
-
+      - name: Invalidate cloudfront cache
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          aws cloudfront create-invalidation \
+          --distribution "$DISTRIBUTION"
+          --paths "/*"
+        env:
+          AWS_ACCESS_KEY_ID: "${{secrets.aws_access_key_id}}"
+          AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
+          DISTRIBUTION: ${{secrets.cloudfront_distribution}}
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
         run: |
