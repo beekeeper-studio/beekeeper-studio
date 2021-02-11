@@ -1,0 +1,185 @@
+name: Build & Publish
+
+on: 
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  linux_release:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        # os: [ubuntu-18.04, ubuntu-arm64]
+        os: [ubuntu-18.04]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v3
+        with:
+          gpg-private-key: ${{ secrets.gpg_key }}
+
+      - name: Install node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - run: npm install -g yarn
+      - run: "apt update"
+      - run: "apt install --yes ruby ruby-dev libffi-dev build-essential snapd libnss3-dev libgdk-pixbuf2.0-dev libgtk-3-dev libxss-dev"
+      - run: "curl -sLO https://github.com/deb-s3/deb-s3/releases/download/0.11.2/deb-s3-0.11.2.gem"
+      - run: "gem install --no-ri --no-rdoc deb-s3-0.11.2.gem"
+      - run: "gem install --no-ri --no-rdoc fpm"
+      - run: service --status-all
+      # - name: Install Snapcraft
+      #   uses: samuelmeuli/action-snapcraft@v1
+      #   with:
+      #     snapcraft_token: ${{ secrets.snapcraft_token }}
+      #     skip_install: ${{ matrix.os == 'ubuntu-arm64' }}
+
+      - name: Remove dist directory
+        run: rm -rf ./dist_electron
+
+      - run: yarn install --frozen-lockfile
+      - name: build
+        run: "yarn run electron:build --linux deb --publish never"
+      # - name: Build and Publish (ARM Linux)
+      #   run: ./build/arm-publish.sh
+      #   if: "startsWith(matrix.os, 'ubuntu-arm64')"
+      #   env:
+      #     GH_TOKEN: ${{ secrets.github_token }}
+      #     BT_TOKEN: ${{ secrets.bintray_apikey }}
+      #     USE_SYSTEM_FPM: true
+      #     SNAPCRAFT_BUILD_ENVIRONMENT: host
+
+
+      # - name: Build and Publish
+      #   if: "${{!startsWith(matrix.os, 'ubuntu-arm64')}}"
+      #   uses: samuelmeuli/action-electron-builder@v1
+      #   with:
+      #     # GitHub token, automatically provided to the action
+      #     # (No need to define this secret in the repo settings)
+      #     github_token: ${{ secrets.github_token }}
+      #     skip_build: true
+      #     use_vue_cli: true
+      #     max_attempts: 2
+
+      #     # If the commit is tagged with a version (e.g. "v1.0.0"),
+      #     # release the app after building
+      #     release: false
+      #   env:
+      #     BT_TOKEN: "${{secrets.bintray_apikey}}"
+
+      - name: Publish DEB to S3
+        run: deb-s3 upload dist_electron/*.deb --bucket=deb.beekeeperstudio.io --lock --sign=${{steps.import_gpg.outputs.keyid}}
+        env:
+          AWS_ACCESS_KEY_ID: "${{secrets.aws_access_key_id}}"
+          AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
+
+      - name: Cleanup artifacts
+        run: |
+          npx rimraf "dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
+
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}
+          path: dist_electron
+
+  windows_release:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Install node
+        uses: actions/setup-node@v1
+
+      - name: Remove dist directory windows
+        run: Remove-Item dist_electron -Recurse -ErrorAction Ignore
+
+
+      - name: Build and Publish
+        if: "!startsWith(matrix.os, 'ubuntu-arm64')"
+        uses: samuelmeuli/action-electron-builder@v1
+        with:
+          # GitHub token, automatically provided to the action
+          # (No need to define this secret in the repo settings)
+          github_token: ${{ secrets.github_token }}
+          skip_build: true
+          use_vue_cli: true
+          max_attempts: 2
+
+          # If the commit is tagged with a version (e.g. "v1.0.0"),
+          # release the app after building
+          release: true
+          windows_certs: ${{ secrets.windows_cert }}
+          windows_certs_password: ${{ secrets.windows_cert_password }}
+
+      - name: Cleanup artifacts Win
+        run: |
+          npx rimraf "dist_electron/!(*.exe)"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}
+          path: dist_electron
+  mac_release:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Install node
+        uses: actions/setup-node@v1
+
+      - name: Remove dist directory
+        run: rm -rf ./dist_electron
+
+      - name: Prepare for app notarization
+        # Import Apple API key for app notarization on macOS
+        run: |
+          mkdir -p ~/private_keys/
+          echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
+
+      - name: Build and Publish
+        uses: samuelmeuli/action-electron-builder@v1
+        with:
+          # GitHub token, automatically provided to the action
+          # (No need to define this secret in the repo settings)
+          github_token: ${{ secrets.github_token }}
+          skip_build: true
+          use_vue_cli: true
+          max_attempts: 2
+
+          # If the commit is tagged with a version (e.g. "v1.0.0"),
+          # release the app after building
+          release: true
+          mac_certs: ${{ secrets.mac_dev }}
+          mac_certs_password: ${{ secrets.mac_dev_pw }}
+        env:
+          API_KEY_ID: ${{ secrets.apple_key_id }}
+          API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
+      - name: Cleanup artifacts
+        run: |
+          npx rimraf "dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}
+          path: dist_electron

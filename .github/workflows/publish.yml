@@ -17,6 +17,11 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+      - run: "curl -sLO https://github.com/deb-s3/deb-s3/releases/download/0.11.2/deb-s3-0.11.2.gem"
+      - run: "gem install --no-ri --no-rdoc deb-s3-0.11.2.gem"
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v1
@@ -73,6 +78,7 @@ jobs:
           API_KEY_ID: ${{ secrets.apple_key_id }}
           API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
           BT_TOKEN: "${{secrets.bintray_apikey}}"
+      - name: Publish deb to s3 repo
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
         run: |
