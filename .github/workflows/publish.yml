@@ -87,7 +87,12 @@ jobs:
 
       - name: Publish DEB to S3
         if: startsWith(matrix.os, 'ubuntu')
-        run: deb-s3 upload dist_electron/*.deb --bucket=deb.beekeeperstudio.io --lock --sign=${{steps.import_gpg.outputs.keyid}} --preserve-versions
+        run: |
+          deb-s3 upload dist_electron/*.deb \
+            --bucket=deb.beekeeperstudio.io \
+            --lock \
+            --sign=${{steps.import_gpg.outputs.keyid}} \
+            --preserve-versions
         env:
           AWS_ACCESS_KEY_ID: "${{secrets.aws_access_key_id}}"
           AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
@@ -95,7 +100,7 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: |
           aws cloudfront create-invalidation \
-          --distribution "$DISTRIBUTION"
+          --distribution "$DISTRIBUTION" \
           --paths "/*"
         env:
           AWS_ACCESS_KEY_ID: "${{secrets.aws_access_key_id}}"
