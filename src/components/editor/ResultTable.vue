@@ -1,11 +1,16 @@
 <template>
   <div class="result-table">
-    <div ref="tabulator"></div>
+    <ag-grid-vue
+      :columnDefs="tableColumns"
+      :rowData="result"
+    ></ag-grid-vue>
+    <!-- <div ref="tabulator"></div> -->
   </div>
 </template>
 
 <script type="text/javascript">
-  import Tabulator from 'tabulator-tables'
+  import { AgGridVue } from "ag-grid-vue";
+  // import Tabulator from 'tabulator-tables'
   import _ from 'lodash'
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
@@ -13,9 +18,11 @@
 
   export default {
     mixins: [Converter, Mutators],
+    components: { AgGridVue },
     data() {
       return {
-        tabulator: null
+        tabulator: null,
+        agGrid: null
       }
     },
     props: ['result', 'tableHeight', 'query', 'active'],
@@ -53,15 +60,15 @@
           return this.result.truncated
       },
       tableColumns() {
-        const columnWidth = this.result.fields.length > 20 ? 125 : undefined
+        // const columnWidth = this.result.fields.length > 20 ? 125 : undefined
         return this.result.fields.map((column) => {
           const result = {
-            title: column.name,
+            headerName: column.name,
             field: column.id,
-            dataType: column.dataType,
-            width: columnWidth,
-            mutatorData: this.resolveDataMutator(column.dataType),
-            formatter: this.cellFormatter
+            // dataType: column.dataType,
+            // width: columnWidth,
+            // mutatorData: this.resolveDataMutator(column.dataType),
+            // formatter: this.cellFormatter
           }
           return result;
         })
@@ -81,22 +88,25 @@
       }
     },
     async mounted() {
-      this.tabulator = new Tabulator(this.$refs.tabulator, {
-        data: this.tableData, //link data to table
-        reactiveData: true,
-        virtualDomHoz: false,
-        columns: this.tableColumns, //define table columns
-        height: this.actualTableHeight,
-        nestedFieldSeparator: false,
-        cellClick: this.cellClick,
-        clipboard: true,
-        keybindings: {
-          copyToClipboard: false
-        },
-        downloadConfig: {
-          columnHeaders: true
-        }
-      });
+
+
+
+      // this.tabulator = new Tabulator(this.$refs.tabulator, {
+      //   data: this.tableData, //link data to table
+      //   reactiveData: true,
+      //   virtualDomHoz: false,
+      //   columns: this.tableColumns, //define table columns
+      //   height: this.actualTableHeight,
+      //   nestedFieldSeparator: false,
+      //   cellClick: this.cellClick,
+      //   clipboard: true,
+      //   keybindings: {
+      //     copyToClipboard: false
+      //   },
+      //   downloadConfig: {
+      //     columnHeaders: true
+      //   }
+      // });
     },
     methods: {
       cellClick(e, cell) {

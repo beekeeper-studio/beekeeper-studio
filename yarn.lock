@@ -2224,6 +2224,16 @@ adm-zip@^0.4.13:
   resolved "https://registry.yarnpkg.com/adm-zip/-/adm-zip-0.4.14.tgz#2cf312bcc9f8875df835b0f6040bd89be0a727a9"
   integrity sha512-/9aQCnQHF+0IiCl0qhXoK7qs//SwYE7zX8lsr/DNk1BRAHYxeLZPL4pguwK29gUEqasYQjqPtEpDRSWEkdHn9g==
 
+ag-grid-community@^25.0.1:
+  version "25.0.1"
+  resolved "https://registry.yarnpkg.com/ag-grid-community/-/ag-grid-community-25.0.1.tgz#e58dfa6d7da1f87e57ec3bc73b227f3d6b2a9468"
+  integrity sha512-h7GIMsJ5N/xRDwKSyOWx0skhtiXs/vEgRqkkHfVopJ4Ql+rtg8If/YYxj/EtTJa1NeIZocWmHBd5Zb/iiUR+bg==
+
+ag-grid-vue@^25.0.0:
+  version "25.0.0"
+  resolved "https://registry.yarnpkg.com/ag-grid-vue/-/ag-grid-vue-25.0.0.tgz#fd9bced8969c991589cea57e0ccb629e006cfe77"
+  integrity sha512-SKIr3ekWV2k9CiTMMikYFVp7cCme+MlXhf3pX7qn7cgWK7xi4kS1KXloRTqxOvQC6Ey1Z73gjnn33iLPqbqotg==
+
 agentkeepalive@^2.2.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/agentkeepalive/-/agentkeepalive-2.2.0.tgz#c5d1bd4b129008f1163f236f86e5faea2026e2ef"

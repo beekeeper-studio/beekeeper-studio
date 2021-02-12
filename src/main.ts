@@ -9,7 +9,6 @@ import 'codemirror/addon/search/searchcursor'
 import Tabulator from 'tabulator-tables'
 
 import App from './App.vue'
-import path from 'path'
 import 'typeface-roboto'
 import 'typeface-source-code-pro'
 import './assets/styles/app.scss'
