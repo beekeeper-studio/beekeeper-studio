@@ -1,9 +1,13 @@
 <template>
   <div class="result-table">
     <ag-grid-vue
+       style="width: 100%; height: 100%;"
+      class="ag-theme-balham-dark"
       :columnDefs="tableColumns"
-      :rowData="result"
+      :rowData="tableData"
+      :enableRangeSelection="true"
     ></ag-grid-vue>
+    <!-- ALREADY A FEATURE BEHIND THE PAYWALL https://www.ag-grid.com/documentation/vue/range-selection/ -->
     <!-- <div ref="tabulator"></div> -->
   </div>
 </template>
@@ -65,6 +69,8 @@
           const result = {
             headerName: column.name,
             field: column.id,
+            sortable: true,
+            filter: true
             // dataType: column.dataType,
             // width: columnWidth,
             // mutatorData: this.resolveDataMutator(column.dataType),
