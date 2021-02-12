@@ -33,9 +33,15 @@ import en from 'javascript-time-ago/locale/en'
 import log from 'electron-log'
 import VueClipboard from 'vue-clipboard2'
 import platformInfo from './common/platform_info'
+import Worker from 'worker-loader!./workers/helloworld.worker'
 
 (async () => {
   try {
+    const worker = new Worker()
+    worker.postMessage({ world: true})
+    worker.onmessage = (e) => {
+      console.log('main thread, received:', e)
+    }
 
     const transports = [log.transports.console, log.transports.file]
     if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
