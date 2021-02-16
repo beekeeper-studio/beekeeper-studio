@@ -58,24 +58,28 @@ describe("Postgres Integration Tests", () => {
 
     await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
-    const updates = [{
-      value: '["x", "y", "z"]',
-      column: "names",
-      pkColumn: "id",
-      primaryKey: 1,
-      columnType: "_text",
-      table: "witharrays",
-    },
-    {
-      value: 'Bananas',
-      table: 'witharrays',
-      column: 'normal',
-      primaryKey: 1,
-      columnType: 'text',
-      pkColumn: 'id'
+    const changes = {
+      updates: [
+        {
+          value: '["x", "y", "z"]',
+          column: "names",
+          pkColumn: "id",
+          primaryKey: 1,
+          columnType: "_text",
+          table: "witharrays",
+        },
+        {
+          value: 'Bananas',
+          table: 'witharrays',
+          column: 'normal',
+          primaryKey: 1,
+          columnType: 'text',
+          pkColumn: 'id'
+        }
+      ]
     }
-  ]
-    const result = await util.connection.updateValues(updates)
+
+    const result = await util.connection.applyChanges(changes)
     expect(result).toMatchObject([{id: 1, names: ['x', 'y', 'z'], normal: 'Bananas'}])
   })
 })

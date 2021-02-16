@@ -107,21 +107,24 @@ describe("MySQL Tests", () => {
       table: 'withbits',
     }
 
-    const values = [
-      {
-        value: '1',
-        column: 'onebit',
-        columnType: 'bit(1)',
-        ...basics
-      },
-      {
-        value: "b'00000000000000000000010000000000'",
-        column: 'thirtytwo',
-        columnType: 'bit(32)',
-        ...basics
-      }
-    ]
-    const results = await util.connection.updateValues(values)
+    const changes = {
+      updates: [
+        {
+          value: '1',
+          column: 'onebit',
+          columnType: 'bit(1)',
+          ...basics
+        },
+        {
+          value: "b'00000000000000000000010000000000'",
+          column: 'thirtytwo',
+          columnType: 'bit(32)',
+          ...basics
+        }
+      ]
+    }
+
+    const results = await util.connection.applyChanges(changes)
     expect(results.length).toBe(2)
     const fixed = data_mutators.methods.bitMutator(results[1].thirtytwo)
     expect(fixed).toBe("b'00000000000000000000010000000000'")
