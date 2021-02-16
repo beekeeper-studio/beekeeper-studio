@@ -14,8 +14,7 @@ const log = rawLog.scope('WindowBuilder')
 const windows: BeekeeperWindow[] = []
 
 function getIcon() {
-  const iconPrefix = platformInfo.environment === 'development' ? 'public' : ''
-  return path.resolve(path.join(__dirname, '..', `${iconPrefix}/icons/png/512x512.png`))
+  return path.resolve(path.join(__dirname, '..', `public/icons/png/512x512.png`))
 }
 
 class BeekeeperWindow {
@@ -28,6 +27,7 @@ class BeekeeperWindow {
     const theme = settings.theme
     const showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
     this.actionHandler = new NativeMenuActionHandlers(this.settings)
+    log.info('constructing the window')
     this.win = new BrowserWindow({
       width: 1200,
       height: 800,
@@ -37,23 +37,28 @@ class BeekeeperWindow {
       titleBarStyle: 'hidden',
       frame: showFrame,
       webPreferences: {
+        enableRemoteModule: true,
         nodeIntegration: Boolean(process.env.ELECTRON_NODE_INTEGRATION),
+        contextIsolation: false
       },
       icon: getIcon()
     })
 
+    const runningInWebpack = !!process.env.WEBPACK_DEV_SERVER_URL
+    const appUrl = process.env.WEBPACK_DEV_SERVER_URL || 'app://./index.html'
+
     this.win.webContents.zoomLevel = Number(settings.zoomLevel?.value) || 0
-    if (!platformInfo.runningInWebpack) {
+    if (!runningInWebpack) {
       createProtocol('app')
     }
-    this.win.loadURL(platformInfo.appUrl)
+    this.win.loadURL(appUrl)
     if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
       this.win.webContents.openDevTools()
     }
 
     this.initializeCallbacks()
     this.win.webContents.on('will-navigate', (e, url) => {
-      if (url === platformInfo.appUrl) return // this is good
+      if (url === appUrl) return // this is good
       log.info("navigate to", url)
       e.preventDefault()
       electron.shell.openExternal(url);

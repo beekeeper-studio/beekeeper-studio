@@ -84,7 +84,7 @@
       this.tabulator = new Tabulator(this.$refs.tabulator, {
         data: this.tableData, //link data to table
         reactiveData: true,
-        virtualDomHoz: true,
+        virtualDomHoz: false,
         columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,
         nestedFieldSeparator: false,
