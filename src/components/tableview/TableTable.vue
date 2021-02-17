@@ -720,7 +720,7 @@ return dt.split("(")[0]
             this.resetPendingChanges()
             this.clearQueryError()
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
-            this.data = data
+            this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
             resolve({
               last_page: Math.ceil(this.totalRecords / limit),

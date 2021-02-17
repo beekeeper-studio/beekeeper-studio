@@ -431,7 +431,7 @@
               result.truncatedRowCount = this.$config.maxResults
             }
           })
-          this.results = results
+          this.results = Object.freeze(results);
 
           this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
           log.debug('identification', identification)
