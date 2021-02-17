@@ -13,3 +13,5 @@ docs/.vuepress/dist/
 yarn-error.log
 .history
 .package-lock.json
+.secrets
+.env

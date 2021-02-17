@@ -75,7 +75,7 @@ describe("Postgres Integration Tests", () => {
       pkColumn: 'id'
     }
   ]
-    const result = await util.connection.updateValues(updates)
+    const result = await util.connection.applyChanges({ updates })
     expect(result).toMatchObject([{id: 1, names: ['x', 'y', 'z'], normal: 'Bananas'}])
   })
 })

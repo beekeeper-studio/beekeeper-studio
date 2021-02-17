@@ -629,6 +629,10 @@ return dt.split("(")[0]
           this.$noty.error("Error saving changes")
           
           return
+        } finally {
+          if (!this.active) {
+            this.forceRedraw = true
+          }
         }
     },
     discardChanges() {
@@ -728,6 +732,10 @@ return dt.split("(")[0]
             this.$nextTick(() => {
               this.tabulator.clearData()
             })
+          } finally {
+            if (!this.active) {
+              this.forceRedraw = true
+            }
           }
         })();
       });
@@ -750,6 +758,7 @@ return dt.split("(")[0]
       const page = this.tabulator.getPage()
       await this.tabulator.replaceData()
       this.tabulator.setPage(page)
+      if (!this.active) this.forceRedraw = true
     },
   }
 };
