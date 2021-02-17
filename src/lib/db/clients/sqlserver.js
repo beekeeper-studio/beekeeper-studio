@@ -75,7 +75,7 @@ function buildFilterString(filters) {
 
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
   let orderByString = "ORDER BY (SELECT NULL)"
-  console.log("filters", filters)
+  log.debug("filters", filters)
   const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
