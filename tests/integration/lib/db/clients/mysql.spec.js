@@ -121,7 +121,7 @@ describe("MySQL Tests", () => {
         ...basics
       }
     ]
-    const results = await util.connection.updateValues(values)
+    const results = await util.connection.applyChanges({ updates: values })
     expect(results.length).toBe(2)
     const fixed = data_mutators.methods.bitMutator(results[1].thirtytwo)
     expect(fixed).toBe("b'00000000000000000000010000000000'")
