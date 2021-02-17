@@ -442,6 +442,7 @@
             this.$store.dispatch('updateTables')
           }
         } catch (ex) {
+          log.error(ex)
           if(this.running) {
             this.error = ex
           }
