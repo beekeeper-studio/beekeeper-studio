@@ -32,6 +32,6 @@ jobs:
         run: yarn run test:unit
 
       - name: Integration Tests
-        run: yarn run test:integration
+        run: yarn run test:integration --runInBand
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
