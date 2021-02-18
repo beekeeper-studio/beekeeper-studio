@@ -295,7 +295,7 @@ export function query(conn, queryText) {
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            executeQuery(connClient, queryText),
+            executeQuery(connClient, queryText, true),
           ]);
 
           pid = null;
@@ -415,8 +415,8 @@ export async function deleteRows(cli, deletes) {
   return true
 }
 
-export async function executeQuery(conn, queryText) {
-  const { fields, data } = await driverExecuteQuery(conn, { query: queryText });
+export async function executeQuery(conn, queryText, rowsAsArray = false) {
+  const { fields, data } = await driverExecuteQuery(conn, { query: queryText, params: {}, rowsAsArray });
   if (!data) {
     return [];
   }
@@ -424,7 +424,7 @@ export async function executeQuery(conn, queryText) {
   const commands = identifyCommands(queryText).map((item) => item.type);
 
   if (!isMultipleQuery(fields)) {
-    return [parseRowQueryResult(data, fields, commands[0])];
+    return [parseRowQueryResult(data, fields, commands[0], rowsAsArray)];
   }
 
   return data.map((_, idx) => parseRowQueryResult(data[idx], fields[idx], commands[idx]));
@@ -569,20 +569,22 @@ function getRealError(conn, err) {
   return err;
 }
 
-
-function parseRowQueryResult(data, fields, command) {
-  // Fallback in case the identifier could not reconize the command
-  const isSelect = Array.isArray(data);
-  const niceFields = (fields || []).map((f) => {
-    return {
-      id: f.name,
-      ...f
-    }
+function parseFields(fields, rowsAsArray) {
+  return fields.map((field, idx) => {
+    return { id: rowsAsArray ? `c${idx}` : field.name, ...field }
   })
+}
+
+
+function parseRowQueryResult(data, rawFields, command, rowsAsArray = false) {
+  // Fallback in case the identifier could not reconize the command
+  const fields = parseFields(rawFields, rowsAsArray)
+  const fieldIds = fields.map(f => f.id)
+  const isSelect = Array.isArray(data);
   return {
     command: command || (isSelect && 'SELECT'),
-    rows: isSelect ? data : [],
-    fields: niceFields,
+    rows: isSelect ? data.map(r => rowsAsArray ? _.zipObject(fieldIds, r) : r) : [],
+    fields: fields,
     rowCount: isSelect ? (data || []).length : undefined,
     affectedRows: !isSelect ? data.affectedRows : undefined,
   };
@@ -607,7 +609,7 @@ function identifyCommands(queryText) {
 function driverExecuteQuery(conn, queryArgs) {
   logger().debug(`Running Query ${queryArgs.query}`)
   const runQuery = (connection) => new Promise((resolve, reject) => {
-    connection.query(queryArgs.query, queryArgs.params, (err, data, fields) => {
+    connection.query({ sql: queryArgs.query, values: queryArgs.params, rowsAsArray: queryArgs.rowsAsArray }, (err, data, fields) => {
       logger().debug(`Resolving Query ${queryArgs.query}`, queryArgs.params)
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});
       if (err) return reject(getRealError(connection, err));

@@ -28,7 +28,7 @@
         <x-menuitem @click.prevent="$emit('closeOther', tab)">
           <x-label>Close Others</x-label>
         </x-menuitem>
-        <x-menuitem @click.prevent="$emit('closeAll', tab)">
+        <x-menuitem @click.prevent="$emit('closeAll')">
           <x-label>Close All</x-label>
         </x-menuitem>
         <hr>

@@ -5,6 +5,15 @@
 .interface-wrap {
   overflow: hidden;
 }
+.app-version {
+  display: flex;
+  justify-content: center;
+  a {
+    color: $text-lighter;
+    font-style: italic;
+    line-height: 2;
+  }
+}
 
 
 // Connection Body
@@ -19,8 +28,11 @@
   align-items: center;
   -webkit-overflow-scrolling: touch;
   .small-wrap {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     max-width: 550px;
-    max-height: -webkit-fill-available;
+    // max-height: -webkit-fill-available;
   }
   .card-flat {
     background: $theme-bg;

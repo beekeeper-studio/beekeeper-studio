@@ -19,6 +19,9 @@ const mmsqlErrors = {
   CANCELED: 'ECANCEL',
 };
 
+// NOTE:
+// DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
+
 
 export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
@@ -75,7 +78,7 @@ function buildFilterString(filters) {
 
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
   let orderByString = "ORDER BY (SELECT NULL)"
-  console.log("filters", filters)
+  log.debug("filters", filters)
   const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
@@ -305,14 +308,14 @@ export async function listRoutines(conn, filter) {
 export async function listTableColumns(conn, database, table) {
   const clause = table ? `WHERE table_name = ${wrapValue(table)}` : ""
   const sql = `
-    SELECT table_schema, table_name, column_name,
+    SELECT table_schema, table_name, column_name, data_type,
       CASE
         WHEN character_maximum_length is not null AND data_type != 'text'
-          THEN CONCAT(data_type, '(', character_maximum_length, ')')
-        WHEN datetime_precision is not null THEN
-          CONCAT(data_type, '(', datetime_precision, ')')
-        ELSE data_type
-      END as data_type
+          THEN character_maximum_length
+        WHEN datetime_precision is not null THEN 
+          datetime_precision
+        ELSE null
+      END as length
     FROM INFORMATION_SCHEMA.COLUMNS
     ${clause}
     ORDER BY table_schema, table_name, ordinal_position
@@ -324,7 +327,7 @@ export async function listTableColumns(conn, database, table) {
     schemaName: row.table_schema,
     tableName: row.table_name,
     columnName: row.column_name,
-    dataType: row.data_type,
+    dataType: row.length ? `${row.data_type}(${row.length})` : row.data_type,
   }));
 }
 

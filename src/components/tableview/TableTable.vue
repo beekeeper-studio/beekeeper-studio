@@ -186,7 +186,8 @@ export default {
       lastUpdated: null,
       lastUpdatedText: null,
       interval: setInterval(this.setlastUpdatedText, 10000),
-      totalRecords: 0
+      totalRecords: 0,
+      forceRedraw: false
     };
   },
   computed: {
@@ -345,9 +346,13 @@ export default {
       if (!this.tabulator) return;
       if (this.active) {
         this.tabulator.restoreRedraw()
-        this.$nextTick(() => {
-          this.tabulator.redraw()
-        })
+        if (this.forceRedraw) {
+          this.forceRedraw = false
+          this.$nextTick(() => {
+            log.debug(`force redraw, table ${this.table.name}, tab ${this.tabId}`)
+            this.tabulator.redraw(true)
+          })
+        }
       } else {
         this.tabulator.blockRedraw()
       }
@@ -357,6 +362,9 @@ export default {
       async handler() {
         if(!this.tabulator) {
           return
+        }
+        if (!this.active) {
+          this.forceRedraw = true
         }
         await this.tabulator.setColumns(this.tableColumns)
         await this.refreshTable()
@@ -684,6 +692,10 @@ return dt.split("(")[0]
           this.$noty.error("Error saving changes")
           
           return
+        } finally {
+          if (!this.active) {
+            this.forceRedraw = true
+          }
         }
     },
     discardChanges() {
@@ -760,7 +772,6 @@ return dt.split("(")[0]
               filters,
               this.table.schema
             );
-            log.debug('Update Fields', response.fields)
             if (_.difference(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
               await this.$store.dispatch('updateTableColumns', this.table)
@@ -772,7 +783,7 @@ return dt.split("(")[0]
             this.resetPendingChanges()
             this.clearQueryError()
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
-            this.data = data
+            this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
             resolve({
               last_page: Math.ceil(this.totalRecords / limit),
@@ -784,6 +795,10 @@ return dt.split("(")[0]
             this.$nextTick(() => {
               this.tabulator.clearData()
             })
+          } finally {
+            if (!this.active) {
+              this.forceRedraw = true
+            }
           }
         })();
       });
@@ -806,6 +821,7 @@ return dt.split("(")[0]
       const page = this.tabulator.getPage()
       await this.tabulator.replaceData()
       this.tabulator.setPage(page)
+      if (!this.active) this.forceRedraw = true
     },
   }
 };
