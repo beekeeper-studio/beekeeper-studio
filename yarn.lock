@@ -1412,10 +1412,10 @@
   resolved "https://registry.yarnpkg.com/@types/strip-json-comments/-/strip-json-comments-0.0.30.tgz#9aa30c04db212a9a0649d6ae6fd50accc40748a1"
   integrity sha512-7NQmHra/JILCd1QqpSzl8+mJRc8ZHz3uDm8YV1Ks9IhK0epEiTw8aIErbvH9PI+6XbqhyIQy3462nEsn7UVzjQ==
 
-"@types/tabulator-tables@^4.7.2":
-  version "4.7.2"
-  resolved "https://registry.yarnpkg.com/@types/tabulator-tables/-/tabulator-tables-4.7.2.tgz#156968a8f4b1cf976e650ab96ceb612b6bf73f5d"
-  integrity sha512-b0Ie+wPeCOpG51+ZNUlRQTRLzfi+OJDpATbz/o0rjJRTox+HyOl91Yt0iyeJPCzs/Kx7NRfZ5y/zdT9lS3W0Ew==
+"@types/tabulator-tables@^4.9.1":
+  version "4.9.1"
+  resolved "https://registry.yarnpkg.com/@types/tabulator-tables/-/tabulator-tables-4.9.1.tgz#4fbc5465960598308260f50f840d610bcc8ffa3a"
+  integrity sha512-BfHDeVDfLF5H0HYFQ3ZEfv7J43sD8dw8fhci8juRB5uc0xQWboDd6f1hgLOwQioYhO9vWZEAWfuD6c1wl9qzmw==
 
 "@types/tern@*":
   version "0.23.3"
@@ -12282,10 +12282,10 @@ sql-formatter@^2.3.3:
   dependencies:
     lodash "^4.16.0"
 
-sql-query-identifier@^1.1.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-1.2.0.tgz#a17f62fa1783c24e176d42099fb47634f2569263"
-  integrity sha512-adbLG/Se4YJ5fKANbD3TzYj+C0oi6L3FbfoSPqpTRZyywQRfH8hQZgQDBdFB24IixYnG8em3UeDmj+jiZ9hh8A==
+sql-query-identifier@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-1.3.0.tgz#2d3bbc4502e7fead2b7a87d7660c9281ae57f94e"
+  integrity sha512-ebt+eu3iihFtr7izBD8eS7Tqls3Fr/WrOXWZyMyBQpwxHTMSfQY94g6Vjj9m1autTjk1bWzAwO5A8q+U6amZ/w==
 
 sqlite3@^5.0.0:
   version "5.0.0"

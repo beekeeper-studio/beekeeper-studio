@@ -131,6 +131,7 @@ import Tabulator from "tabulator-tables";
 // import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
+import ColumnWidths from '../../mixins/column_widths'
 import Statusbar from '../common/StatusBar'
 import rawLog from 'electron-log'
 import _ from 'lodash'
@@ -146,7 +147,7 @@ const FILTER_MODE_RAW = 'raw'
 
 export default {
   components: { Statusbar },
-  mixins: [data_converter, DataMutators],
+  mixins: [data_converter, DataMutators, ColumnWidths],
   props: ["table", "connection", "initialFilter", "tabId", "active"],
   data() {
     return {
@@ -231,7 +232,6 @@ export default {
       return result
     },
     tableColumns() {
-      const columnWidth = this.table.columns.length > 20 ? 125 : undefined
       const keyWidth = 40
       const results = []
       // 1. add a column for a real column
@@ -270,7 +270,8 @@ export default {
           mutatorData: this.resolveDataMutator(column.dataType),
           dataType: column.dataType,
           cellClick: this.cellClick,
-          width: columnWidth,
+          width: this.columnWidth(column.dataType),
+          maxWidth: this.maxWidth(column.dataType),
           cssClass: isPK ? 'primary-key' : '',
           editable: this.cellEditCheck,
           editor: editable ? editorType : undefined,
@@ -410,6 +411,7 @@ export default {
     this.tabulator = new Tabulator(this.$refs.table, {
       height: this.actualTableHeight,
       columns: this.tableColumns,
+      // columnMaxWidth: 200,
       nestedFieldSeparator: false,
       virtualDomHoz: false,
       ajaxURL: "http://fake",
