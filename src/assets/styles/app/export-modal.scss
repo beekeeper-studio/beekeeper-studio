@@ -1,0 +1,9 @@
+.export-progress {
+    padding-top: $gutter-w * 2;
+    padding-bottom: $gutter-w * 2;
+
+    span {
+        font-size: 0.85rem;
+        padding-bottom: ($gutter-w * 0.5)
+    }
+}
