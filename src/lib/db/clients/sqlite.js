@@ -117,7 +117,10 @@ export function query(conn, queryText) {
 }
 
 export async function insertRows(cli, inserts) {
-    buildInsertQueries(knex, inserts).forEach(async command => await driverExecuteQuery(cli, { query: command }))
+
+    for (const command of buildInsertQueries(knex, inserts)) {
+      await driverExecuteQuery(cli, { query: command })
+    }
 
     return true
 }
@@ -188,7 +191,9 @@ export async function updateValues(cli, updates) {
 
 export async function deleteRows(cli, deletes) {
 
-  buildDeleteQueries(knex, deletes).forEach(async command => await driverExecuteQuery(cli, { query: command }))
+  for (const command of buildDeleteQueries(knex, deletes)) {
+    await driverExecuteQuery(cli, { query: command })
+  }
 
   return true
 }

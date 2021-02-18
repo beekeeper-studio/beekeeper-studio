@@ -85,7 +85,7 @@ describe("Postgres Integration Tests", () => {
   })
 
   it("Should not insert bad data", async() => {
-    //await itShouldNotInsertBadData(util)
+    await itShouldNotInsertBadData(util)
   })
 
   it("Should apply all types of changes", async() => {
@@ -93,6 +93,6 @@ describe("Postgres Integration Tests", () => {
   })
 
   it("Should not commit on change error", async() => {
-    //await itShouldNotCommitOnChangeError(util)
+    await itShouldNotCommitOnChangeError(util)
   })
 })

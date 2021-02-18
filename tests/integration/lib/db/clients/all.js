@@ -98,4 +98,51 @@ export async function itShouldApplyAllTypesOfChanges(util) {
 
 export async function itShouldNotCommitOnChangeError(util) {
 
+  const changes = {
+    inserts: [
+      {
+        table: 'test_inserts',
+        data: {
+          id: 5,
+          firstName: 'Tom',
+          lastName: 'Tester'
+        }
+      },
+      {
+        table: 'test_inserts',
+        data: {
+          id: 6,
+          firstName: 'Jane',
+          lastName: 'Doe'
+        }
+      }
+    ],
+    updates: [
+      {
+        table: 'test_inserts',
+        pkColumn: 'id',
+        primaryKey: 3,
+        column: 'id',
+        value: 1
+      }
+    ],
+    deletes: [
+      {
+        table: 'test_inserts',
+        pkColumn: 'id',
+        primaryKey: 1,
+      }
+    ]
+  }
+
+  await expect(util.connection.applyChanges(changes)).rejects.toThrow()
+
+  const results = await util.knex.select().table('test_inserts')
+  expect(results.length).toBe(3)
+  expect(results).toContainEqual({
+    id: 1,
+    firstName: 'Testy',
+    lastName: 'Tester'
+  })
+
 }
