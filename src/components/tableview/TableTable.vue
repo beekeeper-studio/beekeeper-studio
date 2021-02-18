@@ -72,6 +72,7 @@
           </div>
           <div class="btn-wrap">
             <button class="btn btn-primary" type="submit">Search</button>
+            <button class="btn btn-flat" type="button" @click.prevent="exportTable()">Export</button>
           </div>
         </div>
       </form>
@@ -625,6 +626,9 @@ return dt.split("(")[0]
       this.tabulator.replaceData()
       this.tabulator.setPage(page)
     },
+    exportTable() {
+      this.$root.$emit('exportTable', { table: this.table.name, filters: this.filterForTabulator })
+    }
   }
 };
 </script>

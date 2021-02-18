@@ -112,7 +112,7 @@
         this.$root.$emit('loadTableCreate', this.table)
       },
       exportTable() {
-        this.$root.$emit('exportTable', this.table)
+        this.$root.$emit('exportTable', { table: this.table.name, filters: [] })
       },
       copyTable() {
         this.$copyText(this.table.name)

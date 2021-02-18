@@ -56,8 +56,8 @@ export default {
         table: {
             default: null
         },
-        query: {
-            default: null
+        filters: {
+            default: []
         }
     },
     data() {
@@ -103,7 +103,7 @@ export default {
                 this.connection, 
                 this.table, 
                 '', 
-                [],
+                this.filters,
                 this.updateProgress
             )
 

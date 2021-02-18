@@ -7,6 +7,7 @@ import VModal from 'vue-js-modal'
 import 'xel/xel'
 import 'codemirror/addon/search/searchcursor'
 import Tabulator from 'tabulator-tables'
+import './filters/pretty-bytes-filter'
 
 import App from './App.vue'
 import path from 'path'

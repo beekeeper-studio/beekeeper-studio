@@ -31,7 +31,7 @@
         <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
       </div>
     </div>
-    <ExportModal v-show="showExportModal" :table="tableToExport" :connection="this.connection" @close="showExportModal = false"></ExportModal>
+    <ExportModal v-if="showExportModal" :connection="this.connection" :table="tableExportOptions.table" :filters="tableExportOptions.filters" @close="showExportModal = false"></ExportModal>
   </div>
 </template>
 
@@ -59,7 +59,7 @@
         activeItem: 0,
         newTabId: 1,
         showExportModal: false,
-        tableToExport: null
+        tableExportOptions: null
       }
     },
     watch: {
@@ -180,8 +180,8 @@
         }
         this.addTab(t)
       },
-      exportTable(table) {
-        this.tableToExport = table.name
+      exportTable(options) {
+        this.tableExportOptions = options
         this.showExportModal = true
       },
       openSettings(settings) {
