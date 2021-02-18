@@ -22,6 +22,9 @@
       </span>
     </div>
     <div class="tab-content">
+      <div class="layout-center expand">
+        <shortcut-hints></shortcut-hints>
+      </div>
       <div
         v-for="(tab, idx) in tabItems"
         class="tab-pane"
@@ -50,10 +53,11 @@
   import platformInfo from '../common/platform_info'
   import { mapGetters, mapState } from 'vuex'
   import Draggable from 'vuedraggable'
+  import ShortcutHints from './editor/ShortcutHints.vue'
 
   export default {
     props: [ 'connection' ],
-    components: { QueryEditor, CoreTabHeader, TableTable, Draggable },
+    components: { QueryEditor, CoreTabHeader, TableTable, Draggable, ShortcutHints },
     data() {
       return {
         tabItems: [],
