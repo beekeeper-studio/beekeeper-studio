@@ -123,15 +123,7 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
 }
 
 export function buildInsertQueries(knex, inserts) {
-
   return inserts.map(insert => {
-    // remove empty pkColumn data if present
-    insert.data = _.omitBy(insert.row.getData(), (value, key) => {
-      return (key === insert.pkColumn && !value)
-    })
-    
-    console.log("inserts", inserts)
-
     const query = knex(insert.table)
       .insert(insert.data)
       .toQuery()

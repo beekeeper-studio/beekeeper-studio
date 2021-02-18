@@ -622,6 +622,11 @@ return dt.split("(")[0]
     },
     addPendingChange(changeType, payload) {
       if (changeType === CHANGE_TYPE_INSERT) {
+        // remove empty pkColumn data if present
+        payload.data = _.omitBy(payload.row.getData(), (value, key) => {
+          return (key === payload.pkColumn && !value)
+        })
+
         this.pendingChanges.inserts.push(payload)
       }
 

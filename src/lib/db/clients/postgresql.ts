@@ -592,8 +592,8 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
   return results
 }
 
-async function insertRows(cli: any, deletes: TableInsert[]) {
-  await driverExecuteQuery(cli, { query: buildInsertQueries(knex, deletes).join(";") })
+async function insertRows(cli: any, inserts: TableInsert[]) {
+  await driverExecuteQuery(cli, { query: buildInsertQueries(knex, inserts).join(";") })
 
   return true
 }
