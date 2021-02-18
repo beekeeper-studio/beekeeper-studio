@@ -42,8 +42,36 @@
       <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results</span></div></div>
       <div class="message" v-else-if="error"><div class="alert alert-danger"><i class="material-icons">warning</i><span>{{error}}</span></div></div>
       <div class="message" v-else-if="info"><div class="alert alert-info"><i class="material-icons">warning</i><span>{{info}}</span></div></div>
-      <div v-else><!-- No Data --></div>
-      <span class="expand" v-if="!result"></span>
+      <div class="layout-center expand" v-else>
+        <div class="shortcuts">
+          <div class="shortcut-item">
+            <div>Run</div>
+            <div class="shortcut" v-if="$config.isMac"><span>⌘</span><span>Enter</span></div>
+            <div class="shortcut" v-else><span>⌃</span><span>Enter</span></div>
+          </div>
+          <div class="shortcut-item">
+            <div>Run Current</div>
+            <div class="shortcut" v-if="$config.isMac"><span>⌘</span><span>⇧</span><span>Enter</span></div>
+            <div class="shortcut" v-else><span>⌃</span><span>⇧</span><span>Enter</span></div>
+          </div>
+          <div class="shortcut-item">
+            <div>New Window</div>
+            <div class="shortcut" v-if="$config.isMac"><span>⌘</span><span>⇧</span><span>N</span></div>
+            <div class="shortcut" v-else><span>⌃</span><span>⇧</span><span>N</span></div>
+          </div>
+          <div class="shortcut-item">
+            <div>New Tab</div>
+            <div class="shortcut" v-if="$config.isMac"><span>⌘</span><span>T</span></div>
+            <div class="shortcut" v-else><span>⌃</span><span>T</span></div>
+          </div>
+          <!-- <div class="shortcut-item">
+            <div>Shortcut</div>
+            <div v-if="$config.isMac"><span class="badge">⌘ + P</span></div>
+            <div v-else><span class="badge">⌃ + P</span></div>
+          </div> -->
+        </div>
+      </div>
+      <!-- <span class="expand" v-if="!result"></span> -->
       <!-- STATUS BAR -->
       <query-editor-status-bar
         v-model="selectedResult"
