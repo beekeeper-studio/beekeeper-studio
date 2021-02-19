@@ -148,7 +148,6 @@ export function query(conn, queryText) {
           queryRequest = request;
 
           const data = await promiseQuery;
-          console.log(data)
           const commands = identifyCommands(queryText).map((item) => item.type);
 
           // Executing only non select queries will not return results.
