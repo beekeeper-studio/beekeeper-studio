@@ -48,6 +48,10 @@ export abstract class abstractExportFormat {
         return await fs.promises.appendFile(this.fileName, content + "\n")
     }
 
+    async deleteFile() {
+        return await fs.promises.unlink(this.fileName)
+    }
+
     async exportToFile(): Promise<any> {
         const chunkSize = 250
         const firstRow = await this.getFirstRow()
@@ -74,6 +78,7 @@ export abstract class abstractExportFormat {
         } while (countExported < countTotal && !this.aborted)
 
         if (this.aborted) {
+            await this.deleteFile()
             return Promise.reject()
         }
 
