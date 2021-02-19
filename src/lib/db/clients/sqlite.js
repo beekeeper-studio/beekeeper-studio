@@ -5,7 +5,7 @@ import sqlite3 from 'sqlite3';
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import rawLog from 'electron-log'
-import { buildDeleteQueries, genericSelectTop } from './utils';
+import { buildInsertQueries, buildDeleteQueries, genericSelectTop } from './utils';
 
 const log = rawLog.scope('sqlite')
 const logger = () => log
@@ -116,6 +116,15 @@ export function query(conn, queryText) {
   };
 }
 
+export async function insertRows(cli, inserts) {
+
+    for (const command of buildInsertQueries(knex, inserts)) {
+      await driverExecuteQuery(cli, { query: command })
+    }
+
+    return true
+}
+
 export async function applyChanges(conn, changes) {
   let results = []
 
@@ -124,6 +133,10 @@ export async function applyChanges(conn, changes) {
     await driverExecuteQuery(cli, { query: 'BEGIN'})
 
     try {
+      if (changes.inserts) {
+        await insertRows(cli, changes.inserts)
+      }
+
       if (changes.updates) {
         results = await updateValues(cli, changes.updates)
       }
@@ -178,7 +191,9 @@ export async function updateValues(cli, updates) {
 
 export async function deleteRows(cli, deletes) {
 
-  buildDeleteQueries(knex, deletes).forEach(async command => await driverExecuteQuery(cli, { query: command }))
+  for (const command of buildDeleteQueries(knex, deletes)) {
+    await driverExecuteQuery(cli, { query: command })
+  }
 
   return true
 }

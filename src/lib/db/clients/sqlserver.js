@@ -7,7 +7,7 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _ from 'lodash';
 
-import { buildDatabseFilter, buildDeleteQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 import logRaw from 'electron-log'
 const log = logRaw.scope('sql-server')
 
@@ -458,6 +458,10 @@ export async function applyChanges(conn, changes) {
     const cli = { connection }
 
     try {
+      if (changes.inserts) {
+        sql = sql.concat(buildInsertQueries(knex, changes.inserts))
+      }
+
       if (changes.updates) {
         sql = sql.concat(buildUpdateQueries(knex, changes.updates))
       }
