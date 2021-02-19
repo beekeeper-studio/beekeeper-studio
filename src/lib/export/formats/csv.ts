@@ -1,8 +1,11 @@
 import { abstractExportFormat } from "../format";
 
 export class CsvExporter extends abstractExportFormat {
-    getHeader() {
-        return 'HEADER'
+    getHeader(firstRow: any) {
+        if (firstRow && this.outputOptions.header) {
+            return Object.keys(firstRow).join(this.outputOptions.delimiter)
+        }
+        return ''
     }
 
     getFooter() {
