@@ -81,7 +81,7 @@ export default {
                 closeWith: 'button',
                 buttons: [ 
                     Noty.button('Abort', 'btn btn-danger', () => this.cancelExport()),
-                    Noty.button('Maximize', 'btn btn-primary', () => this.maximize())
+                    Noty.button('Maximize', 'btn btn-flat', () => this.maximize())
                 ],
                 queue: 'export'
             }),
@@ -103,7 +103,7 @@ export default {
             return Math.round(this.progress.recordsExported / this.progress.recordsTotal * 100)
         },
         notificationText() {
-            return `Exporting ${this.progress.recordsExported} of ${this.progress.recordsTotal} rows from <code>${this.table}</code>...`
+            return `Exporting ${this.progress.recordsExported} of ${this.progress.recordsTotal} rows from <code>${this.table.name}</code>...`
         }
     },
     methods: {

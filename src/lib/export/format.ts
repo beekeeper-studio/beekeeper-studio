@@ -3,7 +3,7 @@ import fs from 'fs'
 export abstract class abstractExportFormat {
     fileName: string = ''
     connection: any
-    table: string = ''
+    table: any
     schema: string = ''
     filters: any[] = []
     outputOptions: any = {}
@@ -14,7 +14,7 @@ export abstract class abstractExportFormat {
     abstract getFooter(): Promise<string> | undefined
     abstract writeChunkToFile(data: any): Promise<void>
 
-    constructor(fileName: string, connection: any, table: string, schema: string, filters: any[], outputOptions: any, progressCallback: (countTotal: number, countExported: number, fileSize: number) => void) {
+    constructor(fileName: string, connection: any, table: any, schema: string, filters: any[], outputOptions: any, progressCallback: (countTotal: number, countExported: number, fileSize: number) => void) {
         this.fileName = fileName
         this.connection = connection
         this.table = table
@@ -26,7 +26,7 @@ export abstract class abstractExportFormat {
 
     async getChunk(offset: Number, limit: Number) {
         const result = await this.connection.selectTop(
-            this.table,
+            this.table.name,
             offset,
             limit,
             null,

@@ -6,7 +6,7 @@ export default class SqlExporter extends abstractExportFormat {
 
     async getHeader(firstRow: any) {
         if (this.outputOptions.createTable) {
-            return await this.connection.getTableCreateScript(this.table, '')
+            return await this.connection.getTableCreateScript(this.table.name, '')
         }
         return ''
     }
@@ -22,7 +22,7 @@ export default class SqlExporter extends abstractExportFormat {
         }
 
         for (const row of data) {
-            const content = this.knex(this.table).insert(row).toQuery()
+            const content = this.knex(this.table.name).insert(row).toQuery()
             const writeResult = await this.writeLineToFile(content + ',')
         }
     }

@@ -627,7 +627,7 @@ return dt.split("(")[0]
       this.tabulator.setPage(page)
     },
     exportTable() {
-      this.$root.$emit('exportTable', { table: this.table.name, filters: this.filterForTabulator })
+      this.$root.$emit('exportTable', { table: this.table, filters: this.filterForTabulator })
     }
   }
 };
