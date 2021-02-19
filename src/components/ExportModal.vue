@@ -5,7 +5,7 @@
                 <div class="dialog-content">
                     <div class="dialog-c-title">Export</div>
                     <div class="dialog-c-subtitle"></div>
-                    <div class="modal-form">
+                    <div class="modal-form" v-show="!busy">
                         <div class="form-group">
                             <label for="connectionType">Format</label>
                             <select name="connectionType" class="form-control custom-select" v-model="selectedExportFormatKey" id="export-format-select" :disabled="busy">
