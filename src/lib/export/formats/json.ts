@@ -11,7 +11,8 @@ export class JsonExporter extends abstractExportFormat {
 
     async writeChunkToFile(data: any) {
         for (const row of data) {
-            const content = JSON.stringify(row, null, 2)
+            const spacing = this.outputOptions.prettyprint ? 2 : undefined
+            const content = JSON.stringify(row, null, spacing)
             const writeResult = await this.writeLineToFile(content + ',')
         }
     }

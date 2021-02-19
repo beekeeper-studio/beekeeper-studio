@@ -6,18 +6,20 @@ export abstract class abstractExportFormat {
     table: string = ''
     schema: string = ''
     filters: any[] = []
+    outputOptions: any = {}
     progressCallback: (countTotal: number, countExported: number, fileSize: number) => void
 
     abstract getHeader(): string | undefined
     abstract getFooter(): string | undefined
     abstract writeChunkToFile(data: any): Promise<void>
 
-    constructor(fileName: string, connection: any, table: string, schema: string, filters: any[], progressCallback: (countTotal: number, countExported: number, fileSize: number) => void) {
+    constructor(fileName: string, connection: any, table: string, schema: string, filters: any[], outputOptions: any, progressCallback: (countTotal: number, countExported: number, fileSize: number) => void) {
         this.fileName = fileName
         this.connection = connection
         this.table = table
         this.schema = schema
         this.filters = filters
+        this.outputOptions = outputOptions
         this.progressCallback = progressCallback
     }
 

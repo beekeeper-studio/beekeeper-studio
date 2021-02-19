@@ -13,7 +13,7 @@
                                 <option :key="f.value" v-for="f in exportFormats" :value="f.key">{{f.name}}</option>
                             </select>
                         </div>
-                        <component v-bind:is="selectedExportFormat.component" :busy="busy"></component>
+                        <component v-bind:is="selectedExportFormat.component" :busy="busy" v-model="options"></component>
                     </div>
                     <div v-if="busy">
                         <div class="export-progress">
@@ -74,7 +74,8 @@ export default {
                 recordsTotal: 0,
                 fileSize: 0
             },
-            fileName: null
+            fileName: null,
+            options: {}
         }
     },
     computed: {
@@ -102,6 +103,7 @@ export default {
                 this.table, 
                 '', 
                 this.filters,
+                this.options,
                 this.updateProgress
             )
 
