@@ -105,8 +105,9 @@
 }
 .shortcut-item {
   display: table-row;
-  color: $text-light;
+  color: $text-lighter;
   text-align: right;
+  font-size: 95%;
   > div {
     display: table-cell;
     padding: $gutter-h;

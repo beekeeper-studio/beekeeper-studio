@@ -2,6 +2,9 @@
   flex: 0 1 100%;
   max-height: 100%;
   overflow: hidden;
+  &.hide {
+    flex-basis: 44px!important;
+  }
   .sidebar-wrap {
     flex: 1 1 100%;
     flex-wrap: nowrap;
@@ -280,7 +283,7 @@
   flex: 1 1 auto;
   height: 0;
   // max-height: -webkit-fill-available;
-  padding: $gutter-h 0;
+  padding: $gutter-h 0 ($gutter * 0.75);
   overflow: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch!important;
@@ -332,7 +335,7 @@
       }
     }
     &.active {
-      background-color: rgba($theme-base, 0.1);
+      background-color: rgba($theme-base, 0.06);
     }
 
     &.open {

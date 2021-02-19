@@ -2,7 +2,8 @@
 
   <div class="sidebar-wrap row">
     <global-sidebar
-      @click="click"
+      @selected="click"
+      v-on="$listeners"
       :activeItem="activeItem"
     ></global-sidebar>
 
@@ -99,6 +100,7 @@
       },
       click(item) {
         this.activeItem = item;
+        this.sidebarShown = true;
       },
       async databaseSelected(db) {
         await this.$store.dispatch('changeDatabase', db)

@@ -1,8 +1,8 @@
 <template>
-  <div id="interface" class="interface">
+  <div id="interface" class="interface" v-hotkey="keymap">
     <div class="interface-wrap row">
-      <sidebar ref="sidebar">
-        <core-sidebar @databaseSelected="databaseSelected" :connection="connection"></core-sidebar>
+      <sidebar ref="sidebar" :class="{hide: !sidebarShown}">
+        <core-sidebar @databaseSelected="databaseSelected" @toggleSidebar="toggleSidebar" :connection="connection"></core-sidebar>
         <statusbar>
           <ConnectionButton></ConnectionButton>
         </statusbar>
@@ -26,7 +26,8 @@
     props: [ 'connection' ],
     data() {
       return {
-        split: null
+        split: null,
+        sidebarShown: true,
       }
     },
     computed: {
@@ -36,7 +37,12 @@
           this.$refs.content
         ]
       },
-
+      keymap() {
+        const result = {
+          'ctrl+b': this.toggleSidebar,
+        }
+        return result
+      }
     },
     mounted() {
       this.$store.dispatch('updateHistory')
@@ -47,10 +53,10 @@
           elementStyle: (dimension, size) => ({
               'flex-basis': `calc(${size}%)`,
           }),
-          sizes: [10,90],
-          minSize: 200,
-          expandToMin: true,
+          sizes: [25,75],
+          minSize: 40,
           gutterSize: 8,
+          snapOffset: 60,
         })
       })
 
@@ -64,7 +70,10 @@
     methods: {
       databaseSelected(database) {
         this.$emit('databaseSelected', database)
-      }
+      },
+      toggleSidebar() {
+        this.sidebarShown = !this.sidebarShown
+      },
     }
   }
 
