@@ -7,6 +7,7 @@ export abstract class abstractExportFormat {
     schema: string = ''
     filters: any[] = []
     outputOptions: any = {}
+    aborted: boolean = false
     progressCallback: (countTotal: number, countExported: number, fileSize: number) => void
 
     abstract getHeader(firstRow: any): Promise<string> | undefined
@@ -70,12 +71,20 @@ export abstract class abstractExportFormat {
             countExported += chunk.result.length
             const stats = await fs.promises.stat(this.fileName)
             this.progressCallback(countTotal, countExported, stats.size)
-        } while (countExported < countTotal)
+        } while (countExported < countTotal && !this.aborted)
+
+        if (this.aborted) {
+            return Promise.reject()
+        }
 
         if (footer) {
             await this.writeLineToFile(footer)
         }
 
         return Promise.resolve()
+    }
+
+    abort(): void {
+        this.aborted = true
     }
 }

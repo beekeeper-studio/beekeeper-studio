@@ -76,7 +76,8 @@ export default {
                 fileSize: 0
             },
             fileName: null,
-            options: {}
+            options: {},
+            exporter: null
         }
     },
     computed: {
@@ -98,7 +99,7 @@ export default {
 
             this.busy = true
 
-            let exporter = new this.selectedExportFormat.exporter(
+            this.exporter = new this.selectedExportFormat.exporter(
                 this.fileName, 
                 this.connection, 
                 this.table, 
@@ -109,12 +110,14 @@ export default {
             )
 
             this.resetProgress()
-            exporter.exportToFile()         
+            this.exporter.exportToFile()         
         },
         cancelExport() {
-            if (!this.busy) {
+            if (!this.busy || !this.exporter) {
                 return
             }
+            this.exporter.abort()
+            this.$noty.error("Export aborted")
             this.$root.$emit('hideExportTable')
         },
         updateProgress(countTotal, countExported, fileSize) {
