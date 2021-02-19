@@ -38,7 +38,7 @@ export abstract class abstractExportFormat {
     }
 
     async exportToFile(): Promise<any> {
-        const chunkSize = 100
+        const chunkSize = 250
         const header = this.getHeader()
         const footer = this.getFooter()
 

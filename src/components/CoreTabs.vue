@@ -184,6 +184,10 @@
         this.tableExportOptions = options
         this.showExportModal = true
       },
+      hideExportTable() {
+        this.tableExportOptions = null
+        this.showExportModal = false
+      },
       openSettings(settings) {
         const t = {
           title: "Settings",
@@ -256,6 +260,7 @@
       this.$root.$on('loadSettings', this.openSettings)
       this.$root.$on('loadTableCreate', this.loadTableCreate)
       this.$root.$on('exportTable', this.exportTable)
+      this.$root.$on('hideExportTable', this.hideExportTable)
       this.$root.$on('loadRoutineCreate', this.loadRoutineCreate)
       this.$root.$on('favoriteClick', (item) => {
         const queriesOnly = this.tabItems.map((item) => {

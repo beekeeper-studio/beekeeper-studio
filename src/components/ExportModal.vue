@@ -74,7 +74,7 @@ export default {
                 recordsTotal: 0,
                 fileSize: 0
             },
-            interval: null
+            fileName: null
         }
     },
     computed: {
@@ -87,11 +87,9 @@ export default {
     },
     methods: {
         chooseFile() {
-            let fileName = remote.dialog.showSaveDialogSync()
+            this.fileName = remote.dialog.showSaveDialogSync()
 
-            console.log('filename', fileName)
-
-            if (fileName === undefined){
+            if (this.fileName === undefined){
                 console.log("You didn't save the file");
                 return;
             }
@@ -99,7 +97,7 @@ export default {
             this.busy = true
 
             let exporter = new this.selectedExportFormat.exporter(
-                fileName, 
+                this.fileName, 
                 this.connection, 
                 this.table, 
                 '', 
@@ -114,9 +112,7 @@ export default {
             if (!this.busy) {
                 return
             }
-            clearInterval(this.interval)
-            this.resetProgress()
-            this.busy = false
+            this.$root.$emit('hideExportTable')
         },
         updateProgress(countTotal, countExported, fileSize) {
             this.progress = {
@@ -126,7 +122,8 @@ export default {
             }
 
             if (countTotal === countExported) {
-                return
+                this.$noty.success("Data successfully exported to: <br /><br /><code>" + this.fileName + "</code>")
+                this.$root.$emit('hideExportTable')
             }
         },
         resetProgress() {
