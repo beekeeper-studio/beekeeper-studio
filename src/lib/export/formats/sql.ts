@@ -1,7 +1,7 @@
 import { abstractExportFormat } from "../format";
 import knexlib from 'knex'
 
-export class SqlExporter extends abstractExportFormat {
+export default class SqlExporter extends abstractExportFormat {
     knex: any = null
 
     async getHeader(firstRow: any) {

@@ -1,6 +1,6 @@
 import { abstractExportFormat } from "../format";
 
-export class JsonExporter extends abstractExportFormat {
+export default class JsonExporter extends abstractExportFormat {
     async getHeader(firstRow: any) {
         return '['
     }

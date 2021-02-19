@@ -1,6 +1,6 @@
 import { abstractExportFormat } from "../format";
 
-export class CsvExporter extends abstractExportFormat {
+export default class CsvExporter extends abstractExportFormat {
     async getHeader(firstRow: any) {
         if (firstRow && this.outputOptions.header) {
             return Object.keys(firstRow).join(this.outputOptions.delimiter)
