@@ -43,6 +43,7 @@ import _ from 'lodash'
 import { remote } from 'electron'
 import { CsvExporter } from '../lib/export/formats/csv'
 import { JsonExporter } from '../lib/export/formats/json'
+import { SqlExporter } from '../lib/export/formats/sql'
 import ExportFormCSV from './export/forms/ExportFormCSV'
 import ExportFormJSON from './export/forms/ExportFormJSON'
 import ExportFormSQL from './export/forms/ExportFormSQL'
@@ -66,7 +67,7 @@ export default {
             exportFormats: [
                 { name: 'CSV', key: 'csv', component: ExportFormCSV, exporter: CsvExporter },
                 { name: 'JSON', key: 'json', component: ExportFormJSON, exporter: JsonExporter },
-                { name: 'SQL', key: 'sql', component: ExportFormSQL, exporter: JsonExporter },
+                { name: 'SQL', key: 'sql', component: ExportFormSQL, exporter: SqlExporter },
             ],
             busy: false,
             progress: {

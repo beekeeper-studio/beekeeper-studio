@@ -9,8 +9,8 @@ export abstract class abstractExportFormat {
     outputOptions: any = {}
     progressCallback: (countTotal: number, countExported: number, fileSize: number) => void
 
-    abstract getHeader(firstRow: any): string | undefined
-    abstract getFooter(): string | undefined
+    abstract getHeader(firstRow: any): Promise<string> | undefined
+    abstract getFooter(): Promise<string> | undefined
     abstract writeChunkToFile(data: any): Promise<void>
 
     constructor(fileName: string, connection: any, table: string, schema: string, filters: any[], outputOptions: any, progressCallback: (countTotal: number, countExported: number, fileSize: number) => void) {
@@ -50,8 +50,8 @@ export abstract class abstractExportFormat {
     async exportToFile(): Promise<any> {
         const chunkSize = 250
         const firstRow = await this.getFirstRow()
-        const header = this.getHeader(firstRow)
-        const footer = this.getFooter()
+        const header = await this.getHeader(firstRow)
+        const footer = await this.getFooter()
 
         let countExported = 0
         let countTotal = 0

@@ -1,11 +1,11 @@
 import { abstractExportFormat } from "../format";
 
 export class JsonExporter extends abstractExportFormat {
-    getHeader(firstRow: any) {
+    async getHeader(firstRow: any) {
         return '['
     }
 
-    getFooter() {
+    async getFooter() {
         return ']'
     }
 

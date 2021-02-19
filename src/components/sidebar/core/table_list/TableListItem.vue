@@ -28,7 +28,7 @@
           <x-menuitem @click.prevent="createTable" v-if="supportsDDL">
             <x-label>SQL: Create {{table.entityType}}</x-label>
           </x-menuitem>
-          <x-menuitem @click.prevent="exportTable" v-if="supportsDDL">
+          <x-menuitem @click.prevent="exportTable" v-if="supportsDDL && table.entityType === 'table'">
             <x-label>Export...</x-label>
           </x-menuitem>
         </x-menu>
