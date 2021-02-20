@@ -2,6 +2,7 @@ import fs from 'fs'
 import { DBConnection, TableOrView, TableFilter, TableResult } from '../db/client'
 
 export abstract class Export {
+    chunkSize: number = 500
     fileName: string = ''
     connection: DBConnection
     table: TableOrView
@@ -11,6 +12,8 @@ export abstract class Export {
     countExported: number = 0
     countTotal: number = 0
     fileSize: number = 0
+    timeLeft: number = 0
+    lastChunkTime: number = 0
 
     abstract getHeader(firstRow: any): Promise<string | void>
     abstract getFooter(): Promise<string | void>
@@ -61,7 +64,6 @@ export abstract class Export {
 
     async exportToFile(): Promise<any> {
         try {
-            const chunkSize = 250
             const firstRow = await this.getFirstRow()
             const header = await this.getHeader(firstRow)
             const footer = await this.getFooter()
@@ -75,7 +77,7 @@ export abstract class Export {
             }
             
             do {
-                const chunk = await this.getChunk(this.countExported, chunkSize)
+                const chunk = await this.getChunk(this.countExported, this.chunkSize)
 
                 if (!chunk) {
                     this.status = Export.Status.Aborted
@@ -88,6 +90,7 @@ export abstract class Export {
                 this.countExported += chunk.result.length
                 const stats = await fs.promises.stat(this.fileName)
                 this.fileSize = stats.size
+                this.calculateTimeLeft()
             } while (this.countExported < this.countTotal && this.status === Export.Status.Exporting)
 
             if (this.status === Export.Status.Aborted) {
@@ -108,8 +111,23 @@ export abstract class Export {
         }
     }
 
+    calculateTimeLeft(): void {
+        if (this.lastChunkTime) {
+            const lastChunkDuration = Date.now() - this.lastChunkTime
+            const chunksLeft = Math.round((this.countTotal - this.countExported) / this.chunkSize)
+            
+            this.timeLeft = chunksLeft * lastChunkDuration
+        }
+
+        this.lastChunkTime = Date.now()
+    }
+
     abort(): void {
         this.status = Export.Status.Aborted
+    }
+
+    pause(): void {
+        this.status = Export.Status.Paused
     }
 }
 
@@ -117,6 +135,7 @@ export namespace Export {
     export enum Status {
         Idle,
         Exporting,
+        Paused,
         Aborted,
         Completed,
         Error

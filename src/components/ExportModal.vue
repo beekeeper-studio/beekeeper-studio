@@ -19,6 +19,7 @@
                     </div>
                     <div v-else-if="exporter && exporter.status === Export.Status.Exporting" class="export-progress">
                         <div class="flex flex-between">
+                            <span>{{ timeLeftReadable }}</span>
                             <span>{{ exporter.countExported }} / {{ exporter.countTotal }} rows</span>
                             <span>{{ exporter.fileSize | prettyBytes }}</span>
                         </div>
@@ -112,6 +113,7 @@ export default {
             <div class="export-progress-notification">
                 <div class="title">Exporting from <span class="text-primary">${this.table.name}</span></div>
                 <div class="flex flex-between progress-info">
+                    <div>${this.timeLeftReadable}</div>
                     <div>${this.exporter.countExported} / ${this.exporter.countTotal} rows</div>
                     <div>${this.$options.filters.prettyBytes(this.exporter.fileSize)}</div>
                 </div>
@@ -137,6 +139,13 @@ export default {
             } else {
                 return this.filters.length
             }
+        },
+        timeLeftReadable() {
+            if (!this.exporter) {
+                return 0
+            } 
+            
+            return new Date(this.exporter.timeLeft).toISOString().substr(11, 8)
         }
     },
     methods: {
