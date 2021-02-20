@@ -31,7 +31,15 @@
         <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
       </div>
     </div>
-    <ExportModal v-if="showExportModal" :connection="this.connection" :table="tableExportOptions.table" :filters="tableExportOptions.filters" @close="showExportModal = false"></ExportModal>
+    <ExportModal 
+      v-if="showExportModal" 
+      :connection="this.connection" 
+      :table="tableExportOptions.table" 
+      :filters="tableExportOptions.filters"
+      @exportCreated="addExporter"
+      @close="showExportModal = false"
+    ></ExportModal>
+    <ExportNotification v-for="(exporter, key) in activeExports" :key="key" :exporter="exporter"></ExportNotification>
   </div>
 </template>
 
@@ -42,24 +50,27 @@
   import {FavoriteQuery} from '../common/appdb/models/favorite_query'
   import QueryEditor from './TabQueryEditor'
   import CoreTabHeader from './CoreTabHeader'
-  import ExportModal from './ExportModal'
+  import ExportModal from './export/ExportModal'
+  import ExportNotification from './export/ExportNotification'
   import { uuidv4 } from '@/lib/uuid'
   import TableTable from './tableview/TableTable'
   import AppEvent from '../common/AppEvent'
   import platformInfo from '../common/platform_info'
   import { mapGetters, mapState } from 'vuex'
   import Draggable from 'vuedraggable'
+  import { Export } from '../lib/export/export'
 
   export default {
     props: [ 'connection' ],
-    components: { QueryEditor, CoreTabHeader, TableTable, Draggable, ExportModal },
+    components: { QueryEditor, CoreTabHeader, TableTable, Draggable, ExportModal, ExportNotification },
     data() {
       return {
         tabItems: [],
         activeItem: 0,
         newTabId: 1,
         showExportModal: false,
-        tableExportOptions: null
+        tableExportOptions: null,
+        exporters: []
       }
     },
     watch: {
@@ -93,6 +104,9 @@
           result[closeTab] = this.closeTab
         }
         return result
+      },
+      activeExports() {
+        return _.filter(this.exporters, {'status': Export.Status.Exporting})
       }
     },
     methods: {
@@ -180,13 +194,9 @@
         }
         this.addTab(t)
       },
-      exportTable(options) {
+      openExportModal(options) {
         this.tableExportOptions = options
         this.showExportModal = true
-      },
-      hideExportTable() {
-        this.tableExportOptions = null
-        this.showExportModal = false
       },
       openSettings(settings) {
         const t = {
@@ -244,6 +254,10 @@
           duplicatedTab['table'] = tab.table
         }
         this.addTab(duplicatedTab)
+      },
+      addExporter(exporter) {
+        console.log('exporter added')
+        this.exporters.push(exporter)
       }
     },
     mounted() {
@@ -259,8 +273,7 @@
       this.$root.$on('loadTable', this.openTable)
       this.$root.$on('loadSettings', this.openSettings)
       this.$root.$on('loadTableCreate', this.loadTableCreate)
-      this.$root.$on('exportTable', this.exportTable)
-      this.$root.$on('hideExportTable', this.hideExportTable)
+      this.$root.$on('exportTable', this.openExportModal)
       this.$root.$on('loadRoutineCreate', this.loadRoutineCreate)
       this.$root.$on('favoriteClick', (item) => {
         const queriesOnly = this.tabItems.map((item) => {
