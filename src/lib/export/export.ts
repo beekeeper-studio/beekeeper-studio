@@ -10,9 +10,7 @@ export abstract class Export {
     status: Export.Status = Export.Status.Idle
     countExported: number = 0
     countTotal: number = 0
-
-    progressCallback: (countTotal: number, countExported: number, fileSize: number) => void
-    errorCallback: (error: Error) => void
+    fileSize: number = 0
 
     abstract getHeader(firstRow: any): Promise<string | void>
     abstract getFooter(): Promise<string | void>
@@ -23,17 +21,13 @@ export abstract class Export {
         connection: DBConnection, 
         table: TableOrView, 
         filters: TableFilter[] | any[], 
-        outputOptions: any, 
-        progressCallback: (countTotal: number, countExported: number, fileSize: number) => void,
-        errorCallback: (error: Error) => void
+        outputOptions: any
     ) {
         this.fileName = fileName
         this.connection = connection
         this.table = table
         this.filters = filters
         this.outputOptions = outputOptions
-        this.progressCallback = progressCallback
-        this.errorCallback = errorCallback
     }
 
     async getChunk(offset: number, limit: number): Promise<TableResult | undefined> {
@@ -93,7 +87,7 @@ export abstract class Export {
                 this.countTotal = chunk.totalRecords
                 this.countExported += chunk.result.length
                 const stats = await fs.promises.stat(this.fileName)
-                this.progressCallback(this.countTotal, this.countExported, stats.size)
+                this.fileSize = stats.size
             } while (this.countExported < this.countTotal && this.status === Export.Status.Exporting)
 
             if (this.status === Export.Status.Aborted) {
@@ -110,7 +104,7 @@ export abstract class Export {
             return Promise.resolve()
         } catch (ex) {
             this.status = Export.Status.Error
-            this.errorCallback(ex)
+            throw ex
         }
     }
 

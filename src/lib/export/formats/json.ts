@@ -11,11 +11,9 @@ export default class JsonExporter extends Export {
         connection: DBConnection, 
         table: TableOrView, 
         filters: TableFilter[] | any[], 
-        outputOptions: OutputOptionsJson, 
-        progressCallback: (countTotal: number, countExported: number, fileSize: number) => void,
-        errorCallback: (error: Error) => void
+        outputOptions: OutputOptionsJson
     ) {
-        super(fileName, connection, table, filters, outputOptions, progressCallback, errorCallback)
+        super(fileName, connection, table, filters, outputOptions)
     }
 
     async getHeader(firstRow: any) {

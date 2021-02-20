@@ -14,10 +14,8 @@ export default class CsvExporter extends Export {
         table: TableOrView, 
         filters: TableFilter[] | any[], 
         outputOptions: OutputOptionsCsv, 
-        progressCallback: (countTotal: number, countExported: number, fileSize: number) => void,
-        errorCallback: (error: Error) => void
     ) {
-        super(fileName, connection, table, filters, outputOptions, progressCallback, errorCallback)
+        super(fileName, connection, table, filters, outputOptions)
     }
     
     async getHeader(firstRow: any) {

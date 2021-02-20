@@ -13,11 +13,9 @@ export default class SqlExporter extends Export {
         connection: DBConnection, 
         table: TableOrView, 
         filters: TableFilter[] | any[], 
-        outputOptions: OutputOptionsSql, 
-        progressCallback: (countTotal: number, countExported: number, fileSize: number) => void,
-        errorCallback: (error: Error) => void
+        outputOptions: OutputOptionsSql
     ) {
-        super(fileName, connection, table, filters, outputOptions, progressCallback, errorCallback)
+        super(fileName, connection, table, filters, outputOptions)
 
         this.knex = knexlib({ client: this.connection.connectionType || undefined})
     }
