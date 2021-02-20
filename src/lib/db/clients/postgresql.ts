@@ -8,8 +8,8 @@ import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig, NgQueryResult } from '../client'
-import { buildDatabseFilter, buildDeleteQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
+import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig, NgQueryResult } from '../client'
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors, Error as CustomError } from '../../errors';
 import globals from '../../../common/globals';
@@ -569,6 +569,10 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
     await driverExecuteQuery(cli, { query: 'BEGIN' })
 
     try {
+      if (changes.inserts) {
+        await insertRows(cli, changes.inserts)
+      }
+
       if (changes.updates) {
         results = await updateValues(cli, changes.updates)
       }
@@ -586,6 +590,12 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
   })
 
   return results
+}
+
+async function insertRows(cli: any, inserts: TableInsert[]) {
+  await driverExecuteQuery(cli, { query: buildInsertQueries(knex, inserts).join(";") })
+
+  return true
 }
 
 async function updateValues(cli: any, updates: TableUpdate[]): Promise<TableUpdateResult[]> {
@@ -928,7 +938,7 @@ function parseRowQueryResult(data: QueryResult, command: string, rowResults: boo
   const isSelect = data.command === 'SELECT';
   return {
     command: command || data.command,
-    rows: data.rows.map(r => rowResults ? _.zipObject(fieldIds, r) : r),
+    rows: rowResults ? data.rows.map(r => _.zipObject(fieldIds, r)) : data.rows,
     fields: fields,
     rowCount: isSelect ? (data.rowCount || data.rows.length) : undefined,
     affectedRows: !isSelect && !isNaN(data.rowCount) ? data.rowCount : undefined,

@@ -7,7 +7,7 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _ from 'lodash';
 
-import { buildDatabseFilter, buildDeleteQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 import logRaw from 'electron-log'
 const log = logRaw.scope('sql-server')
 
@@ -140,6 +140,7 @@ export function query(conn, queryText) {
       return runWithConnection(conn, async (connection) => {
         const request = connection.request();
         request.multiple = true;
+        request.arrayRowMode = true
 
         try {
           const promiseQuery = request.query(queryText);
@@ -147,7 +148,6 @@ export function query(conn, queryText) {
           queryRequest = request;
 
           const data = await promiseQuery;
-
           const commands = identifyCommands(queryText).map((item) => item.type);
 
           // Executing only non select queries will not return results.
@@ -155,7 +155,7 @@ export function query(conn, queryText) {
           const rowsAffected = _.sum(data.rowsAffected)
           const results = !data.recordsets.length && rowsAffected > 0 ? [[]] : data.recordsets;
 
-          return results.map((_, idx) => parseRowQueryResult(results[idx], rowsAffected, commands[idx]));
+          return results.map((r, idx) => parseRowQueryResult(r, rowsAffected, commands[idx], data.columns[idx], true));
         } catch (err) {
           if (err.code === mmsqlErrors.CANCELED) {
             err.sqlectronError = 'CANCELED_BY_USER';
@@ -177,8 +177,8 @@ export function query(conn, queryText) {
 }
 
 
-export async function executeQuery(conn, queryText) {
-  const { data, rowsAffected } = await driverExecuteQuery(conn, { query: queryText, multiple: true });
+export async function executeQuery(conn, queryText, arrayRowMode = false) {
+  const { data, rowsAffected } = await driverExecuteQuery(conn, { query: queryText, multiple: true }, arrayRowMode);
 
   const commands = identifyCommands(queryText).map((item) => item.type);
 
@@ -186,7 +186,7 @@ export async function executeQuery(conn, queryText) {
   // So we "fake" there is at least one result.
   const results = !data.recordsets.length && rowsAffected > 0 ? [[]] : data.recordsets;
 
-  return results.map((_, idx) => parseRowQueryResult(results[idx], rowsAffected, commands[idx]));
+  return results.map((_, idx) => parseRowQueryResult(results[idx], rowsAffected, commands[idx], arrayRowMode));
 }
 
 
@@ -458,6 +458,10 @@ export async function applyChanges(conn, changes) {
     const cli = { connection }
 
     try {
+      if (changes.inserts) {
+        sql = sql.concat(buildInsertQueries(knex, changes.inserts))
+      }
+
       if (changes.updates) {
         sql = sql.concat(buildUpdateQueries(knex, changes.updates))
       }
@@ -657,15 +661,28 @@ function configDatabase(server, database) {
   return config;
 }
 
+function parseFields(data, columns) {
+  if (columns) {
+    return columns.map((c, idx) => {
+      return {
+        id: `c${idx}`,
+        name: c.name
+      }
+    })
+  } else {
+    return Object.keys(data[0] || {}).map((name) => ({ name, id: name }))
+  }
+}
 
-function parseRowQueryResult(data, rowsAffected, command) {
+function parseRowQueryResult(data, rowsAffected, command, columns, arrayRowMode = false) {
   // Fallback in case the identifier could not reconize the command
   const isSelect = !!(data.length || rowsAffected === 0);
-
+  const fields = parseFields(data, columns)
+  const fieldIds = fields.map(f => f.id)
   return {
     command: command || (isSelect && 'SELECT'),
-    rows: data,
-    fields: Object.keys(data[0] || {}).map((name) => ({ name, id: name })),
+    rows: arrayRowMode ? data.map(r => _.zipObject(fieldIds, r)) : data,
+    fields: fields,
     rowCount: data.length,
     affectedRows: rowsAffected,
   };
@@ -680,10 +697,11 @@ function identifyCommands(queryText) {
   }
 }
 
-export async function driverExecuteQuery(conn, queryArgs) {
+export async function driverExecuteQuery(conn, queryArgs, arrayRowMode = false) {
   logger().debug('Running query', queryArgs)
   const runQuery = async (connection) => {
     const request = connection.request();
+    request.arrayRowMode = arrayRowMode
     const data = await request.query(queryArgs.query)
     const rowsAffected = _.sum(data.rowsAffected);
     return { request, data, rowsAffected };

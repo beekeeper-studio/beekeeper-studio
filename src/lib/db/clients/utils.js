@@ -122,6 +122,15 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
   }
 }
 
+export function buildInsertQueries(knex, inserts) {
+  return inserts.map(insert => {
+    const query = knex(insert.table)
+      .insert(insert.data)
+      .toQuery()
+    return query
+  })
+}
+
 export function buildUpdateQueries(knex, updates) {
   return updates.map(update => {
     const where = {}
