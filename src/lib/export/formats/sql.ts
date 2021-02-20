@@ -1,11 +1,11 @@
-import { abstractExportFormat } from "../format";
+import { Export } from "../export";
 import { DBConnection, TableOrView, TableFilter } from '../../db/client'
 import knexlib from 'knex'
 
 interface OutputOptionsSql {
     createTable: boolean
 }
-export default class SqlExporter extends abstractExportFormat {
+export default class SqlExporter extends Export {
     knex: any = null
 
     constructor(

@@ -1,4 +1,4 @@
-import { abstractExportFormat } from "../format";
+import { Export } from "../export";
 import { DBConnection, TableOrView, TableFilter } from '../../db/client'
 
 interface OutputOptionsCsv {
@@ -6,7 +6,7 @@ interface OutputOptionsCsv {
     delimiter: string
 }
 
-export default class CsvExporter extends abstractExportFormat {
+export default class CsvExporter extends Export {
     
     constructor(
         fileName: string, 

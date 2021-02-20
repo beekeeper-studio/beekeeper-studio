@@ -1,13 +1,16 @@
 import fs from 'fs'
 import { DBConnection, TableOrView, TableFilter, TableResult } from '../db/client'
 
-export abstract class abstractExportFormat {
+export abstract class Export {
     fileName: string = ''
     connection: DBConnection
     table: TableOrView
     filters: TableFilter[] | any[] = []
     outputOptions: any = {}
-    aborted: boolean = false
+    status: Export.Status = Export.Status.Idle
+    countExported: number = 0
+    countTotal: number = 0
+
     progressCallback: (countTotal: number, countExported: number, fileSize: number) => void
     errorCallback: (error: Error) => void
 
@@ -63,50 +66,65 @@ export abstract class abstractExportFormat {
     }
 
     async exportToFile(): Promise<any> {
-        console.log('connection', this.connection)
-        const chunkSize = 250
-        const firstRow = await this.getFirstRow()
-        const header = await this.getHeader(firstRow)
-        const footer = await this.getFooter()
+        try {
+            const chunkSize = 250
+            const firstRow = await this.getFirstRow()
+            const header = await this.getHeader(firstRow)
+            const footer = await this.getFooter()
 
-        let countExported = 0
-        let countTotal = 0
+            this.status = Export.Status.Exporting
 
-        await fs.promises.open(this.fileName, 'w+')
+            await fs.promises.open(this.fileName, 'w+')
 
-        if (header) {
-            await this.writeLineToFile(header)
-        }
-        
-        do {
-            const chunk = await this.getChunk(countExported, chunkSize)
+            if (header) {
+                await this.writeLineToFile(header)
+            }
+            
+            do {
+                const chunk = await this.getChunk(this.countExported, chunkSize)
 
-            if (!chunk) {
-                this.aborted = true
-                continue
+                if (!chunk) {
+                    this.status = Export.Status.Aborted
+                    continue
+                }
+
+                await this.writeChunkToFile(chunk.result)
+                
+                this.countTotal = chunk.totalRecords
+                this.countExported += chunk.result.length
+                const stats = await fs.promises.stat(this.fileName)
+                this.progressCallback(this.countTotal, this.countExported, stats.size)
+            } while (this.countExported < this.countTotal && this.status === Export.Status.Exporting)
+
+            if (this.status === Export.Status.Aborted) {
+                await this.deleteFile()
+                return Promise.reject()
             }
 
-            await this.writeChunkToFile(chunk.result)
-            
-            countTotal = chunk.totalRecords
-            countExported += chunk.result.length
-            const stats = await fs.promises.stat(this.fileName)
-            this.progressCallback(countTotal, countExported, stats.size)
-        } while (countExported < countTotal && !this.aborted)
+            if (footer) {
+                await this.writeLineToFile(footer)
+            }
 
-        if (this.aborted) {
-            await this.deleteFile()
-            return Promise.reject()
+            this.status = Export.Status.Completed
+
+            return Promise.resolve()
+        } catch (ex) {
+            this.status = Export.Status.Error
+            this.errorCallback(ex)
         }
-
-        if (footer) {
-            await this.writeLineToFile(footer)
-        }
-
-        return Promise.resolve()
     }
 
     abort(): void {
-        this.aborted = true
+        this.status = Export.Status.Aborted
+    }
+}
+
+export namespace Export {
+    export enum Status {
+        Idle,
+        Exporting,
+        Aborted,
+        Completed,
+        Error
     }
 }

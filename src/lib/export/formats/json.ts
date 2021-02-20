@@ -1,10 +1,10 @@
-import { abstractExportFormat } from "../format";
+import { Export } from "../export";
 import { DBConnection, TableOrView, TableFilter } from '../../db/client'
 
 interface OutputOptionsJson {
     prettyprint: boolean
 }
-export default class JsonExporter extends abstractExportFormat {
+export default class JsonExporter extends Export {
 
     constructor(
         fileName: string, 
