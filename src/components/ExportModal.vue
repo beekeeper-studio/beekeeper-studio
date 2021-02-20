@@ -19,7 +19,7 @@
                     </div>
                     <div v-if="busy" class="export-progress">
                         <div class="flex flex-between">
-                            <span>{{ progress.recordsExported }}/{{ progress.recordsTotal }} records</span>
+                            <span>{{ progress.recordsExported }} / {{ progress.recordsTotal }} rows</span>
                             <span>{{ progress.fileSize | prettyBytes }}</span>
                         </div>
                         <x-progressbar :value="progressPercent" max="100"></x-progressbar>
@@ -104,7 +104,16 @@ export default {
             return Math.round(this.progress.recordsExported / this.progress.recordsTotal * 100)
         },
         notificationText() {
-            return `Exporting ${this.progress.recordsExported} of ${this.progress.recordsTotal} rows from <code>${this.table.name}</code>...`
+            return `
+            <div class="export-progress-notification">
+                <div class="title">Exporting from <span class="text-primary">${this.table.name}</span></div>
+                <div class="flex flex-between progress-info">
+                    <div>${this.progress.recordsExported} / ${this.progress.recordsTotal} rows</div>
+                    <div>${this.$options.filters.prettyBytes(this.progress.fileSize)}</div>
+                </div>
+                <x-progressbar class="progress-bar" value="${this.progressPercent}" max="100"></x-progressbar>
+            </div>
+            `
         },
         hasFilters() {
             return this.filters && this.filters.length

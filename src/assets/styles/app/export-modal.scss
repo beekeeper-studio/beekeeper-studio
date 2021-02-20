@@ -21,3 +21,20 @@
     }
 }
 
+.export-progress-notification {
+    .title {
+        font-size: 0.85rem;
+        font-weight: bold;
+        margin-bottom: $gutter-w;
+    }
+
+    .progress-info {
+        font-size: 0.8rem;
+    }
+
+    .progress-bar {
+        margin-top: $gutter-w * 0.4;
+        margin-bottom: $gutter-w;
+    }
+}
+
