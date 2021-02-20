@@ -28,6 +28,7 @@ export class DBTestUtil {
   public connection: any
   public extraTables: number = 0
   private options: Options
+  private dialect: string
   
   public preInitCmd: string | undefined
   public defaultSchema: string | null = 'public'
@@ -41,6 +42,7 @@ export class DBTestUtil {
     if (platformInfo.debugEnabled) {
       log.transports.console.level = 'silly'
     }
+    this.dialect = config.client || 'generic'
     this.options = options
     if (config.client === 'sqlite') {
       this.knex = Knex({
@@ -89,8 +91,9 @@ export class DBTestUtil {
     console.log("loading columns...")
     await this.tableViewTests()
 
-    await this.queryTests()
-
+    if (this.dialect !== 'sqlite') {
+      await this.queryTests()
+    }
   }
 
   /**
@@ -161,10 +164,12 @@ export class DBTestUtil {
   }
 
   async queryTests() {
-    const q = await this.connection.query("select 1 as total, 2 as total")
+    const q = await this.connection.query("select 'a' as total, 'b' as total")
     const result = await q.execute()
-    // expect(result[0].rows).toMatchObject([{ total: 2 }])
-    // expect(result).toMatchObject({ rows: [[1, 2]], fields: ['total', 'total']})
+
+    expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
+    const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name}))
+    expect(fields).toMatchObject([{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}])
   }
 
   private async createTables() {

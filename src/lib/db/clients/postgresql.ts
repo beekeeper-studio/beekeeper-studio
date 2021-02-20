@@ -938,7 +938,7 @@ function parseRowQueryResult(data: QueryResult, command: string, rowResults: boo
   const isSelect = data.command === 'SELECT';
   return {
     command: command || data.command,
-    rows: data.rows.map(r => rowResults ? _.zipObject(fieldIds, r) : r),
+    rows: rowResults ? data.rows.map(r => _.zipObject(fieldIds, r)) : data.rows,
     fields: fields,
     rowCount: isSelect ? (data.rowCount || data.rows.length) : undefined,
     affectedRows: !isSelect && !isNaN(data.rowCount) ? data.rowCount : undefined,

@@ -41,7 +41,7 @@
     "lodash": "^4.17.19",
     "material-icons": "^0.3.1",
     "mkdirp": "^1.0.4",
-    "mssql": "^6.2.0",
+    "mssql": "^6.3.1",
     "mysql2": "^2.2.0",
     "node-sass": "^4.12.0",
     "node-ssh-forward": "^0.7.2",
