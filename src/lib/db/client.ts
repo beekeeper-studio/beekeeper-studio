@@ -51,7 +51,7 @@ export interface TableFilter {
 
 export interface TableResult {
   result: any[],
-  totalRecords: Number
+  totalRecords: number
 }
 
 export interface TableUpdate {

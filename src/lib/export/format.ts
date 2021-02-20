@@ -1,36 +1,46 @@
 import fs from 'fs'
+import { DBConnection, TableOrView, TableFilter, TableResult } from '../db/client'
 
 export abstract class abstractExportFormat {
     fileName: string = ''
-    connection: any
-    table: any
-    schema: string = ''
-    filters: any[] = []
+    connection: DBConnection
+    table: TableOrView
+    filters: TableFilter[] | any[] = []
     outputOptions: any = {}
     aborted: boolean = false
     progressCallback: (countTotal: number, countExported: number, fileSize: number) => void
+    errorCallback: (error: Error) => void
 
-    abstract getHeader(firstRow: any): Promise<string> | undefined
-    abstract getFooter(): Promise<string> | undefined
+    abstract getHeader(firstRow: any): Promise<string | void>
+    abstract getFooter(): Promise<string | void>
     abstract writeChunkToFile(data: any): Promise<void>
 
-    constructor(fileName: string, connection: any, table: any, schema: string, filters: any[], outputOptions: any, progressCallback: (countTotal: number, countExported: number, fileSize: number) => void) {
+    constructor(
+        fileName: string, 
+        connection: DBConnection, 
+        table: TableOrView, 
+        filters: TableFilter[] | any[], 
+        outputOptions: any, 
+        progressCallback: (countTotal: number, countExported: number, fileSize: number) => void,
+        errorCallback: (error: Error) => void
+    ) {
         this.fileName = fileName
         this.connection = connection
         this.table = table
-        this.schema = schema
         this.filters = filters
         this.outputOptions = outputOptions
         this.progressCallback = progressCallback
+        this.errorCallback = errorCallback
     }
 
-    async getChunk(offset: Number, limit: Number) {
+    async getChunk(offset: number, limit: number): Promise<TableResult | undefined> {
         const result = await this.connection.selectTop(
             this.table.name,
             offset,
             limit,
-            null,
-            this.filters
+            [],
+            this.filters,
+            this.table.schema
         );
 
         return result
@@ -39,7 +49,7 @@ export abstract class abstractExportFormat {
     async getFirstRow() {
         const row = await this.getChunk(0, 1)
 
-        if (row.result && row.result.length === 1) {
+        if (row && row.result && row.result.length === 1) {
             return row.result[0]
         }
     }
@@ -53,6 +63,7 @@ export abstract class abstractExportFormat {
     }
 
     async exportToFile(): Promise<any> {
+        console.log('connection', this.connection)
         const chunkSize = 250
         const firstRow = await this.getFirstRow()
         const header = await this.getHeader(firstRow)
@@ -69,6 +80,12 @@ export abstract class abstractExportFormat {
         
         do {
             const chunk = await this.getChunk(countExported, chunkSize)
+
+            if (!chunk) {
+                this.aborted = true
+                continue
+            }
+
             await this.writeChunkToFile(chunk.result)
             
             countTotal = chunk.totalRecords

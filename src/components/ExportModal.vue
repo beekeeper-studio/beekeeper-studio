@@ -93,7 +93,8 @@ export default {
             fileName: null,
             options: {},
             exporter: null,
-            editor: null
+            editor: null,
+            error: null
         }
     },
     computed: {
@@ -136,7 +137,7 @@ export default {
         }
     },
     methods: {
-        chooseFile() {
+        async chooseFile() {
             this.fileName = remote.dialog.showSaveDialogSync()
 
             if (this.fileName === undefined){
@@ -150,14 +151,15 @@ export default {
                 this.fileName, 
                 this.connection, 
                 this.table, 
-                '', 
                 this.filters,
                 this.options,
-                this.updateProgress
+                this.updateProgress,
+                this.handleError
             )
 
             this.resetProgress()
-            this.exporter.exportToFile()         
+
+            await this.exporter.exportToFile()
         },
         cancelExport() {
             if (!this.exporter) {
@@ -191,6 +193,9 @@ export default {
                 recordsTotal: 0,
                 fileSize: 0
             }
+        },
+        handleError(error) {
+            this.error = error.message
         },
         minimize() {
             this.minimized = true
