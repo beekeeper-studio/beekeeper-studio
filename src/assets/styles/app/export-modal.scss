@@ -1,9 +1,23 @@
-.export-progress {
-    padding-top: $gutter-w * 2;
-    padding-bottom: $gutter-w * 2;
+.export-modal {
+    .export-progress {
+        padding-top: $gutter-w * 2;
+        padding-bottom: $gutter-w * 2;
 
-    span {
-        font-size: 0.85rem;
-        padding-bottom: ($gutter-w * 0.5)
+        span {
+            font-size: 0.85rem;
+            padding-bottom: ($gutter-w * 0.5)
+        }
+    }
+
+    .export-form {
+        margin-top: $gutter-w;
+    }
+
+    .dialog-c-subtitle {
+        .material-icons {
+            margin-top: -1rem;
+            vertical-align: bottom;
+        }
     }
 }
+

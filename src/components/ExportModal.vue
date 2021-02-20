@@ -1,11 +1,13 @@
 <template>
     <div>
-        <modal v-show="!minimized" class="vue-dialog beekeeper-modal" name="export-modal" height="auto" :scrollable="true">
+        <modal v-show="!minimized" class="vue-dialog beekeeper-modal export-modal" name="export-modal" height="auto" :scrollable="true">
             <form @submit.prevent="exportTable()">
                 <div class="dialog-content">
-                    <div class="dialog-c-title">Export</div>
-                    <div class="dialog-c-subtitle"></div>
-                    <div class="modal-form" v-show="!busy">
+                    <div class="dialog-c-title">Export from <span class="text-primary">{{ table.name }}</span></div>
+                    <div class="dialog-c-subtitle" v-show="hasFilters">
+                        <span v-show="hasFilters">using {{ filterCount }} filter(s) <i class="material-icons" v-tooltip="{ content: filterString, html: true }">info_outlined</i></span>
+                    </div>
+                    <div class="modal-form export-form" v-show="!busy">
                         <div class="form-group">
                             <label for="connectionType">Format</label>
                             <select name="connectionType" class="form-control custom-select" v-model="selectedExportFormatKey" id="export-format-select" :disabled="busy">
@@ -15,14 +17,12 @@
                         </div>
                         <component v-bind:is="selectedExportFormat.component" :busy="busy" v-model="options"></component>
                     </div>
-                    <div v-if="busy">
-                        <div class="export-progress">
-                            <div class="flex flex-between">
-                                <span>{{ progress.recordsExported }}/{{ progress.recordsTotal }} records</span>
-                                <span>{{ progress.fileSize | prettyBytes }}</span>
-                            </div>
-                            <x-progressbar :value="progressPercent" max="100"></x-progressbar>
+                    <div v-if="busy" class="export-progress">
+                        <div class="flex flex-between">
+                            <span>{{ progress.recordsExported }}/{{ progress.recordsTotal }} records</span>
+                            <span>{{ progress.fileSize | prettyBytes }}</span>
                         </div>
+                        <x-progressbar :value="progressPercent" max="100"></x-progressbar>
                     </div>
                 </div>
                 <div class="vue-dialog-buttons">
@@ -92,7 +92,8 @@ export default {
             },
             fileName: null,
             options: {},
-            exporter: null
+            exporter: null,
+            editor: null
         }
     },
     computed: {
@@ -104,6 +105,25 @@ export default {
         },
         notificationText() {
             return `Exporting ${this.progress.recordsExported} of ${this.progress.recordsTotal} rows from <code>${this.table.name}</code>...`
+        },
+        hasFilters() {
+            return this.filters && this.filters.length
+        },
+        filterString() {
+            if (!this.hasFilters) {
+                return
+            }
+
+            return JSON.stringify(this.filters, null, 2)
+        },
+        filterCount() {
+            if (!this.hasFilters) {
+                return null
+            } else if (typeof this.filters === "string") {
+                return 1
+            } else {
+                return this.filters.length
+            }
         }
     },
     methods: {
