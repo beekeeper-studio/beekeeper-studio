@@ -3,7 +3,8 @@ import { DBConnection, TableOrView, TableFilter } from '../../db/client'
 import knexlib from 'knex'
 
 interface OutputOptionsSql {
-    createTable: boolean
+    createTable: boolean,
+    schema: boolean
 }
 export default class SqlExporter extends Export {
     knex: any = null
@@ -30,7 +31,7 @@ export default class SqlExporter extends Export {
 
     async writeChunkToFile(data: any) {
         for (const row of data) {
-            const content = this.knex(this.table.name).insert(row).toQuery()
+            const content = this.knex(this.table.name).withSchema(this.table.schema).insert(row).toQuery()
             await this.writeLineToFile(content + ',')
         }
     }
