@@ -4,6 +4,7 @@
 <script>
 import Noty from 'noty'
 import { Export } from '../../lib/export/export'
+import { remote } from 'electron'
 
 export default {
     props: {
@@ -62,6 +63,9 @@ export default {
             this.exporter.abort()
             this.notification.close()
             this.$noty.error("Export aborted")
+        },
+        openFile() {
+            remote.shell.openItem(this.exporter.fileName)
         }
     },
     watch: {
@@ -80,7 +84,17 @@ export default {
     beforeDestroy() {
         if (this.exporter.status === Export.Status.Completed) {
             this.notification.close()
-            this.$noty.success("Data successfully exported to: <br /><br /><code>" + this.exporter.fileName + "</code>")
+            new Noty({
+                type: "success",
+                text: "Data successfully exported to: <br /><br /><code>" + this.exporter.fileName + "</code>",
+                layout: 'bottomRight',
+                timeout: 3000,
+                closeWith: 'button',
+                buttons: [ 
+                    Noty.button('Open', 'btn btn-success', () => this.openFile())
+                ],
+                queue: 'export'
+            }).show()
         }
 
         if (this.exporter.status === Export.Status.Error) {
