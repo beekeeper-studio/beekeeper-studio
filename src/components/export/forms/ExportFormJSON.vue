@@ -1,7 +1,7 @@
 <template>
     <div>
         <label for="prettyprint" class="checkbox-group">
-            <input v-model="options.prettyprint" id="prettyprint" type="checkbox" name="prettyprint" class="form-control" :disabled="busy">
+            <input v-model="options.prettyprint" id="prettyprint" type="checkbox" name="prettyprint" class="form-control">
             <span>Pretty-print</span>
         </label>
     </div>
@@ -10,9 +10,6 @@
 <script>
 export default {
     props: {
-        busy: {
-            default: false
-        },
         value: {
             required: true
         }

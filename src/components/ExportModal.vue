@@ -10,12 +10,12 @@
                     <div v-if="!exporter || exporter.status === Export.Status.Idle" class="modal-form export-form">
                         <div class="form-group">
                             <label for="connectionType">Format</label>
-                            <select name="connectionType" class="form-control custom-select" v-model="selectedExportFormatKey" id="export-format-select" :disabled="busy">
+                            <select name="connectionType" class="form-control custom-select" v-model="selectedExportFormatKey" id="export-format-select">
                                 <option disabled value="null">Select a format...</option>
                                 <option :key="f.value" v-for="f in exportFormats" :value="f.key">{{f.name}}</option>
                             </select>
                         </div>
-                        <component v-bind:is="selectedExportFormat.component" :busy="busy" v-model="options"></component>
+                        <component v-bind:is="selectedExportFormat.component" v-model="options"></component>
                     </div>
                     <div v-else-if="exporter && exporter.status === Export.Status.Exporting" class="export-progress">
                         <div class="flex flex-between">
@@ -76,7 +76,6 @@ export default {
                 { name: 'JSON', key: 'json', component: ExportFormJSON, exporter: JsonExporter },
                 { name: 'SQL', key: 'sql', component: ExportFormSQL, exporter: SqlExporter },
             ],
-            busy: false,
             minimized: false,
             notification: new Noty({
                 text: "Exporting...",
@@ -147,8 +146,7 @@ export default {
             })
 
             if (this.fileName === undefined){
-                console.log("You didn't save the file");
-                return;
+                return
             }
 
             this.exporter = new this.selectedExportFormat.exporter(

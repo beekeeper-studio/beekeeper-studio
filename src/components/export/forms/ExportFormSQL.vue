@@ -1,7 +1,7 @@
 <template>
     <div>
         <label for="createTable" class="checkbox-group">
-            <input v-model="options.createTable" id="createTable" type="checkbox" name="createTable" class="form-control" :disabled="busy">
+            <input v-model="options.createTable" id="createTable" type="checkbox" name="createTable" class="form-control">
             <span>Include <code>CREATE TABLE</code> query</span>
         </label>
     </div>
@@ -10,9 +10,6 @@
 <script>
 export default {
     props: {
-        busy: {
-            default: false
-        },
         value: {
             required: true
         }
