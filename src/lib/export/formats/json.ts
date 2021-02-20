@@ -1,5 +1,6 @@
 import { Export } from "../export";
 import { DBConnection, TableOrView, TableFilter } from '../../db/client'
+import indentString from 'indent-string'
 
 interface OutputOptionsJson {
     prettyprint: boolean
@@ -27,7 +28,7 @@ export default class JsonExporter extends Export {
     async writeChunkToFile(data: any) {
         for (const row of data) {
             const spacing = this.outputOptions.prettyprint ? 2 : undefined
-            const content = JSON.stringify(row, null, spacing)
+            const content = indentString(JSON.stringify(row, null, spacing), 2)
             await this.writeLineToFile(content + ',')
         }
     }

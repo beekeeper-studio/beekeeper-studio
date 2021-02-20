@@ -34,6 +34,7 @@
     "electron-log": "^4.2.2",
     "electron-util": "^0.14.1",
     "humanize-duration": "^3.23.1",
+    "indent-string": "^4.0.0",
     "javascript-time-ago": "^2.0.8",
     "jquery": "^3.5.0",
     "knex": "^0.21.2",
