@@ -59,7 +59,7 @@
     "sql-query-identifier": "^1.1.0",
     "sqlite3": "^5.0.0",
     "ssh2": "beekeeper-studio/ssh2#electron-detection",
-    "tabulator-tables": "^4.9.1",
+    "tabulator-tables": "rathboma/tabulator#max-initial-width-with-dist",
     "typeface-roboto": "^0.0.75",
     "typeface-source-code-pro": "^1.1.3",
     "typeorm": "^0.2.25",

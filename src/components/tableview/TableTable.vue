@@ -275,7 +275,9 @@ export default {
           width: columnWidth,
           cssClass: isPK ? 'primary-key' : '',
           editable: this.cellEditCheck,
+          headerSort: this.allowHeaderSort(column),
           editor: editorType,
+
           variableHeight: true,
           headerTooltip: headerTooltip,
           cellEditCancelled: cell => cell.getRow().normalizeHeight(),
@@ -420,6 +422,7 @@ export default {
       pagination: "remote",
       paginationSize: this.limit,
       paginationElement: this.$refs.paginationArea,
+      columnMaxInitialWidth: 300,
       initialSort: this.initialSort,
       initialFilter: [this.initialFilter || {}],
       lastUpdated: null,
@@ -475,6 +478,11 @@ export default {
       const fromColumn = cell.getField().replace(/-link$/g, "")
       const valueCell = cell.getRow().getCell(fromColumn)
       return valueCell
+    },
+    allowHeaderSort(column) {
+      if(!column.dataType) return true
+      if(column.dataType.startsWith('json')) return false
+      return true
     },
     slimDataType(dt) {
       if (!dt) return null
