@@ -142,7 +142,9 @@ export default {
     },
     methods: {
         async chooseFile() {
-            this.fileName = remote.dialog.showSaveDialogSync()
+            this.fileName = remote.dialog.showSaveDialogSync(null, {
+                defaultPath: [this.table.name, this.selectedExportFormat.key].join('.')
+            })
 
             if (this.fileName === undefined){
                 console.log("You didn't save the file");
