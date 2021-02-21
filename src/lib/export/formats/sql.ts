@@ -7,6 +7,7 @@ interface OutputOptionsSql {
     schema: boolean
 }
 export default class SqlExporter extends Export {
+    readonly format: string = 'sql'
     knex: any = null
 
     constructor(

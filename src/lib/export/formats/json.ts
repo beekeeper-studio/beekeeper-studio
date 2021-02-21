@@ -6,6 +6,7 @@ interface OutputOptionsJson {
     prettyprint: boolean
 }
 export default class JsonExporter extends Export {
+    readonly format: string = 'json'
 
     constructor(
         fileName: string, 

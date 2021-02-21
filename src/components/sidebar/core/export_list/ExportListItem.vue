@@ -17,6 +17,9 @@
                         <span>{{ $options.filters.prettyBytes(exporter.fileSize) }}</span>
                     </div>
                 </span>
+                <span v-else-if="exporter.status === Export.Status.Error" class="database subtitle">
+                    <span class="text-danger" :title="exporter.error.message">{{ exporter.error.message }}</span>
+                </span>
                 <span v-else class="database subtitle">
                     <div class="flex flex-between progress-info">
                         <span>{{ exporter.countExported }} records</span>
@@ -84,10 +87,8 @@ export default {
                         ],
                         queue: 'export'
                     }).show()
-                }
-
-                if (this.exporter.status === Export.Status.Error) {
-                    this.$noty.error("Error while exporting.")
+                } else if (this.exporter.status === Export.Status.Error) {
+                    this.$noty.error("Error while exporting: <br /><br /><code>" + this.exporter.error.message + "</code>")
                 }
             }
         }

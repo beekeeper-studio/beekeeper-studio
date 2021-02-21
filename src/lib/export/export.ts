@@ -112,7 +112,6 @@ export abstract class Export {
         } catch (error) {
             this.status = Export.Status.Error
             this.error = error
-            throw error
         }
     }
 

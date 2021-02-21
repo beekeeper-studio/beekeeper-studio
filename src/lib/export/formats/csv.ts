@@ -7,7 +7,8 @@ interface OutputOptionsCsv {
 }
 
 export default class CsvExporter extends Export {
-    
+    readonly format: string = 'csv'
+
     constructor(
         fileName: string, 
         connection: DBConnection, 
