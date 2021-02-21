@@ -31,7 +31,7 @@
         href=""
         @click.prevent="click('exports')"
         class="nav-item"
-        :class="{ active: activeItem === 'exports'}"
+        :class="{ active: activeItem === 'exports', 'text-primary': runningExports.length}"
         v-tooltip="exportsTooltip"
       >
         <span class="material-icons">file_download</span>
@@ -40,6 +40,8 @@
 </template>
 
 <script>
+  import { mapGetters } from 'vuex'
+
   export default {
     props: ['activeItem'],
     data() {
@@ -61,6 +63,9 @@
           content: "Exports"
         }
       }
+    },
+    computed: {
+      ...mapGetters({'runningExports': 'exports/runningExports'})
     },
     methods: {
       click(item) {
