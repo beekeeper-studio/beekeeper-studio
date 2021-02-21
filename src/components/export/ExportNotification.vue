@@ -4,7 +4,6 @@
 <script>
 import Noty from 'noty'
 import ExportInfo from './mixins/export-info'
-import { Export } from '../../lib/export/export'
 
 export default {
     mixins: [ExportInfo],
@@ -67,27 +66,6 @@ export default {
         this.notification.show()
     },
     beforeDestroy() {
-        if (this.exporter.status === Export.Status.Completed) {
-            this.notification.close()
-            new Noty({
-                type: "success",
-                text: "Data successfully exported to: <br /><br /><code>" + this.exporter.fileName + "</code>",
-                layout: 'bottomRight',
-                timeout: 3000,
-                closeWith: 'button',
-                buttons: [ 
-                    Noty.button('Open', 'btn btn-success', () => this.exporter.openFile())
-                ],
-                queue: 'export'
-            }).show()
-        }
-
-        if (this.exporter.status === Export.Status.Error) {
-            this.notification.close()
-            this.$noty.error("Error while exporting.")
-        }
-
-        console.log('unmounting')
         this.notification.close()
     }
 }

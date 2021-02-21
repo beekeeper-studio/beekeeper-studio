@@ -42,6 +42,7 @@
 </template>
 
 <script>
+import Noty from 'noty'
 import { Export } from '../../../../lib/export/export'
 import ExportInfo from '../../../export/mixins/export-info'
 
@@ -65,6 +66,30 @@ export default {
     methods: {
         select() {
             console.log('export selected')
+        }
+    },
+    watch: {
+        exporter: {
+            deep: true,
+            handler() {
+                if (this.exporter.status === Export.Status.Completed) {
+                    new Noty({
+                        type: "success",
+                        text: "Data successfully exported to: <br /><br /><code>" + this.exporter.fileName + "</code>",
+                        layout: 'bottomRight',
+                        timeout: 3000,
+                        closeWith: 'button',
+                        buttons: [ 
+                            Noty.button('Open', 'btn btn-success', () => this.exporter.openFile())
+                        ],
+                        queue: 'export'
+                    }).show()
+                }
+
+                if (this.exporter.status === Export.Status.Error) {
+                    this.$noty.error("Error while exporting.")
+                }
+            }
         }
     }
 }

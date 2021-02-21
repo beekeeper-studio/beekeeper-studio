@@ -4,18 +4,19 @@ import { DBConnection, TableOrView, TableFilter, TableResult } from '../db/clien
 
 export abstract class Export {
     chunkSize: number = 500
-    fileName: string = ''
     connection: DBConnection
-    table: TableOrView
-    filters: TableFilter[] | any[] = []
-    outputOptions: any = {}
-    status: Export.Status = Export.Status.Idle
     countExported: number = 0
     countTotal: number = 0
+    error: Error | null = null
+    fileName: string = ''
     fileSize: number = 0
-    timeLeft: number = 0
+    filters: TableFilter[] | any[] = []
     lastChunkTime: number = 0
+    outputOptions: any = {}
     showNotification: boolean = true
+    status: Export.Status = Export.Status.Idle
+    table: TableOrView
+    timeLeft: number = 0
 
     abstract getHeader(firstRow: any): Promise<string | void>
     abstract getFooter(): Promise<string | void>
@@ -108,9 +109,10 @@ export abstract class Export {
             this.status = Export.Status.Completed
 
             return Promise.resolve()
-        } catch (ex) {
+        } catch (error) {
             this.status = Export.Status.Error
-            throw ex
+            this.error = error
+            throw error
         }
     }
 
