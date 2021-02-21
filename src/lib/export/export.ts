@@ -1,4 +1,5 @@
 import fs from 'fs'
+import remote from 'electron'
 import { DBConnection, TableOrView, TableFilter, TableResult } from '../db/client'
 
 export abstract class Export {
@@ -128,6 +129,10 @@ export abstract class Export {
 
     pause(): void {
         this.status = Export.Status.Paused
+    }
+
+    openFile(): void {
+        remote.shell.openItem(this.fileName)
     }
 }
 

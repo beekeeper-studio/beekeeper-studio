@@ -4,7 +4,6 @@
 <script>
 import Noty from 'noty'
 import { Export } from '../../lib/export/export'
-import { remote } from 'electron'
 
 export default {
     props: {
@@ -63,9 +62,6 @@ export default {
             this.exporter.abort()
             this.notification.close()
             this.$noty.error("Export aborted")
-        },
-        openFile() {
-            remote.shell.openItem(this.exporter.fileName)
         }
     },
     watch: {
@@ -91,7 +87,7 @@ export default {
                 timeout: 3000,
                 closeWith: 'button',
                 buttons: [ 
-                    Noty.button('Open', 'btn btn-success', () => this.openFile())
+                    Noty.button('Open', 'btn btn-success', () => this.exporter.openFile())
                 ],
                 queue: 'export'
             }).show()
