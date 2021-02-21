@@ -18,6 +18,9 @@ const ExportStoreModule: Module<State, any> = {
         }
     },
     getters: {
+        allExports(state): Export[] {
+            return state.exports
+        },
         runningExports(state): Export[] {
             return _.filter(state.exports, {'status': Export.Status.Exporting})
         }

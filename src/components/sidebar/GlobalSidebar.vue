@@ -27,6 +27,15 @@
       >
         <span class="material-icons">history</span>
       </a>
+      <a
+        href=""
+        @click.prevent="click('exports')"
+        class="nav-item"
+        :class="{ active: activeItem === 'exports'}"
+        v-tooltip="exportsTooltip"
+      >
+        <span class="material-icons">file_download</span>
+      </a>
     </div>
 </template>
 
@@ -46,6 +55,10 @@
         queriesTooltip: {
           placement: 'right',
           content: "Saved Queries"
+        },
+        exportsTooltip: {
+          placement: 'right',
+          content: "Exports"
         }
       }
     },
