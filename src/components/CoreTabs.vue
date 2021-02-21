@@ -38,7 +38,7 @@
       :filters="tableExportOptions.filters"
       @close="showExportModal = false"
     ></ExportModal>
-    <ExportNotification v-for="(exporter, key) in runningExports" :key="key" :exporter="exporter"></ExportNotification>
+    <ExportNotification v-for="(exporter, key) in exports" :key="key" :exporter="exporter"></ExportNotification>
   </div>
 </template>
 
@@ -75,7 +75,7 @@
     },
     computed: {
       ...mapState(["activeTab"]),
-      ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'runningExports': 'exports/runningExports' }),
+      ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'exports': 'exports/runningVisibleExports' }),
       lastTab() {
         return this.tabItems[this.tabItems.length - 1];
       },

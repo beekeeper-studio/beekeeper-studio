@@ -3,9 +3,11 @@
 </template>
 <script>
 import Noty from 'noty'
+import ExportInfo from './mixins/export-info'
 import { Export } from '../../lib/export/export'
 
 export default {
+    mixins: [ExportInfo],
     props: {
         exporter: {
             required: true
@@ -19,7 +21,8 @@ export default {
                 timeout: false,
                 closeWith: 'button',
                 buttons: [ 
-                    Noty.button('Abort', 'btn btn-danger', () => this.cancelExport())
+                    Noty.button('Abort', 'btn btn-danger', () => this.cancelExport()),
+                    Noty.button('Hide', 'btn btn-flat', () => this.exporter.hide())
                 ],
                 queue: 'export'
             })
@@ -38,20 +41,6 @@ export default {
                 <x-progressbar class="progress-bar" value="${this.progressPercent}" max="100"></x-progressbar>
             </div>
             `
-        },
-        progressPercent() {
-            if (!this.exporter) {
-                return 0
-            }
-
-            return Math.round(this.exporter.countExported / this.exporter.countTotal * 100)
-        },
-        timeLeftReadable() {
-            if (!this.exporter) {
-                return 0
-            } 
-            
-            return new Date(this.exporter.timeLeft).toISOString().substr(11, 8)
         }
     },
     methods: {

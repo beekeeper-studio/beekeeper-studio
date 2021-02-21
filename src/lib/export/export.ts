@@ -15,6 +15,7 @@ export abstract class Export {
     fileSize: number = 0
     timeLeft: number = 0
     lastChunkTime: number = 0
+    showNotification: boolean = true
 
     abstract getHeader(firstRow: any): Promise<string | void>
     abstract getFooter(): Promise<string | void>
@@ -69,6 +70,7 @@ export abstract class Export {
             const header = await this.getHeader(firstRow)
             const footer = await this.getFooter()
 
+            this.countExported = 0
             this.status = Export.Status.Exporting
 
             await fs.promises.open(this.fileName, 'w+')
@@ -120,7 +122,7 @@ export abstract class Export {
             this.timeLeft = chunksLeft * lastChunkDuration
         }
 
-        this.lastChunkTime = Date.now()
+        this.lastChunkTime = Date.now() 
     }
 
     abort(): void {
@@ -129,6 +131,10 @@ export abstract class Export {
 
     pause(): void {
         this.status = Export.Status.Paused
+    }
+
+    hide(): void {
+        this.showNotification = false
     }
 
     openFile(): void {
