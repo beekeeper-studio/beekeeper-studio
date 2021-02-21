@@ -32,6 +32,7 @@
 
 import _ from 'lodash'
 import { remote } from 'electron'
+import { mapMutations } from 'vuex'
 import CsvExporter from '../../lib/export/formats/csv'
 import JsonExporter from '../../lib/export/formats/json'
 import SqlExporter from '../../lib/export/formats/sql'
@@ -91,6 +92,7 @@ export default {
         }
     },
     methods: {
+        ...mapMutations({ 'addExport': 'exports/addExport' }),
         async chooseFile() {
             this.fileName = remote.dialog.showSaveDialogSync(null, {
                 defaultPath: [this.table.name, this.selectedExportFormat.key].join('.')
@@ -110,6 +112,7 @@ export default {
 
             this.$emit('close')
             this.$emit('exportCreated', exporter)
+            this.addExport(exporter)
             
             exporter.exportToFile()
         }

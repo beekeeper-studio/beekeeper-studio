@@ -36,10 +36,9 @@
       :connection="this.connection" 
       :table="tableExportOptions.table" 
       :filters="tableExportOptions.filters"
-      @exportCreated="addExporter"
       @close="showExportModal = false"
     ></ExportModal>
-    <ExportNotification v-for="(exporter, key) in activeExports" :key="key" :exporter="exporter"></ExportNotification>
+    <ExportNotification v-for="(exporter, key) in runningExports" :key="key" :exporter="exporter"></ExportNotification>
   </div>
 </template>
 
@@ -58,7 +57,6 @@
   import platformInfo from '../common/platform_info'
   import { mapGetters, mapState } from 'vuex'
   import Draggable from 'vuedraggable'
-  import { Export } from '../lib/export/export'
 
   export default {
     props: [ 'connection' ],
@@ -69,8 +67,7 @@
         activeItem: 0,
         newTabId: 1,
         showExportModal: false,
-        tableExportOptions: null,
-        exporters: []
+        tableExportOptions: null
       }
     },
     watch: {
@@ -78,7 +75,7 @@
     },
     computed: {
       ...mapState(["activeTab"]),
-      ...mapGetters({ 'menuStyle': 'settings/menuStyle' }),
+      ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'runningExports': 'exports/runningExports' }),
       lastTab() {
         return this.tabItems[this.tabItems.length - 1];
       },
@@ -104,9 +101,6 @@
           result[closeTab] = this.closeTab
         }
         return result
-      },
-      activeExports() {
-        return _.filter(this.exporters, {'status': Export.Status.Exporting})
       }
     },
     methods: {
@@ -254,10 +248,6 @@
           duplicatedTab['table'] = tab.table
         }
         this.addTab(duplicatedTab)
-      },
-      addExporter(exporter) {
-        console.log('exporter added')
-        this.exporters.push(exporter)
       }
     },
     mounted() {
