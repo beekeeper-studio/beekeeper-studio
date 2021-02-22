@@ -38,6 +38,10 @@ Beekeeper Studio supports connecting to the following databases:
 
 Download the latest release from the [releases page](https://github.com/beekeeper-studio/beekeeper-studio/releases), or from [our website](https://beekeeperstudio.io)
 
+## Documentation
+
+Check out [docs.beekeeperstudio.io](https://docs.beekeeperstudio.io) for user guides, FAQs, troubleshooting tips, and more.
+
 ## Contributing to Beekeeper Studio
 
 We love *any* community engagement. Even if you're complaining because you don't like something about the app!
