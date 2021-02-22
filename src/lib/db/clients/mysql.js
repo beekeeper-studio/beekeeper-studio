@@ -28,6 +28,7 @@ export default async function (server, database) {
   await driverExecuteQuery(conn, { query: 'select version();' });
 
   return {
+    knexType: 'mysql2',
     supportedFeatures: () => ({ customRoutines: true }),
     wrapIdentifier,
     disconnect: () => disconnect(conn),

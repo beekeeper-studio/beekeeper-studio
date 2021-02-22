@@ -7,6 +7,10 @@
                     <div class="dialog-c-subtitle" v-show="hasFilters">
                         <span v-show="hasFilters">using {{ filterCount }} filter(s) <i class="material-icons" v-tooltip="{ content: filterString, html: true }">info_outlined</i></span>
                     </div>
+                    <div v-if="error" class="alert alert-danger">
+                        <i class="material-icons">warning</i>
+                        <div>Error: {{ error.message }}</div>
+                    </div>
                     <div class="modal-form export-form">
                         <div class="form-group">
                             <label for="connectionType">Format</label>
@@ -62,7 +66,8 @@ export default {
             ],
             fileName: null,
             options: {},
-            Export: Export
+            Export: Export,
+            error: null
         }
     },
     computed: {
@@ -92,6 +97,8 @@ export default {
     methods: {
         ...mapMutations({ 'addExport': 'exports/addExport' }),
         async chooseFile() {
+            this.error = null
+
             this.fileName = remote.dialog.showSaveDialogSync(null, {
                 defaultPath: [this.table.name, this.selectedExportFormat.key].join('.')
             })
@@ -100,19 +107,23 @@ export default {
                 return
             }
 
-            const exporter = new this.selectedExportFormat.exporter(
-                this.fileName, 
-                this.connection, 
-                this.table, 
-                this.filters,
-                this.options
-            )
+            try {
+                const exporter = new this.selectedExportFormat.exporter(
+                    this.fileName, 
+                    this.connection, 
+                    this.table, 
+                    this.filters,
+                    this.options
+                )
 
-            this.$emit('close')
-            this.$emit('exportCreated', exporter)
-            this.addExport(exporter)
-            
-            exporter.exportToFile()
+                this.$emit('close')
+                this.$emit('exportCreated', exporter)
+                this.addExport(exporter)
+                
+                exporter.exportToFile()
+            } catch (error) {
+                this.error = error
+            }
         }
     },
     mounted() {

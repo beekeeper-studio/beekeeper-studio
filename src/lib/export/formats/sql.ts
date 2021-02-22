@@ -8,6 +8,14 @@ interface OutputOptionsSql {
 }
 export default class SqlExporter extends Export {
     readonly format: string = 'sql'
+    readonly knexTypes: any = {
+        "cockroachdb": "pg",
+        "mariadb": "mysql2",
+        "mysql": "mysql2",
+        "postgresql": "pg",
+        "sqlite": "sqlite3",
+        "sqlserver": "mssql"
+    }
     knex: any = null
 
     constructor(
@@ -19,7 +27,11 @@ export default class SqlExporter extends Export {
     ) {
         super(fileName, connection, table, filters, outputOptions)
 
-        this.knex = knexlib({ client: this.connection.connectionType || undefined})
+        if (!this.connection.connectionType || !this.knexTypes[this.connection.connectionType]) {
+            throw new Error("SQL export not supported on connectiont type " + this.connection.connectionType)
+        }
+
+        this.knex = knexlib({ client: this.knexTypes[this.connection.connectionType] || undefined})
     }
 
     async getHeader(firstRow: any) {
