@@ -64,6 +64,7 @@
   import { mapState } from 'vuex'
 
   export default {
+    props: ['sidebarShown'],
     components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList },
     data() {
       return {
@@ -100,7 +101,9 @@
       },
       click(item) {
         this.activeItem = item;
-        this.sidebarShown = true;
+        if(!this.sidebarShown) {
+          this.$emit('toggleSidebar')
+        }
       },
       async databaseSelected(db) {
         await this.$store.dispatch('changeDatabase', db)

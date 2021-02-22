@@ -2,7 +2,7 @@
   <div id="interface" class="interface" v-hotkey="keymap">
     <div class="interface-wrap row">
       <sidebar ref="sidebar" :class="{hide: !sidebarShown}">
-        <core-sidebar @databaseSelected="databaseSelected" @toggleSidebar="toggleSidebar" :connection="connection"></core-sidebar>
+        <core-sidebar @databaseSelected="databaseSelected" @toggleSidebar="toggleSidebar" :connection="connection" :sidebarShown="sidebarShown"></core-sidebar>
         <statusbar>
           <ConnectionButton></ConnectionButton>
         </statusbar>
@@ -28,6 +28,9 @@
       return {
         split: null,
         sidebarShown: true,
+        keymap: {
+          'ctrl+b': this.toggleSidebar,
+        }
       }
     },
     computed: {
@@ -36,12 +39,6 @@
           this.$refs.sidebar.$refs.sidebar,
           this.$refs.content
         ]
-      },
-      keymap() {
-        const result = {
-          'ctrl+b': this.toggleSidebar,
-        }
-        return result
       }
     },
     mounted() {
@@ -54,7 +51,7 @@
               'flex-basis': `calc(${size}%)`,
           }),
           sizes: [25,75],
-          minSize: 40,
+          minSize: 250,
           gutterSize: 8,
           snapOffset: 60,
         })
