@@ -38,6 +38,13 @@
                     <x-menuitem v-if="hasIncompleteStatus" @click="exporter.exportToFile()">
                         <x-label>Retry</x-label>
                     </x-menuitem>
+                    <x-menuitem v-if="exporter.status !== Export.Status.Exporting" @click="removeExport(exporter.id)">
+                        <x-label>Clear</x-label>
+                    </x-menuitem>
+                    <hr />
+                    <x-menuitem @click="removeInactive()">
+                        <x-label>Clear All</x-label>
+                    </x-menuitem>
                 </x-menu>
             </x-contextmenu>
         </a>
@@ -48,6 +55,7 @@
 import Noty from 'noty'
 import { Export } from '../../../../lib/export/export'
 import ExportInfo from '../../../export/mixins/export-info'
+import { mapMutations } from 'vuex'
 
 export default {
     mixins: [ExportInfo],
@@ -67,6 +75,7 @@ export default {
         }
     },
     methods: {
+        ...mapMutations({'removeExport':'exports/removeExport', 'removeInactive':'exports/removeInactive'}),
         select() {
             console.log('export selected')
         }

@@ -38,7 +38,7 @@
       :filters="tableExportOptions.filters"
       @close="showExportModal = false"
     ></ExportModal>
-    <ExportNotification v-for="(exporter, key) in exports" :key="key" :exporter="exporter"></ExportNotification>
+    <ExportNotification v-for="exporter in exports" :key="exporter.id" :exporter="exporter"></ExportNotification>
   </div>
 </template>
 

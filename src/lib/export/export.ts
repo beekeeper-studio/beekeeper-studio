@@ -1,18 +1,20 @@
 import fs from 'fs'
+import crypto from 'crypto'
 import remote from 'electron'
 import { DBConnection, TableOrView, TableFilter, TableResult } from '../db/client'
 
 export abstract class Export {
+    id: string
     chunkSize: number = 500
     connection: DBConnection
     countExported: number = 0
     countTotal: number = 0
     error: Error | null = null
-    fileName: string = ''
+    fileName: string
     fileSize: number = 0
-    filters: TableFilter[] | any[] = []
+    filters: TableFilter[] | any[]
     lastChunkTime: number = 0
-    outputOptions: any = {}
+    outputOptions: any
     showNotification: boolean = true
     status: Export.Status = Export.Status.Idle
     table: TableOrView
@@ -34,6 +36,17 @@ export abstract class Export {
         this.table = table
         this.filters = filters
         this.outputOptions = outputOptions
+        this.id = this.generateId()
+    }
+
+    generateId(): string {
+        const md5sum = crypto.createHash('md5')
+        
+        md5sum.update(Date.now().toString(), 'utf8')
+        md5sum.update(this.table.name)
+        md5sum.update(this.fileName)
+
+        return md5sum.digest('hex')
     }
 
     async getChunk(offset: number, limit: number): Promise<TableResult | undefined> {

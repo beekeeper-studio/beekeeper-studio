@@ -15,6 +15,12 @@ const ExportStoreModule: Module<State, any> = {
     mutations: {
         addExport(state, newExport: Export): void {
             state.exports.push(newExport)
+        },
+        removeExport(state, id: string): void {
+            state.exports = _.reject(state.exports, {'id': id})
+        },
+        removeInactive(state): void {
+            state.exports = _.filter(state.exports, {'status': Export.Status.Exporting})
         }
     },
     getters: {
