@@ -48,6 +48,8 @@ We love *any* community engagement. Even if you're complaining because you don't
 
 Because building an inclusive and welcoming community is important to us, please follow our code of conduct as you engage with the project.
 
+Like the app but don't know how to code in JavaScript? We have you covered, read our [guide to contributing in 10 minutes without coding](https://github.com/beekeeper-studio/beekeeper-studio/issues/287).
+
 ### Starting the Dev version of Beekeeper Studio
 
 Want to write some code and improve Beekeeper Studio? Getting set-up is easy on Mac, Linux, or Windows.
