@@ -19,10 +19,8 @@
                     </div>
                 </div>
                 <div class="vue-dialog-buttons">
-                    <template>
-                        <button class="btn btn-flat" type="button" @click.prevent="$emit('close')">Cancel</button>
-                        <button class="btn btn-primary" type="submit" @click.prevent="chooseFile()">Run</button>
-                    </template>
+                    <button class="btn btn-flat" type="button" @click.prevent="$emit('close')">Cancel</button>
+                    <button class="btn btn-primary" type="submit" @click.prevent="chooseFile()">Run</button>
                 </div>
             </form>
         </modal>
