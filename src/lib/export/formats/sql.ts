@@ -36,7 +36,8 @@ export default class SqlExporter extends Export {
 
   async getHeader(firstRow: any) {
     if (this.outputOptions.createTable) {
-      return this.connection.getTableCreateScript(this.table.name, '')
+      const schema = this.table.schema && this.outputOptions.schema ? this.table.schema : ''
+      return this.connection.getTableCreateScript(this.table.name, schema)
     }
   }
 
@@ -46,7 +47,13 @@ export default class SqlExporter extends Export {
     let formattedChunk = []
 
     for (const row of data) {
-      const content = this.knex(this.table.name).withSchema(this.table.schema).insert(row).toQuery()
+      let knex = this.knex(this.table.name)
+
+      if (this.outputOptions.schema && this.table.schema) {
+        knex = knex.withSchema(this.table.schema)
+      }
+
+      const content = knex.insert(row).toQuery()
       formattedChunk.push(content)
     }
 
