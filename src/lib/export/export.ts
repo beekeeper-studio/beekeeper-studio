@@ -70,7 +70,7 @@ export abstract class Export {
         }
     }
     
-    async writeLineToFile(content: string) {
+    async writeToFile(content: string) {
         return await fs.promises.appendFile(this.fileName, content + "\n")
     }
 
@@ -90,7 +90,7 @@ export abstract class Export {
             await fs.promises.open(this.fileName, 'w+')
 
             if (header) {
-                await this.writeLineToFile(header)
+                await this.writeToFile(header)
             }
             
             do {
@@ -116,7 +116,7 @@ export abstract class Export {
             }
 
             if (footer) {
-                await this.writeLineToFile(footer)
+                await this.writeToFile(footer)
             }
 
             this.status = Export.Status.Completed

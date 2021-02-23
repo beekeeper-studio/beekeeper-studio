@@ -30,7 +30,7 @@ export default class CsvExporter extends Export {
     async writeChunkToFile(data: any) {
         for (const row of data) {
             const content = Object.values(row).join(this.outputOptions.delimiter)
-            await this.writeLineToFile(content)
+            await this.writeToFile(content)
         }
     }
 }

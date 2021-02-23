@@ -30,7 +30,7 @@ export default class JsonExporter extends Export {
         for (const row of data) {
             const spacing = this.outputOptions.prettyprint ? 2 : undefined
             const content = indentString(JSON.stringify(row, null, spacing), 2)
-            await this.writeLineToFile(content + ',')
+            await this.writeToFile(content + ',')
         }
     }
 }

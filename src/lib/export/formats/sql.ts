@@ -45,7 +45,7 @@ export default class SqlExporter extends Export {
     async writeChunkToFile(data: any) {
         for (const row of data) {
             const content = this.knex(this.table.name).withSchema(this.table.schema).insert(row).toQuery()
-            await this.writeLineToFile(content + ',')
+            await this.writeToFile(content + ',')
         }
     }
 }
