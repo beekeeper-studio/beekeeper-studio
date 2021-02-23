@@ -35,13 +35,13 @@
 import _ from 'lodash'
 import { remote } from 'electron'
 import { mapMutations } from 'vuex'
-import CsvExporter from '../../lib/export/formats/csv'
-import JsonExporter from '../../lib/export/formats/json'
-import SqlExporter from '../../lib/export/formats/sql'
+import CsvExporter from '@/lib/export/formats/csv'
+import JsonExporter from '@/lib/export/formats/json'
+import SqlExporter from '@/lib/export/formats/sql'
 import ExportFormCSV from './forms/ExportFormCSV'
 import ExportFormJSON from './forms/ExportFormJSON'
 import ExportFormSQL from './forms/ExportFormSQL'
-import { Export } from '../../lib/export/export'
+import { Export } from '@/lib/export/export'
 
 export default {
     components: {ExportFormCSV, ExportFormSQL},

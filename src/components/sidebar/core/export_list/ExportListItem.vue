@@ -53,8 +53,8 @@
 
 <script>
 import Noty from 'noty'
-import { Export } from '../../../../lib/export/export'
-import ExportInfo from '../../../export/mixins/export-info'
+import { Export } from '@/lib/export/export'
+import ExportInfo from '@/components/export/mixins/export-info'
 import { mapMutations } from 'vuex'
 
 export default {

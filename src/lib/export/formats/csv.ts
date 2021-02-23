@@ -1,5 +1,5 @@
-import { Export } from "../export";
-import { DBConnection, TableOrView, TableFilter } from '../../db/client'
+import { Export } from "@/lib/export/export";
+import { DBConnection, TableOrView, TableFilter } from '@/lib/db/client'
 
 interface OutputOptionsCsv {
     header: boolean,

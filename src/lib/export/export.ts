@@ -1,7 +1,7 @@
 import fs from 'fs'
 import crypto from 'crypto'
 import remote from 'electron'
-import { DBConnection, TableOrView, TableFilter, TableResult } from '../db/client'
+import { DBConnection, TableOrView, TableFilter, TableResult } from '@/lib/db/client'
 
 export abstract class Export {
     id: string
