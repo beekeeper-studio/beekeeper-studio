@@ -26,11 +26,16 @@ export default class JsonExporter extends Export {
     return ']'
   }
 
-  async writeChunkToFile(data: any) {
+  formatChunk(data: any): string[] {
+    const formattedChunk = []
+
     for (const row of data) {
       const spacing = this.outputOptions.prettyprint ? 2 : undefined
-      const content = indentString(JSON.stringify(row, null, spacing), 2)
-      await this.writeToFile(content + ',')
+      const content = indentString(JSON.stringify(row, null, spacing), 2) + ','
+
+      formattedChunk.push(content)
     }
+    
+    return formattedChunk
   }
 }

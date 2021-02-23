@@ -7,7 +7,7 @@ class DummyExport extends Export { }
 jest.mock('@/lib/db/clients', () => {
   return {
     DBConnection: jest.fn().mockImplementation(() => {
-      const FakeData = [
+      const fakeData = [
         { id: 1, firstName: 'John', lastName: 'Doe' },
         { id: 2, firstName: 'Jane', lastName: 'Doe' },
         { id: 3, firstName: 'Alex', lastName: 'Doe' },
@@ -16,8 +16,8 @@ jest.mock('@/lib/db/clients', () => {
       return {
         selectTop: (table, offset, limit, orderBy, filters, schema) => {
           return {
-            result: FakeData.slice(offset, offset + limit),
-            totalRecords: FakeData.length
+            result: fakeData.slice(offset, offset + limit),
+            totalRecords: fakeData.length
           }
         }
       };
@@ -96,18 +96,18 @@ describe('Export Class Unit Test', () => {
     dummyExport.chunkSize = 1
     dummyExport.getHeader = () => null
     dummyExport.getFooter = () => null
-    dummyExport.writeChunkToFile = (chunk) => null
+    dummyExport.formatChunk = (chunk) => ['a', 'b', 'c']
 
     jest.spyOn(fs.promises, 'open').mockImplementation()
     jest.spyOn(fs.promises, 'appendFile').mockImplementation()
     jest.spyOn(fs.promises, 'stat').mockImplementation(() => Promise.resolve({ size: 1 }))
-    jest.spyOn(dummyExport, 'writeChunkToFile')
+    jest.spyOn(dummyExport, 'formatChunk')
 
     await dummyExport.exportToFile()
 
     expect(dummyExport.error).toBeNull()
     expect(fs.promises.open).toHaveBeenCalled()
-    expect(fs.promises.appendFile).toHaveBeenCalledTimes(0)
-    expect(dummyExport.writeChunkToFile).toHaveBeenCalledTimes(3)
+    expect(fs.promises.appendFile).toHaveBeenCalledTimes(9)
+    expect(dummyExport.formatChunk).toHaveBeenCalledTimes(3)
   })
 })

@@ -22,7 +22,7 @@ export abstract class Export {
 
   abstract getHeader(firstRow: any): Promise<string | void>
   abstract getFooter(): Promise<string | void>
-  abstract writeChunkToFile(data: any): Promise<void>
+  abstract formatChunk(data: any): string[]
 
   constructor(
     fileName: string,
@@ -101,7 +101,9 @@ export abstract class Export {
           continue
         }
 
-        await this.writeChunkToFile(chunk.result)
+        for (const formattedRow of this.formatChunk(chunk.result)) {
+          await this.writeToFile(formattedRow)
+        }
 
         this.countTotal = chunk.totalRecords
         this.countExported += chunk.result.length

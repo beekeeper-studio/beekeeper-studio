@@ -27,10 +27,13 @@ export default class CsvExporter extends Export {
 
   async getFooter() { }
 
-  async writeChunkToFile(data: any) {
+  formatChunk(data: any): string[] {
+    let formattedChunk = []
+
     for (const row of data) {
-      const content = Object.values(row).join(this.outputOptions.delimiter)
-      await this.writeToFile(content)
+      formattedChunk.push(Object.values(row).join(this.outputOptions.delimiter))
     }
+
+    return formattedChunk
   }
 }

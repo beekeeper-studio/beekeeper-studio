@@ -42,10 +42,14 @@ export default class SqlExporter extends Export {
 
   async getFooter() { }
 
-  async writeChunkToFile(data: any) {
+  formatChunk(data: any): string[] {
+    let formattedChunk = []
+
     for (const row of data) {
       const content = this.knex(this.table.name).withSchema(this.table.schema).insert(row).toQuery()
-      await this.writeToFile(content + ',')
+      formattedChunk.push(content)
     }
+
+    return formattedChunk
   }
 }
