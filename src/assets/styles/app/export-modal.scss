@@ -1,41 +1,41 @@
 .export-modal {
-    .export-progress {
-        padding-top: $gutter-w * 2;
-        padding-bottom: $gutter-w * 2;
+  .export-progress {
+    padding-top: $gutter-w * 2;
+    padding-bottom: $gutter-w * 2;
 
-        span {
-            font-size: 0.85rem;
-            padding-bottom: ($gutter-w * 0.5)
-        }
+    span {
+      font-size: 0.85rem;
+      padding-bottom: ($gutter-w * 0.5)
     }
+  }
 
-    .export-form {
-        margin-top: $gutter-w;
-    }
+  .export-form {
+    margin-top: $gutter-w;
+  }
 
-    .dialog-c-subtitle {
-        .material-icons {
-            margin-top: -1rem;
-            vertical-align: bottom;
-        }
+  .dialog-c-subtitle {
+    .material-icons {
+      margin-top: -1rem;
+      vertical-align: bottom;
     }
+  }
 }
 
 .export-progress-notification {
-    .title {
-        font-size: 0.85rem;
-        font-weight: bold;
-        margin-bottom: $gutter-w;
-    }
+  .title {
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-bottom: $gutter-w;
+  }
 
-    .progress-info {
-        font-size: 0.8rem;
-        padding-top: $gutter-w * 0.6;
-    }
+  .progress-info {
+    font-size: 0.8rem;
+    padding-top: $gutter-w * 0.6;
+  }
 
-    .progress-bar {
-        margin-top: $gutter-w * 0.4;
-        margin-bottom: $gutter-w;
-    }
+  .progress-bar {
+    margin-top: $gutter-w * 0.4;
+    margin-bottom: $gutter-w;
+  }
 }
 

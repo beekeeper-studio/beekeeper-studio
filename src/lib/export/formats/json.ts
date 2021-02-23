@@ -3,34 +3,34 @@ import { DBConnection, TableOrView, TableFilter } from '@/lib/db/client'
 import indentString from 'indent-string'
 
 interface OutputOptionsJson {
-    prettyprint: boolean
+  prettyprint: boolean
 }
 export default class JsonExporter extends Export {
-    readonly format: string = 'json'
+  readonly format: string = 'json'
 
-    constructor(
-        fileName: string, 
-        connection: DBConnection, 
-        table: TableOrView, 
-        filters: TableFilter[] | any[], 
-        outputOptions: OutputOptionsJson
-    ) {
-        super(fileName, connection, table, filters, outputOptions)
-    }
+  constructor(
+    fileName: string,
+    connection: DBConnection,
+    table: TableOrView,
+    filters: TableFilter[] | any[],
+    outputOptions: OutputOptionsJson
+  ) {
+    super(fileName, connection, table, filters, outputOptions)
+  }
 
-    async getHeader(firstRow: any) {
-        return '['
-    }
+  async getHeader(firstRow: any) {
+    return '['
+  }
 
-    async getFooter() {
-        return ']'
-    }
+  async getFooter() {
+    return ']'
+  }
 
-    async writeChunkToFile(data: any) {
-        for (const row of data) {
-            const spacing = this.outputOptions.prettyprint ? 2 : undefined
-            const content = indentString(JSON.stringify(row, null, spacing), 2)
-            await this.writeToFile(content + ',')
-        }
+  async writeChunkToFile(data: any) {
+    for (const row of data) {
+      const spacing = this.outputOptions.prettyprint ? 2 : undefined
+      const content = indentString(JSON.stringify(row, null, spacing), 2)
+      await this.writeToFile(content + ',')
     }
+  }
 }
