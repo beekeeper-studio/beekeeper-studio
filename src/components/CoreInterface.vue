@@ -21,6 +21,7 @@
   import Split from 'split.js'
   import Statusbar from './common/StatusBar'
   import ConnectionButton from './sidebar/core/ConnectionButton'
+  import AppEvent from '../common/AppEvent'
   export default {
     components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton },
     props: [ 'connection' ],
@@ -29,7 +30,6 @@
         split: null,
         sidebarShown: true,
         keymap: {
-          'ctrl+b': this.toggleSidebar,
         }
       }
     },
@@ -42,6 +42,7 @@
       }
     },
     mounted() {
+      this.$root.$on(AppEvent.toggleSidebar, this.toggleSidebar)
       this.$store.dispatch('updateHistory')
       this.$store.dispatch('updateFavorites')
 
@@ -59,6 +60,7 @@
 
     },
     beforeDestroy() {
+      this.$root.$off(AppEvent.toggleSidebar, this.toggleSidebar)
       if(this.split) {
         console.log("destroying split")
         this.split.destroy()
