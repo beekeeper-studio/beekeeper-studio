@@ -3,13 +3,16 @@ import { readFileSync } from 'fs'
 import _ from 'lodash'
 import mysql from 'mysql2';
 import { identify } from 'sql-query-identifier';
+import knexlib from 'knex'
 
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
-import { genericSelectTop } from './utils';
+import { buildInsertQueries, buildDeleteQueries, genericSelectTop } from './utils';
 import rawLog from 'electron-log'
 const log = rawLog.scope('mysql')
 const logger = () => log
+
+const knex = knexlib({ client: 'mysql2' })
 
 const mysqlErrors = {
   EMPTY_QUERY: 'ER_EMPTY_QUERY',
@@ -34,7 +37,7 @@ export default async function (server, database) {
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
     listViews: () => listViews(conn),
-    listMaterializedViews: () => [],
+    listMaterializedViews: () => Promise.resolve([]),
     listRoutines: () => listRoutines(conn),
     listTableColumns: (db, table) => listTableColumns(conn, db, table),
     listTableTriggers: (table) => listTableTriggers(conn, table),
@@ -44,7 +47,7 @@ export default async function (server, database) {
     getPrimaryKey: (db, table) => getPrimaryKey(conn, db, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
-    updateValues: (updates) => updateValues(conn, updates),
+    applyChanges: (changes) => applyChanges(conn, changes),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
@@ -293,7 +296,7 @@ export function query(conn, queryText) {
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            executeQuery(connClient, queryText),
+            executeQuery(connClient, queryText, true),
           ]);
 
           pid = null;
@@ -330,8 +333,48 @@ export function query(conn, queryText) {
   };
 }
 
-export async function updateValues(conn, updates) {
-  const updateCommands = updates.map(update => {
+export async function applyChanges(conn, changes) {
+  let results = []
+  
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    await driverExecuteQuery(cli, { query: 'START TRANSACTION'})
+    
+    try {
+      if (changes.inserts) {
+        await insertRows(cli, changes.inserts)
+      }
+
+      if (changes.updates) {
+        results = await updateValues(cli, changes.updates)
+      }
+  
+      if (changes.deletes) {
+        await deleteRows(cli, changes.deletes)
+      }
+  
+      await driverExecuteQuery(cli, { query: 'COMMIT'})
+    } catch (ex) {
+      logger().error("query exception: ", ex)
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
+      throw ex
+    }
+  })
+
+  return results
+}
+
+export async function insertRows(cli, inserts) {
+
+  for (const command of buildInsertQueries(knex, inserts)) {
+    await driverExecuteQuery(cli, { query: command })
+  }
+
+  return true
+}
+
+export async function updateValues(cli, updates) {
+  const commands = updates.map(update => {
     let value = update.value
     if (update.columnType && update.columnType === 'bit(1)') {
       value = _.toNumber(update.value)
@@ -345,45 +388,42 @@ export async function updateValues(conn, updates) {
     }
   })
 
-  const commands = [{ query: 'START TRANSACTION'}, ...updateCommands];
   const results = []
   // TODO: this should probably return the updated values
-  await runWithConnection(conn, async (connection) => {
-    const cli = { connection }
-    try {
-      for (let index = 0; index < commands.length; index++) {
-        const blob = commands[index];
-        await driverExecuteQuery(cli, blob)
-      }
+  for (let index = 0; index < commands.length; index++) {
+    const blob = commands[index];
+    await driverExecuteQuery(cli, blob)
+  }
 
-      const returnQueries = updates.map(update => {
-        return {
-          query: `select * from ${wrapIdentifier(update.table)} where ${wrapIdentifier(update.pkColumn)} = ?`,
-          params: [
-            update.primaryKey
-          ]
-        }
-      })
-
-      for (let index = 0; index < returnQueries.length; index++) {
-        const blob = returnQueries[index];
-        const r = await driverExecuteQuery(cli, blob)
-        if (r.data[0]) results.push(r.data[0])
-      }
-      await driverExecuteQuery(cli,{ query: 'COMMIT'})
-    } catch (ex) {
-      logger().error("query exception: ", ex)
-      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
-
-      throw ex
+  const returnQueries = updates.map(update => {
+    return {
+      query: `select * from ${wrapIdentifier(update.table)} where ${wrapIdentifier(update.pkColumn)} = ?`,
+      params: [
+        update.primaryKey
+      ]
     }
   })
+
+  for (let index = 0; index < returnQueries.length; index++) {
+    const blob = returnQueries[index];
+    const r = await driverExecuteQuery(cli, blob)
+    if (r.data[0]) results.push(r.data[0])
+  }
+
   return results
 }
 
+export async function deleteRows(cli, deletes) {
 
-export async function executeQuery(conn, queryText) {
-  const { fields, data } = await driverExecuteQuery(conn, { query: queryText });
+  for (const command of buildDeleteQueries(knex, deletes)) {
+    await driverExecuteQuery(cli, { query: command })
+  }
+
+  return true
+}
+
+export async function executeQuery(conn, queryText, rowsAsArray = false) {
+  const { fields, data } = await driverExecuteQuery(conn, { query: queryText, params: {}, rowsAsArray });
   if (!data) {
     return [];
   }
@@ -391,7 +431,7 @@ export async function executeQuery(conn, queryText) {
   const commands = identifyCommands(queryText).map((item) => item.type);
 
   if (!isMultipleQuery(fields)) {
-    return [parseRowQueryResult(data, fields, commands[0])];
+    return [parseRowQueryResult(data, fields, commands[0], rowsAsArray)];
   }
 
   return data.map((_, idx) => parseRowQueryResult(data[idx], fields[idx], commands[idx]));
@@ -536,20 +576,22 @@ function getRealError(conn, err) {
   return err;
 }
 
-
-function parseRowQueryResult(data, fields, command) {
-  // Fallback in case the identifier could not reconize the command
-  const isSelect = Array.isArray(data);
-  const niceFields = (fields || []).map((f) => {
-    return {
-      id: f.name,
-      ...f
-    }
+function parseFields(fields, rowsAsArray) {
+  return fields.map((field, idx) => {
+    return { id: rowsAsArray ? `c${idx}` : field.name, ...field }
   })
+}
+
+
+function parseRowQueryResult(data, rawFields, command, rowsAsArray = false) {
+  // Fallback in case the identifier could not reconize the command
+  const fields = parseFields(rawFields, rowsAsArray)
+  const fieldIds = fields.map(f => f.id)
+  const isSelect = Array.isArray(data);
   return {
     command: command || (isSelect && 'SELECT'),
-    rows: isSelect ? data : [],
-    fields: niceFields,
+    rows: isSelect ? data.map(r => rowsAsArray ? _.zipObject(fieldIds, r) : r) : [],
+    fields: fields,
     rowCount: isSelect ? (data || []).length : undefined,
     affectedRows: !isSelect ? data.affectedRows : undefined,
   };
@@ -574,7 +616,7 @@ function identifyCommands(queryText) {
 function driverExecuteQuery(conn, queryArgs) {
   logger().debug(`Running Query ${queryArgs.query}`)
   const runQuery = (connection) => new Promise((resolve, reject) => {
-    connection.query(queryArgs.query, queryArgs.params, (err, data, fields) => {
+    connection.query({ sql: queryArgs.query, values: queryArgs.params, rowsAsArray: queryArgs.rowsAsArray }, (err, data, fields) => {
       logger().debug(`Resolving Query ${queryArgs.query}`, queryArgs.params)
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});
       if (err) return reject(getRealError(connection, err));

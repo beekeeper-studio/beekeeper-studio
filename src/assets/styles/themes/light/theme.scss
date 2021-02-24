@@ -122,13 +122,34 @@ select {
 .CodeMirror-hints {
   background: $codemirror-hint-bg;
 }
+.cm-s-monokai {
+  span {
+    .cm-string {
+      color: darken($theme-primary, 25%);
+    }
+  }
+}
 
 // Statusbar
 .statusbar {
   color: $text;
   @each $key, $val in $color-defaults {
     &.#{$key} {
-      background-color: rgba(nth($val, 1), 0.45);
+      background-color: rgba(nth($val, 1), 0.7);
+    }
+  }
+  &.query-meta {
+    @each $key, $val in $color-defaults {
+      &.#{$key} {
+        background-color: rgba(nth($val, 1), 0.6);
+      }
+    }
+  }
+  &.editing, &.failure {
+    @each $key, $val in $color-defaults {
+      &.#{$key} {
+        background-color: rgba(nth($val, 1), 0.5);
+      }
     }
   }
 }

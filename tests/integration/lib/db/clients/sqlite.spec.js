@@ -1,5 +1,6 @@
 import { DBTestUtil } from '../../../../lib/db'
 import tmp from 'tmp'
+import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError } from './all'
 
 describe("Sqlite Tests", () => {
   let dbfile;
@@ -44,5 +45,21 @@ describe("Sqlite Tests", () => {
       const q = await util.connection.query(trigger)
       await q.execute()
     }).not.toThrowError()
+  })
+
+  it("Should insert good data", async () => {
+    await itShouldInsertGoodData(util)
+  })
+
+  it("Should not insert bad data", async() => {
+    await itShouldNotInsertBadData(util)
+  })
+
+  it("Should apply all types of changes", async() => {
+    await itShouldApplyAllTypesOfChanges(util)
+  })
+
+  it("Should not commit on change error", async() => {
+    await itShouldNotCommitOnChangeError(util)
   })
 })

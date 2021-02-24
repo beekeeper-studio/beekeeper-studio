@@ -15,8 +15,19 @@ jobs:
         os: [macos-latest, ubuntu-18.04, windows-latest, ubuntu-arm64]
 
     steps:
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v3
+        with:
+          gpg-private-key: ${{ secrets.gpg_key }}
+
       - name: Check out Git repository
         uses: actions/checkout@v1
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+      - run: "curl -sLO https://github.com/deb-s3/deb-s3/releases/download/0.11.2/deb-s3-0.11.2.gem"
+      - run: "gem install --no-ri --no-rdoc deb-s3-0.11.2.gem"
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v1
@@ -73,6 +84,28 @@ jobs:
           API_KEY_ID: ${{ secrets.apple_key_id }}
           API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
           BT_TOKEN: "${{secrets.bintray_apikey}}"
+
+      - name: Publish DEB to S3
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          deb-s3 upload dist_electron/*.deb \
+            --bucket=deb.beekeeperstudio.io \
+            --lock \
+            --sign=${{steps.import_gpg.outputs.keyid}} \
+            --preserve-versions
+        env:
+          AWS_ACCESS_KEY_ID: "${{secrets.aws_access_key_id}}"
+          AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
+      - name: Invalidate cloudfront cache
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          aws cloudfront create-invalidation \
+          --distribution "$DISTRIBUTION" \
+          --paths "/*"
+        env:
+          AWS_ACCESS_KEY_ID: "${{secrets.aws_access_key_id}}"
+          AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
+          DISTRIBUTION: ${{secrets.cloudfront_distribution}}
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
         run: |

@@ -2,6 +2,7 @@ import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
 import data_mutators from '../../../../../src/mixins/data_mutators';
+import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError } from './all'
 
 describe("MySQL Tests", () => {
 
@@ -121,10 +122,26 @@ describe("MySQL Tests", () => {
         ...basics
       }
     ]
-    const results = await util.connection.updateValues(values)
+    const results = await util.connection.applyChanges({ updates: values })
     expect(results.length).toBe(2)
     const fixed = data_mutators.methods.bitMutator(results[1].thirtytwo)
     expect(fixed).toBe("b'00000000000000000000010000000000'")
+  })
+
+  it("Should insert good data", async () => {
+    await itShouldInsertGoodData(util)
+  })
+
+  it("Should not insert bad data", async() => {
+    await itShouldNotInsertBadData(util)
+  })
+
+  it("Should apply all types of changes", async() => {
+    await itShouldApplyAllTypesOfChanges(util)
+  })
+
+  it("Should not commit on change error", async() => {
+    await itShouldNotCommitOnChangeError(util)
   })
 
 })

@@ -24,6 +24,9 @@ export interface TableColumn {
 
 export interface FilterOptions {
   schema: Nullable<string>
+  only?: string[]
+  ignore?: string[]
+  tables?: string[]
 }
 
 export interface DatabaseFilterOptions {
@@ -49,9 +52,32 @@ export interface TableFilter {
   value: string
 }
 
+export interface IDbInsertValue {
+  column: TableColumn[],
+  value: string
+}
+
+export interface IDbInsert {
+  table: string,
+  values: IDbInsertValue[],
+}
+
 export interface TableResult {
   result: any[],
+  fields: string[],
   totalRecords: number
+}
+
+export interface TableChanges {
+  inserts: TableInsert[],
+  updates: TableUpdate[],
+  deletes: TableDelete[]
+}
+
+export interface TableInsert {
+  table: string
+  row: any[]
+  data: any[]
 }
 
 export interface TableUpdate {
@@ -62,6 +88,13 @@ export interface TableUpdate {
   schema?: string
   columnType?: string,
   value: any
+}
+
+export interface TableDelete {
+  table: string,
+  pkColumn: string,
+  schema?: string,
+  primaryKey: string
 }
 
 export interface TableKey {
@@ -146,7 +179,7 @@ export interface DatabaseClient {
   query: (queryText: string) => void,
   executeQuery: (queryText: string) => void,
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
-  updateValues: (updates: TableUpdate[]) => Promise<TableUpdateResult[]>,
+  applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableCreateScript: (table: string, schema?: string) => void,
   getViewCreateScript: (view: string) => void,
@@ -233,7 +266,7 @@ export class DBConnection {
   executeQuery = executeQuery.bind(null, this.server, this.database)
   listDatabases = listDatabases.bind(null, this.server, this.database)
   selectTop = selectTop.bind(null, this.server, this.database)
-  updateValues = updateValues.bind(null, this.server, this.database)
+  applyChanges = applyChanges.bind(null, this.server, this.database)
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
   getTableCreateScript = getTableCreateScript.bind(null, this.server, this.database)
   getTableSelectScript = getTableSelectScript.bind(null, this.server, this.database)
@@ -318,8 +351,17 @@ function supportedFeatures(server: IDbConnectionServer, database: IDbConnectionD
   return database.connection?.supportedFeatures()
 }
 
-function selectTop(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[], schema: string) {
+function selectTop(
+  server: IDbConnectionServer,
+  database: IDbConnectionDatabase,
+  table: string,
+  offset: number,
+  limit: number,
+  orderBy: OrderBy[],
+  filters: TableFilter[],
+  schema: string): Promise<TableResult> {
   checkIsConnected(server, database)
+  if (!database.connection) throw "No database connection available, please reconnect"
   return database.connection?.selectTop(table, offset, limit, orderBy, filters, schema);
 }
 
@@ -348,17 +390,25 @@ function listRoutines(server: IDbConnectionServer, database: IDbConnectionDataba
   return database.connection?.listRoutines(filter);
 }
 
-async function listTableColumns(server: IDbConnectionServer, database: IDbConnectionDatabase, table?: string, schema?: string) {
+async function listTableColumns(
+  server: IDbConnectionServer,
+  database: IDbConnectionDatabase,
+  table?: string,
+  schema?: string): Promise<TableColumn[]> {
   checkIsConnected(server , database);
-  return await database.connection?.listTableColumns(database.database, table, schema) || [];
+  return await database.connection?.listTableColumns(database.database, table, schema) || Promise.resolve([]);
 }
 
-function listMaterializedViewColumns(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {
+function listMaterializedViewColumns(
+  server: IDbConnectionServer,
+  database: IDbConnectionDatabase,
+  table: string,
+  schema?: string): Promise<TableColumn[]> {
   checkIsConnected(server , database);
   if (database.connection?.listMaterializedViewColumns) {
-    return database.connection?.listMaterializedViewColumns(database.database, table, schema)
+    return database.connection?.listMaterializedViewColumns(database.database, table, schema) || Promise.resolve([])
   } else {
-    return []
+    return Promise.resolve([])
   }
 }
 
@@ -392,9 +442,9 @@ function query(server: IDbConnectionServer, database: IDbConnectionDatabase, que
   return database.connection?.query(queryText);
 }
 
-function updateValues(server: IDbConnectionServer, database: IDbConnectionDatabase, updates: TableUpdate[]) {
+function applyChanges(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: TableChanges) {
   checkIsConnected(server, database)
-  return database.connection?.updateValues(updates)
+  return database.connection?.applyChanges(changes)
 }
 
 function executeQuery(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string) {

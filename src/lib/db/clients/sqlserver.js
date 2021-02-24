@@ -7,7 +7,7 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _ from 'lodash';
 
-import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 import logRaw from 'electron-log'
 const log = logRaw.scope('sql-server')
 
@@ -18,6 +18,9 @@ const knex = knexlib({
 const mmsqlErrors = {
   CANCELED: 'ECANCEL',
 };
+
+// NOTE:
+// DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 
 
 export default async function (server, database) {
@@ -44,7 +47,7 @@ export default async function (server, database) {
     getTableReferences: (table) => getTableReferences(conn, table),
     getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema) => getPrimaryKey(conn, db, table, schema),
-    updateValues: (updates) => updateValues(conn, updates),
+    applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
@@ -75,7 +78,7 @@ function buildFilterString(filters) {
 
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
   let orderByString = "ORDER BY (SELECT NULL)"
-  console.log("filters", filters)
+  log.debug("filters", filters)
   const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
@@ -110,7 +113,8 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return {
     result: result.data.recordset,
-    totalRecords
+    totalRecords,
+    fields: Object.keys(result.data.recordset[0] || {})
   }
 }
 
@@ -136,6 +140,7 @@ export function query(conn, queryText) {
       return runWithConnection(conn, async (connection) => {
         const request = connection.request();
         request.multiple = true;
+        request.arrayRowMode = true
 
         try {
           const promiseQuery = request.query(queryText);
@@ -143,7 +148,6 @@ export function query(conn, queryText) {
           queryRequest = request;
 
           const data = await promiseQuery;
-
           const commands = identifyCommands(queryText).map((item) => item.type);
 
           // Executing only non select queries will not return results.
@@ -151,7 +155,7 @@ export function query(conn, queryText) {
           const rowsAffected = _.sum(data.rowsAffected)
           const results = !data.recordsets.length && rowsAffected > 0 ? [[]] : data.recordsets;
 
-          return results.map((_, idx) => parseRowQueryResult(results[idx], rowsAffected, commands[idx]));
+          return results.map((r, idx) => parseRowQueryResult(r, rowsAffected, commands[idx], data.columns[idx], true));
         } catch (err) {
           if (err.code === mmsqlErrors.CANCELED) {
             err.sqlectronError = 'CANCELED_BY_USER';
@@ -173,8 +177,8 @@ export function query(conn, queryText) {
 }
 
 
-export async function executeQuery(conn, queryText) {
-  const { data, rowsAffected } = await driverExecuteQuery(conn, { query: queryText, multiple: true });
+export async function executeQuery(conn, queryText, arrayRowMode = false) {
+  const { data, rowsAffected } = await driverExecuteQuery(conn, { query: queryText, multiple: true }, arrayRowMode);
 
   const commands = identifyCommands(queryText).map((item) => item.type);
 
@@ -182,7 +186,7 @@ export async function executeQuery(conn, queryText) {
   // So we "fake" there is at least one result.
   const results = !data.recordsets.length && rowsAffected > 0 ? [[]] : data.recordsets;
 
-  return results.map((_, idx) => parseRowQueryResult(results[idx], rowsAffected, commands[idx]));
+  return results.map((_, idx) => parseRowQueryResult(results[idx], rowsAffected, commands[idx], arrayRowMode));
 }
 
 
@@ -304,14 +308,14 @@ export async function listRoutines(conn, filter) {
 export async function listTableColumns(conn, database, table) {
   const clause = table ? `WHERE table_name = ${wrapValue(table)}` : ""
   const sql = `
-    SELECT table_schema, table_name, column_name,
+    SELECT table_schema, table_name, column_name, data_type,
       CASE
         WHEN character_maximum_length is not null AND data_type != 'text'
-          THEN CONCAT(data_type, '(', character_maximum_length, ')')
-        WHEN datetime_precision is not null THEN
-          CONCAT(data_type, '(', datetime_precision, ')')
-        ELSE data_type
-      END as data_type
+          THEN character_maximum_length
+        WHEN datetime_precision is not null THEN 
+          datetime_precision
+        ELSE null
+      END as length
     FROM INFORMATION_SCHEMA.COLUMNS
     ${clause}
     ORDER BY table_schema, table_name, ordinal_position
@@ -323,7 +327,7 @@ export async function listTableColumns(conn, database, table) {
     schemaName: row.table_schema,
     tableName: row.table_name,
     columnName: row.column_name,
-    dataType: row.data_type,
+    dataType: row.length ? `${row.data_type}(${row.length})` : row.data_type,
   }));
 }
 
@@ -446,24 +450,46 @@ export async function getPrimaryKey(conn, database, table, schema) {
   return data.recordset && data.recordset[0] && data.recordset.length === 1 ? data.recordset[0].COLUMN_NAME : null
 }
 
-export async function updateValues(conn, updates) {
+export async function applyChanges(conn, changes) {
+  let results = []
+  let sql = ['SET XACT_ABORT ON', 'BEGIN TRANSACTION']
 
-  const { updateQueries, selectQueries } = buildUpdateAndSelectQueries(knex, updates)
-  const sql = ['set xact_abort on', 'BEGIN TRANSACTION', ...updateQueries, 'COMMIT'].join(";")
-  const results = []
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
-    await driverExecuteQuery(cli, { query: sql })
 
-    for (let index = 0; index < selectQueries.length; index++) {
-      const element = selectQueries[index];
-      const r = await driverExecuteQuery(cli, element)
-      if (r.data[0]) results.push(r.data[0])
+    try {
+      if (changes.inserts) {
+        sql = sql.concat(buildInsertQueries(knex, changes.inserts))
+      }
+
+      if (changes.updates) {
+        sql = sql.concat(buildUpdateQueries(knex, changes.updates))
+      }
+  
+      if (changes.deletes) {
+        sql = sql.concat(buildDeleteQueries(knex, changes.deletes))
+      }
+  
+      sql.push('COMMIT')
+
+      await driverExecuteQuery(cli, { query: sql.join(';')})
+      
+      if (changes.updates) {
+        const selectQueries = buildSelectQueriesFromUpdates(knex, changes.updates)
+        for (let index = 0; index < selectQueries.length; index++) {
+          const element = selectQueries[index];
+          const r = await driverExecuteQuery(cli, element)
+          if (r.data[0]) results.push(r.data[0])
+        }
+      }
+    } catch (ex) {
+      log.error("query exception: ", ex)
+      throw ex
     }
   })
+
   return results
 }
-
 
 export async function getTableCreateScript(conn, table) {
   // Reference http://stackoverflow.com/a/317864
@@ -635,15 +661,28 @@ function configDatabase(server, database) {
   return config;
 }
 
+function parseFields(data, columns) {
+  if (columns) {
+    return columns.map((c, idx) => {
+      return {
+        id: `c${idx}`,
+        name: c.name
+      }
+    })
+  } else {
+    return Object.keys(data[0] || {}).map((name) => ({ name, id: name }))
+  }
+}
 
-function parseRowQueryResult(data, rowsAffected, command) {
+function parseRowQueryResult(data, rowsAffected, command, columns, arrayRowMode = false) {
   // Fallback in case the identifier could not reconize the command
   const isSelect = !!(data.length || rowsAffected === 0);
-
+  const fields = parseFields(data, columns)
+  const fieldIds = fields.map(f => f.id)
   return {
     command: command || (isSelect && 'SELECT'),
-    rows: data,
-    fields: Object.keys(data[0] || {}).map((name) => ({ name, id: name })),
+    rows: arrayRowMode ? data.map(r => _.zipObject(fieldIds, r)) : data,
+    fields: fields,
     rowCount: data.length,
     affectedRows: rowsAffected,
   };
@@ -658,10 +697,11 @@ function identifyCommands(queryText) {
   }
 }
 
-export async function driverExecuteQuery(conn, queryArgs) {
+export async function driverExecuteQuery(conn, queryArgs, arrayRowMode = false) {
   logger().debug('Running query', queryArgs)
   const runQuery = async (connection) => {
     const request = connection.request();
+    request.arrayRowMode = arrayRowMode
     const data = await request.query(queryArgs.query)
     const rowsAffected = _.sum(data.rowsAffected);
     return { request, data, rowsAffected };

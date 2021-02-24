@@ -1,6 +1,7 @@
 import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
+import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError } from './all'
 
 describe("MariaDB Tests", () => {
 
@@ -40,5 +41,21 @@ describe("MariaDB Tests", () => {
 
   it("Should pass standard tests", async () => {
     await util.testdb()
+  })
+
+  it("Should insert good data", async () => {
+    await itShouldInsertGoodData(util)
+  })
+
+  it("Should not insert bad data", async() => {
+    await itShouldNotInsertBadData(util)
+  })
+
+  it("Should apply all types of changes", async() => {
+    await itShouldApplyAllTypesOfChanges(util)
+  })
+
+  it("Should not commit on change error", async() => {
+    await itShouldNotCommitOnChangeError(util)
   })
 })

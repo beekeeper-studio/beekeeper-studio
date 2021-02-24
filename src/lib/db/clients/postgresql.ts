@@ -8,12 +8,13 @@ import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableUpdate, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig, NgQueryResult } from '../client'
-import { buildDatabseFilter, buildSchemaFilter, buildUpdateAndSelectQueries } from './utils';
+import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig, NgQueryResult } from '../client'
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors, Error as CustomError } from '../../errors';
 import globals from '../../../common/globals';
 
+const base64 = require('base64-url');
 
 interface HasPool {
   pool: Pool
@@ -61,6 +62,10 @@ pg.types.setTypeParser(1082, 'text', (val) => val); // date
 pg.types.setTypeParser(1114, 'text', (val) => val); // timestamp without timezone
 pg.types.setTypeParser(1184, 'text', (val) => val); // timestamp
 
+/**
+ * Convert BYTEA type encoded to hex with '\x' prefix to BASE64 URL (without '+' and '=').
+ */
+pg.types.setTypeParser(17, 'text', (val) => val ? base64.encode(val.substring(2), 'hex') : '');
 
 /**
  * Gets the version details for the connection.
@@ -167,7 +172,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     // TODO
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
-    updateValues: (updates) => updateValues(conn, updates),
+    applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
     executeQuery: (queryText, schema = defaultSchema) => executeQuery(conn, queryText),
     listDatabases: (filter?: DatabaseFilterOptions) => listDatabases(conn, filter),
@@ -297,7 +302,8 @@ async function selectTop(
   log.debug("selectTop:", result.rows)
   return {
     result: result.rows,
-    totalRecords: Number(totalRecords)
+    totalRecords: Number(totalRecords),
+    fields: result.fields.map(f => f.name)
   }
 }
 
@@ -323,7 +329,7 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
   `;
 
   const paramsSQL = `
-    select 
+    select
         r.routine_schema as routine_schema,
         r.specific_name as specific_name,
         p.parameter_name as parameter_name,
@@ -540,7 +546,7 @@ export async function getTableKeys(conn: Conn, database: string, table: string, 
 }
 
 export async function getPrimaryKey(conn: Conn, database: string, table: string, schema: string): Promise<string> {
-  
+
   const tablename = escapeString(schema ? `${wrapIdentifier(schema)}.${wrapIdentifier(table)}` : wrapIdentifier(table))
   const query = `
     SELECT a.attname as column_name, format_type(a.atttypid, a.atttypmod) AS data_type
@@ -555,34 +561,68 @@ export async function getPrimaryKey(conn: Conn, database: string, table: string,
   return data.rows && data.rows[0] && data.rows.length === 1 ? data.rows[0].column_name : null
 }
 
-export async function updateValues(conn: Conn, updates: TableUpdate[]): Promise<TableUpdateResult[]> {
-
-  // If a type starts with an underscore - it's an array
-  // so we need to turn the string representation back to an array
-  updates.forEach((update) => {
-    if (update.columnType?.startsWith('_')) {
-      update.value = JSON.parse(update.value)
-    }
-  })
-
-  const { updateQueries, selectQueries } = buildUpdateAndSelectQueries(knex, updates)
+export async function applyChanges(conn: Conn, changes: TableChanges): Promise<TableUpdateResult[]> {
   let results: TableUpdateResult[] = []
+
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
-    try {
-      await driverExecuteQuery(cli, { query: 'BEGIN' })
-      await driverExecuteQuery(cli, { query: updateQueries.join(";") })
-      const data = await driverExecuteSingle(cli, { query: selectQueries.join(";"), multiple: true })
-      results = [data.rows[0]]
+    await driverExecuteQuery(cli, { query: 'BEGIN' })
 
-      await driverExecuteQuery(cli, { query: 'COMMIT' })
+    try {
+      if (changes.inserts) {
+        await insertRows(cli, changes.inserts)
+      }
+
+      if (changes.updates) {
+        results = await updateValues(cli, changes.updates)
+      }
+    
+      if (changes.deletes) {
+        await deleteRows(cli, changes.deletes)
+      }
+
+      await driverExecuteQuery(cli, { query: 'COMMIT'})
     } catch (ex) {
-      log.error('update error: ', ex)
-      await driverExecuteQuery(cli, { query: 'ROLLBACK' })
+      log.error("query exception: ", ex)
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' });
       throw ex
     }
   })
+
   return results
+}
+
+async function insertRows(cli: any, inserts: TableInsert[]) {
+  await driverExecuteQuery(cli, { query: buildInsertQueries(knex, inserts).join(";") })
+
+  return true
+}
+
+async function updateValues(cli: any, updates: TableUpdate[]): Promise<TableUpdateResult[]> {
+
+  // If a type starts with an underscore - it's an array
+  // so we need to turn the string representation back to an array
+  // if a type is BYTEA, decodes BASE64 URL encoded to hex
+  updates.forEach((update) => {
+    if (update.columnType?.startsWith('_')) {
+      update.value = JSON.parse(update.value)
+    } else if (update.columnType === 'bytea' && update.value) {
+        update.value = '\\x' + base64.decode(update.value, 'hex')
+    }
+  })
+
+  let results: TableUpdateResult[] = []
+  await driverExecuteQuery(cli, { query: buildUpdateQueries(knex, updates).join(";") })
+  const data = await driverExecuteSingle(cli, { query: buildSelectQueriesFromUpdates(knex, updates).join(";"), multiple: true })
+  results = [data.rows[0]]
+
+  return results
+}
+
+async function deleteRows(cli: any, deletes: TableDelete[]) {
+  await driverExecuteQuery(cli, { query: buildDeleteQueries(knex, deletes).join(";") })
+
+  return true
 }
 
 export function query(conn: Conn, queryText: string, schema: string) {
@@ -898,7 +938,7 @@ function parseRowQueryResult(data: QueryResult, command: string, rowResults: boo
   const isSelect = data.command === 'SELECT';
   return {
     command: command || data.command,
-    rows: data.rows.map(r => rowResults ? _.zipObject(fieldIds, r) : r),
+    rows: rowResults ? data.rows.map(r => _.zipObject(fieldIds, r)) : data.rows,
     fields: fields,
     rowCount: isSelect ? (data.rowCount || data.rows.length) : undefined,
     affectedRows: !isSelect && !isNaN(data.rowCount) ? data.rowCount : undefined,
@@ -926,8 +966,6 @@ async function driverExecuteSingle(conn: Conn | HasConnection, queryArgs: Postgr
 }
 
 function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult[]> {
-
-
   function isQueryResult(x: any): x is QueryResult {
     return x.rows !== undefined
   }
@@ -951,7 +989,7 @@ function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQuery
     });
   };
 
-  
+
   if (isConnection(conn)) {
     return runQuery(conn.connection)
   } else {

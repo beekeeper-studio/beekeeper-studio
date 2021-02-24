@@ -1,7 +1,3 @@
-**Attention Existing MacOS, Windows, and AppImage users:**
-
-- Automatic update functionality was broken before version 1.7.5. Please update manually from the releases section on the right. From 1.7.5 the app will automatically update (like it was supposed to).
-
 # Beekeeper Studio
 
 Beekeeper Studio is a cross-platform SQL editor and database manager available for Linux, Mac, and Windows.
@@ -42,11 +38,19 @@ Beekeeper Studio supports connecting to the following databases:
 
 Download the latest release from the [releases page](https://github.com/beekeeper-studio/beekeeper-studio/releases), or from [our website](https://beekeeperstudio.io)
 
+## Documentation
+
+Check out [docs.beekeeperstudio.io](https://docs.beekeeperstudio.io) for user guides, FAQs, troubleshooting tips, and more.
+
 ## Contributing to Beekeeper Studio
 
 We love *any* community engagement. Even if you're complaining because you don't like something about the app!
 
 Because building an inclusive and welcoming community is important to us, please follow our code of conduct as you engage with the project.
+
+### Contribute without coding
+
+We have you covered, read our [guide to contributing in 10 minutes without coding](https://github.com/beekeeper-studio/beekeeper-studio/issues/287).
 
 ### Starting the Dev version of Beekeeper Studio
 

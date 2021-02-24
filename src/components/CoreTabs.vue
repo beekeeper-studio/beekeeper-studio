@@ -1,7 +1,8 @@
 <template>
   <div  class="core-tabs" v-hotkey="keymap">
     <div class="tabs-header">
-      <Draggable v-model="tabItems" tag="ul" class="nav-tabs nav" chosen-class="nav-item-wrap-chosen">
+      <!-- <div class="nav-tabs nav"> -->
+      <Draggable :options="dragOptions" v-model="tabItems" tag="ul" class="nav-tabs nav" chosen-class="nav-item-wrap-chosen">
         <core-tab-header
           v-for="tab in tabItems"
           :key="tab.id"
@@ -15,17 +16,22 @@
           @duplicate="duplicate"
           ></core-tab-header>
       </Draggable>
+      <!-- </div> -->
       <span class="actions">
         <a @click.prevent="createQuery(null)" class="btn-fab add-query"><i class=" material-icons">add_circle</i></a>
       </span>
     </div>
     <div class="tab-content">
+      <div class="layout-center expand">
+        <shortcut-hints></shortcut-hints>
+      </div>
       <div
         v-for="(tab, idx) in tabItems"
         class="tab-pane"
         :id="'tab-' + idx"
         :key="tab.id"
-        :class="{show: (activeTab === tab), active: (activeTab === tab)}"
+        :class="{active: (activeTab === tab)}"
+        v-show="activeTab === tab"
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
         <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
@@ -57,17 +63,21 @@
   import platformInfo from '../common/platform_info'
   import { mapGetters, mapState } from 'vuex'
   import Draggable from 'vuedraggable'
+  import ShortcutHints from './editor/ShortcutHints.vue'
 
   export default {
     props: [ 'connection' ],
-    components: { QueryEditor, CoreTabHeader, TableTable, Draggable, ExportModal, ExportNotification },
+    components: { QueryEditor, CoreTabHeader, TableTable, Draggable, ShortcutHints, ExportModal, ExportNotification },
     data() {
       return {
         tabItems: [],
         activeItem: 0,
         newTabId: 1,
         showExportModal: false,
-        tableExportOptions: null
+        tableExportOptions: null,
+        dragOptions: {
+          handle: '.nav-item'
+        }
       }
     },
     watch: {

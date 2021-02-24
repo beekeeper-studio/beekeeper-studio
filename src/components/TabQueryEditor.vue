@@ -42,8 +42,10 @@
       <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results</span></div></div>
       <div class="message" v-else-if="error"><div class="alert alert-danger"><i class="material-icons">warning</i><span>{{error}}</span></div></div>
       <div class="message" v-else-if="info"><div class="alert alert-info"><i class="material-icons">warning</i><span>{{info}}</span></div></div>
-      <div v-else><!-- No Data --></div>
-      <span class="expand" v-if="!result"></span>
+      <div class="layout-center expand" v-else>
+        <shortcut-hints></shortcut-hints>
+      </div>
+      <!-- <span class="expand" v-if="!result"></span> -->
       <!-- STATUS BAR -->
       <query-editor-status-bar
         v-model="selectedResult"
@@ -115,6 +117,7 @@
   import { splitQueries, extractParams } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
+  import ShortcutHints from './editor/ShortcutHints.vue'
 
   import sqlFormatter from 'sql-formatter';
 
@@ -124,7 +127,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, QueryEditorStatusBar},
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar},
     props: ['tab', 'active'],
     data() {
       return {
@@ -431,7 +434,7 @@
               result.truncatedRowCount = this.$config.maxResults
             }
           })
-          this.results = results
+          this.results = Object.freeze(results);
 
           this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
           log.debug('identification', identification)
@@ -442,6 +445,7 @@
             this.$store.dispatch('updateTables')
           }
         } catch (ex) {
+          log.error(ex)
           if(this.running) {
             this.error = ex
           }
