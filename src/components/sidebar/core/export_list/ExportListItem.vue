@@ -28,9 +28,9 @@
       <div class="list-title flex-col">
         <span
           class="item-text title truncate expand"
-          :title="exporter.fileName"
+          :title="tooltip"
         >
-          Select * From {{ exporter.table.name }}
+          {{ exporter.getFileName() }}
         </span>
         <span
           v-if="exporter.status === Export.Status.Exporting"
@@ -46,7 +46,7 @@
             <span
               >{{ exporter.countExported }} / {{ exporter.countTotal }}</span
             >
-            <span>{{ $options.filters.prettyBytes(exporter.fileSize) }}</span>
+            <span>{{ fileSizeReadable }}</span>
           </div>
         </span>
         <span
@@ -60,7 +60,7 @@
         <span v-else class="database subtitle">
           <div class="flex flex-between progress-info">
             <span>{{ exporter.countExported }} records</span>
-            <span>{{ $options.filters.prettyBytes(exporter.fileSize) }}</span>
+            <span>{{ fileSizeReadable }}</span>
           </div>
         </span>
       </div>
@@ -125,6 +125,9 @@ export default {
         this.exporter.status === Export.Status.Error
       );
     },
+    tooltip() {
+      return `Table: ${this.exporter.table.name}\nFilters: ${this.exporter.getFilterString()}\nPath: ${this.exporter.filePath}`
+    }
   },
   methods: {
     ...mapMutations({
@@ -144,7 +147,7 @@ export default {
             type: "success",
             text:
               "Data successfully exported to: <br /><br /><code>" +
-              this.exporter.fileName +
+              this.exporter.getFileName() +
               "</code>",
             layout: "bottomRight",
             timeout: 3000,

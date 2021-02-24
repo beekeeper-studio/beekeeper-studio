@@ -39,9 +39,7 @@ export default {
                     <div>${this.exporter.countExported} / ${
         this.exporter.countTotal
       } rows</div>
-                    <div>${this.$options.filters.prettyBytes(
-                      this.exporter.fileSize
-                    )}</div>
+                    <div>${this.fileSizeReadable}</div>
                 </div>
                 <x-progressbar class="progress-bar" value="${
                   this.progressPercent

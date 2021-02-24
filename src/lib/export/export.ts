@@ -1,4 +1,5 @@
 import fs from 'fs'
+import path from 'path'
 import crypto from 'crypto'
 import remote from 'electron'
 import { DBConnection, TableOrView, TableFilter, TableResult } from '@/lib/db/client'
@@ -10,7 +11,7 @@ export abstract class Export {
   countExported: number = 0
   countTotal: number = 0
   error: Error | null = null
-  fileName: string
+  filePath: string
   fileSize: number = 0
   filters: TableFilter[] | any[]
   lastChunkTime: number = 0
@@ -25,13 +26,13 @@ export abstract class Export {
   abstract formatChunk(data: any): string[]
 
   constructor(
-    fileName: string,
+    filePath: string,
     connection: DBConnection,
     table: TableOrView,
     filters: TableFilter[] | any[],
     outputOptions: any
   ) {
-    this.fileName = fileName
+    this.filePath = filePath
     this.connection = connection
     this.table = table
     this.filters = filters
@@ -44,7 +45,7 @@ export abstract class Export {
 
     md5sum.update(Date.now().toString(), 'utf8')
     md5sum.update(this.table.name)
-    md5sum.update(this.fileName)
+    md5sum.update(this.filePath)
 
     return md5sum.digest('hex')
   }
@@ -71,11 +72,11 @@ export abstract class Export {
   }
 
   async writeToFile(content: string) {
-    return await fs.promises.appendFile(this.fileName, content + "\n")
+    return await fs.promises.appendFile(this.filePath, content + "\n")
   }
 
   async deleteFile() {
-    return await fs.promises.unlink(this.fileName)
+    return await fs.promises.unlink(this.filePath)
   }
 
   async exportToFile(): Promise<any> {
@@ -87,7 +88,7 @@ export abstract class Export {
       this.countExported = 0
       this.status = Export.Status.Exporting
 
-      await fs.promises.open(this.fileName, 'w+')
+      await fs.promises.open(this.filePath, 'w+')
 
       if (header) {
         await this.writeToFile(header)
@@ -107,7 +108,7 @@ export abstract class Export {
 
         this.countTotal = chunk.totalRecords
         this.countExported += chunk.result.length
-        const stats = await fs.promises.stat(this.fileName)
+        const stats = await fs.promises.stat(this.filePath)
         this.fileSize = stats.size
         this.calculateTimeLeft()
       } while (this.countExported < this.countTotal && this.status === Export.Status.Exporting)
@@ -154,7 +155,19 @@ export abstract class Export {
   }
 
   openFile(): void {
-    remote.shell.openPath(this.fileName)
+    remote.shell.openPath(this.filePath)
+  }
+
+  getFileName(): string {
+    return path.basename(this.filePath)
+  }
+
+  getFilterString(): string {
+    if (typeof this.filters === 'object') {
+      return JSON.stringify(this.filters)
+    }
+
+    return this.filters
   }
 }
 

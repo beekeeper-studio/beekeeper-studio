@@ -10,13 +10,13 @@ export default class CsvExporter extends Export {
   readonly format: string = 'csv'
 
   constructor(
-    fileName: string,
+    filePath: string,
     connection: DBConnection,
     table: TableOrView,
     filters: TableFilter[] | any[],
     outputOptions: OutputOptionsCsv,
   ) {
-    super(fileName, connection, table, filters, outputOptions)
+    super(filePath, connection, table, filters, outputOptions)
   }
 
   async getHeader(firstRow: any) {

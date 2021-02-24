@@ -118,7 +118,6 @@ export default {
           exporter: SqlExporter,
         },
       ],
-      fileName: null,
       options: {},
       Export: Export,
       error: null,
@@ -153,17 +152,17 @@ export default {
     async chooseFile() {
       this.error = null;
 
-      this.fileName = remote.dialog.showSaveDialogSync(null, {
+      const filePath = remote.dialog.showSaveDialogSync(null, {
         defaultPath: [this.table.name, this.selectedExportFormat.key].join("."),
       });
 
-      if (this.fileName === undefined) {
+      if (filePath === undefined) {
         return;
       }
 
       try {
         const exporter = new this.selectedExportFormat.exporter(
-          this.fileName,
+          filePath,
           this.connection,
           this.table,
           this.filters,

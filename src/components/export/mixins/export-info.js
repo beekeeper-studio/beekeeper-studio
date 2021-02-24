@@ -1,5 +1,8 @@
 export default {
   computed: {
+    fileSizeReadable() {
+      return this.$options.filters.prettyBytes(this.exporter.fileSize)
+    },
     progressPercent() {
       if (!this.exporter) {
         return 0

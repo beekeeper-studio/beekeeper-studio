@@ -19,13 +19,13 @@ export default class SqlExporter extends Export {
   knex: any = null
 
   constructor(
-    fileName: string,
+    filePath: string,
     connection: DBConnection,
     table: TableOrView,
     filters: TableFilter[] | any[],
     outputOptions: OutputOptionsSql
   ) {
-    super(fileName, connection, table, filters, outputOptions)
+    super(filePath, connection, table, filters, outputOptions)
 
     if (!this.connection.connectionType || !this.knexTypes[this.connection.connectionType]) {
       throw new Error("SQL export not supported on connectiont type " + this.connection.connectionType)
