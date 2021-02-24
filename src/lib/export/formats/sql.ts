@@ -1,4 +1,4 @@
-import { Export, ExportOptions } from "@/lib/export/export";
+import { Export, ExportOptions } from "@/lib/export";
 import { DBConnection, TableOrView, TableFilter } from '@/lib/db/client'
 import knexlib from 'knex'
 
@@ -6,7 +6,7 @@ interface OutputOptionsSql {
   createTable: boolean,
   schema: boolean
 }
-export default class SqlExporter extends Export {
+export class SqlExporter extends Export {
   readonly format: string = 'sql'
   readonly knexTypes: any = {
     "cockroachdb": "pg",
@@ -42,7 +42,7 @@ export default class SqlExporter extends Export {
     }
   }
 
-  async getFooter() { }
+  async getFooter() {}
 
   formatChunk(data: any): string[] {
     const formattedChunk = []

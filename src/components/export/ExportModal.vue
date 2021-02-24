@@ -97,19 +97,13 @@
   </div>
 </template>
 <script>
-import _ from "lodash";
-import { remote } from "electron";
-import { mapMutations } from "vuex";
-import CsvExporter from "@/lib/export/formats/csv";
-import JsonExporter from "@/lib/export/formats/json";
-import SqlExporter from "@/lib/export/formats/sql";
-import ExportFormCSV from "./forms/ExportFormCSV";
-import ExportFormJSON from "./forms/ExportFormJSON";
-import ExportFormSQL from "./forms/ExportFormSQL";
-import { Export } from "@/lib/export/export";
+import _ from "lodash"
+import { remote } from "electron"
+import { mapMutations } from "vuex"
+import { Export, CsvExporter, JsonExporter, SqlExporter } from "@/lib/export"
+import { ExportFormCSV, ExportFormJSON, ExportFormSQL } from "./forms"
 
 export default {
-  components: { ExportFormCSV, ExportFormSQL },
   props: {
     connection: {
       required: true,
@@ -197,11 +191,10 @@ export default {
           this.outputOptions
         );
 
-        this.$emit("close");
-        this.$emit("exportCreated", exporter);
         this.addExport(exporter);
-
         exporter.exportToFile();
+
+        this.$emit("close");
       } catch (error) {
         this.error = error;
       }

@@ -31,19 +31,13 @@ export default {
     notificationText() {
       return `
             <div class="export-progress-notification">
-                <div class="title">Exporting from <span class="text-primary">${
-                  this.exporter.table.name
-                }</span></div>
+                <div class="title">Exporting from <span class="text-primary">${this.exporter.table.name}</span></div>
                 <div class="flex flex-between progress-info">
                     <div>${this.timeLeftReadable}</div>
-                    <div>${this.exporter.countExported} / ${
-        this.exporter.countTotal
-      } rows</div>
+                    <div>${this.exporter.countExported} / ${this.exporter.countTotal} rows</div>
                     <div>${this.fileSizeReadable}</div>
                 </div>
-                <x-progressbar class="progress-bar" value="${
-                  this.progressPercent
-                }" max="100"></x-progressbar>
+                <x-progressbar class="progress-bar" value="${this.progressPercent}" max="100"></x-progressbar>
             </div>
             `;
     },
@@ -70,6 +64,7 @@ export default {
   },
   mounted() {
     this.notification.show();
+    this.notification.setText(this.notificationText);
   },
   beforeDestroy() {
     this.notification.close();

@@ -102,9 +102,9 @@
 
 <script>
 import Noty from "noty";
-import { Export } from "@/lib/export/export";
-import ExportInfo from "@/components/export/mixins/export-info";
 import { mapMutations } from "vuex";
+import { Export } from "@/lib/export";
+import ExportInfo from "@/components/export/mixins/export-info";
 
 export default {
   mixins: [ExportInfo],

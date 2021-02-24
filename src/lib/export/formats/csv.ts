@@ -1,4 +1,4 @@
-import { Export, ExportOptions } from "@/lib/export/export";
+import { Export, ExportOptions } from "@/lib/export";
 import { DBConnection, TableOrView, TableFilter } from '@/lib/db/client'
 
 interface OutputOptionsCsv {
@@ -6,7 +6,7 @@ interface OutputOptionsCsv {
   delimiter: string
 }
 
-export default class CsvExporter extends Export {
+export class CsvExporter extends Export {
   readonly format: string = 'csv'
 
   constructor(
@@ -26,7 +26,7 @@ export default class CsvExporter extends Export {
     }
   }
 
-  async getFooter() { }
+  async getFooter() {}
 
   formatChunk(data: any): string[] {
     const formattedChunk = []

@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { Module } from 'vuex'
-import { Export } from '@/lib/export/export'
+import { Export } from '@/lib/export'
 
 
 interface State {

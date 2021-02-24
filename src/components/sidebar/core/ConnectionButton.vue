@@ -83,7 +83,6 @@ export default {
 
     },
     disconnect(force) {
-
       if (this.hasRunningExports && !force) {
         this.$modal.show('running-exports-modal')
       } else {
