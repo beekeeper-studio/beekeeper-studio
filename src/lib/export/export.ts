@@ -87,58 +87,70 @@ export abstract class Export {
     return await fs.promises.unlink(this.filePath)
   }
 
-  async exportToFile(): Promise<any> {
-    try {
-      const firstRow = await this.getFirstRow()
-      const header = await this.getHeader(firstRow)
-      const footer = await this.getFooter()
+  async initExport(): Promise<void> {
+    this.status = Export.Status.Exporting
+    this.countExported = 0
+    
+    const firstRow = await this.getFirstRow()
+    const header = await this.getHeader(firstRow)
+    
+    await fs.promises.open(this.filePath, 'w+')
 
-      this.countExported = 0
-      this.status = Export.Status.Exporting
+    if (header) {
+      await this.writeToFile(header)
+    }
+  }
 
-      await fs.promises.open(this.filePath, 'w+')
+  async exportData(): Promise<void> {
+      const chunk = await this.getChunk(this.countExported, this.options.chunkSize)
 
-      if (header) {
-        await this.writeToFile(header)
+      if (!chunk) {
+        this.status = Export.Status.Aborted
+        return
       }
 
-      do {
-        const chunk = await this.getChunk(this.countExported, this.options.chunkSize)
+      for (const formattedRow of this.formatChunk(chunk.result)) {
+        await this.writeToFile(formattedRow)
+      }
 
-        if (!chunk) {
-          this.status = Export.Status.Aborted
-          continue
-        }
+      this.countTotal = chunk.totalRecords
+      this.countExported += chunk.result.length
+      const stats = await fs.promises.stat(this.filePath)
+      this.fileSize = stats.size
+      this.calculateTimeLeft()
 
-        for (const formattedRow of this.formatChunk(chunk.result)) {
-          await this.writeToFile(formattedRow)
-        }
+      if (this.countExported < this.countTotal && this.status === Export.Status.Exporting) {
+        await this.exportData()
+      }
+  }
 
-        this.countTotal = chunk.totalRecords
-        this.countExported += chunk.result.length
-        const stats = await fs.promises.stat(this.filePath)
-        this.fileSize = stats.size
-        this.calculateTimeLeft()
-      } while (this.countExported < this.countTotal && this.status === Export.Status.Exporting)
+  async finalizeExport(): Promise<void> {
+    const footer = await this.getFooter()
+
+    if (footer) {
+      await this.writeToFile(footer)
+    }
+
+    this.status = Export.Status.Completed
+  }
+
+  async exportToFile(): Promise<void> {
+    try {
+      await this.initExport()
+      await this.exportData()
 
       if (this.status === Export.Status.Aborted) {
         if (this.options.deleteOnAbort) {
           await this.deleteFile()
         }
-        return Promise.reject()
+        return
       }
 
-      if (footer) {
-        await this.writeToFile(footer)
-      }
-
-      this.status = Export.Status.Completed
-
-      return Promise.resolve()
+      await this.finalizeExport()
     } catch (error) {
       this.status = Export.Status.Error
       this.error = error
-      
+
       if (this.options.deleteOnAbort) {
         await this.deleteFile()
       }
