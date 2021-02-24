@@ -14,7 +14,7 @@ jest.mock('@/lib/db/clients', () => {
       ]
 
       return {
-        selectTop: (table, offset, limit, orderBy, filters, schema) => {
+        selectTop: (table, offset, limit) => {
           return {
             result: fakeData.slice(offset, offset + limit),
             totalRecords: fakeData.length
@@ -82,13 +82,13 @@ describe('Export Class Unit Test', () => {
   it('should delete the export file', async () => {
     jest.spyOn(fs.promises, 'unlink').mockImplementation()
     dummyExport.deleteFile()
-    expect(fs.promises.unlink).toHaveBeenCalledWith(dummyExport.fileName)
+    expect(fs.promises.unlink).toHaveBeenCalledWith(dummyExport.filePath)
   })
 
   it('should write string line to file', async () => {
     jest.spyOn(fs.promises, 'appendFile').mockImplementation()
     dummyExport.writeToFile('test')
-    expect(fs.promises.appendFile).toHaveBeenCalledWith(dummyExport.fileName, 'test\n')
+    expect(fs.promises.appendFile).toHaveBeenCalledWith(dummyExport.filePath, 'test\n')
     expect(fs.promises.appendFile).toHaveBeenCalledTimes(1)
   })
 
@@ -96,7 +96,7 @@ describe('Export Class Unit Test', () => {
     dummyExport.chunkSize = 1
     dummyExport.getHeader = () => null
     dummyExport.getFooter = () => null
-    dummyExport.formatChunk = (chunk) => ['a', 'b', 'c']
+    dummyExport.formatChunk = () => ['a', 'b', 'c']
 
     jest.spyOn(fs.promises, 'open').mockImplementation()
     jest.spyOn(fs.promises, 'appendFile').mockImplementation()
