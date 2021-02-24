@@ -154,7 +154,7 @@ export abstract class Export {
   }
 
   openFile(): void {
-    remote.shell.openItem(this.fileName)
+    remote.shell.openPath(this.fileName)
   }
 }
 
