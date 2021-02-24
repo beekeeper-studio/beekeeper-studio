@@ -4,9 +4,13 @@ import crypto from 'crypto'
 import remote from 'electron'
 import { DBConnection, TableOrView, TableFilter, TableResult } from '@/lib/db/client'
 
+export interface ExportOptions {
+  chunkSize: number,
+  deleteOnAbort: boolean
+}
+
 export abstract class Export {
   id: string
-  chunkSize: number = 500
   connection: DBConnection
   countExported: number = 0
   countTotal: number = 0
@@ -15,6 +19,7 @@ export abstract class Export {
   fileSize: number = 0
   filters: TableFilter[] | any[]
   lastChunkTime: number = 0
+  options: ExportOptions
   outputOptions: any
   showNotification: boolean = true
   status: Export.Status = Export.Status.Idle
@@ -31,12 +36,14 @@ export abstract class Export {
     connection: DBConnection,
     table: TableOrView,
     filters: TableFilter[] | any[],
+    options: ExportOptions,
     outputOptions: any
   ) {
     this.filePath = filePath
     this.connection = connection
     this.table = table
     this.filters = filters
+    this.options = options
     this.outputOptions = outputOptions
     this.id = this.generateId()
   }
@@ -96,7 +103,7 @@ export abstract class Export {
       }
 
       do {
-        const chunk = await this.getChunk(this.countExported, this.chunkSize)
+        const chunk = await this.getChunk(this.countExported, this.options.chunkSize)
 
         if (!chunk) {
           this.status = Export.Status.Aborted
@@ -115,7 +122,9 @@ export abstract class Export {
       } while (this.countExported < this.countTotal && this.status === Export.Status.Exporting)
 
       if (this.status === Export.Status.Aborted) {
-        await this.deleteFile()
+        if (this.options.deleteOnAbort) {
+          await this.deleteFile()
+        }
         return Promise.reject()
       }
 
@@ -129,6 +138,10 @@ export abstract class Export {
     } catch (error) {
       this.status = Export.Status.Error
       this.error = error
+      
+      if (this.options.deleteOnAbort) {
+        await this.deleteFile()
+      }
     }
   }
 

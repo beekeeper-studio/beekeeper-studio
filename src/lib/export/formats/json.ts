@@ -1,4 +1,4 @@
-import { Export } from "@/lib/export/export";
+import { Export, ExportOptions } from "@/lib/export/export";
 import { DBConnection, TableOrView, TableFilter } from '@/lib/db/client'
 import indentString from 'indent-string'
 
@@ -13,9 +13,10 @@ export default class JsonExporter extends Export {
     connection: DBConnection,
     table: TableOrView,
     filters: TableFilter[] | any[],
+    options: ExportOptions,
     outputOptions: OutputOptionsJson
   ) {
-    super(filePath, connection, table, filters, outputOptions)
+    super(filePath, connection, table, filters, options, outputOptions)
   }
 
   async getHeader(firstRow: any) {

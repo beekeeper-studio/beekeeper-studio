@@ -30,7 +30,8 @@ describe('Export Class Unit Test', () => {
 
   beforeAll(() => {
     const dummyConnection = new DBConnection()
-    dummyExport = new DummyExport('fakeFile', dummyConnection, { schema: '', name: 'table' }, [], {})
+    const options = { chunkSize: 1, deleteOnAbort: true }
+    dummyExport = new DummyExport('fakeFile', dummyConnection, { schema: '', name: 'table' }, [], options, {})
   })
 
   afterEach(() => {
@@ -93,7 +94,6 @@ describe('Export Class Unit Test', () => {
   })
 
   it('should try to write all chunks to file', async () => {
-    dummyExport.chunkSize = 1
     dummyExport.getHeader = () => null
     dummyExport.getFooter = () => null
     dummyExport.formatChunk = () => ['a', 'b', 'c']

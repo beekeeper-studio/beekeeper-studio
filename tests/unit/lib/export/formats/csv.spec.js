@@ -9,13 +9,14 @@ jest.mock('@/lib/db/clients', () => {
 
 describe('CSV Export Class Unit Test', () => {
   const fakeData = { id: 1, firstName: 'John', lastName: 'Doe' }
+  const options = { chunkSize: 1, deleteOnAbort: true }
   const outputOptions = { header: true, delimiter: ';' }
   let dummyExport
 
   beforeAll(() => {
     const dummyConnection = new DBConnection()
 
-    dummyExport = new CsvExporter('fakeFile', dummyConnection, { schema: '', name: 'table' }, [], outputOptions)
+    dummyExport = new CsvExporter('fakeFile', dummyConnection, { schema: '', name: 'table' }, [], options, outputOptions)
   })
 
   afterEach(() => {

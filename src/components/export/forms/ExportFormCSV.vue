@@ -1,31 +1,27 @@
 <template>
   <div>
     <div class="form-group">
-      <div class="form-group row">
-        <label>Delimiter</label>
-        <input
-          v-model="options.delimiter"
-          type="text"
-          class="form-control"
-          autofocus
-          ref="paramInput"
-          value=";"
-        />
-      </div>
+      <label>Delimiter</label>
+      <input
+        v-model="options.delimiter"
+        type="text"
+        class="form-control"
+        autofocus
+        ref="paramInput"
+        value=";"
+      />
     </div>
     <div class="form-group">
-      <div class="form-group row">
-        <label for="headerRow" class="checkbox-group">
-          <input
-            v-model="options.header"
-            id="headerRow"
-            type="checkbox"
-            name="headerRow"
-            class="form-control"
-          />
-          <span>Include header row</span>
-        </label>
-      </div>
+      <label for="headerRow" class="checkbox-group">
+        <input
+          v-model="options.header"
+          id="headerRow"
+          type="checkbox"
+          name="headerRow"
+          class="form-control"
+        />
+        <span>Include header row</span>
+      </label>
     </div>
   </div>
 </template>

@@ -16,13 +16,14 @@ jest.mock('@/lib/db/clients', () => {
 
 describe('SQL Export Class Unit Test', () => {
   const fakeData = { id: 1, firstName: 'John', lastName: 'Doe' }
+  const options = { chunkSize: 1, deleteOnAbort: true }
   const outputOptions = { createTable: true, schema: true }
   let dummyExport
 
   beforeAll(() => {
     const dummyConnection = new DBConnection()
 
-    dummyExport = new SqlExporter('fakeFile', dummyConnection, { schema: 'schema', name: 'table' }, [], outputOptions)
+    dummyExport = new SqlExporter('fakeFile', dummyConnection, { schema: 'schema', name: 'table' }, [], options, outputOptions)
   })
 
   afterEach(() => {

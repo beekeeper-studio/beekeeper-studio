@@ -1,4 +1,4 @@
-import { Export } from "@/lib/export/export";
+import { Export, ExportOptions } from "@/lib/export/export";
 import { DBConnection, TableOrView, TableFilter } from '@/lib/db/client'
 import knexlib from 'knex'
 
@@ -23,9 +23,10 @@ export default class SqlExporter extends Export {
     connection: DBConnection,
     table: TableOrView,
     filters: TableFilter[] | any[],
+    options: ExportOptions,
     outputOptions: OutputOptionsSql
   ) {
-    super(filePath, connection, table, filters, outputOptions)
+    super(filePath, connection, table, filters, options, outputOptions)
 
     if (!this.connection.connectionType || !this.knexTypes[this.connection.connectionType]) {
       throw new Error("SQL export not supported on connectiont type " + this.connection.connectionType)

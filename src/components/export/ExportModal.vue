@@ -46,8 +46,34 @@
             </div>
             <component
               v-bind:is="selectedExportFormat.component"
-              v-model="options"
+              v-model="outputOptions"
             ></component>
+            <div class="modal-form export-form export-advanced-options">
+              <div class="dialog-c-title">Advanced Options</div>
+              <div class="form-group row">
+                <label>Chunk size</label>
+                  <input
+                    v-model="options.chunkSize"
+                    type="number"
+                    class="form-control"
+                    ref="paramInput"
+                    min="10"
+                    step="10"
+                  />
+              </div>
+              <div class="form-group row">
+                <label for="deleteOnAbort" class="checkbox-group">
+                  <input
+                    v-model="options.deleteOnAbort"
+                    id="deleteOnAbort"
+                    type="checkbox"
+                    name="deleteOnAbort"
+                    class="form-control"
+                  />
+                  <span>Delete file on abort/error</span>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
         <div class="vue-dialog-buttons">
@@ -118,7 +144,8 @@ export default {
           exporter: SqlExporter,
         },
       ],
-      options: {},
+      options: { chunkSize: 500, deleteOnAbort: false },
+      outputOptions: {},
       Export: Export,
       error: null,
     };
@@ -166,7 +193,8 @@ export default {
           this.connection,
           this.table,
           this.filters,
-          this.options
+          this.options,
+          this.outputOptions
         );
 
         this.$emit("close");
