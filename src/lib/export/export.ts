@@ -19,6 +19,7 @@ export abstract class Export {
   showNotification: boolean = true
   status: Export.Status = Export.Status.Idle
   table: TableOrView
+  timeElapsed: number = 0
   timeLeft: number = 0
 
   abstract getHeader(firstRow: any): Promise<string | void>
@@ -133,10 +134,10 @@ export abstract class Export {
 
   calculateTimeLeft(): void {
     if (this.lastChunkTime) {
-      const lastChunkDuration = Date.now() - this.lastChunkTime
-      const chunksLeft = Math.round((this.countTotal - this.countExported) / this.chunkSize)
-
-      this.timeLeft = chunksLeft * lastChunkDuration
+      this.timeElapsed += (Date.now() - this.lastChunkTime)
+      const recordsLeft = this.countTotal - this.countExported
+      const timePerRecord = this.timeElapsed / this.countExported
+      this.timeLeft = Math.round(timePerRecord * recordsLeft)
     }
 
     this.lastChunkTime = Date.now()
