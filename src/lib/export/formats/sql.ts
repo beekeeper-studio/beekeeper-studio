@@ -44,7 +44,7 @@ export default class SqlExporter extends Export {
   async getFooter() { }
 
   formatChunk(data: any): string[] {
-    let formattedChunk = []
+    const formattedChunk = []
 
     for (const row of data) {
       let knex = this.knex(this.table.name)

@@ -28,7 +28,7 @@ export default class CsvExporter extends Export {
   async getFooter() { }
 
   formatChunk(data: any): string[] {
-    let formattedChunk = []
+    const formattedChunk = []
 
     for (const row of data) {
       formattedChunk.push(Object.values(row).join(this.outputOptions.delimiter))
