@@ -39,7 +39,8 @@ export default {
       let cellValue = cell.getValue().toString();
       cellValue = cellValue.replace(/\n/g, ' ↩ ');
       cellValue = sanitizeHtml(cellValue);
-      return cellValue;
+      const result = `<pre>${cellValue}</pre>`
+      return result;
     },
 
     resolveDataMutator(dataType) {
