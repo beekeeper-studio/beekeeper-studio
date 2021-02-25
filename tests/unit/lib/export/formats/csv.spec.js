@@ -1,5 +1,5 @@
 import { DBConnection } from '@/lib/db/clients'
-import CsvExporter from '@/lib/export/formats/csv' 
+import { CsvExporter } from '@/lib/export/formats/csv' 
 
 jest.mock('@/lib/db/clients', () => {
   return {

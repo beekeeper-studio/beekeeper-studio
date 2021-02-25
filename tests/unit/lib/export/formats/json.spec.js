@@ -1,5 +1,5 @@
 import { DBConnection } from '@/lib/db/clients'
-import JsonExporter from '@/lib/export/formats/json'
+import { JsonExporter } from '@/lib/export/formats/json'
 
 jest.mock('@/lib/db/clients', () => {
   return {

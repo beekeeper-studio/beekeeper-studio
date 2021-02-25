@@ -1,5 +1,5 @@
 import { DBConnection } from '@/lib/db/clients'
-import SqlExporter from '@/lib/export/formats/sql'
+import { SqlExporter } from '@/lib/export'
 
 jest.mock('@/lib/db/clients', () => {
   return {
