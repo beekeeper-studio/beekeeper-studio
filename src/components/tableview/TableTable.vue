@@ -79,7 +79,7 @@
     <div ref="table"></div>
     <statusbar :mode="statusbarMode" class="tabulator-footer">
       <div class="col x4">
-        <span class="statusbar-item" v-if="lastUpdatedText && !queryError" :title="`${totalRecordsText} Total Records`">
+        <span class="statusbar-item" v-if="lastUpdatedText && !queryError" :title="`~${totalRecordsText} Total Records`">
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
         </span>
@@ -406,12 +406,14 @@ export default Vue.extend({
 
   watch: {
     active() {
+      log.debug('active', this.active)
       if (!this.tabulator) return;
       if (this.active) {
         this.tabulator.restoreRedraw()
         if (this.forceRedraw) {
           this.forceRedraw = false
           this.$nextTick(() => {
+            log.debug('forceredraw')
             log.debug(`force redraw, table ${this.table.name}, tab ${this.tabId}`)
             this.tabulator.redraw(true)
           })
@@ -420,9 +422,10 @@ export default Vue.extend({
         this.tabulator.blockRedraw()
       }
     },
-    tableColumns: {
+    table: {
       deep: true,
       async handler() {
+        log.debug('table changed', this.tableColumns)
         if(!this.tabulator) {
           return
         }
@@ -863,6 +866,7 @@ return dt.split("(")[0]
       this.queryError = null
     },
     async refreshTable() {
+      log.debug('refreshing table')
       const page = this.tabulator.getPage()
       await this.tabulator.replaceData()
       this.tabulator.setPage(page)

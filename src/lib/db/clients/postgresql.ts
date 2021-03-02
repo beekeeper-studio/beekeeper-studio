@@ -13,6 +13,7 @@ import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchema
 import { createCancelablePromise } from '../../../common/utils';
 import { errors, Error as CustomError } from '../../errors';
 import globals from '../../../common/globals';
+import { version } from 'cassandra-driver';
 
 const base64 = require('base64-url');
 
@@ -255,6 +256,7 @@ async function selectTop(
   schema = 'public'
 ): Promise<TableResult> {
 
+  const version = await getVersion(conn)
   let orderByString = ""
   let filterString = ""
   let params: string[] = []
@@ -285,9 +287,14 @@ async function selectTop(
     FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)}
     ${filterString}
   `
-  const countQuery = `
-    select count(1) as total ${baseSQL}
-  `
+
+
+  const countQuery = version.isPostgres ? 
+    `SELECT reltuples as total
+    FROM pg_class WHERE oid = '${wrapIdentifier(schema)}.${wrapIdentifier(table)}'::regclass;`
+    : `SELECT count(*) ${baseSQL}`
+
+
   const query = `
     SELECT * ${baseSQL}
     ${orderByString}
