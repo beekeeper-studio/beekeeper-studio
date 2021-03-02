@@ -52,9 +52,9 @@
               'flex-basis': `calc(${size}%)`,
           }),
           sizes: [25,75],
-          minSize: 250,
+          minSize: 280,
+          expandToMin: true,
           gutterSize: 8,
-          snapOffset: 60,
         })
       })
 
