@@ -6,5 +6,6 @@ export default {
   closeTab: 'ct',
   disconnect: 'dc',
   beekeeperAdded: 'bkadd',
-  openExternally: 'oe'
+  openExternally: 'oe',
+  toggleSidebar: 'ts'
 }

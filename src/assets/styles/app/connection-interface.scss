@@ -9,7 +9,7 @@
   display: flex;
   justify-content: center;
   a {
-    color: $text-lighter;
+    color: rgba($theme-base, 0.2);
     font-style: italic;
     line-height: 2;
   }

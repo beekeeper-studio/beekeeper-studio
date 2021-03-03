@@ -129,6 +129,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     })
   }
 
+  toggleSidebar = async(menuItem: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.toggleSidebar)
+  }
+
   disconnect = (_1: Electron.MenuItem, win: ElectronWindow) => {
     if (win) win.webContents.send(AppEvent.disconnect)
   }
