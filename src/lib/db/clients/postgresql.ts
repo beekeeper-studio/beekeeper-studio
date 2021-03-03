@@ -288,11 +288,21 @@ async function selectTop(
     ${filterString}
   `
 
+  const tuplesQuery = `
+  SELECT
+    ROUND(
+      (reltuples / relpages) * (
+        pg_relation_size('${wrapIdentifier(table)}') / (current_setting('block_size')::integer)
+      )
+    ) as total
+  FROM
+    pg_class
+  where
+      oid = '${wrapIdentifier(schema)}.${wrapIdentifier(table)}'::regclass
+  `
 
-  const countQuery = version.isPostgres ? 
-    `SELECT reltuples as total
-    FROM pg_class WHERE oid = '${wrapIdentifier(schema)}.${wrapIdentifier(table)}'::regclass;`
-    : `SELECT count(*) ${baseSQL}`
+
+  const countQuery = version.isPostgres ? tuplesQuery : `SELECT count(*) ${baseSQL}`
 
 
   const query = `
