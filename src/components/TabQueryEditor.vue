@@ -237,7 +237,7 @@
 
           var autoCompleteName = `"${table.name}"`
           if(table.schema !== null) {
-            var autoCompleteName = `"${table.schema}"."${table.name}"`
+            autoCompleteName = `"${table.schema}"."${table.name}"`
 
             if(table.schema == "public") {
               result[table.name] = cleanColumns
