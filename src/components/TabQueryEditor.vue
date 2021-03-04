@@ -229,19 +229,24 @@
       },
       hintOptions() {
         const result = {}
+
         this.tables.forEach(table => {
           const cleanColumns = table.columns.map(col => {
             return /\./.test(col.columnName) ? `"${col.columnName}"` : col.columnName
           })
 
-          // add quoted option for everyone that needs to be quoted
-          if (this.connectionType === 'postgresql' && (/[^a-z0-9_]/.test(table.name) || /^\d/.test(table.name)))
-            result[`"${table.name}"`] = cleanColumns
-          
-          // don't add table names that can get in conflict with database schema 
-          if (!/\./.test(table.name))
-            result[table.name] = cleanColumns
+          var autoCompleteName = `"${table.name}"`
+          if(table.schema !== null) {
+            var autoCompleteName = `"${table.schema}"."${table.name}"`
+
+            if(table.schema == "public") {
+              result[table.name] = cleanColumns
+            }
+          }
+
+          result[autoCompleteName] = cleanColumns
         })
+
         return { tables: result }
       },
       queryParameterPlaceholders() {
