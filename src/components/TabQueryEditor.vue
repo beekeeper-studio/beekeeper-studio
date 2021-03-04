@@ -234,7 +234,12 @@
           const cleanColumns = table.columns.map(col => {
             return /\./.test(col.columnName) ? `"${col.columnName}"` : col.columnName
           })
-          var autoCompleteName = `"${table.schema}"."${table.name}"`
+
+          var autoCompleteName = `"${table.name}"`
+          if(table.schema !== null) {
+            var autoCompleteName = `"${table.schema}"."${table.name}"`
+          }
+
           result[autoCompleteName] = cleanColumns
 
           if(table.schema == "public") {
