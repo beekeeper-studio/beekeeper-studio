@@ -58,6 +58,7 @@
           const result = {
             title: column.name,
             field: column.id,
+            titleDownload: column.name,
             dataType: column.dataType,
             width: columnWidth,
             mutatorData: this.resolveDataMutator(column.dataType),
