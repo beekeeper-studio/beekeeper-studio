@@ -70,7 +70,7 @@ export function buildFilterString(filters) {
   }
 }
 
-export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
+export function buildSelectTopQuery(table, offset, limit, orderBy, filters, countTitle = 'total') {
   log.debug('building selectTop for', table, offset, limit, orderBy)
   let orderByString = ""
 
@@ -98,7 +98,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
     ${filterString}
   `
   let countSQL = `
-    select count(*) as total ${baseSQL}
+    select count(*) as ${countTitle} ${baseSQL}
   `
   let sql = `
     SELECT * ${baseSQL}

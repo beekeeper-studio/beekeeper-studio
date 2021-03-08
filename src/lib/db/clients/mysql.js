@@ -178,8 +178,10 @@ export async function listTableColumns(conn, database, table) {
 
 export async function selectTop(conn, table, offset, limit, orderBy, filters) {
 
-  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters)
-  queries.countQuery = `show table status like '${table}'`;
+  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters, 'Rows')
+  if(!filters) {
+    queries.countQuery = `show table status like '${table}'`;
+  }
 
   const { query, countQuery, params } = queries
   const countResults = await driverExecuteQuery(conn, { query: countQuery, params })

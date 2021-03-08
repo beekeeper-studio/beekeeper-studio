@@ -301,8 +301,9 @@ async function selectTop(
       oid = '${wrapIdentifier(schema)}.${wrapIdentifier(table)}'::regclass
   `
 
-
-  const countQuery = version.isPostgres ? tuplesQuery : `SELECT count(*) ${baseSQL}`
+  // if we're not filtering data we want an optimized approximation of row count
+  // rather than a legit row count.
+  const countQuery = version.isPostgres && !filters ? tuplesQuery : `SELECT count(*) ${baseSQL}`
 
 
   const query = `
