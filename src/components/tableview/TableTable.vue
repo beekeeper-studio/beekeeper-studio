@@ -79,7 +79,7 @@
     <div ref="table"></div>
     <statusbar :mode="statusbarMode" class="tabulator-footer">
       <div class="col x4">
-        <span class="statusbar-item" v-if="lastUpdatedText && !queryError" :title="`~${totalRecordsText} Total Records`">
+        <span class="statusbar-item" v-if="lastUpdatedText && !queryError" :title="`~${totalRecordsText} Records`">
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
         </span>
@@ -769,10 +769,10 @@ return dt.split("(")[0]
       this.tabulator.updateData([update])
     },
     triggerFilter() {
-      this.tabulator.setData()
+      if (this.tabulator) this.tabulator.setData()
     },
     clearFilter() {
-      this.tabulator.setData();
+      if (this.tabulator) this.tabulator.setData();
     },
     changeFilterMode(filterMode) {
       // Populate raw filter query with existing filter if raw filter is empty
