@@ -128,6 +128,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: "Disconnect",
       click: actionHandler.disconnect
     },
+    sidebarToggle: {
+      id: 'menu-toggle-sidebar',
+      label: 'Toggle Sidebar',
+      click: actionHandler.toggleSidebar,
+    },
     menuStyleToggle: {
       id: 'menu-style-toggle-menu',
       label: "Menu Style",

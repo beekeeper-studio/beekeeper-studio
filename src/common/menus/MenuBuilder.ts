@@ -17,6 +17,7 @@ export default class extends DefaultMenu {
         this.menuItems.zoomout,
         this.menuItems.fullscreen,
         this.menuItems.themeToggle,
+        this.menuItems.sidebarToggle
       ]
     }
     if (!platformInfo.isMac)

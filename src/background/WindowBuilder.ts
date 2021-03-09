@@ -75,7 +75,7 @@ class BeekeeperWindow {
 
   initializeCallbacks() {
     if (process.env.WEBPACK_DEV_SERVER_URL && platformInfo.isWindows) {
-      this.win?.webContents.on('did-finish-load', this.finishLoadListener.bind(this))
+      // this.win?.webContents.on('did-finish-load', this.finishLoadListener.bind(this))
     }
     this.win?.on('closed', () => {
       this.win = null

@@ -76,6 +76,7 @@
     margin: -$gutter-h;
     padding: 0 $gutter-h;
     flex: 1 1 100%;
+    justify-content: flex-start;
     overflow: hidden;
   }
   .connection-name {
@@ -84,7 +85,9 @@
   .connection-button {
     position: relative;
     .material-icons {
-      font-size: 16px;
+      font-size: 20px;
+      min-width: 32px;
+      text-align: center;
     }
     > .btn {
       text-align: left;
