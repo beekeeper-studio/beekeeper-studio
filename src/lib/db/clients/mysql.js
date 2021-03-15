@@ -180,6 +180,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
 
   const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters, 'Rows')
   if(!filters) {
+    // Note: We don't use wrapIdentifier here because it's a string, not an identifier.
     queries.countQuery = `show table status like '${table}'`;
   }
 

@@ -288,6 +288,9 @@ async function selectTop(
     ${filterString}
   `
 
+  // This comes from this PR, it provides approximate counts for PSQL
+  // https://github.com/beekeeper-studio/beekeeper-studio/issues/311#issuecomment-788325650
+  // however it doesn't work in redshift or cockroach.
   const tuplesQuery = `
   SELECT
     ROUND(
@@ -301,7 +304,7 @@ async function selectTop(
       oid = '${wrapIdentifier(schema)}.${wrapIdentifier(table)}'::regclass
   `
 
-  // if we're not filtering data we want an optimized approximation of row count
+  // if we're not filtering data we want the optimized approximation of row count
   // rather than a legit row count.
   let countQuery = version.isPostgres && !filters ? tuplesQuery : `SELECT count(*) as total ${baseSQL}`
   if (version.isRedshift && !filters) {
