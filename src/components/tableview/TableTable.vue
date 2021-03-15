@@ -483,7 +483,7 @@ export default Vue.extend({
       pagination: "remote",
       paginationSize: this.limit,
       paginationElement: this.$refs.paginationArea,
-      columnMaxInitialWidth: 300,
+      columnMaxWidth: 500,
       initialSort: this.initialSort,
       initialFilter: [this.initialFilter || {}],
       lastUpdated: null,

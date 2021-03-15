@@ -4,7 +4,7 @@
       <span class="btn-fab open-close" @mousedown.prevent="toggleColumns" >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
-      <span class="item-wrapper flex flex-middle expand" @click.prevent="openTable" @dblclick.prevent="openTable">
+      <span class="item-wrapper flex flex-middle expand" @click.prevent="openTable">
         <i :title="title" :class="iconClass" class="item-icon material-icons">grid_on</i>
         <span class="table-name truncate" :title="table.name">{{table.name}}</span>
       </span>
