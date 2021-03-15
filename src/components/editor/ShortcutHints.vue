@@ -20,6 +20,11 @@
       <div class="shortcut" v-if="$config.isMac"><span>⌘</span><span>T</span></div>
       <div class="shortcut" v-else><span>Ctrl</span><span>T</span></div>
     </div>
+    <div class="shortcut-item">
+      <div>Close Tab</div>
+      <div class="shortcut" v-if="$config.isMac"><span>⌘</span><span>W</span></div>
+      <div class="shortcut" v-else><span>Ctrl</span><span>W</span></div>
+    </div>
     <!-- <div class="shortcut-item">
       <div>Shortcut</div>
       <div v-if="$config.isMac"><span class="badge">⌘ + P</span></div>
