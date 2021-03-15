@@ -91,9 +91,9 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
     }
   }
 
-  const isPostgres = version.toLowerCase().includes('postgresql')
   const isCockroach = version.toLowerCase().includes('cockroachdb')
   const isRedshift = version.toLowerCase().includes('redshift')
+  const isPostgres = !isCockroach && !isRedshift
   return {
     version,
     isPostgres,
@@ -110,7 +110,7 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
 async function getTypes(conn: HasPool): Promise<any> {
   const version = await getVersion(conn)
   let sql
-  if (version.isPostgres && version.number < 80300) {
+  if ((version.isPostgres && version.number < 80300) || version.isRedshift) {
     sql = `
       SELECT      n.nspname as schema, t.typname as typename, t.oid::int4 as typeid
       FROM        pg_type t
@@ -255,6 +255,8 @@ async function selectTop(
   schema = 'public'
 ): Promise<TableResult> {
 
+  const version = await getVersion(conn)
+  log.debug('SelectTop', version)
   let orderByString = ""
   let filterString = ""
   let params: string[] = []
@@ -285,9 +287,29 @@ async function selectTop(
     FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)}
     ${filterString}
   `
-  const countQuery = `
-    select count(1) as total ${baseSQL}
+
+  // This comes from this PR, it provides approximate counts for PSQL
+  // https://github.com/beekeeper-studio/beekeeper-studio/issues/311#issuecomment-788325650
+  // however not using the complex query, just the simple one from the psql docs
+  // https://wiki.postgresql.org/wiki/Count_estimate
+  // however it doesn't work in redshift or cockroach.
+  const tuplesQuery = `
+  
+  SELECT
+    reltuples as total
+  FROM
+    pg_class
+  where
+      oid = '${wrapIdentifier(schema)}.${wrapIdentifier(table)}'::regclass
   `
+
+  // if we're not filtering data we want the optimized approximation of row count
+  // rather than a legit row count.
+  let countQuery = version.isPostgres && !filters ? tuplesQuery : `SELECT count(*) as total ${baseSQL}`
+  if (version.isRedshift && !filters) {
+    countQuery = `SELECT COUNT(*) as total ${baseSQL}`
+  }
+
   const query = `
     SELECT * ${baseSQL}
     ${orderByString}
@@ -299,7 +321,6 @@ async function selectTop(
   const result = await driverExecuteSingle(conn, { query, params })
   const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
-  log.debug("selectTop:", result.rows)
   return {
     result: result.rows,
     totalRecords: Number(totalRecords),
@@ -545,10 +566,10 @@ export async function getTableKeys(conn: Conn, database: string, table: string, 
   }));
 }
 
-export async function getPrimaryKey(conn: Conn, database: string, table: string, schema: string): Promise<string> {
-
+export async function getPrimaryKey(conn: HasPool, database: string, table: string, schema: string): Promise<string> {
+  const version = await getVersion(conn)
   const tablename = escapeString(schema ? `${wrapIdentifier(schema)}.${wrapIdentifier(table)}` : wrapIdentifier(table))
-  const query = `
+  const psqlQuery = `
     SELECT a.attname as column_name, format_type(a.atttypid, a.atttypmod) AS data_type
     FROM   pg_index i
     JOIN   pg_attribute a ON a.attrelid = i.indrelid
@@ -556,7 +577,27 @@ export async function getPrimaryKey(conn: Conn, database: string, table: string,
     WHERE  i.indrelid = '${tablename}'::regclass
     AND    i.indisprimary;
   `
-  log.debug('getPrimaryKey', query, tablename)
+
+  const redshiftQuery = `
+    select tco.constraint_schema,
+          tco.constraint_name,
+          kcu.ordinal_position as position,
+          kcu.column_name as column_name,
+          kcu.table_schema,
+          kcu.table_name
+    from information_schema.table_constraints tco
+    join information_schema.key_column_usage kcu
+        on kcu.constraint_name = tco.constraint_name
+        and kcu.constraint_schema = tco.constraint_schema
+        and kcu.constraint_name = tco.constraint_name
+    where tco.constraint_type = 'PRIMARY KEY'
+    ${schema ? `and kcu.table_schema = '${escapeString(schema)}'` : ''}
+    and kcu.table_name = '${escapeString(table)}'
+    order by tco.constraint_schema,
+            tco.constraint_name,
+            kcu.ordinal_position;
+  `
+  const query = version.isRedshift ? redshiftQuery : psqlQuery
   const data = await driverExecuteSingle(conn, { query })
   return data.rows && data.rows[0] && data.rows.length === 1 ? data.rows[0].column_name : null
 }
@@ -981,6 +1022,7 @@ function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQuery
     // node-postgres has support for Promise query
     // but that always returns the "fields" property empty
     return new Promise((resolve, reject) => {
+      log.debug('RUNNING', queryArgs.query, queryArgs.params)
       connection.query(args, (err: Error, data: QueryResult | QueryResult[]) => {
         if (err) return reject(err);
         const qr = Array.isArray(data) ? data : [data]

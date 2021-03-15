@@ -15,6 +15,10 @@ import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, EntityFilter, IDbEntityWithColumns, QueryTab, TableTab } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 
+import RawLog from 'electron-log'
+
+const log = RawLog.scope('store/index')
+
 interface State {
   usedConfig: Nullable<SavedConnection>,
   usedConfigs: UsedConnection[],
@@ -161,7 +165,6 @@ const store = new Vuex.Store<State>({
       state.database = database
     },
     tables(state, tables: IDbEntityWithColumns[]) {
-
       const tablesMatch = (t: IDbEntityWithColumns, t2: IDbEntityWithColumns) => {
         return t2.name === t.name &&
         t2.schema === t.schema &&
@@ -309,12 +312,25 @@ const store = new Vuex.Store<State>({
     },
 
     async updateTableColumns(context, table: IDbEntityWithColumns) {
-
+      log.debug('actions/updateTableColumns', table.name)
       // we don't need to commit to the store, it should already be in the store.
       const connection = context.state.connection
-      table.columns = (table.entityType === 'materialized-view' ?
+      const columns = (table.entityType === 'materialized-view' ?
         await connection?.listMaterializedViewColumns(table.name, table.schema) :
         await connection?.listTableColumns(table.name, table.schema)) || []
+
+      const newcols = columns.map((c) => {
+        `${c.columnName}${c.dataType}`
+      }).sort()
+
+      const existing = table.columns.map((c) => {
+        `${c.columnName}${c.dataType}`
+      }).sort()
+      
+      if(_.isEqual(newcols, existing)) {
+        return
+      }
+      table.columns = columns
     },
 
     async updateTables(context) {
