@@ -178,17 +178,19 @@ export async function listTableColumns(conn, database, table) {
 
 export async function selectTop(conn, table, offset, limit, orderBy, filters) {
 
-  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters, 'Rows')
+  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters)
+  let title = 'total'
   if(!filters) {
     // Note: We don't use wrapIdentifier here because it's a string, not an identifier.
     queries.countQuery = `show table status like '${table}'`;
+    title = 'Rows'
   }
 
   const { query, countQuery, params } = queries
   const countResults = await driverExecuteQuery(conn, { query: countQuery, params })
   const result = await driverExecuteQuery(conn, { query, params })
-  const rowWithTotal = countResults.data.find((row) => { return row.Rows })
-  const totalRecords = rowWithTotal ? rowWithTotal.Rows : 0
+  const rowWithTotal = countResults.data.find((row) => { return row[title] })
+  const totalRecords = rowWithTotal ? rowWithTotal[title] : 0
   return {
     result: result.data,
     totalRecords: Number(totalRecords),

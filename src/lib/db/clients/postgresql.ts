@@ -290,14 +290,13 @@ async function selectTop(
 
   // This comes from this PR, it provides approximate counts for PSQL
   // https://github.com/beekeeper-studio/beekeeper-studio/issues/311#issuecomment-788325650
+  // however not using the complex query, just the simple one from the psql docs
+  // https://wiki.postgresql.org/wiki/Count_estimate
   // however it doesn't work in redshift or cockroach.
   const tuplesQuery = `
+  
   SELECT
-    ROUND(
-      (reltuples / relpages) * (
-        pg_relation_size('${wrapIdentifier(table)}') / (current_setting('block_size')::integer)
-      )
-    ) as total
+    reltuples as total
   FROM
     pg_class
   where
