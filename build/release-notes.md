@@ -15,7 +15,6 @@ We're wrapping up some long-outstanding technical debt to fix some really gnarle
 - No duplicate table queries on table load
 - Query identification improvements (eg quote escaped strings)
 
-
 ## PR Merges
 
 a514a94 Merge pull request #590 from beekeeper-studio/tabletable-speedups
