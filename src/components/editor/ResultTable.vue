@@ -88,6 +88,7 @@
         virtualDomHoz: false,
         columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,
+        columnMaxWidth: 500,
         nestedFieldSeparator: false,
         cellClick: this.cellClick,
         clipboard: true,

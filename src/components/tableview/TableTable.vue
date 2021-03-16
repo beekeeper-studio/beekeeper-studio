@@ -244,7 +244,7 @@ export default Vue.extend({
         //   disabled: !this.editable
         // },
         {
-          label: '<x-menuitem><x-label><i class="material-icons">delete_outline</i> Delete row</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Delete row</x-label></x-menuitem>',
           action: (e, cell) => {
             this.addRowToPendingDeletes(cell.getRow())
           },
