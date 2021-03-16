@@ -12573,10 +12573,10 @@ sql-formatter@^2.3.3:
   dependencies:
     lodash "^4.16.0"
 
-sql-query-identifier@^1.1.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-1.2.0.tgz#a17f62fa1783c24e176d42099fb47634f2569263"
-  integrity sha512-adbLG/Se4YJ5fKANbD3TzYj+C0oi6L3FbfoSPqpTRZyywQRfH8hQZgQDBdFB24IixYnG8em3UeDmj+jiZ9hh8A==
+sql-query-identifier@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.1.0.tgz#dbf0f34b11bc14c8ade44de13350271047eb566e"
+  integrity sha512-DcC+inWZvN6fiTyxv+9uhFoTRC9C8LTeApVl1N7JJTTCzto6yhuaI423DzPPqDk10z4naL2mF9g/eNhUfxuMpA==
 
 sqlite3@^5.0.0:
   version "5.0.0"

@@ -56,7 +56,7 @@
     "simple-encryptor": "^3.0.0",
     "split.js": "^1.5.11",
     "sql-formatter": "^2.3.3",
-    "sql-query-identifier": "^1.1.0",
+    "sql-query-identifier": "^2.1.0",
     "sqlite3": "^5.0.0",
     "ssh2": "beekeeper-studio/ssh2#electron-detection",
     "tabulator-tables": "^4.9.3",
