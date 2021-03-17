@@ -1,4 +1,4 @@
-# 1.9.5 - DEB Migration, and Major Engine Improvements
+# 1.10.0 - DEB Migration, and Major Engine Improvements
 
 This release has been a long time coming, but we're about to pick up the pace!
 
