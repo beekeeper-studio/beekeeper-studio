@@ -55,7 +55,7 @@
             {{connectionError}}
           </div>
         </div>
-        <small class="app-version"><a href="">Beekeeper Studio v1.9.1 (Feb 15 2021)</a></small>
+        <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{version}}</a></small>
       </div>
     </div>
   </div>
@@ -74,6 +74,7 @@
   import Split from 'split.js'
   import ImportButton from './connection/ImportButton'
   import _ from 'lodash'
+  import platformInfo from '@/common/platform_info'
   // import ImportUrlForm from './connection/ImportUrlForm';
 
   export default {
@@ -90,6 +91,7 @@
         url: null,
         importError: null,
         sidebarShown: true,
+        version: platformInfo.appVersion
       }
     },
     computed: {
