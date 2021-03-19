@@ -1,8 +1,8 @@
 <template>
-  <div id="interface" class="interface">
+  <div id="interface" class="interface" v-hotkey="keymap">
     <div class="interface-wrap row">
-      <sidebar ref="sidebar">
-        <core-sidebar @databaseSelected="databaseSelected" :connection="connection"></core-sidebar>
+      <sidebar ref="sidebar" :class="{hide: !sidebarShown}">
+        <core-sidebar @databaseSelected="databaseSelected" @toggleSidebar="toggleSidebar" :connection="connection" :sidebarShown="sidebarShown"></core-sidebar>
         <statusbar>
           <ConnectionButton></ConnectionButton>
         </statusbar>
@@ -21,12 +21,16 @@
   import Split from 'split.js'
   import Statusbar from './common/StatusBar'
   import ConnectionButton from './sidebar/core/ConnectionButton'
+  import AppEvent from '../common/AppEvent'
   export default {
     components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton },
     props: [ 'connection' ],
     data() {
       return {
-        split: null
+        split: null,
+        sidebarShown: true,
+        keymap: {
+        }
       }
     },
     computed: {
@@ -35,10 +39,10 @@
           this.$refs.sidebar.$refs.sidebar,
           this.$refs.content
         ]
-      },
-
+      }
     },
     mounted() {
+      this.$root.$on(AppEvent.toggleSidebar, this.toggleSidebar)
       this.$store.dispatch('updateHistory')
       this.$store.dispatch('updateFavorites')
 
@@ -47,8 +51,8 @@
           elementStyle: (dimension, size) => ({
               'flex-basis': `calc(${size}%)`,
           }),
-          sizes: [10,90],
-          minSize: 200,
+          sizes: [25,75],
+          minSize: 280,
           expandToMin: true,
           gutterSize: 8,
         })
@@ -56,6 +60,7 @@
 
     },
     beforeDestroy() {
+      this.$root.$off(AppEvent.toggleSidebar, this.toggleSidebar)
       if(this.split) {
         console.log("destroying split")
         this.split.destroy()
@@ -64,7 +69,10 @@
     methods: {
       databaseSelected(database) {
         this.$emit('databaseSelected', database)
-      }
+      },
+      toggleSidebar() {
+        this.sidebarShown = !this.sidebarShown
+      },
     }
   }
 

@@ -2,7 +2,8 @@
 
   <div class="sidebar-wrap row">
     <global-sidebar
-      @click="click"
+      @selected="click"
+      v-on="$listeners"
       :activeItem="activeItem"
     ></global-sidebar>
 
@@ -78,6 +79,7 @@
   import { mapState } from 'vuex'
 
   export default {
+    props: ['sidebarShown'],
     components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList, ExportList },
     data() {
       return {
@@ -114,6 +116,9 @@
       },
       click(item) {
         this.activeItem = item;
+        if(!this.sidebarShown) {
+          this.$emit('toggleSidebar')
+        }
       },
       async databaseSelected(db) {
         await this.$store.dispatch('changeDatabase', db)

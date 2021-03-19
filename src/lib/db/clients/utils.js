@@ -70,7 +70,8 @@ export function buildFilterString(filters) {
   }
 }
 
-export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
+export function buildSelectTopQuery(table, offset, limit, orderBy, filters, countTitle = 'total') {
+  log.debug('building selectTop for', table, offset, limit, orderBy)
   let orderByString = ""
 
   if (orderBy && orderBy.length > 0) {
@@ -97,7 +98,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
     ${filterString}
   `
   let countSQL = `
-    select count(*) as total ${baseSQL}
+    select count(*) as ${countTitle} ${baseSQL}
   `
   let sql = `
     SELECT * ${baseSQL}
@@ -108,9 +109,8 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters) {
     return {query: sql, countQuery: countSQL, params: filterParams}
 }
 
-export async function genericSelectTop(conn, table, offset, limit, orderBy, filters, executor){
-  const { query, countQuery, params } = buildSelectTopQuery(table, offset, limit, orderBy, filters)
-  log.debug("selectTop queries", query, countQuery, params)
+export async function executeSelectTop(queries, conn, executor) {
+  const { query, countQuery, params } = queries
   const countResults = await executor(conn, { query: countQuery, params })
   const result = await executor(conn, { query, params })
   const rowWithTotal = countResults.data.find((row) => { return row.total })
@@ -119,7 +119,12 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
     result: result.data,
     totalRecords: Number(totalRecords),
     fields: Object.keys(result.data[0] || {})
-  }
+  }  
+}
+
+export async function genericSelectTop(conn, table, offset, limit, orderBy, filters, executor){
+  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters)
+  return await executeSelectTop(queries, conn, executor)
 }
 
 export function buildInsertQueries(knex, inserts) {

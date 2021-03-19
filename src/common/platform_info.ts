@@ -40,6 +40,7 @@ const platformInfo = {
   testMode,
   appDbPath: path.join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
   updatesDisabled,
+  appVersion: testMode ? 'test-mode' : e.app.getVersion()
 }
 
 export default platformInfo

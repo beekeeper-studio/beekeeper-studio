@@ -81,7 +81,7 @@
     <div ref="table"></div>
     <statusbar :mode="statusbarMode" class="tabulator-footer">
       <div class="col x4">
-        <span class="statusbar-item" v-if="lastUpdatedText && !queryError" :title="`${totalRecordsText} Total Records`">
+        <span class="statusbar-item" v-if="lastUpdatedText && !queryError" :title="`~${totalRecordsText} Records`">
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
         </span>
@@ -129,6 +129,7 @@
 </style>
 
 <script>
+import Vue from 'vue'
 import Tabulator from "tabulator-tables";
 // import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
@@ -146,7 +147,7 @@ const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
 
-export default {
+export default Vue.extend({
   components: { Statusbar },
   mixins: [data_converter, DataMutators],
   props: ["table", "connection", "initialFilter", "tabId", "active"],
@@ -189,10 +190,70 @@ export default {
       lastUpdatedText: null,
       interval: setInterval(this.setlastUpdatedText, 10000),
       totalRecords: 0,
-      forceRedraw: false
+      forceRedraw: false,
     };
   },
   computed: {
+    cellContextMenu() {
+      return [{
+          label: '<x-menuitem><x-label>Set Null</x-label></x-menuitem>',
+          action: (e, cell) => {
+            cell.setValue(null);
+          },
+          disabled: !this.editable
+        },
+        { separator: true },
+        {
+          label: '<x-menuitem><x-label>Copy</x-label></x-menuitem>',
+          action: (e, cell) => {
+            this.$native.clipboard.writeText(cell.getValue());
+          },
+        },
+        {
+          label: '<x-menuitem><x-label>Paste</x-label></x-menuitem>',
+          action: (e, cell) => {
+            cell.setValue(this.$native.clipboard.readText())
+          },
+          disabled: !this.editable
+        },
+        { separator: true },
+        // TODO (matthew): NEEDS SOME UX WORK
+        // {
+        //   label: '<x-menuitem><x-label><i class="material-icons">add_circle_outline</i> Add row</x-label></x-menuitem>',
+        //   action: (e, cell) => {
+        //     cell.getTable().addRow({}, false).then(row => { 
+        //       this.addRowToPendingInserts(row)
+        //       this.tabulator.scrollToRow(row, 'bottom', false)
+        //     })
+        //   },
+        //   disabled: !this.editable
+        // },
+        // {
+        //   label: '<x-menuitem><x-label><i class="material-icons">content_copy</i> Clone row</x-label></x-menuitem>',
+        //   action: (e, cell) => {
+        //     const row = cell.getRow()
+        //     const data = { ...row.getData() }
+
+        //     if (this.primaryKey) {
+        //       data[this.primaryKey] = undefined
+        //     }
+
+        //     this.tabulator.addRow(data, false).then(row => {
+        //       this.addRowToPendingInserts(row)
+        //       this.tabulator.scrollToRow(row, 'bottom', false)
+        //     })
+        //   },
+        //   disabled: !this.editable
+        // },
+        {
+          label: '<x-menuitem><x-label>Delete row</x-label></x-menuitem>',
+          action: (e, cell) => {
+            this.addRowToPendingDeletes(cell.getRow())
+          },
+          disabled: !this.editable
+        },
+      ]
+    },
     filterPlaceholder() {
       return `Enter condition, eg: name like 'Matthew%'`
     },
@@ -279,7 +340,7 @@ export default {
           editable: this.cellEditCheck,
           headerSort: this.allowHeaderSort(column),
           editor: editorType,
-
+          contextMenu: this.editable ? this.cellContextMenu : null,
           variableHeight: true,
           headerTooltip: headerTooltip,
           cellEditCancelled: cell => cell.getRow().normalizeHeight(),
@@ -347,12 +408,14 @@ export default {
 
   watch: {
     active() {
+      log.debug('active', this.active)
       if (!this.tabulator) return;
       if (this.active) {
         this.tabulator.restoreRedraw()
         if (this.forceRedraw) {
           this.forceRedraw = false
           this.$nextTick(() => {
+            log.debug('forceredraw')
             log.debug(`force redraw, table ${this.table.name}, tab ${this.tabId}`)
             this.tabulator.redraw(true)
           })
@@ -361,9 +424,10 @@ export default {
         this.tabulator.blockRedraw()
       }
     },
-    tableColumns: {
+    table: {
       deep: true,
       async handler() {
+        log.debug('table changed', this.tableColumns)
         if(!this.tabulator) {
           return
         }
@@ -424,7 +488,7 @@ export default {
       pagination: "remote",
       paginationSize: this.limit,
       paginationElement: this.$refs.paginationArea,
-      columnMaxInitialWidth: 300,
+      columnMaxWidth: 500,
       initialSort: this.initialSort,
       initialFilter: [this.initialFilter || {}],
       lastUpdated: null,
@@ -438,39 +502,7 @@ export default {
         scrollPageDown: false
       },
       rowContextMenu:[
-        {
-          label: '<x-menuitem><x-label><i class="material-icons">add_circle_outline</i> Add row</x-label></x-menuitem>',
-          action: () => {
-            this.tabulator.addRow({}, false).then(row => { 
-              this.addRowToPendingInserts(row)
-              this.tabulator.scrollToRow(row, 'bottom', false)
-            })
-          }
-        },
-        {
-          label: '<x-menuitem><x-label><i class="material-icons">content_copy</i> Clone row</x-label></x-menuitem>',
-          action: (e, row) => {
-            let data = { ...row.getData() }
 
-            if (this.primaryKey) {
-              data[this.primaryKey] = undefined
-            }
-
-            this.tabulator.addRow(data, false).then(row => {
-              this.addRowToPendingInserts(row)
-              this.tabulator.scrollToRow(row, 'bottom', false)
-            })
-          }
-        },
-        {
-          separator:true,
-        },
-        {
-          label: '<x-menuitem><x-label><i class="material-icons">delete_outline</i> Delete row</x-label></x-menuitem>',
-          action: (e, row) => {
-            this.addRowToPendingDeletes(row)
-          }
-        },
       ]
     });
 
@@ -541,6 +573,9 @@ return dt.split("(")[0]
       }
     },
     cellEditCheck(cell) {
+      // check this first because it is easy
+      if (!this.editable) return false
+
       const pendingInsert = _.find(this.pendingChanges.inserts, { row: cell.getRow() })
 
       if (pendingInsert) {
@@ -736,10 +771,10 @@ return dt.split("(")[0]
       this.tabulator.updateData([update])
     },
     triggerFilter() {
-      this.tabulator.setData()
+      if (this.tabulator) this.tabulator.setData()
     },
     clearFilter() {
-      this.tabulator.setData();
+      if (this.tabulator) this.tabulator.setData();
     },
     changeFilterMode(filterMode) {
       // Populate raw filter query with existing filter if raw filter is empty
@@ -833,6 +868,7 @@ return dt.split("(")[0]
       this.queryError = null
     },
     async refreshTable() {
+      log.debug('refreshing table')
       const page = this.tabulator.getPage()
       await this.tabulator.replaceData()
       this.tabulator.setPage(page)
@@ -842,5 +878,5 @@ return dt.split("(")[0]
       this.$root.$emit('exportTable', { table: this.table, filters: this.filterForTabulator })
     }
   }
-};
+});
 </script>

@@ -16,6 +16,13 @@ $foreign-key-width:      24px;
       display:none;
       color: teal;
     }
+    pre {
+      margin: 0;
+      text-overflow: ellipsis;
+      font-family: inherit;
+      overflow: hidden;
+
+    }
     input {
       font-size: 0.85rem;
       height: 28px;

@@ -164,6 +164,7 @@ export class DBTestUtil {
   }
 
   async queryTests() {
+    console.log('query tests')
     const q = await this.connection.query("select 'a' as total, 'b' as total")
     const result = await q.execute()
 

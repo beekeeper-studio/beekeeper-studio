@@ -69,9 +69,12 @@
     },
     methods: {
       click(item) {
-        this.$emit('click', item)
+        if( this.activeItem === item ){
+          this.$emit('toggleSidebar')
+        } else {
+          this.$emit('selected', item)
+        }
       }
     }
   }
-
 </script>

@@ -22,6 +22,12 @@
     flex-direction: column;
     flex-grow: 1;
   }
+  .bottom-panel {
+    min-height: $statusbar-height;
+    > .layout-center {
+      overflow: hidden;
+    }
+  }
   .toolbar {
     display: flex;
     align-items: center;
@@ -105,8 +111,9 @@
 }
 .shortcut-item {
   display: table-row;
-  color: $text-light;
+  color: $text-lighter;
   text-align: right;
+  font-size: 95%;
   > div {
     display: table-cell;
     padding: $gutter-h;

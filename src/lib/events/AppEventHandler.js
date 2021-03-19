@@ -17,6 +17,7 @@ export default class {
     this.ipcRenderer.on(AppEvent.beekeeperAdded, this.addBeekeeper.bind(this))
     this.forward(AppEvent.closeTab)
     this.forward(AppEvent.newTab)
+    this.forward(AppEvent.toggleSidebar)
   }
 
   forward(event) {
