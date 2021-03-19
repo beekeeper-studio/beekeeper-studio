@@ -9,6 +9,7 @@ import { SavedConnection } from '../common/appdb/models/saved_connection'
 import { FavoriteQuery } from '../common/appdb/models/favorite_query'
 import { UsedQuery } from '../common/appdb/models/used_query'
 import ConnectionProvider from '../lib/connection-provider'
+import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { DBConnection, Routine, TableColumn } from '../lib/db/client'
 import { IDbConnectionPublicServer } from '../lib/db/server'
@@ -45,6 +46,7 @@ Vue.use(Vuex)
 
 const store = new Vuex.Store<State>({
   modules: {
+    exports: ExportStoreModule,
     settings: SettingStoreModule
   },
   state: {

@@ -5,7 +5,7 @@
     <span class="connection-name truncate expand">{{connectionName}}</span>
     <span class="connection-type badge truncate">{{connectionType}}</span>
     <x-menu>
-      <x-menuitem @click.prevent="disconnect" class="red">
+      <x-menuitem @click.prevent="disconnect(false)" class="red">
         <x-label><i class="material-icons">power_settings_new</i>Disconnect</x-label>
       </x-menuitem>
       <x-menuitem @click.prevent="$modal.show('config-save-modal')">
@@ -17,7 +17,7 @@
 
   <modal class="vue-dialog beekeeper-modal save-connection-modal" name="config-save-modal" height="auto" :scrollable="true">
     <div class="dialog-content">
-      <div v-if="errors" class="alart alert-danger">
+      <div v-if="errors" class="alert alert-danger">
         <i class="material-icons">warning</i>
         <div>
           <span>Please fix the following errors:</span>
@@ -29,11 +29,23 @@
       <SaveConnectionForm :selectInput="true" @cancel="$modal.hide('config-save-modal')" :canCancel="true" :config="config" @save="save"></SaveConnectionForm>
     </div>
   </modal>
+  <modal class="vue-dialog beekeeper-modal" name="running-exports-modal" height="auto" :scrollable="true">
+    <form @submit.prevent="disconnect(true)">      
+      <div class="dialog-content">
+        <div class="dialog-c-title">Confirm Disconnect</div>
+        There are active exports running. Are you sure you want to disconnect?
+      </div>
+      <div class="vue-dialog-buttons">
+        <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('running-exports-modal')">Cancel</button>
+        <button class="btn btn-danger" type="submit">Disconnect</button>
+      </div>
+    </form>
+  </modal>
 </div>
 
 </template>
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import SaveConnectionForm from '../../connection/SaveConnectionForm'
 export default {
   components: {
@@ -46,6 +58,7 @@ export default {
   },
   computed: {
       ...mapState({'config': 'usedConfig'}),
+      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports'}),
       connectionName() {
         const config = this.config
         if (!config) return 'Connection'
@@ -69,8 +82,12 @@ export default {
       }
 
     },
-    disconnect() {
-      this.$store.dispatch('disconnect')
+    disconnect(force) {
+      if (this.hasRunningExports && !force) {
+        this.$modal.show('running-exports-modal')
+      } else {
+        this.$store.dispatch('disconnect')
+      }
     }
   }
 }

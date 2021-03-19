@@ -27,6 +27,7 @@
           </div>
           <div class="btn-wrap">
             <button class="btn btn-primary" type="submit">Search</button>
+            <button class="btn btn-flat" type="button" @click.prevent="exportTable()">Export</button>
           </div>
         </div>
         <div v-else-if="filterMode === 'builder'" class="filter-group row gutter">
@@ -72,6 +73,7 @@
           </div>
           <div class="btn-wrap">
             <button class="btn btn-primary" type="submit">Search</button>
+            <button class="btn btn-flat" type="button" @click.prevent="exportTable()">Export</button>
           </div>
         </div>
       </form>
@@ -872,6 +874,9 @@ return dt.split("(")[0]
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true
     },
+    exportTable() {
+      this.$root.$emit('exportTable', { table: this.table, filters: this.filterForTabulator })
+    }
   }
 });
 </script>

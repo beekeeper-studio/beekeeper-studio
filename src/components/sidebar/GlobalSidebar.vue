@@ -27,10 +27,21 @@
       >
         <span class="material-icons">history</span>
       </a>
+      <a
+        href=""
+        @click.prevent="click('exports')"
+        class="nav-item"
+        :class="{ active: activeItem === 'exports', 'text-primary': runningExports.length}"
+        v-tooltip="exportsTooltip"
+      >
+        <span class="material-icons">file_download</span>
+      </a>
     </div>
 </template>
 
 <script>
+  import { mapGetters } from 'vuex'
+
   export default {
     props: ['activeItem'],
     data() {
@@ -46,8 +57,15 @@
         queriesTooltip: {
           placement: 'right',
           content: "Saved Queries"
+        },
+        exportsTooltip: {
+          placement: 'right',
+          content: "Exports"
         }
       }
+    },
+    computed: {
+      ...mapGetters({'runningExports': 'exports/runningExports'})
     },
     methods: {
       click(item) {

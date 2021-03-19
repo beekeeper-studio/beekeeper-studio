@@ -1,0 +1,35 @@
+.export-modal {
+  .export-form {
+    margin-top: $gutter-w;
+  }
+
+  .dialog-c-subtitle {
+    .material-icons {
+      margin-top: -1rem;
+      vertical-align: bottom;
+    }
+  }
+
+  .export-advanced-options {
+    padding-top: $gutter-w;
+  }
+}
+
+.export-progress-notification {
+  .title {
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-bottom: $gutter-w;
+  }
+
+  .progress-info {
+    font-size: 0.8rem;
+    padding-top: $gutter-w * 0.6;
+  }
+
+  .progress-bar {
+    margin-top: $gutter-w * 0.4;
+    margin-bottom: $gutter-w;
+  }
+}
+

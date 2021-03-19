@@ -28,6 +28,9 @@
           <x-menuitem @click.prevent="createTable" v-if="supportsDDL">
             <x-label>SQL: Create {{table.entityType}}</x-label>
           </x-menuitem>
+          <x-menuitem @click.prevent="exportTable" v-if="supportsDDL && table.entityType === 'table'">
+            <x-label>Export...</x-label>
+          </x-menuitem>
         </x-menu>
       </x-contextmenu>
     </a>
@@ -107,6 +110,9 @@
     methods: {
       createTable() {
         this.$root.$emit('loadTableCreate', this.table)
+      },
+      exportTable() {
+        this.$root.$emit('exportTable', { table: this.table, filters: [] })
       },
       copyTable() {
         this.$copyText(this.table.name)

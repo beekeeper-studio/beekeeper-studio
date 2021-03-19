@@ -1,0 +1,78 @@
+.sidebar-exports {
+  position: relative;
+  .sidebar-list {
+    position: relative;
+    flex: 1 1 auto;
+    height: 0;
+    max-height: -webkit-fill-available;
+    overflow-x: hidden;
+    padding: $gutter-h 0;
+  }
+  .list-group {
+    padding: $gutter-h 0;
+    min-height: 105px;
+  }
+  .list-item {
+    border-bottom: 1px solid $theme-bg;
+    
+    .badge {
+      min-width: fit-content;
+    }
+
+    .progress-bar {
+      margin-top: $gutter-w * 0.4;
+      margin-bottom: $gutter-w * 0.6;
+    }
+  }
+  .item-icon {
+    align-self: flex-start;
+    line-height: 1.4rem;
+    &.hidden {
+      visibility: hidden;
+    }
+  }
+  .list-title {
+    flex-grow: 1;
+    overflow: hidden;
+    padding-right: ($gutter-h * 0.75);
+    .subtitle {
+      font-size: 80%;
+      color: $text-lighter;
+      @extend .truncate;
+    }
+  }
+  .list-item-btn {
+    position: relative;
+    margin-right: 0;
+    height: initial;
+    line-height: initial;
+    padding: $gutter-h ($gutter-w * 0.75);
+    &:hover {
+      transition: display 0.15s ease-in-out;
+      .badge {
+        display: none;
+      }
+      .btn-fab {
+        display: inline-flex;
+      }
+    }
+    .btn-fab {
+      display: none;
+      flex: 0;
+      min-width: 24px;
+      width: 24px;
+      height: 24px;
+      transition: all 0.15s ease-in-out;
+      .material-icons {
+        color: $text-dark;
+      }
+    }
+    .dropdown {
+      position: initial;
+    }
+    .dropdown-menu {
+      top: 0.32rem;
+      right: 0.4rem;
+    }
+  }
+}

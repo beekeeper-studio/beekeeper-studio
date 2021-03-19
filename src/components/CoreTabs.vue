@@ -37,6 +37,14 @@
         <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
       </div>
     </div>
+    <ExportModal 
+      v-if="showExportModal" 
+      :connection="this.connection" 
+      :table="tableExportOptions.table" 
+      :filters="tableExportOptions.filters"
+      @close="showExportModal = false"
+    ></ExportModal>
+    <ExportNotification v-for="exporter in exports" :key="exporter.id" :exporter="exporter"></ExportNotification>
   </div>
 </template>
 
@@ -47,6 +55,8 @@
   import {FavoriteQuery} from '../common/appdb/models/favorite_query'
   import QueryEditor from './TabQueryEditor'
   import CoreTabHeader from './CoreTabHeader'
+  import ExportModal from './export/ExportModal'
+  import ExportNotification from './export/ExportNotification'
   import { uuidv4 } from '@/lib/uuid'
   import TableTable from './tableview/TableTable'
   import AppEvent from '../common/AppEvent'
@@ -57,12 +67,14 @@
 
   export default {
     props: [ 'connection' ],
-    components: { QueryEditor, CoreTabHeader, TableTable, Draggable, ShortcutHints },
+    components: { QueryEditor, CoreTabHeader, TableTable, Draggable, ShortcutHints, ExportModal, ExportNotification },
     data() {
       return {
         tabItems: [],
         activeItem: 0,
         newTabId: 1,
+        showExportModal: false,
+        tableExportOptions: null,
         dragOptions: {
           handle: '.nav-item'
         },
@@ -74,7 +86,8 @@
           { event: 'loadSettings', handler: this.openSettings },
           { event: 'loadTableCreate', handler: this.loadTableCreate },
           { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
-          { event: 'favoriteClick', handler: this.favoriteClick }
+          { event: 'favoriteClick', handler: this.favoriteClick },
+          { event: 'exportTable', handler: this.openExportModal },
         ]
       }
     },
@@ -83,7 +96,7 @@
     },
     computed: {
       ...mapState(["activeTab"]),
-      ...mapGetters({ 'menuStyle': 'settings/menuStyle' }),
+      ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'exports': 'exports/runningVisibleExports' }),
       lastTab() {
         return this.tabItems[this.tabItems.length - 1];
       },
@@ -196,6 +209,10 @@
           titleScope: "all"
         }
         this.addTab(t)
+      },
+      openExportModal(options) {
+        this.tableExportOptions = options
+        this.showExportModal = true
       },
       openSettings(settings) {
         const t = {
