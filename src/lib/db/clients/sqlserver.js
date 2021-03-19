@@ -65,7 +65,7 @@ async function getVersion(conn) {
   const versionString = result.data.recordset[0].version
   const yearRegex = /SQL Server (\d+)/g
   const yearResults = yearRegex.exec(versionString)
-  const releaseYear = _.toNumber(yearResults[1])
+  const releaseYear = _.toNumber(yearResults[1]) || 2017
   return {
     supportOffsetFetch: releaseYear >= 2012,
     releaseYear,
