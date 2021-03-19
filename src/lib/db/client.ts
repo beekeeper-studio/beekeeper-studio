@@ -76,7 +76,6 @@ export interface TableChanges {
 
 export interface TableInsert {
   table: string
-  row: any[]
   data: any[]
 }
 

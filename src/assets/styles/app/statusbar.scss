@@ -42,16 +42,18 @@
         margin-left: 0;
         padding: 0 0.3rem;
         background: rgba($theme-base, 0.2);
+        i.material-icons {
+          margin: 0;
+        }
       }
       .material-icons {
         font-size: 14px;
       }
     }
     &.error, &.error:hover {
-      background: rgba($theme-base, 0.1);
-      cursor: not-allowed;
+      // background: rgba($theme-base, 0.1);
       pointer-events: all !important;
-      opacity: 0.5;
+      // opacity: 0.5;
     }
     .material-icons {
       font-size: 16px;
@@ -150,6 +152,9 @@
     align-items: center;
     padding: 0 $gutter-h;
     line-height: $statusbar-height;
+    overflow: hidden;
+    text-overflow:ellipsis;
+    
     .material-icons {
       font-size: 16px;
       line-height: $statusbar-height;
@@ -159,6 +164,7 @@
     }
     &.error {
       color: $text-dark;
+      text-over
       .material-icons {
         color: $theme-base;
       }

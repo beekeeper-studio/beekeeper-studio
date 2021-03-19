@@ -6,6 +6,36 @@ $foreign-key-width:      24px;
   background: transparent;
   width: min-content;
   min-width: 100%;
+
+  &.inserted, &.inserted:hover {
+    .tabulator-cell {
+      background: rgba($brand-success, 0.7);
+    }
+
+  }
+  &.deleted, &.deleted:hover {
+    .tabulator-cell {
+      background: rgba($brand-danger, 0.7);
+    }
+
+  }
+
+  &.edit-error {
+    .tabulator-cell {
+      background: rgba($brand-danger, 0.05);
+      border-color: rgba($brand-danger, 0.8);
+      border-left: none;
+      border-right: none;
+    }
+
+    &.edit-error {
+      .tabulator-cell {
+        background: rgba($brand-danger, 0.05);
+        border-color: rgba($brand-danger, 0.8);
+      }
+    }
+  }
+
   .tabulator-cell {
     border: 1px solid transparent;
     padding: 4px 8px;
@@ -54,6 +84,7 @@ $foreign-key-width:      24px;
       background: rgba($theme-primary, 0.05);
       border-color: rgba($brand-primary,0.8);
     }
+
     &.edit-error {
       background: rgba($brand-danger, 0.05);
       border-color: rgba($brand-danger, 0.8);
@@ -102,12 +133,7 @@ $foreign-key-width:      24px;
   &.tabulator-selected {
     background: rgba($theme-base, 0.1);
   }
-  &.inserted, &.inserted:hover {
-    background: rgba($brand-success, 0.7);
-  }
-  &.deleted, &.deleted:hover {
-    background: rgba($brand-danger, 0.7);
-  }
+
 }
 .tabulator {
   position: relative;
