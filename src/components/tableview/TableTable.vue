@@ -670,13 +670,7 @@ export default Vue.extend({
       this.addPendingChange(CHANGE_TYPE_DELETE, payload)
     },
     addPendingChange(changeType, payload) {
-      // TODO (matthew): THIS IS THE BUG, MOVE THIS LOGIC TO THE SUBMISSION
       if (changeType === CHANGE_TYPE_INSERT) {
-        // remove empty pkColumn data if present
-        payload.data = _.omitBy(payload.row.getData(), (value, key) => {
-          return (key === payload.pkColumn && !value)
-        })
-
         this.pendingChanges.inserts.push(payload)
       }
 
