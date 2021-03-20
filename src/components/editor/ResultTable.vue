@@ -101,7 +101,7 @@
     },
     methods: {
       cellClick(e, cell) {
-        this.selectChildren(cell.getElement())
+        this.selectChildren(cell.getElement().querySelector('pre'))
       },
       download(format) {
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
