@@ -483,6 +483,7 @@ export default Vue.extend({
       ajaxURL: "http://fake",
       ajaxSorting: true,
       ajaxFiltering: true,
+      ajaxLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
       pagination: "remote",
       paginationSize: this.limit,
       paginationElement: this.$refs.paginationArea,
@@ -838,8 +839,11 @@ return dt.split("(")[0]
               data
             });
           } catch (error) {
-            reject();
-            this.setQueryError('Error loading data', error.message)
+            reject(error.message);
+            this.queryError = {
+              title: error.message,
+              message: error.message
+            }
             this.$nextTick(() => {
               this.tabulator.clearData()
             })
