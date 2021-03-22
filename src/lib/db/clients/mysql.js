@@ -595,15 +595,16 @@ function getRealError(conn, err) {
 }
 
 function parseFields(fields, rowsAsArray) {
-  return fields.map((field, idx) => {
-    return { id: rowsAsArray ? `c${idx}` : field.name, ...field }
-  })
+  return fields !== undefined ? 
+    fields.map((field, idx) => {
+      return { id: rowsAsArray ? `c${idx}` : field.name, ...field }
+    }):[];
 }
 
 
 function parseRowQueryResult(data, rawFields, command, rowsAsArray = false) {
   // Fallback in case the identifier could not reconize the command
-  const fields = parseFields(rawFields, rowsAsArray)
+  const fields = parseFields(rawFields, rowsAsArray) 
   const fieldIds = fields.map(f => f.id)
   const isSelect = Array.isArray(data);
   return {
