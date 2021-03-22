@@ -595,10 +595,10 @@ function getRealError(conn, err) {
 }
 
 function parseFields(fields, rowsAsArray) {
-  return fields !== undefined ? 
-    fields.map((field, idx) => {
+  if (!fields) return []
+  return fields.map((field, idx) => {
       return { id: rowsAsArray ? `c${idx}` : field.name, ...field }
-    }):[];
+    })
 }
 
 
@@ -699,4 +699,9 @@ export function filterDatabase(item, { database } = {}, databaseField) {
   }
 
   return true;
+}
+
+
+export const testOnly = {
+  parseFields
 }
