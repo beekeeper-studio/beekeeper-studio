@@ -27,9 +27,10 @@ export abstract class Export {
   timeElapsed: number = 0
   timeLeft: number = 0
 
+  abstract chunkSeparator: string
   abstract getHeader(firstRow: any): Promise<string | void>
   abstract getFooter(): Promise<string | void>
-  abstract formatChunk(data: any): string[]
+  abstract formatChunk(data: any[]): string
 
   constructor(
     filePath: string,
@@ -58,11 +59,11 @@ export abstract class Export {
     return md5sum.digest('hex')
   }
 
-  async getChunk(offset: number, limit: number): Promise<TableResult | undefined> {
+  async getChunk(): Promise<TableResult | undefined> {
     const result = await this.connection.selectTop(
       this.table.name,
-      offset,
-      limit,
+      this.countExported,
+      this.options.chunkSize,
       [],
       this.filters,
       this.table.schema
@@ -102,26 +103,24 @@ export abstract class Export {
   }
 
   async exportData(): Promise<void> {
-      const chunk = await this.getChunk(this.countExported, this.options.chunkSize)
-
-      if (!chunk) {
-        this.status = Export.Status.Aborted
-        return
-      }
-
-      for (const formattedRow of this.formatChunk(chunk.result)) {
-        await this.writeToFile(formattedRow)
-      }
-
-      this.countTotal = chunk.totalRecords
-      this.countExported += chunk.result.length
-      const stats = await fs.promises.stat(this.filePath)
-      this.fileSize = stats.size
-      this.calculateTimeLeft()
-
-      if (this.countExported < this.countTotal && this.status === Export.Status.Exporting) {
-        await this.exportData()
-      }
+      let chunk: any | undefined = {}
+      // keep going until we don't get any more results.
+      do {
+        chunk = await this.getChunk()
+        if (!chunk) {
+          this.status = Export.Status.Aborted
+          return
+        }
+        await this.writeToFile(this.formatChunk(chunk.result))
+        this.countTotal = chunk.totalRecords
+        this.countExported += chunk.result.length
+        const stats = await fs.promises.stat(this.filePath)
+        this.fileSize = stats.size
+        this.calculateTimeLeft()
+      } while (
+        chunk.result?.length > 0 &&
+        this.status === Export.Status.Exporting
+      )
   }
 
   async finalizeExport(): Promise<void> {

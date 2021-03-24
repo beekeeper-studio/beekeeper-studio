@@ -3,6 +3,7 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
+import { stream } from 'xlsx/types';
 
 const logger = createLogger('db');
 const DEFAULT_LIMIT = 1000;
@@ -66,6 +67,28 @@ export interface TableResult {
   result: any[],
   fields: string[],
   totalRecords: number
+}
+
+interface CursorActions {
+  cancel(): void
+}
+/*
+
+  The streaming api has to be a wrapper for all database implementations of cursors/streams
+  MySQL: https://github.com/mysqljs/mysql#streaming-query-rows
+  PSQL: https://node-postgres.com/api/cursor
+  MSSQL: https://github.com/tediousjs/node-mssql#streaming
+  SQLITE: https://github.com/mapbox/node-sqlite3/wiki/API#statementeachparam--callback-complete
+*/
+export interface StreamOptions {
+  chunkSize?: number,
+  countFirst?: boolean,
+  approximateCount?: boolean,
+  arrayRowMode?: boolean,
+  handleCount(total: number): Promise<void>,
+  handleFields(fields: string[]): Promise<void>,
+  handleRows(rows: any[], cursor: CursorActions): Promise<void>,
+  afterFinish(): Promise<void>
 }
 
 export interface TableChanges {
@@ -177,6 +200,7 @@ export interface DatabaseClient {
   getTableReferences: (table: string, schema?: string) => void,
   getTableKeys: (db: string, table: string, schema?: string) => void,
   query: (queryText: string) => void,
+  stream(queryText: string, options: StreamOptions): void
   executeQuery: (queryText: string) => void,
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
@@ -188,6 +212,7 @@ export interface DatabaseClient {
   listMaterializedViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
   getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string>,
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[], schema?: string): Promise<TableResult>,
+  selectTopStream(table: string, orderBy: OrderBy[], filters: TableFilter[], options: StreamOptions, schema?: string ): void
   wrapIdentifier: (value: string) => string
 }
 
@@ -263,9 +288,11 @@ export class DBConnection {
   getPrimaryKey = getPrimaryKey.bind(null, this.server, this.database)
   getTableKeys = getTableKeys.bind(null, this.server, this.database)
   query = query.bind(null, this.server, this.database)
+  stream = stream.bind(null, this.server, this.database)
   executeQuery = executeQuery.bind(null, this.server, this.database)
   listDatabases = listDatabases.bind(null, this.server, this.database)
   selectTop = selectTop.bind(null, this.server, this.database)
+  selectTopStream = selectTopStream.bind(null, this.server, this.database)
   applyChanges = applyChanges.bind(null, this.server, this.database)
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
   getTableCreateScript = getTableCreateScript.bind(null, this.server, this.database)
@@ -359,10 +386,24 @@ function selectTop(
   limit: number,
   orderBy: OrderBy[],
   filters: TableFilter[],
-  schema: string): Promise<TableResult> {
+  schema: string
+): Promise<TableResult> {
   checkIsConnected(server, database)
   if (!database.connection) throw "No database connection available, please reconnect"
   return database.connection?.selectTop(table, offset, limit, orderBy, filters, schema);
+}
+
+function selectTopStream(
+  server: IDbConnectionServer,
+  database: IDbConnectionDatabase,
+  table: string,
+  orderBy: OrderBy[],
+  filters: TableFilter[],
+  options: StreamOptions,
+  schema?: string,
+): void {
+  checkIsConnected(server, database)
+  return database.connection?.selectTopStream(table, orderBy, filters, options, schema)
 }
 
 function listSchemas(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: SchemaFilterOptions) {
@@ -440,6 +481,11 @@ function getTableKeys(server: IDbConnectionServer, database: IDbConnectionDataba
 function query(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string) {
   checkIsConnected(server , database);
   return database.connection?.query(queryText);
+}
+
+function stream(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string, options: StreamOptions) {
+  checkIsConnected(server, database)
+  return database.connection?.stream(queryText, options)
 }
 
 function applyChanges(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: TableChanges) {

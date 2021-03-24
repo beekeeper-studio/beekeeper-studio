@@ -6,7 +6,7 @@
       height="auto"
       :scrollable="true"
     >
-      <form @submit.prevent="exportTable()">
+      <form @submit.prevent="exportTable">
         <div class="dialog-content">
           <div class="dialog-c-title">
             Export from <span class="text-primary">{{ table.name }}</span>
@@ -31,14 +31,14 @@
               <select
                 name="connectionType"
                 class="form-control custom-select"
-                v-model="selectedExportFormatKey"
+                v-model="selectedExportFormat"
                 id="export-format-select"
               >
                 <option disabled value="null">Select a format...</option>
                 <option
                   :key="f.value"
                   v-for="f in exportFormats"
-                  :value="f.key"
+                  :value="f"
                 >
                   {{ f.name }}
                 </option>
@@ -97,11 +97,31 @@
   </div>
 </template>
 <script>
-import _ from "lodash"
 import { remote } from "electron"
 import { mapMutations } from "vuex"
 import { Export, CsvExporter, JsonExporter, SqlExporter } from "@/lib/export"
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL } from "./forms"
+
+const exportFormats = [
+  {
+    name: "CSV",
+    key: "csv",
+    component: ExportFormCSV,
+    exporter: CsvExporter,
+  },
+  {
+    name: "JSON",
+    key: "json",
+    component: ExportFormJSON,
+    exporter: JsonExporter,
+  },
+  {
+    name: "SQL",
+    key: "sql",
+    component: ExportFormSQL,
+    exporter: SqlExporter,
+  },
+]
 
 export default {
   props: {
@@ -117,27 +137,8 @@ export default {
   },
   data() {
     return {
-      selectedExportFormatKey: "csv",
-      exportFormats: [
-        {
-          name: "CSV",
-          key: "csv",
-          component: ExportFormCSV,
-          exporter: CsvExporter,
-        },
-        {
-          name: "JSON",
-          key: "json",
-          component: ExportFormJSON,
-          exporter: JsonExporter,
-        },
-        {
-          name: "SQL",
-          key: "sql",
-          component: ExportFormSQL,
-          exporter: SqlExporter,
-        },
-      ],
+      selectedExportFormat: exportFormats[0],
+      exportFormats,
       options: { chunkSize: 500, deleteOnAbort: false },
       outputOptions: {},
       Export: Export,
@@ -145,9 +146,9 @@ export default {
     };
   },
   computed: {
-    selectedExportFormat() {
-      return _.find(this.exportFormats, { key: this.selectedExportFormatKey });
-    },
+    // selectedExportFormat() {
+    //   return _.find(this.exportFormats, { key: this.selectedExportFormatKey });
+    // },
     hasFilters() {
       return this.filters && this.filters.length;
     },

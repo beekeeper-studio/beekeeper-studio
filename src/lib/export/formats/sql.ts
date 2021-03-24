@@ -1,6 +1,7 @@
 import { Export, ExportOptions } from "@/lib/export";
 import { DBConnection, TableOrView, TableFilter } from '@/lib/db/client'
 import knexlib from 'knex'
+import Knex from "knex";
 
 interface OutputOptionsSql {
   createTable: boolean,
@@ -8,6 +9,7 @@ interface OutputOptionsSql {
 }
 export class SqlExporter extends Export {
   readonly format: string = 'sql'
+  readonly chunkSeparator: string = '\n;'
   readonly knexTypes: any = {
     "cockroachdb": "pg",
     "mariadb": "mysql2",
@@ -16,7 +18,7 @@ export class SqlExporter extends Export {
     "sqlite": "sqlite3",
     "sqlserver": "mssql"
   }
-  knex: any = null
+  knex: Knex
 
   constructor(
     filePath: string,
@@ -42,22 +44,23 @@ export class SqlExporter extends Export {
     }
   }
 
-  async getFooter() {}
+  async getFooter() {
+    return this.chunkSeparator
+  }
 
-  formatChunk(data: any): string[] {
+  formatChunk(data: any): string {
     const formattedChunk = []
 
+    let knex = this.knex(this.table.name)
+    if (this.outputOptions.schema && this.table.schema) {
+      knex = knex.withSchema(this.table.schema)
+    }
+
     for (const row of data) {
-      let knex = this.knex(this.table.name)
-
-      if (this.outputOptions.schema && this.table.schema) {
-        knex = knex.withSchema(this.table.schema)
-      }
-
       const content = knex.insert(row).toQuery()
       formattedChunk.push(content)
     }
 
-    return formattedChunk
+    return formattedChunk.join(this.chunkSeparator)
   }
 }

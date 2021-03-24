@@ -1,3 +1,5 @@
+import 
+
 import { Export, ExportOptions } from "@/lib/export";
 import { DBConnection, TableOrView, TableFilter } from '@/lib/db/client'
 
@@ -8,6 +10,9 @@ interface OutputOptionsCsv {
 
 export class CsvExporter extends Export {
   readonly format: string = 'csv'
+  readonly rowOptions = {
+    header: false,
+  }
 
   constructor(
     filePath: string,
@@ -18,6 +23,7 @@ export class CsvExporter extends Export {
     outputOptions: OutputOptionsCsv,
   ) {
     super(filePath, connection, table, filters, options, outputOptions)
+    
   }
 
   async getHeader(firstRow: any) {
@@ -28,9 +34,8 @@ export class CsvExporter extends Export {
 
   async getFooter() {}
 
-  formatChunk(data: any): string[] {
+  formatChunk(data: any[]): string[] {
     const formattedChunk = []
-
     for (const row of data) {
       formattedChunk.push(Object.values(row).join(this.outputOptions.delimiter))
     }
