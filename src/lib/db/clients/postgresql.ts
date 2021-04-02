@@ -3,12 +3,13 @@
 import { readFileSync } from 'fs';
 
 import pg, { PoolClient, QueryResult, Pool, PoolConfig } from 'pg';
+import Cursor from 'pg-cursor';
 import { identify } from 'sql-query-identifier';
 import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig, NgQueryResult } from '../client'
+import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig, NgQueryResult, StreamOptions, BeeCursor } from '../client'
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors, Error as CustomError } from '../../errors';
@@ -169,14 +170,15 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     listTableIndexes: (db, table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
     listSchemas: (db, filter?: SchemaFilterOptions) => listSchemas(conn, filter),
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
-    // TODO
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
     applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
+    stream: (queryText: string, options: StreamOptions, schema: string = defaultSchema) => stream(conn, queryText, options, schema),
     executeQuery: (queryText, schema = defaultSchema) => executeQuery(conn, queryText),
     listDatabases: (filter?: DatabaseFilterOptions) => listDatabases(conn, filter),
-    selectTop: (table: string, offset: Number, limit: Number, orderBy: OrderBy[], filters: TableFilter[], schema: string) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
+    selectTop: (table: string, offset: Number, limit: Number, orderBy: OrderBy[], filters: TableFilter[], schema: string = defaultSchema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
+    selectTopStream: (table: string, orderBy: OrderBy[], filters: TableFilter[], options: StreamOptions, schema: string = defaultSchema) => selectTopStream(conn, table, orderBy, filters, options, schema),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
     getTableCreateScript: (table, schema = defaultSchema) => getTableCreateScript(conn, table, schema),
     getViewCreateScript: (view, schema = defaultSchema) => getViewCreateScript(conn, view, schema),
@@ -245,18 +247,25 @@ export async function listMaterializedViews(conn: HasPool, filter: FilterOptions
   return data.rows;
 }
 
-async function selectTop(
-  conn: HasPool,
+interface STQOptions {
   table: string,
-  offset: Number,
-  limit: Number,
   orderBy: OrderBy[],
   filters: TableFilter[],
-  schema = 'public'
-): Promise<TableResult> {
+  offset?: number,
+  limit?: number,
+  schema: string,
+  version: VersionInfo
+}
 
-  const version = await getVersion(conn)
-  log.debug('SelectTop', version)
+interface STQResults {
+  query: string,
+  countQuery: string,
+  params: string[]
+}
+
+function buildSelectTopQueries(options: STQOptions): STQResults {
+  const filters = options.filters
+  const orderBy = options.orderBy
   let orderByString = ""
   let filterString = ""
   let params: string[] = []
@@ -284,10 +293,9 @@ async function selectTop(
   }
 
   const baseSQL = `
-    FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)}
+    FROM ${wrapIdentifier(options.schema)}.${wrapIdentifier(options.table)}
     ${filterString}
   `
-
   // This comes from this PR, it provides approximate counts for PSQL
   // https://github.com/beekeeper-studio/beekeeper-studio/issues/311#issuecomment-788325650
   // however not using the complex query, just the simple one from the psql docs
@@ -300,25 +308,43 @@ async function selectTop(
   FROM
     pg_class
   where
-      oid = '${wrapIdentifier(schema)}.${wrapIdentifier(table)}'::regclass
+      oid = '${wrapIdentifier(options.schema)}.${wrapIdentifier(options.table)}'::regclass
   `
 
   // if we're not filtering data we want the optimized approximation of row count
   // rather than a legit row count.
-  let countQuery = version.isPostgres && !filters ? tuplesQuery : `SELECT count(*) as total ${baseSQL}`
-  if (version.isRedshift && !filters) {
+  let countQuery = options.version.isPostgres && !filters ? tuplesQuery : `SELECT count(*) as total ${baseSQL}`
+  if (options.version.isRedshift && !filters) {
     countQuery = `SELECT COUNT(*) as total ${baseSQL}`
   }
 
   const query = `
     SELECT * ${baseSQL}
     ${orderByString}
-    LIMIT ${limit}
-    OFFSET ${offset}
+    ${options.limit ? `LIMIT ${options.limit}` : ''}
+    ${options.offset ? `OFSET ${options.offset}` : ''}
     `
-  log.debug("select Top query & params", countQuery, query, params)
-  const countResults = await driverExecuteSingle(conn, { query: countQuery, params })
-  const result = await driverExecuteSingle(conn, { query, params })
+  return {
+    query, countQuery, params
+  }
+}
+
+async function selectTop(
+  conn: HasPool,
+  table: string,
+  offset: number,
+  limit: number,
+  orderBy: OrderBy[],
+  filters: TableFilter[],
+  schema = 'public'
+): Promise<TableResult> {
+
+  const version = await getVersion(conn)
+  const qs = buildSelectTopQueries({
+    table, offset, limit, orderBy, filters, schema, version
+  })
+  const countResults = await driverExecuteSingle(conn, { query: qs.countQuery, params: qs.params })
+  const result = await driverExecuteSingle(conn, { query: qs.query, params: qs.params })
   const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return {
@@ -326,6 +352,19 @@ async function selectTop(
     totalRecords: Number(totalRecords),
     fields: result.fields.map(f => f.name)
   }
+}
+
+async function selectTopStream(conn: HasPool, table: string, orderBy: OrderBy[], filters: TableFilter[], options: StreamOptions, schema: string): Promise<BeeCursor> {
+    const version = await getVersion(conn)
+    let orderByString = ""
+    let filterString = ""
+    let params: string[] = []
+    const qs = buildSelectTopQueries({
+      table, orderBy, filters, version, schema
+    })
+
+    const countResults = await driverExecuteSingle(conn, {query: qs.countQuery, params: qs.params})
+    const cursor = new Cursor()
 }
 
 export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promise<Routine[]> {
@@ -735,6 +774,9 @@ export function query(conn: Conn, queryText: string, schema: string) {
   };
 }
 
+export function stream(conn: Conn, queryText: string, options: StreamOptions, schema: string): void {
+  
+}
 
 export async function executeQuery(conn: Conn, queryText: string, arrayMode: boolean = false) {
   const data = await driverExecuteQuery(conn, { query: queryText, multiple: true, arrayMode });

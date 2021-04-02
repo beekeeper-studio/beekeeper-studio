@@ -3,7 +3,7 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
-import { stream } from 'xlsx/types';
+import Cursor from 'pg-cursor';
 
 const logger = createLogger('db');
 const DEFAULT_LIMIT = 1000;
@@ -69,8 +69,9 @@ export interface TableResult {
   totalRecords: number
 }
 
-interface CursorActions {
+export interface BeeCursor {
   cancel(): void
+  getPercentComplete(): number
 }
 /*
 
@@ -200,7 +201,7 @@ export interface DatabaseClient {
   getTableReferences: (table: string, schema?: string) => void,
   getTableKeys: (db: string, table: string, schema?: string) => void,
   query: (queryText: string) => void,
-  stream(queryText: string, options: StreamOptions): void
+  stream(queryText: string, options: StreamOptions): Promise<BeeCursor>
   executeQuery: (queryText: string) => void,
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
@@ -212,7 +213,7 @@ export interface DatabaseClient {
   listMaterializedViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
   getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string>,
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[], schema?: string): Promise<TableResult>,
-  selectTopStream(table: string, orderBy: OrderBy[], filters: TableFilter[], options: StreamOptions, schema?: string ): void
+  selectTopStream(table: string, orderBy: OrderBy[], filters: TableFilter[], options: StreamOptions, schema?: string ): Promise<BeeCursor>,
   wrapIdentifier: (value: string) => string
 }
 

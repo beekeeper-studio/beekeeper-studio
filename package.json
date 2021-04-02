@@ -48,6 +48,7 @@
     "node-ssh-forward": "^0.7.2",
     "papaparse": "^5.3.0",
     "pg": "^8.4.2",
+    "pg-cursor": "^2.5.2",
     "pg-hstore": "^2.3.3",
     "pluralize": "^8.0.0",
     "popper.js": "^1.15.0",
