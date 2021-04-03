@@ -78,7 +78,9 @@
     </div>
     <div ref="table"></div>
     <statusbar :mode="statusbarMode" class="tabulator-footer">
-      <div class="col x4">
+
+      <!-- Info -->
+      <div class="col truncate expand statusbar-info" :class="{'x4': this.totalRecords > this.limit}">
         <span class="statusbar-item" v-if="lastUpdatedText && !error" :title="`~${totalRecordsText} Records`">
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
@@ -92,11 +94,14 @@
           <span class="">{{ error.title }}</span>
         </span>
       </div>
-      <div class="col x4 flex flex-center">
-        <span ref="paginationArea" class="tabulator-paginator" v-show="this.totalRecords > this.limit"></span>
+
+      <!-- Pagination -->
+      <div class="col flex-center" v-show="this.totalRecords > this.limit" :class="{'x4': this.totalRecords > this.limit}">
+        <span ref="paginationArea" class="tabulator-paginator"></span>
       </div>
 
-      <div class="col x4 pending-edits flex flex-right">
+      <!-- Actions -->
+      <div class="col pending-edits flex-right" :class="{'x4': this.totalRecords > this.limit}">
         <div v-if="missingPrimaryKey" class="flex flex-right">
           <span class="statusbar-item">
             <i
@@ -109,11 +114,12 @@
           <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
           <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="saveButtonText" :class="{'error': !!saveError}">
             <!-- <i v-if="queryError" class="material-icons">error</i> -->
-            <span class="badge"><i class="material-icons">priority_high</i></span>
+            <i class="material-icons">priority_high</i>
             <span>Commit</span>
           </a>
         </div>
       </div>
+      
     </statusbar>
   </div>
 </template>

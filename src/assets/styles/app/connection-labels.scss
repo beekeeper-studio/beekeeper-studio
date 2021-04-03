@@ -33,6 +33,13 @@ $color-defaults: (
       background-color: rgba(nth($val, 1), 0.4);
     }
   }
+  &.tabulator-footer {
+    @each $key, $val in $color-defaults {
+      &.#{$key} {
+        background-color: rgba(nth($val, 1), 0.35);
+      }
+    }
+  }
   &.query-meta {
     @each $key, $val in $color-defaults {
       &.#{$key} {
@@ -43,7 +50,7 @@ $color-defaults: (
   &.editing, &.failure {
     @each $key, $val in $color-defaults {
       &.#{$key} {
-        background-color: rgba(nth($val, 1), 0.2);
+        background-color: rgba(nth($val, 1), 0.25);
       }
     }
   }

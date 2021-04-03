@@ -7,10 +7,13 @@
 .noty_theme__mint.noty_bar {
   background: lighten($theme-bg, 5%);
   border: 0;
-  border-radius: 8px;
+  border-radius: 4px;
   @extend .card-shadow;
-  .noty-body {
+  .noty_body {
+    font-size: 0.85rem;
+    line-height: 1.6;
     padding: $gutter-w;
+    padding-right: $gutter-w * 1.75;
   }
   .noty_buttons{
     display: flex;
@@ -22,6 +25,10 @@
     };
   }
 }
+#noty_layout__bottomRight {
+  bottom: 30px;
+  right: 5px;
+}
 .noty_progressbar {
   display: none!important;
 }
@@ -30,6 +37,8 @@
   border-radius: 20px;
   color: $text-lighter;
   text-align: center;
+  font-weight: normal;
+  font-size: 18px;
   &:hover {
     color: $text-dark;
     background: transparent;

@@ -1,6 +1,4 @@
 .statusbar {
-  // $statusbar-bg: darken($brand-pink, 55%);
-
   display: flex;
   align-items: center;
   background: $statusbar-bg;
@@ -19,41 +17,35 @@
   }
   .btn {
     color: $statusbar-text;
-    height: $statusbar-height * 0.8;
-    line-height: $statusbar-height * 0.8;
+    height: $statusbar-height;
+    line-height: $statusbar-height;
     transition: background 0.15s ease-in-out;
     min-width: 0;
     margin-left: 0.15rem;
     margin-right: 0.15rem;
     padding-left: 0.7rem;
     padding-right: 0.7rem;
+    border-radius: 0;
     &:hover {
-      background: rgba($statusbar-text, 0.1);
+      background: rgba($statusbar-text, 0.05);
     }
     &.btn-primary {
       background: rgba($theme-base, 0.1);
-      // color: rgba(black, 0.87);
       transition: background 0.15s ease-in-out;
       &:hover {
         background: rgba($theme-base, 0.15);
       }
-      .badge {
-        font-size: 85%;
-        margin-left: 0;
-        padding: 0 0.3rem;
-        background: rgba($theme-base, 0.2);
-        i.material-icons {
-          margin: 0;
-        }
-      }
       .material-icons {
-        font-size: 14px;
+        font-size: 12px;
+        width: 16px;
+        background: rgba($theme-base,0.2);
+        border-radius: 40px;
+        padding: 0 2px;
+        line-height: 16px;
       }
     }
     &.error, &.error:hover {
-      // background: rgba($theme-base, 0.1);
       pointer-events: all !important;
-      // opacity: 0.5;
     }
     .material-icons {
       font-size: 16px;
@@ -116,14 +108,23 @@
     .btn-link {
       background: rgba($theme-base, 0.1);
       color: $text-dark;
-      box-shadow: inset 0 0 0 1px rgba($theme-base, 0.05);
-      height: $statusbar-height * 0.8;
-      line-height: $statusbar-height * 0.8;
-      margin: 0;
+      // box-shadow: inset 0 0 0 1px rgba($theme-base, 0.05);
+      height: $statusbar-height;
+      line-height: $statusbar-height;
+      border: 0!important;
+      margin: 0 0 0 1px;
+      &:hover {
+        background: rgba($theme-base, 0.15);
+      }
+      &[menu] {
+        .material-icons {
+          font-size: 16px;
+        }
+      }
     }
     .material-icons {
       color: $text-dark;
-      font-size: 20px;
+      font-size: 18px;
     }
   }
 
@@ -154,7 +155,6 @@
     line-height: $statusbar-height;
     overflow: hidden;
     text-overflow:ellipsis;
-    
     .material-icons {
       font-size: 16px;
       line-height: $statusbar-height;
@@ -164,9 +164,14 @@
     }
     &.error {
       color: $text-dark;
-      text-over
+      font-size: 0.75rem;
+      padding-right: 2rem;
       .material-icons {
         color: $theme-base;
+      }
+      > span {
+        text-overflow: ellipsis;
+        overflow: hidden;
       }
     }
     &.hoverable:hover, &.hoverable:focus {
@@ -179,5 +184,9 @@
     .truncated-rows, .records {
       margin-left: $gutter-h * 0.5;
     }
+  }
+
+  .statusbar-info {
+    min-width: 33.3333%;
   }
 }

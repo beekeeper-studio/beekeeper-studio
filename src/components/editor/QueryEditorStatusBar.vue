@@ -18,8 +18,8 @@
         <span>{{ affectedRowsText }}</span>
       </div>
       <span class="statusbar-item execute-time row flex-middle" v-if="executeTimeText" :title="'Execution Time'">
-      <i class="material-icons">update</i>
-      <span>{{executeTimeText}}</span>
+        <i class="material-icons">update</i>
+        <span>{{executeTimeText}}</span>
       </span>
       <span class="expand"></span>
     </template>
