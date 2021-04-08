@@ -1,6 +1,7 @@
 
 $errorColor:             $brand-danger;
 $foreign-key-width:      20px;
+$row-height:            28px;
 
 // Add/Delete/Clone row
 // -------------------------------
@@ -9,18 +10,18 @@ $foreign-key-width:      20px;
     &.inserted, 
     &.inserted:hover {
       background: rgba($brand-success, 0.5);
-      box-shadow: inset 0 -1px rgba($brand-success, 0.4);
+      box-shadow: inset 0 -1px rgba($brand-success, .25);
     }
     &.deleted, 
     &.deleted:hover {
       background: rgba($brand-danger, 0.5);
-      box-shadow: inset 0 -1px rgba($brand-danger, 0.4);
+      box-shadow: inset 0 -1px rgba($brand-danger, .25);
     }
     &.edit-error {
-      background: rgba($brand-danger, 0.2)!important;
+      background: rgba($brand-danger, 0.15)!important;
       &.edit-error {
         background: rgba($brand-danger, 0.1);
-        box-shadow: inset 0 -1px rgba($brand-danger, 0.4);
+        box-shadow: inset 0 -1px rgba($brand-danger, .25);
       }
     }
   }
@@ -34,14 +35,13 @@ $foreign-key-width:      20px;
   .tabulator-cell {
     border: 1px solid transparent;
     padding: 4px 8px;
-    min-height: 28px;
-    height: 28px;
-    line-height: 20px;
+    min-height: $row-height;
+    height: $row-height;
+    line-height: $row-height - (8px); // row-height - vertical padding
     border-radius: 3px;
     &:hover {
-      background: rgba($theme-base,0.06);
+      background: rgba($theme-base,0.05);
       border-color: transparent;
-      // border-radius: 3px;
       &.primary-key {
         background: transparent;
         cursor: default;
@@ -52,30 +52,30 @@ $foreign-key-width:      20px;
     }
     i.fk-link {
       display:none;
-      color: teal;
     }
     pre {
       margin: 0;
       text-overflow: ellipsis;
       font-family: inherit;
       overflow: hidden;
-
     }
     input {
       font-size: 0.85rem;
-      height: 28px;
+      height: $row-height;
       padding: 4px 4px 4px 8px!important;
     }
     textarea {
       border-color: transparent;
       padding: 4px 6px!important;
-      line-height: 20px;
+      line-height: $row-height - 8px; // row-height - vertical padding
     }
     &.active-cell {
       background: $selection;
       border-color: $input-highlight;
       color: $db-select-text;
     }
+
+    // Cell States
     &.edited, 
     &.edit-error, 
     &.edit-success {
@@ -84,26 +84,24 @@ $foreign-key-width:      20px;
     }
     &.edited {
       background: rgba($theme-primary, 0.2);
-      box-shadow: inset 0 -1px rgba($brand-primary, 0.4);
+      box-shadow: inset 0 -1px rgba($brand-primary, .25);
     }
-
     &.edit-error {
-      background: rgba($brand-danger, 0.2);
-      box-shadow: inset 0 -1px rgba($brand-danger, 0.4);
+      background: rgba($brand-danger, 0.15);
+      box-shadow: inset 0 -1px rgba($brand-danger, .25);
     }
     &.edit-success {
       background: rgba($brand-success, 0.2);
-      box-shadow: inset 0 -1px rgba($brand-success, 0.4);
+      box-shadow: inset 0 -1px rgba($brand-success, .25);
     }
     &.tabulator-editing {
-      // border-bottom-color: $theme-base!important;
       box-shadow: inset 0 -1px $theme-base!important;
-      background: rgba($theme-base, 0.1);
+      background: rgba($theme-base, 0.12);
       padding-left: 0;
       padding-right: 0;
       padding-top: 7px;
-      min-height: 28px;
-      line-height: 28px;
+      min-height: $row-height;
+      line-height: $row-height;
       border-radius: 3px;
     }
 
@@ -154,7 +152,7 @@ $foreign-key-width:      20px;
   border: 0;
   width: 100%;
   background: transparent;
-  background: lighte($query-editor-bg, 1%);
+  background: lighten($query-editor-bg, 1%);
   .tabulator-header {
     background: transparent;
     border: 0;

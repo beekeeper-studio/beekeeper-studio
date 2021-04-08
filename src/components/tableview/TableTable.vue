@@ -26,7 +26,9 @@
             </div>
           </div>
           <div class="btn-wrap">
-            <button class="btn btn-primary" type="submit">Search</button>
+            <button class="btn btn-primary btn-fab" type="submit" title="Filter">
+              <i class="material-icons">search</i>
+            </button>
           </div>
         </div>
         <div v-else-if="filterMode === 'builder'" class="filter-group row gutter">
@@ -71,7 +73,9 @@
             </div>
           </div>
           <div class="btn-wrap">
-            <button class="btn btn-primary" type="submit">Search</button>
+            <button class="btn btn-primary btn-fab" type="submit" title="Filter">
+              <i class="material-icons">search</i>
+            </button>
           </div>
         </div>
       </form>
@@ -79,8 +83,26 @@
     <div ref="table"></div>
     <statusbar :mode="statusbarMode" class="tabulator-footer">
 
-      <!-- Info -->
+      
       <div class="col truncate expand statusbar-info" :class="{'x4': this.totalRecords > this.limit}">
+
+        <!-- Row Actions -->
+        <!-- <div class="row-actions flex">
+          <a class="btn btn-link btn-fab" title="Add Row">
+            <i class="material-icons">add</i>
+          </a>
+          <a class="btn btn-link btn-fab" title="Delete Row">
+            <i class="material-icons">remove</i>
+          </a>
+          <a class="btn btn-link btn-fab" title="Duplicate Row">
+            <i class="material-icons">control_point_duplicate</i>
+          </a>
+          <a class="btn btn-link btn-fab" title="Refresh">
+            <i class="material-icons">refresh</i>
+          </a>
+        </div> -->
+
+        <!-- Info -->
         <span class="statusbar-item" v-if="lastUpdatedText && !error" :title="`~${totalRecordsText} Records`">
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
@@ -100,7 +122,7 @@
         <span ref="paginationArea" class="tabulator-paginator"></span>
       </div>
 
-      <!-- Actions -->
+      <!-- Pending Edits -->
       <div class="col pending-edits flex-right" :class="{'x4': this.totalRecords > this.limit}">
         <div v-if="missingPrimaryKey" class="flex flex-right">
           <span class="statusbar-item">
