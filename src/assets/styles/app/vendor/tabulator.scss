@@ -79,20 +79,20 @@ $foreign-key-width:      20px;
     }
     &.edited, &.edit-error, &.edit-success {
       border-color: $border-color;
-      border-radius: 2px;
+      // border-radius: 2px;
       color: $theme-base;
     }
     &.edited {
-      background: rgba($theme-primary, 0.05);
+      background: rgba($theme-primary, 0.1);
       border-color: rgba($brand-primary,0.8);
     }
 
     &.edit-error {
-      background: rgba($brand-danger, 0.05);
+      background: rgba($brand-danger, 0.1);
       border-color: rgba($brand-danger, 0.8);
     }
     &.edit-success {
-      background: rgba($brand-success, 0.05);
+      background: rgba($brand-success, 0.1);
       border-color: rgba($brand-success, 0.8);
     }
 
