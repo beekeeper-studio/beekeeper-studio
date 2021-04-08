@@ -153,6 +153,11 @@ $foreign-key-width:      24px;
       height: 32px!important;
       font-size: 90%;
       line-height: 1;
+      .badge {
+        background: transparent;
+        color: $text-lighter;
+        padding: 0 0.1rem;
+      }
       &.tabulator-sortable{
         &:hover {
           background: rgba($theme-base, 0.035);

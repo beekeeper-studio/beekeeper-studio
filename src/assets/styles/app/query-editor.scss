@@ -50,6 +50,10 @@
     }
   }
   .bottom-panel {
+    min-height: $statusbar-height;
+    > .layout-center {
+      overflow: hidden;
+    }
     .toolbar {
       padding-top: $gutter-h * 0.5;
       padding-bottom: $gutter-h * 0.5;
