@@ -6,29 +6,18 @@ $foreign-key-width:      20px;
 // -------------------------------
 .tabulator-table {
   .tabulator-row {
-    &.inserted,
-    &.deleted,
-    &.edit-error {
-      .tabulator-cell {
-        &:hover,
-        &.tabulator-editing {
-          background: rgba(black, 0.15);
-          &.foreign-key-button {
-            background: transparent;
-          }
-        }
-      }
-    }
     &.inserted, 
     &.inserted:hover {
-      background: rgba($brand-success, 0.6);
+      background: rgba($brand-success, 0.5);
+      box-shadow: inset 0 -1px rgba($brand-success, 0.4);
     }
     &.deleted, 
     &.deleted:hover {
-      background: rgba($brand-danger, 0.6);
+      background: rgba($brand-danger, 0.5);
+      box-shadow: inset 0 -1px rgba($brand-danger, 0.4);
     }
     &.edit-error {
-      background: rgba($brand-danger, 0.6);
+      background: rgba($brand-danger, 0.2)!important;
       &.edit-error {
         background: rgba($brand-danger, 0.1);
         box-shadow: inset 0 -1px rgba($brand-danger, 0.4);
@@ -50,7 +39,7 @@ $foreign-key-width:      20px;
     line-height: 20px;
     border-radius: 3px;
     &:hover {
-      background: rgba($theme-base,0.05);
+      background: rgba($theme-base,0.06);
       border-color: transparent;
       // border-radius: 3px;
       &.primary-key {
@@ -94,16 +83,16 @@ $foreign-key-width:      20px;
       color: $theme-base;
     }
     &.edited {
-      background: rgba($theme-primary, 0.1);
+      background: rgba($theme-primary, 0.2);
       box-shadow: inset 0 -1px rgba($brand-primary, 0.4);
     }
 
     &.edit-error {
-      background: rgba($brand-danger, 0.1);
+      background: rgba($brand-danger, 0.2);
       box-shadow: inset 0 -1px rgba($brand-danger, 0.4);
     }
     &.edit-success {
-      background: rgba($brand-success, 0.1);
+      background: rgba($brand-success, 0.2);
       box-shadow: inset 0 -1px rgba($brand-success, 0.4);
     }
     &.tabulator-editing {
