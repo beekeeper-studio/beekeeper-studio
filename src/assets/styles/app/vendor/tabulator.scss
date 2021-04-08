@@ -1,6 +1,6 @@
 
 $errorColor:             $brand-danger;
-$foreign-key-width:      24px;
+$foreign-key-width:      16px;
 
 .tabulator-row {
   background: transparent;
@@ -69,11 +69,13 @@ $foreign-key-width:      24px;
       color: $db-select-text;
     }
     &.tabulator-editing {
-      border-color: $theme-base!important;
-      border-radius: 2px!important;
-      padding: 0;
+      border-bottom-color: $theme-base!important;
+      background: rgba($theme-base, 0.1);
+      padding-left: 0;
+      padding-right: 0;
+      padding-top: 7px;
       min-height: 28px;
-      height: auto;
+      line-height: 28px;
     }
     &.edited, &.edit-error, &.edit-success {
       border-color: $border-color;
