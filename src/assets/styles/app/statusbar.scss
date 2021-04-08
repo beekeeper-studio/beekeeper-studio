@@ -6,7 +6,7 @@
   min-height: $statusbar-height;
   height: $statusbar-height;
   line-height: $statusbar-height;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   padding: 0 $gutter-h;
   overflow: hidden;
   > .col {
@@ -36,12 +36,13 @@
         background: rgba($theme-base, 0.15);
       }
       .material-icons {
-        font-size: 12px;
-        width: 16px;
-        background: rgba($theme-base,0.2);
+        font-size: 10px;
+        width: 14px;
+        background: rgba($theme-base, 0.2);
         border-radius: 40px;
-        padding: 0 2px;
-        line-height: 16px;
+        padding: 0;
+        line-height: 14px;
+        margin-top: 1px;
       }
     }
     &.error, &.error:hover {
@@ -92,7 +93,7 @@
       min-width: fit-content;
     }
     x-menu {
-      width: 286px;
+      width: 220px;
     }
   }
 
