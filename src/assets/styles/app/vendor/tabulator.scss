@@ -10,7 +10,8 @@ $foreign-key-width:      20px;
     &.deleted,
     &.edit-error {
       .tabulator-cell {
-        &:hover {
+        &:hover,
+        &.tabulator-editing {
           background: rgba(black, 0.15);
           &.foreign-key-button {
             background: transparent;
