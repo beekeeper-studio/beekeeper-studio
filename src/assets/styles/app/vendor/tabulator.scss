@@ -26,10 +26,10 @@ $cell-radius:            2px;
         position: absolute;
         display: block;
         font-size: 20px;
-        width: 24px;
+        width: 22px;
         line-height: $row-height;
         text-align: center;
-        top: 2px;
+        top: 1px;
         left: 0;
         bottom: 1px;
         z-index: 1;
@@ -38,7 +38,7 @@ $cell-radius:            2px;
         content: '';
         position: absolute;
         display: flex;
-        top: 2px;
+        top: 1px;
         left: 0;
         bottom: 1px;
         width: 34px;
@@ -68,12 +68,9 @@ $cell-radius:            2px;
       .tabulator-cell {
         &.primary-key {
           &:hover {
-            background: rgba($theme-base,0.1);
+            background: rgba($theme-base,0.15);
             cursor: pointer;
           }
-        }
-        &:hover {
-          background: rgba($theme-base,0.15);
         }
       }
     }
@@ -103,6 +100,15 @@ $cell-radius:            2px;
         }
       }
     }
+    &.inserted,
+    &.deleted,
+    &.edit-error {
+      .tabulator-cell {
+        &:hover {
+          background: rgba($theme-base, 0.12);
+        }
+      }
+    } 
   }
 }
 
