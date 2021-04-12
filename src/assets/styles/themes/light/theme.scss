@@ -14,12 +14,16 @@ $tab-link:                 darken($theme-bg, 9%);
 $codemirror-hint-bg:       darken($theme-bg, 2%);
 $editor-statusbar:         rgba($theme-base, 0.035);
 
+$row-highlight:   darken($query-editor-bg, 3%);
 
 // Base Styles
 // -----------------------------------------
 & {
   background: $theme-bg;
   color: $text;
+}
+.material-icons {
+  font-weight: 600;
 }
 select {
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
@@ -109,10 +113,47 @@ select {
   }
 }
 .tabulator {
+
   .tabulator-header {
     .tabulator-col.foreign-key {
       &:before {
         color: darken($brand-primary, 15%);
+      }
+    }
+  }
+  
+  // Editing Cells
+  &:nth-child(even) {
+    background: transparent;
+    .tabulator-cell {
+      &.edited {
+        background: rgba($theme-primary, 0.2);
+        @include cell-shadow(rgba($brand-primary, .15), $query-editor-bg);
+      }
+      &.edit-error {
+        background: rgba($brand-danger, 0.15);
+        @include cell-shadow(rgba($brand-danger, .15), $query-editor-bg);
+      }
+      &.edit-success {
+        background: rgba($brand-success, 0.2);
+        @include cell-shadow(rgba($brand-success, .15), $query-editor-bg);
+      }
+    }
+  }
+  &:nth-child(odd) {
+    background: $row-highlight;
+    .tabulator-cell {
+      &.edited {
+        background: rgba($theme-primary, 0.2);
+        @include cell-shadow(rgba($brand-primary, .15), $row-highlight);
+      }
+      &.edit-error {
+        background: rgba($brand-danger, 0.15);
+        @include cell-shadow(rgba($brand-danger, .15), $row-highlight);
+      }
+      &.edit-success {
+        background: rgba($brand-success, 0.2);
+        @include cell-shadow(rgba($brand-success, .15), $row-highlight);
       }
     }
   }
