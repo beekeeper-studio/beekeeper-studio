@@ -238,30 +238,25 @@ $cell-radius:            2px;
         background: lighten($cell-success, 5%);
       }
     }
-  }
-  &:nth-child(even) {
-    background: transparent;
-    .tabulator-cell {
-      &.edited,
-      &.edit-error,
-      &.edit-success {
-        @include cell-shadow(rgba($query-editor-bg, 0.75));
-      }
+    &.edited,
+    &.edit-error,
+    &.edit-success {
+      @include cell-shadow(rgba($query-editor-bg, 0.75));
     }
   }
-  &:nth-child(odd) {
-    background: $row-highlight;
-    .tabulator-cell {
-      &.edited,
-      &.edit-error,
-      &.edit-success {
-        @include cell-shadow(rgba($row-highlight, 0.75));
-      }
-    }
-  }
+  // &:nth-child(odd) {
+  //   background: $row-highlight;
+  //   .tabulator-cell {
+  //     &.edited,
+  //     &.edit-error,
+  //     &.edit-success {
+  //       @include cell-shadow(rgba($row-highlight, 0.75));
+  //     }
+  //   }
+  // }
 
   &.tabulator-selectable:hover {
-    background: rgba($theme-base, 0.065);
+    background: rgba($theme-base, 0.05);
     i.fk-link {
       display: inline-block;
       &:hover {
