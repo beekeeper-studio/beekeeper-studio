@@ -142,7 +142,7 @@
 
   // Actions
   .actions-btn {
-    padding: 0 0.35rem;
+    padding: 0 0.2rem 0 0.35rem;
     background: transparent;
     box-shadow: none!important;
     .material-icons {
@@ -152,7 +152,7 @@
 
   // Pending Changes
   .pending-changes {
-    margin-left: 0.25rem;
+    margin-left: 0.1rem;
     .btn {
       // padding-left: 0.5rem;
       margin: 0;
@@ -161,7 +161,7 @@
       background: transparent;
       // box-shadow: inset 0 0 0 1px rgba($theme-base, 0.25);
       padding: 0;
-      line-height: 14px;
+      line-height: 16px;
       margin-left: 0;
     }
     .material-icons {
