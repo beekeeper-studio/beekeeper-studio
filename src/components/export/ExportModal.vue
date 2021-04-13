@@ -39,6 +39,7 @@
                   :key="f.value"
                   v-for="f in exportFormats"
                   :value="f"
+                  :selected="selectedExportFormat === f.value"
                 >
                   {{ f.name }}
                 </option>
@@ -142,7 +143,7 @@ export default {
     return {
       selectedExportFormat: exportFormats[0],
       exportFormats,
-      options: { chunkSize: 100, deleteOnAbort: true },
+      options: { chunkSize: 100, deleteOnAbort: true, includeFilter: true },
       outputOptions: {},
       error: null,
     };

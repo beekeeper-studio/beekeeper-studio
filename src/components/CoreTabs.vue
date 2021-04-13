@@ -37,13 +37,16 @@
         <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
       </div>
     </div>
-    <ExportModal 
-      v-if="showExportModal" 
-      :connection="this.connection" 
-      :table="tableExportOptions.table" 
+    <!-- TODO - this should really be in TableTable -->
+    <ExportModal
+      v-if="showExportModal"
+      :connection="this.connection"
+      :table="tableExportOptions.table"
       :filters="tableExportOptions.filters"
       @close="showExportModal = false"
     ></ExportModal>
+
+    <!-- TODO - all notifications should really be handled with an organized system -->
     <ExportNotification v-for="exporter in exports" :key="exporter.id" :exporter="exporter"></ExportNotification>
   </div>
 </template>
