@@ -414,10 +414,6 @@ $cell-radius:            2px;
   padding: 0 $gutter-h;
   background: rgba($theme-base, 0.06);
 
-  .pending-edits {
-    margin-right: auto;
-  }
-
   .tabulator-paginator,
   .tabulator-pages {
     display: flex;

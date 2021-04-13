@@ -86,22 +86,6 @@
       
       <div class="col truncate expand statusbar-info" :class="{'x4': this.totalRecords > this.limit}">
 
-        <!-- Row Actions -->
-        <!-- <div class="row-actions flex">
-          <a class="btn btn-link btn-fab" title="Add Row">
-            <i class="material-icons">add</i>
-          </a>
-          <a class="btn btn-link btn-fab" title="Delete Row">
-            <i class="material-icons">remove</i>
-          </a>
-          <a class="btn btn-link btn-fab" title="Duplicate Row">
-            <i class="material-icons">control_point_duplicate</i>
-          </a>
-          <a class="btn btn-link btn-fab" title="Refresh">
-            <i class="material-icons">refresh</i>
-          </a>
-        </div> -->
-
         <!-- Info -->
         <span class="statusbar-item" v-if="lastUpdatedText && !error" :title="`~${totalRecordsText} Records`">
           <i class="material-icons">list_alt</i>
@@ -123,45 +107,50 @@
       </div>
 
       <!-- Pending Edits -->
-      <div class="col pending-edits flex-right" :class="{'x4': this.totalRecords > this.limit}">
-        <div v-if="missingPrimaryKey" class="flex flex-right">
+      <div class="col statusbar-actions flex-right" :class="{'x4': this.totalRecords > this.limit}">
+        <!-- <div v-if="missingPrimaryKey" class="flex flex-right">
           <span class="statusbar-item">
             <i
             class="material-icons text-danger"
             v-tooltip="'Zero (or multiple) primary keys detected, table editing is disabled.'"
             >warning</i>
           </span>
-        </div>
-        <div class="flex flex-right">
-          <a v-if="pendingChangesCount > 0"  @click.prevent="discardChanges" class="btn btn-link">Discard</a>
-          <!-- <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="saveButtonText" :class="{'error': !!saveError}">
+        </div> -->
+        
+        <!-- Actions -->
+        <x-button class="actions-btn btn btn-flat" title="actions">
+          <i class="material-icons">settings</i>
+          <i class="material-icons">arrow_drop_down</i>
+          <x-menu>
+            <x-menuitem @click.prevent="">
+              <x-label>Add Row</x-label>
+            </x-menuitem>
+            <x-menuitem @click.prevent="">
+              <x-label>Refresh</x-label>
+            </x-menuitem>
+          </x-menu>
+        </x-button>
+        
+        <!-- Pending Changes -->
+        <x-buttons v-if="pendingChangesCount > 0" class="pending-changes">
+          <x-button class="btn btn-primary" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
             <i v-if="error" class="material-icons">error</i>
             <span class="badge" v-if="!error"><small>{{pendingChangesCount}}</small></span>
             <span>Commit</span>
-          </a> -->
-          
-          <x-buttons class="pending-changes">
-            <x-button v-if="pendingChangesCount > 0" class="btn btn-primary" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
-              <i v-if="error" class="material-icons">error</i>
-              <span class="badge" v-if="!error"><small>{{pendingChangesCount}}</small></span>
-              <span>Commit</span>
-            </x-button>
-            <x-button v-if="!pendingChangesCount > 0" class="btn btn-primary add-row" title="Add Row">
-              <i class="material-icons">add</i>
-            </x-button>
-            <x-button class="btn btn-primary" menu>
-            <i class="material-icons">arrow_drop_down</i>
-            <x-menu>
-              <x-menuitem @click.prevent="">
-                <x-label>Add Row</x-label>
-              </x-menuitem>
-              <x-menuitem @click.prevent="">
-                <x-label>Refresh</x-label>
-              </x-menuitem>
-            </x-menu>
-            </x-button>
-          </x-buttons>
-        </div>
+          </x-button>
+          <x-button class="btn btn-primary" menu>
+          <i class="material-icons">arrow_drop_down</i>
+          <x-menu>
+            <x-menuitem @click.prevent="saveChanges">
+              <x-label>Commit Merge </x-label>
+            </x-menuitem>
+            <x-menuitem @click.prevent="discardChanges">
+              <x-label>Discard Changes</x-label>
+            </x-menuitem>
+          </x-menu>
+          </x-button>
+        </x-buttons>
+
       </div>
       
     </statusbar>

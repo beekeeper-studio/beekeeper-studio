@@ -20,19 +20,18 @@
     color: $statusbar-text;
     height: $statusbar-height *0.8;
     line-height: $statusbar-height * 0.8;
-    transition: background 0.15s ease-in-out;
     min-width: 0;
     margin-left: 0.15rem;
     margin-right: 0.15rem;
     padding-left: 0.7rem;
     padding-right: 0.7rem;
     border-radius: 4px;
+    transition: background 0.15s ease-in-out;
     &:hover {
       background: rgba($statusbar-text, 0.05);
     }
     &.btn-primary {
       background: rgba($theme-base, 0.1);
-      transition: background 0.15s ease-in-out;
       &:hover {
         background: rgba($theme-base, 0.15);
       }
@@ -97,22 +96,38 @@
 
   // Row Actions
   // -------------------------
-  x-buttons {
+  .statusbar-actions {
+    margin-right: auto;
+    x-buttons {
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: -1px;
+      .btn {
+        border-radius: 0;
+      }
+    }
+    .btn {
+      margin-left: 0.35rem;
+      margin-top: -1px;
+      --ripple-background: none;
+      &.btn-flat,
+      &.btn-link {
+        &:hover {
+          background: rgba($theme-base, 0.1);
+        }
+      }
+    }
+  }
+
+  // Download Results
+  .download-results {
     border-radius: 4px;
     overflow: hidden;
     margin-top: -1px;
     .btn {
-      border-radius: 0;
-    }
-  }
-  .download-results {
-    .btn-link {
-      background: rgba($theme-base, 0.1);
       color: $text-dark;
       margin: 0;
-      &:hover {
-        background: rgba($theme-base, 0.15);
-      }
+      border-radius: 0;
       &[menu] {
         .material-icons {
           font-size: 16px;
@@ -124,16 +139,21 @@
       font-size: 18px;
     }
   }
+
+  // Actions
+  .actions-btn {
+    padding: 0 0.35rem;
+    .material-icons {
+      width: 16px;
+    }
+  }
+
+  // Pending Changes
   .pending-changes {
-    .btn-primary {
+    margin-left: 0.25rem;
+    .btn {
+      padding-left: 0.5rem;
       margin: 0;
-      &.add-row {
-        padding: 0 0.25rem;
-        .material-icons {
-          font-size: 18px;
-          width: 18px;
-        }
-      }
     }
     .badge {
       line-height: 14px;
@@ -141,8 +161,8 @@
     }
     .material-icons {
       font-size: 14px;
-      overflow:visible;
-      line-height:1.1;
+      overflow: visible;
+      line-height: 1.1;
     }
   }
 
@@ -192,7 +212,8 @@
         overflow: hidden;
       }
     }
-    &.hoverable:hover, &.hoverable:focus {
+    &.hoverable:hover, 
+    &.hoverable:focus {
       color: $text-dark;
       transition: color 0.15s ease-in-out;
       outline: none;

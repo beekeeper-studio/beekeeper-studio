@@ -66,7 +66,10 @@
       flex-grow: 1;
       overflow: hidden;
       .tabulator-cell {
-        cursor: default!important;
+        cursor: default;
+        &:hover {
+          background: transparent;
+        }
       }
     }
     .not-run-yet {
