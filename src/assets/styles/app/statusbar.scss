@@ -31,9 +31,9 @@
       background: rgba($statusbar-text, 0.05);
     }
     &.btn-primary {
-      background: rgba($theme-base, 0.1);
+      background: rgba($theme-base, 0.15);
       &:hover {
-        background: rgba($theme-base, 0.15);
+        background: rgba($theme-base, 0.2);
       }
     }
     &.error, &.error:hover {
@@ -143,6 +143,8 @@
   // Actions
   .actions-btn {
     padding: 0 0.35rem;
+    background: transparent;
+    box-shadow: none!important;
     .material-icons {
       width: 16px;
     }
@@ -152,12 +154,13 @@
   .pending-changes {
     margin-left: 0.25rem;
     .btn {
-      padding-left: 0.5rem;
+      // padding-left: 0.5rem;
       margin: 0;
     }
     .badge {
       background: transparent;
-      box-shadow: inset 0 0 0 1px rgba($theme-base, 0.25);
+      // box-shadow: inset 0 0 0 1px rgba($theme-base, 0.25);
+      padding: 0;
       line-height: 14px;
       margin-left: 0;
     }
