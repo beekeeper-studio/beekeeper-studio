@@ -129,20 +129,16 @@ export default {
       return `Table: ${this.exporter.table.name}\nFilters: ${this.exporter.getFilterString()}\nPath: ${this.exporter.filePath}`
     }
   },
+  mounted() {
+    this.exporter.onProgress(this.progressUpdate.bind(this))
+  },
   methods: {
     ...mapMutations({
       removeExport: "exports/removeExport",
       removeInactive: "exports/removeInactive",
     }),
-    select() {
-      console.log("export selected");
-    },
-  },
-  watch: {
-    exporter: {
-      deep: true,
-      handler() {
-        if (this.exporter.status === Export.Status.Completed) {
+    progressUpdate(p) {
+      if(p.status === Export.Status.Completed) {
           new Noty({
             type: "success",
             text:
@@ -159,15 +155,17 @@ export default {
             ],
             queue: "export",
           }).show();
-        } else if (this.exporter.status === Export.Status.Error) {
-          this.$noty.error(
-            "Error while exporting: <br /><br /><code>" +
-              this.exporter.error.message +
-              "</code>"
-          );
-        }
-      },
+      } else if (p.status == Export.Status.Error) {
+        this.$noty.error(
+          "Error while exporting: <br /><br /><code>" +
+            this.exporter.error.message +
+            "</code>"
+        );
+      }
     },
-  },
+    select() {
+      console.log("export selected");
+    },
+  }
 };
 </script>

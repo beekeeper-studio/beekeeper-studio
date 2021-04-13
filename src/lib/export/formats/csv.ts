@@ -26,7 +26,7 @@ export class CsvExporter extends Export {
     
   }
 
-  getHeader(fields: string[]): string {
+  async getHeader(fields: string[]): Promise<string> {
     // TODO fix this, use papa parse
     if (fields && this.outputOptions.header) {
       return `${fields.join(this.outputOptions.delimiter)}\n`

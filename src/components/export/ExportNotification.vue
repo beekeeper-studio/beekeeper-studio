@@ -31,10 +31,10 @@ export default {
     notificationText() {
       return `
             <div class="export-progress-notification">
-                <div class="title">Exporting from <span class="text-primary">${this.exporter.table.name}</span></div>
+                <div class="title">Exporting from <span class="text-primary">some table</span></div>
                 <div class="flex flex-between progress-info">
                     <div>${this.timeLeftReadable}</div>
-                    <div>${this.exporter.countExported} / ${this.exporter.countTotal} rows</div>
+                    <div>${0} / ${0} rows</div>
                     <div>${this.fileSizeReadable}</div>
                 </div>
                 <x-progressbar class="progress-bar" value="${this.progressPercent}" max="100"></x-progressbar>
@@ -53,8 +53,7 @@ export default {
     },
   },
   watch: {
-    exporter: {
-      deep: true,
+    notificationText: {
       handler() {
         if (this.notification) {
           this.notification.setText(this.notificationText);

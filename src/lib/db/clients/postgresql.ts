@@ -2,38 +2,24 @@
 
 import { readFileSync } from 'fs';
 
-import pg, { PoolClient, QueryResult, Pool, PoolConfig } from 'pg';
+import pg, { PoolClient, QueryResult, PoolConfig } from 'pg';
 import { identify } from 'sql-query-identifier';
 import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig, NgQueryResult, BeeCursor, StreamResults } from '../client'
+import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig, NgQueryResult, StreamResults } from '../client'
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
+
 import { createCancelablePromise } from '../../../common/utils';
 import { errors, Error as CustomError } from '../../errors';
 import globals from '../../../common/globals';
+import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
+
 
 const base64 = require('base64-url');
 
-export interface HasPool {
-  pool: Pool
-}
-
-interface VersionInfo {
-  isPostgres: boolean
-  isCockroach: boolean
-  isRedshift: boolean
-  number: number
-  version: string
-}
-
-interface HasConnection {
-  connection: PoolClient
-}
-
-export type Conn = HasPool | HasConnection
 
 function isPool(x: any): x is HasPool {
   return x.pool !== undefined
@@ -825,7 +811,7 @@ export function getQuerySelectTop(conn: Conn, table: string, limit: number, sche
   return `SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)} LIMIT ${limit}`;
 }
 
-export async function getTableCreateScript(conn: Conn, table: string, schema: string) {
+export async function getTableCreateScript(conn: Conn, table: string, schema: string): Promise<string> {
   // Reference http://stackoverflow.com/a/32885178
   const sql = `
     SELECT
@@ -885,7 +871,7 @@ export async function getTableCreateScript(conn: Conn, table: string, schema: st
 
   const data = await driverExecuteSingle(conn, { query: sql, params });
 
-  return data.rows.map((row) => row.createtable);
+  return data.rows.map((row) => row.createtable)[0];
 }
 
 export async function getViewCreateScript(conn: Conn, view: string, schema: string) {

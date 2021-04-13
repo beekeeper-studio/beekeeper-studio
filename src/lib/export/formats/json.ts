@@ -20,7 +20,7 @@ export class JsonExporter extends Export {
     super(filePath, connection, table, filters, options, outputOptions)
   }
 
-  getHeader() {
+  async getHeader(): Promise<string> {
     return '[\n'
   }
 

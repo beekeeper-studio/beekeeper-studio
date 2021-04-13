@@ -1,7 +1,7 @@
 import { PoolClient } from "pg"
 import Cursor from "pg-cursor"
-import { BeeCursor } from "../../client"
-import { Conn } from '../postgresql'
+import { BeeCursor } from "../base/types"
+import { Conn } from './types'
 import rawlog from 'electron-log'
 
 const log = rawlog.scope('postgresql/cursor')

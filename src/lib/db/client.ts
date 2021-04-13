@@ -3,6 +3,7 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
+import { BeeCursor } from './clients/base/types'
 import Cursor from 'pg-cursor';
 
 const logger = createLogger('db');
@@ -78,14 +79,6 @@ export interface TableResult {
   SQLITE: https://github.com/mapbox/node-sqlite3/wiki/API#statementeachparam--callback-complete
 */
 
-export abstract class BeeCursor {
-  abstract start(): Promise<void>
-  abstract read(chunkSize: number): Promise<any[]>
-  abstract cancel(): Promise<void>
-  async close() {
-    await this.cancel()
-  }
-}
 export interface StreamResults {
   fields: string[],
   totalRows: number,

@@ -99,8 +99,11 @@
 <script>
 import { remote } from "electron"
 import { mapMutations } from "vuex"
-import { Export, CsvExporter, JsonExporter, SqlExporter } from "@/lib/export"
+import rawlog from 'electron-log'
+import { CsvExporter, JsonExporter, SqlExporter } from "@/lib/export"
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL } from "./forms"
+
+const log = rawlog.scope('components/export-modal')
 
 const exportFormats = [
   {
@@ -139,9 +142,8 @@ export default {
     return {
       selectedExportFormat: exportFormats[0],
       exportFormats,
-      options: { chunkSize: 500, deleteOnAbort: false },
+      options: { chunkSize: 100, deleteOnAbort: true },
       outputOptions: {},
-      Export: Export,
       error: null,
     };
   },
@@ -172,6 +174,7 @@ export default {
   methods: {
     ...mapMutations({ addExport: "exports/addExport" }),
     async chooseFile() {
+      log.info('choose file triggered')
       this.error = null;
 
       const filePath = remote.dialog.showSaveDialogSync(null, {
@@ -181,6 +184,8 @@ export default {
       if (filePath === undefined) {
         return;
       }
+
+      log.info('exporting to ', filePath)
 
       try {
         const exporter = new this.selectedExportFormat.exporter(
@@ -193,6 +198,7 @@ export default {
         );
 
         this.addExport(exporter);
+        log.info('exportToFile started with exporter', this.selectedExportFormat)
         exporter.exportToFile();
 
         this.$emit("close");

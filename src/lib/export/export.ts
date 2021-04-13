@@ -2,18 +2,33 @@ import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 import remote from 'electron'
-import { DBConnection, TableOrView, TableFilter, TableResult, BeeCursor } from '@/lib/db/client'
+import { DBConnection, TableOrView, TableFilter, TableResult, } from '@/lib/db/client'
+import { BeeCursor } from '@/lib/db/clients/base/types'
 import { promises } from 'fs'
 import NativeWrapper from '../NativeWrapper'
+import rawlog from 'electron-log'
+
+const log = rawlog.scope('export/export')
 
 export interface ExportOptions {
   chunkSize: number,
   deleteOnAbort: boolean
 }
 
+export interface ExportProgress {
+  totalRecords: number,
+  countExported: number,
+  secondsElapsed: number,
+  secondsRemaining: number
+  status: Export.Status
+}
+
+type ProgressCallback = (p: ExportProgress) => void
+
 export abstract class Export {
+  // don't make stuff public you don't want observed in vue
   id: string
-  connection: DBConnection
+
   countExported: number = 0
   countTotal: number = 0
   error: Error | null = null
@@ -21,15 +36,26 @@ export abstract class Export {
   fileSize: number = 0
   filters: TableFilter[] | string
   lastChunkTime: number = 0
-  options: ExportOptions
-  outputOptions: any
+  
   showNotification: boolean = true
-  status: Export.Status = Export.Status.Idle
+  // see set status()
+  private _status: Export.Status = Export.Status.Idle
   table: TableOrView
   timeElapsed: number = 0
   timeLeft: number = 0
-  cursor?: BeeCursor
-  fileHandle?: promises.FileHandle
+
+  private connection: DBConnection
+  private outputOptions: any
+  private options: ExportOptions
+  private cursor?: BeeCursor
+  private fileHandle?: promises.FileHandle
+
+
+
+  private callbacks = {
+    progress: Array<ProgressCallback>()
+  }
+
 
   abstract separator: string
   abstract getHeader(fields: string[]): Promise<string>
@@ -53,6 +79,29 @@ export abstract class Export {
     this.id = this.generateId()
   }
 
+
+  set status(status: Export.Status) {
+    this._status = status
+    this.notify()
+  }
+
+  get status() {
+    return this._status
+  }
+
+  notify() {
+    const payload = {
+      totalRecords: this.countTotal,
+      countExported: this.countExported,
+      secondsElapsed: this.timeElapsed,
+      secondsRemaining: this.timeLeft,
+      status: this.status
+    }
+    log.debug('notifying', this.status, payload)
+    this.callbacks.progress.forEach(c => c(payload))
+  }
+
+
   generateId(): string {
     const md5sum = crypto.createHash('md5')
 
@@ -64,6 +113,7 @@ export abstract class Export {
   }
 
   async initExport(): Promise<void> {
+    this
     this.status = Export.Status.Exporting
     this.countExported = 0
     
@@ -76,7 +126,10 @@ export abstract class Export {
       this.table.schema,
     )
     this.cursor = results.cursor
+
+    log.debug('initializing export', results)
     this.countTotal = results.totalRows
+    await this.cursor?.start()
     const header = await this.getHeader(results.fields)
 
     if (header) {
@@ -88,11 +141,12 @@ export abstract class Export {
       // keep going until we don't get any more results.
       let rows
       do {
-
+        log.info('exportData')
         if (!this.cursor) {
           throw new Error("Something went wrong")
         }
         rows = await this.cursor?.read(this.options.chunkSize)
+        log.info(`read ${rows.length} rows`)
         for (let rI = 0; rI < rows.length; rI++) {
           const row = rows[rI];
           const formatted = this.formatRow(row)
@@ -102,6 +156,8 @@ export abstract class Export {
         this.countExported += rows.length
 
         this.calculateTimeLeft()
+        this.notify()
+
       } while (
         rows.length > 0 &&
         this.status === Export.Status.Exporting
@@ -114,7 +170,6 @@ export abstract class Export {
     await this.fileHandle?.write(footer)
     await this.fileHandle?.close()
     this.fileHandle = undefined
-
     this.status = Export.Status.Completed
   }
 
@@ -134,7 +189,7 @@ export abstract class Export {
     } catch (error) {
       this.status = Export.Status.Error
       this.error = error
-
+      log.error(error)
       await this.fileHandle?.close()
 
 
@@ -153,6 +208,10 @@ export abstract class Export {
     }
 
     this.lastChunkTime = Date.now()
+  }
+
+  onProgress(func: (progress: ExportProgress) => void): void {
+    this.callbacks.progress.push(func)
   }
 
   abort(): void {
