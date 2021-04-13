@@ -105,12 +105,6 @@ import ExternalLink from '@/components/common/ExternalLink'
       },
       toggleIcon() {
         return this.sslToggled ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
-
-        // if(this.sslToggled === true) {
-        //   return 'keyboard_arrow_down'
-        // } else {
-        //   return 'keyboard_arrow_right'
-        // }
       }
     },
     methods: {
