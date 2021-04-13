@@ -132,13 +132,35 @@
             >warning</i>
           </span>
         </div>
-        <div v-if="pendingChangesCount > 0" class="flex flex-right">
-          <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
-          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="saveButtonText" :class="{'error': !!saveError}">
-            <!-- <i v-if="queryError" class="material-icons">error</i> -->
-            <i class="material-icons">priority_high</i>
+        <div class="flex flex-right">
+          <a v-if="pendingChangesCount > 0"  @click.prevent="discardChanges" class="btn btn-link">Discard</a>
+          <!-- <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="saveButtonText" :class="{'error': !!saveError}">
+            <i v-if="error" class="material-icons">error</i>
+            <span class="badge" v-if="!error"><small>{{pendingChangesCount}}</small></span>
             <span>Commit</span>
-          </a>
+          </a> -->
+          
+          <x-buttons class="pending-changes">
+            <x-button v-if="pendingChangesCount > 0" class="btn btn-primary" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
+              <i v-if="error" class="material-icons">error</i>
+              <span class="badge" v-if="!error"><small>{{pendingChangesCount}}</small></span>
+              <span>Commit</span>
+            </x-button>
+            <x-button v-if="!pendingChangesCount > 0" class="btn btn-primary add-row" title="Add Row">
+              <i class="material-icons">add</i>
+            </x-button>
+            <x-button class="btn btn-primary" menu>
+            <i class="material-icons">arrow_drop_down</i>
+            <x-menu>
+              <x-menuitem @click.prevent="">
+                <x-label>Add Row</x-label>
+              </x-menuitem>
+              <x-menuitem @click.prevent="">
+                <x-label>Refresh</x-label>
+              </x-menuitem>
+            </x-menu>
+            </x-button>
+          </x-buttons>
         </div>
       </div>
       
