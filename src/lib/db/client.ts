@@ -69,10 +69,6 @@ export interface TableResult {
   totalRecords: number
 }
 
-export interface BeeCursor {
-  cancel(): void
-  getPercentComplete(): number
-}
 /*
 
   The streaming api has to be a wrapper for all database implementations of cursors/streams
@@ -81,16 +77,21 @@ export interface BeeCursor {
   MSSQL: https://github.com/tediousjs/node-mssql#streaming
   SQLITE: https://github.com/mapbox/node-sqlite3/wiki/API#statementeachparam--callback-complete
 */
-export interface StreamOptions {
-  chunkSize?: number,
-  countFirst?: boolean,
-  approximateCount?: boolean,
-  arrayRowMode?: boolean,
-  handleCount(total: number): Promise<void>,
-  handleFields(fields: string[]): Promise<void>,
-  handleRows(rows: any[], cursor: CursorActions): Promise<void>,
-  afterFinish(): Promise<void>
+
+export abstract class BeeCursor {
+  abstract start(): Promise<void>
+  abstract read(chunkSize: number): Promise<any[]>
+  abstract cancel(): Promise<void>
+  async close() {
+    await this.cancel()
+  }
 }
+export interface StreamResults {
+  fields: string[],
+  totalRows: number,
+  cursor: BeeCursor
+}
+
 
 export interface TableChanges {
   inserts: TableInsert[],
@@ -200,8 +201,7 @@ export interface DatabaseClient {
   listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>,
   getTableReferences: (table: string, schema?: string) => void,
   getTableKeys: (db: string, table: string, schema?: string) => void,
-  query: (queryText: string) => void,
-  stream(queryText: string, options: StreamOptions): Promise<BeeCursor>
+  query: (queryText: string) => CancelableQuery,
   executeQuery: (queryText: string) => void,
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
@@ -212,8 +212,8 @@ export interface DatabaseClient {
   truncateAllTables: (db: string, schema?: string) => void,
   listMaterializedViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
   getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string>,
-  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[], schema?: string): Promise<TableResult>,
-  selectTopStream(table: string, orderBy: OrderBy[], filters: TableFilter[], options: StreamOptions, schema?: string ): Promise<BeeCursor>,
+  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string): Promise<TableResult>,
+  selectTopStream(table: string, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string ): Promise<StreamResults>,
   wrapIdentifier: (value: string) => string
 }
 
@@ -289,7 +289,6 @@ export class DBConnection {
   getPrimaryKey = getPrimaryKey.bind(null, this.server, this.database)
   getTableKeys = getTableKeys.bind(null, this.server, this.database)
   query = query.bind(null, this.server, this.database)
-  stream = stream.bind(null, this.server, this.database)
   executeQuery = executeQuery.bind(null, this.server, this.database)
   listDatabases = listDatabases.bind(null, this.server, this.database)
   selectTop = selectTop.bind(null, this.server, this.database)
@@ -386,7 +385,7 @@ function selectTop(
   offset: number,
   limit: number,
   orderBy: OrderBy[],
-  filters: TableFilter[],
+  filters: TableFilter[] | string,
   schema: string
 ): Promise<TableResult> {
   checkIsConnected(server, database)
@@ -399,12 +398,12 @@ function selectTopStream(
   database: IDbConnectionDatabase,
   table: string,
   orderBy: OrderBy[],
-  filters: TableFilter[],
-  options: StreamOptions,
+  filters: TableFilter[] | string,
   schema?: string,
-): void {
+): Promise<StreamResults> {
   checkIsConnected(server, database)
-  return database.connection?.selectTopStream(table, orderBy, filters, options, schema)
+  if (!database.connection) throw "No database connection available"
+  return database.connection?.selectTopStream(table, orderBy, filters, schema)
 }
 
 function listSchemas(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: SchemaFilterOptions) {
@@ -482,11 +481,6 @@ function getTableKeys(server: IDbConnectionServer, database: IDbConnectionDataba
 function query(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string) {
   checkIsConnected(server , database);
   return database.connection?.query(queryText);
-}
-
-function stream(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string, options: StreamOptions) {
-  checkIsConnected(server, database)
-  return database.connection?.stream(queryText, options)
 }
 
 function applyChanges(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: TableChanges) {

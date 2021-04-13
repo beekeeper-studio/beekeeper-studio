@@ -1,9 +1,9 @@
 import Knex from 'knex'
-import { exit } from 'process'
-import { IDbConnectionServerConfig } from '../../src/lib/db/client'
+import { DBConnection, IDbConnectionServerConfig } from '../../src/lib/db/client'
 import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
+import { IDbConnectionPublicServer } from '@/lib/db/server'
 export const dbtimeout = 120000
 
 
@@ -24,14 +24,14 @@ interface Options {
 
 export class DBTestUtil {
   public knex: Knex
-  public server: any
-  public connection: any
+  public server: IDbConnectionPublicServer
+  public connection: DBConnection
   public extraTables: number = 0
   private options: Options
   private dialect: string
   
   public preInitCmd: string | undefined
-  public defaultSchema: string | null = 'public'
+  public defaultSchema: string = 'public'
   
   get expectedTables() {
     return this.extraTables + 8
@@ -85,7 +85,7 @@ export class DBTestUtil {
     // SIMPLE TABLE CREATION TEST
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
     console.log(tables)
-    expect(tables.length).toBe(this.expectedTables)
+    expect(tables.length).toBeGreaterThanOrEqual(this.expectedTables)
     const columns = await this.connection.listTableColumns("people", this.defaultSchema)
     expect(columns.length).toBe(7)
     console.log("loading columns...")
@@ -110,39 +110,39 @@ export class DBTestUtil {
     expect(await this.connection.getPrimaryKey("MixedCase", this.defaultSchema))
       .toBe("id");
     
-    const stR = await this.connection.selectTop("group", 0, 10, ["select"], null, this.defaultSchema)
+    const stR = await this.connection.selectTop("group", 0, 10, [{ field: "select", dir: 'ASC'} ], [], this.defaultSchema)
     expect(stR)
       .toMatchObject({ result: [], totalRecords: 0 })
     
     await this.knex("group").insert([{select: "bar"}, {select: "abc"}])
 
-    let r = await this.connection.selectTop("group", 0, 10, ["select"], null, this.defaultSchema)
+    let r = await this.connection.selectTop("group", 0, 10, [{field: "select", dir: 'ASC'}], [], this.defaultSchema)
     let result = r.result.map((r: any) => r.select)
     expect(result).toMatchObject(["abc", "bar"])
 
-    r = await this.connection.selectTop("group", 0, 10, [{field: 'select', dir: 'desc'}], null, this.defaultSchema)
+    r = await this.connection.selectTop("group", 0, 10, [{field: 'select', dir: 'DESC'}], [], this.defaultSchema)
     result = r.result.map((r: any) => r.select)
     expect(result).toMatchObject(['bar', 'abc'])
 
-    r = await this.connection.selectTop("group", 0, 1, [{ field: 'select', dir: 'desc' }], null, this.defaultSchema)
+    r = await this.connection.selectTop("group", 0, 1, [{ field: 'select', dir: 'DESC' }], [], this.defaultSchema)
     result = r.result.map((r: any) => r.select)
     expect(result).toMatchObject(['bar'])
 
-    r = await this.connection.selectTop("group", 1, 10, [{ field: 'select', dir: 'desc' }], null, this.defaultSchema)
+    r = await this.connection.selectTop("group", 1, 10, [{ field: 'select', dir: 'DESC' }], [], this.defaultSchema)
     result = r.result.map((r: any) => r.select)
     expect(result).toMatchObject(['abc'])
 
-    r = await this.connection.selectTop("MixedCase", 0, 1, [], null, this.defaultSchema)
+    r = await this.connection.selectTop("MixedCase", 0, 1, [], [], this.defaultSchema)
     result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(["pears"])
 
     // filter test - builder
-    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'desc' }], [{field: 'bananas', type: '=', value: "pears"}], this.defaultSchema)
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{field: 'bananas', type: '=', value: "pears"}], this.defaultSchema)
     result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(['pears'])
 
     // filter test - raw
-    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'desc' }], "bananas = 'pears'", this.defaultSchema)
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], "bananas = 'pears'", this.defaultSchema)
     result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(['pears'])
 
@@ -159,13 +159,14 @@ export class DBTestUtil {
     }
 
     // composite primary key tests. Just disable them for now
-    r = await this.connection.getPrimaryKey('with_composite_pk', this.defaultSchema)
-    expect(r).toBeNull()
+    const pkres = await this.connection.getPrimaryKey('with_composite_pk', this.defaultSchema)
+    expect(pkres).toBeNull()
   }
 
   async queryTests() {
     console.log('query tests')
     const q = await this.connection.query("select 'a' as total, 'b' as total")
+    if(!q) throw new Error("no query result")
     const result = await q.execute()
 
     expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])

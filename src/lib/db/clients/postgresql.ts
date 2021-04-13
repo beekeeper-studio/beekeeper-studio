@@ -3,21 +3,21 @@
 import { readFileSync } from 'fs';
 
 import pg, { PoolClient, QueryResult, Pool, PoolConfig } from 'pg';
-import Cursor from 'pg-cursor';
 import { identify } from 'sql-query-identifier';
 import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig, NgQueryResult, StreamOptions, BeeCursor } from '../client'
+import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig, NgQueryResult, BeeCursor, StreamResults } from '../client'
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors, Error as CustomError } from '../../errors';
 import globals from '../../../common/globals';
+import { PsqlCursor } from './postgresql/PsqlCursor';
 
 const base64 = require('base64-url');
 
-interface HasPool {
+export interface HasPool {
   pool: Pool
 }
 
@@ -33,7 +33,7 @@ interface HasConnection {
   connection: PoolClient
 }
 
-type Conn = HasPool | HasConnection
+export type Conn = HasPool | HasConnection
 
 function isPool(x: any): x is HasPool {
   return x.pool !== undefined
@@ -174,11 +174,11 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
     applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
-    stream: (queryText: string, options: StreamOptions, schema: string = defaultSchema) => stream(conn, queryText, options, schema),
+    // stream: (queryText: string, options: StreamOptions, schema: string = defaultSchema) => stream(conn, queryText, options, schema),
     executeQuery: (queryText, schema = defaultSchema) => executeQuery(conn, queryText),
     listDatabases: (filter?: DatabaseFilterOptions) => listDatabases(conn, filter),
-    selectTop: (table: string, offset: Number, limit: Number, orderBy: OrderBy[], filters: TableFilter[], schema: string = defaultSchema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
-    selectTopStream: (table: string, orderBy: OrderBy[], filters: TableFilter[], options: StreamOptions, schema: string = defaultSchema) => selectTopStream(conn, table, orderBy, filters, options, schema),
+    selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
+    selectTopStream: (table: string, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTopStream(conn, table, orderBy, filters, schema),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
     getTableCreateScript: (table, schema = defaultSchema) => getTableCreateScript(conn, table, schema),
     getViewCreateScript: (view, schema = defaultSchema) => getViewCreateScript(conn, view, schema),
@@ -250,7 +250,7 @@ export async function listMaterializedViews(conn: HasPool, filter: FilterOptions
 interface STQOptions {
   table: string,
   orderBy: OrderBy[],
-  filters: TableFilter[],
+  filters: TableFilter[] | string,
   offset?: number,
   limit?: number,
   schema: string,
@@ -322,7 +322,7 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
     SELECT * ${baseSQL}
     ${orderByString}
     ${options.limit ? `LIMIT ${options.limit}` : ''}
-    ${options.offset ? `OFSET ${options.offset}` : ''}
+    ${options.offset ? `OFFSET ${options.offset}` : ''}
     `
   return {
     query, countQuery, params
@@ -335,7 +335,7 @@ async function selectTop(
   offset: number,
   limit: number,
   orderBy: OrderBy[],
-  filters: TableFilter[],
+  filters: TableFilter[] | string,
   schema = 'public'
 ): Promise<TableResult> {
 
@@ -354,17 +354,37 @@ async function selectTop(
   }
 }
 
-async function selectTopStream(conn: HasPool, table: string, orderBy: OrderBy[], filters: TableFilter[], options: StreamOptions, schema: string): Promise<BeeCursor> {
-    const version = await getVersion(conn)
-    let orderByString = ""
-    let filterString = ""
-    let params: string[] = []
-    const qs = buildSelectTopQueries({
-      table, orderBy, filters, version, schema
-    })
+async function selectTopStream(
+  conn: HasPool,
+  table: string,
+  orderBy: OrderBy[],
+  filters: TableFilter[] | string,
+  schema: string
+): Promise<StreamResults> {
+  const version = await getVersion(conn)
+  const qs = buildSelectTopQueries({
+    table, orderBy, filters, version, schema
+  })
+  // const cursor = new Cursor(qs.query, qs.params)
+  const countResults = await driverExecuteSingle(conn, {query: qs.countQuery, params: qs.params})
+  const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
+  const totalRecords = rowWithTotal ? Number(rowWithTotal.total) : 0
 
-    const countResults = await driverExecuteSingle(conn, {query: qs.countQuery, params: qs.params})
-    const cursor = new Cursor()
+  const fieldsResult = await driverExecuteSingle(conn, { query: `${qs.query} LIMIT 1`, params: qs.params })
+
+
+  const cursorOpts = {
+    query: qs.query,
+    params: qs.params,
+    runner: runWithConnection,
+    conn: conn
+  }
+
+  return {
+    totalRows: totalRecords,
+    fields: fieldsResult.fields.map(f => f.name),
+    cursor: new PsqlCursor(cursorOpts)
+  }
 }
 
 export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promise<Routine[]> {
@@ -774,10 +794,6 @@ export function query(conn: Conn, queryText: string, schema: string) {
   };
 }
 
-export function stream(conn: Conn, queryText: string, options: StreamOptions, schema: string): void {
-  
-}
-
 export async function executeQuery(conn: Conn, queryText: string, arrayMode: boolean = false) {
   const data = await driverExecuteQuery(conn, { query: queryText, multiple: true, arrayMode });
 
@@ -805,7 +821,7 @@ export async function listDatabases(conn: Conn, filter?: DatabaseFilterOptions) 
 }
 
 
-export function getQuerySelectTop(conn: Conn, table: string, limit: Number, schema: string) {
+export function getQuerySelectTop(conn: Conn, table: string, limit: number, schema: string) {
   return `SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)} LIMIT ${limit}`;
 }
 
