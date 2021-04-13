@@ -178,6 +178,7 @@
 
 <script>
 import Vue from 'vue'
+import pluralize from 'pluralize'
 import Tabulator from "tabulator-tables";
 // import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
@@ -790,11 +791,14 @@ export default Vue.extend({
             })
           }
 
-          this.resetPendingChanges()
-
           if (replaceData) {
+            const niceChanges = pluralize('change', this.pendingChangesCount, true)
+            this.$noty.success(`${niceChanges} successfully applied`)
             this.tabulator.replaceData()
           }
+
+          this.resetPendingChanges()
+
 
         } catch (ex) {
           
