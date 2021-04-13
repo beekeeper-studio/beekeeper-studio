@@ -65,6 +65,9 @@
       flex-direction: column;
       flex-grow: 1;
       overflow: hidden;
+      .tabulator-cell {
+        cursor: default!important;
+      }
     }
     .not-run-yet {
       padding: 0.5rem 0.75rem;
