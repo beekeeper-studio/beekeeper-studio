@@ -18,8 +18,8 @@
   }
   .btn {
     color: $statusbar-text;
-    height: $statusbar-height *0.85;
-    line-height: $statusbar-height * 0.85;
+    height: $statusbar-height *0.8;
+    line-height: $statusbar-height * 0.8;
     transition: background 0.15s ease-in-out;
     min-width: 0;
     margin-left: 0.15rem;
@@ -100,7 +100,7 @@
   x-buttons {
     border-radius: 4px;
     overflow: hidden;
-    // margin-top: -1px;
+    margin-top: -1px;
     .btn {
       border-radius: 0;
     }
