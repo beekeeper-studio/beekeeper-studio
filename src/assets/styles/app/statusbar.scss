@@ -18,7 +18,7 @@
   }
   .btn {
     color: $statusbar-text;
-    height: $statusbar-height *0.8;
+    height: $statusbar-height * 0.8;
     line-height: $statusbar-height * 0.8;
     min-width: 0;
     margin-left: 0.15rem;
@@ -156,6 +156,8 @@
       margin: 0;
     }
     .badge {
+      background: transparent;
+      box-shadow: inset 0 0 0 1px rgba($theme-base, 0.25);
       line-height: 14px;
       margin-left: 0;
     }
