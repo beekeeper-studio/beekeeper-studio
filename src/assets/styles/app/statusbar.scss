@@ -25,7 +25,7 @@
     margin-right: 0.15rem;
     padding-left: 0.7rem;
     padding-right: 0.7rem;
-    border-radius: 4px;
+    border-radius: $btn-border-radius-small;
     transition: background 0.15s ease-in-out;
     &:hover {
       background: rgba($statusbar-text, 0.05);
@@ -99,7 +99,7 @@
   .statusbar-actions {
     margin-right: auto;
     x-buttons {
-      border-radius: 4px;
+      border-radius: $btn-border-radius-small;
       overflow: hidden;
       margin-top: -1px;
       .btn {
@@ -121,7 +121,7 @@
 
   // Download Results
   .download-results {
-    border-radius: 4px;
+    border-radius: $btn-border-radius-small;
     overflow: hidden;
     margin-top: -1px;
     .btn {
