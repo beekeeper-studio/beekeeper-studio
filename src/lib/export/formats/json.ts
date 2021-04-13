@@ -7,6 +7,7 @@ interface OutputOptionsJson {
 }
 export class JsonExporter extends Export {
   readonly format: string = 'json'
+  separator: string = ',\n'
 
   constructor(
     filePath: string,
@@ -19,24 +20,17 @@ export class JsonExporter extends Export {
     super(filePath, connection, table, filters, options, outputOptions)
   }
 
-  async getHeader(firstRow: any) {
-    return '['
+  getHeader() {
+    return '[\n'
   }
 
-  async getFooter() {
+  getFooter() {
     return ']'
   }
 
-  formatChunk(data: any): string[] {
-    const formattedChunk = []
-
-    for (const row of data) {
-      const spacing = this.outputOptions.prettyprint ? 2 : undefined
-      const content = indentString(JSON.stringify(row, null, spacing), 2) + ','
-
-      formattedChunk.push(content)
-    }
-    
-    return formattedChunk
+  formatRow(row: any): string {
+    const spacing = this.outputOptions.prettyprint ? 2 : undefined
+    const content = indentString(JSON.stringify(row, null, spacing), 2)
+    return content
   }
 }

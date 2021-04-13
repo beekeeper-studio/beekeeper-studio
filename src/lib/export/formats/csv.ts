@@ -1,5 +1,3 @@
-import 
-
 import { Export, ExportOptions } from "@/lib/export";
 import { DBConnection, TableOrView, TableFilter } from '@/lib/db/client'
 
@@ -14,6 +12,8 @@ export class CsvExporter extends Export {
     header: false,
   }
 
+  separator: string = '\n'
+
   constructor(
     filePath: string,
     connection: DBConnection,
@@ -26,20 +26,20 @@ export class CsvExporter extends Export {
     
   }
 
-  async getHeader(firstRow: any) {
-    if (firstRow && this.outputOptions.header) {
-      return Object.keys(firstRow).join(this.outputOptions.delimiter)
+  getHeader(fields: string[]): string {
+    // TODO fix this, use papa parse
+    if (fields && this.outputOptions.header) {
+      return `${fields.join(this.outputOptions.delimiter)}\n`
+    } else {
+      return ""
     }
   }
 
-  async getFooter() {}
+  getFooter() { return "" }
 
-  formatChunk(data: any[]): string[] {
-    const formattedChunk = []
-    for (const row of data) {
-      formattedChunk.push(Object.values(row).join(this.outputOptions.delimiter))
-    }
+  formatRow(row: any): string {
 
-    return formattedChunk
+    // TODO: this isn't good enough, need papa parse
+    return Object.values(row).join(this.outputOptions.delimiter)
   }
 }

@@ -206,7 +206,7 @@ export interface DatabaseClient {
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
-  getTableCreateScript: (table: string, schema?: string) => void,
+  getTableCreateScript: (table: string, schema?: string) => Promise<string>,
   getViewCreateScript: (view: string) => void,
   getRoutineCreateScript: (routine: string, type: string, schema?: string) => void,
   truncateAllTables: (db: string, schema?: string) => void,

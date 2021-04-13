@@ -9,7 +9,7 @@ interface OutputOptionsSql {
 }
 export class SqlExporter extends Export {
   readonly format: string = 'sql'
-  readonly chunkSeparator: string = '\n;'
+  readonly separator: string = ';\n'
   readonly knexTypes: any = {
     "cockroachdb": "pg",
     "mariadb": "mysql2",
@@ -37,30 +37,25 @@ export class SqlExporter extends Export {
     this.knex = knexlib({ client: this.knexTypes[this.connection.connectionType] || undefined })
   }
 
-  async getHeader(firstRow: any) {
+  async getHeader(fields: string[]): string {
     if (this.outputOptions.createTable) {
       const schema = this.table.schema && this.outputOptions.schema ? this.table.schema : ''
-      return this.connection.getTableCreateScript(this.table.name, schema)
+      return await this.connection.getTableCreateScript(this.table.name, schema)
     }
   }
 
   async getFooter() {
-    return this.chunkSeparator
+    return this.separator
   }
 
-  formatChunk(data: any): string {
-    const formattedChunk = []
+  formatRow(row: any): string {
 
     let knex = this.knex(this.table.name)
     if (this.outputOptions.schema && this.table.schema) {
       knex = knex.withSchema(this.table.schema)
     }
 
-    for (const row of data) {
-      const content = knex.insert(row).toQuery()
-      formattedChunk.push(content)
-    }
-
-    return formattedChunk.join(this.chunkSeparator)
+    const content = knex.insert(row).toQuery()
+    return content
   }
 }
