@@ -34,6 +34,7 @@ import en from 'javascript-time-ago/locale/en'
 import log from 'electron-log'
 import VueClipboard from 'vue-clipboard2'
 import platformInfo from './common/platform_info'
+import { VueBeekeeperPlugin } from './plugins/BeekeeperPlugin'
 
 (async () => {
   try {
@@ -87,6 +88,7 @@ import platformInfo from './common/platform_info'
     Vue.use(VueClipboard)
     Vue.use(ConfigPlugin)
     Vue.use(ElectronPlugin)
+    Vue.use(VueBeekeeperPlugin, store)
     Vue.use(VueNoty, {
       timeout: 2300,
       progressBar: true,

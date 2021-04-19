@@ -10,7 +10,9 @@
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
   import Mutators from '../../mixins/data_mutators'
-import globals from '@/common/globals'
+  import globals from '@/common/globals'
+  import { buildMagicColumn } from '../../lib/tabulator/magic_columns'
+import { fkColumn } from '../../lib/tabulator/columns'
 
   export default {
     mixins: [Converter, Mutators],
@@ -20,7 +22,7 @@ import globals from '@/common/globals'
         actualTableHeight: '100%',
       }
     },
-    props: ['result', 'tableHeight', 'query', 'active'],
+    props: ['result', 'tableHeight', 'query', 'active', 'connection'],
     watch: {
       active() {
         if (!this.tabulator) return;
@@ -54,20 +56,40 @@ import globals from '@/common/globals'
       tableTruncated() {
           return this.result.truncated
       },
+      magicColumns() {
+        const result = {}
+        this.result.fields.forEach((column) => {
+          result[column.id] = buildMagicColumn(column.name)
+        })
+        return result
+      },
       tableColumns() {
         const columnWidth = this.result.fields.length > 20 ? 125 : undefined
-        return this.result.fields.map((column) => {
+        const results = []
+
+        this.result.fields.forEach((column) => {
+
+          const magic = this.magicColumns[column.id]
+          const formatter = magic?.formatLink ? 'link' : this.cellFormatter
           const result = {
-            title: column.name,
+            title: magic?.friendlyColumnName || column.name,
             field: column.id,
             titleDownload: column.name,
             dataType: column.dataType,
+            cellClick: this.cellClick,
             width: columnWidth,
             mutatorData: this.resolveDataMutator(column.dataType),
-            formatter: this.cellFormatter
+            formatter
           }
-          return result;
+          results.push(result)
+          if (magic?.tableLink) {
+            const { table } = magic.tableLink
+            const fkData = fkColumn({ id: column.id }, { toTable: table }, this.fkClick)
+            results.push(fkData)
+          }
+
         })
+        return results
       },
     },
     beforeDestroy() {
@@ -84,7 +106,6 @@ import globals from '@/common/globals'
         height: this.actualTableHeight,
         columnMaxWidth: globals.maxColumnWidth,
         nestedFieldSeparator: false,
-        cellClick: this.cellClick,
         clipboard: true,
         keybindings: {
           copyToClipboard: false
@@ -97,6 +118,33 @@ import globals from '@/common/globals'
     methods: {
       cellClick(e, cell) {
         this.selectChildren(cell.getElement().querySelector('pre'))
+      },
+      async fkClick(e, cell) {
+        console.log('fk click', cell)
+        const fromColumnName = cell.getField().replace(/-link$/g, "")
+        const valueCell = cell.getRow().getCell(fromColumnName)
+        const valueColumn = this.tabulator.getColumn(fromColumnName)
+        
+        // const column = cell.getColumn()
+        // const originalColumn = all.indexOf(column) - 1
+        console.log(cell.getField(), fromColumnName, valueCell, valueColumn)
+        if (!valueColumn) return
+
+        const magic = this.magicColumns[valueColumn.getField()]
+
+        console.log(magic)
+        if (!magic) return
+
+        if (magic?.tableLink) {
+          const { table, schema } = magic.tableLink
+          if (!table) return
+          const pk = await this.connection.getPrimaryKey(table, schema)
+          this.$bks.openRecord(this.$root, {
+            table, schema,
+            pkColumn: pk,
+            pkValue: valueCell.getValue()
+          })
+        }
       },
       download(format) {
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')

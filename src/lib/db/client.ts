@@ -175,7 +175,7 @@ export interface DatabaseClient {
   listTableIndexes: (db: string, table: string, schema?: string) => void,
   listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>,
   getTableReferences: (table: string, schema?: string) => void,
-  getTableKeys: (db: string, table: string, schema?: string) => void,
+  getTableKeys: (db: string, table: string, schema?: string) => Promise<TableKey[]>,
   query: (queryText: string) => void,
   executeQuery: (queryText: string) => void,
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
@@ -189,6 +189,7 @@ export interface DatabaseClient {
   getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string>,
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[], schema?: string): Promise<TableResult>,
   wrapIdentifier: (value: string) => string
+  defaultSchema: () => Promise<string>
 }
 
 export type IDbClients = keyof typeof clients
@@ -276,6 +277,7 @@ export class DBConnection {
   getViewCreateScript = getViewCreateScript.bind(null, this.server, this.database)
   getRoutineCreateScript = getRoutineCreateScript.bind(null, this.server, this.database)
   truncateAllTables = truncateAllTables.bind(null, this.server, this.database)
+  defaultSchema = defaultSchema.bind(null, this.server, this.database)
   connectionType: Nullable<IDbClients> = null
   async currentDatabase() {
     return this.database.database
@@ -363,6 +365,11 @@ function selectTop(
   checkIsConnected(server, database)
   if (!database.connection) throw "No database connection available, please reconnect"
   return database.connection?.selectTop(table, offset, limit, orderBy, filters, schema);
+}
+
+function defaultSchema(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+  checkIsConnected(server, database)
+  return database.connection?.defaultSchema()
 }
 
 function listSchemas(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: SchemaFilterOptions) {

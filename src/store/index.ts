@@ -16,6 +16,7 @@ import { CoreTab, EntityFilter, IDbEntityWithColumns, QueryTab, TableTab } from 
 import { entityFilter } from '../lib/db/sql_tools'
 
 import RawLog from 'electron-log'
+import { TableForeignKey } from 'typeorm'
 
 const log = RawLog.scope('store/index')
 
@@ -26,6 +27,7 @@ interface State {
   connection: Nullable<DBConnection>,
   database: Nullable<string>,
   tables: IDbEntityWithColumns[],
+  defaultSchema: Nullable<string>,
   routines: Routine[],
   entityFilter: EntityFilter,
   tablesLoading: string,
@@ -54,6 +56,7 @@ const store = new Vuex.Store<State>({
     connection: null,
     database: null,
     tables: [],
+    defaultSchema: null,
     routines: [],
     entityFilter: {
       filterQuery: undefined,
@@ -113,6 +116,16 @@ const store = new Vuex.Store<State>({
     },
     connectionColor(state) {
       return state.usedConfig ? state.usedConfig.labelColor : 'default'
+    },
+    tableFor: (state, getters) => (tableName: string, schemaName?: string): IDbEntityWithColumns | null => {
+      const schema = schemaName || state.defaultSchema
+
+      console.log('finding table', tableName, schema)
+      const table = state.tables.find((t) => {
+        return (!schema || schema === t.schema) && t.name === tableName
+      })
+      console.log("returning table", table)
+      return table || null
     }
   },
   mutations: {
@@ -145,6 +158,7 @@ const store = new Vuex.Store<State>({
       state.usedConfig = payload.config
       state.connection = payload.connection
       state.database = payload.config.defaultDatabase
+      state.defaultSchema = payload.schema
     },
 
     clearConnection(state) {
@@ -287,7 +301,8 @@ const store = new Vuex.Store<State>({
           }
           await lastUsedConnection.save()
         }
-        context.commit('newConnection', {config: config, server, connection})
+        const schema = await connection.defaultSchema()
+        context.commit('newConnection', {config: config, server, connection, schema})
       } else {
         throw "No username provided"
       }

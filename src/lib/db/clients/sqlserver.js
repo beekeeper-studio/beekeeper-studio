@@ -57,6 +57,7 @@ export default async function (server, database) {
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
     getRoutineCreateScript: (routine) => getRoutineCreateScript(conn, routine),
     truncateAllTables: () => truncateAllTables(conn),
+    defaultSchema: () => Promise.resolve(null)
   };
 }
 

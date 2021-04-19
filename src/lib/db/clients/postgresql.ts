@@ -182,6 +182,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getViewCreateScript: (view, schema = defaultSchema) => getViewCreateScript(conn, view, schema),
     getRoutineCreateScript: (routine, type, schema = defaultSchema) => getRoutineCreateScript(conn, routine, type, schema),
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
+    defaultSchema: () => getSchema(conn)
   };
 }
 

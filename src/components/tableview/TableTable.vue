@@ -137,6 +137,7 @@ import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import globals from '@/common/globals';
+import { fkColumn } from '../../lib/tabulator/columns'
 
 const CHANGE_TYPE_INSERT = 'insert'
 const CHANGE_TYPE_UPDATE = 'update'
@@ -297,7 +298,6 @@ export default Vue.extend({
     },
     tableColumns() {
       const columnWidth = this.table.columns.length > 20 ? 125 : undefined
-      const keyWidth = 40
       const results = []
       // 1. add a column for a real column
       // if a FK, add another column with the link
@@ -361,23 +361,7 @@ export default Vue.extend({
 
 
         if (keyData) {
-          const icon = () => "<i class='material-icons fk-link'>launch</i>"
-          const tooltip = () => {
-            return `View record in ${keyData.toTable}`
-          }
-          const keyResult = {
-            headerSort: false,
-            download: false,
-            width: keyWidth,
-            resizable: false,
-            field: column.columnName + '-link',
-            title: "",
-            cssClass: "foreign-key-button",
-            cellClick: this.fkClick,
-            formatter: icon,
-            tooltip
-          }
-          result.cssClass = 'foreign-key'
+          const keyResult = fkColumn({ id: column.columnName }, keyData, this.fkClick)
           results.push(keyResult)
         }
 
@@ -515,11 +499,6 @@ export default Vue.extend({
       if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
       return defaultValue
     },
-    valueCellFor(cell) {
-      const fromColumn = cell.getField().replace(/-link$/g, "")
-      const valueCell = cell.getRow().getCell(fromColumn)
-      return valueCell
-    },
     allowHeaderSort(column) {
       if(!column.dataType) return true
       if(column.dataType.startsWith('json')) return false
@@ -542,30 +521,24 @@ export default Vue.extend({
     },
     fkClick(e, cell) {
       log.info('fk-click', cell)
-      const fromColumn = cell.getField().replace(/-link$/g, "")
-      const valueCell = this.valueCellFor(cell)
+      // const fromColumn = cell.getField().replace(/-link$/g, "")
+      const fromColumnName = cell.getField().replace(/-link$/g, "")
+      const valueCell = cell.getRow().getCell(fromColumnName)
+      const valueColumn = valueCell.getColumn()
       const value = valueCell.getValue()
 
-      const keyData = this.tableKeys[fromColumn]
+      const keyData = this.tableKeys[valueColumn.getField()]
       const tableName = keyData.toTable
       const schemaName = keyData.toSchema
-      const table = this.$store.state.tables.find(t => {
-        return (!schemaName || schemaName === t.schema) && t.name === tableName
+      const result = this.$bks.openRecord(this.$root, {
+        table: tableName,
+        schema: schemaName,
+        pkColumn: keyData.toColumn,
+        pkValue: value
       })
-      if (!table) {
-        log.error("fk-click: unable to find destination table", tableName)
-        return
+      if (!result) {
+        this.$noty.error('Unable to open ${tableName}#${pkValue}')
       }
-      const filter = {
-        value,
-        type: '=',
-        field: keyData.toColumn
-      }
-      const payload = {
-        table, filter, titleScope: value
-      }
-      log.debug('fk-click: clicked ', value, keyData)
-      this.$root.$emit('loadTable', payload)
     },
     cellClick(e, cell) {
       // this makes it easier to select text if not editing

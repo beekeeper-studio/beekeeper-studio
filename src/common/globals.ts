@@ -5,4 +5,5 @@ export default {
   psqlTimeout: 15000, // 5 seconds
   largeFieldWidth: 500,
   maxColumnWidth: 1000,
+  fkColumnWidth: 40,
 }
