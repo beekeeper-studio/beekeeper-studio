@@ -10,9 +10,10 @@ import { FavoriteQuery } from '../common/appdb/models/favorite_query'
 import { UsedQuery } from '../common/appdb/models/used_query'
 import ConnectionProvider from '../lib/connection-provider'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
-import { DBConnection, Routine, TableColumn } from '../lib/db/client'
+import { DBConnection } from '../lib/db/client'
+import { Routine, TableColumn } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/server'
-import { CoreTab, EntityFilter, IDbEntityWithColumns, QueryTab, TableTab } from './models'
+import { CoreTab, EntityFilter, IDbEntityWithColumns } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 
 import RawLog from 'electron-log'

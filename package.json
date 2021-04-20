@@ -10,8 +10,8 @@
   },
   "scripts": {
     "serve": "vue-cli-service serve",
-    "test:unit": "TEST_MODE=1 vue-cli-service test:unit",
-    "test:integration": "TEST_MODE=1 vue-cli-service test:unit --config ./jest.integration.config.js",
+    "test:unit": "TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 ./node_modules/electron/dist/electron ./node_modules/jest/bin/jest.js",
+    "test:integration": "TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 ./node_modules/electron/dist/electron ./node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "lint": "vue-cli-service lint",
     "docs:build": "vuepress build docs",
     "docs:serve": "vuepress dev docs",
@@ -26,6 +26,7 @@
     "@types/pg": "^7.14.7",
     "@types/sql-formatter": "^2.3.0",
     "base64-url": "^2.3.3",
+    "better-sqlite3": "^7.1.5",
     "cassandra-driver": "^4.4.0",
     "cli-highlight": "2.0.0",
     "codemirror": "^5.48.2",
@@ -57,7 +58,6 @@
     "split.js": "^1.5.11",
     "sql-formatter": "^2.3.3",
     "sql-query-identifier": "^2.1.0",
-    "sqlite3": "^5.0.0",
     "ssh2": "beekeeper-studio/ssh2#electron-detection",
     "tabulator-tables": "^4.9.3",
     "typeface-roboto": "^0.0.75",
@@ -80,6 +80,7 @@
     "yup": "^0.27.0"
   },
   "devDependencies": {
+    "@sentry/cli": "^1.64.0",
     "@types/codemirror": "^0.0.97",
     "@types/electron-devtools-installer": "^2.2.0",
     "@types/javascript-time-ago": "^2.0.1",
@@ -100,9 +101,10 @@
     "@vue/test-utils": "^1.0.3",
     "aws-sdk": "^2.645.0",
     "babel-eslint": "^10.0.1",
-    "electron": "~9.4.3",
+    "electron": "12.0.4",
     "electron-builder-notarize": "beekeeper-studio/electron-builder-notarize#master",
     "electron-devtools-installer": "^3.1.1",
+    "electron-download": "^4.1.1",
     "electron-rebuild": "^1.8.5",
     "electron-updater": "^4.2.5",
     "eslint": "^5.16.0",
@@ -111,7 +113,8 @@
     "typescript": "^3.9.7",
     "vue-cli-plugin-electron-builder": "^2.0.0-rc.1",
     "vue-template-compiler": "^2.6.10",
-    "vuepress": "^1.5.0"
+    "vuepress": "^1.5.0",
+    "sqlite3": "^5.0.2"
   },
   "eslintConfig": {
     "root": true,
@@ -154,6 +157,7 @@
   ],
   "resolutions": {
     "watchpack": "1.6.1",
-    "node-ssh-forward/ssh2": "beekeeper-studio/ssh2#electron-detection"
+    "node-ssh-forward/ssh2": "beekeeper-studio/ssh2#electron-detection",
+    "node-pre-gyp": "0.12.0"
   }
 }
