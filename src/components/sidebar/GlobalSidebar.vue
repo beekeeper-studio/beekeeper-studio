@@ -33,7 +33,11 @@
 <script>
   export default {
     props: ['activeItem'],
-    data() {},
+    data() {
+      return {
+        
+      }
+    },
     methods: {
       click(item) {
         if( this.activeItem === item ){
