@@ -12,14 +12,33 @@ $sidebar-list-icons:       darken($theme-primary, 15%);
 $tabs-heading:             rgba($theme-base, 0.08);
 $tab-link:                 darken($theme-bg, 9%);
 $codemirror-hint-bg:       darken($theme-bg, 2%);
+
+// Table Editing
+$row-highlight:            darken($query-editor-bg, 3%);
+$row-add:                  #56DAAC;
+$row-delete:               #FC8A87;
+$row-error:                #F9B8B7;
+
+$cell-edited:              #EDDFA1;
+$cell-error:               $row-error;
+$cell-success:             $row-add;
+
+// Statusbar
 $editor-statusbar:         rgba($theme-base, 0.035);
 
+@mixin cell-shadow {
+  box-shadow: inset 1px 0 rgba(white, 0.4),
+              inset 0 -1px rgba(white, 0.4);
+}
 
 // Base Styles
 // -----------------------------------------
 & {
   background: $theme-bg;
   color: $text;
+}
+.material-icons {
+  font-weight: 600;
 }
 select {
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
@@ -103,11 +122,58 @@ select {
 }
 
 // Tabulator
-.tabulator-row {
-  &:nth-child(odd) {
-    background: rgba(white, 0.42);
+.tabulator-table {
+  .tabulator-row {
+    // &:nth-child(even) {
+    //   background: $row-highlight;
+    // }
+    &.inserted, 
+    &.inserted:hover {
+      background: $row-add;
+    }
+    &.deleted,
+    &.deleted:hover {
+      background: $row-delete;
+    }
+    &.edit-error {
+      background: $row-error!important;
+    }
+
+    .tabulator-cell {
+      &.edited,
+      &.edit-error,
+      &.edit-success {
+        @include cell-shadow;
+      }
+      &.edited {
+        background: $cell-edited;
+        &:hover {
+          background: darken($cell-edited, 5%);
+        }
+      }
+      &.edit-error {
+        background: $cell-error;
+        &:hover {
+          background: darken($cell-error, 5%);
+        }
+      }
+      &.edit-success {
+        background: $cell-success;
+        &:hover {
+          background: darken($cell-success, 5%);
+        }
+      }
+      &.foreign-key-button {
+        .material-icons {
+          &:hover {
+            color: $text-dark;
+          }
+        }
+      }
+    }
   }
 }
+
 .tabulator {
   .tabulator-header {
     .tabulator-col.foreign-key {

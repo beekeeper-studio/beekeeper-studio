@@ -18,8 +18,8 @@
         <span>{{ affectedRowsText }}</span>
       </div>
       <span class="statusbar-item execute-time row flex-middle" v-if="executeTimeText" :title="'Execution Time'">
-      <i class="material-icons">update</i>
-      <span>{{executeTimeText}}</span>
+        <i class="material-icons">update</i>
+        <span>{{executeTimeText}}</span>
       </span>
       <span class="expand"></span>
     </template>
@@ -28,10 +28,10 @@
       <span class="empty">No Data</span>
     </template>
     <x-buttons class="download-results" v-if="result">
-      <x-button class="btn btn-link btn-small" v-tooltip="'Download Results (CSV)'" @click.prevent="download('csv')">
+      <x-button class="btn btn-primary btn-small" v-tooltip="'Download Results (CSV)'" @click.prevent="download('csv')">
       Download
       </x-button>
-      <x-button class="btn btn-link btn-small" menu>
+      <x-button class="btn btn-primary btn-small" menu>
       <i class="material-icons">arrow_drop_down</i>
       <x-menu>
         <x-menuitem @click.prevent="download('csv')">

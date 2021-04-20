@@ -151,6 +151,7 @@ const store = new Vuex.Store<State>({
     clearConnection(state) {
       state.usedConfig = null
       state.connection = null
+      state.server = null
       state.database = null
       state.tables = []
       state.routines = []

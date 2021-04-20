@@ -438,9 +438,12 @@
       font-size: 90%;
     }
     .badge {
-      font-size: 80%;
+      font-size: 75%;
       margin-right: 0;
       max-width: 50%;
+      background: transparent;
+      color: $text-lighter;
+      padding: 0 0.1rem;
       min-width: fit-content;
       overflow: hidden;
       text-overflow: ellipsis;
