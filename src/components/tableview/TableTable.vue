@@ -91,7 +91,7 @@
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
         </span>
-        <span @click="refreshTable" @keypress.enter="refreshTable" tabindex="0" role="button" class="statusbar-item hoverable" v-if="lastUpdatedText && !error" :title="'Updated' + ' ' + lastUpdatedText">
+        <span @click="refreshTable" tabindex="0" role="button" class="statusbar-item hoverable" v-if="lastUpdatedText && !error" :title="'Updated' + ' ' + lastUpdatedText">
           <i class="material-icons">update</i>
           <span>{{lastUpdatedText}}</span>
         </span>
@@ -122,10 +122,10 @@
           <i class="material-icons">settings</i>
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
-            <x-menuitem @click.prevent="">
+            <x-menuitem @click.prevent="cellAddRow">
               <x-label>Add Row</x-label>
             </x-menuitem>
-            <x-menuitem @click.prevent="">
+            <x-menuitem @click="refreshTable">
               <x-label>Refresh</x-label>
             </x-menuitem>
           </x-menu>
