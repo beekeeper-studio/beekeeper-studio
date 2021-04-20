@@ -12,12 +12,17 @@
     </div>
 
     <div class="advanced-connection-settings">
-      <h4 class="advanced-heading flex" :class="{enabled: config.ssl}">
-        <span class="expand">Enable SSL</span>
-        <x-switch @click.prevent="config.ssl = !config.ssl" :toggled="config.ssl"></x-switch>
-      </h4>
+      <div class="flex">
+        <span @click.prevent="toggleSslAdvanced" class="btn btn-link btn-fab">
+          <i class="material-icons">{{toggleIcon}}</i>
+        </span>
+        <h4 class="advanced-heading flex" :class="{enabled: config.ssl}">
+          <span class="expand">Enable SSL</span>
+          <x-switch @click.prevent="toggleSsl" :toggled="config.ssl"></x-switch>
+        </h4>
+      </div>
 
-      <div class="advanced-body" v-show="config.ssl">
+      <div class="advanced-body" v-show="sslToggled">
         <div class="row gutter">
           <div class="alert alert-info">
             <i class="material-icons">info</i>
@@ -30,21 +35,21 @@
         <div class="row gutter">
           <div class="col form-group">
             <label>CA Cert (optional)</label>
-            <file-picker v-model="config.sslCaFile"></file-picker>
+            <file-picker v-model="config.sslCaFile" :disabled="!config.ssl"></file-picker>
           </div>
         </div>
 
         <div class="row gutter">
           <div class="col form-group">
             <label>Certificate (optional)</label>
-            <file-picker v-model="config.sslCertFile"></file-picker>
+            <file-picker v-model="config.sslCertFile" :disabled="!config.ssl"></file-picker>
           </div>
         </div>
 
         <div class="row gutter">
           <div class="col form-group">
             <label>Key File (optional)</label>
-            <file-picker v-model="config.sslKeyFile"></file-picker>
+            <file-picker v-model="config.sslKeyFile" :disabled="!config.ssl"></file-picker>
           </div>
         </div>
         <div class="row gutter">
@@ -89,6 +94,19 @@ import ExternalLink from '@/components/common/ExternalLink'
       FilePicker,
       ExternalLink
     },
+    data() {
+      return {
+        sslToggled: false,
+      }
+    },
+    computed: {
+      hasAdvancedSsl() {
+        return this.config.sslCaFile || this.config.sslCertFile || this.config.sslKeyFile
+      },
+      toggleIcon() {
+        return this.sslToggled ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
+      }
+    },
     methods: {
       onPaste(event) {
           const data = event.clipboardData.getData('text')
@@ -105,7 +123,13 @@ import ExternalLink from '@/components/common/ExternalLink'
           this.config.sslCertFile = null
           this.config.sslKeyFile = null
         }
+      },
+      toggleSslAdvanced() {
+        this.sslToggled = !this.sslToggled;
       }
+    },
+    mounted() {
+      this.sslToggled = this.hasAdvancedSsl
     }
   }
 </script>

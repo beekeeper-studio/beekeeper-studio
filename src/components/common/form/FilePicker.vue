@@ -1,8 +1,8 @@
 <template>
-  <div class="input-group" @click.prevent.stop="openFilePickerDialog">
-    <input type="text" class="form-control clickable" placeholder="No file selected" :title="value" :value="value" readonly>
+  <div class="input-group" @click.prevent.stop="openFilePickerDialog" >
+    <input type="text" class="form-control clickable" placeholder="No file selected" :title="value" :value="value" :disabled="disabled" readonly>
     <div class="input-group-append">
-      <a type="buttom" class="btn btn-flat">Choose file</a>
+      <a type="buttom" class="btn btn-flat" :class="{disabled}">Choose file</a>
     </div>
   </div>
 </template>
@@ -30,10 +30,19 @@ export default {
       type: Object,
       required: false,
       default: () => ({})
+    },
+    disabled: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
   methods: {
     openFilePickerDialog() {
+      if(this.disabled) {
+        return 
+      }
+
       const dialogConfig = {
         properties: ['openFile']
       }
