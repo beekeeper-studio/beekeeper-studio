@@ -1,7 +1,8 @@
 // Copyright (c) 2015 The SQLECTRON Team
 
 import _ from 'lodash'
-import sqlite3 from 'sqlite3';
+// import sqlite3 from 'sqlite3';
+import Database from 'better-sqlite3'
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import rawLog from 'electron-log'
@@ -407,16 +408,22 @@ function identifyCommands(queryText) {
 
 export function driverExecuteQuery(conn, queryArgs) {
   const runQuery = (connection, { executionType, text }) => new Promise((resolve, reject) => {
+    const params = queryArgs.params || []
+    log.info(text, params)
+    const statement = connection.prepare(text)
     const method = resolveExecutionType(executionType);
-    connection[method](text, queryArgs.params, function driverExecQuery(err, data) {
-      if (err) { return reject(err); }
 
-      return resolve({
-        data,
-        lastID: this.lastID,
-        changes: this.changes,
-      });
-    });
+    try {
+      const result = statement[method](params)
+      log.info('result', result)
+      resolve({
+        data: result
+      })
+
+    } catch (error) {
+      console.log(error)
+      reject(error)
+    }
   });
 
   const identifyStatementsRunQuery = async (connection) => {
@@ -439,25 +446,17 @@ export function driverExecuteQuery(conn, queryArgs) {
     : runWithConnection(conn, identifyStatementsRunQuery);
 }
 
-function runWithConnection(conn, run) {
-  return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(conn.dbConfig.database, async (err) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-
-      try {
-        db.serialize();
-        const results = await run(db);
-        resolve(results);
-      } catch (runErr) {
-        reject(runErr);
-      } finally {
-        db.close();
-      }
-    });
-  });
+async function runWithConnection(conn, run) {
+  let db
+  try {
+    db = new Database(conn.dbConfig.database)
+    const results = await run(db)
+    return results
+  } finally {
+    if (db) {
+      db.close()
+    }
+  }
 }
 
 function resolveExecutionType(executioType) {
