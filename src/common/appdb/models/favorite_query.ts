@@ -1,8 +1,9 @@
 import { Entity, Column, Index, BeforeInsert, BeforeUpdate } from 'typeorm'
 import { ApplicationEntity  } from './application_entity'
+import { QueryLike } from './base'
 
 @Entity({ name: 'favorite_query' })
-export class FavoriteQuery extends ApplicationEntity {
+export class FavoriteQuery extends ApplicationEntity implements QueryLike {
 
   @Column({type: "varchar", nullable: false})
   title!: string
@@ -11,7 +12,7 @@ export class FavoriteQuery extends ApplicationEntity {
   text!: string
 
   @Column({type: "varchar", nullable: true})
-  database: Nullable<string> = null
+  database: string | null = null
 
   @Index()
   @Column({type: "varchar", nullable: false})
