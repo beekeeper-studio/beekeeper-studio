@@ -407,17 +407,17 @@ function identifyCommands(queryText) {
 }
 
 export function driverExecuteQuery(conn, queryArgs) {
-  const runQuery = (connection, { executionType, text }) => new Promise((resolve, reject) => {
+  const runQuery = (connection, { text }) => new Promise((resolve, reject) => {
     const params = queryArgs.params || []
     log.info(text, params)
     const statement = connection.prepare(text)
-    const method = resolveExecutionType(executionType);
 
     try {
-      const result = statement[method](params)
+      const result = statement.reader ? statement.all(params) : statement.run(params)
+
       log.info('result', result)
       resolve({
-        data: result
+        data: result || []
       })
 
     } catch (error) {
@@ -456,12 +456,5 @@ async function runWithConnection(conn, run) {
     if (db) {
       db.close()
     }
-  }
-}
-
-function resolveExecutionType(executioType) {
-  switch (executioType) {
-    case 'MODIFICATION': return 'run';
-    default: return 'all';
   }
 }
