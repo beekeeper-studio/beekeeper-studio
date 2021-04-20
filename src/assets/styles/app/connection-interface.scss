@@ -106,6 +106,10 @@
   border-radius: 8px;
   margin: $gutter-w 0;
   padding: $gutter-w ($gutter-w * 1.25);
+  .btn-fab {
+    margin-left: -$gutter-w * 0.75;
+    margin-right: $gutter-h * 0.5;
+  }
 }
 .advanced-heading {
   display: flex;
