@@ -53,13 +53,14 @@
             </a>
           </div> -->
         </div>
-        <Draggable v-model="orderedPins" tag="div" class="list-body">
+        <Draggable v-model="orderedPins" tag="div" ref="pinContainer" class="list-body">
           <div v-for="p in orderedPins" :key="p.id || p.name">
             <table-list-item
               v-if="p.entityType"
               @selected="tableSelected"
               :table="p"
               :connection="connection"
+              :container="$refs.pinContainer"
               :forceExpand="allExpanded"
               :forceCollapse="allCollapsed"
               :noSelect="true"
@@ -70,6 +71,7 @@
               :forceExpand="allExpanded"
               :forceCollapse="allCollapsed"
               :connection="connection"
+              :container="$refs.pinContainer"
             >
             </routine-list-item>
           </div>
@@ -106,7 +108,7 @@
           </div>
         </div>
 
-        <div class="list-body" v-show="tables.length > 0">
+        <div class="list-body" ref="entityContainer" v-show="tables.length > 0">
           <div class="with-schemas">
             <TableListSchema
               v-for="(blob, index) in schemaTables"
@@ -121,6 +123,7 @@
                 
                 v-for="table in blob.tables"
                 :key="table.name"
+                :container="$refs.entityContainer"
                 @selected="tableSelected"
                 :table="table"
                 :connection="connection"
@@ -130,6 +133,7 @@
               <routine-list-item
                 v-for="routine in blob.routines"
                 :key="routine.name"
+                :container="$refs.entityContainer"
                 :routine="routine"
                 :connection="connection"
                 :forceExpand="allExpanded"

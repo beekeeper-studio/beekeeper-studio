@@ -4,7 +4,7 @@
       <span class="btn-fab open-close" @mousedown.prevent="toggleColumns" >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
-      <span class="item-wrapper flex flex-middle expand" @click.prevent="openTable">
+      <span class="item-wrapper flex flex-middle expand" @click.prevent="openTable" @dblclick.prevent.stop="doNothing">
         <i :title="title" :class="iconClass" class="item-icon material-icons">grid_on</i>
         <span class="table-name truncate" :title="table.name">{{table.name}}</span>
       </span>
@@ -54,14 +54,22 @@
 
   import { mapGetters, mapState } from 'vuex'
   import _ from 'lodash'
+  import rawLog from 'electron-log'
+
+  const log = rawLog.scope('TableListItem')
 	export default {
-		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse"],
+		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container"],
     mounted() {
       this.showColumns = !!this.table.showColumns
     },
     data() {
       return {
         showColumns: false,
+        clickState: {
+          timer: null,
+          openClicks: 0,
+          delay: 500
+        },
       }
     },
     watch: {
@@ -80,7 +88,15 @@
       },
       selected() {
         if (this.selected && !this.noSelect) {
-          this.$el.scrollIntoView()
+          let shouldScroll = true
+          if (this.container) {
+            const box = this.$el.getBoundingClientRect()
+            const parentBox = this.container.getBoundingClientRect()
+            shouldScroll = !(box.top > parentBox.top && box.bottom <= parentBox.bottom)
+          }
+          if (shouldScroll) {
+            this.$el.scrollIntoView()
+          }
         }
       }
     },
@@ -105,6 +121,9 @@
       ...mapState(['activeTab'])
     },
     methods: {
+      doNothing() {
+        // do nothing
+      },
       createTable() {
         this.$root.$emit('loadTableCreate', this.table)
       },
@@ -122,7 +141,14 @@
         this.showColumns = !this.showColumns
       },
       openTable() {
+        if (this.clickState.openClicks > 0) {
+          return
+        }
         this.$root.$emit("loadTable", {table: this.table});
+        this.clickState.openClicks ++;
+        this.clickState.timer = setTimeout(() => {
+          this.clickState.openClicks = 0
+        }, this.clickState.delay);
       },
       pin() {
         this.$store.dispatch('pinTable', this.table)
