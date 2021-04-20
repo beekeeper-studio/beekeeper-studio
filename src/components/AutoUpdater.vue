@@ -25,7 +25,7 @@ export default {
         queue: 'download'
       }),
       downloadNotification: new Noty({
-        text: 'A new version is availble. Download now?',
+        text: 'A new version is available. Download now?',
         layout: 'bottomRight',
         timeout: false,
         closeWith: 'button',

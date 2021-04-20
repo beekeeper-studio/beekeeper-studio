@@ -10,12 +10,14 @@
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
   import Mutators from '../../mixins/data_mutators'
+import globals from '@/common/globals'
 
   export default {
     mixins: [Converter, Mutators],
     data() {
       return {
-        tabulator: null
+        tabulator: null,
+        actualTableHeight: '100%',
       }
     },
     props: ['result', 'tableHeight', 'query', 'active'],
@@ -67,14 +69,6 @@
           return result;
         })
       },
-      actualTableHeight() {
-        return '100%'
-        // let result = this.tableHeight
-        // if (this.tableHeight == 0) {
-        //   result = '100%'
-        // }
-        // return result
-      },
     },
     beforeDestroy() {
       if (this.tabulator) {
@@ -88,7 +82,7 @@
         virtualDomHoz: false,
         columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,
-        columnMaxWidth: 500,
+        columnMaxWidth: globals.maxColumnWidth,
         nestedFieldSeparator: false,
         cellClick: this.cellClick,
         clipboard: true,
@@ -102,7 +96,7 @@
     },
     methods: {
       cellClick(e, cell) {
-        this.selectChildren(cell.getElement())
+        this.selectChildren(cell.getElement().querySelector('pre'))
       },
       download(format) {
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')

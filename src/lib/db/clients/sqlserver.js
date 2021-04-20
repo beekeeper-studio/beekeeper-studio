@@ -60,6 +60,18 @@ export default async function (server, database) {
   };
 }
 
+async function getVersion(conn) {
+  const result = await driverExecuteQuery(conn, { query: "SELECT @@VERSION as version"})
+  const versionString = result.data.recordset[0].version
+  const yearRegex = /SQL Server (\d+)/g
+  const yearResults = yearRegex.exec(versionString)
+  const releaseYear = _.toNumber(yearResults[1]) || 2017
+  return {
+    supportOffsetFetch: releaseYear >= 2012,
+    releaseYear,
+    versionString
+  }
+}
 
 export async function disconnect(conn) {
   const connection = await new ConnectionPool(conn.dbConfig);
@@ -76,10 +88,31 @@ function buildFilterString(filters) {
   return filterString
 }
 
-export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
-  let orderByString = "ORDER BY (SELECT NULL)"
-  log.debug("filters", filters)
+function genSelectOld(table, offset, limit, orderBy, filters, schema) {
+  const orderByString = genOrderByString(orderBy)
   const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
+  const lastRow = offset + limit
+  const query = `
+    WITH CTE AS
+    (
+        SELECT *
+              , ROW_NUMBER() OVER (${orderByString}) as RowNumber
+        FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)}
+        ${filterString}
+    )
+    SELECT *
+          -- get the total records so the web layer can work out
+          -- how many pages there are
+          , (SELECT COUNT(*) FROM CTE) AS TotalRecords
+    FROM CTE
+    WHERE RowNumber BETWEEN ${offset} AND ${lastRow}
+    ORDER BY RowNumber ASC
+  `
+  return query
+}
+
+function genOrderByString(orderBy) {
+  let orderByString = "ORDER BY (SELECT NULL)"
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
       if (_.isObject(item)) {
@@ -89,6 +122,11 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
       }
     })).join(",")
   }
+  return orderByString
+}
+
+function genCountQuery(table, filters, schema) {
+  const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
 
   let baseSQL = `
     FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)}
@@ -97,14 +135,34 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
   let countQuery = `
     select count(*) as total ${baseSQL}
   `
-  logger().debug(countQuery)
+  return countQuery
+}
 
+function genSelectNew(table, offset, limit, orderBy, filters, schema) {
+  const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
+
+  const orderByString = genOrderByString(orderBy)
+
+  let baseSQL = `
+    FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)}
+    ${filterString}
+  `
   let query = `
     SELECT * ${baseSQL}
     ${orderByString}
     OFFSET ${offset} ROWS
     FETCH NEXT ${limit} ROWS ONLY
     `
+    return query
+}
+
+export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
+  log.debug("filters", filters)
+  const version = await getVersion(conn);
+  const countQuery = genCountQuery(table, filters, schema)
+  const query = version.supportOffsetFetch ? 
+    genSelectNew(table, offset, limit, orderBy, filters, schema) :
+    genSelectOld(table, offset, limit, orderBy, filters, schema)
   logger().debug(query)
   const countResults = await driverExecuteQuery(conn, { query: countQuery})
   const result = await driverExecuteQuery(conn, { query })

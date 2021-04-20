@@ -1,5 +1,7 @@
-import { FavoriteQuery } from "common/appdb/models/favorite_query";
-import { TableColumn } from '../lib/db/client'
+import { QueryLike } from '../common/appdb/models/base'
+import { TableColumn } from "../lib/db/models"
+
+
 
 export interface IDbEntityWithColumns {
   name: string
@@ -27,7 +29,7 @@ interface Tab {
 export interface QueryTab extends Tab {
   title: string
   connection: any,
-  query: FavoriteQuery,
+  query: QueryLike,
   unsavedChanges?: boolean,
 }
 
