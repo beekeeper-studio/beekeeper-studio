@@ -540,7 +540,6 @@ export default Vue.extend({
 
       ]
     });
-    window.tabulator = this.tabulator
 
   },
   methods: {

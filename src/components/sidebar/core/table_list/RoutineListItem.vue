@@ -47,7 +47,7 @@
 </style>
 
 <script type="text/javascript">
-import { RoutineTypeNames } from '@/lib/db/client'
+import { RoutineTypeNames } from '@/lib/db/models'
 
   import { mapGetters } from 'vuex'
 	export default {
