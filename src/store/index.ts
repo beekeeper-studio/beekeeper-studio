@@ -11,9 +11,10 @@ import { UsedQuery } from '../common/appdb/models/used_query'
 import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
-import { DBConnection, Routine, TableColumn } from '../lib/db/client'
+import { DBConnection } from '../lib/db/client'
+import { Routine, TableColumn } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/server'
-import { CoreTab, EntityFilter, IDbEntityWithColumns, QueryTab, TableTab } from './models'
+import { CoreTab, EntityFilter, IDbEntityWithColumns } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 
 import RawLog from 'electron-log'
@@ -152,6 +153,7 @@ const store = new Vuex.Store<State>({
     clearConnection(state) {
       state.usedConfig = null
       state.connection = null
+      state.server = null
       state.database = null
       state.tables = []
       state.routines = []

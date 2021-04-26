@@ -9,7 +9,7 @@ if (  process.env.PI_BUILD ) {
   fpmOptions.push("armhf")
 }
 
-const externals = ['sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2', 'ssh2']
+const externals = ['better-sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2', 'ssh2']
 module.exports = {
   pluginOptions: {
     electronBuilder: {

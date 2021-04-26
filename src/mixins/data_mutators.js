@@ -39,6 +39,7 @@ export default {
       let cellValue = cell.getValue().toString();
       cellValue = cellValue.replace(/\n/g, ' ↩ ');
       cellValue = sanitizeHtml(cellValue);
+      // removing the <pre> will break selection / copy paste, see ResultTable
       const result = `<pre>${cellValue}</pre>`
       return result;
     },

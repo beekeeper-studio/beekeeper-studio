@@ -26,8 +26,9 @@
             </div>
           </div>
           <div class="btn-wrap">
-            <button class="btn btn-primary" type="submit">Search</button>
-            <button class="btn btn-flat" type="button" @click.prevent="exportTable()">Export</button>
+            <button class="btn btn-primary btn-fab" type="submit" title="Filter">
+              <i class="material-icons">search</i>
+            </button>
           </div>
         </div>
         <div v-else-if="filterMode === 'builder'" class="filter-group row gutter">
@@ -72,50 +73,90 @@
             </div>
           </div>
           <div class="btn-wrap">
-            <button class="btn btn-primary" type="submit">Search</button>
-            <button class="btn btn-flat" type="button" @click.prevent="exportTable()">Export</button>
+            <button class="btn btn-primary btn-fab" type="submit" title="Filter">
+              <i class="material-icons">search</i>
+            </button>
           </div>
         </div>
       </form>
     </div>
     <div ref="table"></div>
     <statusbar :mode="statusbarMode" class="tabulator-footer">
-      <div class="col x4">
-        <span class="statusbar-item" v-if="lastUpdatedText && !queryError" :title="`~${totalRecordsText} Records`">
+
+      
+      <div class="col truncate expand statusbar-info" :class="{'x4': this.totalRecords > this.limit}">
+
+        <!-- Info -->
+        <span class="statusbar-item" v-if="lastUpdatedText && !error" :title="`~${totalRecordsText} Records`">
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
         </span>
-        <span @click="refreshTable" @keypress.enter="refreshTable" tabindex="0" role="button" class="statusbar-item hoverable" v-if="lastUpdatedText && !queryError" :title="'Updated' + ' ' + lastUpdatedText">
+        <span tabindex="0" role="button" class="statusbar-item hoverable" v-if="lastUpdatedText && !error" :title="'Updated' + ' ' + lastUpdatedText">
           <i class="material-icons">update</i>
           <span>{{lastUpdatedText}}</span>
         </span>
-        <span v-if="queryError" class="statusbar-item error" :title="queryError.message">
+        <span v-if="error" class="statusbar-item error" :title="error.message">
           <i class="material-icons">error</i>
-          <span class="">{{ queryError.title }}</span>
+          <span class="">{{ error.title }}</span>
         </span>
       </div>
-      <div class="col x4 flex flex-center">
-        <span ref="paginationArea" class="tabulator-paginator" v-show="this.totalRecords > this.limit"></span>
+
+      <!-- Pagination -->
+      <div class="col flex-center" v-show="this.totalRecords > this.limit" :class="{'x4': this.totalRecords > this.limit}">
+        <span ref="paginationArea" class="tabulator-paginator"></span>
       </div>
 
-      <div class="col x4 pending-edits flex flex-right">
-        <div v-if="missingPrimaryKey" class="flex flex-right">
+      <!-- Pending Edits -->
+      <div class="col statusbar-actions flex-right" :class="{'x4': this.totalRecords > this.limit}">
+        <!-- <div v-if="missingPrimaryKey" class="flex flex-right">
           <span class="statusbar-item">
             <i
             class="material-icons text-danger"
             v-tooltip="'Zero (or multiple) primary keys detected, table editing is disabled.'"
             >warning</i>
           </span>
-        </div>
-        <div v-if="pendingChangesCount > 0" class="flex flex-right">
-          <a @click.prevent="discardChanges" class="btn btn-link">Discard</a>
-          <a @click.prevent="saveChanges" class="btn btn-primary btn-icon" :title="pendingChangesCount + ' ' + 'pending edits'" :class="{'error': !!queryError}">
-            <!-- <i v-if="queryError" class="material-icons">error</i> -->
-            <span class="badge">{{pendingChangesCount}}</span>
+        </div> -->
+        
+        <!-- Actions -->
+        <x-button class="actions-btn btn btn-flat" title="actions">
+          <i class="material-icons">settings</i>
+          <i class="material-icons">arrow_drop_down</i>
+          <x-menu>
+            <x-menuitem @click.prevent="cellAddRow">
+              <x-label>Add Row</x-label>
+            </x-menuitem>
+            <x-menuitem @click="refreshTable">
+              <x-label>Refresh</x-label>
+            </x-menuitem>
+            <x-menuitem @click="exportTable">
+              <x-label>Export</x-label>
+            </x-menuitem>
+          </x-menu>
+        </x-button>
+        
+        <!-- Pending Changes -->
+        <x-buttons v-if="pendingChangesCount > 0" class="pending-changes">
+          <x-button class="btn btn-primary" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
+            <i v-if="error" class="material-icons">error</i>
+            <span class="badge" v-if="!error"><small>{{pendingChangesCount}}</small></span>
             <span>Commit</span>
-          </a>
-        </div>
+          </x-button>
+          <x-button class="btn btn-primary" menu>
+          <i class="material-icons">arrow_drop_down</i>
+          <x-menu>
+            <x-menuitem @click.prevent="saveChanges">
+              <x-label>Commit</x-label>
+            </x-menuitem>
+            <x-menuitem @click.prevent="discardChanges">
+              <x-label>Discard</x-label>
+            </x-menuitem>
+          </x-menu>
+          </x-button>
+        </x-buttons>
+
+
       </div>
+      
     </statusbar>
   </div>
 </template>
@@ -130,6 +171,7 @@
 
 <script>
 import Vue from 'vue'
+import pluralize from 'pluralize'
 import Tabulator from "tabulator-tables";
 // import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
@@ -138,6 +180,7 @@ import Statusbar from '../common/StatusBar'
 import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
+import globals from '@/common/globals';
 
 const CHANGE_TYPE_INSERT = 'insert'
 const CHANGE_TYPE_UPDATE = 'update'
@@ -185,6 +228,7 @@ export default Vue.extend({
         deletes: []
       },
       queryError: null,
+      saveError: null,
       timeAgo: new TimeAgo('en-US'),
       lastUpdated: null,
       lastUpdatedText: null,
@@ -194,6 +238,17 @@ export default Vue.extend({
     };
   },
   computed: {
+    error() {
+      return this.saveError ? this.saveError : this.queryError
+    },
+    saveButtonText() {
+      const result = []
+      if (this.saveError) {
+        result.push(`${this.saveError.title} -`)
+      }
+      result.push(`${this.pendingChangesCount} pending changes`)
+      return result.join(" ")
+    },
     cellContextMenu() {
       return [{
           label: '<x-menuitem><x-label>Set Null</x-label></x-menuitem>',
@@ -217,39 +272,19 @@ export default Vue.extend({
           disabled: !this.editable
         },
         { separator: true },
-        // TODO (matthew): NEEDS SOME UX WORK
-        // {
-        //   label: '<x-menuitem><x-label><i class="material-icons">add_circle_outline</i> Add row</x-label></x-menuitem>',
-        //   action: (e, cell) => {
-        //     cell.getTable().addRow({}, false).then(row => { 
-        //       this.addRowToPendingInserts(row)
-        //       this.tabulator.scrollToRow(row, 'bottom', false)
-        //     })
-        //   },
-        //   disabled: !this.editable
-        // },
-        // {
-        //   label: '<x-menuitem><x-label><i class="material-icons">content_copy</i> Clone row</x-label></x-menuitem>',
-        //   action: (e, cell) => {
-        //     const row = cell.getRow()
-        //     const data = { ...row.getData() }
-
-        //     if (this.primaryKey) {
-        //       data[this.primaryKey] = undefined
-        //     }
-
-        //     this.tabulator.addRow(data, false).then(row => {
-        //       this.addRowToPendingInserts(row)
-        //       this.tabulator.scrollToRow(row, 'bottom', false)
-        //     })
-        //   },
-        //   disabled: !this.editable
-        // },
+        {
+          label: '<x-menuitem><x-label>Add row</x-label></x-menuitem>',
+          action: this.cellAddRow.bind(this),
+          disabled: !this.editable
+        },
+        {
+          label: '<x-menuitem><x-label>Clone row</x-label></x-menuitem>',
+          action: this.cellCloneRow.bind(this),
+          disabled: !this.editable
+        },
         {
           label: '<x-menuitem><x-label>Delete row</x-label></x-menuitem>',
-          action: (e, cell) => {
-            this.addRowToPendingDeletes(cell.getRow())
-          },
+          action: (e, cell) => this.addRowToPendingDeletes(cell.getRow()),
           disabled: !this.editable
         },
       ]
@@ -306,10 +341,12 @@ export default Vue.extend({
       this.table.columns.forEach(column => {
 
         const keyData = this.tableKeys[column.columnName]
+
         // this needs fixing
         // currently it doesn't fetch the right result if you update the PK
         // because it uses the PK to fetch the result.
         const slimDataType = this.slimDataType(column.dataType)
+        const width = this.defaultColumnWidth(slimDataType, columnWidth)
         const editorType = this.editorType(column.dataType)
         const useVerticalNavigation = editorType === 'textarea'
         const isPK = this.primaryKey && this.primaryKey === column.columnName
@@ -335,7 +372,8 @@ export default Vue.extend({
           mutatorData: this.resolveDataMutator(column.dataType),
           dataType: column.dataType,
           cellClick: this.cellClick,
-          width: columnWidth,
+          width,
+          maxWidth: globals.maxColumnWidth,
           cssClass: isPK ? 'primary-key' : '',
           editable: this.cellEditCheck,
           headerSort: this.allowHeaderSort(column),
@@ -485,10 +523,10 @@ export default Vue.extend({
       ajaxURL: "http://fake",
       ajaxSorting: true,
       ajaxFiltering: true,
+      ajaxLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
       pagination: "remote",
       paginationSize: this.limit,
       paginationElement: this.$refs.paginationArea,
-      columnMaxWidth: 500,
       initialSort: this.initialSort,
       initialFilter: [this.initialFilter || {}],
       lastUpdated: null,
@@ -508,6 +546,11 @@ export default Vue.extend({
 
   },
   methods: {
+    defaultColumnWidth(slimType, defaultValue) {
+      const chunkyTypes = ['json', 'jsonb', 'text']
+      if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
+      return defaultValue
+    },
     valueCellFor(cell) {
       const fromColumn = cell.getField().replace(/-link$/g, "")
       const valueCell = cell.getRow().getCell(fromColumn)
@@ -521,8 +564,7 @@ export default Vue.extend({
     slimDataType(dt) {
       if (!dt) return null
       if(dt === 'bit(1)') return dt
-
-return dt.split("(")[0]
+      return dt.split("(")[0]
     },
     editorType(dt) {
       switch (dt) {
@@ -589,25 +631,23 @@ return dt.split("(")[0]
     },
     cellEdited(cell) {
       log.info('edit', cell)
-
-      // Dont handle cell edit if made on a pending insert
-      if (_.find(this.pendingChanges.inserts, { row: cell.getRow() })) {
-        return
-      }
-
       const pkCell = cell.getRow().getCells().find(c => c.getField() === this.primaryKey)
-      const column = this.table.columns.find(c => c.columnName === cell.getField())
+
       if (!pkCell) {
         this.$noty.error("Can't edit column -- couldn't figure out primary key")
         // cell.setValue(cell.getOldValue())
         cell.restoreOldValue()
         return
       }
-
-      if (cell.getValue() === "" && _.isNil(cell.getOldValue())) {
-        cell.restoreOldValue()
+      // Dont handle cell edit if made on a pending insert
+      const pendingInsert = _.find(this.pendingChanges.inserts, { row: cell.getRow() })
+      if (pendingInsert) {
+        pendingInsert.data = pendingInsert.row.getData()
         return
       }
+
+      const column = this.table.columns.find(c => c.columnName === cell.getField())
+
 
       cell.getElement().classList.add('edited')
       const key = `${pkCell.getValue()}-${cell.getField()}`
@@ -626,6 +666,21 @@ return dt.split("(")[0]
       }
 
       this.addPendingChange(CHANGE_TYPE_UPDATE, payload)
+    },
+    cellCloneRow(e, cell) {
+      const row = cell.getRow()
+      const data = { ...row.getData() }
+
+      this.tabulator.addRow(data, true).then(row => {
+        this.addRowToPendingInserts(row)
+        this.tabulator.scrollToRow(row, 'center', true)
+      })
+    },
+    cellAddRow() {
+      this.tabulator.addRow({}, true).then(row => { 
+        this.addRowToPendingInserts(row)
+        this.tabulator.scrollToRow(row, 'center', true)
+      })
     },
     addRowToPendingInserts(row) {
       row.getElement().classList.add('inserted')
@@ -667,11 +722,6 @@ return dt.split("(")[0]
     },
     addPendingChange(changeType, payload) {
       if (changeType === CHANGE_TYPE_INSERT) {
-        // remove empty pkColumn data if present
-        payload.data = _.omitBy(payload.row.getData(), (value, key) => {
-          return (key === payload.pkColumn && !value)
-        })
-
         this.pendingChanges.inserts.push(payload)
       }
 
@@ -704,11 +754,26 @@ return dt.split("(")[0]
       }
     },
     async saveChanges() {
+        this.saveError = null
 
         let replaceData = false
 
         try {
-          const result = await this.connection.applyChanges(this.pendingChanges)
+
+          const inserts = this.pendingChanges.inserts.map((item) => {
+            return {
+              table: item.table,
+              data: _.omitBy(item.row.getData(), (v, k) => (k === item.pkColumn && !v))
+            }
+          })
+
+          const payload = {
+            inserts: inserts,
+            updates: this.pendingChanges.updates,
+            deletes: this.pendingChanges.deletes
+          }
+
+          const result = await this.connection.applyChanges(payload)
           const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)
 
           if (updateIncludedPK || this.hasPendingInserts || this.hasPendingDeletes) {
@@ -726,20 +791,32 @@ return dt.split("(")[0]
             })
           }
 
-          this.resetPendingChanges()
-
           if (replaceData) {
+            const niceChanges = pluralize('change', this.pendingChangesCount, true)
+            this.$noty.success(`${niceChanges} successfully applied`)
             this.tabulator.replaceData()
           }
+
+          this.resetPendingChanges()
+
 
         } catch (ex) {
           
           this.pendingChanges.updates.forEach(edit => {
               edit.cell.getElement().classList.add('edit-error')
           })
-          
-          this.setQueryError('Error saving changes', ex.message)
-          this.$noty.error("Error saving changes")
+
+
+          this.pendingChanges.inserts.forEach(insert => {
+            insert.row.getElement().classList.add('edit-error')
+          })
+
+          this.saveError = {
+            title: ex.message,
+            message: ex.message,
+            ex
+          }
+          this.$noty.error(ex.message)
           
           return
         } finally {
@@ -749,7 +826,7 @@ return dt.split("(")[0]
         }
     },
     discardChanges() {
-      this.queryError = null
+      this.saveError = null
 
       this.pendingChanges.inserts.forEach(insert => this.tabulator.deleteRow(insert.row))
 
@@ -840,8 +917,11 @@ return dt.split("(")[0]
               data
             });
           } catch (error) {
-            reject();
-            this.setQueryError('Error loading data', error.message)
+            reject(error.message);
+            this.queryError = {
+              title: error.message,
+              message: error.message
+            }
             this.$nextTick(() => {
               this.tabulator.clearData()
             })

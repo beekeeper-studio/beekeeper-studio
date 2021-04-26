@@ -5,7 +5,7 @@
         @click.prevent="click('tables')"
         class="nav-item"
         :class="{ active: activeItem === 'tables'}"
-        v-tooltip="tablesTooltip"
+        title="Database"
       >
         <span class="bk-database"></span>
       </a>
@@ -14,7 +14,7 @@
         @click.prevent="click('queries')"
         class="nav-item"
         :class="{ active: activeItem === 'queries'}"
-        v-tooltip="queriesTooltip"
+        title="Run History"
       >
         <span class="material-icons">star</span>
       </a>
@@ -23,7 +23,7 @@
         @click.prevent="click('history')"
         class="nav-item"
         :class="{ active: activeItem === 'history'}"
-        v-tooltip="historyTooltip"
+        title="Saved Queries"
       >
         <span class="material-icons">history</span>
       </a>
@@ -32,7 +32,7 @@
         @click.prevent="click('exports')"
         class="nav-item"
         :class="{ active: activeItem === 'exports', 'text-primary': runningExports.length}"
-        v-tooltip="exportsTooltip"
+        title="Exports"
       >
         <span class="material-icons">file_download</span>
       </a>
@@ -44,26 +44,6 @@
 
   export default {
     props: ['activeItem'],
-    data() {
-      return {
-        tablesTooltip: {
-          placement: 'right',
-          content: "Database"
-        },
-        historyTooltip: {
-          placement: 'right',
-          content: 'Run History'
-        },
-        queriesTooltip: {
-          placement: 'right',
-          content: "Saved Queries"
-        },
-        exportsTooltip: {
-          placement: 'right',
-          content: "Exports"
-        }
-      }
-    },
     computed: {
       ...mapGetters({'runningExports': 'exports/runningExports'})
     },

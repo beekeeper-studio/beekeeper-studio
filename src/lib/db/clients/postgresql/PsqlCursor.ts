@@ -1,6 +1,6 @@
 import { PoolClient } from "pg"
 import Cursor from "pg-cursor"
-import { BeeCursor } from "../base/types"
+import { BeeCursor } from "../../models"
 import { Conn } from './types'
 import rawlog from 'electron-log'
 
@@ -72,4 +72,5 @@ export class PsqlCursor extends BeeCursor {
       }
     })
   }
+
 }

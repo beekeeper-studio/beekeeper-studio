@@ -8,7 +8,8 @@ import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { FilterOptions, DatabaseClient, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, IDbConnectionServerConfig, NgQueryResult, StreamResults } from '../client'
+import { DatabaseClient, IDbConnectionServerConfig } from '../client'
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, NgQueryResult, StreamResults } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 
 import { createCancelablePromise } from '../../../common/utils';
@@ -128,6 +129,7 @@ async function getTypes(conn: HasPool): Promise<any> {
 }
 
 
+
 export default async function (server: any, database: any): Promise<DatabaseClient> {
   const dbConfig = configDatabase(server, database);
   logger().debug('create driver client for postgres with config %j', dbConfig);
@@ -174,11 +176,11 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 }
 
 
+
+
 export function disconnect(conn: HasPool) {
   conn.pool.end();
 }
-
-
 
 export async function listTables(conn: HasPool, filter: FilterOptions = { schema: 'public' }) {
   const schemaFilter = buildSchemaFilter(filter, 'table_schema');

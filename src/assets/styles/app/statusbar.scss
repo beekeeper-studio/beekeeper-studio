@@ -1,18 +1,17 @@
 .statusbar {
-  // $statusbar-bg: darken($brand-pink, 55%);
-
   display: flex;
   align-items: center;
   background: $statusbar-bg;
   color: rgba($statusbar-text, 0.57);
   min-height: $statusbar-height;
   height: $statusbar-height;
-  line-height: $statusbar-height;
-  font-size: 0.85rem;
+  line-height: $statusbar-height *0.8;
+  font-size: 0.8rem;
   padding: 0 $gutter-h;
   overflow: hidden;
   > .col {
     display: flex;
+    align-items: center;
   }
   .badge {
     border-radius: 1.8rem;
@@ -21,37 +20,24 @@
     color: $statusbar-text;
     height: $statusbar-height * 0.8;
     line-height: $statusbar-height * 0.8;
-    transition: background 0.15s ease-in-out;
     min-width: 0;
     margin-left: 0.15rem;
     margin-right: 0.15rem;
     padding-left: 0.7rem;
     padding-right: 0.7rem;
+    border-radius: $btn-border-radius-small;
+    transition: background 0.15s ease-in-out;
     &:hover {
-      background: rgba($statusbar-text, 0.1);
+      background: rgba($statusbar-text, 0.05);
     }
     &.btn-primary {
-      background: rgba($theme-base, 0.1);
-      // color: rgba(black, 0.87);
-      transition: background 0.15s ease-in-out;
+      background: rgba($theme-base, 0.15);
       &:hover {
-        background: rgba($theme-base, 0.15);
-      }
-      .badge {
-        font-size: 85%;
-        margin-left: 0;
-        padding: 0 0.3rem;
         background: rgba($theme-base, 0.2);
-      }
-      .material-icons {
-        font-size: 14px;
       }
     }
     &.error, &.error:hover {
-      background: rgba($theme-base, 0.1);
-      cursor: not-allowed;
       pointer-events: all !important;
-      opacity: 0.5;
     }
     .material-icons {
       font-size: 16px;
@@ -98,7 +84,7 @@
       min-width: fit-content;
     }
     x-menu {
-      width: 286px;
+      width: 220px;
     }
   }
 
@@ -108,20 +94,80 @@
     padding: 0 $gutter-h;
   }
 
+  // Row Actions
+  // -------------------------
+  .statusbar-actions {
+    margin-right: auto;
+    x-buttons {
+      border-radius: $btn-border-radius-small;
+      overflow: hidden;
+      margin-top: -1px;
+      .btn {
+        border-radius: 0;
+      }
+    }
+    .btn {
+      margin-left: 0.35rem;
+      margin-top: -1px;
+      --ripple-background: none;
+      &.btn-flat,
+      &.btn-link {
+        &:hover {
+          background: rgba($theme-base, 0.1);
+        }
+      }
+    }
+  }
+
   // Download Results
-  // -----------------------------
   .download-results {
-    .btn-link {
-      background: rgba($theme-base, 0.1);
+    border-radius: $btn-border-radius-small;
+    overflow: hidden;
+    margin-top: -1px;
+    .btn {
       color: $text-dark;
-      box-shadow: inset 0 0 0 1px rgba($theme-base, 0.05);
-      height: $statusbar-height * 0.8;
-      line-height: $statusbar-height * 0.8;
       margin: 0;
+      border-radius: 0;
+      &[menu] {
+        .material-icons {
+          font-size: 16px;
+        }
+      }
     }
     .material-icons {
       color: $text-dark;
-      font-size: 20px;
+      font-size: 18px;
+    }
+  }
+
+  // Actions
+  .actions-btn {
+    padding: 0 0.2rem 0 0.35rem;
+    background: transparent;
+    box-shadow: none!important;
+    .material-icons {
+      width: 16px;
+    }
+  }
+
+  // Pending Changes
+  .pending-changes {
+    margin-left: 0.1rem;
+    .btn {
+      // padding-left: 0.5rem;
+      margin: 0;
+    }
+    .badge {
+      background: transparent;
+      // box-shadow: inset 0 0 0 1px rgba($theme-base, 0.25);
+      padding: 0;
+      line-height: 16px;
+      margin-left: 0;
+    }
+    .material-icons {
+      font-size: 14px;
+      overflow: visible;
+      line-height: 1.1;
     }
   }
 
@@ -150,6 +196,8 @@
     align-items: center;
     padding: 0 $gutter-h;
     line-height: $statusbar-height;
+    overflow: hidden;
+    text-overflow:ellipsis;
     .material-icons {
       font-size: 16px;
       line-height: $statusbar-height;
@@ -159,11 +207,18 @@
     }
     &.error {
       color: $text-dark;
+      font-size: 0.75rem;
+      padding-right: 2rem;
       .material-icons {
         color: $theme-base;
       }
+      > span {
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
     }
-    &.hoverable:hover, &.hoverable:focus {
+    &.hoverable:hover, 
+    &.hoverable:focus {
       color: $text-dark;
       transition: color 0.15s ease-in-out;
       outline: none;
@@ -173,5 +228,9 @@
     .truncated-rows, .records {
       margin-left: $gutter-h * 0.5;
     }
+  }
+
+  .statusbar-info {
+    min-width: 33.3333%;
   }
 }
