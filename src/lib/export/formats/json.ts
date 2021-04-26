@@ -8,6 +8,7 @@ interface OutputOptionsJson {
 export class JsonExporter extends Export {
   readonly format: string = 'json'
   separator: string = ',\n'
+  outputOptions: OutputOptionsJson;
 
   constructor(
     filePath: string,
@@ -17,7 +18,8 @@ export class JsonExporter extends Export {
     options: ExportOptions,
     outputOptions: OutputOptionsJson
   ) {
-    super(filePath, connection, table, filters, options, outputOptions)
+    super(filePath, connection, table, filters, options)
+    this.outputOptions = outputOptions
   }
 
   async getHeader(): Promise<string> {

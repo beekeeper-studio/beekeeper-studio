@@ -27,15 +27,6 @@
       >
         <span class="material-icons">history</span>
       </a>
-      <a
-        href=""
-        @click.prevent="click('exports')"
-        class="nav-item"
-        :class="{ active: activeItem === 'exports', 'text-primary': runningExports.length}"
-        title="Exports"
-      >
-        <span class="material-icons">file_download</span>
-      </a>
     </div>
 </template>
 

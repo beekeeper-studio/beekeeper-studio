@@ -1,5 +1,8 @@
-import { Export, ExportOptions } from "@/lib/export";
-import { DBConnection, TableOrView, TableFilter } from '@/lib/db/client'
+import Papa from 'papaparse'
+import { DBConnection } from "../../db/client"
+import { TableFilter, TableOrView } from "../../db/models"
+import { Export } from "../export"
+import { ExportOptions } from "../models"
 
 interface OutputOptionsCsv {
   header: boolean,
@@ -8,11 +11,13 @@ interface OutputOptionsCsv {
 
 export class CsvExporter extends Export {
   readonly format: string = 'csv'
-  readonly rowOptions = {
-    header: false,
-  }
+  rowSeparator: string = '\n'
 
-  separator: string = '\n'
+  private outputOptions: OutputOptionsCsv
+  private papaHeader: Papa.UnparseConfig
+  private papaRow: Papa.UnparseConfig = {
+    header: false
+  }
 
   constructor(
     filePath: string,
@@ -22,24 +27,25 @@ export class CsvExporter extends Export {
     options: ExportOptions,
     outputOptions: OutputOptionsCsv,
   ) {
-    super(filePath, connection, table, filters, options, outputOptions)
-    
+    super(filePath, connection, table, filters, options)
+    this.papaHeader = {
+      header: true,
+      delimiter: outputOptions.delimiter,
+    }
+    this.outputOptions = outputOptions
+    this.papaRow.delimiter = outputOptions.delimiter
   }
 
   async getHeader(fields: string[]): Promise<string> {
-    // TODO fix this, use papa parse
-    if (fields && this.outputOptions.header) {
-      return `${fields.join(this.outputOptions.delimiter)}\n`
-    } else {
-      return ""
+    if (fields.length > 0 && this.outputOptions.header) {
+      return Papa.unparse([fields], this.papaHeader)
     }
+    return ""
   }
 
   getFooter() { return "" }
 
   formatRow(row: any): string {
-
-    // TODO: this isn't good enough, need papa parse
-    return Object.values(row).join(this.outputOptions.delimiter)
+    return Papa.unparse([row], this.papaRow)
   }
 }

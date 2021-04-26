@@ -49,19 +49,6 @@
         <favorite-list></favorite-list>
       </div>
 
-      <!-- Exports -->
-      <div
-        class="tab-pane"
-        id="tab-exports"
-        :class="tabClasses('exports')"
-        v-show="activeItem === 'exports'"
-      >
-        <div class="sidebar-heading">
-          <span class="sidebar-title">Exports</span>
-          <span class="expand"></span>
-        </div>
-        <export-list></export-list>
-      </div>
     </div>
 
   </div>
@@ -73,14 +60,13 @@
   import TableList from './core/TableList'
   import HistoryList from './core/HistoryList'
   import FavoriteList from './core/FavoriteList'
-  import ExportList from './core/ExportList'
   import DatabaseDropdown from './core/DatabaseDropdown'
 
   import { mapState } from 'vuex'
 
   export default {
     props: ['sidebarShown'],
-    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList, ExportList },
+    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
     data() {
       return {
         tableLoadError: null,

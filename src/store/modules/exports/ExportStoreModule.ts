@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { Module } from 'vuex'
-import { Export } from '@/lib/export'
-
+import { Export } from '../../../lib/export/export'
+import { ExportStatus } from '../../../lib/export/models'
 
 interface State {
   exports: Export[]
@@ -20,7 +20,7 @@ const ExportStoreModule: Module<State, any> = {
       state.exports = _.reject(state.exports, { 'id': id })
     },
     removeInactive(state): void {
-      state.exports = _.filter(state.exports, { 'status': Export.Status.Exporting })
+      state.exports = _.filter(state.exports, { 'status': ExportStatus.Exporting })
     }
   },
   getters: {
@@ -28,7 +28,7 @@ const ExportStoreModule: Module<State, any> = {
       return state.exports
     },
     runningExports(state): Export[] {
-      return _.filter(state.exports, { 'status': Export.Status.Exporting })
+      return _.filter(state.exports, { 'status': ExportStatus.Exporting })
     },
     runningVisibleExports(state, getters): Export[] {
       return _.filter(getters.runningExports, { 'showNotification': true })

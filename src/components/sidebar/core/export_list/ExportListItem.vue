@@ -101,28 +101,25 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import Noty from "noty";
 import { mapMutations } from "vuex";
 import { Export } from "@/lib/export";
 import ExportInfo from "@/components/export/mixins/export-info";
+import { ExportStatus } from '../../../../lib/export/models';
 
-export default {
+export default Vue.extend({
   mixins: [ExportInfo],
   props: {
-    exporter: {
-      required: true,
-    },
+    exporter: PropType<Export>
   },
   data() {
-    return {
-      Export: Export,
-    };
   },
   computed: {
     hasIncompleteStatus() {
       return (
-        this.exporter.status === Export.Status.Aborted ||
-        this.exporter.status === Export.Status.Error
+        this.exporter.status === ExportStatus.Aborted ||
+        this.exporter.status === ExportStatus.Error
       );
     },
     tooltip() {
@@ -138,7 +135,7 @@ export default {
       removeInactive: "exports/removeInactive",
     }),
     progressUpdate(p) {
-      if(p.status === Export.Status.Completed) {
+      if(p.status === ExportStatus.Completed) {
           new Noty({
             type: "success",
             text:
@@ -167,5 +164,5 @@ export default {
       console.log("export selected");
     },
   }
-};
+});
 </script>

@@ -2,28 +2,14 @@ import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 import remote from 'electron'
-import { DBConnection, TableOrView, TableFilter, TableResult, } from '@/lib/db/client'
-import { BeeCursor } from '@/lib/db/clients/base/types'
 import { promises } from 'fs'
 import NativeWrapper from '../NativeWrapper'
 import rawlog from 'electron-log'
+import { BeeCursor, TableFilter, TableOrView } from '../db/models'
+import { DBConnection } from '../db/client'
+import { ExportOptions, ExportStatus, ProgressCallback, ExportProgress } from './models'
 
 const log = rawlog.scope('export/export')
-
-export interface ExportOptions {
-  chunkSize: number,
-  deleteOnAbort: boolean
-}
-
-export interface ExportProgress {
-  totalRecords: number,
-  countExported: number,
-  secondsElapsed: number,
-  secondsRemaining: number
-  status: Export.Status
-}
-
-type ProgressCallback = (p: ExportProgress) => void
 
 export abstract class Export {
   // don't make stuff public you don't want observed in vue
@@ -32,55 +18,37 @@ export abstract class Export {
   countExported: number = 0
   countTotal: number = 0
   error: Error | null = null
-  filePath: string
   fileSize: number = 0
-  filters: TableFilter[] | string
   lastChunkTime: number = 0
-  
   showNotification: boolean = true
   // see set status()
-  private _status: Export.Status = Export.Status.Idle
-  table: TableOrView
+  private _status: ExportStatus = ExportStatus.Idle
   timeElapsed: number = 0
   timeLeft: number = 0
-
-  private connection: DBConnection
-  private outputOptions: any
-  private options: ExportOptions
   private cursor?: BeeCursor
   private fileHandle?: promises.FileHandle
-
-
-
   private callbacks = {
     progress: Array<ProgressCallback>()
   }
-
-
-  abstract separator: string
+  abstract rowSeparator: string
+  // do not add newlines / row separators
   abstract getHeader(fields: string[]): Promise<string>
   abstract getFooter(): string
+  // do not add newlines / row separators
   abstract formatRow(data: any): string
 
   constructor(
-    filePath: string,
-    connection: DBConnection,
-    table: TableOrView,
-    filters: TableFilter[] | any[],
-    options: ExportOptions,
-    outputOptions: any
+    public filePath: string,
+    public connection: DBConnection,
+    public table: TableOrView,
+    public filters: TableFilter[] | any[],
+    public options: ExportOptions,
   ) {
-    this.filePath = filePath
-    this.connection = connection
-    this.table = table
-    this.filters = filters
-    this.options = options
-    this.outputOptions = outputOptions
     this.id = this.generateId()
   }
 
 
-  set status(status: Export.Status) {
+  set status(status: ExportStatus) {
     this._status = status
     this.notify()
   }
@@ -114,7 +82,7 @@ export abstract class Export {
 
   async initExport(): Promise<void> {
     this
-    this.status = Export.Status.Exporting
+    this.status = ExportStatus.Exporting
     this.countExported = 0
     
 
@@ -134,6 +102,7 @@ export abstract class Export {
 
     if (header) {
       await this.fileHandle.write(header)
+      await this.fileHandle.write(this.rowSeparator)
     }
   }
 
@@ -151,7 +120,7 @@ export abstract class Export {
           const row = rows[rI];
           const formatted = this.formatRow(row)
           this.fileHandle?.write(formatted)
-          this.fileHandle?.write(this.separator)
+          this.fileHandle?.write(this.rowSeparator)
         }
         this.countExported += rows.length
 
@@ -160,7 +129,7 @@ export abstract class Export {
 
       } while (
         rows.length > 0 &&
-        this.status === Export.Status.Exporting
+        this.status === ExportStatus.Exporting
       )
       await this.cursor?.close()
   }
@@ -170,7 +139,7 @@ export abstract class Export {
     await this.fileHandle?.write(footer)
     await this.fileHandle?.close()
     this.fileHandle = undefined
-    this.status = Export.Status.Completed
+    this.status = ExportStatus.Completed
   }
 
   async exportToFile(): Promise<void> {
@@ -179,7 +148,7 @@ export abstract class Export {
       await this.exportData()
       await this.finalizeExport()
 
-      if (this.status === Export.Status.Aborted) {
+      if (this.status === ExportStatus.Aborted) {
         if (this.options.deleteOnAbort) {
           await promises.unlink(this.filePath)
         }
@@ -187,7 +156,7 @@ export abstract class Export {
 
 
     } catch (error) {
-      this.status = Export.Status.Error
+      this.status = ExportStatus.Error
       this.error = error
       log.error(error)
       await this.fileHandle?.close()
@@ -215,11 +184,11 @@ export abstract class Export {
   }
 
   abort(): void {
-    this.status = Export.Status.Aborted
+    this.status = ExportStatus.Aborted
   }
 
   pause(): void {
-    this.status = Export.Status.Paused
+    this.status = ExportStatus.Paused
   }
 
   hide(): void {
@@ -240,16 +209,5 @@ export abstract class Export {
     }
 
     return this.filters
-  }
-}
-
-export namespace Export {
-  export enum Status {
-    Idle,
-    Exporting,
-    Paused,
-    Aborted,
-    Completed,
-    Error
   }
 }

@@ -1,7 +1,9 @@
-import { Export, ExportOptions } from "@/lib/export";
-import { DBConnection, TableOrView, TableFilter } from '@/lib/db/client'
 import knexlib from 'knex'
 import Knex from "knex";
+import { DBConnection } from '../../db/client';
+import { TableFilter, TableOrView } from '../../db/models';
+import { Export } from '../export';
+import { ExportOptions } from '../models';
 
 interface OutputOptionsSql {
   createTable: boolean,
@@ -9,7 +11,7 @@ interface OutputOptionsSql {
 }
 export class SqlExporter extends Export {
   readonly format: string = 'sql'
-  readonly separator: string = ';\n'
+  readonly rowSeparator: string = ';\n'
   readonly knexTypes: any = {
     "cockroachdb": "pg",
     "mariadb": "mysql2",
@@ -18,6 +20,7 @@ export class SqlExporter extends Export {
     "sqlite": "sqlite3",
     "sqlserver": "mssql"
   }
+  private outputOptions: OutputOptionsSql
   knex: Knex
 
   constructor(
@@ -28,10 +31,10 @@ export class SqlExporter extends Export {
     options: ExportOptions,
     outputOptions: OutputOptionsSql
   ) {
-    super(filePath, connection, table, filters, options, outputOptions)
-
+    super(filePath, connection, table, filters, options)
+    this.outputOptions = outputOptions
     if (!this.connection.connectionType || !this.knexTypes[this.connection.connectionType]) {
-      throw new Error("SQL export not supported on connectiont type " + this.connection.connectionType)
+      throw new Error("SQL export not supported on connection type " + this.connection.connectionType)
     }
 
     this.knex = knexlib({ client: this.knexTypes[this.connection.connectionType] || undefined })
@@ -49,7 +52,7 @@ export class SqlExporter extends Export {
   }
 
   getFooter() {
-    return this.separator
+    return this.rowSeparator
   }
 
   formatRow(row: any): string {

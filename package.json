@@ -23,6 +23,7 @@
   },
   "main": "background.js",
   "dependencies": {
+    "@types/papaparse": "^5.2.5",
     "@types/pg": "^7.14.7",
     "@types/sql-formatter": "^2.3.0",
     "base64-url": "^2.3.3",
@@ -112,12 +113,12 @@
     "electron-updater": "^4.2.5",
     "eslint": "^5.16.0",
     "eslint-plugin-vue": "^5.0.0",
+    "sqlite3": "^5.0.2",
     "testcontainers": "^4.6.0",
     "typescript": "^3.9.7",
     "vue-cli-plugin-electron-builder": "^2.0.0-rc.1",
     "vue-template-compiler": "^2.6.10",
-    "vuepress": "^1.5.0",
-    "sqlite3": "^5.0.2"
+    "vuepress": "^1.5.0"
   },
   "eslintConfig": {
     "root": true,
