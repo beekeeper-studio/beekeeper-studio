@@ -77,7 +77,7 @@
               v-model="filePath"
               :defaultPath="defaultPath"
               :save="true"
-              :options="{buttonLabel: 'Choose'}"
+              :options="dialogOptions"
               >
             </file-picker>
 
@@ -107,7 +107,6 @@ import * as path from 'path'
 import { remote } from "electron"
 import { mapMutations } from "vuex"
 import rawlog from 'electron-log'
-import { CsvExporter, JsonExporter, SqlExporter } from "@/lib/export"
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL } from "./forms"
 import FilePicker from '../common/form/FilePicker'
 import platformInfo from '../../common/platform_info'
@@ -118,19 +117,16 @@ const exportFormats = [
     name: "CSV",
     key: "csv",
     component: ExportFormCSV,
-    exporter: CsvExporter,
   },
   {
     name: "JSON",
     key: "json",
     component: ExportFormJSON,
-    exporter: JsonExporter,
   },
   {
     name: "SQL",
     key: "sql",
     component: ExportFormSQL,
-    exporter: SqlExporter,
   },
 ]
 
@@ -155,12 +151,16 @@ export default {
     }
   },
   computed: {
+    dialogOptions() {
+      const result = { buttonLabel: 'OK', properties: [ 'showOverwriteConfirmation', 'createDirectory'] }
+      return result
+    },
     hasFilters() {
       return this.filters && this.filters.length;
     },
     defaultFileName() {
       const schema = this.table.schema ? `${this.table.schema}_` : ''
-      const extension = this.selectedExportFormat.exporter.extension
+      const extension = this.selectedExportFormat.key
       return `${schema}${this.table.name}_export_.${extension}`
     },
     defaultPath() {
@@ -190,25 +190,13 @@ export default {
       if (this.filePath === undefined) {
         return;
       }
-
-      try {
-        const exporter = new this.selectedExportFormat.exporter(
-          this.filePath,
-          this.connection,
-          this.table,
-          this.filters,
-          this.options,
-          this.outputOptions
-        );
-
-        this.addExport(exporter);
-        log.info('exportToFile started with exporter', this.selectedExportFormat)
-        exporter.exportToFile();
-
-        this.$modal.hide("export-modal")
-      } catch (error) {
-        this.error = error;
-      }
+      this.$emit('export', { 
+        filePath: this.filePath,
+        options: this.options,
+        outputOptions: this.outputOptions,
+        exporter: this.selectedExportFormat.key
+      })
+      this.$modal.hide('export-modal')
     },
   },
   mounted() {

@@ -1,14 +1,13 @@
 <template>
   <div>
     <div class="form-group">
-      <label>Delimiter</label>
+      <label>Field Delimitor</label>
       <input
         v-model="options.delimiter"
         type="text"
         class="form-control"
         autofocus
         ref="paramInput"
-        value=";"
       />
     </div>
     <div class="form-group">
@@ -20,7 +19,7 @@
           name="headerRow"
           class="form-control"
         />
-        <span>Include header row</span>
+        <span>Include Header</span>
       </label>
     </div>
   </div>
@@ -36,8 +35,8 @@ export default {
   data() {
     return {
       options: {
-        header: false,
-        delimiter: ";",
+        header: true,
+        delimiter: ",",
       },
     };
   },

@@ -9,6 +9,14 @@ declare module 'vue/types/vue' {
   interface Vue {
     // ...AppEventMixin.methods,
     $native: ElectronPlugin
+    $noty: {
+      show(text: string, type: string, opts?: any): void
+
+      success(text: string, opts?: any): void
+      error(text: string, opts?: any): void
+      warning(text: string, opts?: any): void
+      info(text: string, opts?: any): void
+    }
 
     // TODO: figure out how to add these automatically from AppEvent.ts
     registerHandlers(bindings: RootBinding[]): void
