@@ -30,10 +30,10 @@ const ExportStoreModule: Module<State, any> = {
     runningExports(state): Export[] {
       return _.filter(state.exports, { 'status': ExportStatus.Exporting })
     },
-    runningVisibleExports(state, getters): Export[] {
+    runningVisibleExports(_state, getters): Export[] {
       return _.filter(getters.runningExports, { 'showNotification': true })
     },
-    hasRunningExports(state, getters): boolean {
+    hasRunningExports(_state, getters): boolean {
       return getters.runningExports.length > 0
     }
   }

@@ -7,3 +7,5 @@ export default {
   largeFieldWidth: 500,
   maxColumnWidth: 1000,
 }
+
+

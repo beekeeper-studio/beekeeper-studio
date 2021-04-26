@@ -6,8 +6,6 @@ import { SSHConnection } from 'node-ssh-forward';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery } from './models';
 
 const logger = createLogger('db');
-const DEFAULT_LIMIT = 1000;
-const limitSelect: Nullable<number> = null;
 
 export interface DatabaseClient {
   supportedFeatures: () => SupportedFeatures
@@ -130,7 +128,7 @@ export class DBConnection {
   }
 }
 
-export function createConnection(server: IDbConnectionServer, database: IDbConnectionDatabase, cryptoSecret?: string) {
+export function createConnection(server: IDbConnectionServer, database: IDbConnectionDatabase ) {
   /**
    * Database public API
    */
@@ -362,7 +360,7 @@ async function getTableUpdateScript(server: IDbConnectionServer, database: IDbCo
   ].join(' ');
 }
 
-function getTableDeleteScript(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {
+function getTableDeleteScript(_server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {
   const schemaSelection = resolveSchema(database, schema);
   return [
     `DELETE FROM ${schemaSelection}${wrap(database, table)}`,
@@ -380,7 +378,7 @@ function getRoutineCreateScript(server: IDbConnectionServer, database: IDbConnec
   return database.connection?.getRoutineCreateScript(routine, type, schema);
 }
 
-function truncateAllTables(server: IDbConnectionServer, database: IDbConnectionDatabase, schema: string) {
+function truncateAllTables(_server: IDbConnectionServer, database: IDbConnectionDatabase, schema: string) {
   return database.connection?.truncateAllTables(database.database, schema);
 }
 
@@ -408,7 +406,7 @@ function wrap(database: IDbConnectionDatabase, identifier: string | string[]): s
   return identifier.map((item) => database.connection?.wrapIdentifier(item) || '');
 }
 
-function checkIsConnected(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+function checkIsConnected(_server: IDbConnectionServer, database: IDbConnectionDatabase) {
   if (database.connecting || !database.connection) {
     console.log(database)
     throw new Error('There is no connection available.');

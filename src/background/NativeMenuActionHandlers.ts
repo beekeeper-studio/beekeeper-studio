@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import AppEvent from '../common/AppEvent'
+import {AppEvent} from '../common/AppEvent'
 import { buildWindow, getActiveWindows } from './WindowBuilder'
 import { app } from 'electron'
 import platformInfo from '../common/platform_info'
@@ -7,7 +7,6 @@ import path from 'path'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import { IMenuActionHandler } from 'common/interfaces/IMenuActionHandler'
-import { shell } from 'electron'
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -129,7 +128,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     })
   }
 
-  toggleSidebar = async(menuItem: Electron.MenuItem, win: ElectronWindow) => {
+  toggleSidebar = async(_menuItem: Electron.MenuItem, win: ElectronWindow) => {
     if (win) win.webContents.send(AppEvent.toggleSidebar)
   }
 

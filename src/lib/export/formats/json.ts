@@ -1,13 +1,16 @@
-import { Export, ExportOptions } from "@/lib/export";
-import { DBConnection, TableOrView, TableFilter } from '@/lib/db/client'
+import { Export } from "@/lib/export";
+import { DBConnection } from '@/lib/db/client'
 import indentString from 'indent-string'
+import { TableFilter, TableOrView } from "../../db/models";
+import { ExportOptions } from "../models";
 
 interface OutputOptionsJson {
   prettyprint: boolean
 }
 export class JsonExporter extends Export {
+  public static extension: string = "json"
   readonly format: string = 'json'
-  separator: string = ',\n'
+  rowSeparator: string = ',\n'
   outputOptions: OutputOptionsJson;
 
   constructor(

@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { RoutineTypeNames } from '@/lib/db/client'
+import { RoutineTypeNames } from '../lib/db/models'
 
 export default {
   methods: {

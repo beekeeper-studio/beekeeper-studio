@@ -9,22 +9,17 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, RoutineType, RoutineParam, NgQueryResult, StreamResults } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 
 import { createCancelablePromise } from '../../../common/utils';
-import { errors, Error as CustomError } from '../../errors';
+import { errors } from '../../errors';
 import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 
 
 const base64 = require('base64-url');
-
-
-function isPool(x: any): x is HasPool {
-  return x.pool !== undefined
-}
 
 function isConnection(x: any): x is HasConnection {
   return x.connection !== undefined
@@ -148,22 +143,22 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     supportedFeatures: () => ({ customRoutines: true}),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
-    listTables: (db: string, filter: FilterOptions | undefined) => listTables(conn, filter),
+    listTables: (_db: string, filter: FilterOptions | undefined) => listTables(conn, filter),
     listViews: (filter?: FilterOptions) => listViews(conn, filter),
     listMaterializedViews: (filter?: FilterOptions) => listMaterializedViews(conn, filter),
     listRoutines: (filter?: FilterOptions) => listRoutines(conn, filter),
     listTableColumns: (db, table, schema = defaultSchema) => listTableColumns(conn, db, table, schema),
     listMaterializedViewColumns: (db, table, schema = defaultSchema) => listMaterializedViewColumns(conn, db, table, schema),
     listTableTriggers: (table, schema = defaultSchema) => listTableTriggers(conn, table, schema),
-    listTableIndexes: (db, table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
-    listSchemas: (db, filter?: SchemaFilterOptions) => listSchemas(conn, filter),
+    listTableIndexes: (_db, table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
+    listSchemas: (_db, filter?: SchemaFilterOptions) => listSchemas(conn, filter),
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
     applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
     // stream: (queryText: string, options: StreamOptions, schema: string = defaultSchema) => stream(conn, queryText, options, schema),
-    executeQuery: (queryText, schema = defaultSchema) => executeQuery(conn, queryText),
+    executeQuery: (queryText, _schema = defaultSchema) => executeQuery(conn, queryText),
     listDatabases: (filter?: DatabaseFilterOptions) => listDatabases(conn, filter),
     selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
     selectTopStream: (table: string, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTopStream(conn, table, orderBy, filters, schema),
@@ -442,7 +437,7 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
   });
 }
 
-export async function listTableColumns(conn: Conn, database: string, table?: string, schema?: string) {
+export async function listTableColumns(conn: Conn, _database: string, table?: string, schema?: string) {
   // if you provide table, you have to provide schema
   const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : ""
   const params = table ? [schema, table] : []
@@ -476,7 +471,7 @@ export async function listTableColumns(conn: Conn, database: string, table?: str
   }));
 }
 
-export async function listMaterializedViewColumns(conn: Conn, database: string, table: string, schema: string) {
+export async function listMaterializedViewColumns(conn: Conn, _database: string, table: string, schema: string) {
   const clause = table ? `AND s.nspname = $1 AND t.relname = $2` : ''
   if (table && !schema) {
     throw new Error("Cannot get columns for '${table}, no schema provided'")
@@ -573,7 +568,7 @@ export async function getTableReferences(conn: Conn, table: string, schema: stri
   return data.rows.map((row) => row.referenced_table_name);
 }
 
-export async function getTableKeys(conn: Conn, database: string, table: string, schema: string): Promise<TableKey[]> {
+export async function getTableKeys(conn: Conn, _database: string, table: string, schema: string): Promise<TableKey[]> {
   const sql = `
     SELECT
         tc.table_schema as from_schema,
@@ -613,7 +608,7 @@ export async function getTableKeys(conn: Conn, database: string, table: string, 
   }));
 }
 
-export async function getPrimaryKey(conn: HasPool, database: string, table: string, schema: string): Promise<string> {
+export async function getPrimaryKey(conn: HasPool, _database: string, table: string, schema: string): Promise<string> {
   const version = await getVersion(conn)
   const tablename = escapeString(schema ? `${wrapIdentifier(schema)}.${wrapIdentifier(table)}` : wrapIdentifier(table))
   const psqlQuery = `
@@ -713,7 +708,7 @@ async function deleteRows(cli: any, deletes: TableDelete[]) {
   return true
 }
 
-export function query(conn: Conn, queryText: string, schema: string) {
+export function query(conn: Conn, queryText: string, _schema: string) {
   let pid: any = null;
   let canceling = false;
   const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
@@ -809,7 +804,7 @@ export async function listDatabases(conn: Conn, filter?: DatabaseFilterOptions) 
 }
 
 
-export function getQuerySelectTop(conn: Conn, table: string, limit: number, schema: string) {
+export function getQuerySelectTop(_conn: Conn, table: string, limit: number, schema: string) {
   return `SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)} LIMIT ${limit}`;
 }
 
@@ -1053,9 +1048,6 @@ async function driverExecuteSingle(conn: Conn | HasConnection, queryArgs: Postgr
 }
 
 function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult[]> {
-  function isQueryResult(x: any): x is QueryResult {
-    return x.rows !== undefined
-  }
 
   const runQuery = (connection: pg.PoolClient): Promise<QueryResult[]> => {
     const args = {

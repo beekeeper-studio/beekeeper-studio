@@ -1,7 +1,6 @@
 import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
-import remote from 'electron'
 import { promises } from 'fs'
 import NativeWrapper from '../NativeWrapper'
 import rawlog from 'electron-log'

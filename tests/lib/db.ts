@@ -75,7 +75,7 @@ export class DBTestUtil {
     await this.createTables()
     await this.connection.connect()
     const address = await this.knex("addresses").insert({country: "US"}).returning("id")
-    const mixed = await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
+    await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
     const people = await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0]}).returning("id")
     const jobs = await this.knex("jobs").insert({job_name: "Programmer"}).returning("id")
     await this.knex("people_jobs").insert({job_id: jobs[0], person_id: people[0] })

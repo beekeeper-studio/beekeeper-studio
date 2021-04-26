@@ -38,16 +38,10 @@
       </div>
     </div>
     <!-- TODO - this should really be in TableTable -->
-    <ExportModal
-      v-if="showExportModal"
-      :connection="this.connection"
-      :table="tableExportOptions.table"
-      :filters="tableExportOptions.filters"
-      @close="showExportModal = false"
-    ></ExportModal>
+
 
     <!-- TODO - all notifications should really be handled with an organized system -->
-    <ExportNotification v-for="exporter in exports" :key="exporter.id" :exporter="exporter"></ExportNotification>
+
   </div>
 </template>
 
@@ -58,11 +52,9 @@
   import {FavoriteQuery} from '../common/appdb/models/favorite_query'
   import QueryEditor from './TabQueryEditor'
   import CoreTabHeader from './CoreTabHeader'
-  import ExportModal from './export/ExportModal'
-  import ExportNotification from './export/ExportNotification'
   import { uuidv4 } from '@/lib/uuid'
   import TableTable from './tableview/TableTable'
-  import AppEvent from '../common/AppEvent'
+  import {AppEvent} from '../common/AppEvent'
   import platformInfo from '../common/platform_info'
   import { mapGetters, mapState } from 'vuex'
   import Draggable from 'vuedraggable'
@@ -70,7 +62,7 @@
 
   export default {
     props: [ 'connection' ],
-    components: { QueryEditor, CoreTabHeader, TableTable, Draggable, ShortcutHints, ExportModal, ExportNotification },
+    components: { QueryEditor, CoreTabHeader, TableTable, Draggable, ShortcutHints},
     data() {
       return {
         tabItems: [],
@@ -298,15 +290,10 @@
       }
     },
     beforeDestroy() {
-      this.rootBindings.forEach(({event, handler}) => {
-        this.$root.$off(event, handler)
-      })
+      this.unregisterHandlers(this.rootBindings)
     },
     mounted() {
-      this.rootBindings.forEach(({ event, handler }) => {
-        this.$root.$on(event, handler)
-      })
-      this.createQuery()
+      this.registerHandlers(this.rootBindings)
     }
   }
 </script>

@@ -129,7 +129,11 @@
               <x-label>Refresh</x-label>
             </x-menuitem>
             <x-menuitem @click="exportTable">
-              <x-label>Export</x-label>
+              <x-label>Export Whole Table</x-label>
+            </x-menuitem>
+            <hr>
+            <x-menuitem @click="exportFiltered">
+              <x-label>Export Filtered View</x-label>
             </x-menuitem>
           </x-menu>
         </x-button>
@@ -181,6 +185,7 @@ import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import globals from '@/common/globals';
+import {AppEvent} from '../../common/AppEvent';
 
 const CHANGE_TYPE_INSERT = 'insert'
 const CHANGE_TYPE_UPDATE = 'update'
@@ -955,7 +960,10 @@ export default Vue.extend({
       if (!this.active) this.forceRedraw = true
     },
     exportTable() {
-      this.$root.$emit('exportTable', { table: this.table, filters: this.filterForTabulator })
+      this.trigger(AppEvent.beginExport, { table: this.table })
+    },
+    exportFiltered() {
+      this.trigger(AppEvent.beginExport, {table: this.table, filters: this.filterForTabulator} )
     }
   }
 });

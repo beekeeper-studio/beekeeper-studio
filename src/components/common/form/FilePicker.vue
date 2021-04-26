@@ -35,7 +35,11 @@ export default {
       type: Boolean,
       required: false,
       default: false
-    }
+    },
+    save: {
+      type: Boolean,
+      default: false
+    },
   },
   methods: {
     openFilePickerDialog() {
@@ -55,14 +59,23 @@ export default {
         dialogConfig.properties.push('showHiddenFiles')
       }
 
-      // Show dialog extending default config with provided custom config
-      const file = remote.dialog.showOpenDialogSync({
-        ...dialogConfig,
-        ...this.options
-      })
+      let files
+      if (this.save) {
+        files = [remote.dialog.showSaveDialogSync({
+          ...dialogConfig,
+          ...this.options
+        })]
+      } else {
+        files = remote.dialog.showOpenDialogSync({
+          ...dialogConfig,
+          ...this.options
+        })
 
-      if (file) {
-        this.$emit('input', file[0])
+      }
+      // Show dialog extending default config with provided custom config
+
+      if (files) {
+        this.$emit('input', files[0])
       }
     }
   }

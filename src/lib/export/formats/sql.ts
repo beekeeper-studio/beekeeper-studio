@@ -10,7 +10,9 @@ interface OutputOptionsSql {
   schema: boolean
 }
 export class SqlExporter extends Export {
+  public static extension = "sql"
   readonly format: string = 'sql'
+
   readonly rowSeparator: string = ';\n'
   readonly knexTypes: any = {
     "cockroachdb": "pg",
@@ -40,7 +42,7 @@ export class SqlExporter extends Export {
     this.knex = knexlib({ client: this.knexTypes[this.connection.connectionType] || undefined })
   }
 
-  async getHeader(fields: string[]): Promise<string> {
+  async getHeader(_fields: string[]): Promise<string> {
     if (this.outputOptions.createTable) {
       const schema = this.table.schema && this.outputOptions.schema ? this.table.schema : ''
       const result = await this.connection.getTableCreateScript(this.table.name, schema)
