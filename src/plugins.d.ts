@@ -1,4 +1,4 @@
-import ElectronPlugin from './lib/NativeWrapper'
+import {NativePlugin} from './lib/NativeWrapper'
 import Vue from 'vue'
 import Noty from 'noty'
 import { RootBinding, AppEvent } from './common/AppEvent'
@@ -9,7 +9,7 @@ declare module 'vue/types/vue' {
   // 3. Declare augmentation for Vue
   interface Vue {
     // ...AppEventMixin.methods,
-    $native: ElectronPlugin
+    $native: NativePlugin
     $noty: {
       show(text: string, type: string, opts?: any): void
 

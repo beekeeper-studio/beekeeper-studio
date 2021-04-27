@@ -1,6 +1,5 @@
 
 import { remote } from 'electron'
-
 /*
   Ok this is a little late in the game, but starting to move electron
   remote calls to this object. The hope is that when we support other platforms
@@ -12,7 +11,19 @@ import { remote } from 'electron'
   - all electron remote actions
   - anything else that uses regular node
 */
-export default {
+
+export interface NativePlugin {
+  clipboard: {
+    writeText(text: string): void
+    readText(): string
+  },
+  files: {
+    open(path: string): Promise<string>
+    showItemInFolder(path: string): void
+  }
+}
+
+export const ElectronPlugin: NativePlugin = {
   clipboard: {
     writeText(text: string) {
       remote.clipboard.writeText(text)
@@ -23,10 +34,16 @@ export default {
   },
   files: {
     open(path: string) {
-      remote.shell.openPath(path)
+      return remote.shell.openPath(path)
     },
     showItemInFolder(path: string) {
       remote.shell.showItemInFolder(path)
     }
+  }
+}
+
+export const VueElectronPlugin = {
+  install(Vue: any) {
+    Vue.prototype.$native = ElectronPlugin
   }
 }
