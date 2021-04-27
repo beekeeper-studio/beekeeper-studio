@@ -16,7 +16,7 @@ const wait = (time: number) => new Promise((resolve) => setTimeout(resolve, time
 
 async function waitFor(conditional: () => boolean) {
   while (!conditional()) {
-    await wait(10)
+    await wait(5)
   }
   return
 }
@@ -42,6 +42,7 @@ export class MysqlCursor extends BeeCursor {
     const promise = new Promise<void>((resolve, reject) => {
       this.conn.pool.getConnection((err, connection) => {
         if (err) reject(err)
+
         // @ts-ignore rowsAsArray not in typings yet
         const q = connection.query({ sql: this.query, values: this.params, rowsAsArray: true })
         q.on('result', this.handleRow.bind(this) )
@@ -63,12 +64,15 @@ export class MysqlCursor extends BeeCursor {
   }
 
   private handleEnd(){
+
     this.bufferReady = true
     this.end = true
+    this.cursor?.connection.release()
   }
   
   private handleError(error: Error) {
     this.error = error
+    console.error(error)
   }
 
   private pop() {
@@ -77,12 +81,17 @@ export class MysqlCursor extends BeeCursor {
     return result
   }
 
+  private resume() {
+    this.bufferReady = false
+    this.cursor?.connection.resume()
+  }
+
   async read(): Promise<any[][]> {
     if (this.error) throw this.error
     if (this.end) return this.pop()
     await waitFor(() => this.bufferReady)
     const results = this.pop()
-    this.cursor?.connection.resume()
+    this.resume()
     return results
   }
 

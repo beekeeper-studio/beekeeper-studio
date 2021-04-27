@@ -97,7 +97,6 @@ export abstract class Export {
       status: this.status,
       percentComplete: this.percentComplete,
     }
-    log.debug('notifying', this.status, payload)
     this.callbacks.progress.forEach(c => c(payload))
   }
 
@@ -148,7 +147,7 @@ export abstract class Export {
           throw new Error("Something went wrong")
         }
         rows = await this.cursor?.read()
-        log.info(`read ${rows.length} rows`)
+        // log.info(`read ${rows.length} rows`)
         for (let rI = 0; rI < rows.length; rI++) {
           const row = rows[rI];
           
@@ -199,6 +198,7 @@ export abstract class Export {
       if (this.options.deleteOnAbort) {
         await promises.unlink(this.filePath)
       }
+      throw error
     }
   }
 

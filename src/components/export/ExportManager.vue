@@ -20,6 +20,7 @@ import { TableFilter, TableOrView } from '../../lib/db/models'
 import ExportNotification from './ExportNotification.vue'
 import ExportModal from './ExportModal.vue'
 import { CsvExporter, JsonExporter, SqlExporter } from '../../lib/export'
+import { ExportProgress } from '../../lib/export/models'
 
 interface ExportTriggerOptions {
   table?: TableOrView,
@@ -97,8 +98,8 @@ export default Vue.extend({
       this.table = options?.table
       this.filters = options?.filters
     },
-    notifyProgress() {
-
+    notifyProgress(progress: ExportProgress) {
+      console.log(progress)
     }
   },
   mounted() {
