@@ -4,6 +4,7 @@ $foreign-key-width:      20px;
 $row-height:             30px;
 $row-highlight:          lighten($query-editor-bg, 1%);
 $row-add:                #18855F;
+  $row-cloned:           #6C632C;
 $row-delete:             #8A3937;
 $row-error:              #38201F;
 
@@ -42,6 +43,10 @@ $cell-radius:            2px;
           }
         }
       }
+    }
+    &.cloned,
+    &.cloned:hover {
+      background: $row-cloned;
     }
     &.deleted, 
     &.deleted:hover {

@@ -664,6 +664,7 @@ export default Vue.extend({
       this.tabulator.addRow(data, true).then(row => {
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
+        row.getElement().classList.add('cloned')
       })
     },
     cellAddRow() {
