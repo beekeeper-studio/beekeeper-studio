@@ -1,45 +1,33 @@
 <template>
-  <span></span>
+  <div></div>
 </template>
 <script>
 import Noty from "noty";
 import ExportInfo from "./mixins/export-info";
+import { Export } from '../../lib/export';
 
 export default {
   mixins: [ExportInfo],
-  props: {
-    exporter: {
-      required: true,
-    },
-  },
+  props: ['exporter'],
   data() {
     return {
+      percentComplete: 0,
       notification: new Noty({
-        text: "Exporting...",
+        text: `Exporting '${this.exporter.table.name}'`,
         layout: "bottomRight",
         timeout: false,
-        closeWith: "button",
+        closeWith: 'button',
         buttons: [
-          Noty.button("Abort", "btn btn-danger", () => this.cancelExport()),
-          Noty.button("Hide", "btn btn-flat", () => this.exporter.hide()),
+          Noty.button("Cancel", "btn btn-danger", this.cancelExport.bind(this)),
+          Noty.button("Hide", "btn btn-info", () => this.notification.close()),
         ],
         queue: "export",
       }),
-    };
+    }
   },
   computed: {
     notificationText() {
-      return `
-            <div class="export-progress-notification">
-                <div class="title">Exporting from <span class="text-primary">some table</span></div>
-                <div class="flex flex-between progress-info">
-                    <div>${this.timeLeftReadable}</div>
-                    <div>${0} / ${0} rows</div>
-                    <div>${this.fileSizeReadable}</div>
-                </div>
-                <x-progressbar class="progress-bar" value="${this.progressPercent}" max="100"></x-progressbar>
-            </div>
-            `;
+      return `(${this.percentComplete}%) Exporting '${this.exporter.table.name}'`
     },
   },
   methods: {
@@ -49,8 +37,11 @@ export default {
       }
       this.exporter.abort();
       this.notification.close();
-      this.$noty.error("Export aborted");
+      this.$noty.error(`${this.exporter.table.name} export aborted`);
     },
+    updateProgress(progress) {
+      this.percentComplete = progress.percentComplete
+    }
   },
   watch: {
     notificationText: {
@@ -62,10 +53,11 @@ export default {
     },
   },
   mounted() {
+    this.exporter.onProgress(this.updateProgress)
     this.notification.show();
-    this.notification.setText(this.notificationText);
   },
   beforeDestroy() {
+    this.exporter.offProgress(this.updateProgress)
     this.notification.close();
   },
 };

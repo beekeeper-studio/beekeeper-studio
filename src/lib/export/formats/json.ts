@@ -33,7 +33,8 @@ export class JsonExporter extends Export {
     return ']'
   }
 
-  formatRow(row: any): string {
+  formatRow(rowArray: any[]): string {
+    const row = this.rowToObject(rowArray)
     const spacing = this.outputOptions.prettyprint ? 2 : undefined
     const content = indentString(JSON.stringify(row, null, spacing), 2)
     return content

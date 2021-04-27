@@ -24,6 +24,9 @@ export default {
   files: {
     open(path: string) {
       remote.shell.openPath(path)
+    },
+    showItemInFolder(path: string) {
+      remote.shell.showItemInFolder(path)
     }
   }
 }

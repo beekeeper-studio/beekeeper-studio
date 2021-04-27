@@ -161,7 +161,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     executeQuery: (queryText, _schema = defaultSchema) => executeQuery(conn, queryText),
     listDatabases: (filter?: DatabaseFilterOptions) => listDatabases(conn, filter),
     selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
-    selectTopStream: (table: string, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTopStream(conn, table, orderBy, filters, schema),
+    selectTopStream: (database: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTopStream(conn, database, table, orderBy, filters, schema),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
     getTableCreateScript: (table, schema = defaultSchema) => getTableCreateScript(conn, table, schema),
     getViewCreateScript: (view, schema = defaultSchema) => getViewCreateScript(conn, view, schema),
@@ -339,6 +339,7 @@ async function selectTop(
 
 async function selectTopStream(
   conn: HasPool,
+  database: string,
   table: string,
   orderBy: OrderBy[],
   filters: TableFilter[] | string,
@@ -352,9 +353,7 @@ async function selectTopStream(
   const countResults = await driverExecuteSingle(conn, {query: qs.countQuery, params: qs.params})
   const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
   const totalRecords = rowWithTotal ? Number(rowWithTotal.total) : 0
-
-  const fieldsResult = await driverExecuteSingle(conn, { query: `${qs.query} LIMIT 1`, params: qs.params })
-
+  const columns = await listTableColumns(conn, database, table, schema)
 
   const cursorOpts = {
     query: qs.query,
@@ -365,7 +364,7 @@ async function selectTopStream(
 
   return {
     totalRows: totalRecords,
-    fields: fieldsResult.fields.map(f => f.name),
+    columns,
     cursor: new PsqlCursor(cursorOpts)
   }
 }

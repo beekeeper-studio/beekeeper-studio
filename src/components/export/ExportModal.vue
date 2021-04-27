@@ -187,7 +187,7 @@ export default {
     async submit() {
       this.error = null;
 
-      if (this.filePath === undefined) {
+      if (!this.filePath) {
         return;
       }
       this.$emit('export', { 
@@ -196,6 +196,7 @@ export default {
         outputOptions: this.outputOptions,
         exporter: this.selectedExportFormat.key
       })
+      this.filePath = null
       this.$modal.hide('export-modal')
     },
   },

@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
 import { DBConnection } from "../../db/client"
-import { TableFilter, TableOrView } from "../../db/models"
+import { TableColumn, TableFilter, TableOrView } from "../../db/models"
 import { Export } from "../export"
 import { ExportOptions } from "../models"
 
@@ -15,8 +15,8 @@ export class CsvExporter extends Export {
   rowSeparator: string = '\n'
 
   private outputOptions: OutputOptionsCsv
-  private papaHeader: Papa.UnparseConfig
-  private papaRow: Papa.UnparseConfig = {
+  private headerConfig: Papa.UnparseConfig
+  private rowConfig: Papa.UnparseConfig = {
     header: false
   }
 
@@ -29,24 +29,25 @@ export class CsvExporter extends Export {
     outputOptions: OutputOptionsCsv,
   ) {
     super(filePath, connection, table, filters, options)
-    this.papaHeader = {
+    this.headerConfig = {
       header: true,
       delimiter: outputOptions.delimiter,
     }
     this.outputOptions = outputOptions
-    this.papaRow.delimiter = outputOptions.delimiter
+    this.rowConfig.delimiter = outputOptions.delimiter
   }
 
-  async getHeader(fields: string[]): Promise<string> {
+  async getHeader(columns: TableColumn[]): Promise<string> {
+    const fields = columns.map(c => c.columnName)
     if (fields.length > 0 && this.outputOptions.header) {
-      return Papa.unparse([fields], this.papaHeader)
+      return Papa.unparse([fields], this.headerConfig)
     }
     return ""
   }
 
   getFooter() { return "" }
 
-  formatRow(row: any): string {
-    return Papa.unparse([row], this.papaRow)
+  formatRow(row: any[]): string {
+    return Papa.unparse([row], this.rowConfig)
   }
 }

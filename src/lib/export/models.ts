@@ -19,5 +19,6 @@ export interface ExportProgress {
   secondsElapsed: number;
   secondsRemaining: number;
   status: ExportStatus;
+  percentComplete: number;
 }
 export type ProgressCallback = (p: ExportProgress) => void;

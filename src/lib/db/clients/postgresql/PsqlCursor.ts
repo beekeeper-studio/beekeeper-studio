@@ -17,7 +17,7 @@ interface CursorOptions {
 export class PsqlCursor extends BeeCursor {
 
   private readonly options: CursorOptions
-  private cursor?: Cursor
+  private cursor?: Cursor<any[]>
   private client?: PoolClient
 
   constructor(options: CursorOptions) {
@@ -30,12 +30,12 @@ export class PsqlCursor extends BeeCursor {
     const result = await this.options.runner(this.options.conn, async (c) => {
       const query = this.options.query
       const params = this.options.params
-      return { cursor: c.query(new Cursor(query, params)), client: c}
+      return { cursor: c.query(new Cursor(query, params, {rowMode: 'array'})), client: c}
     })
     this.client = result.client
     this.cursor = result.cursor
   }
-  read(chunkSize: number): Promise<any[]> {
+  read(chunkSize: number): Promise<any[][]> {
 
     return new Promise((resolve, reject) => {
       if (!this.client || !this.cursor) {
@@ -50,7 +50,6 @@ export class PsqlCursor extends BeeCursor {
         })
       }
     })
-    
   }
   cancel(): Promise<void> {
     return new Promise((resolve, reject) => {

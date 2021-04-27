@@ -130,16 +130,16 @@ describe("Postgres Integration Tests", () => {
       [{ field: 'id', dir: 'ASC'}],
       []
     )
-    expect(result.fields).toMatchObject(['id', 'name'])
+    expect(result.columns.map(c => c.columnName)).toMatchObject(['id', 'name'])
     expect(result.totalRows).toBe(6)
     const cursor = result.cursor
     await cursor.start()
     const b1 = await cursor.read(5)
     expect(b1.length).toBe(5)
-    expect(b1.map(r => r.name)).toMatchObject(names.map(r => r.name).slice(0, 5))
+    expect(b1.map(r => r[1])).toMatchObject(names.map(r => r.name).slice(0, 5))
     const b2 = await cursor.read(5)
     expect(b2.length).toBe(1)
-    expect(b2[0].name).toBe(names[names.length - 1].name)
+    expect(b2[0][1]).toBe(names[names.length - 1].name)
 
     const b3 = await cursor.read(5)
     expect(b3).toMatchObject([])

@@ -4,9 +4,10 @@ import crypto from 'crypto'
 import { promises } from 'fs'
 import NativeWrapper from '../NativeWrapper'
 import rawlog from 'electron-log'
-import { BeeCursor, TableFilter, TableOrView } from '../db/models'
+import { BeeCursor, TableColumn, TableFilter, TableOrView } from '../db/models'
 import { DBConnection } from '../db/client'
 import { ExportOptions, ExportStatus, ProgressCallback, ExportProgress } from './models'
+import _ from 'lodash'
 
 const log = rawlog.scope('export/export')
 
@@ -19,22 +20,16 @@ export abstract class Export {
   error: Error | null = null
   fileSize: number = 0
   lastChunkTime: number = 0
-  showNotification: boolean = true
   // see set status()
   private _status: ExportStatus = ExportStatus.Idle
   timeElapsed: number = 0
   timeLeft: number = 0
   private cursor?: BeeCursor
+  private columns?: TableColumn[]
   private fileHandle?: promises.FileHandle
   private callbacks = {
     progress: Array<ProgressCallback>()
   }
-  abstract rowSeparator: string
-  // do not add newlines / row separators
-  abstract getHeader(fields: string[]): Promise<string>
-  abstract getFooter(): string
-  // do not add newlines / row separators
-  abstract formatRow(data: any): string
 
   constructor(
     public filePath: string,
@@ -44,6 +39,36 @@ export abstract class Export {
     public options: ExportOptions,
   ) {
     this.id = this.generateId()
+  }
+
+  abstract rowSeparator: string
+  // do not add newlines / row separators
+  abstract getHeader(columns: TableColumn[]): Promise<string>
+  abstract getFooter(): string
+  // do not add newlines / row separators
+  abstract formatRow(data: any[]): string
+
+  protected rowToObject(row: any[]): Object {
+    let columns = this.dedupedColumns
+    if (!columns) columns = row.map((_r, i) => {
+      return {dataType: 'unknown', columnName: `col_${i+1}`}
+    })
+    const names = columns.map(c => c.columnName)
+    return _.zipObject(names, row)
+  }
+
+  get dedupedColumns(): TableColumn[] {
+    if (!this.columns) return []
+    const found: Map<string, number> = new Map()
+    return this.columns.map((c) => {
+      const nuCol: TableColumn = { ...c }
+      found.set(c.columnName, (found.get(c.columnName) || 0) + 1)
+      const counter = found.get(c.columnName) || 0
+      if (counter > 1) {
+        nuCol.columnName = `${c.columnName}_${counter}`
+      }
+      return nuCol
+    })
   }
 
 
@@ -56,13 +81,21 @@ export abstract class Export {
     return this._status
   }
 
+  public get percentComplete(): number {
+    if([ExportStatus.Completed, ExportStatus.Aborted, ExportStatus.Error].includes(this.status)) {
+      return 100
+    }
+    return Math.round((this.countExported / this.countTotal) * 100)
+  }
+
   notify() {
     const payload = {
       totalRecords: this.countTotal,
       countExported: this.countExported,
       secondsElapsed: this.timeElapsed,
       secondsRemaining: this.timeLeft,
-      status: this.status
+      status: this.status,
+      percentComplete: this.percentComplete,
     }
     log.debug('notifying', this.status, payload)
     this.callbacks.progress.forEach(c => c(payload))
@@ -80,7 +113,6 @@ export abstract class Export {
   }
 
   async initExport(): Promise<void> {
-    this
     this.status = ExportStatus.Exporting
     this.countExported = 0
     
@@ -92,12 +124,13 @@ export abstract class Export {
       this.filters,
       this.table.schema,
     )
+    this.columns = results.columns
     this.cursor = results.cursor
 
     log.debug('initializing export', results)
     this.countTotal = results.totalRows
     await this.cursor?.start()
-    const header = await this.getHeader(results.fields)
+    const header = await this.getHeader(results.columns)
 
     if (header) {
       await this.fileHandle.write(header)
@@ -107,7 +140,7 @@ export abstract class Export {
 
   async exportData(): Promise<void> {
       // keep going until we don't get any more results.
-      let rows
+      let rows: any[][]
       do {
         log.info('exportData')
         if (!this.cursor) {
@@ -117,6 +150,7 @@ export abstract class Export {
         log.info(`read ${rows.length} rows`)
         for (let rI = 0; rI < rows.length; rI++) {
           const row = rows[rI];
+          
           const formatted = this.formatRow(row)
           this.fileHandle?.write(formatted)
           this.fileHandle?.write(this.rowSeparator)
@@ -182,6 +216,10 @@ export abstract class Export {
     this.callbacks.progress.push(func)
   }
 
+  offProgress(func: (progress: ExportProgress) => void): void {
+    this.callbacks.progress = this.callbacks.progress.filter(f => f !== func)
+  }
+
   abort(): void {
     this.status = ExportStatus.Aborted
   }
@@ -190,9 +228,6 @@ export abstract class Export {
     this.status = ExportStatus.Paused
   }
 
-  hide(): void {
-    this.showNotification = false
-  }
 
   openFile(): void {
     NativeWrapper.files.open(this.filePath)

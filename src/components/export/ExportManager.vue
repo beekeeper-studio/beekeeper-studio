@@ -12,7 +12,8 @@
 </template>
 <script lang="ts">
 import Vue from 'vue'
-import { mapGetters, mapMutations } from 'vuex'
+import Noty from 'noty'
+import { mapMutations, mapGetters } from 'vuex'
 import { AppEvent, RootBinding } from '../../common/AppEvent'
 import { DBConnection } from '../../lib/db/client'
 import { TableFilter, TableOrView } from '../../lib/db/models'
@@ -51,12 +52,13 @@ export default Vue.extend({
   },
   data() {
     return {
+      // these are like 'pending Export'
       table: (undefined as TableOrView | undefined),
       filters: (undefined as TableFilter[] | undefined),
     }
   },
   computed: {
-    ...mapGetters({ 'exports': 'exports/runningVisibleExports' }),
+    ...mapGetters({ 'exports': 'exports/runningExports' }),
     rootBindings(): RootBinding[] {
       return [
         { event: AppEvent.beginExport, handler: this.handleExportRequest }
@@ -79,7 +81,15 @@ export default Vue.extend({
         exporter.onProgress(this.notifyProgress.bind(this))
         await exporter.exportToFile()
         console.log("complete!")
-        this.$noty.success(`Export of ${this.table.name} complete`)
+        const n = this.$noty.success(`Export of ${this.table.name} complete`, {
+          buttons: [
+            Noty.button('Show', "btn btn-info", () => {
+              this.$native.files.showItemInFolder(options.filePath)
+              n.close()
+            })
+          ]
+        })
+        this.table = undefined
       }
     },
     handleExportRequest(options?: ExportTriggerOptions): void {

@@ -32,7 +32,7 @@ export interface DatabaseClient {
   listMaterializedViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
   getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string>,
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string): Promise<TableResult>,
-  selectTopStream(table: string, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string ): Promise<StreamResults>,
+  selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string ): Promise<StreamResults>,
   wrapIdentifier: (value: string) => string
 }
 
@@ -222,7 +222,7 @@ function selectTopStream(
 ): Promise<StreamResults> {
   checkIsConnected(server, database)
   if (!database.connection) throw "No database connection available"
-  return database.connection?.selectTopStream(table, orderBy, filters, schema)
+  return database.connection?.selectTopStream(database.database, table, orderBy, filters, schema)
 }
 
 function listSchemas(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: SchemaFilterOptions) {

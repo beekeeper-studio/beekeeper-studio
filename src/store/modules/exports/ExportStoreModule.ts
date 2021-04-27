@@ -24,14 +24,8 @@ const ExportStoreModule: Module<State, any> = {
     }
   },
   getters: {
-    allExports(state): Export[] {
-      return state.exports
-    },
     runningExports(state): Export[] {
       return _.filter(state.exports, { 'status': ExportStatus.Exporting })
-    },
-    runningVisibleExports(_state, getters): Export[] {
-      return _.filter(getters.runningExports, { 'showNotification': true })
     },
     hasRunningExports(_state, getters): boolean {
       return getters.runningExports.length > 0

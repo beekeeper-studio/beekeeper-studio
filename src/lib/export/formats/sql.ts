@@ -42,7 +42,7 @@ export class SqlExporter extends Export {
     this.knex = knexlib({ client: this.knexTypes[this.connection.connectionType] || undefined })
   }
 
-  async getHeader(_fields: string[]): Promise<string> {
+  async getHeader(): Promise<string> {
     if (this.outputOptions.createTable) {
       const schema = this.table.schema && this.outputOptions.schema ? this.table.schema : ''
       const result = await this.connection.getTableCreateScript(this.table.name, schema)
@@ -57,8 +57,8 @@ export class SqlExporter extends Export {
     return this.rowSeparator
   }
 
-  formatRow(row: any): string {
-
+  formatRow(rowArray: any): string {
+    const row = this.rowToObject(rowArray)
     let knex = this.knex(this.table.name)
     if (this.outputOptions.schema && this.table.schema) {
       knex = knex.withSchema(this.table.schema)

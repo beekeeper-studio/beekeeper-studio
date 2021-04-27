@@ -6,7 +6,7 @@ export abstract class BeeCursor {
 
   }
   abstract start(): Promise<void>
-  abstract read(chunkSize: number): Promise<any[]>
+  abstract read(chunkSize: number): Promise<any[][]>
   abstract cancel(): Promise<void>
   async close() {
     await this.cancel()
@@ -14,7 +14,7 @@ export abstract class BeeCursor {
 }
 
 export interface StreamResults {
-  fields: string[],
+  columns: TableColumn[],
   totalRows: number,
   cursor: BeeCursor
 }
