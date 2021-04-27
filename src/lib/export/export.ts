@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 import { promises } from 'fs'
-import NativeWrapper from '../NativeWrapper'
+import { ElectronPlugin } from '../NativeWrapper'
 import rawlog from 'electron-log'
 import { BeeCursor, TableColumn, TableFilter, TableOrView } from '../db/models'
 import { DBConnection } from '../db/client'
@@ -122,6 +122,7 @@ export abstract class Export {
       this.table.name,
       [],
       this.filters,
+      this.options.chunkSize,
       this.table.schema,
     )
     this.columns = results.columns
@@ -146,7 +147,7 @@ export abstract class Export {
         if (!this.cursor) {
           throw new Error("Something went wrong")
         }
-        rows = await this.cursor?.read(this.options.chunkSize)
+        rows = await this.cursor?.read()
         log.info(`read ${rows.length} rows`)
         for (let rI = 0; rI < rows.length; rI++) {
           const row = rows[rI];
@@ -230,7 +231,7 @@ export abstract class Export {
 
 
   openFile(): void {
-    NativeWrapper.files.open(this.filePath)
+    ElectronPlugin.files.open(this.filePath)
   }
 
   getFileName(): string {

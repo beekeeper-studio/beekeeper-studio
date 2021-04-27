@@ -4,10 +4,20 @@ import { Duration, TemporalUnit } from "node-duration"
 import data_mutators from '../../../../../src/mixins/data_mutators';
 import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError } from './all'
 
-describe("MySQL Tests", () => {
+describe("mysql", () => {
 
   let container;
   let util
+
+  const names = [
+    { name: "Matthew" },
+    { name: "Nicoll" },
+    { name: "Gregory" },
+    { name: "Alex" },
+    { name: "Alethea" },
+    { name: "Elias" }
+  ]
+
 
   beforeAll(async () => {
     const timeoutDefault = 5000
@@ -61,6 +71,13 @@ describe("MySQL Tests", () => {
     await util.knex.schema.raw(functionDDL)
     await util.knex.schema.raw(routine1DDL)
     await util.knex.schema.raw(routine2DDL)
+
+    await util.knex.schema.createTable('streamtest', (table) => {
+      table.increments().primary()
+      table.string("name")
+    })
+    await util.knex('streamtest').insert(names)
+
   })
 
   afterAll(async() => {
@@ -142,6 +159,32 @@ describe("MySQL Tests", () => {
 
   it("Should not commit on change error", async() => {
     await itShouldNotCommitOnChangeError(util)
+  })
+
+
+  it.only("should allow selects with streams", async () => {
+    const result = await util.connection.selectTopStream(
+      'streamtest',
+      [{ field: 'id', dir: 'ASC' }],
+      [],
+      5,
+      undefined,
+    )
+    expect(result.columns.map(c => c.columnName)).toMatchObject(['id', 'name'])
+    expect(result.totalRows).toBe(6)
+    const cursor = result.cursor
+    await cursor.start()
+    const b1 = await cursor.read()
+    expect(b1.length).toBe(5)
+    expect(b1.map(r => r[1])).toMatchObject(names.map(r => r.name).slice(0, 5))
+    const b2 = await cursor.read()
+    expect(b2.length).toBe(1)
+    expect(b2[0][1]).toBe(names[names.length - 1].name)
+
+    const b3 = await cursor.read()
+    expect(b3).toMatchObject([])
+    await cursor.close()
+
   })
 
 })

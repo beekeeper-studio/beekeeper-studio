@@ -1,4 +1,4 @@
-// Copyright (c) 2015 The SQLECTRON Team
+// Copyright (c) 2015 The SQLECTRON Team, 2020 Beekeeper Studio team
 import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
@@ -32,7 +32,7 @@ export interface DatabaseClient {
   listMaterializedViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
   getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string>,
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string): Promise<TableResult>,
-  selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string ): Promise<StreamResults>,
+  selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema?: string ): Promise<StreamResults>,
   wrapIdentifier: (value: string) => string
 }
 
@@ -218,11 +218,12 @@ function selectTopStream(
   table: string,
   orderBy: OrderBy[],
   filters: TableFilter[] | string,
+  chunkSize: number,
   schema?: string,
 ): Promise<StreamResults> {
   checkIsConnected(server, database)
   if (!database.connection) throw "No database connection available"
-  return database.connection?.selectTopStream(database.database, table, orderBy, filters, schema)
+  return database.connection?.selectTopStream(database.database, table, orderBy, filters, chunkSize, schema)
 }
 
 function listSchemas(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: SchemaFilterOptions) {

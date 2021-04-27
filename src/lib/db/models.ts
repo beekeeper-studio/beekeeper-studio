@@ -2,11 +2,11 @@
 
 
 export abstract class BeeCursor {
-  constructor() {
+  constructor(public chunkSize: number) {
 
   }
   abstract start(): Promise<void>
-  abstract read(chunkSize: number): Promise<any[][]>
+  abstract read(): Promise<any[][]>
   abstract cancel(): Promise<void>
   async close() {
     await this.cancel()

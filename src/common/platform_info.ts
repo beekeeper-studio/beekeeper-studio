@@ -16,8 +16,8 @@ if (electron.remote) {
 const updatesDisabled = !!p.env.BEEKEEPER_DISABLE_UPDATES
 
 let userDirectory =  testMode ? './tmp' : e.app.getPath("userData")
-const downloadsDirectory = e.app.getPath('downloads')
-const homeDirectory = e.app.getPath('home')
+const downloadsDirectory = testMode ? './tmp' : e.app.getPath('downloads')
+const homeDirectory = testMode ? './tmp' : e.app.getPath('home')
 if (p.env.PORTABLE_EXECUTABLE_DIR) {
   userDirectory = path.join(p.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
 }

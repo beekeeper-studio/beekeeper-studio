@@ -5,8 +5,10 @@ import knexlib from 'knex';
 import _ from 'lodash';
 import mysql from 'mysql2';
 import { identify } from 'sql-query-identifier';
+import globals from '../../../common/globals';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
+import { MysqlCursor } from './mysql/MySqlCursor';
 import { buildDeleteQueries, buildInsertQueries, buildSelectTopQuery } from './utils';
 
 const log = rawLog.scope('mysql')
@@ -50,6 +52,7 @@ export default async function (server, database) {
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
+    selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -176,27 +179,48 @@ export async function listTableColumns(conn, database, table) {
   }));
 }
 
+async function getTableLength(conn, table, filters) {
+  const queries = buildSelectTopQuery(table, 1, 1, [], filters)
+  let title = 'total'
+  if (!filters) {
+    queries.countQuery = `show table status like '${table}'`
+    title = 'Rows'
+  }
+  const { countQuery, params } = queries
+  const countResults = await driverExecuteQuery(conn, { query: countQuery, params })
+  const rowWithTotal = countResults.data.find((row) => { return row[title] })
+  const totalRecords = rowWithTotal ? rowWithTotal[title] : 0
+  return totalRecords
+}
+
+
 export async function selectTop(conn, table, offset, limit, orderBy, filters) {
 
   const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters)
-  let title = 'total'
-  if(!filters) {
-    // Note: We don't use wrapIdentifier here because it's a string, not an identifier.
-    queries.countQuery = `show table status like '${table}'`;
-    title = 'Rows'
-  }
 
-  const { query, countQuery, params } = queries
-  const countResults = await driverExecuteQuery(conn, { query: countQuery, params })
+  const { query, params } = queries
   const result = await driverExecuteQuery(conn, { query, params })
-  const rowWithTotal = countResults.data.find((row) => { return row[title] })
-  const totalRecords = rowWithTotal ? rowWithTotal[title] : 0
+  const totalRecords = await getTableLength(conn, table, filters)
   return {
     result: result.data,
     totalRecords: Number(totalRecords),
     fields: Object.keys(result.data[0] || {})
   }  
 
+}
+
+export async function selectTopStream(conn, db, table, orderBy, filters, chunkSize) {
+  const qs = buildSelectTopQuery(table, null, null, orderBy, filters)
+  const columns = await listTableColumns(conn, db, table)
+  const rowCount = await getTableLength(conn, table, filters)
+
+  const { query, params } = qs
+
+  return {
+    totalRows: Number(rowCount),
+    columns,
+    cursor: new MysqlCursor(conn, query, params, chunkSize)
+  }
 }
 
 export async function listTableTriggers(conn, table) {

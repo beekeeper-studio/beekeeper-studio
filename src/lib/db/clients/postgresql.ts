@@ -161,7 +161,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     executeQuery: (queryText, _schema = defaultSchema) => executeQuery(conn, queryText),
     listDatabases: (filter?: DatabaseFilterOptions) => listDatabases(conn, filter),
     selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
-    selectTopStream: (database: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTopStream(conn, database, table, orderBy, filters, schema),
+    selectTopStream: (database: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema: string = defaultSchema) => selectTopStream(conn, database, table, orderBy, filters, chunkSize, schema),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
     getTableCreateScript: (table, schema = defaultSchema) => getTableCreateScript(conn, table, schema),
     getViewCreateScript: (view, schema = defaultSchema) => getViewCreateScript(conn, view, schema),
@@ -343,6 +343,7 @@ async function selectTopStream(
   table: string,
   orderBy: OrderBy[],
   filters: TableFilter[] | string,
+  chunkSize: number,
   schema: string
 ): Promise<StreamResults> {
   const version = await getVersion(conn)
@@ -359,7 +360,8 @@ async function selectTopStream(
     query: qs.query,
     params: qs.params,
     runner: runWithConnection,
-    conn: conn
+    conn: conn,
+    chunkSize
   }
 
   return {

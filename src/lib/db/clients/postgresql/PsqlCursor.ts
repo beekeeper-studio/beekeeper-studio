@@ -11,7 +11,8 @@ interface CursorOptions {
   query: string,
   params: string[],
   runner: <T>(c: Conn, f: (p: PoolClient) => Promise<T>) => Promise<T>,
-  conn: Conn
+  conn: Conn,
+  chunkSize: number
 }
 
 export class PsqlCursor extends BeeCursor {
@@ -21,7 +22,7 @@ export class PsqlCursor extends BeeCursor {
   private client?: PoolClient
 
   constructor(options: CursorOptions) {
-    super()
+    super(options.chunkSize)
     this.options = options
   }
 
@@ -35,13 +36,13 @@ export class PsqlCursor extends BeeCursor {
     this.client = result.client
     this.cursor = result.cursor
   }
-  read(chunkSize: number): Promise<any[][]> {
+  read(): Promise<any[][]> {
 
     return new Promise((resolve, reject) => {
       if (!this.client || !this.cursor) {
         reject("You need to call start first")
       } else {
-        this.cursor.read(chunkSize, (err, rows) => {
+        this.cursor.read(this.chunkSize, (err, rows) => {
           if (err) {
             reject(err.message)
           } else {
