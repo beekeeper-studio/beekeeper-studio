@@ -9,6 +9,7 @@ import _ from 'lodash';
 
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 import logRaw from 'electron-log'
+import { SqlServerCursor } from './sqlserver/SqlServerCursor';
 const log = logRaw.scope('sql-server')
 
 const logger = () => log;
@@ -52,6 +53,7 @@ export default async function (server, database) {
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     selectTop: (table, offset, limit, orderBy, filters, schema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
+    selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -112,6 +114,8 @@ function genSelectOld(table, offset, limit, orderBy, filters, schema) {
 }
 
 function genOrderByString(orderBy) {
+  if (!orderBy) return ""
+
   let orderByString = "ORDER BY (SELECT NULL)"
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
@@ -147,28 +151,38 @@ function genSelectNew(table, offset, limit, orderBy, filters, schema) {
     FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)}
     ${filterString}
   `
+
+  const offsetString = (_.isNumber(offset) && _.isNumber(limit)) ?
+    `OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY` : ''
+
+
   let query = `
     SELECT * ${baseSQL}
     ${orderByString}
-    OFFSET ${offset} ROWS
-    FETCH NEXT ${limit} ROWS ONLY
+    ${offsetString}
     `
     return query
+}
+
+async function getTableLength(conn, table, filters, schema) {
+  const countQuery = genCountQuery(table, filters, schema)
+  const countResults = await driverExecuteQuery(conn, { query: countQuery})
+  const rowWithTotal = countResults.data.recordset.find((row) => { return row.total })
+  const totalRecords = rowWithTotal ? rowWithTotal.total : 0
+  return totalRecords
 }
 
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
   log.debug("filters", filters)
   const version = await getVersion(conn);
-  const countQuery = genCountQuery(table, filters, schema)
+  const totalRecords = await getTableLength(conn, table, filters, schema);
   const query = version.supportOffsetFetch ? 
     genSelectNew(table, offset, limit, orderBy, filters, schema) :
     genSelectOld(table, offset, limit, orderBy, filters, schema)
   logger().debug(query)
-  const countResults = await driverExecuteQuery(conn, { query: countQuery})
+
   const result = await driverExecuteQuery(conn, { query })
   logger().debug(result)
-  const rowWithTotal = countResults.data.recordset.find((row) => { return row.total })
-  const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return {
     result: result.data.recordset,
     totalRecords,
@@ -176,9 +190,26 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
   }
 }
 
+export async function selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema) {
+  const version = await getVersion(conn);
+  // no limit or offset, so don't need the old version of paging
+  const query = genSelectNew(table, null, null, orderBy, filters, schema);
+  const columns = await listTableColumns(conn, db, table);
+  const rowCount = await getTableLength(conn, table, filters);
+  
+  return {
+    totalRows: Number(rowCount),
+    columns,
+    cursor: new SqlServerCursor(conn, query, chunkSize)
+  }
+}
+
 
 export function wrapIdentifier(value) {
-  return (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*');
+  if (_.isString(value)) {
+    return (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*');
+  } return value
+  
 }
 
 export function wrapValue(value) {

@@ -304,8 +304,8 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   const query = `
     SELECT * ${baseSQL}
     ${orderByString}
-    ${options.limit ? `LIMIT ${options.limit}` : ''}
-    ${options.offset ? `OFFSET ${options.offset}` : ''}
+    ${_.isNumber(options.limit) ? `LIMIT ${options.limit}` : ''}
+    ${_.isNumber(options.offset) ? `OFFSET ${options.offset}` : ''}
     `
   return {
     query, countQuery, params
@@ -359,7 +359,6 @@ async function selectTopStream(
   const cursorOpts = {
     query: qs.query,
     params: qs.params,
-    runner: runWithConnection,
     conn: conn,
     chunkSize
   }
@@ -958,6 +957,7 @@ function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServe
     database: database.database,
     max: 5, // max idle connections per time (30 secs)
     connectionTimeoutMillis: globals.psqlTimeout,
+    idleTimeoutMillis: globals.psqlIdleTimeout
   };
 
   if (server.config.user) {

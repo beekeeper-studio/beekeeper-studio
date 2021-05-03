@@ -1,17 +1,15 @@
 import { PoolClient } from "pg"
 import Cursor from "pg-cursor"
 import { BeeCursor } from "../../models"
-import { Conn } from './types'
 import rawlog from 'electron-log'
-
+import { HasPool } from './types'
 const log = rawlog.scope('postgresql/cursor')
 
 
 interface CursorOptions {
   query: string,
   params: string[],
-  runner: <T>(c: Conn, f: (p: PoolClient) => Promise<T>) => Promise<T>,
-  conn: Conn,
+  conn: HasPool,
   chunkSize: number
 }
 
@@ -20,6 +18,7 @@ export class PsqlCursor extends BeeCursor {
   private readonly options: CursorOptions
   private cursor?: Cursor<any[]>
   private client?: PoolClient
+  private error?: Error
 
   constructor(options: CursorOptions) {
     super(options.chunkSize)
@@ -27,18 +26,22 @@ export class PsqlCursor extends BeeCursor {
   }
 
 
-  async start() {
-    const result = await this.options.runner(this.options.conn, async (c) => {
-      const query = this.options.query
-      const params = this.options.params
-      return { cursor: c.query(new Cursor(query, params, {rowMode: 'array'})), client: c}
-    })
-    this.client = result.client
-    this.cursor = result.cursor
+  private handleError(error: Error) {
+    this.error = error
   }
+
+
+  async start() {
+    this.client = await this.options.conn.pool.connect()
+    this.client.on('error', this.handleError.bind(this))
+    const { query, params } = this.options
+    this.cursor = this.client.query(new Cursor(query, params, {rowMode: 'array'}))
+  }
+
   read(): Promise<any[][]> {
 
     return new Promise((resolve, reject) => {
+      if (this.error) return reject(this.error)
       if (!this.client || !this.cursor) {
         reject("You need to call start first")
       } else {

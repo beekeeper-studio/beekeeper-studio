@@ -88,8 +88,10 @@ export class DBTestUtil {
     expect(tables.length).toBeGreaterThanOrEqual(this.expectedTables)
     const columns = await this.connection.listTableColumns("people", this.defaultSchema)
     expect(columns.length).toBe(7)
-    console.log("loading columns...")
+
+
     await this.tableViewTests()
+    await this.streamTests()
 
     if (this.dialect !== 'sqlite') {
       await this.queryTests()
@@ -172,6 +174,55 @@ export class DBTestUtil {
     expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
     const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name}))
     expect(fields).toMatchObject([{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}])
+  }
+
+  async streamTests() {
+    console.log('selectTopStream tests')
+    const names = [
+      { name: "Matthew" },
+      { name: "Nicoll" },
+      { name: "Gregory" },
+      { name: "Alex" },
+      { name: "Alethea" },
+      { name: "Elias" }
+    ]
+    await this.knex.schema.createTable('streamtest', (table) => {
+      table.increments().primary()
+      table.string("name")
+    })
+
+    await this.knex('streamtest').insert(names)
+    const result = await this.connection.selectTopStream(
+      'streamtest',
+      [{ field: 'id', dir: 'ASC' }],
+      [],
+      5,
+      undefined,
+    )
+    console.log("checking columns and total row count")
+    expect(result.columns.map(c => c.columnName)).toMatchObject(['id', 'name'])
+    expect(result.totalRows).toBe(6)
+    const cursor = result.cursor
+    console.log("starting cursor")
+    await cursor.start()
+    console.log("length?")
+    const b1 = await cursor.read()
+    expect(b1.length).toBe(5)
+    console.log("reading first five names and checking those")
+    console.log(b1)
+    expect(b1.map(r => r[1])).toMatchObject(names.map(r => r.name).slice(0, 5))
+    console.log("read2")
+    const b2 = await cursor.read()
+    expect(b2.length).toBe(1)
+    expect(b2[0][1]).toBe(names[names.length - 1].name)
+    console.log("read 3")
+    const b3 = await cursor.read()
+    expect(b3).toMatchObject([])
+    console.log("closing")
+    await cursor.close()
+
+
+    
   }
 
   private async createTables() {

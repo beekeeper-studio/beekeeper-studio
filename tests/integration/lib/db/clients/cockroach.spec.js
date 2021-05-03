@@ -36,4 +36,5 @@ describe("CockroachDB Tests", () => {
   it("Should pass standard tests", async () => {
     await util.testdb()
   })
+  
 })

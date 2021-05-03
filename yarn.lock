@@ -1283,6 +1283,13 @@
   dependencies:
     "@babel/types" "^7.3.0"
 
+"@types/better-sqlite3@^5.4.1":
+  version "5.4.1"
+  resolved "https://registry.yarnpkg.com/@types/better-sqlite3/-/better-sqlite3-5.4.1.tgz#d45600bc19f8f41397263d037ca9b0d05df85e58"
+  integrity sha512-8hje3Rhsg/9veTkALfCwiWn7VMrP1QDwHhBSgerttYPABEvrHsMQnU9dlqoM6QX3x4uw3Y06dDVz8uDQo1J4Ng==
+  dependencies:
+    "@types/integer" "*"
+
 "@types/body-parser@*":
   version "1.19.0"
   resolved "https://registry.yarnpkg.com/@types/body-parser/-/body-parser-1.19.0.tgz#0685b3c47eb3006ffed117cdd55164b61f80538f"
@@ -1385,6 +1392,11 @@
   dependencies:
     "@types/node" "*"
 
+"@types/integer@*":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@types/integer/-/integer-1.0.1.tgz#025d87e30d97f539fcc6087372af7d3672ffbbe6"
+  integrity sha512-DmZDpSVnsuBrOhtHwE1oKmUJ3qVjHhhNQ7WnZy9/RhH3A24Ar+9o4SoaCWcTzQhalpRDIAMsfdoZLWNJtdBR7A==
+
 "@types/istanbul-lib-coverage@*", "@types/istanbul-lib-coverage@^2.0.0":
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/@types/istanbul-lib-coverage/-/istanbul-lib-coverage-2.0.3.tgz#4ba8ddb720221f432e443bd5f9117fd22cfd4762"
@@ -1465,6 +1477,14 @@
   integrity sha512-HkGSK7CGAXncr8Qn/0VqNtExEE+PHMWb+qlR1faHMao7ng6P3tAaoWWBMdva0gL5h4zprjIO89GJOLXsMcDm1Q==
   dependencies:
     "@types/node" "*"
+
+"@types/mssql@^6.0.8":
+  version "6.0.8"
+  resolved "https://registry.yarnpkg.com/@types/mssql/-/mssql-6.0.8.tgz#f2831267c4c577022d1584943b371af87e8a147d"
+  integrity sha512-N3dr3o1c6EXhHhhNRaKpLTdAoXT/s6qDEJET5FID2gFCj58vIV9q/7RtkvYdE6ntpkJF5F9hpURhxT/oC62yLw==
+  dependencies:
+    "@types/node" "*"
+    "@types/tedious" "*"
 
 "@types/node@*":
   version "14.14.31"
@@ -1603,6 +1623,13 @@
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/@types/tapable/-/tapable-1.0.6.tgz#a9ca4b70a18b270ccb2bc0aaafefd1d486b7ea74"
   integrity sha512-W+bw9ds02rAQaMvaLYxAbJ6cvguW/iJXNT6lTssS1ps6QdrMKttqEAMEG/b5CR8TZl3/L7/lH0ZV5nNR1LXikA==
+
+"@types/tedious@*":
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/@types/tedious/-/tedious-4.0.3.tgz#633a221309661df741eccc552e3a15b3204171aa"
+  integrity sha512-JMGNbZ7BOBSG/Tsus41SMdxqHgWpYhy0ZYGdC5vHGR75grOB17Zm+EZ7JaA32pS4Wtnt4wUPO30EqlmMI78sCA==
+  dependencies:
+    "@types/node" "*"
 
 "@types/tern@*":
   version "0.23.3"

@@ -190,7 +190,7 @@ async function getTableLength(conn, table, filters) {
   const countResults = await driverExecuteQuery(conn, { query: countQuery, params })
   const rowWithTotal = countResults.data.find((row) => { return row[title] })
   const totalRecords = rowWithTotal ? rowWithTotal[title] : 0
-  return totalRecords
+  return Number(totalRecords)
 }
 
 
@@ -217,7 +217,7 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
   const { query, params } = qs
 
   return {
-    totalRows: Number(rowCount),
+    totalRows: rowCount,
     columns,
     cursor: new MysqlCursor(conn, query, params, chunkSize)
   }
