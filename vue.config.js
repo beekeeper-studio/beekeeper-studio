@@ -1,4 +1,5 @@
 const webpack = require('webpack');
+const ThreadsPlugin = require('threads-plugin');
 
 const fpmOptions = [
   "--after-install=build/deb-postinstall"
@@ -36,6 +37,7 @@ module.exports = {
           })
       },
       nodeIntegration: true,
+      asarUnpack: "dist_electron/workers/*.js",
       externals,
       builderOptions: {
         appId: "io.beekeeperstudio.desktop",
@@ -118,7 +120,8 @@ module.exports = {
   configureWebpack: {
     plugins: [
       new webpack.IgnorePlugin(/pg-native/, /pg/),
-      new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/)
+      new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/),
+      new ThreadsPlugin()
     ],
     // externals: {
     //   // Possible drivers for knex - we'll ignore them

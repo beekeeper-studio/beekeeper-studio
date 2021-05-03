@@ -8,6 +8,7 @@ import { BeeCursor, TableColumn, TableFilter, TableOrView } from '../db/models'
 import { DBConnection } from '../db/client'
 import { ExportOptions, ExportStatus, ProgressCallback, ExportProgress } from './models'
 import _ from 'lodash'
+import { spawn, Thread, Worker } from "threads"
 
 const log = rawlog.scope('export/export')
 
@@ -142,7 +143,7 @@ export abstract class Export {
       // keep going until we don't get any more results.
       let rows: any[][]
       do {
-        log.info('exportData')
+        // log.info('exportData')
         if (!this.cursor) {
           throw new Error("Something went wrong")
         }
@@ -177,6 +178,13 @@ export abstract class Export {
 
   async exportToFile(): Promise<void> {
     try {
+
+      const worker = await spawn(new Worker('../../workers/export_worker'))
+      const exported = await worker.export({foo: 'bar', joe: 1, bloggs: true})
+      console.log("Received export! ", exported)
+      await Thread.terminate(worker);
+
+
       await this.initExport()
       await this.exportData()
       await this.finalizeExport()
