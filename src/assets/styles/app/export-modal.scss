@@ -1,17 +1,24 @@
 .export-modal {
-  .export-form {
-    margin-top: $gutter-w;
-  }
-
   .dialog-c-subtitle {
     .material-icons {
       margin-top: -1rem;
       vertical-align: bottom;
     }
   }
-
-  .export-advanced-options {
-    padding-top: $gutter-w;
+  .advanced-options-toggle {
+    font-size: 0.9rem;
+    margin: ($gutter-w * 1.5) 0 $gutter-h;
+    cursor: pointer;
+    .material-icons {
+      margin-right: $gutter-h * 0.5;
+    }
+  }
+  .advanced-options {
+    display: none;
+    margin-top: $gutter-w;
+    &.open {
+      display: block;
+    }
   }
 }
 

@@ -39,14 +39,26 @@
               </select>
             </div>
 
+            <!-- End Advanced -->
+            <file-picker 
+              v-model="filePath"
+              :defaultPath="defaultPath"
+              :save="true"
+              :options="dialogOptions"
+              >
+            </file-picker>
+
             <!-- Advanced Options -->
-            <div class="advanced-options">
+            <div class="advanced-options-toggle flex flex-middle" @click.prevent="toggleAdvanced">
+              <i class="material-icons">{{toggleIcon}}</i> 
+              <span>Advanced Options</span>
+            </div>
+            <div class="advanced-options" :class="{open: advancedToggled}">
               <component
                 v-bind:is="selectedExportFormat.component"
                 v-model="outputOptions"
               ></component>
               <div class="modal-form export-form export-advanced-options">
-                <div class="dialog-c-title">Advanced Options</div>
                 <div class="form-group row">
                   <label title="How many records to read at once from the cursor">Chunk size</label>
                     <input
@@ -72,14 +84,6 @@
                 </div>
               </div>
             </div>
-            <!-- End Advanced -->
-            <file-picker 
-              v-model="filePath"
-              :defaultPath="defaultPath"
-              :save="true"
-              :options="dialogOptions"
-              >
-            </file-picker>
 
           </div>
         </div>
@@ -140,7 +144,8 @@ export default {
       options: { chunkSize: 100, deleteOnAbort: true, includeFilter: true },
       outputOptions: {},
       error: null,
-      filePath: null
+      filePath: null,
+      advancedToggled: false
     };
   },
   watch: {
@@ -181,6 +186,9 @@ export default {
         return this.filters.length;
       }
     },
+    toggleIcon() {
+      return this.advancedToggled ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
+    },
   },
   methods: {
     ...mapMutations({ addExport: "exports/addExport" }),
@@ -199,6 +207,9 @@ export default {
       this.filePath = null
       this.$modal.hide('export-modal')
     },
+    toggleAdvanced() {
+      this.advancedToggled = !this.advancedToggled
+    }
   },
   mounted() {
     this.$modal.show("export-modal");
