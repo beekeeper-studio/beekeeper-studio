@@ -6,6 +6,7 @@
       :table="table"
       :filters="filters"
       @export="startExport"
+      @closed="handleDeadModal"
     ></ExportModal>
     <ExportNotification v-for="exporter in exports" :key="exporter.id" :exporter="exporter"></ExportNotification>
   </div>
@@ -35,6 +36,8 @@ const ExportClassPicker = {
 }
 
 interface StartExportOptions {
+  table: TableOrView,
+  filters: TableFilter[],
   exporter: 'csv' | 'json' | 'sql'
   filePath: string
   options: {
@@ -69,12 +72,11 @@ export default Vue.extend({
   methods: {
     ...mapMutations({ addExport: "exports/addExport" }),
     async startExport(options: StartExportOptions) {
-      if (this.table) {
         const exporter = new ExportClassPicker[options.exporter](
           options.filePath,
           this.connection,
-          this.table,
-          this.filters || [],
+          options.table,
+          options.filters || [],
           options.options,
           options.outputOptions
         )
@@ -82,7 +84,7 @@ export default Vue.extend({
         exporter.onProgress(this.notifyProgress.bind(this))
         await exporter.exportToFile()
         console.log("complete!")
-        const n = this.$noty.success(`Export of ${this.table.name} complete`, {
+        const n = this.$noty.success(`Export of ${options.table.name} complete`, {
           buttons: [
             Noty.button('Show', "btn btn-primary", () => {
               this.$native.files.showItemInFolder(options.filePath)
@@ -90,13 +92,15 @@ export default Vue.extend({
             })
           ]
         })
-        this.table = undefined
-      }
     },
     handleExportRequest(options?: ExportTriggerOptions): void {
       console.log('requested export', options)
       this.table = options?.table
       this.filters = options?.filters
+    },
+    handleDeadModal() {
+      this.table = undefined
+      this.filters = undefined
     },
     notifyProgress(progress: ExportProgress) {
       console.log(progress)

@@ -44,14 +44,22 @@
               </select>
             </div>
 
+            <div class="form-group">
+              <label for="fileDirectory">Output Directory</label>
+            </div>
             <!-- End Advanced -->
             <file-picker 
-              v-model="filePath"
+              v-model="fileDirectory"
               :defaultPath="defaultPath"
-              :save="true"
+              :save="false"
               :options="dialogOptions"
+              buttonText="Choose Directory"
               >
             </file-picker>
+            <div class="form-group">
+              <label for="fileName">File Name</label>
+              <input type="text" v-model="fileName">
+            </div>
 
             <!-- Advanced Options -->
             <div class="advanced-options-toggle flex flex-middle" @click.prevent="toggleAdvanced">
@@ -113,6 +121,7 @@
 </template>
 <script>
 import * as path from 'path'
+import dateFormat from 'dateformat'
 import { remote } from "electron"
 import { mapMutations } from "vuex"
 import rawlog from 'electron-log'
@@ -149,7 +158,8 @@ export default {
       options: { chunkSize: 100, deleteOnAbort: true, includeFilter: true },
       outputOptions: {},
       error: null,
-      filePath: null,
+      fileDirectory: null,
+      fileName: null,
       advancedToggled: false
     };
   },
@@ -158,23 +168,37 @@ export default {
       if (this.table) {
         this.$modal.show("export-modal");
       }
+    },
+    fileDirectory() {
+      if (this.fileDirectory) {
+        localStorage.setItem('export/directory', this.fileDirectory)
+      }
+
     }
   },
   computed: {
+    defaultFileName () {
+      const now = new Date();
+      const formatted = dateFormat(now, 'yyyy-mm-dd_HHMMss')
+      const schema = this.table.schema ? `${this.table.schema}_` : ''
+      const extension = this.selectedExportFormat.key
+      return `${schema}${this.table.name}_export_${formatted}.${extension}`
+    },
+    filePath() {
+      if (!this.fileDirectory || !this.fileName) return null
+      return path.join(this.fileDirectory, this.fileName)
+    },
     dialogOptions() {
-      const result = { buttonLabel: 'OK', properties: [ 'showOverwriteConfirmation', 'createDirectory'] }
+      const result = { buttonLabel: 'Choose Directory', properties: [ 'openDirectory', 'createDirectory'] }
       return result
     },
     hasFilters() {
       return this.filters && this.filters.length;
     },
-    defaultFileName() {
-      const schema = this.table.schema ? `${this.table.schema}_` : ''
-      const extension = this.selectedExportFormat.key
-      return `${schema}${this.table.name}_export_.${extension}`
-    },
     defaultPath() {
-      return path.join(platformInfo.downloadsDirectory, this.defaultFileName)
+      let previous = localStorage.getItem('export/directory')
+      if (previous === 'undefined' || previous === 'null') previous = null
+      return previous || platformInfo.downloadsDirectory
     },
     filterTooltip() {
       if (!this.hasFilters) {
@@ -204,12 +228,13 @@ export default {
         return;
       }
       this.$emit('export', { 
+        table: this.table,
+        filters: this.filters,
         filePath: this.filePath,
         options: this.options,
         outputOptions: this.outputOptions,
         exporter: this.selectedExportFormat.key
       })
-      this.filePath = null
       this.$modal.hide('export-modal')
     },
     closeModal () {
@@ -220,6 +245,8 @@ export default {
     }
   },
   mounted() {
+    this.fileDirectory = this.defaultPath
+    this.fileName = this.defaultFileName
     this.$modal.show("export-modal");
   },
 };

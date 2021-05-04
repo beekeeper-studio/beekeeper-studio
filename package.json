@@ -24,6 +24,7 @@
   "main": "background.js",
   "dependencies": {
     "@types/better-sqlite3": "^5.4.1",
+    "@types/dateformat": "^3.0.1",
     "@types/mssql": "^6.0.8",
     "@types/papaparse": "^5.2.5",
     "@types/pg": "^7.14.7",

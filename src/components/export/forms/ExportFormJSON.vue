@@ -25,7 +25,7 @@ export default {
   data() {
     return {
       options: {
-        prettyprint: true,
+        prettyprint: false,
       },
     };
   },

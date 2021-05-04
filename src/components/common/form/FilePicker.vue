@@ -2,7 +2,7 @@
   <div class="input-group" @click.prevent.stop="openFilePickerDialog" >
     <input type="text" class="form-control clickable" placeholder="No file selected" :title="value" :value="value" :disabled="disabled" readonly>
     <div class="input-group-append">
-      <a type="buttom" class="btn btn-flat" :class="{disabled}">Choose file</a>
+      <a type="buttom" class="btn btn-flat" :class="{disabled}">{{buttonText}}</a>
     </div>
   </div>
 </template>
@@ -40,9 +40,13 @@ export default {
       type: Boolean,
       default: false
     },
+    buttonText: {
+      type: String,
+      default: "Choose File"
+    }
   },
   methods: {
-    openFilePickerDialog() {
+    async openFilePickerDialog() {
       if(this.disabled) {
         return 
       }
@@ -61,7 +65,7 @@ export default {
 
       let files
       if (this.save) {
-        files = [remote.dialog.showSaveDialogSync({
+        files = [ remote.dialog.showSaveDialogSync({
           ...dialogConfig,
           ...this.options
         })]
@@ -72,9 +76,12 @@ export default {
         })
 
       }
-      // Show dialog extending default config with provided custom config
+      if (!Array.isArray && files.filePaths) {
+        files = files.filePaths
+      }
 
       if (files) {
+        if (!Array.isArray(files)) files = [files]
         this.$emit('input', files[0])
       }
     }
