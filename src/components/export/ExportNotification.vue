@@ -18,8 +18,8 @@ export default {
         timeout: false,
         closeWith: 'button',
         buttons: [
-          Noty.button("Cancel", "btn btn-danger", this.cancelExport.bind(this)),
-          Noty.button("Hide", "btn btn-info", () => this.notification.close()),
+          Noty.button("Cancel", "btn btn-flat", this.cancelExport.bind(this)),
+          Noty.button("Hide", "btn btn-primary", () => this.notification.close()),
         ],
         queue: "export",
       }),

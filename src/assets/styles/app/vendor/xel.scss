@@ -455,7 +455,7 @@ x-buttons {
   > x-button {
     margin: 0;
     &[menu] {
-      border-left: 1px solid rgba(black, 0.35)!important;
+      border-left: 1px solid rgba(black, 0.35);
       padding: 0!important;
       .material-icons {
         font-size: 20px;

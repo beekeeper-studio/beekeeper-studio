@@ -84,7 +84,7 @@ export default Vue.extend({
         console.log("complete!")
         const n = this.$noty.success(`Export of ${this.table.name} complete`, {
           buttons: [
-            Noty.button('Show', "btn btn-info", () => {
+            Noty.button('Show', "btn btn-primary", () => {
               this.$native.files.showItemInFolder(options.filePath)
               n.close()
             })

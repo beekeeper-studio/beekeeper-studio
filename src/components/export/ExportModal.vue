@@ -9,11 +9,16 @@
     >
       <form @submit.prevent="submit">
         <div class="dialog-content">
-          <div class="dialog-c-title">
-            Export 
-            <span class="text-primary">{{ table.name }}</span> 
-            <span v-if="filters" class="text-secondary" v-tooltip="filterTooltip">(Filtered)</span>
+          <div class="dialog-c-title flex flex-middle">
+            <div>
+              Export
+              <span class="text-primary truncate">{{ table.name }}</span> 
+              <span v-if="filters" class="text-light" v-tooltip="filterTooltip">(Filtered)</span>
+            </div>
           </div>
+          <span class="close-btn btn btn-fab">
+            <i class="material-icons" @click.prevent="closeModal">clear</i>
+          </span>
           <div v-if="error" class="alert alert-danger">
             <i class="material-icons">warning</i>
             <div>Error: {{ error.message }}</div>
@@ -205,6 +210,9 @@ export default {
         exporter: this.selectedExportFormat.key
       })
       this.filePath = null
+      this.$modal.hide('export-modal')
+    },
+    closeModal () {
       this.$modal.hide('export-modal')
     },
     toggleAdvanced() {
