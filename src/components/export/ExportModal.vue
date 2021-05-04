@@ -25,45 +25,49 @@
           </div>
           <div class="modal-form export-form">
             
-            <!-- File Name -->
-            <div class="form-group">
-              <label for="fileName">File Name</label>
-              <input type="text" v-model="fileName">
-            </div>
+            <div class="flex">
+
+              <!-- File Name -->
+              <div class="file-name form-group expand">
+                <label for="fileName">File Name</label>
+                <input type="text" v-model="fileName">
+              </div>
+              
+              <!-- Format -->
+              <div class="format form-group">
+                <label for="connectionType">Format</label>
+                <select
+                  name="connectionType"
+                  class="form-control custom-select"
+                  v-model="selectedExportFormat"
+                  id="export-format-select"
+                >
+                  <option disabled value="null">Select a format...</option>
+                  <option
+                    :key="f.value"
+                    v-for="f in exportFormats"
+                    :value="f"
+                    :selected="selectedExportFormat === f.value"
+                  >
+                    {{ f.name }}
+                  </option>
+                </select>
+              </div>
+
+           </div>
 
             <!-- Location -->
             <div class="form-group">
               <label for="fileDirectory">Output Directory</label>
-              <file-picker 
-                v-model="fileDirectory"
-                :defaultPath="defaultPath"
-                :save="false"
-                :options="dialogOptions"
-                buttonText="Choose"
-                >
-              </file-picker>
             </div>
-
-            <!-- Format -->
-            <div class="form-group">
-              <label for="connectionType">Format</label>
-              <select
-                name="connectionType"
-                class="form-control custom-select"
-                v-model="selectedExportFormat"
-                id="export-format-select"
+            <file-picker 
+              v-model="fileDirectory"
+              :defaultPath="defaultPath"
+              :save="false"
+              :options="dialogOptions"
+              buttonText="Choose"
               >
-                <option disabled value="null">Select a format...</option>
-                <option
-                  :key="f.value"
-                  v-for="f in exportFormats"
-                  :value="f"
-                  :selected="selectedExportFormat === f.value"
-                >
-                  {{ f.name }}
-                </option>
-              </select>
-            </div>
+            </file-picker>
 
             <!-- Advanced Options -->
             <div class="advanced-options-toggle flex flex-middle" @click.prevent="toggleAdvanced">

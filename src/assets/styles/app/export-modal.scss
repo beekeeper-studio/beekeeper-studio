@@ -20,6 +20,12 @@
       display: block;
     }
   }
+  .file-name {
+    margin-right: $gutter-w;
+  }
+  .format select {
+    width: 120px;
+  }
 }
 
 .export-progress-notification {
