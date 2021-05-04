@@ -172,6 +172,7 @@
   "resolutions": {
     "watchpack": "1.6.1",
     "node-ssh-forward/ssh2": "beekeeper-studio/ssh2#electron-detection",
-    "node-pre-gyp": "0.12.0"
+    "node-pre-gyp": "0.12.0",
+    "@azure/ms-rest-js": "beekeeper-studio/ms-rest-js#dom-fixes-built"
   }
 }

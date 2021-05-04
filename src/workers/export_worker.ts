@@ -1,22 +1,5 @@
 /* eslint-disable */
 
-// hacks to work around dom needs in @azure libs
-import { DOMParser, DOMImplementation, XMLSerializer } from "xmldom";
-
-self.DOMParser = DOMParser;
-self.XMLSerializer = XMLSerializer;
-
-// @ts-ignore
-self.document = {
-  implementation: new DOMImplementation(),
-};
-
-// @ts-ignore
-self.window = {
-  navigator,
-};
-
-
 import { expose } from "threads/worker"
 import { IDbConnectionServerConfig } from "../lib/db/client";
 import { TableFilter, TableOrView } from "../lib/db/models";
@@ -25,7 +8,6 @@ import { createServer } from "../lib/db";
 import { Exporter, ExportType } from "../lib/export";
 import { Observable } from 'observable-fns'
 import { Export } from "../lib/export/export";
-
 
 interface WorkerOptions {
   config: IDbConnectionServerConfig
@@ -44,6 +26,9 @@ let exporter: Export | undefined
 
 const ExportWorker = {
   export: (options: WorkerOptions): Observable<ExportProgress> => {
+    console.log('export worker begins!', options)
+
+    
     return new Observable((observer) => {
       (async () => {
         const server = createServer(options.config)
