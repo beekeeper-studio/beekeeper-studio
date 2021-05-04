@@ -13,26 +13,22 @@
 <script lang="ts">
 import Vue from 'vue'
 import Noty from 'noty'
+import { spawn, Worker } from 'threads'
 import { mapMutations, mapGetters } from 'vuex'
 import { AppEvent, RootBinding } from '../../common/AppEvent'
 import { DBConnection } from '../../lib/db/client'
 import { TableFilter, TableOrView } from '../../lib/db/models'
 import ExportNotification from './ExportNotification.vue'
 import ExportModal from './ExportModal.vue'
-import { CsvExporter, JsonExporter, SqlExporter } from '../../lib/export'
+import { Exporter} from '../../lib/export'
 import { ExportProgress } from '../../lib/export/models'
+
 
 interface ExportTriggerOptions {
   table?: TableOrView,
   filters?: TableFilter[]
 }
 
-
-const ExportClassPicker = {
-  'csv': CsvExporter,
-  'json': JsonExporter,
-  'sql': SqlExporter
-}
 
 interface StartExportOptions {
   exporter: 'csv' | 'json' | 'sql'
@@ -69,8 +65,11 @@ export default Vue.extend({
   methods: {
     ...mapMutations({ addExport: "exports/addExport" }),
     async startExport(options: StartExportOptions) {
+
+      const worker = await spawn(new Worker('../../workers/export_worker'))
+
       if (this.table) {
-        const exporter = new ExportClassPicker[options.exporter](
+        const exporter = new (Exporter(options.exporter))(
           options.filePath,
           this.connection,
           this.table,
