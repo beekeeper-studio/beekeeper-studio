@@ -81,21 +81,16 @@ export class DBTestUtil {
     await this.knex("people_jobs").insert({job_id: jobs[0], person_id: people[0] })
   }
 
-  async testdb() {
-    // SIMPLE TABLE CREATION TEST
+  testdb() {
+
+  }
+
+  async listTableTests() {
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
     console.log(tables)
     expect(tables.length).toBeGreaterThanOrEqual(this.expectedTables)
     const columns = await this.connection.listTableColumns("people", this.defaultSchema)
     expect(columns.length).toBe(7)
-
-
-    await this.tableViewTests()
-    await this.streamTests()
-
-    if (this.dialect !== 'sqlite') {
-      await this.queryTests()
-    }
   }
 
   /**
@@ -166,6 +161,7 @@ export class DBTestUtil {
   }
 
   async queryTests() {
+    if (this.dialect === 'sqlite') return
     console.log('query tests')
     const q = await this.connection.query("select 'a' as total, 'b' as total")
     if(!q) throw new Error("no query result")

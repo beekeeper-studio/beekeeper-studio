@@ -1,7 +1,7 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
-import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError } from './all'
+import { runCommonTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/client'
 
 describe("Postgres Integration Tests", () => {
@@ -66,10 +66,6 @@ describe("Postgres Integration Tests", () => {
     }
   })
 
-  it("Should pass standard tests", async () => {
-    await util.testdb()
-  })
-
   it("Should allow me to update rows with array types", async () => {
 
     const updates = [{
@@ -93,20 +89,9 @@ describe("Postgres Integration Tests", () => {
     expect(result).toMatchObject([{id: 1, names: ['x', 'y', 'z'], normal: 'Bananas'}])
   })
 
-  it("Should insert good data", async () => {
-    await itShouldInsertGoodData(util)
+  describe("Common Tests", () => {
+    runCommonTests(() => util)
   })
 
-  it("Should not insert bad data", async() => {
-    await itShouldNotInsertBadData(util)
-  })
-
-  it("Should apply all types of changes", async() => {
-    await itShouldApplyAllTypesOfChanges(util)
-  })
-
-  it("Should not commit on change error", async() => {
-    await itShouldNotCommitOnChangeError(util)
-  })
 
 })
