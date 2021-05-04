@@ -94,12 +94,14 @@ function genSelectOld(table, offset, limit, orderBy, filters, schema) {
   const orderByString = genOrderByString(orderBy)
   const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
   const lastRow = offset + limit
+  const schemaString = schema ? `${wrapIdentifier(schema)}.` : ''
+
   const query = `
     WITH CTE AS
     (
         SELECT *
               , ROW_NUMBER() OVER (${orderByString}) as RowNumber
-        FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)}
+        FROM ${schemaString}${wrapIdentifier(table)}
         ${filterString}
     )
     SELECT *
@@ -132,9 +134,11 @@ function genOrderByString(orderBy) {
 function genCountQuery(table, filters, schema) {
   const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
 
+  const schemaString = schema ? `${wrapIdentifier(schema)}.` : ''
+
   let baseSQL = `
-    FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)}
-    ${filterString}
+   FROM ${schemaString}${wrapIdentifier(table)}
+   ${filterString}
   `
   let countQuery = `
     select count(*) as total ${baseSQL}
@@ -146,9 +150,10 @@ function genSelectNew(table, offset, limit, orderBy, filters, schema) {
   const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
 
   const orderByString = genOrderByString(orderBy)
+  const schemaString = schema ? `${wrapIdentifier(schema)}.` : ''
 
   let baseSQL = `
-    FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)}
+    FROM ${schemaString}${wrapIdentifier(table)}
     ${filterString}
   `
 

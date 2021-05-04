@@ -12,7 +12,7 @@ export class SqlServerCursor extends BeeCursor {
   private end: boolean = false;
   private bufferRedy: boolean = false;
   private error: Error | undefined;
-  rowBuffer: any;
+  private rowBuffer: any[] = [];
 
 
   constructor(
@@ -25,8 +25,8 @@ export class SqlServerCursor extends BeeCursor {
 
   async start(): Promise<void> {
 
-    this.connection = await new ConnectionPool(this.conn.dbConfig)
-
+    this.connection = await new ConnectionPool(this.conn.dbConfig).connect()
+    
     const request = this.connection.request()
     this.request = request
 
@@ -34,10 +34,15 @@ export class SqlServerCursor extends BeeCursor {
     request.arrayRowMode = true
     request.stream = true
 
+    request.on('recordset', this.handleRecordset.bind(this))
     request.on('row', this.handleRow.bind(this).bind(this))
     request.on('error', this.handleError.bind(this))
     request.on('done', this.handleEnd.bind(this))
     request.query(this.query);
+  }
+
+  private handleRecordset() {
+    console.log('recordset begins')
   }
 
   private handleEnd() {
@@ -52,6 +57,7 @@ export class SqlServerCursor extends BeeCursor {
   }
 
   private handleRow(row: any) {
+    console.log('pushing row -> ', row)
     this.rowBuffer.push(row)
     if (this.rowBuffer.length >= this.chunkSize) {
       this.request?.pause()
@@ -76,6 +82,7 @@ export class SqlServerCursor extends BeeCursor {
     if (this.end) return this.pop()
     await waitFor(() => this.bufferRedy)
     const results = this.pop()
+    console.log('popped -> ', results)
     this.resume()
     return results
   }
