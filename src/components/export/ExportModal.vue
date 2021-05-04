@@ -5,7 +5,7 @@
       name="export-modal"
       height="auto"
       :scrollable="true"
-      @closed="$emit('closed', this.options)"
+      @closed="$emit('closed', id)"
     >
       <form @submit.prevent="submit">
         <div class="dialog-content">
@@ -87,6 +87,7 @@
           <button
             class="btn btn-flat"
             type="button"
+            @click.prevent="close"
           >
             Cancel
           </button>
@@ -132,7 +133,7 @@ const exportFormats = [
 
 export default {
   components: { FilePicker },
-  props: ['table', 'filters', 'connection'],
+  props: ['table', 'filters', 'connection', 'id'],
   data() {
     return {
       selectedExportFormat: exportFormats[0],
@@ -183,7 +184,9 @@ export default {
     },
   },
   methods: {
-    ...mapMutations({ addExport: "exports/addExport" }),
+    close() {
+      this.$modal.hide('export-modal')
+    },
     async submit() {
       this.error = null;
 
@@ -191,6 +194,7 @@ export default {
         return;
       }
       this.$emit('export', {
+        id: this.id,
         table: this.table,
         filters: this.filters,
         filePath: this.filePath,
@@ -199,7 +203,8 @@ export default {
         exporter: this.selectedExportFormat.key
       })
       this.filePath = null
-      this.$modal.hide('export-modal')
+      this.close()
+
     },
   },
   mounted() {

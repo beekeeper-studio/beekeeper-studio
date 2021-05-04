@@ -1,8 +1,9 @@
 <template>
   <div class="export-manager">
     <ExportModal
-      v-for="options in pendingExports"
-      :key="options.table.name"
+      v-for="(options, id) in pending"
+      :key="id"
+      :id="id"
       :connection="connection"
       :table="options.table"
       :filters="options.filters"
@@ -40,8 +41,8 @@ interface ExportTriggerOptions {
   filters?: TableFilter[]
 }
 
-
 interface StartExportOptions {
+  id: string,
   table: TableOrView,
   filters: TableFilter[]
   exporter: 'csv' | 'json' | 'sql'
@@ -61,11 +62,10 @@ export default Vue.extend({
   },
   data() {
     return {
-      workers: new Map<string, ModuleThread<ExportWorker>>(),
-      observers: new Map<string, ObservablePromise<ExportProgress>>(),
-      statuses: new Map<string, ExportProgress>(),
-      // these are for modals
-      pendingExports: ([] as ExportTriggerOptions[]),
+      pending: ({} as { [key: string]: ExportTriggerOptions}),
+      workers: ({} as { [key: string]: ModuleThread<ExportWorker> }),
+      observers: ({} as {[key: string]: ObservablePromise<ExportProgress>}),
+      statuses: ({} as {[key: string]: ExportProgress})
     }
   },
   computed: {
@@ -79,7 +79,7 @@ export default Vue.extend({
   methods: {
     ...mapMutations({ addExport: "exports/addExport" }),
     async startExport(options: StartExportOptions) {
-      const id = uuidv4()
+      const id = options.id
       const worker = await spawn<ExportWorker>(new Worker('../../workers/export_worker'))
       const observer = worker.export({
         config: connectionProvider.convertConfig(this.$store.state.usedConfig, this.$store.state.username),
@@ -93,8 +93,8 @@ export default Vue.extend({
           outputOptions: options.outputOptions
         }
       })
-      this.observers.set(id, observer)
-      this.workers.set(id, worker)
+      this.$set(this.observers, id, observer)
+      this.$set(this.workers, id, worker)
       
       observer.subscribe(
         this.handleProgress.bind(this, id),
@@ -105,25 +105,26 @@ export default Vue.extend({
     handleExportRequest(options: ExportTriggerOptions): void {
       // this triggers the modal
       console.log('requested export', options)
-      this.pendingExports.push(options)
+      const id = uuidv4()
+      this.$set(this.pending, id, options)
     },
     handleProgress(id: string, progress: ExportProgress): void {
-      this.statuses.set(id, progress)
+      this.$set(this.statuses, id, progress)
     },
     async handleError(id: string, error: any) {
-      const progress = this.statuses.get(id)
-      const worker = this.workers.get(id)
+      const progress = this.statuses[id]
+      const worker = this.workers[id]
       this.$noty.error(`Export failed ${progress?.tableName}: ${error}`)
       if (worker) await Thread.terminate(worker)
-      this.statuses.delete(id)
-      this.workers.delete(id)
-      this.observers.delete(id)
+      this.$delete(this.statuses, id)
+      this.$delete(this.workers, id)
+      this.$delete(this.observers, id)
 
     },
 
     async handleComplete(id: string, filePath: string) {
-      const progress = this.statuses.get(id)
-      const worker = this.workers.get(id)
+      const progress = this.statuses[id]
+      const worker = this.workers[id]
 
       const n = this.$noty.success(`Export of ${progress?.tableName} complete`, {
         buttons: [
@@ -134,18 +135,18 @@ export default Vue.extend({
         ]
       })
       if (worker) await Thread.terminate(worker)
-      this.statuses.delete(id)
-      this.workers.delete(id)
-      this.observers.delete(id)
+      this.$delete(this.statuses, id)
+      this.$delete(this.workers, id)
+      this.$delete(this.observers, id)
     },
     handleCancel(id: string) {
-      const worker = this.workers.get(id)
+      const worker = this.workers[id]
       if (!worker) return
       worker.cancel()
       this.$noty.info("Export cancelled")
     },
-    handleClosedModal(options: ExportTriggerOptions) {
-      this.pendingExports = _.without(this.pendingExports, options)
+    handleClosedModal(id: string) {
+      this.$delete(this.pending, id)
     }
   },
   mounted() {
