@@ -5,7 +5,7 @@
       name="export-modal"
       height="auto"
       :scrollable="true"
-      @closed="$emit('closed')"
+      @closed="$emit('closed', this.options)"
     >
       <form @submit.prevent="submit">
         <div class="dialog-content">
@@ -190,7 +190,9 @@ export default {
       if (!this.filePath) {
         return;
       }
-      this.$emit('export', { 
+      this.$emit('export', {
+        table: this.table,
+        filters: this.filters,
         filePath: this.filePath,
         options: this.options,
         outputOptions: this.outputOptions,

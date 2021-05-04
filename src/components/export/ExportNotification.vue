@@ -3,20 +3,18 @@
 </template>
 <script>
 import Noty from "noty";
-import ExportInfo from "./mixins/export-info";
-import { Export } from '../../lib/export';
+import { ExportProgress } from '../../lib/export/models'
 
 export default {
-  mixins: [ExportInfo],
-  props: ['exporter'],
+  props: ['exporter', 'key'],
   data() {
     return {
       percentComplete: 0,
       notification: new Noty({
-        text: `Exporting '${this.exporter.table.name}'`,
+        text: `Exporting '${this.exporter.tableName}'`,
         layout: "bottomRight",
         timeout: false,
-        closeWith: 'button',
+        closeWith: ['button'],
         buttons: [
           Noty.button("Cancel", "btn btn-danger", this.cancelExport.bind(this)),
           Noty.button("Hide", "btn btn-info", () => this.notification.close()),
@@ -27,17 +25,13 @@ export default {
   },
   computed: {
     notificationText() {
-      return `(${this.percentComplete}%) Exporting '${this.exporter.table.name}'`
+      return `(${this.percentComplete}%) Exporting '${this.exporter.tableName}'`
     },
   },
   methods: {
     cancelExport() {
-      if (!this.exporter) {
-        return;
-      }
-      this.exporter.abort();
+      this.$emit('cancel', this.key)
       this.notification.close();
-      this.$noty.error(`${this.exporter.table.name} export aborted`);
     },
     updateProgress(progress) {
       this.percentComplete = progress.percentComplete
@@ -53,7 +47,6 @@ export default {
     },
   },
   mounted() {
-    this.exporter.onProgress(this.updateProgress)
     this.notification.show();
   },
   beforeDestroy() {

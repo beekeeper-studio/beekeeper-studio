@@ -14,11 +14,13 @@ export interface ExportOptions {
 }
 
 export interface ExportProgress {
-  totalRecords: number;
-  countExported: number;
-  secondsElapsed: number;
-  secondsRemaining: number;
-  status: ExportStatus;
-  percentComplete: number;
+  exporterId: string
+  totalRecords: number
+  countExported: number
+  secondsElapsed: number
+  secondsRemaining: number
+  status: ExportStatus
+  percentComplete: number,
+  tableName: string
 }
-export type ProgressCallback = (p: ExportProgress) => void;
+export type ProgressCallback = (p: ExportProgress) => void

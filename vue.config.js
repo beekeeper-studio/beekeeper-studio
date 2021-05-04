@@ -120,7 +120,7 @@ module.exports = {
     plugins: [
       new webpack.IgnorePlugin(/pg-native/, /pg/),
       new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/),
-      new ThreadsPlugin()
+      new ThreadsPlugin({ globalObject: 'self', target: 'electron-node-worker'})
     ],
     // externals: {
     //   // Possible drivers for knex - we'll ignore them

@@ -1,15 +1,12 @@
 import { expose } from "threads/worker"
-import rawLog from 'electron-log'
 import { IDbConnectionServerConfig } from "../lib/db/client";
 import { TableFilter, TableOrView } from "../lib/db/models";
 import { ExportOptions, ExportProgress } from "../lib/export/models";
 import { createServer } from "../lib/db";
 import { Exporter, ExportType } from "../lib/export";
-
 import { Observable } from 'observable-fns'
 import { Export } from "../lib/export/export";
 
-const log = rawLog.scope('workers/export')
 
 interface WorkerOptions {
   config: IDbConnectionServerConfig
@@ -24,6 +21,8 @@ interface WorkerOptions {
   }
 }
 
+let exporter: Export | undefined
+
 const ExportWorker = {
   export: (options: WorkerOptions): Observable<ExportProgress> => {
     return new Observable((observer) => {
@@ -32,7 +31,7 @@ const ExportWorker = {
         const connection = server.createConnection(options.database)
         await connection.connect()
 
-        const exporter: Export = (Exporter(options.exportType))(
+        exporter = (Exporter(options.exportType))(
           options.exportConfig.filePath,
           connection,
           options.exportConfig.table,
@@ -40,19 +39,23 @@ const ExportWorker = {
           options.exportConfig.options,
           options.exportConfig.outputOptions
         )
+        
 
-        exporter.onProgress((progress) => {
+        exporter?.onProgress((progress) => {
           observer.next(progress)
         })
         observer.complete()
         try {
-          await exporter.exportToFile()
+          await exporter?.exportToFile()
         } catch (error: any) {
           observer.error(error)
         }
       })()
 
     })
+  },
+  cancel() {
+    exporter?.abort()
   }
 }
 

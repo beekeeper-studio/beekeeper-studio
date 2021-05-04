@@ -1,4 +1,4 @@
-import { Export } from "@/lib/export";
+import { Export } from "@/lib/export/export";
 import { DBConnection } from '@/lib/db/client'
 import indentString from 'indent-string'
 import { TableFilter, TableOrView } from "../../db/models";

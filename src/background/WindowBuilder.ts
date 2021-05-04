@@ -34,6 +34,7 @@ class BeekeeperWindow {
       webPreferences: {
         enableRemoteModule: true,
         nodeIntegration: Boolean(process.env.ELECTRON_NODE_INTEGRATION),
+        nodeIntegrationInWorker: Boolean(process.env.ELECTRON_NODE_INTEGRATION),
         contextIsolation: false
       },
       icon: getIcon()
