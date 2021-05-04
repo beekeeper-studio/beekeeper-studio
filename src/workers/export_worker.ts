@@ -44,6 +44,7 @@ const ExportWorker = {
         exporter.onProgress((progress) => {
           observer.next(progress)
         })
+        observer.complete()
         try {
           await exporter.exportToFile()
         } catch (error: any) {

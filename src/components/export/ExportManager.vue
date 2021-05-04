@@ -22,6 +22,8 @@ import ExportNotification from './ExportNotification.vue'
 import ExportModal from './ExportModal.vue'
 import { Exporter} from '../../lib/export'
 import { ExportProgress } from '../../lib/export/models'
+import { ExportWorker } from '../../workers/export_worker'
+import connectionProvider from '../../lib/connection-provider'
 
 
 interface ExportTriggerOptions {
@@ -65,8 +67,20 @@ export default Vue.extend({
   methods: {
     ...mapMutations({ addExport: "exports/addExport" }),
     async startExport(options: StartExportOptions) {
-
-      const worker = await spawn(new Worker('../../workers/export_worker'))
+      if (!this.table) return
+      const worker = await spawn<ExportWorker>(new Worker('../../workers/export_worker'))
+      const observer = worker.export({
+        config: connectionProvider.convertConfig(this.$store.state.usedConfig, this.$store.state.username),
+        database: this.$store.state.database,
+        exportType: options.exporter,
+        exportConfig: {
+          filePath: options.filePath,
+          table: this.table,
+          filters: this.filters || [],
+          options: options.options,
+          outputOptions: options.outputOptions
+        }
+      })
 
       if (this.table) {
         const exporter = new (Exporter(options.exporter))(
