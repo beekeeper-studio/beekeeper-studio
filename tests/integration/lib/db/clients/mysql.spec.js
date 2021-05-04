@@ -2,22 +2,12 @@ import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
 import data_mutators from '../../../../../src/mixins/data_mutators';
-import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError } from './all'
+import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests } from './all'
 
 describe("mysql", () => {
 
   let container;
   let util
-
-  const names = [
-    { name: "Matthew" },
-    { name: "Nicoll" },
-    { name: "Gregory" },
-    { name: "Alex" },
-    { name: "Alethea" },
-    { name: "Elias" }
-  ]
-
 
   beforeAll(async () => {
     const timeoutDefault = 5000
@@ -71,13 +61,6 @@ describe("mysql", () => {
     await util.knex.schema.raw(functionDDL)
     await util.knex.schema.raw(routine1DDL)
     await util.knex.schema.raw(routine2DDL)
-
-    await util.knex.schema.createTable('streamtest', (table) => {
-      table.increments().primary()
-      table.string("name")
-    })
-    await util.knex('streamtest').insert(names)
-
   })
 
   afterAll(async() => {
@@ -89,8 +72,8 @@ describe("mysql", () => {
     }
   })
 
-  it("Should pass standard tests", async () => {
-    await util.testdb()
+  describe("Common Tests", () => {
+    runCommonTests(() => util)
   })
 
   it("Should fetch routines correctly", async () => {
@@ -145,46 +128,5 @@ describe("mysql", () => {
     expect(fixed).toBe("b'00000000000000000000010000000000'")
   })
 
-  it("Should insert good data", async () => {
-    await itShouldInsertGoodData(util)
-  })
-
-  it("Should not insert bad data", async() => {
-    await itShouldNotInsertBadData(util)
-  })
-
-  it("Should apply all types of changes", async() => {
-    await itShouldApplyAllTypesOfChanges(util)
-  })
-
-  it("Should not commit on change error", async() => {
-    await itShouldNotCommitOnChangeError(util)
-  })
-
-
-  it.only("should allow selects with streams", async () => {
-    const result = await util.connection.selectTopStream(
-      'streamtest',
-      [{ field: 'id', dir: 'ASC' }],
-      [],
-      5,
-      undefined,
-    )
-    expect(result.columns.map(c => c.columnName)).toMatchObject(['id', 'name'])
-    expect(result.totalRows).toBe(6)
-    const cursor = result.cursor
-    await cursor.start()
-    const b1 = await cursor.read()
-    expect(b1.length).toBe(5)
-    expect(b1.map(r => r[1])).toMatchObject(names.map(r => r.name).slice(0, 5))
-    const b2 = await cursor.read()
-    expect(b2.length).toBe(1)
-    expect(b2[0][1]).toBe(names[names.length - 1].name)
-
-    const b3 = await cursor.read()
-    expect(b3).toMatchObject([])
-    await cursor.close()
-
-  })
 
 })

@@ -1,21 +1,14 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
-import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError } from './all'
+import { runCommonTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/client'
 
 describe("Postgres Integration Tests", () => {
   let container: StartedTestContainer;
   let util: DBTestUtil
 
-  const names = [
-    { name: "Matthew" },
-    { name: "Nicoll" },
-    { name: "Gregory" },
-    { name: "Alex" },
-    { name: "Alethea" },
-    { name: "Elias" }
-  ]
+
 
   beforeAll(async () => {
     try {
@@ -50,19 +43,11 @@ describe("Postgres Integration Tests", () => {
       util = new DBTestUtil(config, "banana")
       await util.setupdb()
 
-      await util.knex.schema.createTable('streamtest', (table) => {
-        table.increments().primary()
-        table.string("name")
-      })
-
       await util.knex.schema.createTable('witharrays', (table) => {
         table.integer("id").primary()
         table.specificType('names', 'TEXT []')
         table.text("normal")
       })
-
-
-      await util.knex('streamtest').insert(names)
 
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
@@ -79,10 +64,6 @@ describe("Postgres Integration Tests", () => {
     if (container) {
       await container.stop()
     }
-  })
-
-  it("Should pass standard tests", async () => {
-    await util.testdb()
   })
 
   it("Should allow me to update rows with array types", async () => {
@@ -108,44 +89,9 @@ describe("Postgres Integration Tests", () => {
     expect(result).toMatchObject([{id: 1, names: ['x', 'y', 'z'], normal: 'Bananas'}])
   })
 
-  it("Should insert good data", async () => {
-    await itShouldInsertGoodData(util)
+  describe("Common Tests", () => {
+    runCommonTests(() => util)
   })
 
-  it("Should not insert bad data", async() => {
-    await itShouldNotInsertBadData(util)
-  })
 
-  it("Should apply all types of changes", async() => {
-    await itShouldApplyAllTypesOfChanges(util)
-  })
-
-  it("Should not commit on change error", async() => {
-    await itShouldNotCommitOnChangeError(util)
-  })
-
-  it("should allow selects with streams", async() => {
-    const result = await util.connection.selectTopStream(
-      'streamtest',
-      [{ field: 'id', dir: 'ASC'}],
-      [],
-      5,
-      undefined,
-    )
-    expect(result.columns.map(c => c.columnName)).toMatchObject(['id', 'name'])
-    expect(result.totalRows).toBe(6)
-    const cursor = result.cursor
-    await cursor.start()
-    const b1 = await cursor.read()
-    expect(b1.length).toBe(5)
-    expect(b1.map(r => r[1])).toMatchObject(names.map(r => r.name).slice(0, 5))
-    const b2 = await cursor.read()
-    expect(b2.length).toBe(1)
-    expect(b2[0][1]).toBe(names[names.length - 1].name)
-
-    const b3 = await cursor.read()
-    expect(b3).toMatchObject([])
-    await cursor.close()
-
-  })
 })

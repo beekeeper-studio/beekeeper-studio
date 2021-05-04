@@ -2,6 +2,7 @@ import { Pool } from "mysql2/typings/mysql";
 import PoolConnection from "mysql2/typings/mysql/lib/PoolConnection";
 import Query from "mysql2/typings/mysql/lib/protocol/sequences/Query";
 import { BeeCursor } from "../../models";
+import { waitFor } from "../base/wait";
 
 interface Conn {
   pool: Pool
@@ -10,15 +11,6 @@ interface Conn {
 interface MiniCursor {
   q: Query,
   connection: PoolConnection
-}
-
-const wait = (time: number) => new Promise((resolve) => setTimeout(resolve, time));
-
-async function waitFor(conditional: () => boolean) {
-  while (!conditional()) {
-    await wait(5)
-  }
-  return
 }
 
 export class MysqlCursor extends BeeCursor {

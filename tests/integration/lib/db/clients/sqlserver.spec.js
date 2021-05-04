@@ -1,13 +1,15 @@
 import { GenericContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
-import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError } from './all'
+import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests } from './all'
 
 describe("SQL Server Tests", () => {
 
   let container;
   let util
   // const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
+
+  const getUtil = () => util
 
   beforeAll(async () => {
     const timeoutDefault = 5000
@@ -52,23 +54,7 @@ describe("SQL Server Tests", () => {
     }
   })
 
-  it("Should pass standard tests", async () => {
-    await util.testdb()
-  })
-
-  it("Should insert good data", async () => {
-    await itShouldInsertGoodData(util)
-  })
-
-  it("Should not insert bad data", async() => {
-    await itShouldNotInsertBadData(util)
-  })
-
-  it("Should apply all types of changes", async() => {
-    await itShouldApplyAllTypesOfChanges(util)
-  })
-
-  it("Should not commit on change error", async() => {
-    await itShouldNotCommitOnChangeError(util)
+  describe("Common DB Tests", () => {
+    runCommonTests(getUtil)
   })
 })
