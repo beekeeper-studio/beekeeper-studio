@@ -9,6 +9,7 @@ import { DBConnection } from '../db/client'
 import { ExportOptions, ExportStatus, ProgressCallback, ExportProgress } from './models'
 import _ from 'lodash'
 import { spawn, Thread, Worker } from "threads"
+import { ExportWorker } from '../../workers/export_worker'
 
 const log = rawlog.scope('export/export')
 
@@ -179,8 +180,8 @@ export abstract class Export {
   async exportToFile(): Promise<void> {
     try {
 
-      const worker = await spawn(new Worker('../../workers/export_worker'))
-      const exported = await worker.export({foo: 'bar', joe: 1, bloggs: true})
+      const worker = await spawn<ExportWorker>(new Worker('../../workers/export_worker'))
+      const exported = await worker.export({foo: 'bar', joe: '1', bloggs: true})
       console.log("Received export! ", exported)
       await Thread.terminate(worker);
 

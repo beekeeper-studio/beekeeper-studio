@@ -37,7 +37,6 @@ module.exports = {
           })
       },
       nodeIntegration: true,
-      asarUnpack: "dist_electron/workers/*.js",
       externals,
       builderOptions: {
         appId: "io.beekeeperstudio.desktop",
