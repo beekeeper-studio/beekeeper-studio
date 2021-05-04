@@ -24,6 +24,27 @@
             <div>Error: {{ error.message }}</div>
           </div>
           <div class="modal-form export-form">
+            
+            <!-- File Name -->
+            <div class="form-group">
+              <label for="fileName">File Name</label>
+              <input type="text" v-model="fileName">
+            </div>
+
+            <!-- Location -->
+            <div class="form-group">
+              <label for="fileDirectory">Output Directory</label>
+              <file-picker 
+                v-model="fileDirectory"
+                :defaultPath="defaultPath"
+                :save="false"
+                :options="dialogOptions"
+                buttonText="Choose"
+                >
+              </file-picker>
+            </div>
+
+            <!-- Format -->
             <div class="form-group">
               <label for="connectionType">Format</label>
               <select
@@ -42,23 +63,6 @@
                   {{ f.name }}
                 </option>
               </select>
-            </div>
-
-            <div class="form-group">
-              <label for="fileDirectory">Output Directory</label>
-            </div>
-            <!-- End Advanced -->
-            <file-picker 
-              v-model="fileDirectory"
-              :defaultPath="defaultPath"
-              :save="false"
-              :options="dialogOptions"
-              buttonText="Choose Directory"
-              >
-            </file-picker>
-            <div class="form-group">
-              <label for="fileName">File Name</label>
-              <input type="text" v-model="fileName">
             </div>
 
             <!-- Advanced Options -->
