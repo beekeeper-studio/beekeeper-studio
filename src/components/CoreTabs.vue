@@ -35,7 +35,7 @@
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
         <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
-        <TableInfo @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table-info'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :table="tab.table"></TableInfo>
+        <TableStructure @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table-structure'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :table="tab.table"></TableStructure>
       </div>
     </div>
   </div>
@@ -50,7 +50,7 @@
   import CoreTabHeader from './CoreTabHeader'
   import { uuidv4 } from '@/lib/uuid'
   import TableTable from './tableview/TableTable'
-  import TableInfo from './tableinfo/TableInfo'
+  import TableStructure from './tablestructure/TableStructure'
   import AppEvent from '../common/AppEvent'
   import platformInfo from '../common/platform_info'
   import { mapGetters, mapState } from 'vuex'
@@ -59,7 +59,7 @@
 
   export default {
     props: [ 'connection' ],
-    components: { QueryEditor, CoreTabHeader, TableTable, Draggable, ShortcutHints, TableInfo },
+    components: { QueryEditor, CoreTabHeader, TableTable, TableStructure, Draggable, ShortcutHints },
     data() {
       return {
         tabItems: [],
@@ -73,7 +73,7 @@
           { event: AppEvent.newTab, handler: this.createQuery},
           { event: 'historyClick', handler: this.createQueryFromItem},
           { event: 'loadTable', handler: this.openTable },
-          { event: 'loadTableInfo', handler: this.openTableInfo},
+          { event: 'loadTableStructure', handler: this.openTableStructure},
           { event: 'loadSettings', handler: this.openSettings },
           { event: 'loadTableCreate', handler: this.loadTableCreate },
           { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
@@ -183,14 +183,13 @@
         const stringResult = sqlFormatter.format(_.isArray(result) ? result[0] : result)
         this.createQuery(stringResult)
       },
-      openTableInfo({ table }) {
-        const prefix = table.schema ? `${table.schema}.` : ''
+      openTableStructure({ table }) {
         const t = {
           id: uuidv4(),
-          type: 'table-info',
+          type: 'table-structure',
           table: table,
           connection: this.connection,
-          title: `${prefix}${table.name} Info`
+          title: `${table.name}`
         }
         this.addTab(t)
       },

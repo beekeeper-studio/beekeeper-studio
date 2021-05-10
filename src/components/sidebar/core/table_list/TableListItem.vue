@@ -21,8 +21,8 @@
           <x-menuitem @click.prevent="openTable">
             <x-label>Open table</x-label>
           </x-menuitem>
-          <x-menuitem @click.prevent="openTableInfo">
-            <x-label>Table Info ℹ</x-label>
+          <x-menuitem @click.prevent="openTableStructure">
+            <x-label>Table Info</x-label>
           </x-menuitem>
           <x-menuitem @click.prevent="toggleColumns">
             <x-label>Toggle columns</x-label>
@@ -151,8 +151,8 @@
           this.clickState.openClicks = 0
         }, this.clickState.delay);
       },
-      openTableInfo(){
-        this.$root.$emit('loadTableInfo', {table: this.table})
+      openTableStructure(){
+        this.$root.$emit('loadTableStructure', {table: this.table})
       },
       pin() {
         this.$store.dispatch('pinTable', this.table)

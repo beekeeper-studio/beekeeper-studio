@@ -9,6 +9,7 @@
       >
         <i v-if="tab.type === 'table'" :class="iconClass" class="material-icons item-icon table">grid_on</i>
         <i v-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
+        <i v-if="tab.type === 'table-structure'" class="material-icons item-icon table-structure">perm_device_information</i>
         <i v-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
         <span class="tab-title truncate" :title="title + scope">{{title}} <span v-if="scope" class="tab-title-scope">{{scope}}</span></span>
         <div class="tab-action">

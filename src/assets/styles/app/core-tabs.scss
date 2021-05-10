@@ -299,3 +299,54 @@
     }
   }
 }
+  
+// Table Info
+.table-structure {    
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  .table-structure-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: $gutter-h 0;
+    padding-top: $gutter-w;
+    .nav-pills {
+      background: rgba($theme-base, 0.08);
+      border-radius: $gutter-w;
+    }
+    .nav-pill {
+      font-size: 0.8rem;
+      line-height: 1.5rem;
+      font-weight: bold;
+      padding: 0 $gutter-w;
+      border-radius: $gutter-w;
+      transition: all 0.15s ease-in-out;
+      &:hover {
+        background: rgba($theme-base, 0.05);
+        // color: $brand-primary;
+      }
+      &.active, &.active:hover {
+        background: $brand-primary;
+        color: black;
+        @extend .card-shadow;
+      }
+    }
+  }
+
+  // Table Info {
+  .table-info {
+    padding: $gutter-w * 2;
+    .form-group.inline {
+      line-height: $input-height;
+      label {
+        color: $text-light;
+        min-width: 120px;
+      }
+      select {
+        min-width: 200px;
+        width: 100%;
+      }
+    }
+  }
+}
