@@ -39,7 +39,7 @@
     "javascript-time-ago": "^2.0.8",
     "jquery": "^3.5.0",
     "knex": "^0.21.2",
-    "lodash": "^4.17.19",
+    "lodash": "^4.17.21",
     "material-icons": "^0.3.1",
     "mkdirp": "^1.0.4",
     "mssql": "^6.3.1",
