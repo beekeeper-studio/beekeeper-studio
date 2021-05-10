@@ -21,6 +21,9 @@
           <x-menuitem @click.prevent="openTable">
             <x-label>Open table</x-label>
           </x-menuitem>
+          <x-menuitem @click.prevent="openTableInfo">
+            <x-label>Table Info ℹ</x-label>
+          </x-menuitem>
           <x-menuitem @click.prevent="toggleColumns">
             <x-label>Toggle columns</x-label>
           </x-menuitem>
@@ -54,9 +57,7 @@
 
   import { mapGetters, mapState } from 'vuex'
   import _ from 'lodash'
-  import rawLog from 'electron-log'
-
-  const log = rawLog.scope('TableListItem')
+  
 	export default {
 		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container"],
     mounted() {
@@ -149,6 +150,9 @@
         this.clickState.timer = setTimeout(() => {
           this.clickState.openClicks = 0
         }, this.clickState.delay);
+      },
+      openTableInfo(){
+        this.$root.$emit('loadTableInfo', {table: this.table})
       },
       pin() {
         this.$store.dispatch('pinTable', this.table)
