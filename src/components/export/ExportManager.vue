@@ -20,7 +20,7 @@ import { DBConnection } from '../../lib/db/client'
 import { TableFilter, TableOrView } from '../../lib/db/models'
 import ExportNotification from './ExportNotification.vue'
 import ExportModal from './ExportModal.vue'
-import { CsvExporter, JsonExporter, SqlExporter } from '../../lib/export'
+import { CsvExporter, JsonExporter, JsonLineExporter, SqlExporter } from '../../lib/export'
 import { ExportProgress } from '../../lib/export/models'
 
 interface ExportTriggerOptions {
@@ -32,13 +32,14 @@ interface ExportTriggerOptions {
 const ExportClassPicker = {
   'csv': CsvExporter,
   'json': JsonExporter,
-  'sql': SqlExporter
+  'sql': SqlExporter,
+  'jsonl': JsonLineExporter
 }
 
 interface StartExportOptions {
   table: TableOrView,
   filters: TableFilter[],
-  exporter: 'csv' | 'json' | 'sql'
+  exporter: 'csv' | 'json' | 'sql' | 'jsonl'
   filePath: string
   options: {
     chunkSize: number

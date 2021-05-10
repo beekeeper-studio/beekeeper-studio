@@ -30,7 +30,7 @@
               <!-- File Name -->
               <div class="file-name form-group expand">
                 <label for="fileName">File Name</label>
-                <input type="text" v-model="fileName">
+                <input type="text" spellcheck="false" v-model="fileName">
               </div>
               
               <!-- Format -->
@@ -112,6 +112,7 @@
           <button
             class="btn btn-flat"
             type="button"
+            @click.prevent="closeModal"
           >
             Cancel
           </button>
@@ -133,7 +134,7 @@ import dateFormat from 'dateformat'
 import { remote } from "electron"
 import { mapMutations } from "vuex"
 import rawlog from 'electron-log'
-import { ExportFormCSV, ExportFormJSON, ExportFormSQL } from "./forms"
+import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "./forms"
 import FilePicker from '../common/form/FilePicker'
 import platformInfo from '../../common/platform_info'
 const log = rawlog.scope('export/export-modal')
@@ -148,6 +149,11 @@ const exportFormats = [
     name: "JSON",
     key: "json",
     component: ExportFormJSON,
+  },
+  {
+    name: 'JSON Lines',
+    key: 'jsonl',
+    component: ExportFormJsonLine
   },
   {
     name: "SQL",
@@ -181,7 +187,13 @@ export default {
       if (this.fileDirectory) {
         localStorage.setItem('export/directory', this.fileDirectory)
       }
-
+    },
+    selectedExportFormat() {
+      if (!this.fileName) return
+      const split = this.fileName.split('.')
+      if (split.length < 2) return
+      split[split.length - 1] = this.selectedExportFormat.key
+      this.fileName = split.join(".")
     }
   },
   computed: {

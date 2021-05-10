@@ -9,7 +9,7 @@
           name="schema"
           class="form-control"
         />
-        <span>Include schema</span>
+        <span>Include Table Schema (If Applicable)</span>
       </label>
     </div>
     <div class="form-group row">
@@ -21,7 +21,7 @@
           name="createTable"
           class="form-control"
         />
-        <span>Include table creation query</span>
+        <span>Create Table Before Inserting</span>
       </label>
     </div>
   </div>
