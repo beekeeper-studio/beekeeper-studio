@@ -38,6 +38,12 @@ module.exports = {
       },
       nodeIntegration: true,
       externals,
+      asar: {
+        smartUnpack: true,
+        asarUnpack: [
+          "/js/*.worker.js*"
+        ],
+      },
       builderOptions: {
         appId: "io.beekeeperstudio.desktop",
         productName: "Beekeeper Studio",
@@ -122,6 +128,11 @@ module.exports = {
       new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/),
       new ThreadsPlugin({ globalObject: 'self', target: 'electron-node-worker'})
     ],
+    externals: {
+      'better-sqlite3': 'commonjs2 better-sqlite3',
+      'typeorm': 'commonjs typeorm',
+      'fs': 'commonjs fs',
+    },
     // externals: {
     //   // Possible drivers for knex - we'll ignore them
     //   // 'sqlite3': 'sqlite3',
