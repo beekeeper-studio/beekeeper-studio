@@ -16,9 +16,20 @@ export default {
 
     }
   },
+  computed: {
+    tableColumns() {
+      return [{ title: 'name', field: 'name'}, {title:'type', field: 'type'}]
+    },
+    tableData() {
+      return this.table.columns.map((c) => {
+        return {name: c.columnName, type: c.dataType}
+      })
+    },
+  },
   mounted() {
     this.schemaTable = new Tabulator(this.$refs.schemaTable, {
-      columns: [{ title: 'name'}, {title:'type'}],
+      columns: this.tableColumns,
+      data: this.tableData
     })
   }
 }
