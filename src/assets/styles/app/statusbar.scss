@@ -89,7 +89,7 @@
     > .btn {
       border-radius: 0!important;
       &:hover, &:hover[expanded] {
-        background: rgba($statusbar-text, 0.1);
+        background: rgba($statusbar-text, 0.08);
       }
       .material-icons {
         color: $statusbar-text;
@@ -128,6 +128,7 @@
       background: transparent;
       padding: 0;
       font-size: 14px;
+      min-width: 10px;
       line-height: 16px;
       margin-left: 0;
     }
