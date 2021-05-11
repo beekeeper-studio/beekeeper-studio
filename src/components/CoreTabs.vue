@@ -36,7 +36,7 @@
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
         <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
-        <TableInfo v-if="tab.type === 'table-structure'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :table="tab.table"></TableInfo>
+        <TableInfo v-if="tab.type === 'table-properties'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :table="tab.table"></TableInfo>
         
       </div>
     </div>
@@ -204,7 +204,7 @@
 
         const t = {
           id: uuidv4(),
-          type: 'table-structure',
+          type: 'table-properties',
           table: table,
           connection: this.connection,
           title: `${table.name}`
