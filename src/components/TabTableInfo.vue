@@ -20,7 +20,7 @@
           :is="pill.component"
           :table="table"
           :connection="connection"
-          :active="pill.id === activePill"
+          :active="pill.id === activePill && active"
           v-show="pill.id === activePill"
         ></component>
       </div>

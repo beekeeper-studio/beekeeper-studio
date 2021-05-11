@@ -13,6 +13,16 @@ export interface TableColumn {
   tableName?: string;
 }
 
+export interface TableColumnPlus extends TableColumn {
+  rawType: string
+  length: number
+  nullable: boolean
+  defaultValue: any
+  unsigned?: boolean
+  encoding?: string
+  keyType?: 'primary' | 'foreign'
+}
+
 export interface FilterOptions {
   schema: Nullable<string>;
   only?: string[];

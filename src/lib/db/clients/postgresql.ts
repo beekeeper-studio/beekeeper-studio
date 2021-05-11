@@ -409,6 +409,8 @@ export async function listTableColumns(conn: Conn, database: string, table?: str
       table_schema,
       table_name,
       column_name,
+      is_nullable,
+      ordinal_position,
       CASE
         WHEN character_maximum_length is not null  and udt_name != 'text'
           THEN CONCAT(udt_name, concat('(', concat(character_maximum_length::varchar(255), ')')))
