@@ -23,10 +23,6 @@ export default {
     },
   },
   mounted() {
-    this.tableRelations = new Tabulator(this.$refs.tableRelations, {
-      columns: this.tableColumns,
-      data: this.tableData
-    })
   }
 }
 </script>

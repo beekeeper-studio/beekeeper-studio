@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 
 import pg, { PoolClient, QueryResult, PoolConfig } from 'pg';
 import { identify } from 'sql-query-identifier';
-import _, { property } from 'lodash'
+import _  from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 

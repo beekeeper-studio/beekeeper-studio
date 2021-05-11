@@ -103,9 +103,11 @@ export default {
   },
   computed: {
     tableSize() {
+      if (!this.properties.size) return 'unknown MB'
       return humanBytes(this.properties.size)
     },
     indexSize() {
+      if (!this.properties.indexSize) return 'unknown MB'
       return humanBytes(this.properties.indexSize)
     },
     descriptionEditStyle() {

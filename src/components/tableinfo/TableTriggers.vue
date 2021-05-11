@@ -22,10 +22,6 @@ export default {
     },
   },
   mounted() {
-    this.tableTriggers = new Tabulator(this.$refs.tableTriggers, {
-      columns: this.tableColumns,
-      data: this.tableData
-    })
   }
 }
 </script>

@@ -32,11 +32,6 @@
 
 <script>
 import Tabulator from 'tabulator-tables'
-// import TableSchema from './components/TableSchema'
-// import TableIndexes from './components/TableIndexes'
-// import TableRelations from './components/TableRelations'
-// import TableInfo from './components/TableInfo'
-// import TableTriggers from './components/TableTriggers'
 import Statusbar from './common/StatusBar'
 import TableInfoVue from './tableinfo/TableInfo.vue'
 import TableSchemaVue from './tableinfo/TableSchema.vue'
@@ -77,7 +72,7 @@ export default {
           component: TableTriggersVue
         }
       ],
-      activePill: 'schema',
+      activePill: 'info',
       tableSchema: null,
       tableIndexes: null,
       tableRelations: null,

@@ -48,15 +48,22 @@ export default {
       return [
         {title: 'Position', field: 'ordinalPosition', headerTooltip: 'The ordinal position of the columns'},
         {title: 'Name', field: 'columnName', editor: 'input', cellEdited: this.cellEdited},
-        {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: autocompleteOptions}, 
+        {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: autocompleteOptions, cellEdited: this.cellEdited}, 
         {
           title: 'Nullable',
           field: 'nullable',
           headerTooltip: "Allow this column to contain a null value",
           editor: 'tickCross',
-          formatter: 'tickCross'
+          formatter: 'tickCross',
+          cellEdited: this.cellEdited
         },
-        {title: 'Default', field: 'defaultValue', editor: 'input', headerTooltip: "If you don't set a value for this field, this is the default value"},
+        {
+          title: 'Default',
+          field: 'defaultValue',
+          editor: 'input',
+          headerTooltip: "If you don't set a value for this field, this is the default value",
+          cellEdited: this.cellEdited
+        },
         {title: 'Primary', field: 'primary', formatter: 'tickCross', formatterParams: { allowEmpty: true}},
       ]
     },
@@ -73,6 +80,7 @@ export default {
   },
   methods: {
     cellEdited(cell, ...props) {
+      console.log('cell edited!', cell, cell.getValue())
       const columnName = cell.getRow().getCells().find((c) => c.getField())
       const change = {
         columnName,

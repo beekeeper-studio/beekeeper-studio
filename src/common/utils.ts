@@ -111,7 +111,7 @@ export function resolveHomePathToAbsolute(filename: string) {
 function getSuffix (power: number, e: number) {
   switch (power) {
     case 1000: // SI ( kB,MB,GB,TB,PB,EB,ZB,YB )
-      return e ? 'kMGTPEZY'[--e] + 'B' : 'Bytes'
+      return e ? 'KMGTPEZY'[--e] + 'B' : 'Bytes'
     case 1024: // IEC ( KiB,MiB,GiB,TiB,PiB,EiB,ZiB,YiB )
       return e ? 'KMGTPEZY'[--e] + 'iB' : 'Bytes'
   }
