@@ -1,14 +1,5 @@
 import { QueryLike } from '../common/appdb/models/base'
-import { TableColumn } from "../lib/db/models"
-
-
-
-export interface IDbEntityWithColumns {
-  name: string
-  entityType: 'table' | 'view' | 'materialized-view'
-  columns: TableColumn[]
-  schema?: string
-}
+import { TableOrView } from "../lib/db/models"
 
 export interface EntityFilter {
   filterQuery?: string
@@ -34,7 +25,7 @@ export interface QueryTab extends Tab {
 }
 
 export interface TableTab extends Tab {
-  table: IDbEntityWithColumns,
+  table: TableOrView,
   connection: any,
   initialFilter: any,
   titleScope: string

@@ -4,9 +4,7 @@ import { BrowserWindow } from "electron"
 import electron from 'electron'
 import { createProtocol } from "vue-cli-plugin-electron-builder/lib"
 import platformInfo from '../common/platform_info'
-import NativeMenuActionHandlers from './NativeMenuActionHandlers'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
-import AppEvent from 'common/AppEvent'
 import rawLog from 'electron-log'
 
 const log = rawLog.scope('WindowBuilder')
@@ -18,16 +16,13 @@ function getIcon() {
 }
 
 class BeekeeperWindow {
-  private active = true
   private win: Nullable<BrowserWindow>
-  private actionHandler: NativeMenuActionHandlers
-  private reloaded = false
+    private reloaded = false
 
-  constructor(private settings: IGroupedUserSettings) {
+  constructor(settings: IGroupedUserSettings) {
     const theme = settings.theme
     const showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
-    this.actionHandler = new NativeMenuActionHandlers(this.settings)
-    log.info('constructing the window')
+      log.info('constructing the window')
     this.win = new BrowserWindow({
       width: 1200,
       height: 800,
@@ -79,7 +74,6 @@ class BeekeeperWindow {
     }
     this.win?.on('closed', () => {
       this.win = null
-      this.active = false
     })
   }
 

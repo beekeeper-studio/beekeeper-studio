@@ -1,4 +1,4 @@
-import AppEvent from "../../common/AppEvent"
+import {AppEvent} from "../../common/AppEvent"
 
 export default class {
 

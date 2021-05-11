@@ -221,7 +221,7 @@ hr {
   }
   &.btn-primary {
     &:hover, &:focus {
-      background: $brand-secondary!important;
+      background: $brand-primary!important;
     }
   }
   &.btn-flat {
@@ -495,6 +495,12 @@ input[type=file] {
 }
 .text-warning {
   color: $brand-warning!important;
+}
+.text-light {
+  color: $text-light;
+}
+.text-lighter {
+  color: $text-lighter;
 }
 
 .text-2x {

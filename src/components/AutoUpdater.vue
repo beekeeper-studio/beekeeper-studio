@@ -6,7 +6,7 @@
 import { ipcRenderer } from 'electron'
 import Noty from 'noty'
 
-import AppEvent from '../common/AppEvent'
+import {AppEvent} from '../common/AppEvent'
 
 export default {
   data() {

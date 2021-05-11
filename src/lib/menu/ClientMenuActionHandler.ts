@@ -1,7 +1,7 @@
 import { IMenuActionHandler } from 'common/interfaces/IMenuActionHandler'
 import { ipcRenderer } from 'electron'
 import _ from 'lodash'
-import AppEvent from '../../common/AppEvent'
+import {AppEvent} from '../../common/AppEvent'
 
 function send(name: string, arg?: any) {
   ipcRenderer.send(AppEvent.menuClick, name, arg)

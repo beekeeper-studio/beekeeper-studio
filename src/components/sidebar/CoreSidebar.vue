@@ -48,6 +48,7 @@
         </div>
         <favorite-list></favorite-list>
       </div>
+
     </div>
 
   </div>
@@ -65,7 +66,7 @@
 
   export default {
     props: ['sidebarShown'],
-    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList },
+    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
     data() {
       return {
         tableLoadError: null,

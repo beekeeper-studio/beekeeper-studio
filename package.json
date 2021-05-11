@@ -23,6 +23,10 @@
   },
   "main": "background.js",
   "dependencies": {
+    "@types/better-sqlite3": "^5.4.1",
+    "@types/dateformat": "^3.0.1",
+    "@types/mssql": "^6.0.8",
+    "@types/papaparse": "^5.2.5",
     "@types/pg": "^7.14.7",
     "@types/sql-formatter": "^2.3.0",
     "base64-url": "^2.3.3",
@@ -36,6 +40,7 @@
     "electron-log": "^4.2.2",
     "electron-util": "^0.14.1",
     "humanize-duration": "^3.23.1",
+    "indent-string": "^4.0.0",
     "javascript-time-ago": "^2.0.8",
     "jquery": "^3.5.0",
     "knex": "^0.21.2",
@@ -46,7 +51,9 @@
     "mysql2": "^2.2.0",
     "node-sass": "^4.12.0",
     "node-ssh-forward": "^0.7.2",
+    "papaparse": "^5.3.0",
     "pg": "^8.4.2",
+    "pg-cursor": "^2.5.2",
     "pg-hstore": "^2.3.3",
     "pluralize": "^8.0.0",
     "popper.js": "^1.15.0",
@@ -109,12 +116,12 @@
     "electron-updater": "^4.2.5",
     "eslint": "^5.16.0",
     "eslint-plugin-vue": "^5.0.0",
+    "sqlite3": "^5.0.2",
     "testcontainers": "^4.6.0",
     "typescript": "^3.9.7",
     "vue-cli-plugin-electron-builder": "^2.0.0-rc.1",
     "vue-template-compiler": "^2.6.10",
-    "vuepress": "^1.5.0",
-    "sqlite3": "^5.0.2"
+    "vuepress": "^1.5.0"
   },
   "eslintConfig": {
     "root": true,
@@ -127,7 +134,9 @@
       "@vue/typescript"
     ],
     "rules": {
-      "no-console": "off"
+      "no-console": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "no-unused-vars": "off"
     },
     "parserOptions": {
       "parser": "@typescript-eslint/parser",

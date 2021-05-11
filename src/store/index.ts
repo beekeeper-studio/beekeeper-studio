@@ -9,11 +9,12 @@ import { SavedConnection } from '../common/appdb/models/saved_connection'
 import { FavoriteQuery } from '../common/appdb/models/favorite_query'
 import { UsedQuery } from '../common/appdb/models/used_query'
 import ConnectionProvider from '../lib/connection-provider'
+import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { DBConnection } from '../lib/db/client'
-import { Routine, TableColumn } from "../lib/db/models"
+import { Routine, TableColumn, TableOrView } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/server'
-import { CoreTab, EntityFilter, IDbEntityWithColumns } from './models'
+import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 
 import RawLog from 'electron-log'
@@ -26,7 +27,7 @@ interface State {
   server: Nullable<IDbConnectionPublicServer>,
   connection: Nullable<DBConnection>,
   database: Nullable<string>,
-  tables: IDbEntityWithColumns[],
+  tables: TableOrView[],
   routines: Routine[],
   entityFilter: EntityFilter,
   tablesLoading: string,
@@ -46,6 +47,7 @@ Vue.use(Vuex)
 
 const store = new Vuex.Store<State>({
   modules: {
+    exports: ExportStoreModule,
     settings: SettingStoreModule
   },
   state: {
@@ -109,7 +111,7 @@ const store = new Vuex.Store<State>({
         return o.schema
       }).value()
     },
-    tablesHaveSchemas(state, getters) {
+    tablesHaveSchemas(_state, getters) {
       return getters.schemaTables.length > 1
     },
     connectionColor(state) {
@@ -166,8 +168,8 @@ const store = new Vuex.Store<State>({
       state.connection = connection
       state.database = database
     },
-    tables(state, tables: IDbEntityWithColumns[]) {
-      const tablesMatch = (t: IDbEntityWithColumns, t2: IDbEntityWithColumns) => {
+    tables(state, tables: TableOrView[]) {
+      const tablesMatch = (t: TableOrView, t2: TableOrView) => {
         return t2.name === t.name &&
         t2.schema === t.schema &&
         t2.entityType === t.entityType
@@ -179,7 +181,7 @@ const store = new Vuex.Store<State>({
       }
       
       // TODO: make this not O(n^2)
-      const result = tables.map((t, idx) => {
+      const result = tables.map((t) => {
         const existingIdx = state.tables.findIndex((st) => tablesMatch(st, t))
         if ( existingIdx >= 0) {
           const existing = state.tables[existingIdx]
@@ -313,7 +315,7 @@ const store = new Vuex.Store<State>({
       }
     },
 
-    async updateTableColumns(context, table: IDbEntityWithColumns) {
+    async updateTableColumns(context, table: TableOrView) {
       log.debug('actions/updateTableColumns', table.name)
       // we don't need to commit to the store, it should already be in the store.
       const connection = context.state.connection
@@ -325,7 +327,7 @@ const store = new Vuex.Store<State>({
         `${c.columnName}${c.dataType}`
       }).sort()
 
-      const existing = table.columns.map((c) => {
+      const existing = !table.columns ? [] : table.columns.map((c) => {
         `${c.columnName}${c.dataType}`
       }).sort()
       

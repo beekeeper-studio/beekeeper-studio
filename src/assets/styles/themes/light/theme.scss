@@ -52,6 +52,9 @@ select {
 .btn-link, .btn-fab {
   box-shadow: none;
 }
+.text-primary {
+  color: darken($theme-primary, 15%)!important;
+}
 .list-group {
   .list-item-btn {
     .actions {

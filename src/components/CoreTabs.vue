@@ -38,6 +38,11 @@
         <TableInfo v-if="tab.type === 'table-structure'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :table="tab.table"></TableInfo>
       </div>
     </div>
+    <!-- TODO - this should really be in TableTable -->
+
+
+    <!-- TODO - all notifications should really be handled with an organized system -->
+
   </div>
 </template>
 
@@ -51,7 +56,7 @@
   import { uuidv4 } from '@/lib/uuid'
   import TableTable from './tableview/TableTable'
   import TableInfo from './TabTableInfo'
-  import AppEvent from '../common/AppEvent'
+  import {AppEvent} from '../common/AppEvent'
   import platformInfo from '../common/platform_info'
   import { mapGetters, mapState } from 'vuex'
   import Draggable from 'vuedraggable'
@@ -65,6 +70,8 @@
         tabItems: [],
         activeItem: 0,
         newTabId: 1,
+        showExportModal: false,
+        tableExportOptions: null,
         dragOptions: {
           handle: '.nav-item'
         },
@@ -77,7 +84,8 @@
           { event: 'loadSettings', handler: this.openSettings },
           { event: 'loadTableCreate', handler: this.loadTableCreate },
           { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
-          { event: 'favoriteClick', handler: this.favoriteClick }
+          { event: 'favoriteClick', handler: this.favoriteClick },
+          { event: 'exportTable', handler: this.openExportModal },
         ]
       }
     },
@@ -86,7 +94,7 @@
     },
     computed: {
       ...mapState(["activeTab"]),
-      ...mapGetters({ 'menuStyle': 'settings/menuStyle' }),
+      ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'exports': 'exports/runningVisibleExports' }),
       lastTab() {
         return this.tabItems[this.tabItems.length - 1];
       },
@@ -210,6 +218,10 @@
         }
         this.addTab(t)
       },
+      openExportModal(options) {
+        this.tableExportOptions = options
+        this.showExportModal = true
+      },
       openSettings(settings) {
         const t = {
           title: "Settings",
@@ -291,15 +303,10 @@
       }
     },
     beforeDestroy() {
-      this.rootBindings.forEach(({event, handler}) => {
-        this.$root.$off(event, handler)
-      })
+      this.unregisterHandlers(this.rootBindings)
     },
     mounted() {
-      this.rootBindings.forEach(({ event, handler }) => {
-        this.$root.$on(event, handler)
-      })
-      this.createQuery()
+      this.registerHandlers(this.rootBindings)
     }
   }
 </script>

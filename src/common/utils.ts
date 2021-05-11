@@ -51,7 +51,7 @@ export function writeFile(filename: string, data: any) {
   return new Promise((resolve, reject) => {
     fs.writeFile(filename, data, (err) => {
       if (err) return reject(err);
-      resolve();
+      resolve(true);
     });
   });
 }

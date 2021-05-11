@@ -1,9 +1,9 @@
 import Knex from 'knex'
-import { exit } from 'process'
-import { IDbConnectionServerConfig } from '../../src/lib/db/client'
+import { DBConnection, IDbConnectionServerConfig } from '../../src/lib/db/client'
 import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
+import { IDbConnectionPublicServer } from '@/lib/db/server'
 export const dbtimeout = 120000
 
 
@@ -24,14 +24,14 @@ interface Options {
 
 export class DBTestUtil {
   public knex: Knex
-  public server: any
-  public connection: any
+  public server: IDbConnectionPublicServer
+  public connection: DBConnection
   public extraTables: number = 0
   private options: Options
   private dialect: string
   
   public preInitCmd: string | undefined
-  public defaultSchema: string | null = 'public'
+  public defaultSchema: string = 'public'
   
   get expectedTables() {
     return this.extraTables + 8
@@ -75,25 +75,22 @@ export class DBTestUtil {
     await this.createTables()
     await this.connection.connect()
     const address = await this.knex("addresses").insert({country: "US"}).returning("id")
-    const mixed = await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
+    await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
     const people = await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0]}).returning("id")
     const jobs = await this.knex("jobs").insert({job_name: "Programmer"}).returning("id")
     await this.knex("people_jobs").insert({job_id: jobs[0], person_id: people[0] })
   }
 
-  async testdb() {
-    // SIMPLE TABLE CREATION TEST
+  testdb() {
+
+  }
+
+  async listTableTests() {
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
     console.log(tables)
-    expect(tables.length).toBe(this.expectedTables)
+    expect(tables.length).toBeGreaterThanOrEqual(this.expectedTables)
     const columns = await this.connection.listTableColumns("people", this.defaultSchema)
     expect(columns.length).toBe(7)
-    console.log("loading columns...")
-    await this.tableViewTests()
-
-    if (this.dialect !== 'sqlite') {
-      await this.queryTests()
-    }
   }
 
   /**
@@ -110,39 +107,39 @@ export class DBTestUtil {
     expect(await this.connection.getPrimaryKey("MixedCase", this.defaultSchema))
       .toBe("id");
     
-    const stR = await this.connection.selectTop("group", 0, 10, ["select"], null, this.defaultSchema)
+    const stR = await this.connection.selectTop("group", 0, 10, [{ field: "select", dir: 'ASC'} ], [], this.defaultSchema)
     expect(stR)
       .toMatchObject({ result: [], totalRecords: 0 })
     
     await this.knex("group").insert([{select: "bar"}, {select: "abc"}])
 
-    let r = await this.connection.selectTop("group", 0, 10, ["select"], null, this.defaultSchema)
+    let r = await this.connection.selectTop("group", 0, 10, [{field: "select", dir: 'ASC'}], [], this.defaultSchema)
     let result = r.result.map((r: any) => r.select)
     expect(result).toMatchObject(["abc", "bar"])
 
-    r = await this.connection.selectTop("group", 0, 10, [{field: 'select', dir: 'desc'}], null, this.defaultSchema)
+    r = await this.connection.selectTop("group", 0, 10, [{field: 'select', dir: 'DESC'}], [], this.defaultSchema)
     result = r.result.map((r: any) => r.select)
     expect(result).toMatchObject(['bar', 'abc'])
 
-    r = await this.connection.selectTop("group", 0, 1, [{ field: 'select', dir: 'desc' }], null, this.defaultSchema)
+    r = await this.connection.selectTop("group", 0, 1, [{ field: 'select', dir: 'DESC' }], [], this.defaultSchema)
     result = r.result.map((r: any) => r.select)
     expect(result).toMatchObject(['bar'])
 
-    r = await this.connection.selectTop("group", 1, 10, [{ field: 'select', dir: 'desc' }], null, this.defaultSchema)
+    r = await this.connection.selectTop("group", 1, 10, [{ field: 'select', dir: 'DESC' }], [], this.defaultSchema)
     result = r.result.map((r: any) => r.select)
     expect(result).toMatchObject(['abc'])
 
-    r = await this.connection.selectTop("MixedCase", 0, 1, [], null, this.defaultSchema)
+    r = await this.connection.selectTop("MixedCase", 0, 1, [], [], this.defaultSchema)
     result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(["pears"])
 
     // filter test - builder
-    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'desc' }], [{field: 'bananas', type: '=', value: "pears"}], this.defaultSchema)
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{field: 'bananas', type: '=', value: "pears"}], this.defaultSchema)
     result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(['pears'])
 
     // filter test - raw
-    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'desc' }], "bananas = 'pears'", this.defaultSchema)
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], "bananas = 'pears'", this.defaultSchema)
     result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(['pears'])
 
@@ -159,18 +156,69 @@ export class DBTestUtil {
     }
 
     // composite primary key tests. Just disable them for now
-    r = await this.connection.getPrimaryKey('with_composite_pk', this.defaultSchema)
-    expect(r).toBeNull()
+    const pkres = await this.connection.getPrimaryKey('with_composite_pk', this.defaultSchema)
+    expect(pkres).toBeNull()
   }
 
   async queryTests() {
+    if (this.dialect === 'sqlite') return
     console.log('query tests')
     const q = await this.connection.query("select 'a' as total, 'b' as total")
+    if(!q) throw new Error("no query result")
     const result = await q.execute()
 
     expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
     const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name}))
     expect(fields).toMatchObject([{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}])
+  }
+
+  async streamTests() {
+    console.log('selectTopStream tests')
+    const names = [
+      { name: "Matthew" },
+      { name: "Nicoll" },
+      { name: "Gregory" },
+      { name: "Alex" },
+      { name: "Alethea" },
+      { name: "Elias" }
+    ]
+    await this.knex.schema.createTable('streamtest', (table) => {
+      table.increments().primary()
+      table.string("name")
+    })
+
+    await this.knex('streamtest').insert(names)
+    const result = await this.connection.selectTopStream(
+      'streamtest',
+      [{ field: 'id', dir: 'ASC' }],
+      [],
+      5,
+      undefined,
+    )
+    console.log("checking columns and total row count")
+    expect(result.columns.map(c => c.columnName)).toMatchObject(['id', 'name'])
+    expect(result.totalRows).toBe(6)
+    const cursor = result.cursor
+    console.log("starting cursor")
+    await cursor.start()
+    console.log("length?")
+    const b1 = await cursor.read()
+    expect(b1.length).toBe(5)
+    console.log("reading first five names and checking those")
+    console.log(b1)
+    expect(b1.map(r => r[1])).toMatchObject(names.map(r => r.name).slice(0, 5))
+    console.log("read2")
+    const b2 = await cursor.read()
+    expect(b2.length).toBe(1)
+    expect(b2[0][1]).toBe(names[names.length - 1].name)
+    console.log("read 3")
+    const b3 = await cursor.read()
+    expect(b3).toMatchObject([])
+    console.log("closing")
+    await cursor.close()
+
+
+    
   }
 
   private async createTables() {
