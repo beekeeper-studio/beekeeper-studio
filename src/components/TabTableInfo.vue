@@ -2,108 +2,28 @@
   <div class="table-structure">
       <div class="table-structure-header">
         <div class="nav-pills">
-          <a class="nav-pill active">Schema</a>
-          <a class="nav-pill">Indexes</a>
-          <a class="nav-pill">Relations</a>
-          <a class="nav-pill">Info</a>
-          <a class="nav-pill">Triggers</a>
+          <a 
+            v-for="(pill) in pills"
+            :key="pill.id"
+            class="nav-pill"
+            :class="{active: pill.id === activePill}"
+            @click.prevent="activePill = pill.id"
+          >
+            {{pill.name}}
+          </a>
         </div>
       </div>
-      <!-- <div ref="tableSchema"></div>
-      <div ref="tableIndexes"></div>
-      <div ref="tableRelations"></div> -->
-  
       <div ref="tableInfo" class="table-info">
-        <div class="small-wrap">
-         <div class="card-flat padding">
-  
-          <div class="form-wrap">
-            <!-- Creation -->
-            <div >
-              <div class="form-group inline input">
-                <label>Type:</label>
-                <select>
-                  <option value="-"></option>
-                </select>
-              </div>
-              <div class="form-group inline input">
-                <label>Encoding:</label>
-                <select>
-                  <option value="-"></option>
-                </select>
-              </div>
-              <div class="form-group inline input">
-                <label>Collation:</label>
-                <select>
-                  <option value="-"></option>
-                </select>
-              </div>
-              <div class="form-group inline">
-                <label>Created at:</label>
-                <span>Feb 11, 2021 at 3:20;18 PM</span>
-              </div>
-              <div class="form-group inline">
-                <label>Updated at:</label>
-                <span>Not Available</span>
-              </div>
-            </div>
-            <hr>
-  
-            <!-- Info -->
-            <div >
-              <div class="form-group inline">
-                <label>Number of row:</label>
-                <span>~442,274</span>
-              </div>
-              <div class="form-group inline">
-                <label>Row format:</label>
-                <span>Dynamic</span>
-              </div>
-              <div class="form-group inline">
-                <label>Avg. row length:</label>
-                <span>46</span>
-              </div>
-              <div class="form-group inline">
-                <label>Auto Increment:</label>
-                <span>Not available</span>
-              </div>
-              <div class="form-group inline">
-                <label>Data Size:</label>
-                <span>19.6 MiB</span>
-              </div>
-              <div class="form-group inline">
-                <label>Max data Size:</label>
-                <span>0 B</span>
-              </div>
-              <div class="form-group inline">
-                <label>Index Size:</label>
-                <span>0 B</span>
-              </div>
-              <div class="form-group inline">
-                <label>Free data Size:</label>
-                <span>4.0 MiB</span>
-              </div>
-            </div>
-            <hr>
-  
-            <!-- Comments/Syntax -->
-            <div>
-              <div class="form-group inline input">
-                <label>Comments</label>
-                <textarea name="" id="" rows="2"></textarea>
-              </div>
-              <div class="form-group inline input">
-                <label>Create Syntax</label>
-                <textarea name="" id="" rows="3"></textarea>
-              </div>
-            </div>
-          </div>
-  
-         </div>
-        </div>
+        <component
+          v-for="(pill) in pills"
+          :key="pill.id"
+          :is="pill.component"
+          :table="table"
+          :connection="connection"
+          :active="pill.id === activePill"
+          v-show="pill.id === activePill"
+        ></component>
       </div>
-
-    <!-- <div ref="tableTriggers"></div> -->
     <statusbar class="statusbar"></statusbar>
   </div>
 </template>
@@ -115,12 +35,45 @@ import Tabulator from 'tabulator-tables'
 // import TableRelations from './components/TableRelations'
 // import TableInfo from './components/TableInfo'
 // import TableTriggers from './components/TableTriggers'
-import Statusbar from '../common/StatusBar'
+import Statusbar from './common/StatusBar'
+import TableInfoVue from './tableinfo/TableInfo.vue'
+import TableSchemaVue from './tableinfo/TableSchema.vue'
+import TableIndexesVue from './tableinfo/TableIndexes.vue'
+import TableRelationsVue from './tableinfo/TableRelations.vue'
+import TableTriggersVue from './tableinfo/TableTriggers.vue'
 export default {
   props: ["table", "connection", "tabID", "active"],
   components: { Statusbar },
   data() {
     return {
+      pills: [
+        {
+          id: 'info',
+          name: 'Info',
+          component: TableInfoVue,
+        },
+        {
+          id: 'schema',
+          name: "Schema",
+          component: TableSchemaVue,
+        },
+        {
+          id: 'indexes',
+          name: "Indexes",
+          component: TableIndexesVue,
+        },
+        {
+          id: 'relations',
+          name: "Relations",
+          component: TableRelationsVue,
+        },
+        {
+          id: 'triggers',
+          name: "Triggers",
+          component: TableTriggersVue
+        }
+      ],
+      activePill: 'info',
       tableSchema: null,
       tableIndexes: null,
       tableRelations: null,

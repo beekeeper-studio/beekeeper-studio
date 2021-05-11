@@ -35,7 +35,7 @@
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
         <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
-        <TableStructure @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table-structure'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :table="tab.table"></TableStructure>
+        <TableInfo v-if="tab.type === 'table-structure'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :table="tab.table"></TableInfo>
       </div>
     </div>
   </div>
@@ -50,7 +50,7 @@
   import CoreTabHeader from './CoreTabHeader'
   import { uuidv4 } from '@/lib/uuid'
   import TableTable from './tableview/TableTable'
-  import TableStructure from './tablestructure/TableStructure'
+  import TableInfo from './TabTableInfo'
   import AppEvent from '../common/AppEvent'
   import platformInfo from '../common/platform_info'
   import { mapGetters, mapState } from 'vuex'
@@ -59,7 +59,7 @@
 
   export default {
     props: [ 'connection' ],
-    components: { QueryEditor, CoreTabHeader, TableTable, TableStructure, Draggable, ShortcutHints },
+    components: { QueryEditor, CoreTabHeader, TableTable, TableInfo, Draggable, ShortcutHints },
     data() {
       return {
         tabItems: [],
