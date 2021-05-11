@@ -4,13 +4,15 @@
 <script>
 import Tabulator from 'tabulator-tables'
 import _ from 'lodash'
+import Vue from 'vue'
 export default {
   props: ["table", "connection", "tabID", "active", "primaryKeys", 'columnTypes'],
   data() {
     return {
       tabulator: null,
       actualTableHeight: "100%",
-      forceRedraw: false
+      forceRedraw: false,
+      stagedChanges: [],
     }
   },
   watch: {
@@ -26,12 +28,15 @@ export default {
         this.tabulator.blockRedraw()
       }
     },
-    tableData: () => {
+    tableData() {
       if (!this.tabulator) return
       this.tabulator.replaceData(this.tableData)
     }
   },
   computed: {
+    jsxTest() {
+      return <div>foo</div>
+    },
     tableColumns() {
       const autocompleteOptions = {
         freetext: true,
@@ -42,7 +47,7 @@ export default {
       }
       return [
         {title: 'Position', field: 'ordinalPosition', headerTooltip: 'The ordinal position of the columns'},
-        {title: 'Name', field: 'columnName', editor: 'input'},
+        {title: 'Name', field: 'columnName', editor: 'input', cellEdited: this.cellEdited},
         {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: autocompleteOptions}, 
         {
           title: 'Nullable',
@@ -52,7 +57,7 @@ export default {
           formatter: 'tickCross'
         },
         {title: 'Default', field: 'defaultValue', editor: 'input', headerTooltip: "If you don't set a value for this field, this is the default value"},
-        {title: 'Primary', field: 'primary'},
+        {title: 'Primary', field: 'primary', formatter: 'tickCross', formatterParams: { allowEmpty: true}},
       ]
     },
     tableData() {
@@ -60,11 +65,24 @@ export default {
       return this.table.columns.map((c) => {
         const key = keys[c.columnName]
         return { 
-          primary: key ? key.position : null,
+          primary: !!key || null,
           ...c
         }
       })
     },
+  },
+  methods: {
+    cellEdited(cell, ...props) {
+      const columnName = cell.getRow().getCells().find((c) => c.getField())
+      const change = {
+        columnName,
+        aspect: cell.getField(),
+        newValue: cell.getValue(),
+        cell: cell
+      }
+      this.stagedChanges.push(change)
+      cell.getElement().classList.add('edited')
+    }
   },
   mounted() {
     // const columnWidth = this.table.columns.length > 20 ? 125 : undefined
