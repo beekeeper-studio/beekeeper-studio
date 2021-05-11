@@ -1,108 +1,87 @@
 <template>
-
   <div class="table-info">
     <div class="small-wrap">
-      <h1>{{table.name}}</h1>
-      <div class="table-description">
-          <div @click.prevent="editDescription" ref="descriptionDiv" v-show="!editingDescription" class="markdown-description" v-html="formattedDescription"></div>
-          <textarea v-show="editingDescription" :style="descriptionEditStyle" ref="descriptionTextarea" @blur="editingDescription = false" name="" id="" rows="10" v-model="properties.description" placeholder="No Description"></textarea>
-      </div>
-      <div class="card-flat padding">
-      <div class="form-wrap">
-        <!-- Creation -->
-        <div >
-          <div class="form-group inline input">
-            <label>Type:</label>
-            <select>
-              <option value="-"></option>
-            </select>
+
+      <!-- Table Info Header -->
+      <div class="table-info-header">
+        <h1 class="table-name">{{table.name}}</h1>
+        <div class="table-description-wrap">
+          <div class="table-description" @click.prevent="editDescription" v-show="!editingDescription">
+            <div ref="descriptionDiv" class="markdown-description" v-html="formattedDescription || 'No Description'"></div>
+            <i class="material-icons">edit</i>
           </div>
-          <div class="form-group inline input">
-            <label>Encoding:</label>
-            <select>
-              <option value="-"></option>
-            </select>
-          </div>
-          <div class="form-group inline input">
-            <label>Collation:</label>
-            <select>
-              <option value="-"></option>
-            </select>
-          </div>
-          <div class="form-group inline">
-            <label>Created at:</label>
-            <span>Feb 11, 2021 at 3:20;18 PM</span>
-          </div>
-          <div class="form-group inline">
-            <label>Updated at:</label>
-            <span>Not Available</span>
+          <div class="table-description-edit" v-show="editingDescription">
+            <textarea  :style="descriptionEditStyle" ref="descriptionTextarea" @blur="editingDescription = false" name="" id="" rows="10" v-model="properties.description" placeholder="Description"></textarea>
+            <span>Markdown</span>
           </div>
         </div>
+      </div>
+  
+      <hr>
+  
+      <!-- Table Info Content -->
+      <div class="table-info-content">
+  
+        <!-- Created -->
+        <div class="form-group inline input">
+          <label>Type:</label>
+          <select>
+            <option value="-"></option>
+          </select>
+        </div>
+        <div class="form-group inline input">
+          <label>Encoding</label>
+          <span>{{properties.encoding}}</span>
+        </div>
+        <div class="form-group inline input">
+          <label>Collation</label>
+          <span>{{properties.collation}}</span>
+        </div>
+        <div class="form-group inline">
+          <label>Created at:</label>
+          <span>Feb 11, 2021 at 3:20;18 PM</span>
+        </div>
+        <div class="form-group inline">
+          <label>Updated at:</label>
+          <span>Not Available</span>
+        </div>
+  
         <hr>
   
         <!-- Info -->
-        <div >
-          <div class="form-group inline">
-            <label>Number of row:</label>
-            <span>~442,274</span>
-          </div>
-          <div class="form-group inline">
-            <label>Row format:</label>
-            <span>Dynamic</span>
-          </div>
-          <div class="form-group inline">
-            <label>Avg. row length:</label>
-            <span>46</span>
-          </div>
-          <div class="form-group inline">
-            <label>Auto Increment:</label>
-            <span>Not available</span>
-          </div>
-          <div class="form-group inline">
-            <label>Data Size:</label>
-            <span>19.6 MiB</span>
-          </div>
-          <div class="form-group inline">
-            <label>Max data Size:</label>
-            <span>0 B</span>
-          </div>
-          <div class="form-group inline">
-            <label>Index Size:</label>
-            <span>0 B</span>
-          </div>
-          <div class="form-group inline">
-            <label>Free data Size:</label>
-            <span>4.0 MiB</span>
-          </div>
+        <div class="form-group inline">
+          <label>Records</label>
+          <span>~{{properties.length}}</span>
         </div>
+        <div class="form-group inline">
+          <label>Data Size</label>
+          <span>{{tableSize}}</span>
+        </div>
+  
+        <div class="form-group inline">
+          <label>Index Size:</label>
+          <span>{{indexSize}}</span>
+        </div>
+  
         <hr>
   
         <!-- Comments/Syntax -->
         <div>
           <div class="form-group inline input">
-            <label>Comments</label>
-            <textarea name="" id="" rows="2"></textarea>
-          </div>
-          <div class="form-group inline input">
             <label>Create Syntax</label>
             <textarea name="" id="" rows="3"></textarea>
           </div>
         </div>
+  
       </div>
-      </div>
+
     </div>
   </div>
 </template>
-<style lang="scss">
-  .table-description {
-    border: 1px solid pink;
-    background-color:#0000001a;
-    padding: 10px;
-  }
-</style>
 <script>
 import marked from 'marked'
 import purify from 'dompurify'
+import { humanBytes } from '../../common/utils'
 export default {
   props: ["table", "connection", "active", "properties"],
   data() {
@@ -123,6 +102,12 @@ export default {
     }
   },
   computed: {
+    tableSize() {
+      return humanBytes(this.properties.size)
+    },
+    indexSize() {
+      return humanBytes(this.properties.indexSize)
+    },
     descriptionEditStyle() {
       return {
         height: `${this.descriptionEditHeight}px`

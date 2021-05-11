@@ -3,7 +3,7 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn } from './models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties } from './models';
 
 const logger = createLogger('db');
 
@@ -25,6 +25,7 @@ export interface DatabaseClient {
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
+  getTableProperties: (table: string, schema?: string) => Promise<TableProperties>,
   getTableCreateScript: (table: string, schema?: string) => Promise<string>,
   getViewCreateScript: (view: string) => void,
   getRoutineCreateScript: (routine: string, type: string, schema?: string) => void,
@@ -109,6 +110,7 @@ export class DBConnection {
   getPrimaryKey = getPrimaryKey.bind(null, this.server, this.database)
   getPrimaryKeys = getPrimaryKeys.bind(null, this.server, this.database)
   getTableKeys = getTableKeys.bind(null, this.server, this.database)
+  getTableProperties = getTableProperties.bind(null, this.server, this.database)
   query = query.bind(null, this.server, this.database)
   executeQuery = executeQuery.bind(null, this.server, this.database)
   listDatabases = listDatabases.bind(null, this.server, this.database)
@@ -303,6 +305,11 @@ function getPrimaryKeys(server: IDbConnectionServer, database: IDbConnectionData
 function getTableKeys(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {
   checkIsConnected(server , database);
   return database.connection?.getTableKeys(database.database, table, schema);
+}
+
+function getTableProperties(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {
+  checkIsConnected(server, database)
+  return database.connection?.getTableProperties(table, schema)
 }
 
 function query(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string) {

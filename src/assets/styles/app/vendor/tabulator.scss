@@ -238,6 +238,7 @@ $cell-radius:            2px;
         padding: 0 0.1rem;
       }
       &.tabulator-sortable{
+        border-radius: 2px;
         &:hover {
           background: rgba($theme-base, 0.035);
         }
