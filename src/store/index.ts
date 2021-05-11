@@ -12,7 +12,7 @@ import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { DBConnection } from '../lib/db/client'
-import { Routine, TableColumn, TableOrView } from "../lib/db/models"
+import { ExtendedTableColumn, Routine, TableColumn, TableOrView } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
@@ -369,7 +369,8 @@ const store = new Vuex.Store<State>({
             viewColumns = viewColumns.concat(columns)
           }
 
-          const allColumns = tableColumns.concat(viewColumns)
+          type MaybeColumn = ExtendedTableColumn | TableColumn
+          const allColumns: MaybeColumn[]  = [...tableColumns, ...viewColumns]
 
           tables.forEach((table) => {
             table.columns = allColumns.filter(row => {
