@@ -763,7 +763,7 @@ export async function alterTableColumns(conn: HasPool, changes: ColumnChange[]) 
     }
   })
   
-  const results = await driverExecuteQuery(conn, { query: queries.join(";")})
+  await driverExecuteQuery(conn, { query: queries.join(";")})
 }
 
 async function insertRows(cli: any, inserts: TableInsert[]) {
