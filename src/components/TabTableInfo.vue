@@ -49,7 +49,7 @@ export default {
   data() {
     return {
       primaryKeys: [],
-      properties: { description: "## Placeholder Description\n Some info goes here"},
+      properties: {},
       pills: [
         {
           id: 'info',
@@ -89,7 +89,9 @@ export default {
   },
   async mounted() {
     this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
+    this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema)
     const columnWidth = this.table.columns.length > 20 ? 125 : undefined
+
 
   }
 }

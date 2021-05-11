@@ -30,9 +30,8 @@ export interface TableOrView {
 export interface TableProperties {
   description?: string
   size: number
+  indexSize: number
   length: number
-  collation?: string
-  encoding?: string
 }
 
 export interface TableColumn {

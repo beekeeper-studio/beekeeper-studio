@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 
 import pg, { PoolClient, QueryResult, PoolConfig } from 'pg';
 import { identify } from 'sql-query-identifier';
-import _ from 'lodash'
+import _, { property } from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
@@ -158,7 +158,6 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getPrimaryKeys: (db, table, schema = defaultSchema) => getPrimaryKeys(conn, db, table, schema),
     applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
-    // stream: (queryText: string, options: StreamOptions, schema: string = defaultSchema) => stream(conn, queryText, options, schema),
     executeQuery: (queryText, _schema = defaultSchema) => executeQuery(conn, queryText),
     listDatabases: (filter?: DatabaseFilterOptions) => listDatabases(conn, filter),
     selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
@@ -168,6 +167,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getViewCreateScript: (view, schema = defaultSchema) => getViewCreateScript(conn, view, schema),
     getRoutineCreateScript: (routine, type, schema = defaultSchema) => getRoutineCreateScript(conn, routine, type, schema),
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
+    getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema)
   };
 }
 
@@ -233,8 +233,8 @@ export async function listMaterializedViews(conn: HasPool, filter: FilterOptions
 
 interface STQOptions {
   table: string,
-  orderBy: OrderBy[],
-  filters: TableFilter[] | string,
+  orderBy?: OrderBy[],
+  filters?: TableFilter[] | string,
   offset?: number,
   limit?: number,
   schema: string,
@@ -313,6 +313,15 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   }
 }
 
+async function getTableLength(conn: HasPool, table: string, schema: string, filters?: TableFilter[] | string): Promise<number> {
+  const version = await getVersion(conn)
+  const { countQuery, params } = buildSelectTopQueries({ table, schema, filters, version})
+  const countResults = await driverExecuteSingle(conn, { query: countQuery, params: params })
+  const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
+  const totalRecords = rowWithTotal ? rowWithTotal.total : 0
+  return totalRecords
+}
+
 async function selectTop(
   conn: HasPool,
   table: string,
@@ -327,10 +336,9 @@ async function selectTop(
   const qs = buildSelectTopQueries({
     table, offset, limit, orderBy, filters, schema, version
   })
-  const countResults = await driverExecuteSingle(conn, { query: qs.countQuery, params: qs.params })
   const result = await driverExecuteSingle(conn, { query: qs.query, params: qs.params })
-  const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
-  const totalRecords = rowWithTotal ? rowWithTotal.total : 0
+  const totalRecords = await getTableLength(conn, table, schema, filters)
+
   return {
     result: result.rows,
     totalRecords: Number(totalRecords),
@@ -559,6 +567,32 @@ export async function listSchemas(conn: Conn, filter?: SchemaFilterOptions) {
 
   return data.rows.map((row) => row.schema_name);
 }
+
+function wrapTable(schema: string, table: string) {
+  return `${wrapIdentifier(schema)}.${wrapIdentifier(table)}`
+}
+
+export async function getTableProperties(conn: HasPool, table: string, schema: string) {
+  const identifier = wrapTable(schema, table)
+  const sql = `
+    SELECT 
+      pg_indexes_size('${identifier}') as index_size,
+      pg_relation_size('${identifier}') as table_size,
+      obj_description('${identifier}'::regclass) as description
+  `
+  const result = await driverExecuteSingle(conn, { query: sql })
+
+  const totalRecords = await getTableLength(conn, table, schema)
+  const props = result.rows.length > 0 ? result.rows[0] : {}
+  return {
+    description: props.description,
+    indexSize: props.index_size,
+    size: props.table_size,
+    length: totalRecords,
+  }
+
+}
+
 
 export async function getTableReferences(conn: Conn, table: string, schema: string) {
   const sql = `
