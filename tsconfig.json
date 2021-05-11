@@ -5,6 +5,8 @@
     "outDir": "dist",
     "noEmit": true,
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "jsx": "preserve",
     "importHelpers": true,
     "moduleResolution": "node",
@@ -21,7 +23,7 @@
     ],
     "paths": {
       "@/*": [
-        "src/*"
+        "./*"
       ]
     },
     "lib": [

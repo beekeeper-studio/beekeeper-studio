@@ -2,9 +2,9 @@ import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
 import data_mutators from '../../../../../src/mixins/data_mutators';
-import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError } from './all'
+import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests } from './all'
 
-describe("MySQL Tests", () => {
+describe("mysql", () => {
 
   let container;
   let util
@@ -72,8 +72,8 @@ describe("MySQL Tests", () => {
     }
   })
 
-  it("Should pass standard tests", async () => {
-    await util.testdb()
+  describe("Common Tests", () => {
+    runCommonTests(() => util)
   })
 
   it("Should fetch routines correctly", async () => {
@@ -128,20 +128,5 @@ describe("MySQL Tests", () => {
     expect(fixed).toBe("b'00000000000000000000010000000000'")
   })
 
-  it("Should insert good data", async () => {
-    await itShouldInsertGoodData(util)
-  })
-
-  it("Should not insert bad data", async() => {
-    await itShouldNotInsertBadData(util)
-  })
-
-  it("Should apply all types of changes", async() => {
-    await itShouldApplyAllTypesOfChanges(util)
-  })
-
-  it("Should not commit on change error", async() => {
-    await itShouldNotCommitOnChangeError(util)
-  })
 
 })

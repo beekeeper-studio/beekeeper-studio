@@ -1,7 +1,7 @@
 import MenuBuilder from '../common/menus/MenuBuilder'
 import NativeMenuActionHandlers from './NativeMenuActionHandlers'
 import { ipcMain, BrowserWindow } from 'electron'
-import AppEvent from '../common/AppEvent'
+import {AppEvent} from '../common/AppEvent'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 
 export default class NativeMenuBuilder {

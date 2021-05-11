@@ -455,7 +455,7 @@ x-buttons {
   > x-button {
     margin: 0;
     &[menu] {
-      border-left: 1px solid rgba(black, 0.35)!important;
+      border-left: 1px solid rgba(black, 0.35);
       padding: 0!important;
       .material-icons {
         font-size: 20px;
@@ -1633,8 +1633,8 @@ x-box {
  */
 
 x-progressbar {
-  background: rgba(59, 153, 251, 0.27);
+  background: rgba(250, 216, 59, 0.27);
   height: 5px;
-  --bar-background:#3B99FB;
-  --bar-box-shadow: 0px 0px 0px 1px #4392F9;
+  --bar-background: #fad83b;
+  --bar-box-shadow: 0px 0px 0px 1px #dabd36;
 }

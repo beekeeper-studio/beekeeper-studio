@@ -6,7 +6,8 @@ import Database from 'better-sqlite3'
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import rawLog from 'electron-log'
-import { buildInsertQueries, buildDeleteQueries, genericSelectTop } from './utils';
+import { buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery } from './utils';
+import { SqliteCursor } from './sqlite/SqliteCursor';
 
 const log = rawLog.scope('sqlite')
 const logger = () => log
@@ -47,6 +48,7 @@ export default async function (server, database) {
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: () => listDatabases(conn),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
+    selectTopStream: (db, table, orderBy, filters, chunkSize) => selectTopStream(conn, db, table, orderBy, filters, chunkSize),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -81,9 +83,29 @@ export function getQuerySelectTop(client, table, limit) {
   return `SELECT * FROM ${wrapIdentifier(table)} LIMIT ${limit}`;
 }
 
+export async function getTableLength(conn, table, filters) {
+  const { countQuery, params } = buildSelectTopQuery(table, null, null, null, filters)
+  const countResults = await driverExecuteQuery(conn, { query: countQuery, params })
+  const rowWithTotal = countResults.data.find((row) => { return row.total })
+  const totalRecords = rowWithTotal ? rowWithTotal.total : 0
+  return Number(totalRecords)
+}
+
 export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   return genericSelectTop(conn, table, offset, limit, orderBy, filters, driverExecuteQuery)
 
+}
+
+export async function selectTopStream(conn, db, table, orderBy, filters, chunkSize) {
+  const qs = buildSelectTopQuery(table, null, null, orderBy, filters)
+  const columns = await listTableColumns(conn, db, table)
+  const rowCount = await getTableLength(conn, table, filters)
+  const { query, params } = qs
+  return {
+    totalRows: rowCount,
+    columns,
+    cursor: new SqliteCursor(conn, query, params, chunkSize)
+  }
 }
 
 export function query(conn, queryText) {

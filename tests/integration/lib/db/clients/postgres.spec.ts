@@ -1,11 +1,14 @@
-import { GenericContainer } from 'testcontainers'
+import { GenericContainer, StartedTestContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
-import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError } from './all'
+import { runCommonTests } from './all'
+import { IDbConnectionServerConfig } from '@/lib/db/client'
 
 describe("Postgres Integration Tests", () => {
-  let container;
-  let util
+  let container: StartedTestContainer;
+  let util: DBTestUtil
+
+
 
   beforeAll(async () => {
     try {
@@ -21,15 +24,32 @@ describe("Postgres Integration Tests", () => {
         .withStartupTimeout(new Duration(dbtimeout, TemporalUnit.MILLISECONDS))
         .start()
       jest.setTimeout(timeoutDefault)
-      const config = {
+      const config: IDbConnectionServerConfig = {
         client: 'postgresql',
         host: container.getContainerIpAddress(),
         port: container.getMappedPort(5432),
         user: 'postgres',
-        password: 'example'
+        password: 'example',
+        osUser: 'foo',
+        ssh: null,
+        sslCaFile: null,
+        sslCertFile: null,
+        sslKeyFile: null,
+        sslRejectUnauthorized: false,
+        ssl: false,
+        domain: null,
+        socketPath: null,
       }
       util = new DBTestUtil(config, "banana")
       await util.setupdb()
+
+      await util.knex.schema.createTable('witharrays', (table) => {
+        table.integer("id").primary()
+        table.specificType('names', 'TEXT []')
+        table.text("normal")
+      })
+
+      await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
     } catch (ex) {
       console.log("ERROR")
@@ -46,18 +66,7 @@ describe("Postgres Integration Tests", () => {
     }
   })
 
-  it("Should pass standard tests", async () => {
-    await util.testdb()
-  })
-
   it("Should allow me to update rows with array types", async () => {
-    await util.knex.schema.createTable('witharrays', (table) => {
-      table.integer("id").primary()
-      table.specificType('names', 'TEXT []')
-      table.text("normal")
-    })
-
-    await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
     const updates = [{
       value: '["x", "y", "z"]',
@@ -76,23 +85,13 @@ describe("Postgres Integration Tests", () => {
       pkColumn: 'id'
     }
   ]
-    const result = await util.connection.applyChanges({ updates })
+    const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
     expect(result).toMatchObject([{id: 1, names: ['x', 'y', 'z'], normal: 'Bananas'}])
   })
 
-  it("Should insert good data", async () => {
-    await itShouldInsertGoodData(util)
+  describe("Common Tests", () => {
+    runCommonTests(() => util)
   })
 
-  it("Should not insert bad data", async() => {
-    await itShouldNotInsertBadData(util)
-  })
 
-  it("Should apply all types of changes", async() => {
-    await itShouldApplyAllTypesOfChanges(util)
-  })
-
-  it("Should not commit on change error", async() => {
-    await itShouldNotCommitOnChangeError(util)
-  })
 })

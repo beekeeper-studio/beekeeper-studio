@@ -1,5 +1,6 @@
 import { DockerComposeEnvironment } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
+import { runCommonTests } from './all';
 
 describe("CockroachDB Tests", () => {
   let container;
@@ -33,7 +34,8 @@ describe("CockroachDB Tests", () => {
     }
   })
 
-  it("Should pass standard tests", async () => {
-    await util.testdb()
+  describe("Common Tests", () => {
+    runCommonTests(() => util)
   })
+  
 })

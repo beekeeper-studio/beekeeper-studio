@@ -1,13 +1,11 @@
-// Copyright (c) 2015 The SQLECTRON Team
+// Copyright (c) 2015 The SQLECTRON Team, 2020 Beekeeper Studio team
 import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult } from './models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery } from './models';
 
 const logger = createLogger('db');
-const DEFAULT_LIMIT = 1000;
-const limitSelect: Nullable<number> = null;
 
 export interface DatabaseClient {
   supportedFeatures: () => SupportedFeatures
@@ -22,18 +20,19 @@ export interface DatabaseClient {
   listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>,
   getTableReferences: (table: string, schema?: string) => void,
   getTableKeys: (db: string, table: string, schema?: string) => void,
-  query: (queryText: string) => void,
+  query: (queryText: string) => CancelableQuery,
   executeQuery: (queryText: string) => void,
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
-  getTableCreateScript: (table: string, schema?: string) => void,
+  getTableCreateScript: (table: string, schema?: string) => Promise<string>,
   getViewCreateScript: (view: string) => void,
   getRoutineCreateScript: (routine: string, type: string, schema?: string) => void,
   truncateAllTables: (db: string, schema?: string) => void,
   listMaterializedViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
   getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string>,
-  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[], schema?: string): Promise<TableResult>,
+  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string): Promise<TableResult>,
+  selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema?: string ): Promise<StreamResults>,
   wrapIdentifier: (value: string) => string
 }
 
@@ -112,6 +111,7 @@ export class DBConnection {
   executeQuery = executeQuery.bind(null, this.server, this.database)
   listDatabases = listDatabases.bind(null, this.server, this.database)
   selectTop = selectTop.bind(null, this.server, this.database)
+  selectTopStream = selectTopStream.bind(null, this.server, this.database)
   applyChanges = applyChanges.bind(null, this.server, this.database)
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
   getTableCreateScript = getTableCreateScript.bind(null, this.server, this.database)
@@ -128,7 +128,7 @@ export class DBConnection {
   }
 }
 
-export function createConnection(server: IDbConnectionServer, database: IDbConnectionDatabase, cryptoSecret?: string) {
+export function createConnection(server: IDbConnectionServer, database: IDbConnectionDatabase ) {
   /**
    * Database public API
    */
@@ -204,11 +204,26 @@ function selectTop(
   offset: number,
   limit: number,
   orderBy: OrderBy[],
-  filters: TableFilter[],
-  schema: string): Promise<TableResult> {
+  filters: TableFilter[] | string,
+  schema: string
+): Promise<TableResult> {
   checkIsConnected(server, database)
   if (!database.connection) throw "No database connection available, please reconnect"
   return database.connection?.selectTop(table, offset, limit, orderBy, filters, schema);
+}
+
+function selectTopStream(
+  server: IDbConnectionServer,
+  database: IDbConnectionDatabase,
+  table: string,
+  orderBy: OrderBy[],
+  filters: TableFilter[] | string,
+  chunkSize: number,
+  schema?: string,
+): Promise<StreamResults> {
+  checkIsConnected(server, database)
+  if (!database.connection) throw "No database connection available"
+  return database.connection?.selectTopStream(database.database, table, orderBy, filters, chunkSize, schema)
 }
 
 function listSchemas(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: SchemaFilterOptions) {
@@ -346,7 +361,7 @@ async function getTableUpdateScript(server: IDbConnectionServer, database: IDbCo
   ].join(' ');
 }
 
-function getTableDeleteScript(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {
+function getTableDeleteScript(_server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {
   const schemaSelection = resolveSchema(database, schema);
   return [
     `DELETE FROM ${schemaSelection}${wrap(database, table)}`,
@@ -364,7 +379,7 @@ function getRoutineCreateScript(server: IDbConnectionServer, database: IDbConnec
   return database.connection?.getRoutineCreateScript(routine, type, schema);
 }
 
-function truncateAllTables(server: IDbConnectionServer, database: IDbConnectionDatabase, schema: string) {
+function truncateAllTables(_server: IDbConnectionServer, database: IDbConnectionDatabase, schema: string) {
   return database.connection?.truncateAllTables(database.database, schema);
 }
 
@@ -392,7 +407,7 @@ function wrap(database: IDbConnectionDatabase, identifier: string | string[]): s
   return identifier.map((item) => database.connection?.wrapIdentifier(item) || '');
 }
 
-function checkIsConnected(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+function checkIsConnected(_server: IDbConnectionServer, database: IDbConnectionDatabase) {
   if (database.connecting || !database.connection) {
     console.log(database)
     throw new Error('There is no connection available.');

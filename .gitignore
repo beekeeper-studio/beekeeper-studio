@@ -1,6 +1,6 @@
 .idea/
 .vscode/
-data/
+./data/
 node_modules/
 dist/
 tmp/

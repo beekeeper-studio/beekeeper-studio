@@ -103,8 +103,8 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
   let sql = `
     SELECT * ${baseSQL}
     ${orderByString}
-    LIMIT ${limit}
-    OFFSET ${offset}
+    ${_.isNumber(limit) ? `LIMIT ${limit}` : ''}
+    ${_.isNumber(offset) ? `OFFSET ${offset}` : ""}
     `
     return {query: sql, countQuery: countSQL, params: filterParams}
 }

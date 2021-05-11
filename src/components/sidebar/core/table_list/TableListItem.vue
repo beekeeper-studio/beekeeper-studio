@@ -28,6 +28,9 @@
           <x-menuitem @click.prevent="createTable" v-if="supportsDDL">
             <x-label>SQL: Create {{table.entityType}}</x-label>
           </x-menuitem>
+          <x-menuitem @click.prevent="exportTable">
+            <x-label>Export</x-label>
+          </x-menuitem>
         </x-menu>
       </x-contextmenu>
     </a>
@@ -54,9 +57,9 @@
 
   import { mapGetters, mapState } from 'vuex'
   import _ from 'lodash'
-  import rawLog from 'electron-log'
-
-  const log = rawLog.scope('TableListItem')
+import { AppEvent } from '../../../../common/AppEvent'
+  // import rawLog from 'electron-log'
+  // const log = rawLog.scope('TableListItem')
 	export default {
 		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container"],
     mounted() {
@@ -126,6 +129,9 @@
       },
       createTable() {
         this.$root.$emit('loadTableCreate', this.table)
+      },
+      exportTable() {
+        this.trigger(AppEvent.beginExport, {table: this.table})
       },
       copyTable() {
         this.$copyText(this.table.name)

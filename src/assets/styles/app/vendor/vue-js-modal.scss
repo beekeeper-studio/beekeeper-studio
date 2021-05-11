@@ -118,7 +118,17 @@
 //   opacity: 0;
 //   transform: translateY(-20px);
 // }
-
+.vue-dialog {
+  .close-btn {
+    position: absolute;
+    top: $gutter-w;
+    right: $gutter-w;
+    opacity: 0.5;
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
 
 .vue-dialog div {
   box-sizing: border-box;
@@ -139,6 +149,7 @@
   line-height: 1;
   font-weight: 500;
   padding-bottom: $gutter-w;
+  padding-right: $gutter-w * 2;
   margin: 0;
 }
 

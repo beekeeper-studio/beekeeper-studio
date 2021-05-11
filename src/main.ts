@@ -7,9 +7,9 @@ import VModal from 'vue-js-modal'
 import 'xel/xel'
 import 'codemirror/addon/search/searchcursor'
 import Tabulator from 'tabulator-tables'
+import './filters/pretty-bytes-filter'
 
 import App from './App.vue'
-import path from 'path'
 import 'typeface-roboto'
 import 'typeface-source-code-pro'
 import './assets/styles/app.scss'
@@ -24,7 +24,7 @@ import 'reflect-metadata'
 import {TypeOrmPlugin} from './lib/typeorm_plugin'
 import config from './config'
 import ConfigPlugin from './plugins/ConfigPlugin'
-import ElectronPlugin from './plugins/ElectronPlugin'
+import { VueElectronPlugin } from './lib/NativeWrapper'
 import { ipcRenderer } from 'electron'
 import AppEventHandler from './lib/events/AppEventHandler'
 import Connection from './common/appdb/Connection'
@@ -34,6 +34,7 @@ import en from 'javascript-time-ago/locale/en'
 import log from 'electron-log'
 import VueClipboard from 'vue-clipboard2'
 import platformInfo from './common/platform_info'
+import { AppEventMixin } from './common/AppEvent'
 
 (async () => {
   try {
@@ -62,6 +63,7 @@ import platformInfo from './common/platform_info'
     (window as any).XLSX = xlsx;
     Vue.config.devtools = platformInfo.isDevelopment;
 
+    Vue.mixin(AppEventMixin)
     Vue.mixin({
       methods: {
         ctrlOrCmd(key) {
@@ -75,7 +77,8 @@ import platformInfo from './common/platform_info'
               element
             );
           }
-        }
+        },
+
       }
     })
 
@@ -86,7 +89,7 @@ import platformInfo from './common/platform_info'
     Vue.use(VModal)
     Vue.use(VueClipboard)
     Vue.use(ConfigPlugin)
-    Vue.use(ElectronPlugin)
+    Vue.use(VueElectronPlugin)
     Vue.use(VueNoty, {
       timeout: 2300,
       progressBar: true,

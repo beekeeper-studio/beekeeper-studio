@@ -11,6 +11,7 @@
         <core-tabs :connection="connection"></core-tabs>
       </div>
     </div>
+    <ExportManager :connection="connection"></ExportManager>
   </div>
 </template>
 
@@ -21,9 +22,10 @@
   import Split from 'split.js'
   import Statusbar from './common/StatusBar'
   import ConnectionButton from './sidebar/core/ConnectionButton'
-  import AppEvent from '../common/AppEvent'
+  import ExportManager from './export/ExportManager'
+  import {AppEvent} from '../common/AppEvent'
   export default {
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton },
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager },
     props: [ 'connection' ],
     data() {
       return {
