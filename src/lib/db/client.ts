@@ -3,7 +3,7 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties } from './models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, ColumnChange } from './models';
 
 const logger = createLogger('db');
 
@@ -24,6 +24,7 @@ export interface DatabaseClient {
   executeQuery: (queryText: string) => void,
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
+  alterTableColumns: (changes: ColumnChange[], table: string, schema?: string) => Promise<void>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties>,
   getTableCreateScript: (table: string, schema?: string) => Promise<string>,

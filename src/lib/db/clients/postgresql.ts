@@ -9,7 +9,7 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, ColumnChange } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 
 import { createCancelablePromise } from '../../../common/utils';
@@ -167,7 +167,9 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getViewCreateScript: (view, schema = defaultSchema) => getViewCreateScript(conn, view, schema),
     getRoutineCreateScript: (routine, type, schema = defaultSchema) => getRoutineCreateScript(conn, routine, type, schema),
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
-    getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema)
+    getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
+    alterTableColumns: (changes: ColumnChange[], table: string, schema?: string) => alterTableColumns(conn, changes, table, schema)
+
   };
 }
 
@@ -568,7 +570,8 @@ export async function listSchemas(conn: Conn, filter?: SchemaFilterOptions) {
   return data.rows.map((row) => row.schema_name);
 }
 
-function wrapTable(schema: string, table: string) {
+function wrapTable(schema?: string, table: string) {
+  if (!schema) return wrapIdentifier(table)
   return `${wrapIdentifier(schema)}.${wrapIdentifier(table)}`
 }
 
@@ -735,6 +738,23 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
   })
 
   return results
+}
+
+export async function alterTableColumns(conn: HasPool, changes: ColumnChange[], table: string, schema: string) {
+
+    const queries = changes.map((change) => {
+      const identifier = wrapTable(change.schema, change.table)
+      switch (change.changeType) {
+        case 'columnName':
+          return `ALTER TABLE ${identifier} RENAME COLUMN ${wrapIdentifier(change.oldValue.toString())} TO ${wrapIdentifier(change.newValue.toString())}`
+          break;
+        case 'dataType':
+        return `ALTER TABLE ${identifier}`
+          break;
+        default:
+          break;
+      }
+    })
 }
 
 async function insertRows(cli: any, inserts: TableInsert[]) {

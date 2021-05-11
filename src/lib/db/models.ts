@@ -20,6 +20,8 @@ export interface StreamResults {
 }
 
 
+
+
 export interface TableOrView {
   schema: string;
   name: string;
@@ -102,6 +104,12 @@ export interface TableChanges {
   inserts: TableInsert[];
   updates: TableUpdate[];
   deletes: TableDelete[];
+}
+
+
+export interface ColumnChange {
+  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue'
+  newValue: string | boolean
 }
 
 export interface TableInsert {
