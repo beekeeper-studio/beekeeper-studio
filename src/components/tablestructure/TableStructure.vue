@@ -1,25 +1,43 @@
 <template>
   <div class="table-structure">
-    <div class="table-structure-header">
-      <div class="nav-pills">
-        <a class="nav-pill active">Schema</a>
-        <a class="nav-pill">Indexes</a>
-        <a class="nav-pill">Relations</a>
-        <a class="nav-pill">Info</a>
-        <a class="nav-pill">Triggers</a>
+      <div class="table-structure-header">
+        <div class="nav-pills">
+          <a class="nav-pill active">Schema</a>
+          <a class="nav-pill">Indexes</a>
+          <a class="nav-pill">Relations</a>
+          <a class="nav-pill">Info</a>
+          <a class="nav-pill">Triggers</a>
+        </div>
       </div>
-    </div>
-    <!-- <div ref="tableSchema"></div>
-    <div ref="tableIndexes"></div>
-    <div ref="tableRelations"></div> -->
-
-    <div ref="tableInfo" class="table-info">
-      <div class="small-wrap">
-       <div class="card-flat padding">
-
-          <!-- Creation -->
-          <div class="row gutter">
-            <div class="col s6">
+      <!-- <div ref="tableSchema"></div>
+      <div ref="tableIndexes"></div>
+      <div ref="tableRelations"></div> -->
+  
+      <div ref="tableInfo" class="table-info">
+        <div class="small-wrap">
+         <div class="card-flat padding">
+  
+          <div class="form-wrap">
+            <!-- Creation -->
+            <div >
+              <div class="form-group inline input">
+                <label>Type:</label>
+                <select>
+                  <option value="-"></option>
+                </select>
+              </div>
+              <div class="form-group inline input">
+                <label>Encoding:</label>
+                <select>
+                  <option value="-"></option>
+                </select>
+              </div>
+              <div class="form-group inline input">
+                <label>Collation:</label>
+                <select>
+                  <option value="-"></option>
+                </select>
+              </div>
               <div class="form-group inline">
                 <label>Created at:</label>
                 <span>Feb 11, 2021 at 3:20;18 PM</span>
@@ -29,33 +47,10 @@
                 <span>Not Available</span>
               </div>
             </div>
-            
-            <div class="col s6">
-              <div class="form-group inline">
-                <label>Type:</label>
-                <select>
-                  <option value="-"></option>
-                </select>
-              </div>
-              <div class="form-group inline">
-                <label>Encoding:</label>
-                <select>
-                  <option value="-"></option>
-                </select>
-              </div>
-              <div class="form-group inline">
-                <label>Collation:</label>
-                <select>
-                  <option value="-"></option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <hr>
-
-          <!-- Info -->
-          <div class="row gutter">
-            <div class="col s6">
+            <hr>
+  
+            <!-- Info -->
+            <div >
               <div class="form-group inline">
                 <label>Number of row:</label>
                 <span>~442,274</span>
@@ -72,8 +67,6 @@
                 <label>Auto Increment:</label>
                 <span>Not available</span>
               </div>
-            </div>
-            <div class="col s6">
               <div class="form-group inline">
                 <label>Data Size:</label>
                 <span>19.6 MiB</span>
@@ -91,17 +84,24 @@
                 <span>4.0 MiB</span>
               </div>
             </div>
+            <hr>
+  
+            <!-- Comments/Syntax -->
+            <div>
+              <div class="form-group inline input">
+                <label>Comments</label>
+                <textarea name="" id="" rows="2"></textarea>
+              </div>
+              <div class="form-group inline input">
+                <label>Create Syntax</label>
+                <textarea name="" id="" rows="3"></textarea>
+              </div>
+            </div>
           </div>
-          <hr>
-
-          <!-- Comments/Syntax -->
-          <div class="form-group">
-            <i class="material-icons">keyboard_arrow_right</i>
-            Advanced
-          </div>
-       </div>
+  
+         </div>
+        </div>
       </div>
-    </div>
 
     <!-- <div ref="tableTriggers"></div> -->
     <statusbar class="statusbar"></statusbar>

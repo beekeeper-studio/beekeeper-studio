@@ -65,8 +65,8 @@ hr {
 // Scrollbar
 // ---------------------
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track-piece {
   background-color: transparent;
@@ -242,15 +242,25 @@ hr {
   flex-direction: column;
   padding-top: $gutter-h;
   &.inline {
-    display: table-row;
+    display: flex;
     flex-direction: row;
+    align-items: flex-start;
     > * {
-      display: table-cell;
+      display: inline-block;
       padding-bottom: $gutter-h;
     }
     label {
-      padding-right: $gutter-w;
+      padding-right: $gutter-w * 2;
       text-align: right;
+    }
+    &.input {
+      label {
+        line-height: $input-height;
+        vertical-align: top;
+      }
+      textarea {
+        height: auto;
+      }
     }
   }
   label {
