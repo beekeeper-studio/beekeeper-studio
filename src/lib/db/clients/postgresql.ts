@@ -9,7 +9,7 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 
 import { createCancelablePromise } from '../../../common/utils';
@@ -437,7 +437,12 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
   });
 }
 
-export async function listTableColumns(conn: Conn, _database: string, table?: string, schema?: string) {
+export async function listTableColumns(
+  conn: Conn,
+  _database: string,
+  table?: string,
+  schema?: string
+): Promise<ExtendedTableColumn[]> {
   // if you provide table, you have to provide schema
   const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : ""
   const params = table ? [schema, table] : []
@@ -451,6 +456,7 @@ export async function listTableColumns(conn: Conn, _database: string, table?: st
       column_name,
       is_nullable,
       ordinal_position,
+      column_default,
       CASE
         WHEN character_maximum_length is not null  and udt_name != 'text'
           THEN CONCAT(udt_name, concat('(', concat(character_maximum_length::varchar(255), ')')))
@@ -470,6 +476,9 @@ export async function listTableColumns(conn: Conn, _database: string, table?: st
     tableName: row.table_name,
     columnName: row.column_name,
     dataType: row.data_type,
+    nullable: row.is_nullable === 'YES',
+    defaultValue: row.column_default,
+    ordinalPosition: Number(row.ordinal_position),
   }));
 }
 

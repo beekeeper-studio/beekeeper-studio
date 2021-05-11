@@ -28,10 +28,16 @@ export interface TableOrView {
 }
 
 export interface TableColumn {
-  columnName: string;
-  dataType: string;
-  schemaName?: string;
-  tableName?: string;
+  columnName: string
+  dataType: string
+  schemaName?: string
+  tableName?: string
+}
+
+export interface ExtendedTableColumn extends TableColumn {
+  ordinalPosition: number
+  nullable: boolean
+  defaultValue: any
 }
 
 export interface TableColumnPlus extends TableColumn {

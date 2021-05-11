@@ -3,7 +3,7 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery } from './models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn } from './models';
 
 const logger = createLogger('db');
 
@@ -14,7 +14,7 @@ export interface DatabaseClient {
   listViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
   listRoutines: (filter?: FilterOptions) => Promise<Routine[]>,
   listMaterializedViewColumns: (db: string, table: string, schema?: string) => Promise<TableColumn[]>
-  listTableColumns: (db: string, table?: string, schema?: string) => Promise<TableColumn[]>,
+  listTableColumns: (db: string, table?: string, schema?: string) => Promise<ExtendedTableColumn[]>,
   listTableTriggers: (table: string, schema?: string) => void,
   listTableIndexes: (db: string, table: string, schema?: string) => void,
   listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>,
@@ -255,7 +255,7 @@ async function listTableColumns(
   server: IDbConnectionServer,
   database: IDbConnectionDatabase,
   table?: string,
-  schema?: string): Promise<TableColumn[]> {
+  schema?: string): Promise<ExtendedTableColumn[]> {
   checkIsConnected(server , database);
   return await database.connection?.listTableColumns(database.database, table, schema) || Promise.resolve([]);
 }
