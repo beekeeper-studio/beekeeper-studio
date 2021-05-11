@@ -54,6 +54,9 @@
       &:hover, &:hover[expanded] {
         background: rgba($statusbar-text, 0.15);
       }
+      .material-icons {
+        font-size: 16px;
+      }
     }
   }
   .connection-button > .btn {
@@ -131,6 +134,7 @@
       min-width: 10px;
       line-height: 16px;
       margin-left: 0;
+      color: $statusbar-text-default;
     }
     .material-icons {
       font-size: 14px;
@@ -251,53 +255,4 @@
     }
   }
 
-  // Default Statusbar -- Invert text color
-  &.default {
-    color: $text;
-    .statusbar-item {
-      &.error {
-        color: $statusbar-text-default;
-        .material-icons {
-          color: $statusbar-text-default;
-        }
-      }
-    }
-    .statusbar-actions .btn,
-    .connection-button > .btn {
-      color: $statusbar-text-default;
-    }
-    .connection-type {
-      color: $statusbar-text;
-    }
-    .badge {
-      background: rgba($statusbar-text-default, 0.25);
-      color: $statusbar-text-default;
-    }
-    .select-wrap {
-      background: rgba($statusbar-text-default, 0.25);
-      &:hover {
-        background: rgba($statusbar-text-default, 0.3);
-      }
-    }
-    .download-results,
-    .pending-changes {
-      background: rgba($statusbar-text-default, 0.25);
-      > .btn {
-        &:hover, &:hover[expanded] {
-          background: rgba($statusbar-text-default, 0.3);
-        }
-        .material-icons {
-          color: $statusbar-text-default;
-        }
-      }
-    }
-    &.tabulator-footer {
-      .tabulator-page {
-        color: $statusbar-text-default;
-        &.active {
-          background: rgba($statusbar-text-default, 0.2);
-        }
-      }
-    }
-  }
 }
