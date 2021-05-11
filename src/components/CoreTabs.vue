@@ -192,6 +192,13 @@
         this.createQuery(stringResult)
       },
       openTableStructure({ table }) {
+        const existing = this.tabItems.find((t) => {
+          return t.type === 'table-structure' &&
+            t.table === table
+        })
+
+        if (existing) return this.click(existing)
+
         const t = {
           id: uuidv4(),
           type: 'table-structure',
@@ -306,6 +313,7 @@
       this.unregisterHandlers(this.rootBindings)
     },
     mounted() {
+      this.createQuery()
       this.registerHandlers(this.rootBindings)
     }
   }

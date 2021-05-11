@@ -9,7 +9,7 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 
 import { createCancelablePromise } from '../../../common/utils';
@@ -155,6 +155,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
+    getPrimaryKeys: (db, table, schema = defaultSchema) => getPrimaryKeys(conn, db, table, schema),
     applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
     // stream: (queryText: string, options: StreamOptions, schema: string = defaultSchema) => stream(conn, queryText, options, schema),
@@ -619,16 +620,25 @@ export async function getTableKeys(conn: Conn, _database: string, table: string,
   }));
 }
 
-export async function getPrimaryKey(conn: HasPool, _database: string, table: string, schema: string): Promise<string> {
+export async function getPrimaryKey(conn: HasPool, _database: string, table: string, schema: string): Promise<string | null> {
+  const keys = await getPrimaryKeys(conn, _database, table, schema)
+  return keys.length > 0 ? keys[0].columnName : null
+}
+
+export async function getPrimaryKeys(conn: HasPool, _database: string, table: string, schema: string): Promise<PrimaryKeyColumn[]> {
   const version = await getVersion(conn)
   const tablename = escapeString(schema ? `${wrapIdentifier(schema)}.${wrapIdentifier(table)}` : wrapIdentifier(table))
   const psqlQuery = `
-    SELECT a.attname as column_name, format_type(a.atttypid, a.atttypmod) AS data_type
+    SELECT 
+      a.attname as column_name,
+      format_type(a.atttypid, a.atttypmod) AS data_type,
+      a.attnum as position
     FROM   pg_index i
     JOIN   pg_attribute a ON a.attrelid = i.indrelid
                         AND a.attnum = ANY(i.indkey)
     WHERE  i.indrelid = '${tablename}'::regclass
-    AND    i.indisprimary;
+    AND    i.indisprimary 
+    ORDER BY a.attnum
   `
 
   const redshiftQuery = `
@@ -652,7 +662,14 @@ export async function getPrimaryKey(conn: HasPool, _database: string, table: str
   `
   const query = version.isRedshift ? redshiftQuery : psqlQuery
   const data = await driverExecuteSingle(conn, { query })
-  return data.rows && data.rows[0] && data.rows.length === 1 ? data.rows[0].column_name : null
+  if (data.rows) {
+    return data.rows.map((r) => ({
+      columnName: r.column_name,
+      position: r.position
+    }))
+  } else {
+    return []
+  }
 }
 
 export async function applyChanges(conn: Conn, changes: TableChanges): Promise<TableUpdateResult[]> {

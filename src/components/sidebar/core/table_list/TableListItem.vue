@@ -15,17 +15,15 @@
       </span>
       <x-contextmenu>
         <x-menu>
-          <x-menuitem @click.prevent="copyTable">
-            <x-label>Copy table name</x-label>
-          </x-menuitem>
+
           <x-menuitem @click.prevent="openTable">
-            <x-label>Open table</x-label>
+            <x-label>Open</x-label>
           </x-menuitem>
-          <x-menuitem @click.prevent="openTableStructure">
-            <x-label>Table Info</x-label>
+          <x-menuitem @click.prevent="copyTable">
+            <x-label>Copy Name</x-label>
           </x-menuitem>
           <x-menuitem @click.prevent="toggleColumns">
-            <x-label>Toggle columns</x-label>
+            <x-label>Toggle Columns</x-label>
           </x-menuitem>
           <hr>
           <x-menuitem @click.prevent="createTable" v-if="supportsDDL">
@@ -33,6 +31,10 @@
           </x-menuitem>
           <x-menuitem @click.prevent="exportTable">
             <x-label>Export</x-label>
+          </x-menuitem>
+          <hr>
+          <x-menuitem @click.prevent="openTableStructure">
+            <x-label>Properties</x-label>
           </x-menuitem>
         </x-menu>
       </x-contextmenu>

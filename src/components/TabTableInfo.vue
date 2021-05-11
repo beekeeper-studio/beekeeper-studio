@@ -19,7 +19,8 @@
           :key="pill.id"
           :is="pill.component"
           :table="table"
-          :primaryKey="primaryKey"
+          :primaryKeys="primaryKeys"
+          :properties="properties"
           :connection="connection"
           :active="pill.id === activePill && active"
           v-show="pill.id === activePill"
@@ -47,7 +48,8 @@ export default {
   components: { Statusbar },
   data() {
     return {
-      primaryKey: null,
+      primaryKeys: [],
+      properties: { description: "## Placeholder Description\n Some info goes here"},
       pills: [
         {
           id: 'info',
@@ -75,7 +77,7 @@ export default {
           component: TableTriggersVue
         }
       ],
-      activePill: 'info',
+      activePill: 'schema',
       tableSchema: null,
       tableIndexes: null,
       tableRelations: null,
@@ -86,7 +88,7 @@ export default {
   computed: {
   },
   async mounted() {
-    this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
+    this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
     const columnWidth = this.table.columns.length > 20 ? 125 : undefined
 
   }

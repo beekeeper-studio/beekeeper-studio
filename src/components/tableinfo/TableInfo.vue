@@ -3,7 +3,14 @@
     <div class="card-flat padding">
     <div class="form-wrap">
       <!-- Creation -->
+      <h1>{{table.name}}</h1>
+      <div class="table-description">
+          <div @click.prevent="editDescription" ref="descriptionDiv" v-show="!editingDescription" class="markdown-description" v-html="formattedDescription"></div>
+          <textarea v-show="editingDescription" :style="descriptionEditStyle" ref="descriptionTextarea" @blur="editingDescription = false" name="" id="" rows="10" v-model="properties.description" placeholder="No Description"></textarea>
+      </div>
       <div >
+        <div class="form-group inline input">
+        </div>
         <div class="form-group inline input">
           <label>Type:</label>
           <select>
@@ -72,10 +79,7 @@
 
       <!-- Comments/Syntax -->
       <div>
-        <div class="form-group inline input">
-          <label>Comments</label>
-          <textarea name="" id="" rows="2"></textarea>
-        </div>
+
         <div class="form-group inline input">
           <label>Create Syntax</label>
           <textarea name="" id="" rows="3"></textarea>
@@ -86,15 +90,45 @@
     </div>
   </div>
 </template>
+<style lang="scss">
+  .table-description {
+    border: 1px solid pink;
+    background-color:#0000001a;
+    padding: 10px;
+  }
+</style>
 <script>
+import marked from 'marked'
+import purify from 'dompurify'
 export default {
-  props: ["table", "connection", "active"],
+  props: ["table", "connection", "active", "properties"],
   data() {
     return {
-      tableInfo: null
+      tableInfo: null,
+      editingDescription: false,
+      descriptionEditHeight: null
+    }
+  },
+  methods: {
+    editDescription() {
+      this.editingDescription = true
+      this.descriptionEditHeight = this.$refs.descriptionDiv.clientHeight
+      this.$nextTick(() => {
+        if (this.$refs.descriptionTextarea)
+          this.$refs.descriptionTextarea.focus()
+      })
     }
   },
   computed: {
+    descriptionEditStyle() {
+      return {
+        height: `${this.descriptionEditHeight}px`
+      }
+    },
+    formattedDescription() {
+      if (!this.properties.description) return null
+      return purify.sanitize(marked(this.properties.description))
+    },
     tableColumns() {
       return [{ title: 'name', field: 'name'}, {title:'type', field: 'type'}]
     },

@@ -27,6 +27,14 @@ export interface TableOrView {
   columns?: TableColumn[];
 }
 
+export interface TableProperties {
+  description?: string
+  size: number
+  length: number
+  collation?: string
+  encoding?: string
+}
+
 export interface TableColumn {
   columnName: string
   dataType: string
@@ -40,14 +48,9 @@ export interface ExtendedTableColumn extends TableColumn {
   defaultValue: any
 }
 
-export interface TableColumnPlus extends TableColumn {
-  rawType: string
-  length: number
-  nullable: boolean
-  defaultValue: any
-  unsigned?: boolean
-  encoding?: string
-  keyType?: 'primary' | 'foreign'
+export interface PrimaryKeyColumn {
+  columnName: string,
+  position: number
 }
 
 export interface FilterOptions {

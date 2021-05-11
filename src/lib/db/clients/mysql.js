@@ -46,6 +46,7 @@ export default async function (server, database) {
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table) => getTableReferences(conn, table),
     getPrimaryKey: (db, table) => getPrimaryKey(conn, db, table),
+    getPrimaryKeys: (db, table) => getPrimaryKeys(conn, db, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
     applyChanges: (changes) => applyChanges(conn, changes),
@@ -161,7 +162,13 @@ order by r.routine_schema,
 export async function listTableColumns(conn, database, table) {
   const clause = table ? `AND table_name = ?` : ''
   const sql = `
-    SELECT table_name AS 'table_name', column_name AS 'column_name', column_type AS 'data_type'
+    SELECT
+      table_name AS 'table_name',
+      column_name AS 'column_name',
+      column_type AS 'data_type',
+      is_nullable AS 'is_nullable',
+      column_default as 'column_default',
+      ordinal_position as 'ordinal_position'
     FROM information_schema.columns
     WHERE table_schema = database()
     ${clause}
@@ -176,6 +183,9 @@ export async function listTableColumns(conn, database, table) {
     tableName: row.table_name,
     columnName: row.column_name,
     dataType: row.data_type,
+    ordinalPosition: Number(row.ordinal_position),
+    nullable: row.is_nullable === 'YES',
+    defaultValue: row.column_default
   }));
 }
 
@@ -275,15 +285,25 @@ export async function getTableReferences(conn, table) {
   return data.map((row) => row.referenced_table_name);
 }
 
-export async function getPrimaryKey(conn, database, table) {
-  logger().debug('finding foreign key for', database, table)
+export async function getPrimaryKeys(conn, database, table) {
+  logger().debug('finding primary keys for', database, table)
   const sql = `SHOW KEYS FROM ?? WHERE Key_name = 'PRIMARY'`
   const params = [
     table,
   ];
   const { data } = await driverExecuteQuery(conn, { query: sql, params })
-  if (data.length !== 1) return null
-  return data[0] ? data[0].Column_name : null
+
+  if (!data || data.length === 0) return []
+
+  return data.map((r) => ({
+    columnName: r.Column_name,
+    position: r.Seq_in_index
+  }))
+}
+
+export async function getPrimaryKey(conn, database, table) {
+  const res = await getPrimaryKeys(conn, database, table)
+  return res.length > 0 ? res[0].columnName : null
 }
 
 export async function getTableKeys(conn, database, table) {

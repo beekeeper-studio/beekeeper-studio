@@ -42,6 +42,7 @@ export default async function (server, database) {
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table) => getTableReferences(conn, table),
     getPrimaryKey: (db, table) => getPrimaryKey(conn, db, table),
+    getPrimaryKeys: (db, table) => getPrimaryKeys(conn, db, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
     applyChanges: (changes) => applyChanges(conn, changes),
@@ -257,17 +258,22 @@ export function listRoutines() {
   return Promise.resolve([]); // DOES NOT SUPPORT IT
 }
 
+function dataToColumns(data, tableName) {
+  return data.map((row) => ({
+    tableName,
+    columnName: row.name,
+    dataType: row.type,
+    nullable: row.notnull === 0,
+    defaultValue: row.dflt_value,
+    ordinalPosition: Number(row.cid)
+  }))
+}
+
 async function listTableColumnsSimple(conn, database, table) {
   const sql = `PRAGMA table_info('${table}')`;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
-
-  return data.map((row) => ({
-    tableName: table,
-    columnName: row.name,
-    dataType: row.type,
-  }));
-
+  return dataToColumns(data)
 }
 
 export async function listTableColumns(conn, database, table) {
@@ -283,13 +289,7 @@ export async function listTableColumns(conn, database, table) {
 
 
   const results = await driverExecuteQuery(conn, {query: sql, multiple: true});
-  const final = _.flatMap(results, (result, idx) => {
-    return result.data.map(row => ({
-      tableName: tables[idx].name,
-      columnName: row.name,
-      dataType: row.type
-    }))
-  })
+  const final = _.flatMap(results, (result, idx) => dataToColumns(result.data))
   return final
 }
 
@@ -328,13 +328,21 @@ export function getTableReferences() {
   return Promise.resolve([]); // TODO: not implemented yet
 }
 
-export async function getPrimaryKey(conn, database, table) {
-  log.debug('finding primary key for', database, table)
+export async function getPrimaryKeys(conn, database, table) {
   const sql = `pragma table_info('${escapeString(table)}')`
   const { data } = await driverExecuteQuery(conn, { query: sql})
   const found = data.filter(r => r.pk > 0)
-  if (found.length !== 1) return null
-  return found[0].name
+  if (!found || found.length === 0) return []
+  return found.map((r) => ({
+    columnName: r.name,
+    position: Number(r.pk)
+  }))
+
+}
+
+export async function getPrimaryKey(conn, database, table) {
+  const keys = await getPrimaryKeys(conn, database, table)
+  return keys.length > 0 ? keys[0].columnName : null
 }
 
 export async function getTableKeys(conn, database, table) {

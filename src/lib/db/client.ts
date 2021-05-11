@@ -3,7 +3,7 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn } from './models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn } from './models';
 
 const logger = createLogger('db');
 
@@ -30,7 +30,8 @@ export interface DatabaseClient {
   getRoutineCreateScript: (routine: string, type: string, schema?: string) => void,
   truncateAllTables: (db: string, schema?: string) => void,
   listMaterializedViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
-  getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string>,
+  getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string | null>,
+  getPrimaryKeys: (db: string, table: string, schema?: string) => Promise<PrimaryKeyColumn[]>,
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string): Promise<TableResult>,
   selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema?: string ): Promise<StreamResults>,
   wrapIdentifier: (value: string) => string
@@ -106,6 +107,7 @@ export class DBConnection {
   listSchemas = listSchemas.bind(null, this.server, this.database)
   getTableReferences = getTableReferences.bind(null, this.server, this.database)
   getPrimaryKey = getPrimaryKey.bind(null, this.server, this.database)
+  getPrimaryKeys = getPrimaryKeys.bind(null, this.server, this.database)
   getTableKeys = getTableKeys.bind(null, this.server, this.database)
   query = query.bind(null, this.server, this.database)
   executeQuery = executeQuery.bind(null, this.server, this.database)
@@ -291,6 +293,11 @@ function getTableReferences(server: IDbConnectionServer, database: IDbConnection
 function getPrimaryKey(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {
   checkIsConnected(server, database)
   return database.connection?.getPrimaryKey(database.database, table, schema)
+}
+
+function getPrimaryKeys(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema?: string) {
+  checkIsConnected(server, database)
+  return database.connection?.getPrimaryKeys(database.database, table, schema)
 }
 
 function getTableKeys(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {

@@ -48,6 +48,7 @@ export default async function (server, database) {
     getTableReferences: (table) => getTableReferences(conn, table),
     getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema) => getPrimaryKey(conn, db, table, schema),
+    getPrimaryKeys: (db, table, schema) => getPrimaryKeys(conn, db, table, schema),
     applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
@@ -402,7 +403,14 @@ export async function listRoutines(conn, filter) {
 export async function listTableColumns(conn, database, table) {
   const clause = table ? `WHERE table_name = ${wrapValue(table)}` : ""
   const sql = `
-    SELECT table_schema, table_name, column_name, data_type,
+    SELECT 
+      table_schema as "table_schema",
+      table_name as "table_name",
+      column_name as "column_name",
+      data_type as "data_type",
+      ordinal_position as "ordinal_position",
+      column_default as "column_default",
+      is_nullable as "is_nullable",
       CASE
         WHEN character_maximum_length is not null AND data_type != 'text'
           THEN character_maximum_length
@@ -422,6 +430,9 @@ export async function listTableColumns(conn, database, table) {
     tableName: row.table_name,
     columnName: row.column_name,
     dataType: row.length ? `${row.data_type}(${row.length})` : row.data_type,
+    ordinalPosition: Number(row.ordinal_position),
+    nullable: row.is_nullable === 'YES',
+    defaultValue: row.column_default
   }));
 }
 
@@ -531,17 +542,26 @@ export async function getTableKeys(conn, database, table, schema) {
   return result
 }
 
-export async function getPrimaryKey(conn, database, table, schema) {
+export async function getPrimaryKeys(conn, database, table, schema) {
   logger().debug('finding foreign key for', database, table)
   const sql = `
-  SELECT COLUMN_NAME
+  SELECT COLUMN_NAME, ORDINAL_POSITION
   FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
   WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + QUOTENAME(CONSTRAINT_NAME)), 'IsPrimaryKey') = 1
   AND TABLE_NAME = ${wrapValue(table)} AND TABLE_SCHEMA = ${wrapValue(schema)}
   `
   const { data } = await driverExecuteQuery(conn, { query: sql})
-  logger().debug('primary key results:', data)
-  return data.recordset && data.recordset[0] && data.recordset.length === 1 ? data.recordset[0].COLUMN_NAME : null
+  if (!data.recordset || data.recordset.length === 0) return []
+
+  return data.recordset.map((r) => ({
+    columnName: r.COLUMN_NAME,
+    position: r.ORDINAL_POSITION
+  }))
+}
+
+export async function getPrimaryKey(conn, database, table, schema) {
+  const res = await getPrimaryKeys(conn, database, table, schema)
+  return res.length > 0 ? res[0].columnName : null
 }
 
 export async function applyChanges(conn, changes) {

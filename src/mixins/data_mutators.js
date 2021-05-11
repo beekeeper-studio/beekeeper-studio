@@ -1,27 +1,12 @@
 import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
+import Purify from 'dompurify'
 export const NULL = '(NULL)'
 
 
 function sanitizeHtml(value) {
-  if (value) {
-    var entityMap = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;',
-      '/': '&#x2F;',
-      '`': '&#x60;',
-      '=': '&#x3D;'
-    };
-
-    return String(value).replace(/[&<>"'`=/]/g, function (s) {
-      return entityMap[s];
-    });
-  } else {
-    return value;
-  }
+  if (!value) return null
+  return Purify.sanitize(value)
 }
 
 
