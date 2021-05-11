@@ -301,7 +301,7 @@
 }
   
 // Table Info
-.table-structure {    
+.table-properties {    
   display: flex;
   flex-direction: column;
   flex-grow: 1;
@@ -312,43 +312,51 @@
   .form-wrap {
     max-width: 520px;
   }
-  .table-structure-header {
+  .table-properties-header {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: $gutter-h 0;
-    padding-top: $gutter-w;
+    padding: $gutter-w 0;
     .nav-pills {
       background: rgba($theme-base, 0.08);
       border-radius: $gutter-w;
+      padding: 2px;
     }
     .nav-pill {
       font-size: 0.8rem;
-      line-height: 1.5rem;
+      line-height: 1.4rem;
       font-weight: bold;
       padding: 0 $gutter-w;
       border-radius: $gutter-w;
+      color: $text;
       transition: all 0.15s ease-in-out;
       &:hover {
-        background: rgba($theme-base, 0.05);
-        // color: $brand-primary;
+        color: $text-dark;
       }
       &.active, &.active:hover {
-        background: $brand-primary;
+        background: white;
         color: black;
-        @extend .card-shadow;
+        // @extend .card-shadow;
       }
     }
   }
-
-  // Table Info {
-  .table-info {
+  .table-properties-content {
+    display: flex;
+    height: 100%;
     overflow: hidden;
     overflow-y: auto;
+  }
+
+  // Table Info 
+  // --------------------------------
+  .table-info {
+    width: 100%;
     padding: $gutter-w * 2;
-    padding-top: $gutter-w;
+    padding-top: 0;
     .form-group.inline {
-      // line-height: $input-height;
+      > * {
+        padding-bottom: 0;
+      }
       label {
         color: $text-light;
         min-width: 110px;
@@ -356,7 +364,6 @@
       select, textarea {
         min-width: 200px;
         width: 100%!important;
-        margin-bottom: $gutter-w;
       }
       select {
         max-width: 220px;
