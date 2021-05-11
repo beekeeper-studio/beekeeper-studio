@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   background: $statusbar-bg;
-  color: rgba($statusbar-text, 0.57);
+  color: rgba($statusbar-text, 0.87);
   min-height: $statusbar-height;
   height: $statusbar-height;
   line-height: $statusbar-height *0.8;
@@ -17,30 +17,8 @@
     border-radius: 1.8rem;
   }
   .btn {
-    color: $statusbar-text;
-    height: $statusbar-height * 0.8;
-    line-height: $statusbar-height * 0.8;
-    min-width: 0;
-    margin-left: 0.15rem;
-    margin-right: 0.15rem;
-    padding-left: 0.7rem;
-    padding-right: 0.7rem;
-    border-radius: $btn-border-radius-small;
-    transition: background 0.15s ease-in-out;
-    &:hover {
-      background: rgba($statusbar-text, 0.05);
-    }
-    &.btn-primary {
-      background: rgba($theme-base, 0.15);
-      &:hover {
-        background: rgba($theme-base, 0.2);
-      }
-    }
     &.error, &.error:hover {
       pointer-events: all !important;
-    }
-    .material-icons {
-      font-size: 16px;
     }
   }
   a {
@@ -52,39 +30,12 @@
       margin-right: $gutter-h * 0.5;
     }
   }
-
-  // Connection Status
-  // ---------------------------
-  .connection-button,
-  .connection-button > .btn {
-    height: $statusbar-height;
-    line-height: $statusbar-height;
-    margin: -$gutter-h;
-    padding: 0 $gutter-h;
-    flex: 1 1 100%;
-    justify-content: flex-start;
-    overflow: hidden;
-  }
-  .connection-name {
-    font-size: 0.85rem;
-  }
-  .connection-button {
-    position: relative;
-    .material-icons {
-      font-size: 20px;
-      min-width: 32px;
-      text-align: center;
-    }
-    > .btn {
-      text-align: left;
-      border-radius: 0;
-      --trigger-effect: none;
-    }
-    .badge {
-      min-width: fit-content;
-    }
-    x-menu {
-      width: 220px;
+  &.tabulator-footer {
+    .tabulator-page {
+      color: $statusbar-text;
+      &.active {
+        background: rgba($statusbar-text, 0.15);
+      }
     }
   }
 
@@ -94,27 +45,55 @@
     padding: 0 $gutter-h;
   }
 
+
   // Row Actions
   // -------------------------
   .statusbar-actions {
-    margin-right: auto;
-    x-buttons {
-      border-radius: $btn-border-radius-small;
-      overflow: hidden;
-      margin-top: -1px;
-      .btn {
-        border-radius: 0;
+    margin-right: -$gutter-h * 0.5;
+    .btn {
+      &:hover, &:hover[expanded] {
+        background: rgba($statusbar-text, 0.15);
       }
     }
-    .btn {
-      margin-left: 0.35rem;
-      margin-top: -1px;
-      --ripple-background: none;
-      &.btn-flat,
-      &.btn-link {
-        &:hover {
-          background: rgba($theme-base, 0.1);
-        }
+  }
+  .connection-button > .btn {
+    &:hover {
+      background: rgba(white, 0.1);
+    }
+  }
+  .connection-button > .btn, 
+  .statusbar-actions .btn {
+    box-shadow: none!important;
+    background: transparent;
+    color: $statusbar-text;
+    height: $statusbar-height * 0.8;
+    line-height: $statusbar-height * 0.8;
+    min-width: 0;
+    margin: 0 0.15rem;
+    margin-top: -1px;
+    padding: 0 0.35rem;
+    --ripple-background: none;
+    border-radius: $btn-border-radius-small;
+    transition: background 0.15s ease-in-out;
+    .material-icons {
+      width: 16px;
+    }
+  }
+  
+  .download-results,
+  .pending-changes {
+    background: rgba($statusbar-text, 0.15);
+    box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+    > .btn {
+      border-radius: 0!important;
+      &:hover, &:hover[expanded] {
+        background: rgba($statusbar-text, 0.08);
+      }
+      .material-icons {
+        color: $statusbar-text;
+        margin-right: $gutter-h * 0.5;
       }
     }
   }
@@ -124,8 +103,7 @@
     border-radius: $btn-border-radius-small;
     overflow: hidden;
     margin-top: -1px;
-    .btn {
-      color: $text-dark;
+    > .btn {
       margin: 0;
       border-radius: 0;
       &[menu] {
@@ -140,27 +118,17 @@
     }
   }
 
-  // Actions
-  .actions-btn {
-    padding: 0 0.2rem 0 0.35rem;
-    background: transparent;
-    box-shadow: none!important;
-    .material-icons {
-      width: 16px;
-    }
-  }
-
   // Pending Changes
   .pending-changes {
     margin-left: 0.1rem;
-    .btn {
-      // padding-left: 0.5rem;
+    > .btn {
       margin: 0;
     }
     .badge {
       background: transparent;
-      // box-shadow: inset 0 0 0 1px rgba($theme-base, 0.25);
       padding: 0;
+      font-size: 14px;
+      min-width: 10px;
       line-height: 16px;
       margin-left: 0;
     }
@@ -202,26 +170,20 @@
       font-size: 16px;
       line-height: $statusbar-height;
       margin-right: 0.25rem;
-      opacity: 0.65;
+      // opacity: 0.65;
       width: 16px;
     }
     &.error {
-      color: $text-dark;
+      color: $statusbar-text;
       font-size: 0.75rem;
       padding-right: 2rem;
       .material-icons {
-        color: $theme-base;
+        color: $statusbar-text;
       }
       > span {
         text-overflow: ellipsis;
         overflow: hidden;
       }
-    }
-    &.hoverable:hover, 
-    &.hoverable:focus {
-      color: $text-dark;
-      transition: color 0.15s ease-in-out;
-      outline: none;
     }
   }
   .row-counts {
@@ -229,8 +191,96 @@
       margin-left: $gutter-h * 0.5;
     }
   }
-
   .statusbar-info {
     min-width: 33.3333%;
+  }
+
+  // Connection Status
+  // ---------------------------
+  .connection-button,
+  .connection-button > .btn {
+    height: $statusbar-height;
+    line-height: $statusbar-height;
+    margin: -$gutter-h;
+    padding: 0 $gutter-h;
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+  .connection-name {
+    font-size: 0.85rem;
+  }
+  .connection-button {
+    position: relative;
+    .material-icons {
+      font-size: 20px;
+      min-width: 32px;
+      text-align: center;
+    }
+    > .btn {
+      text-align: left;
+      border-radius: 0;
+      --trigger-effect: none;
+    }
+    x-menu {
+      width: 220px;
+    }
+  }
+  .badge {
+    min-width: fit-content;
+    background: rgba($statusbar-text, 0.15);
+    color: $statusbar-text;
+  }
+
+  // Default Statusbar -- Invert text color
+  &.default {
+    color: $text;
+    .statusbar-item {
+      &.error {
+        color: $statusbar-text-default;
+        .material-icons {
+          color: $statusbar-text-default;
+        }
+      }
+    }
+    .statusbar-actions .btn,
+    .connection-button > .btn {
+      color: $statusbar-text-default;
+    }
+    .connection-type {
+      color: $statusbar-text;
+    }
+    .badge {
+      background: rgba($statusbar-text-default, 0.15);
+      color: $statusbar-text-default;
+    }
+    .select-wrap {
+      background: rgba($statusbar-text-default, 0.1);
+      &:hover {
+        background: rgba($statusbar-text-default, 0.2);
+      }
+    }
+    .download-results,
+    .pending-changes {
+      background: rgba($statusbar-text-default, 0.15);
+      box-shadow: inset 0 0 0 1px rgba($statusbar-text-default, 0.1);
+      > .btn {
+        border-radius: 0!important;
+        &:hover, &:hover[expanded] {
+          background: rgba($statusbar-text-default, 0.1);
+        }
+        .material-icons {
+          color: $statusbar-text-default;
+        }
+      }
+    }
+    &.tabulator-footer {
+      .tabulator-page {
+        color: $statusbar-text-default;
+        &.active {
+          background: rgba($statusbar-text-default, 0.2);
+        }
+      }
+    }
   }
 }

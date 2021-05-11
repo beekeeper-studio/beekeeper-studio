@@ -388,8 +388,8 @@ $cell-radius:            2px;
     }
     &:disabled {
       opacity: 0.35;
+      cursor: default;
       &:hover, &:focus {
-        color: $text;
         background: transparent;
       }
     }

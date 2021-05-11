@@ -1,9 +1,11 @@
 #sidebar {
   flex: 0 1 100%;
   max-height: 100%;
+  min-width: 300px;
   overflow: hidden;
   &.hide {
     flex-basis: 44px!important;
+    min-width: 44px!important;
   }
   .sidebar-wrap {
     flex: 1 1 100%;

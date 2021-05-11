@@ -30,27 +30,27 @@ $color-defaults: (
 .statusbar {
   @each $key, $val in $color-defaults {
     &.#{$key} {
-      background-color: rgba(nth($val, 1), 0.4);
+      background-color: rgba(nth($val, 1), 1);
     }
   }
   &.tabulator-footer {
     @each $key, $val in $color-defaults {
       &.#{$key} {
-        background-color: rgba(nth($val, 1), 0.35);
+        background-color: rgba(nth($val, 1), 0.85);
       }
     }
   }
   &.query-meta {
     @each $key, $val in $color-defaults {
       &.#{$key} {
-        background-color: rgba(nth($val, 1), 0.3);
+        background-color: rgba(nth($val, 1), 0.85);
       }
     }
   }
   &.editing, &.failure {
     @each $key, $val in $color-defaults {
       &.#{$key} {
-        background-color: rgba(nth($val, 1), 0.25);
+        background-color: rgba(nth($val, 1), 0.8);
       }
     }
   }
