@@ -108,7 +108,10 @@ export interface TableChanges {
 
 
 export interface ColumnChange {
+  table: string
+  schema?: string
   changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue'
+  columnName: string
   newValue: string | boolean
 }
 

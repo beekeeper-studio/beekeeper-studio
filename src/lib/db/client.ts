@@ -24,7 +24,7 @@ export interface DatabaseClient {
   executeQuery: (queryText: string) => void,
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
-  alterTableColumns: (changes: ColumnChange[], table: string, schema?: string) => Promise<void>,
+  alterTableColumns: (changes: ColumnChange[]) => Promise<void>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties>,
   getTableCreateScript: (table: string, schema?: string) => Promise<string>,
@@ -118,6 +118,7 @@ export class DBConnection {
   selectTop = selectTop.bind(null, this.server, this.database)
   selectTopStream = selectTopStream.bind(null, this.server, this.database)
   applyChanges = applyChanges.bind(null, this.server, this.database)
+  alterTableColumns = alterTableColumns.bind(null, this.server, this.database)
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
   getTableCreateScript = getTableCreateScript.bind(null, this.server, this.database)
   getTableSelectScript = getTableSelectScript.bind(null, this.server, this.database)
@@ -322,6 +323,13 @@ function applyChanges(server: IDbConnectionServer, database: IDbConnectionDataba
   checkIsConnected(server, database)
   return database.connection?.applyChanges(changes)
 }
+
+
+function alterTableColumns(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: ColumnChange[]) {
+  checkIsConnected(server, database)
+  return database.connection?.alterTableColumns(changes)
+}
+
 
 function executeQuery(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string) {
   checkIsConnected(server , database);

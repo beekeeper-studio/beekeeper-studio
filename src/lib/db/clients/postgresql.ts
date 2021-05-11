@@ -168,7 +168,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getRoutineCreateScript: (routine, type, schema = defaultSchema) => getRoutineCreateScript(conn, routine, type, schema),
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
     getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
-    alterTableColumns: (changes: ColumnChange[], table: string, schema?: string) => alterTableColumns(conn, changes, table, schema)
+    alterTableColumns: (changes: ColumnChange[]) => alterTableColumns(conn, changes)
 
   };
 }
@@ -570,13 +570,13 @@ export async function listSchemas(conn: Conn, filter?: SchemaFilterOptions) {
   return data.rows.map((row) => row.schema_name);
 }
 
-function wrapTable(schema?: string, table: string) {
+function wrapTable(table: string, schema?: string) {
   if (!schema) return wrapIdentifier(table)
   return `${wrapIdentifier(schema)}.${wrapIdentifier(table)}`
 }
 
 export async function getTableProperties(conn: HasPool, table: string, schema: string) {
-  const identifier = wrapTable(schema, table)
+  const identifier = wrapTable(table, schema)
   const sql = `
     SELECT 
       pg_indexes_size('${identifier}') as index_size,
@@ -740,21 +740,30 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
   return results
 }
 
-export async function alterTableColumns(conn: HasPool, changes: ColumnChange[], table: string, schema: string) {
+export async function alterTableColumns(conn: HasPool, changes: ColumnChange[]) {
 
-    const queries = changes.map((change) => {
-      const identifier = wrapTable(change.schema, change.table)
-      switch (change.changeType) {
-        case 'columnName':
-          return `ALTER TABLE ${identifier} RENAME COLUMN ${wrapIdentifier(change.oldValue.toString())} TO ${wrapIdentifier(change.newValue.toString())}`
-          break;
-        case 'dataType':
-        return `ALTER TABLE ${identifier}`
-          break;
-        default:
-          break;
-      }
-    })
+  const queries = changes.map((change) => {
+    const identifier = wrapTable(change.table, change.schema)
+    const column = wrapIdentifier(change.columnName)
+    const direction = change.newValue === true ? 'SET' : 'DROP'
+    switch (change.changeType) {
+      case 'columnName':
+        return `ALTER TABLE ${identifier} RENAME COLUMN ${wrapIdentifier(change.columnName)} TO ${wrapIdentifier(change.newValue.toString())}`
+        break;
+      case 'dataType':
+      return `ALTER TABLE ${identifier} ALTER COLUMN ${column} TYPE ${escapeLiteral(change.newValue.toString())}`
+        break;
+      case 'defaultValue':
+        return `ALTER TABLE ${identifier} ALTER COLUMN ${column} SET DEFAULT '${escapeString(change.newValue.toString())}'`
+      case 'nullable':
+        return `ALTER TABLE ${identifier} ALTER COLUMN ${column} ${direction} NOT NULL`
+        break;
+      default:
+        break;
+    }
+  })
+  
+  const results = await driverExecuteQuery(conn, { query: queries.join(";")})
 }
 
 async function insertRows(cli: any, inserts: TableInsert[]) {
@@ -993,6 +1002,10 @@ export function wrapIdentifier(value: string): string {
 
 function escapeString(value: string) {
   return value.replace("'", "''")
+}
+
+function escapeLiteral(value: string) {
+  return value.replace(';', '')
 }
 
 
