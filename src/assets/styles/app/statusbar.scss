@@ -82,14 +82,16 @@
   
   .download-results,
   .pending-changes {
-    background: rgba($statusbar-text, 0.15);
-    box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.1);
+    background: rgba($statusbar-text, 0.18);
+    // box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.1);
     border-radius: 6px;
     overflow: hidden;
     > .btn {
+      background: transparent;
+      color: inherit;
       border-radius: 0!important;
       &:hover, &:hover[expanded] {
-        background: rgba($statusbar-text, 0.08);
+        background: rgba($statusbar-text, 0.05);
       }
       .material-icons {
         color: $statusbar-text;
@@ -107,14 +109,12 @@
       margin: 0;
       border-radius: 0;
       &[menu] {
-        .material-icons {
-          font-size: 16px;
-        }
+        border-left: 1px solid rgba(black, 0.35);
       }
     }
     .material-icons {
       color: $text-dark;
-      font-size: 18px;
+      font-size: 20px;
     }
   }
 
@@ -145,16 +145,34 @@
     margin-right: $gutter-h;
   }
   .select-wrap {
+    background: rgba($statusbar-text, 0.15);
     box-shadow: none;
-    background: rgba($statusbar-text, 0.1);
-    &:hover {
-      background: rgba($statusbar-text, 0.15);
+    &:after {
+      width: 0; 
+      height: 0; 
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 4px solid $statusbar-text;
+      position: absolute;
+      top: 40%;
+      right: 7px;
+      content: "";
+      z-index: 98;
     }
-  }
-  select {
-    color: $statusbar-text;
-    height: $statusbar-height * 0.8;
-    line-height: $statusbar-height * 0.8;
+    &:hover {
+      background: rgba($statusbar-text, 0.2);
+    }
+    select {
+      color: $statusbar-text;
+      height: $statusbar-height * 0.8;
+      line-height: $statusbar-height * 0.8;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      option {
+        color: $text;
+      }
+    }
   }
 
   // Query Status
@@ -263,7 +281,8 @@
     .download-results,
     .pending-changes {
       background: rgba($statusbar-text-default, 0.15);
-      box-shadow: inset 0 0 0 1px rgba($statusbar-text-default, 0.1);
+      // box-shadow: inset 0 0 0 1px rgba($statusbar-text-default, 0.1);
+      box-shadow: none;
       > .btn {
         border-radius: 0!important;
         &:hover, &:hover[expanded] {

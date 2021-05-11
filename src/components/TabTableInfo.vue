@@ -1,6 +1,6 @@
 <template>
-  <div class="table-structure">
-      <div class="table-structure-header">
+  <div class="table-properties">
+      <div class="table-properties-header">
         <div class="nav-pills">
           <a 
             v-for="(pill) in pills"
@@ -13,7 +13,7 @@
           </a>
         </div>
       </div>
-      <div ref="tableInfo" class="table-info">
+      <div ref="tableInfo" class="table-properties-content">
         <component
           v-for="(pill) in pills"
           :key="pill.id"
@@ -26,7 +26,7 @@
           v-show="pill.id === activePill"
         ></component>
       </div>
-    <statusbar class="statusbar"></statusbar>
+    <statusbar class="tabulator-footer"></statusbar>
   </div>
 </template>
 

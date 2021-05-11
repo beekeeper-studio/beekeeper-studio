@@ -22,8 +22,9 @@
       </span>
     </div>
     <div class="tab-content">
-      <div class="layout-center expand">
-        <shortcut-hints></shortcut-hints>
+      <div class="empty flex-col  expand">
+        <div class="expand layout-center"><shortcut-hints></shortcut-hints></div>
+        <statusbar class="tabulator-footer"></statusbar>
       </div>
       <div
         v-for="(tab, idx) in tabItems"
@@ -36,6 +37,7 @@
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
         <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
         <TableInfo v-if="tab.type === 'table-structure'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :table="tab.table"></TableInfo>
+        
       </div>
     </div>
     <!-- TODO - this should really be in TableTable -->
@@ -52,6 +54,7 @@
   import sqlFormatter from 'sql-formatter';
   import {FavoriteQuery} from '../common/appdb/models/favorite_query'
   import QueryEditor from './TabQueryEditor'
+  import Statusbar from './common/StatusBar'
   import CoreTabHeader from './CoreTabHeader'
   import { uuidv4 } from '@/lib/uuid'
   import TableTable from './tableview/TableTable'
@@ -64,7 +67,7 @@
 
   export default {
     props: [ 'connection' ],
-    components: { QueryEditor, CoreTabHeader, TableTable, TableInfo, Draggable, ShortcutHints },
+    components: { Statusbar, QueryEditor, CoreTabHeader, TableTable, TableInfo, Draggable, ShortcutHints },
     data() {
       return {
         tabItems: [],
