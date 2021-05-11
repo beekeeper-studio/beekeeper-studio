@@ -244,11 +244,11 @@
     x-menu {
       width: 220px;
     }
-  }
-  .badge {
-    min-width: fit-content;
-    background: rgba($statusbar-text, 0.15);
-    color: $statusbar-text;
+    .badge {
+      min-width: fit-content;
+      background: rgba($statusbar-text, 0.15);
+      color: $statusbar-text;
+    }
   }
 
   // Default Statusbar -- Invert text color
