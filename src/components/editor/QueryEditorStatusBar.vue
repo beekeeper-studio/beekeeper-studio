@@ -28,10 +28,10 @@
       <span class="empty">No Data</span>
     </template>
     <x-buttons class="download-results" v-if="result">
-      <x-button class="btn btn-primary btn-small" v-tooltip="'Download Results (CSV)'" @click.prevent="download('csv')">
+      <x-button class="btn btn-small" v-tooltip="'Download Results (CSV)'" @click.prevent="download('csv')">
       Download
       </x-button>
-      <x-button class="btn btn-primary btn-small" menu>
+      <x-button class="btn btn-small" menu>
       <i class="material-icons">arrow_drop_down</i>
       <x-menu>
         <x-menuitem @click.prevent="download('csv')">
