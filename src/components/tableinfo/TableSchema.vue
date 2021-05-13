@@ -5,7 +5,7 @@
         <h2>Columns</h2>
       </div>
       <div class="table-actions">
-        <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Row</a>
+        <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Column</a>
       </div>
     </div>
     <div class="card-flat">

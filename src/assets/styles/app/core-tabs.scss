@@ -307,6 +307,15 @@
   flex-grow: 1;
   padding: 0;
   overflow: hidden;
+
+  .edit-success {
+    background-color: green;
+  }
+
+  .edit-error {
+    background-color: red;
+  }
+
   .table-properties-wrap {
     height: 100%;
     padding: 0 1.5rem 3rem;

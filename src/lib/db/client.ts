@@ -37,6 +37,7 @@ export interface DatabaseClient {
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string): Promise<TableResult>,
   selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema?: string ): Promise<StreamResults>,
   wrapIdentifier: (value: string) => string
+  setTableDescription: (table: string, description: string, schema?: string) => Promise<string>
 }
 
 export type IDbClients = keyof typeof clients
@@ -128,6 +129,7 @@ export class DBConnection {
   getViewCreateScript = getViewCreateScript.bind(null, this.server, this.database)
   getRoutineCreateScript = getRoutineCreateScript.bind(null, this.server, this.database)
   truncateAllTables = truncateAllTables.bind(null, this.server, this.database)
+  setTableDescription = setTableDescription.bind(null, this.server, this.database)
   connectionType: Nullable<IDbClients> = null
   async currentDatabase() {
     return this.database.database
@@ -404,6 +406,10 @@ function getRoutineCreateScript(server: IDbConnectionServer, database: IDbConnec
 
 function truncateAllTables(_server: IDbConnectionServer, database: IDbConnectionDatabase, schema: string) {
   return database.connection?.truncateAllTables(database.database, schema);
+}
+
+function setTableDescription(_server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, description: string, schema?: string) {
+  return database.connection?.setTableDescription(table, description, schema)
 }
 
 async function getTableColumnNames(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {

@@ -5,7 +5,7 @@
         <h2>Triggers</h2>
       </div>
       <div class="table-actions">
-        <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Row</a>
+        <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Trigger</a>
       </div>
     </div>
     <div class="card-flat">

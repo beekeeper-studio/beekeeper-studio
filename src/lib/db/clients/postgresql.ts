@@ -168,7 +168,9 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getRoutineCreateScript: (routine, type, schema = defaultSchema) => getRoutineCreateScript(conn, routine, type, schema),
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
     getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
-    alterTableColumns: (changes: ColumnChange[]) => alterTableColumns(conn, changes)
+    alterTableColumns: (changes: ColumnChange[]) => alterTableColumns(conn, changes),
+    setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema)
+
 
   };
 }
@@ -764,6 +766,16 @@ export async function alterTableColumns(conn: HasPool, changes: ColumnChange[]) 
   })
   
   await driverExecuteQuery(conn, { query: queries.join(";")})
+}
+
+export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {
+  console.log("updating description", description)
+  const identifier = wrapTable(table, schema)
+  const comment  = escapeString(description)
+  const sql = `COMMENT ON TABLE ${identifier} IS '${comment}'`
+  await driverExecuteSingle(conn, { query: sql})
+  const result = await getTableProperties(conn, table, schema)
+  return result.description
 }
 
 async function insertRows(cli: any, inserts: TableInsert[]) {
