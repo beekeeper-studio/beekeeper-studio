@@ -48,22 +48,13 @@
 
   // Row Actions
   // -------------------------
-  .statusbar-actions {
-    margin-right: -$gutter-h * 0.5;
-    .btn {
-      &:hover, &:hover[expanded] {
-        background: rgba($statusbar-text, 0.15);
-      }
-      .material-icons {
-        font-size: 16px;
-      }
-    }
-  }
   .connection-button > .btn {
     &:hover {
       background: rgba(white, 0.1);
     }
   }
+
+
   .connection-button > .btn, 
   .statusbar-actions .btn {
     box-shadow: none!important;
@@ -80,6 +71,25 @@
     transition: background 0.15s ease-in-out;
     .material-icons {
       width: 16px;
+    }
+  }
+
+  .statusbar-actions {
+    margin-right: -$gutter-h * 0.5;
+    .btn {
+      padding: 0 0.6rem;
+      &:hover, &:hover[expanded] {
+        background: rgba($statusbar-text, 0.15);
+      }
+      .material-icons {
+        font-size: 16px;
+      }
+      &.actions-btn {
+        padding: 0 0.35rem;
+        .material-icons {
+          width: 13px;
+        }
+      }
     }
   }
   
@@ -134,6 +144,7 @@
       min-width: 10px;
       line-height: 16px;
       margin-left: 0;
+      text-align: left;
       color: $statusbar-text-default;
     }
     .material-icons {

@@ -1,23 +1,36 @@
 <template>
   <div class="table-properties">
-      <div v-for="(pill) in pills" :key="pill.id" ref="tableInfo" class="table-properties-content">
-        <component
-          :is="pill.component"
-          :table="table"
-          :primaryKeys="primaryKeys"
-          :properties="properties"
-          :connection="connection"
-          :active="active"
-          
-        ></component>
+    <div class="table-properties-wrap">
+      <div class="center-wrap">
+        <div v-for="(pill) in pills" :key="pill.id" ref="tableInfo" class="table-properties-content">
+          <component
+            :is="pill.component"
+            :table="table"
+            :primaryKeys="primaryKeys"
+            :properties="properties"
+            :connection="connection"
+            :active="active"
+            
+          ></component>
+        </div>
       </div>
+    </div>
+    <span class="expand"></span>
     <statusbar class="tabulator-footer">
-      <div class="properties-content" v-if="properties">
-        <span :title="`Table Size ${properties.size}`"><i class="material-icons">table</i> {{properties.size}}</span>
-        <span :title="`Index Size ${properties.indexSize}`"><i class="material-icons">find_in_page</i> {{properties.indexSize}}</span>
-        <span :title="`${properties.length} Records`"><i class="material-icons">list_alt</i>~{{properties.length}}</span>
+      <div class="expand" v-if="properties">
+        <span class="statusbar-item" :title="`Table Size ${properties.size}`">
+          <i class="material-icons">table</i>
+          <span>{{properties.size}}</span>
+        </span>
+        <span class="statusbar-item" :title="`Index Size ${properties.indexSize}`">
+          <i class="material-icons">find_in_page</i>
+          <span>{{properties.indexSize}}</span>
+        </span>
+        <span class="statusbar-item" :title="`${properties.length} Records`">
+          <i class="material-icons">list_alt</i>
+          <span>~{{properties.length}}</span>
+        </span>
       </div>
-
     </statusbar>
   </div>
 </template>

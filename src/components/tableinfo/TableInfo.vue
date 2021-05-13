@@ -1,23 +1,15 @@
 <template>
   <div class="table-info">
-    <div class="small-wrap">
-
-      <!-- Table Info Header -->
-      <div class="table-info-header">
-        <h1 class="table-name">{{table.name}}</h1>
-        <div class="table-description-wrap">
-          <div class="table-description" @click.prevent="editDescription" v-show="!editingDescription">
-            <div ref="descriptionDiv" class="markdown-description" v-html="formattedDescription || 'No Description'"></div>
-            <i class="material-icons">edit</i>
-          </div>
-          <div class="table-description-edit" v-show="editingDescription">
-            <textarea  :style="descriptionEditStyle" ref="descriptionTextarea" @blur="editingDescription = false" name="" id="" rows="10" v-model="properties.description" placeholder="Description"></textarea>
-            <span>Markdown</span>
-          </div>
-        </div>
+    <h1 class="table-name">{{table.name}}</h1>
+    <div class="table-description-wrap">
+      <div class="table-description" @click.prevent="editDescription" v-show="!editingDescription">
+        <div ref="descriptionDiv" class="markdown-description" v-html="formattedDescription || 'No Description'"></div>
+        <i class="material-icons">edit</i>
       </div>
-  
-  
+      <div class="table-description-edit" v-show="editingDescription">
+        <textarea  :style="descriptionEditStyle" ref="descriptionTextarea" @blur="editingDescription = false" name="" id="" rows="10" v-model="properties.description" placeholder="Description"></textarea>
+        <span>Markdown</span>
+      </div>
     </div>
   </div>
 </template>

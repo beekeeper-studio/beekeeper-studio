@@ -305,65 +305,49 @@
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  overflow-y: scroll;
-  .table-properties-header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: $gutter-w 0;
-    .nav-pills {
-      background: rgba($theme-base, 0.08);
-      border-radius: $gutter-w;
-      padding: 2px;
-    }
-    .nav-pill {
-      font-size: 0.8rem;
-      line-height: 1.4rem;
-      font-weight: bold;
-      padding: 0 $gutter-w;
-      border-radius: $gutter-w;
-      color: $text;
-      transition: all 0.15s ease-in-out;
-      &:hover {
-        color: $text-dark;
-      }
-      &.active, &.active:hover {
-        background: white;
-        color: black;
-        // @extend .card-shadow;
-      }
-    }
+  padding: 0;
+  overflow: hidden;
+  .table-properties-wrap {
+    height: 100%;
+    padding: 0 1.5rem 3rem;
+    overflow: hidden;
+    overflow-y: auto;
   }
   .table-properties-content {
     display: flex;
-    margin: 30px;
-    padding-top: 20px;
-    padding-bottom: 20px;
-    border: solid 1px pink;
-    margin-bottom: 5px;
-    margin-top: 5px;
-    .table-info-table {
+    flex-direction: column;
+    margin-bottom: $gutter-w;
+    .card-flat {
       width: 100%;
+      max-height: 600px;
+      // padding: $gutter-h 0;
+      padding: 0;
+      overflow: auto;
+    }
+  }
+  .table-subheader {
+    display: flex;
+    align-items: center;
+    padding: 0 $gutter-h;
+    margin-top: $gutter-w * 1.5;
+    margin-bottom: $gutter-w;
+    .table-title {
+      display: flex;
+      flex-grow: 1;
+    }
+    h2 {
+      margin: 0;
     }
   }
 
   // Table Info 
   // --------------------------------
-  .table-info {
-    width: 100%;
-  }
-  .small-wrap {
-    padding: $gutter-w * 2;
-    padding-top: 0;
-  }
-  hr {
-    margin: ($gutter-w * 1.5) 0;
-  }
   // Table Info Header
-  .table-info-header {
+  .table-info {
+    padding-top: $gutter-w * 4;
     .table-name {
       padding: 0 $gutter-w;
-      margin: 0;
+      margin: 0 -$gutter-h;
       margin-bottom: $gutter-h;
     }
     .table-description {

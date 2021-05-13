@@ -1,7 +1,16 @@
 <template>
   <div class="table-info-triggers">
-    <h2>Triggers</h2>
-    <div class="table-triggers" ref="tabulator">
+    <div class="table-subheader">
+      <div class="table-title">
+        <h2>Triggers</h2>
+      </div>
+      <div class="table-actions">
+        <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Row</a>
+      </div>
+    </div>
+    <div class="card-flat">
+      <div class="table-triggers" ref="tabulator">
+      </div>
     </div>
   </div>
 </template>

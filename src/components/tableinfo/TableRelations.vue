@@ -1,10 +1,16 @@
 <template>
-  <div class="table-info-table">
-    <h2>Relations</h2>
-    <div class="table-relations" ref="tabulator">
-
+  <div class="table-info-tablet">
+    <div class="table-subheader">
+      <div class="table-title">
+        <h2>Relations</h2>
+      </div>
+      <div class="table-actions">
+        <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Row</a>
+      </div>
     </div>
-
+    <div class="card-flat">
+      <div class="table-relations" ref="tabulator"></div>
+    </div>
   </div>
 </template>
 <script>

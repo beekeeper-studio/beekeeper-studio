@@ -82,7 +82,9 @@ $cell-radius:            2px;
   background: transparent;
   width: min-content;
   min-width: 100%;
-
+  &:nth-child(odd) {
+    background: rgba($theme-base, 0.025);
+  }
   .tabulator-cell {
     border: 0;
     padding: 4px 8px;
@@ -90,15 +92,17 @@ $cell-radius:            2px;
     height: $row-height;
     line-height: $row-height - (6px); // row-height - vertical padding
     border-radius: $cell-radius;
-    &:hover {
-      background: rgba($theme-base,0.05);
-      border-color: transparent;
-      &.primary-key {
-        background: transparent;
-        cursor: default;
-      }
-      &.foreign-key-button {
-        background: transparent;
+    cursor: default;
+    &:first-of-type {
+      padding-left: $gutter-w * 1.5;
+    }
+    &:last-of-type {
+      padding-right: $gutter-w * 1.5;
+    }
+    &.cell-editable {
+      cursor: pointer;
+      &:hover {
+        background: rgba($theme-base,0.05);
       }
     }
     i.fk-link {
@@ -166,6 +170,16 @@ $cell-radius:            2px;
 
   // Cell Edit States
   .tabulator-cell {
+    // &:nth-child(odd) {
+    //   background: $row-highlight;
+    //   .tabulator-cell {
+    //     &.edited,
+    //     &.edit-error,
+    //     &.edit-success {
+    //       @include cell-shadow(rgba($row-highlight, 0.75));
+    //     }
+    //   }
+    // }
     &.edited {
       background: $cell-edited;
       &:hover {
@@ -190,16 +204,6 @@ $cell-radius:            2px;
       @include cell-shadow(rgba($query-editor-bg, 0.75));
     }
   }
-  // &:nth-child(odd) {
-  //   background: $row-highlight;
-  //   .tabulator-cell {
-  //     &.edited,
-  //     &.edit-error,
-  //     &.edit-success {
-  //       @include cell-shadow(rgba($row-highlight, 0.75));
-  //     }
-  //   }
-  // }
 
   &.tabulator-selectable:hover {
     background: rgba($theme-base, 0.05);
@@ -221,6 +225,15 @@ $cell-radius:            2px;
   border: 0;
   width: 100%;
   background: transparent;
+  .tabulator-headers {
+    .tabulator-col:first-of-type {
+      &.foreign-key, &.primary-key {
+        &:before{
+          left: $gutter-w * 0.8;
+        }
+      }
+    }
+  }
   .tabulator-header {
     background: transparent;
     border: 0;
@@ -232,6 +245,12 @@ $cell-radius:            2px;
       height: 32px!important;
       font-size: 90%;
       line-height: 1;
+      &:first-of-type .tabulator-col-content {
+        padding-left: $gutter-w * 1.5;
+      }
+      &:last-of-type .tabulator-col-content {
+        padding-right: $gutter-w * 1.5;
+      }
       .badge {
         background: transparent;
         color: $text-lighter;

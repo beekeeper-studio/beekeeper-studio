@@ -1,7 +1,16 @@
 <template>
   <div class="table-info-table">
-    <h2 class="table-info-subheader">Columns</h2>
-    <div ref="tableSchema"></div>
+    <div class="table-subheader">
+      <div class="table-title">
+        <h2>Columns</h2>
+      </div>
+      <div class="table-actions">
+        <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Row</a>
+      </div>
+    </div>
+    <div class="card-flat">
+      <div ref="tableSchema"></div>
+    </div>
   </div>
 </template>
 <script>

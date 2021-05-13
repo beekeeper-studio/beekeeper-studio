@@ -1,7 +1,15 @@
 <template>
 <div class="table-info-table">
-  <h2>Indexes</h2>
-  <div class="table-indexes" ref="tabulator">
+  <div class="table-subheader">
+    <div class="table-title">
+      <h2>Indexes</h2>
+    </div>
+    <div class="table-actions">
+      <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Row</a>
+    </div>
+  </div>
+  <div class="card-flat">
+    <div class="table-indexes" ref="tabulator"></div>
   </div>
 </div>
 </template>
