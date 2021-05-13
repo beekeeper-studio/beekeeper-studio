@@ -84,6 +84,10 @@ class BeekeeperWindow {
     this.reloaded = true
   }
 
+  get active() {
+    return !!this.win
+  }
+
 }
 
 export function getActiveWindows() {
