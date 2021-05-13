@@ -308,13 +308,6 @@
   padding: 0;
   overflow: hidden;
 
-  .edit-success {
-    background-color: green;
-  }
-
-  .edit-error {
-    background-color: red;
-  }
 
   .table-properties-wrap {
     height: 100%;
@@ -365,6 +358,14 @@
       border-radius: 3px;
       cursor: pointer;
       min-height: 60px;
+
+      &.edit-success {
+        background-color: green;
+      }
+
+      &.edit-error {
+        background-color: red;
+      }
       .material-icons {
         display: none;
         position: absolute;

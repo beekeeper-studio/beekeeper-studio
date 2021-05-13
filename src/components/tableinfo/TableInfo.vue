@@ -43,7 +43,6 @@ export default {
       this.desciptionClass = {'edit-success': true}
       setTimeout(() => {
         this.descriptionClass = {}
-
       }, 1000)
 
     }
