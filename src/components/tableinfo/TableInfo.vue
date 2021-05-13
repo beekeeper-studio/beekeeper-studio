@@ -17,64 +17,7 @@
         </div>
       </div>
   
-      <hr>
   
-      <!-- Table Info Content -->
-      <div class="table-info-content">
-  
-        <!-- Created -->
-        <div class="form-group inline input">
-          <label>Type:</label>
-          <select>
-            <option value="-"></option>
-          </select>
-        </div>
-        <div class="form-group inline input">
-          <label>Encoding</label>
-          <span>{{properties.encoding}}</span>
-        </div>
-        <div class="form-group inline input">
-          <label>Collation</label>
-          <span>{{properties.collation}}</span>
-        </div>
-        <div class="form-group inline">
-          <label>Created at:</label>
-          <span>Feb 11, 2021 at 3:20;18 PM</span>
-        </div>
-        <div class="form-group inline">
-          <label>Updated at:</label>
-          <span>Not Available</span>
-        </div>
-  
-        <hr>
-  
-        <!-- Info -->
-        <div class="form-group inline">
-          <label>Records</label>
-          <span>~{{properties.length}}</span>
-        </div>
-        <div class="form-group inline">
-          <label>Data Size</label>
-          <span>{{tableSize}}</span>
-        </div>
-  
-        <div class="form-group inline">
-          <label>Index Size:</label>
-          <span>{{indexSize}}</span>
-        </div>
-  
-        <hr>
-  
-        <!-- Comments/Syntax -->
-        <div>
-          <div class="form-group inline input">
-            <label>Create Syntax</label>
-            <textarea name="" id="" rows="3"></textarea>
-          </div>
-        </div>
-  
-      </div>
-
     </div>
   </div>
 </template>

@@ -1,5 +1,8 @@
 <template>
-  <div class="table-triggers">
+  <div class="table-info-triggers">
+    <h2>Triggers</h2>
+    <div class="table-triggers" ref="tabulator">
+    </div>
   </div>
 </template>
 <script>
@@ -22,6 +25,10 @@ export default {
     },
   },
   mounted() {
+    this.tabulator = new Tabulator(this.$refs.tabulator, {
+      data: [{name: 'bar', to: 'city', column: 'city_id'}],
+      autoColumns: true
+    })
   }
 }
 </script>

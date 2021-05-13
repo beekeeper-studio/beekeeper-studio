@@ -1,6 +1,9 @@
 <template>
-  <div class="table-indexes">
+<div class="table-info-table">
+  <h2>Indexes</h2>
+  <div class="table-indexes" ref="tabulator">
   </div>
+</div>
 </template>
 <script>
 import Tabulator from 'tabulator-tables'
@@ -8,7 +11,7 @@ export default {
   props: ["table", "connection", "tabId", "active"],
   data() {
     return {
-      tableIndexes: null
+      tabulator: null
 
     }
   },
@@ -23,6 +26,10 @@ export default {
     },
   },
   mounted() {
+    this.tabulator = new Tabulator(this.$refs.tabulator, {
+      data: [{name: "foo", columns: "a,b,c"}],
+      autoColumns: true
+    })
   }
 }
 </script>

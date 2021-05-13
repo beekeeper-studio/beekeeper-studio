@@ -305,7 +305,7 @@
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  overflow: hidden;
+  overflow-y: scroll;
   .table-properties-header {
     display: flex;
     justify-content: center;
@@ -336,9 +336,15 @@
   }
   .table-properties-content {
     display: flex;
-    height: 100%;
-    overflow: hidden;
-    overflow-y: auto;
+    margin: 30px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    border: solid 1px pink;
+    margin-bottom: 5px;
+    margin-top: 5px;
+    .table-info-table {
+      width: 100%;
+    }
   }
 
   // Table Info 

@@ -1,5 +1,8 @@
 <template>
-  <div ref="tableSchema"></div>
+  <div class="table-info-table">
+    <h2 class="table-info-subheader">Columns</h2>
+    <div ref="tableSchema"></div>
+  </div>
 </template>
 <script>
 import Tabulator from 'tabulator-tables'
@@ -98,7 +101,6 @@ export default {
     this.tabulator = new Tabulator(this.$refs.tableSchema, {
       columns: this.tableColumns,
       data: this.tableData,
-      height: this.actualTableHeight,
       // width: columnWidth,
     })
   }

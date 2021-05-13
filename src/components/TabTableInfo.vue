@@ -1,32 +1,24 @@
 <template>
   <div class="table-properties">
-      <div class="table-properties-header">
-        <div class="nav-pills">
-          <a 
-            v-for="(pill) in pills"
-            :key="pill.id"
-            class="nav-pill"
-            :class="{active: pill.id === activePill}"
-            @click.prevent="activePill = pill.id"
-          >
-            {{pill.name}}
-          </a>
-        </div>
-      </div>
-      <div ref="tableInfo" class="table-properties-content">
+      <div v-for="(pill) in pills" :key="pill.id" ref="tableInfo" class="table-properties-content">
         <component
-          v-for="(pill) in pills"
-          :key="pill.id"
           :is="pill.component"
           :table="table"
           :primaryKeys="primaryKeys"
           :properties="properties"
           :connection="connection"
-          :active="pill.id === activePill && active"
-          v-show="pill.id === activePill"
+          :active="active"
+          
         ></component>
       </div>
-    <statusbar class="tabulator-footer"></statusbar>
+    <statusbar class="tabulator-footer">
+      <div class="properties-content" v-if="properties">
+        <span :title="`Table Size ${properties.size}`"><i class="material-icons">table</i> {{properties.size}}</span>
+        <span :title="`Index Size ${properties.indexSize}`"><i class="material-icons">find_in_page</i> {{properties.indexSize}}</span>
+        <span :title="`${properties.length} Records`"><i class="material-icons">list_alt</i>~{{properties.length}}</span>
+      </div>
+
+    </statusbar>
   </div>
 </template>
 

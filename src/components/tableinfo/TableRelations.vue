@@ -1,5 +1,9 @@
 <template>
-  <div class="table-relations">
+  <div class="table-info-table">
+    <h2>Relations</h2>
+    <div class="table-relations" ref="tabulator">
+
+    </div>
 
   </div>
 </template>
@@ -9,7 +13,7 @@ export default {
   props: ["table", "connection", "tabId", "active"],
   data() {
     return {
-      tableRelations: null
+      tabulator: null
     }
   },
   computed: {
@@ -23,6 +27,10 @@ export default {
     },
   },
   mounted() {
+    this.tabulator = new Tabulator(this.$refs.tabulator, {
+      data: [{name: 'bar', to: 'city', column: 'city_id'}],
+      autoColumns: true
+    })
   }
 }
 </script>
