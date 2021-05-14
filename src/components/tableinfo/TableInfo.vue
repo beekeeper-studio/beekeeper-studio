@@ -7,8 +7,12 @@
         <i class="material-icons">edit</i>
       </div>
       <div class="table-description-edit" v-show="editingDescription">
-        <textarea  :style="descriptionEditStyle" ref="descriptionTextarea" @blur="saveDescription" name="" id="" rows="10" v-model="properties.description" placeholder="Description"></textarea>
-        <span>Markdown</span>
+        <textarea @keydown="checkForEsc"  :style="descriptionEditStyle" ref="descriptionTextarea" name="" id="" :rows="descriptionEditRows" v-model="properties.description" placeholder="Description"></textarea>
+        <div class="bottom-buttons">
+          <button class="btn btn-info" @click.prevent="revertDescription">Cancel</button>
+          <button class="btn btn-primary" @click.prevent="saveDescription">Save</button>
+        </div>
+        <span class="markdown">Markdown</span>
       </div>
     </div>
   </div>
@@ -23,18 +27,30 @@ export default {
     return {
       tableInfo: null,
       editingDescription: false,
-      descriptionEditHeight: null,
+      oldDescription: null,
+      descriptionEditRows: 10,
       descriptionClass: {}
     }
   },
   methods: {
     editDescription() {
       this.editingDescription = true
-      this.descriptionEditHeight = this.$refs.descriptionDiv.clientHeight
+      this.oldDescription = this.properties.description
+      this.descriptionEditRows = this.properties.description.split("\n").length + 1
       this.$nextTick(() => {
         if (this.$refs.descriptionTextarea)
           this.$refs.descriptionTextarea.focus()
       })
+    },
+    checkForEsc(e) {
+      if (e.key === 'Escape') {
+        this.revertDescription()
+      }
+    },
+    async revertDescription() {
+      this.properties.description = this.oldDescription
+      this.oldDescription = null
+      this.editingDescription = false
     },
     async saveDescription() {
       this.editingDescription = false

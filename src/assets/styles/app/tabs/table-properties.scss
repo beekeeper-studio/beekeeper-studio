@@ -1,0 +1,135 @@
+
+// Table Info
+.table-properties {    
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  padding: 0;
+  overflow: hidden;
+
+
+  .table-properties-wrap {
+    height: 100%;
+    padding: 0 1.5rem 3rem;
+    overflow: hidden;
+    overflow-y: auto;
+  }
+  .table-properties-content {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: $gutter-w;
+    .card-flat {
+      width: 100%;
+      max-height: 600px;
+      // padding: $gutter-h 0;
+      padding: 0;
+      overflow: auto;
+    }
+  }
+  .table-subheader {
+    display: flex;
+    align-items: center;
+    padding: 0 $gutter-h;
+    margin-top: $gutter-w * 1.5;
+    margin-bottom: $gutter-w;
+    .table-title {
+      display: flex;
+      flex-grow: 1;
+    }
+    h2 {
+      margin: 0;
+    }
+  }
+
+  // Table Info 
+  // --------------------------------
+  // Table Info Header
+  .table-info {
+    padding-top: $gutter-w * 4;
+    .table-name {
+      padding: 0 $gutter-w;
+      margin: 0 -$gutter-h;
+      margin-bottom: $gutter-h;
+    }
+    .table-description {
+      position: relative;
+      padding: $gutter-w;
+      border-radius: 3px;
+      cursor: pointer;
+      min-height: 60px;
+
+      &.edit-success {
+        background-color: green;
+      }
+
+      &.edit-error {
+        background-color: red;
+      }
+      .material-icons {
+        display: none;
+        position: absolute;
+        top: $gutter-h;
+        right: $gutter-h;
+        opacity: 0.58;
+      }
+      &:hover {
+        background: rgba($theme-base, 0.025);
+        .material-icons {
+          display: inline-block;
+        }
+      }
+    }
+    .table-description-edit {
+      position: relative;
+      textarea {
+        height: auto;
+        min-height: 60px;
+        padding: $gutter-h $gutter-w;
+      }
+      span.markdown {
+        content: 'markdown';
+        font-size: 10px;
+        display: inline-block;
+        position: absolute;
+        top: $gutter-h;
+        right: $gutter-h;
+        padding: 0 $gutter-h;
+        line-height: 1.8;
+        background: rgba($theme-base, 0.1);
+        border-radius: 4px;
+      }
+    }
+  }
+
+  // Table Info Content
+  .table-info-content {
+    width: 100%;
+    .form-group.inline {
+      > * {
+        padding-bottom: 0;
+      }
+      label {
+        color: $text-light;
+        min-width: 110px;
+      }
+      select, textarea {
+        min-width: 200px;
+        width: 100%!important;
+      }
+      select {
+        max-width: 220px;
+      }
+    }
+    textarea {
+      height: auto;
+    }
+  }
+
+  .table-schema {
+    .tabulator-table {
+      .yesno-icon {
+        float:right;
+      }
+    }
+  }
+}

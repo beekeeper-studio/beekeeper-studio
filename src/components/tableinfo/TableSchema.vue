@@ -1,5 +1,5 @@
 <template>
-  <div class="table-info-table">
+  <div class="table-info-table table-schema">
     <div class="table-subheader">
       <div class="table-title">
         <h2>Columns</h2>
@@ -15,9 +15,11 @@
 </template>
 <script>
 import Tabulator from 'tabulator-tables'
+import DataMutators from '../../mixins/data_mutators'
 import _ from 'lodash'
 import Vue from 'vue'
 export default {
+  mixins: [DataMutators],
   props: ["table", "connection", "tabID", "active", "primaryKeys", 'columnTypes'],
   data() {
     return {
@@ -65,8 +67,14 @@ export default {
           title: 'Nullable',
           field: 'nullable',
           headerTooltip: "Allow this column to contain a null value",
-          editor: 'tickCross',
-          formatter: 'tickCross',
+          editor: 'select',
+          editorParams: {
+            values: [
+              {label: "YES", value: true},
+              {label: "NO", value: false}
+            ]
+          },
+          formatter: this.yesNoFormatter,
           cellEdited: this.cellEdited
         },
         {
