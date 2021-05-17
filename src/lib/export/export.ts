@@ -8,6 +8,7 @@ import { BeeCursor, TableColumn, TableFilter, TableOrView } from '../db/models'
 import { DBConnection } from '../db/client'
 import { ExportOptions, ExportStatus, ProgressCallback, ExportProgress } from './models'
 import _ from 'lodash'
+import { Mutators } from '../data/tools'
 
 const log = rawlog.scope('export/export')
 
@@ -150,8 +151,8 @@ export abstract class Export {
         // log.info(`read ${rows.length} rows`)
         for (let rI = 0; rI < rows.length; rI++) {
           const row = rows[rI];
-          
-          const formatted = this.formatRow(row)
+          const mutated = Mutators.mutateRow(row, this.columns?.map((c) => c.dataType), true)
+          const formatted = this.formatRow(mutated)
           this.fileHandle?.write(formatted)
           this.fileHandle?.write(this.rowSeparator)
         }

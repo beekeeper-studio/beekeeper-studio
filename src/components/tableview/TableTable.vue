@@ -129,10 +129,11 @@
             <x-menuitem @click="refreshTable">
               <x-label>Refresh</x-label>
             </x-menuitem>
+            <hr>
             <x-menuitem @click="exportTable">
               <x-label>Export Whole Table</x-label>
             </x-menuitem>
-            <hr>
+
             <x-menuitem @click="exportFiltered">
               <x-label>Export Filtered View</x-label>
             </x-menuitem>
@@ -375,7 +376,7 @@ export default Vue.extend({
           title: column.columnName,
           field: column.columnName,
           titleFormatter: formatter,
-          mutatorData: this.resolveDataMutator(column.dataType),
+          mutatorData: this.resolveTabulatorMutator(column.dataType),
           dataType: column.dataType,
           cellClick: this.cellClick,
           width,
