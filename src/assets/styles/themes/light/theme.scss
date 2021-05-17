@@ -193,6 +193,12 @@ select {
 // CodeMirror
 .CodeMirror-hints {
   background: $codemirror-hint-bg;
+  li {
+    &.CodeMirror-hint-active {
+      background: $brand-info;
+      color: white;
+    }
+  }
 }
 .cm-s-monokai {
   span {

@@ -1,5 +1,5 @@
 <template>
-  <div class="tabletable flex-col">
+  <div class="tabletable flex-col" :class="{'view-only': !editable}">
     <div class="table-filter">
       <form @submit.prevent="triggerFilter">
         <div v-if="filterMode === 'raw'" class="filter-group row gutter">
