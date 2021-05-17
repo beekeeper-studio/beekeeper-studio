@@ -243,12 +243,14 @@ interface STQOptions {
   limit?: number,
   schema: string,
   version: VersionInfo
+  forceSlow?: boolean
 }
 
 interface STQResults {
   query: string,
   countQuery: string,
-  params: string[]
+  params: string[],
+
 }
 
 function buildSelectTopQueries(options: STQOptions): STQResults {
@@ -301,7 +303,7 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
 
   // if we're not filtering data we want the optimized approximation of row count
   // rather than a legit row count.
-  let countQuery = options.version.isPostgres && !filters ? tuplesQuery : `SELECT count(*) as total ${baseSQL}`
+  let countQuery = options.version.isPostgres && !filters && !options.forceSlow ? tuplesQuery : `SELECT count(*) as total ${baseSQL}`
   if (options.version.isRedshift && !filters) {
     countQuery = `SELECT COUNT(*) as total ${baseSQL}`
   }
@@ -317,14 +319,28 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   }
 }
 
-async function getTableLength(conn: HasPool, table: string, schema: string, filters?: TableFilter[] | string): Promise<number> {
+async function getTableLength(conn: HasPool, table: string, schema: string, filters?: TableFilter[] | string, forceSlow: boolean): Promise<number> {
   const version = await getVersion(conn)
-  const { countQuery, params } = buildSelectTopQueries({ table, schema, filters, version})
+  const { countQuery, params } = buildSelectTopQueries({ table, schema, filters, version, forceSlow})
   const countResults = await driverExecuteSingle(conn, { query: countQuery, params: params })
   const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return totalRecords
 }
+
+async function getEntityType(
+  conn: HasPool,
+  table: string,
+  schema: string
+): Promise<string | null> {
+  const query = `
+    select table_type as tt from information_schema.tables
+    where table_name = $1 and table_schema = $2
+    `
+  const result = await driverExecuteSingle(conn, { query, params: [table, schema]})
+  return result.rows[0]? result.rows[0]['tt'] : null
+}
+
 
 async function selectTop(
   conn: HasPool,
@@ -337,11 +353,15 @@ async function selectTop(
 ): Promise<TableResult> {
 
   const version = await getVersion(conn)
+  version.isPostgres
+  const tableType = version.isPostgres ? await getEntityType(conn, table, schema) : await Promise.resolve(null)
+  log.info('table type', tableType)
+  const forceSlow = tableType === null || tableType !== 'BASE TABLE'
   const qs = buildSelectTopQueries({
     table, offset, limit, orderBy, filters, schema, version
   })
   const result = await driverExecuteSingle(conn, { query: qs.query, params: qs.params })
-  const totalRecords = await getTableLength(conn, table, schema, filters)
+  const totalRecords = await getTableLength(conn, table, schema, filters, forceSlow)
 
   return {
     result: result.rows,
