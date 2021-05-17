@@ -77,7 +77,8 @@
   .statusbar-actions {
     .btn {
       padding: 0 0.6rem;
-      &:hover, &:hover[expanded] {
+      background: transparent;
+      &:hover[expanded] {
         background: rgba($statusbar-text, 0.15);
       }
       .material-icons {
