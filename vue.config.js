@@ -77,16 +77,7 @@ module.exports = {
         },
         deb: {
           publish: [
-            'github',
-            {
-              provider: 'bintray',
-              user: 'rathboma',
-              repo: 'releases',
-              package: 'beekeeper-studio',
-              owner: 'beekeeper-studio',
-              distribution: 'disco',
-              component: 'main'
-            },
+            'github'
           ],
           fpm: fpmOptions,
           // when we upgrade Electron we need to check these
