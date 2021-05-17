@@ -259,8 +259,8 @@
     }
     .badge {
       min-width: fit-content;
-      background: rgba($statusbar-text, 0.15);
-      color: $statusbar-text;
+      background: transparent;
+      color: rgba(black, 0.57);
     }
   }
 
