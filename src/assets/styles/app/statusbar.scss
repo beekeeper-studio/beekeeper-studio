@@ -75,10 +75,10 @@
   }
 
   .statusbar-actions {
-    margin-right: -$gutter-h * 0.5;
     .btn {
       padding: 0 0.6rem;
-      &:hover, &:hover[expanded] {
+      background: transparent;
+      &:hover[expanded] {
         background: rgba($statusbar-text, 0.15);
       }
       .material-icons {
@@ -117,7 +117,6 @@
   .download-results {
     border-radius: $btn-border-radius-small;
     overflow: hidden;
-    margin-top: -1px;
     > .btn {
       margin: 0;
       border-radius: 0;
@@ -261,8 +260,8 @@
     }
     .badge {
       min-width: fit-content;
-      background: rgba($statusbar-text, 0.15);
-      color: $statusbar-text;
+      background: transparent;
+      color: rgba(black, 0.57);
     }
   }
 

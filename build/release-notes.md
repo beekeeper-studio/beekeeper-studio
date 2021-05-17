@@ -1,34 +1,26 @@
-# 1.10.0 - DEB Migration, and Major Engine Improvements
 
-This release has been a long time coming, but we're about to pick up the pace!
+# Release 1.11
 
-We're wrapping up some long-outstanding technical debt to fix some really gnarley issues and improve usability across the board. Not a massive feature release, but a really satisfying one non the less.
+👋 Hello everyone. We've been pretty quiet lately, but we're ramping up for a 2.0 release in the next few months.
 
-## Included in this release
+We thought in the meantime we'd release a bunch of accumuated bug fixes and features. Some great stuff got merged, a lot of it is really meaty.
 
-- Toggle the sidebar!
-- Automated migration of DEB users to our new DEB repository, as Bintray is shutting down.
-- Set cell values to `null` when editing a table
-- Performance improvements by using `Object.freeze`
-- Results with the same column name no longer clash (except Sqlite :-( )
-- Much faster table loads for large tables using approximate row counts
-- No duplicate table queries on table load
-- Query identification improvements (eg quote escaped strings)
+## 🏅 Headline Features
 
-## PR Merges
+- 🥇Table exports (beta)! Export your tables to CSV, Json, or SQL.
+- 🥈 Add & Duplicate Rows! Add new rows to database tables easily!
 
-a514a94 Merge pull request #590 from beekeeper-studio/tabletable-speedups
-243d966 Merge pull request #569 from beekeeper-studio/sidebar-toggle
-8009e5e Merge pull request #575 from beekeeper-studio/whitespace
-390faff Merge pull request #570 from beekeeper-studio/set-null
-7f29d20 Merge pull request #568 from beekeeper-studio/max-initial-width
-5e6ecd0 Merge pull request #566 from beekeeper-studio/sqlserver-arrayrows
-36c1e88 Merge pull request #525 from fabscav/feature/table-view-insert-row
-da6f041 Merge pull request #557 from beekeeper-studio/freeze-all-the-things
-9ead59e Merge pull request #563 from beekeeper-studio/mysql-rowmode
-131db0b Merge pull request #556 from beekeeper-studio/apt-repo
-6627bdc Merge pull request #548 from beekeeper-studio/moar-force-redraw
-fa48628 Merge pull request #545 from beekeeper-studio/hotfix-1.9.3
-c336a6d Merge pull request #540 from moisespsena/pg_bytea_to_base64
-99e7f5e Merge pull request #395 from fabscav/feature/table-view-delete-rows
+### Other Stuff
+- No more Nulls when running multiple mysql queries
+- Moved to `better-sqlite3` for faster Sqlite queries.
+- Some UI tidy up in the tables view (new ⚙ button)
 
+## PR's merged in this release
+
+b28592c Merge pull request #601 from beekeeper-studio/table-exports
+897478e Merge pull request #624 from beekeeper-studio/ssl-toggle
+32cf3c6 Merge pull request #600 from beekeeper-studio/re-enable-addclone
+e50b877 Merge pull request #615 from beekeeper-studio/dependabot/npm_and_yarn/y18n-3.2.2
+bbc841b Merge pull request #630 from beekeeper-studio/dependabot/npm_and_yarn/ssri-6.0.2
+59e0eb4 Merge pull request #633 from beekeeper-studio/no-more-crashes
+67ca9df Merge pull request #614 from MasterOdin/patch-6

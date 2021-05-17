@@ -105,6 +105,7 @@ $cell-radius:            2px;
         background: rgba($theme-base,0.05);
       }
     }
+
     i.fk-link {
       display:none;
     }
@@ -207,6 +208,7 @@ $cell-radius:            2px;
 
   &.tabulator-selectable:hover {
     background: rgba($theme-base, 0.05);
+    cursor: default;
     i.fk-link {
       display: inline-block;
       &:hover {
@@ -219,6 +221,40 @@ $cell-radius:            2px;
   }
 
 }
+
+// Editable Hover
+.tabulator-row {
+  .tabulator-cell {
+    // &.cell-editable {
+    //   cursor: pointer;
+    //   &:hover {
+    //     background: rgba($theme-base,0.05);
+    //   }
+    // }
+
+    cursor: pointer;
+    &:hover {
+      background: rgba($theme-base,0.05);
+    } 
+    &.primary-key {
+      cursor: default;
+      &:hover {
+        background: transparent;
+      }
+    }
+  }
+}
+.tabletable.view-only {
+  .tabulator-row {
+    .tabulator-cell {
+      cursor: default;
+      &:hover {
+        background: transparent;
+      }
+    }
+  }
+}
+
 .tabulator {
   position: relative;
   font-size: 12px;

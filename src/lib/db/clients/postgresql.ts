@@ -1168,7 +1168,7 @@ function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQuery
     // node-postgres has support for Promise query
     // but that always returns the "fields" property empty
     return new Promise((resolve, reject) => {
-      log.debug('RUNNING', queryArgs.query, queryArgs.params)
+      log.info('RUNNING', queryArgs.query, queryArgs.params)
       connection.query(args, (err: Error, data: QueryResult | QueryResult[]) => {
         if (err) return reject(err);
         const qr = Array.isArray(data) ? data : [data]

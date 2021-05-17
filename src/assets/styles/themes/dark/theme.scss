@@ -6,9 +6,9 @@
   color: $text;
 }
 
+// Default Statusbar -- Invert text color
 .statusbar {
-  
-  // Default Statusbar -- Invert text color
+
   &.default {
     color: $text;
     .statusbar-item {
@@ -63,5 +63,4 @@
       }
     }
   }
-
 }

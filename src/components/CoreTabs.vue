@@ -318,6 +318,7 @@
     mounted() {
       this.createQuery()
       this.registerHandlers(this.rootBindings)
+      this.createQuery()
     }
   }
 </script>

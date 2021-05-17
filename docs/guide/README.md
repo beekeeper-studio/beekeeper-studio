@@ -90,6 +90,27 @@ Now you can filter, sort, and explore your table data all day.
 
 ![table tab](../assets/img/table-tab.png)
 
+### Edit Table Data
+
+Assuming your table has a (single) primary key, you can edit your data right inside of Beekeeper Studio. Don't worry, Beekeeper stages your changes so you can discard them if you make a mistake.
+
+Ways to edit data:
+1. Click a cell to edit the contents
+2. Right click a row and select `clone` to duplicate the row
+3. Right click a row and select `delete` to delete the row
+4. Click ⚙ and select `Add Row` to create a new row
+
+After editing data, click `Commit` in the table footer to commit your changes.
+
+> **Note** if you sort or filter the table while editing you will discard your changes.
+
+### Export Table Data
+
+Click the ⚙ icon in the table footer and select `Export` to export table data to CSV, JSON, or SQL formats.
+
+You can export either the entire table, or the currently filtered view.
+
+
 ## Keyboard Shortcuts
 
 ### General Shortcuts
