@@ -647,6 +647,10 @@ input[type=file] {
               background-color 0.15s ease-in-out,
               border-color 0.15s ease-in-out,
               box-shadow 0.15s ease-in-out;
+  &.badge-info {
+    background: $brand-info;
+    color: rgba(black, 0.87);
+  }
 }
 
 // Alerts

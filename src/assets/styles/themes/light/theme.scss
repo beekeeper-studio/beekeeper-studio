@@ -72,6 +72,9 @@ select {
 .badge {
   background: $badge-bg;
   color: $text-dark;
+  &.badge-info {
+    color: white;
+  }
 }
 .text-danger {
   color: $brand-danger!important;
@@ -204,6 +207,11 @@ select {
       background-color: #C8D7EA;
     }
   }
+}
+
+// Noty
+.noty_theme__mint.noty_type__success {
+  color: darken($brand-success, 5%);
 }
 
 // Switch
