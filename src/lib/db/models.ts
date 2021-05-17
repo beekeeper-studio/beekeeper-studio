@@ -29,11 +29,20 @@ export interface TableOrView {
   columns?: TableColumn[];
 }
 
+export interface TableIndex {
+  id: string
+  table: string
+  schema: string
+  name: string
+  columns: string
+}
+
 export interface TableProperties {
   description?: string
   size: number
   indexSize: number
   length: number
+  indexes: TableIndex[]
 }
 
 export interface TableColumn {

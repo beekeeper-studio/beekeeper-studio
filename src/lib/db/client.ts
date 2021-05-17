@@ -3,7 +3,7 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, ColumnChange } from './models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, ColumnChange, TableIndex } from './models';
 
 const logger = createLogger('db');
 
@@ -16,7 +16,7 @@ export interface DatabaseClient {
   listMaterializedViewColumns: (db: string, table: string, schema?: string) => Promise<TableColumn[]>
   listTableColumns: (db: string, table?: string, schema?: string) => Promise<ExtendedTableColumn[]>,
   listTableTriggers: (table: string, schema?: string) => void,
-  listTableIndexes: (db: string, table: string, schema?: string) => void,
+  listTableIndexes: (db: string, table: string, schema?: string) => TableIndex[],
   listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>,
   getTableReferences: (table: string, schema?: string) => void,
   getTableKeys: (db: string, table: string, schema?: string) => void,

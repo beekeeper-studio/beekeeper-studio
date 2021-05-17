@@ -15,28 +15,40 @@
 </template>
 <script>
 import Tabulator from 'tabulator-tables'
+import data_mutators from '../../mixins/data_mutators'
 export default {
-  props: ["table", "connection", "tabId", "active"],
+  mixins: [data_mutators],
+  props: ["table", "connection", "tabId", "active", "properties"],
   data() {
     return {
       tabulator: null
-
+    }
+  },
+  watch: {
+    tableData() {
+      if (!this.tabulator) return
+      this.tabulator.replaceData(this.tableData)
     }
   },
   computed: {
-    tableColumns() {
-      return [{ title: 'name', field: 'name'}, {title:'type', field: 'type'}]
-    },
     tableData() {
-      return this.table.columns.map((c) => {
-        return {name: c.columnName, type: c.dataType}
-      })
+      return this.properties.indexes || []
     },
+    tableColumns() {
+      return [
+        {title: 'Id', field: 'id'},
+        {title:'Name', field: 'name'},
+        {title: 'Unique', field: 'unique', formatter: this.yesNoFormatter},
+        {title: 'Primary', field: 'primary', formatter: this.yesNoFormatter},
+        {title: 'Columns', field: 'columns'}
+      ]
+    }
   },
   mounted() {
     this.tabulator = new Tabulator(this.$refs.tabulator, {
-      data: [{name: "foo", columns: "a,b,c"}],
-      autoColumns: true
+      data: this.tableData,
+      columns: this.tableColumns,
+      layout: 'fitColumns'
     })
   }
 }

@@ -1,7 +1,7 @@
 <template>
   <div class="table-properties">
     <div class="table-properties-wrap">
-      <div class="center-wrap">
+      <div class="center-wrap" v-if="properties && table">
         <div v-for="(pill) in pills" :key="pill.id" ref="tableInfo" class="table-properties-content">
           <component
             :is="pill.component"

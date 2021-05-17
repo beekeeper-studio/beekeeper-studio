@@ -5,7 +5,7 @@
         <h2>Columns</h2>
       </div>
       <div class="table-actions">
-        <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Column</a>
+        <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Column</a> -->
       </div>
     </div>
     <div class="card-flat">
@@ -48,9 +48,6 @@ export default {
     }
   },
   computed: {
-    jsxTest() {
-      return <div>foo</div>
-    },
     tableColumns() {
       const autocompleteOptions = {
         freetext: true,
@@ -61,13 +58,13 @@ export default {
       }
       return [
         {title: 'Position', field: 'ordinalPosition', headerTooltip: 'The ordinal position of the columns'},
-        {title: 'Name', field: 'columnName', editor: 'input', cellEdited: this.cellEdited},
-        {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: autocompleteOptions, cellEdited: this.cellEdited}, 
+        {title: 'Name', field: 'columnName', editor: null && 'input', cellEdited: this.cellEdited},
+        {title: 'Type', field: 'dataType', editor: null && 'autocomplete', editorParams: autocompleteOptions, cellEdited: this.cellEdited}, 
         {
           title: 'Nullable',
           field: 'nullable',
           headerTooltip: "Allow this column to contain a null value",
-          editor: 'select',
+          editor: null && 'select',
           editorParams: {
             values: [
               {label: "YES", value: true},
@@ -80,7 +77,7 @@ export default {
         {
           title: 'Default',
           field: 'defaultValue',
-          editor: 'input',
+          editor: null && 'input',
           headerTooltip: "If you don't set a value for this field, this is the default value",
           cellEdited: this.cellEdited
         },
@@ -118,6 +115,7 @@ export default {
     this.tabulator = new Tabulator(this.$refs.tableSchema, {
       columns: this.tableColumns,
       data: this.tableData,
+      layout: 'fitColumns',
       // width: columnWidth,
     })
   }

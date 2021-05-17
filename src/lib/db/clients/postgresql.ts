@@ -9,7 +9,7 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, ColumnChange } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, ColumnChange, TableIndex } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
 
 import { createCancelablePromise } from '../../../common/utils';
@@ -560,22 +560,61 @@ export async function listTableTriggers(conn: Conn, table: string, schema: strin
 
   return data.rows.map((row) => row.trigger_name);
 }
-export async function listTableIndexes(conn: Conn, table: string, schema: string) {
-  const sql = `
-    SELECT indexname as index_name
-    FROM pg_indexes
-    WHERE schemaname = $1
-    AND tablename = $2
-  `;
+export async function listTableIndexes(
+  conn: Conn, table: string, schema: string
+  ): Promise<TableIndex[]> {
 
+  const sql = `
+select
+	i.oid as index_id,
+    t.relname as table_name,
+    c.nspname as schema,
+    i.relname as index_name,
+    ix.indisprimary as is_primary,
+    ix.indisunique as is_unique,
+    array_to_string(array_agg(a.attname), ', ') as column_names
+from
+    pg_class t,
+    pg_class i,
+    pg_index ix,
+    pg_attribute a,
+    pg_namespace c
+where
+    t.oid = ix.indrelid
+    and i.oid = ix.indexrelid
+    and a.attrelid = t.oid
+    and a.attnum = ANY(ix.indkey)
+    and t.relkind = 'r'
+    and t.relname = $1
+    and c.nspname = $2
+group by
+	i.oid,
+    t.relname,
+    i.relname,
+    c.nspname,
+    ix.indisprimary,
+    ix.indisunique
+order by
+    t.relname,
+    i.relname
+`
   const params = [
-    schema,
     table,
+    schema,
   ];
 
   const data = await driverExecuteSingle(conn, { query: sql, params });
-
-  return data.rows.map((row) => row.index_name);
+  return data.rows.map((row) => {
+    return {
+      id: row.index_id,
+      name: row.index_name,
+      table: row.table_name,
+      schema: row.schema,
+      columns: row.column_names,
+      unique: row.is_unique,
+      primary: row.is_primary
+    }
+  });
 }
 
 export async function listSchemas(conn: Conn, filter?: SchemaFilterOptions) {
@@ -606,14 +645,17 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
       obj_description('${identifier}'::regclass) as description
   `
   const result = await driverExecuteSingle(conn, { query: sql })
-
-  const totalRecords = await getTableLength(conn, table, schema)
+  const tableType = await getEntityType(conn, table, schema)
+  const forceSlow = !tableType || tableType !== 'BASE TABLE'
+  const totalRecords = await getTableLength(conn, table, schema, undefined, forceSlow)
+  const indexes = await listTableIndexes(conn, table, schema)
   const props = result.rows.length > 0 ? result.rows[0] : {}
   return {
     description: props.description,
     indexSize: props.index_size,
     size: props.table_size,
     length: totalRecords,
+    indexes
   }
 
 }

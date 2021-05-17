@@ -28,7 +28,7 @@ export default {
     yesNoFormatter(cell) {
       let result = 'NO'
       if (cell.getValue() === true) result = 'YES'
-      return `<div class="yesno-select">${result} <i class="material-icons yesno-icon">unfold_more</i></div>`
+      return `<div class="yesno-select">${result}</div>`
     },
     ...Mutators
   }
