@@ -130,6 +130,7 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
 export function buildInsertQueries(knex, inserts) {
   return inserts.map(insert => {
     const query = knex(insert.table)
+      .withSchema(insert.schema)
       .insert(insert.data)
       .toQuery()
     return query

@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-type JsonFriendly = string | boolean | number | null
+type JsonFriendly = string | boolean | number | null | JsonFriendly[] | object
 
 function dec28bits(num: any): string {
   return ("00000000" + num.toString(2)).slice(-8);
@@ -8,22 +8,28 @@ function dec28bits(num: any): string {
 
 
 export const Mutators = {
-  resolveDataMutator(dataType?: string): (v: any) => JsonFriendly {
+
+  resolveTabulatorMutator(dataType?: string): (v: any) => JsonFriendly {
+    const mutator = this.resolveDataMutator(dataType)
+    return (v: any) => mutator(v) // this cleans off the additional params
+  },
+
+  resolveDataMutator(dataType?: string): (v: any, p?: boolean) => JsonFriendly {
     if (dataType && dataType === 'bit(1)') {
-      return this.bit1Mutator
+      return this.bit1Mutator.bind(this)
     }
     if (dataType && dataType.startsWith('bit')) {
-      return this.bitMutator
+      return this.bitMutator.bind(this)
     }
-    return this.genericMutator
+    return this.genericMutator.bind(this)
   },
 
 
-  mutateRow(row: any[], dataTypes: string[] = []): JsonFriendly[] {
+  mutateRow(row: any[], dataTypes: string[] = [], preserveComplex: boolean = false): JsonFriendly[] {
     return row.map((item, index) => {
       const typ = dataTypes[index]
       const mutator = this.resolveDataMutator(typ)
-      return mutator(item)
+      return mutator(item, preserveComplex)
     })
   },
 
@@ -31,14 +37,16 @@ export const Mutators = {
   /**
    * Mutate database data to make it json-friendly
    * This is particularly useful for binary-type data
+   * This is given
    * @param  {any} value
    * @returns JsonFriendly
    */
-  genericMutator(value: any): JsonFriendly {
+  genericMutator(value: any, preserveComplex: boolean = false): JsonFriendly {
+    const mutate = this.genericMutator
     if (_.isBuffer(value)) return value.toString()
     if (_.isDate(value)) return value.toISOString()
-    if (_.isObject(value)) return JSON.stringify(value)
-    if (_.isArray(value)) return JSON.stringify(value)
+    if (_.isObject(value)) return preserveComplex? _.mapValues(value, (v) => mutate(v, preserveComplex)) : JSON.stringify(value)
+    if (_.isArray(value)) return preserveComplex? value.map((v) => mutate(v, preserveComplex)) : JSON.stringify(value)
     if (_.isBoolean(value)) return value
     return value
   },

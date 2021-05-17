@@ -48,19 +48,13 @@
 
   // Row Actions
   // -------------------------
-  .statusbar-actions {
-    margin-right: -$gutter-h * 0.5;
-    .btn {
-      &:hover, &:hover[expanded] {
-        background: rgba($statusbar-text, 0.15);
-      }
-    }
-  }
   .connection-button > .btn {
     &:hover {
       background: rgba(white, 0.1);
     }
   }
+
+
   .connection-button > .btn, 
   .statusbar-actions .btn {
     box-shadow: none!important;
@@ -79,20 +73,41 @@
       width: 16px;
     }
   }
+
+  .statusbar-actions {
+    .btn {
+      padding: 0 0.6rem;
+      background: transparent;
+      &:hover[expanded] {
+        background: rgba($statusbar-text, 0.15);
+      }
+      .material-icons {
+        font-size: 16px;
+      }
+      &.actions-btn {
+        padding: 0 0.35rem;
+        .material-icons {
+          width: 13px;
+        }
+      }
+    }
+  }
   
   .download-results,
   .pending-changes {
-    background: rgba($statusbar-text, 0.15);
-    box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.1);
+    background: rgba($statusbar-text, 0.35);
+    box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.05);
     border-radius: 6px;
     overflow: hidden;
     > .btn {
+      background: transparent;
+      color: $statusbar-text-default;
       border-radius: 0!important;
       &:hover, &:hover[expanded] {
-        background: rgba($statusbar-text, 0.08);
+        background: rgba($statusbar-text, 0.05);
       }
       .material-icons {
-        color: $statusbar-text;
+        color: $statusbar-text-default;
         margin-right: $gutter-h * 0.5;
       }
     }
@@ -102,19 +117,16 @@
   .download-results {
     border-radius: $btn-border-radius-small;
     overflow: hidden;
-    margin-top: -1px;
     > .btn {
       margin: 0;
       border-radius: 0;
       &[menu] {
-        .material-icons {
-          font-size: 16px;
-        }
+        border-left: 1px solid rgba(black, 0.35);
       }
     }
     .material-icons {
       color: $text-dark;
-      font-size: 18px;
+      font-size: 20px;
     }
   }
 
@@ -131,6 +143,8 @@
       min-width: 10px;
       line-height: 16px;
       margin-left: 0;
+      text-align: left;
+      color: $statusbar-text-default;
     }
     .material-icons {
       font-size: 14px;
@@ -142,19 +156,38 @@
   // Results Select
   // -------------------------
   .result-selector {
-    margin-right: $gutter-h;
+    margin-left: -$gutter-h * 0.5;
   }
   .select-wrap {
-    box-shadow: none;
-    background: rgba($statusbar-text, 0.1);
-    &:hover {
-      background: rgba($statusbar-text, 0.15);
+    background: rgba($statusbar-text, 0.35);
+    box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.05);
+    border-radius: 6px;
+    &:after {
+      width: 0; 
+      height: 0; 
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 4px solid $statusbar-text-default;
+      position: absolute;
+      top: 40%;
+      right: 7px;
+      content: "";
+      z-index: 98;
     }
-  }
-  select {
-    color: $statusbar-text;
-    height: $statusbar-height * 0.8;
-    line-height: $statusbar-height * 0.8;
+    &:hover {
+      background: rgba($statusbar-text, 0.4);
+    }
+    select {
+      color: $statusbar-text-default;
+      height: $statusbar-height * 0.8;
+      line-height: $statusbar-height * 0.8;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      option {
+        color: $text;
+      }
+    }
   }
 
   // Query Status
@@ -225,62 +258,11 @@
     x-menu {
       width: 220px;
     }
-  }
-  .badge {
-    min-width: fit-content;
-    background: rgba($statusbar-text, 0.15);
-    color: $statusbar-text;
+    .badge {
+      min-width: fit-content;
+      background: transparent;
+      color: rgba(black, 0.57);
+    }
   }
 
-  // Default Statusbar -- Invert text color
-  &.default {
-    color: $text;
-    .statusbar-item {
-      &.error {
-        color: $statusbar-text-default;
-        .material-icons {
-          color: $statusbar-text-default;
-        }
-      }
-    }
-    .statusbar-actions .btn,
-    .connection-button > .btn {
-      color: $statusbar-text-default;
-    }
-    .connection-type {
-      color: $statusbar-text;
-    }
-    .badge {
-      background: rgba($statusbar-text-default, 0.15);
-      color: $statusbar-text-default;
-    }
-    .select-wrap {
-      background: rgba($statusbar-text-default, 0.1);
-      &:hover {
-        background: rgba($statusbar-text-default, 0.2);
-      }
-    }
-    .download-results,
-    .pending-changes {
-      background: rgba($statusbar-text-default, 0.15);
-      box-shadow: inset 0 0 0 1px rgba($statusbar-text-default, 0.1);
-      > .btn {
-        border-radius: 0!important;
-        &:hover, &:hover[expanded] {
-          background: rgba($statusbar-text-default, 0.1);
-        }
-        .material-icons {
-          color: $statusbar-text-default;
-        }
-      }
-    }
-    &.tabulator-footer {
-      .tabulator-page {
-        color: $statusbar-text-default;
-        &.active {
-          background: rgba($statusbar-text-default, 0.2);
-        }
-      }
-    }
-  }
 }

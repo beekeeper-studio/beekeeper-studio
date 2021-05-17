@@ -457,6 +457,9 @@ x-buttons {
     &[menu] {
       border-left: 1px solid rgba(black, 0.35);
       padding: 0!important;
+      &:hover {
+        border-left: 1px solid rgba(black, 0.35);
+      }
       .material-icons {
         font-size: 20px;
         width: 20px;
@@ -789,7 +792,7 @@ x-menu {
 x-menuitem {
   padding: 0 $gutter-w;
   font-size: 0.9rem;
-  min-height: 32px;
+  min-height: 28px;
   color: $text-dark;
   cursor: pointer;
   // --trigger-effect: ripple;

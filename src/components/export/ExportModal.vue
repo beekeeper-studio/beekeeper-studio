@@ -14,6 +14,7 @@
               Export
               <span class="text-primary truncate">{{ table.name }}</span> 
               <span v-if="filters" class="text-light" v-tooltip="filterTooltip">(Filtered)</span>
+              <span class="badge badge-info">Beta</span>
             </div>
           </div>
           <span class="close-btn btn btn-fab">

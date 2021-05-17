@@ -10,7 +10,7 @@ $sidebar-list-icons:       darken($theme-primary, 15%);
 
 // Editor
 $tabs-heading:             rgba($theme-base, 0.08);
-$tab-link:                 darken($theme-bg, 9%);
+$tab-link:                 darken($theme-bg, 12%);
 $codemirror-hint-bg:       darken($theme-bg, 2%);
 
 // Table Editing
@@ -72,6 +72,9 @@ select {
 .badge {
   background: $badge-bg;
   color: $text-dark;
+  &.badge-info {
+    color: white;
+  }
 }
 .text-danger {
   color: $brand-danger!important;
@@ -179,6 +182,8 @@ select {
 
 .tabulator {
   .tabulator-header {
+    background: $theme-bg;
+    box-shadow: none;
     .tabulator-col.foreign-key {
       &:before {
         color: darken($brand-primary, 15%);
@@ -190,6 +195,12 @@ select {
 // CodeMirror
 .CodeMirror-hints {
   background: $codemirror-hint-bg;
+  li {
+    &.CodeMirror-hint-active {
+      background: $brand-info;
+      color: white;
+    }
+  }
 }
 .cm-s-monokai {
   span {
@@ -198,29 +209,17 @@ select {
     }
   }
 }
+.query-editor {
+  .CodeMirror-code {
+    .highlight {
+      background-color: #C8D7EA;
+    }
+  }
+}
 
-// Statusbar
-.statusbar {
-  color: $text;
-  @each $key, $val in $color-defaults {
-    &.#{$key} {
-      background-color: rgba(nth($val, 1), 0.7);
-    }
-  }
-  &.query-meta {
-    @each $key, $val in $color-defaults {
-      &.#{$key} {
-        background-color: rgba(nth($val, 1), 0.6);
-      }
-    }
-  }
-  &.editing, &.failure {
-    @each $key, $val in $color-defaults {
-      &.#{$key} {
-        background-color: rgba(nth($val, 1), 0.5);
-      }
-    }
-  }
+// Noty
+.noty_theme__mint.noty_type__success {
+  color: darken($brand-success, 5%);
 }
 
 // Switch

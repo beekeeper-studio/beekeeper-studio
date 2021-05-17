@@ -476,7 +476,7 @@ export async function executeQuery(conn, queryText, rowsAsArray = false) {
     return [parseRowQueryResult(data, fields, commands[0], rowsAsArray)];
   }
 
-  return data.map((_, idx) => parseRowQueryResult(data[idx], fields[idx], commands[idx]));
+  return data.map((_, idx) => parseRowQueryResult(data[idx], fields[idx], commands[idx], rowsAsArray));
 }
 
 
