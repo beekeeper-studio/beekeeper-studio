@@ -321,23 +321,11 @@ async function getEntityType(
   schema: string
 ): Promise<string | null> {
   const query = `
-    select
-        t.relkind as relkind
-    from
-        pg_class t,
-        pg_namespace c
-    where
-        t.relname = $1
-        and c.nspname = $2
-        and t.relkind in ('r', 'v', 'm', 't', 'f')
-    group by
-      t.relkind
-    order by
-        t.relkind
-    limit 1
+    select table_type as tt from information_schema.tables
+    where table_name = $1 and table_schema = $2
     `
   const result = await driverExecuteSingle(conn, { query, params: [table, schema]})
-  return result.rows[0]? result.rows[0].relkind : null
+  return result.rows[0]? result.rows[0]['tt'] : null
 }
 
 
@@ -354,7 +342,8 @@ async function selectTop(
   const version = await getVersion(conn)
   version.isPostgres
   const tableType = version.isPostgres ? await getEntityType(conn, table, schema) : await Promise.resolve(null)
-  const forceSlow = tableType === null || tableType !== 'r'
+  log.info('table type', tableType)
+  const forceSlow = tableType === null || tableType !== 'BASE TABLE'
   const qs = buildSelectTopQueries({
     table, offset, limit, orderBy, filters, schema, version, forceSlow
   })
