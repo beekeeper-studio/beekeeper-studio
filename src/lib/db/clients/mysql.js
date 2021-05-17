@@ -180,9 +180,13 @@ export async function listTableColumns(conn, database, table) {
 }
 
 async function getTableLength(conn, table, filters) {
+  const tableCheck = 'SELECT TABLE_TYPE as tt FROM INFORMATION_SCHEMA.TABLES where table_schema = database() and TABLE_NAME = ?'
+  const tcResult = await driverExecuteQuery(conn, { query: tableCheck, params: [table] })
+  const isTable = tcResult.data[0] && tcResult.data[0]['tt'] === 'BASE TABLE'
+
   const queries = buildSelectTopQuery(table, 1, 1, [], filters)
   let title = 'total'
-  if (!filters) {
+  if (!filters && isTable) {
     queries.countQuery = `show table status like '${table}'`
     title = 'Rows'
   }
@@ -199,6 +203,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters)
 
   const { query, params } = queries
+
   const result = await driverExecuteQuery(conn, { query, params })
   const totalRecords = await getTableLength(conn, table, filters)
   return {
@@ -657,7 +662,7 @@ function identifyCommands(queryText) {
 }
 
 function driverExecuteQuery(conn, queryArgs) {
-  logger().debug(`Running Query ${queryArgs.query}`)
+  logger().info(`Running Query ${queryArgs.query}`)
   const runQuery = (connection) => new Promise((resolve, reject) => {
     connection.query({ sql: queryArgs.query, values: queryArgs.params, rowsAsArray: queryArgs.rowsAsArray }, (err, data, fields) => {
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});

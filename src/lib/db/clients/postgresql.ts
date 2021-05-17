@@ -238,12 +238,14 @@ interface STQOptions {
   limit?: number,
   schema: string,
   version: VersionInfo
+  forceSlow?: boolean
 }
 
 interface STQResults {
   query: string,
   countQuery: string,
-  params: string[]
+  params: string[],
+
 }
 
 function buildSelectTopQueries(options: STQOptions): STQResults {
@@ -296,7 +298,7 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
 
   // if we're not filtering data we want the optimized approximation of row count
   // rather than a legit row count.
-  let countQuery = options.version.isPostgres && !filters ? tuplesQuery : `SELECT count(*) as total ${baseSQL}`
+  let countQuery = options.version.isPostgres && !filters && !options.forceSlow ? tuplesQuery : `SELECT count(*) as total ${baseSQL}`
   if (options.version.isRedshift && !filters) {
     countQuery = `SELECT COUNT(*) as total ${baseSQL}`
   }
@@ -312,6 +314,33 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   }
 }
 
+
+async function getEntityType(
+  conn: HasPool,
+  table: string,
+  schema: string
+): Promise<string | null> {
+  const query = `
+    select
+        t.relkind as relkind
+    from
+        pg_class t,
+        pg_namespace c
+    where
+        t.relname = $1
+        and c.nspname = $2
+        and t.relkind in ('r', 'v', 'm', 't', 'f')
+    group by
+      t.relkind
+    order by
+        t.relkind
+    limit 1
+    `
+  const result = await driverExecuteSingle(conn, { query, params: [table, schema]})
+  return result.rows[0]? result.rows[0].relkind : null
+}
+
+
 async function selectTop(
   conn: HasPool,
   table: string,
@@ -323,9 +352,13 @@ async function selectTop(
 ): Promise<TableResult> {
 
   const version = await getVersion(conn)
+  version.isPostgres
+  const tableType = version.isPostgres ? await getEntityType(conn, table, schema) : await Promise.resolve(null)
+  const forceSlow = tableType === null || tableType !== 'r'
   const qs = buildSelectTopQueries({
-    table, offset, limit, orderBy, filters, schema, version
+    table, offset, limit, orderBy, filters, schema, version, forceSlow
   })
+  
   const countResults = await driverExecuteSingle(conn, { query: qs.countQuery, params: qs.params })
   const result = await driverExecuteSingle(conn, { query: qs.query, params: qs.params })
   const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
