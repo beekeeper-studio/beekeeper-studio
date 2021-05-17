@@ -5,6 +5,11 @@
       vertical-align: bottom;
     }
   }
+  .badge {
+    font-size: 0.9rem;
+    vertical-align: 1px;
+    margin-left: $gutter-h;
+  }
   .advanced-options-toggle {
     font-size: 0.9rem;
     margin: ($gutter-w * 1.5) 0 $gutter-h;
@@ -27,6 +32,7 @@
     width: 120px;
   }
 }
+
 
 .export-progress-notification {
   .title {
