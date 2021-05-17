@@ -88,8 +88,8 @@ export interface TableChanges {
 
 export interface TableInsert {
   table: string;
-  row: any[];
-  data: any[];
+  schema?: string
+  data: object[];
 }
 
 export interface TableUpdate {
