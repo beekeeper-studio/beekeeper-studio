@@ -5,7 +5,7 @@
 </template>
 
 <script type="text/javascript">
-  import Tabulator from 'tabulator-tables'
+  import {TabulatorFull as Tabulator} from 'tabulator-tables'
   import _ from 'lodash'
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'

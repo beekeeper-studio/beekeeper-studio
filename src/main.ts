@@ -6,7 +6,6 @@ import VTooltip from 'v-tooltip'
 import VModal from 'vue-js-modal'
 import 'xel/xel'
 import 'codemirror/addon/search/searchcursor'
-import Tabulator from 'tabulator-tables'
 import './filters/pretty-bytes-filter'
 
 import App from './App.vue'
@@ -35,6 +34,8 @@ import log from 'electron-log'
 import VueClipboard from 'vue-clipboard2'
 import platformInfo from './common/platform_info'
 import { AppEventMixin } from './common/AppEvent'
+// @ts-ignore
+import { TabulatorCore, FormatModule, EditModule } from 'tabulator-tables';
 
 (async () => {
   try {
@@ -49,8 +50,10 @@ import { AppEventMixin } from './common/AppEvent'
     log.info("starting logging")
     tls.DEFAULT_MIN_VERSION = "TLSv1"
     TimeAgo.addLocale(en)
+
+    // TabulatorCore.bindModules([FormatModule, EditModule]);
     // @ts-ignore
-    Tabulator.prototype.defaultOptions.layout = "fitDataFill";
+    // Tabulator.prototype.defaultOptions.layout = "fitDataFill";
     const appDb = platformInfo.appDbPath
     const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])
     await connection.connect();

@@ -178,7 +178,7 @@
 <script>
 import Vue from 'vue'
 import pluralize from 'pluralize'
-import Tabulator from "tabulator-tables";
+import { TabulatorFull as Tabulator } from "tabulator-tables";
 // import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
