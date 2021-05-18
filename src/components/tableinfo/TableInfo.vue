@@ -2,9 +2,8 @@
   <div class="table-info">
     <h1 class="table-name">{{fullName}} <span class="badge">{{table.entityType}}</span></h1>
     <div class="table-meta" v-if="createdAt || owner">
-      <span class="table-meta-prefix">Created</span>
-      <span v-if="createdAt" class="table-meta-created"> at {{createdAt}}</span>
-      <span v-if="owner" class="table-meta-owner"> by {{owner}}</span>
+      <span v-if="createdAt" class="table-meta-created">Created at {{createdAt}}</span>
+      <span v-if="owner" class="table-meta-owner">Owned by {{owner}}</span>
     </div>
     <div class="table-description-wrap">
       <div class="table-description" :class="descriptionClass" @click.prevent="editDescription" v-show="!editingDescription">
