@@ -687,8 +687,8 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
   const props = result.rows.length > 0 ? result.rows[0] : {}
   return {
     description: props.description,
-    indexSize: props.index_size,
-    size: props.table_size,
+    indexSize: Number(props.index_size),
+    size: Number(props.table_size),
     length: totalRecords,
     indexes,
     relations,

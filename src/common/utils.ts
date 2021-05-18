@@ -120,7 +120,7 @@ function getSuffix (power: number, e: number) {
 function fileSize (size: number, power: number) {
   const e = Math.log(size)/Math.log(power)|0
   const result = size/Math.pow(power, e)
-  return result.toFixed(2) + ' ' + getSuffix(power, e)
+  return result.toFixed(2).toLocaleString() + ' ' + getSuffix(power, e)
 }
 
 export function humanBytes(size: number) {

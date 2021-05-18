@@ -18,18 +18,19 @@
     <span class="expand"></span>
     <statusbar class="tabulator-footer">
       <div class="expand" v-if="properties">
-        <span class="statusbar-item" :title="`Table Size ${properties.size}`">
-          <i class="material-icons">table</i>
-          <span>{{properties.size}}</span>
-        </span>
-        <span class="statusbar-item" :title="`Index Size ${properties.indexSize}`">
-          <i class="material-icons">find_in_page</i>
-          <span>{{properties.indexSize}}</span>
-        </span>
         <span class="statusbar-item" :title="`${properties.length} Records`">
           <i class="material-icons">list_alt</i>
-          <span>~{{properties.length}}</span>
+          <span v-if="properties.length">~{{properties.length.toLocaleString()}}</span>
         </span>
+        <span class="statusbar-item" :title="`Table Size ${humanSize}`">
+          <i class="material-icons">table</i>
+          <span>{{humanSize}}</span>
+        </span>
+        <span class="statusbar-item" :title="`Index Size ${humanIndexSize}`">
+          <i class="material-icons">find_in_page</i>
+          <span>{{humanIndexSize}}</span>
+        </span>
+
       </div>
     </statusbar>
   </div>
@@ -43,6 +44,7 @@ import TableSchemaVue from './tableinfo/TableSchema.vue'
 import TableIndexesVue from './tableinfo/TableIndexes.vue'
 import TableRelationsVue from './tableinfo/TableRelations.vue'
 import TableTriggersVue from './tableinfo/TableTriggers.vue'
+import { humanBytes } from '../common/utils'
 export default {
   props: ["table", "connection", "tabID", "active"],
   components: { Statusbar },
@@ -50,7 +52,7 @@ export default {
     return {
       primaryKeys: [],
       properties: {},
-      pills: [
+      rawPills: [
         {
           id: 'info',
           name: 'Info',
@@ -64,16 +66,19 @@ export default {
         {
           id: 'indexes',
           name: "Indexes",
+          tableOnly: true,
           component: TableIndexesVue,
         },
         {
           id: 'relations',
           name: "Relations",
+          tableOnly: true,
           component: TableRelationsVue,
         },
         {
           id: 'triggers',
           name: "Triggers",
+          tableOnly: true,
           component: TableTriggersVue
         }
       ],
@@ -86,8 +91,26 @@ export default {
     }
   },
   computed: {
+    pills() {
+      if (!this.table) return []
+      const isTable = this.table.entityType === 'table'
+      return this.rawPills.filter((p) => {
+        if(p.tableOnly) {
+          return isTable
+        } else {
+          return true
+        }
+      })
+    },
+    humanSize() {
+      return humanBytes(this.properties.size)
+    },
+    humanIndexSize() {
+      return humanBytes(this.properties.indexSize)
+    }
   },
   async mounted() {
+    console.log("properties mounted")
     this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
     this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema)
     const columnWidth = this.table.columns.length > 20 ? 125 : undefined
