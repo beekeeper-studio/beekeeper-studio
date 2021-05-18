@@ -545,7 +545,12 @@ export async function listMaterializedViewColumns(conn: Conn, _database: string,
 
 export async function listTableTriggers(conn: Conn, table: string, schema: string) {
   const sql = `
-    SELECT trigger_name
+    SELECT 
+      trigger_name,
+      action_timing as timing,
+      event_manipulation as manipulation,
+      action_statement as action,
+      action_condition as condition
     FROM information_schema.triggers
     WHERE event_object_schema = $1
     AND event_object_table = $2
@@ -558,7 +563,15 @@ export async function listTableTriggers(conn: Conn, table: string, schema: strin
 
   const data = await driverExecuteSingle(conn, { query: sql, params });
 
-  return data.rows.map((row) => row.trigger_name);
+  return data.rows.map((row) => ({
+    name: row.trigger_name,
+    timing: row.timing,
+    manipulation: row.manipulation,
+    action: row.action,
+    condition: row.condition,
+    table: table,
+    schema: schema
+  }));
 }
 export async function listTableIndexes(
   conn: Conn, table: string, schema: string
@@ -604,7 +617,7 @@ order by
   ];
 
   const data = await driverExecuteSingle(conn, { query: sql, params });
-  return data.rows.map((row) => {
+  const result = data.rows.map((row) => {
     return {
       id: row.index_id,
       name: row.index_name,
@@ -615,6 +628,7 @@ order by
       primary: row.is_primary
     }
   });
+  return result
 }
 
 export async function listSchemas(conn: Conn, filter?: SchemaFilterOptions) {
@@ -649,13 +663,17 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
   const forceSlow = !tableType || tableType !== 'BASE TABLE'
   const totalRecords = await getTableLength(conn, table, schema, undefined, forceSlow)
   const indexes = await listTableIndexes(conn, table, schema)
+  const relations = await getTableKeys(conn, "", table, schema)
+  const triggers = await listTableTriggers(conn, table, schema)
   const props = result.rows.length > 0 ? result.rows[0] : {}
   return {
     description: props.description,
     indexSize: props.index_size,
     size: props.table_size,
     length: totalRecords,
-    indexes
+    indexes,
+    relations,
+    triggers
   }
 
 }
@@ -690,7 +708,9 @@ export async function getTableKeys(conn: Conn, _database: string, table: string,
         ccu.table_schema AS to_schema,
         ccu.table_name AS to_table,
         ccu.column_name AS to_column,
-        tc.constraint_name
+        tc.constraint_name,
+        rc.update_rule as update_rule,
+        rc.delete_rule as delete_rule
     FROM
         information_schema.table_constraints AS tc
         JOIN information_schema.key_column_usage AS kcu
@@ -699,8 +719,12 @@ export async function getTableKeys(conn: Conn, _database: string, table: string,
         JOIN information_schema.constraint_column_usage AS ccu
           ON ccu.constraint_name = tc.constraint_name
           AND ccu.table_schema = tc.table_schema
+         JOIN information_schema.referential_constraints rc
+          on tc.constraint_name = rc.constraint_name
+          and tc.table_schema = rc.constraint_schema
     WHERE tc.constraint_type = 'FOREIGN KEY'
-    AND tc.table_name=$1 and tc.table_schema = $2;
+    AND tc.table_name= $1 and tc.table_schema = $2;
+
   `;
 
   const params = [
@@ -718,6 +742,8 @@ export async function getTableKeys(conn: Conn, _database: string, table: string,
     fromSchema: row.from_schema,
     fromColumn: row.from_column,
     constraintName: row.constraint_name,
+    onUpdate: row.update_rule,
+    onDelete: row.delete_rule
   }));
 }
 

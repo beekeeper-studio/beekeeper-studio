@@ -79,7 +79,8 @@ export default {
           field: 'defaultValue',
           editor: null && 'input',
           headerTooltip: "If you don't set a value for this field, this is the default value",
-          cellEdited: this.cellEdited
+          cellEdited: this.cellEdited,
+          formatter: this.cellFormatter
         },
         {title: 'Primary', field: 'primary', formatter: 'tickCross', formatterParams: { allowEmpty: true}},
       ]

@@ -15,7 +15,7 @@ export default {
   methods: {
     cellFormatter(cell) {
       if (_.isNil(cell.getValue())) {
-        return '(NULL)'; //TODO: Make this configurable as soon we have a configuration window
+        return '<span class="null-value">(NULL)</span>'
       }
 
       let cellValue = cell.getValue().toString();

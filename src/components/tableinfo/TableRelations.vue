@@ -5,7 +5,7 @@
         <h2>Relations</h2>
       </div>
       <div class="table-actions">
-        <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Relation</a>
+        <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Relation</a> -->
       </div>
     </div>
     <div class="card-flat">
@@ -16,7 +16,7 @@
 <script>
 import Tabulator from 'tabulator-tables'
 export default {
-  props: ["table", "connection", "tabId", "active"],
+  props: ["table", "connection", "tabId", "active", "properties"],
   data() {
     return {
       tabulator: null
@@ -24,18 +24,31 @@ export default {
   },
   computed: {
     tableColumns() {
-      return [{ title: 'name', field: 'name'}, {title:'type', field: 'type'}]
+      return [
+        { field: 'constraintName', title: "Name"},
+        { field: 'fromColumn', title: "Column"},
+        { field: 'toSchema', title: "FK Schema"},
+        { field: 'toTable', title: "FK Table"},
+        { field: 'toColumn', title: "FK Column"},
+        { field: 'onUpdate', title: "On Update"},
+        { field: 'onDelete', title: 'On Delete'}
+      ]
     },
     tableData() {
-      return this.table.columns.map((c) => {
-        return {name: c.columnName, type: c.dataType}
-      })
+      return this.properties.relations || []
     },
+  },
+  watch: {
+    tableData() {
+      if (this.tabulator) this.tabulator.replaceData(this.tableData)
+    }
   },
   mounted() {
     this.tabulator = new Tabulator(this.$refs.tabulator, {
-      data: [{name: 'bar', to: 'city', column: 'city_id'}],
-      autoColumns: true
+      columns: this.tableColumns,
+      data: this.tableData,
+      layout: 'fitColumns',
+      tooltips: true
     })
   }
 }

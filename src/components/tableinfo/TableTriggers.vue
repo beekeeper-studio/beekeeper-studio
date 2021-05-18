@@ -5,7 +5,7 @@
         <h2>Triggers</h2>
       </div>
       <div class="table-actions">
-        <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Trigger</a>
+        <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Trigger</a> -->
       </div>
     </div>
     <div class="card-flat">
@@ -16,8 +16,10 @@
 </template>
 <script>
 import Tabulator from 'tabulator-tables'
+import data_mutators from '../../mixins/data_mutators'
 export default {
-  props: ["table", "connection", "tabId", "active"],
+  mixins: [data_mutators],
+  props: ["table", "connection", "tabId", "active", "properties"],
   data() {
     return {
       tableTriggers: null
@@ -25,18 +27,30 @@ export default {
   },
   computed: {
     tableColumns() {
-      return [{ title: 'name', field: 'name'}, {title:'type', field: 'type'}]
+      return [
+        { field: 'name', title: "Name", tooltip: true},
+        { field: 'timing', title: "Timing"},
+        { field: 'manipulation', title: "Manipulation"},
+        { field: 'action', title: "Action", tooltip: true},
+        { field: 'condition', title: "Condition", formatter: this.cellFormatter}
+      ]
     },
     tableData() {
-      return this.table.columns.map((c) => {
-        return {name: c.columnName, type: c.dataType}
-      })
+      return this.properties.triggers || []
     },
+  },
+  watch : {
+    tableData() {
+      if (this.tabulator) this.tabulator.replaceData(this.tableData)
+    }
   },
   mounted() {
     this.tabulator = new Tabulator(this.$refs.tabulator, {
-      data: [{name: 'bar', to: 'city', column: 'city_id'}],
-      autoColumns: true
+      columns: this.tableColumns,
+      data: this.tableData,
+      layout: 'fitColumns',
+      tooltips: true
+
     })
   }
 }

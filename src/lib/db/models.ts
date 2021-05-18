@@ -34,7 +34,19 @@ export interface TableIndex {
   table: string
   schema: string
   name: string
-  columns: string
+  columns: string,
+  unique: boolean
+  primary: boolean  
+}
+
+export interface TableTrigger {
+  name: string
+  timing: string
+  manipulation: string
+  action: string
+  condition: string | null
+  table: string
+  schema?: string
 }
 
 export interface TableProperties {
@@ -43,6 +55,8 @@ export interface TableProperties {
   indexSize: number
   length: number
   indexes: TableIndex[]
+  relations: TableKey[]
+  triggers: TableTrigger[]
 }
 
 export interface TableColumn {
