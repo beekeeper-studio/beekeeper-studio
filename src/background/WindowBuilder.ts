@@ -64,10 +64,6 @@ class BeekeeperWindow {
     return this.win ? this.win.webContents : null
   }
 
-  get active() {
-    return !!this.win
-  }
-
   send(channel: string) {
     this.win?.webContents.send(channel)
   }

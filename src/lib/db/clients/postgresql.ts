@@ -319,7 +319,7 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   }
 }
 
-async function getTableLength(conn: HasPool, table: string, schema: string, filters?: TableFilter[] | string, forceSlow: boolean): Promise<number> {
+async function getTableLength(conn: HasPool, table: string, schema: string, filters: TableFilter[] | string | undefined, forceSlow: boolean): Promise<number> {
   const version = await getVersion(conn)
   const { countQuery, params } = buildSelectTopQueries({ table, schema, filters, version, forceSlow})
   const countResults = await driverExecuteSingle(conn, { query: countQuery, params: params })
