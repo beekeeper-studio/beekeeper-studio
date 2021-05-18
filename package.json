@@ -33,7 +33,7 @@
     "better-sqlite3": "^7.1.5",
     "cassandra-driver": "^4.4.0",
     "cli-highlight": "2.0.0",
-    "codemirror": "^5.48.2",
+    "codemirror": "^5.58.2",
     "connection-string": "^3.4.2",
     "core-js": "3",
     "dateformat": "^3.0.3",
