@@ -97,7 +97,7 @@
     },
     computed: {
       ...mapState(["activeTab"]),
-      ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'exports': 'exports/runningVisibleExports' }),
+      ...mapGetters({ 'menuStyle': 'settings/menuStyle' }),
       lastTab() {
         return this.tabItems[this.tabItems.length - 1];
       },

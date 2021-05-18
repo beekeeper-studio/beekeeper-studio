@@ -31,12 +31,10 @@
 </template>
 
 <script>
-  import { mapGetters } from 'vuex'
 
   export default {
     props: ['activeItem'],
     computed: {
-      ...mapGetters({'runningExports': 'exports/runningExports'})
     },
     methods: {
       click(item) {
