@@ -5,8 +5,10 @@ export default {
   psqlTimeout: 15000, // 5 seconds
   psqlIdleTimeout: 20000,
   defaultChunkSize: 100,
-  largeFieldWidth: 500,
+  largeFieldWidth: 300,
   maxColumnWidth: 1000,
+  maxInitialWidth: 300,
+  bigTableColumnWidth: 125
 }
 
 

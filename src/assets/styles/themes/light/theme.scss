@@ -99,6 +99,39 @@ select {
 .advanced-connection-settings {
   background: rgba($theme-base, 0.05);
 }
+#sidebar {
+  .filter {
+    .filter-actions {
+      x-button {
+        &.btn-fab {
+        margin-right: 2px;
+        line-height: 22px;
+        height: 22px;
+        width: 22px;
+        min-width: 22px;
+        border-radius: 22px;
+        border: 0;
+        &.active {
+          background: rgba($theme-base, 0.1);
+          .material-icons {
+            color: $brand-info;
+          }
+        }
+      }
+
+      }
+    }
+  }
+}
+.list-heading {
+  .sub {
+    .badge {
+      &.active {
+        color: $brand-info;
+      }
+    }
+  }
+}
 
 // Editor
 // ---------------------------------------
@@ -212,7 +245,7 @@ select {
 .query-editor {
   .CodeMirror-code {
     .highlight {
-      background-color: #C8D7EA;
+      background-color: rgba($brand-info, 0.2);
     }
   }
 }
