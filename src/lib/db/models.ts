@@ -57,6 +57,8 @@ export interface TableProperties {
   indexes: TableIndex[]
   relations: TableKey[]
   triggers: TableTrigger[]
+  owner?: string,
+  createdAt?: string
 }
 
 export interface TableColumn {

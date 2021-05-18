@@ -1,6 +1,11 @@
 <template>
   <div class="table-info">
-    <h1 class="table-name">{{fullName}}</h1>
+    <h1 class="table-name">{{fullName}} <span class="badge">{{table.entityType}}</span></h1>
+    <div class="table-meta" v-if="createdAt || owner">
+      <span class="table-meta-prefix">Created</span>
+      <span v-if="createdAt" class="table-meta-created"> at {{createdAt}}</span>
+      <span v-if="owner" class="table-meta-owner"> by {{owner}}</span>
+    </div>
     <div class="table-description-wrap">
       <div class="table-description" :class="descriptionClass" @click.prevent="editDescription" v-show="!editingDescription">
         <div ref="descriptionDiv" class="markdown-description" v-html="formattedDescription || 'No Description'"></div>
@@ -23,6 +28,7 @@
 import marked from 'marked'
 import purify from 'dompurify'
 import { humanBytes } from '../../common/utils'
+import TimeAgo from 'javascript-time-ago'
 export default {
   props: ["table", "connection", "active", "properties"],
   data() {
@@ -31,7 +37,8 @@ export default {
       editingDescription: false,
       oldDescription: null,
       descriptionEditRows: 10,
-      descriptionClass: {}
+      descriptionClass: {},
+      timeAgo: new TimeAgo('en-US'),
     }
   },
   methods: {
@@ -66,6 +73,14 @@ export default {
     }
   },
   computed: {
+    owner() {
+      if (!this.properties) return null
+      return this.properties.owner || null
+    },
+    createdAt() {
+      if (!this.properties || !this.properties.createdAt) return null
+      return this.timeAgo.format(Date.parse(this.properties.createdAt)) || null
+    },
     fullName() {
       const table = this.table
       return table.schema ? `${table.schema}.${table.name}` : table.name

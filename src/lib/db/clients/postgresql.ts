@@ -650,6 +650,12 @@ function wrapTable(table: string, schema?: string) {
   return `${wrapIdentifier(schema)}.${wrapIdentifier(table)}`
 }
 
+async function getTableOwner(conn: HasPool, table: string, schema: string) {
+  const sql = `select tableowner from pg_catalog.pg_tables where tablename = $1 and schemaname = $2`
+  const result = await driverExecuteSingle(conn, { query: sql, params: [table, schema]})
+  return result.rows[0]?.tableowner
+}
+
 export async function getTableProperties(conn: HasPool, table: string, schema: string) {
   const identifier = wrapTable(table, schema)
   const sql = `
@@ -658,13 +664,26 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
       pg_relation_size('${identifier}') as table_size,
       obj_description('${identifier}'::regclass) as description
   `
-  const result = await driverExecuteSingle(conn, { query: sql })
+
   const tableType = await getEntityType(conn, table, schema)
   const forceSlow = !tableType || tableType !== 'BASE TABLE'
-  const totalRecords = await getTableLength(conn, table, schema, undefined, forceSlow)
-  const indexes = await listTableIndexes(conn, table, schema)
-  const relations = await getTableKeys(conn, "", table, schema)
-  const triggers = await listTableTriggers(conn, table, schema)
+
+  const [
+    result,
+    totalRecords,
+    indexes,
+    relations,
+    triggers,
+    owner
+  ] = await Promise.all([
+    driverExecuteSingle(conn, { query: sql }),
+    getTableLength(conn, table, schema, undefined, forceSlow),
+    listTableIndexes(conn, table, schema),
+    getTableKeys(conn, "", table, schema),
+    listTableTriggers(conn, table, schema),
+    getTableOwner(conn, table, schema)
+  ])
+
   const props = result.rows.length > 0 ? result.rows[0] : {}
   return {
     description: props.description,
@@ -673,7 +692,8 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     length: totalRecords,
     indexes,
     relations,
-    triggers
+    triggers,
+    owner
   }
 
 }
