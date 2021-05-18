@@ -244,6 +244,9 @@ $cell-radius:            2px;
     }
   }
 }
+
+
+// NOT Editable ~ change to editable at some point
 .tabletable.view-only {
   .tabulator-row {
     .tabulator-cell {
@@ -254,6 +257,17 @@ $cell-radius:            2px;
     }
   }
 }
+.table-properties {
+  .tabulator-row {
+    .tabulator-cell {
+      cursor: default;
+      &:hover {
+        background: transparent;
+      }
+    }
+  }
+}
+
 
 .tabulator {
   position: relative;

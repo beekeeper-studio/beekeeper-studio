@@ -8,9 +8,11 @@
       </div>
       <div class="table-description-edit" v-show="editingDescription">
         <textarea @keydown="checkForEsc"  :style="descriptionEditStyle" ref="descriptionTextarea" name="" id="" :rows="descriptionEditRows" v-model="properties.description" placeholder="Description"></textarea>
-        <div class="bottom-buttons">
-          <button class="btn btn-info" @click.prevent="revertDescription">Cancel</button>
-          <button class="btn btn-primary" @click.prevent="saveDescription">Save</button>
+        <div class="table-description-actions">
+          <div class="btn-group">
+            <button class="btn btn-flat" @click.prevent="revertDescription">Cancel</button>
+            <button class="btn btn-primary" @click.prevent="saveDescription">Save</button>
+          </div>
         </div>
         <span class="markdown">Markdown</span>
       </div>

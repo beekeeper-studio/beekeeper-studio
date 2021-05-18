@@ -30,7 +30,7 @@
     display: flex;
     align-items: center;
     padding: 0 $gutter-h;
-    margin-top: $gutter-w * 1.5;
+    margin-top: $gutter-w * 2;
     margin-bottom: $gutter-w;
     .table-title {
       display: flex;
@@ -57,11 +57,15 @@
       border-radius: 3px;
       cursor: pointer;
       min-height: 60px;
-
+      &:hover {
+        background: rgba($theme-base, 0.025);
+        .material-icons {
+          display: inline-block;
+        }
+      }
       &.edit-success {
         background-color: green;
       }
-
       &.edit-error {
         background-color: red;
       }
@@ -72,31 +76,36 @@
         right: $gutter-h;
         opacity: 0.58;
       }
-      &:hover {
-        background: rgba($theme-base, 0.025);
-        .material-icons {
-          display: inline-block;
-        }
-      }
     }
     .table-description-edit {
       position: relative;
       textarea {
-        height: auto;
-        min-height: 60px;
+        min-height: 120px;
         padding: $gutter-h $gutter-w;
+        padding-bottom: 3rem;
+        resize: vertical;
       }
       span.markdown {
         content: 'markdown';
         font-size: 10px;
+        color: $text-lighter;
         display: inline-block;
         position: absolute;
         top: $gutter-h;
-        right: $gutter-h;
+        right: $gutter-h * 0.25;
         padding: 0 $gutter-h;
         line-height: 1.8;
-        background: rgba($theme-base, 0.1);
+        // background: rgba($theme-base, 0.1);
+        box-shadow: 0 0 0 1px $border-color;
         border-radius: 4px;
+      }
+    }
+    .table-description-actions {
+      position: absolute;
+      right: $gutter-h * 1.5;
+      bottom: $gutter-h * 1.5;
+      .btn {
+        min-width: min-content;
       }
     }
   }
