@@ -87,7 +87,7 @@
       <div class="col truncate expand statusbar-info" :class="{'x4': this.totalRecords > this.limit}">
 
         <!-- Info -->
-        <span class="statusbar-item" v-if="lastUpdatedText && !error" :title="`~${totalRecordsText} Records`">
+        <span class="statusbar-item" v-if="lastUpdatedText && !error" :title="`Approximately ${totalRecordsText} Records`">
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
         </span>
@@ -300,7 +300,7 @@ export default Vue.extend({
       return `Enter condition, eg: name like 'Matthew%'`
     },
     totalRecordsText() {
-      return `${this.totalRecords.toLocaleString()}`
+      return `~${this.totalRecords.toLocaleString()}`
     },
     pendingChangesCount() {
       return this.pendingChanges.inserts.length 
