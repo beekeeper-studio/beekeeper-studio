@@ -79,9 +79,10 @@
     }
     .table-description-edit {
       position: relative;
+      margin-top: $gutter-w;
       textarea {
         min-height: 120px;
-        padding: $gutter-h $gutter-w;
+        padding: $gutter-w;
         padding-bottom: 3rem;
         resize: vertical;
       }
@@ -102,7 +103,7 @@
     }
     .table-description-actions {
       position: absolute;
-      right: $gutter-h * 1.5;
+      right: $gutter-h;
       bottom: $gutter-h * 1.5;
       .btn {
         min-width: min-content;
