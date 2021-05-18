@@ -65,7 +65,8 @@ import globals from '@/common/globals'
             width: columnWidth,
             maxInitialWidth: globals.maxInitialWidth,
             mutatorData: this.resolveDataMutator(column.dataType),
-            formatter: this.cellFormatter
+            formatter: this.cellFormatter,
+            tooltip: true,
           }
           return result;
         })
