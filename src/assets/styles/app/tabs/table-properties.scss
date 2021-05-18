@@ -6,8 +6,6 @@
   flex-grow: 1;
   padding: 0;
   overflow: hidden;
-
-
   .table-properties-wrap {
     height: 100%;
     padding: 0 1.5rem 3rem;
@@ -19,18 +17,14 @@
     flex-direction: column;
     margin-bottom: $gutter-w;
     .card-flat {
-      width: 100%;
-      max-height: 600px;
-      // padding: $gutter-h 0;
       padding: 0;
-      overflow: auto;
     }
   }
   .table-subheader {
     display: flex;
     align-items: center;
     padding: 0 $gutter-h;
-    margin-top: $gutter-w * 2;
+    margin-top: $gutter-w * 3;
     margin-bottom: $gutter-w;
     .table-title {
       display: flex;
@@ -39,6 +33,9 @@
     h2 {
       margin: 0;
     }
+  }
+  .tabulator {
+    max-height: 500px;
   }
 
   // Table Info 
@@ -50,6 +47,19 @@
       padding: 0 $gutter-w;
       margin: 0 -$gutter-h;
       margin-bottom: $gutter-h;
+      display: flex;
+      align-items: center;
+      .badge {
+        font-size: 1rem;
+        margin-left: $gutter-w;
+        line-height: 1.8;
+        padding: 0 $gutter-w;
+      }
+    }
+    .table-meta {
+      padding: $gutter-w;
+      margin: 0 -$gutter-h;
+      color: $text-lighter;
     }
     .table-description {
       position: relative;
@@ -136,6 +146,9 @@
   }
 
   .table-schema {
+    .table-subheader {
+      margin-top: $gutter-w;
+    }
     .tabulator-table {
       .yesno-icon {
         float:right;
@@ -147,7 +160,7 @@
 .tabulator-table {
   .tabulator-cell {
     .null-value {
-      color: blue;
+      color: rgba($theme-base, 0.28);
     }
   }
 }
