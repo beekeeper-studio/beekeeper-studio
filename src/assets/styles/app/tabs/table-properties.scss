@@ -93,7 +93,7 @@
         display: inline-block;
         position: absolute;
         top: $gutter-h;
-        right: $gutter-h * 0.25;
+        right: $gutter-h;
         padding: 0 $gutter-h;
         line-height: 1.8;
         // background: rgba($theme-base, 0.1);
@@ -103,8 +103,8 @@
     }
     .table-description-actions {
       position: absolute;
-      right: $gutter-h;
-      bottom: $gutter-h * 1.5;
+      right: $gutter-h * 1.25;
+      bottom: $gutter-h * 1.25;
       .btn {
         min-width: min-content;
       }
