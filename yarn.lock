@@ -13282,10 +13282,9 @@ table@^5.2.3:
     slice-ansi "^2.1.0"
     string-width "^3.0.0"
 
-tabulator-tables@^4.9.3:
+tabulator-tables@rathboma/tabulator#max-initial-width-with-dist:
   version "4.9.3"
-  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-4.9.3.tgz#89ea8f9bffc11ba9a789369b5165ac82da26f4f0"
-  integrity sha512-iwwQqAEGGxlgrBpcmJJvMJrfjGLcCXOB3AOb/DGkXqBy1YKoYA36hIl7qXGp6Jo8dSkzFAlDT6pKLZgyhs9OnQ==
+  resolved "https://codeload.github.com/rathboma/tabulator/tar.gz/7702b23b0ad0fefe44c163f2e2148644c1bc94b9"
 
 tapable@^1.0.0, tapable@^1.1.3:
   version "1.1.3"

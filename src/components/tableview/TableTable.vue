@@ -339,7 +339,6 @@ export default Vue.extend({
       return result
     },
     tableColumns() {
-      const columnWidth = this.table.columns.length > 20 ? 125 : undefined
       const keyWidth = 40
       const results = []
       // 1. add a column for a real column
@@ -353,10 +352,12 @@ export default Vue.extend({
         // currently it doesn't fetch the right result if you update the PK
         // because it uses the PK to fetch the result.
         const slimDataType = this.slimDataType(column.dataType)
-        const width = this.defaultColumnWidth(slimDataType, columnWidth)
         const editorType = this.editorType(column.dataType)
         const useVerticalNavigation = editorType === 'textarea'
         const isPK = this.primaryKey && this.primaryKey === column.columnName
+        const columnWidth = this.table.columns.length > 30 ?
+          this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
+          undefined
 
         const formatter = () => {
           return `<span class="tabletable-title">${column.columnName} <span class="badge">${slimDataType}</span></span>`
@@ -369,9 +370,6 @@ export default Vue.extend({
           headerTooltip += ' [Primary Key]'
         }
 
-
-
-
         const result = {
           title: column.columnName,
           field: column.columnName,
@@ -379,12 +377,14 @@ export default Vue.extend({
           mutatorData: this.resolveTabulatorMutator(column.dataType),
           dataType: column.dataType,
           cellClick: this.cellClick,
-          width,
+          width: columnWidth,
           maxWidth: globals.maxColumnWidth,
+          maxInitialWidth: globals.maxInitialWidth,
           cssClass: isPK ? 'primary-key' : '',
           editable: this.cellEditCheck,
           headerSort: this.allowHeaderSort(column),
           editor: editorType,
+          tooltip: true,
           contextMenu: this.editable ? this.cellContextMenu : null,
           variableHeight: true,
           headerTooltip: headerTooltip,
@@ -577,7 +577,7 @@ export default Vue.extend({
       return inserts
     },
     defaultColumnWidth(slimType, defaultValue) {
-      const chunkyTypes = ['json', 'jsonb', 'text']
+      const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text']
       if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
       return defaultValue
     },
