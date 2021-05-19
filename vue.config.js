@@ -56,6 +56,50 @@ module.exports = {
             to: 'public'
           }
         ],
+        fileAssociations: [
+          {
+            name: "SQLite File",
+            ext: ["db", "sqlite", "sqlite3"],
+            role: "Editor"
+          }
+        ],
+        protocols: [
+          {
+            name: "Amazon Redshift URL scheme",
+            schemes: ["redshift"],
+            role: "Editor"
+          },
+          {
+            name: "CockroachDB URL scheme",
+            schemes: ["cockroachdb", "cockroach"],
+            role: "Editor"
+          },
+          {
+            name: "MariaDB URL scheme",
+            schemes: ["mariadb"],
+            role: "Editor"
+          },
+          {
+            name: "MySQL URL scheme",
+            schemes: ["mysql"],
+            role: "Editor"
+          },
+          {
+            name: "PostgreSQL URL scheme",
+            schemes: ["postgresql", "postgres", "psql"],
+            role: "Editor"
+          },
+          {
+            name: "SQLite URL scheme",
+            schemes: ["sqlite"],
+            role: "Editor"
+          },
+          {
+            name: "SQL Server URL scheme",
+            schemes: ["sqlserver", "microsoftsqlserver", "mssql"],
+            role: "Editor"
+          }
+        ],
         mac: {
           entitlements: "./build/entitlements.mac.plist",
           entitlementsInherit: "./build/entitlements.mac.plist",

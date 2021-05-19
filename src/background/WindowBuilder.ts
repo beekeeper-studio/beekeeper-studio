@@ -68,8 +68,8 @@ class BeekeeperWindow {
     return !!this.win
   }
 
-  send(channel: string) {
-    this.win?.webContents.send(channel)
+  send(channel: string, ...args: any[]) {
+    this.win?.webContents.send(channel, ...args)
   }
 
   initializeCallbacks() {

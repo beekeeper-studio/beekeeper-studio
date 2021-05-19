@@ -14,6 +14,8 @@ export enum AppEvent {
   openExternally = 'oe',
   toggleSidebar = 'ts',
   beginExport = 'be',
+  openFile = 'open-file',
+  openUrl = 'open-url'
 }
 
 

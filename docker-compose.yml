@@ -74,7 +74,7 @@ services:
     - mssqllatin:/var/opt/mssql/data
     - ./dev/docker_sqlserver:/docker_init
     environment:
-      ACCEPT_EULA: Y
+      ACCEPT_EULA: "Y"
       SA_PASSWORD: Example@1"
       MSSQL_COLLATION: Latin1_General_CS_AS
       MSSQL_PID: "Express"

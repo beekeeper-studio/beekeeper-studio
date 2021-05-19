@@ -18,7 +18,7 @@ import MenuHandler from './background/NativeMenuBuilder'
 import { UserSetting } from './common/appdb/models/user_setting'
 import Connection from './common/appdb/Connection'
 import Migration from './migration/index'
-import { buildWindow } from './background/WindowBuilder'
+import { buildWindow, getActiveWindows } from './background/WindowBuilder'
 
 import { AppEvent } from './common/AppEvent'
 function initUserDirectory(d: string) {
@@ -106,6 +106,20 @@ app.on('ready', async () => {
   }
   createFirstWindow()
 })
+
+// Open a connection from a file (e.g. ./sqlite.db)
+app.on('open-file', (event, file) => {
+  event.preventDefault();
+  const win = getActiveWindows()[0];
+  win.send(AppEvent.openFile, file);
+});
+
+// Open a connection from a url (e.g. postgres://host)
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  const win = getActiveWindows()[0];
+  win.send(AppEvent.openUrl, url);
+});
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
