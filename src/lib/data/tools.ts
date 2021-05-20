@@ -32,7 +32,6 @@ export const Mutators = {
       return mutator(item, preserveComplex)
     })
   },
-
   
   /**
    * Mutate database data to make it json-friendly
