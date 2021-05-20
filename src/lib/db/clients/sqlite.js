@@ -8,7 +8,6 @@ import knexlib from 'knex'
 import rawLog from 'electron-log'
 import { buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery } from './utils';
 import { SqliteCursor } from './sqlite/SqliteCursor';
-
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
@@ -55,7 +54,7 @@ export default async function (server, database) {
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
     getRoutineCreateScript: (routine) => getRoutineCreateScript(conn, routine),
     truncateAllTables: () => truncateAllTables(conn),
-    getTableProperties: () => Promise.resolve({})
+    getTableProperties: (table) => getTableProperties(conn, table)
   };
 }
 
@@ -264,8 +263,8 @@ function dataToColumns(data, tableName) {
     tableName,
     columnName: row.name,
     dataType: row.type,
-    nullable: row.notnull === 0,
-    defaultValue: row.dflt_value,
+    nullable: Number(row.notnull || 0) === 0,
+    defaultValue: row.dflt_value === 'NULL' ? null : row.dflt_value,
     ordinalPosition: Number(row.cid)
   }))
 }
@@ -274,7 +273,7 @@ async function listTableColumnsSimple(conn, database, table) {
   const sql = `PRAGMA table_info('${table}')`;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
-  return dataToColumns(data)
+  return dataToColumns(data, table)
 }
 
 export async function listTableColumns(conn, database, table) {
@@ -284,13 +283,25 @@ export async function listTableColumns(conn, database, table) {
   const allTables = (await listTables(conn)) || []
   const allViews = (await listViews(conn)) || []
   const tables = allTables.concat(allViews)
-  const sql = tables.map(table => {
-    return `PRAGMA table_info(${table.name})`
-  }).join(";")
+  const everything = tables.map((table) => {
+    return {
+      tableName: table.name,
+      sql: `PRAGMA table_info(${table.name})`,
+      results: null
+    }
+  })
 
-
-  const results = await driverExecuteQuery(conn, {query: sql, multiple: true});
-  const final = _.flatMap(results, (result, idx) => dataToColumns(result.data))
+  const query = everything.map((e) => e.sql).join(";")
+  const allResults = await driverExecuteQuery(conn, { query, multiple: true })
+  log.info("ALL RESULTS", allResults)
+  const results = allResults.map((r, i) => {
+    return {
+      result: r,
+      ...everything[i]
+    }
+  })
+  log.info("RESULTS", results)
+  const final = _.flatMap(results, (item, idx) => dataToColumns(item.result.data, item.tableName))
   return final
 }
 
@@ -312,7 +323,20 @@ export async function listTableIndexes(conn, database, table) {
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.map((row) => row.name);
+  const allSQL = data.map((row) => `PRAGMA INDEX_INFO(${row.name})`).join(";")
+  const infos = await driverExecuteQuery(conn, { query: allSQL, multiple: true})
+
+  const indexColumns = infos.map((result) => {
+    return result.data.map((r) => r.name).join(", ")
+  })
+
+  return data.map((row, idx) => ({
+    id: row.seq,
+    name: row.name,
+    unique: row.unique === 1,
+    primary: row.origin === 'pk',
+    columns: indexColumns[idx]
+  }))
 }
 
 export function listSchemas() {
@@ -405,6 +429,14 @@ export async function truncateAllTables(conn) {
 
     await driverExecuteQuery(connClient, { query: truncateAll });
   });
+}
+
+export async function getTableProperties(conn, table) {
+  const length = await getTableLength(conn, table, undefined)
+  const indexes = await listTableIndexes(conn, undefined, table)
+  return {
+    length, indexes
+  }
 }
 
 

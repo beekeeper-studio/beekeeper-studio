@@ -51,8 +51,8 @@ export interface TableTrigger {
 
 export interface TableProperties {
   description?: string
-  size: number
-  indexSize: number
+  size?: number
+  indexSize?: number
   length: number
   indexes: TableIndex[]
   relations: TableKey[]

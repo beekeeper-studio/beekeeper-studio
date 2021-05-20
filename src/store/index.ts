@@ -371,7 +371,7 @@ const store = new Vuex.Store<State>({
 
           type MaybeColumn = ExtendedTableColumn | TableColumn
           const allColumns: MaybeColumn[]  = [...tableColumns, ...viewColumns]
-
+          log.info("ALL COLUMNS", allColumns)
           tables.forEach((table) => {
             table.columns = allColumns.filter(row => {
               return row.tableName === table.name && (!table.schema || table.schema === row.schemaName)

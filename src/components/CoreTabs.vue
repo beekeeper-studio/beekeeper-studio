@@ -314,11 +314,11 @@
     },
     beforeDestroy() {
       this.unregisterHandlers(this.rootBindings)
+      this.tabItems = []
     },
     mounted() {
       this.createQuery()
       this.registerHandlers(this.rootBindings)
-      this.createQuery()
     }
   }
 </script>

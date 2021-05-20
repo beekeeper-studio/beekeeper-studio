@@ -75,7 +75,7 @@ export default {
           cellEdited: this.cellEdited
         },
         {
-          title: 'Default',
+          title: 'Default Value',
           field: 'defaultValue',
           editor: null && 'input',
           headerTooltip: "If you don't set a value for this field, this is the default value",
