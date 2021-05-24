@@ -216,12 +216,15 @@ select {
 .tabulator {
   .tabulator-header {
     background: $theme-bg;
-    box-shadow: none;
+    // box-shadow: none;
     .tabulator-col.foreign-key {
       &:before {
         color: darken($brand-primary, 15%);
       }
     }
+  }
+  .tabulator-tableHolder {
+    background: white;
   }
 }
 
