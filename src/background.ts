@@ -15,7 +15,7 @@ import { manageUpdates } from './background/update_manager'
 
 import platformInfo from './common/platform_info'
 import MenuHandler from './background/NativeMenuBuilder'
-import { UserSetting } from './common/appdb/models/user_setting'
+import { IGroupedUserSettings, UserSetting } from './common/appdb/models/user_setting'
 import Connection from './common/appdb/Connection'
 import Migration from './migration/index'
 import { buildWindow, getActiveWindows } from './background/WindowBuilder'
@@ -36,33 +36,34 @@ if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
 
 const isDevelopment = platformInfo.isDevelopment
 
+
 initUserDirectory(platformInfo.userDirectory)
 log.info("initializing user ORM connection")
 const ormConnection = new Connection(platformInfo.appDbPath, false)
-
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
+let settings: IGroupedUserSettings | undefined = undefined
 let menuHandler
 log.info("registering schema")
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
+let initialized = false
 
-
-async function createFirstWindow () {
-  log.info("Creating first window")
+async function initBasics() {
+  if (initialized) return
+  initialized = true
   await ormConnection.connect()
   log.info("running migrations")
   const migrator = new Migration(ormConnection, process.env.NODE_ENV)
   await migrator.run()
 
   log.info("getting settings")
-  const settings = await UserSetting.all()
+  settings = await UserSetting.all()
 
   log.info("setting up the menu")
   menuHandler = new MenuHandler(electron, settings)
   menuHandler.initialize()
   log.info("Building the window")
-  buildWindow(settings)
   log.info("managing updates")
   manageUpdates()
   ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
@@ -70,6 +71,15 @@ async function createFirstWindow () {
     if (!url) return
     electron.shell.openExternal(url)
   })
+}
+
+async function createFirstWindow () {
+  log.info("Creating first window")
+  if (!settings) {
+    throw "Unable to open window - no settings found"
+  }
+  buildWindow(settings)
+
 }
 
 
@@ -95,6 +105,7 @@ app.on('activate', async (_event, hasVisibleWindows) => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
+  console.log('ready')
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
     try {
@@ -104,21 +115,28 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
-  createFirstWindow()
+  await initBasics()
+  if (getActiveWindows().length === 0) {
+    createFirstWindow()
+  }
+  
 })
 
 // Open a connection from a file (e.g. ./sqlite.db)
-app.on('open-file', (event, file) => {
+app.on('open-file', async (event, file) => {
+  console.log('open file')
+  await initBasics()
   event.preventDefault();
-  const win = getActiveWindows()[0];
-  win.send(AppEvent.openFile, file);
+  if (!settings) throw "No settings!"
+  await buildWindow(settings, { file })
 });
 
 // Open a connection from a url (e.g. postgres://host)
-app.on('open-url', (event, url) => {
+app.on('open-url', async (event, url) => {
+  await initBasics()
   event.preventDefault();
-  const win = getActiveWindows()[0];
-  win.send(AppEvent.openUrl, url);
+  if (!settings) throw "No settings!"
+  await buildWindow(settings, { url })
 });
 
 // Exit cleanly on request from parent process in development mode.

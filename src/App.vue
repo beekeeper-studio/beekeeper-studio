@@ -17,6 +17,7 @@ import Titlebar from './components/Titlebar'
 import CoreInterface from './components/CoreInterface'
 import ConnectionInterface from './components/ConnectionInterface'
 import AutoUpdater from './components/AutoUpdater'
+import querystring from 'querystring'
 
 export default {
   name: 'app',
@@ -25,6 +26,8 @@ export default {
   },
   data() {
     return {
+      file: null,
+      url: null
     }
   },
   computed: {
@@ -42,6 +45,13 @@ export default {
     }
   },
   async mounted() {
+
+    const query = querystring.parse(global.location.search)
+    if (query) {
+      this.file = query.file || null
+      this.url = query.url || null
+    }
+
     this.$nextTick(() => {
       ipcRenderer.send('ready')
     })
@@ -49,6 +59,24 @@ export default {
       console.log("setting background to ", this.themeValue)
       document.body.className = `theme-${this.themeValue}`
     }
+
+
+    if (this.file) {
+      try {
+          await this.$store.dispatch('openFile', this.file)
+      } catch (ex) {
+        this.$noty.error(`Error opening ${this.file}: ${ex.message}`)
+      }
+    }
+
+    if (this.url) {
+      try {
+        await this.$store.dispatch('openUrl', this.url)
+      } catch (error) {
+        this.$noty.error(`Error opening ${this.url}: ${error.message}`)
+      }
+    }
+
   },
   methods: {
     databaseSelected(db) {

@@ -58,6 +58,7 @@
     "pluralize": "^8.0.0",
     "popper.js": "^1.15.0",
     "portfinder": "^1.0.26",
+    "query-string": "^7.0.0",
     "reflect-metadata": "^0.1.10",
     "sass-loader": "^7.1.0",
     "shortid": "^2.2.14",
