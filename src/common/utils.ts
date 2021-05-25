@@ -107,27 +107,6 @@ export function resolveHomePathToAbsolute(filename: string) {
 }
 
 
-// Bytes in human friendly form
-function getSuffix (power: number, e: number) {
-  switch (power) {
-    case 1000: // SI ( kB,MB,GB,TB,PB,EB,ZB,YB )
-      return e ? 'KMGTPEZY'[--e] + 'B' : 'Bytes'
-    case 1024: // IEC ( KiB,MiB,GiB,TiB,PiB,EiB,ZiB,YiB )
-      return e ? 'KMGTPEZY'[--e] + 'iB' : 'Bytes'
-  }
-}
-
-function fileSize (size: number, power: number) {
-  const e = Math.log(size)/Math.log(power)|0
-  const result = size/Math.pow(power, e)
-  return result.toFixed(2).toLocaleString() + ' ' + getSuffix(power, e)
-}
-
-export function humanBytes(size: number) {
-  return fileSize(size, 1000)
-
-}
-
 
 export function createCancelablePromise(error: CustomError, timeIdle = 100) {
   let canceled = false;

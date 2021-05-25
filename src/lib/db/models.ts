@@ -206,6 +206,7 @@ export interface Routine {
 
 export interface SupportedFeatures {
   customRoutines: boolean;
+  comments: boolean
 }
 
 export interface FieldDescriptor {

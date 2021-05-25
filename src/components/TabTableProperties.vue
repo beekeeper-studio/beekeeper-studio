@@ -44,7 +44,7 @@ import TableSchemaVue from './tableinfo/TableSchema.vue'
 import TableIndexesVue from './tableinfo/TableIndexes.vue'
 import TableRelationsVue from './tableinfo/TableRelations.vue'
 import TableTriggersVue from './tableinfo/TableTriggers.vue'
-import { humanBytes } from '../common/utils'
+import { format as humanBytes } from 'bytes'
 export default {
   props: ["table", "connection", "tabID", "active"],
   components: { Statusbar },

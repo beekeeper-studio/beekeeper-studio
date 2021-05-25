@@ -47,7 +47,6 @@ export default {
     this.tabulator = new Tabulator(this.$refs.tabulator, {
       columns: this.tableColumns,
       data: this.tableData,
-      layout: 'fitColumns',
       tooltips: true
     })
   }

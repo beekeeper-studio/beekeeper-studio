@@ -116,8 +116,6 @@ export default {
     this.tabulator = new Tabulator(this.$refs.tableSchema, {
       columns: this.tableColumns,
       data: this.tableData,
-      layout: 'fitColumns',
-      // width: columnWidth,
     })
   }
 }

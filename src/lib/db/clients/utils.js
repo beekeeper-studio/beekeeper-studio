@@ -4,6 +4,16 @@ import logRaw from 'electron-log'
 
 const log = logRaw.scope('db/util')
 
+
+export function escapeString(value) {
+  return value.replaceAll("'", "\\'")
+}
+
+export function escapeLiteral(value) {
+  return value.replaceAll(';', '')
+}
+
+
 export function buildSchemaFilter(filter, schemaField = 'schema_name') {
   if (!filter) return null
   const { schema, only, ignore } = filter

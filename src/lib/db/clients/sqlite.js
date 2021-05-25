@@ -28,7 +28,7 @@ export default async function (server, database) {
   await driverExecuteQuery(conn, { query: 'SELECT sqlite_version()' });
 
   return {
-    supportedFeatures: () => ({ customRoutines: false }),
+    supportedFeatures: () => ({ customRoutines: false, comments: false }),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
@@ -307,7 +307,7 @@ export async function listTableColumns(conn, database, table) {
 
 export async function listTableTriggers(conn, table) {
   const sql = `
-    SELECT name
+    SELECT name, sql
     FROM sqlite_master
     WHERE type = 'trigger'
       AND tbl_name = '${table}'
@@ -315,7 +315,7 @@ export async function listTableTriggers(conn, table) {
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.map((row) => row.name);
+  return data
 }
 
 export async function listTableIndexes(conn, database, table) {
@@ -376,6 +376,7 @@ export async function getTableKeys(conn, database, table) {
   const { data } = await driverExecuteQuery(conn, { query: sql });
   log.debug("response", data)
   return data.map(row => ({
+    constraintName: row.id,
     constraintType: 'FOREIGN',
     toTable: row.table,
     fromTable: table,
@@ -432,10 +433,18 @@ export async function truncateAllTables(conn) {
 }
 
 export async function getTableProperties(conn, table) {
-  const length = await getTableLength(conn, table, undefined)
-  const indexes = await listTableIndexes(conn, undefined, table)
-  const triggers = await listTableTriggers(conn, table);
-  const relations = []
+
+  const [
+    length,
+    indexes,
+    triggers,
+    relations
+  ] = await Promise.all([
+    getTableLength(conn, table, undefined),
+    listTableIndexes(conn, undefined, table),
+    listTableTriggers(conn, table),
+    getTableKeys(conn, null, table)
+  ])
   return {
     length, indexes, relations, triggers
   }

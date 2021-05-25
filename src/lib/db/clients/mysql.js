@@ -9,7 +9,7 @@ import globals from '../../../common/globals';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import { MysqlCursor } from './mysql/MySqlCursor';
-import { buildDeleteQueries, buildInsertQueries, buildSelectTopQuery } from './utils';
+import { buildDeleteQueries, buildInsertQueries, buildSelectTopQuery, escapeString } from './utils';
 
 const log = rawLog.scope('mysql')
 const logger = () => log
@@ -33,7 +33,7 @@ export default async function (server, database) {
   await driverExecuteQuery(conn, { query: 'select version();' });
 
   return {
-    supportedFeatures: () => ({ customRoutines: true }),
+    supportedFeatures: () => ({ customRoutines: true, comments: true }),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
@@ -59,7 +59,8 @@ export default async function (server, database) {
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
     getRoutineCreateScript: (routine, type) => getRoutineCreateScript(conn, routine, type),
     truncateAllTables: () => truncateAllTables(conn),
-    getTableProperties: () => Promise.resolve({})
+    getTableProperties: (table) => getTableProperties(conn, table),
+    setTableDescription: (table, description) => setTableDescription(conn, table, description)
 
   };
 }
@@ -242,7 +243,14 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
 
 export async function listTableTriggers(conn, table) {
   const sql = `
-    SELECT trigger_name as 'trigger_name'
+    SELECT
+      trigger_name as name,
+      event_object_schema as table_schema,
+      event_object_table as table_name,
+      event_manipulation as trigger_manipulation,
+      action_statement as trigger_action,
+      action_timing as trigger_timing,
+      action_condition as trigger_condition
     FROM information_schema.triggers
     WHERE event_object_schema = database()
     AND event_object_table = ?
@@ -254,20 +262,40 @@ export async function listTableTriggers(conn, table) {
 
   const { data } = await driverExecuteQuery(conn, { query: sql, params });
 
-  return data.map((row) => row.trigger_name);
+  return data.map((row) => ({
+    name: row.name,
+    timing: row.trigger_timing,
+    manipulation: row.trigger_manipulation,
+    action: row.trigger_action,
+    condition: row.trigger_condition,
+    table: row.table_name,
+    schema: null,
+  }))
 }
 
 export async function listTableIndexes(conn, database, table) {
-  const sql = 'SHOW INDEX FROM ?? FROM ??';
+  const sql = 'SHOW INDEX FROM ??';
 
   const params = [
     table,
-    database,
   ];
 
   const { data } = await driverExecuteQuery(conn, { query: sql, params });
 
-  return data.map((row) => row.Key_name);
+  const grouped = _.groupBy(data, 'Key_name')
+
+  return Object.keys(grouped).map((key, idx) => {
+    const row = grouped[key][0]
+    const columnNames = grouped[key].map((r) => r.Column_name).join(", ")
+    return {
+      id: idx,
+      name: row.Key_name,
+      unique: row.Non_unique === 0,
+      primary: row.Key_name === 'PRIMARY',
+      columns: columnNames,
+    }
+  })
+
 }
 
 export function listSchemas() {
@@ -315,14 +343,22 @@ export async function getPrimaryKey(conn, database, table) {
 
 export async function getTableKeys(conn, database, table) {
   const sql = `
-    SELECT constraint_name as 'constraint_name', column_name as 'column_name', referenced_table_name as 'referenced_table_name',
-      IF(referenced_table_name IS NOT NULL, 'FOREIGN', constraint_name) as key_type,
-      REFERENCED_TABLE_NAME as referenced_table,
-      REFERENCED_COLUMN_NAME as referenced_column
-    FROM information_schema.key_column_usage
+    SELECT 
+      cu.constraint_name as 'constraint_name',
+      cu.column_name as 'column_name',
+      cu.referenced_table_name as 'referenced_table_name',
+      IF(cu.referenced_table_name IS NOT NULL, 'FOREIGN', cu.constraint_name) as key_type,
+      cu.REFERENCED_TABLE_NAME as referenced_table,
+      cu.REFERENCED_COLUMN_NAME as referenced_column,
+      rc.UPDATE_RULE as on_update,
+      rc.DELETE_RULE as on_delete
+    FROM information_schema.key_column_usage cu
+    JOIN information_schema.referential_constraints rc
+      on cu.constraint_name = rc.constraint_name
+      and cu.constraint_schema = rc.constraint_schema
     WHERE table_schema = database()
-    AND table_name = ?
-    AND referenced_table_name IS NOT NULL
+    AND cu.table_name = ?
+    AND cu.referenced_table_name IS NOT NULL
   `;
 
   const params = [
@@ -339,6 +375,8 @@ export async function getTableKeys(conn, database, table) {
     fromColumn: row.column_name,
     referencedTable: row.referenced_table_name,
     keyType: `${row.key_type} KEY`,
+    onDelete: row.on_delete,
+    onUpdate: row.on_update
   }));
 }
 
@@ -547,7 +585,7 @@ export async function getRoutineCreateScript(conn, routine, type) {
 }
 
 export function wrapIdentifier(value) {
-  return (value !== '*' ? `\`${value.replace(/`/g, '``')}\`` : '*');
+  return (value !== '*' ? `\`${value.replaceAll(/`/g, '``')}\`` : '*');
 }
 
 async function getSchema(conn) {
@@ -581,6 +619,47 @@ export async function truncateAllTables(conn) {
 
     await driverExecuteQuery(connClient, { query: truncateAll });
   });
+}
+
+export async function getTableProperties(conn, table) {
+  const propsSql = `
+    SELECT
+      table_comment as description,
+      data_length as data_size,
+      index_length as index_size
+    FROM INFORMATION_SCHEMA.tables
+    where table_schema = database()
+    and table_name = ?
+  `
+
+  const { data } = await driverExecuteQuery(conn, { query: propsSql, params: [ table ] })
+  const {
+    description,
+    data_size,
+    index_size
+  } = data.length > 0 ? data[0] : {}
+
+  const length = await getTableLength(conn, table, [])
+  const relations = await getTableKeys(conn, null, table)
+  const triggers = await listTableTriggers(conn, table)
+  const indexes = await listTableIndexes(conn, null, table)
+
+  return {
+    description: description || undefined,
+    indexSize: Number(index_size),
+    size: Number(data_size),
+    length,
+    indexes,
+    relations,
+    triggers
+  }
+}
+
+async function setTableDescription(conn, table, description) {
+  const query = `ALTER TABLE ${wrapIdentifier(table)} COMMENT = '${escapeString(description)}'`
+  await driverExecuteQuery(conn, { query })
+  const result = await getTableProperties(conn, table)
+  return result.description
 }
 
 

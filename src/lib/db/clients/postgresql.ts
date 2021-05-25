@@ -10,7 +10,7 @@ import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, ColumnChange, TableIndex } from "../models";
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeLiteral, escapeString } from './utils';
 
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -140,7 +140,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
   return {
     /* eslint max-len:0 */
-    supportedFeatures: () => ({ customRoutines: true}),
+    supportedFeatures: () => ({ customRoutines: true, comments: true}),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: (_db: string, filter: FilterOptions | undefined) => listTables(conn, filter),
@@ -1117,17 +1117,8 @@ export function wrapIdentifier(value: string): string {
   if (value === '*') return value;
   const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
   if (matched) return wrapIdentifier(matched[1]) + matched[2];
-  return `"${value.replace(/"/g, '""')}"`;
+  return `"${value.replaceAll(/"/g, '""')}"`;
 }
-
-function escapeString(value: string) {
-  return value.replace("'", "''")
-}
-
-function escapeLiteral(value: string) {
-  return value.replace(';', '')
-}
-
 
 async function getSchema(conn: Conn) {
   const sql = 'SELECT current_schema() AS schema';

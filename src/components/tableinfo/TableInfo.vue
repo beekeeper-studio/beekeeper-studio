@@ -5,7 +5,7 @@
       <span v-if="createdAt" class="table-meta-created">Created at {{createdAt}}</span>
       <span v-if="owner" class="table-meta-owner">Owned by {{owner}}</span>
     </div>
-    <div class="table-description-wrap">
+    <div title="Table Description (Comment)" v-if="supportsDescription" class="table-description-wrap">
       <div class="table-description" :class="descriptionClass" @click.prevent="editDescription" v-show="!editingDescription">
         <div ref="descriptionDiv" class="markdown-description" v-html="formattedDescription || 'No Description'"></div>
         <i class="material-icons">edit</i>
@@ -28,7 +28,7 @@
 <script>
 import marked from 'marked'
 import purify from 'dompurify'
-import { humanBytes } from '../../common/utils'
+import { format as humanBytes } from 'bytes'
 import TimeAgo from 'javascript-time-ago'
 export default {
   props: ["table", "connection", "active", "properties"],
@@ -36,7 +36,7 @@ export default {
     return {
       tableInfo: null,
       editingDescription: false,
-      oldDescription: null,
+      oldDescription: undefined,
       descriptionEditRows: 10,
       descriptionClass: {},
       timeAgo: new TimeAgo('en-US'),
@@ -45,8 +45,8 @@ export default {
   methods: {
     editDescription() {
       this.editingDescription = true
-      this.oldDescription = this.properties.description
-      this.descriptionEditRows = this.properties.description.split("\n").length + 1
+      this.oldDescription = this.properties.description || null
+      this.descriptionEditRows = (this.properties.description || '').split("\n").length + 1
       this.$nextTick(() => {
         if (this.$refs.descriptionTextarea)
           this.$refs.descriptionTextarea.focus()
@@ -58,17 +58,20 @@ export default {
       }
     },
     async revertDescription() {
-      console.log("revert")
-      if (!this.oldDescription) return
+      console.log("revert", this.oldDescription)
+      if (this.oldDescription === undefined) {
+        console.log('not reverting')
+        return
+      }
       this.properties.description = this.oldDescription
-      this.oldDescription = null
+      this.oldDescription = undefined
       this.editingDescription = false
     },
     async saveDescription() {
       this.justSaved = true
       console.log("save")
       this.editingDescription = false
-      this.oldDescription = null
+      this.oldDescription = undefined
       const confirmedValue = await this.connection.setTableDescription(this.table.name, this.properties.description, this.table.schema)
       this.properties.description = confirmedValue
       this.desciptionClass = {'edit-success': true}
@@ -79,6 +82,9 @@ export default {
     }
   },
   computed: {
+    supportsDescription() {
+      return this.connection.supportedFeatures().comments === true
+    },
     owner() {
       if (!this.properties) return null
       return this.properties.owner || null

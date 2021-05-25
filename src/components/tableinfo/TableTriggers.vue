@@ -27,6 +27,16 @@ export default {
   },
   computed: {
     tableColumns() {
+      return this.connection.connectionType === 'sqlite' ?
+        this.sqliteTableColumns : this.normalTableColumns
+    },
+    sqliteTableColumns() {
+      return [
+        { field: 'name', title: 'Name', tooltip: true},
+        { field: 'sql', title: 'SQL', tooltip: true}
+      ]
+    },
+    normalTableColumns() {
       return [
         { field: 'name', title: "Name", tooltip: true},
         { field: 'timing', title: "Timing"},
@@ -48,8 +58,8 @@ export default {
     this.tabulator = new Tabulator(this.$refs.tabulator, {
       columns: this.tableColumns,
       data: this.tableData,
-      layout: 'fitColumns',
-      tooltips: true
+      tooltips: true,
+      columnMaxInitialWidth: 800,
 
     })
   }

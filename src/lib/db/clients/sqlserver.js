@@ -1,13 +1,13 @@
 // Copyright (c) 2015 The SQLECTRON Team
 
 import { readFileSync } from 'fs';
-
+import { parse as bytesParse } from 'bytes'
 import { ConnectionPool } from 'mssql';
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _ from 'lodash';
 
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString } from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
 const log = logRaw.scope('sql-server')
@@ -34,7 +34,7 @@ export default async function (server, database) {
   await driverExecuteQuery(conn, { query: 'SELECT 1' });
 
   return {
-    supportedFeatures: () => ({ customRoutines: true}),
+    supportedFeatures: () => ({ customRoutines: true, comments: true}),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),
@@ -60,7 +60,8 @@ export default async function (server, database) {
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
     getRoutineCreateScript: (routine) => getRoutineCreateScript(conn, routine),
     truncateAllTables: () => truncateAllTables(conn),
-    getTableProperties: () => Promise.resolve({})
+    getTableProperties: (table, schema) => getTableProperties(conn, table, schema),
+    setTableDescription: (table, description, schema) => setTableDescription(conn, table, description, schema)
   };
 }
 
@@ -437,24 +438,48 @@ export async function listTableColumns(conn, database, table) {
   }));
 }
 
-export async function listTableTriggers(conn, table) {
+export async function listTableTriggers(conn, table, schema) {
   // SQL Server does not have information_schema for triggers, so other way around
   // is using sp_helptrigger stored procedure to fetch triggers related to table
-  const sql = `EXEC sp_helptrigger ${wrapIdentifier(table)}`;
+  const sql = `EXEC sp_helptrigger '${escapeString(schema)}.${escapeString(table)}'`;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.recordset.map((row) => row.trigger_name);
+  return data.recordset.map((row) => {
+    const update = row.isupdate === 1 ? 'UPDATE' : null
+    const del = row.isdelete === 1 ? 'DELETE': null
+    const insert = row.isinsert === 1 ? 'INSERT' : null
+    const instead = row.isinsteadof === 1 ? 'INSEAD_OF' : null
+
+    const manips = [update, del, insert, instead].filter((f) => f).join(", ")
+
+    return {
+      name: row.trigger_name,
+      timing: row.isafter === 1 ? 'AFTER' : 'BEFORE',
+      manipulation: manips,
+      action: null,
+      condition: null,
+      table, schema
+
+    }
+  })
 }
 
-export async function listTableIndexes(conn, database, table) {
+export async function listTableIndexes(conn, table, schema) {
   // SQL Server does not have information_schema for indexes, so other way around
   // is using sp_helpindex stored procedure to fetch indexes related to table
-  const sql = `EXEC sp_helpindex ${wrapIdentifier(table)}`;
+  const sql = `EXEC sp_helpindex '${escapeString(schema)}.${escapeString(table)}'`;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.recordset.map((row) => row.index_name);
+  return data.recordset.map((row, idx) => ({
+    id: idx,
+    name: row.index_name,
+    columns: row.index_keys,
+    primary: row.index_description.includes('primary key'),
+    unique: row.index_description.includes('unique'),
+    table, schema
+  }));
 }
 
 export async function listSchemas(conn, filter) {
@@ -536,8 +561,8 @@ export async function getTableKeys(conn, database, table, schema) {
     toColumn: row.to_column,
     fromTable: row.from_table,
     fromColumn: row.from_column,
-    onUpdate: null,
-    onDelete: null
+    onUpdate: 'UNKNOWN',
+    onDelete: 'UNKNOWN'
   }));
   log.debug("tableKeys result", result)
   return result
@@ -718,6 +743,49 @@ export async function truncateAllTables(conn) {
 
     await driverExecuteQuery(connClient, { query: truncateAll, multiple: true });
   });
+}
+
+async function getTableDescription(conn, table, schema) {
+  const query = `SELECT *
+    FROM fn_listextendedproperty (
+      'MS_Description',
+      'schema',
+      '${escapeString(schema)}',
+      'table',
+      '${escapeString(table)}',
+      default, 
+    default);
+  `
+  const data = await driverExecuteQuery(conn, { query })
+  if (!data || !data.recordset || data.recordset.length === 0) {
+    return null
+  }
+  return data.recordset[0].MS_Description
+}
+
+export async function getTableProperties(conn, table, schema) {
+
+  const triggers = await listTableTriggers(conn, table, schema)
+  const indexes = await listTableIndexes(conn, table, schema)
+
+  const description = await getTableDescription(conn, table, schema)
+  const sizeQuery = `EXEC sp_spaceused N'dbo.${escapeString(table)}'; `
+  const { data }  = await driverExecuteQuery(conn, { query: sizeQuery })
+  const row = data.recordset ? data.recordset[0] || {} : {}
+  const relations = await getTableKeys(conn, null, table, schema)
+  return {
+    size: bytesParse(row.data),
+    indexSize: bytesParse(row.index_size),
+    length: Number(row.rows),
+    triggers,
+    indexes,
+    description,
+    relations
+  }
+}
+
+export async function setTableDescription(conn, table, desc) {
+
 }
 
 

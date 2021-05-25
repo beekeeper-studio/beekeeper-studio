@@ -50,7 +50,7 @@ import { AppEventMixin } from './common/AppEvent'
     tls.DEFAULT_MIN_VERSION = "TLSv1"
     TimeAgo.addLocale(en)
     // @ts-ignore
-    Tabulator.prototype.defaultOptions.layout = "fitDataFill";
+    Tabulator.prototype.defaultOptions.layout = "fitDataStretch";
     const appDb = platformInfo.appDbPath
     const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])
     await connection.connect();

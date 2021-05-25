@@ -94,6 +94,7 @@ export interface IDbConnectionDatabase {
 }
 
 export class DBConnection {
+  connectionType = this.server.config.client
   constructor (private server: IDbConnectionServer, private database: IDbConnectionDatabase) {}
   supportedFeatures = supportedFeatures.bind(null, this.server, this.database)
   connect = connect.bind(null, this.server, this.database)
