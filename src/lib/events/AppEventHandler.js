@@ -1,4 +1,3 @@
-import { SavedConnection } from "../../common/appdb/models/saved_connection"
 import { AppEvent } from "../../common/AppEvent"
 
 export default class {

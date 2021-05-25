@@ -26,7 +26,6 @@ export default {
   },
   data() {
     return {
-      file: null,
       url: null
     }
   },
@@ -51,7 +50,6 @@ export default {
 
     const query = querystring.parse(global.location.search)
     if (query) {
-      this.file = query.file || null
       this.url = query.url || null
     }
 
@@ -63,16 +61,6 @@ export default {
     if (this.themeValue) {
       console.log("setting background to ", this.themeValue)
       document.body.className = `theme-${this.themeValue}`
-    }
-
-
-    if (this.file) {
-      try {
-          await this.$store.dispatch('openFile', this.file)
-      } catch (ex) {
-        console.error(ex)
-        this.$noty.error(`Error opening ${this.file}: ${ex.message}`)
-      }
     }
 
     if (this.url) {

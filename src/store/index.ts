@@ -273,13 +273,6 @@ const store = new Vuex.Store<State>({
       context.commit('setUsername', name)
     },
 
-    async openFile(context, file: string) {
-      const conn = new SavedConnection();
-      conn.connectionType = 'sqlite'
-      conn.defaultDatabase = file
-      await context.dispatch('connect', conn)
-    },
-
     async openUrl(context, url: string) {
       console.log("open url", url)
       const conn = new SavedConnection();

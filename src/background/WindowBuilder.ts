@@ -13,7 +13,6 @@ const log = rawLog.scope('WindowBuilder')
 const windows: BeekeeperWindow[] = []
 
 export interface OpenOptions {
-  file?: string
   url?: string
 }
 
