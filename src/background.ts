@@ -98,7 +98,6 @@ app.on('activate', async (_event, hasVisibleWindows) => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
-  console.log('ready')
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
     try {
@@ -110,7 +109,7 @@ app.on('ready', async () => {
   }
   const slice = platformInfo.isDevelopment ? 2 : 1
   const parsedArgs = yargs(process.argv.slice(slice))
-  console.log("got args", parsedArgs)
+  console.log("Parsing app args", parsedArgs)
   const options = parsedArgs._.map((url: string) => ({ url }))
   const settings = await initBasics()
   
@@ -128,7 +127,6 @@ app.on('ready', async () => {
 // Open a connection from a file (e.g. ./sqlite.db)
 app.on('open-file', async (event, file) => {
   event.preventDefault();
-  console.log('opening file')
   const settings = await initBasics()
   
   await buildWindow(settings, { url: file })
@@ -137,7 +135,6 @@ app.on('open-file', async (event, file) => {
 // Open a connection from a url (e.g. postgres://host)
 app.on('open-url', async (event, url) => {
   event.preventDefault();
-  console.log("opening url")
   const settings = await initBasics()
   await buildWindow(settings, { url })
 });

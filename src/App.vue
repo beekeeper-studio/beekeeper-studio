@@ -27,7 +27,7 @@ export default {
   data() {
     return {
       file: null,
-      url: "/home/rathboma/Downloads/sakila.db"
+      url: null
     }
   },
   computed: {
@@ -70,6 +70,7 @@ export default {
       try {
           await this.$store.dispatch('openFile', this.file)
       } catch (ex) {
+        console.error(ex)
         this.$noty.error(`Error opening ${this.file}: ${ex.message}`)
       }
     }
