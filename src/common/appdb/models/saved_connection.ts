@@ -218,12 +218,12 @@ export class SavedConnection extends DbConnectionBase {
   parse(url: string) {
     try {
       const parsed = new ConnectionString(url)
-      console.log('parsed', parsed)
-      if (parsed.path && !parsed.protocol) {
-        // it's a file!
-          this.connectionType = 'sqlite'
-          this.defaultDatabase = url
-          return true
+      
+      if ((parsed.path || parsed.hostname) && !parsed.protocol && !parsed.port) {
+      // it's a file!
+        this.connectionType = 'sqlite'
+        this.defaultDatabase = url
+        return true
       }
       this.connectionType = parsed.protocol as IDbClients || this.connectionType
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {

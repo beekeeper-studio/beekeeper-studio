@@ -8,8 +8,8 @@ describe("Saved Connection", () => {
       "one:123": {host: 'one', port: 123},
       "postgresql://host:123": {connectionType: 'postgresql', host: 'host', port: 123},
       "user:password@host:12345": {host: 'host', port: 12345, username: 'user', password: 'password'},
-      "superduperhost": {host: 'superduperhost'},
-      "host/database": {host: 'host', defaultDatabase: 'database'}
+      "superduperhost": {defaultDatabase: 'superduperhost', connectionType: 'sqlite'},
+      "some/path": {connectionType: 'sqlite', defaultDatabase: 'some/path'}
     }
 
     Object.keys(testCases).forEach(url => {
