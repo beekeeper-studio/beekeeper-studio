@@ -7,7 +7,7 @@ export default {
   defaultChunkSize: 100,
   largeFieldWidth: 300,
   maxColumnWidth: 1000,
-  maxInitialWidth: 300,
+  maxInitialWidth: 500,
   bigTableColumnWidth: 125
 }
 
