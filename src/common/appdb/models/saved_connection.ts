@@ -215,10 +215,14 @@ export class SavedConnection extends DbConnectionBase {
     return this._sshMode
   }
 
+  private smellsLikeUrl(url: string): boolean {
+    return url.includes("://")
+  }
+
   parse(url: string) {
     try {
       const goodEndings = ['.db', '.sqlite', '.sqlite3']
-      if(goodEndings.find((e) => url.endsWith(e))) {
+      if(goodEndings.find((e) => url.endsWith(e)) && !this.smellsLikeUrl(url)) {
         // it's a sqlite file
         this.connectionType = 'sqlite'
         this.defaultDatabase = url

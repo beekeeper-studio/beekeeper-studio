@@ -10,7 +10,8 @@ describe("Saved Connection", () => {
       "user:password@host:12345": {host: 'host', port: 12345, username: 'user', password: 'password'},
       "superduperhost.db": {defaultDatabase: 'superduperhost.db', connectionType: 'sqlite'},
       "some/path.sqlite3": {connectionType: 'sqlite', defaultDatabase: 'some/path.sqlite3'},
-      "/Path/to file/with space.sqlite": { connectionType: 'sqlite', defaultDatabase: "/Path/to file/with space.sqlite"}
+      "/Path/to file/with space.sqlite": { connectionType: 'sqlite', defaultDatabase: "/Path/to file/with space.sqlite"},
+      "postgresql://database.db": {connectionType: 'postgresql', host: 'database.db'},
     }
 
     Object.keys(testCases).forEach(url => {
