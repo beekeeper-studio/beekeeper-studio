@@ -30,7 +30,7 @@
     "@types/pg": "^7.14.7",
     "@types/sql-formatter": "^2.3.0",
     "base64-url": "^2.3.3",
-    "better-sqlite3": "^7.1.5",
+    "better-sqlite3": "7.1.2",
     "cassandra-driver": "^4.4.0",
     "cli-highlight": "2.0.0",
     "codemirror": "^5.58.2",
@@ -119,7 +119,7 @@
     "sqlite3": "^5.0.2",
     "testcontainers": "^4.6.0",
     "typescript": "^3.9.7",
-    "vue-cli-plugin-electron-builder": "^2.0.0-rc.1",
+    "vue-cli-plugin-electron-builder": "^2.0.0",
     "vue-template-compiler": "^2.6.10",
     "vuepress": "^1.5.0"
   },
@@ -167,6 +167,7 @@
   "resolutions": {
     "watchpack": "1.6.1",
     "node-ssh-forward/ssh2": "beekeeper-studio/ssh2#electron-detection",
-    "node-pre-gyp": "0.12.0"
+    "node-pre-gyp": "0.12.0",
+    "electron-builder": "22.10.5"
   }
 }
