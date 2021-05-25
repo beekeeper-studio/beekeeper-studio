@@ -1,4 +1,4 @@
-import {AppEvent} from "../../common/AppEvent"
+import { AppEvent } from "../../common/AppEvent"
 
 export default class {
 
@@ -47,11 +47,4 @@ export default class {
   menuStyle() {
     this.vueApp.$noty.success("Restart Beekeeper for the change to take effect")
   }
-
-
-
-
-
-
-
 }

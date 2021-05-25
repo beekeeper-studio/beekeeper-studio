@@ -273,6 +273,16 @@ const store = new Vuex.Store<State>({
       context.commit('setUsername', name)
     },
 
+    async openUrl(context, url: string) {
+      console.log("open url", url)
+      const conn = new SavedConnection();
+      if (!conn.parse(url)) {
+        throw `Unable to parse ${url}`
+      } else {
+        await context.dispatch('connect', conn)
+      }
+    },
+
     async connect(context, config: SavedConnection) {
       if (context.state.username) {
         const server = ConnectionProvider.for(config, context.state.username)

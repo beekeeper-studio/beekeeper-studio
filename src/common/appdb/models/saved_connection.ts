@@ -215,10 +215,22 @@ export class SavedConnection extends DbConnectionBase {
     return this._sshMode
   }
 
+  private smellsLikeUrl(url: string): boolean {
+    return url.includes("://")
+  }
+
   parse(url: string) {
     try {
-      const parsed = new ConnectionString(url)
-      this.connectionType = parsed.protocol as IDbClients || this.connectionType
+      const goodEndings = ['.db', '.sqlite', '.sqlite3']
+      if(goodEndings.find((e) => url.endsWith(e)) && !this.smellsLikeUrl(url)) {
+        // it's a sqlite file
+        this.connectionType = 'sqlite'
+        this.defaultDatabase = url
+        return true
+      }
+
+      const parsed = new ConnectionString(url)      
+      this.connectionType = parsed.protocol as IDbClients || this.connectionType || 'postgresql'
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
       }
@@ -229,7 +241,7 @@ export class SavedConnection extends DbConnectionBase {
       this.defaultDatabase = parsed.path ? parsed.path[0] : null || this.defaultDatabase
       return true
     } catch (ex) {
-      log.error("SavedConnection unable to parse connection string", url, ex)
+      log.error('unable to parse connection string, assuming sqlite file', ex)
       return false
     }
   }

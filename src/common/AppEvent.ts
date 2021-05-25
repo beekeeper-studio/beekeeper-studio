@@ -13,7 +13,7 @@ export enum AppEvent {
   beekeeperAdded = 'bkadd',
   openExternally = 'oe',
   toggleSidebar = 'ts',
-  beginExport = 'be',
+  beginExport = 'be'
 }
 
 
