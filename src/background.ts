@@ -19,6 +19,7 @@ import { IGroupedUserSettings, UserSetting } from './common/appdb/models/user_se
 import Connection from './common/appdb/Connection'
 import Migration from './migration/index'
 import { buildWindow, getActiveWindows } from './background/WindowBuilder'
+import yargs from 'yargs-parser'
 
 import { AppEvent } from './common/AppEvent'
 function initUserDirectory(d: string) {
@@ -42,7 +43,7 @@ log.info("initializing user ORM connection")
 const ormConnection = new Connection(platformInfo.appDbPath, false)
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let settings: IGroupedUserSettings | undefined = undefined
+let settings: IGroupedUserSettings
 let menuHandler
 log.info("registering schema")
 // Scheme must be registered before the app is ready
@@ -50,7 +51,7 @@ protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true
 let initialized = false
 
 async function initBasics() {
-  if (initialized) return
+  if (initialized) return settings
   initialized = true
   await ormConnection.connect()
   log.info("running migrations")
@@ -71,15 +72,7 @@ async function initBasics() {
     if (!url) return
     electron.shell.openExternal(url)
   })
-}
-
-async function createFirstWindow () {
-  log.info("Creating first window")
-  if (!settings) {
-    throw "Unable to open window - no settings found"
-  }
-  buildWindow(settings)
-
+  return settings
 }
 
 
@@ -96,7 +89,7 @@ app.on('activate', async (_event, hasVisibleWindows) => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (!hasVisibleWindows) {
-    const settings = await UserSetting.all()
+    if (!settings) throw "No settings initialized!"
     buildWindow(settings)
   }
 })
@@ -115,27 +108,37 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
-  await initBasics()
-  if (getActiveWindows().length === 0) {
-    createFirstWindow()
-  }
+  const slice = platformInfo.isDevelopment ? 2 : 1
+  const parsedArgs = yargs(process.argv.slice(slice))
+  console.log("got args", parsedArgs)
+  const options = parsedArgs._.map((url: string) => ({ url }))
+  const settings = await initBasics()
   
+  if (options.length > 0) {
+
+    await Promise.all(options.map((option) => buildWindow(settings, option)))
+  } else {
+    if (getActiveWindows().length === 0) {
+      const settings = await initBasics()
+      await buildWindow(settings)
+    }
+  }
 })
 
 // Open a connection from a file (e.g. ./sqlite.db)
 app.on('open-file', async (event, file) => {
-  console.log('open file')
-  await initBasics()
   event.preventDefault();
-  if (!settings) throw "No settings!"
-  await buildWindow(settings, { file })
+  console.log('opening file')
+  const settings = await initBasics()
+  
+  await buildWindow(settings, { url: file })
 });
 
 // Open a connection from a url (e.g. postgres://host)
 app.on('open-url', async (event, url) => {
-  await initBasics()
   event.preventDefault();
-  if (!settings) throw "No settings!"
+  console.log("opening url")
+  const settings = await initBasics()
   await buildWindow(settings, { url })
 });
 

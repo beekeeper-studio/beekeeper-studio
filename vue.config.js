@@ -58,9 +58,19 @@ module.exports = {
         ],
         fileAssociations: [
           {
-            name: "SQLite File",
-            ext: ["db", "sqlite", "sqlite3"],
-            role: "Editor"
+            ext: 'db',
+            name: 'SQLite db file',
+            mimeType: 'application/vnd.sqlite3',
+          },
+          {
+            ext: 'sqlite3',
+            name: 'SQLite sqlite3 file',
+            mimeType: 'application/vnd.sqlite3'
+          },
+          {
+            ext: 'sqlite',
+            name: 'SQLite sqlite file',
+            mimeType: 'application/vnd.sqlite3'
           }
         ],
         protocols: [
@@ -128,7 +138,7 @@ module.exports = {
           depends: ["libgtk-3-0", "libnotify4", "libnss3", "libxss1", "libxtst6", "xdg-utils", "libatspi2.0-0", "libuuid1", "libappindicator3-1", "libsecret-1-0", "gnupg"]
         },
         appImage: {
-          publish: ['github']
+          publish: ['github'],
         },
         snap: {
           publish: [

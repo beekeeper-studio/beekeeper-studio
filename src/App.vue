@@ -17,7 +17,7 @@ import Titlebar from './components/Titlebar'
 import CoreInterface from './components/CoreInterface'
 import ConnectionInterface from './components/ConnectionInterface'
 import AutoUpdater from './components/AutoUpdater'
-import querystring from 'querystring'
+import querystring from 'query-string'
 
 export default {
   name: 'app',
@@ -27,7 +27,7 @@ export default {
   data() {
     return {
       file: null,
-      url: null
+      url: "/home/rathboma/Downloads/sakila.db"
     }
   },
   computed: {
@@ -45,12 +45,17 @@ export default {
     }
   },
   async mounted() {
+    await this.$store.dispatch('loadSavedConfigs')
+    await this.$store.dispatch('loadUsedConfigs')
+    await this.$store.dispatch('fetchUsername')
 
     const query = querystring.parse(global.location.search)
     if (query) {
       this.file = query.file || null
       this.url = query.url || null
     }
+
+    console.log("received query", query)
 
     this.$nextTick(() => {
       ipcRenderer.send('ready')
@@ -73,7 +78,9 @@ export default {
       try {
         await this.$store.dispatch('openUrl', this.url)
       } catch (error) {
-        this.$noty.error(`Error opening ${this.url}: ${error.message}`)
+        console.error(error)
+        this.$noty.error(`Error opening ${this.url}: ${error}`)
+        throw error
       }
     }
 
