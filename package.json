@@ -85,7 +85,6 @@
     "vuex-persist": "^2.0.1",
     "xel": "beekeeper-studio/xel",
     "xlsx": "^0.16.2",
-    "yargs": "^17.0.1",
     "yargs-parser": "^20.2.7",
     "yup": "^0.27.0"
   },
