@@ -434,8 +434,10 @@ export async function truncateAllTables(conn) {
 export async function getTableProperties(conn, table) {
   const length = await getTableLength(conn, table, undefined)
   const indexes = await listTableIndexes(conn, undefined, table)
+  const triggers = await listTableTriggers(conn, table);
+  const relations = []
   return {
-    length, indexes
+    length, indexes, relations, triggers
   }
 }
 
