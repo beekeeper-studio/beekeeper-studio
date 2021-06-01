@@ -23,11 +23,11 @@
           <span v-if="properties.length">~{{properties.length.toLocaleString()}}</span>
         </span>
         <span class="statusbar-item" :title="`Table Size ${humanSize}`">
-          <i class="material-icons">table</i>
+          <i class="material-icons">aspect_ratio</i>
           <span>{{humanSize}}</span>
         </span>
         <span class="statusbar-item" :title="`Index Size ${humanIndexSize}`">
-          <i class="material-icons">find_in_page</i>
+          <i class="material-icons">location_searching</i>
           <span>{{humanIndexSize}}</span>
         </span>
 

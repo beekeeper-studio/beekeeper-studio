@@ -49,11 +49,9 @@
       margin-bottom: $gutter-h;
       display: flex;
       align-items: center;
-      .badge {
-        font-size: 1rem;
-        margin-left: $gutter-w;
-        line-height: 1.8;
-        padding: 0 $gutter-w;
+      .item-icon {
+        font-size: 1.6rem;
+        margin-right: $gutter-w;
       }
     }
     .table-meta {
@@ -64,6 +62,7 @@
     .table-description {
       position: relative;
       padding: $gutter-w;
+      margin: 0 -$gutter-h;
       border-radius: 3px;
       cursor: pointer;
       min-height: 60px;

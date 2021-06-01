@@ -1,6 +1,9 @@
 <template>
   <div class="table-info">
-    <h1 class="table-name">{{fullName}} <span class="badge">{{table.entityType}}</span></h1>
+    <h1 class="table-name">
+      <i :title="title" :class="iconClass" class="item-icon material-icons">grid_on</i>
+      <span>{{fullName}}</span>
+    </h1>
     <div class="table-meta" v-if="createdAt || owner">
       <span v-if="createdAt" class="table-meta-created">Created at {{createdAt}}</span>
       <span v-if="owner" class="table-meta-owner">Owned by {{owner}}</span>
@@ -82,6 +85,11 @@ export default {
     }
   },
   computed: {
+    iconClass() {
+      const result = {}
+      result[`${this.table.entityType}-icon`] = true
+      return result
+    },
     supportsDescription() {
       return this.connection.supportedFeatures().comments === true
     },

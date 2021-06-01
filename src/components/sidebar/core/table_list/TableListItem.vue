@@ -60,8 +60,8 @@
 
 <script type="text/javascript">
 
-  import { mapGetters, mapState } from 'vuex'
-  import _ from 'lodash'
+import { mapGetters, mapState } from 'vuex'
+import _ from 'lodash'
 import { AppEvent } from '../../../../common/AppEvent'
 	export default {
 		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container"],
