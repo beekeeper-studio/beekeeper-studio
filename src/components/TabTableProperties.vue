@@ -164,7 +164,7 @@ export default {
       }
     },
     async openTable() {
-      this.$root.emit("loadTable", { table: this.table })
+      this.$root.$emit("loadTable", { table: this.table })
     }
   },
   async mounted() {

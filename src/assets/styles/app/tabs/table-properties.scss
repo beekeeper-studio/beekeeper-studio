@@ -6,6 +6,12 @@
   flex-grow: 1;
   padding: 0;
   overflow: hidden;
+
+  h2 {
+    text-transform: uppercase;
+    font-size: 0.9em;
+  }
+
   .table-properties-wrap {
     height: 100%;
     padding: 0 1.5rem 3rem;

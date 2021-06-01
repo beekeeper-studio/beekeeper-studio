@@ -8,7 +8,7 @@
       <span v-if="createdAt" class="table-meta-created">Created at {{createdAt}}</span>
       <span v-if="owner" class="table-meta-owner">Owned by {{owner}}</span>
     </div>
-    <div title="Table Description (Comment)" v-if="supportsDescription" class="table-description-wrap">
+    <div title="Table Description (Table Comment)" v-if="supportsDescription" class="table-description-wrap">
       <div class="table-description" :class="descriptionClass" @click.prevent="editDescription" v-show="!editingDescription">
         <div ref="descriptionDiv" class="markdown-description" v-html="formattedDescription || 'No Description'"></div>
         <i class="material-icons">edit</i>
@@ -90,8 +90,11 @@ export default {
       result[`${this.table.entityType}-icon`] = true
       return result
     },
+    title() {
+      return this.table.entityType
+    },
     supportsDescription() {
-      return this.connection.supportedFeatures().comments === true
+      return this.table.entityType === 'table' && this.connection.supportedFeatures().comments === true
     },
     owner() {
       if (!this.properties) return null
