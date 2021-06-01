@@ -163,9 +163,9 @@ select {
 // Tabulator
 .tabulator-table {
   .tabulator-row {
-    // &:nth-child(even) {
-    //   background: $row-highlight;
-    // }
+    &:nth-child(odd) {
+      background: rgba($theme-base, 0.025);
+    }
     &.inserted, 
     &.inserted:hover {
       background: $row-add;
