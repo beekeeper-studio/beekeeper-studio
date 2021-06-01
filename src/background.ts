@@ -19,9 +19,8 @@ import { UserSetting } from './common/appdb/models/user_setting'
 import Connection from './common/appdb/Connection'
 import Migration from './migration/index'
 import { buildWindow } from './background/WindowBuilder'
-import { spawn, Worker } from 'threads'
-
 import { AppEvent } from './common/AppEvent'
+// import { spawn, Worker } from 'threads'
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
     fs.mkdirSync(d, { recursive: true })
@@ -51,8 +50,10 @@ protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true
 
 async function createFirstWindow () {
   log.info("Creating first window")
-  const worker = await spawn(new Worker('./workers/test_worker'))
-  await worker.test()
+
+  // const worker = await spawn(new Worker('./workers/test_worker'))
+  // await worker.test()
+
 
   await ormConnection.connect()
   log.info("running migrations")

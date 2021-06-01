@@ -1,6 +1,6 @@
 const webpack = require('webpack');
 const ThreadsPlugin = require('threads-plugin');
-const ExternalsPlugin = require('webpack2-externals-plugin')
+const NodeTargetPlugin = require('webpack/lib/node/NodeTargetPlugin')
 const path = require('path')
 const fpmOptions = [
   "--after-install=build/deb-postinstall"
@@ -11,38 +11,63 @@ if (  process.env.PI_BUILD ) {
   fpmOptions.push("armhf")
 }
 
-const externals = ['better-sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2', 'ssh2']
+const externals = ['better-sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2', 'ssh2', 'mssql']
 module.exports = {
+  configureWebpack: {
+    plugins: [
+      new webpack.IgnorePlugin(/pg-native/, /pg/),
+      new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/),
+
+    ],
+    node: {
+      dns: 'mock'
+    },
+    module: {
+      rules: [
+        {
+          test: /node_modules[/\\](iconv-lite)[/\\].+/,
+          resolve: {
+            aliasFields: ['main']
+          }
+        }
+      ]
+    }
+
+  },
   pluginOptions: {
     electronBuilder: {
+      chainWebpackRendererProcess: config => {
+        config.plugin('threads')
+          .use(new ThreadsPlugin({ globalObject: 'self', plugins: [
+            new webpack.IgnorePlugin(/pg-native/, /pg/),
+            new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/),
+            new NodeTargetPlugin(),
+            new webpack.ExternalsPlugin("commonjs", externals),
+          ] }))
+      },
       chainWebpackMainProcess: config => {
         config.module
           .rule('babel')
           .test(/\.js$/)
           .use('babel')
           .loader('babel-loader')
-
-          .options({
-            presets: [
-              ['@babel/preset-env', { 
-                modules: false,
-                targets: {
-                    esmodules: true
-                  }
-              }],
-          ],
-            plugins: [
-              ['@babel/plugin-proposal-decorators', {legacy: true}],
-              ['@babel/plugin-proposal-class-properties', {loose: true}],
-              new ExternalsPlugin({
-                type: 'commonjs',
-                include: path.join(__dirname, 'node_modules', 'better-sqlite3'),
-              }),
-              new ThreadsPlugin({ globalObject: 'self', target: 'electron-node-worker', plugins: ['ExternalsPlugin'] })
-            ]
-          })
+            .options({
+              presets: [
+                ['@babel/preset-env', { 
+                  modules: false,
+                  targets: {
+                      esmodules: true
+                    }
+                }],
+              ],
+              plugins: [
+                ['@babel/plugin-proposal-decorators', {legacy: true}],
+                ['@babel/plugin-proposal-class-properties', {loose: true}],
+              ]
+            })
       },
       nodeIntegration: true,
+      nodeIntegrationInWorker: true,
       externals,
       asar: {
         smartUnpack: true,
@@ -128,37 +153,5 @@ module.exports = {
       }
     }
   },
-  configureWebpack: {
-    plugins: [
-      new webpack.IgnorePlugin(/pg-native/, /pg/),
-      new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/),
 
-    ],
-    // externals: {
-    //   // Possible drivers for knex - we'll ignore them
-    //   // 'sqlite3': 'sqlite3',
-    //   'mariasql': 'mariasql',
-    //   // 'mssql': 'mssql',
-    //   'mysql': 'mysql',
-    //   'oracle': 'oracle',
-    //   'strong-oracle': 'strong-oracle',
-    //   'oracledb': 'oracledb',
-    //   // 'pg': 'pg',
-    //   // 'pg-query-stream': 'pg-query-stream'
-    // },
-    node: {
-      dns: 'mock'
-    },
-    module: {
-      rules: [
-        {
-          test: /node_modules[/\\](iconv-lite)[/\\].+/,
-          resolve: {
-            aliasFields: ['main']
-          }
-        }
-      ]
-    }
-
-  }
 }
