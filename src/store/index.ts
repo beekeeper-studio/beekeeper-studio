@@ -39,7 +39,8 @@ interface State {
   favorites: UsedQuery[],
   username: Nullable<string>,
   menuActive: boolean,
-  activeTab: Nullable<CoreTab>
+  activeTab: Nullable<CoreTab>,
+  selectedSidebarItem: Nullable<string>,
 }
 
 Vue.use(Vuex)
@@ -71,9 +72,13 @@ const store = new Vuex.Store<State>({
     favorites: [],
     username: null,
     menuActive: false,
-    activeTab: null
+    activeTab: null,
+    selectedSidebarItem: null
   },
   getters: {
+    selectedSidebarItem(state) {
+      return state.selectedSidebarItem
+    },
     orderedUsedConfigs(state) {
       return _.sortBy(state.usedConfigs, 'updatedAt').reverse()
     },
@@ -119,6 +124,9 @@ const store = new Vuex.Store<State>({
     }
   },
   mutations: {
+    selectSidebarItem(state, item: string) {
+      state.selectedSidebarItem = item
+    },
     entityFilter(state, filter) {
       state.entityFilter = filter
     },

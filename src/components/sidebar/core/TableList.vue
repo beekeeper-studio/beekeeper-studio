@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-col expand">
+  <div class="flex-col expand" ref="wrapper">
 
     <!-- Filter -->
     <div class="fixed">
@@ -250,7 +250,7 @@
       supportsRoutines() {
         return this.connection.supportedFeatures().customRoutines
       },
-      ...mapState(['tables', 'routines', 'connection', 'database', 'tablesLoading']),
+      ...mapState(['selectedSidebarItem', 'tables', 'routines', 'connection', 'database', 'tablesLoading']),
       ...mapGetters(['pinned', 'schemaTables', 'filteredTables', 'filteredRoutines']),
     },
     watch: {
@@ -298,12 +298,21 @@
       refreshTables() {
         this.$store.dispatch('updateTables')
         this.$store.dispatch('updateRoutines')
-      }
+      },
+      maybeUnselect(e) {
+        if (this.selectedSidebarItem) {
+          if (this.$refs.wrapper.contains(e.target)) {
+            return
+          }
+          this.$store.commit('selectSidebarItem', null)
+        }
+      },
     },
     mounted() {
-
+      document.addEventListener('mousedown', this.maybeUnselect)
     },
     beforeDestroy() {
+      document.removeEventListener('mousedown', this.maybeUnselect)
       if(this.split) {
         console.log("destroying split")
         this.split.destroy()

@@ -16,6 +16,7 @@
 <script>
 import Tabulator from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
+import globals from '../../common/globals'
 export default {
   mixins: [data_mutators],
   props: ["table", "connection", "tabId", "active", "properties"],
@@ -48,6 +49,7 @@ export default {
     this.tabulator = new Tabulator(this.$refs.tabulator, {
       data: this.tableData,
       columns: this.tableColumns,
+      columnMaxInitialWidth: globals.maxColumnWidthTableInfo
     })
   }
 }

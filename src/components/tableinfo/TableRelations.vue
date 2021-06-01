@@ -15,6 +15,7 @@
 </template>
 <script>
 import Tabulator from 'tabulator-tables'
+import globals from '../../common/globals'
 export default {
   props: ["table", "connection", "tabId", "active", "properties"],
   data() {
@@ -47,7 +48,8 @@ export default {
     this.tabulator = new Tabulator(this.$refs.tabulator, {
       columns: this.tableColumns,
       data: this.tableData,
-      tooltips: true
+      tooltips: true,
+      columnMaxInitialWidth: globals.maxColumnWidthTableInfo
     })
   }
 }

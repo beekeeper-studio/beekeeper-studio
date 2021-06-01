@@ -83,7 +83,7 @@
           { event: AppEvent.newTab, handler: this.createQuery},
           { event: 'historyClick', handler: this.createQueryFromItem},
           { event: 'loadTable', handler: this.openTable },
-          { event: 'loadTableStructure', handler: this.openTableStructure},
+          { event: 'loadTableProperties', handler: this.openTableProperties},
           { event: 'loadSettings', handler: this.openSettings },
           { event: 'loadTableCreate', handler: this.loadTableCreate },
           { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
@@ -194,9 +194,9 @@
         const stringResult = sqlFormatter.format(_.isArray(result) ? result[0] : result)
         this.createQuery(stringResult)
       },
-      openTableStructure({ table }) {
+      openTableProperties({ table }) {
         const existing = this.tabItems.find((t) => {
-          return t.type === 'table-structure' &&
+          return t.type === 'table-properties' &&
             t.table === table
         })
 

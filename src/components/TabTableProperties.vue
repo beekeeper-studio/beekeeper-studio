@@ -1,23 +1,32 @@
 <template>
   <div class="table-properties">
-    <div class="table-properties-wrap">
-      <div class="center-wrap" v-if="properties && table">
-        <div v-for="(pill) in pills" :key="pill.id" ref="tableInfo" class="table-properties-content">
-          <component
-            :is="pill.component"
-            :table="table"
-            :primaryKeys="primaryKeys"
-            :properties="properties"
-            :connection="connection"
-            :active="active"
-            
-          ></component>
+    <div v-if="error" class="alert alert-danger">
+      {{error.message}}
+    </div>
+    <template  v-else>
+      <div v-if="loading" class="table-properties-loading">
+        <x-progressbar></x-progressbar>
+      </div>
+      <div class="table-properties-wrap" >
+        <div class="center-wrap" v-if="properties && table && !loading">
+          <div v-for="(pill) in pills" :key="pill.id" ref="tableInfo" class="table-properties-content">
+            <component
+              :is="pill.component"
+              :table="table"
+              :primaryKeys="primaryKeys"
+              :properties="properties"
+              :connection="connection"
+              :active="active"
+              
+            ></component>
+          </div>
         </div>
       </div>
-    </div>
+    </template>
+
     <span class="expand"></span>
     <statusbar class="tabulator-footer">
-      <div class="expand" v-if="properties">
+      <div class="col truncate expand" v-if="properties">
         <span class="statusbar-item" :title="`${properties.length} Records`">
           <i class="material-icons">list_alt</i>
           <span v-if="properties.length">~{{properties.length.toLocaleString()}}</span>
@@ -32,6 +41,28 @@
         </span>
 
       </div>
+      <div class="col flex-right statusbar-actions">
+        <x-button class="actions-btn btn btn-flat" title="Actions">
+          <i class="material-icons">settings</i>
+          <i class="material-icons">arrow_drop_down</i>
+          <x-menu>
+            <x-menuitem @click.prevent="refresh">
+              <x-label>Refresh</x-label>
+            </x-menuitem>
+            <x-menuitem @click.prevent="openTable">
+              <x-label>View Data</x-label>
+            </x-menuitem>
+            <hr v-if="dev">
+            <x-menuitem v-if="dev" @click.prevent="triggerError">
+              <x-label>[DEV] Toggle Error</x-label>
+            </x-menuitem>
+            <x-menuitem v-if="dev" @click.prevent="loading = !loading">
+              <x-label>[DEV] Toggle Loading</x-label>
+            </x-menuitem>
+            
+          </x-menu>
+        </x-button>
+      </div>
     </statusbar>
   </div>
 </template>
@@ -45,11 +76,15 @@ import TableIndexesVue from './tableinfo/TableIndexes.vue'
 import TableRelationsVue from './tableinfo/TableRelations.vue'
 import TableTriggersVue from './tableinfo/TableTriggers.vue'
 import { format as humanBytes } from 'bytes'
+import platformInfo from '../common/platform_info'
 export default {
   props: ["table", "connection", "tabID", "active"],
   components: { Statusbar },
   data() {
     return {
+      dev: platformInfo.isDevelopment,
+      loading: true,
+      error: null,
       primaryKeys: [],
       properties: {},
       rawPills: [
@@ -109,13 +144,31 @@ export default {
       return humanBytes(this.properties.indexSize)
     }
   },
+  methods: {
+    triggerError() {
+      // this is for dev only
+      this.error = new Error("Something went wrong")
+    },
+    async refresh() {
+      this.loading = true
+      this.error = null
+      this.properties = null
+      try {
+        this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
+        this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema)
+        this.loading = false
+      } catch (ex) {
+        this.error = ex
+      } finally {
+        this.loading = false
+      }
+    },
+    async openTable() {
+      this.$root.emit("loadTable", { table: this.table })
+    }
+  },
   async mounted() {
-    console.log("properties mounted")
-    this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
-    this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema)
-    const columnWidth = this.table.columns.length > 20 ? 125 : undefined
-
-
+    this.refresh()
   }
 }
 </script>

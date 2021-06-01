@@ -18,6 +18,7 @@ import Tabulator from 'tabulator-tables'
 import DataMutators from '../../mixins/data_mutators'
 import _ from 'lodash'
 import Vue from 'vue'
+import globals from '../../common/globals'
 export default {
   mixins: [DataMutators],
   props: ["table", "connection", "tabID", "active", "primaryKeys", 'columnTypes'],
@@ -58,7 +59,7 @@ export default {
       }
       return [
         {title: 'Position', field: 'ordinalPosition', headerTooltip: 'The ordinal position of the columns'},
-        {title: 'Name', field: 'columnName', editor: null && 'input', cellEdited: this.cellEdited},
+        {title: 'Name', field: 'columnName', editor: null && 'input', cellEdited: this.cellEdited, headerFilter: true},
         {title: 'Type', field: 'dataType', editor: null && 'autocomplete', editorParams: autocompleteOptions, cellEdited: this.cellEdited}, 
         {
           title: 'Nullable',
@@ -115,7 +116,10 @@ export default {
     if (!this.active) this.forceRedraw = true
     this.tabulator = new Tabulator(this.$refs.tableSchema, {
       columns: this.tableColumns,
+      layout: 'fitDataFill',
+      tooltips: true,
       data: this.tableData,
+      columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
     })
   }
 }

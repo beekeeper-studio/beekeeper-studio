@@ -17,6 +17,7 @@
 <script>
 import Tabulator from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
+import globals from '../../common/globals'
 export default {
   mixins: [data_mutators],
   props: ["table", "connection", "tabId", "active", "properties"],
@@ -41,7 +42,7 @@ export default {
         { field: 'name', title: "Name", tooltip: true},
         { field: 'timing', title: "Timing"},
         { field: 'manipulation', title: "Manipulation"},
-        { field: 'action', title: "Action", tooltip: true},
+        { field: 'action', title: "Action", tooltip: true, maxInitialWidth: 500},
         { field: 'condition', title: "Condition", formatter: this.cellFormatter}
       ]
     },
@@ -59,7 +60,7 @@ export default {
       columns: this.tableColumns,
       data: this.tableData,
       tooltips: true,
-      columnMaxInitialWidth: 800,
+      columnMaxInitialWidth: globals.maxColumnWidthTableInfo
 
     })
   }

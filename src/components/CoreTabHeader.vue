@@ -3,8 +3,8 @@
     <li class="nav-item" :title="title + scope">
       <a
         class="nav-link"
-        @click.prevent.stop="$emit('click', tab)"
-        @click.middle.prevent.stop="$emit('close', tab)"
+        @mousedown="$emit('click', tab)"
+        @click.middle.prevent="$emit('close', tab)"
         :class="{ active: selected }"
       >
         <i v-if="tab.type === 'table'" :class="iconClass" class="material-icons item-icon table">grid_on</i>
@@ -13,7 +13,7 @@
         <i v-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
         <span class="tab-title truncate" :title="title + scope">{{title}} <span v-if="scope" class="tab-title-scope">{{scope}}</span></span>
         <div class="tab-action">
-          <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @click.prevent.stop="$emit('close', tab)">
+          <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @mousedown.stop="doNothing" @click.prevent.stop="$emit('close', tab)">
             <i class="material-icons close">close</i>
             <i class="material-icons unsaved-icon" >fiber_manual_record</i>
           </span>
@@ -47,6 +47,11 @@
     data() {
       return {
         unsaved: false,
+      }
+    },
+    methods: {
+      doNothing() {
+        
       }
     },
     watch: {

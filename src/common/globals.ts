@@ -8,7 +8,8 @@ export default {
   largeFieldWidth: 300,
   maxColumnWidth: 1000,
   maxInitialWidth: 500,
-  bigTableColumnWidth: 125
+  bigTableColumnWidth: 125,
+  maxColumnWidthTableInfo: 300
 }
 
 

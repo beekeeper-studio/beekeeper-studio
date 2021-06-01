@@ -1,10 +1,10 @@
 <template>
   <div class="list-item">
-    <a class="list-item-btn" role="button" v-bind:class="{'active': selected,'open': showColumns }">
+    <a class="list-item-btn" role="button" v-bind:class="{'active': active, 'selected': selected,'open': showColumns }">
       <span class="btn-fab open-close" @mousedown.prevent="toggleColumns" >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
-      <span class="item-wrapper flex flex-middle expand" @click.prevent="openTable" @dblclick.prevent.stop="doNothing">
+      <span class="item-wrapper flex flex-middle expand" @dblclick.prevent="openTable" @mousedown.prevent="selectItem">
         <i :title="title" :class="iconClass" class="item-icon material-icons">grid_on</i>
         <span class="table-name truncate" :title="table.name">{{table.name}}</span>
       </span>
@@ -63,6 +63,7 @@
 import { mapGetters, mapState } from 'vuex'
 import _ from 'lodash'
 import { AppEvent } from '../../../../common/AppEvent'
+import { uuidv4 } from '../../../../lib/uuid'
 	export default {
 		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container"],
     mounted() {
@@ -71,6 +72,7 @@ import { AppEvent } from '../../../../common/AppEvent'
     data() {
       return {
         showColumns: false,
+        id: uuidv4(),
         clickState: {
           timer: null,
           openClicks: 0,
@@ -92,7 +94,7 @@ import { AppEvent } from '../../../../common/AppEvent'
       showColumns() {
         this.table.showColumns = this.showColumns
       },
-      selected() {
+      active() {
         if (this.selected && !this.noSelect) {
           let shouldScroll = true
           if (this.container) {
@@ -119,16 +121,24 @@ import { AppEvent } from '../../../../common/AppEvent'
         return _.startCase(this.table.entityType)
       },
       selected() {
-        return this.activeTab && this.activeTab.table &&
+        return this.selectedSidebarItem === this.id
+      },
+      active() {
+        const tableSelected = this.activeTab && this.activeTab.table &&
           this.activeTab.table.name === this.table.name &&
           this.activeTab.table.schema === this.table.schema
+        
+        return tableSelected
       },
-      ...mapGetters(['pinned']),
+      ...mapGetters(['pinned', 'selectedSidebarItem']),
       ...mapState(['activeTab'])
     },
     methods: {
       doNothing() {
         // do nothing
+      },
+      selectItem() {
+        this.$store.commit('selectSidebarItem', this.id)
       },
       createTable() {
         this.$root.$emit('loadTableCreate', this.table)
@@ -160,7 +170,7 @@ import { AppEvent } from '../../../../common/AppEvent'
         }, this.clickState.delay);
       },
       openTableStructure(){
-        this.$root.$emit('loadTableStructure', {table: this.table})
+        this.$root.$emit('loadTableProperties', {table: this.table})
       },
       pin() {
         this.$store.dispatch('pinTable', this.table)
