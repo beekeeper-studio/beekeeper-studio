@@ -1,7 +1,9 @@
 <template>
   <div class="table-properties">
-    <div v-if="error" class="alert alert-danger">
-      {{error.message}}
+    <div v-if="error" class="alert-wrapper">
+      <div class="alert alert-danger">
+        {{error.message}}
+      </div>
     </div>
     <template  v-else>
       <div v-if="loading" class="table-properties-loading">

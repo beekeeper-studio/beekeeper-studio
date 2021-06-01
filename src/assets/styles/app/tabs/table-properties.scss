@@ -11,7 +11,9 @@
     text-transform: uppercase;
     font-size: 0.9em;
   }
-
+  .alert-wrapper {
+    padding: $gutter-w;
+  }
   .table-properties-wrap {
     height: 100%;
     padding: 0 1.5rem 3rem;
