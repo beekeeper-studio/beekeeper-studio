@@ -125,7 +125,8 @@
     "typescript": "^4.2.0",
     "vue-cli-plugin-electron-builder": "^2.0.0-rc.1",
     "vue-template-compiler": "^2.6.10",
-    "vuepress": "^1.5.0"
+    "vuepress": "^1.5.0",
+    "webpack2-externals-plugin": "^1.0.0"
   },
   "eslintConfig": {
     "root": true,

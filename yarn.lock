@@ -14929,6 +14929,11 @@ webpack-sources@^1.1.0, webpack-sources@^1.4.0, webpack-sources@^1.4.1, webpack-
     source-list-map "^2.0.0"
     source-map "~0.6.1"
 
+webpack2-externals-plugin@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/webpack2-externals-plugin/-/webpack2-externals-plugin-1.0.0.tgz#a8114d39f23fca31ced323c0da17c11b51762f4a"
+  integrity sha1-qBFNOfI/yjHO0yPA2hfBG1F2L0o=
+
 webpack@^4.0.0, webpack@^4.18.0:
   version "4.46.0"
   resolved "https://registry.yarnpkg.com/webpack/-/webpack-4.46.0.tgz#bf9b4404ea20a073605e0a011d188d77cb6ad542"

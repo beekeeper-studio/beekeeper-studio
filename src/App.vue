@@ -17,7 +17,6 @@ import Titlebar from './components/Titlebar'
 import CoreInterface from './components/CoreInterface'
 import ConnectionInterface from './components/ConnectionInterface'
 import AutoUpdater from './components/AutoUpdater'
-import { spawn, Worker } from 'threads'
 export default {
   name: 'app',
   components: {
@@ -42,8 +41,7 @@ export default {
     }
   },
   async mounted() {
-    const worker = await spawn(new Worker('./workers/export_worker'))
-    worker.test()
+    console.log('making worker')
     this.$nextTick(() => {
       ipcRenderer.send('ready')
     })
