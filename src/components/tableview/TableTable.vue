@@ -558,7 +558,6 @@ export default Vue.extend({
       const inserts = this.pendingChanges.inserts.map((item) => {
         const columnNames = this.table.columns.map((c) => c.columnName)
         const rowData = item.row.getData()
-        console.log("ROW DATA", item.row.getData())
         const result = {}
         columnNames.forEach((c) => {
           const d = rowData[c]
@@ -785,8 +784,6 @@ export default Vue.extend({
             updates: this.pendingChanges.updates,
             deletes: this.pendingChanges.deletes
           }
-
-          console.log("applying changes", payload)
 
           const result = await this.connection.applyChanges(payload)
           const updateIncludedPK = this.pendingChanges.updates.find(e => e.column === e.pkColumn)

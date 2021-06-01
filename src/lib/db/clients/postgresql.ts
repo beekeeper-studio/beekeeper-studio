@@ -877,7 +877,6 @@ export async function alterTableColumns(conn: HasPool, changes: ColumnChange[]) 
 }
 
 export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {
-  console.log("updating description", description)
   const identifier = wrapTable(table, schema)
   const comment  = escapeString(description)
   const sql = `COMMENT ON TABLE ${identifier} IS '${comment}'`

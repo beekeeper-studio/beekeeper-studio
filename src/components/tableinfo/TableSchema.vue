@@ -99,7 +99,6 @@ export default {
   },
   methods: {
     cellEdited(cell, ...props) {
-      console.log('cell edited!', cell, cell.getValue())
       const columnName = cell.getRow().getCells().find((c) => c.getField())
       const change = {
         columnName,

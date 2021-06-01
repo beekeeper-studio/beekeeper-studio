@@ -3,6 +3,9 @@ import NativeMenuActionHandlers from './NativeMenuActionHandlers'
 import { ipcMain, BrowserWindow } from 'electron'
 import {AppEvent} from '../common/AppEvent'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('NativeMenuBuilder')
 
 export default class NativeMenuBuilder {
   private builder?: MenuBuilder
@@ -19,7 +22,7 @@ export default class NativeMenuBuilder {
   initialize() {
     if (this.builder) {
       const template = this.builder.buildTemplate()
-      console.log("MENUTEMPLATE", template)
+      log.info("MENUTEMPLATE", template)
       this.menu = this.electron.Menu.buildFromTemplate(template)
       this.electron.Menu.setApplicationMenu(this.menu)
     } else {
