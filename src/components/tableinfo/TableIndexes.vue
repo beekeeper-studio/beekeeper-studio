@@ -49,7 +49,8 @@ export default {
     this.tabulator = new Tabulator(this.$refs.tabulator, {
       data: this.tableData,
       columns: this.tableColumns,
-      columnMaxInitialWidth: globals.maxColumnWidthTableInfo
+      columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
+      placeholder: "No Indexes"
     })
   }
 }

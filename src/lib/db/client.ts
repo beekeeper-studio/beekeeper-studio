@@ -131,7 +131,6 @@ export class DBConnection {
   getRoutineCreateScript = getRoutineCreateScript.bind(null, this.server, this.database)
   truncateAllTables = truncateAllTables.bind(null, this.server, this.database)
   setTableDescription = setTableDescription.bind(null, this.server, this.database)
-  connectionType: Nullable<IDbClients> = null
   async currentDatabase() {
     return this.database.database
   }
@@ -312,7 +311,7 @@ function getTableKeys(server: IDbConnectionServer, database: IDbConnectionDataba
   return database.connection?.getTableKeys(database.database, table, schema);
 }
 
-function getTableProperties(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {
+function getTableProperties(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema?: string) {
   checkIsConnected(server, database)
   return database.connection?.getTableProperties(table, schema)
 }

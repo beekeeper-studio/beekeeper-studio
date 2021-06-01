@@ -120,6 +120,7 @@ export default {
       tooltips: true,
       data: this.tableData,
       columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
+      placeholder: "No Columns"
     })
   }
 }

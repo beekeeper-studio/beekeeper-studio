@@ -49,7 +49,8 @@ export default {
       columns: this.tableColumns,
       data: this.tableData,
       tooltips: true,
-      columnMaxInitialWidth: globals.maxColumnWidthTableInfo
+      columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
+      placeholder: "No Relations"
     })
   }
 }
