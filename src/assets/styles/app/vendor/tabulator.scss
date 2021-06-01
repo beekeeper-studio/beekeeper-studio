@@ -381,6 +381,13 @@ $cell-radius:            2px;
       color: $text-dark;
       user-select: text;
     }
+    .tabulator-placeholder {
+      span {
+        font-size: 12px;
+        font-weight: normal;
+        color: $text-light;
+      }
+    }
   }
 
   //holding div that contains loader and covers tabulator element to prevent interaction
