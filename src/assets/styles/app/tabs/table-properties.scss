@@ -62,7 +62,7 @@
     .table-description {
       position: relative;
       padding: $gutter-w;
-      margin: 0 -$gutter-h;
+      margin: $gutter-h (-$gutter-h) 0;
       border-radius: 3px;
       cursor: pointer;
       min-height: 60px;

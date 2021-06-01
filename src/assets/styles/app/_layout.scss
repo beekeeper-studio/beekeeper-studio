@@ -172,6 +172,9 @@ hr {
   height: 24px;
   line-height: 24px;
   border-radius: $btn-border-radius-small;
+  x-label {
+    line-height: 24px;
+  }
 }
 .btn-block {
   display: flex;
