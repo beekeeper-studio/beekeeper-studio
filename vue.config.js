@@ -38,7 +38,7 @@ module.exports = {
     electronBuilder: {
       chainWebpackRendererProcess: config => {
         config.plugin('threads')
-          .use(new ThreadsPlugin({ globalObject: 'self', plugins: [
+          .use(new ThreadsPlugin({ globalObject: 'self', target: 'webworker', plugins: [
             new webpack.IgnorePlugin(/pg-native/, /pg/),
             new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/),
             new NodeTargetPlugin(),
