@@ -55,6 +55,7 @@
     "pluralize": "^8.0.0",
     "popper.js": "^1.15.0",
     "portfinder": "^1.0.26",
+    "query-string": "^7.0.0",
     "reflect-metadata": "^0.1.10",
     "sass-loader": "^7.1.0",
     "shortid": "^2.2.14",
@@ -81,6 +82,7 @@
     "vuex-persist": "^2.0.1",
     "xel": "beekeeper-studio/xel",
     "xlsx": "^0.16.2",
+    "yargs-parser": "^20.2.7",
     "yup": "^0.27.0"
   },
   "devDependencies": {

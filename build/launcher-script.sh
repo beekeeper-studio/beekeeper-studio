@@ -16,5 +16,9 @@ if [ ! -f "$CLONE" ]; then
   exec "$SCRIPT_DIR/beekeeper-studio-bin" "$@"
 else
   UNPRIVILEGED_USERNS_ENABLED=$(cat "$CLONE" 2>/dev/null)
-  exec "$SCRIPT_DIR/beekeeper-studio-bin" "$([[ $UNPRIVILEGED_USERNS_ENABLED == 0 ]] && echo '--no-sandbox')" "$@"
+  if [[ $UNPRIVILEGED_USERNS_ENABLED == 0 ]]; then
+    exec "$SCRIPT_DIR/beekeeper-studio-bin" "--no-sandbox" "$@"
+  else
+    exec "$SCRIPT_DIR/beekeeper-studio-bin" "$@"
+  fi
 fi

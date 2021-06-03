@@ -56,6 +56,60 @@ module.exports = {
             to: 'public'
           }
         ],
+        fileAssociations: [
+          {
+            ext: 'db',
+            name: 'SQLite db file',
+            mimeType: 'application/vnd.sqlite3',
+          },
+          {
+            ext: 'sqlite3',
+            name: 'SQLite sqlite3 file',
+            mimeType: 'application/vnd.sqlite3'
+          },
+          {
+            ext: 'sqlite',
+            name: 'SQLite sqlite file',
+            mimeType: 'application/vnd.sqlite3'
+          }
+        ],
+        protocols: [
+          {
+            name: "Amazon Redshift URL scheme",
+            schemes: ["redshift"],
+            role: "Editor"
+          },
+          {
+            name: "CockroachDB URL scheme",
+            schemes: ["cockroachdb", "cockroach"],
+            role: "Editor"
+          },
+          {
+            name: "MariaDB URL scheme",
+            schemes: ["mariadb"],
+            role: "Editor"
+          },
+          {
+            name: "MySQL URL scheme",
+            schemes: ["mysql"],
+            role: "Editor"
+          },
+          {
+            name: "PostgreSQL URL scheme",
+            schemes: ["postgresql", "postgres", "psql"],
+            role: "Editor"
+          },
+          {
+            name: "SQLite URL scheme",
+            schemes: ["sqlite"],
+            role: "Editor"
+          },
+          {
+            name: "SQL Server URL scheme",
+            schemes: ["sqlserver", "microsoftsqlserver", "mssql"],
+            role: "Editor"
+          }
+        ],
         mac: {
           entitlements: "./build/entitlements.mac.plist",
           entitlementsInherit: "./build/entitlements.mac.plist",
@@ -84,7 +138,7 @@ module.exports = {
           depends: ["libgtk-3-0", "libnotify4", "libnss3", "libxss1", "libxtst6", "xdg-utils", "libatspi2.0-0", "libuuid1", "libappindicator3-1", "libsecret-1-0", "gnupg"]
         },
         appImage: {
-          publish: ['github']
+          publish: ['github'],
         },
         snap: {
           publish: [

@@ -6,20 +6,25 @@ import { createProtocol } from "vue-cli-plugin-electron-builder/lib"
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from 'electron-log'
+import querystring from 'query-string'
 
 const log = rawLog.scope('WindowBuilder')
 
 const windows: BeekeeperWindow[] = []
+
+export interface OpenOptions {
+  url?: string
+}
 
 function getIcon() {
   return path.resolve(path.join(__dirname, '..', `public/icons/png/512x512.png`))
 }
 
 class BeekeeperWindow {
-  private win: Nullable<BrowserWindow>
-    private reloaded = false
+  private win: BrowserWindow | null
+  private reloaded = false
 
-  constructor(settings: IGroupedUserSettings) {
+  constructor(settings: IGroupedUserSettings, openOptions?: OpenOptions) {
     const theme = settings.theme
     const showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
       log.info('constructing the window')
@@ -40,7 +45,10 @@ class BeekeeperWindow {
     })
 
     const runningInWebpack = !!process.env.WEBPACK_DEV_SERVER_URL
-    const appUrl = process.env.WEBPACK_DEV_SERVER_URL || 'app://./index.html'
+    let appUrl = process.env.WEBPACK_DEV_SERVER_URL || 'app://./index.html'
+    const query = openOptions ? querystring.stringify(openOptions) : null
+
+    appUrl = query ? `${appUrl}?${query}` : appUrl
 
     this.win.webContents.zoomLevel = Number(settings.zoomLevel?.value) || 0
     if (!runningInWebpack) {
@@ -64,8 +72,8 @@ class BeekeeperWindow {
     return this.win ? this.win.webContents : null
   }
 
-  send(channel: string) {
-    this.win?.webContents.send(channel)
+  send(channel: string, ...args: any[]) {
+    this.win?.webContents.send(channel, ...args)
   }
 
   initializeCallbacks() {
@@ -94,6 +102,6 @@ export function getActiveWindows() {
   return _.filter(windows, 'active')
 }
 
-export function buildWindow(settings: IGroupedUserSettings) {
-  windows.push(new BeekeeperWindow(settings))
+export function buildWindow(settings: IGroupedUserSettings, options?: OpenOptions) {
+  windows.push(new BeekeeperWindow(settings, options))
 }

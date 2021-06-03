@@ -15,10 +15,11 @@ import { manageUpdates } from './background/update_manager'
 
 import platformInfo from './common/platform_info'
 import MenuHandler from './background/NativeMenuBuilder'
-import { UserSetting } from './common/appdb/models/user_setting'
+import { IGroupedUserSettings, UserSetting } from './common/appdb/models/user_setting'
 import Connection from './common/appdb/Connection'
 import Migration from './migration/index'
-import { buildWindow } from './background/WindowBuilder'
+import { buildWindow, getActiveWindows } from './background/WindowBuilder'
+import yargs from 'yargs-parser'
 
 import { AppEvent } from './common/AppEvent'
 function initUserDirectory(d: string) {
@@ -36,33 +37,34 @@ if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
 
 const isDevelopment = platformInfo.isDevelopment
 
+
 initUserDirectory(platformInfo.userDirectory)
 log.info("initializing user ORM connection")
 const ormConnection = new Connection(platformInfo.appDbPath, false)
-
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
+let settings: IGroupedUserSettings
 let menuHandler
 log.info("registering schema")
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
+let initialized = false
 
-
-async function createFirstWindow () {
-  log.info("Creating first window")
+async function initBasics() {
+  if (initialized) return settings
+  initialized = true
   await ormConnection.connect()
   log.info("running migrations")
   const migrator = new Migration(ormConnection, process.env.NODE_ENV)
   await migrator.run()
 
   log.info("getting settings")
-  const settings = await UserSetting.all()
+  settings = await UserSetting.all()
 
   log.info("setting up the menu")
   menuHandler = new MenuHandler(electron, settings)
   menuHandler.initialize()
   log.info("Building the window")
-  buildWindow(settings)
   log.info("managing updates")
   manageUpdates()
   ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
@@ -70,6 +72,7 @@ async function createFirstWindow () {
     if (!url) return
     electron.shell.openExternal(url)
   })
+  return settings
 }
 
 
@@ -86,7 +89,7 @@ app.on('activate', async (_event, hasVisibleWindows) => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (!hasVisibleWindows) {
-    const settings = await UserSetting.all()
+    if (!settings) throw "No settings initialized!"
     buildWindow(settings)
   }
 })
@@ -104,8 +107,37 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
-  createFirstWindow()
+  const slice = platformInfo.isDevelopment ? 2 : 1
+  const parsedArgs = yargs(process.argv.slice(slice))
+  console.log("Parsing app args", parsedArgs)
+  const options = parsedArgs._.map((url: string) => ({ url }))
+  const settings = await initBasics()
+  
+  if (options.length > 0) {
+
+    await Promise.all(options.map((option) => buildWindow(settings, option)))
+  } else {
+    if (getActiveWindows().length === 0) {
+      const settings = await initBasics()
+      await buildWindow(settings)
+    }
+  }
 })
+
+// Open a connection from a file (e.g. ./sqlite.db)
+app.on('open-file', async (event, file) => {
+  event.preventDefault();
+  const settings = await initBasics()
+  
+  await buildWindow(settings, { url: file })
+});
+
+// Open a connection from a url (e.g. postgres://host)
+app.on('open-url', async (event, url) => {
+  event.preventDefault();
+  const settings = await initBasics()
+  await buildWindow(settings, { url })
+});
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
