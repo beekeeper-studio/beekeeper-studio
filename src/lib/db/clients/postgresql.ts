@@ -4,13 +4,13 @@ import { readFileSync } from 'fs';
 
 import pg, { PoolClient, QueryResult, PoolConfig } from 'pg';
 import { identify } from 'sql-query-identifier';
-import _ from 'lodash'
+import _  from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults } from "../models";
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, ColumnChange, TableIndex } from "../models";
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeLiteral, escapeString } from './utils';
 
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -140,7 +140,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
   return {
     /* eslint max-len:0 */
-    supportedFeatures: () => ({ customRoutines: true}),
+    supportedFeatures: () => ({ customRoutines: true, comments: true}),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: (_db: string, filter: FilterOptions | undefined) => listTables(conn, filter),
@@ -155,9 +155,9 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
+    getPrimaryKeys: (db, table, schema = defaultSchema) => getPrimaryKeys(conn, db, table, schema),
     applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
-    // stream: (queryText: string, options: StreamOptions, schema: string = defaultSchema) => stream(conn, queryText, options, schema),
     executeQuery: (queryText, _schema = defaultSchema) => executeQuery(conn, queryText),
     listDatabases: (filter?: DatabaseFilterOptions) => listDatabases(conn, filter),
     selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
@@ -167,6 +167,11 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getViewCreateScript: (view, schema = defaultSchema) => getViewCreateScript(conn, view, schema),
     getRoutineCreateScript: (routine, type, schema = defaultSchema) => getRoutineCreateScript(conn, routine, type, schema),
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
+    getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
+    alterTableColumns: (changes: ColumnChange[]) => alterTableColumns(conn, changes),
+    setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema)
+
+
   };
 }
 
@@ -232,8 +237,8 @@ export async function listMaterializedViews(conn: HasPool, filter: FilterOptions
 
 interface STQOptions {
   table: string,
-  orderBy: OrderBy[],
-  filters: TableFilter[] | string,
+  orderBy?: OrderBy[],
+  filters?: TableFilter[] | string,
   offset?: number,
   limit?: number,
   schema: string,
@@ -314,6 +319,14 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   }
 }
 
+async function getTableLength(conn: HasPool, table: string, schema: string, filters: TableFilter[] | string | undefined, forceSlow: boolean): Promise<number> {
+  const version = await getVersion(conn)
+  const { countQuery, params } = buildSelectTopQueries({ table, schema, filters, version, forceSlow})
+  const countResults = await driverExecuteSingle(conn, { query: countQuery, params: params })
+  const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
+  const totalRecords = rowWithTotal ? rowWithTotal.total : 0
+  return totalRecords
+}
 
 async function getEntityType(
   conn: HasPool,
@@ -345,13 +358,11 @@ async function selectTop(
   log.info('table type', tableType)
   const forceSlow = tableType === null || tableType !== 'BASE TABLE'
   const qs = buildSelectTopQueries({
-    table, offset, limit, orderBy, filters, schema, version, forceSlow
+    table, offset, limit, orderBy, filters, schema, version
   })
-  
-  const countResults = await driverExecuteSingle(conn, { query: qs.countQuery, params: qs.params })
   const result = await driverExecuteSingle(conn, { query: qs.query, params: qs.params })
-  const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
-  const totalRecords = rowWithTotal ? rowWithTotal.total : 0
+  const totalRecords = await getTableLength(conn, table, schema, filters, forceSlow)
+
   return {
     result: result.rows,
     totalRecords: Number(totalRecords),
@@ -459,7 +470,12 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
   });
 }
 
-export async function listTableColumns(conn: Conn, _database: string, table?: string, schema?: string) {
+export async function listTableColumns(
+  conn: Conn,
+  _database: string,
+  table?: string,
+  schema?: string
+): Promise<ExtendedTableColumn[]> {
   // if you provide table, you have to provide schema
   const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : ""
   const params = table ? [schema, table] : []
@@ -471,6 +487,9 @@ export async function listTableColumns(conn: Conn, _database: string, table?: st
       table_schema,
       table_name,
       column_name,
+      is_nullable,
+      ordinal_position,
+      column_default,
       CASE
         WHEN character_maximum_length is not null  and udt_name != 'text'
           THEN CONCAT(udt_name, concat('(', concat(character_maximum_length::varchar(255), ')')))
@@ -490,6 +509,9 @@ export async function listTableColumns(conn: Conn, _database: string, table?: st
     tableName: row.table_name,
     columnName: row.column_name,
     dataType: row.data_type,
+    nullable: row.is_nullable === 'YES',
+    defaultValue: row.column_default,
+    ordinalPosition: Number(row.ordinal_position),
   }));
 }
 
@@ -523,7 +545,12 @@ export async function listMaterializedViewColumns(conn: Conn, _database: string,
 
 export async function listTableTriggers(conn: Conn, table: string, schema: string) {
   const sql = `
-    SELECT trigger_name
+    SELECT 
+      trigger_name,
+      action_timing as timing,
+      event_manipulation as manipulation,
+      action_statement as action,
+      action_condition as condition
     FROM information_schema.triggers
     WHERE event_object_schema = $1
     AND event_object_table = $2
@@ -536,24 +563,72 @@ export async function listTableTriggers(conn: Conn, table: string, schema: strin
 
   const data = await driverExecuteSingle(conn, { query: sql, params });
 
-  return data.rows.map((row) => row.trigger_name);
+  return data.rows.map((row) => ({
+    name: row.trigger_name,
+    timing: row.timing,
+    manipulation: row.manipulation,
+    action: row.action,
+    condition: row.condition,
+    table: table,
+    schema: schema
+  }));
 }
-export async function listTableIndexes(conn: Conn, table: string, schema: string) {
-  const sql = `
-    SELECT indexname as index_name
-    FROM pg_indexes
-    WHERE schemaname = $1
-    AND tablename = $2
-  `;
+export async function listTableIndexes(
+  conn: Conn, table: string, schema: string
+  ): Promise<TableIndex[]> {
 
+  const sql = `
+select
+	i.oid as index_id,
+    t.relname as table_name,
+    c.nspname as schema,
+    i.relname as index_name,
+    ix.indisprimary as is_primary,
+    ix.indisunique as is_unique,
+    array_to_string(array_agg(a.attname), ', ') as column_names
+from
+    pg_class t,
+    pg_class i,
+    pg_index ix,
+    pg_attribute a,
+    pg_namespace c
+where
+    t.oid = ix.indrelid
+    and i.oid = ix.indexrelid
+    and a.attrelid = t.oid
+    and a.attnum = ANY(ix.indkey)
+    and t.relkind = 'r'
+    and t.relname = $1
+    and c.nspname = $2
+group by
+	i.oid,
+    t.relname,
+    i.relname,
+    c.nspname,
+    ix.indisprimary,
+    ix.indisunique
+order by
+    t.relname,
+    i.relname
+`
   const params = [
-    schema,
     table,
+    schema,
   ];
 
   const data = await driverExecuteSingle(conn, { query: sql, params });
-
-  return data.rows.map((row) => row.index_name);
+  const result = data.rows.map((row) => {
+    return {
+      id: row.index_id,
+      name: row.index_name,
+      table: row.table_name,
+      schema: row.schema,
+      columns: row.column_names,
+      unique: row.is_unique,
+      primary: row.is_primary
+    }
+  });
+  return result
 }
 
 export async function listSchemas(conn: Conn, filter?: SchemaFilterOptions) {
@@ -569,6 +644,60 @@ export async function listSchemas(conn: Conn, filter?: SchemaFilterOptions) {
 
   return data.rows.map((row) => row.schema_name);
 }
+
+function wrapTable(table: string, schema?: string) {
+  if (!schema) return wrapIdentifier(table)
+  return `${wrapIdentifier(schema)}.${wrapIdentifier(table)}`
+}
+
+async function getTableOwner(conn: HasPool, table: string, schema: string) {
+  const sql = `select tableowner from pg_catalog.pg_tables where tablename = $1 and schemaname = $2`
+  const result = await driverExecuteSingle(conn, { query: sql, params: [table, schema]})
+  return result.rows[0]?.tableowner
+}
+
+export async function getTableProperties(conn: HasPool, table: string, schema: string) {
+  const identifier = wrapTable(table, schema)
+  const sql = `
+    SELECT 
+      pg_indexes_size('${identifier}') as index_size,
+      pg_relation_size('${identifier}') as table_size,
+      obj_description('${identifier}'::regclass) as description
+  `
+
+  const tableType = await getEntityType(conn, table, schema)
+  const forceSlow = !tableType || tableType !== 'BASE TABLE'
+
+  const [
+    result,
+    totalRecords,
+    indexes,
+    relations,
+    triggers,
+    owner
+  ] = await Promise.all([
+    driverExecuteSingle(conn, { query: sql }),
+    getTableLength(conn, table, schema, undefined, forceSlow),
+    listTableIndexes(conn, table, schema),
+    getTableKeys(conn, "", table, schema),
+    listTableTriggers(conn, table, schema),
+    getTableOwner(conn, table, schema)
+  ])
+
+  const props = result.rows.length > 0 ? result.rows[0] : {}
+  return {
+    description: props.description,
+    indexSize: Number(props.index_size),
+    size: Number(props.table_size),
+    length: totalRecords,
+    indexes,
+    relations,
+    triggers,
+    owner
+  }
+
+}
+
 
 export async function getTableReferences(conn: Conn, table: string, schema: string) {
   const sql = `
@@ -599,7 +728,9 @@ export async function getTableKeys(conn: Conn, _database: string, table: string,
         ccu.table_schema AS to_schema,
         ccu.table_name AS to_table,
         ccu.column_name AS to_column,
-        tc.constraint_name
+        tc.constraint_name,
+        rc.update_rule as update_rule,
+        rc.delete_rule as delete_rule
     FROM
         information_schema.table_constraints AS tc
         JOIN information_schema.key_column_usage AS kcu
@@ -608,8 +739,12 @@ export async function getTableKeys(conn: Conn, _database: string, table: string,
         JOIN information_schema.constraint_column_usage AS ccu
           ON ccu.constraint_name = tc.constraint_name
           AND ccu.table_schema = tc.table_schema
+         JOIN information_schema.referential_constraints rc
+          on tc.constraint_name = rc.constraint_name
+          and tc.table_schema = rc.constraint_schema
     WHERE tc.constraint_type = 'FOREIGN KEY'
-    AND tc.table_name=$1 and tc.table_schema = $2;
+    AND tc.table_name= $1 and tc.table_schema = $2;
+
   `;
 
   const params = [
@@ -627,19 +762,30 @@ export async function getTableKeys(conn: Conn, _database: string, table: string,
     fromSchema: row.from_schema,
     fromColumn: row.from_column,
     constraintName: row.constraint_name,
+    onUpdate: row.update_rule,
+    onDelete: row.delete_rule
   }));
 }
 
-export async function getPrimaryKey(conn: HasPool, _database: string, table: string, schema: string): Promise<string> {
+export async function getPrimaryKey(conn: HasPool, _database: string, table: string, schema: string): Promise<string | null> {
+  const keys = await getPrimaryKeys(conn, _database, table, schema)
+  return keys.length > 0 ? keys[0].columnName : null
+}
+
+export async function getPrimaryKeys(conn: HasPool, _database: string, table: string, schema: string): Promise<PrimaryKeyColumn[]> {
   const version = await getVersion(conn)
   const tablename = escapeString(schema ? `${wrapIdentifier(schema)}.${wrapIdentifier(table)}` : wrapIdentifier(table))
   const psqlQuery = `
-    SELECT a.attname as column_name, format_type(a.atttypid, a.atttypmod) AS data_type
+    SELECT 
+      a.attname as column_name,
+      format_type(a.atttypid, a.atttypmod) AS data_type,
+      a.attnum as position
     FROM   pg_index i
     JOIN   pg_attribute a ON a.attrelid = i.indrelid
                         AND a.attnum = ANY(i.indkey)
     WHERE  i.indrelid = '${tablename}'::regclass
-    AND    i.indisprimary;
+    AND    i.indisprimary 
+    ORDER BY a.attnum
   `
 
   const redshiftQuery = `
@@ -663,7 +809,14 @@ export async function getPrimaryKey(conn: HasPool, _database: string, table: str
   `
   const query = version.isRedshift ? redshiftQuery : psqlQuery
   const data = await driverExecuteSingle(conn, { query })
-  return data.rows && data.rows[0] && data.rows.length === 1 ? data.rows[0].column_name : null
+  if (data.rows) {
+    return data.rows.map((r) => ({
+      columnName: r.column_name,
+      position: r.position
+    }))
+  } else {
+    return []
+  }
 }
 
 export async function applyChanges(conn: Conn, changes: TableChanges): Promise<TableUpdateResult[]> {
@@ -695,6 +848,41 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
   })
 
   return results
+}
+
+export async function alterTableColumns(conn: HasPool, changes: ColumnChange[]) {
+
+  const queries = changes.map((change) => {
+    const identifier = wrapTable(change.table, change.schema)
+    const column = wrapIdentifier(change.columnName)
+    const direction = change.newValue === true ? 'SET' : 'DROP'
+    switch (change.changeType) {
+      case 'columnName':
+        return `ALTER TABLE ${identifier} RENAME COLUMN ${wrapIdentifier(change.columnName)} TO ${wrapIdentifier(change.newValue.toString())}`
+        break;
+      case 'dataType':
+      return `ALTER TABLE ${identifier} ALTER COLUMN ${column} TYPE ${escapeLiteral(change.newValue.toString())}`
+        break;
+      case 'defaultValue':
+        return `ALTER TABLE ${identifier} ALTER COLUMN ${column} SET DEFAULT '${escapeString(change.newValue.toString())}'`
+      case 'nullable':
+        return `ALTER TABLE ${identifier} ALTER COLUMN ${column} ${direction} NOT NULL`
+        break;
+      default:
+        break;
+    }
+  })
+  
+  await driverExecuteQuery(conn, { query: queries.join(";")})
+}
+
+export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {
+  const identifier = wrapTable(table, schema)
+  const comment  = escapeString(description)
+  const sql = `COMMENT ON TABLE ${identifier} IS '${comment}'`
+  await driverExecuteSingle(conn, { query: sql})
+  const result = await getTableProperties(conn, table, schema)
+  return result.description
 }
 
 async function insertRows(cli: any, inserts: TableInsert[]) {
@@ -928,13 +1116,8 @@ export function wrapIdentifier(value: string): string {
   if (value === '*') return value;
   const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
   if (matched) return wrapIdentifier(matched[1]) + matched[2];
-  return `"${value.replace(/"/g, '""')}"`;
+  return `"${value.replaceAll(/"/g, '""')}"`;
 }
-
-function escapeString(value: string) {
-  return value.replace("'", "''")
-}
-
 
 async function getSchema(conn: Conn) {
   const sql = 'SELECT current_schema() AS schema';

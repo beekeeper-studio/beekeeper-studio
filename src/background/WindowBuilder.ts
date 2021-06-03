@@ -72,10 +72,6 @@ class BeekeeperWindow {
     return this.win ? this.win.webContents : null
   }
 
-  get active() {
-    return !!this.win
-  }
-
   send(channel: string, ...args: any[]) {
     this.win?.webContents.send(channel, ...args)
   }
@@ -94,6 +90,10 @@ class BeekeeperWindow {
       this.win?.webContents.reload()
     }
     this.reloaded = true
+  }
+
+  get active() {
+    return !!this.win
   }
 
 }

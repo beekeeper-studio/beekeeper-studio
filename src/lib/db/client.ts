@@ -3,7 +3,7 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery } from './models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, ColumnChange, TableIndex, TableTrigger } from './models';
 
 const logger = createLogger('db');
 
@@ -14,9 +14,9 @@ export interface DatabaseClient {
   listViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
   listRoutines: (filter?: FilterOptions) => Promise<Routine[]>,
   listMaterializedViewColumns: (db: string, table: string, schema?: string) => Promise<TableColumn[]>
-  listTableColumns: (db: string, table?: string, schema?: string) => Promise<TableColumn[]>,
-  listTableTriggers: (table: string, schema?: string) => void,
-  listTableIndexes: (db: string, table: string, schema?: string) => void,
+  listTableColumns: (db: string, table?: string, schema?: string) => Promise<ExtendedTableColumn[]>,
+  listTableTriggers: (table: string, schema?: string) => Promise<TableTrigger[]>,
+  listTableIndexes: (db: string, table: string, schema?: string) => Promise<TableIndex[]>,
   listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>,
   getTableReferences: (table: string, schema?: string) => void,
   getTableKeys: (db: string, table: string, schema?: string) => void,
@@ -24,16 +24,20 @@ export interface DatabaseClient {
   executeQuery: (queryText: string) => void,
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
+  alterTableColumns: (changes: ColumnChange[]) => Promise<void>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
+  getTableProperties: (table: string, schema?: string) => Promise<TableProperties>,
   getTableCreateScript: (table: string, schema?: string) => Promise<string>,
   getViewCreateScript: (view: string) => void,
   getRoutineCreateScript: (routine: string, type: string, schema?: string) => void,
   truncateAllTables: (db: string, schema?: string) => void,
   listMaterializedViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
-  getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string>,
+  getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string | null>,
+  getPrimaryKeys: (db: string, table: string, schema?: string) => Promise<PrimaryKeyColumn[]>,
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string): Promise<TableResult>,
   selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema?: string ): Promise<StreamResults>,
   wrapIdentifier: (value: string) => string
+  setTableDescription: (table: string, description: string, schema?: string) => Promise<string>
 }
 
 export type IDbClients = keyof typeof clients
@@ -90,6 +94,7 @@ export interface IDbConnectionDatabase {
 }
 
 export class DBConnection {
+  connectionType = this.server.config.client
   constructor (private server: IDbConnectionServer, private database: IDbConnectionDatabase) {}
   supportedFeatures = supportedFeatures.bind(null, this.server, this.database)
   connect = connect.bind(null, this.server, this.database)
@@ -106,13 +111,16 @@ export class DBConnection {
   listSchemas = listSchemas.bind(null, this.server, this.database)
   getTableReferences = getTableReferences.bind(null, this.server, this.database)
   getPrimaryKey = getPrimaryKey.bind(null, this.server, this.database)
+  getPrimaryKeys = getPrimaryKeys.bind(null, this.server, this.database)
   getTableKeys = getTableKeys.bind(null, this.server, this.database)
+  getTableProperties = getTableProperties.bind(null, this.server, this.database)
   query = query.bind(null, this.server, this.database)
   executeQuery = executeQuery.bind(null, this.server, this.database)
   listDatabases = listDatabases.bind(null, this.server, this.database)
   selectTop = selectTop.bind(null, this.server, this.database)
   selectTopStream = selectTopStream.bind(null, this.server, this.database)
   applyChanges = applyChanges.bind(null, this.server, this.database)
+  alterTableColumns = alterTableColumns.bind(null, this.server, this.database)
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
   getTableCreateScript = getTableCreateScript.bind(null, this.server, this.database)
   getTableSelectScript = getTableSelectScript.bind(null, this.server, this.database)
@@ -122,7 +130,7 @@ export class DBConnection {
   getViewCreateScript = getViewCreateScript.bind(null, this.server, this.database)
   getRoutineCreateScript = getRoutineCreateScript.bind(null, this.server, this.database)
   truncateAllTables = truncateAllTables.bind(null, this.server, this.database)
-  connectionType: Nullable<IDbClients> = null
+  setTableDescription = setTableDescription.bind(null, this.server, this.database)
   async currentDatabase() {
     return this.database.database
   }
@@ -255,7 +263,7 @@ async function listTableColumns(
   server: IDbConnectionServer,
   database: IDbConnectionDatabase,
   table?: string,
-  schema?: string): Promise<TableColumn[]> {
+  schema?: string): Promise<ExtendedTableColumn[]> {
   checkIsConnected(server , database);
   return await database.connection?.listTableColumns(database.database, table, schema) || Promise.resolve([]);
 }
@@ -293,9 +301,19 @@ function getPrimaryKey(server: IDbConnectionServer, database: IDbConnectionDatab
   return database.connection?.getPrimaryKey(database.database, table, schema)
 }
 
+function getPrimaryKeys(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema?: string) {
+  checkIsConnected(server, database)
+  return database.connection?.getPrimaryKeys(database.database, table, schema)
+}
+
 function getTableKeys(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {
   checkIsConnected(server , database);
   return database.connection?.getTableKeys(database.database, table, schema);
+}
+
+function getTableProperties(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema?: string) {
+  checkIsConnected(server, database)
+  return database.connection?.getTableProperties(table, schema)
 }
 
 function query(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string) {
@@ -307,6 +325,13 @@ function applyChanges(server: IDbConnectionServer, database: IDbConnectionDataba
   checkIsConnected(server, database)
   return database.connection?.applyChanges(changes)
 }
+
+
+function alterTableColumns(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: ColumnChange[]) {
+  checkIsConnected(server, database)
+  return database.connection?.alterTableColumns(changes)
+}
+
 
 function executeQuery(server: IDbConnectionServer, database: IDbConnectionDatabase, queryText: string) {
   checkIsConnected(server , database);
@@ -381,6 +406,10 @@ function getRoutineCreateScript(server: IDbConnectionServer, database: IDbConnec
 
 function truncateAllTables(_server: IDbConnectionServer, database: IDbConnectionDatabase, schema: string) {
   return database.connection?.truncateAllTables(database.database, schema);
+}
+
+function setTableDescription(_server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, description: string, schema?: string) {
+  return database.connection?.setTableDescription(table, description, schema)
 }
 
 async function getTableColumnNames(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {

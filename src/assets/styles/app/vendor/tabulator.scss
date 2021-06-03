@@ -83,7 +83,7 @@ $cell-radius:            2px;
   width: min-content;
   min-width: 100%;
   &:nth-child(odd) {
-    background: rgba($theme-base, 0.025);
+    background: rgba($theme-base, 0.015);
   }
   .tabulator-cell {
     border: 0;
@@ -98,6 +98,12 @@ $cell-radius:            2px;
     }
     &:last-of-type {
       padding-right: $gutter-w * 1.5;
+    }
+    &.cell-editable {
+      cursor: pointer;
+      &:hover {
+        background: rgba($theme-base,0.05);
+      }
     }
 
     i.fk-link {
@@ -238,6 +244,9 @@ $cell-radius:            2px;
     }
   }
 }
+
+
+// NOT Editable ~ change to editable at some point
 .tabletable.view-only {
   .tabulator-row {
     .tabulator-cell {
@@ -248,6 +257,17 @@ $cell-radius:            2px;
     }
   }
 }
+.table-properties {
+  .tabulator-row {
+    .tabulator-cell {
+      cursor: default;
+      &:hover {
+        background: transparent;
+      }
+    }
+  }
+}
+
 
 .tabulator {
   position: relative;
@@ -360,6 +380,13 @@ $cell-radius:            2px;
       width: 100%;
       color: $text-dark;
       user-select: text;
+    }
+    .tabulator-placeholder {
+      span {
+        font-size: 12px;
+        font-weight: normal;
+        color: $text-light;
+      }
     }
   }
 

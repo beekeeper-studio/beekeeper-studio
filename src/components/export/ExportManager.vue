@@ -95,7 +95,6 @@ export default Vue.extend({
         })
     },
     handleExportRequest(options?: ExportTriggerOptions): void {
-      console.log('requested export', options)
       this.table = options?.table
       this.filters = options?.filters
     },
@@ -103,8 +102,7 @@ export default Vue.extend({
       this.table = undefined
       this.filters = undefined
     },
-    notifyProgress(progress: ExportProgress) {
-      console.log(progress)
+    notifyProgress(_progress: ExportProgress) {
     }
   },
   mounted() {

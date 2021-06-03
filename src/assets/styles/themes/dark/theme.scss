@@ -30,7 +30,7 @@
     }
     .connection-button {
       .badge {
-        color: $text-light;
+        color: $statusbar-text-default;
       }
     }
     .connection-type {
@@ -63,5 +63,4 @@
       }
     }
   }
-
-} 
+}

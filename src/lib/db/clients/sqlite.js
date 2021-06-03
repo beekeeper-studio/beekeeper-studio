@@ -8,7 +8,6 @@ import knexlib from 'knex'
 import rawLog from 'electron-log'
 import { buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery } from './utils';
 import { SqliteCursor } from './sqlite/SqliteCursor';
-
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
@@ -29,7 +28,7 @@ export default async function (server, database) {
   await driverExecuteQuery(conn, { query: 'SELECT sqlite_version()' });
 
   return {
-    supportedFeatures: () => ({ customRoutines: false }),
+    supportedFeatures: () => ({ customRoutines: false, comments: false }),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
@@ -42,6 +41,7 @@ export default async function (server, database) {
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table) => getTableReferences(conn, table),
     getPrimaryKey: (db, table) => getPrimaryKey(conn, db, table),
+    getPrimaryKeys: (db, table) => getPrimaryKeys(conn, db, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
     applyChanges: (changes) => applyChanges(conn, changes),
@@ -54,6 +54,7 @@ export default async function (server, database) {
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
     getRoutineCreateScript: (routine) => getRoutineCreateScript(conn, routine),
     truncateAllTables: () => truncateAllTables(conn),
+    getTableProperties: (table) => getTableProperties(conn, table)
   };
 }
 
@@ -257,17 +258,22 @@ export function listRoutines() {
   return Promise.resolve([]); // DOES NOT SUPPORT IT
 }
 
+function dataToColumns(data, tableName) {
+  return data.map((row) => ({
+    tableName,
+    columnName: row.name,
+    dataType: row.type,
+    nullable: Number(row.notnull || 0) === 0,
+    defaultValue: row.dflt_value === 'NULL' ? null : row.dflt_value,
+    ordinalPosition: Number(row.cid)
+  }))
+}
+
 async function listTableColumnsSimple(conn, database, table) {
   const sql = `PRAGMA table_info('${table}')`;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
-
-  return data.map((row) => ({
-    tableName: table,
-    columnName: row.name,
-    dataType: row.type,
-  }));
-
+  return dataToColumns(data, table)
 }
 
 export async function listTableColumns(conn, database, table) {
@@ -277,25 +283,31 @@ export async function listTableColumns(conn, database, table) {
   const allTables = (await listTables(conn)) || []
   const allViews = (await listViews(conn)) || []
   const tables = allTables.concat(allViews)
-  const sql = tables.map(table => {
-    return `PRAGMA table_info(${table.name})`
-  }).join(";")
-
-
-  const results = await driverExecuteQuery(conn, {query: sql, multiple: true});
-  const final = _.flatMap(results, (result, idx) => {
-    return result.data.map(row => ({
-      tableName: tables[idx].name,
-      columnName: row.name,
-      dataType: row.type
-    }))
+  const everything = tables.map((table) => {
+    return {
+      tableName: table.name,
+      sql: `PRAGMA table_info(${table.name})`,
+      results: null
+    }
   })
+
+  const query = everything.map((e) => e.sql).join(";")
+  const allResults = await driverExecuteQuery(conn, { query, multiple: true })
+  log.info("ALL RESULTS", allResults)
+  const results = allResults.map((r, i) => {
+    return {
+      result: r,
+      ...everything[i]
+    }
+  })
+  log.info("RESULTS", results)
+  const final = _.flatMap(results, (item, idx) => dataToColumns(item.result.data, item.tableName))
   return final
 }
 
 export async function listTableTriggers(conn, table) {
   const sql = `
-    SELECT name
+    SELECT name, sql
     FROM sqlite_master
     WHERE type = 'trigger'
       AND tbl_name = '${table}'
@@ -303,7 +315,7 @@ export async function listTableTriggers(conn, table) {
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.map((row) => row.name);
+  return data
 }
 
 export async function listTableIndexes(conn, database, table) {
@@ -311,7 +323,20 @@ export async function listTableIndexes(conn, database, table) {
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.map((row) => row.name);
+  const allSQL = data.map((row) => `PRAGMA INDEX_INFO(${row.name})`).join(";")
+  const infos = await driverExecuteQuery(conn, { query: allSQL, multiple: true})
+
+  const indexColumns = infos.map((result) => {
+    return result.data.map((r) => r.name).join(", ")
+  })
+
+  return data.map((row, idx) => ({
+    id: row.seq,
+    name: row.name,
+    unique: row.unique === 1,
+    primary: row.origin === 'pk',
+    columns: indexColumns[idx]
+  }))
 }
 
 export function listSchemas() {
@@ -328,13 +353,21 @@ export function getTableReferences() {
   return Promise.resolve([]); // TODO: not implemented yet
 }
 
-export async function getPrimaryKey(conn, database, table) {
-  log.debug('finding primary key for', database, table)
+export async function getPrimaryKeys(conn, database, table) {
   const sql = `pragma table_info('${escapeString(table)}')`
   const { data } = await driverExecuteQuery(conn, { query: sql})
   const found = data.filter(r => r.pk > 0)
-  if (found.length !== 1) return null
-  return found[0].name
+  if (!found || found.length === 0) return []
+  return found.map((r) => ({
+    columnName: r.name,
+    position: Number(r.pk)
+  }))
+
+}
+
+export async function getPrimaryKey(conn, database, table) {
+  const keys = await getPrimaryKeys(conn, database, table)
+  return keys.length > 0 ? keys[0].columnName : null
 }
 
 export async function getTableKeys(conn, database, table) {
@@ -343,6 +376,7 @@ export async function getTableKeys(conn, database, table) {
   const { data } = await driverExecuteQuery(conn, { query: sql });
   log.debug("response", data)
   return data.map(row => ({
+    constraintName: row.id,
     constraintType: 'FOREIGN',
     toTable: row.table,
     fromTable: table,
@@ -396,6 +430,24 @@ export async function truncateAllTables(conn) {
 
     await driverExecuteQuery(connClient, { query: truncateAll });
   });
+}
+
+export async function getTableProperties(conn, table) {
+
+  const [
+    length,
+    indexes,
+    triggers,
+    relations
+  ] = await Promise.all([
+    getTableLength(conn, table, undefined),
+    listTableIndexes(conn, undefined, table),
+    listTableTriggers(conn, table),
+    getTableKeys(conn, null, table)
+  ])
+  return {
+    length, indexes, relations, triggers
+  }
 }
 
 

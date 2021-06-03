@@ -181,6 +181,11 @@ export class DBTestUtil {
 
   }
 
+  // lets start simple, it should resolve for all connection types
+  async tablePropertiesTests() {
+    await this.connection.getTableProperties('group')
+  }
+
   async streamTests() {
     console.log('selectTopStream tests')
     const names = [

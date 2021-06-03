@@ -149,6 +149,8 @@
       font-size: 12px;
       padding-left: ($gutter-w * 0.75);
       padding-right: ($gutter-h * 1.25);
+      max-width: $gutter-w * 3;
+      line-height: $tab-height;
     }
     .tab-action {
       position: absolute;
@@ -299,3 +301,4 @@
     }
   }
 }
+  

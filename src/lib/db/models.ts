@@ -20,6 +20,8 @@ export interface StreamResults {
 }
 
 
+
+
 export interface TableOrView {
   schema: string;
   name: string;
@@ -27,11 +29,54 @@ export interface TableOrView {
   columns?: TableColumn[];
 }
 
+export interface TableIndex {
+  id: string
+  table: string
+  schema: string
+  name: string
+  columns: string,
+  unique: boolean
+  primary: boolean  
+}
+
+export interface TableTrigger {
+  name: string
+  timing: string
+  manipulation: string
+  action: string
+  condition: string | null
+  table: string
+  schema?: string
+}
+
+export interface TableProperties {
+  description?: string
+  size?: number
+  indexSize?: number
+  length: number
+  indexes: TableIndex[]
+  relations: TableKey[]
+  triggers: TableTrigger[]
+  owner?: string,
+  createdAt?: string
+}
+
 export interface TableColumn {
-  columnName: string;
-  dataType: string;
-  schemaName?: string;
-  tableName?: string;
+  columnName: string
+  dataType: string
+  schemaName?: string
+  tableName?: string
+}
+
+export interface ExtendedTableColumn extends TableColumn {
+  ordinalPosition: number
+  nullable: boolean
+  defaultValue: any
+}
+
+export interface PrimaryKeyColumn {
+  columnName: string,
+  position: number
 }
 
 export interface FilterOptions {
@@ -84,6 +129,15 @@ export interface TableChanges {
   inserts: TableInsert[];
   updates: TableUpdate[];
   deletes: TableDelete[];
+}
+
+
+export interface ColumnChange {
+  table: string
+  schema?: string
+  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue'
+  columnName: string
+  newValue: string | boolean
 }
 
 export interface TableInsert {
@@ -152,6 +206,7 @@ export interface Routine {
 
 export interface SupportedFeatures {
   customRoutines: boolean;
+  comments: boolean
 }
 
 export interface FieldDescriptor {

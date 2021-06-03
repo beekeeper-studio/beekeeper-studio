@@ -42,7 +42,6 @@ export class SqlServerCursor extends BeeCursor {
   }
 
   private handleRecordset() {
-    console.log('recordset begins')
   }
 
   private handleEnd() {
@@ -57,7 +56,6 @@ export class SqlServerCursor extends BeeCursor {
   }
 
   private handleRow(row: any) {
-    console.log('pushing row -> ', row)
     this.rowBuffer.push(row)
     if (this.rowBuffer.length >= this.chunkSize) {
       this.request?.pause()
@@ -82,7 +80,6 @@ export class SqlServerCursor extends BeeCursor {
     if (this.end) return this.pop()
     await waitFor(() => this.bufferRedy)
     const results = this.pop()
-    console.log('popped -> ', results)
     this.resume()
     return results
   }

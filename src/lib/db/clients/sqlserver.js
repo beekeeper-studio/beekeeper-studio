@@ -1,13 +1,13 @@
 // Copyright (c) 2015 The SQLECTRON Team
 
 import { readFileSync } from 'fs';
-
+import { parse as bytesParse } from 'bytes'
 import { ConnectionPool } from 'mssql';
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _ from 'lodash';
 
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString } from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
 const log = logRaw.scope('sql-server')
@@ -34,7 +34,7 @@ export default async function (server, database) {
   await driverExecuteQuery(conn, { query: 'SELECT 1' });
 
   return {
-    supportedFeatures: () => ({ customRoutines: true}),
+    supportedFeatures: () => ({ customRoutines: true, comments: true}),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),
@@ -48,6 +48,7 @@ export default async function (server, database) {
     getTableReferences: (table) => getTableReferences(conn, table),
     getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema) => getPrimaryKey(conn, db, table, schema),
+    getPrimaryKeys: (db, table, schema) => getPrimaryKeys(conn, db, table, schema),
     applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
@@ -59,6 +60,8 @@ export default async function (server, database) {
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
     getRoutineCreateScript: (routine) => getRoutineCreateScript(conn, routine),
     truncateAllTables: () => truncateAllTables(conn),
+    getTableProperties: (table, schema) => getTableProperties(conn, table, schema),
+    setTableDescription: (table, description, schema) => setTableDescription(conn, table, description, schema)
   };
 }
 
@@ -402,7 +405,14 @@ export async function listRoutines(conn, filter) {
 export async function listTableColumns(conn, database, table) {
   const clause = table ? `WHERE table_name = ${wrapValue(table)}` : ""
   const sql = `
-    SELECT table_schema, table_name, column_name, data_type,
+    SELECT 
+      table_schema as "table_schema",
+      table_name as "table_name",
+      column_name as "column_name",
+      data_type as "data_type",
+      ordinal_position as "ordinal_position",
+      column_default as "column_default",
+      is_nullable as "is_nullable",
       CASE
         WHEN character_maximum_length is not null AND data_type != 'text'
           THEN character_maximum_length
@@ -422,27 +432,54 @@ export async function listTableColumns(conn, database, table) {
     tableName: row.table_name,
     columnName: row.column_name,
     dataType: row.length ? `${row.data_type}(${row.length})` : row.data_type,
+    ordinalPosition: Number(row.ordinal_position),
+    nullable: row.is_nullable === 'YES',
+    defaultValue: row.column_default
   }));
 }
 
-export async function listTableTriggers(conn, table) {
+export async function listTableTriggers(conn, table, schema) {
   // SQL Server does not have information_schema for triggers, so other way around
   // is using sp_helptrigger stored procedure to fetch triggers related to table
-  const sql = `EXEC sp_helptrigger ${wrapIdentifier(table)}`;
+  const sql = `EXEC sp_helptrigger '${escapeString(schema)}.${escapeString(table)}'`;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.recordset.map((row) => row.trigger_name);
+  return data.recordset.map((row) => {
+    const update = row.isupdate === 1 ? 'UPDATE' : null
+    const del = row.isdelete === 1 ? 'DELETE': null
+    const insert = row.isinsert === 1 ? 'INSERT' : null
+    const instead = row.isinsteadof === 1 ? 'INSEAD_OF' : null
+
+    const manips = [update, del, insert, instead].filter((f) => f).join(", ")
+
+    return {
+      name: row.trigger_name,
+      timing: row.isafter === 1 ? 'AFTER' : 'BEFORE',
+      manipulation: manips,
+      action: null,
+      condition: null,
+      table, schema
+
+    }
+  })
 }
 
-export async function listTableIndexes(conn, database, table) {
+export async function listTableIndexes(conn, table, schema) {
   // SQL Server does not have information_schema for indexes, so other way around
   // is using sp_helpindex stored procedure to fetch indexes related to table
-  const sql = `EXEC sp_helpindex ${wrapIdentifier(table)}`;
+  const sql = `EXEC sp_helpindex '${escapeString(schema)}.${escapeString(table)}'`;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.recordset.map((row) => row.index_name);
+  return data.recordset.map((row, idx) => ({
+    id: idx,
+    name: row.index_name,
+    columns: row.index_keys,
+    primary: row.index_description.includes('primary key'),
+    unique: row.index_description.includes('unique'),
+    table, schema
+  }));
 }
 
 export async function listSchemas(conn, filter) {
@@ -524,24 +561,33 @@ export async function getTableKeys(conn, database, table, schema) {
     toColumn: row.to_column,
     fromTable: row.from_table,
     fromColumn: row.from_column,
-    onUpdate: null,
-    onDelete: null
+    onUpdate: 'UNKNOWN',
+    onDelete: 'UNKNOWN'
   }));
   log.debug("tableKeys result", result)
   return result
 }
 
-export async function getPrimaryKey(conn, database, table, schema) {
+export async function getPrimaryKeys(conn, database, table, schema) {
   logger().debug('finding foreign key for', database, table)
   const sql = `
-  SELECT COLUMN_NAME
+  SELECT COLUMN_NAME, ORDINAL_POSITION
   FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
   WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + QUOTENAME(CONSTRAINT_NAME)), 'IsPrimaryKey') = 1
   AND TABLE_NAME = ${wrapValue(table)} AND TABLE_SCHEMA = ${wrapValue(schema)}
   `
   const { data } = await driverExecuteQuery(conn, { query: sql})
-  logger().debug('primary key results:', data)
-  return data.recordset && data.recordset[0] && data.recordset.length === 1 ? data.recordset[0].COLUMN_NAME : null
+  if (!data.recordset || data.recordset.length === 0) return []
+
+  return data.recordset.map((r) => ({
+    columnName: r.COLUMN_NAME,
+    position: r.ORDINAL_POSITION
+  }))
+}
+
+export async function getPrimaryKey(conn, database, table, schema) {
+  const res = await getPrimaryKeys(conn, database, table, schema)
+  return res.length > 0 ? res[0].columnName : null
 }
 
 export async function applyChanges(conn, changes) {
@@ -697,6 +743,49 @@ export async function truncateAllTables(conn) {
 
     await driverExecuteQuery(connClient, { query: truncateAll, multiple: true });
   });
+}
+
+async function getTableDescription(conn, table, schema) {
+  const query = `SELECT *
+    FROM fn_listextendedproperty (
+      'MS_Description',
+      'schema',
+      '${escapeString(schema)}',
+      'table',
+      '${escapeString(table)}',
+      default, 
+    default);
+  `
+  const data = await driverExecuteQuery(conn, { query })
+  if (!data || !data.recordset || data.recordset.length === 0) {
+    return null
+  }
+  return data.recordset[0].MS_Description
+}
+
+export async function getTableProperties(conn, table, schema) {
+
+  const triggers = await listTableTriggers(conn, table, schema)
+  const indexes = await listTableIndexes(conn, table, schema)
+
+  const description = await getTableDescription(conn, table, schema)
+  const sizeQuery = `EXEC sp_spaceused N'dbo.${escapeString(table)}'; `
+  const { data }  = await driverExecuteQuery(conn, { query: sizeQuery })
+  const row = data.recordset ? data.recordset[0] || {} : {}
+  const relations = await getTableKeys(conn, null, table, schema)
+  return {
+    size: bytesParse(row.data),
+    indexSize: bytesParse(row.index_size),
+    length: Number(row.rows),
+    triggers,
+    indexes,
+    description,
+    relations
+  }
+}
+
+export async function setTableDescription(conn, table, desc) {
+
 }
 
 
