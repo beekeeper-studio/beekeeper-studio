@@ -1,6 +1,6 @@
 import path from 'path'
 import Crypto from 'crypto'
-import { Entity, Column, BeforeInsert, BeforeUpdate } from "typeorm"
+import { Entity, Column, BeforeInsert, BeforeUpdate, OneToMany } from "typeorm"
 
 import {ApplicationEntity} from './application_entity'
 import { resolveHomePathToAbsolute } from '../../utils'
@@ -9,6 +9,7 @@ import { ConnectionString } from 'connection-string'
 import log from 'electron-log'
 import { IDbClients } from 'lib/db/client'
 import { EncryptTransformer } from '../transformers/Transformers'
+import { PinnedTable } from './pinned_table'
 
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
@@ -190,7 +191,8 @@ export class SavedConnection extends DbConnectionBase {
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshPassword: Nullable<string> = null
 
-
+  @OneToMany(() => PinnedTable, pin => pin.savedConnection)
+  pinnedTables!: PinnedTable[]
 
   _sshMode: string = "agent"
 
