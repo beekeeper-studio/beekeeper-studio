@@ -64,6 +64,7 @@ import { mapGetters, mapState } from 'vuex'
 import _ from 'lodash'
 import { AppEvent } from '../../../../common/AppEvent'
 import { uuidv4 } from '../../../../lib/uuid'
+import { PinnedTable } from '../../../../common/appdb/models/pinned_table'
 	export default {
 		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container"],
     mounted() {
@@ -131,7 +132,7 @@ import { uuidv4 } from '../../../../lib/uuid'
         return tableSelected
       },
       ...mapGetters(['pinned', 'selectedSidebarItem']),
-      ...mapState(['activeTab'])
+      ...mapState(['activeTab', 'database', 'config'])
     },
     methods: {
       doNothing() {
@@ -173,7 +174,14 @@ import { uuidv4 } from '../../../../lib/uuid'
         this.$root.$emit('loadTableProperties', {table: this.table})
       },
       pin() {
-        this.$store.dispatch('pinTable', this.table)
+        const pin = new PinnedTable(
+          this.table,
+          this.database,
+          this.config
+        )
+        this.$store.dispatch('pins/add', pin)
+        
+        // this.$store.dispatch('pinTable', this.table)
       },
       unpin() {
         this.$store.dispatch('unpinTable', this.table)

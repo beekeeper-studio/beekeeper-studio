@@ -18,10 +18,11 @@ import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 
 import RawLog from 'electron-log'
+import { PinModule } from './modules/PinModule'
 
 const log = RawLog.scope('store/index')
 
-interface State {
+export interface State {
   usedConfig: Nullable<SavedConnection>,
   usedConfigs: UsedConnection[],
   server: Nullable<IDbConnectionPublicServer>,
@@ -49,7 +50,8 @@ Vue.use(Vuex)
 const store = new Vuex.Store<State>({
   modules: {
     exports: ExportStoreModule,
-    settings: SettingStoreModule
+    settings: SettingStoreModule,
+    pins: PinModule
   },
   state: {
     usedConfig: null,

@@ -191,7 +191,7 @@ export class SavedConnection extends DbConnectionBase {
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshPassword: Nullable<string> = null
 
-  @OneToMany(() => PinnedTable, pin => pin.savedConnection)
+  @OneToMany(() => PinnedTable, pin => pin.savedConnection, {eager: true})
   pinnedTables!: PinnedTable[]
 
   _sshMode: string = "agent"

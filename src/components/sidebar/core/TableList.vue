@@ -36,22 +36,8 @@
       <nav class="list-group flex-col">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
-            <!-- <span class="btn-fab open">
-              <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
-            </span> -->
             <div>Pinned <span class="badge">{{orderedPins.length}}</span></div>
           </div>
-          <!-- <div class="actions">
-            <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
-              <i class="material-icons">unfold_less</i>
-            </a>
-            <a @click.prevent="expandAll" v-tooltip="'Expand All'">
-              <i class="material-icons">unfold_more</i>
-            </a>
-            <a @click.prevent="refreshTables" v-tooltip="'Refresh'">
-              <i class="material-icons">refresh</i>
-            </a>
-          </div> -->
         </div>
         <Draggable v-model="orderedPins" tag="div" ref="pinContainer" class="list-body">
           <div v-for="p in orderedPins" :key="p.id || p.name">
@@ -179,7 +165,6 @@
         activeItem: 'tables',
         split: null,
         sizes: [25,75],
-        lastPinnedSize: 0,
       }
     },
     computed: {
@@ -256,15 +241,14 @@
     watch: {
       pinned: {
         deep: true,
-        handler(newPinned) {
-          if (newPinned.length > 0 && this.lastPinnedSize === 0) {
+        handler(newPinned, oldPinned) {
+          if (newPinned.length > 0 && (!oldPinned || oldPinned.length === 0)) {
             this.$nextTick(() => {
               this.split.setSizes(this.sizes);
             });
           } else if (newPinned.length === 0) {
             // this.split.destroy();
           }
-          this.lastPinnedSize = newPinned.length
         }
       },
       tablesLoading() {

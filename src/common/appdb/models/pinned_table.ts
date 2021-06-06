@@ -1,14 +1,20 @@
 import { Column, Entity, ManyToOne } from "typeorm";
+import { TableOrView } from "../../../lib/db/models";
 import { ApplicationEntity } from "./application_entity";
 import { SavedConnection } from "./saved_connection";
-
-
-
 
 
 @Entity({ name: 'pinned_table'})
 export class PinnedTable extends ApplicationEntity {
 
+  constructor(table: TableOrView, db: string, saved: SavedConnection) {
+    super()
+    this.table = table
+    this.tableName = table.name
+    this.schemaName = table.schema
+    this.databaseName = db
+    this.savedConnection = saved
+  }
 
   @Column({type: 'varchar', nullable: false})
   databaseName!: string
@@ -20,8 +26,14 @@ export class PinnedTable extends ApplicationEntity {
   tableName!: string
 
   @Column({type: 'bool', default: false})
-  open?: boolean
+  open: boolean = false
 
-  @ManyToOne(() => SavedConnection, connection => connection.pinnedTables)
-  savedConnection!: SavedConnection
+  @Column({type: 'number', nullable: false})
+  position: number = 99
+
+  // for saved connections
+  @ManyToOne(() => SavedConnection, connection => connection.pinnedTables, {nullable: true})
+  savedConnection?: SavedConnection
+
+  table?: TableOrView
 }
