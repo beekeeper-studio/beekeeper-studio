@@ -60,15 +60,15 @@
             <!-- Location -->
             <div class="form-group">
               <label for="fileDirectory">Output Directory</label>
+              <file-picker 
+                v-model="fileDirectory"
+                :defaultPath="defaultPath"
+                :save="false"
+                :options="dialogOptions"
+                buttonText="Choose"
+                >
+              </file-picker>
             </div>
-            <file-picker 
-              v-model="fileDirectory"
-              :defaultPath="defaultPath"
-              :save="false"
-              :options="dialogOptions"
-              buttonText="Choose"
-              >
-            </file-picker>
 
             <!-- Advanced Options -->
             <div class="advanced-options-toggle flex flex-middle" @click.prevent="toggleAdvanced">

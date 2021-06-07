@@ -32,7 +32,11 @@
     width: 120px;
   }
 }
-
+.export-form {
+  .form-group {
+    margin-bottom: $gutter-h;
+  }
+}
 
 .export-progress-notification {
   .title {
