@@ -140,8 +140,8 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
   const version = await getVersion(conn)
 
-  const features = version.isPostgres ? { customRoutines: true, comments: true, properties: true} :
-   {customRoutines: true, comments: false, properties: false}
+  const features = version.isRedshift ? { customRoutines: true, comments: false, properties: false } : { customRoutines: true, comments: true, properties: true}
+   
 
 
   return {
@@ -673,12 +673,18 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     return getTablePropertiesRedshift()
   }
   const identifier = wrapTable(table, schema)
+  
   const sql = `
     SELECT 
       pg_indexes_size('${identifier}') as index_size,
       pg_relation_size('${identifier}') as table_size,
       obj_description('${identifier}'::regclass) as description
   `
+
+  const detailsPromise =  version.isPostgres ? driverExecuteSingle(conn, { query: sql }) :
+    Promise.resolve({ rows:[]})
+  
+  const triggersPromise = version.isPostgres ? listTableTriggers(conn, table, schema) : Promise.resolve([])
 
   const tableType = await getEntityType(conn, table, schema)
   const forceSlow = !tableType || tableType !== 'BASE TABLE'
@@ -691,11 +697,11 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     triggers,
     owner
   ] = await Promise.all([
-    driverExecuteSingle(conn, { query: sql }),
+    detailsPromise,
     getTableLength(conn, table, schema, undefined, forceSlow),
     listTableIndexes(conn, table, schema),
     getTableKeys(conn, "", table, schema),
-    listTableTriggers(conn, table, schema),
+    triggersPromise,
     getTableOwner(conn, table, schema)
   ])
 
