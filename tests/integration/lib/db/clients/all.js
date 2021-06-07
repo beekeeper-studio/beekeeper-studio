@@ -17,6 +17,16 @@ export function runCommonTests(getUtil) {
     await getUtil().queryTests()
   })
 
+
+  test("table filter tests", async () => {
+    await getUtil().filterTests()
+  })
+
+  test("primary key tests", async () => {
+    await getUtil().primaryKeyTests()
+  })
+
+
   describe("Change Application Tests", () => {
     beforeEach(async () => {
       await prepareTestTable(getUtil())

@@ -790,7 +790,7 @@ export async function getTableKeys(conn: Conn, _database: string, table: string,
 
 export async function getPrimaryKey(conn: HasPool, _database: string, table: string, schema: string): Promise<string | null> {
   const keys = await getPrimaryKeys(conn, _database, table, schema)
-  return keys.length > 0 ? keys[0].columnName : null
+  return keys.length === 1 ? keys[0].columnName : null
 }
 
 export async function getPrimaryKeys(conn: HasPool, _database: string, table: string, schema: string): Promise<PrimaryKeyColumn[]> {
@@ -808,6 +808,7 @@ export async function getPrimaryKeys(conn: HasPool, _database: string, table: st
     AND    i.indisprimary 
     ORDER BY a.attnum
   `
+  console.log("query", psqlQuery)
 
   const redshiftQuery = `
     select tco.constraint_schema,

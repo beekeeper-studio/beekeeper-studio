@@ -1,4 +1,21 @@
-import { buildSelectTopQuery } from "../../../../../src/lib/db/clients/utils.js";
+import { buildSelectTopQuery, escapeString } from "../../../../../src/lib/db/clients/utils.js";
+
+describe('Escape String', () => {
+  it("should escape single quotes", () => {
+    const inputs = [
+      ["foo'bar", "foo''bar"],
+      ["foo'''bar", "foo''''''bar"],
+      ["foo''bar", "foo''''bar"],
+      [null, null],
+      [undefined, null],
+      ["", ""]
+    ]
+
+    inputs.forEach(([ input, expected]) => {
+      expect(escapeString(input)).toStrictEqual(expected)
+    })
+  })
+})
 
 describe("buildSelectTopQuery", () => {
   it("should build correct top select query", () => {

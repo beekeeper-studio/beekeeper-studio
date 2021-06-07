@@ -338,7 +338,7 @@ export async function getPrimaryKeys(conn, database, table) {
 
 export async function getPrimaryKey(conn, database, table) {
   const res = await getPrimaryKeys(conn, database, table)
-  return res.length > 0 ? res[0].columnName : null
+  return res.length === 1 ? res[0].columnName : null
 }
 
 export async function getTableKeys(conn, database, table) {

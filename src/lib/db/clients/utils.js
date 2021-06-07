@@ -6,7 +6,8 @@ const log = logRaw.scope('db/util')
 
 
 export function escapeString(value) {
-  return value.replaceAll("'", "\\'")
+  if (_.isNil(value)) return null
+  return value.replaceAll("'", "''")
 }
 
 export function escapeLiteral(value) {
