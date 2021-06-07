@@ -34,7 +34,7 @@ export default async function (server, database) {
   await driverExecuteQuery(conn, { query: 'SELECT 1' });
 
   return {
-    supportedFeatures: () => ({ customRoutines: true, comments: true}),
+    supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true}),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),

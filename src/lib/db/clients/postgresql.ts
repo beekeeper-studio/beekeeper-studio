@@ -138,9 +138,15 @@ export default async function (server: any, database: any): Promise<DatabaseClie
   logger().debug(`loaded schema ${defaultSchema}`)
   dataTypes = await getTypes(conn)
 
+  const version = await getVersion(conn)
+
+  const features = version.isPostgres ? { customRoutines: true, comments: true, properties: true} :
+   {customRoutines: true, comments: false, properties: false}
+
+
   return {
     /* eslint max-len:0 */
-    supportedFeatures: () => ({ customRoutines: true, comments: true}),
+    supportedFeatures: () => features,
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: (_db: string, filter: FilterOptions | undefined) => listTables(conn, filter),
@@ -656,7 +662,16 @@ async function getTableOwner(conn: HasPool, table: string, schema: string) {
   return result.rows[0]?.tableowner
 }
 
+
+export async function getTablePropertiesRedshift() {
+  return null
+}
+
 export async function getTableProperties(conn: HasPool, table: string, schema: string) {
+  const version = await getVersion(conn)
+  if (version.isRedshift) {
+    return getTablePropertiesRedshift()
+  }
   const identifier = wrapTable(table, schema)
   const sql = `
     SELECT 

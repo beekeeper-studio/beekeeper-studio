@@ -10,7 +10,7 @@
         <x-progressbar></x-progressbar>
       </div>
       <div class="table-properties-wrap" >
-        <div class="center-wrap" v-if="properties && table && !loading">
+        <div class="center-wrap" v-if="!loading">
           <div v-for="(pill) in pills" :key="pill.id" ref="tableInfo" class="table-properties-content">
             <component
               :is="pill.component"
@@ -93,29 +93,34 @@ export default {
         {
           id: 'info',
           name: 'Info',
+          needsProperties: false,
           component: TableInfoVue,
         },
         {
           id: 'schema',
           name: "Schema",
+          needsProperties: false,
           component: TableSchemaVue,
         },
         {
           id: 'indexes',
           name: "Indexes",
           tableOnly: true,
+          needsProperties: true,
           component: TableIndexesVue,
         },
         {
           id: 'relations',
           name: "Relations",
           tableOnly: true,
+          needsProperties: true,
           component: TableRelationsVue,
         },
         {
           id: 'triggers',
           name: "Triggers",
           tableOnly: true,
+          needsProperties: true,
           component: TableTriggersVue
         }
       ],
@@ -132,11 +137,20 @@ export default {
       if (!this.table) return []
       const isTable = this.table.entityType === 'table'
       return this.rawPills.filter((p) => {
+
+        if (!this.properties) {
+          if (p.needsProperties) {
+            return false
+          }
+        }
+        
+        if (p.needsProperties && !this.connection.supportedFeatures().properties) {
+          return false
+        }
         if(p.tableOnly) {
           return isTable
-        } else {
-          return true
         }
+        return true
       })
     },
     humanSize() {

@@ -3,7 +3,7 @@
     <li class="nav-item" :title="title + scope">
       <a
         class="nav-link"
-        @mousedown="$emit('click', tab)"
+        @mousedown="mousedown"
         @click.middle.prevent="$emit('close', tab)"
         :class="{ active: selected }"
       >
@@ -52,6 +52,11 @@
     methods: {
       doNothing() {
         
+      },
+      mousedown(e) {
+        if (e.which === 1) {
+          this.$emit('click', this.tab)
+        }
       }
     },
     watch: {
