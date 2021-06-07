@@ -1,3 +1,4 @@
+import { TableOrView } from "@/lib/db/models";
 import _, { remove } from "lodash";
 import { Module } from "vuex";
 import { PinnedTable } from "../../common/appdb/models/pinned_table";
@@ -14,6 +15,9 @@ export const PinModule: Module<State, RootState> = {
   getters: {
     pinned(state, _g, root) {
       return state.pins.filter((p) => p.databaseName === root.database)
+    },
+    sortedPins(state) {
+      return state.pins.sort((p) => p.position)
     }
   },
   mutations: {
@@ -33,17 +37,27 @@ export const PinModule: Module<State, RootState> = {
       const pins = usedConfig?.pinnedTables.sort((p) => p.position)
       context.dispatch('set', pins)
     },
-    async add(context, newPin: PinnedTable) {
-      if (newPin.savedConnection?.id) {
-        await newPin.save()
+    async add(context, table: TableOrView) {
+      const { database, usedConfig } = context.rootState
+      const existing = context.state.pins.find((p) => p.matches(table, database || undefined))
+      if (existing) return
+
+      if (database && usedConfig) {
+        const newPin = new PinnedTable(table, database, usedConfig)
+        newPin.position = context.getters.sortedPins.reverse()[0] + 1
+        if(usedConfig.hasId()) await newPin.save()
+        context.dispatch('add', newPin)
       }
-      context.dispatch('add', newPin)
+
     },
-    async remove(context, pin: PinnedTable) {
-      if (pin.id) {
-        await pin.remove()
+    async remove(context, table: TableOrView) {
+      const { database } = context.rootState
+
+      const existing = context.state.pins.find((p) => p.matches(table, database || undefined))
+      if (existing) {
+        if (existing.hasId()) await existing.remove()
+        context.dispatch('remove', existing)
       }
-      context.dispatch('remove', pin)
     }
   }
   

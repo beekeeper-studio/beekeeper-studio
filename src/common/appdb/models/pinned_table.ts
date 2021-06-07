@@ -7,7 +7,7 @@ import { SavedConnection } from "./saved_connection";
 @Entity({ name: 'pinned_table'})
 export class PinnedTable extends ApplicationEntity {
 
-  constructor(table: TableOrView, db: string, saved: SavedConnection) {
+  constructor(table: TableOrView, db: string | null, saved: SavedConnection) {
     super()
     this.table = table
     this.tableName = table.name
@@ -15,6 +15,14 @@ export class PinnedTable extends ApplicationEntity {
     this.databaseName = db
     this.savedConnection = saved
   }
+
+  matches(table: TableOrView, database?: string): boolean {
+    return table.name === this.tableName &&
+      table.schema === this.schemaName &&
+      (!database || database === this.databaseName)
+  }
+
+
 
   @Column({type: 'varchar', nullable: false})
   databaseName!: string
