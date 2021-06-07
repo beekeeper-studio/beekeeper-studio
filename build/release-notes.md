@@ -1,26 +1,14 @@
 
-# Release 1.11
+Got a couple of really nice new features for you in this release.
 
-👋 Hello everyone. We've been pretty quiet lately, but we're ramping up for a 2.0 release in the next few months.
+1. Table Properties - right click -> properties to view table information like triggers, indexes, schema, and comments.
+2. File associations - Double click a SQLite file to open it in beekeeper! Handle URLs and files directly from the terminal
 
-We thought in the meantime we'd release a bunch of accumuated bug fixes and features. Some great stuff got merged, a lot of it is really meaty.
 
-## 🏅 Headline Features
+## PRs Merged
 
-- 🥇Table exports (beta)! Export your tables to CSV, Json, or SQL.
-- 🥈 Add & Duplicate Rows! Add new rows to database tables easily!
-
-### Other Stuff
-- No more Nulls when running multiple mysql queries
-- Moved to `better-sqlite3` for faster Sqlite queries.
-- Some UI tidy up in the tables view (new ⚙ button)
-
-## PR's merged in this release
-
-b28592c Merge pull request #601 from beekeeper-studio/table-exports
-897478e Merge pull request #624 from beekeeper-studio/ssl-toggle
-32cf3c6 Merge pull request #600 from beekeeper-studio/re-enable-addclone
-e50b877 Merge pull request #615 from beekeeper-studio/dependabot/npm_and_yarn/y18n-3.2.2
-bbc841b Merge pull request #630 from beekeeper-studio/dependabot/npm_and_yarn/ssri-6.0.2
-59e0eb4 Merge pull request #633 from beekeeper-studio/no-more-crashes
-67ca9df Merge pull request #614 from MasterOdin/patch-6
+a06c4e0 Merge pull request #654 from beekeeper-studio/table-info-panes
+aa6cae7 Merge pull request #669 from beekeeper-studio/dependabot/npm_and_yarn/dns-packet-1.3.4
+497ab42 Merge pull request #664 from beekeeper-studio/dependabot/npm_and_yarn/browserslist-4.16.6
+10ebbd1 Merge pull request #647 from beekeeper-studio/dependabot/npm_and_yarn/hosted-git-info-2.8.9
+e9f668c Merge pull request #658 from branchvincent/feat/open-url

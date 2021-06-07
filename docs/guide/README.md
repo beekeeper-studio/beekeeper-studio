@@ -33,6 +33,16 @@ Once you are connected to your database Beekeeper Studio allows you to open tabs
 1. SQL Editor: Write and execute SQL Queries (this is what tabs do by default)
 2. Table Explorer: View table contents
 
+## File Associations
+
+Beekeeper Studio provides file associations so you can do the following things without opening the app:
+
+- Double click a sqlite `.db` file in a file browser to open it in Beekeeper Studio!
+- Open URLs and files from the terminal:
+  - Mac: `open postgresql://user@host/database` or `open ./example.db`
+  - Linux: `xdg-open postgresql://user@host/database` or `xdg-open ./example.db`
+
+
 ## SQL Editor
 
 Writing SQL is such a fundamental part of interacting with a relational database that we put this functionality front and center.
