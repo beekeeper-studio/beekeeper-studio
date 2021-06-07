@@ -148,7 +148,12 @@ module.exports = {
           environment: {
             "ELECTRON_SNAP": "true"
           },
-          plugs: ["default", "ssh-keys", "removable-media", "mount-observe"]
+          plugs: ["default", "ssh-keys", "removable-media", "mount-observe"],
+          layout: {
+            '/usr/share/libdrm': {
+              bind: '$SNAP/usr/share/libdrm'
+            }
+          }
         },
         win: {
           icon: './public/icons/png/512x512.png',
