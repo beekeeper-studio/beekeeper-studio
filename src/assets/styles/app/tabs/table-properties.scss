@@ -6,11 +6,6 @@
   flex-grow: 1;
   padding: 0;
   overflow: hidden;
-
-  h2 {
-    text-transform: uppercase;
-    font-size: 0.9em;
-  }
   .alert-wrapper {
     padding: $gutter-w;
   }
@@ -40,6 +35,8 @@
     }
     h2 {
       margin: 0;
+      text-transform: uppercase;
+      font-size: 0.9em;
     }
   }
   .tabulator {
@@ -69,8 +66,8 @@
     }
     .table-description {
       position: relative;
-      padding: $gutter-w;
-      margin: $gutter-h (-$gutter-h) 0;
+      padding: $gutter-h $gutter-w;
+      margin: 0 (-$gutter-h) 0;
       border-radius: 3px;
       cursor: pointer;
       min-height: 60px;
@@ -94,13 +91,18 @@
         opacity: 0.58;
       }
     }
+    .table-description-wrap {
+      h1, h2, h3, h4, h5, h5, p {
+        margin: 0 0 $gutter-h;
+      }
+    }
     .table-description-edit {
       position: relative;
       margin-top: $gutter-w;
+      padding-bottom: 3rem;
       textarea {
         min-height: 120px;
-        padding: $gutter-w;
-        padding-bottom: 3rem;
+        padding: $gutter-h $gutter-w;
         resize: vertical;
       }
       span.markdown {
