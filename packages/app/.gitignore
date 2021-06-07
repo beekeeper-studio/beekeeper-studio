@@ -1,0 +1,17 @@
+.idea/
+.vscode/
+./data/
+node_modules/
+dist/
+tmp/
+temp/
+test.db
+*.sqlite
+dist_electron/
+docs/.vuepress/dist/
+.DS_Store
+yarn-error.log
+.history
+.package-lock.json
+.secrets
+.env

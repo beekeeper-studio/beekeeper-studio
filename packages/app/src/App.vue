@@ -1,6 +1,7 @@
 <template>
 <div class="style-wrapper">
     <div class="beekeeper-studio-wrapper">
+      <hello-world></hello-world>
       <titlebar v-if="$config.isMac || menuStyle === 'client'"></titlebar>
       <connection-interface v-if="!connection"></connection-interface>
       <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
@@ -18,11 +19,13 @@ import CoreInterface from './components/CoreInterface'
 import ConnectionInterface from './components/ConnectionInterface'
 import AutoUpdater from './components/AutoUpdater'
 import querystring from 'query-string'
+import components from '@beekeeper-studio/components'
+
 
 export default {
   name: 'app',
   components: {
-    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater
+    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, HelloWorld: components.HelloWorld
   },
   data() {
     return {
