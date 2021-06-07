@@ -903,7 +903,7 @@ export async function setTableDescription(conn: HasPool, table: string, descript
   const sql = `COMMENT ON TABLE ${identifier} IS '${comment}'`
   await driverExecuteSingle(conn, { query: sql})
   const result = await getTableProperties(conn, table, schema)
-  return result.description
+  return result?.description
 }
 
 async function insertRows(cli: any, inserts: TableInsert[]) {

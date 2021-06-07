@@ -26,7 +26,7 @@ export interface DatabaseClient {
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
   alterTableColumns: (changes: ColumnChange[]) => Promise<void>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
-  getTableProperties: (table: string, schema?: string) => Promise<TableProperties>,
+  getTableProperties: (table: string, schema?: string) => Promise<TableProperties | null>,
   getTableCreateScript: (table: string, schema?: string) => Promise<string>,
   getViewCreateScript: (view: string) => void,
   getRoutineCreateScript: (routine: string, type: string, schema?: string) => void,
