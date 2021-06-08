@@ -2,9 +2,12 @@
   <h1>EXAMPLE FOO</h1>
 </template>
 <script>
-/* eslint-disable */
-export default {
 
+export default {
+  data() {
+    return {
+    }
+  }
   
 }
 </script>

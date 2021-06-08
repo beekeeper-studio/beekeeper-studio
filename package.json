@@ -1,0 +1,9 @@
+{
+  "name": "beekeeper-studio-root",
+  "license": "MIT",
+  "scripts": {
+    "electron:serve": "cd studio && yarn run electron:serve",
+    "sqltools:serve": "cd sqltools && yarn dev",
+    "electron:build": "cd studio && yarn run electron:build"
+  }
+}
