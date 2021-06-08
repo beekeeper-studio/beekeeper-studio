@@ -53,10 +53,15 @@
         overflow: hidden;
         min-width: 30px;
         &.bastion {
-          max-width: 80%;
+          max-width: 50%;
+          flex-shrink: 0;
         }
         &.ssh {
           max-width: 40%;
+          flex-shrink: 0;
+        }
+        &.connection {
+          flex-shrink: 1;
         }
         &:first-of-type {
           > span {
