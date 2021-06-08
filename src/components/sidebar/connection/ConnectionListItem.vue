@@ -12,10 +12,10 @@
         <div class="title">{{label}}</div>
         <div class="subtitle"> 
           <span class="bastion" v-if="this.config.sshBastionHost">
-            <span class="truncate">{{ subtitleBastion }}</span>&nbsp;>&nbsp;
+            <span class="truncate">{{ this.config.bastionHostString }}</span>&nbsp;>&nbsp;
           </span>
           <span class="ssh" v-if="this.config.sshHost">
-            <span class="truncate">{{ subtitleSsh }}</span>&nbsp;>&nbsp;
+            <span class="truncate">{{ this.config.sshHostString }}</span>&nbsp;>&nbsp;
           </span>
           <span class="connection">
             <span>{{ subtitleSimple }}</span>
@@ -82,12 +82,6 @@ export default {
       } else {
         return this.config.simpleConnectionString
       }
-    },
-    subtitleBastion() {
-      return this.config.bastionHostString
-    },
-    subtitleSsh() {
-      return this.config.sshHostString
     },
     title() {
       return this.config.fullConnectionString
