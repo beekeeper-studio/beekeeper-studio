@@ -15,12 +15,10 @@
 </template>
 <script>
 import Tabulator from 'tabulator-tables'
-import DataMutators from '../../mixins/data_mutators'
+import { yesNoFormatter } from '@shared/lib/tabulator/formatters'
 import _ from 'lodash'
-import Vue from 'vue'
-import globals from '../../common/globals'
+import globals from '@shared/lib/globals'
 export default {
-  mixins: [DataMutators],
   props: ["table", "connection", "tabID", "active", "primaryKeys", 'columnTypes'],
   data() {
     return {
@@ -59,7 +57,7 @@ export default {
       }
       return [
         {title: 'Position', field: 'ordinalPosition', headerTooltip: 'The ordinal position of the columns'},
-        {title: 'Name', field: 'columnName', editor: null && 'input', cellEdited: this.cellEdited, headerFilter: true},
+        {title: 'Name', field: 'columnName', editor: null && 'input', cellEdited: this.cellEdited},
         {title: 'Type', field: 'dataType', editor: null && 'autocomplete', editorParams: autocompleteOptions, cellEdited: this.cellEdited}, 
         {
           title: 'Nullable',
@@ -72,7 +70,7 @@ export default {
               {label: "NO", value: false}
             ]
           },
-          formatter: this.yesNoFormatter,
+          formatter: yesNoFormatter,
           cellEdited: this.cellEdited
         },
         {

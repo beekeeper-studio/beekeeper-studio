@@ -1,40 +1,30 @@
 <template>
   <div class="container">
-    <div>
-      <Logo />
-      <h1 class="title">
-        sqltools
-      </h1>
-      <example />
-      <div class="links">
-        <a
-          href="https://nuxtjs.org/"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="button--green"
-        >
-          Documentation
-        </a>
-        <a
-          href="https://github.com/nuxt/nuxt.js"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="button--grey"
-        >
-          GitHub
-        </a>
-      </div>
-    </div>
+    <table-schema
+      :table="table"
+      :active="true"
+      :primaryKeys="primaryKeys"
+    ></table-schema>
   </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
-import Example from '@shared/components/Example.vue'
-
-export default Vue.extend({
-  components: { Example }
-})
+import TableSchema from '@shared/components/TableSchema.vue'
+export default {
+  components: { TableSchema },
+  data() {
+    return {
+      primaryKeys: ['foo'],
+      table: {
+        name: "fake",
+        columns: [
+          { ordinalPosition: 1, columnName: "foo", dataType: 'varchar(255)', nullable: false}
+        ]
+      }
+    }
+  }
+}
 </script>
 
 <style>

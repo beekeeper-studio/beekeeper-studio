@@ -2,6 +2,7 @@ import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
 import Purify from 'dompurify'
 export const NULL = '(NULL)'
+import { yesNoFormatter } from '@shared/lib/tabulator/formatters'
 
 
 function sanitizeHtml(value) {
@@ -25,11 +26,7 @@ export default {
       const result = `<pre>${cellValue}</pre>`
       return result;
     },
-    yesNoFormatter(cell) {
-      let result = 'NO'
-      if (cell.getValue() === true) result = 'YES'
-      return `<div class="yesno-select">${result}</div>`
-    },
+    yesNoFormatter,
     ...Mutators
   }
 }

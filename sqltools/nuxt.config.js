@@ -21,6 +21,9 @@ export default {
 
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
+    "tabulator-tables/dist/css/tabulator.min.css",
+    "tabulator-tables/dist/css/tabulator_simple.min.css",
+
   ],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins

@@ -1,9 +1,17 @@
 <template>
-  <div>
-    <Nuxt />
+  <div class="sqltools-wrapper">
+    <div class="header">
+      <h1>SQLTools</h1>
+      <p class="subtitle">from Beekeeper Studio</p>
+    </div>
+    <div>
+      <Nuxt />
+    </div>
   </div>
 </template>
+<script>
 
+</script>
 <style>
 html {
   font-family:
