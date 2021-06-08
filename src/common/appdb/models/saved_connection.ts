@@ -135,18 +135,20 @@ export class DbConnectionBase extends ApplicationEntity {
     let connectionString = `${this.host}:${this.port}`;
     if (this.connectionType === 'sqlite') {
       return path.basename(this.defaultDatabase || "./unknown.db")
-    } else if (this.sshHost) {
-      if (this.sshBastionHost) {
-        return `${this.sshBastionHost} ` + `> ` + connectionString
-      } else {
-        return `${this.sshHost} ` + `> ` + connectionString
-      }
     } else {
       if (this.defaultDatabase) {
         connectionString += `/${this.defaultDatabase}`
       }
       return connectionString
     }
+  }
+
+  get bastionHostString() {
+    return `${this.sshBastionHost}`
+  }
+
+  get sshHostString() {
+    return `${this.sshHost}`
   }
 
   get fullConnectionString() {

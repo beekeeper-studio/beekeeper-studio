@@ -9,8 +9,18 @@
     >
       <span :class="`connection-label connection-label-color-${labelColor}`"></span>
       <div class="connection-title flex-col expand">
-        <span class="title">{{label}}</span>
-        <span class="subtitle">{{subtitle}}</span>
+        <div class="title">{{label}}</div>
+        <div class="subtitle"> 
+          <span class="ssh" v-if="this.config.sshBastionHost">
+            <span class="truncate">{{ subtitleBastion }}</span>&nbsp;>&nbsp;
+          </span>
+          <span class="ssh" v-if="this.config.sshHost">
+            <span class="truncate">{{ subtitleSsh }}</span>&nbsp;>&nbsp;
+          </span>
+          <span class="connection">
+            <span>{{ subtitleSimple }}</span>
+          </span>
+        </div>
       </div>
       <span class="badge"><span>{{config.connectionType}}</span></span>
       <x-contextmenu>
@@ -66,12 +76,18 @@ export default {
 
       return 'Url'
     },
-    subtitle() {
+    subtitleSimple() {
       if (this.isRecentList) {
         return this.timeAgo.format(this.config.updatedAt)
       } else {
         return this.config.simpleConnectionString
       }
+    },
+    subtitleBastion() {
+      return this.config.bastionHostString
+    },
+    subtitleSsh() {
+      return this.config.sshHostString
     },
     title() {
       return this.config.fullConnectionString
