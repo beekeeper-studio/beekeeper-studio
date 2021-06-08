@@ -133,41 +133,6 @@
     "vue-template-compiler": "^2.6.10",
     "vuepress": "^1.5.0"
   },
-  "workspaces": {
-    "nohoist": ["**"]
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "plugin:vue/essential",
-      "eslint:recommended",
-      "@vue/typescript"
-    ],
-    "rules": {
-      "no-console": "off",
-      "@typescript-eslint/no-unused-vars": "off",
-      "no-unused-vars": "off"
-    },
-    "parserOptions": {
-      "parser": "@typescript-eslint/parser",
-      "ecmaFeatures": {
-        "legacyDecorators": true
-      }
-    },
-    "overrides": [
-      {
-        "files": [
-          "tests/**/*.{j,t}s?(x)"
-        ],
-        "env": {
-          "jest": true
-        }
-      }
-    ]
-  },
   "postcss": {
     "plugins": {
       "autoprefixer": {}

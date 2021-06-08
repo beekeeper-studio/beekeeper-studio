@@ -1,5 +1,5 @@
 module.exports = {
-  ignorePattern: [
-    "../components/**"
-  ]
+  // ignorePattern: [
+  //   "../components/**"
+  // ]
 }
