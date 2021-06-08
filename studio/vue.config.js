@@ -1,5 +1,5 @@
 const webpack = require('webpack');
-
+const path = require('path')
 const fpmOptions = [
   "--after-install=build/deb-postinstall"
 ]
@@ -179,6 +179,12 @@ module.exports = {
     // },
     node: {
       dns: 'mock'
+    },
+    resolve: {
+      alias: {
+        "@shared": path.resolve(__dirname, '../shared/src'),
+        "@studio": path.resolve(__dirname, 'src')
+      }
     },
     module: {
       rules: [
