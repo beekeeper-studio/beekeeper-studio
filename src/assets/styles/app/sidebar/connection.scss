@@ -52,11 +52,11 @@
         white-space: nowrap;
         overflow: hidden;
         min-width: 30px;
-        &.ssh {
-          max-width: 42%;
+        &.bastion {
+          max-width: 80%;
         }
-        &.connection {
-          flex-grow: 1;
+        &.ssh {
+          max-width: 40%;
         }
         &:first-of-type {
           > span {

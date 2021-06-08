@@ -11,7 +11,7 @@
       <div class="connection-title flex-col expand">
         <div class="title">{{label}}</div>
         <div class="subtitle"> 
-          <span class="ssh" v-if="this.config.sshBastionHost">
+          <span class="bastion" v-if="this.config.sshBastionHost">
             <span class="truncate">{{ subtitleBastion }}</span>&nbsp;>&nbsp;
           </span>
           <span class="ssh" v-if="this.config.sshHost">
