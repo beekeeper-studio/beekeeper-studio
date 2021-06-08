@@ -27,7 +27,7 @@
   },
   "main": "background.js",
   "dependencies": {
-    "@beekeeper-studio/components": "1.0.0",
+    "bks-components": "1.0.0",
     "base64-url": "^2.3.3",
     "better-sqlite3": "^7.4.1",
     "bytes": "^3.1.0",
@@ -132,6 +132,9 @@
     "vue-cli-plugin-electron-builder": "^2.0.0",
     "vue-template-compiler": "^2.6.10",
     "vuepress": "^1.5.0"
+  },
+  "workspaces": {
+    "nohoist": ["**"]
   },
   "eslintConfig": {
     "root": true,

@@ -1,13 +1,12 @@
 {
   "private": true,
   "workspaces": {
-    "packages": ["packages/*"],
-    "nohoist": ["beekeeper-studio/*"]
+    "packages": ["packages/*"]
   },
   "scripts": {
     "dev": "npm-run-all --parallel components:dev app:dev",
     "app:dev": "yarn workspace beekeeper-studio run dev",
-    "components:dev": "yarn workspace @beekeeper-studio/components run dev"
+    "components:dev": "yarn workspace bks-components run dev"
   },
   "devDependencies": {
     "npm-run-all": "^4.1.5"

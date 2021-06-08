@@ -19,7 +19,7 @@ import CoreInterface from './components/CoreInterface'
 import ConnectionInterface from './components/ConnectionInterface'
 import AutoUpdater from './components/AutoUpdater'
 import querystring from 'query-string'
-import components from '@beekeeper-studio/components'
+import components from 'bks-components'
 
 
 export default {

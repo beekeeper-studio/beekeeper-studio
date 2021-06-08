@@ -9,10 +9,11 @@ if (  process.env.PI_BUILD ) {
   fpmOptions.push("armhf")
 }
 
-const externals = ['better-sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2', 'ssh2']
+const externals = ['better-sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2', 'ssh2', "bks-components"]
 module.exports = {
   pluginOptions: {
     electronBuilder: {
+      nodeModulesPath: ['./node_modules', '../../node_modules'],
       chainWebpackMainProcess: config => {
         config.module
           .rule('babel')
