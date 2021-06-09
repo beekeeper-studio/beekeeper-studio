@@ -1,0 +1,4 @@
+packages:
+  - "packages/**"
+  - "!**/dist_electron/**"
+  - "!**/tests/**"

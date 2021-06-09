@@ -2,14 +2,16 @@
 import fs from 'fs'
 import path from 'path'
 import pf from 'portfinder'
-import createLogger from '../logger';
 import { Options, SSHConnection } from 'node-ssh-forward'
 import appConfig from '../../config'
 
 import { resolveHomePathToAbsolute } from '../../common/utils'
 import { IDbConnectionServerConfig, IDbSshTunnel } from './client';
+import rawLog from 'electron-log'
 
-const logger = createLogger('db:tunnel');
+const log = rawLog.scope('tunnel')
+
+const logger = () => log
 export default function connectTunnel(config: IDbConnectionServerConfig): Promise<IDbSshTunnel> {
   logger().debug('setting up ssh tunnel')
 

@@ -27,9 +27,9 @@
   },
   "main": "background.js",
   "dependencies": {
-    "bks-components": "1.0.0",
     "base64-url": "^2.3.3",
     "better-sqlite3": "^7.4.1",
+    "bks-components": "1.0.0",
     "bytes": "^3.1.0",
     "cassandra-driver": "^4.4.0",
     "cli-highlight": "2.0.0",
@@ -62,6 +62,7 @@
     "portfinder": "^1.0.26",
     "query-string": "^7.0.0",
     "reflect-metadata": "^0.1.10",
+    "regenerator-runtime": "^0.13.7",
     "sass-loader": "^7.1.0",
     "shortid": "^2.2.14",
     "simple-encryptor": "^3.0.0",
@@ -119,6 +120,7 @@
     "aws-sdk": "^2.645.0",
     "babel-eslint": "^10.0.1",
     "electron": "12.0.4",
+    "electron-builder": "^22.10.5",
     "electron-builder-notarize": "beekeeper-studio/electron-builder-notarize#master",
     "electron-devtools-installer": "^3.1.1",
     "electron-download": "^4.1.1",
@@ -126,8 +128,11 @@
     "electron-updater": "^4.2.5",
     "eslint": "^5.16.0",
     "eslint-plugin-vue": "^5.0.0",
+    "node-duration": "^1.0.4",
+    "noty": "^3.2.0-beta-deprecated",
     "sqlite3": "^5.0.2",
     "testcontainers": "^4.6.0",
+    "tslib": "^2.2.0",
     "typescript": "^3.9.7",
     "vue-cli-plugin-electron-builder": "^2.0.0",
     "vue-template-compiler": "^2.6.10",
@@ -142,10 +147,12 @@
     "> 1%",
     "last 2 versions"
   ],
-  "resolutions": {
-    "watchpack": "1.6.1",
-    "node-ssh-forward/ssh2": "beekeeper-studio/ssh2#electron-detection",
-    "node-pre-gyp": "0.12.0",
-    "electron-builder": "22.10.5"
+  "pnpm": {
+    "overrides": {
+      "watchpack": "1.6.1",
+      "node-ssh-forward/ssh2": "beekeeper-studio/ssh2#electron-detection",
+      "node-pre-gyp": "0.12.0",
+      "electron-builder": "22.10.5"
+    }
   }
 }

@@ -13,9 +13,9 @@ import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
 import sslReject from './20201231-ssl-reject-unauthorized'
-import createLogger from '../lib/logger'
+import rawLog from 'electron-log'
 
-const logger = createLogger('migrations')()
+const logger = rawLog.scope('migrations')
 
 const setupSQL = `
  CREATE TABLE IF NOT EXISTS BK_MIGRATIONS(

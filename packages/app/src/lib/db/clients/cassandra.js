@@ -4,10 +4,11 @@ import { readFileSync } from 'fs';
 
 import * as cassandra from 'cassandra-driver';
 import { identify } from 'sql-query-identifier';
+import rawLog from 'electron-log'
+const log = rawLog.scope('cassandra')
 
-import createLogger from '../../logger';
+const logger = () => log
 
-const logger = createLogger('db:clients:cassandra');
 
 /**
  * To keep compatibility with the other clients we treat keyspaces as database.

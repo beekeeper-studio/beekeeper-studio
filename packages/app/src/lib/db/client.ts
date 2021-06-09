@@ -1,11 +1,13 @@
 // Copyright (c) 2015 The SQLECTRON Team, 2020 Beekeeper Studio team
 import connectTunnel from './tunnel';
 import clients from './clients';
-import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, ColumnChange, TableIndex, TableTrigger } from './models';
+import rawLog from 'electron-log'
 
-const logger = createLogger('db');
+const log = rawLog.scope('client')
+const logger = () => log
+
 
 export interface DatabaseClient {
   supportedFeatures: () => SupportedFeatures
