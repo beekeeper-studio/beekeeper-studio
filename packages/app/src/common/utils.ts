@@ -4,29 +4,8 @@ import fs from 'fs';
 import {homedir} from 'os';
 import path from 'path';
 import mkdirp from 'mkdirp';
-import envPaths from 'env-paths';
 import { Error as CustomError } from '../lib/errors'
 
-
-let configPath = '';
-
-export function getConfigPath() {
-  if (configPath) {
-    return configPath;
-  }
-
-  const configName = 'sqlectron.json';
-  const oldConfigPath = path.join(homedir(), `.${configName}`);
-
-  if (fileExistsSync(oldConfigPath)) {
-    configPath = oldConfigPath;
-  } else {
-    const newConfigDir = envPaths('Sqlectron', { suffix: '' }).config;
-    configPath = path.join(newConfigDir, configName);
-  }
-
-  return configPath;
-}
 
 export function fileExists(filename: string) {
   return new Promise((resolve) => {

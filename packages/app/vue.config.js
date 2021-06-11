@@ -13,6 +13,7 @@ const externals = ['better-sqlite3', 'sequelize', 'typeorm', 'reflect-metadata',
 module.exports = {
   pluginOptions: {
     electronBuilder: {
+      nodeModulesPath: ['./node_modules', '../../node_modules'],
       chainWebpackMainProcess: config => {
         config.module
           .rule('babel')
@@ -32,6 +33,8 @@ module.exports = {
             plugins: [
               ['@babel/plugin-proposal-decorators', {legacy: true}],
               ['@babel/plugin-proposal-class-properties', {loose: true}],
+              ['@babel/plugin-proposal-private-methods', { loose: true }],
+              ['@babel/plugin-proposal-private-property-in-object', { loose: true }],
             ]
           })
       },
