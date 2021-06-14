@@ -1,7 +1,7 @@
 <template>
   <div class="schema-wrapper">
     <div class="list-item schema" v-if="!skipSchemaDisplay">
-      <a class="list-item-btn" v-bind:class="{'open': expanded}" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
+      <a class="list-item-btn" :class="{'open': expanded}" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
         <span class="btn-fab open-close" >
           <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
         </span>

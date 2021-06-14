@@ -1,10 +1,10 @@
-
 .core-tabs {
   position: relative;
   display: flex;
   flex: 1 1 100%;
   flex-direction: column;
-  .tab-content, .tab-pane {
+  .tab-content,
+  .tab-pane {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -49,7 +49,7 @@
     margin: 0;
     height: $tab-height;
     -webkit-app-region: no-drag;
-    .nav-item-wrap {    
+    .nav-item-wrap {
       min-width: 28px;
       overflow: hidden;
     }
@@ -58,7 +58,7 @@
       opacity: 0.5;
     }
     .nav-item {
-      max-width: 200px;    
+      max-width: 200px;
       min-width: 28px;
       overflow: hidden;
     }
@@ -76,6 +76,7 @@
       border-radius: 6px 6px 0 0;
       border-right: 1px solid $theme-bg;
       overflow: hidden;
+
       &.active {
         background: $query-editor-bg;
         font-weight: 600;
@@ -85,7 +86,11 @@
           background: $query-editor-bg;
         }
         .tab-action {
-          background: linear-gradient(-90deg, rgba($query-editor-bg, 100%) 80%, rgba($query-editor-bg, 0) 100%);
+          background: linear-gradient(
+            -90deg,
+            rgba($query-editor-bg, 100%) 80%,
+            rgba($query-editor-bg, 0) 100%
+          );
         }
         .tab-close {
           .close {
@@ -124,7 +129,7 @@
             }
           }
         }
-      } 
+      }
     }
     .tab-title {
       text-overflow: initial;
@@ -132,7 +137,7 @@
       &:before {
         display: block;
         content: attr(title);
-        font-weight: 600!important;
+        font-weight: 600 !important;
         height: 0;
         overflow: hidden;
         visibility: hidden;
@@ -142,7 +147,7 @@
         color: $text-lighter;
         font-size: 95%;
         font-style: italic;
-        font-weight: normal!important;
+        font-weight: normal !important;
       }
     }
     .item-icon {
@@ -162,7 +167,11 @@
       justify-content: center;
       height: 100%;
       min-width: 24px;
-      background: linear-gradient(-90deg, rgba(lighten($theme-bg, 3%), 100%) 80%, rgba(lighten($theme-bg, 3%), 0) 100%);
+      background: linear-gradient(
+        -90deg,
+        rgba(lighten($theme-bg, 3%), 100%) 80%,
+        rgba(lighten($theme-bg, 3%), 0) 100%
+      );
     }
     .tab-close {
       position: absolute;
@@ -245,7 +254,7 @@
     }
     .btn-primary {
       // background: $text-dark;
-      &:hover, 
+      &:hover,
       &:focus {
         // background: lighten($text-dark, 10%);
         background: lighten($theme-primary, 10%);
@@ -301,4 +310,3 @@
     }
   }
 }
-  
