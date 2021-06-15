@@ -14,7 +14,6 @@
 
 <script>
 export default {
-  name: 'App Header'
 }
 </script>
 
