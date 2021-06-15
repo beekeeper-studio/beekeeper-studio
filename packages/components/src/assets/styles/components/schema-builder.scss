@@ -11,6 +11,13 @@ $row-height:             42px;
   .tabulator {
     .tabulator-header {
       box-shadow: none;
+      .tabulator-col {
+        .tabulator-col-content {
+          .tabulator-col-title {
+            color: $text-dark;
+          }
+        }
+      }
     }
   }
 
