@@ -3,6 +3,12 @@
     <div ref="tabulator"></div>
   </div>
 </template>
+<style lang="scss" scoped>
+  .table-wrapper {
+    background-color: pink;
+  }
+</style>
+
 <script lang="ts">
 import Vue from 'vue'
 import Tabulator from 'tabulator-tables'
