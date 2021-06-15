@@ -1,0 +1,530 @@
+$errorColor:             $brand-danger;
+$foreign-key-width:      20px;
+
+$row-height:             30px;
+$row-highlight:          lighten($query-editor-bg, 1%);
+$row-add:                #18855F;
+$row-delete:             #8A3937;
+$row-error:              #38201F;
+
+$cell-edited:            #50492A;
+$cell-error:             $row-error;
+$cell-success:           $row-add;
+
+$cell-radius:            2px;
+
+// Mixin
+@mixin cell-shadow($bg) {
+  box-shadow: inset -1px 0 $bg,
+              inset 0 1px $bg,
+              inset 0 -1px rgba(white, 0.1);
+}
+@mixin cell-editing($bg) {
+  box-shadow: inset -1px 0 $bg,
+              inset 0 1px $bg,
+              inset 0 -1px $theme;
+}
+
+// Add/Delete/Clone row
+// -------------------------------
+.tabulator-table {
+  .tabulator-row {
+    &.inserted, 
+    &.inserted:hover {
+      position: relative;
+      background: $row-add;
+      border: 0;
+      .tabulator-cell {
+        &.primary-key {
+          &:hover {
+            background: rgba($theme-base,0.15);
+            cursor: pointer;
+          }
+        }
+      }
+    }
+    &.deleted, 
+    &.deleted:hover {
+      background: $row-delete;
+    }
+    &.edit-error {
+      background: $cell-error!important;
+      &.edit-error {
+      }
+    }
+    &.inserted,
+    &.deleted,
+    &.edit-error {
+      box-shadow: inset 0 -1px rgba($theme-base, .1);
+      .tabulator-cell {
+        &:hover {
+          background: rgba($theme-base, 0.12);
+        }
+        &.foreign-key-button {
+          &:hover {
+            background: transparent!important;
+          }
+        }
+      }
+    } 
+    &.deleted {
+      .tabulator-cell {
+        &:hover {
+          background: transparent!important;
+          cursor: default;
+        }
+      }
+    }
+  }
+}
+
+.tabulator-row {
+  background: transparent;
+  width: min-content;
+  min-width: 100%;
+  &:nth-child(odd) {
+    background: rgba($theme-base, 0.015);
+  }
+  .tabulator-cell {
+    border: 0;
+    padding: 4px 8px;
+    min-height: $row-height;
+    height: $row-height;
+    line-height: $row-height - (6px); // row-height - vertical padding
+    border-radius: $cell-radius;
+    cursor: default;
+    &:first-of-type {
+      padding-left: $gutter-w * 1.5;
+    }
+    &:last-of-type {
+      padding-right: $gutter-w * 1.5;
+    }
+    &.cell-editable {
+      cursor: pointer;
+      &:hover {
+        background: rgba($theme-base,0.05);
+      }
+    }
+
+    i.fk-link {
+      display:none;
+    }
+    pre {
+      margin: 0;
+      text-overflow: ellipsis;
+      font-family: inherit;
+      overflow: hidden;
+    }
+    input {
+      font-size: 0.85rem;
+      height: $row-height;
+      padding: 4px 4px 4px 8px!important;
+    }
+    textarea {
+      border-color: transparent;
+      padding: 4px 6px!important;
+      line-height: $row-height - 8px; // row-height - vertical padding
+    }
+    &.active-cell {
+      background: $selection;
+      border-color: $input-highlight;
+      color: $db-select-text;
+    }
+
+    // Cell States
+    &.edited, 
+    &.edit-error, 
+    &.edit-success {
+      border-radius: $cell-radius;
+      color: $theme-base;
+    }
+    &.tabulator-editing {
+      box-shadow: inset 0 -1px $theme-base!important;
+      background: rgba($theme-base, 0.12);
+      padding-left: 0;
+      padding-right: 0;
+      min-height: $row-height;
+      line-height: $row-height;
+      border-radius: $cell-radius;
+    }
+    &.foreign-key {
+      padding-right: $foreign-key-width - 6px;
+    }
+    &.foreign-key-button {
+      display: inline-flex;
+      justify-content: flex-end;
+      width: $foreign-key-width!important;
+      min-width: $foreign-key-width!important;
+      padding-left: 0!important;
+      padding-right: 0.35rem!important;
+      margin-left: -$foreign-key-width;
+      .material-icons {
+        font-size: 14px;
+        line-height: 22px;
+        color: $text-light;
+      }
+      .tabulator-col-resize-handle.prev {
+        display: none;
+      }
+    }
+  }
+
+  // Cell Edit States
+  .tabulator-cell {
+    // &:nth-child(odd) {
+    //   background: $row-highlight;
+    //   .tabulator-cell {
+    //     &.edited,
+    //     &.edit-error,
+    //     &.edit-success {
+    //       @include cell-shadow(rgba($row-highlight, 0.75));
+    //     }
+    //   }
+    // }
+    &.edited {
+      background: $cell-edited;
+      &:hover {
+        background: lighten($cell-edited, 5%);
+      }
+    }
+    &.edit-error {
+      background: $cell-error;
+      &:hover {
+        background: lighten($cell-error, 5%);
+      }
+    }
+    &.edit-success {
+      background: $cell-success;
+      &:hover {
+        background: lighten($cell-success, 5%);
+      }
+    }
+    &.edited,
+    &.edit-error,
+    &.edit-success {
+      @include cell-shadow(rgba($query-editor-bg, 0.75));
+    }
+  }
+
+  &.tabulator-selectable:hover {
+    background: rgba($theme-base, 0.05);
+    cursor: default;
+    i.fk-link {
+      display: inline-block;
+      &:hover {
+        color: white;
+      }
+    }
+  }
+  &.tabulator-selected {
+    background: rgba($theme-base, 0.05);
+  }
+
+}
+
+// Editable Hover
+.tabulator-row {
+  .tabulator-cell {
+    // &.cell-editable {
+    //   cursor: pointer;
+    //   &:hover {
+    //     background: rgba($theme-base,0.05);
+    //   }
+    // }
+
+    cursor: pointer;
+    &:hover {
+      background: rgba($theme-base,0.05);
+    } 
+    &.primary-key {
+      cursor: default;
+      &:hover {
+        background: transparent;
+      }
+    }
+  }
+}
+
+
+// NOT Editable ~ change to editable at some point
+.tabletable.view-only {
+  .tabulator-row {
+    .tabulator-cell {
+      cursor: default;
+      &:hover {
+        background: transparent;
+      }
+    }
+  }
+}
+.table-properties {
+  .tabulator-row {
+    .tabulator-cell {
+      cursor: default;
+      &:hover {
+        background: transparent;
+      }
+    }
+  }
+}
+
+
+.tabulator {
+  position: relative;
+  font-size: 12px;
+  border: 0;
+  width: 100%;
+  background: transparent;
+  .tabulator-headers {
+    .tabulator-col:first-of-type {
+      &.foreign-key, &.primary-key {
+        &:before{
+          left: $gutter-w * 0.8;
+        }
+      }
+    }
+  }
+  .tabulator-header {
+    background: transparent;
+    border: 0;
+    box-shadow: inset 0 -1px $border-color;
+    width: -webkit-fill-available;
+    .tabulator-col {
+      background: transparent;
+      border-color: transparent;
+      height: 32px!important;
+      font-size: 90%;
+      line-height: 1;
+      &:first-of-type .tabulator-col-content {
+        padding-left: $gutter-w * 1.5;
+      }
+      &:last-of-type .tabulator-col-content {
+        padding-right: $gutter-w * 1.5;
+      }
+      .badge {
+        background: transparent;
+        color: $text-lighter;
+        padding: 0 0.1rem;
+      }
+      &.tabulator-sortable{
+        border-radius: 2px;
+        &:hover {
+          background: rgba($theme-base, 0.035);
+        }
+        .tabulator-col-title {
+          padding-right: 16px;
+          color: $text-dark;
+        }
+      }
+      &.tabulator-sortable[aria-sort="asc"] {
+        .tabulator-col-content {
+          .tabulator-arrow {
+            border-bottom-color: $theme-base;
+          }
+        }
+      }
+      &.tabulator-sortable[aria-sort="desc"] {
+        .tabulator-col-content {
+          .tabulator-arrow {
+            border-top-color: $theme-base;
+          }
+        }
+      }
+      &.tabulator-sortable[aria-sort="none"] {
+        .tabulator-col-content {
+          .tabulator-arrow {
+            border-bottom-color: rgba($theme-base, 0.35);
+          }
+        }
+      }
+      &.foreign-key, &.primary-key {
+        padding-left: $foreign-key-width!important;
+        &:before{
+          content: 'vpn_key';
+          font-family: 'Material Icons';
+          font-size: 13px;
+          position: absolute;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          display: inline-flex;
+          align-items: center;
+          justify-content: flex-end;
+          color: $theme-primary;
+          width: $foreign-key-width;
+
+        }
+      }
+      &.primary-key {
+        &:before {
+          color: $theme-secondary;
+        }
+      }
+      &.foreign-key-button {
+        display: none;
+      }
+      .tabulator-col-content {
+        padding: 0 8px;
+        line-height: 32px;
+        .tabulator-arrow {
+          top: 14px;
+          border-width: 4px!important;
+          border-bottom-color: rgba($theme-base, 0.35);
+        }
+      }
+    }
+  }
+  .tabulator-tableHolder {
+    .tabulator-table {
+      background: transparent;
+      width: 100%;
+      color: $text-dark;
+      user-select: text;
+    }
+    .tabulator-placeholder {
+      span {
+        font-size: 12px;
+        font-weight: normal;
+        color: $text-light;
+      }
+    }
+  }
+
+  //holding div that contains loader and covers tabulator element to prevent interaction
+	.tabulator-loader {
+		.tabulator-loader-msg{
+			border-radius: 8px;
+			background: transparent;
+			font-weight: normal;
+			font-size: 1rem;
+
+			//loading message
+			&.tabulator-loading{
+				border: 0;
+				color: $text-dark;
+			}
+
+			//error message
+			&.tabulator-error{
+				border: 0;
+				color: $brand-danger;
+			}
+		}
+  }
+
+}
+
+.tabulator-edit-select-list {
+  background: $theme-bg;
+  color: white;
+  border-width: 1;
+  border-color: rgba($theme-base, 0.06);
+  border-radius: 2px;
+  margin-top: $gutter-h;
+
+	.tabulator-edit-select-list-item{
+    color: $text-dark;
+	}
+}
+
+.tabulator-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border: 0;
+  height: $statusbar-height;
+  padding: 0 $gutter-h;
+  background: rgba($theme-base, 0.06);
+
+  .tabulator-paginator,
+  .tabulator-pages {
+    display: flex;
+    align-items: center;
+  }
+  .tabulator-pages {
+    margin: 0 ($gutter-h * 0.5);
+  }
+  .tabulator-page {
+    color: $theme-base;
+    background: transparent;
+    color: $text;
+    border: 0;
+    box-shadow: none;
+    font-size: 0.8rem;
+    padding-bottom: 1px;
+    font-weight: bold;
+    border-radius: $statusbar-height;
+    cursor: pointer;
+    &:hover, &:focus {
+      background: transparent;
+      color: $text-dark;
+    }
+    &.active {
+      color: $text-dark;
+      background: rgba($theme-base, 0.2);
+    }
+    &:disabled {
+      opacity: 0.35;
+      cursor: default;
+      &:hover, &:focus {
+        background: transparent;
+      }
+    }
+
+    // Replacing text with Material Icons
+    &[data-page="first"],
+    &[data-page="prev"],
+    &[data-page="next"],
+    &[data-page="last"] {
+      visibility: hidden;
+      width: 24px;
+      padding: 0;
+      overflow: hidden;
+      &:before {
+        font-family: 'Material Icons';
+        visibility: visible;
+        font-size: 18px;
+        line-height: 24px;
+        font-weight: normal;
+        text-align: center;
+      }
+    }
+    &[data-page="first"]:before {
+      content: '\e5dc';
+    }
+    &[data-page="prev"]:before {
+      content: '\e408';
+    }
+    &[data-page="next"]:before {
+      content: '\e409';
+    }
+    &[data-page="last"]:before {
+      content: '\e5dd';
+    }
+  }
+}
+
+.tabulator-menu {
+  background: lighten($theme-bg, 5%);
+  border: none;
+  border-radius: 6px;
+  min-width: 150px;
+  padding: 0.3rem 0;
+
+  .tabulator-menu-item {
+    &:hover {
+      background: rgba($theme-base, 0.05);
+    }
+    color: $text-dark;
+    cursor: pointer;
+    padding: 0;
+
+    .item-icon {
+      vertical-align: top;
+    }
+  }
+
+  .tabulator-menu-separator {
+    border-top-color: rgba($theme-base, 0.07);
+  }
+}

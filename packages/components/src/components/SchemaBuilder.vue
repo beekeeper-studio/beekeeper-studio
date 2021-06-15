@@ -6,11 +6,6 @@
     </div>
   </div>
 </template>
-<style lang="scss" scoped>
-  .table-wrapper {
-    background-color: pink;
-  }
-</style>
 
 <script lang="ts">
 import Vue from 'vue'
@@ -113,3 +108,7 @@ export default Vue.extend({
   }
 })
 </script>
+
+<style lang="scss" scoped>
+
+</style>

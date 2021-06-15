@@ -1,20 +1,13 @@
 <template>
-  <div id="app">
-    <header class="header row flex-middle">
-      <figure>SQLTools</figure>
-      <nav>
-        <router-link to="/Home" class="btn btn-link">Home</router-link>
-        <router-link to="/About" class="btn btn-link">About</router-link>
-      </nav>
-    </header>
-    <router-view/>
-  </div>
+  <nav id="nav">
+    <router-link to="/Home">Home</router-link>
+    <router-link to="/About">About</router-link>
+  </nav>
 </template>
 
 <script>
-
 export default {
-  name: 'app'
+  name: 'Header'
 }
 </script>
 

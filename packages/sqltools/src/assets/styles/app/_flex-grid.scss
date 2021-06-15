@@ -1,0 +1,288 @@
+// Responsive Variables
+// ------------------------
+$screen-xs: 600px;
+$screen-sm: 992px;
+$screen-md: 1200px;
+$screen-lg: 1600px;
+$gutter: 1rem;
+
+// Wrappers
+// -------------------------
+.form-wrap, .small-wrap, .center-wrap, .big-wrap {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+.form-wrap {
+  max-width: 400px;
+}
+.small-wrap {
+  max-width: 780px;
+}
+.center-wrap {
+  max-width: 992px;
+}
+.big-wrap {
+  max-width: 1400px;
+}
+
+// Grid
+// --------------------------
+.row,
+.flex {
+  box-sizing: border-box;
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: row;
+}
+.flex {
+  flex: 0 1 100%;
+}
+.expand {
+  flex-grow: 1;
+}
+.wrap {
+  flex-wrap: wrap;
+}
+
+// Gutters
+.row {
+  margin: 0;
+  flex-wrap: wrap;
+  >.col {
+    display: inline-block;
+    flex: 100%;
+    > .form-group {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+  }
+  &.gutter {
+    width: initial !important; // split.js class overlap fix
+    margin-left: -$gutter / 2;
+    margin-right: -$gutter / 2;
+    >.col {
+      padding-left: $gutter / 2;
+      padding-right: $gutter / 2;
+      margin-top: $gutter / 2;
+      margin-bottom: $gutter / 2;
+    }
+  }
+}
+
+// Alignment
+// -------------------------
+.layout-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+// Horizontal Row Alignment
+.flex-left {
+  justify-content: flex-start;
+}
+.flex-right {
+  justify-content: flex-end;
+}
+.flex-center {
+  justify-content: center;
+}
+.flex-between {
+  justify-content: space-between;
+}
+
+// Vertical Row Alignment
+.flex-top {
+  align-items: flex-start;
+}
+.flex-bottom {
+  align-items: flex-end;
+}
+.flex-middle {
+  align-items: center;
+}
+
+// Alignment per cell
+.cell-top {
+  align-self: flex-start;
+}
+.cell-bottom {
+  align-self: flex-end;
+}
+.cell-center {
+  align-self: center;
+}
+
+// Flex Direction
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+.flex-xs-row {
+  @media (max-width: $screen-xs) {
+    flex-direction: row;
+  }
+}
+.flex-sm-col {
+  @media (max-width: $screen-sm) {
+    flex-direction: column;
+  }
+}
+.flex-md-col {
+  @media (max-width: $screen-md) {
+    flex-direction: column;
+  }
+}
+
+// Base classes
+.row {
+  .x9 {
+    flex-basis: 75%;
+    max-width: 75%;
+  }
+  .x8 {
+    flex-basis: 66.6667%;
+    max-width: 66.6667%;
+  }
+  .x6 {
+    flex-basis: 50%;
+    max-width: 50%;
+  }
+  .x4 {
+    flex-basis: 33.3333%;
+    max-width: 33.3333%;
+  }
+  .x3 {
+    flex-basis: 25%;
+    max-width: 25%;
+  }
+}
+
+@media (min-width: $screen-xs) {
+  .row {
+    .s9 {
+      flex-basis: 75%;
+      max-width: 75%;
+    }
+    .s8 {
+      flex-basis: 66.6667%;
+      max-width: 66.6667%;
+    }
+    .s6 {
+      flex-basis: 50%;
+      max-width: 50%;
+    }
+    .s4 {
+      flex-basis: 33.3333%;
+      max-width: 33.3333%;
+    }
+    .s3 {
+      flex-basis: 25%;
+      max-width: 25%;
+    }
+  }
+}
+
+// Tablets
+@media (min-width: $screen-sm) {
+  .row {
+    .m9 {
+      flex-basis: 75%;
+      max-width: 75%;
+    }
+    .m8 {
+      flex-basis: 66.6667%;
+      max-width: 66.6667%;
+    }
+    .m6 {
+      flex-basis: 50%;
+      max-width: 50%;
+    }
+    .m4 {
+      flex-basis: 33.3333%;
+      max-width: 33.3333%;
+    }
+    .m3 {
+      flex-basis: 25%;
+      max-width: 25%;
+    }
+  }
+}
+
+// Desktop
+@media (min-width: $screen-md) {
+  .row {
+    .l9 {
+      flex-basis: 75%;
+      max-width: 75%;
+    }
+    .l8 {
+      flex-basis: 66.6667%;
+      max-width: 66.6667%;
+    }
+    .l6 {
+      flex-basis: 50%;
+      max-width: 50%;
+    }
+    .l4 {
+      flex-basis: 33.3333%;
+      max-width: 33.3333%;
+    }
+    .l3 {
+      flex-basis: 25%;
+      max-width: 25%;
+    }
+  }
+}
+
+// Large Desktops
+@media (min-width: $screen-lg) {
+  .row {
+    .xl6 {
+      flex-basis: 50%;
+      max-width: 50%;
+    }
+    .xl4 {
+      flex-basis: 33.3333%;
+      max-width: 33.3333%;
+    }
+    .xl3 {
+      flex-basis: 25%;
+      max-width: 25%;
+    }
+  }
+}
+
+// Show/Hide classes
+// ----------------------------
+.hide-md-down {
+  @media (max-width: $screen-md) {
+    display: none !important;
+  }
+}
+.hide-md-up {
+  display: none !important;
+
+  @media (max-width: $screen-md) {
+    display: flex !important;
+  }
+}
+
+.hide-sm-down {
+  @media (max-width: $screen-sm) {
+    display: none !important;
+  }
+}
+.hide-sm-up {
+  display: none !important;
+
+  @media (max-width: $screen-sm) {
+    display: flex !important;
+  }
+}
+.hide-xs {
+  @media (max-width: $screen-xs) {
+    display: none !important;
+  }
+}

@@ -1,18 +1,29 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <div class="big-wrap">
+      <div class="card-flat">
+        <schema-builder/>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-// @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
+import Vue from 'vue';
+import SchemaBuilder from '../../../components/src/components/SchemaBuilder.vue';
 
-export default {
+export default Vue.extend ({
   name: 'Home',
-  components: {
-    HelloWorld
+  components: { 
+    SchemaBuilder
   }
-}
+})
 </script>
+
+<style lang="scss" scoped>
+  @import '@/assets/styles/app/_variables';
+
+  .home {
+    padding: 0 ($gutter-w * 2);
+  }
+</style>
