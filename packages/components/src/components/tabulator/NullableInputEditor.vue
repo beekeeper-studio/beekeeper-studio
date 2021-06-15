@@ -1,13 +1,14 @@
 <template>
   <div >
-    <input placeholder="(EMPTY)" ref='input' type="text" v-model="value" @blur.prevent="submit" @change.prevent="submit">
+    <input :placeholder="params.placeholder" ref='input' type="text" v-model="value" @blur.prevent="submit" @change.prevent="submit">
     <button @mousedown.prevent.stop="clear" title="Nullify Value">🗑</button>
   </div>
 </template>
 <script lang="ts">
+import _ from 'lodash'
 import Vue from 'vue'
 export default Vue.extend({
-  props: ['cell'],
+  props: ['cell', 'params'],
   data() {
     return {
       value: null,
@@ -16,7 +17,13 @@ export default Vue.extend({
   },
   methods: {
     submit() {
-      this.$emit('value', this.value)
+      // some cases we always want null, never empty string
+      if (this.params.allowEmpty === false && _.isEmpty(this.value)) {
+        this.$emit('value', null)
+      } else {
+        this.$emit('value', this.value)
+      }
+
     },
     clear() {
       console.log('clear clicked')
@@ -25,7 +32,6 @@ export default Vue.extend({
   },
   watch: {
     rendered() {
-      console.log("rendered changed!", this.rendered)
       if (this.rendered) {
         this.value = this.cell.getValue()
         this.$refs.input.focus()
