@@ -2,6 +2,7 @@
   "name": "beekeeper-studio",
   "version": "1.12.0",
   "private": true,
+  "repository": "git@github.com:beekeeper-studio/beekeeper-studio.git",
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "author": {
     "name": "Beekeeper Studio Team",
@@ -129,37 +130,6 @@
     "vue-template-compiler": "^2.6.11",
     "vuepress": "^1.5.0"
   },
-  "eslintConfig": {
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "plugin:vue/essential",
-      "eslint:recommended",
-      "@vue/typescript"
-    ],
-    "rules": {
-      "no-console": "off",
-      "@typescript-eslint/no-unused-vars": "off",
-      "no-unused-vars": "off"
-    },
-    "parserOptions": {
-      "parser": "@typescript-eslint/parser",
-      "ecmaFeatures": {
-        "legacyDecorators": true
-      }
-    },
-    "overrides": [
-      {
-        "files": [
-          "tests/**/*.{j,t}s?(x)"
-        ],
-        "env": {
-          "jest": true
-        }
-      }
-    ]
-  },
   "postcss": {
     "plugins": {
       "autoprefixer": {}
@@ -174,5 +144,11 @@
     "node-ssh-forward/ssh2": "beekeeper-studio/ssh2#electron-detection",
     "node-pre-gyp": "0.12.0",
     "electron-builder": "22.10.5"
+  },
+  "eslintConfig": {
+    "ignorePatterns": [
+      "node_modules",
+      "../**/dist"
+    ]
   }
 }

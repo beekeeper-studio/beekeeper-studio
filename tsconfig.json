@@ -1,12 +1,11 @@
 {
   "compilerOptions": {
-    "target": "es2018",
     "module": "esnext",
+    "moduleResolution": "node",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "jsx": "preserve",
     "importHelpers": true,
-    "moduleResolution": "node",
     "experimentalDecorators": true,
     "allowJs": true,
     "skipLibCheck": true,
@@ -23,8 +22,5 @@
       "dom.iterable",
       "scripthost"
     ]
-  },
-  "exclude": [
-    "node_modules"
-  ]
+  }
 }
