@@ -24,7 +24,6 @@
 import { mapState } from "vuex";
 import { createParentDirectory } from "common/utils";
 import { buildTree } from "@/plugins/foldertree";
-const { dialog } = window.require("electron").remote;
 export default {
   data() {
     return {
@@ -43,7 +42,6 @@ export default {
     createFolder() {},
 
     openFolder() {
-      console.log(dialog)
       buildTree();
     },
 
