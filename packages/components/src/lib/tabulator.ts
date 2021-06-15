@@ -1,12 +1,13 @@
 import Purify from 'dompurify'
 import _ from 'lodash'
+import Tabulator from 'tabulator-tables'
 
 function sanitizeHtml(value) {
   if (!value) return null
   return Purify.sanitize(value)
 }
 
-interface YesNoParams {
+export interface YesNoParams {
   allowEmpty?: boolean
   falseEmpty?: boolean
 }
@@ -17,9 +18,14 @@ function yesNoResult(value: boolean) {
 }
 
 export default {
-  cellFormatter(cell) {
+  cellFormatter(cell: Tabulator.CellComponent) {
+    console.log("formatting cell value", cell.getValue())
     if (_.isNil(cell.getValue())) {
       return '<span class="null-value">(NULL)</span>'
+    }
+
+    if(_.isEmpty(cell.getValue())) {
+      return '<span class="empty-value">(EMPTY)</span>'
     }
 
     let cellValue = cell.getValue().toString();
@@ -45,3 +51,4 @@ export default {
     }
   }
 }
+

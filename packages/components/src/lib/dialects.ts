@@ -5,9 +5,12 @@ import { SqliteData } from "./dialects/sqlite";
 import { SqlServerData } from "./dialects/sqlserver";
 
 type SqlServer = "mssql" | "sqlserver"
-type Dialect = "postgresql" | "sqlite" | SqlServer | "mysql"
+export type Dialect = "postgresql" | "sqlite" | SqlServer | "mysql"
 
 
+export type DialectOverride = {
+  [K in Dialect]: string
+}
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {

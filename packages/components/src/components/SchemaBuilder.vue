@@ -16,6 +16,8 @@ import Vue from 'vue'
 import Tabulator from 'tabulator-tables'
 import { getDialectData } from '../lib/dialects'
 import tab from '../lib/tabulator'
+import {vueEditor} from '../lib/tabulator/helpers'
+import NullableInputEditor from './tabulator/NullableInputEditor.vue'
 
 export default Vue.extend({
   props: ['initialSchema', 'initialName', 'dialect'],
@@ -42,7 +44,8 @@ export default Vue.extend({
     },
     tableColumns() {
       return [
-        {rowHandle:true, formatter:"handle", headerSort:false, frozen:true, width:30, minWidth:30},        {title: 'Name', field: 'columnName', editor: 'input', headerFilter: true},
+        {rowHandle:true, formatter:"handle", frozen:true, width:30, minWidth:30, resizable: false},
+        {title: 'Name', field: 'columnName', editor: 'input'},
         {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: this.autoCompleteOptions},
         {
           title: 'Nullable',
@@ -56,24 +59,25 @@ export default Vue.extend({
             ]
           },
           formatter: this.yesNoFormatter,
+
         },
         {
           title: 'Default Value',
           field: 'defaultValue',
-          editor: 'input',
+          editor: vueEditor(NullableInputEditor),
           headerTooltip: "If you don't set a value for this field, this is the default value",
-          formatter: this.cellFormatter
+          formatter: this.cellFormatter,
         },
         {title: 'Primary', field: 'primary', formatter: this.yesNoFormatter, formatterParams: { allowEmpty: true, falseEmpty: true}, editor: 'select',
           editorParams: {
             values: [
               {label: "YES", value: true},
               {label: "NO", value: false}
-            ]
+            ],
           },
         },
         {
-          formatter: this.trashButton, width: 40, hozAlign: 'center', cellClick: this.removeRow
+          formatter: this.trashButton, width: 40, hozAlign: 'center', cellClick: this.removeRow, resizable: false
         }
       ]
     },
@@ -95,7 +99,11 @@ export default Vue.extend({
     cellFormatter: tab.cellFormatter,
     yesNoFormatter: tab.yesNoFormatter
   },
-
+  beforeDestroy() {
+    if (this.tabulator) {
+      this.tabulator.destroy()
+    }
+  },
   mounted() {
     if (this.initialSchema){
       this.schema = [...this.initialSchema]
@@ -107,7 +115,8 @@ export default Vue.extend({
       reactiveData: true,
       columns: this.tableColumns,
       movableRows: true,
-      layout: 'fitDataFill'
+      layout: 'fitDataFill',
+      headerSort: false,
     })
   }
 })

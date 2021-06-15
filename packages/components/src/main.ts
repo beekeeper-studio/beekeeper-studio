@@ -1,14 +1,8 @@
 import SchemaBuilder from './components/SchemaBuilder.vue'
 import formatters from './lib/tabulator'
-import { getDialectData } from './lib/dialects'
-
 import 'tabulator-tables/dist/css/tabulator.css'
+import { getDialectData, Dialect, DialectOverride } from './lib/dialects'
 
-export default {
-   SchemaBuilder, formatters, sql: {
-     getDialectData
-   },
-   Components: {
-     SchemaBuilder
-   }
+export {
+  SchemaBuilder, formatters, getDialectData, Dialect, DialectOverride
 }
