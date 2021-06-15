@@ -88,7 +88,8 @@ hr {
 // ---------------------------------------
 .btn {
   display: inline-flex;
-  font-size: 12px;
+  align-items: center;
+  font-size: 13px;
   line-height: $input-height;
   height: $input-height;
   font-weight: 700;
