@@ -1,9 +1,11 @@
 <template>
   <div class="home">
     <div class="big-wrap">
-      <div class="card-flat">
-        <schema-builder/>
-      </div>
+      <schema-builder>
+        <template>
+          <h2>Schema Builder</h2>
+        </template>
+      </schema-builder>
     </div>
   </div>
 </template>
@@ -25,5 +27,12 @@ export default Vue.extend ({
 
   .home {
     padding: 0 ($gutter-w * 2);
+  }
+  .table-header {
+    padding: $gutter-w 0;
+    h2 {
+      margin: 0;
+      color: $text-dark;
+    }
   }
 </style>

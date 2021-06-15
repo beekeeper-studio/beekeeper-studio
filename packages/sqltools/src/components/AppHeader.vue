@@ -1,8 +1,10 @@
 <template>
   <header class="header row flex-middle">
-    <figure>SQLTools</figure>
+    <figure class="logo">
+      <span class="logo-title">SQLTools</span>
+    </figure>
     <nav>
-      <!-- <router-link to="/Home" class="btn btn-link">Home</router-link> -->
+      <router-link to="/Home" class="btn btn-link">Builder</router-link>
       <router-link to="/About" class="btn btn-link">Templates</router-link>
     </nav>
   </header>
@@ -15,7 +17,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  @import '@/assets/styles/app.scss';
+  @import '@/assets/styles/app/_variables';
+  @import '@/assets/styles/app/_flex-grid';
 
   .header {
     // position: absolute;
@@ -45,17 +48,18 @@ export default {
     }
     .logo {
       display: flex;
-      img {
-        margin-right: 0.5rem;
-        @media (max-width: $screen-xs) {
-          height: 32px!important;
-          margin-right: 0;
-        }
-      }
+      // img {
+      //   margin-right: 0.5rem;
+      //   @media (max-width: $screen-xs) {
+      //     height: 32px!important;
+      //     margin-right: 0;
+      //   }
+      // }
     }
     span.logo-title {
       font-weight: bold;
       font-size: 22px;
+      color: $text-dark;
     }
     nav {
       margin-right: 1.5em;

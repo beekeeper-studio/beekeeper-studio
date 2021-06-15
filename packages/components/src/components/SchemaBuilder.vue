@@ -1,8 +1,12 @@
 <template>
   <div class="table-wrapper">
-    <div ref="tabulator"></div>
-    <div class="table-footer">
-      <button class="btn btn-primary" @click.prevent="addRow">Add Field 🎠</button>
+    <div class="table-header flex flex-middle">
+      <slot></slot>
+      <span class="expand"></span>
+      <button class="btn btn-primary" @click.prevent="addRow">Add Field</button>
+    </div>
+    <div class="card-flat">
+      <div ref="tabulator"></div>
     </div>
   </div>
 </template>
