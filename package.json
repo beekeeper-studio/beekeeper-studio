@@ -15,6 +15,7 @@
     "bks:dev": "yarn workspace beekeeper-studio electron:serve",
     "components:build": "yarn workspace components build",
     "components:dev": "yarn workspace components dev",
+    "components:serve":"yarn workspace components serve",
     "sqltools:build": "yarn workspace sqltools build",
     "sqltools:dev": "yarn workspace sqltools serve",
     

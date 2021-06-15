@@ -1,7 +1,7 @@
-import App from './App.vue'
+import SchemaBuilder from './components/SchemaBuilder.vue'
 
 const Bananas = "Apples"
 
 export default {
-   App, Bananas
+   SchemaBuilder, Bananas
 }

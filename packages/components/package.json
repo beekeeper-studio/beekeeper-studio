@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "vue-cli-service build --target lib --watch src/main.ts",
-    "serve": "vue-cli-service serve",
+    "serve": "vue-cli-service serve src/dev.ts",
     "build": "vue-cli-service build --target lib src/main.ts",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint"
