@@ -14,7 +14,7 @@ const logger = createLogger('db:clients:cassandra');
  */
 
 export default function (server, database) {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const dbConfig = configDatabase(server, database);
 
     logger().debug('creating database client %j', dbConfig);

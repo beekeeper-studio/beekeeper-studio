@@ -63,28 +63,19 @@ export default class {
     console.log("running migrations")
     const runner = this.connection.connection.createQueryRunner()
     await runner.query(setupSQL)
-    try  {
-      // await runner.startTransaction()
-      for(let i = 0; i < migrations.length; i++){
-        const migration = migrations[i]
-        logger.debug(`Checking migration ${migration.name}`)
-        if(migration.env && migration.env !== this.env) {
-          // env defined, and does not match
-          logger.debug(`Skipping ${migration.name} in ${this.env}, required ${migration.env} `)
-          continue
-        }
-        const hasRun = await Manager.checkExists(runner, migration.name)
-        if (!hasRun) {
-          await migration.run(runner, this.env)
-          await Manager.markExists(runner, migration.name)
-        }
+    for(let i = 0; i < migrations.length; i++){
+      const migration = migrations[i]
+      logger.debug(`Checking migration ${migration.name}`)
+      if(migration.env && migration.env !== this.env) {
+        // env defined, and does not match
+        logger.debug(`Skipping ${migration.name} in ${this.env}, required ${migration.env} `)
+        continue
       }
-      // await runner.commitTransaction()
-    } catch (e) {
-      // await runner.rollbackTransaction()
-      throw e
-    } finally {
-      // await runner.release()
+      const hasRun = await Manager.checkExists(runner, migration.name)
+      if (!hasRun) {
+        await migration.run(runner, this.env)
+        await Manager.markExists(runner, migration.name)
+      }
     }
   }
 

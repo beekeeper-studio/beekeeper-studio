@@ -107,8 +107,9 @@ import { AppEventMixin } from './common/AppEvent'
     handler.registerCallbacks()
     app.$mount('#app')
   } catch (err) {
+    console.error("ERROR INITIALIZING APP")
+    console.error(err)
     throw err
-    // console.error(err)
   }
 })();
 
