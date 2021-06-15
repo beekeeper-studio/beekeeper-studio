@@ -1,13 +1,16 @@
 <template>
-  <nav id="nav">
-    <router-link to="/Home">Home</router-link>
-    <router-link to="/About">About</router-link>
-  </nav>
+  <header class="header row flex-middle">
+    <figure>SQLTools</figure>
+    <nav>
+      <!-- <router-link to="/Home" class="btn btn-link">Home</router-link> -->
+      <router-link to="/About" class="btn btn-link">Templates</router-link>
+    </nav>
+  </header>
 </template>
 
 <script>
 export default {
-  name: 'Header'
+  name: 'App Header'
 }
 </script>
 

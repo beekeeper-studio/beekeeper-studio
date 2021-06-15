@@ -1,187 +1,21 @@
 <template>
   <div id="app">
-    <header class="header row flex-middle">
-      <figure>SQLTools</figure>
-      <nav>
-        <router-link to="/Home" class="btn btn-link">Home</router-link>
-        <router-link to="/About" class="btn btn-link">About</router-link>
-      </nav>
-    </header>
+    <app-header/>
     <router-view/>
   </div>
 </template>
 
 <script>
+import AppHeader from '@/components/AppHeader.vue';
 
 export default {
-  name: 'app'
+  name: 'app',
+  components: {
+    AppHeader
+  }
 }
 </script>
 
 <style lang="scss" scoped>
-  @import '@/assets/styles/app.scss';
 
-  .header {
-    // position: absolute;
-    // top: 0;
-    // left: 0;
-    // right: 0;
-    z-index: 10;
-    padding: 0 1.5em;
-    height: 6em;
-    transition: height 0.2s ease-in-out;
-    &.moving {
-      position: fixed;
-      background: lighten($theme-bg, 4%);
-      height: 4em;
-      box-shadow: 0 3px 1px -2px rgba(black,.2), 
-                  0 2px 2px 0 rgba(black,.14), 
-                  0 1px 5px 0 rgba(black,.12);
-    }
-    a {
-      color:white;
-      @media (max-width: $screen-xs) {
-        &.btn {
-          font-size: 11px;
-          min-width: 0;
-        }
-      }
-    }
-    .logo {
-      display: flex;
-      img {
-        margin-right: 0.5rem;
-        @media (max-width: $screen-xs) {
-          height: 32px!important;
-          margin-right: 0;
-        }
-      }
-    }
-    span.logo-title {
-      font-weight: bold;
-      font-size: 22px;
-    }
-    nav {
-      margin-right: 1.5em;
-    }
-    .btn-group {
-      display: flex;
-      align-items: center;
-      .btn-fab {
-        margin: 0 0.25rem;
-        &:first-child{
-          margin-left: 0;
-        }
-        &:last-child {
-          margin-right: 0;
-        }
-      }
-      > span {
-        display: inline-flex;
-      }
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 13px;
-        .hide-xs {
-          margin-left: 3px;
-        }
-        .material-icons {
-          font-size: 15px;
-          width: 15px;
-          margin-right: 0.35rem;
-        }
-        &.btn-primary {
-          color: rgba(black, 0.87);
-        }
-      }
-      @media (max-width: $screen-sm) {
-        min-width: auto;
-        // .github-btn, 
-        // .material-icons {
-        //   display: none;
-        // }
-        .btn {
-          font-size: 11px;
-        }
-      }
-    }
-    // .btn-fab {
-    //   margin-left: -0.25em;
-    //   color: white;
-    //   &:hover, &:focus {
-    //     background: rgba(white, 0.06);
-    //   }
-    // }
-    @media (max-width: $screen-sm) {
-      padding: 0 1em;
-    }
-    @media (max-width: 480px) {
-      .btn-flat {
-        min-width: 0;
-      }
-      nav {
-        margin-right: 0;
-      }
-    }
-  }
-
-  // Mobile Menu
-  // .overlay {
-  //   display: none;
-  //   position: fixed;
-  //   left: 0;
-  //   top: 0;
-  //   right: 0;
-  //   bottom: 0;
-  //   flex-direction: column;
-  //   align-items: center;
-  //   justify-content: center;
-  //   background: rgba($theme-bg, 0.96);
-  //   overflow-x: hidden;
-  //   transition: 0.15s ease-in-out;
-  //   z-index: 100;
-  //   nav {
-  //     @extend .flex-col;
-  //     margin: 0;
-  //     a {
-  //       font-size: 28px;
-  //       padding: 8px;
-  //       color: $text-dark;
-  //       margin: 0.5rem;
-  //       text-transform: initial;
-  //       transition: color 0.2s ease-in-out;
-  //       &:hover, &:focus {
-  //         color: $text;
-  //       }
-  //     }
-  //   }
-  //   .close-btn {
-  //     position: absolute;
-  //     top: 24px;
-  //     right: 24px;
-  //     display: flex;
-  //     font-size: 60px;
-  //     color: $text-dark;
-  //   }
-  //   @media (max-height: 450px) {
-  //     .overlay {
-  //       a {
-  //         font-size: 20px;
-  //       }
-  //       .close-btn {
-  //         font-size: 40px;
-  //         top: 15px;
-  //         right: 35px;
-  //       }
-  //     }
-  //   }
-  // }
-  // body.menu-open {
-  //   overflow: hidden;
-  //   .overlay {
-  //     display: flex;
-  //   }
-  // }
 </style>
