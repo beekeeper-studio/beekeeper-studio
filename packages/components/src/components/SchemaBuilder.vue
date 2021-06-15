@@ -88,7 +88,7 @@ export default Vue.extend({
 
   methods: {
     trashButton() {
-      return '🗑'
+      return 'X'
     },
     removeRow(_e, cell: Tabulator.CellComponent) {
       this.tabulator.deleteRow(cell.getRow())

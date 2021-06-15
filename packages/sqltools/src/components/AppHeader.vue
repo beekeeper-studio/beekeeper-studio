@@ -1,8 +1,10 @@
 <template>
   <header class="header row flex-middle">
     <div class="logo">
+      <img class="logo-img" src="@/assets/icons/bk-logo-yellow-icon.svg">
       <span class="logo-title">SQLTools</span>
     </div>
+    <span class="expand"></span>
     <nav>
       <router-link to="/Home" class="btn btn-link">Builder</router-link>
       <router-link to="/About" class="btn btn-link">Templates</router-link>
@@ -44,13 +46,14 @@ export default {
     }
     .logo {
       display: flex;
-      // img {
-      //   margin-right: 0.5rem;
-      //   @media (max-width: $screen-xs) {
-      //     height: 32px!important;
-      //     margin-right: 0;
-      //   }
-      // }
+      align-items: center;
+      img {
+        width: 32px;
+        margin-right: 0.5rem;
+        @media (max-width: $screen-xs) {
+          margin-right: 0;
+        }
+      }
     }
     .logo-title {
       font-weight: bold;
@@ -59,7 +62,7 @@ export default {
       margin-right: 2rem;
     }
     nav {
-      margin-right: 1.5em;
+      margin-left: 1.5em;
     }
     .btn-group {
       display: flex;
