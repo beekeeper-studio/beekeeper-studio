@@ -1,6 +1,9 @@
 <template>
   <div class="table-wrapper">
     <div ref="tabulator"></div>
+    <div class="table-footer">
+      <button class="btn btn-primary" @click.prevent="addRow">Add Field 🎠</button>
+    </div>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -40,14 +43,13 @@ export default Vue.extend({
     },
     tableColumns() {
       return [
-        {title: 'Position', field: 'ordinalPosition', headerTooltip: 'The ordinal position of the columns'},
-        {title: 'Name', field: 'columnName', editor: null && 'input', cellEdited: this.cellEdited, headerFilter: true},
-        {title: 'Type', field: 'dataType', editor: null && 'autocomplete', editorParams: this.autocompleteOptions, cellEdited: this.cellEdited}, 
+        {rowHandle:true, formatter:"handle", headerSort:false, frozen:true, width:30, minWidth:30},        {title: 'Name', field: 'columnName', editor: 'input', headerFilter: true},
+        {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: this.autoCompleteOptions},
         {
           title: 'Nullable',
           field: 'nullable',
           headerTooltip: "Allow this column to contain a null value",
-          editor: null && 'select',
+          editor: 'select',
           editorParams: {
             values: [
               {label: "YES", value: true},
@@ -55,21 +57,39 @@ export default Vue.extend({
             ]
           },
           formatter: this.yesNoFormatter,
-          cellEdited: this.cellEdited
         },
         {
           title: 'Default Value',
           field: 'defaultValue',
-          editor: null && 'input',
+          editor: 'input',
           headerTooltip: "If you don't set a value for this field, this is the default value",
-          cellEdited: this.cellEdited,
           formatter: this.cellFormatter
         },
-        {title: 'Primary', field: 'primary', formatter: 'tickCross', formatterParams: { allowEmpty: true}},
+        {title: 'Primary', field: 'primary', formatter: this.yesNoFormatter, formatterParams: { allowEmpty: true, falseEmpty: true}, editor: 'select',
+          editorParams: {
+            values: [
+              {label: "YES", value: true},
+              {label: "NO", value: false}
+            ]
+          },
+        },
+        {
+          formatter: this.trashButton, width: 40, hozAlign: 'center', cellClick: this.removeRow
+        }
       ]
-    }
+    },
   },
+
   methods: {
+    trashButton() {
+      return '🗑'
+    },
+    removeRow(_e, cell: Tabulator.CellComponent) {
+      this.tabulator.deleteRow(cell.getRow())
+    },
+    addRow() {
+      this.tabulator.addRow({ columnName: 'untitled', dataType: 'text'})
+    },
     cellEdited(c) {
       console.log('--> Cell edited!', c)
     },
@@ -86,7 +106,9 @@ export default Vue.extend({
     this.tabulator = new Tabulator(this.$refs.tabulator, {
       data: this.tableData,
       reactiveData: true,
-      columns: this.tableColumns
+      columns: this.tableColumns,
+      movableRows: true,
+      layout: 'fitDataFill'
     })
   }
 })

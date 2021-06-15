@@ -1,9 +1,9 @@
 <template>
   <div class="components">
     <h1>Components:</h1>
-    <div :key="component.name" v-for="component in components" class="component-wrapper">
+    <div :key="component.name"  v-for="component in components" class="component-wrapper">
       <h2>{{component.name}}</h2>
-      <component :is="component.component" />
+      <component :is="component.component" v-bind="component.props" />
     </div>
 
   </div>
@@ -17,7 +17,15 @@ export default Vue.extend({
       components: [
         {
           name: "Schema Builder",
-          component: SchemaBuilder
+          component: SchemaBuilder,
+          props: {
+            initialSchema: [
+              { columnName: 'id', dataType: 'int', nullable: false, primary: true},
+              { columnName: 'first_name', dataType: 'varchar', length: 255, nullable: true, primary: false}
+            ],
+            initialName: 'users',
+            dialect: 'postgresql'
+          }
         }
       ]
     }

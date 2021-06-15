@@ -6,6 +6,16 @@ function sanitizeHtml(value) {
   return Purify.sanitize(value)
 }
 
+interface YesNoParams {
+  allowEmpty?: boolean
+  falseEmpty?: boolean
+}
+
+function yesNoResult(value: boolean) {
+  const result = value ? 'YES' : 'NO'
+  return `<div class="yesno-select">${result}</div>`
+}
+
 export default {
   cellFormatter(cell) {
     if (_.isNil(cell.getValue())) {
@@ -19,9 +29,19 @@ export default {
     const result = `<pre>${cellValue}</pre>`
     return result;
   },
-  yesNoFormatter(cell: any): string {
-    let result = 'NO'
-    if (cell.getValue() === true) result = 'YES'
-    return `<div class="yesno-select">${result}</div>`
+  yesNoFormatter(cell: any, params?: YesNoParams): string {
+
+    if (cell.getValue() === true) {
+      return yesNoResult(true)
+    } else if (cell.getValue() === false) {
+      if (params.falseEmpty) return ''
+      return yesNoResult(false)
+    }
+
+    if (params?.allowEmpty && _.isNil(cell.getValue())) {
+      return ''
+    } else {
+      return yesNoResult(false)
+    }
   }
 }
