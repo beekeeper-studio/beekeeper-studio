@@ -3,7 +3,7 @@
     <x-contextmenu>
       <x-menu style="--target-align: right; --v-target-align: top">
         <x-menuitem>
-          <x-label @click="createFolder">New Folder</x-label>
+          <x-label>New Folder</x-label>
           <x-icon
             name="folder"
             computedsize="small"
@@ -13,6 +13,7 @@
         </x-menuitem>
       </x-menu>
     </x-contextmenu>
+    <button @click="openFolder">something</button>
     <!-- <div class="toolbar btn-group row flex-right" v-show="checkedFavorites.length > 0">
       <a class="btn btn-link" @click="discardCheckedFavorites">Cancel</a>
       <a class="btn btn-primary" :title="removeTitle" @click="removeCheckedFavorites">Remove</a>
@@ -22,19 +23,19 @@
 
 <script>
 import { mapState } from "vuex";
-import { createParentDirectory } from "common/utils";
 import { buildTree } from "@/plugins/foldertree";
+const { dialog } = window.require("electron").remote;
 export default {
   data() {
     return {
-      checkedFavorites: [],
+      checkedFavorites: []
     };
   },
   computed: {
     ...mapState(["favorites", "activeTab"]),
     removeTitle() {
       return `Remove ${this.checkedFavorites.length} saved queries`;
-    },
+    }
   },
   methods: {
     // other trigger needed because files are multiplied not component
@@ -42,7 +43,9 @@ export default {
     createFolder() {},
 
     openFolder() {
-      buildTree();
+      dialog.showOpenDialog({ properties: ["openDirectory"] }).then(res => {
+        buildTree(res.filePaths[0]);
+      });
     },
 
     selected(item) {
@@ -67,7 +70,7 @@ export default {
     },
     discardCheckedFavorites() {
       this.checkedFavorites = [];
-    },
-  },
+    }
+  }
 };
 </script>

@@ -19,7 +19,7 @@ export function buildTree(rootPath) {
     if (currentNode) {
       const children = fs.readdirSync(currentNode.path);
 
-      children.forEach((file) => {
+      children.forEach(file => {
         const childPath = `${currentNode.path}/${file}`;
         const childNode = new TreeNode(childPath);
 

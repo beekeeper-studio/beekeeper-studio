@@ -57,12 +57,11 @@ import _ from "lodash";
 import GlobalSidebar from "./GlobalSidebar";
 import TableList from "./core/TableList";
 import HistoryList from "./core/HistoryList";
-import FavoriteFolder from "./core/favorite_list/FavoriteFolder";
 // import FavoriteList from './core/FavoriteList'
 import DatabaseDropdown from "./core/DatabaseDropdown";
 
 import { mapState } from "vuex";
-import FavoriteFolder from "./core/favorite_list/FavoriteFolder.vue";
+import FavoriteFolder from "./core/favorite_list/FavoriteSystem.vue";
 
 export default {
   props: ["sidebarShown"],
@@ -71,7 +70,6 @@ export default {
     DatabaseDropdown,
     HistoryList,
     GlobalSidebar,
-    FavoriteFolder
   },
   data() {
     return {

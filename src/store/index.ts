@@ -287,6 +287,7 @@ const store = new Vuex.Store<State>({
     },
 
     renameFavorite(state: State, query: UsedQuery) {
+      console.log(state)
       query.save();
     },
 
