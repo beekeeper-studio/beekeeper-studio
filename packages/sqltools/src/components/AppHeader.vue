@@ -1,8 +1,8 @@
 <template>
   <header class="header row flex-middle">
-    <figure class="logo">
+    <div class="logo">
       <span class="logo-title">SQLTools</span>
-    </figure>
+    </div>
     <nav>
       <router-link to="/Home" class="btn btn-link">Builder</router-link>
       <router-link to="/About" class="btn btn-link">Templates</router-link>
@@ -21,22 +21,18 @@ export default {
   @import '@/assets/styles/app/_flex-grid';
 
   .header {
-    // position: absolute;
-    // top: 0;
-    // left: 0;
-    // right: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     z-index: 10;
     padding: 0 1.5em;
-    height: 6em;
     transition: height 0.2s ease-in-out;
-    &.moving {
-      position: fixed;
-      background: lighten($theme-bg, 4%);
-      height: 4em;
-      box-shadow: 0 3px 1px -2px rgba(black,.2), 
-                  0 2px 2px 0 rgba(black,.14), 
-                  0 1px 5px 0 rgba(black,.12);
-    }
+    background: lighten($theme-bg, 4%);
+    height: 4em;
+    box-shadow: 0 3px 1px -2px rgba(black,.2), 
+                0 2px 2px 0 rgba(black,.14), 
+                0 1px 5px 0 rgba(black,.12);
     a {
       color:white;
       @media (max-width: $screen-xs) {
@@ -56,10 +52,11 @@ export default {
       //   }
       // }
     }
-    span.logo-title {
+    .logo-title {
       font-weight: bold;
       font-size: 22px;
       color: $text-dark;
+      margin-right: 2rem;
     }
     nav {
       margin-right: 1.5em;

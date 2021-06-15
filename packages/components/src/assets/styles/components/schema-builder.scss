@@ -1,0 +1,74 @@
+@import '../variables';
+
+$row-height:             42px;
+
+.schema-builder {
+
+  .table-header {
+    margin-bottom: $gutter-w;
+  }
+  // Header
+  .tabulator {
+    .tabulator-header {
+      box-shadow: none;
+    }
+  }
+
+  // Resize Handle
+  .tabulator-header,
+  .tabulator-row {
+    .tabulator-frozen, .tabulator-frozen:hover {
+      border: 0!important;
+      background: transparent;
+      padding: 0!important;
+    }
+  }
+  .tabulator-row {
+    .tabulator-frozen {
+      width: 24px!important;
+      cursor: move;
+      &.tabulator-row-handle {
+        .tabulator-row-handle-box {
+          width: 90%;
+          transform: rotate(90deg);
+          .tabulator-row-handle-bar {
+            background: $border-color;
+            height: 1px;
+            &:last-child {
+              display: none;
+            }
+          }
+        }
+      }
+      .tabulator-col-resize-handle {
+        display: none;
+      }
+    }
+  }
+
+  // Field Rows
+  .tabulator-row {
+    margin: 3px 0;
+    background: rgba($theme-base, 0.05);
+    border-radius: 3px;
+    overflow: hidden;
+    &.tabulator-row-even,
+    &:nth-child(odd) {
+      background: rgba($theme-base, 0.05);
+    }
+    .tabulator-cell {
+      min-height: $row-height;
+      height: $row-height;
+      line-height: $row-height - (6px); // row-height - vertical padding
+      &.tabulator-editing {
+        border: 0;
+      }
+    }
+    input {
+      height: $row-height;
+    }
+    textarea {
+      line-height: $row-height - 8px; // row-height - vertical padding
+    }
+  }
+}

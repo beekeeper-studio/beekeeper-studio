@@ -1,13 +1,11 @@
 <template>
-  <div class="table-wrapper">
+  <div class="schema-builder">
     <div class="table-header flex flex-middle">
       <slot></slot>
       <span class="expand"></span>
       <button class="btn btn-primary" @click.prevent="addRow">Add Field</button>
     </div>
-    <div class="card-flat">
-      <div ref="tabulator"></div>
-    </div>
+    <div ref="tabulator"></div>
   </div>
 </template>
 
@@ -18,6 +16,7 @@ import { getDialectData } from '../lib/dialects'
 import tab from '../lib/tabulator'
 import {vueEditor} from '../lib/tabulator/helpers'
 import NullableInputEditor from './tabulator/NullableInputEditor.vue'
+import '../assets/styles/components/schema-builder.scss'
 
 export default Vue.extend({
   props: ['initialSchema', 'initialName', 'dialect'],
@@ -125,7 +124,3 @@ export default Vue.extend({
   }
 })
 </script>
-
-<style lang="scss" scoped>
-
-</style>

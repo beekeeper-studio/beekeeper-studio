@@ -3,7 +3,7 @@
     <div class="big-wrap">
       <schema-builder>
         <template>
-          <h2>Schema Builder</h2>
+          <span class="table-title">Schema Builder</span>
         </template>
       </schema-builder>
     </div>
@@ -30,7 +30,9 @@ export default Vue.extend ({
   }
   .table-header {
     padding: $gutter-w 0;
-    h2 {
+    .table-title {
+      font-weight: bold;
+      font-size: 1.25rem;
       margin: 0;
       color: $text-dark;
     }

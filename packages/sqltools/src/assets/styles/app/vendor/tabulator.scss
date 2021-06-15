@@ -1,7 +1,7 @@
 $errorColor:             $brand-danger;
 $foreign-key-width:      20px;
 
-$row-height:             40px;
+$row-height:             30px;
 $row-highlight:          lighten($query-editor-bg, 1%);
 $row-add:                #18855F;
 $row-delete:             #8A3937;
@@ -82,16 +82,8 @@ $cell-radius:            2px;
   background: transparent;
   width: min-content;
   min-width: 100%;
-  &.tabulator-row-even {
-    background: transparent;
-  }
   &:nth-child(odd) {
     background: rgba($theme-base, 0.015);
-  }
-  .tabulator-frozen {
-    &.tabulator-frozen-left {
-      border: 0;
-    }
   }
   .tabulator-cell {
     border: 0;
@@ -148,7 +140,6 @@ $cell-radius:            2px;
     }
     &.tabulator-editing {
       box-shadow: inset 0 -1px $theme-base!important;
-      border: 0;
       background: rgba($theme-base, 0.12);
       padding-left: 0;
       padding-right: 0;
