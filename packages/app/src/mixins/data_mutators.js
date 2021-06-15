@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
 import Purify from 'dompurify'
+import lib from 'components'
 export const NULL = '(NULL)'
 
 
@@ -25,11 +26,7 @@ export default {
       const result = `<pre>${cellValue}</pre>`
       return result;
     },
-    yesNoFormatter(cell) {
-      let result = 'NO'
-      if (cell.getValue() === true) result = 'YES'
-      return `<div class="yesno-select">${result}</div>`
-    },
+    yesNoFormatter: lib.formatters.yesNoFormatter,
     ...Mutators
   }
 }

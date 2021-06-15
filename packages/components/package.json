@@ -11,10 +11,14 @@
   },
   "dependencies": {
     "core-js": "^3.6.5",
-    "vue": "^2.6.11"
+    "vue": "^2.6.11",
+    "tabulator-tables": "rathboma/tabulator#max-initial-width-with-dist",
+    "dompurify": "^2.2.8",
+    "lodash": "^4.17.21"
   },
   "main": "dist/components.umd.js",
   "devDependencies": {
+    "@types/tabulator-tables": "^4.9.2",
     "@types/jest": "^24.0.19",
     "@typescript-eslint/eslint-plugin": "^4.18.0",
     "@typescript-eslint/parser": "^4.18.0",

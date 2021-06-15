@@ -1626,10 +1626,10 @@
   resolved "https://registry.yarnpkg.com/@types/strip-json-comments/-/strip-json-comments-0.0.30.tgz#9aa30c04db212a9a0649d6ae6fd50accc40748a1"
   integrity sha512-7NQmHra/JILCd1QqpSzl8+mJRc8ZHz3uDm8YV1Ks9IhK0epEiTw8aIErbvH9PI+6XbqhyIQy3462nEsn7UVzjQ==
 
-"@types/tabulator-tables@^4.7.2":
-  version "4.9.1"
-  resolved "https://registry.yarnpkg.com/@types/tabulator-tables/-/tabulator-tables-4.9.1.tgz#4fbc5465960598308260f50f840d610bcc8ffa3a"
-  integrity sha512-BfHDeVDfLF5H0HYFQ3ZEfv7J43sD8dw8fhci8juRB5uc0xQWboDd6f1hgLOwQioYhO9vWZEAWfuD6c1wl9qzmw==
+"@types/tabulator-tables@^4.9.2":
+  version "4.9.2"
+  resolved "https://registry.yarnpkg.com/@types/tabulator-tables/-/tabulator-tables-4.9.2.tgz#5e1773caea664acec0224dd7cd1b6632cf6ddc61"
+  integrity sha512-0Pczxn83HtBqHDIbWVtrlG+OuBFiqwd669TzKw5cOwfryBGobe5Y3yVRKqpqTTfW9bSK0j87xVmvGAFwGVyREg==
 
 "@types/tapable@^1":
   version "1.0.7"

@@ -1,7 +1,9 @@
 import SchemaBuilder from './components/SchemaBuilder.vue'
-
-const Bananas = "Apples"
+import formatters from './lib/tabulator'
+import { getDialectData } from './lib/dialects'
 
 export default {
-   SchemaBuilder, Bananas
+   SchemaBuilder, formatters, sql: {
+     getDialectData
+   }
 }
