@@ -130,7 +130,6 @@
     "vuepress": "^1.5.0"
   },
   "eslintConfig": {
-    "root": true,
     "env": {
       "node": true
     },
