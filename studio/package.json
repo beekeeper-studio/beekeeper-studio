@@ -2,6 +2,7 @@
   "name": "beekeeper-studio",
   "version": "1.12.0",
   "private": true,
+  "repository": "https://github.com/beekeeper-studio/beekeeper-studio.git",
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "author": {
     "name": "Beekeeper Studio Team",
