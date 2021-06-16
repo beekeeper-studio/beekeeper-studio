@@ -1,11 +1,13 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
+    "target": "ESNext",
+    "module": "ESNext",
     "declaration": true,
     "declarationDir": "dist",
     "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "dist",
     "baseUrl": ".",
     "types": [
       "webpack-env",

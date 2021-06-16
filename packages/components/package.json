@@ -3,10 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "watch": "watch 'yarn dev && tsc --emitDeclarationOnly' src",
-    "dev": "vue-cli-service build --target lib --mode=development src/main.ts",
+    "types": "tsc --declaration --emitDeclarationOnly",
+    "types:watch": "yarn types --watch",
+    "watch": "npm-run-all -p dev:watch types:watch",
+    "dev:watch": "yarn dev --watch",
+    "dev": "vue-cli-service build --target lib --mode=production src/main.ts",
     "serve": "vue-cli-service serve src/dev.ts",
-    "build": "vue-cli-service build --target lib src/main.ts",
+    "build": "vue-cli-service build --target lib src/main.ts && yarn types",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint"
   },
