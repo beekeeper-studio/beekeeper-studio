@@ -16,7 +16,6 @@ import { getDialectData } from '../lib/dialects'
 import tab from '../lib/tabulator'
 import {vueEditor} from '../lib/tabulator/helpers'
 import NullableInputEditor from './tabulator/NullableInputEditor.vue'
-import '../assets/styles/components/schema-builder.scss'
 import { Dialect, SchemaItem } from '../lib/dialects/models'
 
 interface SchemaBuilderData {
@@ -135,3 +134,7 @@ export default Vue.extend({
   }
 })
 </script>
+
+<style lang="scss">
+  @import '@/assets/styles/components/schema-builder';
+</style>

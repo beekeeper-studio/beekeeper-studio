@@ -1,7 +1,10 @@
 <template>
   <div class="home">
     <div class="big-wrap">
-      <schema-builder>
+      <schema-builder
+        :initialSchema="schema"
+        :initialName="name"
+      >
         <template>
           <span class="table-title">Schema Builder</span>
         </template>
