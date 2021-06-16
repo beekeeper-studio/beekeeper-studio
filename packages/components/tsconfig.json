@@ -4,6 +4,7 @@
     "target": "esnext",
     "module": "esnext",
     "declaration": true,
+    "declarationDir": "dist",
     "moduleResolution": "node",
     "baseUrl": ".",
     "types": [

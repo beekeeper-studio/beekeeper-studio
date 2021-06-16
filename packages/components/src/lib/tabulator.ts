@@ -12,6 +12,7 @@ export interface YesNoParams {
   falseEmpty?: boolean
 }
 
+
 function yesNoResult(value: boolean) {
   const result = value ? 'YES' : 'NO'
   return `<div class="yesno-select">${result}</div>`

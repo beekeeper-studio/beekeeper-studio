@@ -1,16 +1,8 @@
-import { DialectData } from "./dialects/models";
+import { Dialect, DialectData } from "./dialects/models";
 import { MysqlData } from "./dialects/mysql";
 import { PostgresData } from "./dialects/postgresql";
 import { SqliteData } from "./dialects/sqlite";
 import { SqlServerData } from "./dialects/sqlserver";
-
-type SqlServer = "mssql" | "sqlserver"
-export type Dialect = "postgresql" | "sqlite" | SqlServer | "mysql"
-
-
-export type DialectOverride = {
-  [K in Dialect]: string
-}
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {

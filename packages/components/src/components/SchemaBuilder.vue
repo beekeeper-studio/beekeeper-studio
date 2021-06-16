@@ -10,17 +10,28 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
+import Vue, { PropType } from 'vue'
 import Tabulator from 'tabulator-tables'
 import { getDialectData } from '../lib/dialects'
 import tab from '../lib/tabulator'
 import {vueEditor} from '../lib/tabulator/helpers'
 import NullableInputEditor from './tabulator/NullableInputEditor.vue'
 import '../assets/styles/components/schema-builder.scss'
+import { Dialect, SchemaItem } from '../lib/dialects/models'
+
+interface SchemaBuilderData {
+  schema: SchemaItem[],
+  name: string,
+  tabulator: Tabulator
+}
 
 export default Vue.extend({
-  props: ['initialSchema', 'initialName', 'dialect'],
-  data() {
+  props: {
+    initialName: String,
+    initialSchema: Array as PropType<SchemaItem[]>,
+    dialect: String as PropType<Dialect>
+  },
+  data(): SchemaBuilderData {
     return {
       name: "untitled_table",
       schema: [],

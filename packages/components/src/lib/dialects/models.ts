@@ -1,6 +1,10 @@
 
 
 
+type SqlServer = "mssql" | "sqlserver"
+export type Dialect = "postgresql" | "sqlite" | SqlServer | "mysql"
+
+
 export class ColumnType {
   public name: string
   public supportsLength: boolean
@@ -21,4 +25,23 @@ export class ColumnType {
 
 export interface DialectData {
   columnTypes: ColumnType[]
+}
+
+export interface SchemaConfig {
+  dataType: string
+  special?: string
+  nullable?: boolean
+  defaultValue?: string
+  primaryKey?: boolean
+}
+
+
+export type DialectConfig = {
+  [K in Dialect]: SchemaConfig
+}
+
+export interface SchemaItem {
+  columnName: string
+  config: SchemaConfig
+  dialectConfigs?: DialectConfig
 }

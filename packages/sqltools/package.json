@@ -12,7 +12,8 @@
     "core-js": "^3.6.5",
     "typeface-roboto": "^1.1.13",
     "vue": "^2.6.11",
-    "vue-router": "^3.2.0"
+    "vue-router": "^3.2.0",
+    "components": "1.0.0"
   },
   "devDependencies": {
     "@types/jest": "^24.0.19",

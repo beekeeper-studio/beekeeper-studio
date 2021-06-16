@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "vue-cli-service build --target lib --watch src/main.ts",
+    "watch": "watch 'yarn dev && tsc --emitDeclarationOnly' src",
+    "dev": "vue-cli-service build --target lib --mode=development src/main.ts",
     "serve": "vue-cli-service serve src/dev.ts",
     "build": "vue-cli-service build --target lib src/main.ts",
     "test:unit": "vue-cli-service test:unit",
@@ -11,15 +12,16 @@
   },
   "dependencies": {
     "core-js": "^3.6.5",
-    "vue": "^2.6.11",
-    "tabulator-tables": "rathboma/tabulator#max-initial-width-with-dist",
     "dompurify": "^2.2.8",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "tabulator-tables": "rathboma/tabulator#max-initial-width-with-dist",
+    "vue": "^2.6.11"
   },
-  "main": "dist/components.umd.js",
+  "main": "dist/components.common.js",
   "devDependencies": {
-    "@types/tabulator-tables": "^4.9.2",
+    "@types/dompurify": "^2.2.2",
     "@types/jest": "^24.0.19",
+    "@types/tabulator-tables": "^4.9.2",
     "@typescript-eslint/eslint-plugin": "^4.18.0",
     "@typescript-eslint/parser": "^4.18.0",
     "@vue/cli-plugin-babel": "~4.5.0",
@@ -32,6 +34,7 @@
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
     "typescript": "~4.1.5",
-    "vue-template-compiler": "^2.6.11"
+    "vue-template-compiler": "^2.6.11",
+    "watch": "^1.0.2"
   }
 }

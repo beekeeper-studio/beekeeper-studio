@@ -22,5 +22,12 @@
       "dom.iterable",
       "scripthost"
     ]
-  }
+  },
+  "exclude": [
+    "packages/**/dist",
+    "node_modules",
+    "packages/**/node_modules",
+    "dist_electron",
+    "dist"
+  ]
 }

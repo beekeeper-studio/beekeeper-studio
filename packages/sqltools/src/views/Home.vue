@@ -10,14 +10,26 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import Vue from 'vue';
-import SchemaBuilder from '../../../components/src/components/SchemaBuilder.vue';
+import { SchemaBuilder } from 'components'
+import { UserTemplate as users } from '../lib/templates/index'
+import { SchemaItem } from 'components'
 
+interface Data {
+  schema: SchemaItem[],
+  name: string
+}
 export default Vue.extend ({
   name: 'Home',
   components: { 
     SchemaBuilder
+  },
+  data(): Data {
+    return {
+      schema: users.schema,
+      name: users.name
+    }
   }
 })
 </script>
