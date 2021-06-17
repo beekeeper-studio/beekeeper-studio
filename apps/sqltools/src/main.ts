@@ -5,7 +5,6 @@ import router from './router'
 import 'typeface-roboto'
 // import 'typeface-source-code-pro'
 import 'tabulator-tables/dist/css/tabulator.css'
-import 'components/dist/components.css'
 import '@/assets/styles/app.scss'
 
 

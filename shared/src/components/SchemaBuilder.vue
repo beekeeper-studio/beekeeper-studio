@@ -136,5 +136,5 @@ export default Vue.extend({
 </script>
 
 <style lang="scss">
-  @import '@/assets/styles/components/schema-builder';
+  @import '@shared/assets/styles/components/schema-builder';
 </style>

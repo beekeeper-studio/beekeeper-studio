@@ -8,10 +8,6 @@
   "workspaces": {
     "packages": [
       "apps/*"
-    ],
-    "nohoist": [
-      "**/**",
-      "**/**/**"
     ]
   },
   "scripts": {

@@ -1,12 +1,11 @@
-import { SchemaItem } from 'components'
+import { SchemaItem } from "@shared/lib/dialects/models"
 
 export interface Template {
   name: string,
   schema: SchemaItem[],
 }
 
-
-export const idColumn = {
+export const idColumn: SchemaItem = {
   columnName: 'id',
   config: {
     dataType: 'int',
@@ -14,7 +13,7 @@ export const idColumn = {
     primaryKey: true
   },
   dialectConfigs: {
-    posgresql: {
+    postgresql: {
       dataType: 'serial',
     },
     mysql: {

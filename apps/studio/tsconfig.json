@@ -27,9 +27,12 @@
     "src/**/*.tsx",
     "src/**/*.vue",
     "tests/**/*.ts",
-    "tests/**/*.tsx"
+    "tests/**/*.tsx",
+    "../../shared/src/**/*.ts",
+    "../../shared/src/**/*.tsx",
+    "../../shared/src/**/*.vue",
   ],
   "exclude": [
-    "node_modules", "../components/dist"
+    "node_modules", "dist", "dist_electron"
   ]
 }

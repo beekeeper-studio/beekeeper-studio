@@ -1,7 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "esnext",
+    "target": "es2018",
+    "module": "esnext",
+    "outDir": "dist",
     "baseUrl": ".",
     "types": [
       "webpack-env",
@@ -9,9 +11,11 @@
     ],
     "paths": {
       "@/*": [
-        "src/*"
+        "./src/*"
       ],
-      "@shared/*":["../../shared/src/*"]
+      "@shared/*": [
+        "../../shared/src/*"
+      ]
     },
     "lib": [
       "esnext",
@@ -25,9 +29,13 @@
     "src/**/*.tsx",
     "src/**/*.vue",
     "tests/**/*.ts",
-    "tests/**/*.tsx"
+    "tests/**/*.tsx",
+    "../../shared/src/**/*.ts",
+    "../../shared/src/**/*.tsx",
+    "../../shared/src/**/*.vue",
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "dist"
   ]
 }

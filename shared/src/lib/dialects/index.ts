@@ -1,8 +1,8 @@
-import { Dialect, DialectData } from "./dialects/models";
-import { MysqlData } from "./dialects/mysql";
-import { PostgresData } from "./dialects/postgresql";
-import { SqliteData } from "./dialects/sqlite";
-import { SqlServerData } from "./dialects/sqlserver";
+import { Dialect, DialectData } from "./models";
+import { MysqlData } from "./mysql";
+import { PostgresData } from "./postgresql";
+import { SqliteData } from "./sqlite";
+import { SqlServerData } from "./sqlserver";
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {
@@ -11,7 +11,6 @@ export function getDialectData(dialect: Dialect): DialectData  {
     case "mysql":
       return MysqlData
     case "sqlserver":
-    case "mssql":
       return SqlServerData
     case "sqlite":
       return SqliteData

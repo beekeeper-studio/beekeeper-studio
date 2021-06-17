@@ -1,8 +1,8 @@
 
 
 
-type SqlServer = "mssql" | "sqlserver"
-export type Dialect = "postgresql" | "sqlite" | SqlServer | "mysql"
+
+export type Dialect = "postgresql" | "sqlite" | "sqlserver" | "mysql"
 
 
 export class ColumnType {
