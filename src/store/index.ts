@@ -20,6 +20,7 @@ import {
 } from "../lib/db/models";
 import { IDbConnectionPublicServer } from "../lib/db/server";
 import { CoreTab, EntityFilter } from "./models";
+import { FolderStructre } from "./foldertree";
 import { entityFilter } from "../lib/db/sql_tools";
 
 import RawLog from "electron-log";
@@ -46,6 +47,7 @@ interface State {
   menuActive: boolean;
   activeTab: Nullable<CoreTab>;
   selectedSidebarItem: Nullable<string>;
+  explorerStructure: FolderStructre;
 }
 
 Vue.use(Vuex);
@@ -78,7 +80,10 @@ const store = new Vuex.Store<State>({
     username: null,
     menuActive: false,
     activeTab: null,
-    selectedSidebarItem: null
+    selectedSidebarItem: null,
+    explorerStructure: {
+      rootPath: ""
+    }
   },
   getters: {
     selectedSidebarItem(state) {
@@ -287,7 +292,7 @@ const store = new Vuex.Store<State>({
     },
 
     renameFavorite(state: State, query: UsedQuery) {
-      console.log(state)
+      console.log(state);
       query.save();
     },
 

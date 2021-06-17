@@ -14,9 +14,9 @@
       @click.prevent="click('queries')"
       class="nav-item"
       :class="{ active: activeItem === 'queries' }"
-      title="Saved queries"
+      title="Explorer"
     >
-      <span class="material-icons">star</span>
+      <span class="material-icons">folder</span>
     </a>
     <a
       href=""

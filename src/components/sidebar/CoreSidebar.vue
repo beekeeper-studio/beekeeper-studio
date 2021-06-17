@@ -43,10 +43,10 @@
         v-show="activeItem === 'queries'"
       >
         <div class="sidebar-heading">
-          <span class="sidebar-title">Saved Queries</span>
+          <span class="sidebar-title">Explorer</span>
           <span class="expand"></span>
         </div>
-        <favorite-folder></favorite-folder>
+        <favorite-system></favorite-system>
       </div>
     </div>
   </div>
@@ -61,7 +61,7 @@ import HistoryList from "./core/HistoryList";
 import DatabaseDropdown from "./core/DatabaseDropdown";
 
 import { mapState } from "vuex";
-import FavoriteFolder from "./core/favorite_list/FavoriteSystem.vue";
+import FavoriteSystem from "./core/favorite_list/FavoriteSystem.vue";
 
 export default {
   props: ["sidebarShown"],
@@ -70,6 +70,7 @@ export default {
     DatabaseDropdown,
     HistoryList,
     GlobalSidebar,
+    FavoriteSystem
   },
   data() {
     return {

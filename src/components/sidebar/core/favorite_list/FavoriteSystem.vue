@@ -44,7 +44,11 @@ export default {
 
     openFolder() {
       dialog.showOpenDialog({ properties: ["openDirectory"] }).then(res => {
-        buildTree(res.filePaths[0]);
+        const folderTree = buildTree(res.filePaths[0], {
+          include: ["*"],
+          somethingelse: false
+        });
+        console.log(folderTree);
       });
     },
 
