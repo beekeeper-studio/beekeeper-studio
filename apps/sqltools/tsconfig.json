@@ -1,18 +1,17 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "es2018",
-    "module": "esnext",
-    "outDir": "dist",
-    "baseUrl": "src",
+    "target": "esnext",
+    "baseUrl": ".",
     "types": [
       "webpack-env",
       "jest"
     ],
     "paths": {
       "@/*": [
-        "./*"
-      ]
+        "src/*"
+      ],
+      "@shared/*":["../../shared/src/*"]
     },
     "lib": [
       "esnext",
@@ -29,6 +28,6 @@
     "tests/**/*.tsx"
   ],
   "exclude": [
-    "node_modules", "../components/dist"
+    "node_modules"
   ]
 }

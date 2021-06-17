@@ -15,9 +15,8 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { SchemaBuilder } from 'components'
 import { UserTemplate as users } from '../lib/templates/index'
-import { SchemaItem } from 'components'
+import S from '@share'
 
 interface Data {
   schema: SchemaItem[],
@@ -26,7 +25,7 @@ interface Data {
 export default Vue.extend ({
   name: 'Home',
   components: { 
-    SchemaBuilder
+    
   },
   data(): Data {
     return {

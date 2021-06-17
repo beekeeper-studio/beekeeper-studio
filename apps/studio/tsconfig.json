@@ -1,12 +1,8 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "declaration": true,
-    "declarationDir": "dist",
-    "moduleResolution": "node",
-    "sourceMap": true,
+    "target": "es2018",
+    "module": "esnext",
     "outDir": "dist",
     "baseUrl": ".",
     "types": [
@@ -15,8 +11,9 @@
     ],
     "paths": {
       "@/*": [
-        "src/*"
-      ]
+        "./src/*"
+      ],
+      "@shared/*": ["../../shared/src/*"]
     },
     "lib": [
       "esnext",
@@ -33,7 +30,6 @@
     "tests/**/*.tsx"
   ],
   "exclude": [
-    "node_modules",
-    "dist"
+    "node_modules", "../components/dist"
   ]
 }

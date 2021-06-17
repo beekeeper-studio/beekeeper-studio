@@ -1,5 +1,5 @@
 const webpack = require('webpack');
-
+const path = require('path');
 const fpmOptions = [
   "--after-install=build/deb-postinstall"
 ]
@@ -168,6 +168,7 @@ module.exports = {
       new webpack.IgnorePlugin(/pg-native/, /pg/),
       new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/)
     ],
+
     // externals: {
     //   // Possible drivers for knex - we'll ignore them
     //   // 'sqlite3': 'sqlite3',
@@ -182,6 +183,12 @@ module.exports = {
     // },
     node: {
       dns: 'mock'
+    },
+    resolve: {
+      alias: {
+        "@shared": path.resolve(__dirname, '../shared/src'),
+        "@studio": path.resolve(__dirname, 'src')
+      }
     },
     module: {
       rules: [
