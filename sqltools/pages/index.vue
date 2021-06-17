@@ -8,8 +8,8 @@
   </div>
 </template>
 
-<script lang="ts">
-import Vue from 'vue'
+<script>
+
 import TableSchema from '@shared/components/TableSchema.vue'
 export default {
   components: { TableSchema },
