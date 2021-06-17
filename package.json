@@ -13,14 +13,11 @@
   "scripts": {
     "bks:build": "yarn workspace beekeeper-studio electron:build",
     "bks:dev": "yarn workspace beekeeper-studio electron:serve",
-    "components:build": "yarn workspace components build",
-    "components:dev": "yarn workspace components watch",
-    "components:serve": "yarn workspace components serve",
     "sqltools:build": "yarn workspace sqltools build",
     "sqltools:dev": "yarn workspace sqltools serve",
-    "electron:build": "npm-run-all components:build bks:build",
-    "electron:serve": "run-p components:dev bks:dev",
-    "web:serve": "run-p components:dev sqltools:dev"
+    "electron:build": "yarn bks:build",
+    "electron:serve": "yarn bks:dev",
+    "web:serve": "yarn sqltools:dev"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.18.0",

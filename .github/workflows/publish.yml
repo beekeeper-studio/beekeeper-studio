@@ -50,7 +50,7 @@ jobs:
           skip_install: ${{ matrix.os == 'ubuntu-arm64' }}
       - name: Remove dist directory
         if: "!startsWith(matrix.os, 'windows')"
-        run: rm -rf ./packages/app/dist_electron
+        run: rm -rf ./apps/studio/dist_electron
       - name: Remove dist directory windows
         if: startsWith(matrix.os, 'windows')
         run: Remove-Item dist_electron -Recurse -ErrorAction Ignore
@@ -62,7 +62,7 @@ jobs:
           echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
 
       - name: Build and Publish (ARM Linux)
-        run: cd packages/app && ./build/arm-publish.sh
+        run: cd apps/studio && ./build/arm-publish.sh
         if: startsWith(matrix.os, 'ubuntu-arm64')
         env:
           GH_TOKEN: ${{ secrets.github_token }}
@@ -77,7 +77,7 @@ jobs:
         if: "!startsWith(matrix.os, 'ubuntu-arm64')"
         uses: samuelmeuli/action-electron-builder@v1
         with:
-          package_root: packages/app
+          package_root: apps/studio
           # GitHub token, automatically provided to the action
           # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.github_token }}
@@ -100,7 +100,7 @@ jobs:
       - name: Publish DEB to S3
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          deb-s3 upload packages/app/dist_electron/*.deb \
+          deb-s3 upload apps/studio/dist_electron/*.deb \
             --bucket=deb.beekeeperstudio.io \
             --lock \
             --sign=${{steps.import_gpg.outputs.keyid}} \
@@ -121,11 +121,11 @@ jobs:
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
         run: |
-          npx rimraf "packages/app/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
+          npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
       - name: Cleanup artifacts Win
         if: startsWith(matrix.os, 'windows')
         run: |
-          npx rimraf "packages/app/dist_electron/!(*.exe)"
+          npx rimraf "apps/studio/dist_electron/!(*.exe)"
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
