@@ -14,7 +14,7 @@
         @click.prevent="click('queries')"
         class="nav-item"
         :class="{ active: activeItem === 'queries'}"
-        title="Run History"
+        title="Saved Queries"
       >
         <span class="material-icons">star</span>
       </a>
@@ -23,7 +23,7 @@
         @click.prevent="click('history')"
         class="nav-item"
         :class="{ active: activeItem === 'history'}"
-        title="Saved Queries"
+        title="Run History"
       >
         <span class="material-icons">history</span>
       </a>
