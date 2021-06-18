@@ -10,7 +10,8 @@ $btn-fab-size:           32px;
 .schema-builder {
 
   .table-header {
-    margin-bottom: $gutter-w;
+    margin-bottom: $gutter-h;
+    padding: 0 ($gutter-h * 0.5);
     .btn-fab {
       width: $btn-fab-size;
       height: $btn-fab-size;
