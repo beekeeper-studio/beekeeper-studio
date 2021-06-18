@@ -72,9 +72,14 @@ $btn-fab-size:           32px;
         min-width: $close-width!important;
         padding: 0;
         cursor: default;
-        color: $text-lighter;
         .material-icons {
+          line-height: $row-height;
           cursor: pointer;
+          color: $text-lighter;
+          transition: color 0.2s ease-in-out;
+          &:hover {
+            color: $text-dark;
+          }
         }
       }
       &:last-of-type, 

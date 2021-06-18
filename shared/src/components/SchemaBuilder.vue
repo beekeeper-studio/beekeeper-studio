@@ -98,7 +98,7 @@ export default Vue.extend({
 
   methods: {
     trashButton() {
-      return 'X'
+      return '<i class="material-icons" title="remove">clear</i>'
     },
     removeRow(_e, cell: Tabulator.CellComponent) {
       this.tabulator.deleteRow(cell.getRow())
