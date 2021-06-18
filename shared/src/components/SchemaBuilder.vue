@@ -3,7 +3,7 @@
     <div class="table-header flex flex-middle">
       <slot></slot>
       <span class="expand"></span>
-      <button class="btn btn-primary" @click.prevent="addRow">Add Field</button>
+      <button class="btn btn-primary btn-fab" @click.prevent="addRow" title="Add Field"><i class="material-icons">add</i></button>
     </div>
     <div ref="tabulator"></div>
   </div>

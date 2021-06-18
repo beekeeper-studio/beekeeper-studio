@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <div class="big-wrap">
+    <div class="small-wrap">
       <schema-builder
         :initialSchema="schema"
         :initialName="name"

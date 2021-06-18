@@ -120,12 +120,10 @@ hr {
   }
 }
 .btn-primary {
-  // background: rgba($theme-base, 0.37);
   background: $theme-primary;
   color: rgba(black, 0.87);
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
-    // background: rgba($theme-base, 0.44);
     background: lighten($theme-primary, 8%);
     color: rgba(black, 0.87);
   }
@@ -200,6 +198,16 @@ hr {
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
     background: rgba($theme-base, 0.1);
+  }
+  &.btn-primary {
+    background: $theme-primary;
+    transition: background 0.15s ease-in-out;
+    &:hover, &:focus {
+      background: lighten($theme-primary, 8%);
+    }
+    .material-icons {
+      color: rgba(black, 0.87);
+    }
   }
   .material-icons {
     font-size: 20px;

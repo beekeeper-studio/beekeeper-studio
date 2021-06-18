@@ -1,38 +1,106 @@
 @import '../variables';
+@import '../extends';
 
 $row-height:             42px;
+$min-cell-width:         120px;
+$cell-font-size:         14px;
+$close-width:            24px;
+$btn-fab-size:           32px;
 
 .schema-builder {
 
   .table-header {
     margin-bottom: $gutter-w;
+    .btn-fab {
+      width: $btn-fab-size;
+      height: $btn-fab-size;
+      min-width: $btn-fab-size;
+    }
   }
+
   // Header
   .tabulator {
     .tabulator-header {
       box-shadow: none;
       .tabulator-col {
+        min-width: $min-cell-width!important;
+        padding: 0 $gutter-h;
+        font-size: ($cell-font-size * 0.9);
         .tabulator-col-content {
           .tabulator-col-title {
-            color: $text-dark;
+            color: $text-lighter;
           }
         }
       }
     }
   }
 
+  .tabulator,
+  .tabulator .tabulator-tableHolder {
+    overflow: visible;
+  }
+
+  // Field Rows
+  .tabulator-row {
+    margin: 4px 0;
+    background: rgba($theme-base, 0.05);
+    border-radius: 5px;
+    overflow: hidden;
+    padding-right: 24px;
+    &.tabulator-row-even,
+    &:nth-child(odd) {
+      background: rgba($theme-base, 0.05);
+    }
+    .tabulator-cell {
+      min-height: $row-height;
+      height: $row-height;
+      line-height: $row-height;
+      padding: 0 $gutter-w;
+      min-width: $min-cell-width;
+      font-size: $cell-font-size;
+      color: $text-dark;
+      flex-grow: 1;
+      &.tabulator-editing {
+        border: 0;
+        padding: 0 $gutter-h;
+      }
+      &:last-of-type {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        min-width: $close-width!important;
+        padding: 0;
+        cursor: default;
+        color: $text-lighter;
+        .material-icons {
+          cursor: pointer;
+        }
+      }
+      &:last-of-type, 
+      &:last-of-type:hover {
+        background: transparent;
+      }
+    }
+    input, textarea {
+      height: $row-height;
+    }
+  }
+
+  
   // Resize Handle
   .tabulator-header,
   .tabulator-row {
     .tabulator-frozen, .tabulator-frozen:hover {
       border: 0!important;
-      background: transparent;
+      background: transparent!important;
       padding: 0!important;
     }
   }
   .tabulator-row {
     .tabulator-frozen {
-      width: 24px!important;
+      width: $close-width!important;
+      min-width: $close-width;
       cursor: move;
       &.tabulator-row-handle {
         .tabulator-row-handle-box {
@@ -53,29 +121,11 @@ $row-height:             42px;
     }
   }
 
-  // Field Rows
-  .tabulator-row {
-    margin: 3px 0;
-    background: rgba($theme-base, 0.05);
-    border-radius: 3px;
-    overflow: hidden;
-    &.tabulator-row-even,
-    &:nth-child(odd) {
-      background: rgba($theme-base, 0.05);
-    }
-    .tabulator-cell {
-      min-height: $row-height;
-      height: $row-height;
-      line-height: $row-height - (6px); // row-height - vertical padding
-      &.tabulator-editing {
-        border: 0;
-      }
-    }
-    input {
-      height: $row-height;
-    }
-    textarea {
-      line-height: $row-height - 8px; // row-height - vertical padding
+  .tabulator-row{
+    &.tabulator-moving {
+      @extend .card-shadow-hover;
+      border: 0;
+      background: lighten($theme-bg, 15%);
     }
   }
 }
