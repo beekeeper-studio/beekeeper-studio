@@ -1,11 +1,42 @@
-import { SchemaItem } from "@shared/lib/dialects/models"
+import { Dialect, SchemaConfig, SchemaItem } from "@shared/lib/dialects/models"
 
-export interface Template {
-  name: string,
-  schema: SchemaItem[],
+
+export type DialectConfig = {
+  [K in Dialect]: SchemaConfig
 }
 
-export const idColumn: SchemaItem = {
+// this is similar to a schemaItem except it has configs for each database
+export interface TemplatedSchemaItem {
+  columnName: string
+  config: SchemaConfig
+  dialectConfigs?: DialectConfig
+}
+
+export class Template {
+  name: string
+  schema: TemplatedSchemaItem[]
+
+  constructor(name: string, schema: TemplatedSchemaItem[]) {
+    this.name = name
+    this.schema = schema
+  }
+
+  toSchema(dialect: Dialect): SchemaItem[] {
+    return this.schema.map((item) => {
+      const c = item.config
+      const dc = item.dialectConfigs?.[dialect]
+      // this should overwrite config defaults
+      // with values from the dialect config
+      const config = { ...c, ...dc }
+      return {
+        columnName: item.columnName,
+        ...config
+      }
+    })
+  }
+}
+
+export const idColumn: TemplatedSchemaItem = {
   columnName: 'id',
   config: {
     dataType: 'int',
@@ -58,6 +89,6 @@ export const timestampColumn = (name: string) => ({
   }
 })
 
-export const createdAtColumn: SchemaItem = timestampColumn('created_at')
+export const createdAtColumn: TemplatedSchemaItem = timestampColumn('created_at')
 
-export const updatedAtColumn: SchemaItem = timestampColumn('updated_at')
+export const updatedAtColumn: TemplatedSchemaItem = timestampColumn('updated_at')

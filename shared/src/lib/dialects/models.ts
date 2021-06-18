@@ -1,9 +1,10 @@
 
 
 
+export const Dialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql'] as const
+export type Dialect = typeof Dialects[number]
 
-export type Dialect = "postgresql" | "sqlite" | "sqlserver" | "mysql"
-
+export const foo = 'bar'
 
 export class ColumnType {
   public name: string
@@ -36,12 +37,8 @@ export interface SchemaConfig {
 }
 
 
-export type DialectConfig = {
-  [K in Dialect]: SchemaConfig
-}
 
-export interface SchemaItem {
+// this is the flattened structure we actually render in a component
+export interface SchemaItem extends SchemaConfig {
   columnName: string
-  config: SchemaConfig
-  dialectConfigs?: DialectConfig
 }

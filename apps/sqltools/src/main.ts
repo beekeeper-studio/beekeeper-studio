@@ -7,7 +7,6 @@ import 'typeface-roboto'
 import 'tabulator-tables/dist/css/tabulator.css'
 import '@/assets/styles/app.scss'
 
-
 Vue.config.productionTip = false
 
 new Vue({

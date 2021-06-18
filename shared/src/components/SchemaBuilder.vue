@@ -28,7 +28,8 @@ export default Vue.extend({
   props: {
     initialName: String,
     initialSchema: Array as PropType<SchemaItem[]>,
-    dialect: String as PropType<Dialect>
+    dialect: String as PropType<Dialect>,
+    resetOnUpdate: Boolean as PropType<boolean>
   },
   data(): SchemaBuilderData {
     return {
@@ -37,7 +38,13 @@ export default Vue.extend({
       tabulator: null,
     }
   },
-
+  watch: {
+    initialSchema() {
+      if (this.resetOnUpdate) {
+        this.initializeSchema()
+      }
+    }
+  },
   computed: {
     autoCompleteOptions() {
       return {
@@ -81,6 +88,12 @@ export default Vue.extend({
           headerTooltip: "If you don't set a value for this field, this is the default value",
           formatter: this.cellFormatter,
         },
+        {
+          title: 'Special',
+          field: 'special',
+          formatter: this.cellFormatter,
+          editor: 'input'
+        },
         {title: 'Primary', field: 'primary', formatter: this.yesNoFormatter, formatterParams: { allowEmpty: true, falseEmpty: true}, editor: 'select',
           editorParams: {
             values: [
@@ -97,6 +110,11 @@ export default Vue.extend({
   },
 
   methods: {
+    initializeSchema() {
+      if (this.initialSchema){
+        this.schema = [...this.initialSchema]
+      }
+    },
     trashButton() {
       return '<i class="material-icons" title="remove">clear</i>'
     },
@@ -118,9 +136,8 @@ export default Vue.extend({
     }
   },
   mounted() {
-    if (this.initialSchema){
-      this.schema = [...this.initialSchema]
-    }
+    this.initializeSchema()
+
     if (this.initialName) this.name = this.initialName
 
     this.tabulator = new Tabulator(this.$refs.tabulator, {
