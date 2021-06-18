@@ -86,9 +86,12 @@ $btn-fab-size:           32px;
       &:last-of-type:hover {
         background: transparent;
       }
-    }
-    input, textarea {
-      height: $row-height;
+      input, textarea {
+        height: $row-height;
+      }
+      .null-value {
+        color: $text-lighter;
+      }
     }
   }
 

@@ -1,7 +1,7 @@
 <template>
   <div >
     <input :placeholder="params.placeholder" ref='input' type="text" v-model="value" @blur.prevent="submit" @change.prevent="submit">
-    <button @mousedown.prevent.stop="clear" title="Nullify Value">🗑</button>
+    <i class="material-icons clear" @mousedown.prevent.stop="clear" title="Nullify Value">cancel</i>
   </div>
 </template>
 <script lang="ts">
@@ -44,3 +44,19 @@ export default Vue.extend({
   }
 })
 </script>
+<style lang="scss" scoped>
+@import '@shared/assets/styles/_variables';
+  .clear {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 6px;
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+    color: $text-lighter;
+    &:hover {
+      color: $text-dark;
+    }
+  }
+</style>
