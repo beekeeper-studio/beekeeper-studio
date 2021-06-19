@@ -43,6 +43,14 @@ export default Vue.extend({
       if (this.resetOnUpdate) {
         this.initializeSchema()
       }
+    },
+    schema: {
+      deep: true,
+      handler() {
+        if (this.schema) {
+          this.tabulator.replaceData(this.schema)
+        }
+      }
     }
   },
   computed: {
@@ -94,7 +102,7 @@ export default Vue.extend({
           formatter: this.cellFormatter,
           editor: 'input'
         },
-        {title: 'Primary', field: 'primary', formatter: this.yesNoFormatter, formatterParams: { allowEmpty: true, falseEmpty: true}, editor: 'select',
+        {title: 'Primary', field: 'primaryKey', formatter: this.yesNoFormatter, formatterParams: { allowEmpty: true, falseEmpty: true}, editor: 'select',
           editorParams: {
             values: [
               {label: "YES", value: true},
