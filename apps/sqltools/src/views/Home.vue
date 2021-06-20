@@ -54,7 +54,7 @@ export default Vue.extend ({
   watch: {
     dialect() {
       if(this.dialect) {
-        this.knex = Knex({ client: this.dialect})
+        // this.knex = Knex({ client: this.dialect})
       }
     }
   },
@@ -70,15 +70,15 @@ export default Vue.extend ({
   },
   methods: {
     schemaChanged(schema: SchemaItem[]) {
-      const k = Knex({client: this.dialect})
-      this.sql = k.schema.createTable(this.name, (table) => {
-        schema.forEach((column: SchemaItem) => {
-          const col = table.specificType(column.columnName, column.dataType)
+      // const k = Knex({client: this.dialect})
+      // this.sql = k.schema.createTable(this.name, (table) => {
+      //   schema.forEach((column: SchemaItem) => {
+      //     const col = table.specificType(column.columnName, column.dataType)
 
-          if (column.primaryKey) col.primary()
-          if (column.nullable) col.nullable()
-        })
-      }).toQuery()
+      //     if (column.primaryKey) col.primary()
+      //     if (column.nullable) col.nullable()
+      //   })
+      // }).toQuery()
     }
   },
   mounted() {
