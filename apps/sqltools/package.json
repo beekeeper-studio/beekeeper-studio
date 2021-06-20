@@ -8,9 +8,12 @@
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint"
   },
+  "browser": {
+    "fs": false
+  },
   "dependencies": {
     "core-js": "^3.6.5",
-    "knex": "^0.95.6",
+    "knex": "~0.21.17",
     "typeface-roboto": "^1.1.13",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0",

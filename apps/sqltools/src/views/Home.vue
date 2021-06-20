@@ -35,7 +35,7 @@ interface Data {
   dialect: Dialect,
   dialects: Dialect[],
   sql?: string,
-  knex?: any
+  knex?: Knex
 }
 export default Vue.extend ({
   name: 'Home',
@@ -54,7 +54,7 @@ export default Vue.extend ({
   watch: {
     dialect() {
       if(this.dialect) {
-        // this.knex = Knex({ client: this.dialect})
+        this.knex = Knex({ client: this.dialect})
       }
     }
   },
@@ -65,11 +65,13 @@ export default Vue.extend ({
     formattedSql() {
       // TODO (map dialects)
       if (!this.sql) return null
-      return Formatter.format(this.sql, { language: 'sql'})
+      return this.sql
+      // return Formatter.format(this.sql, { language: 'sql'})
     }
   },
   methods: {
     schemaChanged(schema: SchemaItem[]) {
+      
       // const k = Knex({client: this.dialect})
       // this.sql = k.schema.createTable(this.name, (table) => {
       //   schema.forEach((column: SchemaItem) => {
@@ -82,6 +84,7 @@ export default Vue.extend ({
     }
   },
   mounted() {
+    this.knex = Knex({'dialect': this.dialect})
   }
 })
 </script>
