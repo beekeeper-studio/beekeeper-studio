@@ -1,19 +1,20 @@
 const fs = require("fs");
 const path = require("path");
 
-const defaultOptions = { include: ["*"], somethingelse: true };
+const defaultOptions = { include: ["*"] };
 class TreeNode {
   constructor(path) {
     this.path = path;
     this.children = [];
+    this.type = "";
   }
 }
 
 export function buildTree(rootPath, options = defaultOptions) {
   const finalOptions = { ...defaultOptions, ...options };
-  const root = new TreeNode(rootPath);
-  const stack = [root];
-  console.log(finalOptions);
+  const rootNode = new TreeNode(rootPath);
+  rootNode.type = ".dir";
+  const stack = [rootNode];
   while (stack.length) {
     const currentNode = stack.pop();
 
@@ -25,25 +26,28 @@ export function buildTree(rootPath, options = defaultOptions) {
         const childNode = new TreeNode(childPath);
 
         if (finalOptions.include[0] === "*") {
+          childNode.type = path.extname(file).toLowerCase();
           currentNode.children.push(childNode);
         } else {
           for (let extension of finalOptions.include) {
             if (path.extname(file).toLowerCase() === extension) {
+              childNode.type = extension;
               currentNode.children.push(childNode);
             }
           }
         }
 
         if (fs.statSync(childNode.path).isDirectory()) {
+          childNode.type = ".dir";
           stack.push(childNode);
         }
       });
     }
   }
 
-  return root;
+  return rootNode;
 }
 
-function updateTree(path) {}
+export function updateTree(path) {}
 
-function deleteTreeNode(path) {}
+export function deleteTreeNode(path) {}

@@ -1,5 +1,5 @@
 <template>
-  <div class="sidebar-favorites flex-col expand">
+  <div>
     <x-contextmenu>
       <x-menu style="--target-align: right; --v-target-align: top">
         <x-menuitem>
@@ -13,7 +13,7 @@
         </x-menuitem>
       </x-menu>
     </x-contextmenu>
-    <button @click="openFolder">something</button>
+    <!-- <button @click="openFolder">something</button> -->
     <!-- <div class="toolbar btn-group row flex-right" v-show="checkedFavorites.length > 0">
       <a class="btn btn-link" @click="discardCheckedFavorites">Cancel</a>
       <a class="btn btn-primary" :title="removeTitle" @click="removeCheckedFavorites">Remove</a>
@@ -25,10 +25,14 @@
 import { mapState } from "vuex";
 import { buildTree } from "@/plugins/foldertree";
 const { dialog } = window.require("electron").remote;
+// import ExplorerTree from "@/components/sidebar/core/explorer_list/ExplorerTree.vue";
+import TableListSchema from "@/components/sidebar/core/table_list/TableListSchema.vue";
 export default {
+  components: { TableListSchema },
   data() {
     return {
-      checkedFavorites: []
+      checkedFavorites: [],
+      testing: ["nahh", "jape", "fuckt it"]
     };
   },
   computed: {
@@ -38,19 +42,18 @@ export default {
     }
   },
   methods: {
-    // other trigger needed because files are multiplied not component
-
     createFolder() {},
 
     openFolder() {
       dialog.showOpenDialog({ properties: ["openDirectory"] }).then(res => {
         const folderTree = buildTree(res.filePaths[0], {
-          include: ["*"],
-          somethingelse: false
+          include: ["*"]
         });
-        console.log(folderTree);
+        this.createFolderTree(folderTree);
       });
     },
+
+    createFolderTree(tree) {},
 
     selected(item) {
       return (
@@ -78,3 +81,9 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.schema > .sub-items {
+  padding-left: 18px !important;
+}
+</style>

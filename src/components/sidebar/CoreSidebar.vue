@@ -46,7 +46,7 @@
           <span class="sidebar-title">Explorer</span>
           <span class="expand"></span>
         </div>
-        <favorite-system></favorite-system>
+        <explorer-list></explorer-list>
       </div>
     </div>
   </div>
@@ -61,7 +61,7 @@ import HistoryList from "./core/HistoryList";
 import DatabaseDropdown from "./core/DatabaseDropdown";
 
 import { mapState } from "vuex";
-import FavoriteSystem from "./core/favorite_list/FavoriteSystem.vue";
+import ExplorerList from "./core/ExplorerList.vue";
 
 export default {
   props: ["sidebarShown"],
@@ -70,7 +70,7 @@ export default {
     DatabaseDropdown,
     HistoryList,
     GlobalSidebar,
-    FavoriteSystem
+    ExplorerList
   },
   data() {
     return {
