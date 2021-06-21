@@ -84,6 +84,7 @@ export default Vue.extend({
             ]
           },
           formatter: this.yesNoFormatter,
+          widthShrink: 1,
 
         },
         {
@@ -156,7 +157,7 @@ export default Vue.extend({
       reactiveData: true,
       columns: this.tableColumns,
       movableRows: true,
-      layout: 'fitDataFill',
+      layout: 'fitColumns',
       headerSort: false,
       rowMoved: this.rowMoved,
     })

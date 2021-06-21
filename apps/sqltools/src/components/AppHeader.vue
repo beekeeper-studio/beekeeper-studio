@@ -8,7 +8,7 @@
     <nav>
       <router-link to="/Home" class="btn btn-link">Builder</router-link>
       <router-link to="/templates" class="btn btn-link">Templates</router-link>
-      <dialect-picker />
+      <!-- <dialect-picker /> -->
     </nav>
   </header>
 </template>
@@ -17,9 +17,9 @@
 import Vue from 'vue'
 import DialectPicker from '@/components/DialectPicker.vue'
 export default Vue.extend({
-  components: {
-    DialectPicker
-  }
+  // components: {
+  //   DialectPicker
+  // }
 })
 </script>
 
