@@ -8,13 +8,20 @@
     <section>
       <div class="big-wrap">
         <div class="row gutter">
-            <div v-for="template in templates" :key="template.name" class="col s6">
-              <router-link :to="{ name: 'Template', params: {name: template.name}}" class="card-flat">
-                <h2>{{template.name}}</h2>
-                <p>{{template.description}}</p>
-                <span class="text-primary">View</span>
-              </router-link>
-            </div>
+          <div v-for="template in templates" :key="template.name" class="col s6">
+            <router-link :to="{ name: 'Template', params: {name: template.name}}" class="card-flat">
+              <h2>{{template.name}}</h2>
+              <p>{{template.description}}</p>
+              <div class="badges flex wrap">
+                <span class="badge" v-for="item in template.schema" :key="item.columnName">
+                  <span class="column-name">{{ item.columnName }}:</span>
+                  <span class="data-type">{{ item.config.dataType }}</span>
+                </span>
+              </div>
+              <span class="expand"></span>
+              <div class="card-footer"><span class="btn btn-link text-primary view-btn">View</span></div>
+            </router-link>
+          </div>
         </div>
       </div>
     </section>
@@ -41,7 +48,7 @@ export default Vue.extend({
 
 <style lang="scss" scoped>
   @import '@/assets/styles/app/_variables';
-  
+
   section {
     padding: $gutter-w * 2;
   }
@@ -54,9 +61,38 @@ export default Vue.extend({
     align-items: flex-start;
     justify-content: flex-start;
     padding: $gutter-w * 1.5;
-    flex-grow: 1;
+    height: 100%;
     h2 {
       margin: 0;
+    }
+    p {
+      margin: $gutter-w 0;
+    }
+    .badges {
+      flex: 0 0 auto;
+      margin: 0 -($gutter-h * 0.25);
+    }
+    .badge {
+      font-family: 'Source Code Pro', monospace;
+      margin: ($gutter-h * 0.25);
+      line-height: 1.8;
+      padding: 0 ($gutter-w * 0.75);
+      font-size: 85%;
+      background: rgba($theme-secondary, 0.2);
+      .data-type {
+        color: $text-light;
+        margin-left: $gutter-h * 0.75;
+      }
+    }
+    .view-btn {
+      font-size: 0.95rem;
+      min-width: 0;
+      margin: ($gutter-w * 0.75) -0.6rem -0.6rem 0;
+    }
+    .card-footer {
+      display: flex;
+      justify-content: flex-end;
+      width: 100%;
     }
   }
 </style>
