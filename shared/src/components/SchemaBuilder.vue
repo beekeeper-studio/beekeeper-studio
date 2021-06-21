@@ -121,6 +121,7 @@ export default Vue.extend({
   methods: {
     rowMoved(row, ...args) {
       console.log("row moved", row, args)
+      this.schema = this.tabulator.getData()
     },
     initializeSchema() {
       if (this.initialSchema){
@@ -154,12 +155,13 @@ export default Vue.extend({
 
     this.tabulator = new Tabulator(this.$refs.tabulator, {
       data: this.tableData,
-      reactiveData: true,
+      reactiveData: false,
       columns: this.tableColumns,
       movableRows: true,
       layout: 'fitColumns',
       headerSort: false,
       rowMoved: this.rowMoved,
+      dataChanged: (data) => this.schema = data
     })
   }
 })
