@@ -7,7 +7,7 @@
         <div class="actions">
           <x-buttons class="export">
             <x-button class="btn btn-info">
-              Download
+              Export
             </x-button>
             <x-button class="btn btn-info" menu>
               <i class="material-icons">arrow_drop_down</i>
