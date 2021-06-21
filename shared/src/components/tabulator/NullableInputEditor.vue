@@ -20,8 +20,12 @@ export default Vue.extend({
     smartPlaceholder() {
       if (_.isNil(this.value)) {
         return '(NULL)'
-      } else if (this.value === '' && this.params.allowEmpty) {
-        return '(EMPTY)'
+      } else if (this.value === '') {
+        if (this.params.allowEmpty) {
+          return '(EMPTY)'
+        } else {
+          return '(NULL)'
+        }
       }
       return ''
     }
@@ -33,7 +37,6 @@ export default Vue.extend({
           this.value = null
         }
       } else if (e.key === 'Delete') {
-        console.log('delete!', this.value)
         if (_.isNil(this.value) && this.params.allowEmpty) {
           this.value = ''
         }
