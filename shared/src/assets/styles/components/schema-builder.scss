@@ -116,6 +116,28 @@ $btn-fab-size:           32px;
       border: 0!important;
       padding: 0!important;
     }
+    .tabulator-col,
+    .tabulator-cell {
+      &:first-of-type,
+      &:last-of-type {
+        .tabulator-col-resize-handle {
+          display: none;
+        }
+      }
+      &:nth-child(2) {
+        .tabulator-col-resize-handle.prev {
+          display: none
+        } 
+      }
+      &:nth-last-child(2) {
+        .tabulator-col-resize-handle {
+          display: none;
+          &.prev {
+            display: initial;
+          }
+        }
+      }
+    }
   }
   .tabulator-row {
     padding: 0!important;
