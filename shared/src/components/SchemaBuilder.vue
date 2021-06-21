@@ -16,7 +16,9 @@ import { getDialectData } from '../lib/dialects'
 import tab from '../lib/tabulator'
 import {vueEditor} from '../lib/tabulator/helpers'
 import NullableInputEditor from './tabulator/NullableInputEditor.vue'
+import CheckboxEditor from './tabulator/CheckboxEditor.vue'
 import { Dialect, SchemaItem } from '../lib/dialects/models'
+import checkboxFormatter from '../lib/tabulator/formatters/CheckboxFormatter'
 
 interface SchemaBuilderData {
   schema: SchemaItem[],
@@ -76,14 +78,12 @@ export default Vue.extend({
           title: 'Nullable',
           field: 'nullable',
           headerTooltip: "Allow this column to contain a null value",
-          editor: 'select',
-          editorParams: {
-            values: [
-              {label: "YES", value: true},
-              {label: "NO", value: false}
-            ]
-          },
-          formatter: this.yesNoFormatter,
+          editor: vueEditor(CheckboxEditor),
+          // formatter: vueEditor(CheckboxEditor),
+          // cellClick: (e, cell) => cell.setValue(!cell.getValue(), true),
+          // editor: true,
+          formatter: 'tickCross',
+          // formatter: checkboxFormatter,
           widthShrink: 1,
 
         },
@@ -120,7 +120,6 @@ export default Vue.extend({
 
   methods: {
     rowMoved(row, ...args) {
-      console.log("row moved", row, args)
       this.schema = this.tabulator.getData()
     },
     initializeSchema() {

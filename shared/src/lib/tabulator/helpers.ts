@@ -2,8 +2,9 @@ import Vue from 'vue'
 import Tabulator from 'tabulator-tables'
 
 export function vueEditor(component: any) {
+  const ComponentClass = Vue.extend(component)
   return (cell:Tabulator.CellComponent, onRendered, success, _cancel, editorParams) => {
-    const ComponentClass = Vue.extend(component)
+    console.log("rendering component")
     const instance = new ComponentClass({
       propsData: {cell, params: editorParams}
     })

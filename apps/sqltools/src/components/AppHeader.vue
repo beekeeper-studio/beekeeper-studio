@@ -15,7 +15,6 @@
 
 <script lang="ts">
 import Vue from 'vue'
-// import DialectPicker from '@/components/DialectPicker.vue'
 export default Vue.extend({
   // components: {
   //   DialectPicker

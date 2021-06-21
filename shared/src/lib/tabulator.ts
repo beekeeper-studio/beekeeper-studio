@@ -20,7 +20,6 @@ function yesNoResult(value: boolean) {
 
 export default {
   cellFormatter(cell: Tabulator.CellComponent) {
-    console.log("formatting cell value", cell.getValue())
     if (_.isNil(cell.getValue())) {
       return '<span class="null-value">(NULL)</span>'
     }
