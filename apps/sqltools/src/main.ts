@@ -2,7 +2,7 @@ import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
 import 'typeface-roboto'
-// import 'typeface-source-code-pro'
+import 'typeface-source-code-pro'
 import 'xel/xel'
 
 import 'tabulator-tables/dist/css/tabulator.css'

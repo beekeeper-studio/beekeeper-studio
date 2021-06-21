@@ -72,6 +72,7 @@ export default Vue.extend({
       return this.schema
     },
     tableColumns() {
+
       return [
         {rowHandle:true, formatter:"handle", frozen:true, width:30, minWidth:30, resizable: false},
         {title: 'Name', field: 'columnName', editor: 'input'},
