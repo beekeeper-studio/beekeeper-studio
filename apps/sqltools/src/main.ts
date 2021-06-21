@@ -3,6 +3,8 @@ import App from './App.vue'
 import router from './router'
 import 'typeface-roboto'
 // import 'typeface-source-code-pro'
+import 'xel/xel'
+import '@/assets/styles/app/vendor/xel.scss'
 import 'tabulator-tables/dist/css/tabulator.css'
 import 'highlight.js/styles/hybrid.css';
 import '@/assets/styles/app/vendor/highlightjs.scss';

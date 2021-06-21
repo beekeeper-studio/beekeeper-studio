@@ -5,7 +5,22 @@
         <dialect-picker class="shrink" />
         <span class="expand"></span>
         <div class="actions">
-          <a class="btn btn-info">Export</a>
+          <x-buttons class="export">
+            <x-button class="btn btn-info">
+              Download
+            </x-button>
+            <x-button class="btn btn-info" menu>
+              <i class="material-icons">arrow_drop_down</i>
+              <x-menu  style="--target-align: right;">
+                <x-menuitem @click.prevent="">
+                  <x-label>Item 1</x-label>
+                </x-menuitem>
+                <x-menuitem @click.prevent="">
+                  <x-label>Item 2</x-label>
+                </x-menuitem>
+              </x-menu>
+            </x-button>
+          </x-buttons>
         </div>
       </div>
     </section>
