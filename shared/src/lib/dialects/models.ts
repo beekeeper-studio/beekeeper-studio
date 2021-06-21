@@ -1,6 +1,4 @@
 
-
-
 export const Dialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift'] as const
 export type Dialect = typeof Dialects[number]
 
@@ -12,7 +10,6 @@ export function KnexDialect(d: Dialect): KnexDialect {
   if (d === 'sqlite') return 'sqlite3'
   return d as KnexDialect
 }
-
 
 export class ColumnType {
   public name: string
@@ -43,8 +40,6 @@ export interface SchemaConfig {
   defaultValue?: string
   primaryKey?: boolean
 }
-
-
 
 // this is the flattened structure we actually render in a component
 export interface SchemaItem extends SchemaConfig {

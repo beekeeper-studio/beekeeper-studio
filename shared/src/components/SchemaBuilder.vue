@@ -91,7 +91,7 @@ export default Vue.extend({
           field: 'defaultValue',
           editor: vueEditor(NullableInputEditor),
           editorParams: {
-            allowEmpty: false,
+            allowEmpty: true,
             placeholder: '(NULL)'
           },
           headerTooltip: "If you don't set a value for this field, this is the default value",
