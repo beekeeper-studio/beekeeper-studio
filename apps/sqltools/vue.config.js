@@ -1,6 +1,7 @@
 const path = require('path')
 const webpack = require('webpack')
 module.exports = {
+  transpileDependencies: ['vuex-persist'],
   configureWebpack: {
     resolve: {
       alias: {

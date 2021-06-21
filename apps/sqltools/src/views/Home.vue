@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-
+    <dialect-picker />
     <div class="small-wrap">
       <schema-builder
         :initialSchema="schema"
@@ -25,6 +25,7 @@ import Vue from 'vue';
 import { mapGetters, mapState } from 'vuex'
 import { UserTemplate as users } from '../lib/templates/user'
 import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
+import DialectPicker from '@/components/DialectPicker.vue'
 import { SchemaItem } from '@shared/lib/dialects/models';
 import Formatter from 'sql-formatter'
 import Knex from 'knex'
@@ -36,7 +37,8 @@ interface Data {
 export default Vue.extend ({
   name: 'Home',
   components: { 
-    SchemaBuilder
+    SchemaBuilder,
+    DialectPicker
   },
   data(): Data {
     return {

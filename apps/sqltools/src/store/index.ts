@@ -1,12 +1,22 @@
 import { Dialect, Dialects, KnexDialect } from "@shared/lib/dialects/models";
 import Vue from "vue";
 import Vuex from 'vuex'
+import VuexPersistence from "vuex-persist";
+
 
 Vue.use(Vuex)
 
 interface State {
   dialect: Dialect
 }
+
+
+const vuexLocal = new VuexPersistence<State>({
+  storage: window.localStorage
+})
+
+
+
 export default new Vuex.Store<State>({
   state: {
     dialect: 'postgresql'
@@ -22,5 +32,6 @@ export default new Vuex.Store<State>({
         state.dialect = dialect
       }
     }
-  }
+  },
+  plugins: [vuexLocal.plugin]
 })
