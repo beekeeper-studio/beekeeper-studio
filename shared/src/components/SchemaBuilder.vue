@@ -14,9 +14,10 @@ import Vue, { PropType } from 'vue'
 import Tabulator from 'tabulator-tables'
 import { getDialectData } from '../lib/dialects'
 import tab from '../lib/tabulator'
-import {vueEditor} from '../lib/tabulator/helpers'
+import {vueEditor, vueFormatter} from '../lib/tabulator/helpers'
 import NullableInputEditor from './tabulator/NullableInputEditor.vue'
 import CheckboxEditor from './tabulator/CheckboxEditor.vue'
+import CheckboxFormatter from './tabulator/CheckboxFormatter.vue'
 import { Dialect, SchemaItem } from '../lib/dialects/models'
 import checkboxFormatter from '../lib/tabulator/formatters/CheckboxFormatter'
 
@@ -82,10 +83,11 @@ export default Vue.extend({
           headerTooltip: "Allow this column to contain a null value",
           editor: vueEditor(CheckboxEditor),
           // formatter: vueEditor(CheckboxEditor),
-          cellClick: (e, cell) => cell.setValue(!cell.getValue(), true),
+          // cellClick: (e, cell) => cell.setValue(!cell.getValue(), true),
           // editor: true,
-          formatter: 'tickCross',
+          // formatter: 'tickCross',
           // formatter: checkboxFormatter,
+          formatter: vueFormatter(CheckboxFormatter),
           widthShrink: 1,
 
         },
