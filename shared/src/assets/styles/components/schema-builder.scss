@@ -2,9 +2,9 @@
 @import '../extends';
 
 $row-height:             42px;
-$min-cell-width:         120px;
+$min-cell-width:         0;
 $cell-font-size:         14px;
-$close-width:            24px;
+$close-width:            30px;
 $btn-fab-size:           32px;
 
 .schema-builder {
@@ -23,11 +23,13 @@ $btn-fab-size:           32px;
   .tabulator {
     .tabulator-header {
       box-shadow: none;
+      padding: 0!important;
       .tabulator-col {
         min-width: $min-cell-width!important;
-        padding: 0 $gutter-h;
+        padding: 0 $gutter-w;
         font-size: ($cell-font-size * 0.9);
         .tabulator-col-content {
+          padding: 0;
           .tabulator-col-title {
             color: $text-lighter;
           }
@@ -47,7 +49,6 @@ $btn-fab-size:           32px;
     background: rgba($theme-base, 0.05);
     border-radius: 5px;
     overflow: hidden;
-    padding-right: 24px;
     &.tabulator-row-even,
     &:nth-child(odd) {
       background: rgba($theme-base, 0.05);
@@ -55,7 +56,7 @@ $btn-fab-size:           32px;
     .tabulator-cell {
       min-height: $row-height;
       height: $row-height;
-      line-height: $row-height;
+      line-height: $row-height + 2px;
       padding: 0 $gutter-w;
       min-width: $min-cell-width;
       font-size: $cell-font-size;
@@ -66,10 +67,6 @@ $btn-fab-size:           32px;
         padding: 0 $gutter-h;
       }
       &:last-of-type {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
         min-width: $close-width!important;
         padding: 0;
         cursor: default;
@@ -101,13 +98,16 @@ $btn-fab-size:           32px;
   .tabulator-header,
   .tabulator-row {
     .tabulator-frozen, .tabulator-frozen:hover {
-      border: 0!important;
       background: transparent!important;
+      width: $close-width!important;
+      border: 0!important;
       padding: 0!important;
     }
   }
   .tabulator-row {
+    padding: 0!important;
     .tabulator-frozen {
+      position: relative!important;
       width: $close-width!important;
       min-width: $close-width;
       cursor: move;
