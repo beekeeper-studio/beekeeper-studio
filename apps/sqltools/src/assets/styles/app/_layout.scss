@@ -154,12 +154,12 @@ code {
 }
 .btn-info {
   background: $brand-info;
-  color: white;
+  color: rgba(black, 0.87);
 }
 .btn-danger {
   &:hover {
     background: $brand-danger;
-    color: white;
+    color: rgba(black, 0.87);
   }
 }
 .btn-large {

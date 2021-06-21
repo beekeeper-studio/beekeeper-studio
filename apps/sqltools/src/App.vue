@@ -18,6 +18,6 @@ export default {
 
 <style lang="scss" scoped>
   #app {
-    padding-top: 6rem;
+    padding-top: 4rem;
   }
 </style>

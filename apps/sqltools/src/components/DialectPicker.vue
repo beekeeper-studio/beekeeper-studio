@@ -29,6 +29,8 @@ export default Vue.extend({
   @import '@/assets/styles/app/_variables';
 
   select {
-    margin-bottom: 1.2rem;
+    // margin-bottom: 1.2rem;
+    width: 100%;
+    max-width: 200px;
   }
 </style>
