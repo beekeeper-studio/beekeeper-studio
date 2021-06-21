@@ -7,7 +7,7 @@
     <span class="expand"></span>
     <nav>
       <router-link to="/Home" class="btn btn-link">Builder</router-link>
-      <router-link to="/About" class="btn btn-link">Templates</router-link>
+        <router-link to="/templates" class="btn btn-link">Templates</router-link>
     </nav>
   </header>
 </template>

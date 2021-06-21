@@ -1,6 +1,5 @@
+import { CompanyTemplate } from './company'
 import { UserTemplate } from './user'
 
-export  {
-  UserTemplate
-}
 
+export default [UserTemplate, CompanyTemplate]

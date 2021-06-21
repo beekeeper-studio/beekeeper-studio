@@ -5,6 +5,7 @@ import router from './router'
 import 'typeface-roboto'
 // import 'typeface-source-code-pro'
 import 'tabulator-tables/dist/css/tabulator.css'
+import 'highlight.js/styles/github.css';
 import '@/assets/styles/app.scss'
 import hljs from 'highlight.js'
 Vue.use(hljs.vuePlugin)

@@ -25,7 +25,7 @@
 <script lang="ts">
 
 import Vue from 'vue';
-import { UserTemplate as users } from '../lib/templates/index'
+import { UserTemplate as users } from '../lib/templates/user'
 import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
 import { Dialect, Dialects, SchemaItem } from '@shared/lib/dialects/models';
 import Formatter from 'sql-formatter'
@@ -56,7 +56,8 @@ export default Vue.extend ({
       if(this.dialect) {
         this.knex = Knex({ client: this.dialect})
       }
-    }
+    },
+
   },
   computed: {
     schema() {
@@ -65,22 +66,21 @@ export default Vue.extend ({
     formattedSql() {
       // TODO (map dialects)
       if (!this.sql) return null
-      return this.sql
-      // return Formatter.format(this.sql, { language: 'sql'})
+      return Formatter.format(this.sql, { language: 'sql'})
     }
   },
   methods: {
     schemaChanged(schema: SchemaItem[]) {
       
-      // const k = Knex({client: this.dialect})
-      // this.sql = k.schema.createTable(this.name, (table) => {
-      //   schema.forEach((column: SchemaItem) => {
-      //     const col = table.specificType(column.columnName, column.dataType)
+      const k = this.knex
+      this.sql = k.schema.createTable(this.name, (table) => {
+        schema.forEach((column: SchemaItem) => {
+          const col = table.specificType(column.columnName, column.dataType)
 
-      //     if (column.primaryKey) col.primary()
-      //     if (column.nullable) col.nullable()
-      //   })
-      // }).toQuery()
+          if (column.primaryKey) col.primary()
+          if (column.nullable) col.nullable()
+        })
+      }).toQuery()
     }
   },
   mounted() {

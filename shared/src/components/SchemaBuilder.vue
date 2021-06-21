@@ -49,6 +49,7 @@ export default Vue.extend({
       handler() {
         if (this.schema) {
           this.tabulator.replaceData(this.schema)
+          this.$emit('schemaChanged', this.schema)
         }
       }
     }
@@ -118,6 +119,9 @@ export default Vue.extend({
   },
 
   methods: {
+    rowMoved(row, ...args) {
+      console.log("row moved", row, args)
+    },
     initializeSchema() {
       if (this.initialSchema){
         this.schema = [...this.initialSchema]
@@ -155,6 +159,7 @@ export default Vue.extend({
       movableRows: true,
       layout: 'fitDataFill',
       headerSort: false,
+      rowMoved: this.rowMoved,
     })
   }
 })

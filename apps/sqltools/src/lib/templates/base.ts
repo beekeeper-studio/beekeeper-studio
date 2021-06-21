@@ -12,12 +12,22 @@ export interface TemplatedSchemaItem {
   dialectConfigs?: DialectConfig
 }
 
+interface BasicProps {
+  name: string,
+  description: string,
+  tableName: string
+}
+
 export class Template {
   name: string
+  description: string
+  tableName: string
   schema: TemplatedSchemaItem[]
 
-  constructor(name: string, schema: TemplatedSchemaItem[]) {
-    this.name = name
+  constructor(props: BasicProps, schema: TemplatedSchemaItem[]) {
+    this.tableName = props.tableName
+    this.name = props.name
+    this.description = props.description
     this.schema = schema
   }
 
