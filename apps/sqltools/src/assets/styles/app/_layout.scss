@@ -46,6 +46,10 @@ hr {
   border: 0;
   border-bottom: 1px solid $border-color;
 }
+code {
+  background: $query-editor-bg;
+  padding: $gutter-w;
+}
 
 // Material-icons
 .material-icons {

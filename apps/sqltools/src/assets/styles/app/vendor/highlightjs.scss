@@ -1,0 +1,16 @@
+@import '../variables';
+
+.hljs {
+  background: $query-editor-bg;
+  border-radius: 8px;
+  padding: 0.8rem;
+  .hljs-keyword {
+    color: $brand-pink;
+  }
+  .hljs-type {
+    color: $theme-secondary;
+  }
+  .hljs-number {
+    color: $theme-primary;
+  }
+}

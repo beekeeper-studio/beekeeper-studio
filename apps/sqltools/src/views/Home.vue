@@ -1,7 +1,7 @@
 <template>
   <div class="home">
-    <dialect-picker />
     <div class="small-wrap">
+      <dialect-picker />
       <schema-builder
         :initialSchema="schema"
         :initialName="name"

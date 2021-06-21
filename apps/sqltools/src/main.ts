@@ -4,7 +4,8 @@ import router from './router'
 import 'typeface-roboto'
 // import 'typeface-source-code-pro'
 import 'tabulator-tables/dist/css/tabulator.css'
-import 'highlight.js/styles/github.css';
+import 'highlight.js/styles/hybrid.css';
+import '@/assets/styles/app/vendor/highlightjs.scss';
 import '@/assets/styles/app.scss'
 
 import store from './store'

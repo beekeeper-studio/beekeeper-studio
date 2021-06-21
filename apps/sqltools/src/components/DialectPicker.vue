@@ -24,3 +24,11 @@ export default Vue.extend({
   }
 })
 </script>
+
+<style lang="scss" scoped>
+  @import '@/assets/styles/app/_variables';
+
+  select {
+    margin-bottom: 1.2rem;
+  }
+</style>
