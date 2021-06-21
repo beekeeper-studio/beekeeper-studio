@@ -19,7 +19,6 @@ import NullableInputEditor from './tabulator/NullableInputEditor.vue'
 import CheckboxEditor from './tabulator/CheckboxEditor.vue'
 import CheckboxFormatter from './tabulator/CheckboxFormatter.vue'
 import { Dialect, SchemaItem } from '../lib/dialects/models'
-import checkboxFormatter from '../lib/tabulator/formatters/CheckboxFormatter'
 
 interface SchemaBuilderData {
   schema: SchemaItem[],
@@ -126,7 +125,7 @@ export default Vue.extend({
   },
 
   methods: {
-    rowMoved(row, ...args) {
+    rowMoved() {
       this.schema = this.tabulator.getData()
     },
     initializeSchema() {

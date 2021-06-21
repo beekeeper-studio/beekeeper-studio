@@ -20,7 +20,7 @@
           this.checked = !this.checked
         }
       },
-      click(e: Event) {
+      click(_e: Event) {
         console.log("click!")
         // this.checked = !this.checked
       },
