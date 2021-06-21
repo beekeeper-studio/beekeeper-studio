@@ -8,15 +8,15 @@ export function vueEditor(component: any) {
     const instance = new ComponentClass({
       propsData: {cell, params: editorParams}
     })
-
-    instance.$mount()
     instance.$on('value', (v) => {
       success(v)
     })
+    instance.$mount()
 
     onRendered(() => {
       instance.$set(instance.$data, 'rendered', true)
     })
+
 
 
     return instance.$el

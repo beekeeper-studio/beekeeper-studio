@@ -46,11 +46,13 @@ export default Vue.extend({
         this.initializeSchema()
       }
     },
+    dialect() {
+      this.tabulator.replaceData(this.schema)
+    },
     schema: {
       deep: true,
       handler() {
         if (this.schema) {
-          this.tabulator.replaceData(this.schema)
           this.$emit('schemaChanged', this.schema)
         }
       }
@@ -80,7 +82,7 @@ export default Vue.extend({
           headerTooltip: "Allow this column to contain a null value",
           editor: vueEditor(CheckboxEditor),
           // formatter: vueEditor(CheckboxEditor),
-          // cellClick: (e, cell) => cell.setValue(!cell.getValue(), true),
+          cellClick: (e, cell) => cell.setValue(!cell.getValue(), true),
           // editor: true,
           formatter: 'tickCross',
           // formatter: checkboxFormatter,
@@ -101,7 +103,10 @@ export default Vue.extend({
           title: 'Special',
           field: 'special',
           formatter: this.cellFormatter,
-          editor: 'input'
+          editor: vueEditor(NullableInputEditor),
+          editorParams: {
+            allowEmpty: false
+          }
         },
         {title: 'Primary', field: 'primaryKey', formatter: this.yesNoFormatter, formatterParams: { allowEmpty: true, falseEmpty: true}, editor: 'select',
           editorParams: {
@@ -160,7 +165,10 @@ export default Vue.extend({
       layout: 'fitColumns',
       headerSort: false,
       rowMoved: this.rowMoved,
-      dataChanged: (data) => this.schema = data
+      dataChanged: (data) => {
+        console.log('changed')
+        this.schema = data
+      }
     })
   }
 })

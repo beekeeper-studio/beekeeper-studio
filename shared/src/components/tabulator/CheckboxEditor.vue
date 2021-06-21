@@ -15,15 +15,14 @@
     },
     methods: {
       keydown(e: KeyboardEvent) {
-        if (e.key === 'Space') {
+        if (e.key === ' ') {
           console.log("space")
           this.checked = !this.checked
         }
       },
       click(e: Event) {
         console.log("click!")
-        e.stopImmediatePropagation()
-        this.checked = !this.checked
+        // this.checked = !this.checked
       },
       submit() {
         console.log("submitting", this.checked)
@@ -31,6 +30,9 @@
       }
     },
     watch: {
+      checked() {
+        console.log('checked changed to ', this.checked)
+      },
       rendered() {
         if (this.rendered) {
           this.checked = !!this.cell.getValue()

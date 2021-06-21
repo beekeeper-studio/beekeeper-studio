@@ -67,12 +67,14 @@ export default Vue.extend({
   watch: {
     rendered() {
       if (this.rendered) {
+        console.log('Nullable rendered')
         this.value = this.cell.getValue()
         this.$refs.input.focus()
       }
     }
   },
   mounted() {
+    console.log("Nullable mounted")
     // nothing really happens here, rendered watch is the real hook.
 
   }
