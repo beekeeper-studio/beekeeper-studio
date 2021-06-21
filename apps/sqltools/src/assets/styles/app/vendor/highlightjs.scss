@@ -13,4 +13,10 @@
   .hljs-number {
     color: $theme-primary;
   }
+  .hljs-symbol,
+  .hljs-literal {
+    // color: $brand-success;
+    color: $theme-secondary;
+  }
+  
 }
