@@ -17,6 +17,7 @@
     "typeface-roboto": "^1.1.13",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0",
+    "vuex": "^3.1.1",
     "sql-formatter": "^2.3.3",
     "highlight.js": "^10.4.1"
   },

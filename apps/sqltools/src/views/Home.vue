@@ -2,9 +2,6 @@
   <div class="home">
 
     <div class="small-wrap">
-      <select name="dialect" v-model="dialect" id="dialect-select">
-        <option v-for="d in dialects" :key="d" :value="d">{{d}}</option>
-      </select>
       <schema-builder
         :initialSchema="schema"
         :initialName="name"
@@ -25,15 +22,14 @@
 <script lang="ts">
 
 import Vue from 'vue';
+import { mapGetters, mapState } from 'vuex'
 import { UserTemplate as users } from '../lib/templates/user'
 import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
-import { Dialect, Dialects, SchemaItem } from '@shared/lib/dialects/models';
+import { SchemaItem } from '@shared/lib/dialects/models';
 import Formatter from 'sql-formatter'
 import Knex from 'knex'
 interface Data {
   name: string
-  dialect: Dialect,
-  dialects: Dialect[],
   sql?: string,
   knex?: Knex
 }
@@ -44,22 +40,22 @@ export default Vue.extend ({
   },
   data(): Data {
     return {
-      dialects: [...Dialects],
-      dialect: 'postgresql',
       name: users.name,
       sql: undefined,
       knex: undefined
     }
   },
   watch: {
-    dialect() {
-      if(this.dialect) {
-        this.knex = Knex({ client: this.dialect})
+    knexDialect() {
+      if(this.knexDialect) {
+        this.knex = Knex({ client: this.knexDialect})
       }
     },
 
   },
   computed: {
+    ...mapState(['dialect']),
+    ...mapGetters(['knexDialect']),
     schema() {
       return users.toSchema(this.dialect)
     },
@@ -84,7 +80,7 @@ export default Vue.extend ({
     }
   },
   mounted() {
-    this.knex = Knex({'dialect': this.dialect})
+    this.knex = Knex({'dialect': this.knexDialect})
   }
 })
 </script>

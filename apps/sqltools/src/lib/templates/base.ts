@@ -19,6 +19,7 @@ interface BasicProps {
 }
 
 export class Template {
+  id: string
   name: string
   description: string
   tableName: string
@@ -29,6 +30,7 @@ export class Template {
     this.name = props.name
     this.description = props.description
     this.schema = schema
+    this.id = this.name.toLowerCase()
   }
 
   toSchema(dialect: Dialect): SchemaItem[] {
@@ -68,11 +70,14 @@ export const idColumn: TemplatedSchemaItem = {
     sqlite: {
       dataType: 'integer',
       special: "AUTOINCREMENT"
+    },
+    redshift: {
+      dataType: 'int',
     }
   }
 }
 
-export const timestampColumn = (name: string) => ({
+export const timestampColumn = (name: string): TemplatedSchemaItem => ({
   columnName: name,
   config: {
     dataType: 'varchar(255)',
@@ -94,6 +99,10 @@ export const timestampColumn = (name: string) => ({
     sqlserver: {
       dataType: 'datetime',
       special: 'DEFAULT SYSUTCDATETIME()'
+    },
+    redshift: {
+      dataType: 'timestamp',
+      special: 'DEFAULT GETDATE()'
     }
 
   }

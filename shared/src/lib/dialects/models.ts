@@ -1,10 +1,18 @@
 
 
 
-export const Dialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql'] as const
+export const Dialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift'] as const
 export type Dialect = typeof Dialects[number]
 
-export const foo = 'bar'
+export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'sqlite3', 'redshift', 'mysql']
+export type KnexDialect = typeof KnexDialects[number]
+
+export function KnexDialect(d: Dialect): KnexDialect {
+  if (d === 'sqlserver') return 'mssql'
+  if (d === 'sqlite') return 'sqlite3'
+  return d as KnexDialect
+}
+
 
 export class ColumnType {
   public name: string

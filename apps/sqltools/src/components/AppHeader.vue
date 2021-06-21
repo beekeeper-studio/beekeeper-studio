@@ -7,14 +7,35 @@
     <span class="expand"></span>
     <nav>
       <router-link to="/Home" class="btn btn-link">Builder</router-link>
-        <router-link to="/templates" class="btn btn-link">Templates</router-link>
+      <router-link to="/templates" class="btn btn-link">Templates</router-link>
+      <select name="dialect" @change="setDialect" id="dialect-select">
+        <option v-for="d in dialects" :key="d" :value="d" :selected="d === dialect">{{d}}</option>
+      </select>
     </nav>
   </header>
 </template>
 
-<script>
-export default {
-}
+<script lang="ts">
+import Vue from 'vue'
+import { Dialects } from '@shared/lib/dialects/models'
+import { mapState } from 'vuex'
+export default Vue.extend({
+  data() {
+    return {
+      dialects: Dialects
+    }
+  },
+  computed: {
+    ...mapState(['dialect'])
+  },
+  methods: {
+    setDialect(e: Event) {
+      const target = e.target as HTMLSelectElement
+      this.$store.commit('setDialect', target.value)
+
+    }
+  }
+})
 </script>
 
 <style lang="scss" scoped>

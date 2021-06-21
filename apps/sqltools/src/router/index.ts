@@ -20,7 +20,7 @@ const routes: Array<RouteConfig> = [
     component: () => import(/* webpackChunkName: "templates" */ '../views/Templates.vue')
   },
   {
-    path: '/templates/:name',
+    path: '/templates/:id',
     name: 'Template',
     component: TemplateVue
   }
