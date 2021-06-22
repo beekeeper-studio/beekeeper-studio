@@ -24,14 +24,22 @@
         </schema-builder>
 
         <div class="code-wrap" v-if="formattedSql">
-          <h2>
+          <h3>
             Generated SQL for {{dialectTitle}}
-          </h2>
+          </h3>
           <p class="dialect-warning">{{dialectWarning ? `*${dialectWarning}`: ''}}</p>
           <highlightjs :lang="highlightDialect" :code="formattedSql" />
         </div>
       </div>
     </section>
+    <footer>
+      <div class="small-wrap flex-col flex-middle">
+        <small class="created-by">
+          <span>Made by&nbsp;</span>
+          <router-link to="https://beeekeeperstudio.io">Beekeeper Studio</router-link>
+        </small>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -130,12 +138,13 @@ export default Vue.extend ({
   .subheader {
     display: flex;
     flex-direction: column;
-    background: $query-editor-bg;
+    background: rgba($query-editor-bg, 0.5);
     padding: $gutter-w * 2;
   }
   .alert {
     position: relative;
-      margin-bottom: $gutter-w * 2;
+    margin-bottom: $gutter-w * 2;
+    line-height: 1.8;
     .close-btn {
       position: absolute;
       top: $gutter-h;
@@ -149,6 +158,24 @@ export default Vue.extend ({
         color: $text-lighter;
         transition: color 0.2s ease-in-out;
       }
+    }
+  }
+
+  .code-wrap {
+    margin-top: $gutter-w * 4;
+  }
+
+  // Footer
+  footer {
+    padding: $gutter-w * 2;
+    padding-top: $gutter-w * 4;
+    padding-bottom: $gutter-w * 6;
+    a {
+      color: $theme-primary;
+    }
+    .created-by {
+      display: flex;
+      align-items: center;
     }
   }
 </style>

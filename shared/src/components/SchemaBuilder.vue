@@ -205,6 +205,7 @@ export default Vue.extend({
           border: 0;
           height: auto;
           line-height: 1.6;
+          font-weight: bold;
           &:hover, &:focus {
             background: rgba($theme-base, 0.035);
           }
