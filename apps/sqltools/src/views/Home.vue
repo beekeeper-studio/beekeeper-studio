@@ -26,6 +26,10 @@
     </section>
     <section>
       <div class="small-wrap">
+        <div class="alert" v-if="!dismissedTutorial">
+          <span>sdfsdfs</span>
+          <a class="btn" @click="dismissTutorial">Button</a>
+        </div>
         <schema-builder
           :initialSchema="schema"
           :initialName="name"
@@ -82,7 +86,7 @@ export default Vue.extend ({
 
   },
   computed: {
-    ...mapState(['dialect']),
+    ...mapState(['dialect', 'dismissedTutorial']),
     ...mapGetters(['knexDialect']),
     schema() {
       return users.toSchema(this.dialect)
@@ -96,6 +100,9 @@ export default Vue.extend ({
   methods: {
     schemaChanged(schema: Schema) {
       this.sql = this.generator.buildSql(schema)
+    },
+    dismissTutorial() {
+      this.$store.commit('setDismissedTutorial')
     }
   },
   mounted() {

@@ -9,13 +9,13 @@
       <div class="big-wrap">
         <div class="row gutter">
           <div v-for="template in templates" :key="template.name" class="col s6">
-            <router-link :to="{ name: 'Template', params: {name: template.name}}" class="card-flat">
+            <router-link :to="{ name: 'Template', params: {id: template.id}}" class="card-flat">
               <h2>{{template.name}}</h2>
               <p>{{template.description}}</p>
               <div class="badges flex wrap">
-                <span class="badge" v-for="item in template.schema" :key="item.columnName">
+                <span class="badge" v-for="item in template.toSchema(dialect)" :key="item.columnName">
                   <span class="column-name">{{ item.columnName }}:</span>
-                  <span class="data-type">{{ item.config.dataType }}</span>
+                  <span class="data-type">{{ item.dataType }}</span>
                 </span>
               </div>
               <span class="expand"></span>
@@ -30,6 +30,7 @@
 import Vue from 'vue'
 import templates from '@/lib/templates'
 import { Template } from '@/lib/templates/base'
+import { mapState } from 'vuex'
 
 interface Data {
   templates: Template[]
@@ -40,7 +41,9 @@ export default Vue.extend({
     return {
       templates
     }
-    
+  },
+  computed: {
+    ...mapState(['dialect']),
   }
 })
 </script>

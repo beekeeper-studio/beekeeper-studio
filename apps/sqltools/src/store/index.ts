@@ -8,6 +8,7 @@ Vue.use(Vuex)
 
 interface State {
   dialect: Dialect
+  dismissedTutorial: boolean
 }
 
 
@@ -19,7 +20,8 @@ const vuexLocal = new VuexPersistence<State>({
 
 export default new Vuex.Store<State>({
   state: {
-    dialect: 'postgresql'
+    dialect: 'postgresql',
+    dismissedTutorial: false
   },
   getters: {
     knexDialect(state): KnexDialect {
@@ -31,6 +33,9 @@ export default new Vuex.Store<State>({
       if (Dialects.includes(dialect)) {
         state.dialect = dialect
       }
+    },
+    setDismissedTutorial(state) {
+      state.dismissedTutorial = true
     }
   },
   plugins: [vuexLocal.plugin]
