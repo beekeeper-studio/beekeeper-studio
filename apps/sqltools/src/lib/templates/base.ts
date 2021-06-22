@@ -1,4 +1,4 @@
-import { Dialect, SchemaConfig, SchemaItem } from "@shared/lib/dialects/models"
+import { Dialect, Schema, SchemaConfig } from "@shared/lib/dialects/models"
 
 
 export type DialectConfig = {
@@ -33,18 +33,21 @@ export class Template {
     this.id = this.name.toLowerCase()
   }
 
-  toSchema(dialect: Dialect): SchemaItem[] {
-    return this.schema.map((item) => {
-      const c = item.config
-      const dc = item.dialectConfigs?.[dialect]
-      // this should overwrite config defaults
-      // with values from the dialect config
-      const config = { ...c, ...dc }
-      return {
-        columnName: item.columnName,
-        ...config
-      }
-    })
+  toSchema(dialect: Dialect): Schema {
+    return {
+      name: this.tableName,
+      columns: this.schema.map((item) => {
+        const c = item.config
+        const dc = item.dialectConfigs?.[dialect]
+        // this should overwrite config defaults
+        // with values from the dialect config
+        const config = { ...c, ...dc }
+        return {
+          columnName: item.columnName,
+          ...config
+        }
+      })
+    }
   }
 }
 
@@ -60,16 +63,16 @@ export const idColumn: TemplatedSchemaItem = {
       dataType: 'serial',
     },
     mysql: {
-      special: "AUTO INCREMENT",
+      defaultValue: "AUTO INCREMENT",
       dataType: 'int'
     },
     sqlserver: {
-      special: "IDENTITY(1,1)",
+      defaultValue: "IDENTITY(1,1)",
       dataType: 'int'
     },
     sqlite: {
       dataType: 'integer',
-      special: "AUTOINCREMENT"
+      defaultValue: "AUTOINCREMENT"
     },
     redshift: {
       dataType: 'int',
@@ -86,23 +89,23 @@ export const timestampColumn = (name: string): TemplatedSchemaItem => ({
   dialectConfigs: {
     postgresql: {
       dataType: 'timestamp',
-      special: 'DEFAULT NOW()'
+      defaultValue: 'NOW()'
     },
     mysql: {
       dataType: 'timestamp',
-      special: 'DEFAULT CURRENT_TIMESTAMP',
+      defaultValue: 'CURRENT_TIMESTAMP',
     },
     sqlite: {
       dataType: 'datetime',
-      special: 'DEFAULT CURRENT_TIMESTAMP'
+      defaultValue: 'CURRENT_TIMESTAMP'
     },
     sqlserver: {
       dataType: 'datetime',
-      special: 'DEFAULT SYSUTCDATETIME()'
+      defaultValue: 'SYSUTCDATETIME()'
     },
     redshift: {
       dataType: 'timestamp',
-      special: 'DEFAULT GETDATE()'
+      defaultValue: 'GETDATE()'
     }
 
   }

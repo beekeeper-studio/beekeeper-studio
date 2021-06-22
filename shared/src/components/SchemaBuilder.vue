@@ -18,44 +18,43 @@ import {vueEditor, vueFormatter} from '../lib/tabulator/helpers'
 import NullableInputEditor from './tabulator/NullableInputEditor.vue'
 import CheckboxEditor from './tabulator/CheckboxEditor.vue'
 import CheckboxFormatter from './tabulator/CheckboxFormatter.vue'
-import { Dialect, SchemaItem } from '../lib/dialects/models'
+import { Dialect, SchemaItem, Schema } from '../lib/dialects/models'
 
 interface SchemaBuilderData {
-  schema: SchemaItem[],
+  builtColumns: SchemaItem[],
   name: string,
   tabulator: Tabulator
 }
 
 export default Vue.extend({
   props: {
-    initialName: String,
-    initialSchema: Array as PropType<SchemaItem[]>,
+    initialSchema: Object as PropType<Schema>,
     dialect: String as PropType<Dialect>,
     resetOnUpdate: Boolean as PropType<boolean>
   },
   data(): SchemaBuilderData {
     return {
       name: "untitled_table",
-      schema: [],
+      builtColumns: [],
       tabulator: null,
     }
   },
   watch: {
     initialSchema() {
-      if (this.resetOnUpdate) {
-        this.initializeSchema()
+      if (this.resetOnUpdate && this.initialSchema && this.tabulator) {
+        this.tabulator.replaceData([...this.initialSchema.columns])
       }
     },
     dialect() {
       this.tabulator.replaceData(this.schema)
     },
-    schema: {
+    builtColumns: {
       deep: true,
       handler() {
-        if (this.schema) {
+        if (this.builtColumns) {
           const schema = {
             name: this.name,
-            columns: this.schema
+            columns: this.builtColumns
           }
           this.$emit('schemaChanged', schema)
         }
@@ -72,15 +71,13 @@ export default Vue.extend({
         showListOnEmpty: true
       }
     },
-    tableData() {
-      return this.schema
-    },
     tableColumns() {
-
+      const trashButton = () => '<i class="material-icons" title="remove">clear</i>'
       return [
         {rowHandle:false, formatter:"handle", frozen:true, width:30, minWidth:30, resizable: false, cssClass: "no-edit-highlight"},
         {title: 'Name', field: 'columnName', editor: 'input'},
         {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: this.autoCompleteOptions,  minWidth: 56,widthShrink:1},
+
         {
           title: 'Nullable',
           field: 'nullable',
@@ -98,19 +95,17 @@ export default Vue.extend({
           editorParams: {
             allowEmpty: false
           },
-          headerTooltip: "If you don't set a value for this field, this is the default value",
+          headerTooltip: "The default value of this field. Be sure to add quotes around literal values - eg 'my value'",
           formatter: this.cellFormatter,
           widthShrink:1
         },
         {
-          title: 'Special',
-          field: 'special',
+          title: 'Comment',
+          field: 'comment',
           formatter: this.cellFormatter,
           editor: vueEditor(NullableInputEditor),
           widthShrink:1,
-          editorParams: {
-            allowEmpty: false
-          }
+          headerTooltip: "Leave a friendly comment for other database users about this column"
         },
         {
           title: 'Primary', field: 'primaryKey', 
@@ -121,7 +116,7 @@ export default Vue.extend({
           widthShrink:1,
         },
         {
-          formatter: this.trashButton, width: 30, minWidth: 30, hozAlign: 'center', cellClick: this.removeRow, resizable: false, cssClass: "no-edit-highlight",
+          formatter: trashButton, width: 30, minWidth: 30, hozAlign: 'center', cellClick: this.removeRow, resizable: false, cssClass: "no-edit-highlight",
         }
       ]
     },
@@ -129,15 +124,7 @@ export default Vue.extend({
 
   methods: {
     rowMoved() {
-      this.schema = this.tabulator.getData()
-    },
-    initializeSchema() {
-      if (this.initialSchema){
-        this.schema = [...this.initialSchema]
-      }
-    },
-    trashButton() {
-      return '<i class="material-icons" title="remove">clear</i>'
+      this.builtSchema = this.tabulator.getData()
     },
     removeRow(_e, cell: Tabulator.CellComponent) {
       this.tabulator.deleteRow(cell.getRow())
@@ -157,13 +144,10 @@ export default Vue.extend({
     }
   },
   mounted() {
-    this.initializeSchema()
-
-    if (this.initialName) this.name = this.initialName
+    this.name = this.initialSchema.name || 'untitled_table'
 
     this.tabulator = new Tabulator(this.$refs.tabulator, {
-      data: this.tableData,
-      reactiveData: false,
+      data: [...this.initialSchema.columns],
       columns: this.tableColumns,
       movableRows: true,
       headerSort: false,
@@ -172,13 +156,13 @@ export default Vue.extend({
       columnMinWidth: 56,
       // layout: 'fitColumns',
       dataChanged: (data) => {
-        console.log('changed')
-        this.schema = data
+        this.builtColumns = data
       }
     })
   }
 })
 </script>
+
 
 <style lang="scss">
   @import '@shared/assets/styles/components/schema-builder';

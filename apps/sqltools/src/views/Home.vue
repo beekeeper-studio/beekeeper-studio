@@ -2,7 +2,7 @@
   <div class="home">
     <section class="subheader">
       <div class="small-wrap flex">
-        <dialect-picker class="shrink" />
+        <dialect-picker class="shrink" :confirm="schemaChanges > 0" :confirmMessage="confirmMessage" />
         <span class="expand"></span>
         <div class="actions">
           <x-buttons class="export">
@@ -40,8 +40,13 @@
             <span class="table-title">Columns</span>
           </template>
         </schema-builder>
+
         <div class="code-wrap" v-if="formattedSql">
-          <highlightjs lang="sql" :code="formattedSql" />
+          <h2>
+            Generated SQL for {{dialectTitle}}
+          </h2>
+          <p class="dialect-warning">{{dialectWarning ? `*${dialectWarning}`: ''}}</p>
+          <highlightjs :lang="highlightDialect" :code="formattedSql" />
         </div>
       </div>
     </section>
@@ -54,7 +59,7 @@ import Vue from 'vue';
 import { mapGetters, mapState } from 'vuex'
 import { UserTemplate as users } from '../lib/templates/user'
 import DialectPicker from '@/components/DialectPicker.vue'
-import { Schema } from '@shared/lib/dialects/models'
+import { DialectTitles, Schema } from '@shared/lib/dialects/models'
 import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
 import Formatter from 'sql-formatter'
 import Knex from 'knex'
@@ -64,7 +69,14 @@ interface Data {
   sql?: string,
   knex?: Knex,
   generator: SqlGenerator
+  schemaChanges: number
 }
+
+
+const dialectNotes = {
+  sqlite: "Sqlite does not support table or column comments",
+}
+
 export default Vue.extend ({
   name: 'Home',
   components: { 
@@ -76,18 +88,38 @@ export default Vue.extend ({
       name: users.name,
       sql: undefined,
       knex: undefined,
-      generator: undefined
+      generator: undefined,
+      schemaChanges: 0
     }
   },
   watch: {
     dialect() {
       this.generator.dialect = this.dialect
+      this.schemaChanges = 0
     },
 
   },
   computed: {
     ...mapState(['dialect', 'dismissedTutorial']),
     ...mapGetters(['knexDialect']),
+    confirmMessage() {
+      return `You will lose ${this.schemaChanges} changes, continue?`
+    },
+    dialectWarning() {
+      return dialectNotes[this.dialect]
+    },
+    highlightDialect() {
+      switch (this.dialect) {
+        case 'postgresql':
+        case 'redshift':
+          return 'pgsql'
+        default:
+          return 'sql'
+      }
+    },
+    dialectTitle() {
+      return DialectTitles[this.dialect]
+    },
     schema() {
       return users.toSchema(this.dialect)
     },
@@ -99,6 +131,7 @@ export default Vue.extend ({
   },
   methods: {
     schemaChanged(schema: Schema) {
+      this.schemaChanges += 1
       this.sql = this.generator.buildSql(schema)
     },
     dismissTutorial() {
@@ -108,6 +141,7 @@ export default Vue.extend ({
   mounted() {
     this.knex = Knex({'dialect': this.knexDialect})
     this.generator = new SqlGenerator(this.dialect)
+    this.sql = this.generator.buildSql(this.schema)
   }
 })
 </script>
@@ -132,4 +166,5 @@ export default Vue.extend ({
       color: $text-dark;
     }
   }
+
 </style>

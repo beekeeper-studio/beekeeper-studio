@@ -14,6 +14,9 @@
       }
     },
     methods: {
+      keydown(_e: KeyboardEvent) {
+        console.log("keydown", _e.key)
+      },
       click(_e: Event) {
         console.log("click!")
         this.checked = !this.checked

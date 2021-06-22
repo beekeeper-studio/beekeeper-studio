@@ -25,10 +25,11 @@ export class SqlGenerator {
     const sql = k.schema.createTable(schema.name, (table) => {
       const primaries = schema.columns.filter((c) => c.primaryKey)
       table.primary(primaries.map((c) => c.columnName))
-      schema.columns.forEach((column: SchemaItem) => {
-        const withSpecial = `${column.dataType} ${column.special}`
-        const col = table.specificType(column.columnName, withSpecial)
-        col.defaultTo(column.defaultValue)
+      schema.columns.forEach((column: SchemaItem) => {        
+        const col = table.specificType(column.columnName, column.dataType)
+        if (column.defaultValue) col.defaultTo(k.raw(column.defaultValue))
+        if(column.unsigned) col.unsigned()
+        if (column.comment) col.comment(column.comment)
         column.nullable ? col.nullable() : col.notNullable()
       })
     }).toQuery()
