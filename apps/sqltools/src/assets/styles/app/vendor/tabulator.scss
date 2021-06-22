@@ -146,6 +146,9 @@ $cell-radius:            2px;
       min-height: $row-height;
       line-height: $row-height;
       border-radius: $cell-radius;
+      &:focus {
+        box-shadow: inset 0 -1px $theme-base!important;
+      }
     }
     &.foreign-key {
       padding-right: $foreign-key-width - 6px;

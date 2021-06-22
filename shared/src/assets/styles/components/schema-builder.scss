@@ -27,6 +27,7 @@ $btn-fab-size:           32px;
 
   // Header
   .tabulator {
+    width: 780px;
     .tabulator-header {
       box-shadow: none;
       padding: 0!important;
@@ -63,9 +64,50 @@ $btn-fab-size:           32px;
       font-size: $cell-font-size;
       color: $text-dark;
       flex-grow: 1;
-      &.tabulator-editing {
+      &.tabulator-editing,
+      &:focus {
         border: 0;
         padding: 0 $gutter-h;
+        min-height: $row-height;
+        height: $row-height;
+        line-height: $row-height + 2px;
+        box-shadow: inset 0 1px $theme-base;
+      }
+      &.no-padding {
+        padding: 0;
+        > * {
+          margin: 0 $gutter-w;
+        }
+      }
+      &.no-edit-highlight,
+      &.no-edit-highlight:focus {
+        background: transparent!important;
+        &.tabulator-editing {
+          box-shadow: none!important;
+          input {
+            box-shadow: inset 0 0 0 2px rgba($theme-base,0.87);
+            &[type="checkbox"]:active, 
+            &[type="checkbox"]:checked, 
+            &[type="checkbox"]:checked:active {
+              background: $theme-primary!important;
+              color: rgba(black, 0.87)!important;
+              box-shadow: none!important;
+              &:after {
+                font-family: 'Material Icons';
+                content: '\e5ca';
+                font-size: 18px;
+                font-weight: bold;
+                position: absolute;
+                height: 100%;
+                width: 100%;
+                color: rgba(0, 0, 0, 0.87);
+              }
+            }
+          }
+        }
+        &:hover {
+          background: transparent;
+        }
       }
       &:last-of-type {
         min-width: $close-width!important;
@@ -80,10 +122,6 @@ $btn-fab-size:           32px;
             color: $text-dark;
           }
         }
-      }
-      &:last-of-type, 
-      &:last-of-type:hover {
-        background: transparent;
       }
       input, textarea {
         height: $row-height;

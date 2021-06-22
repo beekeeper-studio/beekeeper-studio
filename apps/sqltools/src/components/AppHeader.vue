@@ -1,9 +1,9 @@
 <template>
   <header class="header row flex-middle">
-    <div class="logo">
+    <router-link class="logo" to="/">
       <img class="logo-img" src="@/assets/icons/bk-logo-yellow-icon.svg">
       <span class="logo-title">SQLTools</span>
-    </div>
+    </router-link>
     <span class="expand"></span>
     <nav>
       <router-link to="/Home" class="btn btn-link">Builder</router-link>

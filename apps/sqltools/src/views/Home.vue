@@ -37,7 +37,7 @@
           @schemaChanged="schemaChanged"
         >
           <template>
-            <span class="table-title">Schema Builder</span>
+            <span class="table-title">Columns</span>
           </template>
         </schema-builder>
         <div class="code-wrap" v-if="formattedSql">

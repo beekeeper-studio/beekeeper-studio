@@ -78,7 +78,7 @@ export default Vue.extend({
     tableColumns() {
 
       return [
-        {rowHandle:false, formatter:"handle", frozen:true, width:30, minWidth:30, resizable: false},
+        {rowHandle:false, formatter:"handle", frozen:true, width:30, minWidth:30, resizable: false, cssClass: "no-edit-highlight"},
         {title: 'Name', field: 'columnName', editor: 'input'},
         {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: this.autoCompleteOptions,  minWidth: 56,widthShrink:1},
         {
@@ -116,11 +116,12 @@ export default Vue.extend({
           title: 'Primary', field: 'primaryKey', 
           editor: vueEditor(CheckboxEditor),
           formatter: vueFormatter(CheckboxFormatter), 
+          cssClass: "no-padding no-edit-highlight",
           width: 76,
           widthShrink:1,
         },
         {
-          formatter: this.trashButton, width: 30, minWidth: 30, hozAlign: 'center', cellClick: this.removeRow, resizable: false,
+          formatter: this.trashButton, width: 30, minWidth: 30, hozAlign: 'center', cellClick: this.removeRow, resizable: false, cssClass: "no-edit-highlight",
         }
       ]
     },
@@ -169,7 +170,8 @@ export default Vue.extend({
       rowMoved: this.rowMoved,
       resizableColumns: false,
       columnMinWidth: 56,
-      layout: 'fitColumns',
+      // layout: 'fitColumns',
+      width: 780,
       dataChanged: (data) => {
         console.log('changed')
         this.schema = data
