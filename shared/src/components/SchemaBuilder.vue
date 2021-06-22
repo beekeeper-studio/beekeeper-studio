@@ -1,5 +1,6 @@
 <template>
   <div class="schema-builder">
+    <h2><input type="text" v-model="name" placeholder="defaultName"></h2>
     <div class="table-header flex flex-middle">
       <slot></slot>
       <span class="expand"></span>
@@ -24,6 +25,7 @@ interface SchemaBuilderData {
   builtColumns: SchemaItem[],
   name: string,
   tabulator: Tabulator
+  defaultName: string
 }
 
 export default Vue.extend({
@@ -37,6 +39,7 @@ export default Vue.extend({
       name: "untitled_table",
       builtColumns: [],
       tabulator: null,
+      defaultName: 'untitled_table',
     }
   },
   watch: {
@@ -48,20 +51,22 @@ export default Vue.extend({
     dialect() {
       this.tabulator.replaceData(this.schema)
     },
-    builtColumns: {
+    schema: {
       deep: true,
       handler() {
-        if (this.builtColumns) {
-          const schema = {
-            name: this.name,
-            columns: this.builtColumns
-          }
-          this.$emit('schemaChanged', schema)
+        if (this.schema) {
+          this.$emit('schemaChanged', this.schema)
         }
       }
     }
   },
   computed: {
+    schema(): Schema {
+      return {
+        name: this.name,
+        columns: this.builtColumns
+      }
+    },
     autoCompleteOptions() {
       return {
         freetext: true,
@@ -74,7 +79,7 @@ export default Vue.extend({
     tableColumns() {
       const trashButton = () => '<i class="material-icons" title="remove">clear</i>'
       return [
-        {rowHandle:false, formatter:"handle", frozen:true, width:30, minWidth:30, resizable: false, cssClass: "no-edit-highlight"},
+        {rowHandle:true, formatter:"handle", width:30, frozen: true, minWidth:30, resizable: false, cssClass: "no-edit-highlight"},
         {title: 'Name', field: 'columnName', editor: 'input'},
         {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: this.autoCompleteOptions,  minWidth: 56,widthShrink:1},
 
@@ -123,7 +128,7 @@ export default Vue.extend({
 
   methods: {
     rowMoved() {
-      this.builtSchema = this.tabulator.getData()
+      this.builtColumns = this.tabulator.getData()
     },
     removeRow(_e, cell: Tabulator.CellComponent) {
       this.tabulator.deleteRow(cell.getRow())
@@ -144,6 +149,7 @@ export default Vue.extend({
   },
   mounted() {
     this.name = this.initialSchema.name || 'untitled_table'
+    this.builtColumns = [...this.initialSchema.columns]
 
     this.tabulator = new Tabulator(this.$refs.tabulator, {
       data: [...this.initialSchema.columns],

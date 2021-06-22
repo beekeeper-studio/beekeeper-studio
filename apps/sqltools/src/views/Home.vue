@@ -2,15 +2,8 @@
   <div class="home">
     <section class="subheader">
       <div class="small-wrap">
-        
         <!-- Alert -->
-        <div class="alert">  <!--v-if="!dismissedTutorial"-->
-          <span class="close-btn" @click="dismissTutorial">
-            <i class="material-icons">clear</i>
-          </span>
-          <div>sdfsdfs</div>
-        </div>
-
+        <tutorial-alert />
         <!-- Dialect with Actions -->
         <div class="flex">
           <dialect-picker class="shrink" :confirm="schemaChanges > 0" :confirmMessage="confirmMessage"/>
@@ -38,32 +31,6 @@
     </section>
     <section>
       <div class="small-wrap">
-        
-        <!-- Table Info -->
-        <div class="table-info">
-          <h1 class="table-name">
-            <span>{Table Name}</span>
-          </h1>
-          <div title="Table Description (Table Comment)" class="table-description-wrap">
-            {Table Description}
-            <!-- <div class="table-description" :class="descriptionClass" @click.prevent="editDescription" v-show="!editingDescription">
-              <div ref="descriptionDiv" class="markdown-description" v-html="formattedDescription || 'No Description'"></div>
-              <i class="material-icons">edit</i>
-            </div>
-            <div class="table-description-edit">
-               <textarea @keydown="checkForEsc" @blur="revertDescription" :style="descriptionEditStyle" ref="descriptionTextarea" name="" id="" :rows="descriptionEditRows" v-model="properties.description" placeholder="Description"></textarea>
-              <div class="table-description-actions">
-                <div class="btn-group">
-                  <button class="btn btn-flat" @click.prevent="revertDescription">Cancel</button>
-                  <button class="btn btn-primary" @mousedown.prevent.stop="saveDescription">Save</button>
-                </div>
-              </div>
-              <span class="markdown" title="The description supports **markdown** `syntax`">
-                <a @mousedown.prevent.stop="() => {}" href="https://www.markdownguide.org/basic-syntax/">Markdown</a>
-              </span> 
-            </div> -->
-          </div>
-        </div>
 
         <!-- Schema Builder -->
         <schema-builder
@@ -100,6 +67,7 @@ import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
 import Formatter from 'sql-formatter'
 import Knex from 'knex'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator';
+import TutorialAlert from '@/components/TutorialAlert.vue';
 interface Data {
   name: string
   sql?: string,
@@ -117,7 +85,8 @@ export default Vue.extend ({
   name: 'Home',
   components: { 
     SchemaBuilder,
-    DialectPicker
+    DialectPicker,
+    TutorialAlert
   },
   data(): Data {
     return {
