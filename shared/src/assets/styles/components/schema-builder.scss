@@ -116,8 +116,7 @@ $btn-fab-size:           32px;
       border: 0!important;
       padding: 0!important;
     }
-    .tabulator-col,
-    .tabulator-cell {
+    .tabulator-col {
       &:first-of-type,
       &:last-of-type {
         .tabulator-col-resize-handle {
@@ -159,6 +158,8 @@ $btn-fab-size:           32px;
           }
         }
       }
+    }
+    .tabulator-cell {
       .tabulator-col-resize-handle {
         display: none;
       }
