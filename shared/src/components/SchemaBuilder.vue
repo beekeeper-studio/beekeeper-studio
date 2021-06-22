@@ -368,9 +368,9 @@ export default Vue.extend({
         cursor: move;
         &.tabulator-row-handle {
           .tabulator-row-handle-box {
-            width: 78%;
+            width: 80%;
             transform: rotate(90deg);
-            margin-left: -12px;
+            margin-left: -8px;
             .tabulator-row-handle-bar {
               background: $border-color;
               height: 1px;
