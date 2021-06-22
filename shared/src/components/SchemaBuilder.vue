@@ -171,7 +171,6 @@ export default Vue.extend({
       resizableColumns: false,
       columnMinWidth: 56,
       // layout: 'fitColumns',
-      width: 780,
       dataChanged: (data) => {
         console.log('changed')
         this.schema = data
