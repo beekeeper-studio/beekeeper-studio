@@ -1,5 +1,5 @@
 <template>
-  <div class="alert" v-if="!dismissedTutorial">
+  <div class="alert">
     <div>{{content}}</div>
   </div>
 
