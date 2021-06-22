@@ -19,7 +19,6 @@
                 </span>
               </div>
               <span class="expand"></span>
-              <div class="card-footer"><span class="btn btn-link text-primary view-btn">View</span></div>
             </router-link>
           </div>
         </div>
@@ -62,6 +61,10 @@ export default Vue.extend({
     justify-content: flex-start;
     padding: $gutter-w * 1.5;
     height: 100%;
+    transition: box-shadow 0.2s ease-in-out;
+    &:hover {
+      box-shadow: inset 0 0 0 2px $theme-primary;
+    }
     h2 {
       margin: 0;
     }
