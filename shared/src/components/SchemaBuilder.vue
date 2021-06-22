@@ -53,7 +53,11 @@ export default Vue.extend({
       deep: true,
       handler() {
         if (this.schema) {
-          this.$emit('schemaChanged', this.schema)
+          const schema = {
+            name: this.name,
+            columns: this.schema
+          }
+          this.$emit('schemaChanged', schema)
         }
       }
     }
@@ -80,14 +84,11 @@ export default Vue.extend({
         {
           title: 'Nullable',
           field: 'nullable',
+          cssClass: "no-padding no-edit-highlight",
           headerTooltip: "Allow this column to contain a null value",
           editor: vueEditor(CheckboxEditor),
-          // formatter: vueEditor(CheckboxEditor),
-          // cellClick: (e, cell) => cell.setValue(!cell.getValue(), true),
-          // editor: true,
-          // formatter: 'tickCross',
-          // formatter: checkboxFormatter,
-          formatter: vueFormatter(CheckboxFormatter), width: 76,
+          formatter: vueFormatter(CheckboxFormatter), 
+          width: 76,
           widthShrink:1
         },
         {
@@ -111,13 +112,12 @@ export default Vue.extend({
             allowEmpty: false
           }
         },
-        {title: 'Primary', field: 'primaryKey', formatter: this.yesNoFormatter, width: 76, widthShrink:1,formatterParams: { allowEmpty: true, falseEmpty: true}, editor: 'select',
-          editorParams: {
-            values: [
-              {label: "YES", value: true},
-              {label: "NO", value: false}
-            ],
-          },
+        {
+          title: 'Primary', field: 'primaryKey', 
+          editor: vueEditor(CheckboxEditor),
+          formatter: vueFormatter(CheckboxFormatter), 
+          width: 76,
+          widthShrink:1,
         },
         {
           formatter: this.trashButton, width: 30, minWidth: 30, hozAlign: 'center', cellClick: this.removeRow, resizable: false,

@@ -49,15 +49,17 @@
 import Vue from 'vue';
 import { mapGetters, mapState } from 'vuex'
 import { UserTemplate as users } from '../lib/templates/user'
-import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
 import DialectPicker from '@/components/DialectPicker.vue'
-import { SchemaItem } from '@shared/lib/dialects/models'
+import { Schema } from '@shared/lib/dialects/models'
+import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
 import Formatter from 'sql-formatter'
 import Knex from 'knex'
+import { SqlGenerator } from '@shared/lib/sql/SqlGenerator';
 interface Data {
   name: string
   sql?: string,
-  knex?: Knex
+  knex?: Knex,
+  generator: SqlGenerator
 }
 export default Vue.extend ({
   name: 'Home',
@@ -69,14 +71,13 @@ export default Vue.extend ({
     return {
       name: users.name,
       sql: undefined,
-      knex: undefined
+      knex: undefined,
+      generator: undefined
     }
   },
   watch: {
-    knexDialect() {
-      if(this.knexDialect) {
-        this.knex = Knex({ client: this.knexDialect})
-      }
+    dialect() {
+      this.generator.dialect = this.dialect
     },
 
   },
@@ -93,21 +94,13 @@ export default Vue.extend ({
     }
   },
   methods: {
-    schemaChanged(schema: SchemaItem[]) {
-      
-      const k = this.knex
-      this.sql = k.schema.createTable(this.name, (table) => {
-        schema.forEach((column: SchemaItem) => {
-          const col = table.specificType(column.columnName, column.dataType)
-
-          if (column.primaryKey) col.primary()
-          if (column.nullable) col.nullable()
-        })
-      }).toQuery()
+    schemaChanged(schema: Schema) {
+      this.sql = this.generator.buildSql(schema)
     }
   },
   mounted() {
     this.knex = Knex({'dialect': this.knexDialect})
+    this.generator = new SqlGenerator(this.dialect)
   }
 })
 </script>

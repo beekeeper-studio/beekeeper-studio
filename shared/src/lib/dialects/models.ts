@@ -45,3 +45,8 @@ export interface SchemaConfig {
 export interface SchemaItem extends SchemaConfig {
   columnName: string
 }
+
+export interface Schema {
+  name: string
+  columns: SchemaItem[]
+}
