@@ -19,5 +19,7 @@
     // color: $brand-success;
     color: $theme-secondary;
   }
-  
+  .hljs-built_in {
+    color: $brand-warning;
+  }
 }

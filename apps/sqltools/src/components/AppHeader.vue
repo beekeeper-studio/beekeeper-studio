@@ -6,7 +6,7 @@
     </router-link>
     <span class="expand"></span>
     <nav>
-      <router-link to="/Home" class="btn btn-link">Builder</router-link>
+      <router-link to="/" class="btn btn-link">Builder</router-link>
       <router-link to="/templates" class="btn btn-link">Templates</router-link>
       <!-- <dialect-picker /> -->
     </nav>
