@@ -5,16 +5,21 @@
         <h1>SQL Table Builder</h1>
 
         <!-- Alert -->
-        <tutorial-alert />
+        <tutorial-alert v-if="isHome" />
+        <!-- Dialect with Actions -->
+        <div class="flex">
+          <dialect-picker class="shrink" :confirm="schemaChanges > 0" :confirmMessage="confirmMessage"/>
+          <span class="expand"></span>
+        </div>
       </div>
     </section>
     <section>
       <div class="small-wrap">
 
         <!-- Schema Builder -->
-        <schema-builder
+        <schema-builder v-if="template"
           :initialSchema="schema"
-          :initialName="name"
+          :initialName="template.name"
           :resetOnUpdate="true"
           @schemaChanged="schemaChanged"
         >
@@ -54,8 +59,10 @@ import Formatter from 'sql-formatter'
 import Knex from 'knex'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator';
 import TutorialAlert from '@/components/TutorialAlert.vue';
+import { Template } from '@/lib/templates/base';
+import templates from '@/lib/templates';
 interface Data {
-  name: string
+  template: Template
   sql?: string,
   knex?: Knex,
   generator: SqlGenerator
@@ -73,9 +80,19 @@ export default Vue.extend ({
     SchemaBuilder,
     TutorialAlert
   },
+  beforeRouteEnter(to, _from, next) {
+    next((component: any) => {
+      component.initialize(to.params.id)
+      if (!component.template) return "/"
+    })
+  },
+  beforeRouteUpdate(to, _from, next) {
+    this.initialize(to.params.id)
+    if (!this.template) next('/')
+  },
   data(): Data {
     return {
-      name: users.name,
+      template: null,
       sql: undefined,
       knex: undefined,
       generator: undefined,
@@ -83,11 +100,17 @@ export default Vue.extend ({
     }
   },
   watch: {
-
+    dialect() {
+      this.generator.dialect = this.dialect
+      this.schemaChanges = 0
+    },
   },
   computed: {
-    ...mapState(['dialect', 'dismissedTutorial']),
+    ...mapState(['dialect']),
     ...mapGetters(['knexDialect']),
+    isHome() {
+      return this.$route.name === 'Home'
+    },
     confirmMessage() {
       return `You will lose ${this.schemaChanges} changes, continue?`
     },
@@ -100,11 +123,14 @@ export default Vue.extend ({
           return 'sql'
       }
     },
+    dialectWarning() {
+      return dialectNotes[this.dialect]
+    },
     dialectTitle() {
       return DialectTitles[this.dialect]
     },
     schema() {
-      return users.toSchema(this.dialect)
+      return this.template.toSchema(this.dialect)
     },
     formattedSql() {
       // TODO (map dialects)
@@ -113,18 +139,22 @@ export default Vue.extend ({
     }
   },
   methods: {
+    initialize(id?: string) {
+      this.generator = new SqlGenerator(this.dialect)
+      this.template = id ? templates.find((t) => t.id === id) : users
+      // if (!this.id) this.$router.replace({query: {}})
+      if (!this.template) return
+      this.knex = Knex({client: this.knexDialect})
+      this.sql = this.generator.buildSql(this.schema)
+    },
     schemaChanged(schema: Schema) {
+      console.log("Schema change", schema)
       this.schemaChanges += 1
       this.sql = this.generator.buildSql(schema)
-    },
-    dismissTutorial() {
-      this.$store.commit('setDismissedTutorial')
     }
   },
   mounted() {
-    this.knex = Knex({'dialect': this.knexDialect})
-    this.generator = new SqlGenerator(this.dialect)
-    this.sql = this.generator.buildSql(this.schema)
+      
   }
 })
 </script>

@@ -25,6 +25,9 @@ export default Vue.extend({
           const target = e.target as HTMLSelectElement
           this.$store.commit('setDialect', target.value)
         }
+      } else {
+        const target = e.target as HTMLSelectElement
+        this.$store.commit('setDialect', target.value)
       }
     }
   }

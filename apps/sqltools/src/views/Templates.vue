@@ -2,7 +2,8 @@
   <div class="templates">
     <section class="subheader">
       <div class="big-wrap">
-        <h1>This is an templates page</h1>
+        <h1>SQL Table Templates</h1>
+        <p>Use these templates as a starting point for your next table. All templates are fully custimizable.</p>
       </div>
     </section>
     <section>
@@ -13,7 +14,7 @@
               <h2>{{template.name}}</h2>
               <p>{{template.description}}</p>
               <div class="badges flex wrap">
-                <span class="badge" v-for="item in template.toSchema(dialect)" :key="item.columnName">
+                <span class="badge" v-for="item in template.toSchema(dialect).columns" :key="item.columnName">
                   <span class="column-name">{{ item.columnName }}:</span>
                   <span class="data-type">{{ item.dataType }}</span>
                 </span>

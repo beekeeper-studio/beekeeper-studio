@@ -1,6 +1,6 @@
 <template>
   <div class="tabulator-bks-checkbox" @mousedown.prevent.stop="click">
-    <input type="checkbox" @mousedown.prevent.stop="click" :checked="checked" />
+    <input type="checkbox" :disabled="!this.params.editable" @mousedown.prevent.stop="click" :checked="checked" />
   </div>
 </template>
 <script lang="ts">
@@ -21,6 +21,7 @@
     },
     methods: {
       click() {
+        if (!this.params.editable) return
         this.cell.setValue(!this.cell.getValue())
         this.checked = this.cell.getValue()
       }
