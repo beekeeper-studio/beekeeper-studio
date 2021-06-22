@@ -1,6 +1,6 @@
 <template>
-  <div >
-    <input :placeholder="smartPlaceholder" ref='input' type="text" v-model="value" @blur.prevent="submit" @change.prevent="submit" @keydown="keydown">
+  <div>
+    <input class="nullible-input" :placeholder="smartPlaceholder" ref='input' type="text" v-model="value" @blur.prevent="submit" @change.prevent="submit" @keydown="keydown">
     <i class="material-icons clear" @mousedown.prevent.stop="clear" title="Nullify Value">cancel</i>
   </div>
 </template>
@@ -81,15 +81,21 @@ export default Vue.extend({
 })
 </script>
 <style lang="scss" scoped>
-@import '@shared/assets/styles/_variables';
+  @import '@shared/assets/styles/_variables';
+  
+  input {
+    padding-right: 18px!important;
+  }
   .clear {
     position: absolute;
     top: 0;
     bottom: 0;
-    right: 6px;
+    right: 2px;
     display: flex;
     align-items: center;
     font-size: 15px;
+    width: 18px;
+    text-align: center;
     color: $text-lighter;
     &:hover {
       color: $text-dark;
