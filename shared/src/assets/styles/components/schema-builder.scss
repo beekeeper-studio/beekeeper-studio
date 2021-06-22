@@ -2,7 +2,7 @@
 @import '../extends';
 
 $row-height:             42px;
-$min-cell-width:         0;
+$min-cell-width:         24px;
 $cell-font-size:         14px;
 $close-width:            30px;
 $btn-fab-size:           32px;
@@ -17,6 +17,12 @@ $btn-fab-size:           32px;
       height: $btn-fab-size;
       min-width: $btn-fab-size;
     }
+  }
+
+  .tabulator,
+  .tabulator .tabulator-tableHolder {
+    overflow: visible;
+    max-width: 100%;
   }
 
   // Header
@@ -36,11 +42,6 @@ $btn-fab-size:           32px;
         }
       }
     }
-  }
-
-  .tabulator,
-  .tabulator .tabulator-tableHolder {
-    overflow: visible;
   }
 
   // Field Rows
@@ -102,6 +103,9 @@ $btn-fab-size:           32px;
           padding: 0!important;
         }
       }
+      .tabulator-responsive-collapse {
+        border: 0;
+      }
     }
   }
 
@@ -156,11 +160,6 @@ $btn-fab-size:           32px;
             }
           }
         }
-      }
-    }
-    .tabulator-cell {
-      .tabulator-col-resize-handle {
-        display: none;
       }
     }
   }
