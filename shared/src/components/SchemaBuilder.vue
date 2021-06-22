@@ -75,8 +75,8 @@ export default Vue.extend({
 
       return [
         {rowHandle:false, formatter:"handle", frozen:true, width:30, minWidth:30, resizable: false},
-        {title: 'Name', field: 'columnName', editor: 'input', minWidth: 56},
-        {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: this.autoCompleteOptions,  minWidth: 56,},
+        {title: 'Name', field: 'columnName', editor: 'input'},
+        {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: this.autoCompleteOptions,  minWidth: 56,widthShrink:1},
         {
           title: 'Nullable',
           field: 'nullable',
@@ -87,7 +87,8 @@ export default Vue.extend({
           // editor: true,
           // formatter: 'tickCross',
           // formatter: checkboxFormatter,
-          formatter: vueFormatter(CheckboxFormatter), width: 76, minWidth: 56
+          formatter: vueFormatter(CheckboxFormatter), width: 76,
+          widthShrink:1
         },
         {
           title: 'Default Value',
@@ -98,19 +99,19 @@ export default Vue.extend({
           },
           headerTooltip: "If you don't set a value for this field, this is the default value",
           formatter: this.cellFormatter,
-          minWidth: 56,
+          widthShrink:1
         },
         {
           title: 'Special',
           field: 'special',
           formatter: this.cellFormatter,
           editor: vueEditor(NullableInputEditor),
-          minWidth: 56,
+          widthShrink:1,
           editorParams: {
             allowEmpty: false
           }
         },
-        {title: 'Primary', field: 'primaryKey', formatter: this.yesNoFormatter, width: 76, minWidth: 56, formatterParams: { allowEmpty: true, falseEmpty: true}, editor: 'select',
+        {title: 'Primary', field: 'primaryKey', formatter: this.yesNoFormatter, width: 76, widthShrink:1,formatterParams: { allowEmpty: true, falseEmpty: true}, editor: 'select',
           editorParams: {
             values: [
               {label: "YES", value: true},
@@ -164,11 +165,11 @@ export default Vue.extend({
       reactiveData: false,
       columns: this.tableColumns,
       movableRows: true,
-      layout: 'fitData',
       headerSort: false,
       rowMoved: this.rowMoved,
-      resizableColumns: 'header',
-      columnMinWidth: 24,
+      resizableColumns: false,
+      columnMinWidth: 56,
+      layout: 'fitColumns',
       dataChanged: (data) => {
         console.log('changed')
         this.schema = data
