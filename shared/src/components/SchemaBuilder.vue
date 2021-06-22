@@ -116,7 +116,6 @@ export default Vue.extend({
           title: 'Primary', field: 'primaryKey', 
           editor: vueEditor(CheckboxEditor),
           formatter: vueFormatter(CheckboxFormatter), 
-          cssClass: "no-padding no-edit-highlight",
           width: 76,
           widthShrink:1,
         },
@@ -170,8 +169,7 @@ export default Vue.extend({
       rowMoved: this.rowMoved,
       resizableColumns: false,
       columnMinWidth: 56,
-      // layout: 'fitColumns',
-      width: 780,
+      layout: 'fitColumns',
       dataChanged: (data) => {
         console.log('changed')
         this.schema = data

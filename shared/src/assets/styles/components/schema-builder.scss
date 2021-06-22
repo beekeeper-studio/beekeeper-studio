@@ -64,8 +64,7 @@ $btn-fab-size:           32px;
       font-size: $cell-font-size;
       color: $text-dark;
       flex-grow: 1;
-      &.tabulator-editing,
-      &:focus {
+      &.tabulator-editing {
         border: 0;
         padding: 0 $gutter-h;
         min-height: $row-height;
@@ -79,8 +78,7 @@ $btn-fab-size:           32px;
           margin: 0 $gutter-w;
         }
       }
-      &.no-edit-highlight,
-      &.no-edit-highlight:focus {
+      &.no-edit-highlight {
         background: transparent!important;
         &.tabulator-editing {
           box-shadow: none!important;
