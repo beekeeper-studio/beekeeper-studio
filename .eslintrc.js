@@ -3,7 +3,7 @@ module.exports = {
   "env": {
     "node": true
   },
-  "ignorePatterns": ["node_modules", "dist", "tsconfig.json"],
+  "ignorePatterns": ["node_modules", "dist", "apps/**/tsconfig.json"],
   "extends": [
     "plugin:vue/essential",
     "eslint:recommended",

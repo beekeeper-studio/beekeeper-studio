@@ -1,6 +1,6 @@
 <template>
   <div class="tabulator-bks-checkbox tabulator-checkbox-editor">
-    <input type="checkbox" ref="input" :checked="checked" @keydown="keydown" @blur="submit" /> 
+    <input type="checkbox" ref="input" v-model="checked" @keydown="keydown" @blur="submit" /> 
   </div>
 </template>
 <script lang="ts">
@@ -16,11 +16,6 @@
     methods: {
       keydown(_e: KeyboardEvent) {
         console.log("keydown", _e.key)
-      },
-      click(_e: Event) {
-        console.log("click!")
-        this.checked = !this.checked
-        // this.checked = !this.checked
       },
       submit() {
         console.log("submitting", this.checked)
