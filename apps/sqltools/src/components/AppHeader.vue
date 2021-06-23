@@ -2,9 +2,11 @@
   <header class="header row flex-middle">
     <router-link class="logo" to="/">
       <img class="logo-img" src="@/assets/icons/bk-logo-yellow-icon.svg">
-      <span class="logo-title">SQLTools</span>
+      <div class="flex-col">
+        <span class="logo-title">SQLTools</span>
+        <small class="logo-subtitle">by <span class="text-primary" href="https://beekeeperstudio.io" target="_blank">Beekeeper Studio</span></small>
+      </div>
     </router-link>
-    <span class="blurb">by <a href="https://beekeeperstudio.io" target="_blank">Beekeeper Studio</a></span>
     <span class="expand"></span>
     <nav>
       <router-link :to="{path: '/', query: { template: null}}" class="btn btn-link">Builder</router-link>
@@ -49,13 +51,6 @@ export default Vue.extend({
         }
       }
     }
-
-    .blurb {
-      h1 {
-        font-size: 1em;
-      }
-    }
-
     .logo {
       display: flex;
       align-items: center;
@@ -72,6 +67,11 @@ export default Vue.extend({
       font-size: 22px;
       color: $text-dark;
       margin-right: 2rem;
+    }
+    .logo-subtitle {
+      font-size: 0.7rem;
+      line-height: 1.4;
+      color: $text-light;
     }
     nav {
       margin-left: 1.5em;
@@ -110,22 +110,11 @@ export default Vue.extend({
       }
       @media (max-width: $screen-sm) {
         min-width: auto;
-        // .github-btn, 
-        // .material-icons {
-        //   display: none;
-        // }
         .btn {
           font-size: 11px;
         }
       }
     }
-    // .btn-fab {
-    //   margin-left: -0.25em;
-    //   color: white;
-    //   &:hover, &:focus {
-    //     background: rgba(white, 0.06);
-    //   }
-    // }
     @media (max-width: $screen-sm) {
       padding: 0 1em;
     }

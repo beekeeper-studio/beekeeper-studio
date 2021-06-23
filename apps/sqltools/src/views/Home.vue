@@ -19,13 +19,10 @@
           @columnsChanged="columnsChanged"
         >
           <div class="table-header flex flex-middle">
-            <h2 class="expand">
-              <div class="form-group">
-                <input type="text" v-model="schema.name" :placeholder="defaultName">
-                <span class="input-icon">🖊</span>
-              </div>
-
-            </h2>
+            <div class="form-group expand flex flex-middle">
+              <input type="text" v-model="schema.name" :placeholder="defaultName">
+              <span class="input-icon"><i class="material-icons">edit</i></span>
+            </div>
             <dialect-picker :confirm="schemaChanges > 0" :confirmMessage="confirmMessage"/>
           </div>
           <template>
@@ -211,6 +208,56 @@ export default Vue.extend ({
     }
   }
 
+  // Table Header
+  .table-header {
+    margin: 0 (-$gutter-h * 1.25) ($gutter-w * 2);
+    padding-right: $gutter-h * 1.25;
+    .form-group {
+      position: relative;
+      width: 100%;
+      padding: 0;
+      &:hover {
+        .input-icon {
+          display: flex;
+        }
+      }
+      input {
+        font-size: 1.6rem;
+        border: 0;
+        height: auto;
+        line-height: 1.6;
+        font-weight: bold;
+        padding-right: 24px;
+        &:hover {
+          background: rgba($theme-base, 0.035);
+        }
+        &:focus {
+          background: transparent;
+          box-shadow: inset 0 0 0 1px $border-color;
+        }
+      }
+      .input-icon {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        align-items: center;
+        display: none;
+        .material-icons {
+          font-size: 22px;
+          width: 24px;
+          margin-right: $gutter-h;
+          color: $text-lighter;
+        }
+      }
+    }
+    select {
+      font-size: 1.1rem;
+      line-height: 2.1;
+      height: auto;
+      margin-left: $gutter-w;
+    }
+  }
   .code-wrap {
     margin-top: $gutter-w * 4;
   }

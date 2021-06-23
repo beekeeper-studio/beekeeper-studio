@@ -2,13 +2,24 @@
   <div class="template" v-if="template">
     <section class="subheader">
       <div class="small-wrap">
-        <router-link to="/templates">⬅ all templates</router-link>
-        <h1>{{template.name}} <span class="badge">template</span></h1>
-        <p>{{template.description}}</p>
+        <router-link to="/templates"><i class="material-icons">arrow_backward</i> All Templates</router-link>
       </div>
     </section>
     <section>
       <div class="small-wrap">
+        
+        <!-- Table Hader -->
+        <div class="table-header flex flex-top">
+          <div class="flex-col expand">
+            <h1 class="table-name">{{template.name}} <span class="badge">template</span></h1>
+            <div class="table-description">{{template.description}}</div>
+            <router-link class="text-primary" :to="{name: 'Build', params: {id: template.id}}">Open in Table Builder</router-link>
+          </div>
+          <div class="actions">
+            <dialect-picker />
+          </div>
+        </div>
+
         <!-- Schema Builder -->
         <schema-builder
           v-if="template"
@@ -16,19 +27,10 @@
           :resetOnUpdate="true"
           :disabled="true"
         >
-          <div class="flex">
-            <div class="actions">
-              <router-link class="btn btn-primary" :to="{name: 'Build', params: {id: template.id}}" >Open in Table Builder</router-link>
-            </div>
-            <span class="expand"></span>
-            <dialect-picker class="shrink" />
-          </div>
         </schema-builder>
 
         <div class="code-wrap" v-if="sql">
-          <h2>
-            Generated SQL
-          </h2>
+          <h3>Generated SQL</h3>
           <highlightjs lang="sql" :code="sql" />
         </div>
 
@@ -94,3 +96,65 @@ export default Vue.extend({
   }
 })
 </script>
+
+<style lang="scss" scoped>
+  @import '@/assets/styles/app/_variables';
+
+  section {
+    padding: $gutter-w * 2;
+  }
+  .subheader {
+    display: flex;
+    flex-direction: column;
+    background: rgba($query-editor-bg, 0.5);
+    padding: $gutter-w * 2;
+    a {
+      display: flex;
+      align-items: center;
+    }
+    .material-icons {
+      width: 24px;
+    }
+  }
+  .table-header {
+    margin: 0 0 ($gutter-w * 2);
+    // padding-right: $gutter-h * 1.25;
+    .table-name {
+      padding: 0;
+      margin: 0;
+      margin-bottom: $gutter-w;
+      display: flex;
+      align-items: center;
+      .item-icon {
+        font-size: 1.6rem;
+        margin-right: $gutter-w;
+      }
+      .badge {
+        font-size: 1.05rem;
+        padding: 0 $gutter-w;
+        margin-left: $gutter-w * 0.75;
+        line-height: 1.6;
+        background: rgba($theme-base, 0.08);
+        color: $text-light;
+        // font-weight: bold;
+      }
+    }
+    .table-description {
+      position: relative;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      margin-bottom: $gutter-w * 1.5;
+    }
+    select {
+      font-size: 1.1rem;
+      line-height: 2.1;
+      height: auto;
+      min-width: 150px;
+      // margin-left: $gutter-w;
+    }
+  }
+  .code-wrap {
+    margin-top: $gutter-w * 4;
+  }
+</style>

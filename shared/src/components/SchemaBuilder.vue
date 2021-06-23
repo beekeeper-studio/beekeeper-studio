@@ -194,31 +194,6 @@ export default Vue.extend({
   $btn-fab-size:           32px;
 
   .schema-builder {
-
-    // Table Header
-    .table-header {
-      margin: 0 (-$gutter-h * 1.25) ($gutter-w * 2);
-      padding-right: $gutter-h * 1.25;
-      h2 {
-        margin: 0;
-        input {
-          font-size: 1.6rem;
-          border: 0;
-          height: auto;
-          line-height: 1.6;
-          font-weight: bold;
-          &:hover, &:focus {
-            background: rgba($theme-base, 0.035);
-          }
-        }
-      }
-      select {
-        font-size: 1.1rem;
-        line-height: 2.1;
-        height: auto;
-        margin-left: $gutter-w;
-      }
-    }
     
     // Schema Header
     .schema-header {
