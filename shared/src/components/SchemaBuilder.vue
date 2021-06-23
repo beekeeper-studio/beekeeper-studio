@@ -86,7 +86,7 @@ export default Vue.extend({
       const trashButton = () => '<i class="material-icons" title="remove">clear</i>'
       const editable = this.editable
       const dataColumns = [
-        {title: 'Name', field: 'columnName', editor: 'input',},
+        {title: 'Name', field: 'columnName', editor: 'input', tooltip: true,},
         {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: this.autoCompleteOptions,  minWidth: 56,widthShrink:1},
 
         {
@@ -109,6 +109,7 @@ export default Vue.extend({
           editorParams: {
             allowEmpty: false
           },
+          tooltip: true,
           headerTooltip: "The default value of this field. Be sure to add quotes around literal values - eg 'my value'",
           formatter: this.cellFormatter,
           widthShrink:1
@@ -119,6 +120,7 @@ export default Vue.extend({
           formatter: this.cellFormatter,
           editor: vueEditor(NullableInputEditor),
           widthShrink:1,
+          tooltip: true,
           headerTooltip: "Leave a friendly comment for other database users about this column"
         },
         {
@@ -133,13 +135,13 @@ export default Vue.extend({
           cssClass: "no-padding no-edit-highlight"
         },
       ]
-      return [
+      return editable ? [
         {rowHandle:true, formatter:"handle", width:30, frozen: true, minWidth:30, resizable: false, cssClass: "no-edit-highlight"},
-        ...dataColumns.map((c) => ({...c, editable})),
+        ...dataColumns,
         {
-          formatter: trashButton, width: 36, minWidth: 36, hozAlign: 'center', cellClick: this.removeRow, resizable: false, cssClass: "remove-btn no-edit-highlight",
+          formatter: trashButton, width: 36, minWidth: 36, hozAlign: 'center', cellClick: editable ? this.removeRow : undefined, resizable: false, cssClass: "remove-btn no-edit-highlight",
         }
-      ]
+      ] : dataColumns.map((c) => ({...c, editable}))
     },
   },
 
@@ -168,7 +170,7 @@ export default Vue.extend({
     this.tabulator = new Tabulator(this.$refs.tabulator, {
       data: [...this.initialColumns],
       columns: this.tableColumns,
-      movableRows: true,
+      movableRows: this.editable,
       headerSort: false,
       rowMoved: () => this.getData(),
       resizableColumns: false,
