@@ -156,7 +156,7 @@ export default Vue.extend({
     addRow() {
       this.tabulator.addRow({ columnName: 'untitled', dataType: 'text'})
     },
-    cellEdited(c) {
+    cellEdited() {
     },
     cellFormatter: tab.cellFormatter,
     yesNoFormatter: tab.yesNoFormatter

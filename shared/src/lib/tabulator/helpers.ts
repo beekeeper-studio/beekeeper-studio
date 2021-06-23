@@ -38,7 +38,7 @@ export function vueEditor(component: any) {
       off()
     })
 
-    instance.$on('cancel', (v) => {
+    instance.$on('cancel', () => {
       cancel()
       off()
     })
