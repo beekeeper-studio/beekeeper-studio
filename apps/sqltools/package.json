@@ -12,6 +12,7 @@
     "fs": false
   },
   "dependencies": {
+    "lodash": "^4.17.21",    
     "core-js": "^3.6.5",
     "knex": "~0.21.17",
     "typeface-roboto": "^1.1.13",

@@ -4,6 +4,7 @@
       <img class="logo-img" src="@/assets/icons/bk-logo-yellow-icon.svg">
       <span class="logo-title">SQLTools</span>
     </router-link>
+    <span class="blurb">by <a href="https://beekeeperstudio.io" target="_blank">Beekeeper Studio</a></span>
     <span class="expand"></span>
     <nav>
       <router-link :to="{path: '/', query: { template: null}}" class="btn btn-link">Builder</router-link>
@@ -48,6 +49,13 @@ export default Vue.extend({
         }
       }
     }
+
+    .blurb {
+      h1 {
+        font-size: 1em;
+      }
+    }
+
     .logo {
       display: flex;
       align-items: center;

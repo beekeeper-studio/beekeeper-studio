@@ -1,34 +1,28 @@
 <template>
   <div class="template" v-if="template">
     <section class="subheader">
-      <div class="big-wrap">
-        <h1>{{template.name}} Table Template</h1>
+      <div class="small-wrap">
+        <router-link to="/templates">⬅ all templates</router-link>
+        <h1>{{template.name}} <span class="badge">template</span></h1>
         <p>{{template.description}}</p>
       </div>
-      <div class="small-wrap">
-        <div class="flex">
-          <dialect-picker class="shrink" />
-          <span class="expand"></span>
-          <div class="actions">
-            <router-link :to="{name: 'Build', params: {id: template.id}}" >Open in Table Builder</router-link>
-          </div>
-        </div>
-      </div>
-
     </section>
     <section>
       <div class="small-wrap">
         <!-- Schema Builder -->
         <schema-builder
           v-if="template"
-          :initialSchema="template.toSchema(dialect)"
-          :initialName="template.tableName"
+          :initialColumns="template.toSchema(dialect).columns"
           :resetOnUpdate="true"
           :disabled="true"
         >
-          <template>
-            <span class="table-title">Columns</span>
-          </template>
+          <div class="flex">
+            <div class="actions">
+              <router-link class="btn btn-primary" :to="{name: 'Build', params: {id: template.id}}" >Open in Table Builder</router-link>
+            </div>
+            <span class="expand"></span>
+            <dialect-picker class="shrink" />
+          </div>
         </schema-builder>
 
         <div class="code-wrap" v-if="sql">

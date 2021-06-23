@@ -7,24 +7,28 @@
         <!-- Alert -->
         <tutorial-alert v-if="isHome" />
         <!-- Dialect with Actions -->
-        <div class="flex">
-          <dialect-picker class="shrink" :confirm="schemaChanges > 0" :confirmMessage="confirmMessage"/>
-          <span class="expand"></span>
-        </div>
       </div>
     </section>
     <section>
       <div class="small-wrap">
 
         <!-- Schema Builder -->
-        <schema-builder v-if="template"
-          :initialSchema="schema"
-          :initialName="template.name"
+        <schema-builder v-if="schema.columns"
+          :initialColumns="schema.columns"
           :resetOnUpdate="true"
-          @schemaChanged="schemaChanged"
+          @columnsChanged="columnsChanged"
         >
+          <div class="table-header flex flex-middle">
+            <h2 class="expand">
+              <div class="form-group">
+                <input type="text" v-model="schema.name" :placeholder="defaultName">
+                <span class="input-icon">🖊</span>
+              </div>
+
+            </h2>
+            <dialect-picker :confirm="schemaChanges > 0" :confirmMessage="confirmMessage"/>
+          </div>
           <template>
-            <span class="table-title">Columns</span>
           </template>
         </schema-builder>
 
@@ -51,22 +55,26 @@
 <script lang="ts">
 
 import Vue from 'vue';
+import _ from 'lodash'
 import { mapGetters, mapState } from 'vuex'
 import { UserTemplate as users } from '../lib/templates/user'
-import { DialectTitles, Schema } from '@shared/lib/dialects/models'
+import { DialectTitles, Schema, SchemaItem } from '@shared/lib/dialects/models'
 import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
 import Formatter from 'sql-formatter'
 import Knex from 'knex'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator';
 import TutorialAlert from '@/components/TutorialAlert.vue';
+import DialectPicker from '@/components/DialectPicker.vue'
 import { Template } from '@/lib/templates/base';
 import templates from '@/lib/templates';
 interface Data {
   template: Template
+  schema: Schema
   sql?: string,
   knex?: Knex,
   generator: SqlGenerator
   schemaChanges: number
+  defaultName: string
 }
 
 
@@ -78,7 +86,8 @@ export default Vue.extend ({
   name: 'Home',
   components: { 
     SchemaBuilder,
-    TutorialAlert
+    TutorialAlert,
+    DialectPicker
   },
   beforeRouteEnter(to, _from, next) {
     next((component: any) => {
@@ -93,8 +102,12 @@ export default Vue.extend ({
   data(): Data {
     return {
       template: null,
+      defaultName: 'untitled_table',
+      schema: {
+        name: 'untitled_table',
+        columns: null
+      },
       sql: undefined,
-      knex: undefined,
       generator: undefined,
       schemaChanges: 0
     }
@@ -103,6 +116,12 @@ export default Vue.extend ({
     dialect() {
       this.generator.dialect = this.dialect
       this.schemaChanges = 0
+    },
+    schema: {
+      deep: true,
+      handler() {
+        this.generateSql()
+      }
     },
   },
   computed: {
@@ -129,9 +148,6 @@ export default Vue.extend ({
     dialectTitle() {
       return DialectTitles[this.dialect]
     },
-    schema() {
-      return this.template.toSchema(this.dialect)
-    },
     formattedSql() {
       // TODO (map dialects)
       if (!this.sql) return null
@@ -139,22 +155,22 @@ export default Vue.extend ({
     }
   },
   methods: {
+    generateSql: _.debounce(function() {
+      this.sql = this.generator.buildSql(this.schema)
+    }, 300),
     initialize(id?: string) {
-      this.generator = new SqlGenerator(this.dialect)
       this.template = id ? templates.find((t) => t.id === id) : users
       // if (!this.id) this.$router.replace({query: {}})
       if (!this.template) return
-      this.knex = Knex({client: this.knexDialect})
-      this.sql = this.generator.buildSql(this.schema)
+      this.schema = this.template.toSchema(this.dialect)
     },
-    schemaChanged(schema: Schema) {
-      console.log("Schema change", schema)
+    columnsChanged(columns: SchemaItem[]) {
+      this.schema.columns = columns
       this.schemaChanges += 1
-      this.sql = this.generator.buildSql(schema)
     }
   },
   mounted() {
-      
+      this.generator = new SqlGenerator(this.dialect)
   }
 })
 </script>

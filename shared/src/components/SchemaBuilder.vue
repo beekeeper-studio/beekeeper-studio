@@ -1,15 +1,10 @@
 <template>
   <div class="schema-builder">
-    <h2>
-      <input v-if="editable" type="text" v-model="name" placeholder="defaultName">
-      <span v-else>{{name}}</span>
-    </h2>
-    <div class="table-header flex flex-middle">
-      <h2 class="expand"><input type="text" v-model="name" placeholder="defaultName"></h2>
-      <dialect-picker :confirm="schemaChanges > 0" :confirmMessage="confirmMessage"/>
+    <div class="slot-wrapper">
+      <slot></slot>
     </div>
     <div class="schema-header flex flex-middle">
-      <slot></slot>
+      <h3 class="table-title">Columns</h3>
       <span class="expand"></span>
       <button class="btn btn-primary btn-fab" @click.prevent="addRow" title="Add Field"><i class="material-icons">add</i></button>
     </div>
@@ -21,17 +16,15 @@
 import Vue, { PropType } from 'vue'
 import Tabulator from 'tabulator-tables'
 import { getDialectData } from '../lib/dialects'
-import DialectPicker from '@/components/DialectPicker.vue'
 import tab from '../lib/tabulator'
 import {vueEditor, vueFormatter} from '../lib/tabulator/helpers'
 import NullableInputEditor from './tabulator/NullableInputEditor.vue'
 import CheckboxEditor from './tabulator/CheckboxEditor.vue'
 import CheckboxFormatter from './tabulator/CheckboxFormatter.vue'
-import { Dialect, SchemaItem, Schema } from '../lib/dialects/models'
+import { Dialect, SchemaItem } from '../lib/dialects/models'
 
 interface SchemaBuilderData {
   builtColumns: SchemaItem[],
-  name: string,
   tabulator: Tabulator
   defaultName: string
   columnsModified: boolean
@@ -39,17 +32,13 @@ interface SchemaBuilderData {
 
 export default Vue.extend({
   props: {
-    initialSchema: Object as PropType<Schema>,
+    initialColumns: Array as PropType<SchemaItem[]>,
     dialect: String as PropType<Dialect>,
     resetOnUpdate: Boolean as PropType<boolean>,
     disabled: Boolean as PropType<boolean>
   },
-  components: {
-    DialectPicker,
-  },
   data(): SchemaBuilderData {
     return {
-      name: "untitled_table",
       builtColumns: [],
       tabulator: null,
       defaultName: 'untitled_table',
@@ -57,23 +46,22 @@ export default Vue.extend({
     }
   },
   watch: {
-    initialSchema() {
-      if (this.resetOnUpdate && this.initialSchema && this.tabulator) {
-        this.builtColumns = [...this.initialSchema.columns]
-        this.tabulator.replaceData([...this.initialSchema.columns])
-        this.columnsModified = false
+    initialColumns() {
+      if (this.resetOnUpdate && this.initialColumns && this.tabulator) {
+        this.tabulator.replaceData([...this.initialColumns])
+        this.getData(false)
       }
     },
     dialect() {
       this.generator.dialect = this.dialect
       this.schemaChanges = 0
-      this.tabulator.replaceData(this.schema)
+      this.tabulator.replaceData(this.builtColumns)
     },
-    schema: {
+    builtColumns: {
       deep: true,
       handler() {
-        if (this.schema && this.modified) {
-          this.$emit('schemaChanged', this.schema)
+        if (this.builtColumns && this.modified) {
+          this.$emit('columnsChanged', this.builtColumns)
         }
       }
     }
@@ -83,14 +71,7 @@ export default Vue.extend({
       return !this.disabled
     },
     modified(){
-      return this.name !== this.initialSchema.name ||
-        this.columnsModified
-    },
-    schema(): Schema {
-      return {
-        name: this.name,
-        columns: this.builtColumns
-      }
+      return this.columnsModified
     },
     autoCompleteOptions() {
       return {
@@ -163,9 +144,9 @@ export default Vue.extend({
   },
 
   methods: {
-    getData() {
+    getData(markModified: boolean = true) {
       this.builtColumns = this.tabulator.getData()
-      this.columnsModified = true
+      this.columnsModified = markModified
     },
     removeRow(_e, cell: Tabulator.CellComponent) {
       this.tabulator.deleteRow(cell.getRow())
@@ -185,19 +166,18 @@ export default Vue.extend({
     }
   },
   mounted() {
-    this.name = this.initialSchema.name || 'untitled_table'
-    this.builtColumns = [...this.initialSchema.columns]
     this.tabulator = new Tabulator(this.$refs.tabulator, {
-      data: [...this.initialSchema.columns],
+      data: [...this.initialColumns],
       columns: this.tableColumns,
       movableRows: true,
       headerSort: false,
-      rowMoved: this.getData,
+      rowMoved: () => this.getData(),
       resizableColumns: false,
       columnMinWidth: 56,
       layout: 'fitColumns',
-      dataChanged: this.getData
+      dataChanged: () => this.getData()
     })
+    this.getData(false)
   }
 })
 </script>
