@@ -4,12 +4,12 @@
       <img class="logo-img" src="@/assets/icons/bk-logo-yellow-icon.svg">
       <div class="flex-col">
         <span class="logo-title">SQLTools</span>
-        <small class="logo-subtitle">by <span class="text-primary" href="https://beekeeperstudio.io" target="_blank">Beekeeper Studio</span></small>
+        <small class="logo-subtitle">by <span class="text-primary">Beekeeper Studio</span></small>
       </div>
     </router-link>
     <span class="expand"></span>
     <nav>
-      <router-link :to="{path: '/', query: { template: null}}" class="btn btn-link">Builder</router-link>
+      <router-link :to="{path: '/'}" class="btn btn-link">Builder</router-link>
       <router-link to="/templates" class="btn btn-link">Templates</router-link>
       <!-- <dialect-picker /> -->
     </nav>

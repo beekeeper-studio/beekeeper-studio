@@ -1,6 +1,6 @@
 <template>
   <div class="alert">
-    <div>{{content}}</div>
+    <div>SQLTools is a SQL table builder for Postgres, MySQL, SQL Server, SQLite, and Redshift databases from the makers of  <a class="text-primary" href="https://beekeeperstudio.io" target="_blank">Beekeeper Studio</a>. We also provide some simple sql table starter templates, check them out above 👆.</div>
   </div>
 
 </template>
@@ -9,7 +9,7 @@ import Vue from 'vue'
 export default Vue.extend({
   data() {
     return {
-      content: "SQLTools is a SQL table builder for Postgres, MySQL, SQL Server, SQLite, and Redshift databases. We also provide some simple sql table starter templates, check them out above 👆."
+      content: ""
     }
   }
 })
