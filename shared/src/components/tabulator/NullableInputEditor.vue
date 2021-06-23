@@ -46,6 +46,8 @@ export default Vue.extend({
         // this.$emit('value', this.value)
       } else if (e.key.startsWith("Arrow")) {
         // this.$emit('value', this.value)
+      } else if (e.key === 'Escape') {
+        this.$emit('cancel')
       } else {
         this.everEdited = true
       }
@@ -60,23 +62,23 @@ export default Vue.extend({
 
     },
     clear() {
-      console.log('clear clicked')
       this.$emit('value', null)
     }
   },
   watch: {
     rendered() {
       if (this.rendered) {
-        console.log('Nullable rendered')
         this.value = this.cell.getValue()
         this.$refs.input.focus()
       }
     }
   },
   mounted() {
-    console.log("Nullable mounted")
     // nothing really happens here, rendered watch is the real hook.
 
+  },
+  beforeDestroy() {
+    // add some logging here if you wanna check there's no memory leak
   }
 })
 </script>

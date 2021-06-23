@@ -48,7 +48,6 @@ export default Vue.extend({
   watch: {
     initialColumns() {
       if (this.resetOnUpdate && this.initialColumns && this.tabulator) {
-        console.log("updating tabulator")
         this.tabulator.replaceData([...this.initialColumns])
         this.getData(false)
       }
@@ -156,7 +155,6 @@ export default Vue.extend({
       this.tabulator.addRow({ columnName: 'untitled', dataType: 'text'})
     },
     cellEdited(c) {
-      console.log('--> Cell edited!', c)
     },
     cellFormatter: tab.cellFormatter,
     yesNoFormatter: tab.yesNoFormatter

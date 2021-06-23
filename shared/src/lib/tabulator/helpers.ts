@@ -20,14 +20,29 @@ export function vueFormatter(component: any) {
 export function vueEditor(component: any) {
   const ComponentClass = Vue.extend(component)
 
-  return (cell:Tabulator.CellComponent, onRendered, success, _cancel, editorParams) => {
+  return (cell:Tabulator.CellComponent, onRendered, success, cancel, editorParams) => {
 
     const instance = new ComponentClass({
       propsData: {cell, params: editorParams}
     })
+
+    // this is important otherwise we bleed both event listeners
+    // and memory!
+    const off = () => {
+      instance.$off()
+      instance.$destroy()
+    }
+
     instance.$on('value', (v) => {
       success(v)
+      off()
     })
+
+    instance.$on('cancel', (v) => {
+      cancel()
+      off()
+    })
+
     instance.$mount()
 
     onRendered(() => {

@@ -15,16 +15,17 @@
     },
     methods: {
       keydown(_e: KeyboardEvent) {
+        if (_e.key === 'Escape') {
+          this.$emit('cancel')
+        }
         console.log("keydown", _e.key)
       },
       submit() {
-        console.log("submitting", this.checked)
         this.$emit('value', this.checked)
       }
     },
     watch: {
       checked() {
-        console.log('checked changed to ', this.checked)
       },
       rendered() {
         if (this.rendered) {
