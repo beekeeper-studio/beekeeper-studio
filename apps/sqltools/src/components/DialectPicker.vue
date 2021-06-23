@@ -27,7 +27,7 @@ export default Vue.extend({
     this.selectedDialect = this.dialect
   },
   methods: {
-    setDialect(e: Event) {
+    setDialect(_e: Event) {
       if (this.confirm) {
         const shouldContinue = window.confirm(this.confirmMessage)
         if (shouldContinue) {
