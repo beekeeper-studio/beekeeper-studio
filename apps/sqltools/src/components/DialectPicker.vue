@@ -1,6 +1,6 @@
 <template>
-  <select name="dialect" @change="setDialect" id="dialect-select">
-    <option v-for="d in dialects" :key="d" :value="d" :selected="d === dialect">{{d}}</option>
+  <select name="dialect" v-model="selectedDialect" @change="setDialect" id="dialect-select">
+    <option v-for="d in dialects" :key="d" :value="d">{{d}}</option>
   </select>
 </template>
 <script lang="ts">
@@ -11,23 +11,32 @@ export default Vue.extend({
   props: ['confirm', 'confirmMessage'],
   data() {
     return {
-      dialects: Dialects
+      dialects: Dialects,
+      selectedDialect: null
+    }
+  },
+  watch: {
+    dialect() {
+      this.selectedDialect = this.dialect
     }
   },
   computed: {
     ...mapState(['dialect'])
+  },
+  mounted() {
+    this.selectedDialect = this.dialect
   },
   methods: {
     setDialect(e: Event) {
       if (this.confirm) {
         const shouldContinue = window.confirm(this.confirmMessage)
         if (shouldContinue) {
-          const target = e.target as HTMLSelectElement
-          this.$store.commit('setDialect', target.value)
+          this.$store.commit('setDialect', this.selectedDialect)
+        } else{
+          this.selectedDialect = this.dialect
         }
       } else {
-        const target = e.target as HTMLSelectElement
-        this.$store.commit('setDialect', target.value)
+        this.$store.commit('setDialect', this.selectedDialect)
       }
     }
   }
