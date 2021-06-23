@@ -8,10 +8,10 @@
         </select>
       </div>
       </span>
-      <div class="statusbar-item row-counts row flex-middle" v-if="rowCount > 0" :title="rowCount + ' ' + 'Total Records'">
+      <div class="statusbar-item row-counts row flex-middle" v-if="rowCount > 0" :title="`${rowCount} Records${result.truncated ? ' (Truncated)' : ''}`">
         <i class="material-icons">list_alt</i>
         <span class="num-rows">{{rowCount}}</span>
-        <span class="truncated-rows" v-if="result && result.truncated">/&nbsp;{{result.truncatedRowCount}}</span>
+        <span class="truncated-rows" v-if="result && result.truncated">/&nbsp;{{result.totalRowCount}}</span>
       </div>
       <div class="statusbar-item affected-rows" v-if="affectedRowsText " :title="affectedRowsText + ' ' + 'Rows Affected'">
         <i class="material-icons">clear_all</i>
