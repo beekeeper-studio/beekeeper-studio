@@ -13,8 +13,8 @@
       <div class="small-wrap">
 
         <!-- Schema Builder -->
-        <schema-builder v-if="schema.columns"
-          :initialColumns="schema.columns"
+        <schema-builder v-if="templateSchema.columns"
+          :initialColumns="templateSchema.columns"
           :resetOnUpdate="true"
           @columnsChanged="columnsChanged"
         >
@@ -132,7 +132,7 @@ export default Vue.extend ({
       return `You will lose ${this.schemaChanges} changes, continue?`
     },
     templateSchema() {
-      return this.template.toSchema(this.dialect)
+      return this.template ? this.template.toSchema(this.dialect) : []
     },
     highlightDialect() {
       switch (this.dialect) {
@@ -163,7 +163,7 @@ export default Vue.extend ({
       this.template = id ? templates.find((t) => t.id === id) : users
       // if (!this.id) this.$router.replace({query: {}})
       if (!this.template) return
-      this.schema = this.templateSchema
+      this.schema = _.clone(this.templateSchema)
     },
     columnsChanged(columns: SchemaItem[]) {
       this.schema.columns = columns

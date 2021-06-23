@@ -48,6 +48,7 @@ export default Vue.extend({
   watch: {
     initialColumns() {
       if (this.resetOnUpdate && this.initialColumns && this.tabulator) {
+        console.log("updating tabulator")
         this.tabulator.replaceData([...this.initialColumns])
         this.getData(false)
       }
