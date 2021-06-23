@@ -116,6 +116,7 @@ export default Vue.extend ({
     dialect() {
       this.generator.dialect = this.dialect
       this.schemaChanges = 0
+      this.schema.columns = this.templateSchema.columns
     },
     schema: {
       deep: true,
@@ -132,6 +133,9 @@ export default Vue.extend ({
     },
     confirmMessage() {
       return `You will lose ${this.schemaChanges} changes, continue?`
+    },
+    templateSchema() {
+      return this.template.toSchema(this.dialect)
     },
     highlightDialect() {
       switch (this.dialect) {
@@ -162,7 +166,7 @@ export default Vue.extend ({
       this.template = id ? templates.find((t) => t.id === id) : users
       // if (!this.id) this.$router.replace({query: {}})
       if (!this.template) return
-      this.schema = this.template.toSchema(this.dialect)
+      this.schema = this.templateSchema
     },
     columnsChanged(columns: SchemaItem[]) {
       this.schema.columns = columns
