@@ -28,14 +28,12 @@
           <template>
           </template>
         </schema-builder>
-
-        <div class="code-wrap" v-if="formattedSql">
+        <highlighted-code :code="formattedSql" :dialect="highlightDialect">
           <h3>
             Generated SQL for {{dialectTitle}}
           </h3>
           <p class="dialect-warning">{{dialectWarning ? `*${dialectWarning}`: ''}}</p>
-          <highlightjs :lang="highlightDialect" :code="formattedSql" />
-        </div>
+        </highlighted-code>
       </div>
     </section>
     <footer>
@@ -64,6 +62,7 @@ import TutorialAlert from '@/components/TutorialAlert.vue';
 import DialectPicker from '@/components/DialectPicker.vue'
 import { Template } from '@/lib/templates/base';
 import templates from '@/lib/templates';
+import HighlightedCode from '@/components/HighlightedCode.vue';
 interface Data {
   template: Template
   schema: Schema
@@ -84,7 +83,8 @@ export default Vue.extend ({
   components: { 
     SchemaBuilder,
     TutorialAlert,
-    DialectPicker
+    DialectPicker,
+    HighlightedCode
   },
   beforeRouteEnter(to, _from, next) {
     next((component: any) => {

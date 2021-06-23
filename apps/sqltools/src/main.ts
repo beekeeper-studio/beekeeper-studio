@@ -12,6 +12,9 @@ import '@/assets/styles/app.scss'
 import store from './store'
 
 import hljs from 'highlight.js'
+import VueClipboard from 'vue-clipboard2'
+
+Vue.use(VueClipboard)
 Vue.use(hljs.vuePlugin)
 Vue.config.productionTip = false
 new Vue({
