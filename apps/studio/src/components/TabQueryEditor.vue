@@ -431,7 +431,7 @@
             if (result.rowCount > this.$config.maxResults) {
               result.rows = _.take(result.rows, this.$config.maxResults)
               result.truncated = true
-              result.truncatedRowCount = this.$config.maxResults
+              result.totalRowCount = result.rowCount
             }
           })
           this.results = Object.freeze(results);
