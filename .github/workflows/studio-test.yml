@@ -1,4 +1,4 @@
-name: Unit Tests
+name: Studio - Unit Tests
 
 on:
   # Trigger the workflow on push or pull request,
@@ -7,7 +7,11 @@ on:
     branches:
       - main
       - master
-  pull_request: # all PRs
+    paths-ignore:
+      - apps/sqltools/**
+  pull_request:
+    paths-ignore:
+      - apps/sqltools/**
 
 jobs:
   testing:

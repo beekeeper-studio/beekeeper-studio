@@ -1,4 +1,4 @@
-import { SavedConnection } from 'common/appdb/models/saved_connection'
+import { SavedConnection } from '@/common/appdb/models/saved_connection'
 import { IDbConnectionServerConfig } from './db/client'
 import { createServer } from './db/index'
 import { IDbConnectionPublicServer } from './db/server'

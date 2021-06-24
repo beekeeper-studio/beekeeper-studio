@@ -1,7 +1,7 @@
 import DefaultMenu from './BaseMenuBuilder'
 import platformInfo from '../platform_info'
 import { IGroupedUserSettings } from '../appdb/models/user_setting'
-import { IMenuActionHandler } from 'common/interfaces/IMenuActionHandler'
+import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 
 export default class extends DefaultMenu {
   constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler) {

@@ -1,5 +1,5 @@
 
-import { IMenuActionHandler } from 'common/interfaces/IMenuActionHandler'
+import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import { IGroupedUserSettings } from '../appdb/models/user_setting'
 import { menuItems } from './MenuItems'
 // TODO (matthew): When multi-window

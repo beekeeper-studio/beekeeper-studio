@@ -1,9 +1,11 @@
-name: Master Build
+name: Studio - Master build
 
 on: 
   push:
     branches:
       - "master"
+    paths-ignore:
+      - 'apps/sqltools/**'
 
 jobs:
   masterbuild:
@@ -20,7 +22,7 @@ jobs:
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v1
         with:
-          node-version: 12
+          node-version: 14
 
       - name: Check dependencies
         run: "yarn install --frozen-lockfile"

@@ -6,7 +6,7 @@ import platformInfo from '../common/platform_info'
 import path from 'path'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
-import { IMenuActionHandler } from 'common/interfaces/IMenuActionHandler'
+import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 

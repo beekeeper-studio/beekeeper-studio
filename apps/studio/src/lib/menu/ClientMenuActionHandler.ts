@@ -1,4 +1,4 @@
-import { IMenuActionHandler } from 'common/interfaces/IMenuActionHandler'
+import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import { ipcRenderer } from 'electron'
 import _ from 'lodash'
 import {AppEvent} from '../../common/AppEvent'

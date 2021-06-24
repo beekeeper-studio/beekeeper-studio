@@ -1,8 +1,9 @@
 import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
 import Purify from 'dompurify'
-import lib from 'components'
+import helpers from '@shared/lib/tabulator'
 export const NULL = '(NULL)'
+import Tabulator from 'tabulator-tables'
 
 
 function sanitizeHtml(value) {
@@ -14,7 +15,7 @@ function sanitizeHtml(value) {
 export default {
 
   methods: {
-    cellFormatter(cell) {
+    cellFormatter(cell: Tabulator.CellComponent) {
       if (_.isNil(cell.getValue())) {
         return '<span class="null-value">(NULL)</span>'
       }
@@ -26,7 +27,7 @@ export default {
       const result = `<pre>${cellValue}</pre>`
       return result;
     },
-    yesNoFormatter: lib.formatters.yesNoFormatter,
+    yesNoFormatter: helpers.yesNoFormatter,
     ...Mutators
   }
 }

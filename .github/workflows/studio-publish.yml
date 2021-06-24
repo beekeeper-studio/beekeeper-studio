@@ -1,9 +1,11 @@
-name: Build & Publish
+name: Studio - Build & Publish
 
 on: 
   push:
     tags:
       - "v*"
+    paths-ignore:
+      - "apps/sqltools/**"
 
 jobs:
 

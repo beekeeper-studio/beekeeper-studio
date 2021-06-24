@@ -1,6 +1,9 @@
-name: Pull Request & Branch Build
+name: Studio - PR Build
 
-on: [pull_request]
+on: 
+  pull_request:
+    paths-ignore: 
+      - apps/sqltools/**
 
 jobs:
   build:

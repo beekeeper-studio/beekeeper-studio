@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { identify } from 'sql-query-identifier'
-import { EntityFilter } from 'store/models'
+import { EntityFilter } from '@/store/models'
 import { RoutineTypeNames } from "./models"
 
 export function splitQueries(queryText: string) {

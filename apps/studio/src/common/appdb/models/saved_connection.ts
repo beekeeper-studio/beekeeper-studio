@@ -7,7 +7,7 @@ import { resolveHomePathToAbsolute } from '../../utils'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
 import log from 'electron-log'
-import { IDbClients } from 'lib/db/client'
+import { IDbClients } from '@/lib/db/client'
 import { EncryptTransformer } from '../transformers/Transformers'
 
 

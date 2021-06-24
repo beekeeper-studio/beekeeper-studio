@@ -1,4 +1,4 @@
-import { IMenuActionHandler } from 'common/interfaces/IMenuActionHandler';
+import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler';
 import { IGroupedUserSettings } from '../appdb/models/user_setting';
 import platformInfo from "../platform_info";
 
