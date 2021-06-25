@@ -34,4 +34,4 @@ jobs:
           args: deploy --dir=apps/sqltools/dist --prod
         env:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SQLTOOLS_ID }}
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_SQLTOOLS_TOKEN }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
