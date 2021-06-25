@@ -1,15 +1,12 @@
-name: Sqltools - Master build
+name: Sqltools - PR Build
 
 on: 
-  push:
+  pull_request:
     paths-ignore:
       - apps/studio/**
-    branches:
-      - "master"
-
 
 jobs:
-  masterbuild:
+  build:
     runs-on: ${{ matrix.os }}
 
     strategy:
