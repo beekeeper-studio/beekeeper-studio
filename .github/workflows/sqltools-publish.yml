@@ -3,10 +3,7 @@ name: Sqltools - Build & Publish
 on: 
   push:
     tags:
-      - "v*"
-    paths-ignore:
-      - "apps/sqltools/**"
-
+      - "sqltools-v*"
 
 jobs:
   buildandpublish:
