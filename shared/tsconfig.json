@@ -1,0 +1,38 @@
+{
+  "extends": "../tsconfig.base.json",
+  "files": [
+    "src/main.ts"
+  ],
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "esnext",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "types": [
+      "webpack-env",
+      "jest"
+    ],
+    "paths": {
+      "@shared/*": [
+        "./src/*"
+      ]
+    },
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "scripthost"
+    ]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

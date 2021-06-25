@@ -1,0 +1,47 @@
+{
+  "name": "sqltools",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "test:unit": "vue-cli-service test:unit",
+    "lint": "vue-cli-service lint"
+  },
+  "browser": {
+    "fs": false
+  },
+  "dependencies": {
+    "lodash": "^4.17.21",    
+    "core-js": "^3.6.5",
+    "knex": "~0.21.17",
+    "typeface-roboto": "^1.1.13",
+    "vue": "^2.6.11",
+    "vue-router": "^3.2.0",
+    "vuex": "^3.1.1",
+    "vue-clipboard2": "^0.3.1",
+    "vuex-persist": "^2.0.1",
+    "sql-formatter": "^2.3.3",
+    "highlight.js": "^10.4.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.19",
+    "@types/knex": "^0.16.1",
+    "@types/sql-formatter": "^2.3.0",
+    "@typescript-eslint/eslint-plugin": "^4.18.0",
+    "@typescript-eslint/parser": "^4.18.0",
+    "@vue/cli-plugin-babel": "~4.5.0",
+    "@vue/cli-plugin-eslint": "~4.5.0",
+    "@vue/cli-plugin-router": "~4.5.0",
+    "@vue/cli-plugin-typescript": "~4.5.0",
+    "@vue/cli-plugin-unit-jest": "~4.5.0",
+    "@vue/cli-service": "~4.5.0",
+    "@vue/eslint-config-typescript": "^7.0.0",
+    "@vue/test-utils": "^1.0.3",
+    "eslint": "^6.7.2",
+    "eslint-plugin-vue": "^6.2.2",
+    "typescript": "~4.1.5",
+    "vue-template-compiler": "^2.6.11",
+    "node-noop": "^1.0.0"
+  }
+}
