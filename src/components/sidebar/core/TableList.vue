@@ -329,6 +329,8 @@ export default {
       this.filterQuery = null;
     },
     expandAll() {
+      console.log(this.schemaTables);
+
       this.allExpanded = Date.now();
     },
     collapseAll() {
@@ -349,7 +351,6 @@ export default {
   },
   mounted() {
     document.addEventListener("mousedown", this.maybeUnselect);
-    console.log(this.schemaTables);
   },
   beforeDestroy() {
     document.removeEventListener("mousedown", this.maybeUnselect);

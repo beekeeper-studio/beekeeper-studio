@@ -1,89 +1,116 @@
 <template>
-  <div>
-    <x-contextmenu>
-      <x-menu style="--target-align: right; --v-target-align: top">
-        <x-menuitem>
-          <x-label>New Folder</x-label>
-          <x-icon
-            name="folder"
-            computedsize="small"
-            size="small"
-            iconset="https://xel-toolkit.org/iconsets/material.svg"
-          ></x-icon>
-        </x-menuitem>
-      </x-menu>
-    </x-contextmenu>
-    <!-- <button @click="openFolder">something</button> -->
-    <!-- <div class="toolbar btn-group row flex-right" v-show="checkedFavorites.length > 0">
-      <a class="btn btn-link" @click="discardCheckedFavorites">Cancel</a>
-      <a class="btn btn-primary" :title="removeTitle" @click="removeCheckedFavorites">Remove</a>
-    </div> -->
+  <div class="flex-col expand" ref="wrapper">
+    <!-- Fake splitjs Gutter styling -->
+    <div v-if="explorer.selected" class="table-list flex-col" ref="tables">
+      <nav class="list-group flex-col">
+        <div class="list-heading row">
+          <div class="sub row flex-middle expand">
+            <div>
+              Entities
+            </div>
+          </div>
+          <div class="actions">
+            <a @click.prevent="collapseAll" title="'Collapse All'">
+              <i class="material-icons">unfold_less</i>
+            </a>
+            <a @click.prevent="expandAll" title="'Expand All'">
+              <i class="material-icons">unfold_more</i>
+            </a>
+            <a title="New Folder">
+              <i class="material-icons">create_new_folder</i>
+            </a>
+            <a title="New File" @click="checking">
+              <i class="material-icons">add</i>
+            </a>
+            <a title="'Refresh'" @click.prevent="refreshExplorer">
+              <i class="material-icons">refresh</i>
+            </a>
+          </div>
+        </div>
+
+        <div class="list-body" ref="entityContainer">
+          <div class="with-schemas">
+            <explorer-list-schema
+              v-show="explorer.selected"
+              :tree="explorer.tree"
+            >
+            </explorer-list-schema>
+          </div>
+        </div>
+      </nav>
+    </div>
+
+    <div class="empty" v-if="explorer.tree.length === 0">
+      <button @click="selectFolder">Select</button>
+    </div>
   </div>
 </template>
 
 <script>
-import { mapState } from "vuex";
-import { buildTree } from "@/plugins/foldertree";
-const { dialog } = window.require("electron").remote;
-// import ExplorerTree from "@/components/sidebar/core/explorer_list/ExplorerTree.vue";
-import TableListSchema from "@/components/sidebar/core/table_list/TableListSchema.vue";
+import ExplorerListSchema from "./explorer_list/ExplorerListSchema.vue";
+
+const electron = require("electron");
+const folderTree = require("../../../plugins/foldertree");
 export default {
-  components: { TableListSchema },
+  components: {
+    ExplorerListSchema
+  },
+
   data() {
     return {
-      checkedFavorites: [],
-      testing: ["nahh", "jape", "fuckt it"]
+      allExpanded: null,
+      allCollapsed: null,
+      activeItem: "tables",
+      explorer: {
+        rootPath: "",
+        tree: [],
+        selected: false
+      }
     };
   },
-  computed: {
-    ...mapState(["favorites", "activeTab"]),
-    removeTitle() {
-      return `Remove ${this.checkedFavorites.length} saved queries`;
-    }
-  },
+
+  computed: {},
+
   methods: {
-    createFolder() {},
-
-    openFolder() {
-      dialog.showOpenDialog({ properties: ["openDirectory"] }).then(res => {
-        const folderTree = buildTree(res.filePaths[0], {
-          include: ["*"]
+    selectFolder() {
+      electron.remote.dialog
+        .showOpenDialog({ properties: ["openDirectory"] })
+        .then(res => {
+          const root = res.filePaths[0];
+          this.explorer.rootPath = root;
+          const tree = this.createTree(root);
+          this.explorer.selected = true;
         });
-        this.createFolderTree(folderTree);
-      });
     },
 
-    createFolderTree(tree) {},
+    tableSelected() {
+      // this.selectedTable = table
+    },
 
-    selected(item) {
-      return (
-        this.activeTab &&
-        this.activeTab.query &&
-        this.activeTab.query.id === item.id
-      );
+    expandAll() {
+      this.allExpanded = Date.now();
     },
-    click(item) {
-      this.$root.$emit("favoriteClick", item);
+    collapseAll() {
+      this.allCollapsed = Date.now();
     },
-    async remove(favorite) {
-      console.log(favorite.remove());
-      await this.$store.dispatch("removeFavorite", favorite);
+    refreshExplorer() {
+      this.createTree();
+      // this.$store.dispatch("updateTables");
+      // this.$store.dispatch("updateRoutines");
     },
-    async removeCheckedFavorites() {
-      for (let i = 0; i < this.checkedFavorites.length; i++) {
-        await this.remove(this.checkedFavorites[i]);
-      }
-      this.checkedFavorites = [];
+
+    createTree(path, options) {
+      const finalPath = path || this.explorer.rootPath;
+      const tree = folderTree.buildTree(finalPath, options);
+      this.explorer.tree = tree;
+      return tree;
     },
-    discardCheckedFavorites() {
-      this.checkedFavorites = [];
+
+    checking() {
+      console.log(this.files);
     }
   }
 };
 </script>
 
-<style scoped>
-.schema > .sub-items {
-  padding-left: 18px !important;
-}
-</style>
+<style lang="scss" scoped></style>

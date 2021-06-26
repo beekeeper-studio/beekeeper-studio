@@ -48,7 +48,7 @@
   // Table Info Header
   .table-info {
     padding-top: $gutter-w * 4;
-    .table-name {
+    .table-name, .folder-name {
       padding: 0 $gutter-w;
       margin: 0 -$gutter-h;
       margin-bottom: $gutter-h;

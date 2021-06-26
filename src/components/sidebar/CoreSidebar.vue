@@ -35,17 +35,21 @@
         <history-list></history-list>
       </div>
 
-      <!-- Favorites -->
+      <!-- Explorer -->
       <div
         class="tab-pane"
         id="tab-saved"
         :class="tabClasses('queries')"
         v-show="activeItem === 'queries'"
       >
-        <div class="sidebar-heading">
+        <folder-drop-down
+          @databaseSelected="databaseSelected"
+          :connection="connection"
+        ></folder-drop-down>
+        <!-- <div class="sidebar-heading">
           <span class="sidebar-title">Explorer</span>
           <span class="expand"></span>
-        </div>
+        </div> -->
         <explorer-list></explorer-list>
       </div>
     </div>
@@ -59,6 +63,7 @@ import TableList from "./core/TableList";
 import HistoryList from "./core/HistoryList";
 // import FavoriteList from './core/FavoriteList'
 import DatabaseDropdown from "./core/DatabaseDropdown";
+import FolderDropDown from "./core/FolderDropDown.vue";
 
 import { mapState } from "vuex";
 import ExplorerList from "./core/ExplorerList.vue";
@@ -68,6 +73,7 @@ export default {
   components: {
     TableList,
     DatabaseDropdown,
+    FolderDropDown,
     HistoryList,
     GlobalSidebar,
     ExplorerList

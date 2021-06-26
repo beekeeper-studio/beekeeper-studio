@@ -23,6 +23,13 @@
       >
         <i class="material-icons">refresh</i>
       </a>
+      <a
+        class="refresh"
+        @click.prevent="refreshDatabases"
+        :title="'Refresh Databases'"
+      >
+        <i class="material-icons">create</i>
+      </a>
     </div>
   </div>
 </template>
