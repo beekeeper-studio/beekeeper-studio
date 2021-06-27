@@ -1,13 +1,14 @@
 <template>
   <div class="schema-wrapper">
     <explorer-list-dir
-      v-for="(dir, index) in directories"
-      :key="index"
+      v-for="dir in directories"
+      :key="dir.name"
       :node="dir"
+      :depth="0"
     ></explorer-list-dir>
     <explorer-list-file
-      v-for="(file, index) in files"
-      :key="index"
+      v-for="file in files"
+      :key="file.name"
       :file="file"
     ></explorer-list-file>
   </div>

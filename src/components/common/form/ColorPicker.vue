@@ -14,7 +14,7 @@
 <script>
   export default {
     props: ['value'],
-    data: function() {
+    data() {
       return {
         colors: [
           'default',
@@ -29,7 +29,7 @@
       };
     },
     methods: {
-      getColorClass: function(color) {
+      getColorClass(color) {
         const suffix = color ? color : 'default';
         return `connection-label-color-${suffix}`;
       }

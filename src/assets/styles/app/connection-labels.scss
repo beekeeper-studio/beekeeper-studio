@@ -1,11 +1,11 @@
 $color-defaults: (
-  red:          $brand-danger,
-  orange:       $brand-warning,
-  yellow:       $brand-primary,
-  green:        $brand-success,
-  blue:         $brand-info,
-  purple:       $brand-purple,
-  pink:         $brand-pink,
+  red: $brand-danger,
+  orange: $brand-warning,
+  yellow: $brand-primary,
+  green: $brand-success,
+  blue: $brand-info,
+  purple: $brand-purple,
+  pink: $brand-pink
 );
 
 .connection-label {
@@ -27,6 +27,7 @@ $color-defaults: (
     }
   }
 }
+
 .statusbar {
   @each $key, $val in $color-defaults {
     &.#{$key} {
@@ -47,7 +48,8 @@ $color-defaults: (
       }
     }
   }
-  &.editing, &.failure {
+  &.editing,
+  &.failure {
     @each $key, $val in $color-defaults {
       &.#{$key} {
         background-color: rgba(nth($val, 1), 0.8);

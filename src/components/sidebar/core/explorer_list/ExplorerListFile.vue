@@ -1,7 +1,7 @@
 <template>
   <div class="list-item extra-padding">
     <a class="list-item-btn " role="button">
-      <i class="item-icon query material-icons ">code</i>
+      <i class="item-icon query material-icons">code</i>
 
       <span class="item-wrapper flex flex-middle expand">
         <span class="folder-name truncate">
@@ -20,6 +20,6 @@ export default {
 
 <style lang="scss" scoped>
 .extra-padding {
-  padding: 0 1.2rem !important;
+  padding: 0 1.1rem !important;
 }
 </style>

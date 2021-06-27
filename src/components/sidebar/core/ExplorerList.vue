@@ -6,20 +6,17 @@
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
             <div>
-              Entities
+              Testing
             </div>
           </div>
           <div class="actions">
             <a @click.prevent="collapseAll" title="'Collapse All'">
               <i class="material-icons">unfold_less</i>
             </a>
-            <a @click.prevent="expandAll" title="'Expand All'">
-              <i class="material-icons">unfold_more</i>
-            </a>
             <a title="New Folder">
               <i class="material-icons">create_new_folder</i>
             </a>
-            <a title="New File" @click="checking">
+            <a title="New File">
               <i class="material-icons">add</i>
             </a>
             <a title="'Refresh'" @click.prevent="refreshExplorer">
@@ -104,10 +101,6 @@ export default {
       const tree = folderTree.buildTree(finalPath, options);
       this.explorer.tree = tree;
       return tree;
-    },
-
-    checking() {
-      console.log(this.files);
     }
   }
 };

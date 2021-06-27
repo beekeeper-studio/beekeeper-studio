@@ -5,9 +5,9 @@ const defaultOptions = { include: [".query", ".design"] };
 class TreeNode {
   constructor(path) {
     this.path = path;
-    this.children = [];
     this.type = "";
     this.name = "";
+    this.children = [];
   }
 }
 
@@ -69,5 +69,6 @@ function extractName(pathValue) {
 module.exports = {
   buildTree,
   updateTree,
-  deleteTreeNode
+  deleteTreeNode,
+  TreeNode
 };
