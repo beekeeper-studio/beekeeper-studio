@@ -229,7 +229,7 @@ export default Vue.extend({
           padding: 0 $cell-padding;
           font-size: ($cell-font-size * 0.9);
           .tabulator-col-content {
-            padding: 0;
+            padding: 0!important;
             .tabulator-col-title {
               color: $text-lighter;
             }
@@ -269,7 +269,7 @@ export default Vue.extend({
           }
         }
         &.no-padding {
-          padding: 0;
+          padding: 0!important;
           > * {
             margin: 0 $cell-padding;
           }
