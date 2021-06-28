@@ -1,7 +1,7 @@
 <template>
   <div class="templates">
     <section class="subheader">
-      <div class="small-wrap">
+      <div class="big-wrap">
         <h1>SQL Table Templates</h1>
         <div class="subtitle">Use these templates as a starting point for your next table. All templates are fully custimizable.</div>
       </div>

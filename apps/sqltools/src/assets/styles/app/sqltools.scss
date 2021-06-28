@@ -76,6 +76,12 @@ section {
   h1 {
     margin: 0 0 $gutter-w;
   }
+  .subtitle {
+    font-size: 1.1rem;
+    a {
+      display: inline;
+    }
+  }
 }
 
 // Table Header
