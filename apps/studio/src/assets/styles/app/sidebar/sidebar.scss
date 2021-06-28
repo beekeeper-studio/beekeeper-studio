@@ -45,6 +45,9 @@
       box-shadow: 0 1px $border-color;
     }
   }
+  .create-table {
+    margin-top: $gutter-h;
+  }
   .tab-content {
     flex: 1 1 100%;
     max-width: 100%;

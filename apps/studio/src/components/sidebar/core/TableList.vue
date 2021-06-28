@@ -81,6 +81,12 @@
       </nav>
     </div>
 
+    <div class="create-table fixed">
+      <a @click.prevent="newTable" title="New Table" class="btn btn-flat btn-icon">
+        <i class="material-icons">add</i> Create Table
+      </a>
+    </div>
+    
     <!-- Tables -->
     <hr v-show="pinned.length > 0"> <!-- Fake splitjs Gutter styling -->
     <div v-if="!tablesLoading" class="table-list flex-col" ref="tables">
@@ -105,12 +111,8 @@
             <a @click.prevent="refreshTables" :title="'Refresh'">
               <i class="material-icons">refresh</i>
             </a>
-            <a @click.prevent="newTable" title="New Table" class="text-primary">
-              <i class="material-icons">add</i>
-            </a>
           </div>
         </div>
-
         <div class="list-body" ref="entityContainer" v-show="tables.length > 0">
           <div class="with-schemas">
             <TableListSchema
