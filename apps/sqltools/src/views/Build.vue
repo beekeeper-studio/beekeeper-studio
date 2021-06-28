@@ -27,7 +27,7 @@
 
         <!-- Generated code -->
         <highlighted-code :code="formattedSql" :dialect="highlightDialect">
-          <div class="table-title">Generated SQL for {{dialectTitle}}</div>
+          <h3>Generated SQL for {{dialectTitle}}</h3>
           <p class="dialect-warning">{{dialectWarning ? `*${dialectWarning}`: ''}}</p>
         </highlighted-code>
 

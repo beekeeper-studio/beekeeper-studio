@@ -8,22 +8,19 @@
     </section>
     <section>
       <div class="small-wrap">
+        <div class="schema-header">
+          <h2 class="title">Paste SQL</h2>
+          <span class="expand"></span>
+          <div class="actions"><a @click.prevent="clear" class="btn btn-flat">Clear</a></div>
+        </div>
         <div class="form-group">
-          <a @click.prevent="clear" class="btn">Clear</a>
           <textarea placeholder="Paste your raw SQL here" name="input" id="input" rows="8" v-model="input"></textarea>
         </div>
         
-        <div v-if="output" class="output">
+        <div class="output">
           <highlighted-code :code="output" dialect="sql" >
             <h3>Formatted SQL</h3>
           </highlighted-code>
-        </div>
-        <div v-else>
-          <div class="format-info">
-            <p>
-              <i class="material-icons">info</i> Formatted SQL will appear here
-            </p>
-          </div>
         </div>
       </div>
     </section>

@@ -1,10 +1,10 @@
 <template>
   <div class="highlighted-code">
-    <div class="code-wrap" v-if="code">
-      <div class="schema-header flex flex-middle">
+    <div class="code-wrap">
+      <div class="schema-header">
         <slot></slot>
         <span class="expand"></span>
-        <div class="table-actions">
+        <div class="actions" v-if="code">
           <a v-clipboard:copy="code"
              v-clipboard:success="onCopySuccess"
              v-clipboard:error="onCopyError"
@@ -12,7 +12,8 @@
           ><span class="material-icons" :title='copyTitle'>{{copyIcon}}</span>{{copyMessage}}</a>
         </div>
       </div>
-      <highlightjs :lang="dialect" :code="code" />
+      <highlightjs :lang="dialect" :code="code"  v-if="code" />
+      <pre class="code-empty" v-else><div class="hljs">(Empty)</div></pre>
     </div>
   </div>
 </template>
@@ -54,3 +55,11 @@ export default Vue.extend({
 
 })
 </script>
+
+<style lang="scss" scoped>
+  @import '@/assets/styles/app/_variables';
+
+  .code-empty .hljs {
+    color: rgba($theme-base, 0.15);
+  }
+</style>

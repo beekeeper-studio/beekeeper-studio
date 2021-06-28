@@ -139,6 +139,15 @@ section {
 .code-wrap {
   margin-top: $gutter-w * 3;
 }
+.schema-header {
+  display: flex;
+  align-items: center;
+  min-height: 35px;
+  margin-bottom: $gutter-h;
+  .title {
+    margin: 0;
+  }
+}
 
 // Footer
 // --------------------------------
