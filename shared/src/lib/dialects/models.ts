@@ -73,5 +73,6 @@ export interface SchemaItem extends SchemaConfig {
 
 export interface Schema {
   name: string
+  schema?: string
   columns: SchemaItem[]
 }

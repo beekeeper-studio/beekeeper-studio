@@ -2,6 +2,12 @@
   <div class="table-builder">
     <div v-if="error" class="alert-wrapper">
       <div class="alert alert-danger">{{error.message}}</div>
+      <div class="error-sql" v-if="errorSql">
+        <h3>Attempted To Execute</h3>
+        <highlightjs v-if="errorSql" :lang="sql" :code="errorSql" />
+        <a @click.prevent="sql" class="btn btn-info">Open in a new tab</a>
+      </div>
+      
     </div>
     <div v-if="running">
       <p>Creating {{tableName}}...</p>
@@ -48,6 +54,7 @@ import StatusBar from '@/components/common/StatusBar.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
+import _ from 'lodash';
 interface Data {
   initialColumns: SchemaItem[]
   tableName: string | null,
@@ -56,6 +63,7 @@ interface Data {
   error?: Error,
   running: boolean
   tableSchema?: string
+  errorSql?: string
 }
 export default Vue.extend({
   components: {
@@ -72,7 +80,8 @@ export default Vue.extend({
       ],
       generator: undefined,
       columns: [],
-      tableSchema: undefined
+      tableSchema: undefined,
+      errorSql: undefined
     }
   },
   computed: {
@@ -83,9 +92,17 @@ export default Vue.extend({
       if (this.dialect === 'sqlserver') return 'dbo'
       return undefined
     },
+    fixedSchema(): string | undefined {
+      if (_.isNil(this.tableSchema) || _.isEmpty(this.tableSchema)) {
+        return this.defaultSchema
+      } else {
+        return this.tableSchema
+      }
+    },
     schema(): Schema {
       return {
         name: this.tableName,
+        schema: this.fixedSchema,
         columns: this.columns
       }
     },
@@ -112,15 +129,19 @@ export default Vue.extend({
         await this.$store.dispatch('updateTables');
         const newTable = this.tables.find((t) => (
           t.name === this.tableName &&
-          ((!this.tableSchema && !t.schema) || (this.tableSchema === t.schema))
+          ((!this.fixedSchema && !t.schema) || (this.fixedSchema === t.schema))
         ))
         if (newTable) {
           this.$root.$emit(AppEvent.openTableProperties, { table: newTable })
           this.$root.$emit(AppEvent.closeTab, this.tabId)
         }
-
       } catch (error) {
         this.error = error
+        try {
+          this.errorSql = Formatter.format(sql, { language: 'sql'})
+        } catch (error) {
+          // do nothing
+        }
       } finally {
         this.running = false
       }
