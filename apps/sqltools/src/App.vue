@@ -2,7 +2,16 @@
   <div id="app" class="theme-dark">
     <app-header/>
     <router-view :key="$route.fullPath"/>
+    <footer>
+      <div class="small-wrap flex-col flex-middle">
+        <small class="created-by">
+          <span>Made by&nbsp;</span>
+          <router-link to="https://beeekeeperstudio.io">Beekeeper Studio</router-link>
+        </small>
+      </div>
+    </footer>
   </div>
+
 </template>
 
 <script>
