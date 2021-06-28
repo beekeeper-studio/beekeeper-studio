@@ -8,35 +8,36 @@
       </div>
     </div>
   </section>
-  <section>
+  <section class="tools-list">
     <div class="small-wrap">
-      <router-link to="/format">
-        <div class="card-flat padding">
-          <h2>SQL Formatter</h2>
-          <p>Quickly format SQL queries, just paste your ugly SQL and get beautiful SQL back.</p>
-        </div>
 
+      <router-link to="/format" class="tool">
+        <div class="card-flat card-link padding">
+          <h2>SQL Formatter</h2>
+          <div>Quickly format SQL queries, just paste your ugly SQL and get beautiful SQL back.</div>
+        </div>
       </router-link>
-      <router-link to="/build">
-        <div class="card-flat padding">
+
+      <router-link to="/build" class="tool">
+        <div class="card-flat card-link padding">
           <h2>Table Builder</h2>
           <p>Visually create database tables with an intuitive interface. We always forget CREATE TABLE syntax, so we built this to help.</p>
-          <p>
+          <div>
             <span class="badge" v-for="s in syntaxes" :key="s">{{s}}</span>
-          </p>
+          </div>
         </div>
-
       </router-link>
-      <router-link to="/templates">
-        <div class="card-flat padding">
+
+      <router-link to="/templates" class="tool">
+        <div class="card-flat card-link padding">
           <h2>Table Templates</h2>
           <p>SQL table templates and examples. These are super useful if you're building a database schema and don't know where to start. Once you find a template you like, modify it in our Table Builder, or just copy the CREATE TABLE syntax as needed.</p>
-          <p>
+          <div>
             <span class="badge" v-for="s in syntaxes" :key="s">{{s}}</span>
-          </p>
+          </div>
         </div>
-
       </router-link>
+
     </div>
   </section>
   <section>
@@ -65,3 +66,17 @@ export default Vue.extend({
   }
 })
 </script>
+
+<style lang="scss" scoped>
+  @import '@/assets/styles/app/_variables';
+
+  .tool {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: $gutter-w;
+    .card-flat {
+      width: 100%;
+    }
+  }
+</style>

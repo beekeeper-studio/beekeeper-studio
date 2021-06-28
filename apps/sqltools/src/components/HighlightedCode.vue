@@ -1,14 +1,18 @@
 <template>
   <div class="highlighted-code">
     <div class="code-wrap" v-if="code">
-      <slot></slot>
+      <div class="schema-header flex flex-middle">
+        <slot></slot>
+        <span class="expand"></span>
+        <div class="table-actions">
+          <a v-clipboard:copy="code"
+             v-clipboard:success="onCopySuccess"
+             v-clipboard:error="onCopyError"
+             class="btn btn-icon" :class="copyClass"
+          ><span class="material-icons" :title='copyTitle'>{{copyIcon}}</span>{{copyMessage}}</a>
+        </div>
+      </div>
       <highlightjs :lang="dialect" :code="code" />
-      <a 
-        v-clipboard:copy="code"
-        v-clipboard:success="onCopySuccess"
-        v-clipboard:error="onCopyError"
-        class="btn" :class="copyClass"
-      ><span class="material-icons" :title='copyTitle'>{{copyIcon}}</span>{{copyMessage}}</a>
     </div>
   </div>
 </template>
@@ -20,7 +24,7 @@ export default Vue.extend({
     return {
       copyMessage: "Copy",
       copyIcon: "content_copy",
-      copyClass: 'btn-info',
+      copyClass: 'btn-flat',
       copyTitle: null
     }
   },

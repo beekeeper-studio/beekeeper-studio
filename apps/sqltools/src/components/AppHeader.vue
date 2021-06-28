@@ -1,10 +1,9 @@
 <template>
   <header class="header row flex-middle">
-    <router-link class="logo" to="/">
+    <router-link class="logo" to="/" title="SQLTools by Beekeeper Studio - Homepage">
       <img class="logo-img" src="@/assets/icons/bk-logo-yellow-icon.svg">
       <div class="flex-col">
         <span class="logo-title">SQLTools</span>
-        <small class="logo-subtitle">by <span class="text-primary">Beekeeper Studio</span></small>
       </div>
     </router-link>
     <span class="expand"></span>

@@ -2,15 +2,8 @@
   <div class="home">
     <section class="subheader">
       <div class="small-wrap">
-        <h1>
-          SQL Table Builder
-        </h1>
-
-        <!-- Alert -->
-        <div class="subtitle">
-          <div>This is a SQL table builder for Postgres, MySQL, SQL Server, SQLite, and Redshift databases from the makers of  <a class="text-primary" href="https://beekeeperstudio.io" target="_blank">Beekeeper Studio</a>. We also provide some simple sql table starter templates, check them out above 👆.</div>
-        </div>
-        <!-- Dialect with Actions -->
+        <h1>SQL Table Builder</h1>
+        <div class="subtitle">This is a SQL table builder for Postgres, MySQL, SQL Server, SQLite, and Redshift databases from the makers of  <a class="text-primary" href="https://beekeeperstudio.io" target="_blank">Beekeeper Studio</a>. We also provide some simple sql table starter templates, check them out above 👆.</div>
       </div>
     </section>
     <section>
@@ -29,15 +22,15 @@
             </div>
             <dialect-picker :confirm="schemaChanges > 0" :confirmMessage="confirmMessage"/>
           </div>
-          <template>
-          </template>
+          <template></template>
         </schema-builder>
+
+        <!-- Generated code -->
         <highlighted-code :code="formattedSql" :dialect="highlightDialect">
-          <h3>
-            Generated SQL for {{dialectTitle}}
-          </h3>
+          <div class="table-title">Generated SQL for {{dialectTitle}}</div>
           <p class="dialect-warning">{{dialectWarning ? `*${dialectWarning}`: ''}}</p>
         </highlighted-code>
+
       </div>
     </section>
   </div>
@@ -169,104 +162,3 @@ export default Vue.extend ({
   }
 })
 </script>
-
-<style lang="scss" scoped>
-  @import '@/assets/styles/app/_variables';
-
-  section {
-    padding: $gutter-w * 2;
-  }
-  .subheader {
-    display: flex;
-    flex-direction: column;
-    background: rgba($query-editor-bg, 0.5);
-    padding: $gutter-w * 2;
-  }
-  .alert {
-    position: relative;
-    margin-bottom: $gutter-w * 2;
-    line-height: 1.8;
-    .close-btn {
-      position: absolute;
-      top: $gutter-h;
-      right: $gutter-h;
-      &:hover {
-        .material-icons {
-          color: $text-dark
-        }
-      }
-      .material-icons {
-        color: $text-lighter;
-        transition: color 0.2s ease-in-out;
-      }
-    }
-  }
-
-  // Table Header
-  .table-header {
-    margin: 0 (-$gutter-h * 1.25) ($gutter-w * 2);
-    padding-right: $gutter-h * 1.25;
-    .form-group {
-      position: relative;
-      width: 100%;
-      padding: 0;
-      &:hover {
-        .input-icon {
-          display: flex;
-        }
-      }
-      input {
-        font-size: 1.6rem;
-        border: 0;
-        height: auto;
-        line-height: 1.6;
-        font-weight: bold;
-        padding-right: 24px;
-        &:hover {
-          background: rgba($theme-base, 0.035);
-        }
-        &:focus {
-          background: transparent;
-          box-shadow: inset 0 0 0 1px $border-color;
-        }
-      }
-      .input-icon {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        align-items: center;
-        display: none;
-        .material-icons {
-          font-size: 22px;
-          width: 24px;
-          margin-right: $gutter-h;
-          color: $text-lighter;
-        }
-      }
-    }
-    select {
-      font-size: 1.1rem;
-      line-height: 2.1;
-      height: auto;
-      margin-left: $gutter-w;
-    }
-  }
-  .code-wrap {
-    margin-top: $gutter-w * 4;
-  }
-
-  // Footer
-  footer {
-    padding: $gutter-w * 2;
-    padding-top: $gutter-w * 4;
-    padding-bottom: $gutter-w * 6;
-    a {
-      color: $theme-primary;
-    }
-    .created-by {
-      display: flex;
-      align-items: center;
-    }
-  }
-</style>

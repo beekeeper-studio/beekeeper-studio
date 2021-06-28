@@ -10,12 +10,12 @@
       <div class="small-wrap">
         <div class="form-group">
           <a @click.prevent="clear" class="btn">Clear</a>
-          <textarea placeholder="Paste your raw SQL here" name="input" id="input" cols="30" rows="10" v-model="input"></textarea>
+          <textarea placeholder="Paste your raw SQL here" name="input" id="input" rows="8" v-model="input"></textarea>
         </div>
         
         <div v-if="output" class="output">
           <highlighted-code :code="output" dialect="sql" >
-            <h2>Formatted SQL</h2>
+            <h3>Formatted SQL</h3>
           </highlighted-code>
         </div>
         <div v-else>
@@ -59,3 +59,12 @@ export default Vue.extend({
 
 })
 </script>
+
+<style lang="scss" scoped>
+  @import '@/assets/styles/app/_variables';
+
+  textarea {
+    resize: vertical;
+    height: initial;
+  }
+</style>
