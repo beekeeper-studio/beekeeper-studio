@@ -1,8 +1,9 @@
 import Vue from 'vue'
 import VueRouter, { RouteConfig } from 'vue-router'
 import Home from '../views/Home.vue'
+import Build from '@/views/Build.vue'
 import TemplateVue from '@/views/Template.vue'
-
+import Format from '@/views/Format.vue'
 Vue.use(VueRouter)
 
 const routes: Array<RouteConfig> = [
@@ -12,9 +13,19 @@ const routes: Array<RouteConfig> = [
     component: Home
   },
   {
+    path: '/build',
+    name: 'BuildRoot',
+    component: Build
+  },
+  {
     path: '/build/:id',
     name: "Build",
-    component: Home
+    component: Build
+  },
+  {
+    path: '/format',
+    name: "Format",
+    component: Format
   },
   {
     path: '/templates',

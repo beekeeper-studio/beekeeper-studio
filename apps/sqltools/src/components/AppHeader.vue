@@ -9,8 +9,9 @@
     </router-link>
     <span class="expand"></span>
     <nav>
-      <router-link :to="{path: '/'}" class="btn btn-link">Builder</router-link>
-      <router-link to="/templates" class="btn btn-link">Templates</router-link>
+      <router-link :to="{path: '/format'}" class="btn btn-link">SQL Formatter</router-link>      
+      <router-link :to="{path: '/build'}" class="btn btn-link">Table Builder</router-link>
+      <router-link to="/templates" class="btn btn-link">Table Templates</router-link>
       <!-- <dialect-picker /> -->
     </nav>
   </header>

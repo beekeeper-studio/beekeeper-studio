@@ -1,6 +1,7 @@
 <template>
   <div class="highlighted-code">
     <div class="code-wrap" v-if="code">
+      <slot></slot>
       <highlightjs :lang="dialect" :code="code" />
       <a 
         v-clipboard:copy="code"
