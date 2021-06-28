@@ -7,6 +7,7 @@
         <small class="created-by">
           <span>Made by&nbsp;</span>
           <router-link to="https://beeekeeperstudio.io">Beekeeper Studio</router-link>
+          <span>&nbsp; with ♥ in Dallas, Texas</span>
         </small>
       </div>
     </footer>

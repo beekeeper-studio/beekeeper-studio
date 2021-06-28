@@ -39,6 +39,20 @@
       </router-link>
     </div>
   </section>
+  <section>
+    <div class="small-wrap">
+      <h2>Our Promise</h2>
+      <p>SQLTools is made by <a href="https://beekeeperstudio.io" target="_blank" class="text-primary">Beekeeper Studio</a> and is 100% MIT open source and free. We promise to keep it that way.</p>
+      <p>We are</p>
+      <ul>
+        <li><strong>Open and Free</strong> We believe basic development tools should be free and open source under a permissive license.</li>
+        <li><strong>Private</strong> SQLTools does not transmit your data to our servers or any third party tool. It is private to you</li>
+        <li><strong>Inclusive</strong> We are an inclusive community and have a code of conduct. Diversity and inclusivity is good for the world.</li>
+      </ul>
+      <p><a href="https://beekeeperstudio.io" target="_blank" class="text-primary">Beekeeper Studio</a> is an open source and free SQL management app available for Linux, MacOS and Windows. Many SQLTools utilities are also part of the Beekeeper Studio app, but we thought they might be useful to the rest of the internet too.</p>
+
+    </div>
+  </section>
 </div>
 </template>
 <script lang="ts">
