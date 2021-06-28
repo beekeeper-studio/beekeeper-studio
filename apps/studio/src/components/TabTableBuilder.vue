@@ -13,15 +13,16 @@
       <x-progressbar></x-progressbar>
     </div>
     <div class="table-builder-wrap">
-      <div class="form-group" v-if="defaultSchema">
-        <label for="schema">Schema</label>
-        <input type="text" v-model="tableSchema" :placeholder="defaultSchema">
+      <div class="table-builder-header">
+        <div class="form-group" v-if="defaultSchema">
+          <label for="schema">Schema</label>
+          <input type="text" v-model="tableSchema" :placeholder="defaultSchema">
+        </div>
+        <div class="form-group">
+          <label for="table">Table Name</label>
+          <input type="text" v-model="tableName" placeholder="untitled_table">
+        </div>
       </div>
-      <div class="form-group">
-        <label for="table">Table Name</label>
-        <input type="text" v-model="tableName" placeholder="untitled_table">
-      </div>
-
       <schema-builder
         :dialect="dialect"
         :resetOnUpdate="false"
@@ -30,7 +31,8 @@
       ></schema-builder>
     </div>
     <span class="expand"></span>
-    <status-bar>
+    <status-bar class="tabulator-footer">
+      <span class="expand"></span>
       <div class="col flex-right statusbar-actions">
         <x-button class="actions-btn btn btn-flat" title="Actions">
           <i class="material-icons">settings</i>

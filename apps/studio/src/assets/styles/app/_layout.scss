@@ -119,12 +119,10 @@ hr {
   }
 }
 .btn-primary {
-  // background: rgba($theme-base, 0.37);
   background: $theme-primary;
   color: rgba(black, 0.87);
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
-    // background: rgba($theme-base, 0.44);
     background: lighten($theme-primary, 8%);
     color: rgba(black, 0.87);
   }
@@ -203,6 +201,18 @@ hr {
   .material-icons {
     font-size: 20px;
     color: $text-dark;
+  }
+  &.btn-primary {
+    background: $theme-primary;
+    .material-icons {
+      color: rgba(black, 0.87);
+    }
+    &:hover, &:focus {
+      background: lighten($theme-primary, 8%);
+      .material-icons {
+        color: rgba(black, 0.87);
+      }
+    }
   }
 }
 .btn-group {

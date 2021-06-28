@@ -10,13 +10,21 @@
   }
   .table-builder-wrap {
     height: 100%;
-    padding: 0 1.5rem 3rem;
+    padding: 1.5rem 1.5rem 3rem;
     overflow: hidden;
     overflow-y: auto;
   }
+  .table-builder-header {
+    .form-group {
+      padding: 0 0 ($gutter-w * 1.5);
+    }
+  }
+  .schema-builder {
+    margin-top: $gutter-w;
+  }
 }
 
-// Tabulator Syling
+// Tabulator Styling
 // -----------------------------
 .table-builder {
 
