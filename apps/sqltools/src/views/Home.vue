@@ -8,6 +8,8 @@
       </div>
     </div>
   </section>
+
+  <!-- Tools List -->
   <section class="tools-list">
     <div class="small-wrap">
 
@@ -34,7 +36,9 @@
 
     </div>
   </section>
-  <section>
+
+  <!-- Promise -->
+  <section class="promise">
     <div class="small-wrap">
       <h2>Our Promise</h2>
       <p>SQLTools is made by <a href="https://beekeeperstudio.io" target="_blank" class="text-primary">Beekeeper Studio</a> and is 100% MIT open source and free. We promise to keep it that way.</p>
@@ -45,9 +49,9 @@
         <li><strong>Inclusive</strong> We are an inclusive community and have a code of conduct. Diversity and inclusivity is good for the world.</li>
       </ul>
       <p><a href="https://beekeeperstudio.io" target="_blank" class="text-primary">Beekeeper Studio</a> is an open source and free SQL management app available for Linux, MacOS and Windows. Many SQLTools utilities are also part of the Beekeeper Studio app, but we thought they might be useful to the rest of the internet too.</p>
-
     </div>
   </section>
+
 </div>
 </template>
 <script lang="ts">
@@ -64,11 +68,17 @@ export default Vue.extend({
 <style lang="scss" scoped>
   @import '@/assets/styles/app/_variables';
 
+  section {
+    padding: ($gutter-w * 4) $gutter-w;
+  }
   .card-flat {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     margin-bottom: $gutter-w;
     width: 100%;
+  }
+  .promise {
+    background: darken($theme-bg, 3%);
   }
 </style>
