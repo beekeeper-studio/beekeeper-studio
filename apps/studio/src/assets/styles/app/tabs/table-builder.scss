@@ -1,0 +1,17 @@
+
+.table-builder {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  padding: 0;
+  overflow: hidden;
+  .alert-wrapper {
+    padding: $gutter-w;
+  }
+  .table-builder-wrap {
+    height: 100%;
+    padding: 0 1.5rem 3rem;
+    overflow: hidden;
+    overflow-y: auto;
+  }
+}

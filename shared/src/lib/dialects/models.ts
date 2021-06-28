@@ -2,6 +2,20 @@
 export const Dialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift'] as const
 export type Dialect = typeof Dialects[number]
 
+export function dialectFor(s: string): Dialect | null {
+  switch (s) {
+    case 'cockroachdb':
+      return 'postgresql'
+      break;
+    case 'mariadb':
+      return 'mysql'
+    case 'mssql':
+      return 'sqlserver'
+    default:
+      return Dialects.find((d) => d === s) || null
+  }
+}
+
 export const DialectTitles: {[K in Dialect]: string} = {
   postgresql: "Postgres",
   mysql: "MySQL",

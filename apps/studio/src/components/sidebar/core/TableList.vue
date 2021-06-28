@@ -105,6 +105,9 @@
             <a @click.prevent="refreshTables" :title="'Refresh'">
               <i class="material-icons">refresh</i>
             </a>
+            <a @click.prevent="newTable" title="New Table" class="text-primary">
+              <i class="material-icons">add</i>
+            </a>
           </div>
         </div>
 
@@ -167,6 +170,7 @@
   import { mapState, mapGetters } from 'vuex'
   import TableFilter from '../../../mixins/table_filter'
   import Draggable from 'vuedraggable'
+import { AppEvent } from '@/common/AppEvent'
 
   export default {
     mixins: [TableFilter],
@@ -298,6 +302,9 @@
       refreshTables() {
         this.$store.dispatch('updateTables')
         this.$store.dispatch('updateRoutines')
+      },
+      newTable() {
+        this.$root.$emit(AppEvent.createTable)
       },
       maybeUnselect(e) {
         if (this.selectedSidebarItem) {

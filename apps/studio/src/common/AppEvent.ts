@@ -13,7 +13,9 @@ export enum AppEvent {
   beekeeperAdded = 'bkadd',
   openExternally = 'oe',
   toggleSidebar = 'ts',
-  beginExport = 'be'
+  beginExport = 'be',
+  createTable = 'new_table',
+  openTableProperties = 'loadTableProperties'
 }
 
 

@@ -8,9 +8,11 @@
         :class="{ active: selected }"
       >
         <i v-if="tab.type === 'table'" :class="iconClass" class="material-icons item-icon table">grid_on</i>
-        <i v-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
-        <i v-if="tab.type === 'table-properties'" class="material-icons item-icon table-properties" :class="iconClass">lightbulb</i>
-        <i v-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
+        <i v-else-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
+        <i v-else-if="tab.type === 'table-properties'" class="material-icons item-icon table-properties" :class="iconClass">lightbulb</i>
+        <i v-else-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
+        <i v-else-if="tab.type ==='table-builder'" class="material-icons item-icon table-builder">add_circle</i>
+        <i v-else class="material-icons item-icon">new_releases</i>
         <span class="tab-title truncate" :title="title + scope">{{title}} <span v-if="scope" class="tab-title-scope">{{scope}}</span></span>
         <div class="tab-action">
           <span class="tab-close" :class="{unsaved: tab.unsavedChanges}" @mousedown.stop="doNothing" @click.prevent.stop="$emit('close', tab)">

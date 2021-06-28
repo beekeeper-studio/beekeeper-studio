@@ -24,7 +24,9 @@ export class SqlGenerator {
 
     const sql = k.schema.createTable(schema.name, (table) => {
       const primaries = schema.columns.filter((c) => c.primaryKey)
-      table.primary(primaries.map((c) => c.columnName))
+      if (primaries.length > 0) {
+        table.primary(primaries.map((c) => c.columnName))
+      }
       schema.columns.forEach((column: SchemaItem) => {        
         const col = table.specificType(column.columnName, column.dataType)
         if (column.defaultValue) col.defaultTo(k.raw(column.defaultValue))
