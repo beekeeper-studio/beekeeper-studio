@@ -8,9 +8,7 @@
         <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Relation</a> -->
       </div>
     </div>
-    <div class="card-flat">
-      <div class="table-relations" ref="tabulator"></div>
-    </div>
+    <div class="table-relations" ref="tabulator"></div>
   </div>
 </template>
 <script>

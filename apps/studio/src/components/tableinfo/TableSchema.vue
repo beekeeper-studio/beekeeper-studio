@@ -8,9 +8,7 @@
         <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Column</a> -->
       </div>
     </div>
-    <div class="card-flat">
-      <div ref="tableSchema"></div>
-    </div>
+    <div ref="tableSchema"></div>
   </div>
 </template>
 <script>
