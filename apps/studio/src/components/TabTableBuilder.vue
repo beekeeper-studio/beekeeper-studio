@@ -7,7 +7,6 @@
         <highlightjs v-if="errorSql" :lang="sql" :code="errorSql" />
         <a @click.prevent="sql" class="btn btn-info">Open in a new tab</a>
       </div>
-      
     </div>
     <div v-if="running">
       <p>Creating {{tableName}}...</p>

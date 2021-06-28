@@ -222,7 +222,7 @@ export default Vue.extend({
     // Tabulator Header Row
     .tabulator {
       .tabulator-header {
-        box-shadow: none;
+        box-shadow: none!important;
         padding: 0!important;
         .tabulator-col {
           min-width: $min-cell-width!important;
@@ -241,7 +241,7 @@ export default Vue.extend({
     // Field Rows
     .tabulator-row {
       margin: 4px 0;
-      background: rgba($theme-base, 0.05);
+      background: rgba($theme-base, 0.05)!important;
       border-radius: 5px;
       overflow: hidden;
       &.tabulator-row-even,
@@ -259,7 +259,7 @@ export default Vue.extend({
         flex-grow: 1;
         &.tabulator-editing {
           border: 0;
-          padding: 0 $gutter-h;
+          padding: 0 $gutter-h!important;
           min-height: $row-height;
           height: $row-height;
           line-height: $row-height + 2px;
@@ -296,7 +296,7 @@ export default Vue.extend({
 
         // Remove Cell
         &.remove-btn {
-          padding: 0;
+          padding: 0!important;
           cursor: default;
           .material-icons {
             line-height: $row-height;
@@ -315,7 +315,7 @@ export default Vue.extend({
           align-items: center;
           height: $row-height;
           input {
-            height: 18px;
+            height: 18px!important;
             padding: 0!important;
           }
         }
@@ -365,7 +365,8 @@ export default Vue.extend({
       &.tabulator-moving {
         @extend .card-shadow-hover;
         border: 0;
-        background: lighten($theme-bg, 15%);
+        background: lighten($theme-bg, 15%)!important;
+        opacity: 1!important;
       }
     }
   }
