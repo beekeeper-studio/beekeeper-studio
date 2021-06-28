@@ -32,8 +32,18 @@
   $cell-font-size:         13px;
   $cell-padding:           0.8rem;
   $row-gutter:             3px;
+  $btn-fab-size:           28px;
 
   .table-builder-wrap {
+
+    // Schema Header
+    .schema-header {
+      .btn-fab {
+        width: $btn-fab-size;
+        height: $btn-fab-size;
+        min-width: $btn-fab-size;
+      }
+    }
     
     // Tabulator Header Row
     .tabulator {
