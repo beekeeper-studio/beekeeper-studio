@@ -38,7 +38,9 @@
     </div>
 
     <div class="empty" v-if="explorer.tree.length === 0">
-      <button @click="selectFolder">Select</button>
+      <button @click="selectFolder">
+        Select <i class="schema-icon material-icons">drive_folder_upload</i>
+      </button>
     </div>
   </div>
 </template>
@@ -55,11 +57,8 @@ export default {
 
   data() {
     return {
-      allExpanded: null,
-      allCollapsed: null,
-      activeItem: "tables",
       explorer: {
-        rootPath: "",
+        rootPath: this.$store.getters.selectedPath || "",
         tree: [],
         selected: false
       }
@@ -92,8 +91,6 @@ export default {
     },
     refreshExplorer() {
       this.createTree();
-      // this.$store.dispatch("updateTables");
-      // this.$store.dispatch("updateRoutines");
     },
 
     createTree(path, options) {

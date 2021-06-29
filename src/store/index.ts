@@ -47,7 +47,7 @@ interface State {
   menuActive: boolean;
   activeTab: Nullable<CoreTab>;
   selectedSidebarItem: Nullable<string>;
-  explorerStructure: FolderStructre;
+  explorer: FolderStructre;
 }
 
 Vue.use(Vuex);
@@ -81,11 +81,23 @@ const store = new Vuex.Store<State>({
     menuActive: false,
     activeTab: null,
     selectedSidebarItem: null,
-    explorerStructure: {
-      rootPath: ""
+    explorer: {
+      extension: ["query", "design"],
+      validation: {
+        dir: "^[a-zA-Z]+$",
+        file: "^[a-zA-Z]+.(query|design)$"
+      }
     }
   },
   getters: {
+    includedExtension(state) {
+      return state.explorer.extension;
+    },
+
+    explorerValidation(state) {
+      return state.explorer.validation;
+    },
+
     selectedSidebarItem(state) {
       return state.selectedSidebarItem;
     },
@@ -195,10 +207,12 @@ const store = new Vuex.Store<State>({
         showRoutines: true
       };
     },
+
     updateConnection(state, { connection, database }) {
       state.connection = connection;
       state.database = database;
     },
+
     tables(state, tables: TableOrView[]) {
       const tablesMatch = (t: TableOrView, t2: TableOrView) => {
         return (
@@ -564,6 +578,10 @@ const store = new Vuex.Store<State>({
     },
     async tabActive(context, value: CoreTab) {
       context.commit("tabActive", value);
+    },
+
+    async saveFolderPath(context, path) {
+      context.commit("saveFolderPath", path);
     }
   },
   plugins: []

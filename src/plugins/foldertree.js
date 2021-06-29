@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const defaultOptions = { include: [".query", ".design"] };
+const defaultOptions = { include: ["query", "design"] };
 class TreeNode {
   constructor(path) {
     this.path = path;
@@ -14,7 +14,7 @@ class TreeNode {
 function buildTree(rootPath, options = defaultOptions) {
   const finalOptions = { ...defaultOptions, ...options };
   const rootNode = new TreeNode(rootPath);
-  rootNode.type = ".dir";
+  rootNode.type = "dir";
   rootNode.name = extractName(rootNode.path);
   const stack = [rootNode];
   while (stack.length) {
@@ -33,7 +33,10 @@ function buildTree(rootPath, options = defaultOptions) {
           currentNode.children.push(childNode);
         } else {
           for (const extension of finalOptions.include) {
-            const fileExtension = path.extname(file).toLowerCase();
+            const fileExtension = path
+              .extname(file)
+              .toLowerCase()
+              .slice(1);
             // "" means it is a directory
             if (fileExtension === extension || fileExtension === "") {
               childNode.type = extension;
@@ -45,7 +48,7 @@ function buildTree(rootPath, options = defaultOptions) {
         }
 
         if (fs.statSync(childNode.path).isDirectory()) {
-          childNode.type = ".dir";
+          childNode.type = "dir";
           stack.push(childNode);
         }
       });
@@ -57,18 +60,73 @@ function buildTree(rootPath, options = defaultOptions) {
 
 function updateTree(pathValue) {}
 
-function deleteTreeNode(pathValue) {}
+function deleteNode(pathValue) {}
+
+function addNode(currentNode, node, type) {
+  return new Promise((resolve, reject) => {
+    switch (type) {
+      case "dir":
+        createDir(node).then(() => {
+          currentNode.children.push(node);
+          resolve();
+        });
+
+        break;
+
+      case "file":
+        createFile(node).then(() => {
+          currentNode.children.push(node);
+        });
+        resolve();
+        break;
+    }
+  });
+}
+
+function createFile(node) {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(node.path, "", err => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+function createDir(node) {
+  return new Promise((resolve, reject) => {
+    fs.mkdir(node.path, err => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
 
 function extractName(pathValue) {
   const pathArr = pathValue.split("\\");
   const segment = pathArr[pathArr.length - 1];
-  // const segment = pathArr[pathArr.length - 1].replace(extension, "");
   return segment;
+}
+
+function nodeExist(node, name) {
+  const exists = node.children.filter(element => {
+    if (element.name === name) return element;
+  });
+
+  if (exists.length > 0) return true;
+  return false;
 }
 
 module.exports = {
   buildTree,
   updateTree,
-  deleteTreeNode,
-  TreeNode
+  deleteNode,
+  addNode,
+  TreeNode,
+  nodeExist
 };

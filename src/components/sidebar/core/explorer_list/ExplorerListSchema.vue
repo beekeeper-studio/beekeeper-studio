@@ -37,7 +37,7 @@ export default {
 
     directories() {
       const dirArr = this.tree.children.filter(element => {
-        if (element.type === ".dir") {
+        if (element.type === "dir") {
           return element;
         }
       });
@@ -47,7 +47,7 @@ export default {
 
     files() {
       const fileArr = this.tree.children.filter(element => {
-        if (element.type !== ".dir") {
+        if (element.type !== "dir") {
           return element;
         }
       });

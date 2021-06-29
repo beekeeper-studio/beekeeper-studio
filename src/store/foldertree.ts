@@ -1,3 +1,4 @@
 export interface FolderStructre {
-  rootPath: string;
+  extension: string[];
+  validation: { [key: string]: string };
 }

@@ -4,7 +4,7 @@
       <span
         class="btn-fab open-close"
         @mousedown.prevent="toggleColumns"
-        @click.prevent="selectedDir(node.name)"
+        @click.prevent="select(node)"
       >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
@@ -19,10 +19,10 @@
 
       <x-contextmenu>
         <x-menu>
-          <x-menuitem @click.prevent="createState('.dir')">
+          <x-menuitem @click.prevent="create('dir')">
             <x-label>New Folder</x-label>
           </x-menuitem>
-          <x-menuitem @click.prevent="createState('file')">
+          <x-menuitem @click.prevent="create('file')">
             <x-label>New File</x-label>
           </x-menuitem>
           <hr />
@@ -37,7 +37,9 @@
         v-show="creating.trigger"
         :placeholder="creating.placeholder"
         :type="creating.type"
+        :currentNode="currentNode"
         @cancel="cancel"
+        @close="close"
       ></CreateNewNode>
 
       <explorer-list-file
@@ -72,7 +74,8 @@ export default {
       showColumns: false,
       id: uuidv4(),
       selected: {
-        dir: null
+        dir: null,
+        node: null
       },
       creating: {
         trigger: false,
@@ -85,7 +88,7 @@ export default {
   computed: {
     directories() {
       const dirArr = this.node.children.filter(element => {
-        if (element.type === ".dir") {
+        if (element.type === "dir") {
           return element;
         }
       });
@@ -95,7 +98,7 @@ export default {
 
     files() {
       const fileArr = this.node.children.filter(element => {
-        if (element.type !== ".dir") {
+        if (element.type !== "dir") {
           return element;
         }
       });
@@ -109,6 +112,10 @@ export default {
       } else {
         return { transform: `translate(0.89rem)` };
       }
+    },
+
+    currentNode() {
+      return this.selected.node;
     }
   },
 
@@ -118,7 +125,7 @@ export default {
       this.showColumns = !this.showColumns;
     },
 
-    selectedDir(node) {
+    select(node) {
       for (const key in this.$refs) {
         const spanElement = this.$refs[key];
         if (spanElement.classList.contains("folder-name-selected")) {
@@ -130,25 +137,33 @@ export default {
         }
         spanElement.classList.add("folder-name-selected");
       }
+
+      this.selected.node = node;
     },
 
-    createState(type) {
+    create(type) {
       this.creating.trigger = true;
       this.showColumns = true;
+      this.creating.type = type;
 
       switch (type) {
-        case ".dir":
+        case "dir":
           this.creating.placeholder = "Foldername";
-          this.creating.type = type;
           break;
         case "file":
           this.creating.placeholder = "Filename";
-          this.creating.type = "";
           break;
       }
     },
 
-    cancel() {}
+    cancel() {},
+    close() {
+      this.creating = {
+        trigger: false,
+        placeholder: "",
+        type: ""
+      };
+    }
   }
 };
 </script>

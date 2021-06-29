@@ -7,11 +7,13 @@ a {
   text-decoration: none;
   outline: none;
   cursor: pointer;
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     color: $link-color;
     text-decoration: none;
   }
-  &.disabled, &.disabled:hover {
+  &.disabled,
+  &.disabled:hover {
     cursor: initial;
     opacity: 0.25;
   }
@@ -34,9 +36,9 @@ i {
   letter-spacing: 0.05rem;
 }
 .noselect {
-        -ms-user-select: none;
-    -webkit-user-select: none;
-            user-select: none;
+  -ms-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .clickable,
 .cursor-pointer {
@@ -70,7 +72,8 @@ hr {
 }
 ::-webkit-scrollbar-track-piece {
   background-color: transparent;
-  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=); background-repeat: repeat-y!important;
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=);
+  background-repeat: repeat-y !important;
 }
 ::-webkit-scrollbar-thumb {
   background: rgba($theme-base, 0.2);
@@ -82,7 +85,6 @@ hr {
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
-
 
 // Buttons
 // ---------------------------------------
@@ -98,12 +100,12 @@ hr {
   min-width: 88px;
   box-shadow: inset 0 0 0 1px rgba(white, 0.025);
   border-radius: $btn-border-radius;
-  transition: background 0.15s ease-in-out,
-              color 0.15s ease-in-out;
+  transition: background 0.15s ease-in-out, color 0.15s ease-in-out;
   justify-content: center;
   text-align: center;
   cursor: pointer;
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     font-weight: 700;
     outline: 0;
     border: 0;
@@ -123,7 +125,8 @@ hr {
   background: $theme-primary;
   color: rgba(black, 0.87);
   transition: background 0.15s ease-in-out;
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     // background: rgba($theme-base, 0.44);
     background: lighten($theme-primary, 8%);
     color: rgba(black, 0.87);
@@ -132,7 +135,8 @@ hr {
 .btn-flat {
   color: $theme-base;
   background: rgba($theme-base, 0.06);
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     background: rgba($theme-base, 0.12);
   }
 }
@@ -140,7 +144,8 @@ hr {
   color: $theme-base;
   background: transparent;
   box-shadow: none;
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     background: rgba($theme-base, 0.06);
   }
 }
@@ -167,7 +172,7 @@ hr {
 }
 .btn-small {
   font-size: 0.85rem;
-  padding: 0 .65rem;
+  padding: 0 0.65rem;
   min-width: 0;
   height: 24px;
   line-height: 24px;
@@ -182,7 +187,7 @@ hr {
   width: 100%;
 }
 .btn-fab {
-  $fab-size:   26px;
+  $fab-size: 26px;
 
   height: $fab-size;
   min-width: $fab-size;
@@ -197,7 +202,8 @@ hr {
   @extend .noselect;
   @extend .layout-center;
   transition: background 0.15s ease-in-out;
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     background: rgba($theme-base, 0.1);
   }
   .material-icons {
@@ -208,7 +214,9 @@ hr {
 .btn-group {
   margin-left: -0.25rem;
   margin-right: -0.25rem;
-  >.btn, > x-buttons, > x-button {
+  > .btn,
+  > x-buttons,
+  > x-button {
     margin-left: 0.25rem;
     margin-right: 0.25rem;
   }
@@ -216,20 +224,23 @@ hr {
 
 // Disabled Buttons
 .btn[disabled="disabled"] {
-  $btn-disabled-opacity:      0.25;
+  $btn-disabled-opacity: 0.25;
 
-  opacity: $btn-disabled-opacity!important;
-  &:hover, &:focus {
-    opacity: $btn-disabled-opacity!important;
+  opacity: $btn-disabled-opacity !important;
+  &:hover,
+  &:focus {
+    opacity: $btn-disabled-opacity !important;
   }
   &.btn-primary {
-    &:hover, &:focus {
-      background: $brand-primary!important;
+    &:hover,
+    &:focus {
+      background: $brand-primary !important;
     }
   }
   &.btn-flat {
-    &:hover, &:focus {
-     background: transparent!important;
+    &:hover,
+    &:focus {
+      background: transparent !important;
     }
   }
 }
@@ -310,7 +321,9 @@ label {
   }
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
   @extend .form-control;
   &:focus {
     border-color: $input-highlight;
@@ -351,7 +364,8 @@ input, select, textarea {
 select {
   -webkit-appearance: none;
   appearance: none;
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>")
+    no-repeat scroll 98% 60% transparent !important;
   padding: 0 0.75rem;
   option {
     background: lighten($theme-bg, 2%);
@@ -390,21 +404,21 @@ select {
   }
 }
 input[type="checkbox"] {
-  $checkbox-size:     18px;
+  $checkbox-size: 18px;
 
   position: relative;
   display: inline-flex;
-	-webkit-appearance: none;
-	background-color: transparent;
+  -webkit-appearance: none;
+  background-color: transparent;
   box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2);
   height: $checkbox-size;
   line-height: 1;
   width: $checkbox-size;
-	padding: 0;
+  padding: 0;
   border: 0;
   margin-top: -1px;
   margin-right: ($gutter-w * 0.8);
-	border-radius: 5px;
+  border-radius: 5px;
   transition: background 0.2s ease-in-out;
   cursor: pointer;
   &:active,
@@ -415,8 +429,8 @@ input[type="checkbox"] {
     box-shadow: none;
   }
   &:checked:after {
-    font-family: 'Material Icons';
-    content: '\e5ca';
+    font-family: "Material Icons";
+    content: "\e5ca";
     font-size: $checkbox-size;
     font-weight: bold;
     position: absolute;
@@ -429,7 +443,7 @@ input[type="checkbox"] {
 // Radio
 // ---------------------------------
 input[type="radio"] {
-  $radio-size:     16px;
+  $radio-size: 16px;
 
   position: relative;
   display: inline-flex;
@@ -446,7 +460,7 @@ input[type="radio"] {
   border-radius: 5px;
   transition: background 0.2s ease-in-out;
   cursor: pointer;
-  &:checked{
+  &:checked {
     background: darken($theme-primary, 10%);
     color: rgba(black, 0.87);
     box-shadow: none;
@@ -455,7 +469,7 @@ input[type="radio"] {
 
 // Input File
 // ---------------------------------
-input[type=file] {
+input[type="file"] {
   padding-left: $gutter-h;
   font-size: 12px;
   outline: none;
@@ -465,7 +479,7 @@ input[type=file] {
     font-family: $font-family, Helvetica, Arial, sans-serif;
     color: $theme-base;
     background: rgba($theme-base, 0.035);
-    font-size: 11px!important;
+    font-size: 11px !important;
     line-height: $input-height;
     height: $input-height + 1px;
     padding: 0 $gutter-w;
@@ -477,27 +491,28 @@ input[type=file] {
     box-shadow: inset -1px 0 rgba($theme-base, 0.08);
     transition: background 0.15s ease-in-out;
     cursor: pointer;
-    &:hover, &:focus {
+    &:hover,
+    &:focus {
       background: rgba($theme-base, 0.08);
     }
   }
 }
 
 .text-primary {
-  color: $brand-primary!important;
+  color: $brand-primary !important;
 }
 
 .text-success {
-  color: $brand-success!important;
+  color: $brand-success !important;
 }
 .text-info {
-  color: $brand-info!important;
+  color: $brand-info !important;
 }
 .text-danger {
-  color: lighten($brand-danger, 5%)!important;
+  color: lighten($brand-danger, 5%) !important;
 }
 .text-warning {
-  color: $brand-warning!important;
+  color: $brand-warning !important;
 }
 .text-light {
   color: $text-light;
@@ -569,6 +584,11 @@ input[type=file] {
   &.query {
     color: $brand-pink;
   }
+
+  &.design {
+    color: $brand-dark-blue;
+  }
+
   &.settings {
     color: $text-lighter;
   }
@@ -588,7 +608,7 @@ input[type=file] {
     z-index: 10;
   }
   &.gutter-horizontal {
-    width: 0!important;
+    width: 0 !important;
     cursor: e-resize;
     &:after {
       height: 100%;
@@ -598,7 +618,7 @@ input[type=file] {
   }
   &.gutter-vertical {
     cursor: n-resize;
-    height: 0!important;
+    height: 0 !important;
     &:after {
       height: 8px;
       width: 100%;
@@ -613,10 +633,10 @@ input[type=file] {
   }
 }
 
-
 // Cards
 // ---------------------------------------
-.card, .card-flat {
+.card,
+.card-flat {
   border-radius: 8px;
   overflow: hidden;
   &.padding {
@@ -648,15 +668,13 @@ input[type=file] {
   margin-bottom: 1.25rem;
 }
 .card-shadow {
-  box-shadow: 0 0 0 1px rgba(black ,0.06),
-              0 1px 3px 0 rgba(black ,0.12),
-              0 2px 1px -1px rgba(black ,0.08);
+  box-shadow: 0 0 0 1px rgba(black, 0.06), 0 1px 3px 0 rgba(black, 0.12),
+    0 2px 1px -1px rgba(black, 0.08);
   transition: box-shadow 0.28s ease-in-out;
 }
 .card-shadow-hover {
-  box-shadow: 0 0 0 1px rgba(black ,0.06),
-              0 1px 2px rgba(black ,0.08),
-              0 6px 15px rgba(black ,0.12);
+  box-shadow: 0 0 0 1px rgba(black, 0.06), 0 1px 2px rgba(black, 0.08),
+    0 6px 15px rgba(black, 0.12);
 }
 
 // Badge
@@ -674,10 +692,8 @@ input[type=file] {
   background: rgba($theme-base, 0.2);
   color: $theme-base;
   margin: 0 ($gutter-h * 0.75);
-  transition: color 0.15s ease-in-out,
-              background-color 0.15s ease-in-out,
-              border-color 0.15s ease-in-out,
-              box-shadow 0.15s ease-in-out;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   &.badge-info {
     background: $brand-info;
     color: rgba(black, 0.87);

@@ -1,27 +1,26 @@
 // Copyright (c) 2015 The SQLECTRON Team
 
-import fs from 'fs';
-import {homedir} from 'os';
-import path from 'path';
-import mkdirp from 'mkdirp';
-import envPaths from 'env-paths';
-import { Error as CustomError } from '../lib/errors'
+import fs from "fs";
+import { homedir } from "os";
+import path from "path";
+import mkdirp from "mkdirp";
+import envPaths from "env-paths";
+import { Error as CustomError } from "../lib/errors";
 
-
-let configPath = '';
+let configPath = "";
 
 export function getConfigPath() {
   if (configPath) {
     return configPath;
   }
 
-  const configName = 'sqlectron.json';
+  const configName = "sqlectron.json";
   const oldConfigPath = path.join(homedir(), `.${configName}`);
 
   if (fileExistsSync(oldConfigPath)) {
     configPath = oldConfigPath;
   } else {
-    const newConfigDir = envPaths('Sqlectron', { suffix: '' }).config;
+    const newConfigDir = envPaths("Sqlectron", { suffix: "" }).config;
     configPath = path.join(newConfigDir, configName);
   }
 
@@ -29,14 +28,13 @@ export function getConfigPath() {
 }
 
 export function fileExists(filename: string) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     fs.stat(filename, (err, stats) => {
       if (err) return resolve(false);
       resolve(stats.isFile());
     });
   });
 }
-
 
 export function fileExistsSync(filename: string) {
   try {
@@ -46,26 +44,22 @@ export function fileExistsSync(filename: string) {
   }
 }
 
-
 export function writeFile(filename: string, data: any) {
   return new Promise((resolve, reject) => {
-    fs.writeFile(filename, data, (err) => {
+    fs.writeFile(filename, data, err => {
       if (err) return reject(err);
       resolve(true);
     });
   });
 }
 
-
 export function writeJSONFile(filename: string, data: any) {
   return writeFile(filename, JSON.stringify(data, null, 2));
 }
 
-
 export function writeJSONFileSync(filename: string, data: any) {
   return fs.writeFileSync(filename, JSON.stringify(data, null, 2));
 }
-
 
 export function readFile(filename: string): Promise<string> {
   const filePath = resolveHomePathToAbsolute(filename);
@@ -77,26 +71,23 @@ export function readFile(filename: string): Promise<string> {
   });
 }
 
-
 export function readJSONFile(filename: string) {
-  return readFile(filename).then((data) => JSON.parse(data));
+  return readFile(filename).then(data => JSON.parse(data));
 }
-
 
 export function readJSONFileSync(filename: string) {
   const filePath = resolveHomePathToAbsolute(filename);
-  const data = fs.readFileSync(path.resolve(filePath), 'utf-8');
+  const data = fs.readFileSync(path.resolve(filePath), "utf-8");
   return JSON.parse(data);
 }
 
 export function createParentDirectory(filename: string) {
-  return mkdirp(path.dirname(filename))
+  return mkdirp(path.dirname(filename));
 }
 
 export function createParentDirectorySync(filename: string) {
   mkdirp.sync(path.dirname(filename));
 }
-
 
 export function resolveHomePathToAbsolute(filename: string) {
   if (!/^~\//.test(filename)) {
@@ -106,13 +97,12 @@ export function resolveHomePathToAbsolute(filename: string) {
   return path.join(homedir(), filename.substring(2));
 }
 
-
-
 export function createCancelablePromise(error: CustomError, timeIdle = 100) {
   let canceled = false;
   let discarded = false;
 
-  const wait = (time: number) => new Promise((resolve) => setTimeout(resolve, time));
+  const wait = (time: number) =>
+    new Promise(resolve => setTimeout(resolve, time));
 
   return {
     async wait() {
@@ -121,11 +111,11 @@ export function createCancelablePromise(error: CustomError, timeIdle = 100) {
       }
 
       if (canceled) {
-        const err = new Error(error.message || 'Promise canceled.');
+        const err = new Error(error.message || "Promise canceled.");
 
         Object.getOwnPropertyNames(error)
           // @ts-ignore
-          .forEach((key: string) => err[key] = error[key]); // eslint-disable-line no-return-assign
+          .forEach((key: string) => (err[key] = error[key])); // eslint-disable-line no-return-assign
 
         throw err;
       }
@@ -135,6 +125,6 @@ export function createCancelablePromise(error: CustomError, timeIdle = 100) {
     },
     discard() {
       discarded = true;
-    },
+    }
   };
 }

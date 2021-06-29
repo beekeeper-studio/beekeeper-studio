@@ -15,7 +15,6 @@
       </span>
       <x-contextmenu>
         <x-menu>
-
           <x-menuitem @click.prevent="openTable">
             <x-label>Open</x-label>
           </x-menuitem>
