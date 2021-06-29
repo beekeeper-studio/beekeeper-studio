@@ -3,14 +3,14 @@
     <section class="subheader">
       <div class="big-wrap">
         <h1>SQL Table Templates</h1>
-        <p>Use these templates as a starting point for your next table. All templates are fully custimizable.</p>
+        <div class="subtitle">Use these templates as a starting point for your next table. All templates are fully custimizable.</div>
       </div>
     </section>
     <section>
       <div class="big-wrap">
         <div class="row gutter">
           <div v-for="template in templates" :key="template.name" class="col s6">
-            <router-link :to="{ name: 'Template', params: {id: template.id}}" class="card-flat">
+            <router-link :to="{ name: 'Template', params: {id: template.id}}" class="card-flat card-link padding">
               <h2>{{template.name}}</h2>
               <p>{{template.description}}</p>
               <div class="badges flex wrap">
@@ -52,12 +52,6 @@ export default Vue.extend({
 <style lang="scss" scoped>
   @import '@/assets/styles/app/_variables';
 
-  section {
-    padding: $gutter-w * 2;
-  }
-  .subheader {
-    background: $query-editor-bg;
-  }
   .card-flat {
     display: flex;
     flex-direction: column;
@@ -65,10 +59,6 @@ export default Vue.extend({
     justify-content: flex-start;
     padding: $gutter-w * 1.5;
     height: 100%;
-    transition: box-shadow 0.2s ease-in-out;
-    &:hover {
-      box-shadow: inset 0 0 0 2px $theme-primary;
-    }
     h2 {
       margin: 0;
     }
@@ -78,28 +68,6 @@ export default Vue.extend({
     .badges {
       flex: 0 0 auto;
       margin: 0 -($gutter-h * 0.25);
-    }
-    .badge {
-      font-family: 'Source Code Pro', monospace;
-      margin: ($gutter-h * 0.25);
-      line-height: 1.8;
-      padding: 0 ($gutter-w * 0.75);
-      font-size: 85%;
-      background: rgba($theme-secondary, 0.2);
-      .data-type {
-        color: $text-light;
-        margin-left: $gutter-h * 0.75;
-      }
-    }
-    .view-btn {
-      font-size: 0.95rem;
-      min-width: 0;
-      margin: ($gutter-w * 0.75) -0.6rem -0.6rem 0;
-    }
-    .card-footer {
-      display: flex;
-      justify-content: flex-end;
-      width: 100%;
     }
   }
 </style>

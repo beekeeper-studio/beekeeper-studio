@@ -1,13 +1,19 @@
 <template>
   <div class="highlighted-code">
-    <div class="code-wrap" v-if="code">
-      <highlightjs :lang="dialect" :code="code" />
-      <a 
-        v-clipboard:copy="code"
-        v-clipboard:success="onCopySuccess"
-        v-clipboard:error="onCopyError"
-        class="btn" :class="copyClass"
-      ><span class="material-icons" :title='copyTitle'>{{copyIcon}}</span>{{copyMessage}}</a>
+    <div class="code-wrap">
+      <div class="schema-header">
+        <slot></slot>
+        <span class="expand"></span>
+        <div class="actions" v-if="code">
+          <a v-clipboard:copy="code"
+             v-clipboard:success="onCopySuccess"
+             v-clipboard:error="onCopyError"
+             class="btn btn-icon" :class="copyClass"
+          ><span class="material-icons" :title='copyTitle'>{{copyIcon}}</span>{{copyMessage}}</a>
+        </div>
+      </div>
+      <highlightjs :lang="dialect" :code="code"  v-if="code" />
+      <pre class="code-empty" v-else><div class="hljs">(Empty)</div></pre>
     </div>
   </div>
 </template>
@@ -19,7 +25,7 @@ export default Vue.extend({
     return {
       copyMessage: "Copy",
       copyIcon: "content_copy",
-      copyClass: 'btn-info',
+      copyClass: 'btn-flat',
       copyTitle: null
     }
   },
@@ -49,3 +55,11 @@ export default Vue.extend({
 
 })
 </script>
+
+<style lang="scss" scoped>
+  @import '@/assets/styles/app/_variables';
+
+  .code-empty .hljs {
+    color: rgba($theme-base, 0.15);
+  }
+</style>
