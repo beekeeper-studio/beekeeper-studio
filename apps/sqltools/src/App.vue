@@ -7,7 +7,7 @@
       <div class="small-wrap flex-col flex-middle">
         <small class="created-by">
           <span>Made by&nbsp;</span>
-          <router-link to="https://beeekeeperstudio.io">Beekeeper Studio</router-link>
+          <a href="https://beekeeperstudio.io" target="_blank">Beekeeper Studio</a>
           <span>&nbsp; with ♥ in Dallas, TX</span>
         </small>
       </div>
