@@ -31,10 +31,10 @@
             <h3 class="title">Generated SQL for {{dialectTitle}}</h3>
           </template>
           
-          <template v-slot:alert>
+          <template v-slot:alert v-if="dialectWarning">
             <div class="alert alert-warning">
             <i class="material-icons">warning</i>
-            <div>{{dialectWarning ? `*${dialectWarning}`: ''}}</div>
+            <div>{{dialectWarning}}</div>
           </div>
           </template>
         </highlighted-code>
