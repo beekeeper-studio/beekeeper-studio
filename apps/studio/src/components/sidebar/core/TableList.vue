@@ -80,12 +80,6 @@
         </Draggable>
       </nav>
     </div>
-
-    <div class="create-table fixed">
-      <a @click.prevent="newTable" title="New Table" class="btn btn-flat btn-icon">
-        <i class="material-icons">add</i> Create Table
-      </a>
-    </div>
     
     <!-- Tables -->
     <hr v-show="pinned.length > 0"> <!-- Fake splitjs Gutter styling -->
@@ -110,6 +104,11 @@
             </a>
             <a @click.prevent="refreshTables" :title="'Refresh'">
               <i class="material-icons">refresh</i>
+            </a>
+          </div>
+          <div>
+            <a @click.prevent="newTable" title="New Table" class="create-table">
+              <i class="material-icons">add_circle</i>
             </a>
           </div>
         </div>
