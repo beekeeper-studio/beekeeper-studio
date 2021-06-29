@@ -19,7 +19,7 @@
         
         <div class="output">
           <highlighted-code :code="output" dialect="sql" >
-            <h3>Formatted SQL</h3>
+            <h3 class="title">Formatted SQL</h3>
           </highlighted-code>
         </div>
       </div>

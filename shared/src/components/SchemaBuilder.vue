@@ -4,7 +4,7 @@
       <slot></slot>
     </div>
     <div class="schema-header flex flex-middle">
-      <h3 class="table-title">Columns</h3>
+      <h3 class="title">Columns</h3>
       <span class="expand"></span>
       <button class="btn btn-primary btn-fab" @click.prevent="addRow" title="Add Field"><i class="material-icons">add</i></button>
     </div>
