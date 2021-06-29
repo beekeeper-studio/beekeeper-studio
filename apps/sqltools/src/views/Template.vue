@@ -29,11 +29,9 @@
         >
         </schema-builder>
 
-        <div class="code-wrap" v-if="sql">
+        <highlighted-code :code="sql" :dialect="dialect">
           <h3>Generated SQL</h3>
-          <highlightjs lang="sql" :code="sql" />
-        </div>
-
+        </highlighted-code>
       </div>
     </section>
   </div>
@@ -46,11 +44,13 @@ import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
 import DialectPicker from '@/components/DialectPicker.vue'
 import Formatter from 'sql-formatter'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator';
+import HighlightedCode from '@/components/HighlightedCode.vue'
 
 export default Vue.extend({
   components: {
     SchemaBuilder,
-    DialectPicker
+    DialectPicker,
+    HighlightedCode
   },
   beforeRouteEnter(to, _from, next) {
     next((component: any) => {

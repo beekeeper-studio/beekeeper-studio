@@ -13,7 +13,7 @@
         </div>
       </div>
       <slot name="alert"></slot>
-      <highlightjs :lang="dialect" :code="code"  v-if="code" />
+      <highlightjs :lang="highlightDialect" :code="code"  v-if="code" />
       <pre class="code-empty" v-else><div class="hljs">(Empty)</div></pre>
     </div>
   </div>
@@ -29,6 +29,17 @@ export default Vue.extend({
       copyClass: 'btn-flat',
       copyTitle: null
     }
+  },
+  computed: {
+    highlightDialect() {
+      switch (this.dialect) {
+        case 'postgresql':
+        case 'redshift':
+          return 'pgsql'
+        default:
+          return 'sql'
+      }
+    },
   },
   methods: {
     onCopySuccess() {

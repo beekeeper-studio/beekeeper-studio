@@ -26,7 +26,7 @@
         </schema-builder>
 
         <!-- Generated code -->
-        <highlighted-code :code="formattedSql" :dialect="highlightDialect">
+        <highlighted-code :code="formattedSql" :dialect="dialect">
           <template>
             <h3 class="title">Generated SQL for {{dialectTitle}}</h3>
           </template>
@@ -128,15 +128,6 @@ export default Vue.extend ({
     },
     templateSchema() {
       return this.template ? this.template.toSchema(this.dialect) : []
-    },
-    highlightDialect() {
-      switch (this.dialect) {
-        case 'postgresql':
-        case 'redshift':
-          return 'pgsql'
-        default:
-          return 'sql'
-      }
     },
     dialectWarning() {
       return dialectNotes[this.dialect]
