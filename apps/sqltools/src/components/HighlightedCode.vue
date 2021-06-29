@@ -38,7 +38,7 @@ export default Vue.extend({
       setTimeout(() => {
         this.copyMessage = "Copy"
         this.copyIcon = "content_copy"
-        this.copyClass = "btn-info"
+        this.copyClass = "btn-flat"
       }, 2000)
     },
     onCopyError(e) {
@@ -49,7 +49,7 @@ export default Vue.extend({
       setTimeout(() => {
         this.copyMessage = "Copy"
         this.copyIcon = "content_copy"
-        this.copyClass = "btn-info"
+        this.copyClass = "btn-flat"
       }, 5000);
     }
   }
