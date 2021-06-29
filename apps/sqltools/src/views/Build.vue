@@ -27,8 +27,16 @@
 
         <!-- Generated code -->
         <highlighted-code :code="formattedSql" :dialect="highlightDialect">
-          <h3>Generated SQL for {{dialectTitle}}</h3>
-          <p class="dialect-warning">{{dialectWarning ? `*${dialectWarning}`: ''}}</p>
+          <template>
+            <h3 class="title">Generated SQL for {{dialectTitle}}</h3>
+          </template>
+          
+          <template v-slot:alert>
+            <div class="alert alert-warning">
+            <i class="material-icons">warning</i>
+            <div>{{dialectWarning ? `*${dialectWarning}`: ''}}</div>
+          </div>
+          </template>
         </highlighted-code>
 
       </div>
@@ -162,3 +170,12 @@ export default Vue.extend ({
   }
 })
 </script>
+
+<style lang="scss" scoped>
+  .title {
+    margin: 0;
+  }
+  .alert {
+    margin: 0;
+  }
+</style>

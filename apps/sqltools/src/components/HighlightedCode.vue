@@ -12,6 +12,7 @@
           ><span class="material-icons" :title='copyTitle'>{{copyIcon}}</span>{{copyMessage}}</a>
         </div>
       </div>
+      <slot name="alert"></slot>
       <highlightjs :lang="dialect" :code="code"  v-if="code" />
       <pre class="code-empty" v-else><div class="hljs">(Empty)</div></pre>
     </div>
