@@ -32,8 +32,9 @@ export default {
       actualTableHeight: "100%",
       forceRedraw: false,
       stagedChanges: [],
-      newColumns: [],
-      removedColumns: [],
+      editedCells: [],
+      newRows: [],
+      removedRows: [],
     }
   },
   watch: {
@@ -68,7 +69,7 @@ export default {
         showListOnEmpty: true
       }
 
-      const trashButton = () => '<i class="material-icons" title="remove">clear</i>'
+      const trashButton = (cell) => `<i class="material-icons" title="${cell.getValue() === 'undo' ? 'Undo delete table column' : 'Delete table column'}">${cell.getValue() === 'undo' ? 'undo' : 'close'}</i>`
 
       return [
         {title: 'Name', field: 'columnName', editor: vueEditor(NullableInputEditorVue), cellEdited: this.cellEdited, headerFilter: true},
@@ -82,7 +83,8 @@ export default {
           formatterParams: {
             editable: true
           },
-          cellEdited: this.cellEdited
+          cellEdited: this.cellEdited,
+          width: 70
         },
         {
           title: 'Default Value',
@@ -98,10 +100,17 @@ export default {
           formatter: vueFormatter(CheckboxFormatterVue),
           formatterParams: {
             editable: false
-          }
+          },
+          width: 70
         },
         {
-          formatter: trashButton, width: 36, minWidth: 36, hozAlign: 'center', cellClick: this.removeRow, resizable: false, cssClass: "remove-btn no-edit-highlight",
+          formatter: trashButton,
+          width: 36,
+          minWidth: 36,
+          hozAlign: 'center',
+          cellClick: this.removeRow,
+          resizable: false,
+          cssClass: "remove-btn no-edit-highlight",
         }
       ]
     },
@@ -120,25 +129,34 @@ export default {
     async addRow() {
       const row = await this.tabulator.addRow({columnName: 'untitled', dataType: 'varchar(255)'})
       row.getElement().classList.add('inserted')
-      this.newColumns.push(row)
+      this.newRows.push(row)
     },
     removeRow(e, cell) {
       const row = cell.getRow()
-      if (this.newColumns.includes(row)) {
-        this.newColumns = _.without(this.newcolumns, row)
+      console.log(row)
+      if (this.newRows.includes(row)) {
+        this.newRows = _.without(this.newRows, row)
+        row.delete()
+        return
       }
-      this.removedColumns.push(row)
-      row.getElement().classList.add('deleted')
+      if (this.removedRows.includes(row)) {
+        this.removedRows = _.without(this.removedRows, row)
+        row.getElement().classList.remove('deleted')
+        cell.setValue('trash')
+      } else {
+        this.removedRows.push(row)
+        row.getElement().classList.add('deleted')
+        cell.setValue('undo')
+        const undoEdits = this.editedCells.filter((c) => row.getCells().includes(c))
+        undoEdits.forEach((c) => {
+          c.restoreInitialValue()
+          c.getElement().classList.remove('edited')
+        })
+        this.editedCells = _.without(this.editedCells, undoEdits)
+      }
     },
     cellEdited(cell, ...props) {
-      const columnName = cell.getRow().getCells().find((c) => c.getField())
-      const change = {
-        columnName,
-        aspect: cell.getField(),
-        newValue: cell.getValue(),
-        cell: cell
-      }
-      this.stagedChanges.push(change)
+      this.editedCells.push(cell)
       cell.getElement().classList.add('edited')
     }
   },
@@ -151,7 +169,8 @@ export default {
       tooltips: true,
       data: this.tableData,
       columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
-      placeholder: "No Columns"
+      placeholder: "No Columns",
+      headerSort: false,
     })
   }
 }

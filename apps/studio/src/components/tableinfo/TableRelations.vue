@@ -49,7 +49,7 @@ export default {
       tooltips: true,
       columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
       placeholder: "No Relations",
-      layout: 'fitColumns'
+      layout: 'fitDataStretch'
 
     })
   }

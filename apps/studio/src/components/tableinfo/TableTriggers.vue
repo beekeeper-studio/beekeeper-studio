@@ -60,7 +60,7 @@ export default {
       tooltips: true,
       columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
       placeholder: "No triggers",
-      layout: 'fitColumns'
+      layout: 'fitDataStretch'
 
 
     })

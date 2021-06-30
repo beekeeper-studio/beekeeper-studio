@@ -15,6 +15,8 @@
 import Tabulator from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
 import globals from '../../common/globals'
+import { vueFormatter } from '@shared/lib/tabulator/helpers'
+import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 export default {
   mixins: [data_mutators],
   props: ["table", "connection", "tabId", "active", "properties"],
@@ -37,8 +39,8 @@ export default {
       return [
         {title: 'Id', field: 'id'},
         {title:'Name', field: 'name'},
-        {title: 'Unique', field: 'unique', formatter: this.yesNoFormatter},
-        {title: 'Primary', field: 'primary', formatter: this.yesNoFormatter},
+        {title: 'Unique', field: 'unique', formatter: vueFormatter(CheckboxFormatterVue)},
+        {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue)},
         {title: 'Columns', field: 'columns'}
       ]
     }
@@ -47,7 +49,7 @@ export default {
     this.tabulator = new Tabulator(this.$refs.tabulator, {
       data: this.tableData,
       columns: this.tableColumns,
-      layout: 'fitColumns',
+      layout: 'fitDataStretch',
       columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
       placeholder: "No Indexes"
     })

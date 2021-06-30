@@ -155,10 +155,25 @@
   }
 
   .table-schema {
+
     .table-subheader {
       margin-top: $gutter-w;
     }
     .tabulator-table {
+      .tabulator-row {
+        &.inserted {
+          background-color: darkgreen;
+          .tabulator-cell {
+            background-color: darkgreen;
+          }
+        }
+        &.deleted {
+          background-color: darkred;
+          .tabulator-cell {
+            background-color: darkred;
+          }
+        }
+      }
       .yesno-icon {
         float:right;
       }
