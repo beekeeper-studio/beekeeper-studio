@@ -5,7 +5,7 @@
         <h2>Columns</h2>
       </div>
       <div class="table-actions">
-        <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Column</a> -->
+        <a @click="addRow" class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Column</a>
       </div>
     </div>
     <div ref="tableSchema"></div>
@@ -17,15 +17,24 @@ import DataMutators from '../../mixins/data_mutators'
 import _ from 'lodash'
 import Vue from 'vue'
 import globals from '../../common/globals'
+import { vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
+import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
+import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
+import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
+import { mapGetters } from 'vuex'
+import { getDialectData } from '@shared/lib/dialects'
 export default {
   mixins: [DataMutators],
-  props: ["table", "connection", "tabID", "active", "primaryKeys", 'columnTypes'],
+  props: ["table", "connection", "tabID", "active", "primaryKeys"],
   data() {
     return {
       tabulator: null,
       actualTableHeight: "100%",
       forceRedraw: false,
       stagedChanges: [],
+      editedCells: [],
+      newRows: [],
+      removedRows: [],
     }
   },
   watch: {
@@ -47,6 +56,10 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(['dialect']),
+    columnTypes() {
+      return getDialectData(this.dialect).columnTypes
+    },
     tableColumns() {
       const autocompleteOptions = {
         freetext: true,
@@ -55,33 +68,50 @@ export default {
         defaultValue: 'varchar(255)',
         showListOnEmpty: true
       }
+
+      const trashButton = (cell) => `<i class="material-icons" title="${cell.getValue() === 'undo' ? 'Undo delete table column' : 'Delete table column'}">${cell.getValue() === 'undo' ? 'undo' : 'close'}</i>`
+
       return [
-        {title: 'Position', field: 'ordinalPosition', headerTooltip: 'The ordinal position of the columns'},
-        {title: 'Name', field: 'columnName', editor: null && 'input', cellEdited: this.cellEdited, headerFilter: true},
-        {title: 'Type', field: 'dataType', editor: null && 'autocomplete', editorParams: autocompleteOptions, cellEdited: this.cellEdited}, 
+        {title: 'Name', field: 'columnName', editor: vueEditor(NullableInputEditorVue), cellEdited: this.cellEdited, headerFilter: true},
+        {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: autocompleteOptions, cellEdited: this.cellEdited}, 
         {
           title: 'Nullable',
           field: 'nullable',
           headerTooltip: "Allow this column to contain a null value",
-          editor: null && 'select',
-          editorParams: {
-            values: [
-              {label: "YES", value: true},
-              {label: "NO", value: false}
-            ]
+          editor: vueEditor(CheckboxEditorVue),
+          formatter: vueFormatter(CheckboxFormatterVue),
+          formatterParams: {
+            editable: true
           },
-          formatter: this.yesNoFormatter,
-          cellEdited: this.cellEdited
+          cellEdited: this.cellEdited,
+          width: 70
         },
         {
           title: 'Default Value',
           field: 'defaultValue',
-          editor: null && 'input',
+          editor: vueEditor(NullableInputEditorVue),
           headerTooltip: "If you don't set a value for this field, this is the default value",
           cellEdited: this.cellEdited,
           formatter: this.cellFormatter
         },
-        {title: 'Primary', field: 'primary', formatter: 'tickCross', formatterParams: { allowEmpty: true}},
+        {
+          title: 'Primary',
+          field: 'primary',
+          formatter: vueFormatter(CheckboxFormatterVue),
+          formatterParams: {
+            editable: false
+          },
+          width: 70
+        },
+        {
+          formatter: trashButton,
+          width: 36,
+          minWidth: 36,
+          hozAlign: 'center',
+          cellClick: this.removeRow,
+          resizable: false,
+          cssClass: "remove-btn no-edit-highlight",
+        }
       ]
     },
     tableData() {
@@ -96,15 +126,37 @@ export default {
     },
   },
   methods: {
-    cellEdited(cell, ...props) {
-      const columnName = cell.getRow().getCells().find((c) => c.getField())
-      const change = {
-        columnName,
-        aspect: cell.getField(),
-        newValue: cell.getValue(),
-        cell: cell
+    async addRow() {
+      const row = await this.tabulator.addRow({columnName: 'untitled', dataType: 'varchar(255)'})
+      row.getElement().classList.add('inserted')
+      this.newRows.push(row)
+    },
+    removeRow(e, cell) {
+      const row = cell.getRow()
+      console.log(row)
+      if (this.newRows.includes(row)) {
+        this.newRows = _.without(this.newRows, row)
+        row.delete()
+        return
       }
-      this.stagedChanges.push(change)
+      if (this.removedRows.includes(row)) {
+        this.removedRows = _.without(this.removedRows, row)
+        row.getElement().classList.remove('deleted')
+        cell.setValue('trash')
+      } else {
+        this.removedRows.push(row)
+        row.getElement().classList.add('deleted')
+        cell.setValue('undo')
+        const undoEdits = this.editedCells.filter((c) => row.getCells().includes(c))
+        undoEdits.forEach((c) => {
+          c.restoreInitialValue()
+          c.getElement().classList.remove('edited')
+        })
+        this.editedCells = _.without(this.editedCells, undoEdits)
+      }
+    },
+    cellEdited(cell, ...props) {
+      this.editedCells.push(cell)
       cell.getElement().classList.add('edited')
     }
   },
@@ -113,11 +165,12 @@ export default {
     if (!this.active) this.forceRedraw = true
     this.tabulator = new Tabulator(this.$refs.tableSchema, {
       columns: this.tableColumns,
-      layout: 'fitDataFill',
+      layout: 'fitColumns',
       tooltips: true,
       data: this.tableData,
       columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
-      placeholder: "No Columns"
+      placeholder: "No Columns",
+      headerSort: false,
     })
   }
 }

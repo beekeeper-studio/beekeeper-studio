@@ -48,7 +48,9 @@ export default {
       data: this.tableData,
       tooltips: true,
       columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
-      placeholder: "No Relations"
+      placeholder: "No Relations",
+      layout: 'fitDataStretch'
+
     })
   }
 }
