@@ -47,9 +47,9 @@ export class ColumnType {
 
   get pretty() {
     if (this.supportsLength) {
-      return `${this.name}(${this.defaultLength})`
+      return `${this.name.toUpperCase()}(${this.defaultLength})`
     } 
-    return this.name
+    return this.name.toUpperCase()
   }
 }
 

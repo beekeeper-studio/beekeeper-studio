@@ -5,7 +5,25 @@
         <h2>Columns</h2>
       </div>
       <div class="table-actions">
-        <a @click="addRow" class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Column</a>
+        <a @click.prevent="addRow" class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Column</a>
+        <template v-if="hasEdits">
+            <x-buttons>
+              <x-button class="btn btn-primary" @click.prevent="submitApply">
+                <span>Apply Changes</span>
+              </x-button>
+              <x-button class="btn btn-primary">
+                <i class="material-icons">arrow_drop_down</i>
+                <x-menu>
+                  <x-menuitem @click.prevent="submitSql">
+                    Edit SQL
+                  </x-menuitem>
+                </x-menu>
+              </x-button>
+
+            </x-buttons>
+            <x-button @click.prevent="submitUndo">Undo</x-button>
+
+        </template>
       </div>
     </div>
     <div ref="tableSchema"></div>
@@ -31,7 +49,6 @@ export default {
       tabulator: null,
       actualTableHeight: "100%",
       forceRedraw: false,
-      stagedChanges: [],
       editedCells: [],
       newRows: [],
       removedRows: [],
@@ -58,7 +75,10 @@ export default {
   computed: {
     ...mapGetters(['dialect']),
     columnTypes() {
-      return getDialectData(this.dialect).columnTypes
+      return getDialectData(this.dialect).columnTypes.map((c) => c.pretty)
+    },
+    hasEdits() {
+      return this.editedCells.length || this.newRows.length || this.removedRows.length
     },
     tableColumns() {
       const autocompleteOptions = {
@@ -104,6 +124,7 @@ export default {
           width: 70
         },
         {
+          field: 'trash-button',
           formatter: trashButton,
           width: 36,
           minWidth: 36,
@@ -126,6 +147,34 @@ export default {
     },
   },
   methods: {
+
+    // submission methods
+    submitApply() {
+      this.$noty.info("TODO applying changes")
+    },
+    submitSql() {
+      this.$noty.info("TODO opening a new tab with SQL")
+    },
+    submitUndo() {
+      this.editedCells.forEach((c) => {
+        c.restoreInitialValue()
+        c.getElement().classList.remove('edited')
+      })
+      
+      this.newRows.forEach((r) => r.delete())
+      this.removedRows.forEach((r) => {
+        r.getElement().classList.remove('deleted')
+        const c = r.getCell('trash-button')
+        c.setValue('trash')
+      })
+
+      this.editedCells = []
+      this.newRows = []
+      this.removedRows = []
+    },
+    // table edit callbacks
+
+
     async addRow() {
       const row = await this.tabulator.addRow({columnName: 'untitled', dataType: 'varchar(255)'})
       row.getElement().classList.add('inserted')
