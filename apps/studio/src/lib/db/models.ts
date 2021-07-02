@@ -1,3 +1,4 @@
+import { SchemaItem } from "@shared/lib/dialects/models";
 
 
 
@@ -132,13 +133,20 @@ export interface TableChanges {
 }
 
 
-export interface ColumnChange {
-  table: string
-  schema?: string
-  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue'
+export interface SchemaItemChange {
+  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue' | 'comment'
   columnName: string
   newValue: string | boolean
 }
+
+export interface AlterTablePayload {
+  table: string
+  schema?: string
+  updates: SchemaItemChange[]
+  inserts: SchemaItem[]
+  deletes: string[]
+}
+
 
 export interface TableInsert {
   table: string;

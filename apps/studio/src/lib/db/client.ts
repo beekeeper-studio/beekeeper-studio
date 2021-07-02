@@ -3,7 +3,7 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, ColumnChange, TableIndex, TableTrigger } from './models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, SchemaItemChange, TableIndex, TableTrigger, AlterTablePayload } from './models';
 
 const logger = createLogger('db');
 
@@ -24,7 +24,10 @@ export interface DatabaseClient {
   executeQuery: (queryText: string) => void,
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
-  alterTableColumns: (changes: ColumnChange[]) => Promise<void>,
+  // alter table
+  alterTableSql: (change: AlterTablePayload) => string,
+  alterTable: (change: AlterTablePayload) => Promise<void>,
+
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties | null>,
   getTableCreateScript: (table: string, schema?: string) => Promise<string>,
@@ -120,7 +123,8 @@ export class DBConnection {
   selectTop = selectTop.bind(null, this.server, this.database)
   selectTopStream = selectTopStream.bind(null, this.server, this.database)
   applyChanges = applyChanges.bind(null, this.server, this.database)
-  alterTableColumns = alterTableColumns.bind(null, this.server, this.database)
+  alterTableSql = bind.bind(null, 'alterTableSql', this.server, this.database)
+  alterTable = bind.bind(null, 'alterTable', this.server, this.database)
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
   getTableCreateScript = getTableCreateScript.bind(null, this.server, this.database)
   getTableSelectScript = getTableSelectScript.bind(null, this.server, this.database)
@@ -326,10 +330,17 @@ function applyChanges(server: IDbConnectionServer, database: IDbConnectionDataba
   return database.connection?.applyChanges(changes)
 }
 
-
-function alterTableColumns(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: ColumnChange[]) {
+function bind(functionName: string, server: IDbConnectionServer, database: IDbConnectionDatabase, ...args) {
   checkIsConnected(server, database)
-  return database.connection?.alterTableColumns(changes)
+  return database.connection[functionName](...args)
+}
+function alterTableSql(server: IDbConnectionServer, database: IDbConnectionDatabase, change: AlterTablePayload) {
+  checkIsConnected(server, database)
+  return database.connection.alterTableSql(change)
+}
+function alterTable(server: IDbConnectionServer, database: IDbConnectionDatabase, change: AlterTablePayload) {
+  checkIsConnected(server, database)
+  return database.connection?.alterTable(change)
 }
 
 

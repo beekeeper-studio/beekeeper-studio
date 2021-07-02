@@ -32,6 +32,7 @@
 <script>
 import Tabulator from 'tabulator-tables'
 import DataMutators from '../../mixins/data_mutators'
+import sqlFormatter from 'sql-formatter'
 import _ from 'lodash'
 import Vue from 'vue'
 import globals from '../../common/globals'
@@ -41,6 +42,8 @@ import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import { mapGetters } from 'vuex'
 import { getDialectData } from '@shared/lib/dialects'
+import { AlterTablePayload } from '@/lib/db/models'
+import { AppEvent } from '@/common/AppEvent'
 export default {
   mixins: [DataMutators],
   props: ["table", "connection", "tabID", "active", "primaryKeys"],
@@ -147,13 +150,42 @@ export default {
     },
   },
   methods: {
+    collectChanges() {
 
+      const updates = this.editedCells.map((cell) => {
+        return {
+          changeType: cell.getField(),
+          columnName: cell.getRow().getData()['columnName'],
+          newValue: cell.getValue()
+        }
+      })
+
+      const inserts = this.newRows.map((row) => {
+        return row.getData()
+      })
+
+      const deletes = this.removedRows.map((row) => row.getData()['columnName'])
+
+      return {
+        table: this.table.name,
+        schema: this.table.schema,
+        updates,
+        inserts,
+        deletes
+      }
+    },
     // submission methods
-    submitApply() {
-      this.$noty.info("TODO applying changes")
+    async submitApply() {
+      const changes = this.collectChanges()
+      const result = await this.connection.alterTable(changes)
+      this.$noty.success(`${this.table.name} Updated`)
+      this.$root.$emit('loadTable', { table: this.table })
     },
     submitSql() {
-      this.$noty.info("TODO opening a new tab with SQL")
+      const changes = this.collectChanges()
+      const sql = this.connection.alterTableSql(changes)
+      const formatted = sqlFormatter.format(sql)
+      this.$root.$emit(AppEvent.newTab, formatted)
     },
     submitUndo() {
       this.editedCells.forEach((c) => {
@@ -205,8 +237,10 @@ export default {
       }
     },
     cellEdited(cell, ...props) {
-      this.editedCells.push(cell)
-      cell.getElement().classList.add('edited')
+      if(![...this.newRows, this.removedRows].includes(cell.getRow())) {
+        this.editedCells.push(cell)
+        cell.getElement().classList.add('edited')
+      }
     }
   },
   mounted() {

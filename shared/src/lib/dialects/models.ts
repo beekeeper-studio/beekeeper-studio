@@ -55,6 +55,9 @@ export class ColumnType {
 
 export interface DialectData {
   columnTypes: ColumnType[]
+  wrapIdentifier: (s: string) => string
+  wrapString: (s: string, quote?: boolean) => string
+  wrapLiteral: (s: string) => string
 }
 
 export interface SchemaConfig {
@@ -75,4 +78,18 @@ export interface Schema {
   name: string
   schema?: string
   columns: SchemaItem[]
+}
+
+export interface SchemaItemChange {
+  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue' | 'comment'
+  columnName: string
+  newValue: string | boolean
+}
+
+export interface AlterTableSpec {
+  table: string
+  schema?: string
+  updates: SchemaItemChange[]
+  inserts: SchemaItem[]
+  deletes: string[]
 }

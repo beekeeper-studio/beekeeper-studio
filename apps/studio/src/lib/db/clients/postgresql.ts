@@ -9,9 +9,9 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, ColumnChange, TableIndex } from "../models";
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeLiteral, escapeString } from './utils';
-
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, SchemaItemChange, TableIndex, AlterTablePayload } from "../models";
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString } from './utils';
+import { escapeLiteral } from 'pg/lib/client'
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
@@ -174,10 +174,9 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getRoutineCreateScript: (routine, type, schema = defaultSchema) => getRoutineCreateScript(conn, routine, type, schema),
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
     getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
-    alterTableColumns: (changes: ColumnChange[]) => alterTableColumns(conn, changes),
+    alterTableSql: (change: AlterTablePayload) => alterTableSql(conn, change),
+    alterTable: (change: AlterTablePayload) => alterTable(conn, change),
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema)
-
-
   };
 }
 
@@ -872,30 +871,71 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
   return results
 }
 
-export async function alterTableColumns(conn: HasPool, changes: ColumnChange[]) {
-
-  const queries = changes.map((change) => {
-    const identifier = wrapTable(change.table, change.schema)
-    const column = wrapIdentifier(change.columnName)
-    const direction = change.newValue === true ? 'SET' : 'DROP'
-    switch (change.changeType) {
+export function alterTableSql(_conn: HasPool, change: AlterTablePayload) {
+  const alters = change.updates.map((update) => {
+    const column = wrapIdentifier(update.columnName)
+    const nullableDirection = update.newValue === true ? 'SET' : 'DROP'
+    switch (update.changeType) {
       case 'columnName':
-        return `ALTER TABLE ${identifier} RENAME COLUMN ${wrapIdentifier(change.columnName)} TO ${wrapIdentifier(change.newValue.toString())}`
+        return `RENAME COLUMN ${wrapIdentifier(update.columnName)} TO ${wrapIdentifier(update.newValue.toString())}`
         break;
       case 'dataType':
-      return `ALTER TABLE ${identifier} ALTER COLUMN ${column} TYPE ${escapeLiteral(change.newValue.toString())}`
+        return `ALTER COLUMN ${column} TYPE ${escapeLiteral(update.newValue.toString())}`
         break;
       case 'defaultValue':
-        return `ALTER TABLE ${identifier} ALTER COLUMN ${column} SET DEFAULT '${escapeString(change.newValue.toString())}'`
+        return `ALTER COLUMN ${column} SET DEFAULT ${escapeLiteral(update.newValue.toString())}`
       case 'nullable':
-        return `ALTER TABLE ${identifier} ALTER COLUMN ${column} ${direction} NOT NULL`
+        return `ALTER COLUMN ${column} ${nullableDirection} NOT NULL`
         break;
       default:
         break;
     }
   })
-  
-  await driverExecuteQuery(conn, { query: queries.join(";")})
+
+  const insertsAndDrops = knex.schema.withSchema(change.schema).alterTable(change.table, (table) => {
+    change.inserts.map((item) => {
+      const col = table.specificType(item.columnName, item.dataType)
+      item.nullable ? col.nullable() : col.notNullable()
+      if (item.defaultValue) col.defaultTo(knex.raw(item.defaultValue))
+      if (item.comment) col.comment(item.comment)
+    })
+    if (change.deletes.length > 0) {
+      table.dropColumns(...change.deletes)
+    }
+  }).toQuery()
+
+  const comments = change.updates.filter((c) => c.changeType === 'comment').map((c) => {
+    const table = `${wrapIdentifier(change.schema)}.${wrapIdentifier(change.table)}`
+    const id = `${table}.${c.columnName}`
+    return `COMMENT ON ${id} IS '${escapeString(c.newValue)}'`
+  }).join(";")
+
+  console.log("inserts", insertsAndDrops)
+  console.log("alters", alters)
+  // result is:
+  // ALTER TABLE FOO
+  // ADD COLUMN BAR,
+  // DROP COLUMN BAZ,
+  // ALTER COLUMN BIN
+  // ...
+  const tableChanges = [insertsAndDrops, ...alters].join(',')
+  return [tableChanges, comments].join(';')
+}
+
+export async function alterTable(_conn: HasPool, change: AlterTablePayload) {
+  runWithConnection(_conn, async (connection) => {
+    const cli = { connection }
+    const sql = alterTableSql(_conn, change)
+    try {
+      await driverExecuteQuery(cli, { query: 'BEGIN' })
+      await driverExecuteQuery(cli, { query: sql })
+      await driverExecuteQuery(cli, { query: 'COMMIT' })
+    } catch (ex) {
+      log.error("ALTERTABLE", ex)
+      await driverExecuteQuery(cli, { query: 'ROLLBACK'})
+      throw ex
+    }
+  })
 }
 
 export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {

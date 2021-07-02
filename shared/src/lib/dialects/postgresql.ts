@@ -17,4 +17,39 @@ const defaultLength =(t: string) => {
 
 export const PostgresData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
+  wrapIdentifier: (id: string) => id.replaceAll(/"/, '""'),
+  wrapString: (str: string, quote?: boolean) => {
+    const quoted = str.replaceAll(/'/, "''")
+    if (quote) {
+      return `'${quoted}'`
+    } else {
+      return quoted
+    }
+  },
+  // Copyright node-postgres - https://github.com/brianc/node-postgres/blob/4b229275cfe41ca17b7d69bd39f91ada0068a5d0/packages/pg/lib/client.js
+  wrapLiteral: (str) => {
+    let hasBackslash = false
+    let escaped = "'"
+
+    for (let i = 0; i < str.length; i++) {
+      const c = str[i]
+      if (c === "'") {
+        escaped += c + c
+      } else if (c === '\\') {
+        escaped += c + c
+        hasBackslash = true
+      } else {
+        escaped += c
+      }
+    }
+    escaped += "'"
+
+    if (hasBackslash === true) {
+      escaped = ' E' + escaped
+    }
+
+    return escaped
+  }
+
+
 }
