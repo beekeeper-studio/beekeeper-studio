@@ -17,9 +17,9 @@ const defaultLength =(t: string) => {
 
 export const PostgresData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
-  wrapIdentifier: (id: string) => id.replaceAll(/"/, '""'),
+  wrapIdentifier: (id: string) => `"${id.replaceAll(/"/g, '""')}"`,
   wrapString: (str: string, quote?: boolean) => {
-    const quoted = str.replaceAll(/'/, "''")
+    const quoted = str.replaceAll(/'/g, "''")
     if (quote) {
       return `'${quoted}'`
     } else {

@@ -1,3 +1,4 @@
+import _ from "lodash"
 import { ColumnType, DialectData } from "./models"
 
 
@@ -12,5 +13,16 @@ const supportsLength = [
 const defaultLength = (t: string) => t.startsWith('var') ? 255 : 8
 
 export const MysqlData: DialectData = {
-  columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t)))
+  columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
+  wrapIdentifier(value: string) {
+    return (value !== '*' ? `\`${value.replaceAll(/`/g, '``')}\`` : '*');
+  },
+  wrapString(value: string) {
+    if (_.isNil(value)) return null
+    return value.replaceAll("'", "''")
+  },
+  wrapLiteral(value: string) {
+    return value.replaceAll(';', '')
+  }
+
 }

@@ -9,14 +9,15 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, SchemaItemChange, TableIndex, AlterTablePayload } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString } from './utils';
-import { escapeLiteral } from 'pg/lib/client'
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
+import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
+import { AlterTableSpec } from '@shared/lib/dialects/models';
 
 
 const base64 = require('base64-url');
@@ -174,8 +175,8 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getRoutineCreateScript: (routine, type, schema = defaultSchema) => getRoutineCreateScript(conn, routine, type, schema),
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
     getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
-    alterTableSql: (change: AlterTablePayload) => alterTableSql(conn, change),
-    alterTable: (change: AlterTablePayload) => alterTable(conn, change),
+    alterTableSql: (change: AlterTableSpec) => alterTableSql(conn, change),
+    alterTable: (change: AlterTableSpec) => alterTable(conn, change),
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema)
   };
 }
@@ -871,58 +872,12 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
   return results
 }
 
-export function alterTableSql(_conn: HasPool, change: AlterTablePayload) {
-  const alters = change.updates.map((update) => {
-    const column = wrapIdentifier(update.columnName)
-    const nullableDirection = update.newValue === true ? 'SET' : 'DROP'
-    switch (update.changeType) {
-      case 'columnName':
-        return `RENAME COLUMN ${wrapIdentifier(update.columnName)} TO ${wrapIdentifier(update.newValue.toString())}`
-        break;
-      case 'dataType':
-        return `ALTER COLUMN ${column} TYPE ${escapeLiteral(update.newValue.toString())}`
-        break;
-      case 'defaultValue':
-        return `ALTER COLUMN ${column} SET DEFAULT ${escapeLiteral(update.newValue.toString())}`
-      case 'nullable':
-        return `ALTER COLUMN ${column} ${nullableDirection} NOT NULL`
-        break;
-      default:
-        break;
-    }
-  })
-
-  const insertsAndDrops = knex.schema.withSchema(change.schema).alterTable(change.table, (table) => {
-    change.inserts.map((item) => {
-      const col = table.specificType(item.columnName, item.dataType)
-      item.nullable ? col.nullable() : col.notNullable()
-      if (item.defaultValue) col.defaultTo(knex.raw(item.defaultValue))
-      if (item.comment) col.comment(item.comment)
-    })
-    if (change.deletes.length > 0) {
-      table.dropColumns(...change.deletes)
-    }
-  }).toQuery()
-
-  const comments = change.updates.filter((c) => c.changeType === 'comment').map((c) => {
-    const table = `${wrapIdentifier(change.schema)}.${wrapIdentifier(change.table)}`
-    const id = `${table}.${c.columnName}`
-    return `COMMENT ON ${id} IS '${escapeString(c.newValue)}'`
-  }).join(";")
-
-  console.log("inserts", insertsAndDrops)
-  console.log("alters", alters)
-  // result is:
-  // ALTER TABLE FOO
-  // ADD COLUMN BAR,
-  // DROP COLUMN BAZ,
-  // ALTER COLUMN BIN
-  // ...
-  const tableChanges = [insertsAndDrops, ...alters].join(',')
-  return [tableChanges, comments].join(';')
+export function alterTableSql(_conn: HasPool, change: AlterTableSpec) {
+  const builder = new PostgresqlChangeBuilder(change.table, change.schema)
+  return builder.alterTable(change)
 }
 
-export async function alterTable(_conn: HasPool, change: AlterTablePayload) {
+export async function alterTable(_conn: HasPool, change: AlterTableSpec) {
   runWithConnection(_conn, async (connection) => {
     const cli = { connection }
     const sql = alterTableSql(_conn, change)
@@ -1356,5 +1311,6 @@ async function runWithConnection<T>(x: Conn, run: (p: PoolClient) => Promise<T>)
 
 
 export const testOnly = {
-  parseRowQueryResult
+  parseRowQueryResult,
+  alterTableSql
 }

@@ -3,7 +3,8 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, SchemaItemChange, TableIndex, TableTrigger, AlterTablePayload } from './models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger } from './models';
+import { AlterTableSpec } from '@shared/lib/dialects/models';
 
 const logger = createLogger('db');
 
@@ -25,8 +26,8 @@ export interface DatabaseClient {
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
   // alter table
-  alterTableSql: (change: AlterTablePayload) => string,
-  alterTable: (change: AlterTablePayload) => Promise<void>,
+  alterTableSql: (change: AlterTableSpec) => string,
+  alterTable: (change: AlterTableSpec) => Promise<void>,
 
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties | null>,

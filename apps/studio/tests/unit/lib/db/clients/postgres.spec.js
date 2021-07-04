@@ -43,4 +43,24 @@ describe("Postgres UNIT tests (no connection required)", () => {
     }
     expect(f(data, undefined, false)).toStrictEqual(expected)
   })
+
+  it("Should generate correct alter table statement", () => {
+    const input = {
+      table: 'foo',
+      schema: 'public',
+      updates: [
+        {
+          changeType: 'columnName',
+          columnName: 'bar',
+          newValue: 'baz'
+        }
+      ],
+      inserts: [],
+      deletes: []
+    }
+    const result = testOnly.alterTableSql(null, input)
+    const expected = 'ALTER TABLE "public"."foo" RENAME COLUMN "bar" TO "baz";'
+    expect(result).toBe(expected)
+  })
+
 })

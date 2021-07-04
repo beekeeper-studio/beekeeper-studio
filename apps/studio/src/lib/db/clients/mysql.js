@@ -29,8 +29,7 @@ export default async function (server, database) {
     pool: mysql.createPool(dbConfig),
   };
 
-  // light solution to test connection with with the server
-  await driverExecuteQuery(conn, { query: 'select version();' });
+  const versionInfo = await getVersion(conn)
 
   return {
     supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true }),
@@ -68,6 +67,30 @@ export default async function (server, database) {
 
 export function disconnect(conn) {
   conn.pool.end();
+}
+
+async function getVersion(conn) {
+  const { data } = await driverExecuteQuery(conn, { query: 'SELECT VERSION() as v'})
+  const version = data[0]['v']
+
+  if (!version) {
+    return {
+      versionString: '',
+      isMariaDb: false,
+      isMySql: true,
+      version: 5.7
+    }
+  }
+
+  const stuff = version.split("-")
+
+  return {
+    versionString: version,
+    isMariaDb: version.toLowerCase().includes('mariadb'),
+    isMySql: !version.toLowerCase().includes("mariadb"),
+    version: Number(stuff[0] || 0)
+  }
+
 }
 
 

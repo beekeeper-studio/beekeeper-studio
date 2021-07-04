@@ -1,7 +1,3 @@
-import { SchemaItem } from "@shared/lib/dialects/models";
-
-
-
 export abstract class BeeCursor {
   constructor(public chunkSize: number) {
 
@@ -133,20 +129,7 @@ export interface TableChanges {
 }
 
 
-export interface SchemaItemChange {
-  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue' | 'comment'
-  columnName: string
-  newValue: string | boolean
-}
-
-export interface AlterTablePayload {
-  table: string
-  schema?: string
-  updates: SchemaItemChange[]
-  inserts: SchemaItem[]
-  deletes: string[]
-}
-
+// AlterTableSpec is in @shared
 
 export interface TableInsert {
   table: string;
