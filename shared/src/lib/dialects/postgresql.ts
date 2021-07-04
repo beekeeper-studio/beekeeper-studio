@@ -26,30 +26,7 @@ export const PostgresData: DialectData = {
       return quoted
     }
   },
-  // Copyright node-postgres - https://github.com/brianc/node-postgres/blob/4b229275cfe41ca17b7d69bd39f91ada0068a5d0/packages/pg/lib/client.js
-  wrapLiteral: (str) => {
-    let hasBackslash = false
-    let escaped = "'"
-
-    for (let i = 0; i < str.length; i++) {
-      const c = str[i]
-      if (c === "'") {
-        escaped += c + c
-      } else if (c === '\\') {
-        escaped += c + c
-        hasBackslash = true
-      } else {
-        escaped += c
-      }
-    }
-    escaped += "'"
-
-    if (hasBackslash === true) {
-      escaped = ' E' + escaped
-    }
-
-    return escaped
-  }
+  wrapLiteral: (s: string) => s ? s.replaceAll(/;/g, '') : null
 
 
 }

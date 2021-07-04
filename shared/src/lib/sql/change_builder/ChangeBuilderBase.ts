@@ -42,6 +42,11 @@ export abstract class ChangeBuilderBase {
 
   // new columns
   addColumn(item: SchemaItem) {
+
+    if (!item.columnName || !item.dataType) {
+      throw new Error("can't add a column without name or data type")
+    }
+
     return [
       'ADD COLUMN',
       this.wrapIdentifier(item.columnName),
@@ -82,20 +87,20 @@ export abstract class ChangeBuilderBase {
   }
 
   abstract wrapIdentifier(str: string): string
-  abstract wrapLiteral(str: string): string
+  abstract wrapLiteral(str: string): string 
   abstract escapeString(str: string): string
 
   alterTable(spec: AlterTableSpec): string {
     const beginning = `ALTER TABLE ${this.tableName}`
     const alterations = [
-      this.addColumns(spec.inserts),
-      this.dropColumns(spec.deletes),
-      this.alterColumns(spec.updates)
+      this.addColumns(spec.adds || []),
+      this.dropColumns(spec.drops || []),
+      this.alterColumns(spec.alterations || [])
     ].filter((i) => !_.isEmpty(i))
     const alterTable = `${beginning} ${alterations.join(", ")}`
     const results = [
       alterTable,
-      this.alterComments(spec.updates)
+      this.alterComments(spec.alterations || [])
     ].join(";")
     return results
   }

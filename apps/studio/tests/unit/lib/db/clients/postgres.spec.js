@@ -44,23 +44,75 @@ describe("Postgres UNIT tests (no connection required)", () => {
     expect(f(data, undefined, false)).toStrictEqual(expected)
   })
 
-  it("Should generate correct alter table statement", () => {
+  it("Should generate correct alter table rename statement", () => {
     const input = {
       table: 'foo',
       schema: 'public',
-      updates: [
+      alterations: [
         {
           changeType: 'columnName',
           columnName: 'bar',
           newValue: 'baz'
         }
       ],
-      inserts: [],
-      deletes: []
     }
     const result = testOnly.alterTableSql(null, input)
     const expected = 'ALTER TABLE "public"."foo" RENAME COLUMN "bar" TO "baz";'
     expect(result).toBe(expected)
+  })
+
+  it("Should generate correct alter table type change statement", () => {
+    const input = {
+      table: 'foo',
+      schema: 'public',
+      alterations: [
+        {
+          changeType: 'dataType',
+          columnName: 'bar',
+          newValue: 'varchar(255)'
+        }
+      ]
+    }
+    const result = testOnly.alterTableSql(null, input);
+    const expected = 'ALTER TABLE "public"."foo" ALTER COLUMN "bar" TYPE varchar(255);'
+    expect(result).toBe(expected)
+  })
+
+  it("Should add a new column properly", () => {
+    const input = {
+      table: 'foo',
+      schema: 'public',
+      adds: [
+        {
+          columnName: 'bar',
+          dataType: 'varchar(255)',
+          nullable: true,
+          defaultValue: "'Hello Fella'"
+        }
+      ]
+    }
+
+    const result = testOnly.alterTableSql(null, input);
+    const expected = 'ALTER TABLE "public"."foo" ADD COLUMN "bar" varchar(255) NULL DEFAULT \'Hello Fella\';'
+    expect(result).toBe(expected)
+  })
+
+  it("Should do everything at once", () => {
+    const input = {
+      table: 'foo',
+      schema: 'public',
+      adds: [
+        { columnName: 'a', dataType: 'int'}
+      ],
+      alterations: [
+        { columnName:'b', changeType: 'dataType', newValue: 'char'},
+        { columnName: 'd', changeType: 'comment', newValue: 'comment!'}
+      ],
+      drops: ['c']
+    }
+    const result = testOnly.alterTableSql(null, input)
+    const expected = 'ALTER TABLE "public"."foo" ADD COLUMN "a" int NOT NULL, DROP COLUMN "c", ALTER COLUMN "b" TYPE char;COMMENT ON COLUMN "public"."foo"."d" IS \'comment!\''
+    expect(result).toBe(expected);
   })
 
 })
