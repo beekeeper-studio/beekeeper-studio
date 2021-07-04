@@ -88,7 +88,7 @@ export abstract class ChangeBuilderBase {
 
   abstract wrapIdentifier(str: string): string
   abstract wrapLiteral(str: string): string 
-  abstract escapeString(str: string): string
+  abstract escapeString(str: string, quote?: boolean): string
 
   alterTable(spec: AlterTableSpec): string {
     const beginning = `ALTER TABLE ${this.tableName}`

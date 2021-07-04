@@ -221,7 +221,7 @@ export function wrapIdentifier(value) {
 }
 
 export function wrapValue(value) {
-  return `'${value.replace(/'/g, "''")}'`
+  return `'${value.replaceAll(/'/g, "''")}'`
 }
 
 

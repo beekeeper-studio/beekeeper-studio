@@ -1,4 +1,4 @@
-import { ColumnType, DialectData } from "./models"
+import { ColumnType, defaultEscapeString, DialectData } from "./models"
 
 
 const types = [
@@ -12,5 +12,16 @@ const supportsLength = [
 const defaultLength = (t: string) => t.includes('var') ? 255 : 8
 
 export const SqlServerData: DialectData = {
-  columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t)))
+  columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
+  wrapIdentifier(value: string): string {
+    if (_.isString(value)) {
+      return (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*');
+    } return value
+
+  },
+  wrapLiteral(str: string): string {
+    return str.replaceAll(/;/g, '');
+  },
+  escapeString: defaultEscapeString
+
 }

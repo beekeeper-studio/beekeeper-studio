@@ -1,5 +1,5 @@
 import _ from "lodash"
-import { ColumnType, DialectData } from "./models"
+import { ColumnType, defaultEscapeString, DialectData } from "./models"
 
 
 const types = [
@@ -17,10 +17,7 @@ export const MysqlData: DialectData = {
   wrapIdentifier(value: string) {
     return (value !== '*' ? `\`${value.replaceAll(/`/g, '``')}\`` : '*');
   },
-  wrapString(value: string) {
-    if (_.isNil(value)) return null
-    return value.replaceAll("'", "''")
-  },
+  escapeString: defaultEscapeString,
   wrapLiteral(value: string) {
     return value.replaceAll(';', '')
   }

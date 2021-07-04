@@ -1,4 +1,4 @@
-import { ColumnType, DialectData } from "./models";
+import { ColumnType, defaultEscapeString, DialectData } from "./models";
 
 
 
@@ -18,14 +18,7 @@ const defaultLength =(t: string) => {
 export const PostgresData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   wrapIdentifier: (id: string) => `"${id.replaceAll(/"/g, '""')}"`,
-  wrapString: (str: string, quote?: boolean) => {
-    const quoted = str.replaceAll(/'/g, "''")
-    if (quote) {
-      return `'${quoted}'`
-    } else {
-      return quoted
-    }
-  },
+  escapeString: defaultEscapeString,
   wrapLiteral: (s: string) => s ? s.replaceAll(/;/g, '') : null
 
 

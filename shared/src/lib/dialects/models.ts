@@ -56,9 +56,15 @@ export class ColumnType {
 export interface DialectData {
   columnTypes: ColumnType[]
   wrapIdentifier: (s: string) => string
-  wrapString: (s: string, quote?: boolean) => string
+  escapeString: (s: string, quote?: boolean) => string
   wrapLiteral: (s: string) => string
 }
+
+export function defaultEscapeString(value: string, quote?: boolean): string {
+  const result = `${value.replaceAll(/'/g, "''")}`
+  return quote ? `'${result}'` : result
+}
+
 
 export interface SchemaConfig {
   dataType: string
