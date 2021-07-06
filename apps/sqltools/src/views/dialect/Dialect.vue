@@ -34,12 +34,12 @@ export default Vue.extend({
       ]
     }
   },
-  beforeRouteEnter(to, from, next) {
+  beforeRouteEnter(to, _from, next) {
     next((component: any) => {
       component.dialect = to.params.dialect_id
     })
   },
-  data() {
+  data(): State {
     return {
       dialect: 'sqlite'
     }

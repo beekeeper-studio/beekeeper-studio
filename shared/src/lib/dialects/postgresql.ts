@@ -21,5 +21,4 @@ export const PostgresData: DialectData = {
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral
 
-
 }

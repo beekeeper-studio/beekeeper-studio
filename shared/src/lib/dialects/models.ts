@@ -59,6 +59,15 @@ export interface DialectData {
   wrapIdentifier: (s: string) => string
   escapeString: (s: string, quote?: boolean) => string
   wrapLiteral: (s: string) => string
+  disabledFeatures?: {
+    alter?: {
+      addColumn?: boolean
+      dropColumn?: boolean
+      renameColumn?: boolean
+      alterColumn?: boolean
+    },
+    comments?: boolean
+  }
 }
 
 export function defaultEscapeString(value: string, quote?: boolean): string {
@@ -97,7 +106,7 @@ export interface Schema {
 export interface SchemaItemChange {
   changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue' | 'comment'
   columnName: string
-  newValue: string | boolean
+  newValue: string | boolean | null
 }
 
 export interface AlterTableSpec {

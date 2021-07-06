@@ -1,4 +1,5 @@
 // Copyright (c) 2015 The SQLECTRON Team
+import { MySqlChangeBuilder } from '@shared/lib/sql/change_builder/MysqlChangeBuilder';
 import rawLog from 'electron-log';
 import { readFileSync } from 'fs';
 import knexlib from 'knex';
@@ -59,7 +60,10 @@ export default async function (server, database) {
     getRoutineCreateScript: (routine, type) => getRoutineCreateScript(conn, routine, type),
     truncateAllTables: () => truncateAllTables(conn),
     getTableProperties: (table) => getTableProperties(conn, table),
-    setTableDescription: (table, description) => setTableDescription(conn, table, description)
+    setTableDescription: (table, description) => setTableDescription(conn, table, description),
+    
+    alterTableSql: (change) => alterTableSql(conn, change),
+    alterTable: (change) => alterTable(conn, change)
 
   };
 }
@@ -683,6 +687,28 @@ async function setTableDescription(conn, table, description) {
   await driverExecuteQuery(conn, { query })
   const result = await getTableProperties(conn, table)
   return result.description
+}
+async function alterTableSql(conn, change) {
+  const columns = await listTableColumns(conn, null, change.table)
+  const builder = MySqlChangeBuilder(change.table, columns)
+  return builder.alterTable(change)
+}
+
+async function alterTable(conn, change) {
+  const sql = await alterTableSql(conn, change)
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    const queries = [
+      'START TRANSACTION',
+      sql,
+      'COMMIT'
+    ].join(";")
+    try {
+      await driverExecuteQuery(cli, { query: queries })
+    } catch (ex) {
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' })
+    }
+  })
 }
 
 

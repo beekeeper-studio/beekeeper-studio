@@ -1,6 +1,11 @@
 import { now } from "@/lib/templates/base"
 import { AlterTableSpec, Dialect, DialectTitles } from "@shared/lib/dialects/models"
-import { ChangeBuilder } from "@shared/lib/sql/ChangeBuilder"
+import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase"
+import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder"
+import { PostgresqlChangeBuilder } from "@shared/lib/sql/change_builder/PostgresqlChangeBuilder"
+import { RedshiftChangeBuilder } from "@shared/lib/sql/change_builder/RedshiftChangeBuilder"
+import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder"
+import { SqlServerChangeBuilder } from "@shared/lib/sql/change_builder/SqlServerChangeBuilder"
 
 interface CodeExample  {
   value: string
@@ -51,6 +56,26 @@ const alterTableExampleSpec: AlterTableSpec = {
 
 }
 
+function getChangeBuilder(dialect: Dialect): ChangeBuilderBase {
+  switch (dialect) {
+    case 'postgresql':
+      return new PostgresqlChangeBuilder("users", "public")
+      break;
+    case 'mysql':
+      return new MySqlChangeBuilder("users", [])
+    case 'sqlserver':
+      return new SqlServerChangeBuilder("users", 'dbo', [], [])
+    case 'sqlite':
+      return new SqliteChangeBuilder('users')
+    case 'redshift':
+      return new RedshiftChangeBuilder('users')
+    default:
+      throw new Error("Unknown dialect")
+
+  }
+}
+
+
 function buildExamples(dialect: Dialect, prefix: string): Example[] {
 
   function wrap(cAlter: string) {
@@ -60,7 +85,7 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
 
   const nowText = now(dialect)
 
-  const pBuilder = ChangeBuilder.for(dialect)
+  const pBuilder = getChangeBuilder(dialect)
 
   return [
     {

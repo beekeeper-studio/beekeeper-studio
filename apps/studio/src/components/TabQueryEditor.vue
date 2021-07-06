@@ -398,6 +398,7 @@
       },
       async submitQuery(rawQuery, skipModal) {
         this.running = true
+        this.error = null
         this.queryForExecution = rawQuery
         this.results = []
         this.selectedResult = 0

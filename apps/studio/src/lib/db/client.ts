@@ -124,8 +124,12 @@ export class DBConnection {
   selectTop = selectTop.bind(null, this.server, this.database)
   selectTopStream = selectTopStream.bind(null, this.server, this.database)
   applyChanges = applyChanges.bind(null, this.server, this.database)
+
+  // alter table
   alterTableSql = bind.bind(null, 'alterTableSql', this.server, this.database)
   alterTable = bind.bind(null, 'alterTable', this.server, this.database)
+
+  
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
   getTableCreateScript = getTableCreateScript.bind(null, this.server, this.database)
   getTableSelectScript = getTableSelectScript.bind(null, this.server, this.database)
@@ -334,14 +338,6 @@ function applyChanges(server: IDbConnectionServer, database: IDbConnectionDataba
 function bind(functionName: string, server: IDbConnectionServer, database: IDbConnectionDatabase, ...args) {
   checkIsConnected(server, database)
   return database.connection[functionName](...args)
-}
-function alterTableSql(server: IDbConnectionServer, database: IDbConnectionDatabase, change: AlterTablePayload) {
-  checkIsConnected(server, database)
-  return database.connection.alterTableSql(change)
-}
-function alterTable(server: IDbConnectionServer, database: IDbConnectionDatabase, change: AlterTablePayload) {
-  checkIsConnected(server, database)
-  return database.connection?.alterTable(change)
 }
 
 

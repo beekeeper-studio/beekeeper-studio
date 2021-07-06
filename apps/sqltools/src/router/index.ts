@@ -3,7 +3,6 @@ import _ from 'lodash'
 import VueRouter, { RouteConfig } from 'vue-router'
 import Home from '../views/Home.vue'
 import TemplatesVue from '@/views/Templates.vue'
-import TemplateVue from '@/views/Template.vue'
 import DialectsVue from '@/views/Dialects.vue'
 import DialectVue from '@/views/dialect/Dialect.vue'
 import ExampleVue from '@/views/dialect/Example.vue'
@@ -11,9 +10,6 @@ import Build from '@/views/Build.vue'
 import TemplateVue from '@/views/Template.vue'
 import Format from '@/views/Format.vue'
 Vue.use(VueRouter)
-
-const DEFAULT_TITLE = "SQLTools"
-const DEFAULT_DESCRIPTION = ""
 
 const routes: Array<RouteConfig> = [
   {

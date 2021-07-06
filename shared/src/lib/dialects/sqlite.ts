@@ -16,5 +16,11 @@ export const SqliteData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
-  wrapIdentifier: defaultWrapIdentifier
+  wrapIdentifier: defaultWrapIdentifier,
+  disabledFeatures: {
+    comments: true,
+    alter: {
+      alterColumn: true,
+    }
+  }
 }

@@ -1,6 +1,6 @@
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { MysqlData } from "@shared/lib/dialects/mysql";
-import { SchemaItem } from "@shared/lib/dialects/models";
+import { Dialect } from "@shared/lib/dialects/models";
 
 interface LiteSchemaItem {
   columnName: string
@@ -8,11 +8,12 @@ interface LiteSchemaItem {
 }
 
 export class MySqlChangeBuilder extends ChangeBuilderBase {
+  dialect: Dialect = 'mysql'
   wrapIdentifier = MysqlData.wrapIdentifier
   wrapLiteral = MysqlData.wrapLiteral
   escapeString = MysqlData.escapeString
 
-  existingColumns: SchemaItem[]
+  existingColumns: LiteSchemaItem[]
   constructor(table: string, existingColumns: LiteSchemaItem[]) {
     super(table)
     this.existingColumns = existingColumns
