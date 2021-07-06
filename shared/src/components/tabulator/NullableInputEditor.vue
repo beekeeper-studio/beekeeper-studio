@@ -69,7 +69,13 @@ export default Vue.extend({
     rendered() {
       if (this.rendered) {
         this.value = this.cell.getValue()
-        this.$refs.input.focus()
+        this.$nextTick(() => {
+          this.$refs.input.focus();
+          if (this.params.autoSelect) {
+
+            this.$refs.input.select();
+          }
+        })
       }
     }
   },
