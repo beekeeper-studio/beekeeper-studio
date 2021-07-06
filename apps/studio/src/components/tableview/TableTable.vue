@@ -148,15 +148,15 @@
             <span>Commit</span>
           </x-button>
           <x-button class="btn btn-primary" menu>
-          <i class="material-icons">arrow_drop_down</i>
-          <x-menu>
-            <x-menuitem @click.prevent="saveChanges">
-              <x-label>Commit</x-label>
-            </x-menuitem>
-            <x-menuitem @click.prevent="discardChanges">
-              <x-label>Discard Changes</x-label>
-            </x-menuitem>
-          </x-menu>
+            <i class="material-icons">arrow_drop_down</i>
+            <x-menu>
+              <x-menuitem @click.prevent="saveChanges">
+                <x-label>Commit</x-label>
+              </x-menuitem>
+              <x-menuitem @click.prevent="discardChanges">
+                <x-label>Discard Changes</x-label>
+              </x-menuitem>
+            </x-menu>
           </x-button>
         </x-buttons>
 

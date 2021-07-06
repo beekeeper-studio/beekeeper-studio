@@ -6,22 +6,6 @@
       </div>
       <span class="expand"></span>
       <div class="actions">
-        <template v-if="hasEdits">
-          <x-button @click.prevent="submitUndo">Undo</x-button>
-          <x-buttons>
-            <x-button class="btn btn-info btn-small" @click.prevent="submitApply">
-              <span>Apply Changes</span>
-            </x-button>
-            <x-button class="btn btn-info btn-small" menu>
-              <i class="material-icons">arrow_drop_down</i>
-              <x-menu>
-                <x-menuitem @click.prevent="submitSql">
-                  Edit SQL
-                </x-menuitem>
-              </x-menu>
-            </x-button>
-          </x-buttons>
-        </template>
         <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
       </div>
     </div>

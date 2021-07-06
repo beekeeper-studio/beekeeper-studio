@@ -75,9 +75,27 @@
             <x-menuitem v-if="dev" @click.prevent="loading = !loading">
               <x-label>[DEV] Toggle Loading</x-label>
             </x-menuitem>
-            
           </x-menu>
         </x-button>
+        
+        <!-- <x-button class="btn btn-flat" @click.prevent="submitUndo">Undo</x-button> -->
+        <x-buttons class="pending-changes">
+          <x-button class="btn btn-primary" @click.prevent="submitApply">
+            <span>Commit</span>
+          </x-button>
+          <x-button class="btn btn-primary" menu>
+            <i class="material-icons">arrow_drop_down</i>
+            <x-menu>
+              <x-menuitem @click.prevent="submitSql">
+                Edit SQL
+              </x-menuitem>
+              <x-menuitem @click.prevent="">
+                <x-label>Discard Changes</x-label>
+              </x-menuitem>
+            </x-menu>
+          </x-button>
+        </x-buttons>
+
       </div>
     </statusbar>
   </div>
@@ -173,7 +191,10 @@ export default {
     },
     humanIndexSize() {
       return humanBytes(this.properties.indexSize)
-    }
+    },
+    hasEdits() {
+      return this.editedCells.length || this.newRows.length || this.removedRows.length
+    },
   },
   methods: {
     triggerError() {
