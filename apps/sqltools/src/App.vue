@@ -20,6 +20,10 @@
 import AppHeader from '@/components/AppHeader.vue';
 
 export default {
+  metaInfo: {
+    titleTemplate: "%s | SQLTools",
+    title: "SQLTools by Beekeeper Studio"
+  },
   name: 'app',
   components: {
     AppHeader

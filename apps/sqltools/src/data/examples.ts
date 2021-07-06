@@ -8,6 +8,8 @@ interface CodeExample  {
 }
 
 export interface Example {
+  id: string,
+  linkText: string
   title: string
   description: string
   code: string | CodeExample[]
@@ -62,17 +64,21 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
 
   return [
     {
+      id: 'alter-column-type',
+      linkText: 'Alter Column Type',
       title: `${title} Alter Column Type Example`,
       description: `How to change a table column type in ${title}`,
       code: wrap(pBuilder.alterType('first_name', 'varchar(255)'))
     },
     {
+      id: 'alter-column-default',
+      linkText: 'Alter Column Default',
       title: `${title} Alter Column Default Example`,
       description: `How to change a column's default value in ${title}`,
       code: [
         {
           value: wrap(pBuilder.alterDefault('created_at', nowText)),
-          title: "A common example for a created_at column - making the default the result the time that the record was created"
+          title: "A common example for a created_at column - setting the default to the time that the record was created"
         },
         {
           value: wrap(pBuilder.alterDefault('first_name', "'Mateo'")),
@@ -81,6 +87,8 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
       ]
     },
     {
+      id: 'alter-column-nullable',
+      linkText: 'Alter Column Nullable',
       title: `${title} Alter Column Nullable Example`,
       description: `How to change the nullable flag on a ${title} table column`,
       code: [
@@ -95,6 +103,8 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
       ]
     },
     {
+      id: 'alter-table',
+      linkText: 'Alter Table',
       title: `${title} Full Alter Table Example`,
       description: `A ${title} example for changing, adding, and removing columns for an existing table`,
       code: pBuilder.alterTable(alterTableExampleSpec)

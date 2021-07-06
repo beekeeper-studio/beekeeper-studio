@@ -32,6 +32,17 @@ import Vue from 'vue'
 import Formatter from 'sql-formatter'
 import HighlightedCode from '@/components/HighlightedCode.vue'
 export default Vue.extend({
+  metaInfo() {
+    return {
+      title: "SQL Table Templates and Examples",
+      meta: [
+        {
+          name: "description",
+          content: "Use these SQL table templates to bootstrap your database. Available for Postgres, MySQL, Sqlite, SQL Server, and Redshift."
+        }
+      ]
+    }
+  },
   components: { HighlightedCode },
   data() {
     return {

@@ -47,6 +47,17 @@ import { SqlGenerator } from '@shared/lib/sql/SqlGenerator';
 import HighlightedCode from '@/components/HighlightedCode.vue'
 
 export default Vue.extend({
+  metaInfo() {
+    return {
+      title: `${this.template.id} table CREATE_TABLE example`,
+      meta: [
+        {
+          name: 'description',
+          content: `CREATE TABLE syntax for a ${this.template.id} SQL table for Postgres, SqlServer, MySQL, Sqlite, or Redshift.`
+        }
+      ]
+    }
+  },
   components: {
     SchemaBuilder,
     DialectPicker,

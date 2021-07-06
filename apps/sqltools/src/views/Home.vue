@@ -57,6 +57,12 @@
 <script lang="ts">
 import Vue from 'vue'
 export default Vue.extend({
+  metaInfo: {
+      title: "Web Utilities and examples for Relational Databases",
+      meta: [
+        { name: 'description', content: "Free, open source database utilities: SQL table builder, SQL formatter, CREATE TABLE templates. Postgres, MySQL, Sqlite, SQL Server, and Redshift" }
+      ]
+  },
   data() {
     return {
       syntaxes: ['Postgres', 'MySQL', 'SqLite', 'SQL Server', 'Redshift']
