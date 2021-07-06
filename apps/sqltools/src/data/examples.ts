@@ -56,15 +56,30 @@ const alterTableExampleSpec: AlterTableSpec = {
 
 }
 
+const existingColumns = [
+  {
+    columnName: 'important_column',
+    dataType: 'varchar(255)'
+  },
+  {
+    columnName: 'not_important_column',
+    dataType: 'varchar(255)'
+  },
+  {
+    columnName: 'birthdate',
+    dataType: 'varchar(255)'
+  }
+]
+
 function getChangeBuilder(dialect: Dialect): ChangeBuilderBase {
   switch (dialect) {
     case 'postgresql':
       return new PostgresqlChangeBuilder("users", "public")
       break;
     case 'mysql':
-      return new MySqlChangeBuilder("users", [])
+      return new MySqlChangeBuilder("users", existingColumns)
     case 'sqlserver':
-      return new SqlServerChangeBuilder("users", 'dbo', [], [])
+      return new SqlServerChangeBuilder("users", 'dbo', existingColumns, [])
     case 'sqlite':
       return new SqliteChangeBuilder('users')
     case 'redshift':
