@@ -4,26 +4,25 @@
       <div class="table-title">
         <h2>Columns</h2>
       </div>
-      <div class="table-actions">
-        <a @click.prevent="addRow" class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Column</a>
+      <span class="expand"></span>
+      <div class="actions">
         <template v-if="hasEdits">
-            <x-buttons>
-              <x-button class="btn btn-primary" @click.prevent="submitApply">
-                <span>Apply Changes</span>
-              </x-button>
-              <x-button class="btn btn-primary">
-                <i class="material-icons">arrow_drop_down</i>
-                <x-menu>
-                  <x-menuitem @click.prevent="submitSql">
-                    Edit SQL
-                  </x-menuitem>
-                </x-menu>
-              </x-button>
-
-            </x-buttons>
-            <x-button @click.prevent="submitUndo">Undo</x-button>
-
+          <x-button @click.prevent="submitUndo">Undo</x-button>
+          <x-buttons>
+            <x-button class="btn btn-info btn-small" @click.prevent="submitApply">
+              <span>Apply Changes</span>
+            </x-button>
+            <x-button class="btn btn-info btn-small" menu>
+              <i class="material-icons">arrow_drop_down</i>
+              <x-menu>
+                <x-menuitem @click.prevent="submitSql">
+                  Edit SQL
+                </x-menuitem>
+              </x-menu>
+            </x-button>
+          </x-buttons>
         </template>
+        <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
       </div>
     </div>
     <div ref="tableSchema"></div>

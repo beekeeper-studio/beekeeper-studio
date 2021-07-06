@@ -9,21 +9,34 @@
       <div v-if="loading" class="table-properties-loading">
         <x-progressbar></x-progressbar>
       </div>
-      <div class="table-properties-wrap" >
-        <div class="center-wrap" v-if="!loading">
-          <div v-for="(pill) in pills" :key="pill.id" ref="tableInfo" class="table-properties-content">
-            <component
-              class="schema-builder"
-              :is="pill.component"
-              :table="table"
-              :primaryKeys="primaryKeys"
-              :properties="properties"
-              :connection="connection"
-              :active="active"
-              
-            ></component>
-          </div>
+      <table-info ></table-info>
+      <div class="table-properties-header">
+        <div class="nav-pills">
+          <a 
+            v-for="(pill) in pills"
+            :key="pill.id"
+            class="nav-pill"
+            :class="{active: pill.id === activePill}"
+            @click.prevent="activePill = pill.id"
+          >
+            {{pill.name}}
+          </a>
         </div>
+      </div>
+      <div class="table-properties-wrap center-wrap" v-if="!loading">
+        <component
+          class="schema-builder"
+          :is="pill.component"
+          :table="table"
+          :primaryKeys="primaryKeys"
+          :properties="properties"
+          :connection="connection"
+          :active="pill.id === activePill && active"
+          v-show="pill.id === activePill"
+          v-for="(pill) in pills" 
+          :key="pill.id"
+          
+        ></component>
       </div>
     </template>
 
@@ -73,16 +86,17 @@
 <script>
 import Tabulator from 'tabulator-tables'
 import Statusbar from './common/StatusBar'
-import TableInfoVue from './tableinfo/TableInfo.vue'
+// import TableInfoVue from './tableinfo/TableInfo.vue'
 import TableSchemaVue from './tableinfo/TableSchema.vue'
 import TableIndexesVue from './tableinfo/TableIndexes.vue'
 import TableRelationsVue from './tableinfo/TableRelations.vue'
 import TableTriggersVue from './tableinfo/TableTriggers.vue'
 import { format as humanBytes } from 'bytes'
 import platformInfo from '../common/platform_info'
+import TableInfo from './tableinfo/TableInfo.vue'
 export default {
   props: ["table", "connection", "tabID", "active"],
-  components: { Statusbar },
+  components: { Statusbar, TableInfo },
   data() {
     return {
       dev: platformInfo.isDevelopment,
@@ -91,12 +105,12 @@ export default {
       primaryKeys: [],
       properties: {},
       rawPills: [
-        {
-          id: 'info',
-          name: 'Info',
-          needsProperties: false,
-          component: TableInfoVue,
-        },
+        // {
+        //   id: 'info',
+        //   name: 'Info',
+        //   needsProperties: false,
+        //   component: TableInfoVue,
+        // },
         {
           id: 'schema',
           name: "Schema",
@@ -125,7 +139,7 @@ export default {
           component: TableTriggersVue
         }
       ],
-      activePill: 'info',
+      activePill: 'schema',
       tableSchema: null,
       tableIndexes: null,
       tableRelations: null,

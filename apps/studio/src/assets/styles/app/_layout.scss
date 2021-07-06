@@ -149,7 +149,11 @@ hr {
 }
 .btn-info {
   background: $brand-info;
-  color: white;
+  color: rgba(black, 0.87);
+  &:hover, &:focus {
+    background: lighten($brand-info, 8%);
+    color: rgba(black, 0.87);
+  }
 }
 .btn-danger {
   &:hover {

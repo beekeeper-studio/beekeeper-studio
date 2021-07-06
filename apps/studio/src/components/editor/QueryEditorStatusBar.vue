@@ -32,22 +32,22 @@
       Download
       </x-button>
       <x-button class="btn btn-small" menu>
-      <i class="material-icons">arrow_drop_down</i>
-      <x-menu>
-        <x-menuitem @click.prevent="download('csv')">
-          <x-label>CSV</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="download('xlsx')">
-          <x-label>Excel</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="download('json')">
-          <x-label>JSON</x-label>
-        </x-menuitem>
-        <hr>
-        <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboard">
-          <x-label>Copy to Clipboard</x-label>
-        </x-menuitem>
-      </x-menu>
+        <i class="material-icons">arrow_drop_down</i>
+        <x-menu>
+          <x-menuitem @click.prevent="download('csv')">
+            <x-label>CSV</x-label>
+          </x-menuitem>
+          <x-menuitem @click.prevent="download('xlsx')">
+            <x-label>Excel</x-label>
+          </x-menuitem>
+          <x-menuitem @click.prevent="download('json')">
+            <x-label>JSON</x-label>
+          </x-menuitem>
+          <hr>
+          <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboard">
+            <x-label>Copy to Clipboard</x-label>
+          </x-menuitem>
+        </x-menu>
       </x-button>
     </x-buttons>
   </statusbar>
