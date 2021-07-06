@@ -1,5 +1,5 @@
 <template>
-<div class="table-info-table">
+<div class="table-info-table view-only">
   <div class="table-subheader">
     <div class="table-title">
       <h2>Indexes</h2>

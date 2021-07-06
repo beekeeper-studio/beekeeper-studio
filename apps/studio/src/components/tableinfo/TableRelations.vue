@@ -1,5 +1,5 @@
 <template>
-  <div class="table-info-tablet">
+  <div class="table-info-tablet view-only">
     <div class="table-subheader">
       <div class="table-title">
         <h2>Relations</h2>

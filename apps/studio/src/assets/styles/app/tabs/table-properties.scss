@@ -194,14 +194,6 @@ $cell-success:           $row-add;
 
   .table-schema {
     .tabulator-table {
-      // .tabulator-row {
-      //   &.inserted {
-      //     background-color: $row-add!important;
-      //   }
-      //   &.deleted {
-      //     background-color: $row-delete!important;
-      //   }
-      // }
       .yesno-icon {
         float:right;
       }
@@ -318,8 +310,16 @@ $cell-success:           $row-add;
       }
       &.inserted, &.deleted {
         .tabulator-cell {
-          &.edited, &.edited:hover {
-            background: rgba($theme-base, 0.1);
+          // &.edited {
+          //   background: transparent;
+          //   box-shadow: none;
+          // }
+          cursor: pointer;
+          &.edited {
+            background: rgba($theme-base, 0.05);
+          }
+          &.edited:hover {
+            background: rgba($theme-base, 0.12);
           }
         }
       }

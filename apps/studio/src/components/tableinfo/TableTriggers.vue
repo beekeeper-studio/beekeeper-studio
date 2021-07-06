@@ -1,5 +1,5 @@
 <template>
-  <div class="table-info-triggers">
+  <div class="table-info-triggers view-only">
     <div class="table-subheader">
       <div class="table-title">
         <h2>Triggers</h2>

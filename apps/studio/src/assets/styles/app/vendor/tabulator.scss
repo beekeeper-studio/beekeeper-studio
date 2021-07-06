@@ -253,14 +253,14 @@ $cell-radius:            2px;
 .tabletable.view-only {
   .tabulator-row {
     .tabulator-cell {
-      cursor: default;
+      cursor: default!important;
       &:hover {
-        background: transparent;
+        background: transparent!important;
       }
     }
   }
 }
-.table-properties {
+.table-properties .view-only {
   .tabulator-row {
     .tabulator-cell {
       cursor: default;
