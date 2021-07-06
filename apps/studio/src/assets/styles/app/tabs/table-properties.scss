@@ -38,7 +38,7 @@ $cell-success:           $row-add;
     padding: 0 $gutter-h;
     min-height: 28px;
     margin-top: $gutter-w * 2;
-    margin-bottom: $gutter-w;
+    margin-bottom: $gutter-h;
     .table-title {
       display: flex;
       flex-grow: 1;
@@ -57,10 +57,6 @@ $cell-success:           $row-add;
       }
     }
   }
-  .tabulator {
-    max-height: 750px;
-  }
-
 
   // Nav Pills
   // -------------------------------
@@ -198,14 +194,14 @@ $cell-success:           $row-add;
 
   .table-schema {
     .tabulator-table {
-      .tabulator-row {
-        &.inserted {
-          background-color: $row-add!important;
-        }
-        &.deleted {
-          background-color: $row-delete!important;
-        }
-      }
+      // .tabulator-row {
+      //   &.inserted {
+      //     background-color: $row-add!important;
+      //   }
+      //   &.deleted {
+      //     background-color: $row-delete!important;
+      //   }
+      // }
       .yesno-icon {
         float:right;
       }
@@ -302,6 +298,36 @@ $cell-success:           $row-add;
           .tabulator-row-handle-box {
             margin-left: 0;
           }
+        }
+      }
+    }
+  }
+}
+
+// Editing
+// -------------------------------------
+.tabulator-table {
+  .tabulator-row {
+    &.tabulator-row-even, 
+    &:nth-child(odd){
+      &.inserted {
+        background-color: $row-add!important;
+      }
+      &.deleted {
+        background-color: $row-delete!important;
+      }
+      &.inserted, &.deleted {
+        .tabulator-cell {
+          &.edited, &.edited:hover {
+            background: rgba($theme-base, 0.1);
+          }
+        }
+      }
+    }
+    .tabulator-cell {
+      &.no-edit-highlight {
+        &.edited {
+          box-shadow: none!important;
         }
       }
     }

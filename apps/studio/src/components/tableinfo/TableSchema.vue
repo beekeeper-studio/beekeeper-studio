@@ -87,7 +87,8 @@ export default {
             editable: true
           },
           cellEdited: this.cellEdited,
-          width: 70
+          width: 70,
+          cssClass: "no-edit-highlight",
         },
         {
           title: 'Default Value',
@@ -104,7 +105,8 @@ export default {
           formatterParams: {
             editable: false
           },
-          width: 70
+          width: 70,
+          cssClass: "no-edit-highlight",
         },
         {
           field: 'trash-button',
