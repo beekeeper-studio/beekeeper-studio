@@ -1,6 +1,6 @@
 import { now } from "@/lib/templates/base"
 import { AlterTableSpec, Dialect, DialectTitles } from "@shared/lib/dialects/models"
-import { PostgresqlChangeBuilder } from "@shared/lib/sql/change_builder/PostgresqlChangeBuilder"
+import { ChangeBuilder } from "@shared/lib/sql/ChangeBuilder"
 
 interface CodeExample  {
   value: string
@@ -51,8 +51,6 @@ const alterTableExampleSpec: AlterTableSpec = {
 
 }
 
-const pBuilder = new PostgresqlChangeBuilder("users", "public")
-
 function buildExamples(dialect: Dialect, prefix: string): Example[] {
 
   function wrap(cAlter: string) {
@@ -61,6 +59,8 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
   const title = DialectTitles[dialect]
 
   const nowText = now(dialect)
+
+  const pBuilder = ChangeBuilder.for(dialect)
 
   return [
     {
