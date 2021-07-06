@@ -1,3 +1,4 @@
+import _ from 'lodash'
 
 export const Dialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift'] as const
 export type Dialect = typeof Dialects[number]
@@ -65,6 +66,13 @@ export function defaultEscapeString(value: string, quote?: boolean): string {
   return quote ? `'${result}'` : result
 }
 
+export function defaultWrapLiteral(str: string): string {
+  return str ? str.replaceAll(/;/g, '') : '';
+}
+
+export function defaultWrapIdentifier(value: string): string {
+  return value ? `"${value.replaceAll(/"/g, '""')}"` : ''
+}
 
 export interface SchemaConfig {
   dataType: string

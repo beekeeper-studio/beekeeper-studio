@@ -16,4 +16,8 @@ export class SqlServerChangeBuilder extends ChangeBuilderBase {
   renameColumn(column: string, newName: string): string {
     return `sp_rename ${this.escapeString(this.tableName)}.${this.escapeString(column)}, '${this.escapeString(newName)}', 'COLUMN';`
   }
+
+  alterType(column: string, newType: string) {
+    return `ALTER COLUMN ${this.wrapIdentifier(column)} ${this.wrapLiteral(newType)}`
+  }
 }

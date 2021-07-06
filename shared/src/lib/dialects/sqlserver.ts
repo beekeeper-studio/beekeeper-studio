@@ -1,4 +1,5 @@
-import { ColumnType, defaultEscapeString, DialectData } from "./models"
+import _ from "lodash"
+import { ColumnType, defaultEscapeString, defaultWrapIdentifier, defaultWrapLiteral, DialectData } from "./models"
 
 
 const types = [
@@ -13,15 +14,9 @@ const defaultLength = (t: string) => t.includes('var') ? 255 : 8
 
 export const SqlServerData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
-  wrapIdentifier(value: string): string {
-    if (_.isString(value)) {
-      return (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*');
-    } return value
-
-  },
-  wrapLiteral(str: string): string {
-    return str.replaceAll(/;/g, '');
-  },
+  wrapIdentifier: (value) =>   _.isString(value) ?
+    (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*') : value,
+  wrapLiteral: defaultWrapLiteral,
   escapeString: defaultEscapeString
 
 }

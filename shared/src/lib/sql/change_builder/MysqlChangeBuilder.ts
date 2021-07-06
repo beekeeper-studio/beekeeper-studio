@@ -10,7 +10,7 @@ interface LiteSchemaItem {
 export class MySqlChangeBuilder extends ChangeBuilderBase {
   wrapIdentifier = MysqlData.wrapIdentifier
   wrapLiteral = MysqlData.wrapLiteral
-  escapeString = MysqlData.wrapString
+  escapeString = MysqlData.escapeString
 
   existingColumns: SchemaItem[]
   constructor(table: string, existingColumns: LiteSchemaItem[]) {

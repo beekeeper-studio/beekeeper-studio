@@ -1,4 +1,4 @@
-import { ColumnType, DialectData } from "./models"
+import { ColumnType, defaultEscapeString, defaultWrapIdentifier, defaultWrapLiteral, DialectData } from "./models"
 
 
 const types = [
@@ -13,5 +13,8 @@ const defaultLength = (t: string) => t.startsWith('var') ? 255 : 8
 
 
 export const SqliteData: DialectData = {
-  columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t)))
+  columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
+  escapeString: defaultEscapeString,
+  wrapLiteral: defaultWrapLiteral,
+  wrapIdentifier: defaultWrapIdentifier
 }

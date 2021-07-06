@@ -1,7 +1,7 @@
 import { PostgresData } from "@shared/lib/dialects/postgresql";
 import { ChangeBuilderBase } from "./ChangeBuilderBase";
 
-const { wrapLiteral: wL, wrapIdentifier: wI, wrapString } = PostgresData
+const { wrapLiteral: wL, wrapIdentifier: wI, escapeString: wrapString } = PostgresData
 
 
 
