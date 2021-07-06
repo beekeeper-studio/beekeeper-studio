@@ -8,6 +8,8 @@
 @import './app/vendor/highlightjs.scss';
 @import './app/vendor/xel.scss';
 
+@import './app/sqltools.scss';
+
 #app.theme-dark {
   @import '../styles/themes/dark/variables.scss';
   @import '../styles/themes/dark/theme.scss';

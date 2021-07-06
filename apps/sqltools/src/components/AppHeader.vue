@@ -1,16 +1,17 @@
 <template>
   <header class="header row flex-middle">
-    <router-link class="logo" to="/">
+    <router-link class="logo" to="/" title="SQLTools by Beekeeper Studio - Homepage">
       <img class="logo-img" src="@/assets/icons/bk-logo-yellow-icon.svg">
       <div class="flex-col">
         <span class="logo-title">SQLTools</span>
-        <small class="logo-subtitle">by <span class="text-primary">Beekeeper Studio</span></small>
       </div>
     </router-link>
     <span class="expand"></span>
     <nav>
-      <router-link :to="{path: '/'}" class="btn btn-link">Builder</router-link>
-      <router-link to="/templates" class="btn btn-link">Templates</router-link>
+      <router-link :to="{path: '/format'}" class="btn btn-link">SQL Formatter</router-link>      
+      <router-link :to="{path: '/build'}" class="btn btn-link">Table Builder</router-link>
+      <router-link to="/templates" class="btn btn-link">Table Templates</router-link>
+      <router-link to="/dialects" class="btn btn-link">Code Examples</router-link>
       <!-- <dialect-picker /> -->
     </nav>
   </header>

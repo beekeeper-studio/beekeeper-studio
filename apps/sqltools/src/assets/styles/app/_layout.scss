@@ -127,7 +127,7 @@ code {
   background: $theme-primary;
   color: rgba(black, 0.87);
   transition: background 0.15s ease-in-out;
-  &:hover, &:focus {
+  &:hover {
     background: lighten($theme-primary, 8%);
     color: rgba(black, 0.87);
   }
@@ -135,7 +135,7 @@ code {
 .btn-flat {
   color: $theme-base;
   background: rgba($theme-base, 0.06);
-  &:hover, &:focus {
+  &:hover {
     background: rgba($theme-base, 0.12);
   }
 }
@@ -143,7 +143,7 @@ code {
   color: $theme-base;
   background: transparent;
   box-shadow: none;
-  &:hover, &:focus {
+  &:hover {
     background: rgba($theme-base, 0.06);
   }
 }
@@ -709,7 +709,7 @@ input[type=file] {
   line-height: 1.1rem;
   > i {
     font-size: 18px;
-    line-height: 1.1rem;
+    line-height: 24px;
     margin-right: 1rem;
   }
   ul {

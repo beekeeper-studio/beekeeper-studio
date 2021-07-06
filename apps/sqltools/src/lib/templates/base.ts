@@ -80,6 +80,19 @@ export const idColumn: TemplatedSchemaItem = {
   }
 }
 
+export function now(d: Dialect): string {
+  switch (d) {
+    case 'postgresql':
+      return 'NOW()'
+    case 'sqlserver':
+      return 'SYSUTCDATETIME()'
+    case 'redshift':
+      return 'GETDATE()'
+    default:
+      return 'CURRENT_TIMESTAMP';
+  }
+}
+
 export const timestampColumn = (name: string): TemplatedSchemaItem => ({
   columnName: name,
   config: {

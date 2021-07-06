@@ -1,3 +1,4 @@
+import _ from 'lodash'
 
 export const Dialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift'] as const
 export type Dialect = typeof Dialects[number]
@@ -55,6 +56,31 @@ export class ColumnType {
 
 export interface DialectData {
   columnTypes: ColumnType[]
+  wrapIdentifier: (s: string) => string
+  escapeString: (s: string, quote?: boolean) => string
+  wrapLiteral: (s: string) => string
+  disabledFeatures?: {
+    alter?: {
+      addColumn?: boolean
+      dropColumn?: boolean
+      renameColumn?: boolean
+      alterColumn?: boolean
+    },
+    comments?: boolean
+  }
+}
+
+export function defaultEscapeString(value: string, quote?: boolean): string {
+  const result = `${value.replaceAll(/'/g, "''")}`
+  return quote ? `'${result}'` : result
+}
+
+export function defaultWrapLiteral(str: string): string {
+  return str ? str.replaceAll(/;/g, '') : '';
+}
+
+export function defaultWrapIdentifier(value: string): string {
+  return value ? `"${value.replaceAll(/"/g, '""')}"` : ''
 }
 
 export interface SchemaConfig {
@@ -75,4 +101,18 @@ export interface Schema {
   name: string
   schema?: string
   columns: SchemaItem[]
+}
+
+export interface SchemaItemChange {
+  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue' | 'comment'
+  columnName: string
+  newValue: string | boolean | null
+}
+
+export interface AlterTableSpec {
+  table: string
+  schema?: string
+  alterations?: SchemaItemChange[]
+  adds?: SchemaItem[]
+  drops?: string[]
 }
