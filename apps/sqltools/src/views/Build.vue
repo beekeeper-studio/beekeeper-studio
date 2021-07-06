@@ -129,7 +129,7 @@ export default Vue.extend ({
     ...mapState(['dialect']),
     ...mapGetters(['knexDialect']),
     description() {
-      if (this.isHome()) {
+      if (this.isHome) {
         return "Generate 'CREATE TABLE' statements using our builder interface. Perfect if you can never remember CREATE TABLE syntax. Works for Postgres, MySQL, Sqlite, SQL Server, and Redshift"
       } else {
         return "Create a ${this.template.id} table using a visual SQL table builder for Postgres, MySQL, Sqlite, SQL Server, or Redshift"
