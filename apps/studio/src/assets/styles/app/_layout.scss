@@ -408,7 +408,7 @@ input[type="checkbox"] {
 	background-color: transparent;
   box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2);
   height: $checkbox-size;
-  line-height: 1;
+  line-height: $checkbox-size;
   width: $checkbox-size;
 	padding: 0;
   border: 0;
@@ -430,6 +430,8 @@ input[type="checkbox"] {
     font-size: $checkbox-size;
     font-weight: bold;
     position: absolute;
+    top: 0;
+    left: 0;
     height: 100%;
     width: 100%;
     color: rgba(black, 0.87);

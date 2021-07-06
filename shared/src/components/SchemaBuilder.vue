@@ -314,9 +314,10 @@ export default Vue.extend({
           display: flex;
           align-items: center;
           height: $row-height;
-          input {
+          input[type="checkbox"] {
             height: 18px!important;
             padding: 0!important;
+            margin: 0!important;
           }
         }
 

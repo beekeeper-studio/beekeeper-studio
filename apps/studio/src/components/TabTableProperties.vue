@@ -13,6 +13,7 @@
         <div class="center-wrap" v-if="!loading">
           <div v-for="(pill) in pills" :key="pill.id" ref="tableInfo" class="table-properties-content">
             <component
+              class="schema-builder"
               :is="pill.component"
               :table="table"
               :primaryKeys="primaryKeys"
