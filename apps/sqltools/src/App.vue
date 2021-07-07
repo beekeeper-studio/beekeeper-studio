@@ -12,6 +12,12 @@
         </small>
       </div>
     </footer>
+    <div class="scripts" v-if="production">
+      <component :is="'script'" src="https://eel.beekeeperstudio.io/script.js" data-spa="auto" data-site="IXJBRDTH" defer></component>
+    </div>
+    <div v-else class="no-analytics">
+      <!-- No analytics scripts -->
+    </div>
   </div>
 
 </template>
@@ -23,6 +29,11 @@ export default {
   metaInfo: {
     titleTemplate: "%s | SQLTools",
     title: "SQLTools by Beekeeper Studio"
+  },
+  data() {
+    return {
+      production: process.env.NODE_ENV === 'production'
+    }
   },
   name: 'app',
   components: {
