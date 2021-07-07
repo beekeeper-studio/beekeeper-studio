@@ -10,7 +10,7 @@
         <div class="dialect-list">
           <div class="row gutter">
             <div class="col s3" v-for="dialect in dialects" :key="dialect">
-              <router-link :to="{name: 'Dialect', params: {dialect_id: dialect}}" class="card-flat padding flex-col">
+              <router-link :to="{name: 'Dialect', params: {dialect_id: dialect}}" class="card-flat card-link padding flex-col">
                 <img :src="require(`@/assets/img/db-logos/${dialect}-client.svg`)">
                 <div>{{titleFor(dialect)}}</div>
               </router-link>
@@ -65,9 +65,6 @@ export default Vue.extend({
     .card-flat {
       transition: background 0.2s ease-in-out;
       border-radius: 32px;
-      &:hover {
-        background: rgba($theme-base, 0.065);
-      }
     }
   }
 </style>
