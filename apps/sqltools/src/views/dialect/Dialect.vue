@@ -1,17 +1,21 @@
 <template>
-  <div class="dialect-page small-wrap">
-    <h1>Code examples for {{dialectName}}</h1>
-    <div class="description">
-      Remembering all the syntax for {{dialectName}} is hard, at least we find it hard to remember it all. Hopefully the examples below help you as much as they help us.
+  <div class="dialect-page">
+    <div class="subheader">
+      <div class="small-wrap">
+        <h1 class="title">Code examples for {{dialectName}}</h1>
+        <div class="subtitle description">
+          Remembering all the syntax for {{dialectName}} is hard, at least we find it hard to remember it all. Hopefully the examples below help you as much as they help us.
+        </div>
+      </div>
     </div>
-    <div class="examples-list">
-      <ul>
-        <li class="example-item" v-for="example in dialectExamples" :key="example.id">
-          <router-link :to="{name: 'Example', params: {dialect_id: dialect, id: example.id} }">{{example.linkText}}</router-link>
+    <section class="page-content examples-list">
+      <div class="small-wrap">
+        <router-link :to="{name: 'Example', params: {dialect_id: dialect, id: example.id} }" class="card-flat example-item" v-for="example in dialectExamples" :key="example.id">
+          <div><span class="badge" >{{example.linkText}}</span></div>
           <span class="example-item-description">{{example.description}}</span>
-        </li>
-      </ul>
-    </div>
+        </router-link>
+      </div>
+    </section>
   </div>
 </template>
 <script lang="ts">
@@ -56,3 +60,26 @@ export default Vue.extend({
   }
 })
 </script>
+
+<style lang="scss" scoped>
+  @import '@/assets/styles/app/_variables';
+
+  .card-flat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: $gutter-w;
+    margin-bottom: $gutter-h;
+    transition: background 0.2s ease-in-out;
+    &:hover {
+      background: rgba($theme-base, 0.065);
+    }
+    .badge {
+      display: inline-flex;
+      margin: 0 0 $gutter-h;
+    }
+    .example-item-description {
+      padding-left: $gutter-h * 0.5;
+    }
+  }
+</style>

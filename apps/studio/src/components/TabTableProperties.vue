@@ -81,6 +81,8 @@
         <!-- <x-button class="btn btn-flat" @click.prevent="submitUndo">Undo</x-button> -->
         <x-buttons class="pending-changes">
           <x-button class="btn btn-primary" @click.prevent="submitApply">
+            <i v-if="error" class="material-icons">error</i>
+            <span class="badge" v-if="!error"><small>#</small></span>
             <span>Commit</span>
           </x-button>
           <x-button class="btn btn-primary" menu>

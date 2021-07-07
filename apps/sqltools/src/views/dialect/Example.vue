@@ -1,18 +1,24 @@
 <template>
-  <div class="dialect-example-page small-wrap" v-if="example">
-    <div class="back-link">
-      <router-link :to="{name: 'Dialect', params: {dialect_id: dialect}}">Back to {{dialectTitle}} code examples</router-link>
-    </div>
-    <h1>{{example.title}}</h1>
-    <div class="description">{{example.description}}</div>
-    <div class="code-examples">
-      <div class="code" v-for="(item, idx) in codes" :key="idx">
-        <highlighted-code :format="true" :code="item.value || item" :dialect="dialect">
-          <div class="code-title" v-if="item.title">{{item.title}}</div>
-        </highlighted-code>
+  <div class="dialect-example-page" v-if="example">
+    <div class="subheader">
+      <div class="small-wrap">
+        <router-link  class="back-link" :to="{name: 'Dialect', params: {dialect_id: dialect}}">
+          <i class="material-icons">arrow_backward</i> 
+          <span>Back to {{dialectTitle}} code examples</span>
+        </router-link>
+        <h1>{{example.title}}</h1>
+        <div class="description">{{example.description}}</div>
       </div>
     </div>
-
+    <section class="code-examples">
+      <div class="small-wrap">
+        <div class="code" v-for="(item, idx) in codes" :key="idx">
+          <highlighted-code :format="true" :code="item.value || item" :dialect="dialect">
+            <div class="code-title" v-if="item.title">{{item.title}}</div>
+          </highlighted-code>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 <script lang="ts">
@@ -65,3 +71,18 @@ export default Vue.extend({
   }
 })
 </script>
+
+<style lang="scss" scoped>
+  @import '@/assets/styles/app/_variables';
+
+  .back-link {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    color: $theme-primary;
+    margin-bottom: $gutter-w;
+    i {
+      width: 24px;
+    }
+  }
+</style>
