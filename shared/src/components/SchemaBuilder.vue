@@ -14,7 +14,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from 'vue'
-import Tabulator from 'tabulator-tables'
+import Tabulator, { RowComponent } from 'tabulator-tables'
 import { getDialectData } from '../lib/dialects'
 import tab from '../lib/tabulator'
 import {vueEditor, vueFormatter} from '../lib/tabulator/helpers'
@@ -90,6 +90,7 @@ export default Vue.extend({
           title: 'Name', 
           field: 'columnName',
           editor: vueEditor(NullableInputEditor),
+          formatter: this.cellFormatter,
           tooltip: true,
           editorParams: {
           }
@@ -160,8 +161,17 @@ export default Vue.extend({
     removeRow(_e, cell: Tabulator.CellComponent) {
       this.tabulator.deleteRow(cell.getRow())
     },
-    addRow() {
-      this.tabulator.addRow({ columnName: 'untitled', dataType: 'text'})
+    async addRow() {
+
+      const num = this.tabulator.getData().length + 1
+      const columnName = `column_${num}`
+
+      const row: RowComponent = await this.tabulator.addRow({ columnName, dataType: 'varchar(255)', nullable: true})
+      const nameCell = row.getCell('columnName')
+      if (nameCell){
+        // don't know why we need this, but we do.
+        setTimeout(() => nameCell.edit(), 50)
+      }
     },
     cellEdited() {
     },

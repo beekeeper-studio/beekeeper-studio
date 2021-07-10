@@ -114,11 +114,12 @@ export abstract class ChangeBuilderBase {
 
 
   initialSql(_spec: AlterTableSpec): string {
-    return ""
+    return null
   }
 
   alterTable(spec: AlterTableSpec): string {
-    const beginning = `${this.initialSql(spec)}; ALTER TABLE ${this.tableName}`
+    const initial = this.initialSql(spec) ? `${this.initialSql(spec)};` : ''
+    const beginning = `${initial} ALTER TABLE ${this.tableName}`
     const alterations = [
       this.addColumns(spec.adds || []),
       this.dropColumns(spec.drops || []),

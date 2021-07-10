@@ -127,7 +127,7 @@ export class DBConnection {
 
   // alter table
   alterTableSql = bind.bind(null, 'alterTableSql', this.server, this.database)
-  alterTable = bind.bind(null, 'alterTable', this.server, this.database)
+  alterTable = bindAsync.bind(null, 'alterTable', this.server, this.database)
 
   
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
@@ -338,6 +338,11 @@ function applyChanges(server: IDbConnectionServer, database: IDbConnectionDataba
 function bind(functionName: string, server: IDbConnectionServer, database: IDbConnectionDatabase, ...args) {
   checkIsConnected(server, database)
   return database.connection[functionName](...args)
+}
+
+async function bindAsync(functionName: string, server: IDbConnectionServer, database: IDbConnectionDatabase, ...args ) {
+  checkIsConnected(server, database)
+  return await database.connection[functionName](...args)
 }
 
 

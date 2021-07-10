@@ -25,7 +25,7 @@
       </div>
       <schema-builder
         :dialect="dialect"
-        :resetOnUpdate="false"
+        :resetOnUpdate="true"
         :initialColumns="initialColumns"
         @columnsChanged="handleChange"
       ></schema-builder>
@@ -55,6 +55,7 @@ import StatusBar from '@/components/common/StatusBar.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
+import { BasicTable } from '@/lib/data/table_templates'
 import _ from 'lodash';
 interface Data {
   initialColumns: SchemaItem[]
@@ -160,6 +161,8 @@ export default Vue.extend({
     }
   },
   mounted() {
+    const schema = BasicTable.toSchema(this.dialect)
+    this.initialColumns = schema.columns
     this.generator = new SqlGenerator(this.dialect)
   }
 })

@@ -872,13 +872,13 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
   return results
 }
 
-export function alterTableSql(_conn: HasPool, change: AlterTableSpec) {
+export function alterTableSql(_conn: HasPool, change: AlterTableSpec): string {
   const builder = new PostgresqlChangeBuilder(change.table, change.schema)
   return builder.alterTable(change)
 }
 
 export async function alterTable(_conn: HasPool, change: AlterTableSpec) {
-  runWithConnection(_conn, async (connection) => {
+  await runWithConnection(_conn, async (connection) => {
     const cli = { connection }
     const sql = alterTableSql(_conn, change)
     try {

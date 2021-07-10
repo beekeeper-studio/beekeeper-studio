@@ -35,71 +35,47 @@
           v-show="pill.id === activePill"
           v-for="(pill) in pills" 
           :key="pill.id"
-          
-        ></component>
+        >
+          <template v-slot:footer>
+            <div class="col truncate expand" v-if="properties">
+              <span class="statusbar-item" :title="`${properties.length} Records`">
+                <i class="material-icons">list_alt</i>
+                <span v-if="properties.length">~{{properties.length.toLocaleString()}}</span>
+              </span>
+              <span class="statusbar-item" :title="`Table Size ${humanSize}`">
+                <i class="material-icons">aspect_ratio</i>
+                <span>{{humanSize}}</span>
+              </span>
+              <span class="statusbar-item" :title="`Index Size ${humanIndexSize}`">
+                <i class="material-icons">location_searching</i>
+                <span>{{humanIndexSize}}</span>
+              </span>
+            </div>
+            <div class="flex-right statusbar-actions">
+              <x-button class="actions-btn btn btn-flat" title="Actions">
+                <i class="material-icons">settings</i>
+                <i class="material-icons">arrow_drop_down</i>
+                <x-menu>
+                  <x-menuitem @click.prevent="refresh">
+                    <x-label>Refresh</x-label>
+                  </x-menuitem>
+                  <x-menuitem @click.prevent="openTable">
+                    <x-label>View Data</x-label>
+                  </x-menuitem>
+                  <hr v-if="dev">
+                  <x-menuitem v-if="dev" @click.prevent="triggerError">
+                    <x-label>[DEV] Toggle Error</x-label>
+                  </x-menuitem>
+                  <x-menuitem v-if="dev" @click.prevent="loading = !loading">
+                    <x-label>[DEV] Toggle Loading</x-label>
+                  </x-menuitem>
+                </x-menu>
+              </x-button>
+            </div>
+          </template>
+        </component>
       </div>
     </template>
-
-    <span class="expand"></span>
-    <statusbar class="tabulator-footer">
-      <div class="col truncate expand" v-if="properties">
-        <span class="statusbar-item" :title="`${properties.length} Records`">
-          <i class="material-icons">list_alt</i>
-          <span v-if="properties.length">~{{properties.length.toLocaleString()}}</span>
-        </span>
-        <span class="statusbar-item" :title="`Table Size ${humanSize}`">
-          <i class="material-icons">aspect_ratio</i>
-          <span>{{humanSize}}</span>
-        </span>
-        <span class="statusbar-item" :title="`Index Size ${humanIndexSize}`">
-          <i class="material-icons">location_searching</i>
-          <span>{{humanIndexSize}}</span>
-        </span>
-
-      </div>
-      <div class="col flex-right statusbar-actions">
-        <x-button class="actions-btn btn btn-flat" title="Actions">
-          <i class="material-icons">settings</i>
-          <i class="material-icons">arrow_drop_down</i>
-          <x-menu>
-            <x-menuitem @click.prevent="refresh">
-              <x-label>Refresh</x-label>
-            </x-menuitem>
-            <x-menuitem @click.prevent="openTable">
-              <x-label>View Data</x-label>
-            </x-menuitem>
-            <hr v-if="dev">
-            <x-menuitem v-if="dev" @click.prevent="triggerError">
-              <x-label>[DEV] Toggle Error</x-label>
-            </x-menuitem>
-            <x-menuitem v-if="dev" @click.prevent="loading = !loading">
-              <x-label>[DEV] Toggle Loading</x-label>
-            </x-menuitem>
-          </x-menu>
-        </x-button>
-        
-        <!-- <x-button class="btn btn-flat" @click.prevent="submitUndo">Undo</x-button> -->
-        <x-buttons class="pending-changes">
-          <x-button class="btn btn-primary" @click.prevent="submitApply">
-            <i v-if="error" class="material-icons">error</i>
-            <span class="badge" v-if="!error"><small>#</small></span>
-            <span>Commit</span>
-          </x-button>
-          <x-button class="btn btn-primary" menu>
-            <i class="material-icons">arrow_drop_down</i>
-            <x-menu>
-              <x-menuitem @click.prevent="submitSql">
-                Edit SQL
-              </x-menuitem>
-              <x-menuitem @click.prevent="">
-                <x-label>Discard Changes</x-label>
-              </x-menuitem>
-            </x-menu>
-          </x-button>
-        </x-buttons>
-
-      </div>
-    </statusbar>
   </div>
 </template>
 

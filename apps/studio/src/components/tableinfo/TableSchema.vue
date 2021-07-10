@@ -4,16 +4,42 @@
       <div class="table-title">
         <h2>Columns</h2>
       </div>
+      <error-alert :error="error" v-if="error" />
+      <slot />
       <span class="expand"></span>
       <div class="actions">
         <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
       </div>
     </div>
     <div ref="tableSchema"></div>
+    <div class="expand" />
+    <status-bar class="tabulator-footer">
+      <slot name="footer" />
+      <div class="col flex-right statusbar-actions">
+        <x-button v-if="hasEdits" class="btn btn-flat" @click.prevent="submitUndo">Reset</x-button>
+        <x-buttons v-if="hasEdits" class="pending-changes">
+          <x-button class="btn btn-primary" @click.prevent="submitApply">
+            <i v-if="error" class="material-icons">error</i>
+            <span class="badge" v-if="!error"><small>{{editCount}}</small></span>
+            <span>Apply</span>
+          </x-button>
+          <x-button class="btn btn-primary" menu>
+            <i class="material-icons">arrow_drop_down</i>
+            <x-menu>
+              <x-menuitem @click.prevent="submitSql">
+                Copy to SQL
+              </x-menuitem>
+            </x-menu>
+          </x-button>
+        </x-buttons>
+
+      </div>
+    </status-bar>
+
   </div>
 </template>
-<script>
-import Tabulator from 'tabulator-tables'
+<script lang="ts">
+import Tabulator, { CellComponent, RowComponent } from 'tabulator-tables'
 import DataMutators from '../../mixins/data_mutators'
 import sqlFormatter from 'sql-formatter'
 import _ from 'lodash'
@@ -25,9 +51,15 @@ import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import { mapGetters } from 'vuex'
 import { getDialectData } from '@shared/lib/dialects'
-import { AlterTablePayload } from '@/lib/db/models'
 import { AppEvent } from '@/common/AppEvent'
-export default {
+import StatusBar from '../common/StatusBar.vue'
+import { AlterTableSpec } from '@shared/lib/dialects/models'
+import ErrorAlert from '../common/ErrorAlert.vue'
+export default Vue.extend({
+  components: {
+    StatusBar,
+    ErrorAlert
+  },
   mixins: [DataMutators],
   props: ["table", "connection", "tabID", "active", "primaryKeys"],
   data() {
@@ -38,6 +70,7 @@ export default {
       editedCells: [],
       newRows: [],
       removedRows: [],
+      error: null
     }
   },
   watch: {
@@ -60,11 +93,14 @@ export default {
   },
   computed: {
     ...mapGetters(['dialect']),
+    editCount() {
+      return this.editedCells.length + this.newRows.length + this.removedRows.length
+    },
     columnTypes() {
       return getDialectData(this.dialect).columnTypes.map((c) => c.pretty)
     },
     hasEdits() {
-      return this.editedCells.length || this.newRows.length || this.removedRows.length
+      return this.editCount > 0
     },
     tableColumns() {
       const autocompleteOptions = {
@@ -78,7 +114,7 @@ export default {
       const trashButton = (cell) => `<i class="material-icons" title="${cell.getValue() === 'undo' ? 'Undo delete table column' : 'Delete table column'}">${cell.getValue() === 'undo' ? 'undo' : 'close'}</i>`
 
       return [
-        {title: 'Name', field: 'columnName', editor: vueEditor(NullableInputEditorVue), cellEdited: this.cellEdited, headerFilter: true},
+        {title: 'Name', field: 'columnName', editor: vueEditor(NullableInputEditorVue), cellEdited: this.cellEdited, headerFilter: true, formatter: this.cellFormatter},
         {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: autocompleteOptions, cellEdited: this.cellEdited}, 
         {
           title: 'Nullable',
@@ -135,44 +171,59 @@ export default {
     },
   },
   methods: {
-    collectChanges() {
+    collectChanges(): AlterTableSpec {
 
-      const updates = this.editedCells.map((cell) => {
+      const alterations = this.editedCells.map((cell: CellComponent) => {
+
+        const nameCell = cell.getRow().getCell('columnName')
+        const name = nameCell.isEdited() ? nameCell.getInitialValue() : nameCell.getValue()
+
         return {
           changeType: cell.getField(),
-          columnName: cell.getRow().getData()['columnName'],
+          columnName: name,
           newValue: cell.getValue()
         }
       })
 
-      const inserts = this.newRows.map((row) => {
+      const adds = this.newRows.map((row) => {
         return row.getData()
       })
 
-      const deletes = this.removedRows.map((row) => row.getData()['columnName'])
+      const drops = this.removedRows.map((row) => row.getData()['columnName'])
 
       return {
         table: this.table.name,
         schema: this.table.schema,
-        updates,
-        inserts,
-        deletes
+        alterations,
+        adds,
+        drops
       }
     },
     // submission methods
-    async submitApply() {
-      const changes = this.collectChanges()
-      const result = await this.connection.alterTable(changes)
-      this.$noty.success(`${this.table.name} Updated`)
-      this.$root.$emit('loadTable', { table: this.table })
+    async submitApply(): Promise<void> {
+      try {
+        this.error = null
+        const changes = this.collectChanges()
+        const result = await this.connection.alterTable(changes)
+        console.log(result)
+        this.$noty.success(`${this.table.name} Updated`)
+      } catch(ex) {
+        this.error = ex
+      }
+
     },
-    submitSql() {
-      const changes = this.collectChanges()
-      const sql = this.connection.alterTableSql(changes)
-      const formatted = sqlFormatter.format(sql)
-      this.$root.$emit(AppEvent.newTab, formatted)
+    submitSql(): void {
+      try {
+        this.error = null
+        const changes = this.collectChanges()
+        const sql = this.connection.alterTableSql(changes)
+        const formatted = sqlFormatter.format(sql)
+        this.$root.$emit(AppEvent.newTab, formatted)
+      } catch (ex) {
+        this.error = ex
+      }
     },
-    submitUndo() {
+    submitUndo(): void {
       this.editedCells.forEach((c) => {
         c.restoreInitialValue()
         c.getElement().classList.remove('edited')
@@ -190,14 +241,21 @@ export default {
       this.removedRows = []
     },
     // table edit callbacks
-
-
-    async addRow() {
-      const row = await this.tabulator.addRow({columnName: 'untitled', dataType: 'varchar(255)'})
+    async addRow(): Promise<void> {
+      const data = this.tabulator.getData()
+      const name = `column_${data.length + 1}`
+      const row: RowComponent = await this.tabulator.addRow({columnName: name, dataType: 'varchar(255)', nullable: true})
+      const cell = row.getCell('columnName')
       row.getElement().classList.add('inserted')
       this.newRows.push(row)
-    },
-    removeRow(e, cell) {
+      console.log(cell)
+      if (cell) {
+        // don't know why I need this, but I do
+        setTimeout(() => cell.edit(), 50)
+      }
+
+},
+    removeRow(_e, cell): void {
       const row = cell.getRow()
       console.log(row)
       if (this.newRows.includes(row)) {
@@ -221,7 +279,7 @@ export default {
         this.editedCells = _.without(this.editedCells, undoEdits)
       }
     },
-    cellEdited(cell, ...props) {
+    cellEdited(cell) {
       if(![...this.newRows, this.removedRows].includes(cell.getRow())) {
         this.editedCells.push(cell)
         cell.getElement().classList.add('edited')
@@ -236,10 +294,11 @@ export default {
       layout: 'fitColumns',
       tooltips: true,
       data: this.tableData,
+      // @ts-ignore-error
       columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
       placeholder: "No Columns",
       headerSort: false,
     })
   }
-}
+})
 </script>

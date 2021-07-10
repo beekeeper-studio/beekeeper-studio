@@ -116,3 +116,7 @@ export interface AlterTableSpec {
   adds?: SchemaItem[]
   drops?: string[]
 }
+
+export type DialectConfig = {
+  [K in Dialect]: SchemaConfig
+}
