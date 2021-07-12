@@ -68,21 +68,21 @@ export abstract class ChangeBuilderBase {
       item.defaultValue ? `DEFAULT ${this.wrapLiteral(item.defaultValue)}` : null
     ].filter((i) => !!i).join(" ")
   }
-  addColumns(items: SchemaItem[]) {
+  addColumns(items: SchemaItem[]): string[] {
     if (this.dialectData.disabledFeatures?.alter?.addColumn) return []
-    return items.map((item) => this.addColumn(item)).join(", ")
+    return items.map((item) => this.addColumn(item))
   }
 
-  dropColumns(items: string[]) {
+  dropColumns(items: string[]): string[] {
     if (this.dialectData.disabledFeatures?.alter?.dropColumn) return []
-    return items.map((i) => this.dropColumn(i)).join(", ")
+    return items.map((i) => this.dropColumn(i))
   }
 
-  alterComments(items: SchemaItemChange[]) {
+  alterComments(items: SchemaItemChange[]): string[] {
     if (this.dialectData.disabledFeatures?.comments) return ''
     return items.filter((i) => i.changeType === 'comment').map((item) => {
       return this.setComment(this.tableName, item.columnName, item.newValue.toString())
-    }).join(";")
+    })
   }
 
   get disabledAlter() {
@@ -103,7 +103,7 @@ export abstract class ChangeBuilderBase {
     }).filter((i) => !!i)
   }
 
-  alterColumns(items: SchemaItemChange[]) {
+  alterColumns(items: SchemaItemChange[]): string[] {
 
     // these filters make sure we don't build SQL for disabled features.
 
@@ -121,7 +121,7 @@ export abstract class ChangeBuilderBase {
         default:
           return null
       }
-    }).filter((s) => !!s).join(", ")
+    }).filter((s) => !!s)
   }
 
   abstract wrapIdentifier(str: string): string
@@ -129,31 +129,50 @@ export abstract class ChangeBuilderBase {
   abstract escapeString(str: string, quote?: boolean): string
 
 
-  initialSql(_spec: AlterTableSpec): string {
+  initialSql(_spec: AlterTableSpec): string | null {
     return null
   }
 
+  endSql(_spec: AlterTableSpec): string | null {
+    return null
+  }
+
+  get multiStatementMode(): boolean {
+    return !!this.dialectData.disabledFeatures?.alter?.multiStatement
+  }
+
+
   alterTable(spec: AlterTableSpec): string {
-    const initial = this.initialSql(spec) ? this.initialSql(spec) : null
+    const initial = this.initialSql(spec)
+    const end = this.endSql(spec)
     const beginning = `ALTER TABLE ${this.tableName}`
     const alterations = [
-      this.addColumns(spec.adds || []),
-      this.dropColumns(spec.drops || []),
-      this.alterColumns(spec.alterations || [])
+      ...this.addColumns(spec.adds || []),
+      ...this.dropColumns(spec.drops || []),
+      ...this.alterColumns(spec.alterations || [])
     ].filter((i) => !_.isEmpty(i))
 
     const renames = this.renames(spec.alterations || [])
     const fullRenames = renames.map((r) => `${beginning} ${r}`).join(";")
-    
-    const alterTable = alterations.length ? `${beginning} ${alterations.join(", ")}` : null
+
+    let alterTable = alterations.length ? `${beginning} ${alterations.join(", ")}` : null
+
+    // some dbs (SQLITE) don't support multiple operations in a single ALTER
+    if (this.multiStatementMode) {
+      alterTable = alterations.map((a) => {
+        return `${beginning} ${a}`
+      }).join(';')
+    }
+
     const results = [
       initial,
       alterTable,
       fullRenames,
-      this.alterComments(spec.alterations || [])
+      this.alterComments(spec.alterations || []),
+      end
     ].filter((sql) => !!sql).join(";")
-    if (results.length && !results.endsWith(";")) {
-      return `${results};`
+    if (results.length) {
+      return results.endsWith(';') ? results : `${results};`
     } else {
       return null
     }

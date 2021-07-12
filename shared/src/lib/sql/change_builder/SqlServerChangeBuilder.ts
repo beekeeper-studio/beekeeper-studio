@@ -1,4 +1,4 @@
-import { AlterTableSpec, Dialect } from "@shared/lib/dialects/models";
+import { AlterTableSpec, Dialect, SchemaItem } from "@shared/lib/dialects/models";
 import { DefaultConstraint, SqlServerData } from "@shared/lib/dialects/sqlserver";
 import _ from "lodash";
 import { ChangeBuilderBase } from "./ChangeBuilderBase";
@@ -28,6 +28,22 @@ export class SqlServerChangeBuilder extends ChangeBuilderBase {
     return null
   }
 
+  // new columns
+  addColumn(item: SchemaItem) {
+
+    if (!item.columnName || !item.dataType) {
+      throw new Error("can't add a column without name or data type")
+    }
+
+    return [
+      'ADD',
+      this.wrapIdentifier(item.columnName),
+      this.wrapLiteral(item.dataType),
+      item.nullable ? 'NULL' : 'NOT NULL',
+      item.defaultValue ? `DEFAULT ${this.wrapLiteral(item.defaultValue)}` : null
+    ].filter((i) => !!i).join(" ")
+  }
+
   alterType(column: string, newType: string) {
     return `ALTER COLUMN ${this.wrapIdentifier(column)} ${this.wrapLiteral(newType)}`
   }
@@ -47,11 +63,11 @@ export class SqlServerChangeBuilder extends ChangeBuilderBase {
     return drop ? `${drop}, ${add}` : add
   }
 
-  initialSql(spec: AlterTableSpec) {
+  endSql(spec: AlterTableSpec) {
     const tablePrefix = spec.schema ? `${this.escapeString(spec.schema)}.` : ''
     const tableName = `${tablePrefix}${this.escapeString(spec.table)}`
     return (spec.alterations || []).filter((a) => a.changeType === 'columnName').map((a) => {
-      return `sp_rename '${tableName}.${this.escapeString(a.columnName)}', '${this.escapeString(a.newValue.toString())}', 'COLUMN'`
+      return `EXEC sp_rename '${tableName}.${this.escapeString(a.columnName)}', '${this.escapeString(a.newValue.toString())}', 'COLUMN'`
     }).join(";")
   }
 

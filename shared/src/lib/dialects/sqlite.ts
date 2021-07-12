@@ -21,6 +21,7 @@ export const SqliteData: DialectData = {
     comments: true,
     alter: {
       alterColumn: true,
+      multiStatement: true
     }
   }
 }

@@ -65,6 +65,7 @@ export interface DialectData {
       dropColumn?: boolean
       renameColumn?: boolean
       alterColumn?: boolean
+      multiStatement?: boolean
     },
     comments?: boolean
   }

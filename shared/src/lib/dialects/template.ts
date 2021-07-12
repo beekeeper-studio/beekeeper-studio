@@ -82,7 +82,6 @@ export const idColumn: TemplatedSchemaItem = {
       dataType: 'int'
     },
     sqlserver: {
-      defaultValue: "IDENTITY(1,1)",
       dataType: 'int'
     },
     sqlite: {

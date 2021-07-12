@@ -25,5 +25,10 @@ export const SqlServerData: DialectData = {
     (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*') : value,
   wrapLiteral: defaultWrapLiteral,
   escapeString: defaultEscapeString,
+  disabledFeatures: {
+    alter: {
+      multiStatement: true
+    }
+  }
 
 }

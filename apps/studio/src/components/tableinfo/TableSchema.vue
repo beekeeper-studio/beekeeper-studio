@@ -4,7 +4,7 @@
       <div class="center-wrap">
         <div class="table-subheader">
           <div class="table-title">
-            <h2>Columns</h2>
+            <h2>Columns <a @click.prevent="refreshColumns"><i class="material-icons">refresh</i></a></h2>
           </div>
           <error-alert :error="error" v-if="error" />
           <slot />
@@ -123,6 +123,9 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(['dialect']),
+    disabledFeatures() {
+      return getDialectData(this.dialect).disabledFeatures
+    },
     editCount() {
       return this.editedCells.length + this.newRows.length + this.removedRows.length
     },
@@ -143,8 +146,23 @@ export default Vue.extend({
 
 
       const result = [
-        {title: 'Name', field: 'columnName', editor: vueEditor(NullableInputEditorVue), cellEdited: this.cellEdited, headerFilter: true, formatter: this.cellFormatter},
-        {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: autocompleteOptions, cellEdited: this.cellEdited}, 
+        {
+          title: 'Name', 
+          field: 'columnName', 
+          editor: vueEditor(NullableInputEditorVue), 
+          cellEdited: this.cellEdited, 
+          headerFilter: true, 
+          formatter: this.cellFormatter,
+          editable: !this.disabledFeatures?.alter?.renameColumn
+        },
+        {
+          title: 'Type',
+          field: 'dataType',
+          editor: 'autocomplete',
+          editorParams: autocompleteOptions,
+          cellEdited: this.cellEdited,
+          editable: !this.disabledFeatures?.alter?.alterColumn
+          }, 
         {
           title: 'Nullable',
           field: 'nullable',
@@ -155,6 +173,7 @@ export default Vue.extend({
             editable: true
           },
           cellEdited: this.cellEdited,
+          editable: !this.disabledFeatures?.alter?.alterColumn,
           width: 70,
           cssClass: "no-edit-highlight",
         },
@@ -164,12 +183,14 @@ export default Vue.extend({
           editor: vueEditor(NullableInputEditorVue),
           headerTooltip: "Be sure to 'quote' string values.",
           cellEdited: this.cellEdited,
-          formatter: this.cellFormatter
+          formatter: this.cellFormatter,
+          editable: !this.disabledFeatures?.alter?.alterColumn
         },
         {
           title: 'Primary',
           field: 'primary',
           tooltip: false,
+          editable: false,
           formatter: vueFormatter(CheckboxFormatterVue),
           formatterParams: {
             editable: false
@@ -202,6 +223,15 @@ export default Vue.extend({
     },
   },
   methods: {
+    async refreshColumns() {
+      if(this.hasEdits) {
+        if (!window.confirm("Are you sure? You will lose unsaved changes")) {
+          return
+        }
+      }
+      this.submitUndo()
+      await this.$store.dispatch('updateTableColumns', this.table)
+    },
     collectChanges(): AlterTableSpec {
 
       const alterations = this.editedCells.map((cell: CellComponent) => {
@@ -249,11 +279,11 @@ export default Vue.extend({
         console.error(ex)
       }
     },
-    submitSql(): void {
+    async submitSql(): Promise<void> {
       try {
         this.error = null
         const changes = this.collectChanges()
-        const sql = this.connection.alterTableSql(changes)
+        const sql = await this.connection.alterTableSql(changes)
         const formatted = sqlFormatter.format(sql)
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch (ex) {
@@ -275,6 +305,9 @@ export default Vue.extend({
     },
     // table edit callbacks
     async addRow(): Promise<void> {
+      if (this.disabledFeatures?.alter?.addColumn) {
+        this.$noty.info(`Adding columns is not supported by ${this.dialect}`)
+      }
       const data = this.tabulator.getData()
       const name = `column_${data.length + 1}`
       const row: RowComponent = await this.tabulator.addRow({columnName: name, dataType: 'varchar(255)', nullable: true})
@@ -295,6 +328,10 @@ export default Vue.extend({
       if (this.removedRows.includes(row)) {
         this.removedRows = _.without(this.removedRows, row)
       } else {
+        if (this.disabledFeatures?.alter?.dropColumn) {
+          this.$noty.info(`Adding columns is not supported by ${this.dialect}`)
+          return
+        }
         this.removedRows.push(row)
         const undoEdits = this.editedCells.filter((c) => row.getCells().includes(c))
         undoEdits.forEach((c) => {
