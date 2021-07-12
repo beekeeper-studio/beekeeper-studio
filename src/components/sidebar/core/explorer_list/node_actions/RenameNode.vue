@@ -1,17 +1,12 @@
 <template>
   <div class="create-node-wrapper">
-    <i
-      :class="`item-icon material-icons ${renameType.class}`"
-      v-if="type !== 'dir'"
-    >
-      {{ renameType.icon }}
-    </i>
-
-    <i class="item-icon schema-icon material-icons " v-if="type === 'dir'">
-      folder
-    </i>
-
-    <input type="text" v-model="node.name" class="node-input" ref="nodeInput" />
+    <input
+      type="text"
+      v-model="name"
+      class="node-input"
+      ref="nodeInput"
+      @keydown.enter="rename"
+    />
   </div>
 </template>
 
@@ -19,25 +14,25 @@
 const folderTree = require("../../../../../plugins/foldertree");
 
 export default {
-  props: ["type", "currentNode"],
+  props: ["currentNode"],
+
+  data() {
+    return {
+      name: this.currentNode.name
+    };
+  },
 
   computed: {
-    renameType() {
-      const result = { valid: false, icon: "", class: this.type };
-      switch (this.type) {
-        case "query":
-          result.icon = "code";
-          break;
-        case "design":
-          result.icon = "device_hub";
-          break;
-      }
-
-      return result;
-    },
-
     node() {
       return this.currentNode || new folderTree.TreeNode("");
+    }
+  },
+
+  methods: {
+    rename() {},
+
+    close() {
+      this.$emit("close");
     }
   }
 };
@@ -47,7 +42,6 @@ export default {
 .create-node-wrapper {
   display: flex;
   align-items: center;
-  margin-left: 1.2rem;
 
   .node-input {
     position: relative;

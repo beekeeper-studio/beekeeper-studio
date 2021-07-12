@@ -12,7 +12,11 @@
         <i class="schema-icon item-icon material-icons">
           folder
         </i>
-        <span class="folder-name-unselected truncate" :ref="node.name">
+        <RenameNode
+          :currentNode="currentNode"
+          v-if="nodeData.type === 'rename'"
+        ></RenameNode>
+        <span class="folder-name-unselected truncate" :ref="node.name" v-else>
           {{ node.name }}
         </span>
       </span>
@@ -37,7 +41,7 @@
     </a>
     <div v-if="showColumns" class="sub-items">
       <NodeActions
-        v-show="nodeData.trigger"
+        v-show="nodeData.trigger && nodeData.type !== 'rename'"
         :placeholder="nodeData.placeholder"
         :type="nodeData.type"
         :currentNode="currentNode"
@@ -49,7 +53,6 @@
         :key="file.name"
         :file="file"
         :currentNode="currentNode"
-        :nodeData="nodeData"
       ></explorer-list-file>
       <explorer-list-dir
         v-for="dir in directories"
@@ -64,12 +67,13 @@
 <script type="text/javascript">
 import ExplorerListFile from "./ExplorerListFile.vue";
 import NodeActions from "./node_actions/NodeActions.vue";
+import RenameNode from "./node_actions/RenameNode.vue";
 import { uuidv4 } from "../../../../lib/uuid";
 
 export default {
   name: "explorer-list-dir",
   props: ["node", "depth"],
-  components: { ExplorerListFile, NodeActions },
+  components: { ExplorerListFile, NodeActions, RenameNode },
   mounted() {
     this.showColumns = !!false;
   },
@@ -85,7 +89,7 @@ export default {
         trigger: false,
         placeholder: "",
         type: "",
-        rename: false
+        stateType: ""
       }
     };
   },
@@ -158,8 +162,6 @@ export default {
         case "file":
           this.nodeData.placeholder = "Filename";
           break;
-        case "rename":
-          this.nodeData.rename = true;
       }
     },
 

@@ -1,5 +1,7 @@
 <template>
   <div class="create-node-wrapper">
+    <!-- create files -->
+
     <i
       class="schema-icon item-icon material-icons"
       v-if="!fileCreation && type !== 'dir'"
@@ -30,29 +32,16 @@
 </template>
 
 <script>
-import { bind } from "lodash";
 const folderTree = require("../../../../../plugins/foldertree");
 
 export default {
   props: ["placeholder", "type", "currentNode"],
-
   data() {
     return {
       node: new folderTree.TreeNode(""),
       extensionValidation: this.$store.getters.explorerValidation,
       extension: this.$store.getters.includedExtension
     };
-  },
-
-  directives: {
-    outside: {
-      inserted(el) {
-        console.log(el);
-      },
-
-      bind() {},
-      update() {}
-    }
   },
 
   computed: {
