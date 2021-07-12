@@ -73,6 +73,7 @@ $cell-success:           $row-add;
     justify-content: center;
     box-shadow: inset 0 -1px $border-color;
     .nav-pill {
+      font-weight: 500;
       padding: $gutter-w ($gutter-w * 1.25);
       color: $text-light;
       transition: color 0.2s ease-in-out, 

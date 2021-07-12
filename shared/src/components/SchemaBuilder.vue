@@ -203,8 +203,8 @@ export default Vue.extend({
 
 <style lang="scss">
   @import '@shared/assets/styles/_variables';
+  @import '@shared/assets/styles/themes/light/variables';
   @import '@shared/assets/styles/_extends';
-
   $row-height:             42px;
   $min-cell-width:         24px;
   $cell-font-size:         14px;
