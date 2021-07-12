@@ -69,6 +69,7 @@
       background: lighten($theme-bg, 3%);
       padding: 0;
       height: $tab-height;
+      line-height: $tab-height * 0.9;
       font-size: 0.85rem;
       font-weight: normal;
       color: $text;

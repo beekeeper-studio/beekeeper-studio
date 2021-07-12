@@ -318,12 +318,12 @@ x-switch {
 // Table Properties
 // -------------------------------
 .table-properties {
-.nav-pills {
-  .nav-pill {
-    &.active {
-      color: $theme-primary-dark;
-      box-shadow: inset 0 -2px $theme-primary-dark;
+  .nav-pills {
+    .nav-pill {
+      &.active {
+        color: $theme-primary-dark;
+        box-shadow: inset 0 -2px $theme-primary-dark;
+      }
     }
   }
-}
 }
