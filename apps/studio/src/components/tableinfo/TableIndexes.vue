@@ -1,14 +1,16 @@
 <template>
 <div class="table-info-table view-only">
-  <div class="table-subheader">
-    <div class="table-title">
-      <h2>Indexes</h2>
+  <div class="table-info-table-wrap">
+    <div class="table-subheader">
+      <div class="table-title">
+        <h2>Indexes</h2>
+      </div>
+      <div class="table-actions">
+        <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Index</a> -->
+      </div>
     </div>
-    <div class="table-actions">
-      <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Index</a> -->
-    </div>
+    <div class="table-indexes" ref="tabulator"></div>
   </div>
-  <div class="table-indexes" ref="tabulator"></div>
 </div>
 </template>
 <script>

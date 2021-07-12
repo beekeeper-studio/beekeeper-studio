@@ -20,9 +20,16 @@ $cell-success:           $row-add;
   }
   .table-properties-wrap {
     height: 100%;
-    padding: 0 1.5rem 3rem;
     overflow: hidden;
     overflow-y: auto;
+  }
+  .table-info-table {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .table-info-table-wrap {
+    padding: 0 1.5rem 3rem;
   }
   .table-properties-content {
     display: flex;
