@@ -588,6 +588,9 @@ input[type=file] {
   &.settings {
     color: $text-lighter;
   }
+  &.table-builder {
+    color: $brand-success;
+  }
 }
 
 // Split.js Resizer

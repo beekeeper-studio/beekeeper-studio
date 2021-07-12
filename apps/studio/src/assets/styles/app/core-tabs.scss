@@ -147,11 +147,14 @@
       }
     }
     .item-icon {
-      font-size: 12px;
-      padding-left: ($gutter-w * 0.75);
-      padding-right: ($gutter-h * 1.25);
-      max-width: $gutter-w * 3;
+      font-size: 16px;
+      padding-left: ($gutter-h * 1.25);
+      padding-right: $gutter-h;
+      max-width: $gutter-w * 2.8;
       line-height: $tab-height;
+      &.table-properties {
+        font-size: 14px;
+      }
     }
     .tab-action {
       position: absolute;
