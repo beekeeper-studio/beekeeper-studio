@@ -417,7 +417,7 @@ select {
 // CodeMirror
 // ----------------------------------
 .CodeMirror-hints {
-  background: white!important;
+  background: darken($theme-bg, 5%)!important;
   li {
     &.CodeMirror-hint-active {
       background: $brand-info;
