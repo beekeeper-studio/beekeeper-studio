@@ -52,26 +52,28 @@
                 <span>{{humanIndexSize}}</span>
               </span>
             </div>
-            <div class="flex flex-middle flex-right statusbar-actions">
-              <x-button class="actions-btn btn btn-flat" title="Actions">
-                <i class="material-icons">settings</i>
-                <i class="material-icons">arrow_drop_down</i>
-                <x-menu>
-                  <x-menuitem @click.prevent="refresh">
-                    <x-label>Refresh</x-label>
-                  </x-menuitem>
-                  <x-menuitem @click.prevent="openTable">
-                    <x-label>View Data</x-label>
-                  </x-menuitem>
-                  <hr v-if="dev">
-                  <x-menuitem v-if="dev" @click.prevent="triggerError">
-                    <x-label>[DEV] Toggle Error</x-label>
-                  </x-menuitem>
-                  <x-menuitem v-if="dev" @click.prevent="loading = !loading">
-                    <x-label>[DEV] Toggle Loading</x-label>
-                  </x-menuitem>
-                </x-menu>
-              </x-button>
+            <div class="flex flex-middle expand">
+              <div class="statusbar-actions flex flex-right">
+                <x-button class="actions-btn btn btn-flat" title="Actions">
+                  <i class="material-icons">settings</i>
+                  <i class="material-icons">arrow_drop_down</i>
+                  <x-menu>
+                    <x-menuitem @click.prevent="refresh">
+                      <x-label>Refresh</x-label>
+                    </x-menuitem>
+                    <x-menuitem @click.prevent="openTable">
+                      <x-label>View Data</x-label>
+                    </x-menuitem>
+                    <hr v-if="dev">
+                    <x-menuitem v-if="dev" @click.prevent="triggerError">
+                      <x-label>[DEV] Toggle Error</x-label>
+                    </x-menuitem>
+                    <x-menuitem v-if="dev" @click.prevent="loading = !loading">
+                      <x-label>[DEV] Toggle Loading</x-label>
+                    </x-menuitem>
+                  </x-menu>
+                </x-button>
+              </div>
             </div>
           </template>
         </component>
