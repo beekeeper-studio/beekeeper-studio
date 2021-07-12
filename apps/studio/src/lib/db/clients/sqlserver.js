@@ -412,7 +412,7 @@ export async function listTableColumns(conn, database, table, schema) {
   const clauses = []
   if (table) clauses.push(`table_name = ${D.escapeString(table, true)}`)
   if (schema) clauses.push(`table_schema = ${D.escapeString(schema, true)}`)
-  const clause = clauses.length > 0 ? `WHERE ${clauses.join("AND")}` : ''
+  const clause = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ''
   const sql = `
     SELECT 
       table_schema as "table_schema",
@@ -810,10 +810,10 @@ async function listDefaultConstraints(conn, table, schema) {
   const sql = `
 -- returns name of a column's default value constraint 
 SELECT
-    all_columns.name as column,
-    tables.name as table,
-    schemas.name as schema,
-    default_constraints.name as name,
+    all_columns.name as columnName,
+    tables.name as tableName,
+    schemas.name as schemaName,
+    default_constraints.name as name
 FROM 
     sys.all_columns
 
@@ -835,7 +835,16 @@ WHERE
 
   `
   const { data } = await driverExecuteQuery(conn, { query: sql})
-  return data
+  // eslint-disable-next-line no-debugger
+  // debugger
+  return data.recordset.map((d) => {
+    return {
+      column: d.columnName,
+      table: d.tableName,
+      schema: d.schemaName,
+      name: d.name
+    }
+  })
 }
 
 async function alterTableSql(conn, changes) {
@@ -967,4 +976,9 @@ async function runWithConnection(conn, run) {
   const connection = await new ConnectionPool(conn.dbConfig).connect();
   conn.connection = connection
   return run(connection);
+}
+
+
+export const sqlServerTestOnly = {
+  alterTableSql
 }

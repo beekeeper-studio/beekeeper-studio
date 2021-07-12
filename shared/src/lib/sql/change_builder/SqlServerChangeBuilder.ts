@@ -1,4 +1,4 @@
-import { Dialect } from "@shared/lib/dialects/models";
+import { AlterTableSpec, Dialect } from "@shared/lib/dialects/models";
 import { DefaultConstraint, SqlServerData } from "@shared/lib/dialects/sqlserver";
 import _ from "lodash";
 import { ChangeBuilderBase } from "./ChangeBuilderBase";
@@ -24,26 +24,35 @@ export class SqlServerChangeBuilder extends ChangeBuilderBase {
   wrapLiteral = SqlServerData.wrapLiteral
   escapeString = SqlServerData.escapeString
 
-  renameColumn(column: string, newName: string): string {
-    return `sp_rename ${this.escapeString(this.tableName)}.${this.escapeString(column)}, '${this.escapeString(newName)}', 'COLUMN';`
+  renameColumn(): string | null {
+    return null
   }
 
   alterType(column: string, newType: string) {
     return `ALTER COLUMN ${this.wrapIdentifier(column)} ${this.wrapLiteral(newType)}`
   }
 
-  alterDefault(column: string, newDefalt: string) {
+  alterDefault(column: string, newDefalt: string | boolean | null) {
     // we drop the default in the initialSql
 
     const constraint: DefaultConstraint | null = this.getDefaultConstraint(column)
 
     const drop = constraint ? `DROP CONSTRAINT ${this.wrapIdentifier(constraint.name)}` : null
 
-    if (newDefalt === null && drop) return drop
 
-    const add = `ADD DEFAULT ${this.wrapLiteral(newDefalt)} FOR ${this.wrapIdentifier(column)}`
+    if (newDefalt === null) return drop
+
+    const add = `ADD DEFAULT ${this.wrapLiteral(newDefalt.toString())} FOR ${this.wrapIdentifier(column)}`
 
     return drop ? `${drop}, ${add}` : add
+  }
+
+  initialSql(spec: AlterTableSpec) {
+    const tablePrefix = spec.schema ? `${this.escapeString(spec.schema)}.` : ''
+    const tableName = `${tablePrefix}${this.escapeString(spec.table)}`
+    return (spec.alterations || []).filter((a) => a.changeType === 'columnName').map((a) => {
+      return `sp_rename '${tableName}.${this.escapeString(a.columnName)}', '${this.escapeString(a.newValue.toString())}', 'COLUMN'`
+    }).join(";")
   }
 
   alterNullable(column: string, nullable: boolean) {

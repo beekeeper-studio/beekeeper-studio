@@ -27,11 +27,11 @@ export abstract class ChangeBuilderBase {
     return `ALTER COLUMN ${this.wrapIdentifier(column)} TYPE ${this.wrapLiteral(newType)}`
   }
 
-  alterDefault(column: string, newDefault: string) {
+  alterDefault(column: string, newDefault: string | boolean | null) {
     if (newDefault === null) {
       return `ALTER COLUMN ${this.wrapIdentifier(column)} DROP DEFAULT`
     } else {
-      return `ALTER COLUMN ${this.wrapIdentifier(column)} SET DEFAULT ${this.wrapLiteral(newDefault)}`
+      return `ALTER COLUMN ${this.wrapIdentifier(column)} SET DEFAULT ${this.wrapLiteral(newDefault.toString())}`
     }
 
   }
@@ -85,21 +85,37 @@ export abstract class ChangeBuilderBase {
     }).join(";")
   }
 
-  alterColumns(items: SchemaItemChange[]) {
-    const disabledAlter = !!this.dialectData.disabledFeatures?.alter?.alterColumn
-    const disabledRename = !!this.dialectData.disabledFeatures?.alter?.renameColumn
-    // these filters make sure we don't build SQL for disabled features.
-    const nameFilter = disabledRename ? (i: SchemaItemChange) => i.changeType !== 'columnName' : () => true
-    const alterFilter = disabledAlter ? (i: SchemaItemChange) => i.changeType === 'columnName' : () => true
+  get disabledAlter() {
+    return !!this.dialectData.disabledFeatures?.alter?.alterColumn
+  }
 
-    return items.filter(nameFilter).filter(alterFilter).map((item) => {
+  get disabledRename() {
+    return !!this.dialectData.disabledFeatures?.alter?.renameColumn
+  } 
+
+  nameFilter = () => this.disabledRename ? (i: SchemaItemChange) => i.changeType !== 'columnName' : () => true
+  alterFilter = () => this.disabledAlter ? (i: SchemaItemChange) => i.changeType === 'columnName' : () => true
+
+
+  renames(items: SchemaItemChange[]) {
+    return items.filter(this.nameFilter).filter(this.alterFilter).filter((c) => c.changeType === 'columnName').map((item) => {
+      return this.renameColumn(item.columnName, (item.newValue || '').toString())
+    }).filter((i) => !!i)
+  }
+
+  alterColumns(items: SchemaItemChange[]) {
+
+    // these filters make sure we don't build SQL for disabled features.
+
+
+    return items.filter(this.nameFilter).filter(this.alterFilter).map((item) => {
       switch (item.changeType) {
         case 'columnName':
-          return this.renameColumn(item.columnName, item.newValue.toString())
+          return null
         case 'dataType':
-          return this.alterType(item.columnName, item.newValue.toString())
+          return this.alterType(item.columnName, (item.newValue || '').toString())
         case 'defaultValue':
-          return this.alterDefault(item.columnName, item.newValue.toString())
+          return this.alterDefault(item.columnName, item.newValue)
         case 'nullable':
           return this.alterNullable(item.columnName, !!item.newValue)
         default:
@@ -118,18 +134,28 @@ export abstract class ChangeBuilderBase {
   }
 
   alterTable(spec: AlterTableSpec): string {
-    const initial = this.initialSql(spec) ? `${this.initialSql(spec)};` : ''
-    const beginning = `${initial} ALTER TABLE ${this.tableName}`
+    const initial = this.initialSql(spec) ? this.initialSql(spec) : null
+    const beginning = `ALTER TABLE ${this.tableName}`
     const alterations = [
       this.addColumns(spec.adds || []),
       this.dropColumns(spec.drops || []),
       this.alterColumns(spec.alterations || [])
     ].filter((i) => !_.isEmpty(i))
-    const alterTable = `${beginning} ${alterations.join(", ")}`
+
+    const renames = this.renames(spec.alterations || [])
+    const fullRenames = renames.map((r) => `${beginning} ${r}`).join(";")
+    
+    const alterTable = alterations.length ? `${beginning} ${alterations.join(", ")}` : null
     const results = [
+      initial,
       alterTable,
+      fullRenames,
       this.alterComments(spec.alterations || [])
-    ].join(";")
-    return results
+    ].filter((sql) => !!sql).join(";")
+    if (results.length && !results.endsWith(";")) {
+      return `${results};`
+    } else {
+      return null
+    }
   }
 }

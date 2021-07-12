@@ -79,8 +79,8 @@ export default Vue.extend({
     }
   },
   watch: {
-    editCount() {
-      this.tabState.dirty = true
+    hasEdits() {
+      this.tabState.dirty = this.hasEdits
     },
     active() {
       if (!this.tabulator) return;
@@ -94,9 +94,31 @@ export default Vue.extend({
         this.tabulator.blockRedraw()
       }
     },
-    tableData() {
-      if (!this.tabulator) return
-      this.tabulator.replaceData(this.tableData)
+    editedCells(newCells: CellComponent[], oldCells: CellComponent[]) {
+      const removed = oldCells.filter((c) => !newCells.includes(c))
+      newCells.forEach((c) => c.getElement().classList.add('edited'))
+      removed.forEach((c) => c.getElement().classList.remove('edited'))
+    },
+    newRows(nuRows: RowComponent[], oldRows: RowComponent[]) {
+      const removed = oldRows.filter((r) => !nuRows.includes(r))
+      nuRows.forEach((r) => {
+        r.getElement().classList?.add('inserted')
+      })
+      removed.forEach((r) => {
+        r.getElement().classList?.remove('inserted')
+      })
+    },
+    removedRows(newRemoved: RowComponent[], oldRemoved: RowComponent[]) {
+      const removed = oldRemoved.filter((r) => !newRemoved.includes(r))
+      newRemoved.forEach((r) => r.getElement().classList?.add('deleted'))
+      removed.forEach((r) => r.getElement().classList?.remove('deleted'))
+    },
+    tableData: {
+      deep: true,
+      handler() {
+        if (!this.tabulator) return
+        this.tabulator.replaceData(this.tableData)
+      }
     }
   },
   computed: {
@@ -119,7 +141,6 @@ export default Vue.extend({
         showListOnEmpty: true
       }
 
-      const trashButton = (cell) => `<i class="material-icons" title="${cell.getValue() === 'undo' ? 'Undo delete table column' : 'Delete table column'}">${cell.getValue() === 'undo' ? 'undo' : 'close'}</i>`
 
       const result = [
         {title: 'Name', field: 'columnName', editor: vueEditor(NullableInputEditorVue), cellEdited: this.cellEdited, headerFilter: true, formatter: this.cellFormatter},
@@ -141,7 +162,7 @@ export default Vue.extend({
           title: 'Default Value',
           field: 'defaultValue',
           editor: vueEditor(NullableInputEditorVue),
-          headerTooltip: "If you don't set a value for this field, this is the default value",
+          headerTooltip: "Be sure to 'quote' string values.",
           cellEdited: this.cellEdited,
           formatter: this.cellFormatter
         },
@@ -157,7 +178,7 @@ export default Vue.extend({
         },
         {
           field: 'trash-button',
-          formatter: trashButton,
+          formatter: (_cell) => `<div class="dynamic-action" />`,
           width: 36,
           minWidth: 36,
           hozAlign: 'center',
@@ -184,6 +205,7 @@ export default Vue.extend({
 
       const alterations = this.editedCells.map((cell: CellComponent) => {
 
+        // renames happen last, so we need to get the original column name here.
         const nameCell = cell.getRow().getCell('columnName')
         const name = nameCell.isEdited() ? nameCell.getInitialValue() : nameCell.getValue()
 
@@ -213,13 +235,18 @@ export default Vue.extend({
       try {
         this.error = null
         const changes = this.collectChanges()
-        const result = await this.connection.alterTable(changes)
-        console.log(result)
+        await this.connection.alterTable(changes)
+
+        this.clearChanges()
+        await this.$store.dispatch('updateTableColumns', this.table)
+        this.$nextTick(() => {
+          this.initializeTabulator()
+        })
         this.$noty.success(`${this.table.name} Updated`)
       } catch(ex) {
         this.error = ex
+        console.error(ex)
       }
-
     },
     submitSql(): void {
       try {
@@ -235,16 +262,12 @@ export default Vue.extend({
     submitUndo(): void {
       this.editedCells.forEach((c) => {
         c.restoreInitialValue()
-        c.getElement().classList.remove('edited')
       })
       
       this.newRows.forEach((r) => r.delete())
-      this.removedRows.forEach((r) => {
-        r.getElement().classList.remove('deleted')
-        const c = r.getCell('trash-button')
-        c.setValue('trash')
-      })
-
+      this.clearChanges()
+    },
+    clearChanges() {
       this.editedCells = []
       this.newRows = []
       this.removedRows = []
@@ -255,18 +278,14 @@ export default Vue.extend({
       const name = `column_${data.length + 1}`
       const row: RowComponent = await this.tabulator.addRow({columnName: name, dataType: 'varchar(255)', nullable: true})
       const cell = row.getCell('columnName')
-      row.getElement().classList.add('inserted')
       this.newRows.push(row)
-      console.log(cell)
       if (cell) {
         // don't know why I need this, but I do
         setTimeout(() => cell.edit(), 50)
       }
-
-},
-    removeRow(_e, cell): void {
+    },
+    removeRow(_e, cell: CellComponent): void {
       const row = cell.getRow()
-      console.log(row)
       if (this.newRows.includes(row)) {
         this.newRows = _.without(this.newRows, row)
         row.delete()
@@ -274,18 +293,13 @@ export default Vue.extend({
       }
       if (this.removedRows.includes(row)) {
         this.removedRows = _.without(this.removedRows, row)
-        row.getElement().classList.remove('deleted')
-        cell.setValue('trash')
       } else {
         this.removedRows.push(row)
-        row.getElement().classList.add('deleted')
-        cell.setValue('undo')
         const undoEdits = this.editedCells.filter((c) => row.getCells().includes(c))
         undoEdits.forEach((c) => {
           c.restoreInitialValue()
-          c.getElement().classList.remove('edited')
         })
-        this.editedCells = _.without(this.editedCells, undoEdits)
+        this.editedCells = _.without(this.editedCells, ...undoEdits)
       }
     },
     cellEdited(cell: CellComponent) {
@@ -293,30 +307,36 @@ export default Vue.extend({
       const existingCell: CellComponent = this.editedCells.find((c) => c === cell)
       if(!rowIncluded && !existingCell) {
         this.editedCells.push(cell)
-        cell.getElement().classList.add('edited')
       }
 
       if(existingCell) {
         if (existingCell.getInitialValue() === existingCell.getValue()) {
-          existingCell.getElement().classList.remove('edited');
           this.editedCells = _.without(this.editedCells, existingCell);
         }
       }
+    },
+    initializeTabulator() {
+      if (this.tabulator) this.tabulator.destroy()
+      this.tabulator = new Tabulator(this.$refs.tableSchema, {
+        columns: this.tableColumns,
+        layout: 'fitColumns',
+        tooltips: true,
+        data: this.tableData,
+        // @ts-ignore-error
+        columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
+        placeholder: "No Columns",
+        headerSort: false,
+      })
+
     }
   },
   mounted() {
     // const columnWidth = this.table.columns.length > 20 ? 125 : undefined
     if (!this.active) this.forceRedraw = true
-    this.tabulator = new Tabulator(this.$refs.tableSchema, {
-      columns: this.tableColumns,
-      layout: 'fitColumns',
-      tooltips: true,
-      data: this.tableData,
-      // @ts-ignore-error
-      columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
-      placeholder: "No Columns",
-      headerSort: false,
-    })
+    this.initializeTabulator()
+  },
+  beforeDestroy() {
+    if (this.tabulator) this.tabulator.destroy()
   }
 })
 </script>

@@ -132,9 +132,58 @@ export class DBTestUtil {
     r = await this.connection.selectTop("MixedCase", 0, 1, [], [], this.defaultSchema)
     result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(["pears"])
+  }
 
+  async alterTableTests() {
 
+    await this.knex.schema.dropTableIfExists("alter_test")
+    await this.knex.schema.createTable("alter_test", (table) => {
+      table.specificType("id", 'varchar(255)')
+      table.specificType("first_name", "varchar(255)")
+      table.specificType("last_name", "varchar(255)")
+      table.specificType("age", "varchar(255)")
+    })
 
+    const input = {
+      table: 'alter_test',
+      schema: 'public',
+      alterations: [
+        {
+          columnName: 'last_name',
+          changeType: 'columnName',
+          newValue: 'family_name'
+        },
+        {
+          columnName: 'age',
+          changeType: 'dataType',
+          newValue: 'varchar(4)'
+        }
+      ]
+    }
+
+    await this.connection.alterTable(input)
+    const schema = await this.connection.listTableColumns('alter_test')
+    const result = schema.map((c) => ({columnName: c.columnName, dataType: c.dataType}))
+    const expected = [
+      {
+        columnName: 'id',
+        dataType: 'varchar(255)'
+      },
+      {
+        columnName: 'first_name',
+        dataType: 'varchar(255)'
+      },
+      {
+        columnName: 'family_name',
+        dataType: 'varchar(255)'
+      },
+      {
+        columnName: 'age',
+        dataType: 'varchar(4)'
+      }
+    ]
+    expect(result).toMatchObject(expected)
+    
   }
 
   async filterTests() {

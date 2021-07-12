@@ -111,7 +111,7 @@ describe("Postgres UNIT tests (no connection required)", () => {
       drops: ['c']
     }
     const result = testOnly.alterTableSql(null, input)
-    const expected = 'ALTER TABLE "public"."foo" ADD COLUMN "a" int NOT NULL, DROP COLUMN "c", ALTER COLUMN "b" TYPE char;COMMENT ON COLUMN "public"."foo"."d" IS \'comment!\''
+    const expected = 'ALTER TABLE "public"."foo" ADD COLUMN "a" int NOT NULL, DROP COLUMN "c", ALTER COLUMN "b" TYPE char;COMMENT ON COLUMN "public"."foo"."d" IS \'comment!\';'
     expect(result).toBe(expected);
   })
 

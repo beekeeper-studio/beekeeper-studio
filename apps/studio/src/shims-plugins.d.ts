@@ -26,6 +26,5 @@ declare module 'vue/types/vue' {
     registerHandlers(bindings: RootBinding[]): void
     unregisterHandlers(bindings: RootBinding[]): void
     trigger<T>(event: AppEvent, options: T): void
-
   }
 }

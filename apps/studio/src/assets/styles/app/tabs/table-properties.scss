@@ -340,6 +340,19 @@ $cell-success:           $row-add;
 // -------------------------------------
 .tabulator-table {
   .tabulator-row {
+
+    div.dynamic-action::after {
+      line-height: $row-height;
+      cursor: pointer;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      font-family: 'Material Icons';
+      content: "close";
+    }
+
     &.tabulator-row-even, 
     &:nth-child(odd){
       &.inserted {
@@ -347,6 +360,9 @@ $cell-success:           $row-add;
       }
       &.deleted {
         background-color: $row-delete!important;
+        div.dynamic-action::after {
+          content: "undo";
+        }
       }
       &.inserted, &.deleted {
         .tabulator-cell {

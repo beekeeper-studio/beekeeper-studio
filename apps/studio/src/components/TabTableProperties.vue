@@ -9,7 +9,6 @@
       <div v-if="loading" class="table-properties-loading">
         <x-progressbar></x-progressbar>
       </div>
-      <table-info ></table-info>
       <div class="table-properties-header">
         <div class="nav-pills">
           <a 
@@ -178,9 +177,6 @@ export default {
     },
     humanIndexSize() {
       return humanBytes(this.properties.indexSize)
-    },
-    hasEdits() {
-      return this.editedCells.length || this.newRows.length || this.removedRows.length
     },
   },
   methods: {

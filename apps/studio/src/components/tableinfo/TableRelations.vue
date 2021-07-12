@@ -24,9 +24,12 @@
 <script>
 import Tabulator from 'tabulator-tables'
 import globals from '../../common/globals'
-import statusbar from '../common/StatusBar.vue'
+import StatusBar from '../common/StatusBar.vue'
 export default {
   props: ["table", "connection", "tabId", "active", "properties"],
+  components: {
+    StatusBar
+  },
   data() {
     return {
       tabulator: null

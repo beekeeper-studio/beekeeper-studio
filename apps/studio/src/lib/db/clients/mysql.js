@@ -690,7 +690,7 @@ async function setTableDescription(conn, table, description) {
 }
 async function alterTableSql(conn, change) {
   const columns = await listTableColumns(conn, null, change.table)
-  const builder = MySqlChangeBuilder(change.table, columns)
+  const builder = new MySqlChangeBuilder(change.table, columns)
   return builder.alterTable(change)
 }
 

@@ -794,6 +794,7 @@ export default Vue.extend({
           if (updateIncludedPK || this.hasPendingInserts || this.hasPendingDeletes) {
             replaceData = true
           } else if (this.hasPendingUpdates) {
+            this.tabulator.clearCellEdited()
             this.tabulator.updateData(result)
             this.pendingChanges.updates.forEach(edit => {
               edit.cell.getElement().classList.remove('edited')

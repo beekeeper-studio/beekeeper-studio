@@ -71,6 +71,7 @@ export interface DialectData {
 }
 
 export function defaultEscapeString(value: string, quote?: boolean): string {
+  if (!value) return null
   const result = `${value.replaceAll(/'/g, "''")}`
   return quote ? `'${result}'` : result
 }
