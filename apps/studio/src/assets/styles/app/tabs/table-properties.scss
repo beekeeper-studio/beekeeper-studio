@@ -274,7 +274,11 @@ $cell-success:           $row-add;
         &.edited {
           .tabulator-bks-checkbox {
             input {
-              background: $theme-base;
+              &:active,
+              &:checked,
+              &:checked:active {
+                background: $theme-base;
+              }
             }
           }
         }

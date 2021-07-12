@@ -424,7 +424,7 @@ input[type="checkbox"] {
   &:active,
   &:checked,
   &:checked:active {
-    background: darken($theme-primary, 10%);
+    background: $theme-primary;
     color: rgba(black, 0.87);
     box-shadow: none;
   }
