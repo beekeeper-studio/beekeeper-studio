@@ -53,6 +53,9 @@ select {
 .btn-link, .btn-fab {
   box-shadow: none;
 }
+.btn-flat {
+  background: rgba($theme-base, 0.08);
+}
 .text-primary {
   color: $theme-primary-dark!important;
 }
@@ -206,6 +209,12 @@ select {
       }
     }
   }
+  .table-filter {
+    .filter-group .select-wrap, 
+    .filter input {
+      background: rgba($theme-base, 0.08);
+    }
+  }
 }
 
 // Tabulator
@@ -260,9 +269,14 @@ select {
 .tabulator {
   .tabulator-header {
     background: $theme-bg;
-    .tabulator-col.foreign-key {
-      &:before {
-        color: darken($brand-primary, 15%);
+    .tabulator-col {
+      &.foreign-key {
+        &:before {
+          color: darken($brand-primary, 15%);
+        }
+      }
+      .badge {
+        color: $text-light;
       }
     }
   }
@@ -272,7 +286,7 @@ select {
 }
 .tabulator-row {
   &:nth-child(odd) {
-    background: rgba($theme-base, 0.025);
+    background: rgba($theme-base, 0.06);
   }
 }
 .table-builder .table-builder-wrap,
