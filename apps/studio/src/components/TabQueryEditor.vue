@@ -170,7 +170,7 @@
         return this.tab.query
       },
       queryText() {
-        return this.tab.query.text
+        return this.tab.query.text || null
       },
       individualQueries() {
         if (!this.queryText) return []
@@ -321,6 +321,14 @@
         // this.editor.refresh()
       },
       queryText() {
+
+        const isEmpty = (s) => _.isEmpty(_.trim(s))
+
+        if (!this.query.id && isEmpty(this.queryText) && isEmpty(this.unsavedText)) {
+          this.tab.unsavedChanges = false
+          return
+        }
+
         if (this.query.id && this.unsavedText === this.queryText) {
           this.tab.unsavedChanges = false
           return
@@ -505,7 +513,6 @@
         this.unsavedText = this.query.text
         this.tab.unsavedChanges = false
       } else {
-        this.tab.unsavedChanges = true
         for (var i = 0; i < 9; i++) {
             startingValue += '\n';
         }

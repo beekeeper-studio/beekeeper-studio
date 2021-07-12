@@ -35,9 +35,9 @@
         v-show="activeTab === tab"
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
-        <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
-        <TableProperties v-if="tab.type === 'table-properties'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :table="tab.table"></TableProperties>
-        <TableBuilder v-if="tab.type === 'table-builder'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection"></TableBuilder>
+        <TableTable @setTabTitleScope="setTabTitleScope" :tab="tab" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
+        <TableProperties v-if="tab.type === 'table-properties'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="tab.connection" :table="tab.table"></TableProperties>
+        <TableBuilder v-if="tab.type === 'table-builder'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="tab.connection"></TableBuilder>
         
       </div>
     </div>
@@ -186,7 +186,7 @@
           title: "Query #" + this.newTabId,
           connection: this.connection,
           query: query,
-          unsavedChanges: true
+          unsavedChanges: query.text?.length ? true : false
         }
 
         this.addTab(result)
@@ -214,6 +214,7 @@
           type: 'table-builder',
           connection: this.connection,
           title: "New Table",
+          unsavedChanges: true,
         }
         this.addTab(t)
       },
@@ -230,7 +231,8 @@
           type: 'table-properties',
           table: table,
           connection: this.connection,
-          title: `${table.name}`
+          title: `${table.name}`,
+          unsavedChanges: false
         }
         this.addTab(t)
       },

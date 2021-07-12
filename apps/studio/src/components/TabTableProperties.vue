@@ -17,9 +17,10 @@
             :key="pill.id"
             class="nav-pill"
             :class="{active: pill.id === activePill}"
+            :title="pill.dirty ? 'Unsaved Changes' : ''"
             @click.prevent="activePill = pill.id"
           >
-            {{pill.name}}
+            {{pill.name}} {{pill.dirty ? '*' : ''}}
           </a>
         </div>
       </div>
@@ -29,6 +30,7 @@
           :is="pill.component"
           :table="table"
           :primaryKeys="primaryKeys"
+          :tabState="pill"
           :properties="properties"
           :connection="connection"
           :active="pill.id === activePill && active"
@@ -91,7 +93,7 @@ import { format as humanBytes } from 'bytes'
 import platformInfo from '../common/platform_info'
 import TableInfo from './tableinfo/TableInfo.vue'
 export default {
-  props: ["table", "connection", "tabID", "active"],
+  props: ["table", "connection", "tabId", "active", "tab"],
   components: { Statusbar, TableInfo },
   data() {
     return {
@@ -100,18 +102,14 @@ export default {
       error: null,
       primaryKeys: [],
       properties: {},
+      dirtyPills: {},
       rawPills: [
-        // {
-        //   id: 'info',
-        //   name: 'Info',
-        //   needsProperties: false,
-        //   component: TableInfoVue,
-        // },
         {
           id: 'schema',
           name: "Schema",
           needsProperties: false,
           component: TableSchemaVue,
+          dirty: false,
         },
         {
           id: 'indexes',
@@ -119,6 +117,7 @@ export default {
           tableOnly: true,
           needsProperties: true,
           component: TableIndexesVue,
+          dirty: false,
         },
         {
           id: 'relations',
@@ -126,13 +125,15 @@ export default {
           tableOnly: true,
           needsProperties: true,
           component: TableRelationsVue,
+          dirty: false,
         },
         {
           id: 'triggers',
           name: "Triggers",
           tableOnly: true,
           needsProperties: true,
-          component: TableTriggersVue
+          component: TableTriggersVue,
+          dirty: false
         }
       ],
       activePill: 'schema',
@@ -143,7 +144,15 @@ export default {
       actualTableHeight: "100%",
     }
   },
+  watch: {
+    unsavedChanges() {
+      this.tab.unsavedChanges = this.unsavedChanges
+    }
+  },
   computed: {
+    unsavedChanges() {
+      return this.pills.filter((p) => p.dirty).length > 0
+    },
     pills() {
       if (!this.table) return []
       const isTable = this.table.entityType === 'table'

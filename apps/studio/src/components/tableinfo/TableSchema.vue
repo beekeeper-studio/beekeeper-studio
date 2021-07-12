@@ -66,7 +66,7 @@ export default Vue.extend({
     ErrorAlert
   },
   mixins: [DataMutators],
-  props: ["table", "connection", "tabID", "active", "primaryKeys"],
+  props: ["table", "connection", "tabID", "active", "primaryKeys", "tabState"],
   data() {
     return {
       tabulator: null,
@@ -79,6 +79,9 @@ export default Vue.extend({
     }
   },
   watch: {
+    editCount() {
+      this.tabState.dirty = true
+    },
     active() {
       if (!this.tabulator) return;
       if (this.active) {
@@ -118,7 +121,7 @@ export default Vue.extend({
 
       const trashButton = (cell) => `<i class="material-icons" title="${cell.getValue() === 'undo' ? 'Undo delete table column' : 'Delete table column'}">${cell.getValue() === 'undo' ? 'undo' : 'close'}</i>`
 
-      return [
+      const result = [
         {title: 'Name', field: 'columnName', editor: vueEditor(NullableInputEditorVue), cellEdited: this.cellEdited, headerFilter: true, formatter: this.cellFormatter},
         {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: autocompleteOptions, cellEdited: this.cellEdited}, 
         {
@@ -163,6 +166,7 @@ export default Vue.extend({
           cssClass: "remove-btn no-edit-highlight",
         }
       ]
+      return result
     },
     tableData() {
       const keys = _.keyBy(this.primaryKeys, 'columnName')
@@ -284,10 +288,19 @@ export default Vue.extend({
         this.editedCells = _.without(this.editedCells, undoEdits)
       }
     },
-    cellEdited(cell) {
-      if(![...this.newRows, this.removedRows].includes(cell.getRow())) {
+    cellEdited(cell: CellComponent) {
+      const rowIncluded = [...this.newRows, ...this.removedRows].includes(cell.getRow())
+      const existingCell: CellComponent = this.editedCells.find((c) => c === cell)
+      if(!rowIncluded && !existingCell) {
         this.editedCells.push(cell)
         cell.getElement().classList.add('edited')
+      }
+
+      if(existingCell) {
+        if (existingCell.getInitialValue() === existingCell.getValue()) {
+          existingCell.getElement().classList.remove('edited');
+          this.editedCells = _.without(this.editedCells, existingCell);
+        }
       }
     }
   },
