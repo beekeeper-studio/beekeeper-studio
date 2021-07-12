@@ -208,11 +208,11 @@
   }
   .create-table {
     display: flex;
-    color: $theme-primary;
+    color: $text;
     padding: 0 0.6rem 0 0;
     transition: color 0.2s ease-in-out;
     &:hover {
-      color: lighten($theme-primary, 10%);
+      color: $theme-base;
     }
   }
   .toolbar {

@@ -38,7 +38,7 @@
           :key="pill.id"
         >
           <template v-slot:footer>
-            <div class="col truncate expand" v-if="properties">
+            <div class="col flex expand" v-if="properties">
               <span class="statusbar-item" :title="`${properties.length} Records`">
                 <i class="material-icons">list_alt</i>
                 <span v-if="properties.length">~{{properties.length.toLocaleString()}}</span>
