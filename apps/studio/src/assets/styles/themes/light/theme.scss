@@ -331,7 +331,28 @@ select {
             &[type="checkbox"]:checked, 
             &[type="checkbox"]:checked:active {
               background: $theme-base!important;
-              color: rgba(black, 0.87)!important;
+            }
+          }
+        }
+        &.edited {
+          input {
+            &[type="checkbox"]:active, 
+            &[type="checkbox"]:checked, 
+            &[type="checkbox"]:checked:active {
+              &:after {
+                color: white!important;
+              }
+            }
+          }
+        }
+        &.read-only {
+          input {
+            &[type="checkbox"]:active, 
+            &[type="checkbox"]:checked, 
+            &[type="checkbox"]:checked:active {
+              &:after {
+                color: $theme-primary-dark!important;
+              }
             }
           }
         }
