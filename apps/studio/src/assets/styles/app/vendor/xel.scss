@@ -452,6 +452,7 @@ x-button {
 }
 
 x-buttons {
+  min-width: min-content;
   > x-button {
     margin: 0;
     &[menu] {

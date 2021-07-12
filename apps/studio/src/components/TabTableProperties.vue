@@ -53,7 +53,7 @@
                 <span>{{humanIndexSize}}</span>
               </span>
             </div>
-            <div class="flex-right statusbar-actions">
+            <div class="flex flex-middle flex-right statusbar-actions">
               <x-button class="actions-btn btn btn-flat" title="Actions">
                 <i class="material-icons">settings</i>
                 <i class="material-icons">arrow_drop_down</i>

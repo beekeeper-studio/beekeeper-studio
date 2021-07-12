@@ -14,7 +14,7 @@
           </div>
         </div>
         <div ref="tableSchema"></div>
-        
+
       </div>
     </div>
 
@@ -23,7 +23,7 @@
     <status-bar class="tabulator-footer">
       <div class="flex flex-middle flex-right statusbar-actions">
         <slot name="footer" />
-        <x-button v-if="hasEdits" class="btn btn-flat" @click.prevent="submitUndo">Reset</x-button>
+        <x-button v-if="hasEdits" class="btn btn-flat reset" @click.prevent="submitUndo">Reset</x-button>
         <x-buttons v-if="hasEdits" class="pending-changes">
           <x-button class="btn btn-primary" @click.prevent="submitApply">
             <i v-if="error" class="material-icons">error</i>
@@ -320,3 +320,9 @@ export default Vue.extend({
   }
 })
 </script>
+
+<style scoped>
+  .btn.reset {
+    margin-right: 0.8rem;
+  }
+</style>
