@@ -856,7 +856,7 @@ async function alterTableSql(conn, changes) {
 }
 
 async function alterTable(conn, changes) {
-  const sql = alterTableSql(conn, changes)
+  const sql = await alterTableSql(conn, changes)
   try {
     const queries = ['SET XACT_ABORT ON', 'BEGIN TRANSACTION', sql, 'COMMIT']
     await driverExecuteQuery(conn, { query: queries.join(";") })

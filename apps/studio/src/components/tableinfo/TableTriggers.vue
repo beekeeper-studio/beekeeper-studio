@@ -53,7 +53,7 @@ export default {
         { field: 'name', title: "Name", tooltip: true},
         { field: 'timing', title: "Timing"},
         { field: 'manipulation', title: "Manipulation"},
-        { field: 'action', title: "Action", tooltip: true, maxInitialWidth: 500},
+        { field: 'action', title: "Action", tooltip: true, widthGrow: 2.5},
         { field: 'condition', title: "Condition", formatter: this.cellFormatter}
       ]
     },
@@ -73,7 +73,7 @@ export default {
       tooltips: true,
       columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
       placeholder: "No triggers",
-      layout: 'fitDataStretch'
+      layout: 'fitColumns'
 
 
     })

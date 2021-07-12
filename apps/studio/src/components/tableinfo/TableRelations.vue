@@ -38,7 +38,7 @@ export default {
   computed: {
     tableColumns() {
       return [
-        { field: 'constraintName', title: "Name"},
+        { field: 'constraintName', title: "Name", widthGrow: 2},
         { field: 'fromColumn', title: "Column"},
         { field: 'toSchema', title: "FK Schema"},
         { field: 'toTable', title: "FK Table"},
@@ -63,7 +63,7 @@ export default {
       tooltips: true,
       columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
       placeholder: "No Relations",
-      layout: 'fitDataStretch'
+      layout: 'fitColumns'
 
     })
   }

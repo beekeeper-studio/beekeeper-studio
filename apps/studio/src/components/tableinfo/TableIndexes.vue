@@ -50,10 +50,10 @@ export default {
     },
     tableColumns() {
       return [
-        {title: 'Id', field: 'id'},
+        {title: 'Id', field: 'id', widthGrow: 0.5},
         {title:'Name', field: 'name'},
-        {title: 'Unique', field: 'unique', formatter: vueFormatter(CheckboxFormatterVue)},
-        {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue)},
+        {title: 'Unique', field: 'unique', formatter: vueFormatter(CheckboxFormatterVue), width: 80},
+        {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue), width: 85},
         {title: 'Columns', field: 'columns'}
       ]
     }
@@ -62,7 +62,7 @@ export default {
     this.tabulator = new Tabulator(this.$refs.tabulator, {
       data: this.tableData,
       columns: this.tableColumns,
-      layout: 'fitDataStretch',
+      layout: 'fitColumns',
       columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
       placeholder: "No Indexes"
     })

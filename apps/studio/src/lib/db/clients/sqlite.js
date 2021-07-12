@@ -459,7 +459,7 @@ export async function alterTableSql(conn, changes) {
 }
 
 export async function alterTable(conn, changes) {
-  const sql = alterTableSql(conn, changes)
+  const sql = await alterTableSql(conn, changes)
   runWithConnection(conn, async (connection) => {
     const cli = { connection }
     try {

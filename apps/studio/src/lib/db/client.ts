@@ -26,7 +26,7 @@ export interface DatabaseClient {
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
   // alter table
-  alterTableSql: (change: AlterTableSpec) => string,
+  alterTableSql: (change: AlterTableSpec) => Promise<string>,
   alterTable: (change: AlterTableSpec) => Promise<void>,
 
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,

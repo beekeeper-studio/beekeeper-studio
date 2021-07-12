@@ -872,7 +872,7 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
   return results
 }
 
-export function alterTableSql(_conn: HasPool, change: AlterTableSpec): string {
+export async function alterTableSql(_conn: HasPool, change: AlterTableSpec): Promise<string> {
   const builder = new PostgresqlChangeBuilder(change.table, change.schema)
   return builder.alterTable(change)
 }
@@ -880,7 +880,7 @@ export function alterTableSql(_conn: HasPool, change: AlterTableSpec): string {
 export async function alterTable(_conn: HasPool, change: AlterTableSpec) {
   await runWithConnection(_conn, async (connection) => {
     const cli = { connection }
-    const sql = alterTableSql(_conn, change)
+    const sql = await alterTableSql(_conn, change)
     try {
       await driverExecuteQuery(cli, { query: 'BEGIN' })
       await driverExecuteQuery(cli, { query: sql })

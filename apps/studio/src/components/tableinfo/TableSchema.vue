@@ -169,6 +169,7 @@ export default Vue.extend({
         {
           title: 'Primary',
           field: 'primary',
+          tooltip: false,
           formatter: vueFormatter(CheckboxFormatterVue),
           formatterParams: {
             editable: false
