@@ -142,6 +142,9 @@
         await this.$store.dispatch('tabActive', tab)
       },
       addTab(item) {
+        if (_.isNil(item.unsavedChanges)) {
+          item.unsavedChanges = false
+        }
         this.tabItems.push(item)
         this.newTabId += 1
         this.$nextTick(() => {
@@ -232,7 +235,6 @@
           table: table,
           connection: this.connection,
           title: `${table.name}`,
-          unsavedChanges: false
         }
         this.addTab(t)
       },
@@ -249,7 +251,7 @@
           table: resolvedTable || table,
           connection: this.connection,
           initialFilter: filter,
-          titleScope: "all"
+          titleScope: "all",
         }
         this.addTab(t)
       },

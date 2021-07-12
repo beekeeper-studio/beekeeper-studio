@@ -200,7 +200,7 @@ const FILTER_MODE_RAW = 'raw'
 export default Vue.extend({
   components: { Statusbar },
   mixins: [data_converter, DataMutators],
-  props: ["table", "connection", "initialFilter", "tabId", "active"],
+  props: ["table", "connection", "initialFilter", "tabId", "active", 'tab'],
   data() {
     return {
       filterTypes: {
@@ -507,6 +507,9 @@ export default Vue.extend({
     },
     filterMode() {
       this.triggerFilter()
+    },
+    pendingChangesCount() {
+      this.tab.unsavedChanges = this.pendingChangesCount > 0
     }
   },
   beforeDestroy() {
