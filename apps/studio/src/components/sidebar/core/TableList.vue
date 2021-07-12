@@ -108,7 +108,7 @@
           </div>
           <div>
             <a @click.prevent="newTable" title="New Table" class="create-table">
-              <i class="material-icons">add</i>
+              <i class="material-icons">add_circle</i>
             </a>
           </div>
         </div>
