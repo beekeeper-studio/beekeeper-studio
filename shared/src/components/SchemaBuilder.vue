@@ -324,6 +324,13 @@ export default Vue.extend({
             }
           }
         }
+        
+        .material-icons.clear {
+          color: $text-lighter;
+          &:hover {
+            color: $text-dark;
+          }
+        }
 
         // Make checkboxes behave correctly
         .tabulator-bks-checkbox {

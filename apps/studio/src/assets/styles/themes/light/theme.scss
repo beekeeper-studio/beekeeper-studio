@@ -337,6 +337,13 @@ select {
         }
       }
 
+      .material-icons.clear {
+        color: $text-light;
+        &:hover {
+          color: $text-dark;
+        }
+      }
+
       // Remove Cell
       &.remove-btn {
         .material-icons {

@@ -98,15 +98,11 @@ export default Vue.extend({
     position: absolute;
     top: 0;
     bottom: 0;
-    right: 2px;
+    right: 4px;
     display: flex;
     align-items: center;
     font-size: 15px;
     width: 18px;
     text-align: center;
-    color: $text-lighter;
-    &:hover {
-      color: $text-dark;
-    }
   }
 </style>
