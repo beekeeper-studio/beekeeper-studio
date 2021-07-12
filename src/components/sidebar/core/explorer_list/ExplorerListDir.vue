@@ -19,11 +19,14 @@
 
       <x-contextmenu>
         <x-menu>
-          <x-menuitem @click.prevent="create('dir')">
+          <x-menuitem @click.prevent="createState('dir')">
             <x-label>New Folder</x-label>
           </x-menuitem>
-          <x-menuitem @click.prevent="create('file')">
+          <x-menuitem @click.prevent="createState('file')">
             <x-label>New File</x-label>
+          </x-menuitem>
+          <x-menuitem @click.prevent="createState('rename')">
+            <x-label>Rename</x-label>
           </x-menuitem>
           <hr />
           <x-menuitem @click.prevent="remove">
@@ -33,19 +36,20 @@
       </x-contextmenu>
     </a>
     <div v-if="showColumns" class="sub-items">
-      <CreateNewNode
-        v-show="creating.trigger"
-        :placeholder="creating.placeholder"
-        :type="creating.type"
+      <NodeActions
+        v-show="nodeData.trigger"
+        :placeholder="nodeData.placeholder"
+        :type="nodeData.type"
         :currentNode="currentNode"
-        @cancel="cancel"
         @close="close"
-      ></CreateNewNode>
+      ></NodeActions>
 
       <explorer-list-file
         v-for="file in files"
         :key="file.name"
         :file="file"
+        :currentNode="currentNode"
+        :nodeData="nodeData"
       ></explorer-list-file>
       <explorer-list-dir
         v-for="dir in directories"
@@ -59,13 +63,13 @@
 
 <script type="text/javascript">
 import ExplorerListFile from "./ExplorerListFile.vue";
-import CreateNewNode from "./CreateNewNode.vue";
+import NodeActions from "./node_actions/NodeActions.vue";
 import { uuidv4 } from "../../../../lib/uuid";
 
 export default {
   name: "explorer-list-dir",
   props: ["node", "depth"],
-  components: { ExplorerListFile, CreateNewNode },
+  components: { ExplorerListFile, NodeActions },
   mounted() {
     this.showColumns = !!false;
   },
@@ -77,10 +81,11 @@ export default {
         dir: null,
         node: null
       },
-      creating: {
+      nodeData: {
         trigger: false,
         placeholder: "",
-        type: ""
+        type: "",
+        rename: false
       }
     };
   },
@@ -121,7 +126,6 @@ export default {
 
   methods: {
     async toggleColumns() {
-      // this.$emit("selected", this.table);
       this.showColumns = !this.showColumns;
     },
 
@@ -141,24 +145,26 @@ export default {
       this.selected.node = node;
     },
 
-    create(type) {
-      this.creating.trigger = true;
+    createState(type) {
+      this.select(this.node);
+      this.nodeData.trigger = true;
       this.showColumns = true;
-      this.creating.type = type;
+      this.nodeData.type = type;
 
       switch (type) {
         case "dir":
-          this.creating.placeholder = "Foldername";
+          this.nodeData.placeholder = "Foldername";
           break;
         case "file":
-          this.creating.placeholder = "Filename";
+          this.nodeData.placeholder = "Filename";
           break;
+        case "rename":
+          this.nodeData.rename = true;
       }
     },
 
-    cancel() {},
     close() {
-      this.creating = {
+      this.nodeData = {
         trigger: false,
         placeholder: "",
         type: ""

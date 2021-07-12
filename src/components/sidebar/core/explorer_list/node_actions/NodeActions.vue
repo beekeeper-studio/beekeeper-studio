@@ -22,18 +22,16 @@
       type="text"
       v-model="node.name"
       :placeholder="placeholder"
-      @keydown.enter="validation"
+      @keydown.enter="nameValidation"
       class="node-input"
       ref="nodeInput"
-      v-outside
     />
   </div>
 </template>
 
 <script>
 import { bind } from "lodash";
-import { fileExists } from "../../../../common/utils";
-const folderTree = require("../../../../plugins/foldertree");
+const folderTree = require("../../../../../plugins/foldertree");
 
 export default {
   props: ["placeholder", "type", "currentNode"],
@@ -93,7 +91,7 @@ export default {
   },
 
   methods: {
-    validation() {
+    nameValidation() {
       const isValid = this.reg[this.type].test(this.node.name);
       this.node.path = `${this.currentNode.path}\\${this.node.name}`;
       if (isValid && this.type === "file") {
@@ -101,12 +99,14 @@ export default {
       } else if (isValid && this.type === "dir") {
         this.node.type = "dir";
       } else {
-        this.$noty.error(
-          "Filename cannot have white spaces or start with special characters or numbers."
-        );
+        this.error(this.type);
         return;
       }
 
+      this.createNode();
+    },
+
+    createNode() {
       const alreadyExist = folderTree.nodeExist(
         this.currentNode,
         this.node.name
@@ -117,6 +117,24 @@ export default {
           this.node = new folderTree.TreeNode("");
           this.$emit("close");
         });
+      } else {
+        this.error("duplicate");
+      }
+    },
+
+    error(type) {
+      switch (type) {
+        case "dir":
+          this.$noty.error("Directories can only contain letters.");
+          break;
+        case "file":
+          this.$noty.error(
+            "Filename cannot have white spaces or start with special characters or numbers."
+          );
+          break;
+        case "duplicate":
+          this.$noty.error("File/Directorie already exists.");
+          break;
       }
     }
   }

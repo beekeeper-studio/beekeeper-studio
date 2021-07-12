@@ -9,14 +9,35 @@
         <span class="folder-name truncate">
           {{ file.name }}
         </span>
+
+     
       </span>
+      <x-contextmenu>
+        <x-menu>
+          <x-menuitem @click.prevent="createState('dir')">
+            <x-label>New Folder</x-label>
+          </x-menuitem>
+          <x-menuitem @click.prevent="createState('file')">
+            <x-label>New File</x-label>
+          </x-menuitem>
+          <x-menuitem @click.prevent="createState('rename')">
+            <x-label>Rename</x-label>
+          </x-menuitem>
+          <hr />
+          <x-menuitem @click.prevent="remove">
+            <x-label class="text-danger">Remove</x-label>
+          </x-menuitem>
+        </x-menu>
+      </x-contextmenu>
     </a>
   </div>
 </template>
 
 <script>
+// import RenameNode from "./node_actions/RenameNode.vue";
 export default {
-  props: ["file"],
+  props: ["file", "currentNode", "nodeData"],
+  components: {  },
   computed: {
     fileType() {
       const result = { class: this.file.type, icon: "" };
