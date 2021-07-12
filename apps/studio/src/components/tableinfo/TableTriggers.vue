@@ -1,21 +1,23 @@
 <template>
   <div class="table-info-table view-only">
     <div class="table-info-table-wrap">
-      <div class="table-subheader">
-        <div class="table-title">
-          <h2>Triggers</h2>
+      <div class="center-wrap">
+        <div class="table-subheader">
+          <div class="table-title">
+            <h2>Triggers</h2>
+          </div>
+          <div class="table-actions">
+            <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Trigger</a> -->
+          </div>
         </div>
-        <div class="table-actions">
-          <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Trigger</a> -->
-        </div>
+        <div class="table-triggers" ref="tabulator"></div>
       </div>
-      <div class="table-triggers" ref="tabulator"></div>
     </div>
     
     <div class="expand" />
 
     <status-bar class="tabulator-footer">
-      
+
     </status-bar>
   </div>
 </template>

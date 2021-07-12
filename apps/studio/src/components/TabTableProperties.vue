@@ -23,7 +23,7 @@
           </a>
         </div>
       </div>
-      <div class="table-properties-wrap center-wrap" v-if="!loading">
+      <div class="table-properties-wrap" v-if="!loading">
         <component
           class="schema-builder"
           :is="pill.component"

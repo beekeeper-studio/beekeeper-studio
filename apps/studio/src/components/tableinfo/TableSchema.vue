@@ -1,25 +1,28 @@
 <template>
   <div class="table-info-table table-schema">
     <div class="table-info-table-wrap">
-      <div class="table-subheader">
-        <div class="table-title">
-          <h2>Columns</h2>
+      <div class="center-wrap">
+        <div class="table-subheader">
+          <div class="table-title">
+            <h2>Columns</h2>
+          </div>
+          <error-alert :error="error" v-if="error" />
+          <slot />
+          <span class="expand"></span>
+          <div class="actions">
+            <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
+          </div>
         </div>
-        <error-alert :error="error" v-if="error" />
-        <slot />
-        <span class="expand"></span>
-        <div class="actions">
-          <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
-        </div>
+        <div ref="tableSchema"></div>
+        
       </div>
-      <div ref="tableSchema"></div>
     </div>
 
     <div class="expand" />
 
     <status-bar class="tabulator-footer">
-      <slot name="footer" />
-      <div class="col flex-right statusbar-actions">
+      <div class="flex flex-middle flex-right statusbar-actions">
+        <slot name="footer" />
         <x-button v-if="hasEdits" class="btn btn-flat" @click.prevent="submitUndo">Reset</x-button>
         <x-buttons v-if="hasEdits" class="pending-changes">
           <x-button class="btn btn-primary" @click.prevent="submitApply">
