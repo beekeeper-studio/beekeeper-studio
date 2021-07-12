@@ -10,7 +10,7 @@ $sidebar-list-icons:       darken($theme-primary, 15%);
 
 // Editor
 $tabs-heading:             rgba($theme-base, 0.08);
-$tab-link:                 darken($theme-bg, 12%);
+$tab-link:                 darken($theme-bg, 6%);
 $codemirror-hint-bg:       darken($theme-bg, 2%);
 
 // Table Editing
@@ -79,6 +79,11 @@ select {
 .text-danger {
   color: $brand-danger!important;
 }
+.connection-main {
+  .card-flat {
+    background: rgba($theme-base, 0.035);
+  }
+}
 
 // File-Menu
 // ---------------------------------------
@@ -100,6 +105,7 @@ select {
   background: rgba($theme-base, 0.05);
 }
 #sidebar {
+  position: relative;
   .filter {
     .filter-actions {
       x-button {
@@ -133,6 +139,33 @@ select {
   }
 }
 
+.page-content {
+  position: relative;
+  &:before {
+    content: '';
+    position: absolute;
+    top: $tab-height;
+    bottom: 0;
+    left: 0;
+    width: 1px;
+    background: $border-color;
+    z-index: 10;
+  }
+  .tabs-header {
+    position: relative;
+    &:before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: $border-color;
+      z-index: 1;
+    }
+  }
+}
+
 // Editor
 // ---------------------------------------
 .core-tabs {
@@ -145,8 +178,22 @@ select {
       // &.active {
       //   box-shadow: inset 0 1px $theme-primary;
       // }
+      &.active {
+        z-index: 10;
+        background: white;
+        box-shadow: inset 0 1px $border-color, 
+                    inset 1px 0 $border-color, 
+                    inset -1px 0 $border-color;
+        .tab-action {
+          background: linear-gradient(-90deg, white 80%, rgba(white, 0) 100%);
+        }
+      }
     }
     .tab-action {
+      top: 1px;
+      right: 1px;
+      bottom: 1px;
+      border-radius: 0 6px 0 0;
       background: linear-gradient(-90deg, $tab-link 80%, $tab-link 100%);
     }
     .tab-close {
@@ -161,6 +208,7 @@ select {
 }
 
 // Tabulator
+// -------------------------------
 .tabulator-table {
   .tabulator-row {
     &.inserted, 
@@ -226,10 +274,29 @@ select {
     background: rgba($theme-base, 0.025);
   }
 }
+.schema-builder {
+  .tabulator-row {
+    .tabulator-cell {
+      color: $text-dark;
+    }
+  }
+  .tabulator {
+    .tabulator-header {
+      .tabulator-col {
+        .tabulator-col-content {
+          .tabulator-col-title {
+            color: $text-dark;
+          }
+        }
+      }
+    }
+  }
+}
 
 // CodeMirror
+// ----------------------------------
 .CodeMirror-hints {
-  background: $codemirror-hint-bg;
+  background: white!important;
   li {
     &.CodeMirror-hint-active {
       background: $brand-info;
