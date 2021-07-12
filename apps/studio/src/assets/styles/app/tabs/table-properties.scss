@@ -50,6 +50,7 @@ $cell-success:           $row-add;
     .table-title {
       display: flex;
       flex-grow: 1;
+      color: $text-dark;
     }
     h2 {
       margin: 0;
@@ -62,6 +63,9 @@ $cell-success:           $row-add;
       padding: 0;
       .btn-fab {
         margin-left: $gutter-h;
+      }
+      .btn-fab.btn-link {
+        margin-left: $gutter-w;
       }
     }
   }
@@ -237,6 +241,9 @@ $cell-success:           $row-add;
         width: $btn-fab-size;
         height: $btn-fab-size;
         min-width: $btn-fab-size;
+      }
+      .title {
+        margin: 0;
       }
     }
 

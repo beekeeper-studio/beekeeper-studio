@@ -75,7 +75,8 @@
       color: $text;
       border: 0;
       border-radius: 6px 6px 0 0;
-      border-right: 1px solid $theme-bg;
+      // border-right: 1px solid $theme-bg;
+      margin-right: 1px;
       overflow: hidden;
       &.active {
         background: $query-editor-bg;
@@ -147,13 +148,13 @@
       }
     }
     .item-icon {
-      font-size: 16px;
-      padding-left: ($gutter-h * 1.25);
+      font-size: 15px;
+      padding-left: ($gutter-h * 1.5);
       padding-right: $gutter-h;
       max-width: $gutter-w * 2.8;
       line-height: $tab-height;
       &.table-properties {
-        font-size: 14px;
+        font-size: 13px;
       }
     }
     .tab-action {

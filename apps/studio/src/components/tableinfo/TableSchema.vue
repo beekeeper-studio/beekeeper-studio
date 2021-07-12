@@ -4,12 +4,13 @@
       <div class="center-wrap">
         <div class="table-subheader">
           <div class="table-title">
-            <h2>Columns <a @click.prevent="refreshColumns"><i class="material-icons">refresh</i></a></h2>
+            <h2>Columns</h2>
           </div>
           <error-alert :error="error" v-if="error" />
           <slot />
           <span class="expand"></span>
           <div class="actions">
+            <a @click.prevent="refreshColumns" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
             <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
           </div>
         </div>
