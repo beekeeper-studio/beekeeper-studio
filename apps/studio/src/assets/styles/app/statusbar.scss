@@ -75,6 +75,11 @@
   }
 
   .statusbar-actions {
+    display: flex;
+    align-items: middle;
+    .btn.reset {
+      margin-right: $gutter-w;
+    }
     .btn {
       padding: 0 0.6rem;
       background: transparent;

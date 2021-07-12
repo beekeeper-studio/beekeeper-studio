@@ -320,9 +320,3 @@ export default Vue.extend({
   }
 })
 </script>
-
-<style scoped>
-  .btn.reset {
-    margin-right: 0.8rem;
-  }
-</style>
