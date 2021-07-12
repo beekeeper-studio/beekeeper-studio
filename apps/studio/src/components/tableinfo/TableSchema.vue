@@ -147,7 +147,7 @@ export default Vue.extend({
             editable: false
           },
           width: 70,
-          cssClass: "no-edit-highlight",
+          cssClass: "no-edit-highlight read-only",
         },
         {
           field: 'trash-button',

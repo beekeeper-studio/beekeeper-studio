@@ -11,11 +11,18 @@
       </div>
       <div class="table-relations" ref="tabulator"></div>
     </div>
+    
+    <div class="expand" />
+
+    <status-bar class="tabulator-footer">
+      
+    </status-bar>
   </div>
 </template>
 <script>
 import Tabulator from 'tabulator-tables'
 import globals from '../../common/globals'
+import statusbar from '../common/StatusBar.vue'
 export default {
   props: ["table", "connection", "tabId", "active", "properties"],
   data() {

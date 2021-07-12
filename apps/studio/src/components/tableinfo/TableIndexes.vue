@@ -1,16 +1,21 @@
 <template>
-<div class="table-info-table view-only">
-  <div class="table-info-table-wrap">
-    <div class="table-subheader">
-      <div class="table-title">
-        <h2>Indexes</h2>
+  <div class="table-info-table view-only">
+    <div class="table-info-table-wrap">
+      <div class="table-subheader">
+        <div class="table-title">
+          <h2>Indexes</h2>
+        </div>
+        <div class="table-actions">
+          <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Index</a> -->
+        </div>
       </div>
-      <div class="table-actions">
-        <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Index</a> -->
-      </div>
+      <div class="table-indexes" ref="tabulator"></div>
     </div>
-    <div class="table-indexes" ref="tabulator"></div>
-  </div>
+  
+    <div class="expand" />
+
+    <status-bar class="tabulator-footer">
+    </status-bar>
 </div>
 </template>
 <script>
@@ -19,7 +24,11 @@ import data_mutators from '../../mixins/data_mutators'
 import globals from '../../common/globals'
 import { vueFormatter } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
+import StatusBar from '../common/StatusBar.vue'
 export default {
+  components: {
+    StatusBar,
+  },
   mixins: [data_mutators],
   props: ["table", "connection", "tabId", "active", "properties"],
   data() {

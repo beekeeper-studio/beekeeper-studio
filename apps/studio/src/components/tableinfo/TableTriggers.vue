@@ -11,13 +11,23 @@
       </div>
       <div class="table-triggers" ref="tabulator"></div>
     </div>
+    
+    <div class="expand" />
+
+    <status-bar class="tabulator-footer">
+      
+    </status-bar>
   </div>
 </template>
 <script>
 import Tabulator from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
 import globals from '../../common/globals'
+import StatusBar from '../common/StatusBar.vue'
 export default {
+  components: {
+    StatusBar,
+  },
   mixins: [data_mutators],
   props: ["table", "connection", "tabId", "active", "properties"],
   data() {

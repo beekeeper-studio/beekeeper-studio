@@ -22,6 +22,7 @@ $cell-success:           $row-add;
     height: 100%;
     overflow: hidden;
     overflow-y: auto;
+    margin: 0;
   }
   .table-info-table {
     display: flex;
@@ -265,6 +266,31 @@ $cell-success:           $row-add;
           min-height: $row-height;
           height: $row-height;
           line-height: $row-height + 2px;
+          // Make checkboxes behave correctly
+          .tabulator-bks-checkbox {
+            padding: $cell-padding / 2;
+          }
+        }
+        &.edited {
+          .tabulator-bks-checkbox {
+            input {
+              background: $theme-base;
+            }
+          }
+        }
+        &.read-only {
+          .tabulator-bks-checkbox {
+            input {
+              background:transparent;
+              &:after {
+                color: $theme-primary;
+                font-size: 20px;
+              }
+              &[disabled="disabled"] {
+                box-shadow: none;
+              }
+            }
+          }
         }
         &.no-padding {
           > * {
