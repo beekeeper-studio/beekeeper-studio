@@ -25,3 +25,17 @@ export default Vue.extend({
   }
 })
 </script>
+
+<style lang="scss" scoped>
+  @import '@/assets/styles/app/_variables';
+
+  .alert {
+    display: flex;
+    flex-direction: column;
+  }
+  a {
+    font-weight: 600;
+    margin-top: $gutter-h / 2;
+    padding-left: $gutter-w * 1.8;
+  }
+</style>
