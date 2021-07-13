@@ -43,11 +43,11 @@
                 <i class="material-icons">list_alt</i>
                 <span v-if="properties.length">~{{properties.length.toLocaleString()}}</span>
               </span>
-              <span class="statusbar-item" v-if="humanSize.length" :title="`Table Size ${humanSize}`">
+              <span class="statusbar-item" :title="`Table Size ${humanSize}`">
                 <i class="material-icons">aspect_ratio</i>
                 <span>{{humanSize}}</span>
               </span>
-              <span class="statusbar-item" v-if="humanIndexSize.length" :title="`Index Size ${humanIndexSize}`">
+              <span class="statusbar-item" :title="`Index Size ${humanIndexSize}`">
                 <i class="material-icons">location_searching</i>
                 <span>{{humanIndexSize}}</span>
               </span>
