@@ -91,6 +91,11 @@ export default Vue.extend({
 <style lang="scss" scoped>
   @import '@shared/assets/styles/_variables';
   
+  div {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
   input {
     padding-right: 18px!important;
   }

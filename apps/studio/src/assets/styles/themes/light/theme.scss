@@ -215,12 +215,6 @@ select {
       }
     }
   }
-  .table-filter {
-    .filter-group .select-wrap, 
-    .filter input {
-      background: rgba($theme-base, 0.08);
-    }
-  }
 }
 
 // Tabulator
@@ -292,7 +286,7 @@ select {
 }
 .tabulator-row {
   &:nth-child(odd) {
-    background: rgba($theme-base, 0.06);
+    background: rgba($theme-base, 0.035);
   }
 }
 .table-builder .table-builder-wrap,

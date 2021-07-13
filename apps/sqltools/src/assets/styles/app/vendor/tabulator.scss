@@ -90,7 +90,7 @@ $cell-radius:            2px;
     padding: 4px 8px;
     min-height: $row-height;
     height: $row-height;
-    line-height: $row-height - (6px); // row-height - vertical padding
+    line-height: $row-height - (8px); // row-height - vertical padding
     border-radius: $cell-radius;
     cursor: default;
     &:first-of-type {
