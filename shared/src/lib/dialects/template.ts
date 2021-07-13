@@ -69,29 +69,10 @@ export class Template {
 export const idColumn: TemplatedSchemaItem = {
   columnName: 'id',
   config: {
-    dataType: 'int',
+    dataType: 'autoincrement',
     nullable: false,
     primaryKey: true
   },
-  dialectConfigs: {
-    postgresql: {
-      dataType: 'serial',
-    },
-    mysql: {
-      defaultValue: "AUTO INCREMENT",
-      dataType: 'int'
-    },
-    sqlserver: {
-      dataType: 'int'
-    },
-    sqlite: {
-      dataType: 'integer',
-      defaultValue: "AUTOINCREMENT"
-    },
-    redshift: {
-      dataType: 'int',
-    }
-  }
 }
 
 

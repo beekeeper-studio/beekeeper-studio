@@ -56,9 +56,9 @@ import Formatter from 'sql-formatter'
 import Knex from 'knex'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator';
 import DialectPicker from '@/components/DialectPicker.vue'
-import { Template } from '@/lib/templates/base';
 import templates from '@/lib/templates';
 import HighlightedCode from '@/components/HighlightedCode.vue';
+import { Template } from '@shared/lib/dialects/template';
 interface Data {
   template: Template
   schema: Schema

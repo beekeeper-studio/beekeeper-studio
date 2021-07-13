@@ -30,8 +30,8 @@
 <script lang="ts">
 import Vue from 'vue'
 import templates from '@/lib/templates'
-import { Template } from '@/lib/templates/base'
 import { mapState } from 'vuex'
+import { Template } from '@shared/lib/dialects/template'
 
 interface Data {
   templates: Template[]

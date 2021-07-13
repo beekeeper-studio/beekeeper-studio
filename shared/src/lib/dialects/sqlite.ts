@@ -1,7 +1,8 @@
-import { ColumnType, defaultEscapeString, defaultWrapIdentifier, defaultWrapLiteral, DialectData } from "./models"
+import { ColumnType, defaultEscapeString, defaultWrapIdentifier, defaultWrapLiteral, DialectData, SpecialTypes } from "./models"
 
 
 const types = [
+  ...SpecialTypes,
   'int', 'int2', 'int8', 'integer', 'tinyint', 'smallint', 'mediumint', 'bigint', 'decimal', 'numeric', 'float', 'double', 'real', 'double precision', 'datetime', 'varying character', 'character', 'native character', 'varchar', 'nchar', 'nvarchar2', 'unsigned big int', 'boolean', 'blob', 'text', 'clob', 'date'
 ]
 

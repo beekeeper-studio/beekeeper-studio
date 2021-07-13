@@ -1,6 +1,8 @@
 import _ from 'lodash'
 
 export const Dialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift'] as const
+
+export const SpecialTypes = ['autoincrement']
 export type Dialect = typeof Dialects[number]
 
 export function dialectFor(s: string): Dialect | null {

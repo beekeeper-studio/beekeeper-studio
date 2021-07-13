@@ -1,8 +1,9 @@
 import _ from "lodash"
-import { ColumnType, defaultEscapeString, defaultWrapLiteral, DialectData } from "./models"
+import { ColumnType, defaultEscapeString, defaultWrapLiteral, DialectData, SpecialTypes } from "./models"
 
 
 const types = [
+  ...SpecialTypes,
   'int', 'bigint', 'bit', 'decimal', 'money', 'numeric', 'smallint', 'smallmoney', 'tinyint', 'float', 'real', 'date', 'datetime2', 'datetime', 'datetimeoffset', 'smalldatetime', 'time', 'char', 'varchar', 'text', 'nchar', 'nvarchar', 'ntext', 'binary', 'image', 'varbinary', 'hierarchyid', 'sql_variant', 'timestamp', 'uniqueidentifier', 'xml', 'geometry', 'geography', 'rowversion'
 ]
 

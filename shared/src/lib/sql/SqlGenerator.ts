@@ -24,14 +24,16 @@ export class SqlGenerator {
     
     const sql = k.createTable(schema.name, (table) => {
 
-      const primaries = schema.columns.filter((c) => c.primaryKey)
+      const primaries = schema.columns.filter((c) => c.primaryKey && c.dataType !== 'autoincrement')
       if (primaries.length > 0) {
         table.primary(primaries.map((c) => c.columnName))
       }
-      schema.columns.forEach((column: SchemaItem) => {        
-        const col = table.specificType(column.columnName, column.dataType)
+      schema.columns.forEach((column: SchemaItem) => {
+        const col = column.dataType === 'autoincrement' ?
+          table.increments(column.columnName) :
+          table.specificType(column.columnName, column.dataType)
         if (column.defaultValue) col.defaultTo(this.knex.raw(column.defaultValue))
-        if(column.unsigned) col.unsigned()
+        if (column.unsigned) col.unsigned()
         if (column.comment) col.comment(column.comment)
         column.nullable ? col.nullable() : col.notNullable()
       })

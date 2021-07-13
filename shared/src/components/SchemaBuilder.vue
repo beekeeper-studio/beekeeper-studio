@@ -35,7 +35,8 @@ export default Vue.extend({
     initialColumns: Array as PropType<SchemaItem[]>,
     dialect: String as PropType<Dialect>,
     resetOnUpdate: Boolean as PropType<boolean>,
-    disabled: Boolean as PropType<boolean>
+    disabled: Boolean as PropType<boolean>,
+    initialEmit: Boolean as PropType<boolean>
   },
   data(): SchemaBuilderData {
     return {
@@ -49,7 +50,7 @@ export default Vue.extend({
     initialColumns() {
       if (this.resetOnUpdate && this.initialColumns && this.tabulator) {
         this.tabulator.replaceData([...this.initialColumns])
-        this.getData(false)
+        this.getData(!!this.initialEmit)
       }
     },
     dialect() {
@@ -61,6 +62,7 @@ export default Vue.extend({
       deep: true,
       handler() {
         if (this.builtColumns && this.modified) {
+          console.log("emitting columns")
           this.$emit('columnsChanged', this.builtColumns)
         }
       }
@@ -195,7 +197,7 @@ export default Vue.extend({
       layout: 'fitColumns',
       dataChanged: () => this.getData()
     })
-    this.getData(false)
+    this.getData(!!this.initialEmit)
   }
 })
 </script>

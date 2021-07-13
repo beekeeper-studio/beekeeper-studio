@@ -18,6 +18,7 @@ import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
 import { AlterTableSpec } from '@shared/lib/dialects/models';
+import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
 
 
 const base64 = require('base64-url');
@@ -872,22 +873,35 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
   return results
 }
 
-export async function alterTableSql(_conn: HasPool, change: AlterTableSpec): Promise<string> {
-  const builder = new PostgresqlChangeBuilder(change.table, change.schema)
+// this allows us to test without a valid connection
+async function Builder(conn?: HasPool) {
+  if (!conn) return PostgresqlChangeBuilder
+  const v = await getVersion(conn)
+  return v.isRedshift ? RedshiftChangeBuilder : PostgresqlChangeBuilder
+}
+
+export async function alterTableSql(conn: HasPool, change: AlterTableSpec): Promise<string> {
+  const Cls = await Builder(conn)
+  const builder = new Cls(change.table, change.schema)
   return builder.alterTable(change)
 }
 
 export async function alterTable(_conn: HasPool, change: AlterTableSpec) {
+  const version = await getVersion(_conn)
+  
   await runWithConnection(_conn, async (connection) => {
+
     const cli = { connection }
     const sql = await alterTableSql(_conn, change)
+    // redshift doesn't support alter table within transactions.
+    const transaction = !version.isRedshift && change.alterations?.length
     try {
-      await driverExecuteQuery(cli, { query: 'BEGIN' })
+      if (transaction) await driverExecuteQuery(cli, { query: 'BEGIN' })
       await driverExecuteQuery(cli, { query: sql })
-      await driverExecuteQuery(cli, { query: 'COMMIT' })
+      if (transaction) await driverExecuteQuery(cli, { query: 'COMMIT' })
     } catch (ex) {
       log.error("ALTERTABLE", ex)
-      await driverExecuteQuery(cli, { query: 'ROLLBACK'})
+      if (transaction) await driverExecuteQuery(cli, { query: 'ROLLBACK'})
       throw ex
     }
   })

@@ -22,6 +22,12 @@ import { dialectFor } from '@shared/lib/dialects/models'
 
 const log = RawLog.scope('store/index')
 
+const tablesMatch = (t: TableOrView, t2: TableOrView) => {
+  return t2.name === t.name &&
+    t2.schema === t.schema &&
+    t2.entityType === t.entityType
+}
+
 interface State {
   usedConfig: Nullable<SavedConnection>,
   usedConfigs: UsedConnection[],
@@ -181,11 +187,6 @@ const store = new Vuex.Store<State>({
       state.database = database
     },
     tables(state, tables: TableOrView[]) {
-      const tablesMatch = (t: TableOrView, t2: TableOrView) => {
-        return t2.name === t.name &&
-        t2.schema === t.schema &&
-        t2.entityType === t.entityType
-      }
 
       if(state.tables.length === 0) {
         state.tables = tables
@@ -204,6 +205,17 @@ const store = new Vuex.Store<State>({
         }
       })
       state.tables = result
+    },
+
+    table(state, table: TableOrView) {
+      const existingIdx = state.tables.findIndex((st) => tablesMatch(st, table))
+      if (existingIdx >= 0) {
+        const result = state.tables
+        Object.assign(result[existingIdx], table)
+        state.tables = result
+      } else {
+        state.tables = [...state.tables, table]
+      }
     },
 
     routines(state, routines) {
@@ -357,6 +369,7 @@ const store = new Vuex.Store<State>({
         return
       }
       table.columns = columns
+      context.commit('table', table)
     },
 
     async updateTables(context) {

@@ -1,5 +1,5 @@
-import { now } from "@/lib/templates/base"
 import { AlterTableSpec, Dialect, DialectTitles } from "@shared/lib/dialects/models"
+import { now } from "@shared/lib/dialects/template"
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase"
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder"
 import { PostgresqlChangeBuilder } from "@shared/lib/sql/change_builder/PostgresqlChangeBuilder"

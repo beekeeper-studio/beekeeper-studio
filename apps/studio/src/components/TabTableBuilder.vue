@@ -29,6 +29,7 @@
           :resetOnUpdate="true"
           :initialColumns="initialColumns"
           @columnsChanged="handleChange"
+          :initialEmit="true"
         ></schema-builder>
       </div>
     </div>
@@ -36,14 +37,18 @@
     <status-bar class="tabulator-footer">
       <span class="expand"></span>
       <div class="col flex-right statusbar-actions">
-        <x-button class="actions-btn btn btn-flat" title="Actions">
-          <i class="material-icons">settings</i>
-          <i class="material-icons">arrow_drop_down</i>
-          <x-menu>
-            <x-menuitem @click.prevent="create">Create</x-menuitem>
-            <x-menuitem @click.prevent="sql">Open as SQL</x-menuitem>
-          </x-menu>
-        </x-button>
+        <x-buttons class="pending-changes">
+          <x-button class="btn btn-primary" @click.prevent="create">
+            <i v-if="error" class="material-icons">error</i>
+            <span>Create Table</span>
+          </x-button>
+          <x-button class="btn btn-primary" menu>
+            <i class="material-icons">arrow_drop_down</i>
+            <x-menu>
+              <x-menuitem @click.prevent="sql">Copy to SQL</x-menuitem>
+            </x-menu>
+          </x-button>
+        </x-buttons>
       </div>
     </status-bar>
   </div>
@@ -93,6 +98,7 @@ export default Vue.extend({
     ...mapState(['tables']),
     defaultSchema() {
       if (this.dialect === 'postgresql') return 'public'
+      if (this.dialect === 'redshift') return 'public'
       if (this.dialect === 'sqlserver') return 'dbo'
       return undefined
     },
