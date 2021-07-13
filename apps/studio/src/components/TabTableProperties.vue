@@ -39,15 +39,15 @@
         >
           <template v-slot:footer>
             <div class="col flex expand" v-if="properties">
-              <span class="statusbar-item" :title="`${properties.length} Records`">
+              <span class="statusbar-item" v-if="properties.length" :title="`${properties.length} Records`">
                 <i class="material-icons">list_alt</i>
-                <span v-if="properties.length">~{{properties.length.toLocaleString()}}</span>
+                <span>~{{properties.length.toLocaleString()}}</span>
               </span>
-              <span class="statusbar-item" :title="`Table Size ${humanSize}`">
+              <span class="statusbar-item" v-if="humanSize !== null" :title="`Table Size ${humanSize}`">
                 <i class="material-icons">aspect_ratio</i>
                 <span>{{humanSize}}</span>
               </span>
-              <span class="statusbar-item" :title="`Index Size ${humanIndexSize}`">
+              <span class="statusbar-item" v-if="humanIndexSize !== null" :title="`Index Size ${humanIndexSize}`">
                 <i class="material-icons">location_searching</i>
                 <span>{{humanIndexSize}}</span>
               </span>

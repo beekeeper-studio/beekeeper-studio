@@ -300,7 +300,7 @@ select {
   .tabulator-row {
     &.tabulator-row-even,
     &:nth-child(odd) {
-      background: rgba($theme-base, 0.08)!important;
+      background: rgba($theme-base, 0.06)!important;
     }
     &.inserted {
       background: $row-add!important;
