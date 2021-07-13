@@ -188,6 +188,8 @@ import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
+import { vueEditor } from '@shared/lib/tabulator/helpers';
+import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
 
 const CHANGE_TYPE_INSERT = 'insert'
 const CHANGE_TYPE_UPDATE = 'update'
@@ -393,7 +395,8 @@ export default Vue.extend({
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             search: true,
-            values: column.dataType === 'bool' ? [true, false] : undefined
+            values: column.dataType === 'bool' ? [true, false] : undefined,
+            allowEmpty: true,
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
             // }
@@ -599,13 +602,14 @@ export default Vue.extend({
       return dt.split("(")[0]
     },
     editorType(dt) {
+      const ne = vueEditor(NullableInputEditorVue)
       switch (dt) {
         case 'text': return 'textarea'
         case 'json': return 'textarea'
         case 'jsonb': return 'textarea'
         case 'bytea': return 'textarea'
         case 'bool': return 'select'
-        default: return 'input'
+        default: return ne
       }
     },
     fkClick(e, cell) {
@@ -684,6 +688,13 @@ export default Vue.extend({
       cell.getElement().classList.add('edited')
       const key = `${pkCell.getValue()}-${cell.getField()}`
       const currentEdit = _.find(this.pendingChanges.updates, { key: key })
+      
+      if (currentEdit && currentEdit.cell.getInitialValue() === cell.getValue()) {
+        this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit))
+        cell.getElement().classList.remove('edited')
+        return
+      }
+
       const payload = {
         key: key,
         table: this.table.name,
@@ -692,7 +703,7 @@ export default Vue.extend({
         pkColumn: this.primaryKey,
         columnType: column ? column.dataType : undefined,
         primaryKey: pkCell.getValue(),
-        oldValue: currentEdit ? currentEdit.oldValue : cell.getOldValue(),
+        oldValue: cell.getInitialValue(),
         cell: cell,
         value: cell.getValue(0)
       }
