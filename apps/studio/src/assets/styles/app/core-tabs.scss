@@ -152,6 +152,7 @@
       padding-left: ($gutter-h * 1.5);
       padding-right: $gutter-h;
       max-width: $gutter-w * 2.8;
+      min-width: $gutter-w * 2.6;
       line-height: $tab-height;
       &.table-properties {
         font-size: 13px;
@@ -166,7 +167,7 @@
       align-items: center;
       justify-content: center;
       height: 100%;
-      min-width: 24px;
+      min-width: 28px;
       background: linear-gradient(-90deg, rgba(lighten($theme-bg, 3%), 100%) 80%, rgba(lighten($theme-bg, 3%), 0) 100%);
     }
     .tab-close {
