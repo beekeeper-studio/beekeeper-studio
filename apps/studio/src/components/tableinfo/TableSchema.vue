@@ -171,7 +171,7 @@ export default Vue.extend({
           editor: vueEditor(CheckboxEditorVue),
           formatter: vueFormatter(CheckboxFormatterVue),
           formatterParams: {
-            editable: true
+            editable: !this.disabledFeatures?.alter?.alterColumn
           },
           cellEdited: this.cellEdited,
           editable: !this.disabledFeatures?.alter?.alterColumn,
