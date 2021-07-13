@@ -1,15 +1,7 @@
 <template>
   <div class="table-builder">
-    <div v-if="error" class="alert-wrapper">
-      <div class="alert alert-danger">{{error.message}}</div>
-      <div class="error-sql" v-if="errorSql">
-        <h3>Attempted To Execute</h3>
-        <highlightjs v-if="errorSql" :lang="sql" :code="errorSql" />
-        <a @click.prevent="sql" class="btn btn-info">Open in a new tab</a>
-      </div>
-    </div>
-    <div v-if="running">
-      <p>Creating {{tableName}}...</p>
+    <error-alert v-if="error" :error="error" />
+    <div v-show="running">
       <x-progressbar></x-progressbar>
     </div>
     <div class="table-builder-wrap">
@@ -64,6 +56,7 @@ import { AppEvent } from '@/common/AppEvent'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
 import { BasicTable } from '@/lib/data/table_templates'
 import _ from 'lodash';
+import ErrorAlert from './common/ErrorAlert.vue';
 interface Data {
   initialColumns: SchemaItem[]
   tableName: string | null,
@@ -77,7 +70,8 @@ interface Data {
 export default Vue.extend({
   components: {
     SchemaBuilder,
-    StatusBar
+    StatusBar,
+    ErrorAlert,
   },
   props: ['connection', 'tabId'],
   data(): Data {
