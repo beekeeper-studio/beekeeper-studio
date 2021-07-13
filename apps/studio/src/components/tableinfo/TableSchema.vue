@@ -210,7 +210,12 @@ export default Vue.extend({
           cssClass: "remove-btn no-edit-highlight",
         }
       ]
-      return result
+      return result.map((col) => {
+        const cssBase = col.cssClass || null
+        const extraCss = col.editable ? 'editable' : 'read-only'
+        const cssClass = cssBase ? `${cssBase} ${extraCss}` : extraCss
+        return { ...col, cssClass }
+      })
     },
     tableData() {
       const keys = _.keyBy(this.primaryKeys, 'columnName')
