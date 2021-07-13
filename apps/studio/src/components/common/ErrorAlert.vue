@@ -5,6 +5,9 @@
         {{e.message || e.toString()}}
       </li>
     </ul>
+    <div class="help-links" v-if="error.helpLink">
+      <a :href="error.helpLink">Learn more about this error</a>
+    </div>
   </div>
 </template>
 <script lang="ts">

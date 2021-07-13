@@ -439,9 +439,14 @@ export function query(conn, queryText) {
           if (canceling && err.code === mysqlErrors.CONNECTION_LOST) {
             canceling = false;
             err.sqlectronError = 'CANCELED_BY_USER';
+            throw err
+          } else if (queryText && _.trim(queryText).toUpperCase().startsWith("DELIMITER")) {
+            const nuError = Error(`DELIMITER is only supported in the command line client, ${err.message}`)
+            nuError.helpLink = "https://docs.beekeeperstudio.io/troubleshooting/#mysql"
+            throw nuError
+          } else {
+            throw err;
           }
-
-          throw err;
         } finally {
           cancelable.discard();
         }

@@ -40,7 +40,9 @@
       <progress-bar @cancel="cancelQuery" v-if="running"></progress-bar>
       <result-table ref="table" v-else-if="rowCount > 0" :active="active" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
       <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results</span></div></div>
-      <div class="message" v-else-if="error"><div class="alert alert-danger"><i class="material-icons">warning</i><span>{{error}}</span></div></div>
+      <div class="message" v-else-if="error">
+        <error-alert :error="error" />
+      </div>
       <div class="message" v-else-if="info"><div class="alert alert-info"><i class="material-icons">warning</i><span>{{info}}</span></div></div>
       <div class="layout-center expand" v-else>
         <shortcut-hints></shortcut-hints>
@@ -123,11 +125,12 @@
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from 'electron-log'
+  import ErrorAlert from './common/ErrorAlert.vue'
   const log = rawlog.scope('query-editor')
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar},
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert},
     props: ['tab', 'active'],
     data() {
       return {

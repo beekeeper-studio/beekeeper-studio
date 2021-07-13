@@ -26,6 +26,39 @@ You can enable extended logging by starting Beekeeper Studio with the debug flag
 On linux, just run the app like this: `DEBUG=* beekeeper-studio`
 
 
+## MySQL
+
+* This section also applies to MariaDB
+
+### I get a SQL syntax error when trying to create a stored procedure
+
+When using the `mysql` command line client you need to remap delimiters using `DELIMITER`, however this syntax isn't supported by MySQL server itself, so it errors when run through Beekeeper Studio.
+
+You'll likely get an error like `You have an error in your SQL syntax`. Simply remove the delimiter statements to fix it.
+
+For example, change this:
+```sql
+DELIMITER //
+
+CREATE PROCEDURE simpleproc (OUT param1 INT)
+ BEGIN
+  SELECT COUNT(*) INTO param1 FROM t;
+ END;
+//
+
+DELIMITER ;
+```
+
+To this:
+
+```sql
+CREATE PROCEDURE simpleproc (OUT param1 INT)
+ BEGIN
+  SELECT COUNT(*) INTO param1 FROM t;
+ END;
+```
+
+
 ## SQLite
 
 ### I get 'permission denied' when trying to access a database on an external drive
