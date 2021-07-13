@@ -15,8 +15,30 @@
     overflow-y: auto;
   }
   .table-builder-header {
+    margin-bottom: $gutter-w * 1.5;
     .form-group {
       padding: 0 0 $gutter-w;
+      flex-direction: row;
+      align-items: center;
+      padding: 0;
+      margin-bottom: $gutter-h / 2;
+      label {
+        width: 85px;
+        font-size: 80%;
+        color: $text-lighter;
+        padding: 0;
+        white-space: nowrap;
+        line-height: $input-height * 1.15;
+        margin: 0;
+      }
+      input {
+        border: 0;
+        font-size: 14px;
+        height: $input-height * 1.15;
+        line-height: $input-height * 1.15;
+        font-weight: 500;
+        background: rgba($theme-base, 0.035);
+      }
     }
   }
   .schema-builder {

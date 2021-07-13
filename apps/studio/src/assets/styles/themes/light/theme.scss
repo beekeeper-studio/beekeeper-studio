@@ -303,6 +303,16 @@ select {
     }
   }
 }
+.table-builder {
+  
+  .table-builder-header {
+    .form-group {
+      label {
+        color: $text-light;
+      }
+    }
+  }
+}
 
 // Schema Builder
 // ----------------------------------
