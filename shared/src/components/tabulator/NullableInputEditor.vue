@@ -103,10 +103,10 @@ export default Vue.extend({
     position: absolute;
     top: 0;
     bottom: 0;
-    right: 4px;
+    right: 3px;
     display: flex;
     align-items: center;
-    font-size: 15px;
+    font-size: 13px;
     width: 18px;
     text-align: center;
   }

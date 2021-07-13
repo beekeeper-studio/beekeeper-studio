@@ -176,7 +176,7 @@ export default Vue.extend({
           cellEdited: this.cellEdited,
           editable: !this.disabledFeatures?.alter?.alterColumn,
           width: 70,
-          cssClass: "no-edit-highlight",
+          cssClass: "read-only",
         },
         {
           title: 'Default Value',
@@ -197,7 +197,7 @@ export default Vue.extend({
             editable: false
           },
           width: 70,
-          cssClass: "no-edit-highlight read-only",
+          cssClass: "read-only",
         },
         {
           field: 'trash-button',
@@ -207,7 +207,7 @@ export default Vue.extend({
           hozAlign: 'center',
           cellClick: this.removeRow,
           resizable: false,
-          cssClass: "remove-btn no-edit-highlight",
+          cssClass: "remove-btn read-only",
         }
       ]
       return result.map((col) => {

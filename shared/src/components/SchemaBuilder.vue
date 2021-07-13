@@ -292,6 +292,8 @@ export default Vue.extend({
             margin: 0 $cell-padding;
           }
         }
+
+        // Checkboxes - no highlight
         &.no-edit-highlight {
           background: transparent!important;
           &.tabulator-editing {
@@ -309,6 +311,16 @@ export default Vue.extend({
           }
           &:hover {
             background: transparent;
+          }
+        }
+
+        // Read Only
+        &.read-only,
+        &.read-only:hover {
+          background: transparent!important;
+          cursor: default;
+          input {
+            cursor: default;
           }
         }
 

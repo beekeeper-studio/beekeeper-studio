@@ -359,16 +359,19 @@ select {
             }
           }
         }
-        &.read-only {
-          input {
-            &[type="checkbox"]:active, 
-            &[type="checkbox"]:checked, 
-            &[type="checkbox"]:checked:active {
-              &:after {
-                color: $theme-primary-dark!important;
-              }
+      }
+      &.read-only {
+        input {
+          &[type="checkbox"]:active, 
+          &[type="checkbox"]:checked, 
+          &[type="checkbox"]:checked:active {
+            &:after {
+              color: $theme-primary-dark!important;
             }
           }
+        }
+        .tabulator-bks-checkbox input:after {
+          color: $theme-primary-dark;
         }
       }
 
