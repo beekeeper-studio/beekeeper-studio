@@ -72,6 +72,10 @@ yarn run electron:serve ## the app will now start
 
 ### Where to make changes?
 
+This repo is now a monorepo, we have several places with code, but only really a couple of important entry points.
+
+All app code lives in `apps/studio`, some shared code lives in `shared/src`. This is shared with other apps.
+
 Beekeeper Studio has two entry points:
 - `background.js` - this is the electron-side code that controls native things like showing windows.
 - `main.js` - this is the entry point for the Vue.js app. You can follow the Vue component breadcrumbs from `App.vue` to find the screen you need.

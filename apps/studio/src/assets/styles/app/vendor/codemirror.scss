@@ -1,0 +1,73 @@
+@import '../extends';
+
+.CodeMirror {
+  font-family: $font-family-mono, monospace;
+  background: $query-editor-bg!important;
+  color: $text-dark!important;
+  padding: 0.75rem 0;
+  z-index: 1;
+}
+.CodeMirror-gutters {
+  border: 0!important;
+  background: transparent!important;
+}
+.CodeMirror-code {
+  line-height: 1.3!important;
+}
+.CodeMirror-gutters {
+  border: 0!important;
+  background: transparent!important;
+}
+
+// Monokai
+// ---------------------------------------
+.cm-s-monokai {
+  span.cm-keyword {
+    color: $brand-pink;
+  }
+  span.cm-variable-2 {
+    color: $brand-secondary;
+  }
+  div.CodeMirror-selected {
+    background: rgba($theme-secondary, 0.2);
+  }
+  .CodeMirror-linenumber {
+    color: rgba($theme-base, 0.25);
+  }
+  .CodeMirror-line .cm-number {
+    color: $brand-primary;
+  }
+  .CodeMirror-cursor {
+    border-color: $text-dark;
+  }
+  span.cm-bracket {
+    color: $text;
+  }
+}
+
+// Addon: Hints
+// --------------------------------------
+.CodeMirror-hints {
+  font-family: $font-family-mono, monospace;
+  background: lighten($theme-bg, 5%);
+  color: $text-dark;
+  padding: $gutter-h 0;
+  border: 0;
+  border-radius: 6px;
+  @extend .card-shadow;
+  li {
+    &:hover {
+      background: rgba($theme-base, 0.05);
+    }
+    &.CodeMirror-hint-active {
+      background: darken($theme-secondary, 25%);
+      color: white;
+    }
+  }
+}
+.CodeMirror-hint {
+  padding: ($gutter-h * 0.5) $gutter-h;
+  border-radius: 0;
+  color: $text-dark;
+  cursor: pointer;
+}

@@ -1,0 +1,263 @@
+@import "~codemirror/theme/xq-light";
+@import "./app/vendor/codemirror";
+
+
+// Global
+$badge-bg:                 rgba($theme-base, 0.1);
+
+// Sidebar
+$sidebar-list-icons:       darken($theme-primary, 15%);
+
+// Editor
+$tabs-heading:             rgba($theme-base, 0.08);
+$tab-link:                 darken($theme-bg, 12%);
+$codemirror-hint-bg:       darken($theme-bg, 2%);
+
+// Table Editing
+$row-highlight:            darken($query-editor-bg, 3%);
+$row-add:                  #56DAAC;
+$row-delete:               #FC8A87;
+$row-error:                #F9B8B7;
+
+$cell-edited:              #EDDFA1;
+$cell-error:               $row-error;
+$cell-success:             $row-add;
+
+// Statusbar
+$editor-statusbar:         rgba($theme-base, 0.035);
+
+@mixin cell-shadow {
+  box-shadow: inset 1px 0 rgba(white, 0.4),
+              inset 0 -1px rgba(white, 0.4);
+}
+
+// Base Styles
+// -----------------------------------------
+& {
+  background: $theme-bg;
+  color: $text;
+}
+.material-icons {
+  font-weight: 600;
+}
+select {
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
+}
+::selection {
+  background: rgba($brand-info, 0.25);
+}
+.btn {
+  box-shadow: inset 0 0 0 1px rgba($theme-base, 0.035);
+}
+.btn-link, .btn-fab {
+  box-shadow: none;
+}
+.text-primary {
+  color: darken($theme-primary, 15%)!important;
+}
+.list-group {
+  .list-item-btn {
+    .actions {
+      i {
+        color: $text-light;
+      }
+      .btn-fab.pinned {
+        i {
+          color: $text-dark;
+        }
+      }
+    }
+  }
+}
+.badge {
+  background: $badge-bg;
+  color: $text-dark;
+  &.badge-info {
+    color: white;
+  }
+}
+.text-danger {
+  color: $brand-danger!important;
+}
+
+// File-Menu
+// ---------------------------------------
+.flyout-nav {
+  > .menu-bar {
+    .top-menu-item {
+      > a {
+        > .label {
+          color: $text-light;
+        }
+      }
+    }
+  }
+}
+
+// Sidebar
+// ---------------------------------------
+.advanced-connection-settings {
+  background: rgba($theme-base, 0.05);
+}
+#sidebar {
+  .filter {
+    .filter-actions {
+      x-button {
+        &.btn-fab {
+        margin-right: 2px;
+        line-height: 22px;
+        height: 22px;
+        width: 22px;
+        min-width: 22px;
+        border-radius: 22px;
+        border: 0;
+        &.active {
+          background: rgba($theme-base, 0.1);
+          .material-icons {
+            color: $brand-info;
+          }
+        }
+      }
+
+      }
+    }
+  }
+}
+.list-heading {
+  .sub {
+    .badge {
+      &.active {
+        color: $brand-info;
+      }
+    }
+  }
+}
+
+// Editor
+// ---------------------------------------
+.core-tabs {
+  .tabs-header {
+    background: $tabs-bg;
+  }
+  .nav-tabs {
+    .nav-link {
+      background: $tab-link;
+      // &.active {
+      //   box-shadow: inset 0 1px $theme-primary;
+      // }
+    }
+    .tab-action {
+      background: linear-gradient(-90deg, $tab-link 80%, $tab-link 100%);
+    }
+    .tab-close {
+      .material-icons {
+        color: $text-lighter;
+        &.close {
+          color: $text-dark;
+        }
+      }
+    }
+  }
+}
+
+// Tabulator
+.tabulator-table {
+  .tabulator-row {
+    &.inserted, 
+    &.inserted:hover {
+      background: $row-add;
+    }
+    &.deleted,
+    &.deleted:hover {
+      background: $row-delete;
+    }
+    &.edit-error {
+      background: $row-error!important;
+    }
+    .tabulator-cell {
+      &.edited,
+      &.edit-error,
+      &.edit-success {
+        @include cell-shadow;
+      }
+      &.edited {
+        background: $cell-edited;
+        &:hover {
+          background: darken($cell-edited, 5%);
+        }
+      }
+      &.edit-error {
+        background: $cell-error;
+        &:hover {
+          background: darken($cell-error, 5%);
+        }
+      }
+      &.edit-success {
+        background: $cell-success;
+        &:hover {
+          background: darken($cell-success, 5%);
+        }
+      }
+      &.foreign-key-button {
+        .material-icons {
+          &:hover {
+            color: $text-dark;
+          }
+        }
+      }
+    }
+  }
+}
+.tabulator {
+  .tabulator-header {
+    background: $theme-bg;
+    .tabulator-col.foreign-key {
+      &:before {
+        color: darken($brand-primary, 15%);
+      }
+    }
+  }
+  .tabulator-tableHolder {
+    background: white;
+  }
+}
+.tabulator-row {
+  &:nth-child(odd) {
+    background: rgba($theme-base, 0.025);
+  }
+}
+
+// CodeMirror
+.CodeMirror-hints {
+  background: $codemirror-hint-bg;
+  li {
+    &.CodeMirror-hint-active {
+      background: $brand-info;
+      color: white;
+    }
+  }
+}
+.cm-s-monokai {
+  span {
+    .cm-string {
+      color: darken($theme-primary, 25%);
+    }
+  }
+}
+.query-editor {
+  .CodeMirror-code {
+    .highlight {
+      background-color: rgba($brand-info, 0.2);
+    }
+  }
+}
+
+// Noty
+.noty_theme__mint.noty_type__success {
+  color: darken($brand-success, 5%);
+}
+
+// Switch
+x-switch {
+  color: darken($theme-primary, 10%);
+}

@@ -1,0 +1,47 @@
+name: Studio - Master build
+
+on: 
+  push:
+    branches:
+      - "master"
+    paths-ignore:
+      - 'apps/sqltools/**'
+
+jobs:
+  masterbuild:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-18.04, windows-latest]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14
+
+      - name: Check dependencies
+        run: "yarn install --frozen-lockfile"
+
+      - name: Build Electron app
+        run: "yarn run electron:build --publish never"
+
+      - name: Cleanup artifacts
+        if: matrix.os != 'windows-latest'
+        run: |
+          npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
+
+      - name: Cleanup artifacts Win
+        if: matrix.os == 'windows-latest'
+        run: |
+          npx rimraf "apps/studio/dist_electron/!(*.exe)"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}
+          path: apps/studio/dist_electron

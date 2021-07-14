@@ -1,0 +1,58 @@
+.export-modal {
+  .dialog-c-subtitle {
+    .material-icons {
+      margin-top: -1rem;
+      vertical-align: bottom;
+    }
+  }
+  .badge {
+    font-size: 0.9rem;
+    vertical-align: 1px;
+    margin-left: $gutter-h;
+  }
+  .advanced-options-toggle {
+    font-size: 0.9rem;
+    margin: ($gutter-w * 1.5) 0 $gutter-h;
+    cursor: pointer;
+    .material-icons {
+      margin-right: $gutter-h * 0.5;
+    }
+  }
+  .advanced-options {
+    display: none;
+    margin-top: $gutter-w;
+    &.open {
+      display: block;
+    }
+  }
+  .file-name {
+    margin-right: $gutter-w;
+  }
+  .format select {
+    width: 120px;
+  }
+}
+.export-form {
+  .form-group {
+    margin-bottom: $gutter-h;
+  }
+}
+
+.export-progress-notification {
+  .title {
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-bottom: $gutter-w;
+  }
+
+  .progress-info {
+    font-size: 0.8rem;
+    padding-top: $gutter-w * 0.6;
+  }
+
+  .progress-bar {
+    margin-top: $gutter-w * 0.4;
+    margin-bottom: $gutter-w;
+  }
+}
+
