@@ -174,13 +174,7 @@ import { PinnedTable } from '../../../../common/appdb/models/pinned_table'
         this.$root.$emit('loadTableProperties', {table: this.table})
       },
       pin() {
-        const pin = new PinnedTable(
-          this.table,
-          this.database,
-          this.config
-        )
-        this.$store.dispatch('pins/add', pin)
-        
+        this.$store.dispatch('pins/add', this.table)
         // this.$store.dispatch('pinTable', this.table)
       },
       unpin() {

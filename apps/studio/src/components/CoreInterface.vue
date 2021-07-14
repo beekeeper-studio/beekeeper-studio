@@ -47,6 +47,7 @@
       this.$root.$on(AppEvent.toggleSidebar, this.toggleSidebar)
       this.$store.dispatch('updateHistory')
       this.$store.dispatch('updateFavorites')
+      this.$store.dispatch('pins/loadPins')
 
       this.$nextTick(() => {
         this.split = Split(this.splitElements, {

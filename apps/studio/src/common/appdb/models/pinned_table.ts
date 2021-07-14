@@ -4,16 +4,19 @@ import { ApplicationEntity } from "./application_entity";
 import { SavedConnection } from "./saved_connection";
 
 
-@Entity({ name: 'pinned_table'})
+@Entity({ name: 'pinned_tables'})
 export class PinnedTable extends ApplicationEntity {
 
-  constructor(table: TableOrView, db: string | null, saved: SavedConnection) {
+  constructor(table?: TableOrView, db?: string | null, saved?: SavedConnection) {
     super()
-    this.table = table
-    this.tableName = table.name
-    this.schemaName = table.schema
-    this.databaseName = db
-    this.savedConnection = saved
+    console.log('initializing with', table, db, saved)
+    if (table) {
+      this.table = table
+      this.tableName = table.name
+      this.schemaName = table.schema
+    }
+    if (db) this.databaseName = db
+    if (saved) this.savedConnection = saved
   }
 
   matches(table: TableOrView, database?: string): boolean {
@@ -21,7 +24,6 @@ export class PinnedTable extends ApplicationEntity {
       table.schema === this.schemaName &&
       (!database || database === this.databaseName)
   }
-
 
 
   @Column({type: 'varchar', nullable: false})
@@ -33,11 +35,11 @@ export class PinnedTable extends ApplicationEntity {
   @Column({type: 'varchar', nullable: false})
   tableName!: string
 
-  @Column({type: 'bool', default: false})
+  @Column({type: 'boolean', default: false})
   open: boolean = false
 
-  @Column({type: 'number', nullable: false})
-  position: number = 99
+  @Column({type: 'float', nullable: false, default: 1})
+  position: number = 99.0
 
   // for saved connections
   @ManyToOne(() => SavedConnection, connection => connection.pinnedTables, {nullable: true})

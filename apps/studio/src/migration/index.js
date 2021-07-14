@@ -13,6 +13,7 @@ import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
 import sslReject from './20201231-ssl-reject-unauthorized'
+import pinned from './20210713_create_pinned_tables'
 import createLogger from '../lib/logger'
 
 const logger = createLogger('migrations')()
@@ -24,7 +25,7 @@ const setupSQL = `
  )
 `
 const realMigrations = [
-  a, b, c, d, domains, createSettings, addZoom, addSc, sslFiles, sslReject
+  a, b, c, d, domains, createSettings, addZoom, addSc, sslFiles, sslReject, pinned
 ]
 
 // fixtures require the models
