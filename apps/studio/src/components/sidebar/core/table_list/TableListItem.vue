@@ -8,10 +8,10 @@
         <i :title="title" :class="iconClass" class="item-icon material-icons">grid_on</i>
         <span class="table-name truncate" :title="table.name">{{table.name}}</span>
       </span>
-      <span class="actions" v-bind:class="{'pinned': pinned.includes(table)}">
-        <span v-if="!pinned.includes(table)" @mousedown.prevent.stop="pin" class="btn-fab pin" :title="'Pin'"><i class="bk-pin"></i></span>
-        <span v-if="pinned.includes(table)" @mousedown.prevent.stop="unpin" class="btn-fab unpin" :title="'Unpin'"><i class="material-icons">clear</i></span>
-        <span v-if="pinned.includes(table)" class="btn-fab pinned"><i class="bk-pin" :title="'Unpin'"></i></span>
+      <span class="actions" v-bind:class="{'pinned': pinned}">
+        <span v-if="!pinned" @mousedown.prevent.stop="pin" class="btn-fab pin" :title="'Pin'"><i class="bk-pin"></i></span>
+        <span v-if="pinned" @mousedown.prevent.stop="unpin" class="btn-fab unpin" :title="'Unpin'"><i class="material-icons">clear</i></span>
+        <span v-if="pinned" class="btn-fab pinned"><i class="bk-pin" :title="'Unpin'"></i></span>
       </span>
       <x-contextmenu>
         <x-menu>
@@ -64,9 +64,8 @@ import { mapGetters, mapState } from 'vuex'
 import _ from 'lodash'
 import { AppEvent } from '../../../../common/AppEvent'
 import { uuidv4 } from '../../../../lib/uuid'
-import { PinnedTable } from '../../../../common/appdb/models/pinned_table'
 	export default {
-		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container"],
+		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container", "pinned"],
     mounted() {
       this.showColumns = !!this.table.showColumns
     },
@@ -131,7 +130,7 @@ import { PinnedTable } from '../../../../common/appdb/models/pinned_table'
         
         return tableSelected
       },
-      ...mapGetters(['pinned', 'selectedSidebarItem']),
+      ...mapGetters(['selectedSidebarItem']),
       ...mapState(['activeTab', 'database', 'config'])
     },
     methods: {
@@ -175,10 +174,9 @@ import { PinnedTable } from '../../../../common/appdb/models/pinned_table'
       },
       pin() {
         this.$store.dispatch('pins/add', this.table)
-        // this.$store.dispatch('pinTable', this.table)
       },
       unpin() {
-        this.$store.dispatch('unpinTable', this.table)
+        this.$store.dispatch('pins/remove', this.table)
       }
     }
 	}

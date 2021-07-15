@@ -1,10 +1,10 @@
-import { TableOrView } from "@/lib/db/models";
+import { DatabaseEntity } from "@/lib/db/models";
 import _ from "lodash";
 import { Module } from "vuex";
-import { PinnedTable } from "../../common/appdb/models/pinned_table";
+import { PinnedEntity } from "../../common/appdb/models/PinnedEntity";
 import { State as RootState } from '../index'
 interface State {
-  pins: PinnedTable[]
+  pins: PinnedEntity[]
 }
 
 export const PinModule: Module<State, RootState> = {
@@ -13,56 +13,65 @@ export const PinModule: Module<State, RootState> = {
     pins: []
   }),
   getters: {
-    pinned(state, _g, root): PinnedTable[] {
+    pinned(state: State, _g, root): PinnedEntity[] {
       return state.pins.filter((p) => p.databaseName === root.database)
     },
-    sortedPins(state): PinnedTable[] {
-      return state.pins.sort((p) => p.position)
+    orderedPins(state, _g, rootState): PinnedEntity[] {
+      const { tables, routines } = rootState
+      return state.pins.sort((p) => p.position).map((pin) => {
+        const items = [...tables, ...routines]
+        const t = items.find((t) => pin.matches(t))
+        if (t) pin.entity = t
+        return t ? pin : null
+      }).filter((p) => !!p)
     },
-    pinnedTables(_state, getters, rootState): TableOrView[] {
-      const { tables } = rootState
-      return getters.sortedPins.map((p: PinnedTable) => {
-        return tables.find((t) => p.matches(t))
-      }).filter((t) => !!t)
+    pinnedEntities(_state: State, getters): DatabaseEntity[] {
+      return getters.orderedPins.map((pin) => pin.entity)
     }
   },
   mutations: {
-    set(state, pins: PinnedTable[]) {
+    set(state, pins: PinnedEntity[]) {
       state.pins = pins
     },
-    add(state, newPin: PinnedTable) {
+    add(state, newPin: PinnedEntity) {
       state.pins.push(newPin)
     },
-    remove(state, pin: PinnedTable) {
+    remove(state, pin: PinnedEntity) {
       state.pins = _.without(state.pins, pin)
     }
   },
   actions: {
     async loadPins(context) {
       const { usedConfig } = context.rootState
-      const pins = usedConfig?.pinnedTables.sort((p) => p.position)
+      const pins = usedConfig?.pinnedEntities
       context.commit('set', pins)
     },
-    async add(context, table: TableOrView) {
+    async unloadPins(context) {
+      context.commit('set', [])
+    },
+    async add(context, item: DatabaseEntity) {
       const { database, usedConfig } = context.rootState
-      const existing = context.state.pins.find((p) => p.matches(table, database || undefined))
+      const existing = context.state.pins.find((p) => p.matches(item, database || undefined))
       if (existing) return
 
       if (database && usedConfig) {
-        const newPin = new PinnedTable(table, database, usedConfig)
-        newPin.position = (context.getters.sortedPins.reverse()[0]?.position || 0) + 1
+        const newPin = new PinnedEntity(item, database, usedConfig)
+        newPin.position = (context.getters.orderedPins.reverse()[0]?.position || 0) + 1
         console.log('saving pin', newPin)
         if(usedConfig.hasId()) await newPin.save()
         context.commit('add', newPin)
       }
     },
-    async reorder(context, pins: PinnedTable[]) {
+    async reorder(context, pins: PinnedEntity[]) {
       pins.forEach((p, idx) => p.position = idx)
+      const { usedConfig } = context.rootState
+      context.commit('set', pins)
+      if (usedConfig.hasId()) await PinnedEntity.save(pins)
     },
-    async remove(context, table: TableOrView) {
+    async remove(context, item: DatabaseEntity) {
       const { database } = context.rootState
 
-      const existing = context.state.pins.find((p) => p.matches(table, database || undefined))
+      const existing = context.state.pins.find((p) => p.matches(item, database || undefined))
       if (existing) {
         if (existing.hasId()) await existing.remove()
         context.commit('remove', existing)

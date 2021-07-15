@@ -9,7 +9,7 @@ import { ConnectionString } from 'connection-string'
 import log from 'electron-log'
 import { IDbClients } from '@/lib/db/client'
 import { EncryptTransformer } from '../transformers/Transformers'
-import { PinnedTable } from './pinned_table'
+import { PinnedEntity } from './PinnedEntity'
 
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
@@ -191,8 +191,8 @@ export class SavedConnection extends DbConnectionBase {
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshPassword: Nullable<string> = null
 
-  @OneToMany(() => PinnedTable, pin => pin.savedConnection, {eager: true})
-  pinnedTables!: PinnedTable[]
+  @OneToMany(() => PinnedEntity, pin => pin.savedConnection, {eager: true})
+  pinnedEntities!: PinnedEntity[]
 
   _sshMode: string = "agent"
 

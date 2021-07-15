@@ -408,7 +408,8 @@ const store = new Vuex.Store<State>({
     async updateRoutines(context) {
       if (!context.state.connection) return;
       const connection = context.state.connection
-      const routines = await connection.listRoutines({ schema: null })
+      const routines: Routine[] = await connection.listRoutines({ schema: null })
+      routines.forEach((r) => r.entityType = 'routine')
       context.commit('routines', routines)
     },
     async setFilterQuery(context, filterQuery) {

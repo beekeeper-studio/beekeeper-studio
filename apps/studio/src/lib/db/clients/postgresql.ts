@@ -464,6 +464,7 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
       name: row.name,
       type: row.routine_type ? row.routine_type.toLowerCase() : 'function',
       returnType: row.data_type,
+      entityType: 'routine',
       id: row.id,
       routineParams: params.map((p, i) => {
         return {
