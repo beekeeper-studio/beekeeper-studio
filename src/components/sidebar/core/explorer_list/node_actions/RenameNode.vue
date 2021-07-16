@@ -63,23 +63,15 @@ export default {
         .nodeNameValidation(node, this.type)
         .then(() => {
           folderTree
-            .renameNode(this.currentNode.path, this.name)
+            .renameNode(this.currentNode.path, this.name, this.currentDir)
             .then(() => {
-              const isExisitng = folderTree.nodeExist(
-                this.currentDir,
-                this.name
-              );
-              if (!isExisitng) {
-                this.$noty.success("Successfully renamed!");
-                this.$root.$emit("refreshExplorer");
-                this.$emit("closeRename", this.type);
-              } else {
-                this.$noty.error("Directory already exists");
-                this.$emit("closeRename", this.type);
-              }
+              this.$noty.success("Successfully renamed!");
+              this.$root.$emit("refreshExplorer");
+              this.$emit("closeRename", this.type);
             })
             .catch(err => {
               this.$noty.error(err.message);
+              this.$emit("closeRename", this.type);
             });
         })
         .catch(type => {

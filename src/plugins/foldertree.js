@@ -66,18 +66,25 @@ function updateTree(pathValue) {}
 
 function deleteNode(pathValue) {}
 
-function renameNode(path, name) {
+function renameNode(path, name, currentDir) {
   return new Promise((resolve, reject) => {
-    const origin = extractPath(path);
-    origin.push(name);
-    const newPath = origin.join("/");
-    fs.rename(path, newPath, err => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
+    const isExisting = nodeExist(currentDir, name);
+
+    if (!isExisting) {
+      const origin = extractPath(path);
+      origin.push(name);
+      const newPath = origin.join("/");
+      fs.rename(path, newPath, err => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    } else {
+      const error = new Error("Name already existing")
+      reject(error);
+    }
   });
 }
 
