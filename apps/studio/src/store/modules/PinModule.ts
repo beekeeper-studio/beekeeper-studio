@@ -16,9 +16,9 @@ export const PinModule: Module<State, RootState> = {
     pinned(state: State, _g, root): PinnedEntity[] {
       return state.pins.filter((p) => p.databaseName === root.database)
     },
-    orderedPins(state, _g, rootState): PinnedEntity[] {
+    orderedPins(_state, getters, rootState): PinnedEntity[] {
       const { tables, routines } = rootState
-      return state.pins.sort((p) => p.position).map((pin) => {
+      return getters.pinned.sort((p) => p.position).map((pin) => {
         const items = [...tables, ...routines]
         const t = items.find((t) => pin.matches(t))
         if (t) pin.entity = t
@@ -43,8 +43,10 @@ export const PinModule: Module<State, RootState> = {
   actions: {
     async loadPins(context) {
       const { usedConfig } = context.rootState
-      const pins = usedConfig?.pinnedEntities
-      context.commit('set', pins)
+      if (usedConfig.hasId()) {
+        const pins = usedConfig?.pinnedEntities
+        context.commit('set', pins || [])
+      }
     },
     async unloadPins(context) {
       context.commit('set', [])
