@@ -21,7 +21,6 @@
                 type="text"
                 :ref="`input-${item.id}`"
                 v-model="renameSystem.title"
-                @keydown.enter="rename(item)"
                 style="display:none;"
                 autofocus
               />
@@ -33,7 +32,6 @@
             <x-contextmenu>
               <x-menu style="--target-align: right; --v-target-align: top;">
                 <x-menuitem>
-                  <x-label @click="triggerRename(item)">Rename</x-label>
                 </x-menuitem>
                 <x-menuitem @click.prevent="remove(item)">
                   <x-label class="text-danger">Remove</x-label>
@@ -69,17 +67,10 @@
 
 <script>
 import { mapState } from "vuex";
-import { createParentDirectory } from "common/utils";
 export default {
   data() {
     return {
       checkedFavorites: [],
-      renameSystem: {
-        input: null,
-        span: null,
-        title: null,
-        itemId: null
-      }
     };
   },
   computed: {
@@ -90,38 +81,6 @@ export default {
   },
   methods: {
     // other trigger needed because files are multiplied not components
-    triggerRename(item) {
-      const input = this.$refs[`input-${item.id}`][0];
-      const span = this.$refs[`title-${item.id}`][0];
-      input.style.display = "block";
-      span.style.display = "none";
-      if (
-        this.renameSystem.itemId !== null &&
-        item.id !== this.renameSystem.itemId
-      ) {
-        this.resetLastRenameInput(item);
-      }
-      this.renameSystem.itemId = item.id;
-      this.renameSystem.title = item.title;
-    },
-
-    resetLastRenameInput(item) {
-      const lastInput = this.$refs[`input-${this.renameSystem.itemId}`][0];
-      const lastSpan = this.$refs[`title-${this.renameSystem.itemId}`][0];
-      lastInput.style.display = "none";
-      lastSpan.style.display = "block";
-    },
-
-    async rename(item) {
-      if (this.renameSystem.title !== "") {
-        item.title = this.renameSystem.title;
-        await this.$store.dispatch("renameFavorite", item);
-        this.resetLastRenameInput(item);
-      }
-    },
-
-    createFolder() {},
-
     selected(item) {
       return (
         this.activeTab &&

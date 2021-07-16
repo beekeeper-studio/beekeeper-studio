@@ -14,7 +14,9 @@
         </i>
         <RenameNode
           :currentNode="currentNode"
-          v-if="nodeData.type === 'rename'"
+          :currentDir="currentDir"
+          @closeRename="close"
+          v-if="renameState.trigger"
         ></RenameNode>
         <span class="folder-name-unselected truncate" :ref="node.name" v-else>
           {{ node.name }}
@@ -39,12 +41,13 @@
         </x-menu>
       </x-contextmenu>
     </a>
+
     <div v-if="showColumns" class="sub-items">
       <NodeActions
-        v-show="nodeData.trigger && nodeData.type !== 'rename'"
+        v-show="nodeData.trigger && nodeData.actionType !== 'rename'"
         :placeholder="nodeData.placeholder"
-        :type="nodeData.type"
-        :currentNode="currentNode"
+        :type="nodeData.actionType"
+        :currentDir="currentDir"
         @close="close"
       ></NodeActions>
 
@@ -52,7 +55,9 @@
         v-for="file in files"
         :key="file.name"
         :file="file"
+        @selectFile="selectFile"
         :currentNode="currentNode"
+        :currentDir="currentDir"
       ></explorer-list-file>
       <explorer-list-dir
         v-for="dir in directories"
@@ -69,27 +74,30 @@ import ExplorerListFile from "./ExplorerListFile.vue";
 import NodeActions from "./node_actions/NodeActions.vue";
 import RenameNode from "./node_actions/RenameNode.vue";
 import { uuidv4 } from "../../../../lib/uuid";
+import explorer_actions from "@/mixins/explorer_actions";
 
 export default {
   name: "explorer-list-dir",
   props: ["node", "depth"],
+  mixins: [explorer_actions],
   components: { ExplorerListFile, NodeActions, RenameNode },
   mounted() {
     this.showColumns = !!false;
   },
+
   data() {
     return {
       showColumns: false,
       id: uuidv4(),
-      selected: {
-        dir: null,
-        node: null
+
+      renameState: {
+        trigger: false
       },
+
       nodeData: {
         trigger: false,
         placeholder: "",
-        type: "",
-        stateType: ""
+        actionType: ""
       }
     };
   },
@@ -121,10 +129,6 @@ export default {
       } else {
         return { transform: `translate(0.89rem)` };
       }
-    },
-
-    currentNode() {
-      return this.selected.node;
     }
   },
 
@@ -146,21 +150,25 @@ export default {
         spanElement.classList.add("folder-name-selected");
       }
 
+      this.selected.dir = node;
       this.selected.node = node;
     },
 
-    createState(type) {
+    createState(actionTyp) {
       this.select(this.node);
       this.nodeData.trigger = true;
       this.showColumns = true;
-      this.nodeData.type = type;
+      this.nodeData.actionType = actionTyp;
 
-      switch (type) {
+      switch (actionTyp) {
         case "dir":
           this.nodeData.placeholder = "Foldername";
           break;
         case "file":
           this.nodeData.placeholder = "Filename";
+          break;
+        case "rename":
+          this.renameState.trigger = true;
           break;
       }
     },

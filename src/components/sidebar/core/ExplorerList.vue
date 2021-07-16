@@ -6,7 +6,7 @@
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
             <div>
-              Testing
+              {{ rootDirName }}
             </div>
           </div>
           <div class="actions">
@@ -55,17 +55,33 @@ export default {
     ExplorerListSchema
   },
 
+  mounted() {
+    this.registerHandlers(this.rootBindings);
+  },
+
+  beforeDestroy() {
+    this.unregisterHandlers(this.rootBindings);
+  },
+
   data() {
     return {
       explorer: {
         rootPath: this.$store.getters.selectedPath || "",
         tree: [],
         selected: false
-      }
+      },
+      rootBindings: [
+        { event: "refreshExplorer", handler: this.refreshExplorer }
+      ]
     };
   },
 
-  computed: {},
+  computed: {
+    rootDirName() {
+      const nameArr = this.explorer.rootPath.split("\\");
+      return nameArr[nameArr.length - 1];
+    }
+  },
 
   methods: {
     selectFolder() {
@@ -77,10 +93,6 @@ export default {
           const tree = this.createTree(root);
           this.explorer.selected = true;
         });
-    },
-
-    tableSelected() {
-      // this.selectedTable = table
     },
 
     expandAll() {

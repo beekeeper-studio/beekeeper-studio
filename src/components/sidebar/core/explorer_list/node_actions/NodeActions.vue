@@ -35,7 +35,7 @@
 const folderTree = require("../../../../../plugins/foldertree");
 
 export default {
-  props: ["placeholder", "type", "currentNode"],
+  props: ["placeholder", "type", "currentDir"],
   data() {
     return {
       node: new folderTree.TreeNode(""),
@@ -81,28 +81,26 @@ export default {
 
   methods: {
     nameValidation() {
-      const isValid = this.reg[this.type].test(this.node.name);
-      this.node.path = `${this.currentNode.path}\\${this.node.name}`;
-      if (isValid && this.type === "file") {
-        this.node.type = RegExp.$1;
-      } else if (isValid && this.type === "dir") {
-        this.node.type = "dir";
-      } else {
-        this.error(this.type);
-        return;
-      }
-
-      this.createNode();
+      const s = folderTree
+        .nodeNameValidation(this.node, this.type)
+        .then(() => {
+          this.node.path = `${this.currentDir.path}\\${this.node.name}`;
+          console.log(this.node);
+          this.createNode();
+        })
+        .catch(type => {
+          this.error(type);
+        });
     },
 
     createNode() {
       const alreadyExist = folderTree.nodeExist(
-        this.currentNode,
+        this.currentDir,
         this.node.name
       );
 
       if (!alreadyExist) {
-        folderTree.addNode(this.currentNode, this.node, this.type).then(() => {
+        folderTree.addNode(this.currentDir, this.node, this.type).then(() => {
           this.node = new folderTree.TreeNode("");
           this.$emit("close");
         });
@@ -118,7 +116,7 @@ export default {
           break;
         case "file":
           this.$noty.error(
-            "Filename cannot have white spaces or start with special characters or numbers."
+            "Filename cannot have white spaces or start with special characters or numbers. The Extension accepted are .query and .design"
           );
           break;
         case "duplicate":

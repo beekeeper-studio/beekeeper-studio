@@ -1,7 +1,11 @@
 const fs = require("fs");
 const path = require("path");
-
 const defaultOptions = { include: ["query", "design"] };
+
+const regEx = {
+  dir: /^[a-zA-Z]+$/,
+  file: /^[a-zA-Z]+.(query|design)$/
+};
 class TreeNode {
   constructor(path) {
     this.path = path;
@@ -62,6 +66,21 @@ function updateTree(pathValue) {}
 
 function deleteNode(pathValue) {}
 
+function renameNode(path, name) {
+  return new Promise((resolve, reject) => {
+    const origin = extractPath(path);
+    origin.push(name);
+    const newPath = origin.join("/");
+    fs.rename(path, newPath, err => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
 function addNode(currentNode, node, type) {
   return new Promise((resolve, reject) => {
     switch (type) {
@@ -113,6 +132,12 @@ function extractName(pathValue) {
   return segment;
 }
 
+function extractPath(path) {
+  let pathArr = path.split("\\");
+  pathArr = pathArr.slice(0, pathArr.length - 1);
+  return pathArr;
+}
+
 function nodeExist(node, name) {
   const exists = node.children.filter(element => {
     if (element.name === name) return element;
@@ -122,11 +147,30 @@ function nodeExist(node, name) {
   return false;
 }
 
+function nodeNameValidation(newNode, type) {
+  return new Promise((resolve, reject) => {
+    const isValid = regEx[type].test(newNode.name);
+
+    if (isValid && type === "file") {
+      newNode.type = RegExp.$1;
+      resolve();
+    } else if (isValid && type === "dir") {
+      newNode.type = "dir";
+      resolve();
+    } else {
+      reject(type);
+      return;
+    }
+  });
+}
+
 module.exports = {
   buildTree,
   updateTree,
   deleteNode,
   addNode,
   TreeNode,
-  nodeExist
+  nodeExist,
+  nodeNameValidation,
+  renameNode
 };

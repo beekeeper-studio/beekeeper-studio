@@ -86,6 +86,10 @@ const store = new Vuex.Store<State>({
       validation: {
         dir: "^[a-zA-Z]+$",
         file: "^[a-zA-Z]+.(query|design)$"
+      },
+      rootPath: "",
+      rename: {
+        instanceActive: null
       }
     }
   },
@@ -305,13 +309,15 @@ const store = new Vuex.Store<State>({
       state.favorites.unshift(query);
     },
 
-    renameFavorite(state: State, query: UsedQuery) {
-      console.log(state);
-      query.save();
-    },
-
     removeUsedFavorite(state: State, favorite) {
       state.favorites = _.without(state.favorites, favorite);
+    },
+
+    setRenameInstance(state: State, instance = null) {
+      if (state.explorer.rename.instanceActive !== null) {
+        state.explorer.rename.instanceActive.renameState.trigger = false;
+      }
+      state.explorer.rename.instanceActive = instance;
     }
   },
   actions: {
@@ -561,10 +567,6 @@ const store = new Vuex.Store<State>({
       }
     },
 
-    async renameFavorite(context, favorite) {
-      context.commit("renameFavorite", favorite);
-    },
-
     async removeFavorite(context, favorite) {
       await favorite.remove();
       context.commit("removeUsedFavorite", favorite);
@@ -580,8 +582,8 @@ const store = new Vuex.Store<State>({
       context.commit("tabActive", value);
     },
 
-    async saveFolderPath(context, path) {
-      context.commit("saveFolderPath", path);
+    async setRenameInstance(context, instance) {
+      context.commit("setRenameInstance", instance);
     }
   },
   plugins: []
