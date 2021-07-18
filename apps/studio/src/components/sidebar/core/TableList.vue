@@ -31,13 +31,15 @@
       </div>
     </div>
 
-    <div class="pin-wrapper" ref="pinned">
+    <!-- Pinned Tables -->
+    <div class="pin-wrapper" ref="pinned" v-show="orderedPins.length > 0">
       <pinned-table-list
         :allExpanded="allExpanded"
         :allCollapsed="allCollapsed"
         :connection="connection"
       />
     </div>
+
     <!-- Tables -->
     <hr v-show="pinnedEntities.length > 0"> <!-- Fake splitjs Gutter styling -->
     <div class="table-list flex-col" ref="tables">
@@ -201,7 +203,8 @@
       ...mapState(['selectedSidebarItem', 'tables', 'routines', 'connection', 'database', 'tablesLoading']),
       ...mapGetters(['schemaTables', 'filteredTables', 'filteredRoutines']),
       ...mapGetters({
-          pinnedEntities: 'pins/pinnedEntities'
+          pinnedEntities: 'pins/pinnedEntities',
+          orderedPins: 'pins/orderedPins',
       }),
     },
     watch: {
