@@ -112,6 +112,8 @@
   .btn-fab {
     margin-left: -$gutter-w * 0.75;
     margin-right: $gutter-h * 0.5;
+    margin-top: -$gutter-h;
+    margin-bottom: -$gutter-h;
   }
 }
 .advanced-heading {
@@ -128,6 +130,9 @@
     i {
       color: $theme-primary;
     }
+  }
+  x-switch {
+    margin-right: 0;
   }
 }
 .advanced-body {

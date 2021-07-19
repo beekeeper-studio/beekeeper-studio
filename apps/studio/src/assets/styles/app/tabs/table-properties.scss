@@ -281,7 +281,7 @@ $cell-success:           $row-add;
         }
         &.edited {
           .tabulator-bks-checkbox {
-            input {
+            input[type="checkbox"] {
               box-shadow: inset 0 0 0 2px $theme-base;
               &:active,
               &:checked,
@@ -294,11 +294,11 @@ $cell-success:           $row-add;
         }
         &.read-only {
           .tabulator-bks-checkbox {
-            input {
+            input[type="checkbox"] {
               background: transparent!important;
               box-shadow: none!important;
               &:after {
-                color: $theme-primary;
+                color: $theme-base;
                 font-size: 20px;
               }
               &[disabled="disabled"] {
