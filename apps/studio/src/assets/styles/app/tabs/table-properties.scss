@@ -267,13 +267,21 @@ $cell-success:           $row-add;
       .tabulator-cell {
         min-height: $row-height;
         height: $row-height;
-        line-height: $row-height + 2px;
+        line-height: $row-height;
         padding: 0 $cell-padding;
         font-size: $cell-font-size;
         pre, input:not([type="checkbox"]) {
-          height: $row-height;
-          line-height: $row-height;
           font-size: $cell-font-size;
+          line-height: $row-height;
+        }
+        pre {
+          line-height: $row-height + 2px;
+        }
+        input {
+          border: 0;
+          &[type="search"] {
+            padding-bottom: 1px!important;
+          }
         }
         .nullible-input {
           padding-right: 18px!important;
@@ -281,7 +289,7 @@ $cell-success:           $row-add;
         &.tabulator-editing {
           min-height: $row-height;
           height: $row-height;
-          line-height: $row-height + 2px;
+          line-height: $row-height;
           padding: 0!important;
           // Make checkboxes behave correctly
           .tabulator-bks-checkbox {

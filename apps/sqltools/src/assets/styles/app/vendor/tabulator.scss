@@ -146,7 +146,7 @@ $cell-padding:           $gutter-h;
       padding-left: 0;
       padding-right: 0;
       min-height: $row-height;
-      line-height: $row-height;
+      line-height: $row-height + 2px;
       border-radius: $cell-radius;
     }
     &.foreign-key {

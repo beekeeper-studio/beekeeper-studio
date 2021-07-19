@@ -1,5 +1,6 @@
 <template>
-  <div v-if="error" class="error-alert alert">
+  <div v-if="error" class="error-alert alert text-danger">
+    <i class="material-icons">error</i>
     <ul class="error-list">
       <li class="error-item" v-for="(e, idx) in errors" :key="idx">
         {{e.message || e.toString()}}
@@ -29,13 +30,22 @@ export default Vue.extend({
 <style lang="scss" scoped>
   @import '@/assets/styles/app/_variables';
 
-  .alert {
+  .alert.error-alert {
     display: flex;
-    flex-direction: column;
-  }
-  a {
-    font-weight: 600;
-    margin-top: $gutter-h / 2;
-    padding-left: $gutter-w * 1.8;
+    flex-direction: row;
+    > i {
+      padding-top: 4px;
+    }
+    ul {
+      padding-left: 0;
+    }
+    li {
+      list-style-type: none;
+    }
+    a {
+      font-weight: 600;
+      margin-top: $gutter-h / 2;
+      padding-left: $gutter-w * 1.8;
+    }
   }
 </style>

@@ -2,11 +2,11 @@
   <div class="table-info-table table-schema">
     <div class="table-info-table-wrap">
       <div class="center-wrap">
+        <error-alert :error="error" v-if="error" />
         <div class="table-subheader">
           <div class="table-title">
             <h2>Columns</h2>
           </div>
-          <error-alert :error="error" v-if="error" />
           <slot />
           <span class="expand"></span>
           <div class="actions">

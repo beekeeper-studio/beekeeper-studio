@@ -140,7 +140,7 @@ $cell-padding:           $gutter-w;
       padding-left: 0;
       padding-right: 0;
       min-height: $row-height;
-      line-height: $row-height;
+      line-height: $row-height + 2px;
       border-radius: $cell-radius;
       &:focus {
         box-shadow: inset 0 -1px $theme-base!important;
