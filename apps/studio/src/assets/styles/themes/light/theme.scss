@@ -107,6 +107,17 @@ select {
   }
 }
 
+// Connection Label 
+// -----------------------------------------
+.connection-label {
+  &.connection-label-color-yellow {
+    background-color: darken($theme-primary, 4%);
+    &:checked {
+      background-color: darken($theme-primary, 4%);
+    }
+  }
+}
+
 // Sidebar
 // ---------------------------------------
 .advanced-connection-settings {
@@ -147,7 +158,7 @@ select {
   }
 }
 .item-icon {
-  color: darken($theme-primary, 8%);
+  color: darken($theme-primary, 6%);
 }
 
 // Editor
@@ -412,18 +423,36 @@ select {
     }
   }
 }
-.cm-s-monokai {
-  span {
-    .cm-string {
-      color: darken($theme-primary, 25%);
-    }
-  }
-}
 .query-editor {
   .CodeMirror-code {
     .highlight {
       background-color: rgba($brand-info, 0.2);
     }
+  }
+}
+.cm-s-monokai {
+  font-weight: 500;
+  span.cm-keyword {
+    color: $brand-pink;
+  }
+  span.cm-variable-2 {
+    color: $brand-secondary;
+  }
+  div.CodeMirror-selected {
+    background: rgba($theme-secondary, 0.2);
+  }
+  .CodeMirror-linenumber {
+    color: rgba($theme-base, 0.25);
+  }
+  .CodeMirror-line .cm-number,
+  .CodeMirror-line .cm-string {
+    color: $brand-success;
+  }
+  .CodeMirror-cursor {
+    border-color: $text-dark;
+  }
+  span.cm-bracket {
+    color: $text;
   }
 }
 
