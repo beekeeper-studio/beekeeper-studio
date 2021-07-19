@@ -71,9 +71,14 @@ $cell-padding:           $gutter-w;
     } 
     &.deleted {
       .tabulator-cell {
+        cursor: default!important;
         &:hover {
           background: transparent!important;
-          cursor: default;
+        }
+        .tabulator-bks-checkbox {
+          input {
+            cursor: default!important;
+          }
         }
       }
     }
