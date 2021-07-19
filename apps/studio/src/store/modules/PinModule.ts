@@ -51,6 +51,14 @@ export const PinModule: Module<State, RootState> = {
     async unloadPins(context) {
       context.commit('set', [])
     },
+    async maybeSavePins(context) {
+      const { usedConfig } = context.rootState
+      const unsavedPins = context.state.pins.filter((p)=> !p.hasId())
+      await Promise.all(unsavedPins.map((p) => {
+        p.savedConnection = usedConfig
+        p.save()
+      }))
+    },
     async add(context, item: DatabaseEntity) {
       const { database, usedConfig } = context.rootState
       const existing = context.state.pins.find((p) => p.matches(item, database || undefined))
