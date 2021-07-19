@@ -381,10 +381,10 @@ $cell-success:           $row-add;
       right: 0;
       left: 0;
       font-family: 'Material Icons';
-      color: $text-light;
+      color: $text-lighter;
       content: "close";
       transition: color 0.2s ease-in-out;
-      font-size: 16px;
+      font-size: 18px;
     }
 
     &.tabulator-row-even, 
