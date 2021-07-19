@@ -85,7 +85,7 @@ $cell-padding:           $gutter-h;
   width: min-content;
   min-width: 100%;
   &:nth-child(odd) {
-    background: rgba($theme-base, 0.015);
+    background: rgba($theme-base, 0.025);
   }
   .tabulator-cell {
     border: 0;
