@@ -22,7 +22,7 @@
     <div class="expand" />
 
     <status-bar class="tabulator-footer">
-      <div class="flex flex-middle flex-right statusbar-actions">
+      <div class="flex flex-middle statusbar-actions">
         <slot name="footer" />
         <x-button v-if="hasEdits" class="btn btn-flat reset" @click.prevent="submitUndo">Reset</x-button>
         <x-buttons v-if="hasEdits" class="pending-changes">

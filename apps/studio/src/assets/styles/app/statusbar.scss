@@ -7,7 +7,7 @@ $button-height:     $statusbar-height * 0.75;
   color: rgba($statusbar-text, 0.87);
   min-height: $statusbar-height;
   height: $statusbar-height;
-  line-height: $statusbar-height *0.8;
+  line-height: $statusbar-height;
   font-size: 0.8rem;
   padding: 0 $gutter-h;
   overflow: hidden;
@@ -81,6 +81,7 @@ $button-height:     $statusbar-height * 0.75;
   .statusbar-info {
     display: flex;
     align-items: center;
+    margin-top: -1px;
     .btn.reset {
       margin-right: $gutter-w;
     }
@@ -96,7 +97,6 @@ $button-height:     $statusbar-height * 0.75;
     height: $button-height;
     line-height: $button-height;
     margin: 0 0.15rem;
-    margin-top: -1px;
     &:hover[expanded] {
       background: rgba($statusbar-text, 0.15);
     }
