@@ -152,9 +152,6 @@ $cell-radius:            2px;
     }
     &.foreign-key {
       padding-right: $foreign-key-width - 6px;
-      .clear {
-        margin-right: $gutter-h * 0.5!important;
-      }
     }
     &.foreign-key-button {
       display: inline-flex;

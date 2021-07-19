@@ -93,10 +93,16 @@
         line-height: $row-height + 2px;
         padding: 0 $cell-padding;
         font-size: $cell-font-size;
+        pre {
+          height: $row-height;
+          line-height: $row-height;
+        }
         &.tabulator-editing {
           min-height: $row-height;
           height: $row-height;
           line-height: $row-height + 2px;
+          padding-left: $gutter-h * 0.65!important;
+          padding-right: $gutter-h * 0.65!important;
         }
         &.no-padding {
           > * {

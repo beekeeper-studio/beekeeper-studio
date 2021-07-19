@@ -270,6 +270,10 @@ $cell-success:           $row-add;
         line-height: $row-height + 2px;
         padding: 0 $cell-padding;
         font-size: $cell-font-size;
+        pre {
+          height: $row-height;
+          line-height: $row-height;
+        }
         &.tabulator-editing {
           min-height: $row-height;
           height: $row-height;
