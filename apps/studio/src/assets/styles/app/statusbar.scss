@@ -212,18 +212,18 @@ $button-height:     $statusbar-height * 0.75;
     height: $button-height;
     border-radius: $btn-border-radius;
     transition: background 0.2s ease-in-out;
-    &:after {
-      width: 0; 
-      height: 0; 
-      border-left: 4px solid transparent;
-      border-right: 4px solid transparent;
-      border-top: 4px solid $statusbar-text;
-      position: absolute;
-      top: 42%;
-      right: 7px;
-      content: "";
-      z-index: 98;
-    }
+    // &:after {
+    //   width: 0; 
+    //   height: 0; 
+    //   border-left: 4px solid transparent;
+    //   border-right: 4px solid transparent;
+    //   border-top: 4px solid $statusbar-text;
+    //   position: absolute;
+    //   top: 42%;
+    //   right: 7px;
+    //   content: "";
+    //   z-index: 98;
+    // }
     &:hover {
       background: rgba($statusbar-text, 0.15);
     }
@@ -235,6 +235,7 @@ $button-height:     $statusbar-height * 0.75;
       appearance: none!important;
       font-weight: 600;
       font-size: 12px;
+      background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
       option {
         color: $text;
       }
