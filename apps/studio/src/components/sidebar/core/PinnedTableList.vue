@@ -5,8 +5,8 @@
         <div>Pinned <span class="badge">{{orderedPins.length}}</span></div>
       </div>
     </div>
-    <Draggable v-model="orderedPins" tag="div" ref="pinContainer" class="list-body">
-      <div v-for="p in orderedPins" :key="p.id || p.entity.name">
+    <Draggable :options="{handle: '.pin-wrapper'}" v-model="orderedPins" tag="div" ref="pinContainer" class="list-body">
+      <div class="pin-wrapper" v-for="p in orderedPins" :key="p.id || p.entity.name">
         <table-list-item
           v-if="p.entityType !== 'routine'"
           :table="p.entity"
@@ -51,6 +51,7 @@ export default Vue.extend({
         return this.$store.getters['pins/orderedPins']
       },
       set(pins: PinnedEntity[]) {
+        console.log("set!")
         this.$store.dispatch('pins/reorder', pins)
       }
     }
