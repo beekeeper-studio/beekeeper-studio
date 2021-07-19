@@ -452,7 +452,9 @@ select {
   .CodeMirror-linenumber {
     color: rgba($theme-base, 0.25);
   }
-  .CodeMirror-line .cm-number,
+  .CodeMirror-line .cm-number {
+    color: $brand-warning;
+  }
   .CodeMirror-line .cm-string {
     color: $brand-success;
   }
