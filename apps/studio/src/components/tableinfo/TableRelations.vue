@@ -17,7 +17,10 @@
     <div class="expand" />
 
     <status-bar class="tabulator-footer">
-      
+      <div class="flex flex-middle flex-right statusbar-actions">
+        <slot name="footer" />
+        <slot name="actions" />
+      </div>
     </status-bar>
   </div>
 </template>

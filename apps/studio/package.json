@@ -43,7 +43,7 @@
     "knex": "^0.21.2",
     "lodash": "^4.17.21",
     "marked": "^2.0.3",
-    "material-icons": "^0.3.1",
+    "material-icons": "^0.7.6",
     "mkdirp": "^1.0.4",
     "mssql": "^6.3.1",
     "mysql2": "^2.2.0",

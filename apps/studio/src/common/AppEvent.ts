@@ -15,7 +15,8 @@ export enum AppEvent {
   toggleSidebar = 'ts',
   beginExport = 'be',
   createTable = 'new_table',
-  openTableProperties = 'loadTableProperties'
+  openTableProperties = 'loadTableProperties',
+  loadTable = 'loadTable'
 }
 
 

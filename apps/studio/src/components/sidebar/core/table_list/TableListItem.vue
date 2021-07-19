@@ -170,7 +170,7 @@ import { uuidv4 } from '../../../../lib/uuid'
         }, this.clickState.delay);
       },
       openTableStructure(){
-        this.$root.$emit('loadTableProperties', {table: this.table})
+        this.$root.$emit(AppEvent.openTableProperties, {table: this.table})
       },
       pin() {
         this.$store.dispatch('pinTable', this.table)

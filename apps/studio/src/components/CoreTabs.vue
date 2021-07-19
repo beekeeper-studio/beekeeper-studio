@@ -94,7 +94,7 @@
           { event: AppEvent.newTab, handler: this.createQuery},
           { event: AppEvent.createTable, handler: this.openTableBuilder},
           { event: 'historyClick', handler: this.createQueryFromItem},
-          { event: 'loadTable', handler: this.openTable },
+          { event: AppEvent.loadTable, handler: this.openTable },
           { event: AppEvent.openTableProperties, handler: this.openTableProperties},
           { event: 'loadSettings', handler: this.openSettings },
           { event: 'loadTableCreate', handler: this.loadTableCreate },

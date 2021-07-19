@@ -40,6 +40,7 @@
             </x-menu>
           </x-button>
         </x-buttons>
+        <slot name="actions" />
       </div>
     </status-bar>
   </div>

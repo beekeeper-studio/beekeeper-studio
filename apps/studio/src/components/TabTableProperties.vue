@@ -38,22 +38,33 @@
           :key="pill.id"
         >
           <template v-slot:footer>
-            <div class="col flex expand" v-if="properties">
-              <span class="statusbar-item" v-if="properties.length" :title="`${properties.length} Records`">
-                <i class="material-icons">list_alt</i>
-                <span>~{{properties.length.toLocaleString()}}</span>
-              </span>
-              <span class="statusbar-item" v-if="humanSize !== null" :title="`Table Size ${humanSize}`">
-                <i class="material-icons">aspect_ratio</i>
-                <span>{{humanSize}}</span>
-              </span>
-              <span class="statusbar-item" v-if="humanIndexSize !== null" :title="`Index Size ${humanIndexSize}`">
-                <i class="material-icons">location_searching</i>
-                <span>{{humanIndexSize}}</span>
-              </span>
+            <div class="col flex expand">
+              <x-button @click.prevent="openData" class="btn btn-flat">
+                Data <i class="material-icons">north_east</i>
+              </x-button>
+              <template v-if="properties">
+                <span class="statusbar-item" v-if="properties.length" :title="`${properties.length} Records`">
+                  <i class="material-icons">list_alt</i>
+                  <span>~{{properties.length.toLocaleString()}}</span>
+                </span>
+                <span class="statusbar-item" v-if="humanSize !== null" :title="`Table Size ${humanSize}`">
+                  <i class="material-icons">aspect_ratio</i>
+                  <span>{{humanSize}}</span>
+                </span>
+                <span class="statusbar-item" v-if="humanIndexSize !== null" :title="`Index Size ${humanIndexSize}`">
+                  <i class="material-icons">location_searching</i>
+                  <span>{{humanIndexSize}}</span>
+                </span>
+              </template>
             </div>
-            <div class="flex flex-middle expand">
+            <!-- <div class="flex flex-middle expand">
               <div class="statusbar-actions flex flex-right">
+
+
+              </div>
+            </div> -->
+          </template>
+          <template v-slot:actions >
                 <x-button class="actions-btn btn btn-flat" title="Actions">
                   <i class="material-icons">settings</i>
                   <i class="material-icons">arrow_drop_down</i>
@@ -73,8 +84,6 @@
                     </x-menuitem>
                   </x-menu>
                 </x-button>
-              </div>
-            </div>
           </template>
         </component>
       </div>
@@ -93,6 +102,7 @@ import TableTriggersVue from './tableinfo/TableTriggers.vue'
 import { format as humanBytes } from 'bytes'
 import platformInfo from '../common/platform_info'
 import TableInfo from './tableinfo/TableInfo.vue'
+import { AppEvent } from '@/common/AppEvent'
 export default {
   props: ["table", "connection", "tabId", "active", "tab"],
   components: { Statusbar, TableInfo },
@@ -182,6 +192,9 @@ export default {
     },
   },
   methods: {
+    openData() {
+      this.$root.$emit(AppEvent.loadTable, { table: this.table })
+    },
     triggerError() {
       // this is for dev only
       this.error = new Error("Something went wrong")

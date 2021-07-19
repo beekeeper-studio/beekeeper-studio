@@ -85,7 +85,9 @@
 
       
       <div class="col truncate expand statusbar-info" :class="{'x4': this.totalRecords > this.limit}">
-
+        <x-button @click.prevent="openProperties" class="btn btn-flat">
+          Properties <i class="material-icons">north_east</i>
+        </x-button>
         <!-- Info -->
         <span class="statusbar-item" v-if="lastUpdatedText && !error" :title="`Approximately ${totalRecordsText} Records`">
           <i class="material-icons">list_alt</i>
@@ -116,7 +118,15 @@
             >warning</i>
           </span>
         </div> -->
-      
+
+        <template v-if="pendingChangesCount > 0">
+          <x-button class="btn btn-flat" @click.prevent="discardChanges">Reset</x-button>
+          <x-button class="btn btn-primary" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
+            <i v-if="error" class="material-icons">error</i>
+            <span class="badge" v-if="!error"><small>{{pendingChangesCount}}</small></span>
+            <span>Apply</span>
+          </x-button>
+        </template>
 
         <!-- Actions -->
         <x-button class="actions-btn btn btn-flat" title="actions">
@@ -139,27 +149,6 @@
             </x-menuitem>
           </x-menu>
         </x-button>
-
-        <!-- Pending Changes -->
-        <x-buttons v-if="pendingChangesCount > 0" class="pending-changes">
-          <x-button class="btn btn-primary" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
-            <i v-if="error" class="material-icons">error</i>
-            <span class="badge" v-if="!error"><small>{{pendingChangesCount}}</small></span>
-            <span>Commit</span>
-          </x-button>
-          <x-button class="btn btn-primary" menu>
-            <i class="material-icons">arrow_drop_down</i>
-            <x-menu>
-              <x-menuitem @click.prevent="saveChanges">
-                <x-label>Commit</x-label>
-              </x-menuitem>
-              <x-menuitem @click.prevent="discardChanges">
-                <x-label>Discard Changes</x-label>
-              </x-menuitem>
-            </x-menu>
-          </x-button>
-        </x-buttons>
-
 
       </div>
       
@@ -561,6 +550,9 @@ export default Vue.extend({
 
   },
   methods: {
+    openProperties() {
+      this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
+    },
     buildPendingInserts() {
       const inserts = this.pendingChanges.inserts.map((item) => {
         const columnNames = this.table.columns.map((c) => c.columnName)
