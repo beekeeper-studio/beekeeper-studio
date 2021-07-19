@@ -10,7 +10,7 @@
         <x-progressbar></x-progressbar>
       </div>
       <div class="table-properties-header">
-        <div class="nav-pills">
+        <div class="nav-pills" v-if="pills.length > 1">
           <a 
             v-for="(pill) in pills"
             :key="pill.id"
@@ -107,7 +107,7 @@ export default {
       rawPills: [
         {
           id: 'schema',
-          name: "Schema",
+          name: "Columns",
           needsProperties: false,
           component: TableSchemaVue,
           dirty: false,
@@ -137,7 +137,7 @@ export default {
           dirty: false
         }
       ],
-      activePill: 'schema',
+      activePill: 'schema', // the only tab that is always there.
       tableSchema: null,
       tableIndexes: null,
       tableRelations: null,
@@ -192,7 +192,9 @@ export default {
       this.properties = null
       try {
         this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
-        this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema)
+        if (this.table.entityType === 'table') {
+          this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema)
+        }
         this.loading = false
       } catch (ex) {
         this.error = ex

@@ -205,6 +205,7 @@
     line-height: $statusbar-height;
     overflow: hidden;
     text-overflow:ellipsis;
+
     .material-icons {
       font-size: 16px;
       line-height: $statusbar-height;
@@ -223,6 +224,13 @@
         text-overflow: ellipsis;
         overflow: hidden;
       }
+    }
+  }
+
+  a.statusbar-item {
+    color: inherit;
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.05);
     }
   }
   .row-counts {

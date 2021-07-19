@@ -91,10 +91,10 @@
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
         </span>
-        <span @click="refreshTable" tabindex="0" role="button" class="statusbar-item hoverable" v-if="lastUpdatedText && !error" :title="'Updated' + ' ' + lastUpdatedText">
+        <a @click="refreshTable" tabindex="0" role="button" class="statusbar-item hoverable" v-if="lastUpdatedText && !error" :title="'Updated' + ' ' + lastUpdatedText">
           <i class="material-icons">update</i>
           <span>{{lastUpdatedText}}</span>
-        </span>
+        </a>
         <span v-if="error" class="statusbar-item error" :title="error.message">
           <i class="material-icons">error</i>
           <span class="">{{ error.title }}</span>
@@ -533,6 +533,7 @@ export default Vue.extend({
       height: this.actualTableHeight,
       columns: this.tableColumns,
       nestedFieldSeparator: false,
+      placeholder: "No Data",
       virtualDomHoz: false,
       ajaxURL: "http://fake",
       ajaxSorting: true,

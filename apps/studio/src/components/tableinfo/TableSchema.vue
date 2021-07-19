@@ -154,7 +154,7 @@ export default Vue.extend({
           cellEdited: this.cellEdited, 
           headerFilter: true, 
           formatter: this.cellFormatter,
-          editable: !this.disabledFeatures?.alter?.renameColumn
+          editable: this.isCellEditable.bind(this, 'renameColumn')
         },
         {
           title: 'Type',
@@ -162,7 +162,7 @@ export default Vue.extend({
           editor: 'autocomplete',
           editorParams: autocompleteOptions,
           cellEdited: this.cellEdited,
-          editable: !this.disabledFeatures?.alter?.alterColumn
+          editable: this.isCellEditable.bind(this, 'alterColumn')
           }, 
         {
           title: 'Nullable',
@@ -171,10 +171,10 @@ export default Vue.extend({
           editor: vueEditor(CheckboxEditorVue),
           formatter: vueFormatter(CheckboxFormatterVue),
           formatterParams: {
-            editable: !this.disabledFeatures?.alter?.alterColumn
+            editable: this.isCellEditable.bind(this, 'alterColumn')
           },
           cellEdited: this.cellEdited,
-          editable: !this.disabledFeatures?.alter?.alterColumn,
+          editable: this.isCellEditable.bind(this, 'alterColumn'),
           width: 70,
           cssClass: "read-only",
         },
@@ -185,7 +185,7 @@ export default Vue.extend({
           headerTooltip: "Be sure to 'quote' string values.",
           cellEdited: this.cellEdited,
           formatter: this.cellFormatter,
-          editable: !this.disabledFeatures?.alter?.alterColumn
+          editable: this.isCellEditable.bind(this, 'alterColumn'),
         },
         {
           title: 'Primary',
@@ -229,6 +229,15 @@ export default Vue.extend({
     },
   },
   methods: {
+    isCellEditable(feature: string, cell: CellComponent): boolean {
+      // views and materialized views are not editable
+      if (this.table.entityType !== 'table') return false
+
+      const isDisabled = this.disabledFeatures?.alter?.[feature]
+      const isNewRow = this.newRows.includes(cell.getRow())
+
+      return (isNewRow || !isDisabled)
+    },
     async refreshColumns() {
       if(this.hasEdits) {
         if (!window.confirm("Are you sure? You will lose unsaved changes")) {

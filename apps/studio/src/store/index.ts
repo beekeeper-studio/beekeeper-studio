@@ -351,23 +351,11 @@ const store = new Vuex.Store<State>({
 
     async updateTableColumns(context, table: TableOrView) {
       log.debug('actions/updateTableColumns', table.name)
-      // we don't need to commit to the store, it should already be in the store.
       const connection = context.state.connection
       const columns = (table.entityType === 'materialized-view' ?
         await connection?.listMaterializedViewColumns(table.name, table.schema) :
         await connection?.listTableColumns(table.name, table.schema)) || []
 
-      const newcols = columns.map((c) => {
-        `${c.columnName}${c.dataType}`
-      }).sort()
-
-      const existing = !table.columns ? [] : table.columns.map((c) => {
-        `${c.columnName}${c.dataType}`
-      }).sort()
-      
-      if(_.isEqual(newcols, existing)) {
-        return
-      }
       table.columns = columns
       context.commit('table', table)
     },
@@ -451,6 +439,7 @@ const store = new Vuex.Store<State>({
     },
     async removeConnectionConfig(context, config) {
       await config.remove()
+      await context.dispatch('loadUsedConfigs')
       context.commit('removeConfig', config)
     },
     async removeUsedConfig(context, config) {
