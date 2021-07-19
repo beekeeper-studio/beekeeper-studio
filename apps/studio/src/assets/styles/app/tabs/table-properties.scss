@@ -272,14 +272,12 @@ $cell-success:           $row-add;
         font-size: $cell-font-size;
         pre, input:not([type="checkbox"]) {
           font-size: $cell-font-size;
-          line-height: $row-height;
-        }
-        pre {
           line-height: $row-height + 2px;
         }
         input {
           border: 0;
           &[type="search"] {
+            line-height: $row-height;
             padding-bottom: 1px!important;
           }
         }

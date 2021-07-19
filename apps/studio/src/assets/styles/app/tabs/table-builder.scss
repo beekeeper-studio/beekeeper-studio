@@ -95,12 +95,10 @@
         font-size: $cell-font-size;
         pre, input:not([type="checkbox"]) {
           font-size: $cell-font-size;
-          line-height: $row-height;
-        }
-        pre {
           line-height: $row-height + 2px;
         }
         &[type="search"] {
+          line-height: $row-height;
           padding-bottom: 1px!important;
         }
         .nullible-input {
