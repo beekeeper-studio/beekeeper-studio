@@ -592,8 +592,8 @@ input[type=file] {
     cursor: e-resize;
     &:after {
       height: 100%;
-      width: 8px;
-      left: -2px;
+      width: 5px;
+      background-color: inherit;
     }
   }
   &.gutter-vertical {
