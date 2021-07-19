@@ -20,20 +20,9 @@
       }
     }
 
-    a.statusbar-item {
-      &:hover {
-        background-color: rgba(255, 255, 255, 0.05);
-      }
-    }
-
     .statusbar-actions .btn,
     .connection-button > .btn {
       color: $statusbar-text-default;
-    }
-    .statusbar-actions .btn {
-      &:hover {
-        background: rgba($statusbar-text-default, 0.1);
-      }
     }
     .connection-button {
       .badge {
@@ -43,18 +32,36 @@
     .connection-type {
       color: $statusbar-text;
     }
-    .select-wrap {
-      background: rgba($statusbar-text-default, 0.25);
-      &:hover {
-        background: rgba($statusbar-text-default, 0.3);
+
+    .btn {
+      &.btn-flat {
+        background: rgba($statusbar-text-default, 0.05);
+        color: $statusbar-text-default;
+        &:hover {
+          background: rgba($statusbar-text-default, 0.1);
+        }
+      }
+      &.btn-primary {
+        background: rgba($statusbar-text-default, 0.2);
+        &:hover {
+          background: rgba($statusbar-text-default, 0.25);
+        }
       }
     }
+
+    .select-wrap {
+      background: rgba($statusbar-text-default, 0.2);
+      &:hover {
+        background: rgba($statusbar-text-default, 0.25);
+      }
+    }
+
     .download-results,
     .pending-changes {
-      background: rgba($statusbar-text-default, 0.25);
+      background: rgba($statusbar-text-default, 0.2);
       > .btn {
         &:hover, &:hover[expanded] {
-          background: rgba($statusbar-text-default, 0.3);
+          background: rgba($statusbar-text-default, 0.25);
         }
         .material-icons {
           color: $statusbar-text-default;

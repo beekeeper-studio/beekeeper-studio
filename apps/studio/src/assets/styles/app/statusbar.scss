@@ -132,6 +132,7 @@ $button-height:     $statusbar-height * 0.75;
         background: transparent;
         line-height: 1;
         padding-left: 0;
+        color: $statusbar-text-default;
       }
     }
     &.btn-primary {
@@ -272,12 +273,14 @@ $button-height:     $statusbar-height * 0.75;
     }
   }
 
-  a.statusbar-item {
+  .statusbar-item.hoverable {
     color: inherit;
+    transition: opacity 0.2s ease-in-out;
     &:hover {
-      color: rgba($statusbar-text, 0.57);
+      opacity: 0.5;
     }
   }
+
   .row-counts {
     .truncated-rows, .records {
       margin-left: $gutter-h * 0.5;
