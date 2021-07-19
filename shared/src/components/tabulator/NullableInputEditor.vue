@@ -106,8 +106,8 @@ export default Vue.extend({
     right: 3px;
     display: flex;
     align-items: center;
-    font-size: 13px;
-    width: 18px;
+    font-size: 14px!important;
+    width: 16px;
     text-align: center;
   }
 </style>
