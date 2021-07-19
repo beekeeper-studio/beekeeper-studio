@@ -86,7 +86,7 @@
       
       <div class="col truncate expand statusbar-info" :class="{'x4': this.totalRecords > this.limit}">
         <x-button @click.prevent="openProperties" class="btn btn-flat">
-          Properties <i class="material-icons">north_east</i>
+          Structure <i class="material-icons">north_east</i>
         </x-button>
         <!-- Info -->
         <span class="statusbar-item" v-if="lastUpdatedText && !error" :title="`Approximately ${totalRecordsText} Records`">
