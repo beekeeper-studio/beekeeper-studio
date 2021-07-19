@@ -152,6 +152,7 @@ $button-height:     $statusbar-height * 0.75;
       color: $statusbar-text-default;
       border-radius: 0!important;
       margin-top: 0;
+      margin: 0;
       &:hover, &:hover[expanded] {
         background: rgba($statusbar-text, 0.05);
       }
@@ -159,6 +160,11 @@ $button-height:     $statusbar-height * 0.75;
         color: $statusbar-text-default;
         font-size: 18px;
       }
+    }
+  }
+  .download-results {
+    .material-icons {
+      margin-right: $gutter-h * 0.25;
     }
   }
   .pending-changes {
