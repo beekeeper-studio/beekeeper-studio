@@ -270,14 +270,17 @@ $cell-success:           $row-add;
         line-height: $row-height + 2px;
         padding: 0 $cell-padding;
         font-size: $cell-font-size;
-        pre {
+        pre, input:not([type="checkbox"]) {
           height: $row-height;
           line-height: $row-height;
+          font-size: $cell-font-size;
         }
         &.tabulator-editing {
           min-height: $row-height;
           height: $row-height;
           line-height: $row-height + 2px;
+          padding-left: $gutter-h * 0.65!important;
+          padding-right: $gutter-h * 0.65!important;
           // Make checkboxes behave correctly
           .tabulator-bks-checkbox {
             padding: $cell-padding / 2;

@@ -93,9 +93,10 @@
         line-height: $row-height + 2px;
         padding: 0 $cell-padding;
         font-size: $cell-font-size;
-        pre {
+        pre, input:not([type="checkbox"]) {
           height: $row-height;
           line-height: $row-height;
+          font-size: $cell-font-size;
         }
         &.tabulator-editing {
           min-height: $row-height;
