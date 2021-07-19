@@ -13,6 +13,8 @@ $cell-success:           $row-add;
 
 $cell-radius:            2px;
 
+$cell-padding:           $gutter-h;
+
 // Mixin
 @mixin cell-shadow($bg) {
   box-shadow: inset -1px 0 $bg,
@@ -87,22 +89,22 @@ $cell-radius:            2px;
   }
   .tabulator-cell {
     border: 0;
-    padding: 4px 8px;
+    padding: $row-height $cell-padding;
     min-height: $row-height;
     height: $row-height;
-    line-height: $row-height - (8px); // row-height - vertical padding
+    line-height: $row-height
     border-radius: $cell-radius;
     cursor: default;
     &:first-of-type {
-      padding-left: $gutter-w * 1.5;
+      padding-left: $cell-padding * 1.5;
     }
     &:last-of-type {
-      padding-right: $gutter-w * 1.5;
+      padding-right: $cell-padding * 1.5;
     }
     &.cell-editable {
       cursor: pointer;
       &:hover {
-        background: rgba($theme-base,0.05);
+        background: rgba($theme-base, 0.05);
       }
     }
 
@@ -171,16 +173,6 @@ $cell-radius:            2px;
 
   // Cell Edit States
   .tabulator-cell {
-    // &:nth-child(odd) {
-    //   background: $row-highlight;
-    //   .tabulator-cell {
-    //     &.edited,
-    //     &.edit-error,
-    //     &.edit-success {
-    //       @include cell-shadow(rgba($row-highlight, 0.75));
-    //     }
-    //   }
-    // }
     &.edited {
       background: $cell-edited;
       &:hover {
@@ -225,14 +217,7 @@ $cell-radius:            2px;
 // Editable Hover
 .tabulator-row {
   .tabulator-cell {
-    // &.cell-editable {
-    //   cursor: pointer;
-    //   &:hover {
-    //     background: rgba($theme-base,0.05);
-    //   }
-    // }
-
-    cursor: pointer;
+     cursor: pointer;
     &:hover {
       background: rgba($theme-base,0.05);
     } 
