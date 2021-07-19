@@ -1,5 +1,5 @@
 <template>
-  <div class="tabulator-bks-checkbox" @mousedown.prevent.stop="click">
+  <div class="tabulator-bks-checkbox" :class="editable ? 'editable' : 'read-only'" @mousedown.prevent.stop="click">
     <input type="checkbox" :disabled="!editable" @mousedown.prevent.stop="click" :checked="checked" />
   </div>
 </template>

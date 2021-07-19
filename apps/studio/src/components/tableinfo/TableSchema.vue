@@ -176,7 +176,6 @@ export default Vue.extend({
           cellEdited: this.cellEdited,
           editable: this.isCellEditable.bind(this, 'alterColumn'),
           width: 70,
-          cssClass: "read-only",
         },
         {
           title: 'Default Value',
@@ -375,8 +374,7 @@ export default Vue.extend({
         layout: 'fitColumns',
         tooltips: true,
         data: this.tableData,
-        // @ts-ignore-error
-        columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
+        resizableColumns: false,
         placeholder: "No Columns",
         headerSort: false,
       })
