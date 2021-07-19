@@ -4,19 +4,18 @@
 
 // Global
 $badge-bg:                 rgba($theme-base, 0.1);
-$theme-primary-dark:       darken($theme-primary, 15%);     
 
 // Sidebar
-$sidebar-list-icons:       $theme-primary-dark;
+$sidebar-list-icons:       $theme-primary;
 
 // Editor
 $tabs-heading:             rgba($theme-base, 0.08);
-$tab-link:                 darken($theme-bg, 8%);
+$tab-link:                 darken($theme-bg, 4%);
 $codemirror-hint-bg:       darken($theme-bg, 2%);
 
 // Table Editing
 $row-highlight:            darken($query-editor-bg, 3%);
-$row-add:                  #56DAAC;
+$row-add:                  #5ff3c0;
 $row-delete:               #FC8A87;
 $row-error:                #F9B8B7;
 
@@ -57,7 +56,7 @@ select {
   background: rgba($theme-base, 0.08);
 }
 .text-primary {
-  color: $theme-primary-dark!important;
+  color: $theme-primary!important;
 }
 .list-group {
   .list-item-btn {
@@ -147,32 +146,8 @@ select {
     }
   }
 }
-
-.page-content {
-  position: relative;
-  &:before {
-    content: '';
-    position: absolute;
-    top: $tab-height;
-    bottom: $statusbar-height;
-    left: 0;
-    width: 0.5px;
-    background: $border-color;
-    z-index: 10;
-  }
-  .tabs-header {
-    position: relative;
-    &:before {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: lighten($theme-base, 85%);
-      z-index: 1;
-    }
-  }
+.item-icon {
+  color: darken($theme-primary, 8%);
 }
 
 // Editor
@@ -184,20 +159,14 @@ select {
   .nav-tabs {
     .nav-link {
       background: $tab-link;
-      border: 0;
-      margin-right: 1px;
-      // &.active {
-      //   box-shadow: inset 0 1px $theme-primary;
-      // }
       &.active {
-        z-index: 10;
-        background: white;
-        box-shadow: inset 0 1px lighten($theme-base, 85%), 
-                    inset 1px 0 lighten($theme-base, 85%), 
-                    inset -1px 0 lighten($theme-base, 85%);
+        background: $query-editor-bg;
         .tab-action {
-          background: linear-gradient(90deg, rgba(white,0) 0%, rgba(white,1) 20%);
-          border-right: 1px solid lighten($theme-base, 85%);
+          background: linear-gradient(
+            90deg, 
+            rgba($query-editor-bg,0) 0%, 
+            rgba($query-editor-bg,1) 20%
+          );
         }
       }
     }
@@ -206,7 +175,11 @@ select {
       right: 0;
       bottom: 1px;
       border-radius: 0 6px 0 0;
-      background: linear-gradient(90deg, rgba($tab-link,0) 0%, rgba($tab-link,1) 20%);
+      background: linear-gradient(
+        90deg, 
+        rgba($tab-link,0) 0%, 
+        rgba($tab-link,1) 20%
+      );
     }
     .tab-close {
       .material-icons {
@@ -223,16 +196,19 @@ select {
 // -------------------------------
 .tabulator-table {
   .tabulator-row {
-    &.inserted, 
-    &.inserted:hover {
-      background: $row-add;
-    }
-    &.deleted,
-    &.deleted:hover {
-      background: $row-delete;
-    }
-    &.edit-error {
-      background: $row-error!important;
+    &.tabulator-row-even,
+    &:nth-child(odd) {
+      &.inserted, 
+      &.inserted:hover {
+        background: $row-add!important;
+      }
+      &.deleted,
+      &.deleted:hover {
+        background: $row-delete!important;
+      }
+      &.edit-error {
+        background: $row-error!important;
+      }
     }
     .tabulator-cell {
       &.edited,
@@ -270,7 +246,6 @@ select {
 }
 .tabulator {
   .tabulator-header {
-    background: $theme-bg;
     .tabulator-col {
       &.foreign-key {
         &:before {
@@ -282,13 +257,10 @@ select {
       }
     }
   }
-  .tabulator-tableHolder {
-    background: white;
-  }
 }
 .tabulator-row {
   &:nth-child(odd) {
-    background: rgba($theme-base, 0.035);
+    background: rgba($theme-base, 0.025);
   }
 }
 .table-builder .table-builder-wrap,
@@ -296,7 +268,7 @@ select {
   .tabulator-row {
     &.tabulator-row-even,
     &:nth-child(odd) {
-      background: rgba($theme-base, 0.06)!important;
+      background: rgba($theme-base, 0.06);
     }
     &.inserted {
       background: $row-add!important;
@@ -378,12 +350,12 @@ select {
           &[type="checkbox"]:checked, 
           &[type="checkbox"]:checked:active {
             &:after {
-              color: $theme-primary-dark!important;
+              color: $text-dark!important;
             }
           }
         }
         .tabulator-bks-checkbox input:after {
-          color: $theme-primary-dark;
+          color: $theme-primary;
         }
       }
 
@@ -462,7 +434,7 @@ select {
 
 // Switch
 x-switch {
-  color: $theme-primary-dark;
+  color: $theme-primary;
 }
 
 // Table Properties
@@ -471,8 +443,8 @@ x-switch {
   .nav-pills {
     .nav-pill {
       &.active {
-        color: $theme-primary-dark;
-        box-shadow: inset 0 -2px $theme-primary-dark;
+        color: $theme-secondary;
+        box-shadow: inset 0 -2px $theme-secondary;
       }
     }
   }

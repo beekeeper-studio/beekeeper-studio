@@ -295,7 +295,8 @@ $cell-success:           $row-add;
         &.read-only {
           .tabulator-bks-checkbox {
             input {
-              background:transparent;
+              background: transparent!important;
+              box-shadow: none!important;
               &:after {
                 color: $theme-primary;
                 font-size: 20px;
