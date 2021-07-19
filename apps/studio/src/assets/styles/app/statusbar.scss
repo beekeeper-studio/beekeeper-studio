@@ -163,6 +163,7 @@ $button-height:     $statusbar-height * 0.75;
     }
   }
   .download-results {
+    margin-right: $gutter-h * 0.25;
     .material-icons {
       margin-right: $gutter-h * 0.25;
     }
@@ -321,6 +322,26 @@ $button-height:     $statusbar-height * 0.75;
       min-width: fit-content;
       background: transparent;
       color: rgba(black, 0.87);
+    }
+  }
+
+  // Scope issue with modals -- needs to portal to top level
+  .save-actions {
+    .btn-flat {
+      color: $theme-base;
+      background: rgba($theme-base, 0.06);
+      &:hover, &:focus {
+        background: rgba($theme-base, 0.12);
+      }
+    }
+    .btn-primary.save {
+      background: $theme-primary;
+      color: rgba(black, 0.87);
+      transition: background 0.15s ease-in-out;
+      &:hover, &:focus {
+        background: lighten($theme-primary, 8%);
+        color: rgba(black, 0.87);
+      }
     }
   }
 
