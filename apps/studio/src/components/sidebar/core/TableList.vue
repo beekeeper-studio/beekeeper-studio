@@ -32,7 +32,7 @@
     </div>
 
     <!-- Pinned Tables -->
-    <div class="pin-wrapper" ref="pinned" v-show="orderedPins.length > 0">
+    <div class="table-list pinned flex-col" ref="pinned" v-show="orderedPins.length > 0">
       <pinned-table-list
         :allExpanded="allExpanded"
         :allCollapsed="allCollapsed"
