@@ -236,6 +236,12 @@ $cell-padding:           $gutter-w;
       }
     }
   }
+  &.inserted {
+    .tabulator-cell.primary-key {
+      cursor: pointer;
+      opacity: 1;
+    }
+  }
 }
 
 

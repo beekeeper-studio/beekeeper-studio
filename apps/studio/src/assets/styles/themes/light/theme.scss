@@ -255,6 +255,9 @@ select {
           }
         }
       }
+      .null-value {
+        color: $text-light;
+      }
     }
   }
 }
@@ -277,6 +280,8 @@ select {
     background: rgba($theme-base, 0.025);
   }
 }
+// Table Builder
+// -------------------------
 .table-builder .table-builder-wrap,
 .table-properties .table-properties-wrap {
   .tabulator-row {
