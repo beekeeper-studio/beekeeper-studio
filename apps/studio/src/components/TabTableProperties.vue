@@ -38,8 +38,8 @@
           :key="pill.id"
         >
           <template v-slot:footer>
-            <div class="col flex expand">
-              <x-button @click.prevent="openData" class="btn btn-flat">
+            <div class="statusbar-info col flex expand">
+              <x-button @click.prevent="openData" class="btn btn-flat btn-icon end" title="View Data">
                 Data <i class="material-icons">north_east</i>
               </x-button>
               <template v-if="properties">
@@ -57,33 +57,28 @@
                 </span>
               </template>
             </div>
-            <!-- <div class="flex flex-middle expand">
-              <div class="statusbar-actions flex flex-right">
-
-
-              </div>
-            </div> -->
           </template>
+
           <template v-slot:actions >
-                <x-button class="actions-btn btn btn-flat" title="Actions">
-                  <i class="material-icons">settings</i>
-                  <i class="material-icons">arrow_drop_down</i>
-                  <x-menu>
-                    <x-menuitem @click.prevent="refresh">
-                      <x-label>Refresh</x-label>
-                    </x-menuitem>
-                    <x-menuitem @click.prevent="openTable">
-                      <x-label>View Data</x-label>
-                    </x-menuitem>
-                    <hr v-if="dev">
-                    <x-menuitem v-if="dev" @click.prevent="triggerError">
-                      <x-label>[DEV] Toggle Error</x-label>
-                    </x-menuitem>
-                    <x-menuitem v-if="dev" @click.prevent="loading = !loading">
-                      <x-label>[DEV] Toggle Loading</x-label>
-                    </x-menuitem>
-                  </x-menu>
-                </x-button>
+            <x-button class="actions-btn btn btn-flat" title="Actions">
+              <i class="material-icons">settings</i>
+              <i class="material-icons">arrow_drop_down</i>
+              <x-menu>
+                <x-menuitem @click.prevent="refresh">
+                  <x-label>Refresh</x-label>
+                </x-menuitem>
+                <x-menuitem @click.prevent="openTable">
+                  <x-label>View Data</x-label>
+                </x-menuitem>
+                <hr v-if="dev">
+                <x-menuitem v-if="dev" @click.prevent="triggerError">
+                  <x-label>[DEV] Toggle Error</x-label>
+                </x-menuitem>
+                <x-menuitem v-if="dev" @click.prevent="loading = !loading">
+                  <x-label>[DEV] Toggle Loading</x-label>
+                </x-menuitem>
+              </x-menu>
+            </x-button>
           </template>
         </component>
       </div>

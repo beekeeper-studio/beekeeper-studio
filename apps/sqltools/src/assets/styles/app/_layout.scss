@@ -554,6 +554,7 @@ input[type=file] {
 }
 .item-icon {
   font-size: 12px;
+  font-weight: normal;
   color: darken($theme-primary, 15%);
   &.schema-icon {
     color: $text-lighter;

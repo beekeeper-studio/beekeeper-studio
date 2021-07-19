@@ -84,8 +84,8 @@
     <statusbar :mode="statusbarMode" class="tabulator-footer">
 
       
-      <div class="col truncate expand statusbar-info" :class="{'x4': this.totalRecords > this.limit}">
-        <x-button @click.prevent="openProperties" class="btn btn-flat">
+      <div class="col truncate expand statusbar-info">
+        <x-button @click.prevent="openProperties" class="btn btn-flat btn-icon end" title="View Structure">
           Structure <i class="material-icons">north_east</i>
         </x-button>
         <!-- Info -->
@@ -104,7 +104,7 @@
       </div>
 
       <!-- Pagination -->
-      <div class="col flex-center" v-show="this.totalRecords > this.limit" :class="{'x4': this.totalRecords > this.limit}">
+      <div class="col flex-center expand" v-show="this.totalRecords > this.limit">
         <span ref="paginationArea" class="tabulator-paginator"></span>
       </div>
 
@@ -121,9 +121,9 @@
 
         <template v-if="pendingChangesCount > 0">
           <x-button class="btn btn-flat" @click.prevent="discardChanges">Reset</x-button>
-          <x-button class="btn btn-primary" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
+          <x-button class="btn btn-primary btn-badge" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
             <i v-if="error" class="material-icons">error</i>
-            <span class="badge" v-if="!error"><small>{{pendingChangesCount}}</small></span>
+            <span class="badge" v-if="!error">{{pendingChangesCount}}</span>
             <span>Apply</span>
           </x-button>
         </template>

@@ -1,3 +1,5 @@
+$button-height:     $statusbar-height * 0.75;
+
 .statusbar {
   display: flex;
   align-items: center;
@@ -55,83 +57,115 @@
   }
 
 
-  .connection-button > .btn, 
-  .statusbar-actions .btn {
-    box-shadow: none!important;
-    background: transparent;
-    color: $statusbar-text;
-    height: $statusbar-height * 0.75;
-    line-height: $statusbar-height * 0.6;
-    min-width: 0;
-    margin: 0 0.15rem;
-    margin-top: -1px;
-    padding: 0 0.35rem;
-    --ripple-background: none;
-    border-radius: $btn-border-radius-small;
-    transition: background 0.15s ease-in-out;
-    .material-icons {
-      width: 16px;
+  .connection-button { 
+    > .btn{
+      box-shadow: none!important;
+      background: transparent;
+      color: $statusbar-text;
+      height: $button-height;
+      line-height: $button-height;
+      min-width: 0;
+      margin: 0 0.15rem;
+      margin-top: -1px;
+      padding: 0 0.35rem;
+      --ripple-background: none;
+      border-radius: $btn-border-radius-small;
+      transition: background 0.15s ease-in-out;
+      .material-icons {
+        width: 16px;
+      }
     }
   }
 
-  .statusbar-actions {
+  .statusbar-actions,
+  .statusbar-info {
     display: flex;
-    align-items: middle;
+    align-items: center;
     .btn.reset {
       margin-right: $gutter-w;
     }
-    .btn {
-      padding: 0 0.6rem;
-      background: transparent;
-      &:hover[expanded] {
+  }
+
+  // Buttons
+  // ----------------------
+  .btn {
+    padding: 0 0.6rem;
+    min-width: auto;
+    background: transparent;
+    color: $statusbar-text;
+    height: $button-height;
+    line-height: $button-height;
+    margin: 0 0.15rem;
+    margin-top: -1px;
+    &:hover[expanded] {
+      background: rgba($statusbar-text, 0.15);
+    }
+    .material-icons {
+      font-size: 16px;
+    }
+    &.actions-btn {
+      padding: 0 0.35rem;
+      .material-icons {
+        width: 13px;
+      }
+    }
+    &.btn-flat {
+      box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.025);
+      background: rgba($statusbar-text, 0.1);
+      transition: background 0.2s ease-in-out;
+      &:hover {
         background: rgba($statusbar-text, 0.15);
       }
-      .material-icons {
-        font-size: 16px;
-      }
-      &.actions-btn {
-        padding: 0 0.35rem;
+    }
+    &.btn-icon {
+      &.end {
         .material-icons {
-          width: 13px;
+          margin: 0 -0.2rem 0 0.1rem;
+          font-size: 12px;
         }
       }
+    }
+    &.btn-badge {
+      .badge {
+        margin: 0;
+        margin-right: $gutter-h * 0.25;
+        background: transparent;
+        line-height: 1;
+        padding-left: 0;
+      }
+    }
+    &.btn-primary {
+      background: rgba($statusbar-text, 0.35);
+      box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.025);
+      color: $statusbar-text-default;
     }
   }
   
   .download-results,
   .pending-changes {
     background: rgba($statusbar-text, 0.35);
-    box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.05);
-    border-radius: 6px;
+    box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.025);
+    border-radius: $btn-border-radius;
     overflow: hidden;
     > .btn {
       background: transparent;
       color: $statusbar-text-default;
       border-radius: 0!important;
+      margin-top: 0;
       &:hover, &:hover[expanded] {
         background: rgba($statusbar-text, 0.05);
       }
       .material-icons {
         color: $statusbar-text-default;
-        margin-right: $gutter-h * 0.5;
+        font-size: 18px;
       }
     }
   }
-
-  // Download Results
-  .download-results {
-    border-radius: $btn-border-radius-small;
-    overflow: hidden;
+  .pending-changes {
     > .btn {
-      margin: 0;
-      border-radius: 0;
-      &[menu] {
-        border-left: 1px solid rgba(black, 0.35);
+      .material-icons {
+        margin-right: $gutter-h * 0.5;
       }
-    }
-    .material-icons {
-      color: $text-dark;
-      font-size: 20px;
     }
   }
 
@@ -164,31 +198,35 @@
     margin-left: -$gutter-h * 0.5;
   }
   .select-wrap {
-    background: rgba($statusbar-text, 0.35);
-    box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.05);
-    border-radius: 6px;
+    box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.025);
+    background: rgba($statusbar-text, 0.1);
+    color: $statusbar-text;
+    height: $button-height;
+    border-radius: $btn-border-radius;
+    transition: background 0.2s ease-in-out;
     &:after {
       width: 0; 
       height: 0; 
       border-left: 4px solid transparent;
       border-right: 4px solid transparent;
-      border-top: 4px solid $statusbar-text-default;
+      border-top: 4px solid $statusbar-text;
       position: absolute;
-      top: 40%;
+      top: 42%;
       right: 7px;
       content: "";
       z-index: 98;
     }
     &:hover {
-      background: rgba($statusbar-text, 0.4);
+      background: rgba($statusbar-text, 0.15);
     }
     select {
-      color: $statusbar-text-default;
-      height: $statusbar-height * 0.8;
-      line-height: $statusbar-height * 0.8;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
+      color: $statusbar-text;
+      height: $button-height;
+      line-height: $button-height;
+      -webkit-appearance: none!important;
+      appearance: none!important;
+      font-weight: 600;
+      font-size: 12px;
       option {
         color: $text;
       }
@@ -207,9 +245,9 @@
     text-overflow:ellipsis;
 
     .material-icons {
-      font-size: 16px;
+      font-size: 18px;
       line-height: $statusbar-height;
-      margin-right: 0.25rem;
+      margin-right: 0.35rem;
       // opacity: 0.65;
       width: 16px;
     }
@@ -230,7 +268,7 @@
   a.statusbar-item {
     color: inherit;
     &:hover {
-      background-color: rgba(0, 0, 0, 0.05);
+      color: rgba($statusbar-text, 0.57);
     }
   }
   .row-counts {
