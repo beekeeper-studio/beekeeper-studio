@@ -198,7 +198,7 @@ export default Vue.extend({
             editable: false
           },
           width: 70,
-          cssClass: "read-only",
+          cssClass: "read-only never-editable",
         },
         {
           field: 'trash-button',
@@ -212,8 +212,9 @@ export default Vue.extend({
         }
       ]
       return result.map((col) => {
+        const editable = _.isFunction(col.editable) ? col.editable({ getRow: () => ({})}) : col.editable
         const cssBase = col.cssClass || null
-        const extraCss = col.editable ? 'editable' : 'read-only'
+        const extraCss = editable ? 'editable' : 'read-only'
         const cssClass = cssBase ? `${cssBase} ${extraCss}` : extraCss
         return { ...col, cssClass }
       })
@@ -233,6 +234,7 @@ export default Vue.extend({
     isCellEditable(feature: string, cell: CellComponent): boolean {
       // views and materialized views are not editable
       if (this.table.entityType !== 'table') return false
+      if (this.removedRows.includes(cell.getRow())) return false
 
       const isDisabled = this.disabledFeatures?.alter?.[feature]
       const isNewRow = this.newRows.includes(cell.getRow())
