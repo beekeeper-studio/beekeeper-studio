@@ -68,7 +68,6 @@ export const PinModule: Module<State, RootState> = {
       if (database && usedConfig) {
         const newPin = new PinnedEntity(item, database, usedConfig)
         newPin.position = (context.getters.orderedPins.reverse()[0]?.position || 0) + 1
-        console.log('saving pin', newPin)
         if(usedConfig.hasId()) await newPin.save()
         context.commit('add', newPin)
       }

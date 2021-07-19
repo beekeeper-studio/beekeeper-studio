@@ -51,7 +51,6 @@ export default Vue.extend({
         return this.$store.getters['pins/orderedPins']
       },
       set(pins: PinnedEntity[]) {
-        console.log("set!")
         this.$store.dispatch('pins/reorder', pins)
       }
     }

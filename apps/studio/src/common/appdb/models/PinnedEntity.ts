@@ -14,8 +14,7 @@ export class PinnedEntity extends ApplicationEntity {
 
   constructor(table?: DatabaseEntity, db?: string | null, saved?: SavedConnection) {
     super()
-    console.log('initializing with', table, db, saved)
-    if (table) {
+     if (table) {
       this.entityName = table.name
       this.schemaName = table.schema
       this.entityType = table.entityType
