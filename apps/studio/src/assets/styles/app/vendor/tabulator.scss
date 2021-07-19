@@ -101,12 +101,6 @@ $cell-padding:           $gutter-w;
     &:last-of-type {
       padding-right: $cell-padding * 1.5;
     }
-    &.cell-editable {
-      cursor: pointer;
-      &:hover {
-        background: rgba($theme-base,0.05);
-      }
-    }
 
     i.fk-link {
       display:none;
@@ -160,6 +154,7 @@ $cell-padding:           $gutter-w;
     }
     &.foreign-key-button {
       display: inline-flex;
+      align-items: center;
       justify-content: flex-end;
       width: $foreign-key-width!important;
       min-width: $foreign-key-width!important;
@@ -185,7 +180,7 @@ $cell-padding:           $gutter-w;
     &.edited {
       background: $cell-edited;
       &:hover {
-        background: lighten($cell-edited, 5%);
+        background: lighten($cell-edited, 3%);
       }
     }
     &.edit-error {
@@ -229,9 +224,13 @@ $cell-padding:           $gutter-w;
     cursor: pointer;
     &:hover {
       background: rgba($theme-base,0.05);
+    }
+    &.editable:hover {
+      background: rgba($theme-base,0.05);
     } 
     &.primary-key {
       cursor: default;
+      opacity: 0.5;
       &:hover {
         background: transparent;
       }

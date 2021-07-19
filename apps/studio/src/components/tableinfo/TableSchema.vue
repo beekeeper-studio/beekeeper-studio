@@ -50,7 +50,7 @@ import DataMutators from '../../mixins/data_mutators'
 import sqlFormatter from 'sql-formatter'
 import _ from 'lodash'
 import Vue from 'vue'
-import globals from '../../common/globals'
+// import globals from '../../common/globals'
 import { vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
@@ -176,6 +176,7 @@ export default Vue.extend({
           cellEdited: this.cellEdited,
           editable: this.isCellEditable.bind(this, 'alterColumn'),
           width: 70,
+          cssClass: "no-padding no-edit-highlight",
         },
         {
           title: 'Default Value',

@@ -96,7 +96,7 @@ export default Vue.extend({
     display: flex;
     align-items: center;
   }
-  input {
+  .nullible-input {
     padding-right: 18px!important;
   }
   .clear {

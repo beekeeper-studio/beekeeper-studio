@@ -221,6 +221,9 @@ select {
         background: $row-error!important;
       }
     }
+    &.tabulator-selectable:hover {
+      background: rgba($brand-info, 0.1);
+    }
     .tabulator-cell {
       &.edited,
       &.edit-error,

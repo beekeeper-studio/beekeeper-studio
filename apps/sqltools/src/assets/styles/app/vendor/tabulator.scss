@@ -154,6 +154,7 @@ $cell-padding:           $gutter-h;
     }
     &.foreign-key-button {
       display: inline-flex;
+      align-items: center;
       justify-content: flex-end;
       width: $foreign-key-width!important;
       min-width: $foreign-key-width!important;

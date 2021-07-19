@@ -275,6 +275,9 @@ $cell-success:           $row-add;
           line-height: $row-height;
           font-size: $cell-font-size;
         }
+        .nullible-input {
+          padding-right: 18px!important;
+        }
         &.tabulator-editing {
           min-height: $row-height;
           height: $row-height;

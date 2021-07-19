@@ -282,9 +282,6 @@ export default Vue.extend({
           height: $row-height;
           line-height: $row-height + 2px;
           box-shadow: inset 0 1px $theme-base;
-          .nullible-input {
-            padding-right: 18px!important;
-          }
         }
         &.no-padding {
           padding: 0!important;
