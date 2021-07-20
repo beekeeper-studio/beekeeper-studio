@@ -282,6 +282,9 @@ export default Vue.extend({
           height: $row-height;
           line-height: $row-height + 2px;
           box-shadow: inset 0 1px $theme-base;
+          input:not([type="checkbox"]) {
+            background: rgba($theme-base, 0.08);
+          }
         }
         &.no-padding {
           padding: 0!important;
@@ -295,13 +298,13 @@ export default Vue.extend({
           background: transparent!important;
           &.tabulator-editing {
             box-shadow: none!important;
-            input {
-              box-shadow: inset 0 0 0 2px rgba($theme-base,0.87);
-              &[type="checkbox"]:active, 
-              &[type="checkbox"]:checked, 
-              &[type="checkbox"]:checked:active {
-                background: $theme-base!important;
-                color: rgba(black, 0.87)!important;
+            input[type="checkbox"] {
+              box-shadow: inset 0 0 0 2px $theme-base;
+              &:active, 
+              &:checked, 
+              &:checked:active {
+                background: rgba($theme-base, 0.5)!important;
+                color: $theme-bg!important;
                 box-shadow: none!important;
               }
             }
@@ -402,6 +405,49 @@ export default Vue.extend({
         border: 0;
         background: lighten($theme-bg, 15%)!important;
         opacity: 1!important;
+      }
+    }
+
+    // Inserted
+    .tabulator-row.inserted {
+      .tabulator-cell {
+        &.read-only {
+          &:hover {
+            background: rgba($theme-base, 0.08)!important;
+            cursor: pointer;
+            input {
+              cursor: pointer;
+            }
+          }
+          &.no-edit-highlight,
+          &.never-editable,
+          &.remove-btn {
+            &:hover {
+              background: transparent!important;
+            }
+          }
+          &.never-editable {
+            cursor: default!important;
+          }
+        }
+        &.tabulator-editing {
+          box-shadow: none!important;
+          input:not([type="checkbox"]) {
+            background: rgba($theme-base, 0.1)!important;
+          }
+          input[type="checkbox"] {
+            box-shadow: inset 0 0 0 2px $theme-base;
+            &:active, 
+            &:checked, 
+            &:checked:active {
+              background: rgba($theme-base, 0.5)!important;
+              box-shadow: none!important;
+              &:after {
+                color: $theme-bg!important;
+              }
+            }
+          }
+        }
       }
     }
   }

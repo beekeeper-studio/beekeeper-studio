@@ -336,15 +336,19 @@ select {
       color: $text-dark;
       &.tabulator-editing {
         box-shadow: inset 0 1px $theme-base;
+        input:not([type="checkbox"]) {
+          background: rgba($theme-base, 0.08);
+        }
       }
       &.no-edit-highlight {
         &.tabulator-editing {
           input {
-            box-shadow: inset 0 0 0 2px rgba($theme-base,0.87);
+            box-shadow: inset 0 0 0 2px $theme-base;
             &[type="checkbox"]:active, 
             &[type="checkbox"]:checked, 
             &[type="checkbox"]:checked:active {
-              background: $theme-base!important;
+              background: rgba($theme-base, 0.5)!important;
+              color: $theme-bg!important;
             }
           }
         }
@@ -361,17 +365,38 @@ select {
         }
       }
       &.read-only {
-        input {
-          &[type="checkbox"]:active, 
-          &[type="checkbox"]:checked, 
-          &[type="checkbox"]:checked:active {
+        input[type="checkbox"] {
+          &:active, 
+          &:checked, 
+          &:checked:active {
             &:after {
-              color: $text-dark!important;
+              color: $theme-base!important;
             }
           }
         }
-        .tabulator-bks-checkbox input:after {
-          color: $theme-primary;
+        .tabulator-bks-checkbox {
+          input {
+            &:after {
+              color: $theme-primary;
+            }
+          }
+          &.editable {
+            input[type="checkbox"] {
+              box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2)!important;
+              cursor: pointer!important;
+              &:active,
+              &:checked,
+              &:checked:active {
+                background: $theme-base!important;
+                &:after {
+                  color: $theme-bg!important;
+                }
+              }
+              &:focus {
+                box-shadow: inset 0 0 0 2px $theme-base!important;
+              }
+            }
+          }
         }
       }
 
@@ -393,6 +418,33 @@ select {
       }
       .null-value {
         color: $text-lighter;
+      }
+    }
+  }
+
+  // Inserted
+  .tabulator-row.inserted {
+    .tabulator-cell {
+      &.read-only {
+        &:hover {
+          background: rgba($theme-base, 0.08)!important;
+        }
+      }
+      &.tabulator-editing {
+        input:not([type="checkbox"]) {
+          background: rgba($theme-base, 0.08)!important;
+        }
+        input[type="checkbox"] {
+          box-shadow: inset 0 0 0 2px $theme-base;
+          &:active, 
+          &:checked, 
+          &:checked:active {
+            background: rgba($theme-base, 0.5)!important;
+            &:after {
+              color: $theme-bg!important;
+            }
+          }
+        }
       }
     }
   }

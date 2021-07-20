@@ -310,16 +310,18 @@ $cell-success:           $row-add;
             }
           }
         }
-        .tabulator-bks-checkbox.read-only {
-          input[type="checkbox"] {
-            background: transparent!important;
-            box-shadow: none!important;
-            &:after {
-              color: $theme-base;
-              font-size: 20px;
-            }
-            &[disabled="disabled"] {
-              box-shadow: none;
+        .tabulator-bks-checkbox {
+          &.read-only {
+            input[type="checkbox"] {
+              background: transparent!important;
+              box-shadow: none!important;
+              &:after {
+                color: $theme-base;
+                font-size: 20px;
+              }
+              &[disabled="disabled"] {
+                box-shadow: none;
+              }
             }
           }
         }
