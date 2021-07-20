@@ -19,13 +19,15 @@ export interface StreamResults {
   cursor: BeeCursor
 }
 
-
-
-
-export interface TableOrView {
-  schema: string;
+export interface DatabaseEntity {
+  schema?: string;
   name: string;
-  entityType?: 'table' | 'view' | 'materialized-view';
+  entityType: 'table' | 'view' | 'materialized-view' | 'routine'
+}
+
+
+
+export interface TableOrView extends DatabaseEntity {
   columns?: TableColumn[];
 }
 
@@ -193,10 +195,8 @@ export const RoutineTypeNames = {
   'procedure': "Stored Procedure"
 };
 
-export interface Routine {
+export interface Routine extends DatabaseEntity {
   id: string;
-  schema?: string;
-  name: string;
   returnType: string;
   returnTypeLength?: number;
   routineParams?: RoutineParam[];
