@@ -155,9 +155,6 @@ $cell-padding:           $gutter-w;
       .tabulator-bks-checkbox {
         padding: 0!important;
       }
-      input:not([type="checkbox"]) {
-        background: rgba($theme-base, 0.08);
-      }
     }
     &.foreign-key {
       padding-right: $foreign-key-width - 6px;

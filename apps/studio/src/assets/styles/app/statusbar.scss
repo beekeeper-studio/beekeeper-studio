@@ -1,4 +1,4 @@
-$button-height:     $statusbar-height * 0.75;
+$button-height:     $statusbar-height * 0.65;
 
 .statusbar {
   display: flex;
@@ -108,10 +108,10 @@ $button-height:     $statusbar-height * 0.75;
     }
     &.btn-flat {
       box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.025);
-      background: rgba($statusbar-text, 0.1);
+      background: rgba($statusbar-text, 0.15);
       transition: background 0.2s ease-in-out;
       &:hover {
-        background: rgba($statusbar-text, 0.15);
+        background: rgba($statusbar-text, 0.2);
       }
     }
     &.btn-icon {
