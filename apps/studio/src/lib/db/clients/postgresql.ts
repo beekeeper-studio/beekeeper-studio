@@ -17,11 +17,13 @@ import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
-import { AlterTableSpec } from '@shared/lib/dialects/models';
+import { AlterTableSpec, CreateIndexSpec, DropIndexSpec } from '@shared/lib/dialects/models';
 import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
+import { PostgresData } from '@shared/lib/dialects/postgresql';
 
 
 const base64 = require('base64-url');
+const PD = PostgresData
 
 function isConnection(x: any): x is HasConnection {
   return x.connection !== undefined
@@ -37,6 +39,11 @@ const pgErrors = {
 };
 
 let dataTypes: any = {}
+
+function tableName(table: string, schema?: string): string{
+  return schema ? `${PD.wrapIdentifier(schema)}.${PD.wrapIdentifier(table)}` : PD.wrapIdentifier(table);
+}
+
 
 /**
  * Do not convert DATE types to JS date.
@@ -178,6 +185,10 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
     alterTableSql: (change: AlterTableSpec) => alterTableSql(conn, change),
     alterTable: (change: AlterTableSpec) => alterTable(conn, change),
+
+    createIndex: (specs: CreateIndexSpec[]) => createIndex(conn, specs),
+    dropIndex: (specs) => dropIndex(conn, specs),
+
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema)
   };
 }
@@ -907,6 +918,30 @@ export async function alterTable(_conn: HasPool, change: AlterTableSpec) {
   })
 }
 
+function createIndexSql(spec: CreateIndexSpec): string {
+  const unique = spec.unique ? 'UNIQUE' : ''
+  const name = spec.name ? PD.wrapIdentifier(spec.name) : ''
+  const table = tableName(spec.table, spec.schema)
+  const columns = spec.columns.map((c) => {
+    return PD.wrapIdentifier(c)
+  })
+  return `
+    CREATE ${unique} INDEX ${name} on ${table}(${columns})
+  `
+}
+
+export async function createIndex(conn: HasPool, specs: CreateIndexSpec[]) {
+  const queries = specs.map((spec) => createIndexSql(spec))
+  await executeWithTransaction(conn, { query: queries.join(";") })
+}
+
+export async function dropIndex(conn: HasPool, specs: DropIndexSpec[]) {
+  if (!specs.length) return
+  const names = specs.map((spec) => PD.wrapIdentifier(spec.name)).join(",")
+  const query = `DROP INDEX ${names}`
+  await executeWithTransaction(conn, { query })
+}
+
 export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {
   const identifier = wrapTable(table, schema)
   const comment  = escapeString(description)
@@ -1282,6 +1317,22 @@ interface PostgresQueryArgs {
 
 async function driverExecuteSingle(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult> {
   return (await driverExecuteQuery(conn, queryArgs))[0]
+}
+
+async function executeWithTransaction(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult[]> {
+  const fullQuery = [
+    'BEGIN', queryArgs.query, 'COMMIT'
+  ].join(";")
+  return await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    try {
+      return await driverExecuteQuery(cli, { ...queryArgs, query: fullQuery})
+    } catch (ex) {
+      log.error("Query Exception", ex)
+      await driverExecuteSingle(cli, { query: "ROLLBACK" })
+      throw ex;
+    }
+  })
 }
 
 function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult[]> {

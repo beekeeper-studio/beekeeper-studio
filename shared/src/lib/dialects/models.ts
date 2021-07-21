@@ -121,6 +121,19 @@ export interface AlterTableSpec {
   drops?: string[]
 }
 
+export interface CreateIndexSpec {
+  name?: string
+  schema?: string
+  table: string
+  columns: string[]
+  unique: boolean
+}
+
+export interface DropIndexSpec {
+  name: string
+}
+
+
 export type DialectConfig = {
   [K in Dialect]: SchemaConfig
 }

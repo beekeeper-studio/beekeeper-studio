@@ -52,7 +52,7 @@ import sqlFormatter from 'sql-formatter'
 import _ from 'lodash'
 import Vue from 'vue'
 // import globals from '../../common/globals'
-import { vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
+import { vueEditor, vueFormatter, trashButton, TabulatorStateWatchers } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
@@ -84,44 +84,7 @@ export default Vue.extend({
     hasEdits() {
       this.tabState.dirty = this.hasEdits
     },
-    active() {
-      if (!this.tabulator) return;
-      if (this.active) {
-        this.tabulator.restoreRedraw()
-        this.$nextTick(() => {
-          this.tabulator.redraw(this.forceRedraw)
-          this.forceRedraw = false
-        })
-      } else {
-        this.tabulator.blockRedraw()
-      }
-    },
-    editedCells(newCells: CellComponent[], oldCells: CellComponent[]) {
-      const removed = oldCells.filter((c) => !newCells.includes(c))
-      newCells.forEach((c) => c.getElement().classList.add('edited'))
-      removed.forEach((c) => c.getElement().classList.remove('edited'))
-    },
-    newRows(nuRows: RowComponent[], oldRows: RowComponent[]) {
-      const removed = oldRows.filter((r) => !nuRows.includes(r))
-      nuRows.forEach((r) => {
-        r.getElement().classList?.add('inserted')
-      })
-      removed.forEach((r) => {
-        r.getElement().classList?.remove('inserted')
-      })
-    },
-    removedRows(newRemoved: RowComponent[], oldRemoved: RowComponent[]) {
-      const removed = oldRemoved.filter((r) => !newRemoved.includes(r))
-      newRemoved.forEach((r) => r.getElement().classList?.add('deleted'))
-      removed.forEach((r) => r.getElement().classList?.remove('deleted'))
-    },
-    tableData: {
-      deep: true,
-      handler() {
-        if (!this.tabulator) return
-        this.tabulator.replaceData(this.tableData)
-      }
-    }
+    ...TabulatorStateWatchers
   },
   computed: {
     ...mapGetters(['dialect']),
@@ -200,16 +163,7 @@ export default Vue.extend({
           width: 70,
           cssClass: "read-only never-editable",
         },
-        {
-          field: 'trash-button',
-          formatter: (_cell) => `<div class="dynamic-action" />`,
-          width: 36,
-          minWidth: 36,
-          hozAlign: 'center',
-          cellClick: this.removeRow,
-          resizable: false,
-          cssClass: "remove-btn read-only",
-        }
+        trashButton(this.removeRow)
       ]
       return result.map((col) => {
         const editable = _.isFunction(col.editable) ? col.editable({ getRow: () => ({})}) : col.editable

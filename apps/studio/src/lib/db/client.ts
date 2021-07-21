@@ -4,7 +4,7 @@ import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger } from './models';
-import { AlterTableSpec } from '@shared/lib/dialects/models';
+import { AlterTableSpec, CreateIndexSpec, DropIndexSpec } from '@shared/lib/dialects/models';
 
 const logger = createLogger('db');
 
@@ -28,6 +28,9 @@ export interface DatabaseClient {
   // alter table
   alterTableSql: (change: AlterTableSpec) => Promise<string>,
   alterTable: (change: AlterTableSpec) => Promise<void>,
+
+  createIndex: (specs: CreateIndexSpec[]) => Promise<void>,
+  dropIndex: (specs: DropIndexSpec[]) => Promise<void>,
 
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties | null>,

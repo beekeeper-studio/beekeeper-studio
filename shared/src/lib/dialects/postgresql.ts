@@ -21,5 +21,5 @@ export const PostgresData: DialectData = {
   wrapIdentifier: (id: string) => id ? `"${id.replaceAll(/"/g, '""')}"` : null,
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral
-
 }
+
