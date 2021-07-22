@@ -23,7 +23,7 @@
           </a>
         </div>
       </div>
-      <div class="table-properties-wrap" v-if="!loading">
+      <div class="table-properties-wrap" v-if="properties && table">
         <component
           class="schema-builder"
           :is="pill.component"
@@ -36,6 +36,7 @@
           v-show="pill.id === activePill"
           v-for="(pill) in pills" 
           :key="pill.id"
+          @actionCompleted="refresh"
         >
           <template v-slot:footer>
             <div class="statusbar-info col flex expand">
@@ -197,7 +198,6 @@ export default {
     async refresh() {
       this.loading = true
       this.error = null
-      this.properties = null
       try {
         this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
         if (this.table.entityType === 'table') {

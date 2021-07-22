@@ -183,13 +183,16 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getRoutineCreateScript: (routine, type, schema = defaultSchema) => getRoutineCreateScript(conn, routine, type, schema),
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
     getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
+
+    // alter tables
     alterTableSql: (change: AlterTableSpec) => alterTableSql(conn, change),
     alterTable: (change: AlterTableSpec) => alterTable(conn, change),
 
-    createIndex: (specs: CreateIndexSpec[]) => createIndex(conn, specs),
-    dropIndex: (specs) => dropIndex(conn, specs),
+    // alter indexes
+    alterIndexSql: (specs: CreateIndexSpec[], drops: DropIndexSpec[]) => alterIndexSql(specs, drops),
+    alterIndex: (specs, drops) => alterIndex(conn, specs, drops),
 
-    setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema)
+    setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
   };
 }
 
@@ -472,6 +475,7 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
   return data.rows.map((row) => {
     const params = grouped[row.id] || []
     return {
+      entityType: 'routine',
       schema: row.routine_schema,
       name: row.name,
       type: row.routine_type ? row.routine_type.toLowerCase() : 'function',
@@ -918,28 +922,38 @@ export async function alterTable(_conn: HasPool, change: AlterTableSpec) {
   })
 }
 
+export function alterIndexSql(specs?: CreateIndexSpec[], drops?: DropIndexSpec[]): string | null {
+  if (!specs?.length && !drops?.length ) return null
+
+  // drops
+  const names = drops.map((spec) => PD.wrapIdentifier(spec.name)).join(",")
+  const dropQuery = names.length ? `DROP INDEX ${names}` : null
+  
+  // creates
+  const creates = specs.map((spec) => createIndexSql(spec));
+
+  const result = [dropQuery, ...creates].filter((f) => !!f).join(";")
+  return result
+}
+
+export async function alterIndex(conn: HasPool, specs: CreateIndexSpec[], drops: DropIndexSpec[]) {
+  const sql = alterIndexSql(specs, drops);
+  await executeWithTransaction(conn, { query: sql });
+}
+
 function createIndexSql(spec: CreateIndexSpec): string {
   const unique = spec.unique ? 'UNIQUE' : ''
   const name = spec.name ? PD.wrapIdentifier(spec.name) : ''
   const table = tableName(spec.table, spec.schema)
-  const columns = spec.columns.map((c) => {
+  if (!spec.columns?.length) {
+    throw new Error("Indexes require at least one column")
+  }
+  const columns = spec.columns?.map((c) => {
     return PD.wrapIdentifier(c)
   })
   return `
     CREATE ${unique} INDEX ${name} on ${table}(${columns})
   `
-}
-
-export async function createIndex(conn: HasPool, specs: CreateIndexSpec[]) {
-  const queries = specs.map((spec) => createIndexSql(spec))
-  await executeWithTransaction(conn, { query: queries.join(";") })
-}
-
-export async function dropIndex(conn: HasPool, specs: DropIndexSpec[]) {
-  if (!specs.length) return
-  const names = specs.map((spec) => PD.wrapIdentifier(spec.name)).join(",")
-  const query = `DROP INDEX ${names}`
-  await executeWithTransaction(conn, { query })
 }
 
 export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {

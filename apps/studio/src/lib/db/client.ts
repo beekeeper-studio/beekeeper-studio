@@ -29,8 +29,8 @@ export interface DatabaseClient {
   alterTableSql: (change: AlterTableSpec) => Promise<string>,
   alterTable: (change: AlterTableSpec) => Promise<void>,
 
-  createIndex: (specs: CreateIndexSpec[]) => Promise<void>,
-  dropIndex: (specs: DropIndexSpec[]) => Promise<void>,
+  alterIndexSql: (specs: CreateIndexSpec[], drops: DropIndexSpec[]) => string | null
+  alterIndex: (specs: CreateIndexSpec[], drops: DropIndexSpec[]) => Promise<void>,
 
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties | null>,
@@ -132,6 +132,9 @@ export class DBConnection {
   alterTableSql = bind.bind(null, 'alterTableSql', this.server, this.database)
   alterTable = bindAsync.bind(null, 'alterTable', this.server, this.database)
 
+  // indexes
+  alterIndexSql = bind.bind(null, 'alterIndexSql', this.server, this.database)
+  alterIndex = bindAsync.bind(null, 'alterIndex', this.server, this.database)
   
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
   getTableCreateScript = getTableCreateScript.bind(null, this.server, this.database)

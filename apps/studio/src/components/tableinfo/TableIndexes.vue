@@ -2,17 +2,24 @@
   <div class="table-info-table view-only">
     <div class="table-info-table-wrap">
       <div class="center-wrap">
-        <div class="table-subheader">
-          <div class="table-title">
-            <h2>Indexes</h2>
+        <error-alert :error="error" v-if="error" />
+        <div class="loading" v-if="loading">
+          <x-progressbar></x-progressbar>
+        </div>
+        <div class="content-wrap">
+          <div class="table-subheader">
+            <div class="table-title">
+              <h2>Indexes</h2>
+            </div>
+            <span class="expand"></span>
+            <div class="actions">
+              <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
+            </div>
+
           </div>
-          <span class="expand"></span>
-          <div class="actions">
-            <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
-          </div>
+          <div class="table-indexes" ref="tabulator"></div>
 
         </div>
-        <div class="table-indexes" ref="tabulator"></div>
       </div>
     </div>
   
@@ -21,8 +28,9 @@
     <status-bar class="tabulator-footer">
       <div class="flex flex-middle flex-right statusbar-actions">
         <slot name="footer" />
-        <x-button v-if="hasEdits" class="btn btn-flat reset" @click.prevent="submitUndo">Reset</x-button>
-        <x-buttons v-if="hasEdits" class="pending-changes">
+        <span class="loading" v-if="loading">applying changes...</span>
+        <x-button v-if="hasEdits && !loading" class="btn btn-flat reset" @click.prevent="submitUndo">Reset</x-button>
+        <x-buttons v-if="hasEdits && !loading" class="pending-changes">
           <x-button class="btn btn-primary" @click.prevent="submitApply">
             <i v-if="error" class="material-icons">error</i>
             <span class="badge" v-if="!error"><small>{{editCount}}</small></span>
@@ -53,16 +61,25 @@ import Vue from 'vue'
 import _ from 'lodash'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
+import { CreateIndexSpec, DropIndexSpec } from '@shared/lib/dialects/models'
+import rawLog from 'electron-log'
+import sqlFormatter from 'sql-formatter'
+import { AppEvent } from '@/common/AppEvent'
+import ErrorAlert from '../common/ErrorAlert.vue'
+const log = rawLog.scope('TableIndexVue')
 
 interface State {
   tabulator: Tabulator
   newRows: RowComponent[]
-  removedRows: RowComponent[]
+  removedRows: RowComponent[],
+  loading: boolean,
+  error: any | null
 }
 
 export default Vue.extend({
   components: {
     StatusBar,
+    ErrorAlert,
   },
   mixins: [data_mutators],
   props: ["table", "connection", "tabId", "active", "properties"],
@@ -70,7 +87,9 @@ export default Vue.extend({
     return {
       tabulator: null,
       newRows: [],
-      removedRows: []
+      removedRows: [],
+      loading: false,
+      error: null,
     }
   },
   watch: {
@@ -87,7 +106,7 @@ export default Vue.extend({
       return this.properties.indexes || []
     },
     tableColumns() {
-      const editable = (cell) => this.newRows.includes(cell.getRow())
+      const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
       return [
         {title: 'Id', field: 'id', widthGrow: 0.5},
         {
@@ -126,15 +145,18 @@ export default Vue.extend({
   },
   methods: {
     async addRow() {
+      if (this.loading) return
       const tabulator = this.tabulator as Tabulator
+      const name = `${this.table.name}_index_${this.tabulator.getData().length + 1}`
       const row = await tabulator.addRow({
-        name: null,
+        name,
         unique: true
       })
       row.getElement().classList.add('inserted')
       this.newRows.push(row)
     },
-    async removeRow(e: any, cell: CellComponent) {
+    async removeRow(_e: any, cell: CellComponent) {
+      if (this.loading) return
       const row = cell.getRow()
       if (this.newRows.includes(row)) {
         this.newRows = _.without(this.newRows, row)
@@ -154,23 +176,61 @@ export default Vue.extend({
       this.newRows.forEach((r) => r.delete())
       this.clearChanges()
     },
-    submitApply() {
+    getPayload(): {additions: CreateIndexSpec[], drops: DropIndexSpec[]} {
+        const additions = this.newRows.map((row: RowComponent) => {
+          const data = row.getData()
+          const payload: CreateIndexSpec = {
+            table: this.table.name,
+            schema: this.table.schema || undefined,
+            unique: data.unique,
+            columns: data.columns,
+            name: data.name || undefined
+          }
+          return payload
+        })
+        const drops = this.removedRows.map((row: RowComponent) => ({ name: row.getData()['name']}))
+      return { additions, drops }
+    },
+    async submitApply() {
+      try {
+        this.loading = true
+        this.error = null
+        const { additions, drops } = this.getPayload()
+
+        await this.connection.alterIndex(additions, drops)
+        this.$noty.success("Indexes Updated")
+        this.$emit('actionCompleted')
+        this.$nextTick(() => this.initializeTabulator())
+      } catch (ex) {
+        log.error('submitting index error', ex)
+        this.error = ex
+      } finally {
+        this.loading = false
+      }
 
     },
     submitSql() {
+      const { additions, drops } = this.getPayload()
+      const sql = this.connection.alterIndexSql(additions, drops)
+      const formatted = sqlFormatter.format(sql)
+      this.$root.$emit(AppEvent.newTab, formatted)
+    },
 
+    initializeTabulator() {
+      if (this.tabulator) this.tabulator.destroy()
+      this.tabulator = new Tabulator(this.$refs.tabulator, {
+        data: this.tableData,
+        columns: this.tableColumns,
+        layout: 'fitColumns',
+        placeholder: "No Indexes",
+        resizableColumns: false,
+        headerSort: false,
+      })
     }
 
   },
   mounted() {
-    this.tabulator = new Tabulator(this.$refs.tabulator, {
-      data: this.tableData,
-      columns: this.tableColumns,
-      layout: 'fitColumns',
-      placeholder: "No Indexes",
-      resizableColumns: false,
-      headerSort: false,
-    })
+    this.initializeTabulator()
   }
 })
 </script>
