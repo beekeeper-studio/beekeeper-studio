@@ -3,7 +3,9 @@
     <div class="table-info-table-wrap">
       <div class="center-wrap">
         <error-alert :error="error" v-if="error" />
-        <div class="loading" v-if="loading">
+
+        <div v-if="loading">
+          <div class="alert alert-info">Applying changes...</div>
           <x-progressbar></x-progressbar>
         </div>
         <div class="content-wrap">
@@ -28,7 +30,6 @@
     <status-bar class="tabulator-footer">
       <div class="flex flex-middle flex-right statusbar-actions">
         <slot name="footer" />
-        <span class="loading" v-if="loading">applying changes...</span>
         <x-button v-if="hasEdits && !loading" class="btn btn-flat reset" @click.prevent="submitUndo">Reset</x-button>
         <x-buttons v-if="hasEdits && !loading" class="pending-changes">
           <x-button class="btn btn-primary" @click.prevent="submitApply">
@@ -193,6 +194,7 @@ export default Vue.extend({
     },
     async submitApply() {
       try {
+    
         this.loading = true
         this.error = null
         const { additions, drops } = this.getPayload()
@@ -217,6 +219,7 @@ export default Vue.extend({
     },
 
     initializeTabulator() {
+      this.clearChanges()
       if (this.tabulator) this.tabulator.destroy()
       this.tabulator = new Tabulator(this.$refs.tabulator, {
         data: this.tableData,
