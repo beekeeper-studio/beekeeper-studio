@@ -603,6 +603,7 @@ export async function listTableIndexes(
   const sql = `
     SELECT i.indexrelid::regclass AS indexname,
         k.i AS index_order,
+        i.indexrelid as id,
         i.indnkeyatts,
         i.indisunique,
         i.indisprimary,
@@ -640,9 +641,9 @@ export async function listTableIndexes(
   const result = Object.keys(grouped).map((indexName) => {
     const blob = grouped[indexName]
     const unique = blob[0].indisunique
-    const id = blob[0].index_order
+    const id = blob[0].id
     const primary = blob[0].indisprimary
-    const columns: IndexedColumn[] = blob.map((b) => {
+    const columns: IndexedColumn[] = _.sortBy(blob, 'index_order').map((b) => {
       return {
         name: b.index_column,
         order: b.ascending ? 'ASC' : 'DESC'

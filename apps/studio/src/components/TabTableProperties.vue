@@ -6,9 +6,6 @@
       </div>
     </div>
     <template  v-else>
-      <div v-if="loading" class="table-properties-loading">
-        <x-progressbar></x-progressbar>
-      </div>
       <div class="table-properties-header">
         <div class="nav-pills" v-if="pills.length > 1">
           <a 
@@ -22,6 +19,9 @@
             {{pill.name}} {{pill.dirty ? '*' : ''}}
           </a>
         </div>
+      </div>
+      <div v-if="loading" class="table-properties-loading">
+        <x-progressbar></x-progressbar>
       </div>
       <div class="table-properties-wrap" v-if="properties && table">
         <component
