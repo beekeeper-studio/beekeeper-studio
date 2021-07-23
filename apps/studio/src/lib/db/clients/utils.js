@@ -11,6 +11,7 @@ export function escapeString(value) {
 }
 
 export function escapeLiteral(value) {
+  
   return value.replaceAll(';', '')
 }
 

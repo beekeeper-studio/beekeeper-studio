@@ -14,7 +14,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from 'vue'
-import Tabulator from 'tabulator-tables'
+import Tabulator, { RowComponent } from 'tabulator-tables'
 import { getDialectData } from '../lib/dialects'
 import tab from '../lib/tabulator'
 import {vueEditor, vueFormatter} from '../lib/tabulator/helpers'
@@ -35,7 +35,8 @@ export default Vue.extend({
     initialColumns: Array as PropType<SchemaItem[]>,
     dialect: String as PropType<Dialect>,
     resetOnUpdate: Boolean as PropType<boolean>,
-    disabled: Boolean as PropType<boolean>
+    disabled: Boolean as PropType<boolean>,
+    initialEmit: Boolean as PropType<boolean>
   },
   data(): SchemaBuilderData {
     return {
@@ -49,7 +50,7 @@ export default Vue.extend({
     initialColumns() {
       if (this.resetOnUpdate && this.initialColumns && this.tabulator) {
         this.tabulator.replaceData([...this.initialColumns])
-        this.getData(false)
+        this.getData(!!this.initialEmit)
       }
     },
     dialect() {
@@ -61,6 +62,7 @@ export default Vue.extend({
       deep: true,
       handler() {
         if (this.builtColumns && this.modified) {
+          console.log("emitting columns")
           this.$emit('columnsChanged', this.builtColumns)
         }
       }
@@ -90,6 +92,7 @@ export default Vue.extend({
           title: 'Name', 
           field: 'columnName',
           editor: vueEditor(NullableInputEditor),
+          formatter: this.cellFormatter,
           tooltip: true,
           editorParams: {
           }
@@ -160,8 +163,17 @@ export default Vue.extend({
     removeRow(_e, cell: Tabulator.CellComponent) {
       this.tabulator.deleteRow(cell.getRow())
     },
-    addRow() {
-      this.tabulator.addRow({ columnName: 'untitled', dataType: 'text'})
+    async addRow() {
+
+      const num = this.tabulator.getData().length + 1
+      const columnName = `column_${num}`
+
+      const row: RowComponent = await this.tabulator.addRow({ columnName, dataType: 'varchar(255)', nullable: true})
+      const nameCell = row.getCell('columnName')
+      if (nameCell){
+        // don't know why we need this, but we do.
+        setTimeout(() => nameCell.edit(), 50)
+      }
     },
     cellEdited() {
     },
@@ -185,7 +197,7 @@ export default Vue.extend({
       layout: 'fitColumns',
       dataChanged: () => this.getData()
     })
-    this.getData(false)
+    this.getData(!!this.initialEmit)
   }
 })
 </script>
@@ -194,7 +206,6 @@ export default Vue.extend({
 <style lang="scss">
   @import '@shared/assets/styles/_variables';
   @import '@shared/assets/styles/_extends';
-
   $row-height:             42px;
   $min-cell-width:         24px;
   $cell-font-size:         14px;
@@ -229,14 +240,14 @@ export default Vue.extend({
     // Tabulator Header Row
     .tabulator {
       .tabulator-header {
-        box-shadow: none;
+        box-shadow: none!important;
         padding: 0!important;
         .tabulator-col {
           min-width: $min-cell-width!important;
           padding: 0 $cell-padding;
           font-size: ($cell-font-size * 0.9);
           .tabulator-col-content {
-            padding: 0;
+            padding: 0!important;
             .tabulator-col-title {
               color: $text-lighter;
             }
@@ -248,7 +259,7 @@ export default Vue.extend({
     // Field Rows
     .tabulator-row {
       margin: 4px 0;
-      background: rgba($theme-base, 0.05);
+      background: rgba($theme-base, 0.05)!important;
       border-radius: 5px;
       overflow: hidden;
       &.tabulator-row-even,
@@ -266,32 +277,35 @@ export default Vue.extend({
         flex-grow: 1;
         &.tabulator-editing {
           border: 0;
-          padding: 0 $gutter-h;
+          padding: 0 $gutter-h!important;
           min-height: $row-height;
           height: $row-height;
           line-height: $row-height + 2px;
           box-shadow: inset 0 1px $theme-base;
-          .nullible-input {
-            padding-right: 18px!important;
+          input:not([type="checkbox"]) {
+            background: rgba($theme-base, 0.08);
+            box-shadow: inset 0 -1px $theme-base;
           }
         }
         &.no-padding {
-          padding: 0;
+          padding: 0!important;
           > * {
             margin: 0 $cell-padding;
           }
         }
+
+        // Checkboxes - no highlight
         &.no-edit-highlight {
           background: transparent!important;
           &.tabulator-editing {
             box-shadow: none!important;
-            input {
-              box-shadow: inset 0 0 0 2px rgba($theme-base,0.87);
-              &[type="checkbox"]:active, 
-              &[type="checkbox"]:checked, 
-              &[type="checkbox"]:checked:active {
-                background: $theme-base!important;
-                color: rgba(black, 0.87)!important;
+            input[type="checkbox"] {
+              box-shadow: inset 0 0 0 2px $theme-base;
+              &:active, 
+              &:checked, 
+              &:checked:active {
+                background: rgba($theme-base, 0.5)!important;
+                color: $theme-bg!important;
                 box-shadow: none!important;
               }
             }
@@ -301,9 +315,19 @@ export default Vue.extend({
           }
         }
 
+        // Read Only
+        &.read-only,
+        &.read-only:hover {
+          background: transparent!important;
+          cursor: default;
+          input {
+            cursor: default;
+          }
+        }
+
         // Remove Cell
         &.remove-btn {
-          padding: 0;
+          padding: 0!important;
           cursor: default;
           .material-icons {
             line-height: $row-height;
@@ -315,15 +339,23 @@ export default Vue.extend({
             }
           }
         }
+        
+        .material-icons.clear {
+          color: $text-lighter;
+          &:hover {
+            color: $text-dark;
+          }
+        }
 
         // Make checkboxes behave correctly
         .tabulator-bks-checkbox {
           display: flex;
           align-items: center;
           height: $row-height;
-          input {
-            height: 18px;
+          input[type="checkbox"] {
+            height: 18px!important;
             padding: 0!important;
+            margin: 0!important;
           }
         }
 
@@ -372,7 +404,52 @@ export default Vue.extend({
       &.tabulator-moving {
         @extend .card-shadow-hover;
         border: 0;
-        background: lighten($theme-bg, 15%);
+        background: lighten($theme-bg, 15%)!important;
+        opacity: 1!important;
+      }
+    }
+
+    // Inserted
+    .tabulator-row.inserted {
+      .tabulator-cell {
+        &.read-only {
+          &:hover {
+            background: rgba($theme-base, 0.08)!important;
+            cursor: pointer;
+            input {
+              cursor: pointer;
+            }
+          }
+          &.no-edit-highlight,
+          &.never-editable,
+          &.remove-btn {
+            &:hover {
+              background: transparent!important;
+            }
+          }
+          &.never-editable {
+            cursor: default!important;
+          }
+        }
+        &.tabulator-editing {
+          box-shadow: none!important;
+          input:not([type="checkbox"]) {
+            background: rgba($theme-base, 0.1)!important;
+            box-shadow: inset 0 -1px $theme-base!important;
+          }
+          input[type="checkbox"] {
+            box-shadow: inset 0 0 0 2px $theme-base;
+            &:active, 
+            &:checked, 
+            &:checked:active {
+              background: rgba($theme-base, 0.5)!important;
+              box-shadow: none!important;
+              &:after {
+                color: $theme-bg!important;
+              }
+            }
+          }
+        }
       }
     }
   }

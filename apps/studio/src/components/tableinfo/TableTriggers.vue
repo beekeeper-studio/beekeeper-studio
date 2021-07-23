@@ -1,24 +1,38 @@
 <template>
-  <div class="table-info-triggers">
-    <div class="table-subheader">
-      <div class="table-title">
-        <h2>Triggers</h2>
-      </div>
-      <div class="table-actions">
-        <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Trigger</a> -->
+  <div class="table-info-table view-only">
+    <div class="table-info-table-wrap">
+      <div class="center-wrap">
+        <div class="table-subheader">
+          <div class="table-title">
+            <h2>Triggers</h2>
+          </div>
+          <div class="table-actions">
+            <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Trigger</a> -->
+          </div>
+        </div>
+        <div class="table-triggers" ref="tabulator"></div>
       </div>
     </div>
-    <div class="card-flat">
-      <div class="table-triggers" ref="tabulator">
+    
+    <div class="expand" />
+
+    <status-bar class="tabulator-footer">
+      <div class="flex flex-middle flex-right statusbar-actions">
+        <slot name="footer" />
+        <slot name="actions" />
       </div>
-    </div>
+    </status-bar>
   </div>
 </template>
 <script>
 import Tabulator from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
 import globals from '../../common/globals'
+import StatusBar from '../common/StatusBar.vue'
 export default {
+  components: {
+    StatusBar,
+  },
   mixins: [data_mutators],
   props: ["table", "connection", "tabId", "active", "properties"],
   data() {
@@ -42,7 +56,7 @@ export default {
         { field: 'name', title: "Name", tooltip: true},
         { field: 'timing', title: "Timing"},
         { field: 'manipulation', title: "Manipulation"},
-        { field: 'action', title: "Action", tooltip: true, maxInitialWidth: 500},
+        { field: 'action', title: "Action", tooltip: true, widthGrow: 2.5},
         { field: 'condition', title: "Condition", formatter: this.cellFormatter}
       ]
     },
@@ -61,7 +75,9 @@ export default {
       data: this.tableData,
       tooltips: true,
       columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
-      placeholder: "No triggers"
+      placeholder: "No triggers",
+      layout: 'fitColumns'
+
 
     })
   }

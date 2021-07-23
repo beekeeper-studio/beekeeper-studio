@@ -9,14 +9,16 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, ColumnChange, TableIndex } from "../models";
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeLiteral, escapeString } from './utils';
-
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, } from "../models";
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
+import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
+import { AlterTableSpec } from '@shared/lib/dialects/models';
+import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
 
 
 const base64 = require('base64-url');
@@ -174,10 +176,9 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getRoutineCreateScript: (routine, type, schema = defaultSchema) => getRoutineCreateScript(conn, routine, type, schema),
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
     getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
-    alterTableColumns: (changes: ColumnChange[]) => alterTableColumns(conn, changes),
+    alterTableSql: (change: AlterTableSpec) => alterTableSql(conn, change),
+    alterTable: (change: AlterTableSpec) => alterTable(conn, change),
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema)
-
-
   };
 }
 
@@ -873,30 +874,38 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
   return results
 }
 
-export async function alterTableColumns(conn: HasPool, changes: ColumnChange[]) {
+// this allows us to test without a valid connection
+async function Builder(conn?: HasPool) {
+  if (!conn) return PostgresqlChangeBuilder
+  const v = await getVersion(conn)
+  return v.isRedshift ? RedshiftChangeBuilder : PostgresqlChangeBuilder
+}
 
-  const queries = changes.map((change) => {
-    const identifier = wrapTable(change.table, change.schema)
-    const column = wrapIdentifier(change.columnName)
-    const direction = change.newValue === true ? 'SET' : 'DROP'
-    switch (change.changeType) {
-      case 'columnName':
-        return `ALTER TABLE ${identifier} RENAME COLUMN ${wrapIdentifier(change.columnName)} TO ${wrapIdentifier(change.newValue.toString())}`
-        break;
-      case 'dataType':
-      return `ALTER TABLE ${identifier} ALTER COLUMN ${column} TYPE ${escapeLiteral(change.newValue.toString())}`
-        break;
-      case 'defaultValue':
-        return `ALTER TABLE ${identifier} ALTER COLUMN ${column} SET DEFAULT '${escapeString(change.newValue.toString())}'`
-      case 'nullable':
-        return `ALTER TABLE ${identifier} ALTER COLUMN ${column} ${direction} NOT NULL`
-        break;
-      default:
-        break;
+export async function alterTableSql(conn: HasPool, change: AlterTableSpec): Promise<string> {
+  const Cls = await Builder(conn)
+  const builder = new Cls(change.table, change.schema)
+  return builder.alterTable(change)
+}
+
+export async function alterTable(_conn: HasPool, change: AlterTableSpec) {
+  const version = await getVersion(_conn)
+  
+  await runWithConnection(_conn, async (connection) => {
+
+    const cli = { connection }
+    const sql = await alterTableSql(_conn, change)
+    // redshift doesn't support alter table within transactions.
+    const transaction = !version.isRedshift && change.alterations?.length
+    try {
+      if (transaction) await driverExecuteQuery(cli, { query: 'BEGIN' })
+      await driverExecuteQuery(cli, { query: sql })
+      if (transaction) await driverExecuteQuery(cli, { query: 'COMMIT' })
+    } catch (ex) {
+      log.error("ALTERTABLE", ex)
+      if (transaction) await driverExecuteQuery(cli, { query: 'ROLLBACK'})
+      throw ex
     }
   })
-  
-  await driverExecuteQuery(conn, { query: queries.join(";")})
 }
 
 export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {
@@ -1289,6 +1298,7 @@ function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQuery
     // node-postgres has support for Promise query
     // but that always returns the "fields" property empty
     return new Promise((resolve, reject) => {
+      console.log(queryArgs.query)
       log.info('RUNNING', queryArgs.query, queryArgs.params)
       connection.query(args, (err: Error, data: QueryResult | QueryResult[]) => {
         if (err) return reject(err);
@@ -1317,5 +1327,6 @@ async function runWithConnection<T>(x: Conn, run: (p: PoolClient) => Promise<T>)
 
 
 export const testOnly = {
-  parseRowQueryResult
+  parseRowQueryResult,
+  alterTableSql
 }

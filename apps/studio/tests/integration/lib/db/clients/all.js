@@ -26,6 +26,16 @@ export function runCommonTests(getUtil) {
     await getUtil().primaryKeyTests()
   })
 
+  describe("Alter Table Tests", () => {
+    beforeEach(async() => {
+      await prepareTestTable(getUtil())
+    })
+
+    test("should past alter table tests", async () => {
+      await getUtil().alterTableTests()
+    })
+  })
+
 
   describe("Change Application Tests", () => {
     beforeEach(async () => {
@@ -62,6 +72,7 @@ const prepareTestTable = async function(util) {
     table.specificType("lastName", "varchar(255)")
   })
 }
+
 
 export const itShouldInsertGoodData = async function(util) {
 

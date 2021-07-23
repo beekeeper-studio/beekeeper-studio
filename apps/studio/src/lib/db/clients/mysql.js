@@ -1,4 +1,5 @@
 // Copyright (c) 2015 The SQLECTRON Team
+import { MySqlChangeBuilder } from '@shared/lib/sql/change_builder/MysqlChangeBuilder';
 import rawLog from 'electron-log';
 import { readFileSync } from 'fs';
 import knexlib from 'knex';
@@ -29,8 +30,7 @@ export default async function (server, database) {
     pool: mysql.createPool(dbConfig),
   };
 
-  // light solution to test connection with with the server
-  await driverExecuteQuery(conn, { query: 'select version();' });
+  const versionInfo = await getVersion(conn)
 
   return {
     supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true }),
@@ -60,7 +60,10 @@ export default async function (server, database) {
     getRoutineCreateScript: (routine, type) => getRoutineCreateScript(conn, routine, type),
     truncateAllTables: () => truncateAllTables(conn),
     getTableProperties: (table) => getTableProperties(conn, table),
-    setTableDescription: (table, description) => setTableDescription(conn, table, description)
+    setTableDescription: (table, description) => setTableDescription(conn, table, description),
+    
+    alterTableSql: (change) => alterTableSql(conn, change),
+    alterTable: (change) => alterTable(conn, change)
 
   };
 }
@@ -68,6 +71,30 @@ export default async function (server, database) {
 
 export function disconnect(conn) {
   conn.pool.end();
+}
+
+async function getVersion(conn) {
+  const { data } = await driverExecuteQuery(conn, { query: 'SELECT VERSION() as v'})
+  const version = data[0]['v']
+
+  if (!version) {
+    return {
+      versionString: '',
+      isMariaDb: false,
+      isMySql: true,
+      version: 5.7
+    }
+  }
+
+  const stuff = version.split("-")
+
+  return {
+    versionString: version,
+    isMariaDb: version.toLowerCase().includes('mariadb'),
+    isMySql: !version.toLowerCase().includes("mariadb"),
+    version: Number(stuff[0] || 0)
+  }
+
 }
 
 
@@ -412,9 +439,14 @@ export function query(conn, queryText) {
           if (canceling && err.code === mysqlErrors.CONNECTION_LOST) {
             canceling = false;
             err.sqlectronError = 'CANCELED_BY_USER';
+            throw err
+          } else if (queryText && _.trim(queryText).toUpperCase().startsWith("DELIMITER")) {
+            const nuError = Error(`DELIMITER is only supported in the command line client, ${err.message}`)
+            nuError.helpLink = "https://docs.beekeeperstudio.io/troubleshooting/#mysql"
+            throw nuError
+          } else {
+            throw err;
           }
-
-          throw err;
         } finally {
           cancelable.discard();
         }
@@ -660,6 +692,28 @@ async function setTableDescription(conn, table, description) {
   await driverExecuteQuery(conn, { query })
   const result = await getTableProperties(conn, table)
   return result.description
+}
+async function alterTableSql(conn, change) {
+  const columns = await listTableColumns(conn, null, change.table)
+  const builder = new MySqlChangeBuilder(change.table, columns)
+  return builder.alterTable(change)
+}
+
+async function alterTable(conn, change) {
+  const sql = await alterTableSql(conn, change)
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    const queries = [
+      'START TRANSACTION',
+      sql,
+      'COMMIT'
+    ].join(";")
+    try {
+      await driverExecuteQuery(cli, { query: queries })
+    } catch (ex) {
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' })
+    }
+  })
 }
 
 

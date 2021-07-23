@@ -21,9 +21,9 @@ section {
 }
 
 .card-link {
-  transition: box-shadow 0.2s ease-in-out;
+  transition: background 0.2s ease-in-out;
   &:hover {
-    box-shadow: inset 0 0 0 2px $theme-primary;
+    background: rgba($theme-base, 0.065);
   }
 }
 
@@ -148,6 +148,9 @@ section {
     margin: 0;
   }
 }
+
+// Code Examples
+
 
 // Footer
 // --------------------------------

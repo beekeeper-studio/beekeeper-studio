@@ -35,6 +35,7 @@ import log from 'electron-log'
 import VueClipboard from 'vue-clipboard2'
 import platformInfo from './common/platform_info'
 import { AppEventMixin } from './common/AppEvent'
+import BeekeeperPlugin from './plugins/BeekeeperPlugin'
 
 (async () => {
   try {
@@ -89,6 +90,7 @@ import { AppEventMixin } from './common/AppEvent'
     Vue.use(VModal)
     Vue.use(VueClipboard)
     Vue.use(ConfigPlugin)
+    Vue.use(BeekeeperPlugin)
     Vue.use(VueElectronPlugin)
     Vue.use(VueNoty, {
       timeout: 2300,

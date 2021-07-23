@@ -1,3 +1,4 @@
+import { Example, Mysqlexamples as MysqlExamples, PostgresExamples, RedshiftExamples, SqliteExamples, SqlServerExamples } from "@/data/examples";
 import { Dialect, Dialects, KnexDialect } from "@shared/lib/dialects/models";
 import Vue from "vue";
 import Vuex from 'vuex'
@@ -6,14 +7,22 @@ import VuexPersistence from "vuex-persist";
 
 Vue.use(Vuex)
 
-interface State {
+
+type ExampleMap = {
+  [K in Dialect]: Example[]
+}
+
+export interface State {
   dialect: Dialect
   dismissedTutorial: boolean
+  dialects: Dialect[]
+  examples: ExampleMap
 }
 
 
 const vuexLocal = new VuexPersistence<State>({
-  storage: window.localStorage
+  storage: window.localStorage,
+  reducer: (state) => ({dialect: state.dialect, dismissedTutorial: state.dismissedTutorial})
 })
 
 
@@ -21,7 +30,15 @@ const vuexLocal = new VuexPersistence<State>({
 export default new Vuex.Store<State>({
   state: {
     dialect: 'postgresql',
-    dismissedTutorial: false
+    dismissedTutorial: false,
+    dialects: [...Dialects],
+    examples: {
+      'postgresql': PostgresExamples,
+      'mysql': MysqlExamples,
+      'sqlite': SqliteExamples,
+      'sqlserver': SqlServerExamples,
+      'redshift': RedshiftExamples
+    }
   },
   getters: {
     knexDialect(state): KnexDialect {

@@ -69,6 +69,7 @@
       background: lighten($theme-bg, 3%);
       padding: 0;
       height: $tab-height;
+      line-height: $tab-height * 0.9;
       font-size: 0.85rem;
       font-weight: normal;
       color: $text;
@@ -146,10 +147,11 @@
       }
     }
     .item-icon {
-      font-size: 12px;
-      padding-left: ($gutter-w * 0.75);
-      padding-right: ($gutter-h * 1.25);
-      max-width: $gutter-w * 3;
+      font-size: 15px;
+      padding-left: ($gutter-h * 1.5);
+      padding-right: $gutter-h;
+      max-width: $gutter-w * 2.8;
+      min-width: $gutter-w * 2.6;
       line-height: $tab-height;
     }
     .tab-action {
@@ -161,7 +163,7 @@
       align-items: center;
       justify-content: center;
       height: 100%;
-      min-width: 24px;
+      min-width: 28px;
       background: linear-gradient(-90deg, rgba(lighten($theme-bg, 3%), 100%) 80%, rgba(lighten($theme-bg, 3%), 0) 100%);
     }
     .tab-close {
@@ -295,7 +297,7 @@
         color: $text-dark;
       }
       i {
-        font-size: 14px;
+        font-size: 16px;
         width: 26px;
       }
     }

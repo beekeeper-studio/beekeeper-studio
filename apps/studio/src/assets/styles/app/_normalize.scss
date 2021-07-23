@@ -109,6 +109,12 @@ textarea {
   line-height: 1.15;
   margin: 0;
 }
+input,
+textarea {
+  &:focus {
+    outline-offset: 0!important;
+  }
+}
 button,
 input {
   overflow: visible;

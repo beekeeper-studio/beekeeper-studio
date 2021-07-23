@@ -1,9 +1,4 @@
-import { Dialect, Schema, SchemaConfig } from "@shared/lib/dialects/models"
-
-
-export type DialectConfig = {
-  [K in Dialect]: SchemaConfig
-}
+import { Dialect, DialectConfig, Schema, SchemaConfig } from "./models"
 
 // this is similar to a schemaItem except it has configs for each database
 export interface TemplatedSchemaItem {
@@ -12,21 +7,40 @@ export interface TemplatedSchemaItem {
   dialectConfigs?: DialectConfig
 }
 
+
+export function now(d: Dialect): string {
+  switch (d) {
+    case 'postgresql':
+      return 'NOW()'
+    case 'sqlserver':
+      return 'SYSUTCDATETIME()'
+    case 'redshift':
+      return 'GETDATE()'
+    default:
+      return 'CURRENT_TIMESTAMP';
+  }
+}
+
+
 interface BasicProps {
   name: string,
   description: string,
-  tableName: string
+  tableName: string,
+  schemaName?: string
 }
+
 
 export class Template {
   id: string
   name: string
   description: string
   tableName: string
+  schemaName?: string
   schema: TemplatedSchemaItem[]
 
   constructor(props: BasicProps, schema: TemplatedSchemaItem[]) {
     this.tableName = props.tableName
+    this.schemaName = props.schemaName
     this.name = props.name
     this.description = props.description
     this.schema = schema
@@ -51,34 +65,16 @@ export class Template {
   }
 }
 
+
 export const idColumn: TemplatedSchemaItem = {
   columnName: 'id',
   config: {
-    dataType: 'int',
+    dataType: 'autoincrement',
     nullable: false,
     primaryKey: true
   },
-  dialectConfigs: {
-    postgresql: {
-      dataType: 'serial',
-    },
-    mysql: {
-      defaultValue: "AUTO INCREMENT",
-      dataType: 'int'
-    },
-    sqlserver: {
-      defaultValue: "IDENTITY(1,1)",
-      dataType: 'int'
-    },
-    sqlite: {
-      dataType: 'integer',
-      defaultValue: "AUTOINCREMENT"
-    },
-    redshift: {
-      dataType: 'int',
-    }
-  }
 }
+
 
 export const timestampColumn = (name: string): TemplatedSchemaItem => ({
   columnName: name,

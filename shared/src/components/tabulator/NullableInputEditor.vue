@@ -91,22 +91,24 @@ export default Vue.extend({
 <style lang="scss" scoped>
   @import '@shared/assets/styles/_variables';
   
-  input {
+  div {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .nullible-input {
     padding-right: 18px!important;
   }
   .clear {
     position: absolute;
     top: 0;
     bottom: 0;
-    right: 2px;
+    right: 3px;
     display: flex;
     align-items: center;
-    font-size: 15px;
-    width: 18px;
+    font-size: 14px!important;
+    width: 16px;
     text-align: center;
-    color: $text-lighter;
-    &:hover {
-      color: $text-dark;
-    }
+    margin-top: -1px;
   }
 </style>

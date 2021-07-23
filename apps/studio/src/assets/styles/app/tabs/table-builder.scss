@@ -1,0 +1,151 @@
+
+.table-builder {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  padding: 0;
+  overflow: hidden;
+  .alert-wrapper {
+    padding: $gutter-w;
+  }
+  .table-builder-wrap {
+    height: 100%;
+    padding: 1.5rem 1.5rem 3rem;
+    overflow: hidden;
+    overflow-y: auto;
+  }
+  .table-builder-header {
+    margin-bottom: $gutter-w * 1.5;
+    .form-group {
+      padding: 0 0 $gutter-w;
+      flex-direction: row;
+      align-items: center;
+      padding: 0;
+      margin-bottom: $gutter-h / 2;
+      label {
+        width: 85px;
+        font-size: 80%;
+        color: $text-lighter;
+        padding: 0;
+        white-space: nowrap;
+        line-height: $input-height * 1.15;
+        margin: 0;
+      }
+      input {
+        border: 0;
+        font-size: 14px;
+        height: $input-height * 1.15;
+        line-height: $input-height * 1.15;
+        font-weight: 500;
+        background: rgba($theme-base, 0.035);
+      }
+    }
+  }
+  .schema-builder {
+    margin-top: $gutter-w;
+  }
+}
+
+// Tabulator Styling
+// -----------------------------
+.table-builder {
+
+  $row-height:             38px;
+  $cell-font-size:         13px;
+  $cell-padding:           0.8rem;
+  $row-gutter:             3px;
+  $btn-fab-size:           28px;
+
+  .table-builder-wrap {
+
+    // Schema Header
+    .schema-header {
+      .btn-fab {
+        width: $btn-fab-size;
+        height: $btn-fab-size;
+        min-width: $btn-fab-size;
+      }
+      .title {
+        margin: 0;
+      }
+    }
+    
+    // Tabulator Header Row
+    .tabulator {
+      .tabulator-header {
+        .tabulator-col {
+          padding: 0 $cell-padding;
+          font-size: ($cell-font-size * 0.9);
+        }
+      }
+    }
+
+    // Field Rows
+    .tabulator-row {
+      margin: $row-gutter 0;
+      &.tabulator-row-even, 
+      &:nth-child(odd){
+        background: rgba($theme-base, 0.05)!important;
+      }
+      .tabulator-cell {
+        min-height: $row-height;
+        height: $row-height;
+        line-height: $row-height;
+        padding: 0 $cell-padding;
+        font-size: $cell-font-size;
+        pre, input:not([type="checkbox"]) {
+          font-size: $cell-font-size;
+          line-height: $row-height + 2px;
+        }
+        &[type="search"] {
+          line-height: $row-height;
+          padding-bottom: 1px!important;
+        }
+        .nullible-input {
+          padding-right: 18px!important;
+        }
+        &.tabulator-editing {
+          min-height: $row-height;
+          height: $row-height;
+          line-height: $row-height;
+          padding: 0!important;
+          pre, input:not([type="checkbox"]) {
+            padding: 0 $cell-padding;
+          }
+        }
+        &.no-padding {
+          > * {
+            margin: 0 $cell-padding;
+          }
+        }
+
+        // Remove Cell
+        &.remove-btn {
+          .material-icons {
+            line-height: $row-height;
+          }
+        }
+
+        // Make checkboxes behave correctly
+        .tabulator-bks-checkbox {
+          height: $row-height;
+        }
+
+        input, textarea {
+          height: $row-height;
+        }
+      }
+    }
+
+    // Resize Handle
+    .tabulator-row {
+      .tabulator-frozen {
+        &.tabulator-row-handle {
+          .tabulator-row-handle-box {
+            margin-left: 0;
+          }
+        }
+      }
+    }
+  }
+}

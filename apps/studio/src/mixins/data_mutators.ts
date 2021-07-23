@@ -19,6 +19,9 @@ export default {
       if (_.isNil(cell.getValue())) {
         return '<span class="null-value">(NULL)</span>'
       }
+      if (_.isString(cell.getValue()) && _.isEmpty(cell.getValue())) {
+        return '<span class="null-value">(EMPTY)</span>'
+      }
 
       let cellValue = cell.getValue().toString();
       cellValue = cellValue.replace(/\n/g, ' ↩ ');

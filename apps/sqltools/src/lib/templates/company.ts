@@ -1,4 +1,4 @@
-import { createdAtColumn, idColumn, Template, updatedAtColumn } from "./base";
+import { createdAtColumn, idColumn, Template, updatedAtColumn } from "@shared/lib/dialects/template";
 
 
 export const CompanyTemplate = new Template({
