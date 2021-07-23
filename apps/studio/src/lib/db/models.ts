@@ -121,7 +121,6 @@ export interface IDbInsert {
 export interface TableResult {
   result: any[];
   fields: string[];
-  totalRecords: Number;
 }
 
 export interface TableChanges {

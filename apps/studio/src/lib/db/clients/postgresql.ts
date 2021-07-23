@@ -168,6 +168,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
     executeQuery: (queryText, _schema = defaultSchema) => executeQuery(conn, queryText),
     listDatabases: (filter?: DatabaseFilterOptions) => listDatabases(conn, filter),
+    getTableLength: (table: string, schema: string) => getTableLength(conn, table, schema),
     selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
     selectTopStream: (database: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema: string = defaultSchema) => selectTopStream(conn, database, table, orderBy, filters, chunkSize, schema),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
@@ -326,9 +327,9 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   }
 }
 
-async function getTableLength(conn: HasPool, table: string, schema: string, filters: TableFilter[] | string | undefined, forceSlow: boolean): Promise<number> {
+async function getTableLength(conn: HasPool, table: string, schema: string): Promise<number> {
   const version = await getVersion(conn)
-  const { countQuery, params } = buildSelectTopQueries({ table, schema, filters, version, forceSlow})
+  const { countQuery, params } = buildSelectTopQueries({ table, schema, filters: undefined, version, forceSlow: undefined})
   const countResults = await driverExecuteSingle(conn, { query: countQuery, params: params })
   const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
@@ -368,11 +369,9 @@ async function selectTop(
     table, offset, limit, orderBy, filters, schema, version
   })
   const result = await driverExecuteSingle(conn, { query: qs.query, params: qs.params })
-  const totalRecords = await getTableLength(conn, table, schema, filters, forceSlow)
 
   return {
     result: result.rows,
-    totalRecords: Number(totalRecords),
     fields: result.fields.map(f => f.name)
   }
 }

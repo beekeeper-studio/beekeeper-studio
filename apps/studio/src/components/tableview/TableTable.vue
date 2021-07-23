@@ -89,7 +89,11 @@
           Structure <i class="material-icons">north_east</i>
         </x-button>
         <!-- Info -->
-        <span class="statusbar-item" v-if="lastUpdatedText && !error" :title="`Approximately ${totalRecordsText} Records`">
+        <span v-if="loadingLength" class="statusbar-item" title="Loading Table Size...">
+          <i class="material-icons">list_alt</i>
+          <span>loading...</span>
+        </span>
+        <span v-else class="statusbar-item" :title="`Approximately ${totalRecordsText} Records`">
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
         </span>
@@ -182,6 +186,11 @@ import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
 
+function sleep(ms) {
+    return new Promise( resolve => setTimeout(resolve, ms) );
+}
+
+
 const CHANGE_TYPE_INSERT = 'insert'
 const CHANGE_TYPE_UPDATE = 'update'
 const CHANGE_TYPE_DELETE = 'delete'
@@ -217,7 +226,12 @@ export default Vue.extend({
       tabulator: null,
       actualTableHeight: "100%",
       loading: false,
-      data: null,
+
+      // table data
+      data: null, // array of data
+      totalRecords: 0,
+      loadingLength: false,
+      // 
       response: null,
       limit: 100,
       rawTableKeys: [],
@@ -233,7 +247,7 @@ export default Vue.extend({
       lastUpdated: null,
       lastUpdatedText: null,
       interval: setInterval(this.setlastUpdatedText, 10000),
-      totalRecords: 0,
+
       forceRedraw: false,
       rawPage: 1
     };
@@ -531,6 +545,7 @@ export default Vue.extend({
     if (this.initialFilter) {
       this.filter = _.clone(this.initialFilter)
     }
+    this.fetchTableLength()
     this.resetPendingChanges()
     await this.$store.dispatch('updateTableColumns', this.table)
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
@@ -568,6 +583,19 @@ export default Vue.extend({
 
   },
   methods: {
+    async fetchTableLength() {
+      try {
+        this.loadingLength = true
+        await sleep(10000)
+        const length = await this.connection.getTableLength(this.table.name, this.table.schema)
+        this.totalRecords = length
+      } catch(ex) {
+        console.error("unable to get table length", ex)
+        this.totalRecords = 0
+      } finally {
+        this.loadingLength = false
+      }
+    },
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
     },
@@ -943,7 +971,6 @@ export default Vue.extend({
             }
 
             const r = response.result;
-            this.totalRecords = Number(response.totalRecords) || 0;
             this.response = response
             this.resetPendingChanges()
             this.clearQueryError()
