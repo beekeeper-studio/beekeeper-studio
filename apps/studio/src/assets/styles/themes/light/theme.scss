@@ -240,7 +240,12 @@ select {
 .cm-s-monokai {
   span {
     .cm-string {
-      color: darken($theme-primary, 25%);
+      color: $brand-success;
+    }
+  }
+  .CodeMirror-line {
+    .cm-number {
+      color: $brand-warning;
     }
   }
 }
