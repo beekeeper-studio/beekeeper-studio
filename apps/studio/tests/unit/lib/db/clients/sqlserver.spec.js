@@ -14,7 +14,7 @@ describe("SQL Server alter table codegen", () => {
     const builder = new SqlServerChangeBuilder('foo', 'public', [], [])
 
     const result = builder.alterTable(input)
-    const expected = 'ALTER TABLE [public].[foo] ADD COLUMN [a] int NOT NULL;'
+    const expected = 'ALTER TABLE [public].[foo] ADD [a] int NOT NULL;'
     expect(result).toBe(expected)
   })
 
@@ -30,7 +30,7 @@ describe("SQL Server alter table codegen", () => {
 
     const builder = new SqlServerChangeBuilder('foo', 'dbo', [{columnName: 'a', dataType: 'int'}], [])
     const result = builder.alterTable(input)
-    const expected = "sp_rename 'dbo.foo.a', 'b', 'COLUMN';"
+    const expected = "EXEC sp_rename 'dbo.foo.a', 'b', 'COLUMN';"
     expect(result).toBe(expected)
 
   })
