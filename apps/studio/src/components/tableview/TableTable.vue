@@ -89,13 +89,10 @@
           Structure <i class="material-icons">north_east</i>
         </x-button>
         <!-- Info -->
-        <span v-if="loadingLength" class="statusbar-item" title="Loading Table Size...">
+        <span class="statusbar-item" :title="loadingLength ? 'Loading Total Records' : `Approximately ${totalRecordsText} Records`">
           <i class="material-icons">list_alt</i>
-          <span>loading...</span>
-        </span>
-        <span v-else class="statusbar-item" :title="`Approximately ${totalRecordsText} Records`">
-          <i class="material-icons">list_alt</i>
-          <span>{{ totalRecordsText }}</span>
+          <span v-if="loadingLength">Loading...</span>
+          <span v-else>{{ totalRecordsText }}</span>
         </span>
         <a @click="refreshTable" tabindex="0" role="button" class="statusbar-item hoverable" v-if="lastUpdatedText && !error" :title="'Updated' + ' ' + lastUpdatedText">
           <i class="material-icons">update</i>
@@ -186,11 +183,6 @@ import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
 
-function sleep(ms) {
-    return new Promise( resolve => setTimeout(resolve, ms) );
-}
-
-
 const CHANGE_TYPE_INSERT = 'insert'
 const CHANGE_TYPE_UPDATE = 'update'
 const CHANGE_TYPE_DELETE = 'delete'
@@ -229,8 +221,7 @@ export default Vue.extend({
 
       // table data
       data: null, // array of data
-      totalRecords: 0,
-      loadingLength: false,
+      totalRecords: null,
       // 
       response: null,
       limit: 100,
@@ -253,6 +244,9 @@ export default Vue.extend({
     };
   },
   computed: {
+    loadingLength() {
+      return this.totalRecords === null
+    },
     page: {
       set(nu) {
         const newPage = Number(nu)
@@ -585,15 +579,11 @@ export default Vue.extend({
   methods: {
     async fetchTableLength() {
       try {
-        this.loadingLength = true
-        await sleep(10000)
         const length = await this.connection.getTableLength(this.table.name, this.table.schema)
         this.totalRecords = length
       } catch(ex) {
         console.error("unable to get table length", ex)
         this.totalRecords = 0
-      } finally {
-        this.loadingLength = false
       }
     },
     openProperties() {

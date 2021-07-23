@@ -52,6 +52,8 @@ export default async function (server, database) {
     applyChanges: (changes) => applyChanges(conn, changes),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
+    // tabletable
+    getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -219,14 +221,14 @@ export async function listTableColumns(conn, database, table) {
   }));
 }
 
-async function getTableLength(conn, table, filters) {
+async function getTableLength(conn, table) {
   const tableCheck = 'SELECT TABLE_TYPE as tt FROM INFORMATION_SCHEMA.TABLES where table_schema = database() and TABLE_NAME = ?'
   const tcResult = await driverExecuteQuery(conn, { query: tableCheck, params: [table] })
   const isTable = tcResult.data[0] && tcResult.data[0]['tt'] === 'BASE TABLE'
 
-  const queries = buildSelectTopQuery(table, 1, 1, [], filters)
+  const queries = buildSelectTopQuery(table, 1, 1, [], [])
   let title = 'total'
-  if (!filters && isTable) {
+  if (isTable) {
     queries.countQuery = `show table status like '${table}'`
     title = 'Rows'
   }
@@ -238,6 +240,7 @@ async function getTableLength(conn, table, filters) {
 }
 
 
+
 export async function selectTop(conn, table, offset, limit, orderBy, filters) {
 
   const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters)
@@ -245,10 +248,8 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   const { query, params } = queries
 
   const result = await driverExecuteQuery(conn, { query, params })
-  const totalRecords = await getTableLength(conn, table, filters)
   return {
     result: result.data,
-    totalRecords: Number(totalRecords),
     fields: Object.keys(result.data[0] || {})
   }  
 

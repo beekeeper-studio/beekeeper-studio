@@ -329,7 +329,9 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
 
 async function getTableLength(conn: HasPool, table: string, schema: string): Promise<number> {
   const version = await getVersion(conn)
-  const { countQuery, params } = buildSelectTopQueries({ table, schema, filters: undefined, version, forceSlow: undefined})
+  const tableType = await getEntityType(conn, table, schema)
+  const forceSlow = !tableType || tableType !== 'BASE_TABLE'
+  const { countQuery, params } = buildSelectTopQueries({ table, schema, filters: undefined, version, forceSlow})
   const countResults = await driverExecuteSingle(conn, { query: countQuery, params: params })
   const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
@@ -362,9 +364,6 @@ async function selectTop(
 
   const version = await getVersion(conn)
   version.isPostgres
-  const tableType = version.isPostgres ? await getEntityType(conn, table, schema) : await Promise.resolve(null)
-  log.info('table type', tableType)
-  const forceSlow = tableType === null || tableType !== 'BASE TABLE'
   const qs = buildSelectTopQueries({
     table, offset, limit, orderBy, filters, schema, version
   })
@@ -687,19 +686,14 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
   
   const triggersPromise = version.isPostgres ? listTableTriggers(conn, table, schema) : Promise.resolve([])
 
-  const tableType = await getEntityType(conn, table, schema)
-  const forceSlow = !tableType || tableType !== 'BASE TABLE'
-
   const [
     result,
-    totalRecords,
     indexes,
     relations,
     triggers,
     owner
   ] = await Promise.all([
     detailsPromise,
-    getTableLength(conn, table, schema, undefined, forceSlow),
     listTableIndexes(conn, table, schema),
     getTableKeys(conn, "", table, schema),
     triggersPromise,
@@ -711,7 +705,6 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     description: props.description,
     indexSize: Number(props.index_size),
     size: Number(props.table_size),
-    length: totalRecords,
     indexes,
     relations,
     triggers,
