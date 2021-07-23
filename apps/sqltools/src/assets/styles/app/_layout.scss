@@ -423,8 +423,8 @@ input[type="checkbox"] {
   &:active,
   &:checked,
   &:checked:active {
-    background: darken($theme-primary, 10%);
-    color: rgba(black, 0.87);
+    background: $theme-base);
+    color: $theme-bg;
     box-shadow: none;
   }
   &:checked:after {
@@ -435,7 +435,7 @@ input[type="checkbox"] {
     position: absolute;
     height: 100%;
     width: 100%;
-    color: rgba(black, 0.87);
+    color: $theme-bg;
   }
 }
 
@@ -554,6 +554,7 @@ input[type=file] {
 }
 .item-icon {
   font-size: 12px;
+  font-weight: normal;
   color: darken($theme-primary, 15%);
   &.schema-icon {
     color: $text-lighter;

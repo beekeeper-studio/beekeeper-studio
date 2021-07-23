@@ -18,9 +18,16 @@ import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 
 import RawLog from 'electron-log'
+import { dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 
 const log = RawLog.scope('store/index')
+
+const tablesMatch = (t: TableOrView, t2: TableOrView) => {
+  return t2.name === t.name &&
+    t2.schema === t.schema &&
+    t2.entityType === t.entityType
+}
 
 export interface State {
   usedConfig: Nullable<SavedConnection>,
@@ -74,6 +81,9 @@ const store = new Vuex.Store<State>({
     selectedSidebarItem: null
   },
   getters: {
+    dialect(state: State) {
+      return dialectFor(state.usedConfig.connectionType)
+    },
     selectedSidebarItem(state) {
       return state.selectedSidebarItem
     },
@@ -171,11 +181,6 @@ const store = new Vuex.Store<State>({
       state.database = database
     },
     tables(state, tables: TableOrView[]) {
-      const tablesMatch = (t: TableOrView, t2: TableOrView) => {
-        return t2.name === t.name &&
-        t2.schema === t.schema &&
-        t2.entityType === t.entityType
-      }
 
       if(state.tables.length === 0) {
         state.tables = tables
@@ -194,6 +199,17 @@ const store = new Vuex.Store<State>({
         }
       })
       state.tables = result
+    },
+
+    table(state, table: TableOrView) {
+      const existingIdx = state.tables.findIndex((st) => tablesMatch(st, table))
+      if (existingIdx >= 0) {
+        const result = state.tables
+        Object.assign(result[existingIdx], table)
+        state.tables = result
+      } else {
+        state.tables = [...state.tables, table]
+      }
     },
 
     routines(state, routines) {
@@ -312,24 +328,13 @@ const store = new Vuex.Store<State>({
 
     async updateTableColumns(context, table: TableOrView) {
       log.debug('actions/updateTableColumns', table.name)
-      // we don't need to commit to the store, it should already be in the store.
       const connection = context.state.connection
       const columns = (table.entityType === 'materialized-view' ?
         await connection?.listMaterializedViewColumns(table.name, table.schema) :
         await connection?.listTableColumns(table.name, table.schema)) || []
 
-      const newcols = columns.map((c) => {
-        `${c.columnName}${c.dataType}`
-      }).sort()
-
-      const existing = !table.columns ? [] : table.columns.map((c) => {
-        `${c.columnName}${c.dataType}`
-      }).sort()
-      
-      if(_.isEqual(newcols, existing)) {
-        return
-      }
       table.columns = columns
+      context.commit('table', table)
     },
 
     async updateTables(context) {
@@ -412,6 +417,7 @@ const store = new Vuex.Store<State>({
     },
     async removeConnectionConfig(context, config) {
       await config.remove()
+      await context.dispatch('loadUsedConfigs')
       context.commit('removeConfig', config)
     },
     async removeUsedConfig(context, config) {

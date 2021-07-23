@@ -31,7 +31,8 @@
   .CodeMirror-linenumber {
     color: rgba($theme-base, 0.15);
   }
-  .CodeMirror-line .cm-number {
+  .CodeMirror-line .cm-number,
+  .CodeMirror-line .cm-string {
     color: $brand-primary;
   }
   .CodeMirror-cursor {

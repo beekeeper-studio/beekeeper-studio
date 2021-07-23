@@ -65,8 +65,8 @@ hr {
 // Scrollbar
 // ---------------------
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
 }
 ::-webkit-scrollbar-track-piece {
   background-color: transparent;
@@ -119,12 +119,10 @@ hr {
   }
 }
 .btn-primary {
-  // background: rgba($theme-base, 0.37);
   background: $theme-primary;
   color: rgba(black, 0.87);
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
-    // background: rgba($theme-base, 0.44);
     background: lighten($theme-primary, 8%);
     color: rgba(black, 0.87);
   }
@@ -151,7 +149,11 @@ hr {
 }
 .btn-info {
   background: $brand-info;
-  color: white;
+  color: rgba(black, 0.87);
+  &:hover, &:focus {
+    background: lighten($brand-info, 8%);
+    color: rgba(black, 0.87);
+  }
 }
 .btn-danger {
   &:hover {
@@ -203,6 +205,18 @@ hr {
   .material-icons {
     font-size: 20px;
     color: $text-dark;
+  }
+  &.btn-primary {
+    background: $theme-primary;
+    .material-icons {
+      color: rgba(black, 0.87);
+    }
+    &:hover, &:focus {
+      background: lighten($theme-primary, 8%);
+      .material-icons {
+        color: rgba(black, 0.87);
+      }
+    }
   }
 }
 .btn-group {
@@ -398,7 +412,7 @@ input[type="checkbox"] {
 	background-color: transparent;
   box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2);
   height: $checkbox-size;
-  line-height: 1;
+  line-height: $checkbox-size;
   width: $checkbox-size;
 	padding: 0;
   border: 0;
@@ -410,8 +424,8 @@ input[type="checkbox"] {
   &:active,
   &:checked,
   &:checked:active {
-    background: darken($theme-primary, 10%);
-    color: rgba(black, 0.87);
+    background: $theme-base;
+    color: $theme-bg;
     box-shadow: none;
   }
   &:checked:after {
@@ -420,9 +434,11 @@ input[type="checkbox"] {
     font-size: $checkbox-size;
     font-weight: bold;
     position: absolute;
+    top: 0;
+    left: 0;
     height: 100%;
     width: 100%;
-    color: rgba(black, 0.87);
+    color: $theme-bg;
   }
 }
 
@@ -572,9 +588,9 @@ input[type=file] {
   &.settings {
     color: $text-lighter;
   }
-  // &.table-properties {
-  //   color: $text-lighter;
-  // }
+  &.table-builder {
+    color: $brand-info;
+  }
 }
 
 // Split.js Resizer

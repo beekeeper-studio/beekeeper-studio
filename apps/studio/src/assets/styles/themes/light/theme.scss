@@ -6,16 +6,16 @@
 $badge-bg:                 rgba($theme-base, 0.1);
 
 // Sidebar
-$sidebar-list-icons:       darken($theme-primary, 15%);
+$sidebar-list-icons:       $theme-primary;
 
 // Editor
 $tabs-heading:             rgba($theme-base, 0.08);
-$tab-link:                 darken($theme-bg, 12%);
+$tab-link:                 darken($theme-bg, 4%);
 $codemirror-hint-bg:       darken($theme-bg, 2%);
 
 // Table Editing
 $row-highlight:            darken($query-editor-bg, 3%);
-$row-add:                  #56DAAC;
+$row-add:                  #5ff3c0;
 $row-delete:               #FC8A87;
 $row-error:                #F9B8B7;
 
@@ -52,8 +52,11 @@ select {
 .btn-link, .btn-fab {
   box-shadow: none;
 }
+.btn-flat {
+  background: rgba($theme-base, 0.08);
+}
 .text-primary {
-  color: darken($theme-primary, 15%)!important;
+  color: $theme-primary!important;
 }
 .list-group {
   .list-item-btn {
@@ -79,6 +82,16 @@ select {
 .text-danger {
   color: $brand-danger!important;
 }
+.connection-main {
+  .card-flat {
+    background: rgba($theme-base, 0.035);
+  }
+}
+.connection-interface {
+  .page-content:before {
+    top: 0;
+  }
+}
 
 // File-Menu
 // ---------------------------------------
@@ -94,12 +107,24 @@ select {
   }
 }
 
+// Connection Label 
+// -----------------------------------------
+.connection-label {
+  &.connection-label-color-yellow {
+    background-color: darken($theme-primary, 4%);
+    &:checked {
+      background-color: darken($theme-primary, 4%);
+    }
+  }
+}
+
 // Sidebar
 // ---------------------------------------
 .advanced-connection-settings {
   background: rgba($theme-base, 0.05);
 }
 #sidebar {
+  position: relative;
   .filter {
     .filter-actions {
       x-button {
@@ -132,6 +157,9 @@ select {
     }
   }
 }
+.item-icon {
+  color: darken($theme-primary, 6%);
+}
 
 // Editor
 // ---------------------------------------
@@ -142,12 +170,27 @@ select {
   .nav-tabs {
     .nav-link {
       background: $tab-link;
-      // &.active {
-      //   box-shadow: inset 0 1px $theme-primary;
-      // }
+      &.active {
+        background: $query-editor-bg;
+        .tab-action {
+          background: linear-gradient(
+            90deg, 
+            rgba($query-editor-bg,0) 0%, 
+            rgba($query-editor-bg,1) 20%
+          );
+        }
+      }
     }
     .tab-action {
-      background: linear-gradient(-90deg, $tab-link 80%, $tab-link 100%);
+      top: 1px;
+      right: 0;
+      bottom: 1px;
+      border-radius: 0 6px 0 0;
+      background: linear-gradient(
+        90deg, 
+        rgba($tab-link,0) 0%, 
+        rgba($tab-link,1) 20%
+      );
     }
     .tab-close {
       .material-icons {
@@ -161,18 +204,22 @@ select {
 }
 
 // Tabulator
+// -------------------------------
 .tabulator-table {
   .tabulator-row {
-    &.inserted, 
-    &.inserted:hover {
-      background: $row-add;
-    }
-    &.deleted,
-    &.deleted:hover {
-      background: $row-delete;
-    }
-    &.edit-error {
-      background: $row-error!important;
+    &.tabulator-row-even,
+    &:nth-child(odd) {
+      &.inserted, 
+      &.inserted:hover {
+        background: $row-add!important;
+      }
+      &.deleted,
+      &.deleted:hover {
+        background: $row-delete!important;
+      }
+      &.edit-error {
+        background: $row-error!important;
+      }
     }
     .tabulator-cell {
       &.edited,
@@ -205,20 +252,24 @@ select {
           }
         }
       }
+      .null-value {
+        color: $text-light;
+      }
     }
   }
 }
 .tabulator {
   .tabulator-header {
-    background: $theme-bg;
-    .tabulator-col.foreign-key {
-      &:before {
-        color: darken($brand-primary, 15%);
+    .tabulator-col {
+      &.foreign-key {
+        &:before {
+          color: darken($brand-primary, 6%);
+        }
+      }
+      .badge {
+        color: $text-light;
       }
     }
-  }
-  .tabulator-tableHolder {
-    background: white;
   }
 }
 .tabulator-row {
@@ -226,10 +277,203 @@ select {
     background: rgba($theme-base, 0.025);
   }
 }
+// Table Builder
+// -------------------------
+.table-builder .table-builder-wrap,
+.table-properties .table-properties-wrap {
+  .tabulator-row {
+    &.tabulator-row-even,
+    &:nth-child(odd) {
+      background: rgba($theme-base, 0.06);
+    }
+    &.inserted {
+      background: $row-add!important;
+    }
+  }
+}
+.table-builder {
+  
+  .table-builder-header {
+    .form-group {
+      label {
+        color: $text-light;
+      }
+    }
+  }
+}
+
+// Schema Builder
+// ----------------------------------
+.schema-builder {
+
+  // Schema Header
+  .schema-header {
+    .table-title {
+      color: $text-light;
+    }
+  }
+
+  // Tabulator Header Row
+  .tabulator {
+    .tabulator-header {
+      .tabulator-col {
+        .tabulator-col-content {
+          .tabulator-col-title {
+            color: $text-lighter;
+          }
+        }
+      }
+    }
+  }
+
+  // Field Rows
+  .tabulator-row {
+    &.tabulator-row-even,
+    &:nth-child(odd) {
+      background: rgba($theme-base, 0.05);
+    }
+    .tabulator-cell {
+      color: $text-dark;
+      &.tabulator-editing {
+        box-shadow: inset 0 1px $theme-base;
+        input:not([type="checkbox"]) {
+          background: rgba($theme-base, 0.08);
+          box-shadow: inset 0 -1px $theme-base!important;
+        }
+      }
+      &.no-edit-highlight {
+        &.tabulator-editing {
+          input {
+            box-shadow: inset 0 0 0 2px $theme-base;
+            &[type="checkbox"]:active, 
+            &[type="checkbox"]:checked, 
+            &[type="checkbox"]:checked:active {
+              background: rgba($theme-base, 0.5)!important;
+              color: $theme-bg!important;
+            }
+          }
+        }
+        &.edited {
+          input {
+            &[type="checkbox"]:active, 
+            &[type="checkbox"]:checked, 
+            &[type="checkbox"]:checked:active {
+              &:after {
+                color: white!important;
+              }
+            }
+          }
+        }
+      }
+      &.read-only {
+        input[type="checkbox"] {
+          &:active, 
+          &:checked, 
+          &:checked:active {
+            &:after {
+              color: $theme-base!important;
+            }
+          }
+        }
+        .tabulator-bks-checkbox {
+          input {
+            &:after {
+              color: $theme-primary;
+            }
+          }
+          &.editable {
+            input[type="checkbox"] {
+              box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2)!important;
+              cursor: pointer!important;
+              &:active,
+              &:checked,
+              &:checked:active {
+                background: $theme-base!important;
+                &:after {
+                  color: $theme-bg!important;
+                }
+              }
+              &:focus {
+                box-shadow: inset 0 0 0 2px $theme-base!important;
+              }
+            }
+          }
+        }
+      }
+
+      .material-icons.clear {
+        color: $text-light;
+        &:hover {
+          color: $text-dark;
+        }
+      }
+
+      // Remove Cell
+      &.remove-btn {
+        .material-icons {
+          color: $text-lighter;
+          &:hover {
+            color: $text-dark;
+          }
+        }
+      }
+      .null-value {
+        color: $text-lighter;
+      }
+    }
+  }
+
+  // Inserted
+  .tabulator-row.inserted {
+    .tabulator-cell {
+      &.read-only {
+        &:hover {
+          background: rgba($theme-base, 0.08)!important;
+        }
+      }
+      &.tabulator-editing {
+        input:not([type="checkbox"]) {
+          background: rgba($theme-base, 0.08)!important;
+        }
+        input[type="checkbox"] {
+          box-shadow: inset 0 0 0 2px $theme-base;
+          &:active, 
+          &:checked, 
+          &:checked:active {
+            background: rgba($theme-base, 0.5)!important;
+            &:after {
+              color: $theme-bg!important;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Resize Handle
+  .tabulator-row {
+    .tabulator-frozen {
+      &.tabulator-row-handle {
+        .tabulator-row-handle-box {
+          .tabulator-row-handle-bar {
+            background: $border-color;
+          }
+        }
+      }
+    }
+  }
+  .tabulator-row {
+    &.tabulator-moving {
+      background: lighten($theme-bg, 15%)!important;
+    }
+  }
+}
+
 
 // CodeMirror
+// ----------------------------------
 .CodeMirror-hints {
-  background: $codemirror-hint-bg;
+  background: darken($theme-bg, 5%)!important;
   li {
     &.CodeMirror-hint-active {
       background: $brand-info;
@@ -237,6 +481,7 @@ select {
     }
   }
 }
+
 .cm-s-monokai {
   span {
     .cm-string {
@@ -256,6 +501,33 @@ select {
     }
   }
 }
+.cm-s-monokai {
+  font-weight: 500;
+  span.cm-keyword {
+    color: $brand-pink;
+  }
+  span.cm-variable-2 {
+    color: $brand-secondary;
+  }
+  div.CodeMirror-selected {
+    background: rgba($theme-secondary, 0.2);
+  }
+  .CodeMirror-linenumber {
+    color: rgba($theme-base, 0.25);
+  }
+  .CodeMirror-line .cm-number {
+    color: $brand-warning;
+  }
+  .CodeMirror-line .cm-string {
+    color: $brand-success;
+  }
+  .CodeMirror-cursor {
+    border-color: $text-dark;
+  }
+  span.cm-bracket {
+    color: $text;
+  }
+}
 
 // Noty
 .noty_theme__mint.noty_type__success {
@@ -264,5 +536,18 @@ select {
 
 // Switch
 x-switch {
-  color: darken($theme-primary, 10%);
+  color: $theme-primary;
+}
+
+// Table Properties
+// -------------------------------
+.table-properties {
+  .nav-pills {
+    .nav-pill {
+      &.active {
+        color: $theme-secondary;
+        box-shadow: inset 0 -2px $theme-secondary;
+      }
+    }
+  }
 }

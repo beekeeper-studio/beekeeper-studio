@@ -8,6 +8,7 @@ import knexlib from 'knex'
 import rawLog from 'electron-log'
 import { buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery } from './utils';
 import { SqliteCursor } from './sqlite/SqliteCursor';
+import { SqliteChangeBuilder } from '@shared/lib/sql/change_builder/SqliteChangeBuilder';
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
@@ -54,7 +55,9 @@ export default async function (server, database) {
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
     getRoutineCreateScript: (routine) => getRoutineCreateScript(conn, routine),
     truncateAllTables: () => truncateAllTables(conn),
-    getTableProperties: (table) => getTableProperties(conn, table)
+    getTableProperties: (table) => getTableProperties(conn, table),
+    alterTableSql: (change) => alterTableSql(conn, change),
+    alterTable: (change) => alterTable(conn, change)
   };
 }
 
@@ -448,6 +451,28 @@ export async function getTableProperties(conn, table) {
   return {
     length, indexes, relations, triggers
   }
+}
+
+export async function alterTableSql(conn, changes) {
+  const builder = new SqliteChangeBuilder(changes.table)
+  return builder.alterTable(changes)
+}
+
+export async function alterTable(conn, changes) {
+  const sql = await alterTableSql(conn, changes)
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    try {
+
+      await driverExecuteQuery(cli, { query: 'BEGIN' })
+      await driverExecuteQuery(cli, { query: sql })
+      await driverExecuteQuery(cli, { query: 'COMMIT' })
+    } catch(ex) {
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' })
+      log.error(ex)
+      throw ex
+    }
+  })
 }
 
 

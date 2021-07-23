@@ -1,6 +1,15 @@
 
+$row-highlight:          lighten($query-editor-bg, 1%);
+$row-add:                #104633;
+$row-delete:             #8A3937;
+$row-error:              #38201F;
+
+$cell-edited:            #50492A;
+$cell-error:             $row-error;
+$cell-success:           $row-add;
+
 // Table Info
-.table-properties {    
+.table-properties {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
@@ -11,9 +20,17 @@
   }
   .table-properties-wrap {
     height: 100%;
-    padding: 0 1.5rem 3rem;
     overflow: hidden;
     overflow-y: auto;
+    margin: 0;
+  }
+  .table-info-table {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .table-info-table-wrap {
+    padding: 0 1.5rem 3rem;
   }
   .table-properties-content {
     display: flex;
@@ -27,21 +44,55 @@
     display: flex;
     align-items: center;
     padding: 0 $gutter-h;
-    margin-top: $gutter-w * 3;
-    margin-bottom: $gutter-w;
+    min-height: 28px;
+    margin-top: $gutter-w * 2;
+    margin-bottom: $gutter-h;
     .table-title {
       display: flex;
       flex-grow: 1;
+      color: $text-dark;
     }
     h2 {
       margin: 0;
-      text-transform: uppercase;
-      font-size: 0.9em;
+      // text-transform: uppercase;
+      // font-size: 0.9em;
+    }
+    .actions {
+      display: flex;
+      align-items: center;
+      padding: 0;
+      .btn-fab {
+        margin-left: $gutter-h;
+      }
+      .btn-fab.btn-link {
+        margin-left: $gutter-w;
+      }
     }
   }
-  .tabulator {
-    max-height: 750px;
+
+  // Nav Pills
+  // -------------------------------
+  .nav-pills {
+    display: flex;
+    justify-content: center;
+    box-shadow: inset 0 -1px $border-color;
+    .nav-pill {
+      font-weight: 500;
+      padding: $gutter-w ($gutter-w * 1.25);
+      color: $text-light;
+      transition: color 0.2s ease-in-out, 
+                  box-shadow 0.2s ease-in-out;
+      &:hover {
+        color: $text-dark;
+        box-shadow: inset 0 -2px rgba($theme-base, 0.2);
+      }
+      &.active {
+        color: $theme-primary;
+        box-shadow: inset 0 -2px $theme-primary;
+      }
+    }
   }
+
 
   // Table Info 
   // --------------------------------
@@ -78,10 +129,10 @@
         }
       }
       &.edit-success {
-        background-color: green;
+        background-color: $row-add;
       }
       &.edit-error {
-        background-color: red;
+        background-color: $row-error;
       }
       .material-icons {
         display: none;
@@ -155,9 +206,6 @@
   }
 
   .table-schema {
-    .table-subheader {
-      margin-top: $gutter-w;
-    }
     .tabulator-table {
       .yesno-icon {
         float:right;
@@ -170,6 +218,208 @@
   .tabulator-cell {
     .null-value {
       color: rgba($theme-base, 0.28);
+    }
+  }
+}
+
+
+// Tabulator Styling
+// ------------------------------
+.table-properties {
+
+  $row-height:             38px;
+  $cell-font-size:         13px;
+  $cell-padding:           0.8rem;
+  $row-gutter:             3px;
+  $btn-fab-size:           28px;
+
+  .table-properties-wrap {
+
+    // Schema Header
+    .schema-header {
+      .btn-fab {
+        width: $btn-fab-size;
+        height: $btn-fab-size;
+        min-width: $btn-fab-size;
+      }
+      .title {
+        margin: 0;
+      }
+    }
+
+    // Tabulator Header Row
+    .tabulator {
+      .tabulator-header {
+        .tabulator-col {
+          padding: 0 $cell-padding;
+          font-size: ($cell-font-size * 0.9);
+        }
+      }
+    }
+
+    // Field Rows
+    .tabulator-row {
+      margin: $row-gutter 0;
+      &.tabulator-row-even, 
+      &:nth-child(odd){
+        background: rgba($theme-base, 0.05)!important;
+      }
+      .tabulator-cell {
+        min-height: $row-height;
+        height: $row-height;
+        line-height: $row-height;
+        padding: 0 $cell-padding;
+        font-size: $cell-font-size;
+        pre, input:not([type="checkbox"]) {
+          font-size: $cell-font-size;
+          line-height: $row-height + 2px;
+        }
+        input {
+          border: 0;
+          &[type="search"] {
+            line-height: $row-height;
+            padding-bottom: 1px!important;
+          }
+        }
+        .nullible-input {
+          padding-right: 18px!important;
+        }
+        &.tabulator-editing {
+          min-height: $row-height;
+          height: $row-height;
+          line-height: $row-height;
+          padding: 0!important;
+          // Make checkboxes behave correctly
+          .tabulator-bks-checkbox {
+            padding: $cell-padding / 2;
+          }
+          pre, input:not([type="checkbox"]) {
+            padding: 0 $cell-padding;
+          }
+        }
+        &.edited {
+          .tabulator-bks-checkbox {
+            input[type="checkbox"] {
+              box-shadow: inset 0 0 0 2px $theme-base;
+              &:active,
+              &:checked,
+              &:checked:active {
+                background: $theme-base;
+                box-shadow: none;
+              }
+            }
+          }
+        }
+        .tabulator-bks-checkbox {
+          &.read-only {
+            input[type="checkbox"] {
+              background: transparent!important;
+              box-shadow: none!important;
+              &:after {
+                color: $theme-base;
+                font-size: 20px;
+              }
+              &[disabled="disabled"] {
+                box-shadow: none;
+              }
+            }
+          }
+        }
+        &.no-padding {
+          > * {
+            margin: 0 $cell-padding;
+          }
+        }
+
+        // Remove Cell
+        &.remove-btn {
+          &:hover {
+            div.dynamic-action:after {
+              color: $theme-base;
+            }
+          }
+          .material-icons {
+            line-height: $row-height;
+          }
+        }
+
+        // Make checkboxes behave correctly
+        .tabulator-bks-checkbox {
+          height: $row-height;
+        }
+
+        input, textarea {
+          height: $row-height;
+        }
+      }
+    }
+
+    // Resize Handle
+    .tabulator-row {
+      .tabulator-frozen {
+        &.tabulator-row-handle {
+          .tabulator-row-handle-box {
+            margin-left: 0;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Editing
+// -------------------------------------
+.tabulator-table {
+  .tabulator-row {
+
+    div.dynamic-action:after {
+      line-height: $row-height;
+      cursor: pointer;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      font-family: 'Material Icons';
+      color: $text-lighter;
+      content: "close";
+      transition: color 0.2s ease-in-out;
+      font-size: 18px;
+    }
+
+    &.tabulator-row-even, 
+    &:nth-child(odd){
+      &.inserted {
+        background-color: $row-add!important;
+      }
+      &.deleted {
+        background-color: $row-delete!important;
+        div.dynamic-action::after {
+          content: "undo";
+        }
+      }
+      &.inserted, &.deleted {
+        .tabulator-cell {
+          // &.edited {
+          //   background: transparent;
+          //   box-shadow: none;
+          // }
+          cursor: pointer;
+          &.edited {
+            background: rgba($theme-base, 0.05);
+          }
+          &.edited:hover {
+            background: rgba($theme-base, 0.12);
+          }
+        }
+      }
+    }
+    .tabulator-cell {
+      &.no-edit-highlight {
+        &.edited {
+          box-shadow: none!important;
+        }
+      }
     }
   }
 }

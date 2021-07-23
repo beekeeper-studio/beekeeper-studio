@@ -779,7 +779,8 @@ x-menu {
     height: 1px;
     margin: ($gutter-h * 0.75) 0;
     box-sizing: border-box;
-    background: $border-color;
+    background: transparent;
+    border-top: 1px solid $border-color;
     border: 0;
     + hr, &:last-child {
       display: none;

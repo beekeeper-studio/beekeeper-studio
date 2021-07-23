@@ -9332,10 +9332,10 @@ matcher@^3.0.0:
   dependencies:
     escape-string-regexp "^4.0.0"
 
-material-icons@^0.3.1:
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/material-icons/-/material-icons-0.3.1.tgz#425e06e2448632d6249d6e1ffe2993682c5b171e"
-  integrity sha512-5Hbj76A6xDPcDZEbM4oxTknhWuMwGWnAHVLLPCEq9eVlcHb0fn4koU9ZeyMy1wjARtDEPAHfd5ZdL2Re5hf0zQ==
+material-icons@^0.7.6:
+  version "0.7.6"
+  resolved "https://registry.yarnpkg.com/material-icons/-/material-icons-0.7.6.tgz#2f58773c9ba9d242b30d140f8ae01c158481366a"
+  integrity sha512-jvMsSxU5PSlCkx+OxmBQtHMuzlbPYEhMZE69H/dDUXXXY4IHhFUZLm/T8fa1cJ68WlWpcyUI9QguAj6hOIwc/g==
 
 md5.js@^1.3.4:
   version "1.3.5"
@@ -14512,6 +14512,13 @@ vue-loader@^15.7.1, vue-loader@^15.9.2:
     loader-utils "^1.1.0"
     vue-hot-reload-api "^2.3.0"
     vue-style-loader "^4.1.0"
+
+vue-meta@^2.4.0:
+  version "2.4.0"
+  resolved "https://registry.yarnpkg.com/vue-meta/-/vue-meta-2.4.0.tgz#a419fb4b4135ce965dab32ec641d1989c2ee4845"
+  integrity sha512-XEeZUmlVeODclAjCNpWDnjgw+t3WA6gdzs6ENoIAgwO1J1d5p1tezDhtteLUFwcaQaTtayRrsx7GL6oXp/m2Jw==
+  dependencies:
+    deepmerge "^4.2.2"
 
 vue-property-decorator@^8.4.2:
   version "8.5.1"

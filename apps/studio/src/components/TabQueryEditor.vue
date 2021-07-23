@@ -40,7 +40,9 @@
       <progress-bar @cancel="cancelQuery" v-if="running"></progress-bar>
       <result-table ref="table" v-else-if="rowCount > 0" :active="active" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
       <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results</span></div></div>
-      <div class="message" v-else-if="error"><div class="alert alert-danger"><i class="material-icons">warning</i><span>{{error}}</span></div></div>
+      <div class="message" v-else-if="error">
+        <error-alert :error="error" />
+      </div>
       <div class="message" v-else-if="info"><div class="alert alert-info"><i class="material-icons">warning</i><span>{{info}}</span></div></div>
       <div class="layout-center expand" v-else>
         <shortcut-hints></shortcut-hints>
@@ -123,11 +125,12 @@
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from 'electron-log'
+  import ErrorAlert from './common/ErrorAlert.vue'
   const log = rawlog.scope('query-editor')
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar},
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert},
     props: ['tab', 'active'],
     data() {
       return {
@@ -170,7 +173,7 @@
         return this.tab.query
       },
       queryText() {
-        return this.tab.query.text
+        return this.tab.query.text || null
       },
       individualQueries() {
         if (!this.queryText) return []
@@ -321,6 +324,14 @@
         // this.editor.refresh()
       },
       queryText() {
+
+        const isEmpty = (s) => _.isEmpty(_.trim(s))
+
+        if (!this.query.id && isEmpty(this.queryText) && isEmpty(this.unsavedText)) {
+          this.tab.unsavedChanges = false
+          return
+        }
+
         if (this.query.id && this.unsavedText === this.queryText) {
           this.tab.unsavedChanges = false
           return
@@ -398,6 +409,7 @@
       },
       async submitQuery(rawQuery, skipModal) {
         this.running = true
+        this.error = null
         this.queryForExecution = rawQuery
         this.results = []
         this.selectedResult = 0
@@ -504,7 +516,6 @@
         this.unsavedText = this.query.text
         this.tab.unsavedChanges = false
       } else {
-        this.tab.unsavedChanges = true
         for (var i = 0; i < 9; i++) {
             startingValue += '\n';
         }

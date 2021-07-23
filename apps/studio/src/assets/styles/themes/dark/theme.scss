@@ -19,14 +19,10 @@
         }
       }
     }
+
     .statusbar-actions .btn,
     .connection-button > .btn {
       color: $statusbar-text-default;
-    }
-    .statusbar-actions .btn {
-      &:hover {
-        background: rgba($statusbar-text-default, 0.1);
-      }
     }
     .connection-button {
       .badge {
@@ -36,18 +32,40 @@
     .connection-type {
       color: $statusbar-text;
     }
-    .select-wrap {
-      background: rgba($statusbar-text-default, 0.25);
-      &:hover {
-        background: rgba($statusbar-text-default, 0.3);
+
+    .btn {
+      &.btn-flat {
+        background: rgba($statusbar-text-default, 0.05);
+        color: $statusbar-text-default;
+        &:hover {
+          background: rgba($statusbar-text-default, 0.1);
+        }
+      }
+      &.btn-primary {
+        background: rgba($statusbar-text-default, 0.2);
+        &:hover {
+          background: rgba($statusbar-text-default, 0.25);
+        }
       }
     }
+
+    .select-wrap {
+      background: rgba($statusbar-text-default, 0.05);
+      &:hover {
+        background: rgba($statusbar-text-default, 0.1);
+      }
+      select {
+        color: $statusbar-text-default;
+        background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255,0.87'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
+      }
+    }
+
     .download-results,
     .pending-changes {
-      background: rgba($statusbar-text-default, 0.25);
+      background: rgba($statusbar-text-default, 0.2);
       > .btn {
         &:hover, &:hover[expanded] {
-          background: rgba($statusbar-text-default, 0.3);
+          background: rgba($statusbar-text-default, 0.25);
         }
         .material-icons {
           color: $statusbar-text-default;

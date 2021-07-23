@@ -1,8 +1,8 @@
 // Theme
 // -----------------------------
-$theme-bg:           white;
+$theme-bg:           #f8f8f8;
 $theme-base:         black;
-$theme-primary:      #fad83b;
+$theme-primary:      darken(#fad83b, 10%);
 $theme-secondary:    #0099ff;
 
 // Colors
@@ -32,7 +32,7 @@ $selection:                 rgba($theme-primary, 0.2);
 $input-highlight:           rgba($theme-base, 0.27);
 
 $db-select-text:            white;
-$query-editor-bg:           darken($theme-bg, 5%);
+$query-editor-bg:           white;
 
 $titlebar-bg:               transparent;
 $global-sidebar-bg:         transparent;

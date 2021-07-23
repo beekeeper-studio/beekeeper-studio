@@ -39,7 +39,7 @@
         :connection="connection"
       />
     </div>
-
+    
     <!-- Tables -->
     <hr v-show="pinnedEntities.length > 0"> <!-- Fake splitjs Gutter styling -->
     <div class="table-list flex-col" ref="tables">
@@ -65,8 +65,12 @@
               <i class="material-icons">refresh</i>
             </a>
           </div>
+          <div>
+            <a @click.prevent="newTable" title="New Table" class="create-table">
+              <i class="material-icons">add</i>
+            </a>
+          </div>
         </div>
-
         <div class="list-body" ref="entityContainer" v-show="tables.length > 0">
           <div class="with-schemas">
             <TableListSchema
@@ -234,6 +238,9 @@
       refreshTables() {
         this.$store.dispatch('updateTables')
         this.$store.dispatch('updateRoutines')
+      },
+      newTable() {
+        this.$root.$emit(AppEvent.createTable)
       },
       maybeUnselect(e) {
         if (this.selectedSidebarItem) {

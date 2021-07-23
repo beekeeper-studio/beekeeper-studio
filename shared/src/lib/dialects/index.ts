@@ -1,3 +1,4 @@
+import { RedshiftData } from "@shared/lib/dialects/redshift";
 import { Dialect, DialectData } from "./models";
 import { MysqlData } from "./mysql";
 import { PostgresData } from "./postgresql";
@@ -14,6 +15,8 @@ export function getDialectData(dialect: Dialect): DialectData  {
       return SqlServerData
     case "sqlite":
       return SqliteData
+    case 'redshift':
+      return RedshiftData
     default:
       return SqliteData
   }

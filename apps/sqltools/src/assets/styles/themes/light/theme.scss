@@ -213,7 +213,7 @@ select {
     background: $theme-bg;
     .tabulator-col.foreign-key {
       &:before {
-        color: darken($brand-primary, 15%);
+        color: darken($brand-primary, 6%);
       }
     }
   }

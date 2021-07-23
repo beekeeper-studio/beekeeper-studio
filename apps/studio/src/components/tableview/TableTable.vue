@@ -84,17 +84,19 @@
     <statusbar :mode="statusbarMode" class="tabulator-footer">
 
       
-      <div class="col truncate expand statusbar-info" :class="{'x4': this.totalRecords > this.limit}">
-
+      <div class="col truncate expand statusbar-info">
+        <x-button @click.prevent="openProperties" class="btn btn-flat btn-icon end" title="View Structure">
+          Structure <i class="material-icons">north_east</i>
+        </x-button>
         <!-- Info -->
         <span class="statusbar-item" v-if="lastUpdatedText && !error" :title="`Approximately ${totalRecordsText} Records`">
           <i class="material-icons">list_alt</i>
           <span>{{ totalRecordsText }}</span>
         </span>
-        <span @click="refreshTable" tabindex="0" role="button" class="statusbar-item hoverable" v-if="lastUpdatedText && !error" :title="'Updated' + ' ' + lastUpdatedText">
+        <a @click="refreshTable" tabindex="0" role="button" class="statusbar-item hoverable" v-if="lastUpdatedText && !error" :title="'Updated' + ' ' + lastUpdatedText">
           <i class="material-icons">update</i>
           <span>{{lastUpdatedText}}</span>
-        </span>
+        </a>
         <span v-if="error" class="statusbar-item error" :title="error.message">
           <i class="material-icons">error</i>
           <span class="">{{ error.title }}</span>
@@ -102,7 +104,7 @@
       </div>
 
       <!-- Pagination -->
-      <div class="col flex-center" v-show="this.totalRecords > this.limit" :class="{'x4': this.totalRecords > this.limit}">
+      <div class="col flex-center expand" v-show="this.totalRecords > this.limit">
         <span ref="paginationArea" class="tabulator-paginator"></span>
       </div>
 
@@ -116,7 +118,15 @@
             >warning</i>
           </span>
         </div> -->
-      
+
+        <template v-if="pendingChangesCount > 0">
+          <x-button class="btn btn-flat" @click.prevent="discardChanges">Reset</x-button>
+          <x-button class="btn btn-primary btn-badge" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
+            <i v-if="error" class="material-icons">error</i>
+            <span class="badge" v-if="!error">{{pendingChangesCount}}</span>
+            <span>Apply</span>
+          </x-button>
+        </template>
 
         <!-- Actions -->
         <x-button class="actions-btn btn btn-flat" title="actions">
@@ -139,27 +149,6 @@
             </x-menuitem>
           </x-menu>
         </x-button>
-
-        <!-- Pending Changes -->
-        <x-buttons v-if="pendingChangesCount > 0" class="pending-changes">
-          <x-button class="btn btn-primary" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
-            <i v-if="error" class="material-icons">error</i>
-            <span class="badge" v-if="!error"><small>{{pendingChangesCount}}</small></span>
-            <span>Commit</span>
-          </x-button>
-          <x-button class="btn btn-primary" menu>
-          <i class="material-icons">arrow_drop_down</i>
-          <x-menu>
-            <x-menuitem @click.prevent="saveChanges">
-              <x-label>Commit</x-label>
-            </x-menuitem>
-            <x-menuitem @click.prevent="discardChanges">
-              <x-label>Discard Changes</x-label>
-            </x-menuitem>
-          </x-menu>
-          </x-button>
-        </x-buttons>
-
 
       </div>
       
@@ -188,6 +177,8 @@ import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
+import { vueEditor } from '@shared/lib/tabulator/helpers';
+import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
 
 const CHANGE_TYPE_INSERT = 'insert'
 const CHANGE_TYPE_UPDATE = 'update'
@@ -200,7 +191,7 @@ const FILTER_MODE_RAW = 'raw'
 export default Vue.extend({
   components: { Statusbar },
   mixins: [data_converter, DataMutators],
-  props: ["table", "connection", "initialFilter", "tabId", "active"],
+  props: ["table", "connection", "initialFilter", "tabId", "active", 'tab'],
   data() {
     return {
       filterTypes: {
@@ -393,7 +384,8 @@ export default Vue.extend({
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             search: true,
-            values: column.dataType === 'bool' ? [true, false] : undefined
+            values: column.dataType === 'bool' ? [true, false] : undefined,
+            allowEmpty: true,
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
             // }
@@ -507,6 +499,9 @@ export default Vue.extend({
     },
     filterMode() {
       this.triggerFilter()
+    },
+    pendingChangesCount() {
+      this.tab.unsavedChanges = this.pendingChangesCount > 0
     }
   },
   beforeDestroy() {
@@ -527,6 +522,7 @@ export default Vue.extend({
       height: this.actualTableHeight,
       columns: this.tableColumns,
       nestedFieldSeparator: false,
+      placeholder: "No Data",
       virtualDomHoz: false,
       ajaxURL: "http://fake",
       ajaxSorting: true,
@@ -554,6 +550,9 @@ export default Vue.extend({
 
   },
   methods: {
+    openProperties() {
+      this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
+    },
     buildPendingInserts() {
       const inserts = this.pendingChanges.inserts.map((item) => {
         const columnNames = this.table.columns.map((c) => c.columnName)
@@ -596,13 +595,14 @@ export default Vue.extend({
       return dt.split("(")[0]
     },
     editorType(dt) {
+      const ne = vueEditor(NullableInputEditorVue)
       switch (dt) {
         case 'text': return 'textarea'
         case 'json': return 'textarea'
         case 'jsonb': return 'textarea'
         case 'bytea': return 'textarea'
         case 'bool': return 'select'
-        default: return 'input'
+        default: return ne
       }
     },
     fkClick(e, cell) {
@@ -681,6 +681,13 @@ export default Vue.extend({
       cell.getElement().classList.add('edited')
       const key = `${pkCell.getValue()}-${cell.getField()}`
       const currentEdit = _.find(this.pendingChanges.updates, { key: key })
+      
+      if (currentEdit && currentEdit.cell.getInitialValue() === cell.getValue()) {
+        this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit))
+        cell.getElement().classList.remove('edited')
+        return
+      }
+
       const payload = {
         key: key,
         table: this.table.name,
@@ -689,7 +696,7 @@ export default Vue.extend({
         pkColumn: this.primaryKey,
         columnType: column ? column.dataType : undefined,
         primaryKey: pkCell.getValue(),
-        oldValue: currentEdit ? currentEdit.oldValue : cell.getOldValue(),
+        oldValue: cell.getInitialValue(),
         cell: cell,
         value: cell.getValue(0)
       }
@@ -791,6 +798,7 @@ export default Vue.extend({
           if (updateIncludedPK || this.hasPendingInserts || this.hasPendingDeletes) {
             replaceData = true
           } else if (this.hasPendingUpdates) {
+            this.tabulator.clearCellEdited()
             this.tabulator.updateData(result)
             this.pendingChanges.updates.forEach(edit => {
               edit.cell.getElement().classList.remove('edited')

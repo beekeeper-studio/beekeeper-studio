@@ -35,8 +35,9 @@
         v-show="activeTab === tab"
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
-        <TableTable @setTabTitleScope="setTabTitleScope" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
-        <TableProperties v-if="tab.type === 'table-properties'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :table="tab.table"></TableProperties>
+        <TableTable @setTabTitleScope="setTabTitleScope" :tab="tab" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
+        <TableProperties v-if="tab.type === 'table-properties'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="tab.connection" :table="tab.table"></TableProperties>
+        <TableBuilder v-if="tab.type === 'table-builder'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="tab.connection"></TableBuilder>
         
       </div>
     </div>
@@ -53,12 +54,13 @@
   import _ from 'lodash'
   import sqlFormatter from 'sql-formatter';
   import {FavoriteQuery} from '../common/appdb/models/favorite_query'
-  import QueryEditor from './TabQueryEditor'
-  import Statusbar from './common/StatusBar'
-  import CoreTabHeader from './CoreTabHeader'
+  import QueryEditor from './TabQueryEditor.vue'
+  import Statusbar from './common/StatusBar.vue'
+  import CoreTabHeader from './CoreTabHeader.vue'
   import { uuidv4 } from '@/lib/uuid'
-  import TableTable from './tableview/TableTable'
-  import TableProperties from './TabTableProperties'
+  import TableTable from './tableview/TableTable.vue'
+  import TableProperties from './TabTableProperties.vue'
+  import TableBuilder from './TabTableBuilder.vue'
   import {AppEvent} from '../common/AppEvent'
   import platformInfo from '../common/platform_info'
   import { mapGetters, mapState } from 'vuex'
@@ -67,7 +69,16 @@
 
   export default {
     props: [ 'connection' ],
-    components: { Statusbar, QueryEditor, CoreTabHeader, TableTable, TableProperties, Draggable, ShortcutHints },
+    components: { 
+      Statusbar,
+      QueryEditor,
+      CoreTabHeader,
+      TableTable,
+      TableProperties,
+      Draggable,
+      ShortcutHints,
+      TableBuilder
+    },
     data() {
       return {
         tabItems: [],
@@ -81,9 +92,10 @@
         rootBindings: [
           { event: AppEvent.closeTab, handler: this.closeTab },
           { event: AppEvent.newTab, handler: this.createQuery},
+          { event: AppEvent.createTable, handler: this.openTableBuilder},
           { event: 'historyClick', handler: this.createQueryFromItem},
-          { event: 'loadTable', handler: this.openTable },
-          { event: 'loadTableProperties', handler: this.openTableProperties},
+          { event: AppEvent.loadTable, handler: this.openTable },
+          { event: AppEvent.openTableProperties, handler: this.openTableProperties},
           { event: 'loadSettings', handler: this.openSettings },
           { event: 'loadTableCreate', handler: this.loadTableCreate },
           { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
@@ -130,6 +142,9 @@
         await this.$store.dispatch('tabActive', tab)
       },
       addTab(item) {
+        if (_.isNil(item.unsavedChanges)) {
+          item.unsavedChanges = false
+        }
         this.tabItems.push(item)
         this.newTabId += 1
         this.$nextTick(() => {
@@ -154,9 +169,11 @@
       setTabTitleScope(id, value) {
         this.tabItems.filter(t => t.id === id).forEach(t => t.titleScope = value)
       },
-      closeTab() {
-        console.log('close tab', this.activeTab)
-        this.close(this.activeTab)
+      closeTab(id) {
+        console.log("trying to close tab", id)
+        const tab = id ? this.tabItems.find((t) => t.id === id) : this.activeTab
+        console.log('close tab', tab)
+        this.close(tab)
       },
       handleCreateTab() {
         this.createQuery()
@@ -172,7 +189,7 @@
           title: "Query #" + this.newTabId,
           connection: this.connection,
           query: query,
-          unsavedChanges: true
+          unsavedChanges: query.text?.length ? true : false
         }
 
         this.addTab(result)
@@ -194,6 +211,16 @@
         const stringResult = sqlFormatter.format(_.isArray(result) ? result[0] : result)
         this.createQuery(stringResult)
       },
+      openTableBuilder() {
+        const t = {
+          id: uuidv4(),
+          type: 'table-builder',
+          connection: this.connection,
+          title: "New Table",
+          unsavedChanges: true,
+        }
+        this.addTab(t)
+      },
       openTableProperties({ table }) {
         const existing = this.tabItems.find((t) => {
           return t.type === 'table-properties' &&
@@ -207,7 +234,7 @@
           type: 'table-properties',
           table: table,
           connection: this.connection,
-          title: `${table.name}`
+          title: `${table.name}`,
         }
         this.addTab(t)
       },
@@ -224,7 +251,7 @@
           table: resolvedTable || table,
           connection: this.connection,
           initialFilter: filter,
-          titleScope: "all"
+          titleScope: "all",
         }
         this.addTab(t)
       },

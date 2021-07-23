@@ -56,9 +56,9 @@ import Formatter from 'sql-formatter'
 import Knex from 'knex'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator';
 import DialectPicker from '@/components/DialectPicker.vue'
-import { Template } from '@/lib/templates/base';
 import templates from '@/lib/templates';
 import HighlightedCode from '@/components/HighlightedCode.vue';
+import { Template } from '@shared/lib/dialects/template';
 interface Data {
   template: Template
   schema: Schema
@@ -75,6 +75,14 @@ const dialectNotes = {
 }
 
 export default Vue.extend ({
+  metaInfo() {
+    return {
+      title: "SQL Table Builder",
+      meta: [
+        { name: 'description', content: this.description}
+      ]
+    }
+  },
   name: 'Home',
   components: { 
     SchemaBuilder,
@@ -120,6 +128,13 @@ export default Vue.extend ({
   computed: {
     ...mapState(['dialect']),
     ...mapGetters(['knexDialect']),
+    description() {
+      if (this.isHome) {
+        return "Generate 'CREATE TABLE' statements using our builder interface. Perfect if you can never remember CREATE TABLE syntax. Works for Postgres, MySQL, Sqlite, SQL Server, and Redshift"
+      } else {
+        return "Create a ${this.template.id} table using a visual SQL table builder for Postgres, MySQL, Sqlite, SQL Server, or Redshift"
+      }
+    },
     isHome() {
       return this.$route.name === 'BuildRoot'
     },

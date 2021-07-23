@@ -13,10 +13,12 @@ $cell-success:           $row-add;
 
 $cell-radius:            2px;
 
+$cell-padding:           $gutter-w;
+
 // Mixin
 @mixin cell-shadow($bg) {
-  box-shadow: inset -1px 0 $bg,
-              inset 0 1px $bg,
+  box-shadow: inset -1px 0 rgba(black, 0.2),
+              inset 0 1px rgba(black, 0.2),
               inset 0 -1px rgba(white, 0.1);
 }
 @mixin cell-editing($bg) {
@@ -37,7 +39,7 @@ $cell-radius:            2px;
       .tabulator-cell {
         &.primary-key {
           &:hover {
-            background: rgba($theme-base,0.15);
+            background: rgba($theme-base,0.08);
             cursor: pointer;
           }
         }
@@ -58,7 +60,7 @@ $cell-radius:            2px;
       box-shadow: inset 0 -1px rgba($theme-base, .1);
       .tabulator-cell {
         &:hover {
-          background: rgba($theme-base, 0.12);
+          background: rgba($theme-base, 0.08);
         }
         &.foreign-key-button {
           &:hover {
@@ -69,9 +71,14 @@ $cell-radius:            2px;
     } 
     &.deleted {
       .tabulator-cell {
+        cursor: default!important;
         &:hover {
           background: transparent!important;
-          cursor: default;
+        }
+        .tabulator-bks-checkbox {
+          input {
+            cursor: default!important;
+          }
         }
       }
     }
@@ -87,25 +94,18 @@ $cell-radius:            2px;
   }
   .tabulator-cell {
     border: 0;
-    padding: 4px 8px;
+    padding: 0 $cell-padding;
     min-height: $row-height;
     height: $row-height;
-    line-height: $row-height - (6px); // row-height - vertical padding
+    line-height: $row-height;
     border-radius: $cell-radius;
     cursor: default;
     &:first-of-type {
-      padding-left: $gutter-w * 1.5;
+      padding-left: $cell-padding * 1.5;
     }
     &:last-of-type {
-      padding-right: $gutter-w * 1.5;
+      padding-right: $cell-padding * 1.5;
     }
-    &.cell-editable {
-      cursor: pointer;
-      &:hover {
-        background: rgba($theme-base,0.05);
-      }
-    }
-
     i.fk-link {
       display:none;
     }
@@ -115,10 +115,10 @@ $cell-radius:            2px;
       font-family: inherit;
       overflow: hidden;
     }
-    input {
+    input:not([type="checkbox"]) {
       font-size: 0.85rem;
       height: $row-height;
-      padding: 4px 4px 4px 8px!important;
+      padding: 0 $gutter-w;
     }
     textarea {
       border-color: transparent;
@@ -140,14 +140,20 @@ $cell-radius:            2px;
     }
     &.tabulator-editing {
       box-shadow: inset 0 -1px $theme-base!important;
-      background: rgba($theme-base, 0.12);
+      // background: rgba($theme-base, 0.08);
       padding-left: 0;
       padding-right: 0;
       min-height: $row-height;
-      line-height: $row-height;
+      line-height: $row-height + 2px;
       border-radius: $cell-radius;
       &:focus {
         box-shadow: inset 0 -1px $theme-base!important;
+      }
+      pre, input:not([type="checkbox"]), {
+        padding: 0 $cell-padding!important;
+      }
+      .tabulator-bks-checkbox {
+        padding: 0!important;
       }
     }
     &.foreign-key {
@@ -155,12 +161,16 @@ $cell-radius:            2px;
     }
     &.foreign-key-button {
       display: inline-flex;
+      align-items: center;
       justify-content: flex-end;
       width: $foreign-key-width!important;
       min-width: $foreign-key-width!important;
       padding-left: 0!important;
       padding-right: 0.35rem!important;
       margin-left: -$foreign-key-width;
+      &:hover {
+        background: transparent!important;
+      }
       .material-icons {
         font-size: 14px;
         line-height: 22px;
@@ -174,20 +184,10 @@ $cell-radius:            2px;
 
   // Cell Edit States
   .tabulator-cell {
-    // &:nth-child(odd) {
-    //   background: $row-highlight;
-    //   .tabulator-cell {
-    //     &.edited,
-    //     &.edit-error,
-    //     &.edit-success {
-    //       @include cell-shadow(rgba($row-highlight, 0.75));
-    //     }
-    //   }
-    // }
     &.edited {
       background: $cell-edited;
       &:hover {
-        background: lighten($cell-edited, 5%);
+        background: lighten($cell-edited, 3%);
       }
     }
     &.edit-error {
@@ -228,19 +228,16 @@ $cell-radius:            2px;
 // Editable Hover
 .tabulator-row {
   .tabulator-cell {
-    // &.cell-editable {
-    //   cursor: pointer;
-    //   &:hover {
-    //     background: rgba($theme-base,0.05);
-    //   }
-    // }
-
     cursor: pointer;
     &:hover {
-      background: rgba($theme-base,0.05);
+      background: rgba($theme-base,0.08);
+    }
+    &.editable:hover {
+      background: rgba($theme-base,0.08);
     } 
     &.primary-key {
       cursor: default;
+      opacity: 0.5;
       &:hover {
         background: transparent;
       }
@@ -253,20 +250,21 @@ $cell-radius:            2px;
 .tabletable.view-only {
   .tabulator-row {
     .tabulator-cell {
-      cursor: default;
+      cursor: default!important;
       &:hover {
-        background: transparent;
+        background: transparent!important;
       }
     }
   }
 }
-.table-properties {
+.table-properties .view-only {
   .tabulator-row {
-    .tabulator-cell {
-      cursor: default;
-      &:hover {
-        background: transparent;
-      }
+    .tabulator-cell:hover {
+      background: transparent;
+    }
+    .tabulator-cell,
+    .tabulator-cell input {
+      cursor: default!important;
     }
   }
 }
@@ -385,6 +383,8 @@ $cell-radius:            2px;
       user-select: text;
     }
     .tabulator-placeholder {
+      background: rgba($theme-base, 0.035);
+      border-radius: 8px;
       span {
         font-size: 12px;
         font-weight: normal;

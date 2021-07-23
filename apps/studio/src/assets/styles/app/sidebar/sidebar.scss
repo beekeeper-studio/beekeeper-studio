@@ -206,15 +206,18 @@
       }
     }
   }
-  
+  .create-table {
+    display: flex;
+    color: $text;
+    padding: 0 0.6rem 0 0;
+    transition: color 0.2s ease-in-out;
+    &:hover {
+      color: $theme-base;
+    }
+  }
   .toolbar {
-    // position: absolute;
-    // bottom: 5px;
-    // left: 0;
-    // width: 100%;
     margin-right: 0;
     margin-left: 0;
-    // background: darken($theme-bg, 3%);
     padding: $gutter-h ($gutter-h * 0.5);
     .btn {
       min-width: 0;
@@ -243,7 +246,6 @@
   padding: $gutter-w $gutter-w ($gutter-h * 0.5);
   padding-right: $gutter-h;
   background: transparent;
-  // border-top: 1px solid $border-color;
   .sub {
     color: $text-dark;
     line-height: 1;

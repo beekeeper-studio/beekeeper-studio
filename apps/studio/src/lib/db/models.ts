@@ -1,6 +1,3 @@
-
-
-
 export abstract class BeeCursor {
   constructor(public chunkSize: number) {
 
@@ -134,13 +131,7 @@ export interface TableChanges {
 }
 
 
-export interface ColumnChange {
-  table: string
-  schema?: string
-  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue'
-  columnName: string
-  newValue: string | boolean
-}
+// AlterTableSpec is in @shared
 
 export interface TableInsert {
   table: string;

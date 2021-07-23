@@ -10,9 +10,12 @@ import _ from 'lodash';
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString } from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
+import { SqlServerData } from '@shared/lib/dialects/sqlserver';
+import { SqlServerChangeBuilder } from '@shared/lib/sql/change_builder/SqlServerChangeBuilder';
 const log = logRaw.scope('sql-server')
 
 const logger = () => log;
+const D = SqlServerData
 const knex = knexlib({
   client: 'mssql'
 })
@@ -41,9 +44,9 @@ export default async function (server, database) {
     listViews: (filter) => listViews(conn, filter),
     listMaterializedViews: (filter) => listMaterializedViews(conn, filter),
     listRoutines: (filter) => listRoutines(conn, filter),
-    listTableColumns: (db, table) => listTableColumns(conn, db, table),
-    listTableTriggers: (table) => listTableTriggers(conn, table),
-    listTableIndexes: (db, table) => listTableIndexes(conn, db, table),
+    listTableColumns: (db, table, schema) => listTableColumns(conn, db, table, schema),
+    listTableTriggers: (table, schema) => listTableTriggers(conn, table, schema),
+    listTableIndexes: (db, table, schema) => listTableIndexes(conn, db, table, schema),
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table) => getTableReferences(conn, table),
     getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
@@ -61,7 +64,10 @@ export default async function (server, database) {
     getRoutineCreateScript: (routine) => getRoutineCreateScript(conn, routine),
     truncateAllTables: () => truncateAllTables(conn),
     getTableProperties: (table, schema) => getTableProperties(conn, table, schema),
-    setTableDescription: (table, description, schema) => setTableDescription(conn, table, description, schema)
+    setTableDescription: (table, description, schema) => setTableDescription(conn, table, description, schema),
+    alterTableSql: (change) => alterTableSql(conn, change),
+    alterTable: (change) => alterTable(conn, change)
+
   };
 }
 
@@ -221,7 +227,7 @@ export function wrapIdentifier(value) {
 }
 
 export function wrapValue(value) {
-  return `'${value.replace(/'/g, "''")}'`
+  return `'${value.replaceAll(/'/g, "''")}'`
 }
 
 
@@ -402,8 +408,11 @@ export async function listRoutines(conn, filter) {
   });
 }
 
-export async function listTableColumns(conn, database, table) {
-  const clause = table ? `WHERE table_name = ${wrapValue(table)}` : ""
+export async function listTableColumns(conn, database, table, schema) {
+  const clauses = []
+  if (table) clauses.push(`table_name = ${D.escapeString(table, true)}`)
+  if (schema) clauses.push(`table_schema = ${D.escapeString(schema, true)}`)
+  const clause = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ''
   const sql = `
     SELECT 
       table_schema as "table_schema",
@@ -784,10 +793,78 @@ export async function getTableProperties(conn, table, schema) {
   }
 }
 
-export async function setTableDescription(conn, table, desc) {
-
+export async function setTableDescription(conn, table, desc, schema) {
+  const existingDescription = await getTableDescription(conn, table, schema)
+  const f = existingDescription ? 'sp_updateextendedproperty' : 'sp_addextendedproperty'
+  const sql = `
+  EXEC sys.${f}
+    @name = N'MS_Description',
+    @value = N${D.escapeString(desc, true)},
+    @level0type = N'SCHEMA', @level0name = ${D.wrapIdentifier(schema)},
+    @level1type = N'TABLE',  @level1name = ${D.wrapIdentifier(table)};
+  GO
+  `
 }
 
+async function listDefaultConstraints(conn, table, schema) {
+  const sql = `
+-- returns name of a column's default value constraint 
+SELECT
+    all_columns.name as columnName,
+    tables.name as tableName,
+    schemas.name as schemaName,
+    default_constraints.name as name
+FROM 
+    sys.all_columns
+
+        INNER JOIN
+    sys.tables
+        ON all_columns.object_id = tables.object_id
+
+        INNER JOIN 
+    sys.schemas
+        ON tables.schema_id = schemas.schema_id
+
+        INNER JOIN
+    sys.default_constraints
+        ON all_columns.default_object_id = default_constraints.object_id
+
+WHERE 
+        schemas.name = ${D.escapeString(schema, true)}
+    AND tables.name = ${D.escapeString(table, true)}
+
+  `
+  const { data } = await driverExecuteQuery(conn, { query: sql})
+  // eslint-disable-next-line no-debugger
+  // debugger
+  return data.recordset.map((d) => {
+    return {
+      column: d.columnName,
+      table: d.tableName,
+      schema: d.schemaName,
+      name: d.name
+    }
+  })
+}
+
+async function alterTableSql(conn, changes) {
+  const { table, schema } = changes
+  const columns = await listTableColumns(conn, null, table, schema)
+  const defaultConstraints = await listDefaultConstraints(conn, table, schema)
+  const builder = new SqlServerChangeBuilder(table, schema, columns, defaultConstraints)
+  return builder.alterTable(changes)
+}
+
+async function alterTable(conn, changes) {
+  const sql = await alterTableSql(conn, changes)
+  try {
+    const queries = ['SET XACT_ABORT ON', 'BEGIN TRANSACTION', sql, 'COMMIT']
+    await driverExecuteQuery(conn, { query: queries.join(";") })
+  } catch (ex) {
+    log.error(ex)
+    throw ex
+  }
+}
 
 function configDatabase(server, database) {
   const config = {
@@ -881,7 +958,7 @@ function identifyCommands(queryText) {
 }
 
 export async function driverExecuteQuery(conn, queryArgs, arrayRowMode = false) {
-  logger().debug('Running query', queryArgs)
+  logger().info('RUNNING', queryArgs)
   const runQuery = async (connection) => {
     const request = connection.request();
     request.arrayRowMode = arrayRowMode
@@ -899,4 +976,9 @@ async function runWithConnection(conn, run) {
   const connection = await new ConnectionPool(conn.dbConfig).connect();
   conn.connection = connection
   return run(connection);
+}
+
+
+export const sqlServerTestOnly = {
+  alterTableSql
 }

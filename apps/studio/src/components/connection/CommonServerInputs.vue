@@ -12,7 +12,7 @@
     </div>
 
     <div class="advanced-connection-settings">
-      <div class="flex">
+      <div class="flex flex-middle">
         <span @click.prevent="toggleSslAdvanced" class="btn btn-link btn-fab">
           <i class="material-icons">{{toggleIcon}}</i>
         </span>

@@ -10,9 +10,9 @@
   border-radius: 4px;
   @extend .card-shadow;
   .noty_body {
-    font-size: 0.85rem;
+    font-size: 1rem;
     line-height: 1.6;
-    padding: $gutter-w;
+    padding: $gutter-w * 1.25;
     padding-right: $gutter-w * 1.75;
   }
   .noty_buttons{
@@ -26,19 +26,21 @@
   }
 }
 #noty_layout__bottomRight {
-  bottom: 30px;
-  right: 5px;
+  bottom: $statusbar-height + ($gutter-h / 2);
+  right: $gutter-h;
 }
 .noty_progressbar {
   display: none!important;
 }
 .noty_close_button {
+  top: $gutter-h;
+  right: $gutter-h;
   background-color: transparent;
   border-radius: 20px;
   color: $text-lighter;
   text-align: center;
   font-weight: normal;
-  font-size: 18px;
+  font-size: 24px;
   &:hover {
     color: $text-dark;
     background: transparent;

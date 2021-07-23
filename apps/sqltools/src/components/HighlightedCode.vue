@@ -13,15 +13,16 @@
         </div>
       </div>
       <slot name="alert"></slot>
-      <highlightjs :lang="highlightDialect" :code="code"  v-if="code" />
+      <highlightjs :lang="highlightDialect" :code="formattedCode"  v-if="formattedCode" />
       <pre class="code-empty" v-else><div class="hljs">(Empty)</div></pre>
     </div>
   </div>
 </template>
 <script lang="ts">
 import Vue from 'vue'
+import sqlFormatter from 'sql-formatter'
 export default Vue.extend({
-  props: ['code', 'dialect', 'allowCopy'],
+  props: ['code', 'dialect', 'allowCopy', 'format'],
   data() {
     return {
       copyMessage: "Copy",
@@ -31,6 +32,16 @@ export default Vue.extend({
     }
   },
   computed: {
+    formattedCode() {
+
+      if (!this.code) return null
+
+      if (this.format) {
+        return sqlFormatter.format(this.code, { language: 'sql' })
+      } else {
+        return this.code
+      }
+    },
     highlightDialect() {
       switch (this.dialect) {
         case 'postgresql':
