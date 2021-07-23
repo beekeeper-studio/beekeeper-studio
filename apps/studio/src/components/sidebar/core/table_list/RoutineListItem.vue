@@ -51,7 +51,7 @@ import { RoutineTypeNames } from '@/lib/db/models'
 
   import { mapGetters } from 'vuex'
 	export default {
-		props: ["connection", "routine", "noSelect", "forceExpand", "forceCollapse"],
+		props: ["connection", "routine", "noSelect", "forceExpand", "forceCollapse", "pinned"],
     mounted() {
     },
     data() {

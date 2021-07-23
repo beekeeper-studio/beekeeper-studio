@@ -81,7 +81,7 @@
       </form>
     </div>
     <div ref="table"></div>
-    <statusbar :mode="statusbarMode" class="tabulator-footer">
+    <statusbar :mode="statusbarMode">
 
       
       <div class="col truncate expand statusbar-info">
@@ -104,8 +104,10 @@
       </div>
 
       <!-- Pagination -->
-      <div class="col flex-center expand" v-show="this.totalRecords > this.limit">
-        <span ref="paginationArea" class="tabulator-paginator"></span>
+      <div class="col flex-center expand tabulator-paginator">
+        <a @click="page = page  - 1"><i class="material-icons">navigate_before</i></a>
+        <input type="number" v-model="page" />
+        <a @click="page = page + 1"><i class="material-icons">navigate_next</i></a>
       </div>
 
       <!-- Pending Edits -->
@@ -233,9 +235,21 @@ export default Vue.extend({
       interval: setInterval(this.setlastUpdatedText, 10000),
       totalRecords: 0,
       forceRedraw: false,
+      rawPage: 1
     };
   },
   computed: {
+    page: {
+      set(nu) {
+        const newPage = Number(nu)
+        console.log("new page", newPage)
+        if (_.isNaN(newPage) || newPage < 1) return
+        this.rawPage = newPage
+      },
+      get() {
+        return this.rawPage
+      }
+    },
     error() {
       return this.saveError ? this.saveError : this.queryError
     },
@@ -445,6 +459,9 @@ export default Vue.extend({
   },
 
   watch: {
+    page: _.debounce(function () {
+      this.tabulator.setPage(this.page || 1)
+    }, 500),
     active() {
       log.debug('active', this.active)
       if (!this.tabulator) return;
@@ -531,6 +548,7 @@ export default Vue.extend({
       pagination: "remote",
       paginationSize: this.limit,
       paginationElement: this.$refs.paginationArea,
+      paginationButtonCount: 0,
       initialSort: this.initialSort,
       initialFilter: [this.initialFilter || {}],
       lastUpdated: null,
@@ -933,7 +951,7 @@ export default Vue.extend({
             this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
             resolve({
-              last_page: Math.ceil(this.totalRecords / limit),
+              last_page: 1,
               data
             });
           } catch (error) {

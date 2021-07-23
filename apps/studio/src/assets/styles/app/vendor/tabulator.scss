@@ -29,7 +29,10 @@ $cell-padding:           $gutter-w;
 
 // Add/Delete/Clone row
 // -------------------------------
+
+
 .tabulator-table {
+
   .tabulator-row {
     &.inserted, 
     &.inserted:hover {
@@ -431,7 +434,7 @@ $cell-padding:           $gutter-w;
 }
 
 .tabulator-footer {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: flex-end;
   border: 0;

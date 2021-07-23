@@ -11,6 +11,15 @@ $button-height:     $statusbar-height * 0.65;
   font-size: 0.8rem;
   padding: 0 $gutter-h;
   overflow: hidden;
+
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+      /* display: none; <- Crashes Chrome on hover */
+      -webkit-appearance: none;
+      margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+  }
+
+
   > .col {
     display: flex;
     align-items: center;
