@@ -518,6 +518,12 @@ $cell-padding:           $gutter-w;
   a {
     display: inline-flex;
     align-items: center;
+    .material-icons {
+      color: rgba($statusbar-text, 0.68);
+      &:hover {
+        color: $statusbar-text;
+      }
+    }
   }
   input[type="number"] {
     font-weight: bold;

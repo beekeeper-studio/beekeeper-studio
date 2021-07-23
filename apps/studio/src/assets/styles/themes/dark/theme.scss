@@ -92,7 +92,10 @@
       }
       a {
         .material-icons {
-          color: $statusbar-text-default;
+          color: rgba($statusbar-text-default, 0.68);
+          &:hover {
+            color: $statusbar-text-default;
+          }
         }
       }
     }
