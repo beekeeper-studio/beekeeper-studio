@@ -605,7 +605,7 @@ input[type=file] {
   }
   &.gutter-horizontal {
     width: 0!important;
-    cursor: e-resize;
+    cursor: ew-resize;
     &:after {
       height: 100%;
       width: 5px;
@@ -613,7 +613,7 @@ input[type=file] {
     }
   }
   &.gutter-vertical {
-    cursor: n-resize;
+    cursor: ns-resize;
     height: 0!important;
     &:after {
       height: 8px;
