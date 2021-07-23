@@ -29,7 +29,10 @@ $cell-padding:           $gutter-w;
 
 // Add/Delete/Clone row
 // -------------------------------
+
+
 .tabulator-table {
+
   .tabulator-row {
     &.inserted, 
     &.inserted:hover {
@@ -431,7 +434,7 @@ $cell-padding:           $gutter-w;
 }
 
 .tabulator-footer {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: flex-end;
   border: 0;
@@ -503,6 +506,28 @@ $cell-padding:           $gutter-w;
     }
     &[data-page="last"]:before {
       content: '\e5dd';
+    }
+  }
+}
+
+// New Pagination
+.tabulator-paginator > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  a {
+    display: inline-flex;
+    align-items: center;
+  }
+  input[type="number"] {
+    font-weight: bold;
+    color: $statusbar-text!important;
+    padding: 0 ($gutter-h * 1.5);
+    width: 60px;
+    text-align: center;
+    &:hover, &:focus {
+      background: rgba(0,0,0,0.1);
+      min-width: auto;
     }
   }
 }
