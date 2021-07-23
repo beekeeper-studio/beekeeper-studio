@@ -80,5 +80,21 @@
         }
       }
     }
+    
+    // New Pagination
+    .tabulator-paginator > div {
+      input[type="number"] {
+        color: $statusbar-text-default!important;
+        border-color: rgba($statusbar-text-default, 0.2);
+        &:hover, &:focus {
+          border-color: rgba($statusbar-text-default, 0.25);
+        }
+      }
+      a {
+        .material-icons {
+          color: $statusbar-text-default;
+        }
+      }
+    }
   }
 }
