@@ -510,6 +510,28 @@ $cell-padding:           $gutter-w;
   }
 }
 
+// New Pagination
+.tabulator-paginator > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  a {
+    display: inline-flex;
+    align-items: center;
+  }
+  input[type="number"] {
+    font-weight: bold;
+    color: $statusbar-text!important;
+    padding: 0 ($gutter-h * 1.5);
+    width: 60px;
+    text-align: center;
+    &:hover, &:focus {
+      background: rgba(0,0,0,0.1);
+      min-width: auto;
+    }
+  }
+}
+
 .tabulator-menu {
   background: lighten($theme-bg, 5%);
   border: none;

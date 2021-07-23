@@ -84,7 +84,7 @@
     <statusbar :mode="statusbarMode">
 
       
-      <div class="col truncate expand statusbar-info">
+      <div class="truncate statusbar-info">
         <x-button @click.prevent="openProperties" class="btn btn-flat btn-icon end" title="View Structure">
           Structure <i class="material-icons">north_east</i>
         </x-button>
@@ -105,14 +105,16 @@
       </div>
 
       <!-- Pagination -->
-      <div class="col flex-center expand tabulator-paginator">
-        <a @click="page = page  - 1"><i class="material-icons">navigate_before</i></a>
-        <input type="number" v-model="page" />
-        <a @click="page = page + 1"><i class="material-icons">navigate_next</i></a>
+      <div class="tabulator-paginator">
+        <div class="flex-center flex-middle flex">
+          <a @click="page = page  - 1"><i class="material-icons">navigate_before</i></a>
+          <input type="number" v-model="page" />
+          <a @click="page = page + 1"><i class="material-icons">navigate_next</i></a>
+        </div>
       </div>
 
       <!-- Pending Edits -->
-      <div class="col statusbar-actions flex-right" :class="{'x4': this.totalRecords > this.limit}">
+      <div class="col x4 statusbar-actions flex-right">
         <!-- <div v-if="missingPrimaryKey" class="flex flex-right">
           <span class="statusbar-item">
             <i

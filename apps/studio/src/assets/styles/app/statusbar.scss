@@ -3,6 +3,7 @@ $button-height:     $statusbar-height * 0.65;
 .statusbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   background: $statusbar-bg;
   color: rgba($statusbar-text, 0.87);
   min-height: $statusbar-height;
@@ -73,7 +74,7 @@ $button-height:     $statusbar-height * 0.65;
       color: $statusbar-text;
       height: $button-height;
       line-height: $button-height;
-      min-width: 0;
+      min-width: min-content;
       margin: 0 0.15rem;
       margin-top: -1px;
       padding: 0 0.35rem;
@@ -96,7 +97,7 @@ $button-height:     $statusbar-height * 0.65;
   // ----------------------
   .btn {
     padding: 0 0.6rem;
-    min-width: auto;
+    min-width: min-content;
     background: transparent;
     color: $statusbar-text;
     height: $button-height;
