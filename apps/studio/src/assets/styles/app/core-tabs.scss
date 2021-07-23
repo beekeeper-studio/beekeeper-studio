@@ -220,6 +220,7 @@
     padding: $gutter-h;
     margin-left: -($gutter-h * 0.5);
     margin-right: -($gutter-h * 0.5);
+    flex-wrap: nowrap;
     > * {
       display: inline-flex;
       padding-left: ($gutter-h * 0.5);

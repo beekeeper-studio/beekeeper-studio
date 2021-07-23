@@ -522,9 +522,13 @@ $cell-padding:           $gutter-w;
   input[type="number"] {
     font-weight: bold;
     color: $statusbar-text!important;
+    border-color: rgba($statusbar-text, 0.2);
     padding: 0 ($gutter-h * 1.5);
     width: 60px;
     text-align: center;
+    &:hover, &:focus {
+      border-color: rgba($statusbar-text, 0.25);
+    }
   }
 }
 
