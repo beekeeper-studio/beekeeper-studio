@@ -127,6 +127,18 @@ $cell-padding:           $gutter-w;
       border-color: transparent;
       padding: 4px 6px!important;
       line-height: $row-height - 8px; // row-height - vertical padding
+      z-index: 10;
+      box-shadow: inset 1px solid $theme-base;
+      height: auto!important;
+      &:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
+        bottom: 0;
+        background: $query-editor-bg;
+      }
     }
     &.active-cell {
       background: $selection;
@@ -149,10 +161,12 @@ $cell-padding:           $gutter-w;
       min-height: $row-height;
       line-height: $row-height + 2px;
       border-radius: $cell-radius;
+      overflow-y: visible;
+      height: auto!important;
       &:focus {
         box-shadow: inset 0 -1px $theme-base!important;
       }
-      pre, input:not([type="checkbox"]), {
+      pre, input:not([type="checkbox"]), textarea {
         padding: 0 $cell-padding!important;
       }
       .tabulator-bks-checkbox {
