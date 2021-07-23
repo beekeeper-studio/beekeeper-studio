@@ -392,9 +392,9 @@ const store = new Vuex.Store<State>({
       routines.forEach((r) => r.entityType = 'routine')
       context.commit('routines', routines)
     },
-    async setFilterQuery(context, filterQuery) {
+    setFilterQuery: _.debounce(function (context, filterQuery) {
       context.commit('filterQuery', filterQuery)
-    },
+    }, 500),
     async pinTable(context, table) {
       table.pinned = true
       context.commit('addPinned', table)
