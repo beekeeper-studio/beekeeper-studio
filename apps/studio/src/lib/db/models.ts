@@ -26,12 +26,17 @@ export interface TableOrView {
   columns?: TableColumn[];
 }
 
+export interface IndexedColumn {
+  name: string
+  order: 'ASC' | 'DESC'
+}
+
 export interface TableIndex {
   id: string
   table: string
   schema: string
   name: string
-  columns: string,
+  columns: IndexedColumn[]
   unique: boolean
   primary: boolean  
 }

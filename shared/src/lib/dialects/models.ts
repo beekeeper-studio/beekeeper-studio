@@ -121,11 +121,16 @@ export interface AlterTableSpec {
   drops?: string[]
 }
 
+export interface IndexColumn {
+  name: string
+  order: 'ASC' | 'DESC'
+}
+
 export interface CreateIndexSpec {
   name?: string
   schema?: string
   table: string
-  columns: string[]
+  columns: IndexColumn[]
   unique: boolean
 }
 

@@ -67,6 +67,7 @@ import rawLog from 'electron-log'
 import sqlFormatter from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import { TableIndex } from '@/lib/db/models'
 const log = rawLog.scope('TableIndexVue')
 
 interface State {
@@ -97,6 +98,11 @@ export default Vue.extend({
     ...TabulatorStateWatchers
   },
   computed: {
+    indexColumnOptions() {
+      const normal = this.table.columns.map((c) => c.columnName)
+      const desc = this.table.columns.map((c) => `${c.columnName} DESC`)
+      return [...normal, ...desc]
+    },
     editCount() {
       return this.newRows.length + this.removedRows.length;
     },
@@ -104,7 +110,12 @@ export default Vue.extend({
       return this.editCount > 0
     },
     tableData() {
-      return this.properties.indexes || []
+      return (this.properties.indexes || []).map((i: TableIndex) => {
+        return {
+          ...i,
+          columns: i.columns.map((c) => `${c.name}${c.order === 'DESC' ? ' DESC' : ''}`)
+        }
+      })
     },
     tableColumns() {
       const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
@@ -137,7 +148,7 @@ export default Vue.extend({
           formatter: this.cellFormatter,
           editorParams: {
             multiselect: true,
-            values: this.table.columns.map((c) => c.columnName)
+            values: this.indexColumnOptions,
           }
         },
         trashButton(this.removeRow)
@@ -180,11 +191,16 @@ export default Vue.extend({
     getPayload(): {additions: CreateIndexSpec[], drops: DropIndexSpec[]} {
         const additions = this.newRows.map((row: RowComponent) => {
           const data = row.getData()
+          const columns = data.columns.map((c: string)=> {
+            const order = c.endsWith('DESC') ? 'DESC' : 'ASC'
+            const name = c.replaceAll(' DESC', '')
+            return { name, order }
+          })
           const payload: CreateIndexSpec = {
             table: this.table.name,
             schema: this.table.schema || undefined,
             unique: data.unique,
-            columns: data.columns,
+            columns,
             name: data.name || undefined
           }
           return payload

@@ -9,7 +9,7 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -599,57 +599,66 @@ export async function listTableIndexes(
   conn: Conn, table: string, schema: string
   ): Promise<TableIndex[]> {
 
+
   const sql = `
-select
-	i.oid as index_id,
-    t.relname as table_name,
-    c.nspname as schema,
-    i.relname as index_name,
-    ix.indisprimary as is_primary,
-    ix.indisunique as is_unique,
-    array_to_string(array_agg(a.attname), ', ') as column_names
-from
-    pg_class t,
-    pg_class i,
-    pg_index ix,
-    pg_attribute a,
-    pg_namespace c
-where
-    t.oid = ix.indrelid
-    and i.oid = ix.indexrelid
-    and a.attrelid = t.oid
-    and a.attnum = ANY(ix.indkey)
-    and t.relkind = 'r'
-    and t.relname = $1
-    and c.nspname = $2
-group by
-	i.oid,
-    t.relname,
-    i.relname,
-    c.nspname,
-    ix.indisprimary,
-    ix.indisunique
-order by
-    t.relname,
-    i.relname
+    SELECT i.indexrelid::regclass AS indexname,
+        k.i AS index_order,
+        i.indnkeyatts,
+        i.indisunique,
+        i.indisprimary,
+        coalesce(a.attname,
+                  (('{' || pg_get_expr(
+                              i.indexprs,
+                              i.indrelid
+                          )
+                        || '}')::text[]
+                  )[k.i]
+                ) AS index_column,
+        i.indoption[k.i - 1] = 0 AS ascending,
+        k.i <= i.indnkeyatts AS is_key
+      FROM pg_index i
+        CROSS JOIN LATERAL unnest(i.indkey) WITH ORDINALITY AS k(attnum, i)
+        LEFT JOIN pg_attribute AS a
+            ON i.indrelid = a.attrelid AND k.attnum = a.attnum
+        JOIN pg_class t on t.oid = i.indrelid
+        JOIN pg_namespace c on c.oid = t.relnamespace
+      WHERE
+       c.nspname = $1 AND
+       t.relname = $2
 `
   const params = [
-    table,
     schema,
+    table,
   ];
 
   const data = await driverExecuteSingle(conn, { query: sql, params });
-  const result = data.rows.map((row) => {
-    return {
-      id: row.index_id,
-      name: row.index_name,
-      table: row.table_name,
-      schema: row.schema,
-      columns: row.column_names,
-      unique: row.is_unique,
-      primary: row.is_primary
+
+  
+
+  const grouped = _.groupBy(data.rows, 'indexname')
+  
+  const result = Object.keys(grouped).map((indexName) => {
+    const blob = grouped[indexName]
+    const unique = blob[0].indisunique
+    const id = blob[0].index_order
+    const primary = blob[0].indisprimary
+    const columns: IndexedColumn[] = blob.map((b) => {
+      return {
+        name: b.index_column,
+        order: b.ascending ? 'ASC' : 'DESC'
+      }
+    })
+    const item: TableIndex = {
+      table, schema,
+      id,
+      name: indexName,
+      unique,
+      primary,
+      columns
     }
-  });
+    return item
+  })
+
   return result
 }
 
@@ -949,7 +958,7 @@ function createIndexSql(spec: CreateIndexSpec): string {
     throw new Error("Indexes require at least one column")
   }
   const columns = spec.columns?.map((c) => {
-    return PD.wrapIdentifier(c)
+    return `${PD.wrapIdentifier(c.name)} ${c.order}`
   })
   return `
     CREATE ${unique} INDEX ${name} on ${table}(${columns})
