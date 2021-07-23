@@ -465,6 +465,7 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
       name: row.name,
       type: row.routine_type ? row.routine_type.toLowerCase() : 'function',
       returnType: row.data_type,
+      entityType: 'routine',
       id: row.id,
       routineParams: params.map((p, i) => {
         return {
@@ -1151,7 +1152,7 @@ export function wrapIdentifier(value: string): string {
 }
 
 async function getSchema(conn: Conn) {
-  const sql = 'SELECT current_schema() AS schema';
+  const sql = 'SELECT CURRENT_SCHEMA() AS schema';
 
   const data = await driverExecuteQuery(conn, { query: sql });
   return data[0].rows[0].schema;

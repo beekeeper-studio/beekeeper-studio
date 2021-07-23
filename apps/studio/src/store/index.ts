@@ -19,6 +19,7 @@ import { entityFilter } from '../lib/db/sql_tools'
 
 import RawLog from 'electron-log'
 import { dialectFor } from '@shared/lib/dialects/models'
+import { PinModule } from './modules/PinModule'
 
 const log = RawLog.scope('store/index')
 
@@ -28,7 +29,7 @@ const tablesMatch = (t: TableOrView, t2: TableOrView) => {
     t2.entityType === t.entityType
 }
 
-interface State {
+export interface State {
   usedConfig: Nullable<SavedConnection>,
   usedConfigs: UsedConnection[],
   server: Nullable<IDbConnectionPublicServer>,
@@ -38,9 +39,6 @@ interface State {
   routines: Routine[],
   entityFilter: EntityFilter,
   tablesLoading: string,
-  pinStore: {
-    [x: string]: string[]
-  },
   connectionConfigs: UsedConnection[],
   history: UsedQuery[],
   favorites: UsedQuery[],
@@ -56,7 +54,8 @@ Vue.use(Vuex)
 const store = new Vuex.Store<State>({
   modules: {
     exports: ExportStoreModule,
-    settings: SettingStoreModule
+    settings: SettingStoreModule,
+    pins: PinModule
   },
   state: {
     usedConfig: null,
@@ -73,7 +72,6 @@ const store = new Vuex.Store<State>({
       showViews: true
     },
     tablesLoading: "loading tables...",
-    pinStore: {},
     connectionConfigs: [],
     history: [],
     favorites: [],
@@ -91,10 +89,6 @@ const store = new Vuex.Store<State>({
     },
     orderedUsedConfigs(state) {
       return _.sortBy(state.usedConfigs, 'updatedAt').reverse()
-    },
-    pinned(state) {
-      const result = state.database ? state.pinStore[state.database] : null
-      return _.isNil(result) ? [] : result
     },
     filteredTables(state) {
       return entityFilter(state.tables, state.entityFilter)
@@ -224,24 +218,6 @@ const store = new Vuex.Store<State>({
     tablesLoading(state, value: string) {
       state.tablesLoading = value
     },
-    addPinned(state, table: any) {
-      if (state.database && !state.pinStore[state.database]) {
-        Vue.set(state.pinStore, state.database, [table])
-      } else if (state.database && !state.pinStore[state.database].includes(table)) {
-        state.pinStore[state.database].push(table)
-      }
-    },
-    setPinned(state, pins) {
-      if (state.database) {
-        Vue.set(state.pinStore, state.database, pins)
-      }
-    },
-    removePinned(state, table) {
-      if (!state.database || !state.pinStore[state.database]) {
-        return
-      }
-      Vue.set(state.pinStore, state.database, _.without(state.pinStore[state.database], table))
-    },
     config(state, newConfig) {
       if (!state.connectionConfigs.includes(newConfig)) {
         state.connectionConfigs.push(newConfig)
@@ -318,6 +294,7 @@ const store = new Vuex.Store<State>({
         if (!lastUsedConnection) {
           const usedConfig = new UsedConnection(config)
           await usedConfig.save()
+          context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
         } else {
           lastUsedConnection.updatedAt = new Date()
           if (config.id) {
@@ -411,7 +388,8 @@ const store = new Vuex.Store<State>({
     async updateRoutines(context) {
       if (!context.state.connection) return;
       const connection = context.state.connection
-      const routines = await connection.listRoutines({ schema: null })
+      const routines: Routine[] = await connection.listRoutines({ schema: null })
+      routines.forEach((r) => r.entityType = 'routine')
       context.commit('routines', routines)
     },
     async setFilterQuery(context, filterQuery) {

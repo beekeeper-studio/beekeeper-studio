@@ -43,8 +43,6 @@ export default {
     }
   },
   async mounted() {
-    await this.$store.dispatch('loadSavedConfigs')
-    await this.$store.dispatch('loadUsedConfigs')
     await this.$store.dispatch('fetchUsername')
 
     const query = querystring.parse(global.location.search)

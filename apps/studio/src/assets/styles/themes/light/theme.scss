@@ -481,6 +481,19 @@ select {
     }
   }
 }
+
+.cm-s-monokai {
+  span {
+    .cm-string {
+      color: $brand-success;
+    }
+  }
+  .CodeMirror-line {
+    .cm-number {
+      color: $brand-warning;
+    }
+  }
+}
 .query-editor {
   .CodeMirror-code {
     .highlight {

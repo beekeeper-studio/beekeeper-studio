@@ -31,60 +31,19 @@
       </div>
     </div>
 
-    <!-- Pinned -->
-    <div v-show="orderedPins.length > 0" class="table-list pinned flex-col" ref="pinned">
-      <nav class="list-group flex-col">
-        <div class="list-heading row">
-          <div class="sub row flex-middle expand">
-            <!-- <span class="btn-fab open">
-              <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
-            </span> -->
-            <div>Pinned <span class="badge">{{orderedPins.length}}</span></div>
-          </div>
-          <!-- <div class="actions">
-            <a @click.prevent="collapseAll" v-tooltip="'Collapse All'">
-              <i class="material-icons">unfold_less</i>
-            </a>
-            <a @click.prevent="expandAll" v-tooltip="'Expand All'">
-              <i class="material-icons">unfold_more</i>
-            </a>
-            <a @click.prevent="refreshTables" v-tooltip="'Refresh'">
-              <i class="material-icons">refresh</i>
-            </a>
-          </div> -->
-        </div>
-        <Draggable v-model="orderedPins" tag="div" ref="pinContainer" class="list-body">
-          <div v-for="p in orderedPins" :key="p.id || p.name">
-            <table-list-item
-              v-if="p.entityType"
-              @selected="tableSelected"
-              :table="p"
-              :connection="connection"
-              :container="$refs.pinContainer"
-              :forceExpand="allExpanded"
-              :forceCollapse="allCollapsed"
-              :noSelect="true"
-            ></table-list-item>
-            <routine-list-item
-              v-else
-              :routine="p"
-              :forceExpand="allExpanded"
-              :forceCollapse="allCollapsed"
-              :connection="connection"
-              :container="$refs.pinContainer"
-            >
-            </routine-list-item>
-          </div>
-     
-
-        </Draggable>
-      </nav>
+    <!-- Pinned Tables -->
+    <div class="table-list pinned flex-col" ref="pinned" v-show="orderedPins.length > 0">
+      <pinned-table-list
+        :allExpanded="allExpanded"
+        :allCollapsed="allCollapsed"
+        :connection="connection"
+      />
     </div>
     
     <!-- Tables -->
-    <hr v-show="pinned.length > 0"> <!-- Fake splitjs Gutter styling -->
-    <div v-if="!tablesLoading" class="table-list flex-col" ref="tables">
-      <nav class="list-group flex-col">
+    <hr v-show="pinnedEntities.length > 0"> <!-- Fake splitjs Gutter styling -->
+    <div class="table-list flex-col" ref="tables">
+      <nav class="list-group flex-col" v-if="!tablesLoading">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
             <!-- <span class="btn-fab open">
@@ -127,6 +86,7 @@
                 
                 v-for="table in blob.tables"
                 :key="table.name"
+                :pinned="pinnedEntities.includes(table)"
                 :container="$refs.entityContainer"
                 @selected="tableSelected"
                 :table="table"
@@ -137,6 +97,7 @@
               <routine-list-item
                 v-for="routine in blob.routines"
                 :key="routine.name"
+                :pinned="pinnedEntities.includes(routine)"
                 :container="$refs.entityContainer"
                 :routine="routine"
                 :connection="connection"
@@ -153,11 +114,12 @@
           There are no entities in<br> <span>{{database}}</span>
         </div>
       </nav>
+      <div class="empty" v-else>
+        {{tablesLoading}}
+      </div>
     </div>
 
-    <div class="empty" v-else>
-      {{tablesLoading}}
-    </div>
+
 
 
   </div>
@@ -170,12 +132,11 @@
   import Split from 'split.js'
   import { mapState, mapGetters } from 'vuex'
   import TableFilter from '../../../mixins/table_filter'
-  import Draggable from 'vuedraggable'
-import { AppEvent } from '@/common/AppEvent'
+  import PinnedTableList from '@/components/sidebar/core/PinnedTableList.vue'
 
   export default {
     mixins: [TableFilter],
-    components: { TableListItem, TableListSchema, RoutineListItem, Draggable },
+    components: { TableListItem, TableListSchema, RoutineListItem, PinnedTableList, },
     data() {
       return {
         tableLoadError: null,
@@ -184,7 +145,6 @@ import { AppEvent } from '@/common/AppEvent'
         activeItem: 'tables',
         split: null,
         sizes: [25,75],
-        lastPinnedSize: 0,
       }
     },
     computed: {
@@ -232,20 +192,6 @@ import { AppEvent } from '@/common/AppEvent'
           this.$store.commit('showRoutines')
         }
       },
-      orderedPins: {
-        set(newPins) {
-          this.$store.commit('setPinned', newPins)
-        },
-        get() {
-          return this.pinned
-        }
-      },
-      pinnedTables() {
-        return this.pinned.filter((p) => (p.entityType))
-      },
-      pinnedRoutines() {
-        return this.pinned.filter((p) => (p.type))
-      },
       components() {
         return [
           this.$refs.pinned,
@@ -255,37 +201,26 @@ import { AppEvent } from '@/common/AppEvent'
       supportsRoutines() {
         return this.connection.supportedFeatures().customRoutines
       },
+      loadedWithPins() {
+        return !this.tablesLoading && this.pinnedEntities.length > 0
+      },
       ...mapState(['selectedSidebarItem', 'tables', 'routines', 'connection', 'database', 'tablesLoading']),
-      ...mapGetters(['pinned', 'schemaTables', 'filteredTables', 'filteredRoutines']),
+      ...mapGetters(['schemaTables', 'filteredTables', 'filteredRoutines']),
+      ...mapGetters({
+          pinnedEntities: 'pins/pinnedEntities',
+          orderedPins: 'pins/orderedPins',
+      }),
     },
     watch: {
-      pinned: {
-        deep: true,
-        handler(newPinned) {
-          if (newPinned.length > 0 && this.lastPinnedSize === 0) {
-            this.$nextTick(() => {
-              this.split.setSizes(this.sizes);
-            });
-          } else if (newPinned.length === 0) {
-            // this.split.destroy();
-          }
-          this.lastPinnedSize = newPinned.length
+      loadedWithPins (loaded, oldloaded) {
+        if (loaded && (!oldloaded)) {
+          this.$nextTick(() => {
+            this.split.setSizes(this.sizes);
+          });
+        } else if (!loaded) {
+          // this.split.destroy();
         }
       },
-      tablesLoading() {
-        if (!this.tablesLoading) {
-          this.$nextTick(() => {
-            this.split = Split(this.components, {
-              elementStyle: (dimension, size) => ({
-                  'flex-basis': `calc(${size}%)`,
-              }),
-              direction: 'vertical',
-              sizes: this.sizes,
-            })
-
-          })
-        }
-      }
     },
     methods: {
       tableSelected() {
@@ -318,6 +253,13 @@ import { AppEvent } from '@/common/AppEvent'
     },
     mounted() {
       document.addEventListener('mousedown', this.maybeUnselect)
+      this.split = Split(this.components, {
+        elementStyle: (dimension, size) => ({
+            'flex-basis': `calc(${size}%)`,
+        }),
+        direction: 'vertical',
+        sizes: this.sizes,
+      })
     },
     beforeDestroy() {
       document.removeEventListener('mousedown', this.maybeUnselect)
