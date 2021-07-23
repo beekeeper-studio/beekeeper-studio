@@ -1,0 +1,135 @@
+name: Studio - Build & Publish
+
+on: 
+  push:
+    tags:
+      - "v*"
+    paths-ignore:
+      - "apps/sqltools/**"
+
+jobs:
+
+  release:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-18.04, windows-latest, ubuntu-arm64]
+
+    steps:
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v3
+        with:
+          gpg-private-key: ${{ secrets.gpg_key }}
+        if: "startsWith(matrix.os, 'ubuntu')"
+
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+        env:
+          ImageOS: ubuntu18
+        if: "startsWith(matrix.os, 'ubuntu-18.04')"
+
+      - run: "curl -sLO https://github.com/deb-s3/deb-s3/releases/download/0.11.2/deb-s3-0.11.2.gem"
+        if: "startsWith(matrix.os, 'ubuntu-18.04')"
+
+      - run: "gem install -N ./deb-s3-0.11.2.gem"
+        if: "startsWith(matrix.os, 'ubuntu-18.04')"
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14
+
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v1
+        if: startsWith(matrix.os, 'ubuntu')
+        with:
+          snapcraft_token: ${{ secrets.snapcraft_token }}
+          skip_install: ${{ matrix.os == 'ubuntu-arm64' }}
+      - name: Remove dist directory
+        if: "!startsWith(matrix.os, 'windows')"
+        run: rm -rf ./apps/studio/dist_electron
+      - name: Remove dist directory windows
+        if: startsWith(matrix.os, 'windows')
+        run: Remove-Item dist_electron -Recurse -ErrorAction Ignore
+      - name: Prepare for app notarization
+        if: startsWith(matrix.os, 'macos')
+        # Import Apple API key for app notarization on macOS
+        run: |
+          mkdir -p ~/private_keys/
+          echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
+
+      - name: Build and Publish (ARM Linux)
+        run: cd apps/studio && ./build/arm-publish.sh
+        if: startsWith(matrix.os, 'ubuntu-arm64')
+        env:
+          GH_TOKEN: ${{ secrets.github_token }}
+          BT_TOKEN: ${{ secrets.bintray_apikey }}
+          USE_SYSTEM_FPM: true
+          SNAPCRAFT_BUILD_ENVIRONMENT: host
+      
+      - name: Prebuild
+        run: yarn components:build
+
+      - name: Build and Publish
+        if: "!startsWith(matrix.os, 'ubuntu-arm64')"
+        uses: samuelmeuli/action-electron-builder@v1
+        with:
+          package_root: apps/studio
+          # GitHub token, automatically provided to the action
+          # (No need to define this secret in the repo settings)
+          github_token: ${{ secrets.github_token }}
+          skip_build: true
+          use_vue_cli: true
+          max_attempts: 2
+
+          # If the commit is tagged with a version (e.g. "v1.0.0"),
+          # release the app after building
+          release: true
+          windows_certs: ${{ secrets.windows_cert }}
+          windows_certs_password: ${{ secrets.windows_cert_password }}
+          mac_certs: ${{ secrets.mac_dev }}
+          mac_certs_password: ${{ secrets.mac_dev_pw }}
+        env:
+          API_KEY_ID: ${{ secrets.apple_key_id }}
+          API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
+          BT_TOKEN: "${{secrets.bintray_apikey}}"
+
+      - name: Publish DEB to S3
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          deb-s3 upload apps/studio/dist_electron/*.deb \
+            --bucket=deb.beekeeperstudio.io \
+            --lock \
+            --sign=${{steps.import_gpg.outputs.keyid}} \
+            --preserve-versions
+        env:
+          AWS_ACCESS_KEY_ID: "${{secrets.aws_access_key_id}}"
+          AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
+      - name: Invalidate cloudfront cache
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          aws cloudfront create-invalidation \
+          --distribution "$DISTRIBUTION" \
+          --paths "/*"
+        env:
+          AWS_ACCESS_KEY_ID: "${{secrets.aws_access_key_id}}"
+          AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
+          DISTRIBUTION: ${{secrets.cloudfront_distribution}}
+      - name: Cleanup artifacts
+        if: "!startsWith(matrix.os, 'windows')"
+        run: |
+          npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
+      - name: Cleanup artifacts Win
+        if: startsWith(matrix.os, 'windows')
+        run: |
+          npx rimraf "apps/studio/dist_electron/!(*.exe)"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}
+          path: dist_electron

@@ -1,0 +1,26 @@
+@import '../variables';
+
+.hljs {
+  background: $query-editor-bg;
+  border-radius: 8px;
+  padding: 0.8rem;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 14px;
+  .hljs-keyword {
+    color: $brand-pink;
+  }
+  .hljs-type {
+    color: $theme-secondary;
+  }
+  .hljs-number {
+    color: $theme-primary;
+  }
+  .hljs-symbol,
+  .hljs-literal {
+    // color: $brand-success;
+    color: $theme-secondary;
+  }
+  .hljs-built_in {
+    color: $brand-warning;
+  }
+}

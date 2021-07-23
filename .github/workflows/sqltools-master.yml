@@ -1,0 +1,36 @@
+name: Sqltools - Master build
+
+on: 
+  push:
+    paths-ignore:
+      - apps/studio/**
+    branches:
+      - "master"
+
+
+jobs:
+  masterbuild:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-18.04]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14
+
+      - name: Check dependencies
+        run: "yarn install --frozen-lockfile"
+
+      - name: Build SQLTools
+        run: "yarn run sqltools:build"
+
+      - name: Cleanup artifacts
+        run: |
+          npx rimraf "apps/sqltools/dist/*"
