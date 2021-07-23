@@ -133,6 +133,7 @@
   import { mapState, mapGetters } from 'vuex'
   import TableFilter from '../../../mixins/table_filter'
   import PinnedTableList from '@/components/sidebar/core/PinnedTableList.vue'
+import { AppEvent } from '@/common/AppEvent'
 
   export default {
     mixins: [TableFilter],
