@@ -240,7 +240,7 @@ export class SavedConnection extends DbConnectionBase {
       this.port = parsed.port || this.port
       this.username = parsed.user || this.username
       this.password = parsed.password || this.password
-      this.defaultDatabase = parsed.path ? parsed.path[0] : null || this.defaultDatabase
+      this.defaultDatabase = parsed.path?.[0] ?? this.defaultDatabase
       return true
     } catch (ex) {
       log.error('unable to parse connection string, assuming sqlite file', ex)
