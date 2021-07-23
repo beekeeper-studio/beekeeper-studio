@@ -408,6 +408,7 @@ $cell-padding:           $gutter-w;
 			&.tabulator-loading{
 				border: 0;
 				color: $text-dark;
+        background-color: black;
 			}
 
 			//error message

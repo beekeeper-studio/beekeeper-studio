@@ -259,6 +259,16 @@ select {
   }
 }
 .tabulator {
+
+  .tabulator-loader {
+    .tabulator-loader-msg {
+      &.tabulator-loading {
+        background-color: white;
+      }
+      
+    }
+  }
+
   .tabulator-header {
     .tabulator-col {
       &.foreign-key {
