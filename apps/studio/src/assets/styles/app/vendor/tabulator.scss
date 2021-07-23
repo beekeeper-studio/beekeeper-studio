@@ -525,10 +525,6 @@ $cell-padding:           $gutter-w;
     padding: 0 ($gutter-h * 1.5);
     width: 60px;
     text-align: center;
-    &:hover, &:focus {
-      background: rgba(0,0,0,0.1);
-      min-width: auto;
-    }
   }
 }
 
