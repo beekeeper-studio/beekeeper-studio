@@ -1,4 +1,20 @@
 
+It's a 🔥🔥 July week here in Dallas, so we've got some equally 🔥🔥 new Beekeeper Studio features for you!
+
+## Healine Features
+
+1. 💥 **Table Schema Editing** - Edit your table column types, names, defaults, etc. Don't trust Beekeeper to make the change? Pop open the change in a new SQL tab.
+
+2. 🤩 **Persisted Pinned Tables** - When you are using a saved connection, your pinned tables will now persist across sessions
+
+3. 🤟 **Visual Table Builder** - Create new tables visually right inside of Beekeeper Studio. No need to remember all that syntax anymore.
+
+
+## Other Impressive Features
+
+1. Table 
+
+
 Got a couple of really nice new features for you in this release.
 
 1. Table Properties - right click -> properties to view table information like triggers, indexes, schema, and comments.
