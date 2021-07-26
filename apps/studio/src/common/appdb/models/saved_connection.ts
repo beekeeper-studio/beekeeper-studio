@@ -132,17 +132,24 @@ export class DbConnectionBase extends ApplicationEntity {
     return Crypto.createHash('md5').update(str).digest('hex')
   }
 
-
   get simpleConnectionString() {
+    let connectionString = `${this.host}:${this.port}`;
     if (this.connectionType === 'sqlite') {
       return path.basename(this.defaultDatabase || "./unknown.db")
     } else {
-      let connectionString = `${this.host}:${this.port}`;
       if (this.defaultDatabase) {
         connectionString += `/${this.defaultDatabase}`
       }
       return connectionString
     }
+  }
+
+  get bastionHostString() {
+    return `${this.sshBastionHost}`
+  }
+
+  get sshHostString() {
+    return `${this.sshHost}`
   }
 
   get fullConnectionString() {
