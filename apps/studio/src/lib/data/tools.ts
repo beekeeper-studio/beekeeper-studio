@@ -32,7 +32,7 @@ export const Mutators = {
       return mutator(item, preserveComplex)
     })
   },
-  
+
   /**
    * Mutate database data to make it json-friendly
    * This is particularly useful for binary-type data
@@ -58,13 +58,16 @@ export const Mutators = {
   bit1Mutator(value: any): JsonFriendly {
     return value[0]
   },
-  
+
   /**
    * Stringify bit data for use in json / UIs
    * @param  {any} value
    * @returns JsonFriendly
    */
   bitMutator(value: any): JsonFriendly {
+    // SQL Server bit data type is an integer data type
+    if (this.connection.connectionType === "sqlserver") return value;
+
     const result = []
     for (let index = 0; index < value.length; index++) {
       result.push(value[index])
