@@ -61,9 +61,7 @@ export default {
       }
     },
     async revertDescription() {
-      console.log("revert", this.oldDescription)
       if (this.oldDescription === undefined) {
-        console.log('not reverting')
         return
       }
       this.properties.description = this.oldDescription
@@ -72,7 +70,6 @@ export default {
     },
     async saveDescription() {
       this.justSaved = true
-      console.log("save")
       this.editingDescription = false
       this.oldDescription = undefined
       const confirmedValue = await this.connection.setTableDescription(this.table.name, this.properties.description, this.table.schema)

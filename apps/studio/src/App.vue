@@ -50,13 +50,11 @@ export default {
       this.url = query.url || null
     }
 
-    console.log("received query", query)
 
     this.$nextTick(() => {
       ipcRenderer.send('ready')
     })
     if (this.themeValue) {
-      console.log("setting background to ", this.themeValue)
       document.body.className = `theme-${this.themeValue}`
     }
 
@@ -73,7 +71,7 @@ export default {
   },
   methods: {
     databaseSelected(db) {
-      console.log("Do something here! (Db selected) " + db)
+      // TODO: do something here if needed
     },
   }
 }

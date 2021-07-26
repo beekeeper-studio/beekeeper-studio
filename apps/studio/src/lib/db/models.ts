@@ -52,7 +52,6 @@ export interface TableProperties {
   description?: string
   size?: number
   indexSize?: number
-  length: number
   indexes: TableIndex[]
   relations: TableKey[]
   triggers: TableTrigger[]
@@ -121,7 +120,6 @@ export interface IDbInsert {
 export interface TableResult {
   result: any[];
   fields: string[];
-  totalRecords: Number;
 }
 
 export interface TableChanges {

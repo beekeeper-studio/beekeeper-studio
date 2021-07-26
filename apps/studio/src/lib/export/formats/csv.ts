@@ -14,6 +14,8 @@ export class CsvExporter extends Export {
   readonly format: string = 'csv'
   rowSeparator: string = '\n'
 
+  preserveComplex = false
+
   private outputOptions: OutputOptionsCsv
   private headerConfig: Papa.UnparseConfig
   private rowConfig: Papa.UnparseConfig = {

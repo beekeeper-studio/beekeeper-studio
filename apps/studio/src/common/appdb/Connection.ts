@@ -1,4 +1,3 @@
-console.log('db-connection')
 import { createConnection, Connection as TypeORMConnection } from "typeorm"
 import { SavedConnection } from "./models/saved_connection"
 import { UsedConnection } from "./models/used_connection"

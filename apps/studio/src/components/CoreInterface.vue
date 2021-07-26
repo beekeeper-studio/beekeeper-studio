@@ -66,7 +66,6 @@
       this.$store.dispatch('pins/unloadPins')
       this.$root.$off(AppEvent.toggleSidebar, this.toggleSidebar)
       if(this.split) {
-        console.log("destroying split")
         this.split.destroy()
       }
     },

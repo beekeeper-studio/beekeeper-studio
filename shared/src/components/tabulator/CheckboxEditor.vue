@@ -18,7 +18,6 @@
         if (_e.key === 'Escape') {
           this.$emit('cancel')
         }
-        console.log("keydown", _e.key)
       },
       submit() {
         this.$emit('value', this.checked)

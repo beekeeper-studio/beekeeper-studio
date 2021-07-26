@@ -423,7 +423,7 @@ input[type="checkbox"] {
   &:active,
   &:checked,
   &:checked:active {
-    background: $theme-base);
+    background: $theme-base;
     color: $theme-bg;
     box-shadow: none;
   }
@@ -603,7 +603,7 @@ input[type=file] {
   }
   &.gutter-horizontal {
     width: 0!important;
-    cursor: e-resize;
+    cursor: ew-resize;
     &:after {
       height: 100%;
       width: 8px;
@@ -611,7 +611,7 @@ input[type=file] {
     }
   }
   &.gutter-vertical {
-    cursor: n-resize;
+    cursor: ns-resize;
     height: 0!important;
     &:after {
       height: 8px;
