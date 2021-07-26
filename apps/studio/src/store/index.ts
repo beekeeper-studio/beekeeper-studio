@@ -18,7 +18,7 @@ import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 
 import RawLog from 'electron-log'
-import { dialectFor } from '@shared/lib/dialects/models'
+import { Dialect, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 
 const log = RawLog.scope('store/index')
@@ -81,7 +81,8 @@ const store = new Vuex.Store<State>({
     selectedSidebarItem: null
   },
   getters: {
-    dialect(state: State) {
+    dialect(state: State): Dialect | null {
+      if (!state.usedConfig) return null
       return dialectFor(state.usedConfig.connectionType)
     },
     selectedSidebarItem(state) {

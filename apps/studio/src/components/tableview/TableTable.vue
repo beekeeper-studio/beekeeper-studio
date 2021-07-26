@@ -635,10 +635,13 @@ export default Vue.extend({
     editorType(dt) {
       const ne = vueEditor(NullableInputEditorVue)
       switch (dt) {
-        case 'text': return 'textarea'
-        case 'json': return 'textarea'
-        case 'jsonb': return 'textarea'
-        case 'bytea': return 'textarea'
+        case 'text':
+        case 'json':
+        case 'jsonb':
+        case 'bytea':
+        case 'tsvector':
+        case '_text':
+          return 'textarea'
         case 'bool': return 'select'
         default: return ne
       }
@@ -1007,6 +1010,7 @@ export default Vue.extend({
     async refreshTable() {
       log.debug('refreshing table')
       const page = this.tabulator.getPage()
+      this.fetchTableLength()
       await this.tabulator.replaceData()
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true

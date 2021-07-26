@@ -558,3 +558,8 @@ async function runWithConnection(conn, run) {
     }
   }
 }
+
+
+export const sqliteTestOnly = {
+  alterTableSql
+}

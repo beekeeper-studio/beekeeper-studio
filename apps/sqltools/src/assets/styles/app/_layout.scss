@@ -423,7 +423,7 @@ input[type="checkbox"] {
   &:active,
   &:checked,
   &:checked:active {
-    background: $theme-base);
+    background: $theme-base;
     color: $theme-bg;
     box-shadow: none;
   }
