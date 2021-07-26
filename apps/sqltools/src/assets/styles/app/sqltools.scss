@@ -151,6 +151,22 @@ section {
 
 // Code Examples
 
+.template {
+  .schema-header {
+    .btn-primary {
+      display: none;
+    }
+  }
+  .tabulator-row {
+    .tabulator-cell:hover {
+      background: transparent;
+      cursor: default;
+      input {
+        cursor: default;
+      }
+    }
+  }
+}
 
 // Footer
 // --------------------------------
