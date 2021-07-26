@@ -276,7 +276,7 @@ export default Vue.extend({
         flex-grow: 1;
         &.tabulator-editing {
           border: 0;
-          padding: 0 $gutter-h!important;
+          padding: 0 !important;
           min-height: $row-height;
           height: $row-height;
           line-height: $row-height;
@@ -284,6 +284,7 @@ export default Vue.extend({
           pre, input:not([type="checkbox"]) {
             min-height: $row-height;
             line-height: $row-height;
+            padding: $cell-padding!important;
           }
         }
         &.no-padding {
