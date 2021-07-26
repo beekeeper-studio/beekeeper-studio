@@ -18,7 +18,7 @@ import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 
 import RawLog from 'electron-log'
-import { dialectFor } from '@shared/lib/dialects/models'
+import { Dialect, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 
 const log = RawLog.scope('store/index')
@@ -81,7 +81,8 @@ const store = new Vuex.Store<State>({
     selectedSidebarItem: null
   },
   getters: {
-    dialect(state: State) {
+    dialect(state: State): Dialect | null {
+      if (!state.usedConfig) return null
       return dialectFor(state.usedConfig.connectionType)
     },
     selectedSidebarItem(state) {
@@ -274,7 +275,6 @@ const store = new Vuex.Store<State>({
     },
 
     async openUrl(context, url: string) {
-      console.log("open url", url)
       const conn = new SavedConnection();
       if (!conn.parse(url)) {
         throw `Unable to parse ${url}`
@@ -392,9 +392,9 @@ const store = new Vuex.Store<State>({
       routines.forEach((r) => r.entityType = 'routine')
       context.commit('routines', routines)
     },
-    async setFilterQuery(context, filterQuery) {
+    setFilterQuery: _.debounce(function (context, filterQuery) {
       context.commit('filterQuery', filterQuery)
-    },
+    }, 500),
     async pinTable(context, table) {
       table.pinned = true
       context.commit('addPinned', table)

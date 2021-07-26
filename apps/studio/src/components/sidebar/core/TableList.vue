@@ -265,7 +265,6 @@ import { AppEvent } from '@/common/AppEvent'
     beforeDestroy() {
       document.removeEventListener('mousedown', this.maybeUnselect)
       if(this.split) {
-        console.log("destroying split")
         this.split.destroy()
       }
     }

@@ -168,6 +168,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
     executeQuery: (queryText, _schema = defaultSchema) => executeQuery(conn, queryText),
     listDatabases: (filter?: DatabaseFilterOptions) => listDatabases(conn, filter),
+    getTableLength: (table: string, schema: string) => getTableLength(conn, table, schema),
     selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
     selectTopStream: (database: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema: string = defaultSchema) => selectTopStream(conn, database, table, orderBy, filters, chunkSize, schema),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
@@ -326,9 +327,11 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   }
 }
 
-async function getTableLength(conn: HasPool, table: string, schema: string, filters: TableFilter[] | string | undefined, forceSlow: boolean): Promise<number> {
+async function getTableLength(conn: HasPool, table: string, schema: string): Promise<number> {
   const version = await getVersion(conn)
-  const { countQuery, params } = buildSelectTopQueries({ table, schema, filters, version, forceSlow})
+  const tableType = await getEntityType(conn, table, schema)
+  const forceSlow = !tableType || tableType !== 'BASE_TABLE'
+  const { countQuery, params } = buildSelectTopQueries({ table, schema, filters: undefined, version, forceSlow})
   const countResults = await driverExecuteSingle(conn, { query: countQuery, params: params })
   const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
@@ -361,18 +364,13 @@ async function selectTop(
 
   const version = await getVersion(conn)
   version.isPostgres
-  const tableType = version.isPostgres ? await getEntityType(conn, table, schema) : await Promise.resolve(null)
-  log.info('table type', tableType)
-  const forceSlow = tableType === null || tableType !== 'BASE TABLE'
   const qs = buildSelectTopQueries({
     table, offset, limit, orderBy, filters, schema, version
   })
   const result = await driverExecuteSingle(conn, { query: qs.query, params: qs.params })
-  const totalRecords = await getTableLength(conn, table, schema, filters, forceSlow)
 
   return {
     result: result.rows,
-    totalRecords: Number(totalRecords),
     fields: result.fields.map(f => f.name)
   }
 }
@@ -688,19 +686,14 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
   
   const triggersPromise = version.isPostgres ? listTableTriggers(conn, table, schema) : Promise.resolve([])
 
-  const tableType = await getEntityType(conn, table, schema)
-  const forceSlow = !tableType || tableType !== 'BASE TABLE'
-
   const [
     result,
-    totalRecords,
     indexes,
     relations,
     triggers,
     owner
   ] = await Promise.all([
     detailsPromise,
-    getTableLength(conn, table, schema, undefined, forceSlow),
     listTableIndexes(conn, table, schema),
     getTableKeys(conn, "", table, schema),
     triggersPromise,
@@ -712,7 +705,6 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     description: props.description,
     indexSize: Number(props.index_size),
     size: Number(props.table_size),
-    length: totalRecords,
     indexes,
     relations,
     triggers,
@@ -810,7 +802,6 @@ export async function getPrimaryKeys(conn: HasPool, _database: string, table: st
     AND    i.indisprimary 
     ORDER BY a.attnum
   `
-  console.log("query", psqlQuery)
 
   const redshiftQuery = `
     select tco.constraint_schema,
@@ -1298,7 +1289,6 @@ function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQuery
     // node-postgres has support for Promise query
     // but that always returns the "fields" property empty
     return new Promise((resolve, reject) => {
-      console.log(queryArgs.query)
       log.info('RUNNING', queryArgs.query, queryArgs.params)
       connection.query(args, (err: Error, data: QueryResult | QueryResult[]) => {
         if (err) return reject(err);

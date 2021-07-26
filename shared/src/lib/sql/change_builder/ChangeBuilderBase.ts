@@ -168,7 +168,7 @@ export abstract class ChangeBuilderBase {
       initial,
       alterTable,
       fullRenames,
-      this.alterComments(spec.alterations || []),
+      this.alterComments(spec.alterations || []).join(";"),
       end
     ].filter((sql) => !!sql).join(";")
     if (results.length) {

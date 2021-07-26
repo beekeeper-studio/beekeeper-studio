@@ -125,11 +125,8 @@ export async function executeSelectTop(queries, conn, executor) {
   const { query, countQuery, params } = queries
   const countResults = await executor(conn, { query: countQuery, params })
   const result = await executor(conn, { query, params })
-  const rowWithTotal = countResults.data.find((row) => { return row.total })
-  const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return {
     result: result.data,
-    totalRecords: Number(totalRecords),
     fields: Object.keys(result.data[0] || {})
   }  
 }

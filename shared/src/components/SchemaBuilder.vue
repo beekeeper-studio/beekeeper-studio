@@ -62,7 +62,6 @@ export default Vue.extend({
       deep: true,
       handler() {
         if (this.builtColumns && this.modified) {
-          console.log("emitting columns")
           this.$emit('columnsChanged', this.builtColumns)
         }
       }
@@ -269,7 +268,7 @@ export default Vue.extend({
       .tabulator-cell {
         min-height: $row-height;
         height: $row-height;
-        line-height: $row-height + 2px;
+        line-height: $row-height;
         padding: 0 $cell-padding;
         min-width: $min-cell-width;
         font-size: $cell-font-size;
@@ -277,14 +276,15 @@ export default Vue.extend({
         flex-grow: 1;
         &.tabulator-editing {
           border: 0;
-          padding: 0 $gutter-h!important;
+          padding: 0 !important;
           min-height: $row-height;
           height: $row-height;
-          line-height: $row-height + 2px;
+          line-height: $row-height;
           box-shadow: inset 0 1px $theme-base;
-          input:not([type="checkbox"]) {
-            background: rgba($theme-base, 0.08);
-            box-shadow: inset 0 -1px $theme-base;
+          pre, input:not([type="checkbox"]) {
+            min-height: $row-height;
+            line-height: $row-height;
+            padding: $cell-padding!important;
           }
         }
         &.no-padding {

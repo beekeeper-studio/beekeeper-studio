@@ -495,7 +495,7 @@
             CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
 
           } catch (ex) {
-            console.log('no keyup space autocomplete')
+            // do nothing
           }
         }
       },

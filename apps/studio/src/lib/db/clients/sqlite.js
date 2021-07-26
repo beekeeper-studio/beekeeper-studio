@@ -48,6 +48,7 @@ export default async function (server, database) {
     applyChanges: (changes) => applyChanges(conn, changes),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: () => listDatabases(conn),
+    getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
     selectTopStream: (db, table, orderBy, filters, chunkSize) => selectTopStream(conn, db, table, orderBy, filters, chunkSize),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -87,8 +88,8 @@ export function getQuerySelectTop(client, table, limit) {
   return `SELECT * FROM ${wrapIdentifier(table)} LIMIT ${limit}`;
 }
 
-export async function getTableLength(conn, table, filters) {
-  const { countQuery, params } = buildSelectTopQuery(table, null, null, null, filters)
+export async function getTableLength(conn, table) {
+  const { countQuery, params } = buildSelectTopQuery(table, null, null, null, [])
   const countResults = await driverExecuteQuery(conn, { query: countQuery, params })
   const rowWithTotal = countResults.data.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
@@ -520,7 +521,7 @@ export function driverExecuteQuery(conn, queryArgs) {
       })
 
     } catch (error) {
-      console.log(error)
+      log.error(error)
       reject(error)
     }
   });
@@ -556,4 +557,9 @@ async function runWithConnection(conn, run) {
       db.close()
     }
   }
+}
+
+
+export const sqliteTestOnly = {
+  alterTableSql
 }
