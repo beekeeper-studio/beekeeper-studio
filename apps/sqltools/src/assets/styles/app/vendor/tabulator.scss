@@ -173,6 +173,11 @@ $cell-padding:           $gutter-w;
       pre, input:not([type="checkbox"]) {
         line-height: $row-height;
       }
+      input:not([type="checkbox"]) {
+        &.nullible-input {
+          padding-right: 18px!important;
+        }
+      }
       .tabulator-bks-checkbox {
         padding: 0!important;
       }
