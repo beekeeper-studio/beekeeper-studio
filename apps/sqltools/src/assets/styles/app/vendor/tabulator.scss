@@ -246,12 +246,9 @@ $cell-padding:           $gutter-w;
 .tabulator-row {
   .tabulator-cell {
     cursor: pointer;
-    &:hover {
+    &:hover, &.editable:hover {
       background: rgba($theme-base,0.08);
     }
-    &.editable:hover {
-      background: rgba($theme-base,0.08);
-    } 
     &.primary-key {
       cursor: default;
       opacity: 0.5;
