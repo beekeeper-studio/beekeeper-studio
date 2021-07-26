@@ -8,7 +8,7 @@
     <section>
       <div class="small-wrap">
         
-        <!-- Table Hader -->
+        <!-- Table Header -->
         <div class="table-header flex flex-top">
           <div class="flex-col expand">
             <h1 class="table-name">{{template.name}} <span class="badge">template</span></h1>
@@ -165,4 +165,5 @@ export default Vue.extend({
   .code-wrap {
     margin-top: $gutter-w * 4;
   }
+
 </style>
