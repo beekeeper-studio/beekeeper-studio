@@ -129,4 +129,4 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: ${{ matrix.os }}
-          path: dist_electron
+          path: apps/studio/dist_electron
