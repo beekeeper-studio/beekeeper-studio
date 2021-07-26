@@ -71,9 +71,6 @@ jobs:
           BT_TOKEN: ${{ secrets.bintray_apikey }}
           USE_SYSTEM_FPM: true
           SNAPCRAFT_BUILD_ENVIRONMENT: host
-      
-      - name: Prebuild
-        run: yarn components:build
 
       - name: Build and Publish
         if: "!startsWith(matrix.os, 'ubuntu-arm64')"
