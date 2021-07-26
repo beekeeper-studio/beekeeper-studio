@@ -401,10 +401,6 @@ $cell-success:           $row-add;
       }
       &.inserted, &.deleted {
         .tabulator-cell {
-          // &.edited {
-          //   background: transparent;
-          //   box-shadow: none;
-          // }
           cursor: pointer;
           &.edited {
             background: rgba($theme-base, 0.05);
