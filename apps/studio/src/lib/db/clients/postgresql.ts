@@ -802,7 +802,6 @@ export async function getPrimaryKeys(conn: HasPool, _database: string, table: st
     AND    i.indisprimary 
     ORDER BY a.attnum
   `
-  console.log("query", psqlQuery)
 
   const redshiftQuery = `
     select tco.constraint_schema,
@@ -1290,7 +1289,6 @@ function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQuery
     // node-postgres has support for Promise query
     // but that always returns the "fields" property empty
     return new Promise((resolve, reject) => {
-      console.log(queryArgs.query)
       log.info('RUNNING', queryArgs.query, queryArgs.params)
       connection.query(args, (err: Error, data: QueryResult | QueryResult[]) => {
         if (err) return reject(err);

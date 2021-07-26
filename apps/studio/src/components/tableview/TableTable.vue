@@ -252,7 +252,6 @@ export default Vue.extend({
     page: {
       set(nu) {
         const newPage = Number(nu)
-        console.log("new page", newPage)
         if (_.isNaN(newPage) || newPage < 1) return
         this.rawPage = newPage
       },

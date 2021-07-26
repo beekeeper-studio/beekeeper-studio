@@ -164,14 +164,6 @@ export abstract class ChangeBuilderBase {
       }).join(';')
     }
 
-    console.log(
-      initial,
-      alterTable,
-      fullRenames,
-      this.alterComments(spec.alterations || []).join(";"),
-      end
-    )
-
     const results = [
       initial,
       alterTable,

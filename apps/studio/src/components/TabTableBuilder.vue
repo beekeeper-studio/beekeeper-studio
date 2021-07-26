@@ -116,7 +116,6 @@ export default Vue.extend({
   },
   methods: {
     handleChange(columns: SchemaItem[]) {
-      console.log("handling change")
       this.error = undefined
       this.columns = columns
     },

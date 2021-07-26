@@ -170,9 +170,7 @@
         this.tabItems.filter(t => t.id === id).forEach(t => t.titleScope = value)
       },
       closeTab(id) {
-        console.log("trying to close tab", id)
         const tab = id ? this.tabItems.find((t) => t.id === id) : this.activeTab
-        console.log('close tab', tab)
         this.close(tab)
       },
       handleCreateTab() {
@@ -272,7 +270,6 @@
 
       },
       close(tab) {
-        console.log('closing tab', tab.title)
         if (this.activeTab === tab) {
           if(tab === this.lastTab) {
             this.previousTab()

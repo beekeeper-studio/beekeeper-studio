@@ -521,7 +521,7 @@ export function driverExecuteQuery(conn, queryArgs) {
       })
 
     } catch (error) {
-      console.log(error)
+      log.error(error)
       reject(error)
     }
   });

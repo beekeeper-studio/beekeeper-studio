@@ -275,7 +275,6 @@ const store = new Vuex.Store<State>({
     },
 
     async openUrl(context, url: string) {
-      console.log("open url", url)
       const conn = new SavedConnection();
       if (!conn.parse(url)) {
         throw `Unable to parse ${url}`

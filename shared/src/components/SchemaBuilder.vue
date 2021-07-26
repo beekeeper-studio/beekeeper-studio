@@ -62,7 +62,6 @@ export default Vue.extend({
       deep: true,
       handler() {
         if (this.builtColumns && this.modified) {
-          console.log("emitting columns")
           this.$emit('columnsChanged', this.builtColumns)
         }
       }
