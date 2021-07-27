@@ -62,12 +62,13 @@ import Vue from 'vue'
 import _ from 'lodash'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
-import { CreateIndexSpec, DropIndexSpec } from '@shared/lib/dialects/models'
+import { CreateIndexSpec, DropIndexSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import rawLog from 'electron-log'
-import sqlFormatter from 'sql-formatter'
+import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '../common/ErrorAlert.vue'
 import { TableIndex } from '@/lib/db/models'
+import { mapGetters } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
 
 interface State {
@@ -84,7 +85,7 @@ export default Vue.extend({
     ErrorAlert,
   },
   mixins: [data_mutators],
-  props: ["table", "connection", "tabId", "active", "properties"],
+  props: ["table", "connection", "tabId", "active", "properties", 'tabState'],
   data(): State {
     return {
       tabulator: null,
@@ -95,9 +96,13 @@ export default Vue.extend({
     }
   },
   watch: {
-    ...TabulatorStateWatchers
+    ...TabulatorStateWatchers,
+    hasEdits() {
+      this.tabState.dirty = this.hasEdits
+    }
   },
   computed: {
+    ...mapGetters(['dialect']),
     indexColumnOptions() {
       const normal = this.table.columns.map((c) => c.columnName)
       const desc = this.table.columns.map((c) => `${c.columnName} DESC`)
@@ -164,8 +169,8 @@ export default Vue.extend({
         name,
         unique: true
       })
-      row.getElement().classList.add('inserted')
       this.newRows.push(row)
+      setTimeout(() => row.getCells()[0].edit(), 50)
     },
     async removeRow(_e: any, cell: CellComponent) {
       if (this.loading) return
@@ -230,7 +235,7 @@ export default Vue.extend({
     submitSql() {
       const { additions, drops } = this.getPayload()
       const sql = this.connection.alterIndexSql(additions, drops)
-      const formatted = sqlFormatter.format(sql)
+      const formatted = format(sql, { language: FormatterDialect(this.dialect)})
       this.$root.$emit(AppEvent.newTab, formatted)
     },
 

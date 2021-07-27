@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import Tabulator, { CellComponent, RowComponent } from 'tabulator-tables'
+import Tabulator, { CellComponent, ColumnDefinition, RowComponent } from 'tabulator-tables'
 
 export function vueFormatter(component: any): HTMLElement {
   const ComponentClass = Vue.extend(component)
@@ -55,9 +55,10 @@ export function vueEditor(component: any) {
   }
 }
 
-export function trashButton(handler: (c: CellComponent) => void) {
+export function trashButton(handler: (e, c: CellComponent) => void): ColumnDefinition {
   return {
     field: 'trash-button',
+    title: null,
     formatter: (_cell) => `<div class="dynamic-action" />`,
     width: 36,
     minWidth: 36,
@@ -107,5 +108,11 @@ export const TabulatorStateWatchers = {
       if (!this.tabulator) return
       this.tabulator.replaceData(this.tableData)
     }
-}
+  },
+  table: {
+    deep: true,
+    handler() {
+      this.initializeTabulator()
+    }
+  }
 }

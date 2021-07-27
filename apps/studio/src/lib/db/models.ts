@@ -166,9 +166,15 @@ export interface TableKey {
   fromTable: string;
   fromSchema: string;
   fromColumn: string;
-  constraintName: string;
+  constraintName?: string;
   onUpdate?: string;
   onDelete?: string;
+}
+
+export interface DropTableKey {
+  schema?: string
+  table: string
+  constraintName: string
 }
 
 export type TableUpdateResult = any;

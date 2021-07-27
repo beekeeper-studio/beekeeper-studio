@@ -3,7 +3,7 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableKey } from './models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableKey, DropTableKey } from './models';
 import { AlterTableSpec, CreateIndexSpec, DropIndexSpec } from '@shared/lib/dialects/models';
 
 const logger = createLogger('db');
@@ -32,8 +32,8 @@ export interface DatabaseClient {
   alterIndexSql: (specs: CreateIndexSpec[], drops: DropIndexSpec[]) => string | null
   alterIndex: (specs: CreateIndexSpec[], drops: DropIndexSpec[]) => Promise<void>,
 
-  alterRelationsSql: (spec: TableKey[], drops: string[]) => string | null
-  alterRelations: (specs: TableKey[], drops: string[]) => Promise<void>
+  alterRelationSql: (spec: TableKey[], drops: DropTableKey[]) => string | null
+  alterRelation: (specs: TableKey[], drops: DropTableKey[]) => Promise<void>
 
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties | null>,
@@ -145,8 +145,8 @@ export class DBConnection {
   alterIndexSql = bind.bind(null, 'alterIndexSql', this.server, this.database)
   alterIndex = bindAsync.bind(null, 'alterIndex', this.server, this.database)
 
-  alterRelationsSql = bind.bind(null, 'alterRelationsSql', this.server, this.database)
-  alterRelations = bindAsync.bind(null, 'alterRelations', this.server, this.database)
+  alterRelationSql = bind.bind(null, 'alterRelationSql', this.server, this.database)
+  alterRelation = bindAsync.bind(null, 'alterRelation', this.server, this.database)
   
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
   getTableCreateScript = getTableCreateScript.bind(null, this.server, this.database)

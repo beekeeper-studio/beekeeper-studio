@@ -64,7 +64,8 @@ export class ColumnType {
 }
 
 export interface DialectData {
-  columnTypes: ColumnType[]
+  columnTypes: ColumnType[],
+  constraintActions: string[]
   wrapIdentifier: (s: string) => string
   escapeString: (s: string, quote?: boolean) => string
   wrapLiteral: (s: string) => string
@@ -76,9 +77,20 @@ export interface DialectData {
       alterColumn?: boolean
       multiStatement?: boolean
     },
+    constraints?: {
+      onUpdate?: boolean,
+      onDelete?: boolean
+    }
     comments?: boolean
   }
 }
+
+export const defaultConstraintActions = [
+  'NO ACTION',
+  'SET NULL',
+  'SET DEFAULT',
+  'CASCADE'
+]
 
 export function defaultEscapeString(value: string, quote?: boolean): string {
   if (!value) return null

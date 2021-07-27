@@ -20,6 +20,7 @@ import { entityFilter } from '../lib/db/sql_tools'
 import RawLog from 'electron-log'
 import { Dialect, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
+import { getDialectData } from '@shared/lib/dialects'
 
 const log = RawLog.scope('store/index')
 
@@ -85,6 +86,9 @@ const store = new Vuex.Store<State>({
       if (!state.usedConfig) return null
       return dialectFor(state.usedConfig.connectionType)
     },
+    dialectData(state: State, getters) {
+      return getDialectData(getters.dialect)
+    },
     selectedSidebarItem(state) {
       return state.selectedSidebarItem
     },
@@ -126,6 +130,9 @@ const store = new Vuex.Store<State>({
     },
     connectionColor(state) {
       return state.usedConfig ? state.usedConfig.labelColor : 'default'
+    },
+    schemas(state) {
+      return new Set(state.tables.map((t) => t.schema));
     }
   },
   mutations: {

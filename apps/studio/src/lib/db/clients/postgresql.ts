@@ -9,7 +9,7 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, DropTableKey, } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -194,8 +194,8 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     alterIndex: (specs, drops) => alterIndex(conn, specs, drops),
 
     // relations
-    alterRelationsSql: (specs: TableKey[], drops: string[]) => alterRelationsSql(specs, drops)
-    alterRelations: (specs, drops) => alterRelations(conn, specs, drops)
+    alterRelationSql: (specs, drops) => alterRelationsSql(specs, drops),
+    alterRelation: (specs, drops) => alterRelations(conn, specs, drops),
 
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
   };
@@ -961,7 +961,7 @@ function createIndexSql(spec: CreateIndexSpec): string {
   `
 }
 
-export function alterRelationsSql(specs: TableKey[], drops: string[]): string | null {
+export function alterRelationsSql(specs: TableKey[], drops: DropTableKey[]): string | null {
   const additions = specs.map((spec) => {
     const fkName = spec.constraintName ? PD.wrapIdentifier(spec.constraintName) : ''
     const fromTable = tableName(spec.fromTable, spec.fromSchema)
@@ -981,17 +981,21 @@ export function alterRelationsSql(specs: TableKey[], drops: string[]): string | 
     `
     return result
   })
-  const names = drops.map((name) => PD.wrapIdentifier(name)).join(", ")
-  const dropSql = `DROP INDEX ${names}`
+
+  const dropSqls = drops.map((drop) => {
+    const table = tableName(drop.table, drop.schema)
+    const constraint = PD.wrapIdentifier(drop.constraintName)
+    return `ALTER TABLE ${table} DROP CONSTRAINT ${constraint}`
+  })
   return [
     ...additions,
-    dropSql
-  ].join(";")
+    ...dropSqls
+  ].filter((i) => !!i).join(";")
 }
 
-export async function alterRelations(conn: HasPool, specs: TableKey[], drops: string[]): Promise<void> {
-
-  
+export async function alterRelations(conn: HasPool, specs: TableKey[], drops: DropTableKey[]): Promise<void> {
+  const sql = alterRelationsSql(specs, drops)
+  await executeWithTransaction(conn, { query: sql })
 }
 
 export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {

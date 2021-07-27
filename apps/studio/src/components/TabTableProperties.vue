@@ -23,7 +23,7 @@
       <div v-if="loading" class="table-properties-loading">
         <x-progressbar></x-progressbar>
       </div>
-      <div class="table-properties-wrap" v-if="properties && table">
+      <div class="table-properties-wrap" v-if="table">
         <component
           class="schema-builder"
           :is="pill.component"
