@@ -38,6 +38,7 @@ export function KnexDialect(d: Dialect): KnexDialect {
 
 export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift'
 export function FormatterDialect(d: Dialect): FormatterDialect {
+  if (!d) return 'sql'
   if (d === 'sqlserver') return 'tsql'
   if (d === 'sqlite') return 'sql'
   return d

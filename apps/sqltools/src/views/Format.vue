@@ -24,7 +24,7 @@
           <dialect-picker />
         </div>
         <div class="output">
-          <highlighted-code :code="output" dialect="sql" >
+          <highlighted-code :code="output" :dialect="dialect" :format="true" >
             <h3 class="title">Formatted SQL</h3>
           </highlighted-code>
         </div>
@@ -35,11 +35,10 @@
 </template>
 <script lang="ts">
 import Vue from 'vue'
-import { format } from 'sql-formatter'
 import HighlightedCode from '@/components/HighlightedCode.vue'
 import { mapState } from 'vuex'
-import { FormatterDialect } from '@shared/lib/dialects/models'
 import DialectPicker from '@/components/DialectPicker.vue'
+import _ from 'lodash'
 export default Vue.extend({
   metaInfo() {
     return {
@@ -65,20 +64,14 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['dialect']),
-    shouldUpdate() {
-      return `${this.input}${this.dialect}`
-    }
+    ...mapState(['dialect'])
   },
   watch: {
-    shouldUpdate() {
-      if (!this.input) {
-        this.output = null
-        return
-      }
-      this.output = format(this.input, { language: FormatterDialect(this.dialect) })
-    }
+    input: _.debounce(function() {
+      this.output = this.input;
+    }, 300)
   }
+
 
 })
 </script>
