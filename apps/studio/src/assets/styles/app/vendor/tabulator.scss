@@ -48,14 +48,17 @@ $cell-padding:           $gutter-w;
         }
       }
     }
+    &.inserted {
+      .tabulator-editing {
+        box-shadow: inset 0 -1px $theme-base!important;
+      }
+    }
     &.deleted, 
     &.deleted:hover {
       background: $row-delete;
     }
     &.edit-error {
       background: $cell-error!important;
-      &.edit-error {
-      }
     }
     &.inserted,
     &.deleted,
@@ -180,6 +183,9 @@ $cell-padding:           $gutter-w;
       }
       .tabulator-bks-checkbox {
         padding: 0!important;
+      }
+      input[type="checkbox"] {
+        box-shadow: inset 0 0 0 2px $theme-base!important;
       }
     }
     &.foreign-key {

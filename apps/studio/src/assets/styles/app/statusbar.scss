@@ -1,4 +1,4 @@
-$button-height:     $statusbar-height * 0.75;
+$button-height:     $statusbar-height * 0.78;
 
 .statusbar {
   display: flex;
@@ -103,7 +103,7 @@ $button-height:     $statusbar-height * 0.75;
     height: $button-height;
     line-height: $button-height;
     margin: 0 0.15rem;
-    margin-top: -1px;
+    // margin-top: -1px;
     &:hover[expanded] {
       background: rgba($statusbar-text, 0.15);
     }
@@ -167,7 +167,7 @@ $button-height:     $statusbar-height * 0.75;
       }
       .material-icons {
         color: $statusbar-text-default;
-        font-size: 18px;
+        font-size: 14px;
       }
     }
   }
