@@ -282,9 +282,13 @@ export default Vue.extend({
           line-height: $row-height;
           box-shadow: inset 0 1px $theme-base;
           pre, input:not([type="checkbox"]) {
+            font-family: 'Roboto';
             min-height: $row-height;
             line-height: $row-height;
-            padding: $cell-padding!important;
+            padding: 0 $cell-padding!important;
+            &:focus {
+              padding-bottom: 1px !important;
+            }
           }
         }
         &.no-padding {
@@ -433,10 +437,6 @@ export default Vue.extend({
         }
         &.tabulator-editing {
           box-shadow: none!important;
-          input:not([type="checkbox"]) {
-            background: rgba($theme-base, 0.1)!important;
-            box-shadow: inset 0 -1px $theme-base!important;
-          }
           input[type="checkbox"] {
             box-shadow: inset 0 0 0 2px $theme-base;
             &:active, 
