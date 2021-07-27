@@ -3,8 +3,8 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableKey, DropTableKey } from './models';
-import { AlterTableSpec, CreateIndexSpec, DropIndexSpec } from '@shared/lib/dialects/models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, } from './models';
+import { AlterTableSpec, CreateIndexSpec, DropIndexSpec, DropTableKey, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
 const logger = createLogger('db');
 
@@ -29,11 +29,11 @@ export interface DatabaseClient {
   alterTableSql: (change: AlterTableSpec) => Promise<string>,
   alterTable: (change: AlterTableSpec) => Promise<void>,
 
-  alterIndexSql: (specs: CreateIndexSpec[], drops: DropIndexSpec[]) => string | null
-  alterIndex: (specs: CreateIndexSpec[], drops: DropIndexSpec[]) => Promise<void>,
+  alterIndexSql: (changes: IndexAlterations) => string | null
+  alterIndex: (changes: IndexAlterations) => Promise<void>,
 
-  alterRelationSql: (spec: TableKey[], drops: DropTableKey[]) => string | null
-  alterRelation: (specs: TableKey[], drops: DropTableKey[]) => Promise<void>
+  alterRelationSql: (changes: RelationAlterations) => string | null
+  alterRelation: (changes: RelationAlterations) => Promise<void>
 
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties | null>,

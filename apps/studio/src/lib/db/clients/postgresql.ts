@@ -9,7 +9,7 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, DropTableKey, } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -17,14 +17,13 @@ import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
-import { AlterTableSpec, CreateIndexSpec, DropIndexSpec } from '@shared/lib/dialects/models';
+import { AlterTableSpec, CreateIndexSpec, DropIndexSpec, DropTableKey, TableKey } from '@shared/lib/dialects/models';
 import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 
 
 const base64 = require('base64-url');
 const PD = PostgresData
-
 function isConnection(x: any): x is HasConnection {
   return x.connection !== undefined
 }
@@ -190,7 +189,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     alterTable: (change: AlterTableSpec) => alterTable(conn, change),
 
     // alter indexes
-    alterIndexSql: (specs: CreateIndexSpec[], drops: DropIndexSpec[]) => alterIndexSql(specs, drops),
+    alterIndexSql: (specs, drops) => alterIndexSql(specs, drops),
     alterIndex: (specs, drops) => alterIndex(conn, specs, drops),
 
     // relations
@@ -927,18 +926,11 @@ export async function alterTable(_conn: HasPool, change: AlterTableSpec) {
   })
 }
 
-export function alterIndexSql(specs?: CreateIndexSpec[], drops?: DropIndexSpec[]): string | null {
-  if (!specs?.length && !drops?.length ) return null
-
-  // drops
-  const names = drops.map((spec) => PD.wrapIdentifier(spec.name)).join(",")
-  const dropQuery = names.length ? `DROP INDEX ${names}` : null
-  
-  // creates
-  const creates = specs.map((spec) => createIndexSql(spec));
-
-  const result = [dropQuery, ...creates].filter((f) => !!f).join(";")
-  return result
+export function alterIndexSql(table: string, schema: string, specs?: CreateIndexSpec[], drops?: DropIndexSpec[]): string | null {
+  const changeBuilder = new PostgresqlChangeBuilder(table, schema)
+  const additions = changeBuilder.createIndexes(specs)
+  const droppers = changeBuilder.dropIndexes(drops)
+  return [additions, droppers].filter((f) => !!f).join(";")
 }
 
 export async function alterIndex(conn: HasPool, specs: CreateIndexSpec[], drops: DropIndexSpec[]) {
@@ -1384,7 +1376,7 @@ async function executeWithTransaction(conn: Conn | HasConnection, queryArgs: Pos
     try {
       return await driverExecuteQuery(cli, { ...queryArgs, query: fullQuery})
     } catch (ex) {
-      log.error("Query Exception", ex)
+      log.error("executeWithTransaction", ex)
       await driverExecuteSingle(cli, { query: "ROLLBACK" })
       throw ex;
     }

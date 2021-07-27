@@ -157,7 +157,40 @@ export interface DropIndexSpec {
   name: string
 }
 
+export interface IndexAlterations {
+  additions: CreateIndexSpec[]
+  drops: DropIndexSpec[]
+  table: string
+  schema?: string
+}
+
 
 export type DialectConfig = {
   [K in Dialect]: SchemaConfig
+}
+
+
+export interface TableKey {
+  toTable: string;
+  toSchema: string;
+  toColumn: string;
+  fromTable: string;
+  fromSchema: string;
+  fromColumn: string;
+  constraintName?: string;
+  onUpdate?: string;
+  onDelete?: string;
+}
+
+export interface DropTableKey {
+  schema?: string
+  table: string
+  constraintName: string
+}
+
+export interface RelationAlterations {
+  additions: TableKey[],
+  drops: DropTableKey[]
+  table: string
+  schema?: string
 }

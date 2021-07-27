@@ -1,5 +1,5 @@
 import { getDialectData } from "@shared/lib/dialects";
-import { AlterTableSpec, Dialect, DialectData, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
+import { AlterTableSpec, CreateIndexSpec, Dialect, DialectData, DropIndexSpec, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
 import _ from "lodash";
 
 export abstract class ChangeBuilderBase {
@@ -176,5 +176,35 @@ export abstract class ChangeBuilderBase {
     } else {
       return null
     }
+  }
+
+
+  singleIndex(spec: CreateIndexSpec): string {
+    const unique = spec.unique ? 'UNIQUE' : ''
+    const name = spec.name ? this.dialectData.wrapIdentifier(spec.name) : ''
+    const table = this.tableName
+    if (!spec.columns?.length) {
+      throw new Error("Indexes require at least one column")
+    }
+    const columns = spec.columns?.map((c) => {
+      return `${this.dialectData.wrapIdentifier(c.name)} ${c.order}`
+    })
+    return `
+      CREATE ${unique} INDEX ${name} on ${table}(${columns})
+    `
+  }
+
+  createIndexes(specs: CreateIndexSpec[]): string | null {
+    if (!specs?.length) return null
+    return specs.map((spec) => this.singleIndex(spec)).join(";");
+  }
+
+  dropIndexes(drops: DropIndexSpec[]): string | null {
+    if (!drops?.length) return null
+
+    const names = drops.map((spec) => this.dialectData.wrapIdentifier(spec.name)).join(",")
+    return names.length ? `DROP INDEX ${names}` : null
+
+
   }
 }

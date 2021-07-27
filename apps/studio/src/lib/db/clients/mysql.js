@@ -63,9 +63,18 @@ export default async function (server, database) {
     truncateAllTables: () => truncateAllTables(conn),
     getTableProperties: (table) => getTableProperties(conn, table),
     setTableDescription: (table, description) => setTableDescription(conn, table, description),
-    
+
+    // schema
     alterTableSql: (change) => alterTableSql(conn, change),
-    alterTable: (change) => alterTable(conn, change)
+    alterTable: (change) => alterTable(conn, change),
+
+    // indexes
+    alterIndexSql: (adds, drops) => alterIndexSql(adds, drops),
+    alterIndex: (adds, drops) => alterIndex(conn, adds, drops)
+
+    // relations
+    alterRelationSql: (adds, drops) => alterRelationSql(adds, drops),
+    alterRelation: (adds, drops) => alterRelation(conn, adds, drops)
 
   };
 }
@@ -702,19 +711,19 @@ async function alterTableSql(conn, change) {
 
 async function alterTable(conn, change) {
   const sql = await alterTableSql(conn, change)
-  await runWithConnection(conn, async (connection) => {
-    const cli = { connection }
-    const queries = [
-      'START TRANSACTION',
-      sql,
-      'COMMIT'
-    ].join(";")
-    try {
-      await driverExecuteQuery(cli, { query: queries })
-    } catch (ex) {
-      await driverExecuteQuery(cli, { query: 'ROLLBACK' })
-    }
-  })
+  await executeWithTransaction(conn, { query: queries })
+}
+
+function alterIndexSql(table, adds, drops) {
+  const changeBuilder = new MySqlChangeBuilder(table, schema, [])
+  const additions = changeBuilder.createIndexes(specs)
+  const droppers = changeBuilder.dropIndexes(drops)
+  return [additions, droppers].filter((f) => !!f).join(";")
+}
+
+async function alterIndex(conn, table, adds, drops) {
+  const query = alterIndexSql(table, adds, drops)
+  await executeWithTransaction(conn, { query })
 }
 
 
@@ -815,6 +824,22 @@ function identifyCommands(queryText) {
   } catch (err) {
     return [];
   }
+}
+
+async function executeWithTransaction(conn, queryArgs) {
+    const fullQuery = [
+      'BEGIN', queryArgs.query, 'COMMIT'
+    ].join(";")
+    return await runWithConnection(conn, async (connection) => {
+      const cli = { connection }
+      try {
+        return await driverExecuteQuery(cli, {...queryArgs, query: fullQuery})
+      } catch (ex) {
+        log.error("executeWithTransaction", ex)
+        await driverExecuteQuery(cli, { query: 'ROLLBACK' })
+        throw ex
+      }
+    })
 }
 
 function driverExecuteQuery(conn, queryArgs) {
