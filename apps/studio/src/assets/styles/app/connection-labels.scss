@@ -33,13 +33,6 @@ $color-defaults: (
       background-color: rgba(nth($val, 1), 1);
     }
   }
-  &.tabulator-footer {
-    @each $key, $val in $color-defaults {
-      &.#{$key} {
-        background-color: rgba(nth($val, 1), 0.85);
-      }
-    }
-  }
   &.query-meta {
     @each $key, $val in $color-defaults {
       &.#{$key} {
@@ -51,6 +44,15 @@ $color-defaults: (
     @each $key, $val in $color-defaults {
       &.#{$key} {
         background-color: rgba(nth($val, 1), 0.8);
+      }
+    }
+  }
+}
+.core-tabs {
+  .statusbar {
+    @each $key, $val in $color-defaults {
+      &.#{$key} {
+        background-color: rgba(nth($val, 1), 0.85);
       }
     }
   }

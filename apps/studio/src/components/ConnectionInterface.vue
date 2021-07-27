@@ -116,6 +116,8 @@
       }
     },
     async mounted() {
+      await this.$store.dispatch('loadSavedConfigs')
+      await this.$store.dispatch('loadUsedConfigs')
       this.config = this.defaultConfig
       this.config.sshUsername = os.userInfo().username
       this.$nextTick(() => {

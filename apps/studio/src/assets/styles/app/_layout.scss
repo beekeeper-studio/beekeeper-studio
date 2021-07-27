@@ -368,7 +368,17 @@ select {
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
   padding: 0 0.75rem;
   option {
-    background: lighten($theme-bg, 2%);
+    background: lighten($theme-bg, 3%);
+    color: $text;
+    &:checked, 
+    &:hover {
+      color: white;
+      box-shadow: 0 0 10px 100px $brand-info inset;
+    }
+    &:disabled, &:disabled:hover, &:disabled:focus {
+      background: transparent!important;
+      color: $text-lighter!important;
+    }
   }
 }
 .select-wrap {
@@ -605,15 +615,15 @@ input[type=file] {
   }
   &.gutter-horizontal {
     width: 0!important;
-    cursor: e-resize;
+    cursor: ew-resize;
     &:after {
       height: 100%;
-      width: 8px;
-      left: -2px;
+      width: 5px;
+      background-color: inherit;
     }
   }
   &.gutter-vertical {
-    cursor: n-resize;
+    cursor: ns-resize;
     height: 0!important;
     &:after {
       height: 8px;

@@ -47,6 +47,7 @@
       this.$root.$on(AppEvent.toggleSidebar, this.toggleSidebar)
       this.$store.dispatch('updateHistory')
       this.$store.dispatch('updateFavorites')
+      this.$store.dispatch('pins/loadPins')
 
       this.$nextTick(() => {
         this.split = Split(this.splitElements, {
@@ -56,15 +57,15 @@
           sizes: [25,75],
           minSize: 280,
           expandToMin: true,
-          gutterSize: 8,
+          gutterSize: 5,
         })
       })
 
     },
     beforeDestroy() {
+      this.$store.dispatch('pins/unloadPins')
       this.$root.$off(AppEvent.toggleSidebar, this.toggleSidebar)
       if(this.split) {
-        console.log("destroying split")
         this.split.destroy()
       }
     },

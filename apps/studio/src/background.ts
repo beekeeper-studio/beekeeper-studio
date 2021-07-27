@@ -109,7 +109,7 @@ app.on('ready', async () => {
   }
   const slice = platformInfo.isDevelopment ? 2 : 1
   const parsedArgs = yargs(process.argv.slice(slice))
-  console.log("Parsing app args", parsedArgs)
+  log.debug("Parsing app args", parsedArgs)
   const options = parsedArgs._.map((url: string) => ({ url }))
   const settings = await initBasics()
   

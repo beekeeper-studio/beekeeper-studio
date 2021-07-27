@@ -48,7 +48,7 @@
 <script lang="ts">
 import Tabulator, { CellComponent, RowComponent } from 'tabulator-tables'
 import DataMutators from '../../mixins/data_mutators'
-import sqlFormatter from 'sql-formatter'
+import { format } from 'sql-formatter'
 import _ from 'lodash'
 import Vue from 'vue'
 // import globals from '../../common/globals'
@@ -60,7 +60,7 @@ import { mapGetters } from 'vuex'
 import { getDialectData } from '@shared/lib/dialects'
 import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
-import { AlterTableSpec } from '@shared/lib/dialects/models'
+import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
 export default Vue.extend({
   components: {
@@ -256,7 +256,7 @@ export default Vue.extend({
         this.error = null
         const changes = this.collectChanges()
         const sql = await this.connection.alterTableSql(changes)
-        const formatted = sqlFormatter.format(sql)
+        const formatted = format(sql, { language: FormatterDialect(this.dialect)})
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch (ex) {
         this.error = ex

@@ -56,6 +56,7 @@ export default async function (server, database) {
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
+    getTableLength: (table, schema) => getTableLength(conn, table, schema),
     selectTop: (table, offset, limit, orderBy, filters, schema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -178,8 +179,8 @@ function genSelectNew(table, offset, limit, orderBy, filters, schema) {
     return query
 }
 
-async function getTableLength(conn, table, filters, schema) {
-  const countQuery = genCountQuery(table, filters, schema)
+async function getTableLength(conn, table, schema) {
+  const countQuery = genCountQuery(table, [], schema)
   const countResults = await driverExecuteQuery(conn, { query: countQuery})
   const rowWithTotal = countResults.data.recordset.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
@@ -189,7 +190,6 @@ async function getTableLength(conn, table, filters, schema) {
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
   log.debug("filters", filters)
   const version = await getVersion(conn);
-  const totalRecords = await getTableLength(conn, table, filters, schema);
   const query = version.supportOffsetFetch ? 
     genSelectNew(table, offset, limit, orderBy, filters, schema) :
     genSelectOld(table, offset, limit, orderBy, filters, schema)
@@ -199,7 +199,6 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
   logger().debug(result)
   return {
     result: result.data.recordset,
-    totalRecords,
     fields: Object.keys(result.data.recordset[0] || {})
   }
 }

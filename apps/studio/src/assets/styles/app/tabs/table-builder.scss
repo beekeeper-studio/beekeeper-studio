@@ -95,7 +95,8 @@
         font-size: $cell-font-size;
         pre, input:not([type="checkbox"]) {
           font-size: $cell-font-size;
-          line-height: $row-height + 2px;
+          line-height: $row-height;
+          min-height: $row-height;
         }
         &[type="search"] {
           line-height: $row-height;

@@ -109,7 +109,7 @@ export class DBTestUtil {
     
     const stR = await this.connection.selectTop("group", 0, 10, [{ field: "select", dir: 'ASC'} ], [], this.defaultSchema)
     expect(stR)
-      .toMatchObject({ result: [], totalRecords: 0 })
+      .toMatchObject({ result: [] })
     
     await this.knex("group").insert([{select: "bar"}, {select: "abc"}])
 
@@ -146,24 +146,27 @@ export class DBTestUtil {
 
     const input = {
       table: 'alter_test',
-      schema: 'public',
       alterations: [
         {
           columnName: 'last_name',
           changeType: 'columnName',
           newValue: 'family_name'
-        },
-        {
-          columnName: 'age',
-          changeType: 'dataType',
-          newValue: 'varchar(4)'
         }
       ]
     }
 
     await this.connection.alterTable(input)
     const schema = await this.connection.listTableColumns('alter_test')
-    const result = schema.map((c) => ({columnName: c.columnName, dataType: c.dataType}))
+    interface MiniColumn {
+      columnName: string
+      dataType: string
+    }
+    const rawResult: MiniColumn[] = schema.map((c) => ({columnName: c.columnName, dataType: c.dataType}))
+    
+
+    // cockroach adds a rowid column if there's no primary key.
+    const result = rawResult.filter((r) => r.columnName !== 'rowid')
+
     const expected = [
       {
         columnName: 'id',
@@ -179,7 +182,7 @@ export class DBTestUtil {
       },
       {
         columnName: 'age',
-        dataType: 'varchar(4)'
+        dataType: 'varchar(255)'
       }
     ]
     expect(result).toMatchObject(expected)

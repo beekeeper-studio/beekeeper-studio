@@ -20,7 +20,8 @@
 </template>
 <script lang="ts">
 import Vue from 'vue'
-import sqlFormatter from 'sql-formatter'
+import { format } from 'sql-formatter'
+import { FormatterDialect } from '@shared/lib/dialects/models'
 export default Vue.extend({
   props: ['code', 'dialect', 'allowCopy', 'format'],
   data() {
@@ -37,7 +38,7 @@ export default Vue.extend({
       if (!this.code) return null
 
       if (this.format) {
-        return sqlFormatter.format(this.code, { language: 'sql' })
+        return format(this.code, { language: FormatterDialect(this.dialect) })
       } else {
         return this.code
       }

@@ -52,7 +52,7 @@
 <script>
 
   import _ from 'lodash'
-  import sqlFormatter from 'sql-formatter';
+  import { format } from 'sql-formatter';
   import {FavoriteQuery} from '../common/appdb/models/favorite_query'
   import QueryEditor from './TabQueryEditor.vue'
   import Statusbar from './common/StatusBar.vue'
@@ -170,9 +170,7 @@
         this.tabItems.filter(t => t.id === id).forEach(t => t.titleScope = value)
       },
       closeTab(id) {
-        console.log("trying to close tab", id)
         const tab = id ? this.tabItems.find((t) => t.id === id) : this.activeTab
-        console.log('close tab', tab)
         this.close(tab)
       },
       handleCreateTab() {
@@ -203,12 +201,12 @@
           return
         }
         const result = await method(table.name, table.schema)
-        const stringResult = sqlFormatter.format(_.isArray(result) ? result[0] : result)
+        const stringResult = format(_.isArray(result) ? result[0] : result)
         this.createQuery(stringResult)
       },
       async loadRoutineCreate(routine) {
         const result = await this.connection.getRoutineCreateScript(routine.name, routine.schema)
-        const stringResult = sqlFormatter.format(_.isArray(result) ? result[0] : result)
+        const stringResult = format(_.isArray(result) ? result[0] : result)
         this.createQuery(stringResult)
       },
       openTableBuilder() {
@@ -272,7 +270,6 @@
 
       },
       close(tab) {
-        console.log('closing tab', tab.title)
         if (this.activeTab === tab) {
           if(tab === this.lastTab) {
             this.previousTab()

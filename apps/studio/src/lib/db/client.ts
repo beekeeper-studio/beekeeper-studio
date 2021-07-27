@@ -41,8 +41,11 @@ export interface DatabaseClient {
   listMaterializedViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
   getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string | null>,
   getPrimaryKeys: (db: string, table: string, schema?: string) => Promise<PrimaryKeyColumn[]>,
+  // for tabletable
+  getTableLength(table: string, schema?: string): Promise<number>
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string): Promise<TableResult>,
   selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema?: string ): Promise<StreamResults>,
+
   wrapIdentifier: (value: string) => string
   setTableDescription: (table: string, description: string, schema?: string) => Promise<string>
 }
@@ -124,6 +127,9 @@ export class DBConnection {
   query = query.bind(null, this.server, this.database)
   executeQuery = executeQuery.bind(null, this.server, this.database)
   listDatabases = listDatabases.bind(null, this.server, this.database)
+
+  // tabletable
+  getTableLength = bindAsync.bind(null, 'getTableLength', this.server, this.database)
   selectTop = selectTop.bind(null, this.server, this.database)
   selectTopStream = selectTopStream.bind(null, this.server, this.database)
   applyChanges = applyChanges.bind(null, this.server, this.database)
@@ -457,7 +463,6 @@ function wrap(database: IDbConnectionDatabase, identifier: string | string[]): s
 
 function checkIsConnected(_server: IDbConnectionServer, database: IDbConnectionDatabase) {
   if (database.connecting || !database.connection) {
-    console.log(database)
     throw new Error('There is no connection available.');
   }
 }

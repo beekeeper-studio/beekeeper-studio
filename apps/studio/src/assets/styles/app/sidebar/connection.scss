@@ -45,7 +45,34 @@
     .subtitle {
       font-size: 80%;
       color: $text-lighter;
-      @extend .truncate;
+      display: flex;
+      overflow: hidden;
+      > span {
+        display: flex;
+        white-space: nowrap;
+        overflow: hidden;
+        min-width: 30px;
+        &.bastion {
+          max-width: 50%;
+          flex-shrink: 0;
+        }
+        &.ssh {
+          max-width: 40%;
+          flex-shrink: 0;
+        }
+        &.connection {
+          flex-shrink: 1;
+        }
+        &:first-of-type {
+          > span {
+            margin-left: 0;
+          }
+        }
+        > span {
+          @extend .truncate;
+          margin: 0 0.2rem;
+        }
+      }
     }
   }
   .list-item-btn {

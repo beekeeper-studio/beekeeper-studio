@@ -162,6 +162,20 @@ select {
 
 // Tabulator
 .tabulator-table {
+
+	.tabulator-loader {
+		.tabulator-loader-msg{
+			//loading message
+			&.tabulator-loading{
+        background-color: white;
+			}
+		}
+  }
+
+}
+
+
+
   .tabulator-row {
     &.inserted, 
     &.inserted:hover {

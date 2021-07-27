@@ -21,9 +21,9 @@
     display: flex;
     flex-direction: column;
     flex-grow: 1;
+    min-height: 200px;
   }
   .bottom-panel {
-    min-height: $statusbar-height;
     > .layout-center {
       overflow: hidden;
     }
@@ -56,7 +56,6 @@
     }
   }
   .bottom-panel {
-    min-height: $statusbar-height;
     > .layout-center {
       overflow: hidden;
     }

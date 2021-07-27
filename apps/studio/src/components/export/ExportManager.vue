@@ -84,7 +84,6 @@ export default Vue.extend({
         this.addExport(exporter)
         exporter.onProgress(this.notifyProgress.bind(this))
         await exporter.exportToFile()
-        console.log("complete!")
         const n = this.$noty.success(`Export of ${options.table.name} complete`, {
           buttons: [
             Noty.button('Show', "btn btn-primary", () => {

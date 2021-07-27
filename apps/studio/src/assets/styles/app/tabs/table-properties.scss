@@ -272,7 +272,8 @@ $cell-success:           $row-add;
         font-size: $cell-font-size;
         pre, input:not([type="checkbox"]) {
           font-size: $cell-font-size;
-          line-height: $row-height + 2px;
+          line-height: $row-height;
+          min-height: $row-height;
         }
         input {
           border: 0;
@@ -300,7 +301,6 @@ $cell-success:           $row-add;
         &.edited {
           .tabulator-bks-checkbox {
             input[type="checkbox"] {
-              box-shadow: inset 0 0 0 2px $theme-base;
               &:active,
               &:checked,
               &:checked:active {
@@ -310,16 +310,18 @@ $cell-success:           $row-add;
             }
           }
         }
-        .tabulator-bks-checkbox.read-only {
-          input[type="checkbox"] {
-            background: transparent!important;
-            box-shadow: none!important;
-            &:after {
-              color: $theme-base;
-              font-size: 20px;
-            }
-            &[disabled="disabled"] {
-              box-shadow: none;
+        .tabulator-bks-checkbox {
+          &.read-only {
+            input[type="checkbox"] {
+              background: transparent!important;
+              box-shadow: none!important;
+              &:after {
+                color: $theme-base;
+                font-size: 20px;
+              }
+              &[disabled="disabled"] {
+                box-shadow: none;
+              }
             }
           }
         }
@@ -398,10 +400,6 @@ $cell-success:           $row-add;
       }
       &.inserted, &.deleted {
         .tabulator-cell {
-          // &.edited {
-          //   background: transparent;
-          //   box-shadow: none;
-          // }
           cursor: pointer;
           &.edited {
             background: rgba($theme-base, 0.05);

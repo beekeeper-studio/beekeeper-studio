@@ -21,6 +21,8 @@ export abstract class Export {
   error: Error | null = null
   fileSize: number = 0
   lastChunkTime: number = 0
+
+  preserveComplex = true
   // see set status()
   private _status: ExportStatus = ExportStatus.Idle
   timeElapsed: number = 0
@@ -151,7 +153,7 @@ export abstract class Export {
         // log.info(`read ${rows.length} rows`)
         for (let rI = 0; rI < rows.length; rI++) {
           const row = rows[rI];
-          const mutated = Mutators.mutateRow(row, this.columns?.map((c) => c.dataType), true)
+          const mutated = Mutators.mutateRow(row, this.columns?.map((c) => c.dataType), this.preserveComplex)
           const formatted = this.formatRow(mutated)
           this.fileHandle?.write(formatted)
           this.fileHandle?.write(this.rowSeparator)

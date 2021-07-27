@@ -44,9 +44,10 @@
                 Data <i class="material-icons">north_east</i>
               </x-button>
               <template v-if="properties">
-                <span class="statusbar-item" v-if="properties.length" :title="`${properties.length} Records`">
+                <span class="statusbar-item" :title="totalRecords === null ? 'Loading Total Records...' : `Approximately ${totalRecords} Records`">
                   <i class="material-icons">list_alt</i>
-                  <span>~{{properties.length.toLocaleString()}}</span>
+                  <span v-if="totalRecords === null">Loading...</span>
+                  <span v-else>~{{totalRecords.toLocaleString()}}</span>
                 </span>
                 <span class="statusbar-item" v-if="humanSize !== null" :title="`Table Size ${humanSize}`">
                   <i class="material-icons">aspect_ratio</i>
@@ -109,6 +110,7 @@ export default {
       error: null,
       primaryKeys: [],
       properties: {},
+      totalRecords: null,
       dirtyPills: {},
       rawPills: [
         {
@@ -195,9 +197,19 @@ export default {
       // this is for dev only
       this.error = new Error("Something went wrong")
     },
+    async fetchTotalRecords() {
+      try {
+        this.totalRecords = await this.connection.getTableLength(this.table.name, this.table.schema)
+      } catch (ex) {
+        console.error("unable to fetch total records", ex)
+        this.totalRecords = 0
+      } 
+    },
     async refresh() {
       this.loading = true
       this.error = null
+      this.properties = null
+      this.fetchTotalRecords()
       try {
         this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
         if (this.table.entityType === 'table') {

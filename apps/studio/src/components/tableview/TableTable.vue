@@ -81,17 +81,18 @@
       </form>
     </div>
     <div ref="table"></div>
-    <statusbar :mode="statusbarMode" class="tabulator-footer">
+    <statusbar :mode="statusbarMode">
 
       
-      <div class="col truncate expand statusbar-info">
+      <div class="truncate statusbar-info">
         <x-button @click.prevent="openProperties" class="btn btn-flat btn-icon end" title="View Structure">
           Structure <i class="material-icons">north_east</i>
         </x-button>
         <!-- Info -->
-        <span class="statusbar-item" v-if="lastUpdatedText && !error" :title="`Approximately ${totalRecordsText} Records`">
+        <span class="statusbar-item" :title="loadingLength ? 'Loading Total Records' : `Approximately ${totalRecordsText} Records`">
           <i class="material-icons">list_alt</i>
-          <span>{{ totalRecordsText }}</span>
+          <span v-if="loadingLength">Loading...</span>
+          <span v-else>{{ totalRecordsText }}</span>
         </span>
         <a @click="refreshTable" tabindex="0" role="button" class="statusbar-item hoverable" v-if="lastUpdatedText && !error" :title="'Updated' + ' ' + lastUpdatedText">
           <i class="material-icons">update</i>
@@ -104,12 +105,16 @@
       </div>
 
       <!-- Pagination -->
-      <div class="col flex-center expand" v-show="this.totalRecords > this.limit">
-        <span ref="paginationArea" class="tabulator-paginator"></span>
+      <div class="tabulator-paginator">
+        <div class="flex-center flex-middle flex">
+          <a @click="page = page  - 1"><i class="material-icons">navigate_before</i></a>
+          <input type="number" v-model="page" />
+          <a @click="page = page + 1"><i class="material-icons">navigate_next</i></a>
+        </div>
       </div>
 
       <!-- Pending Edits -->
-      <div class="col statusbar-actions flex-right" :class="{'x4': this.totalRecords > this.limit}">
+      <div class="col x4 statusbar-actions flex-right">
         <!-- <div v-if="missingPrimaryKey" class="flex flex-right">
           <span class="statusbar-item">
             <i
@@ -215,7 +220,11 @@ export default Vue.extend({
       tabulator: null,
       actualTableHeight: "100%",
       loading: false,
-      data: null,
+
+      // table data
+      data: null, // array of data
+      totalRecords: null,
+      // 
       response: null,
       limit: 100,
       rawTableKeys: [],
@@ -231,11 +240,25 @@ export default Vue.extend({
       lastUpdated: null,
       lastUpdatedText: null,
       interval: setInterval(this.setlastUpdatedText, 10000),
-      totalRecords: 0,
+
       forceRedraw: false,
+      rawPage: 1
     };
   },
   computed: {
+    loadingLength() {
+      return this.totalRecords === null
+    },
+    page: {
+      set(nu) {
+        const newPage = Number(nu)
+        if (_.isNaN(newPage) || newPage < 1) return
+        this.rawPage = newPage
+      },
+      get() {
+        return this.rawPage
+      }
+    },
     error() {
       return this.saveError ? this.saveError : this.queryError
     },
@@ -445,6 +468,9 @@ export default Vue.extend({
   },
 
   watch: {
+    page: _.debounce(function () {
+      this.tabulator.setPage(this.page || 1)
+    }, 500),
     active() {
       log.debug('active', this.active)
       if (!this.tabulator) return;
@@ -514,6 +540,7 @@ export default Vue.extend({
     if (this.initialFilter) {
       this.filter = _.clone(this.initialFilter)
     }
+    this.fetchTableLength()
     this.resetPendingChanges()
     await this.$store.dispatch('updateTableColumns', this.table)
     this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
@@ -531,6 +558,7 @@ export default Vue.extend({
       pagination: "remote",
       paginationSize: this.limit,
       paginationElement: this.$refs.paginationArea,
+      paginationButtonCount: 0,
       initialSort: this.initialSort,
       initialFilter: [this.initialFilter || {}],
       lastUpdated: null,
@@ -550,6 +578,15 @@ export default Vue.extend({
 
   },
   methods: {
+    async fetchTableLength() {
+      try {
+        const length = await this.connection.getTableLength(this.table.name, this.table.schema)
+        this.totalRecords = length
+      } catch(ex) {
+        console.error("unable to get table length", ex)
+        this.totalRecords = 0
+      }
+    },
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
     },
@@ -597,10 +634,13 @@ export default Vue.extend({
     editorType(dt) {
       const ne = vueEditor(NullableInputEditorVue)
       switch (dt) {
-        case 'text': return 'textarea'
-        case 'json': return 'textarea'
-        case 'jsonb': return 'textarea'
-        case 'bytea': return 'textarea'
+        case 'text':
+        case 'json':
+        case 'jsonb':
+        case 'bytea':
+        case 'tsvector':
+        case '_text':
+          return 'textarea'
         case 'bool': return 'select'
         default: return ne
       }
@@ -925,7 +965,6 @@ export default Vue.extend({
             }
 
             const r = response.result;
-            this.totalRecords = Number(response.totalRecords) || 0;
             this.response = response
             this.resetPendingChanges()
             this.clearQueryError()
@@ -933,7 +972,7 @@ export default Vue.extend({
             this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
             resolve({
-              last_page: Math.ceil(this.totalRecords / limit),
+              last_page: 1,
               data
             });
           } catch (error) {
@@ -970,6 +1009,7 @@ export default Vue.extend({
     async refreshTable() {
       log.debug('refreshing table')
       const page = this.tabulator.getPage()
+      this.fetchTableLength()
       await this.tabulator.replaceData()
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true

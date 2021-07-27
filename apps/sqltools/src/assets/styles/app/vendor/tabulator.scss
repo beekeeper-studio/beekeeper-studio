@@ -13,12 +13,12 @@ $cell-success:           $row-add;
 
 $cell-radius:            2px;
 
-$cell-padding:           $gutter-h;
+$cell-padding:           $gutter-w;
 
 // Mixin
 @mixin cell-shadow($bg) {
-  box-shadow: inset -1px 0 $bg,
-              inset 0 1px $bg,
+  box-shadow: inset -1px 0 rgba(black, 0.2),
+              inset 0 1px rgba(black, 0.2),
               inset 0 -1px rgba(white, 0.1);
 }
 @mixin cell-editing($bg) {
@@ -29,7 +29,10 @@ $cell-padding:           $gutter-h;
 
 // Add/Delete/Clone row
 // -------------------------------
+
+
 .tabulator-table {
+
   .tabulator-row {
     &.inserted, 
     &.inserted:hover {
@@ -39,10 +42,15 @@ $cell-padding:           $gutter-h;
       .tabulator-cell {
         &.primary-key {
           &:hover {
-            background: rgba($theme-base,0.15);
+            background: rgba($theme-base,0.05);
             cursor: pointer;
           }
         }
+      }
+    }
+    &.inserted {
+      .tabulator-editing {
+        box-shadow: inset 0 -1px $theme-base!important;
       }
     }
     &.deleted, 
@@ -51,8 +59,6 @@ $cell-padding:           $gutter-h;
     }
     &.edit-error {
       background: $cell-error!important;
-      &.edit-error {
-      }
     }
     &.inserted,
     &.deleted,
@@ -60,7 +66,7 @@ $cell-padding:           $gutter-h;
       box-shadow: inset 0 -1px rgba($theme-base, .1);
       .tabulator-cell {
         &:hover {
-          background: rgba($theme-base, 0.12);
+          background: rgba($theme-base, 0.05);
         }
         &.foreign-key-button {
           &:hover {
@@ -71,9 +77,14 @@ $cell-padding:           $gutter-h;
     } 
     &.deleted {
       .tabulator-cell {
+        cursor: default!important;
         &:hover {
           background: transparent!important;
-          cursor: default;
+        }
+        .tabulator-bks-checkbox {
+          input {
+            cursor: default!important;
+          }
         }
       }
     }
@@ -85,14 +96,14 @@ $cell-padding:           $gutter-h;
   width: min-content;
   min-width: 100%;
   &:nth-child(odd) {
-    background: rgba($theme-base, 0.025);
+    background: rgba($theme-base, 0.015);
   }
   .tabulator-cell {
     border: 0;
-    padding: $row-height $cell-padding;
+    padding: 0 $cell-padding;
     min-height: $row-height;
     height: $row-height;
-    line-height: $row-height
+    line-height: $row-height;
     border-radius: $cell-radius;
     cursor: default;
     &:first-of-type {
@@ -101,13 +112,6 @@ $cell-padding:           $gutter-h;
     &:last-of-type {
       padding-right: $cell-padding * 1.5;
     }
-    &.cell-editable {
-      cursor: pointer;
-      &:hover {
-        background: rgba($theme-base, 0.05);
-      }
-    }
-
     i.fk-link {
       display:none;
     }
@@ -117,15 +121,27 @@ $cell-padding:           $gutter-h;
       font-family: inherit;
       overflow: hidden;
     }
-    input {
+    input:not([type="checkbox"]) {
       font-size: 0.85rem;
       height: $row-height;
-      padding: 4px 4px 4px 8px!important;
+      padding: 0 $gutter-w;
     }
     textarea {
       border-color: transparent;
       padding: 4px 6px!important;
       line-height: $row-height - 8px; // row-height - vertical padding
+      z-index: 10;
+      box-shadow: inset 1px solid $theme-base;
+      height: auto!important;
+      &:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
+        bottom: 0;
+        background: $query-editor-bg;
+      }
     }
     &.active-cell {
       background: $selection;
@@ -142,12 +158,35 @@ $cell-padding:           $gutter-h;
     }
     &.tabulator-editing {
       box-shadow: inset 0 -1px $theme-base!important;
-      background: rgba($theme-base, 0.1);
+      background: rgba($theme-base, 0.08);
       padding-left: 0;
       padding-right: 0;
       min-height: $row-height;
-      line-height: $row-height + 2px;
+      line-height: $row-height;
       border-radius: $cell-radius;
+      overflow-y: visible;
+      height: auto!important;
+      &:focus {
+        box-shadow: inset 0 -1px $theme-base!important;
+      }
+      pre, input:not([type="checkbox"]), textarea {
+        padding: 0 $cell-padding!important;
+        min-height: $row-height;
+      }
+      pre, input:not([type="checkbox"]) {
+        line-height: $row-height;
+      }
+      input:not([type="checkbox"]) {
+        &.nullible-input {
+          padding-right: 18px!important;
+        }
+      }
+      .tabulator-bks-checkbox {
+        padding: 0!important;
+      }
+      input[type="checkbox"] {
+        box-shadow: inset 0 0 0 2px $theme-base!important;
+      }
     }
     &.foreign-key {
       padding-right: $foreign-key-width - 6px;
@@ -161,6 +200,9 @@ $cell-padding:           $gutter-h;
       padding-left: 0!important;
       padding-right: 0.35rem!important;
       margin-left: -$foreign-key-width;
+      &:hover {
+        background: transparent!important;
+      }
       .material-icons {
         font-size: 14px;
         line-height: 22px;
@@ -177,7 +219,7 @@ $cell-padding:           $gutter-h;
     &.edited {
       background: $cell-edited;
       &:hover {
-        background: lighten($cell-edited, 5%);
+        background: lighten($cell-edited, 3%);
       }
     }
     &.edit-error {
@@ -218,12 +260,13 @@ $cell-padding:           $gutter-h;
 // Editable Hover
 .tabulator-row {
   .tabulator-cell {
-     cursor: pointer;
-    &:hover {
+    cursor: pointer;
+    &:hover, &.editable:hover {
       background: rgba($theme-base,0.05);
-    } 
+    }
     &.primary-key {
       cursor: default;
+      opacity: 0.5;
       &:hover {
         background: transparent;
       }
@@ -236,20 +279,21 @@ $cell-padding:           $gutter-h;
 .tabletable.view-only {
   .tabulator-row {
     .tabulator-cell {
-      cursor: default;
+      cursor: default!important;
       &:hover {
-        background: transparent;
+        background: transparent!important;
       }
     }
   }
 }
-.table-properties {
+.table-properties .view-only {
   .tabulator-row {
-    .tabulator-cell {
-      cursor: default;
-      &:hover {
-        background: transparent;
-      }
+    .tabulator-cell:hover {
+      background: transparent;
+    }
+    .tabulator-cell,
+    .tabulator-cell input {
+      cursor: default!important;
     }
   }
 }
@@ -368,6 +412,8 @@ $cell-padding:           $gutter-h;
       user-select: text;
     }
     .tabulator-placeholder {
+      background: rgba($theme-base, 0.035);
+      border-radius: 8px;
       span {
         font-size: 12px;
         font-weight: normal;
@@ -388,6 +434,7 @@ $cell-padding:           $gutter-h;
 			&.tabulator-loading{
 				border: 0;
 				color: $text-dark;
+        background-color: black;
 			}
 
 			//error message
@@ -414,7 +461,7 @@ $cell-padding:           $gutter-h;
 }
 
 .tabulator-footer {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: flex-end;
   border: 0;
@@ -490,6 +537,34 @@ $cell-padding:           $gutter-h;
   }
 }
 
+// New Pagination
+.tabulator-paginator > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  a {
+    display: inline-flex;
+    align-items: center;
+    .material-icons {
+      color: rgba($statusbar-text, 0.68);
+      &:hover {
+        color: $statusbar-text;
+      }
+    }
+  }
+  input[type="number"] {
+    font-weight: bold;
+    color: $statusbar-text!important;
+    border-color: rgba($statusbar-text, 0.2);
+    padding: 0 ($gutter-h * 1.5);
+    width: 60px;
+    text-align: center;
+    &:hover, &:focus {
+      border-color: rgba($statusbar-text, 0.25);
+    }
+  }
+}
+
 .tabulator-menu {
   background: lighten($theme-bg, 5%);
   border: none;
@@ -512,5 +587,22 @@ $cell-padding:           $gutter-h;
 
   .tabulator-menu-separator {
     border-top-color: rgba($theme-base, 0.07);
+  }
+}
+
+
+// Tabulator Edit Select
+.tabulator-edit-select-list {
+  &:empty {
+    display: none;
+  }
+  .tabulator-edit-select-list-item {
+    &:hover {
+      background: rgba($theme-base, 0.05);
+    }
+    &.active, &.active:hover {
+      background: $brand-info;
+      color: white;
+    }
   }
 }

@@ -8,7 +8,7 @@
     <section>
       <div class="small-wrap">
         
-        <!-- Table Hader -->
+        <!-- Table Header -->
         <div class="table-header flex flex-top">
           <div class="flex-col expand">
             <h1 class="table-name">{{template.name}} <span class="badge">template</span></h1>
@@ -42,9 +42,10 @@ import templates from '@/lib/templates'
 import Vue from 'vue'
 import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
 import DialectPicker from '@/components/DialectPicker.vue'
-import Formatter from 'sql-formatter'
+import { format } from 'sql-formatter'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator';
 import HighlightedCode from '@/components/HighlightedCode.vue'
+import { FormatterDialect } from '@shared/lib/dialects/models'
 
 export default Vue.extend({
   metaInfo() {
@@ -90,7 +91,7 @@ export default Vue.extend({
   methods: {
     genSql() {
       const unformatted = this.generator.buildSql(this.template.toSchema(this.dialect))
-      this.sql = Formatter.format(unformatted, { language: 'sql'})
+      this.sql = format(unformatted, { language: FormatterDialect(this.dialect)})
     },
     setTemplate(id: string) {
       this.generator = new SqlGenerator(this.dialect)
@@ -165,4 +166,5 @@ export default Vue.extend({
   .code-wrap {
     margin-top: $gutter-w * 4;
   }
+
 </style>

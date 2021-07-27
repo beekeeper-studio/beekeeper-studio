@@ -1,6 +1,6 @@
 import path from 'path'
 import Crypto from 'crypto'
-import { Entity, Column, BeforeInsert, BeforeUpdate } from "typeorm"
+import { Entity, Column, BeforeInsert, BeforeUpdate, OneToMany } from "typeorm"
 
 import {ApplicationEntity} from './application_entity'
 import { resolveHomePathToAbsolute } from '../../utils'
@@ -9,6 +9,7 @@ import { ConnectionString } from 'connection-string'
 import log from 'electron-log'
 import { IDbClients } from '@/lib/db/client'
 import { EncryptTransformer } from '../transformers/Transformers'
+import { PinnedEntity } from './PinnedEntity'
 
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
@@ -131,17 +132,24 @@ export class DbConnectionBase extends ApplicationEntity {
     return Crypto.createHash('md5').update(str).digest('hex')
   }
 
-
   get simpleConnectionString() {
+    let connectionString = `${this.host}:${this.port}`;
     if (this.connectionType === 'sqlite') {
       return path.basename(this.defaultDatabase || "./unknown.db")
     } else {
-      let connectionString = `${this.host}:${this.port}`;
       if (this.defaultDatabase) {
         connectionString += `/${this.defaultDatabase}`
       }
       return connectionString
     }
+  }
+
+  get bastionHostString() {
+    return `${this.sshBastionHost}`
+  }
+
+  get sshHostString() {
+    return `${this.sshHost}`
   }
 
   get fullConnectionString() {
@@ -190,7 +198,8 @@ export class SavedConnection extends DbConnectionBase {
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshPassword: Nullable<string> = null
 
-
+  @OneToMany(() => PinnedEntity, pin => pin.savedConnection, {eager: true})
+  pinnedEntities!: PinnedEntity[]
 
   _sshMode: string = "agent"
 
@@ -238,7 +247,7 @@ export class SavedConnection extends DbConnectionBase {
       this.port = parsed.port || this.port
       this.username = parsed.user || this.username
       this.password = parsed.password || this.password
-      this.defaultDatabase = parsed.path ? parsed.path[0] : null || this.defaultDatabase
+      this.defaultDatabase = parsed.path?.[0] ?? this.defaultDatabase
       return true
     } catch (ex) {
       log.error('unable to parse connection string, assuming sqlite file', ex)

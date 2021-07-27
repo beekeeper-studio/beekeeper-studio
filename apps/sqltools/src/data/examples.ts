@@ -1,3 +1,4 @@
+import { getDialectData } from "@shared/lib/dialects"
 import { AlterTableSpec, Dialect, DialectTitles } from "@shared/lib/dialects/models"
 import { now } from "@shared/lib/dialects/template"
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase"
@@ -18,6 +19,7 @@ export interface Example {
   title: string
   description: string
   code: string | CodeExample[]
+  skip?: boolean // skip for this dialect
 }
 
 const alterTableExampleSpec: AlterTableSpec = {
@@ -68,6 +70,10 @@ const existingColumns = [
   {
     columnName: 'birthdate',
     dataType: 'varchar(255)'
+  },
+  {
+    columnName: 'last_name',
+    dataType: 'varchar(255)'
   }
 ]
 
@@ -101,20 +107,31 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
   const nowText = now(dialect)
 
   const pBuilder = getChangeBuilder(dialect)
+  const dData = getDialectData(dialect)
 
-  return [
+  const result = [
     {
       id: 'alter-column-type',
       linkText: 'Alter Column Type',
       title: `${title} Alter Column Type Example`,
       description: `How to change a table column type in ${title}`,
-      code: wrap(pBuilder.alterType('first_name', 'varchar(255)'))
+      code: wrap(pBuilder.alterType('first_name', 'varchar(255)')),
+      skip: dData.disabledFeatures?.alter?.alterColumn
+    },
+    {
+      id: 'rename-column',
+      linkText: 'Rename A Column',
+      title: `${title} Rename Column Example`,
+      description: `How to rename a table column in ${title}`,
+      code: wrap(pBuilder.renameColumn('last_name', 'family_name')),
+      skip: dData.disabledFeatures?.alter?.renameColumn
     },
     {
       id: 'alter-column-default',
       linkText: 'Alter Column Default',
       title: `${title} Alter Column Default Example`,
       description: `How to change a column's default value in ${title}`,
+      skip: dData.disabledFeatures?.alter?.alterColumn,
       code: [
         {
           value: wrap(pBuilder.alterDefault('created_at', nowText)),
@@ -131,6 +148,7 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
       linkText: 'Alter Column Nullable',
       title: `${title} Alter Column Nullable Example`,
       description: `How to change the nullable flag on a ${title} table column`,
+      skip: dData.disabledFeatures?.alter?.alterColumn,
       code: [
         {
           value: wrap(pBuilder.alterNullable('important_column', false)),
@@ -146,11 +164,13 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
       id: 'alter-table',
       linkText: 'Alter Table',
       title: `${title} Full Alter Table Example`,
+      skip: dData.disabledFeatures?.alter?.alterColumn,
       description: `A ${title} example for changing, adding, and removing columns for an existing table`,
       code: pBuilder.alterTable(alterTableExampleSpec)
 
     }
   ]
+  return result.filter((r) => !r.skip)
 }
 
 export const PostgresExamples: Example[] = buildExamples('postgresql', 'ALTER TABLE "users"')

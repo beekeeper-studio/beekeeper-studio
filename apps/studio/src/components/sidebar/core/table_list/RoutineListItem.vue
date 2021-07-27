@@ -8,10 +8,10 @@
         <i :title="title" :class="iconClass" class="item-icon material-icons">functions</i>
         <span class="table-name truncate" :title="routine.name">{{routine.name}}</span>
       </span>
-      <span class="actions" v-bind:class="{'pinned': pinned.includes(routine)}">
-        <span v-if="!pinned.includes(routine)" @mousedown.prevent.stop="pin" class="btn-fab pin" :title="'Pin'"><i class="bk-pin"></i></span>
-        <span v-if="pinned.includes(routine)" @mousedown.prevent.stop="unpin" class="btn-fab unpin" :title="'Unpin'"><i class="material-icons">clear</i></span>
-        <span v-if="pinned.includes(routine)" class="btn-fab pinned"><i class="bk-pin" :title="'Unpin'"></i></span>
+      <span class="actions" v-bind:class="{'pinned': pinned}">
+        <span v-if="!pinned" @mousedown.prevent.stop="pin" class="btn-fab pin" :title="'Pin'"><i class="bk-pin"></i></span>
+        <span v-if="pinned" @mousedown.prevent.stop="unpin" class="btn-fab unpin" :title="'Unpin'"><i class="material-icons">clear</i></span>
+        <span v-if="pinned" class="btn-fab pinned"><i class="bk-pin" :title="'Unpin'"></i></span>
       </span>
       <x-contextmenu>
         <x-menu>
@@ -51,7 +51,7 @@ import { RoutineTypeNames } from '@/lib/db/models'
 
   import { mapGetters } from 'vuex'
 	export default {
-		props: ["connection", "routine", "noSelect", "forceExpand", "forceCollapse"],
+		props: ["connection", "routine", "noSelect", "forceExpand", "forceCollapse", "pinned"],
     mounted() {
     },
     data() {
@@ -96,17 +96,16 @@ import { RoutineTypeNames } from '@/lib/db/models'
       title() {
         return RoutineTypeNames[this.routine.type]
       },
-      ...mapGetters(['pinned']),
     },
     methods: {
       toggleArgs() {
         this.showArgs = !this.showArgs
       },
       pin() {
-        this.$store.dispatch('pinRoutine', this.routine)
+        this.$store.dispatch('pins/add', this.routine)
       },
       unpin() {
-        this.$store.dispatch('unpinRoutine', this.routine)
+        this.$store.dispatch('pins/remove', this.routine)
       },
       createRoutine() {
         this.$root.$emit('loadRoutineCreate', this.routine)
