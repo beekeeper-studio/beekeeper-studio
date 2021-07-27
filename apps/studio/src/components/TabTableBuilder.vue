@@ -47,9 +47,9 @@
 </template>
 <script lang="ts">
 import { mapGetters, mapState } from 'vuex'
-import Formatter from 'sql-formatter';
+import { format } from 'sql-formatter';
 import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
-import { SchemaItem, Schema } from '@shared/lib/dialects/models'
+import { SchemaItem, Schema, FormatterDialect } from '@shared/lib/dialects/models'
 import StatusBar from '@/components/common/StatusBar.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
@@ -141,7 +141,7 @@ export default Vue.extend({
       } catch (error) {
         this.error = error
         try {
-          this.errorSql = Formatter.format(sql, { language: 'sql'})
+          this.errorSql = format(sql, { language: FormatterDialect(this.dialect)})
         } catch (error) {
           // do nothing
         }
@@ -152,7 +152,7 @@ export default Vue.extend({
     sql() {
       this.error = undefined
       const sql = (this.generator as SqlGenerator).buildSql(this.schema)
-      const formatted = Formatter.format(sql, { language: 'sql'})
+      const formatted = format(sql, { language: FormatterDialect(this.dialect)})
       if (sql) {
         this.$root.$emit(AppEvent.newTab, formatted)
       } else {

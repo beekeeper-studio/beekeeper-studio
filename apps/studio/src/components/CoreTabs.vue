@@ -52,7 +52,7 @@
 <script>
 
   import _ from 'lodash'
-  import sqlFormatter from 'sql-formatter';
+  import { format } from 'sql-formatter';
   import {FavoriteQuery} from '../common/appdb/models/favorite_query'
   import QueryEditor from './TabQueryEditor.vue'
   import Statusbar from './common/StatusBar.vue'
@@ -201,12 +201,12 @@
           return
         }
         const result = await method(table.name, table.schema)
-        const stringResult = sqlFormatter.format(_.isArray(result) ? result[0] : result)
+        const stringResult = format(_.isArray(result) ? result[0] : result)
         this.createQuery(stringResult)
       },
       async loadRoutineCreate(routine) {
         const result = await this.connection.getRoutineCreateScript(routine.name, routine.schema)
-        const stringResult = sqlFormatter.format(_.isArray(result) ? result[0] : result)
+        const stringResult = format(_.isArray(result) ? result[0] : result)
         this.createQuery(stringResult)
       },
       openTableBuilder() {

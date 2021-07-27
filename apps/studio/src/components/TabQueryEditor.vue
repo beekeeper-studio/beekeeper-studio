@@ -121,7 +121,7 @@
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
 
-  import sqlFormatter from 'sql-formatter';
+  import { format } from 'sql-formatter';
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from 'electron-log'
@@ -500,7 +500,7 @@
         }
       },
       formatSql() {
-        this.editor.setValue(sqlFormatter.format(this.editor.getValue()))
+        this.editor.setValue(format(this.editor.getValue()))
         this.selectEditor()
       },
       toggleComment() {

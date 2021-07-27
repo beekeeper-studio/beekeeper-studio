@@ -50,9 +50,9 @@ import Vue from 'vue';
 import _ from 'lodash'
 import { mapGetters, mapState } from 'vuex'
 import { UserTemplate as users } from '../lib/templates/user'
-import { DialectTitles, Schema, SchemaItem } from '@shared/lib/dialects/models'
+import { DialectTitles, FormatterDialect, Schema, SchemaItem } from '@shared/lib/dialects/models'
 import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
-import Formatter from 'sql-formatter'
+import { format } from 'sql-formatter'
 import Knex from 'knex'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator';
 import DialectPicker from '@/components/DialectPicker.vue'
@@ -153,7 +153,7 @@ export default Vue.extend ({
     formattedSql() {
       // TODO (map dialects)
       if (!this.sql) return null
-      return Formatter.format(this.sql, { language: 'sql'})
+      return format(this.sql, { language: FormatterDialect(this.dialect)})
     }
   },
   methods: {
