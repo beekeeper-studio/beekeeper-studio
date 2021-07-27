@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Tabulator, { CellComponent, RowComponent } from 'tabulator-tables'
 
-export function vueFormatter(component: any) {
+export function vueFormatter(component: any): HTMLElement {
   const ComponentClass = Vue.extend(component)
   return (cell: Tabulator.CellComponent, params: any, onRendered) => {
 
@@ -13,14 +13,14 @@ export function vueFormatter(component: any) {
     onRendered(() => {
       instance.$set(instance.$data, 'rendered', true)
     })
-    return instance.$el
+    return instance.$el as HTMLElement
   }
 }
 
 export function vueEditor(component: any) {
   const ComponentClass = Vue.extend(component)
 
-  return (cell:Tabulator.CellComponent, onRendered, success, cancel, editorParams) => {
+  return (cell:Tabulator.CellComponent, onRendered, success, cancel, editorParams): HTMLElement => {
 
     const instance = new ComponentClass({
       propsData: {cell, params: editorParams}
@@ -51,7 +51,7 @@ export function vueEditor(component: any) {
 
 
 
-    return instance.$el
+    return instance.$el as HTMLElement
   }
 }
 

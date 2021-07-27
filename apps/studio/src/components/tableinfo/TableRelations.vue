@@ -24,27 +24,61 @@
     </status-bar>
   </div>
 </template>
-<script>
-import Tabulator from 'tabulator-tables'
+<script lang="ts">
+import Vue from 'vue'
+import Tabulator, { CellComponent, ColumnDefinition } from 'tabulator-tables'
 import globals from '../../common/globals'
 import StatusBar from '../common/StatusBar.vue'
-export default {
+import { vueEditor } from '@shared/lib/tabulator/helpers'
+import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
+export default Vue.extend({
   props: ["table", "connection", "tabId", "active", "properties"],
   components: {
     StatusBar
   },
   data() {
     return {
-      tabulator: null
+      tabulator: null,
+      newRows: [],
+      removedRows: [],
+      error: null
     }
   },
   computed: {
-    tableColumns() {
+    tableColumns(): ColumnDefinition[] {
+      const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
+
       return [
-        { field: 'constraintName', title: "Name", widthGrow: 2},
-        { field: 'fromColumn', title: "Column"},
-        { field: 'toSchema', title: "FK Schema"},
-        { field: 'toTable', title: "FK Table"},
+        { 
+          field: 'constraintName',
+          title: "Name",
+          widthGrow: 2,
+          editable,
+          editor: vueEditor(NullableInputEditorVue),
+
+        },
+        { 
+          field: 'fromColumn',
+          title: "Column",
+          editable,
+          editor: 'select',
+          editorParams: {
+            values: this.table.columns.map((c) => c.columnName)
+          }
+        },
+        { 
+          field: 'toSchema',
+          title: "FK Schema",
+          editable,
+          editor: vueEditor(NullableInputEditorVue)
+        },
+        { 
+          field: 'toTable',
+          title: "FK Table",
+          editable,
+          editor: vueEditor(NullableInputEditorVue)
+          
+        },
         { field: 'toColumn', title: "FK Column"},
         { field: 'onUpdate', title: "On Update"},
         { field: 'onDelete', title: 'On Delete'}
@@ -59,16 +93,20 @@ export default {
       if (this.tabulator) this.tabulator.replaceData(this.tableData)
     }
   },
+  methods: {
+    isCellEditable(cell: CellComponent): boolean {
+      return this.newRows.includes(cell.getRow())
+    }
+  },
   mounted() {
     this.tabulator = new Tabulator(this.$refs.tabulator, {
       columns: this.tableColumns,
       data: this.tableData,
       tooltips: true,
-      columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
       placeholder: "No Relations",
       layout: 'fitColumns'
 
     })
   }
-}
+})
 </script>

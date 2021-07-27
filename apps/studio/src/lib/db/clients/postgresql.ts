@@ -193,6 +193,10 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     alterIndexSql: (specs: CreateIndexSpec[], drops: DropIndexSpec[]) => alterIndexSql(specs, drops),
     alterIndex: (specs, drops) => alterIndex(conn, specs, drops),
 
+    // relations
+    alterRelationsSql: (specs: TableKey[], drops: string[]) => alterRelationsSql(specs, drops)
+    alterRelations: (specs, drops) => alterRelations(conn, specs, drops)
+
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
   };
 }
@@ -473,7 +477,6 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
   return data.rows.map((row) => {
     const params = grouped[row.id] || []
     return {
-      entityType: 'routine',
       schema: row.routine_schema,
       name: row.name,
       type: row.routine_type ? row.routine_type.toLowerCase() : 'function',
@@ -956,6 +959,39 @@ function createIndexSql(spec: CreateIndexSpec): string {
   return `
     CREATE ${unique} INDEX ${name} on ${table}(${columns})
   `
+}
+
+export function alterRelationsSql(specs: TableKey[], drops: string[]): string | null {
+  const additions = specs.map((spec) => {
+    const fkName = spec.constraintName ? PD.wrapIdentifier(spec.constraintName) : ''
+    const fromTable = tableName(spec.fromTable, spec.fromSchema)
+    const toTable = tableName(spec.toTable, spec.toSchema)
+    const fromColumn = PD.wrapIdentifier(spec.fromColumn)
+    const toColumn = PD.wrapIdentifier(spec.toColumn)
+    const onUpdate = spec.onUpdate ? `ON UPDATE ${PD.wrapLiteral(spec.onUpdate)}` : ''
+    const onDelete = spec.onDelete ? `ON DELETE ${PD.wrapLiteral(spec.onDelete)}` : ''
+
+    const result = `
+      ALTER TABLE ${fromTable}
+      ADD CONSTRAINT ${fkName}
+      FOREIGN KEY (${fromColumn})
+      REFERENCES ${toTable} (${toColumn})
+      ${onUpdate}
+      ${onDelete}
+    `
+    return result
+  })
+  const names = drops.map((name) => PD.wrapIdentifier(name)).join(", ")
+  const dropSql = `DROP INDEX ${names}`
+  return [
+    ...additions,
+    dropSql
+  ].join(";")
+}
+
+export async function alterRelations(conn: HasPool, specs: TableKey[], drops: string[]): Promise<void> {
+
+  
 }
 
 export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {
