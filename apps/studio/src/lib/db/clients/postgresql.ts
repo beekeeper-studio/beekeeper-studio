@@ -17,7 +17,7 @@ import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
-import { AlterTableSpec, CreateIndexSpec, DropIndexSpec, DropTableKey, TableKey } from '@shared/lib/dialects/models';
+import { AlterTableSpec, CreateIndexSpec, DropIndexSpec, DropTableKey, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 
@@ -189,12 +189,12 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     alterTable: (change: AlterTableSpec) => alterTable(conn, change),
 
     // alter indexes
-    alterIndexSql: (specs, drops) => alterIndexSql(specs, drops),
-    alterIndex: (specs, drops) => alterIndex(conn, specs, drops),
+    alterIndexSql: (payload) => alterIndexSql(payload),
+    alterIndex: (payload) => alterIndex(conn, payload),
 
     // relations
-    alterRelationSql: (specs, drops) => alterRelationsSql(specs, drops),
-    alterRelation: (specs, drops) => alterRelations(conn, specs, drops),
+    alterRelationSql: (payload) => alterRelationsSql(payload),
+    alterRelation: (payload) => alterRelations(conn, payload),
 
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
   };
@@ -926,35 +926,22 @@ export async function alterTable(_conn: HasPool, change: AlterTableSpec) {
   })
 }
 
-export function alterIndexSql(table: string, schema: string, specs?: CreateIndexSpec[], drops?: DropIndexSpec[]): string | null {
+export function alterIndexSql(payload: IndexAlterations): string | null {
+  const { table, schema, additions, drops } = payload
   const changeBuilder = new PostgresqlChangeBuilder(table, schema)
-  const additions = changeBuilder.createIndexes(specs)
+  const newIndexes = changeBuilder.createIndexes(additions)
   const droppers = changeBuilder.dropIndexes(drops)
-  return [additions, droppers].filter((f) => !!f).join(";")
+  return [newIndexes, droppers].filter((f) => !!f).join(";")
 }
 
-export async function alterIndex(conn: HasPool, specs: CreateIndexSpec[], drops: DropIndexSpec[]) {
-  const sql = alterIndexSql(specs, drops);
+export async function alterIndex(conn: HasPool, payload: IndexAlterations) {
+  const sql = alterIndexSql(payload);
   await executeWithTransaction(conn, { query: sql });
 }
 
-function createIndexSql(spec: CreateIndexSpec): string {
-  const unique = spec.unique ? 'UNIQUE' : ''
-  const name = spec.name ? PD.wrapIdentifier(spec.name) : ''
-  const table = tableName(spec.table, spec.schema)
-  if (!spec.columns?.length) {
-    throw new Error("Indexes require at least one column")
-  }
-  const columns = spec.columns?.map((c) => {
-    return `${PD.wrapIdentifier(c.name)} ${c.order}`
-  })
-  return `
-    CREATE ${unique} INDEX ${name} on ${table}(${columns})
-  `
-}
-
-export function alterRelationsSql(specs: TableKey[], drops: DropTableKey[]): string | null {
-  const additions = specs.map((spec) => {
+export function alterRelationsSql(payload: RelationAlterations): string | null {
+  const { table, schema, additions, drops} = payload
+  const newRelations = additions.map((spec) => {
     const fkName = spec.constraintName ? PD.wrapIdentifier(spec.constraintName) : ''
     const fromTable = tableName(spec.fromTable, spec.fromSchema)
     const toTable = tableName(spec.toTable, spec.toSchema)
@@ -980,13 +967,13 @@ export function alterRelationsSql(specs: TableKey[], drops: DropTableKey[]): str
     return `ALTER TABLE ${table} DROP CONSTRAINT ${constraint}`
   })
   return [
-    ...additions,
+    ...newRelations,
     ...dropSqls
   ].filter((i) => !!i).join(";")
 }
 
-export async function alterRelations(conn: HasPool, specs: TableKey[], drops: DropTableKey[]): Promise<void> {
-  const sql = alterRelationsSql(specs, drops)
+export async function alterRelations(conn: HasPool, payload: RelationAlterations): Promise<void> {
+  const sql = alterRelationsSql(payload)
   await executeWithTransaction(conn, { query: sql })
 }
 
