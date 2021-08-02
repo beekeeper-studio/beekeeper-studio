@@ -588,11 +588,16 @@ export async function getTableReferences(conn, table) {
 export async function getTableKeys(conn, database, table, schema) {
   const sql = `
     SELECT
+        name = FK.CONSTRAINT_NAME,
+        from_schema = PK.TABLE_SCHEMA,
         from_table = FK.TABLE_NAME,
         from_column = CU.COLUMN_NAME,
+        to_schema = PK.TABLE_SCHEMA,
         to_table = PK.TABLE_NAME,
         to_column = PT.COLUMN_NAME,
-        constraint_name = C.CONSTRAINT_NAME
+        constraint_name = C.CONSTRAINT_NAME,
+        on_update = c.UPDATE_RULE,
+        on_delete = c.DELETE_RULE
     FROM
         INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
     INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
@@ -620,12 +625,15 @@ export async function getTableKeys(conn, database, table, schema) {
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
   const result = data.recordset.map((row) => ({
+    constraintName: row.name,
     toTable: row.to_table,
     toColumn: row.to_column,
+    toSchema: row.to_schema,
+    fromSchema: row.from_schema,
     fromTable: row.from_table,
     fromColumn: row.from_column,
-    onUpdate: 'UNKNOWN',
-    onDelete: 'UNKNOWN'
+    onUpdate: row.on_update,
+    onDelete: row.on_delete
   }));
   log.debug("tableKeys result", result)
   return result

@@ -76,6 +76,8 @@ export interface DialectData {
       renameColumn?: boolean
       alterColumn?: boolean
       multiStatement?: boolean
+      addConstraint?: boolean
+      dropConstraint?: boolean
     },
     constraints?: {
       onUpdate?: boolean,

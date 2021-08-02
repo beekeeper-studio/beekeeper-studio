@@ -105,8 +105,8 @@ const store = new Vuex.Store<State>({
       // if no schemas, just return a single schema
       if (_.chain(state.tables).map('schema').uniq().value().length <= 1) {
         return [{
-          schema: null,
-          skipSchemaDisplay: true,
+          schema: g.schemas[0] || null,
+          skipSchemaDisplay: g.schemas.length < 2,
           tables: g.filteredTables,
           routines: g.filteredRoutines
         }]
@@ -126,13 +126,16 @@ const store = new Vuex.Store<State>({
       }).value()
     },
     tablesHaveSchemas(_state, getters) {
-      return getters.schemaTables.length > 1
+      return getters.schemas.length > 1
     },
     connectionColor(state) {
       return state.usedConfig ? state.usedConfig.labelColor : 'default'
     },
     schemas(state) {
-      return new Set(state.tables.map((t) => t.schema));
+      if (state.tables.find((t) => !!t.schema)) {
+        return _.uniq(state.tables.map((t) => t.schema));
+      }
+      return []
     }
   },
   mutations: {

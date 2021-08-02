@@ -405,7 +405,7 @@ export async function getTableKeys(conn, database, table) {
   const { data } = await driverExecuteQuery(conn, { query: sql, params });
 
   return data.map((row) => ({
-    constraintName: `${row.constraint_name} KEY`,
+    constraintName: `${row.constraint_name}`,
     toTable: row.referenced_table,
     toColumn: row.referenced_column,
     fromTable: table,

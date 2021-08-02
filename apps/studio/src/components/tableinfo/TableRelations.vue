@@ -2,6 +2,8 @@
   <div class="table-info-table view-only">
     <div class="table-info-table-wrap">
       <div class="center-wrap">
+        <error-alert :error="error" v-if="error" />
+
         <div class="table-subheader">
           <div class="table-title">
             <h2>Relations</h2>
@@ -9,10 +11,16 @@
           <div class="expand"></div>
           <div class="actions">
               <a @click.prevent="$emit('refresh')" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
-              <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
+              <a v-if="canAdd" @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
           </div>
         </div>
         <div class="table-relations" ref="tabulator"></div>
+        <div class="notices" v-if="notice">
+          <div class="alert alert-info">
+            <i class="material-icons">info</i> 
+            {{notice}}
+            </div>
+        </div>
       </div>
     </div>
     
@@ -50,18 +58,20 @@ import StatusBar from '../common/StatusBar.vue'
 import { TabulatorStateWatchers, trashButton, vueEditor } from '@shared/lib/tabulator/helpers'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import { mapGetters, mapState } from 'vuex'
-import { CreateRelationSpec, Dialect, FormatterDialect, RelationAlterations } from '@shared/lib/dialects/models'
+import { CreateRelationSpec, Dialect, DialectTitles, FormatterDialect, RelationAlterations } from '@shared/lib/dialects/models'
 import { TableColumn, TableOrView } from '@/lib/db/models'
 import _ from 'lodash'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import rawLog from 'electron-log'
+import ErrorAlert from '../common/ErrorAlert.vue'
 const log = rawLog.scope('TableRelations');
 
 export default Vue.extend({
   props: ["table", "connection", "tabId", "active", "properties", 'tabState'],
   components: {
-    StatusBar
+    StatusBar,
+    ErrorAlert
   },
   data() {
     return {
@@ -75,6 +85,25 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables']),
     ...mapGetters(['schemas', 'dialect', 'schemaTables', 'dialectData']),
+    notice() {
+      const results = []
+      if (!this.canAdd) {
+        results.push("Adding relations is not supported")
+      }
+      if (!this.canDrop) {
+        results.push("Dropping constraints is not supported")
+      }
+      if (results?.length) {
+        return `${DialectTitles[this.dialect]}: ${results.join(". ")}`
+      }
+      return null
+    },
+    canAdd() {
+      return !this.dialectData?.disabledFeatures?.alter?.addConstraint
+    },
+    canDrop() {
+      return !this.dialectData?.disabledFeatures?.alter?.dropConstraint
+    },
     hasEdits() {
       return this.editCount > 0
     },
@@ -85,7 +114,7 @@ export default Vue.extend({
       const withSchemas: Dialect[] = ['postgresql', 'sqlserver']
       const showSchema = withSchemas.includes(this.dialect)
       const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
-      return [
+      const results: ColumnDefinition[] = [
         {
           field: 'constraintName',
           title: "Name",
@@ -153,8 +182,8 @@ export default Vue.extend({
             defaultValue: 'NO ACTION',
           }
         },
-        trashButton(this.removeRow)
       ]
+      return this.canDrop ? [...results, trashButton(this.removeRow)] : results
     },
     tableData() {
       return this.properties.relations || []
@@ -236,6 +265,7 @@ export default Vue.extend({
     async submitApply() {
       try {
         this.loading = true
+        this.error = null
         const payload = this.getPayload()
         await this.connection.alterRelation(payload)
         this.$noty.success("Relations Updated")
@@ -261,6 +291,8 @@ export default Vue.extend({
       this.removedRows = []
     },
     initializeTabulator() {
+      this.newRows = []
+      this.removedRows = []
       this.tabulator?.destroy()
       this.tabulator = new Tabulator(this.$refs.tabulator, {
         columns: this.tableColumns,
