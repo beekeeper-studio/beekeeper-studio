@@ -15,6 +15,13 @@ export function escapeLiteral(value) {
   return value.replaceAll(';', '')
 }
 
+export function joinQueries(queries) {
+  const results = queries.map((sql) => {
+    return sql.match(/;\s*$/g) ? sql : `${sql};`
+  })
+  return results.join("")
+}
+
 
 export function buildSchemaFilter(filter, schemaField = 'schema_name') {
   if (!filter) return null

@@ -27,7 +27,8 @@ export const RedshiftData: DialectData = {
     constraints: {
       onUpdate: true,
       onDelete: true
-    }
+    },
+    createIndex: true,
   }
 
 }

@@ -86,7 +86,7 @@ const store = new Vuex.Store<State>({
       if (!state.usedConfig) return null
       return dialectFor(state.usedConfig.connectionType)
     },
-    dialectData(state: State, getters) {
+    dialectData(_state: State, getters) {
       return getDialectData(getters.dialect)
     },
     selectedSidebarItem(state) {

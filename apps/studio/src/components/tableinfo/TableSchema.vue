@@ -17,6 +17,12 @@
         <div ref="tableSchema"></div>
 
       </div>
+      <div class="notices" v-if="notice">
+        <div class="alert alert-info">
+          <i class="material-icons">info</i> 
+          {{notice}}
+        </div>
+      </div>
     </div>
 
     <div class="expand" />
@@ -88,6 +94,12 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(['dialect']),
+    notice() {
+      if (this.dialect === 'sqlite') {
+        return 'Note: SQLite does not support any column alterations except renaming.'
+      }
+      return null
+    },
     disabledFeatures() {
       return getDialectData(this.dialect).disabledFeatures
     },
@@ -340,6 +352,7 @@ export default Vue.extend({
     }
   },
   mounted() {
+    this.tabState.dirty = false
     // const columnWidth = this.table.columns.length > 20 ? 125 : undefined
     if (!this.active) this.forceRedraw = true
     this.initializeTabulator()

@@ -37,6 +37,7 @@
           v-for="(pill) in pills" 
           :key="pill.id"
           @actionCompleted="refresh"
+          @refresh="refresh"
         >
           <template v-slot:footer>
             <div class="statusbar-info col flex expand">
@@ -208,7 +209,7 @@ export default {
     async refresh() {
       this.loading = true
       this.error = null
-      this.properties = null
+      // this.properties = null
       this.fetchTotalRecords()
       try {
         this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)

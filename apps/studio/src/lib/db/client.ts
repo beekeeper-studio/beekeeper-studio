@@ -4,7 +4,7 @@ import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from 'node-ssh-forward';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, } from './models';
-import { AlterTableSpec, CreateIndexSpec, DropIndexSpec, DropTableKey, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 
 const logger = createLogger('db');
 

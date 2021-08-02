@@ -7,7 +7,7 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _ from 'lodash';
 
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
 import { SqlServerData } from '@shared/lib/dialects/sqlserver';
@@ -66,8 +66,19 @@ export default async function (server, database) {
     truncateAllTables: () => truncateAllTables(conn),
     getTableProperties: (table, schema) => getTableProperties(conn, table, schema),
     setTableDescription: (table, description, schema) => setTableDescription(conn, table, description, schema),
+    // alter table
     alterTableSql: (change) => alterTableSql(conn, change),
-    alterTable: (change) => alterTable(conn, change)
+    alterTable: (change) => alterTable(conn, change),
+
+
+    // indexes
+    alterIndexSql: (adds, drops) => alterIndexSql(adds, drops),
+    alterIndex: (adds, drops) => alterIndex(conn, adds, drops),
+
+    // relations
+    alterRelationSql: (payload) => alterRelationSql(payload),
+    alterRelation: (payload) => alterRelation(conn, payload),
+
 
   };
 }
@@ -474,20 +485,64 @@ export async function listTableTriggers(conn, table, schema) {
 }
 
 export async function listTableIndexes(conn, table, schema) {
-  // SQL Server does not have information_schema for indexes, so other way around
-  // is using sp_helpindex stored procedure to fetch indexes related to table
-  const sql = `EXEC sp_helpindex '${escapeString(schema)}.${escapeString(table)}'`;
+
+  const sql = `
+
+    SELECT
+
+    t.name as table_name,
+    s.name as schema_name,
+    ind.name as index_name,
+    ind.index_id as index_id,
+    ic.index_column_id as column_id,
+    col.name as column_name,
+    ic.is_descending_key as is_descending,
+    ind.is_unique as is_unique,
+    ind.is_primary_key as is_primary
+
+    FROM
+        SYS.INDEXES ind
+    INNER JOIN
+        SYS.INDEX_COLUMNS ic ON  ind.object_id = ic.object_id and ind.index_id = ic.index_id
+    INNER JOIN
+        SYS.COLUMNS col ON ic.object_id = col.object_id and ic.column_id = col.column_id
+    INNER JOIN
+        SYS.TABLES t ON ind.object_id = t.object_id
+    INNER JOIN
+        SYS.SCHEMAS s on t.schema_id = s.schema_id
+    WHERE
+        ind.is_unique_constraint = 0
+        AND t.is_ms_shipped = 0
+        AND t.name = '${escapeString(table)}'
+        AND s.name = '${escapeString(schema || 'dbo')}'
+    ORDER BY
+        t.name, ind.name, ind.index_id, ic.is_included_column, ic.key_ordinal;
+
+
+  `;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  return data.recordset.map((row, idx) => ({
-    id: idx,
-    name: row.index_name,
-    columns: row.index_keys,
-    primary: row.index_description.includes('primary key'),
-    unique: row.index_description.includes('unique'),
-    table, schema
-  }));
+
+  const grouped = _.groupBy(data.recordset, 'index_name')
+
+  const result = Object.keys(grouped).map((indexName) => {
+    const blob = grouped[indexName]
+    const unique = blob[0].is_unique
+    const id = blob[0].index_id
+    const primary = blob[0].is_primary
+    const columns = _.sortBy(blob, 'column_id').map((column) => {
+      return {
+        name: column.column_name,
+        order: column.is_descending ? 'DESC' : 'ASC'
+      }
+    })
+    return {
+      table, schema, id, name: indexName, unique, primary, columns
+    }
+  })
+  return _.sortBy(result, 'id')
+
 }
 
 export async function listSchemas(conn, filter) {
@@ -855,15 +910,38 @@ async function alterTableSql(conn, changes) {
 }
 
 async function alterTable(conn, changes) {
-  const sql = await alterTableSql(conn, changes)
-  try {
-    const queries = ['SET XACT_ABORT ON', 'BEGIN TRANSACTION', sql, 'COMMIT']
-    await driverExecuteQuery(conn, { query: queries.join(";") })
-  } catch (ex) {
-    log.error(ex)
-    throw ex
-  }
+  const query = await alterTableSql(conn, changes)
+  await executeWithTransaction(conn, { query })
 }
+
+
+export function alterIndexSql(payload) {
+  const { table, schema, additions, drops } = payload
+  const changeBuilder = new SqlServerChangeBuilder(table, schema, [], [])
+  const newIndexes = changeBuilder.createIndexes(additions)
+  const droppers = changeBuilder.dropIndexes(drops)
+  return [newIndexes, droppers].filter((f) => !!f).join(";")
+}
+
+export async function alterIndex(conn, payload) {
+  const sql = alterIndexSql(payload);
+  await executeWithTransaction(conn, { query: sql });
+}
+
+
+export function alterRelationSql(payload) {
+  const { table, schema } = payload
+  const builder = new SqlServerChangeBuilder(table, schema, [], [])
+  const creates = builder.createRelations(payload.additions)
+  const drops = builder.dropRelations(payload.drops)
+  return [creates, drops].filter((f) => !!f).join(";")
+}
+
+export async function alterRelation(conn, payload) {
+  const query = alterRelationSql(payload)
+  await executeWithTransaction(conn, { query });
+}
+
 
 function configDatabase(server, database) {
   const config = {
@@ -975,6 +1053,16 @@ async function runWithConnection(conn, run) {
   const connection = await new ConnectionPool(conn.dbConfig).connect();
   conn.connection = connection
   return run(connection);
+}
+
+async function executeWithTransaction(conn, queryArgs) {
+  try {
+    const query = joinQueries(['SET XACT_ABORT ON', 'BEGIN TRANSACTION', queryArgs.query, 'COMMIT'])
+    await driverExecuteQuery(conn, { ...queryArgs, query })
+  } catch (ex) {
+    log.error(ex)
+    throw ex
+  }
 }
 
 

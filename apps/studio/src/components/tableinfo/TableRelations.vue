@@ -8,7 +8,8 @@
           </div>
           <div class="expand"></div>
           <div class="actions">
-            <a @click.prevent="addRow" class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Relation</a>
+              <a @click.prevent="$emit('refresh')" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
+              <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
           </div>
         </div>
         <div class="table-relations" ref="tabulator"></div>
@@ -49,8 +50,8 @@ import StatusBar from '../common/StatusBar.vue'
 import { TabulatorStateWatchers, trashButton, vueEditor } from '@shared/lib/tabulator/helpers'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import { mapGetters, mapState } from 'vuex'
-import { Dialect, FormatterDialect } from '@shared/lib/dialects/models'
-import { TableColumn, TableKey, TableOrView } from '@/lib/db/models'
+import { CreateRelationSpec, Dialect, FormatterDialect, RelationAlterations } from '@shared/lib/dialects/models'
+import { TableColumn, TableOrView } from '@/lib/db/models'
 import _ from 'lodash'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
@@ -190,13 +191,11 @@ export default Vue.extend({
         )?.columns.map((c: TableColumn) => c.columnName) || []
       }
     },
-    getPayload() {
-      const additions: TableKey[] = this.newRows.map((row: RowComponent) => {
+    getPayload(): RelationAlterations {
+      const additions: CreateRelationSpec[] = this.newRows.map((row: RowComponent) => {
         const data = row.getData()
-        const payload: TableKey = {
+        const payload: CreateRelationSpec = {
           constraintName: data.constraintName || undefined,
-          fromSchema: this.table.schema,
-          fromTable: this.table.name,
           fromColumn: data.fromColumn,
           toSchema: data.toSchema,
           toTable: data.toTable,
@@ -207,14 +206,9 @@ export default Vue.extend({
         return payload
       })
       const drops = this.removedRows.map((row: RowComponent) => {
-        return {
-          table: this.table.name,
-          schema: this.table.schema,
-          constraintName: row.getData()['constraintName']
-        }
-        
+        return row.getData()['constraintName'];        
       })
-      return { additions, drops }
+      return { additions, drops, table: this.table.name, schema: this.table.schema }
     },
     async addRow() {
       if (this.loading) return;
@@ -242,8 +236,8 @@ export default Vue.extend({
     async submitApply() {
       try {
         this.loading = true
-        const { additions, drops } = this.getPayload()
-        await this.connection.alterRelation(additions, drops)
+        const payload = this.getPayload()
+        await this.connection.alterRelation(payload)
         this.$noty.success("Relations Updated")
         this.$emit('actionCompleted')
         this.$nextTick(() => this.initializeTabulator())
@@ -256,8 +250,8 @@ export default Vue.extend({
 
     },
     submitSql() {
-      const { additions, drops } = this.getPayload()
-      const sql = this.connection.alterRelationSql(additions, drops)
+      const payload = this.getPayload()
+      const sql = this.connection.alterRelationSql(payload)
       const formatted = format(sql, { language: FormatterDialect(this.dialect)})
       this.$root.$emit(AppEvent.newTab, formatted)
     },
@@ -278,6 +272,7 @@ export default Vue.extend({
     }
   },
   mounted() {
+    this.tabState.dirty = false
     this.initializeTabulator()
   }
 })

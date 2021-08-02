@@ -81,6 +81,10 @@ export interface DialectData {
       onUpdate?: boolean,
       onDelete?: boolean
     }
+    index?: {
+      desc?: boolean
+    }
+    createIndex?: boolean
     comments?: boolean
   }
 }
@@ -147,8 +151,6 @@ export interface IndexColumn {
 
 export interface CreateIndexSpec {
   name?: string
-  schema?: string
-  table: string
   columns: IndexColumn[]
   unique: boolean
 }
@@ -162,6 +164,18 @@ export interface IndexAlterations {
   drops: DropIndexSpec[]
   table: string
   schema?: string
+}
+
+
+
+export interface CreateRelationSpec {
+  toTable: string;
+  toSchema?: string;
+  toColumn: string;
+  fromColumn: string;
+  constraintName?: string;
+  onUpdate?: string;
+  onDelete?: string;
 }
 
 
@@ -182,15 +196,9 @@ export interface TableKey {
   onDelete?: string;
 }
 
-export interface DropTableKey {
-  schema?: string
-  table: string
-  constraintName: string
-}
-
 export interface RelationAlterations {
-  additions: TableKey[],
-  drops: DropTableKey[]
+  additions: CreateRelationSpec[],
+  drops: string[]
   table: string
   schema?: string
 }

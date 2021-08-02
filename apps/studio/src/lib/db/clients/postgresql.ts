@@ -10,14 +10,14 @@ import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
-import { AlterTableSpec, CreateIndexSpec, DropIndexSpec, DropTableKey, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 
@@ -193,8 +193,8 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     alterIndex: (payload) => alterIndex(conn, payload),
 
     // relations
-    alterRelationSql: (payload) => alterRelationsSql(payload),
-    alterRelation: (payload) => alterRelations(conn, payload),
+    alterRelationSql: (payload) => alterRelationSql(payload),
+    alterRelation: (payload) => alterRelation(conn, payload),
 
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
   };
@@ -816,7 +816,7 @@ export async function getPrimaryKey(conn: HasPool, _database: string, table: str
 
 export async function getPrimaryKeys(conn: HasPool, _database: string, table: string, schema: string): Promise<PrimaryKeyColumn[]> {
   const version = await getVersion(conn)
-  const tablename = escapeString(schema ? `${wrapIdentifier(schema)}.${wrapIdentifier(table)}` : wrapIdentifier(table))
+  const tablename = tableName(table, schema)
   const psqlQuery = `
     SELECT 
       a.attname as column_name,
@@ -939,43 +939,20 @@ export async function alterIndex(conn: HasPool, payload: IndexAlterations) {
   await executeWithTransaction(conn, { query: sql });
 }
 
-export function alterRelationsSql(payload: RelationAlterations): string | null {
-  const { table, schema, additions, drops} = payload
-  const newRelations = additions.map((spec) => {
-    const fkName = spec.constraintName ? PD.wrapIdentifier(spec.constraintName) : ''
-    const fromTable = tableName(spec.fromTable, spec.fromSchema)
-    const toTable = tableName(spec.toTable, spec.toSchema)
-    const fromColumn = PD.wrapIdentifier(spec.fromColumn)
-    const toColumn = PD.wrapIdentifier(spec.toColumn)
-    const onUpdate = spec.onUpdate ? `ON UPDATE ${PD.wrapLiteral(spec.onUpdate)}` : ''
-    const onDelete = spec.onDelete ? `ON DELETE ${PD.wrapLiteral(spec.onDelete)}` : ''
 
-    const result = `
-      ALTER TABLE ${fromTable}
-      ADD CONSTRAINT ${fkName}
-      FOREIGN KEY (${fromColumn})
-      REFERENCES ${toTable} (${toColumn})
-      ${onUpdate}
-      ${onDelete}
-    `
-    return result
-  })
-
-  const dropSqls = drops.map((drop) => {
-    const table = tableName(drop.table, drop.schema)
-    const constraint = PD.wrapIdentifier(drop.constraintName)
-    return `ALTER TABLE ${table} DROP CONSTRAINT ${constraint}`
-  })
-  return [
-    ...newRelations,
-    ...dropSqls
-  ].filter((i) => !!i).join(";")
+export function alterRelationSql(payload: RelationAlterations): string {
+  const { table, schema } = payload
+  const builder = new PostgresqlChangeBuilder(table, schema)
+  const creates = builder.createRelations(payload.additions)
+  const drops = builder.dropRelations(payload.drops)
+  return [creates, drops].filter((f) => !!f).join(";")
 }
 
-export async function alterRelations(conn: HasPool, payload: RelationAlterations): Promise<void> {
-  const sql = alterRelationsSql(payload)
-  await executeWithTransaction(conn, { query: sql })
+export async function alterRelation(conn, payload: RelationAlterations): Promise<void> {
+  const query = alterRelationSql(payload)
+  await executeWithTransaction(conn, { query });
 }
+
 
 export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {
   const identifier = wrapTable(table, schema)
@@ -1355,9 +1332,9 @@ async function driverExecuteSingle(conn: Conn | HasConnection, queryArgs: Postgr
 }
 
 async function executeWithTransaction(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult[]> {
-  const fullQuery = [
+  const fullQuery = joinQueries([
     'BEGIN', queryArgs.query, 'COMMIT'
-  ].join(";")
+  ])
   return await runWithConnection(conn, async (connection) => {
     const cli = { connection }
     try {

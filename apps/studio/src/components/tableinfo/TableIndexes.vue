@@ -15,6 +15,7 @@
             </div>
             <span class="expand"></span>
             <div class="actions">
+              <a @click.prevent="$emit('refresh')" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
               <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
             </div>
 
@@ -22,6 +23,9 @@
           <div class="table-indexes" ref="tabulator"></div>
 
         </div>
+      </div>
+      <div class="notices" v-if="notice">
+        <div class="alert alert-info"><i class="material-icons">info</i> {{notice}}</div>
       </div>
     </div>
   
@@ -62,7 +66,7 @@ import Vue from 'vue'
 import _ from 'lodash'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
-import { CreateIndexSpec, DropIndexSpec, FormatterDialect } from '@shared/lib/dialects/models'
+import { CreateIndexSpec, FormatterDialect, IndexAlterations } from '@shared/lib/dialects/models'
 import rawLog from 'electron-log'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
@@ -97,19 +101,25 @@ export default Vue.extend({
   },
   watch: {
     ...TabulatorStateWatchers,
-    hasEdits() {
-      this.tabState.dirty = this.hasEdits
+    editCount() {
+      console.log("idx, setting dirty", this.editCount > 0)
+      this.tabState.dirty = this.editCount > 0
     }
   },
   computed: {
     ...mapGetters(['dialect']),
+    notice() {
+      return this.dialect === 'mysql' ? 'Only ascending indexes are supported in MySQL before version 8.0.' : null
+    },
     indexColumnOptions() {
       const normal = this.table.columns.map((c) => c.columnName)
       const desc = this.table.columns.map((c) => `${c.columnName} DESC`)
       return [...normal, ...desc]
     },
     editCount() {
-      return this.newRows.length + this.removedRows.length;
+      const result = this.newRows.length + this.removedRows.length;
+      console.log("idx, new edit count: ", result)
+      return result
     },
     hasEdits() {
       return this.editCount > 0
@@ -170,7 +180,7 @@ export default Vue.extend({
         unique: true
       })
       this.newRows.push(row)
-      setTimeout(() => row.getCells()[0].edit(), 50)
+      setTimeout(() => row.getCell('name').edit(), 50)
     },
     async removeRow(_e: any, cell: CellComponent) {
       if (this.loading) return
@@ -193,7 +203,7 @@ export default Vue.extend({
       this.newRows.forEach((r) => r.delete())
       this.clearChanges()
     },
-    getPayload(): {additions: CreateIndexSpec[], drops: DropIndexSpec[]} {
+    getPayload(): IndexAlterations {
         const additions = this.newRows.map((row: RowComponent) => {
           const data = row.getData()
           const columns = data.columns.map((c: string)=> {
@@ -202,28 +212,27 @@ export default Vue.extend({
             return { name, order }
           })
           const payload: CreateIndexSpec = {
-            table: this.table.name,
-            schema: this.table.schema || undefined,
             unique: data.unique,
             columns,
             name: data.name || undefined
           }
           return payload
         })
-        const drops = this.removedRows.map((row: RowComponent) => ({ name: row.getData()['name']}))
-      return { additions, drops }
+      const drops = this.removedRows.map((row: RowComponent) => ({ name: row.getData()['name']}))
+      return { additions, drops, table: this.table.name, schema: this.table.schema }
     },
     async submitApply() {
       try {
     
         this.loading = true
         this.error = null
-        const { additions, drops } = this.getPayload()
+        const payload = this.getPayload()
 
-        await this.connection.alterIndex(additions, drops)
+        await this.connection.alterIndex(payload)
         this.$noty.success("Indexes Updated")
         this.$emit('actionCompleted')
-        this.$nextTick(() => this.initializeTabulator())
+        this.clearChanges()
+        // this.$nextTick(() => this.initializeTabulator())
       } catch (ex) {
         log.error('submitting index error', ex)
         this.error = ex
@@ -233,15 +242,29 @@ export default Vue.extend({
 
     },
     submitSql() {
-      const { additions, drops } = this.getPayload()
-      const sql = this.connection.alterIndexSql(additions, drops)
+      const payload = this.getPayload()
+      const sql = this.connection.alterIndexSql(payload)
       const formatted = format(sql, { language: FormatterDialect(this.dialect)})
       this.$root.$emit(AppEvent.newTab, formatted)
     },
 
     initializeTabulator() {
       this.clearChanges()
-      if (this.tabulator) this.tabulator.destroy()
+      // if (this.tabulator) this.tabulator.destroy()
+      // this.tabulator = new Tabulator(this.$refs.tabulator, {
+      //   data: this.tableData,
+      //   columns: this.tableColumns,
+      //   layout: 'fitColumns',
+      //   placeholder: "No Indexes",
+      //   resizableColumns: false,
+      //   headerSort: false,
+      // })
+    }
+
+  },
+  mounted() {
+    // this.initializeTabulator()
+    this.tabState.dirty = false
       this.tabulator = new Tabulator(this.$refs.tabulator, {
         data: this.tableData,
         columns: this.tableColumns,
@@ -250,11 +273,6 @@ export default Vue.extend({
         resizableColumns: false,
         headerSort: false,
       })
-    }
-
-  },
-  mounted() {
-    this.initializeTabulator()
   }
 })
 </script>

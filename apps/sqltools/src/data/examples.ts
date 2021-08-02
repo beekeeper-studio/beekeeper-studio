@@ -109,7 +109,7 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
   const pBuilder = getChangeBuilder(dialect)
   const dData = getDialectData(dialect)
 
-  const result = [
+  const result: Example[] = [
     {
       id: 'alter-column-type',
       linkText: 'Alter Column Type',
@@ -157,6 +157,51 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
         {
           value: wrap(pBuilder.alterNullable('not_important_column', true)),
           title: "Turning nullable on"
+        }
+      ]
+    },
+    {
+      id: 'alter-add-index',
+      linkText: 'CREATE INDEX examples',
+      title: `${title} CREATE INDEX examples`,
+      description: `How to create an index on one (or many) columns in ${title}.`,
+      skip: dData.disabledFeatures.createIndex,
+      code: [
+        {
+          value: wrap(pBuilder.createIndexes([{ name: 'fk_example_1', unique: true, columns: [{ name: 'first_name', order: 'ASC'}, { name: 'last_name', order: 'ASC'}]}])),
+          title: 'Creating a simple compound index of two columns with a unique constraint. In this example the UNIQUE means that no two people can have the same first_name/last_name combination. Be careful with UNIQUE!'
+        },
+        {
+          value: wrap(pBuilder.createIndexes([{ unique: false, columns: [{ name: 'created_at', order: 'DESC'}]}])),
+          title: 'A simple index of record creation data. The descending order is useful for a lot of applications where you want to show the most recent items (eg blog posts, comments)'
+        }
+      ]
+    },
+    {
+      id: 'alter-table-add-fk',
+      linkText: 'Alter Table Add Foreign Key',
+      title: `${title} ALTER TABLE example - adding a foreign key constraint`,
+      description: `Adding a foreign key (otherwise known as a relation or association) to a ${title} table means adding a 'constraint'. These basic examples assume that the column type is correct, and any existing values match existing relation IDs in the target table.`,
+      skip: !!dData.disabledFeatures.constraints,
+      code: [
+        {
+          value: wrap(pBuilder.createRelations([{
+            fromColumn: 'department_id',
+            toTable: 'departments',
+            toColumn: 'id',
+          }])),
+          title: "Creating a simple foreign key relation, Note we don't even need to specify the name of the constraint, the database will give us one automatically."
+        },
+        {
+          value: wrap(pBuilder.createRelations([{
+            fromColumn: 'department_id',
+            toTable: 'departments',
+            toColumn: 'id',
+            constraintName: 'example_fk_1',
+            onUpdate: 'NO ACTION',
+            onDelete: 'CASCADE'
+          }])),
+          title: "In this example we're explicitly telling the database what action to take when a record is updated or deleted. CASCADE on delete is useful - it will will delete this record if the foreign key relation is deleted."
         }
       ]
     },

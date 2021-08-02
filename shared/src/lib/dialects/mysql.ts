@@ -22,5 +22,5 @@ export const MysqlData: DialectData = {
   escapeString: defaultEscapeString,
   wrapLiteral(value: string) {
     return value.replaceAll(';', '')
-  }
+  },
 }

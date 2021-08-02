@@ -1,7 +1,8 @@
 import Vue from 'vue'
 import Tabulator, { CellComponent, ColumnDefinition, RowComponent } from 'tabulator-tables'
+import _ from 'lodash'
 
-export function vueFormatter(component: any): HTMLElement {
+export function vueFormatter(component: any) {
   const ComponentClass = Vue.extend(component)
   return (cell: Tabulator.CellComponent, params: any, onRendered) => {
 
@@ -107,6 +108,9 @@ export const TabulatorStateWatchers = {
       handler() {
       if (!this.tabulator) return
       this.tabulator.replaceData(this.tableData)
+      this.newRows = []
+      this.removedRows = []
+      if (!_.isUndefined(this.editedCells)) this.editedCells = []
     }
   },
   table: {
