@@ -19,6 +19,20 @@
         </div>
       </div>
     </section>
+    <section class="bks-callout">
+      <div class="small-wrap">
+        <h3>Using Beekeeper Studio</h3>
+        <p>Beekeeper Studio is a free and open source database manager for Windows, Mac, and Linux.</p>
+        <p>This feature is baked right in, so there's no need to manually type SQL every time.</p>
+        <p v-if="example.beekeeperBlurb">{{example.beekeeperBlurb}}</p>
+        <a href="https://beekeeperstudio.io/get">Download Beekeeper Studio</a>
+        <p>
+          <img src="https://via.placeholder.com/500x300?text=screenshot" alt="">
+        </p>
+
+
+      </div>
+    </section>
   </div>
 </template>
 <script lang="ts">

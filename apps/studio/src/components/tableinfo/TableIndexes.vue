@@ -102,7 +102,6 @@ export default Vue.extend({
   watch: {
     ...TabulatorStateWatchers,
     editCount() {
-      console.log("idx, setting dirty", this.editCount > 0)
       this.tabState.dirty = this.editCount > 0
     }
   },
@@ -118,7 +117,6 @@ export default Vue.extend({
     },
     editCount() {
       const result = this.newRows.length + this.removedRows.length;
-      console.log("idx, new edit count: ", result)
       return result
     },
     hasEdits() {

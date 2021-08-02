@@ -20,6 +20,7 @@ export interface Example {
   description: string
   code: string | CodeExample[]
   skip?: boolean // skip for this dialect
+  beekeeperBlurb?: string
 }
 
 const alterTableExampleSpec: AlterTableSpec = {
@@ -109,6 +110,18 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
   const pBuilder = getChangeBuilder(dialect)
   const dData = getDialectData(dialect)
 
+  const renameSpec: AlterTableSpec = {
+    table: 'users',
+    schema: 'dbo',
+    alterations: [
+      {
+        columnName: 'last_name',
+        newValue: 'family_name',
+        changeType: 'columnName'
+      }
+    ]
+  }
+
   const result: Example[] = [
     {
       id: 'alter-column-type',
@@ -116,15 +129,18 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
       title: `${title} Alter Column Type Example`,
       description: `How to change a table column type in ${title}`,
       code: wrap(pBuilder.alterType('first_name', 'varchar(255)')),
-      skip: dData.disabledFeatures?.alter?.alterColumn
+      skip: dData.disabledFeatures?.alter?.alterColumn,
+      beekeeperBlurb: "Access column editing by right-clicking on a table in the sidebar and clicking 'View Structure'."
     },
     {
       id: 'rename-column',
       linkText: 'Rename A Column',
       title: `${title} Rename Column Example`,
       description: `How to rename a table column in ${title}`,
-      code: wrap(pBuilder.renameColumn('last_name', 'family_name')),
-      skip: dData.disabledFeatures?.alter?.renameColumn
+      code: dialect === 'sqlserver' ? pBuilder.endSql(renameSpec) : wrap(pBuilder.renameColumn('last_name', 'family_name')),
+      skip: dData.disabledFeatures?.alter?.renameColumn,
+      beekeeperBlurb: "Access column renaming by right-clicking on a table in the sidebar and clicking 'View Structure'."
+
     },
     {
       id: 'alter-column-default',
@@ -141,7 +157,9 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
           value: wrap(pBuilder.alterDefault('first_name', "'Mateo'")),
           title: "Making the default value static"
         }
-      ]
+      ],
+      beekeeperBlurb: "Access column editing by right-clicking on a table in the sidebar and clicking 'View Structure'."
+
     },
     {
       id: 'alter-column-nullable',
@@ -158,7 +176,8 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
           value: wrap(pBuilder.alterNullable('not_important_column', true)),
           title: "Turning nullable on"
         }
-      ]
+      ],
+      beekeeperBlurb: "Access column editing by right-clicking on a table in the sidebar and clicking 'View Structure'."
     },
     {
       id: 'alter-add-index',
@@ -175,7 +194,9 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
           value: wrap(pBuilder.createIndexes([{ unique: false, columns: [{ name: 'created_at', order: 'DESC'}]}])),
           title: 'A simple index of record creation data. The descending order is useful for a lot of applications where you want to show the most recent items (eg blog posts, comments)'
         }
-      ]
+      ],
+      beekeeperBlurb: "Access index editing by right-clicking on a table in the sidebar and clicking 'View Structure', then click 'Indexes' at the top."
+
     },
     {
       id: 'alter-table-add-fk',
@@ -203,7 +224,9 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
           }])),
           title: "In this example we're explicitly telling the database what action to take when a record is updated or deleted. CASCADE on delete is useful - it will will delete this record if the foreign key relation is deleted."
         }
-      ]
+      ],
+      beekeeperBlurb: "Access foreign key editing by right-clicking on a table in the sidebar and clicking 'View Structure', then click 'Relations'."
+
     },
     {
       id: 'alter-table-drop-fk',
@@ -211,7 +234,8 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
       title: `${title} How to remove a foreign key (or constraint) from an existing table`,
       description: `Removing a foreign key (otherwise known as a relation or association) from a ${title} table. Note that after removing a relation, you might also want to remove any left over indexes.`,
       skip: !!dData.disabledFeatures?.alter?.dropConstraint,
-      code: pBuilder.dropRelations(['department_id_fk_constraint'])
+      code: pBuilder.dropRelations(['department_id_fk_constraint']),
+      beekeeperBlurb: "Access foreign key editing by right-clicking on a table in the sidebar and clicking 'View Structure', then click 'Relations'."
     },
     {
       id: 'alter-table',
@@ -219,7 +243,8 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
       title: `${title} Full Alter Table Example`,
       skip: dData.disabledFeatures?.alter?.alterColumn,
       description: `A ${title} example for changing, adding, and removing columns for an existing table`,
-      code: pBuilder.alterTable(alterTableExampleSpec)
+      code: pBuilder.alterTable(alterTableExampleSpec),
+      beekeeperBlurb: "Access table column editing by right-clicking on a table in the sidebar and clicking 'View Structure'."
 
     }
   ]
