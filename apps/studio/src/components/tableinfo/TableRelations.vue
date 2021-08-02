@@ -244,8 +244,8 @@ export default Vue.extend({
       const t = this.tabulator as Tabulator
       const row = await t.addRow({
         constraintName: `${this.table.name}_relation_${this.tabulator.getData().length + 1}` ,
-        onUpdate: 'CASCADE',
-        onDelete: 'RESTRICT'
+        onUpdate: 'NO ACTION',
+        onDelete: 'NO ACTION'
       })
       this.newRows.push(row);
       setTimeout(() => row.getCells()[0].edit(), 50)
@@ -270,7 +270,9 @@ export default Vue.extend({
         await this.connection.alterRelation(payload)
         this.$noty.success("Relations Updated")
         this.$emit('actionCompleted')
-        this.$nextTick(() => this.initializeTabulator())
+        this.newRows = []
+        this.removedRows = []
+        // this.$nextTick(() => this.initializeTabulator())
       } catch (ex) {
         log.error('submitting relations error', ex)
         this.error = ex
@@ -291,8 +293,7 @@ export default Vue.extend({
       this.removedRows = []
     },
     initializeTabulator() {
-      this.newRows = []
-      this.removedRows = []
+
       this.tabulator?.destroy()
       this.tabulator = new Tabulator(this.$refs.tabulator, {
         columns: this.tableColumns,
@@ -301,6 +302,8 @@ export default Vue.extend({
         placeholder: "No Relations",
         layout: 'fitColumns'
       })
+      this.newRows = []
+      this.removedRows = []
     }
   },
   mounted() {
