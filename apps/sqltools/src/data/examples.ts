@@ -165,7 +165,7 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
       linkText: 'CREATE INDEX examples',
       title: `${title} CREATE INDEX examples`,
       description: `How to create an index on one (or many) columns in ${title}.`,
-      skip: dData.disabledFeatures.createIndex,
+      skip: dData.disabledFeatures?.createIndex,
       code: [
         {
           value: wrap(pBuilder.createIndexes([{ name: 'fk_example_1', unique: true, columns: [{ name: 'first_name', order: 'ASC'}, { name: 'last_name', order: 'ASC'}]}])),
@@ -182,7 +182,7 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
       linkText: 'Alter Table Add Foreign Key',
       title: `${title} ALTER TABLE example - adding a foreign key constraint`,
       description: `Adding a foreign key (otherwise known as a relation or association) to a ${title} table means adding a 'constraint'. These basic examples assume that the column type is correct, and any existing values match existing relation IDs in the target table.`,
-      skip: !!dData.disabledFeatures.constraints,
+      skip: !!dData.disabledFeatures?.alter?.addConstraint,
       code: [
         {
           value: wrap(pBuilder.createRelations([{
@@ -204,6 +204,14 @@ function buildExamples(dialect: Dialect, prefix: string): Example[] {
           title: "In this example we're explicitly telling the database what action to take when a record is updated or deleted. CASCADE on delete is useful - it will will delete this record if the foreign key relation is deleted."
         }
       ]
+    },
+    {
+      id: 'alter-table-drop-fk',
+      linkText: 'Alter Table Drop Foreign Key / Constraint',
+      title: `${title} How to remove a foreign key (or constraint) from an existing table`,
+      description: `Removing a foreign key (otherwise known as a relation or association) from a ${title} table. Note that after removing a relation, you might also want to remove any left over indexes.`,
+      skip: !!dData.disabledFeatures?.alter?.dropConstraint,
+      code: pBuilder.dropRelations(['department_id_fk_constraint'])
     },
     {
       id: 'alter-table',
