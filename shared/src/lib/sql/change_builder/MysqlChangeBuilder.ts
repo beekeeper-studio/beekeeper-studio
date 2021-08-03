@@ -8,6 +8,7 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
   wrapLiteral = MysqlData.wrapLiteral
   escapeString = MysqlData.escapeString
 
+
   existingColumns: SchemaItem[]
   constructor(table: string, existingColumns: SchemaItem[]) {
     super(table)
@@ -32,7 +33,7 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
       this.wrapIdentifier(column),
       newName ? this.wrapIdentifier(newName) : null,
       c.dataType,
-      c.defaultValue ? `DEFAULT ${d()}` : null,
+      c.defaultValue ? `DEFAULT ${d(c.defaultValue)}` : null,
       c.nullable ? 'NULL' : 'NOT NULL',
       c.extra,
       c.comment ? `COMMENT ${this.escapeString(c.comment, true)}` : null,
@@ -47,6 +48,7 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     }
     return c
   }
+
 
   renameColumn(column: string, newName: string): string {
 

@@ -203,6 +203,11 @@ export class DBTestUtil {
           columnName: 'age',
           changeType: 'nullable',
           newValue: false
+        },
+        {
+          columnName: 'age',
+          changeType: 'defaultValue',
+          newValue: '99'
         }
       ]
     }
@@ -251,7 +256,7 @@ export class DBTestUtil {
         columnName: 'age',
         dataType: 'varchar(255)',
         nullable: false,
-        defaultValue: defaultValue('8')
+        defaultValue: defaultValue('99')
       }
     ]
     expect(result).toMatchObject(expected)
