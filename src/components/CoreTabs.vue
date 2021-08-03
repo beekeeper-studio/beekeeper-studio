@@ -201,6 +201,7 @@ export default {
       // const text = optionalText ? optionalText : ""
       const query = new FavoriteQuery();
       query.text = optionalText;
+
       const result = {
         id: uuidv4(),
         type: "query",
@@ -324,7 +325,6 @@ export default {
       if (tab.type === "query") {
         const query = new FavoriteQuery();
         query.text = tab.query.text;
-
         duplicatedTab["title"] = "Query #" + this.newTabId;
         duplicatedTab["unsavedChanges"] = true;
         duplicatedTab["query"] = query;

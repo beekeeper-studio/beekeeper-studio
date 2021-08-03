@@ -38,8 +38,8 @@
     </div>
 
     <div class="empty" v-if="explorer.tree.length === 0">
-      <button @click="selectFolder">
-        Select <i class="schema-icon material-icons">drive_folder_upload</i>
+      <button @click="selectWorkspace">
+        Workspace <i class="schema-icon material-icons">drive_folder_upload</i>
       </button>
     </div>
   </div>
@@ -47,8 +47,7 @@
 
 <script>
 import ExplorerListSchema from "./explorer_list/ExplorerListSchema.vue";
-
-const electron = require("electron");
+import { Workspace } from "../../../common/appdb/models/workspace";
 const folderTree = require("../../../plugins/foldertree");
 export default {
   components: {
@@ -84,15 +83,11 @@ export default {
   },
 
   methods: {
-    selectFolder() {
-      electron.remote.dialog
-        .showOpenDialog({ properties: ["openDirectory"] })
-        .then(res => {
-          const root = res.filePaths[0];
-          this.explorer.rootPath = root;
-          const tree = this.createTree(root);
-          this.explorer.selected = true;
-        });
+    async selectWorkspace() {
+      const space = new Workspace();
+      space.name = "nahhh";
+      space.database = "nahhahahha";
+      await space.save(space);
     },
 
     expandAll() {

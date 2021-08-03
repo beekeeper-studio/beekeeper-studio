@@ -1,5 +1,5 @@
 <template>
-  <!-- the class is doing -->
+  <!-- the class is doing nothing -->
   <div class="schema-wrapper">
     <explorer-list-dir
       v-for="dir in directories"
