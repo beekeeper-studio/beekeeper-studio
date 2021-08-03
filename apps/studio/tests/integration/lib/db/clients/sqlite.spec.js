@@ -12,7 +12,7 @@ describe("Sqlite Tests", () => {
     const config = {
       client: 'sqlite',
     }
-    util = new DBTestUtil(config, dbfile.name)
+    util = new DBTestUtil(config, dbfile.name, { dialect: 'sqlite'})
     util.extraTables = 1
     await util.setupdb()
 

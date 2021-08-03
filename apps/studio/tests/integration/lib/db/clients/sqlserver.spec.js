@@ -41,7 +41,7 @@ describe("SQL Server Tests", () => {
       user: 'sa',
       password: 'Example*1'
     }
-    util = new DBTestUtil(config, "tempdb", { defaultSchema: 'dbo'})
+    util = new DBTestUtil(config, "tempdb", { defaultSchema: 'dbo', dialect: 'sqlserver'})
     await util.setupdb()
   })
 

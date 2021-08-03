@@ -101,6 +101,7 @@ export interface SchemaConfig {
   comment?: string
   defaultValue?: string
   primaryKey?: boolean
+  extra?: string
 }
 
 // this is the flattened structure we actually render in a component
