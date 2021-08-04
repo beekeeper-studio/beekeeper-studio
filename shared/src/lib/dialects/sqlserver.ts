@@ -29,6 +29,9 @@ export const SqlServerData: DialectData = {
   disabledFeatures: {
     alter: {
       multiStatement: true
+    },
+    informationSchema: {
+      extra: true
     }
   }
 

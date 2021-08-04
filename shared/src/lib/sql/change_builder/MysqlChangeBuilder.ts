@@ -1,6 +1,7 @@
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { MysqlData } from "@shared/lib/dialects/mysql";
-import { Dialect, SchemaItem } from "@shared/lib/dialects/models";
+import { Dialect, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
+import _ from 'lodash'
 
 export class MySqlChangeBuilder extends ChangeBuilderBase {
   dialect: Dialect = 'mysql'
@@ -15,28 +16,32 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     this.existingColumns = existingColumns
   }
   
-  alterColumn(c: SchemaItem, newName?: string): string {
-    const column = c.columnName
+  defaultValue(defaultValue) {
+    if (defaultValue === 'CURRENT_TIMESTAMP') return defaultValue
+    if (defaultValue.toString().startsWith('(')) return defaultValue
+    return this.escapeString(defaultValue.toString(), true);
+  }
+
+  ddl(existing: SchemaItem, updated: SchemaItem): string {
+    const column = existing.columnName
+    const newName = updated.columnName
+    const nameChanged = column !== newName
 
     // mysql 5.7 only allows literal values except CURRENT_TIMESTAMP
     // mysql 8 allows literal values PLUS expressions like ('foo')
     // https://dev.mysql.com/doc/refman/8.0/en/data-type-defaults.html
     // it's very confusing.
-    const d = (defaultValue) => {
-      if (defaultValue === 'CURRENT_TIMESTAMP') return defaultValue
-      if (defaultValue.toString().startsWith('(')) return defaultValue
-      return this.escapeString(c.defaultValue.toString(), true);
-    }
+
 
     return [
-      newName ? `CHANGE` : 'MODIFY',
+      nameChanged ? `CHANGE` : 'MODIFY',
       this.wrapIdentifier(column),
-      newName ? this.wrapIdentifier(newName) : null,
-      c.dataType,
-      c.defaultValue ? `DEFAULT ${d(c.defaultValue)}` : null,
-      c.nullable ? 'NULL' : 'NOT NULL',
-      c.extra,
-      c.comment ? `COMMENT ${this.escapeString(c.comment, true)}` : null,
+      nameChanged ? this.wrapIdentifier(newName) : null,
+      updated.dataType,
+      updated.defaultValue ? `DEFAULT ${this.defaultValue(updated.defaultValue)}` : null,
+      updated.nullable ? 'NULL' : 'NOT NULL',
+      updated.extra,
+      updated.comment ? `COMMENT ${this.escapeString(updated.comment, true)}` : null,
     ].filter((c) => !!c).join(" ")
   }
 
@@ -49,35 +54,41 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     return c
   }
 
-
-  renameColumn(column: string, newName: string): string {
-
-    const c = this.getExisting(column)
-    return this.alterColumn(c, newName)
+  buildUpdatedSchema(existing: SchemaItem, specs: SchemaItemChange[]) {
+    let result = { ...existing }
+    specs.forEach((spec) => {
+      if (spec.changeType === 'columnName') result = { ...result, columnName: spec.newValue.toString()}
+      if (spec.changeType === 'dataType') result = { ...result, dataType: spec.newValue.toString()}
+      if (spec.changeType === 'defaultValue') result = { ...result, defaultValue: spec.newValue.toString()}
+      if (spec.changeType === 'nullable') result = { ...result, nullable: !!spec.newValue}
+      if (spec.changeType === 'comment') result = { ...result, comment: spec.newValue.toString()}
+      if (spec.changeType === 'extra') result = { ...result, extra: spec.newValue.toString()}
+    })
+    return result
   }
 
-  alterNullable(column, newNullable) {
-    const c = this.getExisting(column)
-    const newSchema = {...c, nullable: newNullable}
-    return this.alterColumn(newSchema)
+  alterColumns(specs: SchemaItemChange[]) {
+    const groupedByName = _.groupBy(specs, 'columnName')
+    const existingGrouped = _.groupBy(this.existingColumns, 'columnName')
+
+    return Object.keys(groupedByName).map((name) => {
+      const changes = groupedByName[name];
+      const existing = existingGrouped[name][0];
+      if (!existing) return null;
+      const updated = this.buildUpdatedSchema(existing, changes)
+      return this.ddl(existing, updated)
+    }).filter((c)=> !!c)
+
   }
 
-  alterDefault(column, newDefault) {
-    const c = this.getExisting(column)
-    const newSchema: SchemaItem = { ...c, defaultValue: newDefault}
-    return this.alterColumn(newSchema)
+  renames() {
+    // return nothing, do it all in alterColumns:
+    return []
   }
 
-  alterType(column, newType) {
-    const c = this.getExisting(column)
-    const newSchema = { ...c, dataType: newType }
-    return this.alterColumn(newSchema)
-  }
-
-  setComment(_table: string, column: string, comment: string) {
-    const c = this.getExisting(column)
-    const newSchema = { ...c, comment, }
-    return this.alterColumn(newSchema)
+  alterComments() {
+    // return nothing, do it all in alterColumns
+    return []
   }
 
 }

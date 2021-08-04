@@ -166,6 +166,9 @@ export abstract class ChangeBuilderBase {
       }).join(';')
     }
 
+    // for most databases (excluding mysql)
+    // renames and comments happen outside the core ALTER COLUMN statement.
+    // eg psql SET COMMENT ON COLUMN, sql server is a stored procedure.
     const results = [
       initial,
       alterTable,

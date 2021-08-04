@@ -201,7 +201,8 @@ export async function listTableColumns(conn, database, table) {
       is_nullable AS 'is_nullable',
       column_default as 'column_default',
       ordinal_position as 'ordinal_position',
-      extra as extra
+      COLUMN_COMMENT as 'column_comment',
+      extra as 'extra'
     FROM information_schema.columns
     WHERE table_schema = database()
     ${clause}
@@ -211,7 +212,7 @@ export async function listTableColumns(conn, database, table) {
   const params = table ? [table] : []
 
   const { data } = await driverExecuteQuery(conn, { query: sql, params });
-
+  console.error("RESULT", data)
   return data.map((row) => ({
     tableName: row.table_name,
     columnName: row.column_name,
@@ -219,7 +220,8 @@ export async function listTableColumns(conn, database, table) {
     ordinalPosition: Number(row.ordinal_position),
     nullable: row.is_nullable === 'YES',
     defaultValue: row.column_default,
-    extra: row.extra
+    extra: _.isEmpty(row.extra) ? null : row.extra,
+    comment: _.isEmpty(row.column_comment) ? null : row.column_comment
   }));
 }
 

@@ -188,6 +188,16 @@ export default Vue.extend({
           formatter: this.cellFormatter,
           editable: this.isCellEditable.bind(this, 'alterColumn'),
         },
+        (this.disabledFeatures?.informationSchema?.extra ? null : {
+          title: "Extra",
+          field: 'extra',
+          tooltip: true,
+          headerTooltip: 'eg AUTO_INCREMENT',
+          editable: this.isCellEditable.bind(this, 'alterColumn'),
+          formatter: this.cellFormatter,
+          cellEdited: this.cellEdited,
+          editor: vueEditor(NullableInputEditorVue)
+        }),
         {
           title: 'Primary',
           field: 'primary',
@@ -210,7 +220,7 @@ export default Vue.extend({
           resizable: false,
           cssClass: "remove-btn read-only",
         }
-      ]
+      ].filter((c) => !!c)
       return result.map((col) => {
         const editable = _.isFunction(col.editable) ? col.editable({ getRow: () => ({})}) : col.editable
         const cssBase = col.cssClass || null

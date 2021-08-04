@@ -208,6 +208,16 @@ export class DBTestUtil {
           columnName: 'age',
           changeType: 'defaultValue',
           newValue: '99'
+        },
+        {
+          columnName: 'age',
+          changeType: 'dataType',
+          newValue: 'varchar(5)'
+        },
+        {
+          columnName: 'age',
+          changeType: 'comment',
+          newValue: "Age doesn't matter to me."
         }
       ]
     }
@@ -219,6 +229,7 @@ export class DBTestUtil {
       dataType: string,
       nullable: boolean,
       defaultValue: string,
+      comment: string
     }
     const rawResult: MiniColumn[] = schema.map((c) => _.pick(c, 'nullable', 'defaultValue', 'columnName', 'dataType'))
     
@@ -238,7 +249,7 @@ export class DBTestUtil {
         columnName: 'id',
         dataType: 'varchar(255)',
         nullable: false,
-        defaultValue: null
+        defaultValue: null,
       },
       {
         columnName: 'first_name',
@@ -254,9 +265,10 @@ export class DBTestUtil {
       },
       {
         columnName: 'age',
-        dataType: 'varchar(255)',
+        dataType: 'varchar(5)',
         nullable: false,
-        defaultValue: defaultValue('99')
+        defaultValue: defaultValue('99'),
+        comment: "Age doesn't matter to me."
       }
     ]
     expect(result).toMatchObject(expected)
