@@ -212,7 +212,6 @@ export async function listTableColumns(conn, database, table) {
   const params = table ? [table] : []
 
   const { data } = await driverExecuteQuery(conn, { query: sql, params });
-  console.error("RESULT", data)
   return data.map((row) => ({
     tableName: row.table_name,
     columnName: row.column_name,

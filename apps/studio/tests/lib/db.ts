@@ -231,7 +231,9 @@ export class DBTestUtil {
       defaultValue: string,
       comment: string
     }
-    const rawResult: MiniColumn[] = schema.map((c) => _.pick(c, 'nullable', 'defaultValue', 'columnName', 'dataType'))
+    const rawResult: MiniColumn[] = schema.map((c) => 
+      _.pick(c, 'nullable', 'defaultValue', 'columnName', 'dataType', 'comment')
+    )
     
 
     // cockroach adds a rowid column if there's no primary key.
@@ -250,18 +252,21 @@ export class DBTestUtil {
         dataType: 'varchar(255)',
         nullable: false,
         defaultValue: null,
+        comment: null,
       },
       {
         columnName: 'first_name',
         dataType: 'varchar(20)',
         nullable: true,
-        defaultValue: null
+        defaultValue: null,
+        comment: null,
       },
       {
         columnName: 'family_name',
         dataType: 'varchar(255)',
         nullable: false,
-        defaultValue: defaultValue('Rathbone')
+        defaultValue: defaultValue('Rathbone'),
+        comment: null,
       },
       {
         columnName: 'age',
