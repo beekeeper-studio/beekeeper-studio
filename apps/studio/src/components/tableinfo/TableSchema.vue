@@ -11,7 +11,7 @@
           <span class="expand"></span>
           <div class="actions">
             <a @click.prevent="refreshColumns" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
-            <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
+            <a v-if="editable" @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
           </div>
         </div>
         <div ref="tableSchema"></div>
@@ -19,7 +19,7 @@
       </div>
       <div class="notices" v-if="notice">
         <div class="alert alert-info">
-          <i class="material-icons">info</i> 
+          <i class="material-icons-outlined">info</i> 
           {{notice}}
         </div>
       </div>
@@ -30,6 +30,9 @@
     <status-bar class="tabulator-footer">
       <div class="flex flex-middle statusbar-actions">
         <slot name="footer" />
+        <span class="statusbar-item" v-if="!editable" title="Only tables can be edited.">
+          <i class="material-icons-outlined">warning</i> Read Only
+        </span>
         <x-button v-if="hasEdits" class="btn btn-flat reset" @click.prevent="submitUndo">Reset</x-button>
         <x-buttons v-if="hasEdits" class="pending-changes">
           <x-button class="btn btn-primary" @click.prevent="submitApply">
@@ -175,8 +178,8 @@ export default Vue.extend({
           width: 70,
           cssClass: "read-only never-editable",
         },
-        trashButton(this.removeRow)
-      ]
+        this.editable ? trashButton(this.removeRow) : null
+      ].filter((c) => !!c)
       return result.map((col) => {
         const editable = _.isFunction(col.editable) ? col.editable({ getRow: () => ({})}) : col.editable
         const cssBase = col.cssClass || null
@@ -195,11 +198,14 @@ export default Vue.extend({
         }
       })
     },
+    editable() {
+      return this.table.entityType === 'table'
+    }
   },
   methods: {
     isCellEditable(feature: string, cell: CellComponent): boolean {
       // views and materialized views are not editable
-      if (this.table.entityType !== 'table') return false
+      if (!this.editable) return false
       if (this.removedRows.includes(cell.getRow())) return false
 
       const isDisabled = this.disabledFeatures?.alter?.[feature]

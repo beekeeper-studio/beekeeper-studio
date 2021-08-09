@@ -17,7 +17,7 @@
         <div class="table-relations" ref="tabulator"></div>
         <div class="notices" v-if="notice">
           <div class="alert alert-info">
-            <i class="material-icons">info</i> 
+            <i class="material-icons-outlined">info</i> 
             {{notice}}
             </div>
         </div>
