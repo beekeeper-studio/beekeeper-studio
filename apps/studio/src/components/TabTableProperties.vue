@@ -58,6 +58,9 @@
                   <i class="material-icons">location_searching</i>
                   <span>{{humanIndexSize}}</span>
                 </span>
+                <span class="statusbar-item" v-if="!editable" title="Only tables can be edited.">
+                  <i class="material-icons-outlined">report_problem</i> Read Only
+                </span>
               </template>
             </div>
           </template>

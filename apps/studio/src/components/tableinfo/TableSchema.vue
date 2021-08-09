@@ -30,9 +30,6 @@
     <status-bar class="tabulator-footer">
       <div class="flex flex-middle statusbar-actions">
         <slot name="footer" />
-        <span class="statusbar-item" v-if="!editable" title="Only tables can be edited.">
-          <i class="material-icons-outlined">warning</i> Read Only
-        </span>
         <x-button v-if="hasEdits" class="btn btn-flat reset" @click.prevent="submitUndo">Reset</x-button>
         <x-buttons v-if="hasEdits" class="pending-changes">
           <x-button class="btn btn-primary" @click.prevent="submitApply">
