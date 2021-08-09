@@ -97,6 +97,10 @@ export default Vue.extend({
     }
   }
   .bks-callout {
+    .small-wrap {
+      display: flex;
+      flex-direction: column;
+    }
     h3 {
       font-size: 1.4rem;
     }
@@ -108,7 +112,7 @@ export default Vue.extend({
       margin-bottom: $gutter-w * 2;
     }
     img {
-      max-width: 100%;
+      max-width: 500px;
       border-radius: 4px;
       @extend .card-shadow;
     }
