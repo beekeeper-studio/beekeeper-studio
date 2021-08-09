@@ -21,16 +21,12 @@
     </section>
     <section class="bks-callout">
       <div class="small-wrap">
-        <h3>Using Beekeeper Studio</h3>
-        <p>Beekeeper Studio is a free and open source database manager for Windows, Mac, and Linux.</p>
-        <p>This feature is baked right in, so there's no need to manually type SQL every time.</p>
-        <p v-if="example.beekeeperBlurb">{{example.beekeeperBlurb}}</p>
+        <hr>
+        <h3>Using Beekeeper Studio?</h3>
+        <p>Beekeeper Studio is a free and open source database manager for Windows, Mac, and Linux.</p> 
+        <p>This feature is baked right in, so there's no need to manually type SQL every time. <span v-if="example.beekeeperBlurb">{{example.beekeeperBlurb}}</span></p>
         <a href="https://beekeeperstudio.io/get">Download Beekeeper Studio</a>
-        <p>
-          <img src="https://via.placeholder.com/500x300?text=screenshot" alt="">
-        </p>
-
-
+        <img src="@/assets/img/bk-example.png" alt="">
       </div>
     </section>
   </div>
@@ -88,6 +84,7 @@ export default Vue.extend({
 
 <style lang="scss" scoped>
   @import '@/assets/styles/app/_variables';
+  @import '@/assets/styles/app/_extends';
 
   .back-link {
     display: flex;
@@ -97,6 +94,23 @@ export default Vue.extend({
     margin-bottom: $gutter-w;
     i {
       width: 24px;
+    }
+  }
+  .bks-callout {
+    h3 {
+      font-size: 1.4rem;
+    }
+    hr {
+      margin-bottom: $gutter-w * 5;
+    }
+    a {
+      color: $theme-primary;
+      margin-bottom: $gutter-w * 2;
+    }
+    img {
+      max-width: 100%;
+      border-radius: 4px;
+      @extend .card-shadow;
     }
   }
 </style>
