@@ -816,7 +816,7 @@ export async function getPrimaryKey(conn: HasPool, _database: string, table: str
 
 export async function getPrimaryKeys(conn: HasPool, _database: string, table: string, schema: string): Promise<PrimaryKeyColumn[]> {
   const version = await getVersion(conn)
-  const tablename = tableName(table, schema)
+  const tablename = PD.escapeString(tableName(table, schema), true)
   const psqlQuery = `
     SELECT 
       a.attname as column_name,
@@ -825,7 +825,7 @@ export async function getPrimaryKeys(conn: HasPool, _database: string, table: st
     FROM   pg_index i
     JOIN   pg_attribute a ON a.attrelid = i.indrelid
                         AND a.attnum = ANY(i.indkey)
-    WHERE  i.indrelid = '${tablename}'::regclass
+    WHERE  i.indrelid = ${tablename}::regclass
     AND    i.indisprimary 
     ORDER BY a.attnum
   `
