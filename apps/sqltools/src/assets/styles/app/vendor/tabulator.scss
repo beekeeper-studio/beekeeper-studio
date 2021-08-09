@@ -34,7 +34,7 @@ $cell-padding:           $gutter-w;
 .tabulator-table {
 
   .tabulator-row {
-    &.inserted, 
+    &.inserted,
     &.inserted:hover {
       position: relative;
       background: $row-add;
@@ -53,7 +53,7 @@ $cell-padding:           $gutter-w;
         box-shadow: inset 0 -1px $theme-base!important;
       }
     }
-    &.deleted, 
+    &.deleted,
     &.deleted:hover {
       background: $row-delete;
     }
@@ -74,7 +74,7 @@ $cell-padding:           $gutter-w;
           }
         }
       }
-    } 
+    }
     &.deleted {
       .tabulator-cell {
         cursor: default!important;
@@ -168,8 +168,8 @@ $cell-padding:           $gutter-w;
     }
 
     // Cell States
-    &.edited, 
-    &.edit-error, 
+    &.edited,
+    &.edit-error,
     &.edit-success {
       border-radius: $cell-radius;
       color: $theme-base;
@@ -624,10 +624,12 @@ $cell-padding:           $gutter-w;
   &:empty {
     display: none;
   }
+
   .tabulator-edit-select-list-item {
     &:hover {
       background: rgba($theme-base, 0.05);
     }
+
     &.active, &.active:hover {
       background: $brand-info;
       color: white;
