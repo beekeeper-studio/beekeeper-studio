@@ -712,18 +712,12 @@ async function alterTableSql(conn, change) {
   return builder.alterTable(change)
 }
 
-<<<<<<< HEAD
 async function alterTable(_conn, change) {
   await runWithTransaction(_conn, async (connection) => {
     const cli = { connection }
     const query = await alterTableSql(cli, change)
     return await driverExecuteQuery(cli, { query })
   })
-=======
-async function alterTable(conn, change) {
-  const sql = await alterTableSql(conn, change)
-  await executeWithTransaction(conn, { query: sql })
->>>>>>> origin/master
 }
 
 export function alterIndexSql(payload) {
