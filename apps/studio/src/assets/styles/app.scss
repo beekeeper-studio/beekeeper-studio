@@ -1,4 +1,3 @@
-@import './components/context-menu.scss';
 
 @import './app/normalize';
 @import './app/variables';
@@ -7,6 +6,7 @@
 
 body.theme-dark {
   @import './themes/dark/variables.scss';
+  @import './components/context-menu.scss';
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/dark/theme.scss';
@@ -14,6 +14,7 @@ body.theme-dark {
 
 body.theme-light {
   @import './themes/light/variables.scss';
+  @import './components/context-menu.scss';
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/light/theme.scss';

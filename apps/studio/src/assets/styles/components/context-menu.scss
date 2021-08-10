@@ -9,37 +9,57 @@
   list-style: none;
   position: absolute;
   z-index: 1000000;
-  background-color: #ecf0f1;
-  border-bottom-width: 0px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-  box-shadow: 0 3px 6px 0 rgba(51, 51, 51, 0.2);
-  border-radius: 4px;
+  background: lighten($theme-bg, 5%);
+  color: $text;
+  padding: ($gutter-h * 0.75) 0;
+  border-radius: 6px;
+  box-shadow: var(--elevation-5);
+  font-size: 0.85rem;
+  text-transform: none;
+  font-weight: 400;
+  min-width: 150px;
+  border: 0;
+  @extend .card-shadow-hover;
 }
 .vue-simple-context-menu--active {
   display: block;
 }
 .vue-simple-context-menu__item {
   display: flex;
-  color: #333;
+  padding: 0 $gutter-w;
+  font-size: 0.9rem;
+  min-height: 28px;
+  color: $text-dark;
   cursor: pointer;
-  padding: 5px 15px;
   align-items: center;
+  &:hover {
+    background: rgba($theme-base, 0.05);
+  }
+  i {
+    height: 24px!important;
+    line-height: 24px!important;
+    width: 24px;
+    opacity: 0.6;
+    margin-right: $gutter-h!important;
+  }
 }
-.vue-simple-context-menu__item:hover {
-  background-color: #007aff;
-  color: #fff;
-}
-.vue-simple-context-menu__divider {
-  box-sizing: content-box;
-  height: 2px;
-  background-color: #c0cdd1;
-  padding: 4px 0;
-  background-clip: content-box;
+.vue-simple-context-menu__divider, hr {
+  min-height: 0;
+  width: 100%;
+  height: 1px;
+  margin: ($gutter-h * 0.75) 0;
+  box-sizing: border-box;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid $border-color;
   pointer-events: none;
+  + hr, &:last-child {
+    display: none;
+  }
 }
 .vue-simple-context-menu li:first-of-type {
-  margin-top: 4px;
+  margin-top: 0;
 }
 .vue-simple-context-menu li:last-of-type {
-  margin-bottom: 4px;
+  margin-bottom: 0;
 }
