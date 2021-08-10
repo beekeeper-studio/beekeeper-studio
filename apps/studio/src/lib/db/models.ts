@@ -1,5 +1,5 @@
 <<<<<<< HEAD
-import { SchemaItem } from "@shared/lib/dialects/models";
+import { SchemaItem, TableKey } from "@shared/lib/dialects/models";
 =======
 import { TableKey } from '@shared/lib/dialects/models'
 >>>>>>> origin/master
