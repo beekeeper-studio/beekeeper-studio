@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { SchemaItem, TableKey } from "@shared/lib/dialects/models";
-=======
-import { TableKey } from '@shared/lib/dialects/models'
->>>>>>> origin/master
 
 export abstract class BeeCursor {
   constructor(public chunkSize: number) {
