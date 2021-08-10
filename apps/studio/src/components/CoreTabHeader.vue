@@ -1,5 +1,5 @@
 <template>
-  <div class="nav-item-wrap">
+  <div class="nav-item-wrap" @contextmenu="$emit('contextmenu', $event)">
     <li class="nav-item" :title="title + scope">
       <a
         class="nav-link"
@@ -22,24 +22,6 @@
         </div>
       </a>
     </li>
-    <x-contextmenu>
-      <x-menu>
-        <x-menuitem @click.prevent="$emit('close', tab)">
-          <x-label>Close</x-label>
-          <x-shortcut value="Control+W"></x-shortcut>
-        </x-menuitem>
-        <x-menuitem @click.prevent="$emit('closeOther', tab)">
-          <x-label>Close Others</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="$emit('closeAll')">
-          <x-label>Close All</x-label>
-        </x-menuitem>
-        <hr>
-        <x-menuitem @click.prevent="$emit('duplicate', tab)">
-          <x-label>Duplicate</x-label>
-        </x-menuitem>
-      </x-menu>
-    </x-contextmenu>
   </div>
 </template>
 <script>

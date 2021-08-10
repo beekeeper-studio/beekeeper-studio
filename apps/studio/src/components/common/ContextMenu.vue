@@ -3,11 +3,9 @@
   <div>
     <portal to="menus">
       <ul
-        :id="elementId"
         class="vue-simple-context-menu"
-        ref="ul"
+        ref="menu"
       >
-      <slot />
         <li
           v-for="(option, index) in options"
           :key="index"
@@ -22,52 +20,39 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
+import { ContextOption } from '@/plugins/BeekeeperPlugin'
 import Vue from 'vue'
 
-export default {
+export default Vue.extend({
   name: 'ContextMenu',
-  props: ['elementId', 'options', 'triggerEvent'],
+  props: ['options', 'event', 'item'],
   data () {
     return {
-      item: null,
       menuWidth: null,
       menuHeight: null,
       menuOpen: false,
     }
   },
-  watch: {
-    triggerEvent() {
-      if (this.triggerEvent) {
-        const { item, event } = this.triggerEvent
-        console.log("opening menu")
-        this.showMenu(event, item)
-      }
-    },
-  },
 
   computed: {
-    outsideOptions() {
-      const userProvided = this.clickOutsideOptions || {}
-      return { ...this.defaultOutsideOptions, ...userProvided, handler: this.onClickOutside}
-    },
     menuElements() {
-      if (this.$refs.ul) {
-        return Array.from(this.$refs.ul.getElementsByTagName("*"))
+      if (this.$refs.menu) {
+        return Array.from(this.$refs.menu.getElementsByTagName("*"))
       } else {
         return []
       }
     }
   },
   methods: {
-    showMenu (event, item) {
-      this.item = item
+    showMenu (event) {
 
-      var menu = document.getElementById(this.elementId)
+      const menu = this.$refs.menu
       if (!menu) {
         return
       }
+      console.log("showing menu")
 
       if (!this.menuWidth || !this.menuHeight) {
         menu.style.visibility = "hidden"
@@ -93,22 +78,18 @@ export default {
       this.menuOpen = true
     },
     hideContextMenu () {
-      this.menuOpen = false
-      let element = document.getElementById(this.elementId)
+      this.$emit('close')
+      let element = this.$refs.ul
       if (element) {
         element.classList.remove('vue-simple-context-menu--active');
       }
     },
     onClickOutside () {
-      console.log("Click outside!")
       this.hideContextMenu()
     },
-    optionClicked (option) {
+    optionClicked (option: ContextOption) {
+      option.handler({ item: this.item, option })
       this.hideContextMenu()
-      this.$emit('option-clicked', {
-        item: this.item,
-        option: option
-      })
     },
     onEscKeyRelease (event) {
       if (event.keyCode === 27) {
@@ -116,15 +97,17 @@ export default {
       }
     },
     maybeHideMenu(event) {
-      if (this.menuOpen) {
-        const target = event.target
-        if (!this.menuElements.includes(target)) {
-          this.hideContextMenu()
-        }
+      const target = event.target
+      if (!this.menuElements.includes(target)) {
+        this.hideContextMenu()
       }
     }
   },
   mounted () {
+    this.$nextTick(() => {
+      this.showMenu(this.event, this.item)
+    })
+
     document.addEventListener('keyup', this.onEscKeyRelease);
     document.addEventListener('mousedown', this.maybeHideMenu)
   },
@@ -132,7 +115,7 @@ export default {
     document.removeEventListener('mousedown', this.maybeHideMenu)
     document.removeEventListener('keyup', this.onEscKeyRelease);
   }
-}
+})
 </script>
 
 <style lang="scss">

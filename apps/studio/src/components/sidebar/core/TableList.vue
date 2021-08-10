@@ -93,7 +93,7 @@
                 :connection="connection"
                 :forceExpand="allExpanded"
                 :forceCollapse="allCollapsed"
-                @contextmenu.prevent.stop="openTableMenu($event, table)"
+                @contextmenu.prevent.stop="$bks.openMenu({ item: table, event: $event, options: tableMenuOptions})"
               ></table-list-item>
               <routine-list-item
                 v-for="routine in blob.routines"
@@ -104,7 +104,7 @@
                 :connection="connection"
                 :forceExpand="allExpanded"
                 :forceCollapse="allCollapsed"
-                @contextmenu.prevent.stop="openRoutineMenu($event, routine)"
+                @contextmenu.prevent.stop="$bks.openMenu({item: routine, event: $event, options: routineMenuOptions})"
               >
               </routine-list-item>
             </TableListSchema>
@@ -121,20 +121,6 @@
       </div>
 
     </div>
-      <context-menu
-        elementId="table-list-context-menu"
-        :options="tableMenuOptions"
-        ref="tableMenu"
-        @option-clicked="tableMenuClick"
-        :triggerEvent="tableEvent"
-      />
-      <context-menu
-        elementId="routine-list-context-menu"
-        :options="routineMenuOptions"
-        ref="routineMenu"
-        @option-clicked="routineMenuClick"
-        :triggerEvent="routineEvent"
-      />
   </div>
 </template>
 
@@ -148,10 +134,10 @@
   import TableListContextMenus from '../../../mixins/TableListContextMenus'
   import PinnedTableList from '@/components/sidebar/core/PinnedTableList.vue'
   import { AppEvent } from '@/common/AppEvent'
-  import ContextMenu from '@/components/common/ContextMenu.vue'
+  // import ContextMenu from '@/components/common/ContextMenu.vue'
   export default {
     mixins: [TableFilter, TableListContextMenus],
-    components: { TableListItem, TableListSchema, RoutineListItem, PinnedTableList, ContextMenu},
+    components: { TableListItem, TableListSchema, RoutineListItem, PinnedTableList},
     data() {
       return {
         tableLoadError: null,

@@ -14,6 +14,7 @@
           @closeAll="closeAll"
           @closeOther="closeOther"
           @duplicate="duplicate"
+          @contextmenu="$bks.openMenu({item: tab, options: contextOptions, event: $event})"
           ></core-tab-header>
       </Draggable>
       <!-- </div> -->
@@ -41,11 +42,6 @@
         
       </div>
     </div>
-    <!-- TODO - this should really be in TableTable -->
-
-
-    <!-- TODO - all notifications should really be handled with an organized system -->
-
   </div>
 </template>
 
@@ -77,7 +73,7 @@
       TableProperties,
       Draggable,
       ShortcutHints,
-      TableBuilder
+      TableBuilder,
     },
     data() {
       return {
@@ -101,7 +97,13 @@
           { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
           { event: 'favoriteClick', handler: this.favoriteClick },
           { event: 'exportTable', handler: this.openExportModal },
-        ]
+        ],
+        contextOptions: [
+          { name: "Close", slug: 'close', handler: ({item}) => this.close(item)},
+          { name: "Close Others", slug: 'close-others', handler: ({item}) => this.closeOther(item)},
+          { name: 'Close All', slug: 'close-all', handler: this.closeAll},
+          { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.duplicate(item)}
+        ],
       }
     },
     watch: {
@@ -138,6 +140,21 @@
       }
     },
     methods: {
+      openContextMenu(event, item) {
+        this.contextEvent = { event, item }
+      },
+      contextClick({ option, item }) {
+        switch (option.slug) {
+          case 'close':
+            return this.close(item)
+          case 'close-others':
+            return this.closeOther(item)
+          case 'close-all':
+            return this.closeAll();
+          case 'duplicate':
+            return this.duplicate(item);
+        }
+      },
       async setActiveTab(tab) {
         await this.$store.dispatch('tabActive', tab)
       },

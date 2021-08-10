@@ -1,5 +1,20 @@
 import { AppEvent } from "@/common/AppEvent"
+import Vue from 'vue'
+import ContextMenu from '@/components/common/ContextMenu.vue'
 
+export interface ContextOption {
+  name: string,
+  slug: string
+  type?: 'divider'
+  handler: (...any) => void
+}
+
+interface MenuProps {
+  options: ContextOption[],
+  elementId: string
+  item: any,
+  event: Event
+}
 
 export const BeekeeperPlugin = {
   closeTab(id?: string) {
@@ -13,6 +28,18 @@ export const BeekeeperPlugin = {
     } else {
       return false
     }
+  },
+  openMenu(args: MenuProps): void {
+    const ContextComponent = Vue.extend(ContextMenu)
+    const cMenu = new ContextComponent({
+      propsData: args
+    })
+    cMenu.$on('close', () => {
+      cMenu.$off()
+      console.log("closing menu")
+      cMenu.$destroy()
+    })
+    cMenu.$mount()
   }
 }
 
