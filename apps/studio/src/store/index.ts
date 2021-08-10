@@ -20,6 +20,7 @@ import { entityFilter } from '../lib/db/sql_tools'
 import RawLog from 'electron-log'
 import { Dialect, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
+import { getDialectData } from '@shared/lib/dialects'
 
 const log = RawLog.scope('store/index')
 
@@ -85,6 +86,9 @@ const store = new Vuex.Store<State>({
       if (!state.usedConfig) return null
       return dialectFor(state.usedConfig.connectionType)
     },
+    dialectData(_state: State, getters) {
+      return getDialectData(getters.dialect)
+    },
     selectedSidebarItem(state) {
       return state.selectedSidebarItem
     },
@@ -101,8 +105,8 @@ const store = new Vuex.Store<State>({
       // if no schemas, just return a single schema
       if (_.chain(state.tables).map('schema').uniq().value().length <= 1) {
         return [{
-          schema: null,
-          skipSchemaDisplay: true,
+          schema: g.schemas[0] || null,
+          skipSchemaDisplay: g.schemas.length < 2,
           tables: g.filteredTables,
           routines: g.filteredRoutines
         }]
@@ -122,10 +126,16 @@ const store = new Vuex.Store<State>({
       }).value()
     },
     tablesHaveSchemas(_state, getters) {
-      return getters.schemaTables.length > 1
+      return getters.schemas.length > 1
     },
     connectionColor(state) {
       return state.usedConfig ? state.usedConfig.labelColor : 'default'
+    },
+    schemas(state) {
+      if (state.tables.find((t) => !!t.schema)) {
+        return _.uniq(state.tables.map((t) => t.schema));
+      }
+      return []
     }
   },
   mutations: {

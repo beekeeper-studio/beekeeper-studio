@@ -10,7 +10,7 @@ import globals from '../../../common/globals';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import { MysqlCursor } from './mysql/MySqlCursor';
-import { buildDeleteQueries, buildInsertQueries, buildSelectTopQuery, escapeString } from './utils';
+import { buildDeleteQueries, buildInsertQueries, buildSelectTopQuery, escapeString, joinQueries } from './utils';
 
 const log = rawLog.scope('mysql')
 const logger = () => log
@@ -63,9 +63,18 @@ export default async function (server, database) {
     truncateAllTables: () => truncateAllTables(conn),
     getTableProperties: (table) => getTableProperties(conn, table),
     setTableDescription: (table, description) => setTableDescription(conn, table, description),
-    
+
+    // schema
     alterTableSql: (change) => alterTableSql(conn, change),
-    alterTable: (change) => alterTable(conn, change)
+    alterTable: (change) => alterTable(conn, change),
+
+    // indexes
+    alterIndexSql: (adds, drops) => alterIndexSql(adds, drops),
+    alterIndex: (adds, drops) => alterIndex(conn, adds, drops),
+
+    // relations
+    alterRelationSql: (payload) => alterRelationSql(payload),
+    alterRelation: (payload) => alterRelation(conn, payload)
 
   };
 }
@@ -314,13 +323,13 @@ export async function listTableIndexes(conn, database, table) {
 
   return Object.keys(grouped).map((key, idx) => {
     const row = grouped[key][0]
-    const columnNames = grouped[key].map((r) => r.Column_name).join(", ")
+    const columns = grouped[key].map((r) => ({ name: r.Column_name, order: r.Collation === 'A' ? 'ASC' : 'DESC'}))
     return {
       id: idx,
       name: row.Key_name,
       unique: row.Non_unique === 0,
       primary: row.Key_name === 'PRIMARY',
-      columns: columnNames,
+      columns,
     }
   })
 
@@ -396,7 +405,7 @@ export async function getTableKeys(conn, database, table) {
   const { data } = await driverExecuteQuery(conn, { query: sql, params });
 
   return data.map((row) => ({
-    constraintName: `${row.constraint_name} KEY`,
+    constraintName: `${row.constraint_name}`,
     toTable: row.referenced_table,
     toColumn: row.referenced_column,
     fromTable: table,
@@ -702,20 +711,36 @@ async function alterTableSql(conn, change) {
 
 async function alterTable(conn, change) {
   const sql = await alterTableSql(conn, change)
-  await runWithConnection(conn, async (connection) => {
-    const cli = { connection }
-    const queries = [
-      'START TRANSACTION',
-      sql,
-      'COMMIT'
-    ].join(";")
-    try {
-      await driverExecuteQuery(cli, { query: queries })
-    } catch (ex) {
-      await driverExecuteQuery(cli, { query: 'ROLLBACK' })
-    }
-  })
+  await executeWithTransaction(conn, { query: sql })
 }
+
+export function alterIndexSql(payload) {
+  const { table, schema, additions, drops } = payload
+  const changeBuilder = new MySqlChangeBuilder(table, schema, [])
+  const newIndexes = changeBuilder.createIndexes(additions)
+  const droppers = changeBuilder.dropIndexes(drops)
+  return [newIndexes, droppers].filter((f) => !!f).join(";")
+}
+
+export async function alterIndex(conn, payload) {
+  const sql = alterIndexSql(payload);
+  await executeWithTransaction(conn, { query: sql });
+}
+
+
+export function alterRelationSql(payload) {
+  const { table, schema } = payload
+  const builder = new MySqlChangeBuilder(table, schema, [])
+  const creates = builder.createRelations(payload.additions)
+  const drops = builder.dropRelations(payload.drops)
+  return [creates, drops].filter((f) => !!f).join(";")
+}
+
+export async function alterRelation(conn, payload) {
+  const query = alterRelationSql(payload)
+  await executeWithTransaction(conn, { query });
+}
+
 
 
 function configDatabase(server, database) {
@@ -815,6 +840,22 @@ function identifyCommands(queryText) {
   } catch (err) {
     return [];
   }
+}
+
+async function executeWithTransaction(conn, queryArgs) {
+    const fullQuery = joinQueries([
+      'START TRANSACTION', queryArgs.query, 'COMMIT'
+    ])
+    return await runWithConnection(conn, async (connection) => {
+      const cli = { connection }
+      try {
+        return await driverExecuteQuery(cli, {...queryArgs, query: fullQuery})
+      } catch (ex) {
+        log.error("executeWithTransaction", fullQuery, ex)
+        await driverExecuteQuery(cli, { query: 'ROLLBACK' })
+        throw ex
+      }
+    })
 }
 
 function driverExecuteQuery(conn, queryArgs) {

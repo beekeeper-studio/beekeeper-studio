@@ -30,6 +30,16 @@ On linux, just run the app like this: `DEBUG=* beekeeper-studio`
 
 * This section also applies to MariaDB
 
+### I can't create a descending index
+
+Before version 8.0 MySQL did not support `DESC` indexes, but it did support the syntax.
+
+This is a 'feature' of MySQL to make it more compatible with other engines.
+
+If you edit your indexes in Beekeeper Studio and create a `DESC` index it will simply create a `ASC` index instead.
+
+As of version 8.0 this issue has been solved.
+
 ### I get a SQL syntax error when trying to create a stored procedure
 
 When using the `mysql` command line client you need to remap delimiters using `DELIMITER`, however this syntax isn't supported by MySQL server itself, so it errors when run through Beekeeper Studio.

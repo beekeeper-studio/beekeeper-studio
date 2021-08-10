@@ -1,6 +1,6 @@
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SqliteData as D } from "@shared/lib/dialects/sqlite";
-import { Dialect } from "@shared/lib/dialects/models";
+import { Dialect, DropIndexSpec } from "@shared/lib/dialects/models";
 
 
 export class SqliteChangeBuilder extends ChangeBuilderBase {
@@ -11,5 +11,12 @@ export class SqliteChangeBuilder extends ChangeBuilderBase {
   wrapIdentifier = D.wrapIdentifier
   wrapLiteral = D.wrapLiteral
   escapeString = D.escapeString
+
+  dropIndexes(drops: DropIndexSpec[]): string | null {
+    if (!drops?.length) return null
+    return drops.map((drop) => {
+      return `DROP INDEX ${this.wrapIdentifier(drop.name)}`
+    }).join(";")
+  }
   
 }

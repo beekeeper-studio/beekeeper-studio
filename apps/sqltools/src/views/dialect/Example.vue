@@ -19,6 +19,16 @@
         </div>
       </div>
     </section>
+    <section class="bks-callout">
+      <div class="small-wrap">
+        <hr>
+        <h3>Using Beekeeper Studio?</h3>
+        <p>Beekeeper Studio is a free and open source database manager for Windows, Mac, and Linux.</p> 
+        <p>This feature is baked right in, so there's no need to manually type SQL every time. <span v-if="example.beekeeperBlurb">{{example.beekeeperBlurb}}</span></p>
+        <a href="https://beekeeperstudio.io/get">Download Beekeeper Studio</a>
+        <img src="@/assets/img/bk-example.png" alt="">
+      </div>
+    </section>
   </div>
 </template>
 <script lang="ts">
@@ -74,6 +84,7 @@ export default Vue.extend({
 
 <style lang="scss" scoped>
   @import '@/assets/styles/app/_variables';
+  @import '@/assets/styles/app/_extends';
 
   .back-link {
     display: flex;
@@ -83,6 +94,27 @@ export default Vue.extend({
     margin-bottom: $gutter-w;
     i {
       width: 24px;
+    }
+  }
+  .bks-callout {
+    .small-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+    h3 {
+      font-size: 1.4rem;
+    }
+    hr {
+      margin-bottom: $gutter-w * 5;
+    }
+    a {
+      color: $theme-primary;
+      margin-bottom: $gutter-w * 2;
+    }
+    img {
+      max-width: 500px;
+      border-radius: 4px;
+      @extend .card-shadow;
     }
   }
 </style>

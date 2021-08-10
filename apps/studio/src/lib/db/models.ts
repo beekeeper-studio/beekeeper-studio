@@ -1,3 +1,5 @@
+import { TableKey } from '@shared/lib/dialects/models'
+
 export abstract class BeeCursor {
   constructor(public chunkSize: number) {
 
@@ -28,12 +30,17 @@ export interface TableOrView extends DatabaseEntity {
   columns?: TableColumn[];
 }
 
+export interface IndexedColumn {
+  name: string
+  order: 'ASC' | 'DESC'
+}
+
 export interface TableIndex {
   id: string
   table: string
   schema: string
   name: string
-  columns: string,
+  columns: IndexedColumn[]
   unique: boolean
   primary: boolean  
 }
@@ -152,18 +159,6 @@ export interface TableDelete {
   pkColumn: string;
   schema?: string;
   primaryKey: string;
-}
-
-export interface TableKey {
-  toTable: string;
-  toSchema: string;
-  toColumn: string;
-  fromTable: string;
-  fromSchema: string;
-  fromColumn: string;
-  constraintName: string;
-  onUpdate?: string;
-  onDelete?: string;
 }
 
 export type TableUpdateResult = any;

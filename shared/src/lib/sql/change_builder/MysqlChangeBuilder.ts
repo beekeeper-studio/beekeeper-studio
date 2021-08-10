@@ -19,6 +19,15 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     this.existingColumns = existingColumns
   }
 
+  dropRelations(names: string[]): string | null {
+    if (!names?.length) return null
+    return names.map((name: string) => {
+      const t = this.tableName
+      const c = this.wrapIdentifier(name)
+      return `ALTER TABLE ${t} DROP FOREIGN KEY ${c}`
+    }).join(";")
+  }
+
   renameColumn(column: string, newName: string): string {
 
     const existingColumn = this.existingColumns.find((c) => c.columnName === column)
