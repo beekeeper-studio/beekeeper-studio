@@ -66,7 +66,7 @@ export const Mutators = {
    */
   bitMutator(value: any): JsonFriendly {
     // SQL Server bit data type is an integer data type
-    if (this.connection.connectionType === "sqlserver") return value;
+    if (this.connection?.connectionType === "sqlserver") return value;
 
     const result = []
     for (let index = 0; index < value.length; index++) {

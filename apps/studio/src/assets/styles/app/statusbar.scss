@@ -248,19 +248,17 @@ $button-height:     $statusbar-height * 0.78;
     line-height: $statusbar-height;
     overflow: hidden;
     text-overflow:ellipsis;
-
-    .material-icons {
+    i {
       font-size: 18px;
       line-height: $statusbar-height;
       margin-right: 0.35rem;
-      // opacity: 0.65;
       width: 16px;
     }
     &.error {
       color: $statusbar-text;
       font-size: 0.75rem;
       padding-right: 2rem;
-      .material-icons {
+      i {
         color: $statusbar-text;
       }
       > span {
@@ -306,7 +304,7 @@ $button-height:     $statusbar-height * 0.78;
     position: relative;
     .material-icons {
       font-size: 20px;
-      min-width: 32px;
+      min-width: 38px;
       text-align: center;
     }
     > .btn {

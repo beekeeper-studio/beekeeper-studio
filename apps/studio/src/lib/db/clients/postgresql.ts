@@ -9,20 +9,21 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, TableKey, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, } from "../models";
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString } from './utils';
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
-import { AlterTableSpec } from '@shared/lib/dialects/models';
+import { AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
+import { PostgresData } from '@shared/lib/dialects/postgresql';
 
 
 const base64 = require('base64-url');
-
+const PD = PostgresData
 function isConnection(x: any): x is HasConnection {
   return x.connection !== undefined
 }
@@ -37,6 +38,11 @@ const pgErrors = {
 };
 
 let dataTypes: any = {}
+
+function tableName(table: string, schema?: string): string{
+  return schema ? `${PD.wrapIdentifier(schema)}.${PD.wrapIdentifier(table)}` : PD.wrapIdentifier(table);
+}
+
 
 /**
  * Do not convert DATE types to JS date.
@@ -177,9 +183,20 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getRoutineCreateScript: (routine, type, schema = defaultSchema) => getRoutineCreateScript(conn, routine, type, schema),
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
     getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
+
+    // alter tables
     alterTableSql: (change: AlterTableSpec) => alterTableSql(conn, change),
     alterTable: (change: AlterTableSpec) => alterTable(conn, change),
-    setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema)
+
+    // alter indexes
+    alterIndexSql: (payload) => alterIndexSql(payload),
+    alterIndex: (payload) => alterIndex(conn, payload),
+
+    // relations
+    alterRelationSql: (payload) => alterRelationSql(payload),
+    alterRelation: (payload) => alterRelation(conn, payload),
+
+    setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
   };
 }
 
@@ -583,57 +600,67 @@ export async function listTableIndexes(
   conn: Conn, table: string, schema: string
   ): Promise<TableIndex[]> {
 
+
   const sql = `
-select
-	i.oid as index_id,
-    t.relname as table_name,
-    c.nspname as schema,
-    i.relname as index_name,
-    ix.indisprimary as is_primary,
-    ix.indisunique as is_unique,
-    array_to_string(array_agg(a.attname), ', ') as column_names
-from
-    pg_class t,
-    pg_class i,
-    pg_index ix,
-    pg_attribute a,
-    pg_namespace c
-where
-    t.oid = ix.indrelid
-    and i.oid = ix.indexrelid
-    and a.attrelid = t.oid
-    and a.attnum = ANY(ix.indkey)
-    and t.relkind = 'r'
-    and t.relname = $1
-    and c.nspname = $2
-group by
-	i.oid,
-    t.relname,
-    i.relname,
-    c.nspname,
-    ix.indisprimary,
-    ix.indisunique
-order by
-    t.relname,
-    i.relname
+    SELECT i.indexrelid::regclass AS indexname,
+        k.i AS index_order,
+        i.indexrelid as id,
+        i.indnkeyatts,
+        i.indisunique,
+        i.indisprimary,
+        coalesce(a.attname,
+                  (('{' || pg_get_expr(
+                              i.indexprs,
+                              i.indrelid
+                          )
+                        || '}')::text[]
+                  )[k.i]
+                ) AS index_column,
+        i.indoption[k.i - 1] = 0 AS ascending,
+        k.i <= i.indnkeyatts AS is_key
+      FROM pg_index i
+        CROSS JOIN LATERAL unnest(i.indkey) WITH ORDINALITY AS k(attnum, i)
+        LEFT JOIN pg_attribute AS a
+            ON i.indrelid = a.attrelid AND k.attnum = a.attnum
+        JOIN pg_class t on t.oid = i.indrelid
+        JOIN pg_namespace c on c.oid = t.relnamespace
+      WHERE
+       c.nspname = $1 AND
+       t.relname = $2
 `
   const params = [
-    table,
     schema,
+    table,
   ];
 
   const data = await driverExecuteSingle(conn, { query: sql, params });
-  const result = data.rows.map((row) => {
-    return {
-      id: row.index_id,
-      name: row.index_name,
-      table: row.table_name,
-      schema: row.schema,
-      columns: row.column_names,
-      unique: row.is_unique,
-      primary: row.is_primary
+
+  
+
+  const grouped = _.groupBy(data.rows, 'indexname')
+  
+  const result = Object.keys(grouped).map((indexName) => {
+    const blob = grouped[indexName]
+    const unique = blob[0].indisunique
+    const id = blob[0].id
+    const primary = blob[0].indisprimary
+    const columns: IndexedColumn[] = _.sortBy(blob, 'index_order').map((b) => {
+      return {
+        name: b.index_column,
+        order: b.ascending ? 'ASC' : 'DESC'
+      }
+    })
+    const item: TableIndex = {
+      table, schema,
+      id,
+      name: indexName,
+      unique,
+      primary,
+      columns
     }
-  });
+    return item
+  })
+
   return result
 }
 
@@ -789,7 +816,7 @@ export async function getPrimaryKey(conn: HasPool, _database: string, table: str
 
 export async function getPrimaryKeys(conn: HasPool, _database: string, table: string, schema: string): Promise<PrimaryKeyColumn[]> {
   const version = await getVersion(conn)
-  const tablename = escapeString(schema ? `${wrapIdentifier(schema)}.${wrapIdentifier(table)}` : wrapIdentifier(table))
+  const tablename = PD.escapeString(tableName(table, schema), true)
   const psqlQuery = `
     SELECT 
       a.attname as column_name,
@@ -798,7 +825,7 @@ export async function getPrimaryKeys(conn: HasPool, _database: string, table: st
     FROM   pg_index i
     JOIN   pg_attribute a ON a.attrelid = i.indrelid
                         AND a.attnum = ANY(i.indkey)
-    WHERE  i.indrelid = '${tablename}'::regclass
+    WHERE  i.indrelid = ${tablename}::regclass
     AND    i.indisprimary 
     ORDER BY a.attnum
   `
@@ -898,6 +925,34 @@ export async function alterTable(_conn: HasPool, change: AlterTableSpec) {
     }
   })
 }
+
+export function alterIndexSql(payload: IndexAlterations): string | null {
+  const { table, schema, additions, drops } = payload
+  const changeBuilder = new PostgresqlChangeBuilder(table, schema)
+  const newIndexes = changeBuilder.createIndexes(additions)
+  const droppers = changeBuilder.dropIndexes(drops)
+  return [newIndexes, droppers].filter((f) => !!f).join(";")
+}
+
+export async function alterIndex(conn: HasPool, payload: IndexAlterations) {
+  const sql = alterIndexSql(payload);
+  await executeWithTransaction(conn, { query: sql });
+}
+
+
+export function alterRelationSql(payload: RelationAlterations): string {
+  const { table, schema } = payload
+  const builder = new PostgresqlChangeBuilder(table, schema)
+  const creates = builder.createRelations(payload.additions)
+  const drops = builder.dropRelations(payload.drops)
+  return [creates, drops].filter((f) => !!f).join(";")
+}
+
+export async function alterRelation(conn, payload: RelationAlterations): Promise<void> {
+  const query = alterRelationSql(payload)
+  await executeWithTransaction(conn, { query });
+}
+
 
 export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {
   const identifier = wrapTable(table, schema)
@@ -1274,6 +1329,22 @@ interface PostgresQueryArgs {
 
 async function driverExecuteSingle(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult> {
   return (await driverExecuteQuery(conn, queryArgs))[0]
+}
+
+async function executeWithTransaction(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult[]> {
+  const fullQuery = joinQueries([
+    'BEGIN', queryArgs.query, 'COMMIT'
+  ])
+  return await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    try {
+      return await driverExecuteQuery(cli, { ...queryArgs, query: fullQuery})
+    } catch (ex) {
+      log.error("executeWithTransaction", ex)
+      await driverExecuteSingle(cli, { query: "ROLLBACK" })
+      throw ex;
+    }
+  })
 }
 
 function driverExecuteQuery(conn: Conn | HasConnection, queryArgs: PostgresQueryArgs): Promise<QueryResult[]> {

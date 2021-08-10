@@ -1,5 +1,5 @@
 import _ from "lodash"
-import { ColumnType, defaultEscapeString, defaultWrapLiteral, DialectData, SpecialTypes } from "./models"
+import { ColumnType, defaultConstraintActions, defaultEscapeString, defaultWrapLiteral, DialectData, SpecialTypes } from "./models"
 
 
 const types = [
@@ -22,6 +22,7 @@ export interface DefaultConstraint {
 
 export const SqlServerData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
+  constraintActions: [...defaultConstraintActions],
   wrapIdentifier: (value) =>   _.isString(value) ?
     (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*') : value,
   wrapLiteral: defaultWrapLiteral,

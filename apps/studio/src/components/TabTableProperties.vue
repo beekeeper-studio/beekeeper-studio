@@ -6,9 +6,6 @@
       </div>
     </div>
     <template  v-else>
-      <div v-if="loading" class="table-properties-loading">
-        <x-progressbar></x-progressbar>
-      </div>
       <div class="table-properties-header">
         <div class="nav-pills" v-if="pills.length > 1">
           <a 
@@ -23,7 +20,10 @@
           </a>
         </div>
       </div>
-      <div class="table-properties-wrap" v-if="!loading">
+      <div v-if="loading" class="table-properties-loading">
+        <x-progressbar></x-progressbar>
+      </div>
+      <div class="table-properties-wrap" v-if="table">
         <component
           class="schema-builder"
           :is="pill.component"
@@ -36,6 +36,8 @@
           v-show="pill.id === activePill"
           v-for="(pill) in pills" 
           :key="pill.id"
+          @actionCompleted="refresh"
+          @refresh="refresh"
         >
           <template v-slot:footer>
             <div class="statusbar-info col flex expand">
@@ -55,6 +57,9 @@
                 <span class="statusbar-item" v-if="humanIndexSize !== null" :title="`Index Size ${humanIndexSize}`">
                   <i class="material-icons">location_searching</i>
                   <span>{{humanIndexSize}}</span>
+                </span>
+                <span class="statusbar-item" v-if="!editable" title="Only tables can be edited.">
+                  <i class="material-icons-outlined">report_problem</i> Read Only
                 </span>
               </template>
             </div>
@@ -207,7 +212,7 @@ export default {
     async refresh() {
       this.loading = true
       this.error = null
-      this.properties = null
+      // this.properties = null
       this.fetchTotalRecords()
       try {
         this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)

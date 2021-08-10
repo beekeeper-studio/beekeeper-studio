@@ -22,6 +22,15 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     return this.escapeString(defaultValue.toString(), true);
   }
 
+  dropRelations(names: string[]): string | null {
+    if (!names?.length) return null
+    return names.map((name: string) => {
+      const t = this.tableName
+      const c = this.wrapIdentifier(name)
+      return `ALTER TABLE ${t} DROP FOREIGN KEY ${c}`
+    }).join(";")
+  }
+
   ddl(existing: SchemaItem, updated: SchemaItem): string {
     const column = existing.columnName
     const newName = updated.columnName
@@ -31,7 +40,6 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     // mysql 8 allows literal values PLUS expressions like ('foo')
     // https://dev.mysql.com/doc/refman/8.0/en/data-type-defaults.html
     // it's very confusing.
-
 
     return [
       nameChanged ? `CHANGE` : 'MODIFY',

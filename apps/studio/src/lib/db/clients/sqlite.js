@@ -57,8 +57,18 @@ export default async function (server, database) {
     getRoutineCreateScript: (routine) => getRoutineCreateScript(conn, routine),
     truncateAllTables: () => truncateAllTables(conn),
     getTableProperties: (table) => getTableProperties(conn, table),
+
+    // alter table
     alterTableSql: (change) => alterTableSql(conn, change),
-    alterTable: (change) => alterTable(conn, change)
+    alterTable: (change) => alterTable(conn, change),
+
+    // indexes
+    alterIndexSql: (adds, drops) => alterIndexSql(adds, drops),
+    alterIndex: (adds, drops) => alterIndex(conn, adds, drops),
+
+    // relations
+    alterRelationSql: (payload) => alterRelationSql(payload),
+    alterRelation: (payload) => alterRelation(conn, payload),
   };
 }
 
@@ -323,15 +333,15 @@ export async function listTableTriggers(conn, table) {
 }
 
 export async function listTableIndexes(conn, database, table) {
-  const sql = `PRAGMA INDEX_LIST('${table}')`;
+  const sql = `PRAGMA INDEX_LIST('${escapeString(table)}')`;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
-  const allSQL = data.map((row) => `PRAGMA INDEX_INFO(${row.name})`).join(";")
+  const allSQL = data.map((row) => `PRAGMA INDEX_XINFO('${escapeString(row.name)}')`).join(";")
   const infos = await driverExecuteQuery(conn, { query: allSQL, multiple: true})
 
   const indexColumns = infos.map((result) => {
-    return result.data.map((r) => r.name).join(", ")
+    return result.data.filter((r) => !!r.name).map((r) => ({name: r.name, order: r.desc ? 'DESC' : 'ASC'}))
   })
 
   return data.map((row, idx) => ({
@@ -461,21 +471,37 @@ export async function alterTableSql(conn, changes) {
 
 export async function alterTable(conn, changes) {
   const sql = await alterTableSql(conn, changes)
-  await runWithConnection(conn, async (connection) => {
-    const cli = { connection }
-    try {
 
-      await driverExecuteQuery(cli, { query: 'BEGIN' })
-      await driverExecuteQuery(cli, { query: sql })
-      await driverExecuteQuery(cli, { query: 'COMMIT' })
-    } catch(ex) {
-      await driverExecuteQuery(cli, { query: 'ROLLBACK' })
-      log.error(ex)
-      throw ex
-    }
-  })
+  await executeWithTransaction(conn, { query: sql })
 }
 
+
+export function alterIndexSql(payload) {
+  const { table, schema, additions, drops } = payload
+  const changeBuilder = new SqliteChangeBuilder(table, schema)
+  const newIndexes = changeBuilder.createIndexes(additions)
+  const droppers = changeBuilder.dropIndexes(drops)
+  return [newIndexes, droppers].filter((f) => !!f).join(";")
+}
+
+export async function alterIndex(conn, payload) {
+  const sql = alterIndexSql(payload);
+  await executeWithTransaction(conn, { query: sql });
+}
+
+
+export function alterRelationSql(payload) {
+  const { table, schema } = payload
+  const builder = new SqliteChangeBuilder(table, schema, [])
+  const creates = builder.createRelations(payload.additions)
+  const drops = builder.dropRelations(payload.drops)
+  return [creates, drops].filter((f) => !!f).join(";")
+}
+
+export async function alterRelation(conn, payload) {
+  const query = alterRelationSql(payload)
+  await executeWithTransaction(conn, { query });
+}
 
 function configDatabase(server, database) {
   return {
@@ -557,6 +583,22 @@ async function runWithConnection(conn, run) {
       db.close()
     }
   }
+}
+
+export async function executeWithTransaction(conn, queryArgs) {
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    try {
+
+      await driverExecuteQuery(cli, { query: 'BEGIN' })
+      await driverExecuteQuery(cli, queryArgs)
+      await driverExecuteQuery(cli, { query: 'COMMIT' })
+    } catch (ex) {
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' })
+      log.error(ex)
+      throw ex
+    }
+  })
 }
 
 

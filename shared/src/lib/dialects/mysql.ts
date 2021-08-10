@@ -1,5 +1,5 @@
 import _ from "lodash"
-import { ColumnType, defaultEscapeString, DialectData, SpecialTypes } from "./models"
+import { ColumnType, defaultConstraintActions, defaultEscapeString, DialectData, SpecialTypes } from "./models"
 
 
 const types = [
@@ -15,6 +15,7 @@ const defaultLength = (t: string) => t.startsWith('var') ? 255 : 8
 
 export const MysqlData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
+  constraintActions: [...defaultConstraintActions, 'RESTRICT'],
   wrapIdentifier(value: string) {
     return (value !== '*' ? `\`${value.replaceAll(/`/g, '``')}\`` : '*');
   },

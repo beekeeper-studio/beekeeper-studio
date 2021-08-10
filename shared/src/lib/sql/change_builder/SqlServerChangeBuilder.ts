@@ -1,4 +1,4 @@
-import { AlterTableSpec, Dialect, SchemaItem } from "@shared/lib/dialects/models";
+import { AlterTableSpec, Dialect, DropIndexSpec, SchemaItem } from "@shared/lib/dialects/models";
 import { DefaultConstraint, SqlServerData } from "@shared/lib/dialects/sqlserver";
 import _ from "lodash";
 import { ChangeBuilderBase } from "./ChangeBuilderBase";
@@ -84,6 +84,12 @@ export class SqlServerChangeBuilder extends ChangeBuilderBase {
         constraint.table === this.table &&
         constraint.column === column
     }) || null
+  }
+
+  dropIndexes(specs: DropIndexSpec[]) {
+    if (!specs?.length) return null
+    const names = specs.map((spec) => `${this.tableName}.${this.wrapIdentifier(spec.name)}`).join(", ")
+    return `DROP INDEX ${names}`
   }
 
 

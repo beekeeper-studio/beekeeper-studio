@@ -137,17 +137,16 @@
         </template>
 
         <!-- Actions -->
+        <x-button class="btn btn-flat" title="Refresh table" @click="refreshTable">
+          <i class="material-icons">refresh</i>
+        </x-button>
+        <x-button class="btn btn-flat" title="Add row" @click.prevent="cellAddRow">
+          <i class="material-icons">add</i>
+        </x-button>
         <x-button class="actions-btn btn btn-flat" title="actions">
           <i class="material-icons">settings</i>
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
-            <x-menuitem @click.prevent="cellAddRow">
-              <x-label>Add Row</x-label>
-            </x-menuitem>
-            <x-menuitem @click="refreshTable">
-              <x-label>Refresh</x-label>
-            </x-menuitem>
-            <hr>
             <x-menuitem @click="exportTable">
               <x-label>Export Whole Table</x-label>
             </x-menuitem>
