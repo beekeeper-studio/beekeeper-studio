@@ -752,9 +752,7 @@ export default Vue.extend({
     },
     cellCopyRowAsInsert(e, cell) {
       const row = cell.getRow()
-      console.log(row)
       const data = { ...row.getData() }
-      console.log(data)
       const payload = {
         table: this.table.name,
         schema: this.table.schema,
