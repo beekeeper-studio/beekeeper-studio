@@ -752,7 +752,9 @@ export default Vue.extend({
     },
     cellCopyRowAsInsert(e, cell) {
       const row = cell.getRow()
+      console.log(row)
       const data = { ...row.getData() }
+      console.log(data)
       const payload = {
         table: this.table.name,
         schema: this.table.schema,
@@ -762,19 +764,19 @@ export default Vue.extend({
       this.$native.clipboard.writeText(insertQuery);
     },
     createInsertStatement(payload) {
-      let query = `INSERT INTO ${payload.schema}.${payload.table} (`
+      const allColumns = Object.keys(payload.data)
+        .filter(key => payload.data[key] !== undefined)
 
-      query += Object.keys(payload.data)
+      let query = `INSERT INTO ${payload.schema}.${payload.table} (`
+      query += allColumns
         .map(columnName => `${columnName}`)
         .join(", ")
-
       query += ") VALUES ("
-
-      query += Object.keys(payload.data)
+      query += allColumns
         .map(columnName => `${payload.data[columnName] ? `'${payload.data[columnName]}'` : 'null'}`)
         .join(", ")
-
       query += ");";
+
       return query
     },
     cellCloneRow(e, cell) {
