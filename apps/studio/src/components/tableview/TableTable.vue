@@ -279,6 +279,12 @@ export default Vue.extend({
         },
         { separator: true },
         {
+          label: '<x-menuitem><x-label>Copy as insert</x-label></x-menuitem>',
+          action: this.cellCopyRowAsInsert.bind(this),
+          disabled: !this.editable
+        },
+        { separator: true },
+        {
           label: '<x-menuitem><x-label>Copy</x-label></x-menuitem>',
           action: (e, cell) => {
             this.$native.clipboard.writeText(cell.getValue());
@@ -743,6 +749,33 @@ export default Vue.extend({
       let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
       pendingUpdates.push(payload)
       this.$set(this.pendingChanges, 'updates', pendingUpdates)
+    },
+    cellCopyRowAsInsert(e, cell) {
+      const row = cell.getRow()
+      const data = { ...row.getData() }
+      const payload = {
+        table: this.table.name,
+        schema: this.table.schema,
+        data
+      }
+      const insertQuery = this.createInsertStatement(payload);
+      this.$native.clipboard.writeText(insertQuery);
+    },
+    createInsertStatement(payload) {
+      let query = `INSERT INTO ${payload.schema}.${payload.table} (`
+
+      query += Object.keys(payload.data)
+        .map(columnName => `${columnName}`)
+        .join(", ")
+
+      query += ") VALUES ("
+
+      query += Object.keys(payload.data)
+        .map(columnName => `${payload.data[columnName] ? `'${payload.data[columnName]}'` : 'null'}`)
+        .join(", ")
+
+      query += ");";
+      return query
     },
     cellCloneRow(e, cell) {
       const row = cell.getRow()
