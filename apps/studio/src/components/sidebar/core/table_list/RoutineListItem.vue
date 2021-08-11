@@ -13,17 +13,6 @@
         <span v-if="pinned" @mousedown.prevent.stop="unpin" class="btn-fab unpin" :title="'Unpin'"><i class="material-icons">clear</i></span>
         <span v-if="pinned" class="btn-fab pinned"><i class="bk-pin" :title="'Unpin'"></i></span>
       </span>
-      <!-- <x-contextmenu>
-        <x-menu>
-          <x-menuitem @click.prevent="copyRoutine">
-            <x-label>Copy routine name</x-label>
-          </x-menuitem>
-          <x-menuitem @click.prevent="toggleArgs">
-            <x-label>Toggle arguments</x-label>
-          </x-menuitem>
-          <hr>
-        </x-menu>
-      </x-contextmenu> -->
     </a>
     <div v-if="showArgs" class="sub-items">
       <!-- <span class="sub-item" v-if="displayParams.length === 0">

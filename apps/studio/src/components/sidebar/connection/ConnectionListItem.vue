@@ -1,5 +1,9 @@
 <template>
-  <div class="list-item" :title="title">
+  <div 
+    class="list-item"
+    :title="title"
+    @contextmenu.stop.prevent="showContextMenu"
+  >
     <a
       href=""
       class="list-item-btn"
@@ -23,20 +27,6 @@
         </div>
       </div>
       <span class="badge"><span>{{config.connectionType}}</span></span>
-      <x-contextmenu>
-        <x-menu>
-          <x-menuitem v-if="showDuplicate" @click.prevent="duplicate" title="Duplicate the connection with all settings">
-            <x-label class="text-">Duplicate</x-label>
-          </x-menuitem>
-          <x-menuitem @click.prevent="remove" title="Removes the connection">
-            <x-label class="text-danger">Remove</x-label>
-          </x-menuitem>
-          <hr>
-          <x-menuitem @click.prevent="copyUrl" v-bind:title="`Copy the ${this.connectionType} of the connection to the clipboard`">
-            <x-label class="text-">Copy {{this.connectionType}}</x-label>
-          </x-menuitem>
-        </x-menu>
-      </x-contextmenu>
     </a>
   </div>
 </template>
@@ -100,6 +90,27 @@ export default {
 
   },
   methods: {
+    showContextMenu(event) {
+      this.$bks.openMenu({
+        event,
+        item: this.config,
+        options: [
+          {
+            name: "Duplicate",
+            slug: 'duplicate',
+            handler: this.duplicate
+          },
+          {
+            name: `Copy ${this.connectionType}`,
+            handler: this.copyUrl
+          },
+          {
+            name: "Remove",
+            handler: this.remove
+          },
+        ]
+      })
+    },
     click() {
       if (this.savedConnection) {
         this.$emit('edit', this.savedConnection)

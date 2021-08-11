@@ -1,6 +1,10 @@
 <template>
   <div class="query-editor" v-hotkey="keymap">
-    <div class="top-panel" ref="topPanel" >
+    <div 
+      class="top-panel"
+      ref="topPanel"
+      @contextmenu.prevent.stop="showContextMenu"
+    >
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
       <div class="toolbar text-right">
@@ -27,14 +31,6 @@
           </x-buttons>
         </div>
       </div>
-      <x-contextmenu>
-        <x-menu>
-          <x-menuitem @click.prevent="formatSql">
-            <x-label>Format query</x-label>
-            <x-shortcut value="Control+Shift+F"></x-shortcut>
-          </x-menuitem>
-        </x-menu>
-      </x-contextmenu>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar @cancel="cancelQuery" v-if="running"></progress-bar>
@@ -341,6 +337,19 @@
       }
     },
     methods: {
+      showContextMenu(event) {
+        this.$bks.openMenu({
+          item: this.tab,
+          options: [
+            {
+              name: "Format Query",
+              slug: 'format',
+              handler: this.formatSql
+            }
+          ],
+          event,
+        })
+      },
       async cancelQuery() {
         if(this.running && this.runningQuery) {
           this.running = false
