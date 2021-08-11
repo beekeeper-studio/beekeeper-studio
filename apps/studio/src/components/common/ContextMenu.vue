@@ -52,7 +52,6 @@ export default Vue.extend({
       if (!menu) {
         return
       }
-      console.log("showing menu")
 
       if (!this.menuWidth || !this.menuHeight) {
         menu.style.visibility = "hidden"

@@ -134,7 +134,6 @@
   import TableListContextMenus from '../../../mixins/TableListContextMenus'
   import PinnedTableList from '@/components/sidebar/core/PinnedTableList.vue'
   import { AppEvent } from '@/common/AppEvent'
-  // import ContextMenu from '@/components/common/ContextMenu.vue'
   export default {
     mixins: [TableFilter, TableListContextMenus],
     components: { TableListItem, TableListSchema, RoutineListItem, PinnedTableList},
