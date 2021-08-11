@@ -31,7 +31,7 @@
                   <x-menuitem
                     v-for="i in Object.keys(sortables)"
                     :key="i"
-                    :toggled="i === sortBy"
+                    :toggled="i === sortOrder"
                     togglable
                     @click="sortConnections(i)"
                   >
@@ -99,7 +99,6 @@
     data: () => ({
       split: null,
       sizes: [60, 40],
-      sortBy: 'name',
       sortables: {
         labelColor: "Color",
         id: "Created",
@@ -109,9 +108,13 @@
     }),
     computed: {
       ...mapState(['connectionConfigs']),
-      ...mapGetters({'usedConfigs': 'orderedUsedConfigs'}),
+      ...mapGetters({
+        'usedConfigs': 'orderedUsedConfigs',
+        'settings': 'settings/settings',
+        'sortOrder': 'settings/sortOrder'
+      }),
       orderedConnectionConfigs() {
-        return _.orderBy(this.connectionConfigs, this.sortBy)
+        return _.orderBy(this.connectionConfigs, this.sortOrder)
       },
       components() {
         return [
@@ -149,7 +152,8 @@
         return `label-${color}`
       },
       sortConnections(by) {
-        this.sortBy = by;
+        this.settings.sortOrder.userValue = by
+        this.settings.sortOrder.save()
       }
     }
   }
