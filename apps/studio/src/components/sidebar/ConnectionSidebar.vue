@@ -20,13 +20,30 @@
       <div class="list saved-connection-list expand" ref="savedConnectionList">
         <div class="list-group">
           <div class="list-heading">
-            <div class="sub row flex-middle noselect">
-              Saved Connections <span class="badge">{{connectionConfigs.length}}</span>
+            <div class="flex flex-between">
+              <div class="sub row flex-middle noselect">
+                Saved Connections <span class="badge">{{connectionConfigs.length}}</span>
+              </div>
+              <x-button class="actions-btn btn btn-flat" title="sort">
+                <i class="material-icons">reorder</i>
+                <i class="material-icons">arrow_drop_down</i>
+                <x-menu>
+                  <x-menuitem
+                    v-for="i in Object.keys(sortables)"
+                    :key="i"
+                    :toggled="i === sortBy"
+                    togglable
+                    @click="sortConnections(i)"
+                  >
+                    <x-label>{{ sortables[i] }}</x-label>
+                  </x-menuitem>
+                </x-menu>
+              </x-button>
             </div>
           </div>
           <nav class="list-body">
               <connection-list-item
-                v-for="c in connectionConfigs"
+                v-for="c in orderedConnectionConfigs"
                 :key="c.id"
                 :config="c"
                 :selectedConfig="selectedConfig"
@@ -72,6 +89,7 @@
 </template>
 
 <script>
+  import _ from 'lodash'
   import { mapState, mapGetters } from 'vuex'
   import ConnectionListItem from './connection/ConnectionListItem'
   import Split from 'split.js'
@@ -81,10 +99,20 @@
     data: () => ({
       split: null,
       sizes: [60, 40],
+      sortBy: 'name',
+      sortables: {
+        labelColor: "Color",
+        id: "Created",
+        name: "Name",
+        connectionType: "Type"
+      }
     }),
     computed: {
       ...mapState(['connectionConfigs']),
       ...mapGetters({'usedConfigs': 'orderedUsedConfigs'}),
+      orderedConnectionConfigs() {
+        return _.orderBy(this.connectionConfigs, this.sortBy)
+      },
       components() {
         return [
           this.$refs.savedConnectionList,
@@ -119,6 +147,9 @@
       },
       getLabelClass(color) {
         return `label-${color}`
+      },
+      sortConnections(by) {
+        this.sortBy = by;
       }
     }
   }
