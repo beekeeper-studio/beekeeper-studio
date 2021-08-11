@@ -1,5 +1,5 @@
 <template>
-  <div class="nav-item-wrap">
+  <div class="nav-item-wrap" @contextmenu="$emit('contextmenu', $event)">
     <li class="nav-item" :title="title + scope">
       <a
         class="nav-link"
@@ -9,7 +9,7 @@
       >
         <i v-if="tab.type === 'table'" :class="iconClass" class="material-icons item-icon table">grid_on</i>
         <i v-else-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
-        <i v-else-if="tab.type === 'table-properties'" class="material-icons item-icon table-properties" :class="iconClass">construction</i>
+        <i v-else-if="tab.type === 'table-properties'" class="material-icons-outlined item-icon table-properties" :class="iconClass">construction</i>
         <i v-else-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
         <i v-else-if="tab.type ==='table-builder'" class="material-icons item-icon table-builder">add</i>
         <i v-else class="material-icons item-icon">new_releases</i>
@@ -22,24 +22,6 @@
         </div>
       </a>
     </li>
-    <x-contextmenu>
-      <x-menu>
-        <x-menuitem @click.prevent="$emit('close', tab)">
-          <x-label>Close</x-label>
-          <x-shortcut value="Control+W"></x-shortcut>
-        </x-menuitem>
-        <x-menuitem @click.prevent="$emit('closeOther', tab)">
-          <x-label>Close Others</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="$emit('closeAll')">
-          <x-label>Close All</x-label>
-        </x-menuitem>
-        <hr>
-        <x-menuitem @click.prevent="$emit('duplicate', tab)">
-          <x-label>Duplicate</x-label>
-        </x-menuitem>
-      </x-menu>
-    </x-contextmenu>
   </div>
 </template>
 <script>

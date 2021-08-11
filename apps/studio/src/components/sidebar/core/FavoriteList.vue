@@ -2,7 +2,7 @@
   <div class="sidebar-favorites flex-col expand">
     <div class="sidebar-list">
       <nav class="list-group" v-if="favorites.length > 0">
-        <div class="list-item" v-for="item in favorites" v-bind:key="item.id">
+        <div @contextmenu.prevent.stop="openContextMenu($event, item)" class="list-item" v-for="item in favorites" v-bind:key="item.id">
           <a class="list-item-btn" @click.prevent="click(item)" :class="{active: selected(item)}">
             <i class="item-icon query material-icons">code</i>
             <!-- <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedFavorites" :class="{ shown: checkedFavorites.length > 0 }"> -->
@@ -10,13 +10,6 @@
               <span class="item-text title truncate expand" :title="item.title">{{item.title}}</span>
               <span class="database subtitle"><span :title="item.database" >{{item.database}}</span></span>
             </div>
-            <x-contextmenu>
-              <x-menu style="--target-align: right; --v-target-align: top;">
-                <x-menuitem @click="remove(item)">
-                  <x-label class="text-danger">Remove</x-label>
-                </x-menuitem>
-              </x-menu>
-            </x-contextmenu>
           </a>
         </div>
       </nav>
@@ -46,6 +39,17 @@
       }
     },
     methods: {
+      openContextMenu(event, item) {
+        this.$bks.openMenu({
+          item, event,
+          options: [
+            {
+              name: "Remove",
+              handler: ({ item }) => this.remove(item)
+            }
+          ]
+        })
+      },
       selected(item) {
         return this.activeTab && this.activeTab.query &&
           this.activeTab.query.id === item.id

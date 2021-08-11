@@ -1,7 +1,7 @@
 <template>
-  <div class="list-item">
+  <div class="list-item" @contextmenu="$emit('contextmenu', $event)">
     <a class="list-item-btn" role="button" v-bind:class="{'active': selected,'open': showArgs }">
-      <span class="btn-fab open-close" @mousedown.prevent="toggleArgs" >
+      <span class="btn-fab open-close" @mousedown.prevent="toggleArgs" @contextmenu.stop.prevent="" >
         <i v-if="displayParams.length > 0" class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>      
       <span class="item-wrapper flex flex-middle expand">
@@ -13,17 +13,6 @@
         <span v-if="pinned" @mousedown.prevent.stop="unpin" class="btn-fab unpin" :title="'Unpin'"><i class="material-icons">clear</i></span>
         <span v-if="pinned" class="btn-fab pinned"><i class="bk-pin" :title="'Unpin'"></i></span>
       </span>
-      <x-contextmenu>
-        <x-menu>
-          <x-menuitem @click.prevent="copyRoutine">
-            <x-label>Copy routine name</x-label>
-          </x-menuitem>
-          <x-menuitem @click.prevent="toggleArgs">
-            <x-label>Toggle arguments</x-label>
-          </x-menuitem>
-          <hr>
-        </x-menu>
-      </x-contextmenu>
     </a>
     <div v-if="showArgs" class="sub-items">
       <!-- <span class="sub-item" v-if="displayParams.length === 0">

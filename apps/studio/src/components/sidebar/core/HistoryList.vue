@@ -2,7 +2,7 @@
   <div class="sidebar-history flex-col expand">
     <div class="sidebar-list">
       <nav class="list-group" v-if="history.length > 0">
-        <div class="list-item" :title="item.text" v-for="item in history" v-bind:key="item.id">
+        <div class="list-item" @contextmenu.prevent.stop="openContextMenu($event, item)" :title="item.text" v-for="item in history" v-bind:key="item.id">
           <a class="list-item-btn" @click.prevent="click(item)">
             <i class="item-icon query material-icons">code</i>
             <!-- <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedHistoryQueries" v-bind:class="{ shown: checkedHistoryQueries.length > 0 }"> -->
@@ -10,13 +10,6 @@
               <span class="item-text expand truncate">{{nicelySized(item.text)}}</span>
               <span class="subtitle"><span>{{item.database}}</span></span>
             </div>
-            <x-contextmenu>
-              <x-menu style="--target-align: right; --v-target-align: top;">
-                <x-menuitem @click="remove(item)">
-                  <x-label class="text-danger">Remove</x-label>
-                </x-menuitem>
-              </x-menu>
-            </x-contextmenu>
           </a>
         </div>
       </nav>
@@ -47,6 +40,17 @@
       }
     },
     methods: {
+      openContextMenu(event, item) {
+        this.$bks.openMenu({
+          event, item,
+          options: [
+            {
+              name: "Remove",
+              handler: ({ item }) => this.remove(item)
+            }
+          ]
+        })
+      },
       click(item) {
         this.$root.$emit("historyClick", item)
       },

@@ -55,6 +55,7 @@
     "pg-hstore": "^2.3.3",
     "pluralize": "^8.0.0",
     "popper.js": "^1.15.0",
+    "portal-vue": "^2.1.7",
     "portfinder": "^1.0.26",
     "query-string": "^7.0.0",
     "reflect-metadata": "^0.1.10",

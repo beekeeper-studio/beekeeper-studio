@@ -6,6 +6,7 @@
       <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
       <auto-updater></auto-updater>
     </div>
+    <portal-target name="menus" multiple />
 </div>
 
 </template>
@@ -21,7 +22,7 @@ import querystring from 'query-string'
 export default {
   name: 'app',
   components: {
-    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater
+    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater 
   },
   data() {
     return {

@@ -16,6 +16,8 @@
           :forceExpand="allExpanded"
           :forceCollapse="allCollapsed"
           :noSelect="true"
+          @contextmenu.prevent.stop="$bks.openMenu({item: p.entity, event: $event, options: tableMenuOptions})"
+
         />
         <routine-list-item
           v-else
@@ -25,6 +27,8 @@
           :pinned="true"
           :forceExpand="forceExpand"
           :forceCollapse="forceCollapse"
+          @contextmenu.prevent.stop="$bks.openMenu({item: p.entity, event: $event, options: routineMenuOptions})"
+
         />
         
       </div>
@@ -38,10 +42,11 @@ import Draggable from 'vuedraggable'
 import { PinnedEntity } from '@/common/appdb/models/PinnedEntity'
 import RoutineListItem from '@/components/sidebar/core/table_list/RoutineListItem.vue'
 import TableListItem from '@/components/sidebar/core/table_list/TableListItem.vue'
-
 import Vue from 'vue'
+import TableListContextMenus from '@/mixins/TableListContextMenus'
 export default Vue.extend({
-  components: { RoutineListItem, Draggable, TableListItem},
+  components: { RoutineListItem, Draggable, TableListItem },
+  mixins: [ TableListContextMenus],
   props: [
     'allExpanded', 'allCollapsed', 'connection'
   ],

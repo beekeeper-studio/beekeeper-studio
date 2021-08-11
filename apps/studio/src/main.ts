@@ -8,7 +8,7 @@ import 'xel/xel'
 import 'codemirror/addon/search/searchcursor'
 import Tabulator from 'tabulator-tables'
 import './filters/pretty-bytes-filter'
-
+import PortalVue from 'portal-vue'
 import App from './App.vue'
 import 'typeface-roboto'
 import 'typeface-source-code-pro'
@@ -92,6 +92,7 @@ import BeekeeperPlugin from './plugins/BeekeeperPlugin'
     Vue.use(ConfigPlugin)
     Vue.use(BeekeeperPlugin)
     Vue.use(VueElectronPlugin)
+    Vue.use(PortalVue)
     Vue.use(VueNoty, {
       timeout: 2300,
       progressBar: true,

@@ -93,6 +93,7 @@
                 :connection="connection"
                 :forceExpand="allExpanded"
                 :forceCollapse="allCollapsed"
+                @contextmenu.prevent.stop="$bks.openMenu({ item: table, event: $event, options: tableMenuOptions})"
               ></table-list-item>
               <routine-list-item
                 v-for="routine in blob.routines"
@@ -103,6 +104,7 @@
                 :connection="connection"
                 :forceExpand="allExpanded"
                 :forceCollapse="allCollapsed"
+                @contextmenu.prevent.stop="$bks.openMenu({item: routine, event: $event, options: routineMenuOptions})"
               >
               </routine-list-item>
             </TableListSchema>
@@ -117,11 +119,8 @@
       <div class="empty" v-else>
         {{tablesLoading}}
       </div>
+
     </div>
-
-
-
-
   </div>
 </template>
 
@@ -132,12 +131,12 @@
   import Split from 'split.js'
   import { mapState, mapGetters } from 'vuex'
   import TableFilter from '../../../mixins/table_filter'
+  import TableListContextMenus from '../../../mixins/TableListContextMenus'
   import PinnedTableList from '@/components/sidebar/core/PinnedTableList.vue'
-import { AppEvent } from '@/common/AppEvent'
-
+  import { AppEvent } from '@/common/AppEvent'
   export default {
-    mixins: [TableFilter],
-    components: { TableListItem, TableListSchema, RoutineListItem, PinnedTableList, },
+    mixins: [TableFilter, TableListContextMenus],
+    components: { TableListItem, TableListSchema, RoutineListItem, PinnedTableList},
     data() {
       return {
         tableLoadError: null,
@@ -146,6 +145,7 @@ import { AppEvent } from '@/common/AppEvent'
         activeItem: 'tables',
         split: null,
         sizes: [25,75],
+
       }
     },
     computed: {
@@ -224,6 +224,7 @@ import { AppEvent } from '@/common/AppEvent'
       },
     },
     methods: {
+
       tableSelected() {
         // this.selectedTable = table
       },

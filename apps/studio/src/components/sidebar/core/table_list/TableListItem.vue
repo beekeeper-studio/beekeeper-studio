@@ -1,7 +1,7 @@
 <template>
-  <div class="list-item">
+  <div class="list-item" @contextmenu="$emit('contextmenu', $event)">
     <a class="list-item-btn" role="button" v-bind:class="{'active': active, 'selected': selected,'open': showColumns }">
-      <span class="btn-fab open-close" @mousedown.prevent="toggleColumns" >
+      <span @contextmenu.prevent.stop="" class="btn-fab open-close" @mousedown.prevent="toggleColumns" >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
       <span class="item-wrapper flex flex-middle expand" @dblclick.prevent="openTable" @mousedown="selectItem">
@@ -13,30 +13,6 @@
         <span v-if="pinned" @mousedown.prevent.stop="unpin" class="btn-fab unpin" :title="'Unpin'"><i class="material-icons">clear</i></span>
         <span v-if="pinned" class="btn-fab pinned"><i class="bk-pin" :title="'Unpin'"></i></span>
       </span>
-      <x-contextmenu>
-        <x-menu>
-
-          <x-menuitem @click.prevent="openTable">
-            <x-label>View Data</x-label>
-          </x-menuitem>
-          <x-menuitem @click.prevent="openTableStructure">
-            <x-label>View Structure</x-label>
-          </x-menuitem>
-          <hr>
-          <x-menuitem @click.prevent="copyTable">
-            <x-label>Copy Name</x-label>
-          </x-menuitem>
-          <x-menuitem @click.prevent="toggleColumns">
-            <x-label>Toggle Columns</x-label>
-          </x-menuitem>
-          <x-menuitem @click.prevent="createTable" v-if="supportsDDL">
-            <x-label>SQL: Create {{table.entityType}}</x-label>
-          </x-menuitem>
-          <x-menuitem @click.prevent="exportTable">
-            <x-label>Export</x-label>
-          </x-menuitem>
-        </x-menu>
-      </x-contextmenu>
     </a>
     <div v-if="showColumns" class="sub-items">
       <span v-bind:key="c.columnName" v-for="(c, i) in table.columns" class="sub-item">
