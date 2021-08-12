@@ -1,30 +1,16 @@
 <template>
-  <div class="create-node-wrapper">
+  <div class="create-node-wrapper" v-hotkey="keymap">
     <!-- create files -->
 
-    <i
-      class="schema-icon item-icon material-icons"
-      v-if="!fileCreation && type !== 'dir'"
-    >
-      description
-    </i>
-
-    <i
-      :class="`item-icon material-icons ${extensionDetected.class}`"
-      v-if="fileCreation"
-    >
-      {{ extensionDetected.icon }}
-    </i>
-
-    <i class="item-icon schema-icon material-icons " v-if="type === 'dir'">
-      folder
+    <i :class="`item-icon  ${inputValidation.class} material-icons `">
+      {{ inputValidation.icon }}
     </i>
 
     <input
       type="text"
-      v-model="node.name"
       :placeholder="placeholder"
-      @keydown.enter="nameValidation"
+      @keydown.enter="create"
+      v-model="title"
       class="node-input"
       ref="nodeInput"
     />
@@ -32,95 +18,125 @@
 </template>
 
 <script>
-const folderTree = require("../../../../../plugins/foldertree");
+import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
+import { Directory } from "@/common/appdb/models/directory";
 
 export default {
   props: ["placeholder", "type", "currentDir"],
   data() {
     return {
-      node: new folderTree.TreeNode(""),
       extensionValidation: this.$store.getters.explorerValidation,
-      extension: this.$store.getters.includedExtension
+      extension: this.$store.getters.includedExtension,
+      title: ""
     };
   },
 
+  mounted() {
+    this.$store.dispatch("setStateInstance", {
+      instance: this.$parent,
+      type: "creation"
+    });
+  },
+
   computed: {
-    extensionDetected() {
-      const result = { valid: false, icon: "", class: "" };
-      const typedExtension = this.node.name.split(".")[1] || "";
-      this.extension.forEach(element => {
-        if (element === typedExtension && this.reg.file.test(this.node.name)) {
-          result.valid = true;
-          result.class = typedExtension;
-
-          switch (typedExtension) {
-            case "query":
-              result.icon = "code";
-              break;
-            case "design":
-              result.icon = "device_hub";
-              break;
-          }
-        }
-      });
-
-      return result;
+    inputValidation() {
+      const result = { icon: "description", class: "schema-icon " };
+      const file = new RegExp(this.extensionValidation.file);
+      const dir = new RegExp(this.extensionValidation.dir);
+      if (this.type === "file" && file.test(this.title)) {
+        result.icon = "code";
+        result.class = "query";
+        return result;
+        //create file
+      } else if (this.type === "dir" && dir.test(this.title)) {
+        result.icon = "folder";
+        return result;
+        // create dir
+      } else {
+        return this.default;
+      }
     },
 
-    fileCreation() {
-      return this.extensionDetected.valid && this.type === "file";
-    },
-
-    reg() {
+    keymap() {
       return {
-        file: new RegExp(this.extensionValidation.file),
-        dir: new RegExp(this.extensionValidation.dir)
+        esc: this.close
       };
+    },
+
+    default() {
+      if (this.type === "file") {
+        return { icon: "description", class: "schema-icon", isValid: false };
+      } else {
+        return { icon: "folder", class: "schema-icon ", isValid: false };
+      }
+    },
+
+    onlyTitle() {
+      if (this.type === "file") {
+        return this.title.split(".")[0];
+      } else {
+        return this.title;
+      }
     }
   },
 
   methods: {
-    nameValidation() {
-      const s = folderTree
-        .nodeNameValidation(this.node, this.type)
-        .then(() => {
-          this.node.path = `${this.currentDir.path}\\${this.node.name}`;
-          console.log(this.node);
-          this.createNode();
-        })
-        .catch(type => {
-          this.error(type);
-        });
+    async create() {
+      if (!this.inputValidation.hasOwnProperty("isValid")) {
+        if (!this.$isExisting(this.type, this.onlyTitle, this.currentDir)) {
+          if (this.type === "file") {
+            const title = this.title.split(".")[0];
+            const query = new FavoriteQuery();
+            query.title = title;
+            query.directory_id = this.currentDir.node.id;
+            query.text = "";
+            await this.$store.dispatch("saveFavorite", query);
+            setTimeout(() => {
+              this.$root.$emit("refreshExplorer");
+              this.close();
+            }, 1);
+          } else if (this.type == "dir") {
+            const currentworkspace = this.$store.getters.currentWorkspace;
+            const dir = new Directory();
+            dir.title = this.title;
+            dir.workspace_id = currentworkspace.id;
+            dir.parent_id = this.currentDir.node.id;
+            dir.deepth = this.currentDir.node.deepth + 1;
+            dir.isWorkspace = 0;
+            await this.$store.dispatch("createDirectory", dir);
+            setTimeout(() => {
+              this.$root.$emit("refreshExplorer");
+              this.close();
+            }, 1);
+          }
+
+          return;
+        } else {
+          this.error("duplicate");
+          return;
+        }
+      }
+
+      this.error(this.type);
     },
 
-    createNode() {
-      const alreadyExist = folderTree.nodeExist(
-        this.currentDir,
-        this.node.name
-      );
-
-      if (!alreadyExist) {
-        folderTree.addNode(this.currentDir, this.node, this.type).then(() => {
-          this.node = new folderTree.TreeNode("");
-          this.$emit("close");
-        });
-      } else {
-        this.error("duplicate");
-      }
+    close() {
+      this.title = "";
+      this.$emit("close");
     },
 
     error(type) {
       switch (type) {
         case "dir":
-          this.$noty.error("Directories can only contain letters.");
-          break;
-        case "file":
           this.$noty.error(
-            "Filename cannot have white spaces or start with special characters or numbers. The Extension accepted are .query and .design"
+            "Directories can only contain letters, underscores(_) or dashes(-)"
           );
           break;
+        case "file":
+          this.$noty.error("Filename cannot have white spaces or numbers.");
+          break;
         case "duplicate":
-          this.$noty.error("File/Directorie already exists.");
+          this.$noty.error("File/Directory already exists.");
           break;
       }
     }

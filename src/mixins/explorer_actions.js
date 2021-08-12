@@ -10,16 +10,16 @@ export default {
 
   computed: {
     currentNode() {
-      return this.selected.node;
+      return this.selected.node || this.$store.getters.currentWorkspace;
     },
     currentDir() {
-      return this.selected.dir;
+      return this.selected.dir || this.$store.getters.currentWorkspace;
     }
   },
 
   methods: {
-    selectFile(file) {
-      this.selected.node = file;
+    selectQuery(query) {
+      this.selected.node = query;
     }
   }
 };

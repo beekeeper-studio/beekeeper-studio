@@ -39,7 +39,7 @@
     "src/**/*.vue",
     "tests/**/*.ts",
     "tests/**/*.tsx"
-  ],
+, "src/plugins/tree.js"  ],
   "exclude": [
     "node_modules"
   ]

@@ -1,33 +1,34 @@
-import { Entity, Column, Index, BeforeInsert, BeforeUpdate } from 'typeorm'
-import { ApplicationEntity  } from './application_entity'
-import { QueryLike } from './base'
+import { Entity, Column, Index, BeforeInsert, BeforeUpdate } from "typeorm";
+import { ApplicationEntity } from "./application_entity";
+import { QueryLike } from "./base";
 
-@Entity({ name: 'favorite_query' })
+@Entity({ name: "favorite_query" })
 export class FavoriteQuery extends ApplicationEntity implements QueryLike {
+  @Column({ type: "varchar", nullable: false })
+  title!: string;
 
-  @Column({type: "varchar", nullable: false})
-  title!: string
+  @Column({ type: "integer", nullable: false })
+  directory_id!: number;
 
-  @Column({type: "text", nullable: false})
-  text!: string
+  @Column({ type: "text", nullable: false })
+  text!: string;
 
-  @Column({type: "varchar", nullable: true})
-  database: string | null = null
+  @Column({ type: "varchar", nullable: true })
+  database: string | null = null;
 
   @Index()
-  @Column({type: "varchar", nullable: false})
-  connectionHash!: string
+  @Column({ type: "varchar", nullable: false })
+  connectionHash!: string;
 
   @BeforeInsert()
   @BeforeUpdate()
   setDefaultDatabase() {
     // shouldn't be not null, so need a default
     if (!this.database) {
-      this.database = '[blank]'
+      this.database = "[blank]";
     }
     if (!this.connectionHash) {
-      this.connectionHash = 'DEPRECATED'
+      this.connectionHash = "DEPRECATED";
     }
   }
-
 }

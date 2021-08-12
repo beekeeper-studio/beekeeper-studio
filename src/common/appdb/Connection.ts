@@ -5,8 +5,8 @@ import { UsedConnection } from "./models/used_connection";
 import { UsedQuery } from "./models/used_query";
 import { FavoriteQuery } from "./models/favorite_query";
 import { UserSetting } from "./models/user_setting";
-import { Workspace } from "./models/workspace";
 import { LoggerOptions } from "typeorm/logger/LoggerOptions";
+import { Directory } from "./models/directory";
 
 const models = [
   SavedConnection,
@@ -14,7 +14,7 @@ const models = [
   UsedQuery,
   FavoriteQuery,
   UserSetting,
-  Workspace
+  Directory
 ];
 
 export default class Connection {

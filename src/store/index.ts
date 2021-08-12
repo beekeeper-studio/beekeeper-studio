@@ -12,6 +12,7 @@ import ConnectionProvider from "../lib/connection-provider";
 import ExportStoreModule from "./modules/exports/ExportStoreModule";
 import SettingStoreModule from "./modules/settings/SettingStoreModule";
 import { DBConnection } from "../lib/db/client";
+import { selectConnection } from "./orm_helper";
 import {
   ExtendedTableColumn,
   Routine,
@@ -20,10 +21,11 @@ import {
 } from "../lib/db/models";
 import { IDbConnectionPublicServer } from "../lib/db/server";
 import { CoreTab, EntityFilter } from "./models";
-import { FolderStructre } from "./foldertree";
+import { FolderStructre } from "./tree";
 import { entityFilter } from "../lib/db/sql_tools";
 
 import RawLog from "electron-log";
+import { Directory } from "@/common/appdb/models/directory";
 
 const log = RawLog.scope("store/index");
 
@@ -82,18 +84,43 @@ const store = new Vuex.Store<State>({
     activeTab: null,
     selectedSidebarItem: null,
     explorer: {
-      extension: ["query", "design"],
+      extension: ["query"], // "design"
       validation: {
-        dir: "^[a-zA-Z]+$",
-        file: "^[a-zA-Z]+.(query|design)$"
+        dir: "^[_A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*$",
+        file: "^[a-zA-Z_-]+\\.(query)$" // "^[a-zA-Z]+.(query|design)$"
       },
-      rootPath: "",
-      rename: {
-        instanceActive: null
+      workspace: {
+        all: [],
+        current: ""
+      },
+      directories: [],
+      files: {
+        queries: [],
+        deisgns: []
+      },
+      nodeActions: {
+        renameInstance: null,
+        creationInstance: null
       }
     }
   },
   getters: {
+    allDirectories(state) {
+      return state.explorer.directories;
+    },
+
+    allWorkspaces(state) {
+      return state.explorer.workspace.all;
+    },
+
+    allQueries(state) {
+      return state.explorer.files.queries;
+    },
+
+    currentWorkspace(state) {
+      return state.explorer.workspace.current;
+    },
+
     includedExtension(state) {
       return state.explorer.extension;
     },
@@ -313,11 +340,64 @@ const store = new Vuex.Store<State>({
       state.favorites = _.without(state.favorites, favorite);
     },
 
-    setRenameInstance(state: State, instance = null) {
-      if (state.explorer.rename.instanceActive !== null) {
-        state.explorer.rename.instanceActive.renameState.trigger = false;
+    setStateInstance(state: State, data) {
+      switch (data.type) {
+        case "creation":
+          if (state.explorer.nodeActions.creationInstance !== null) {
+            state.explorer.nodeActions.creationInstance.state.creationTrigger = false;
+          }
+          state.explorer.nodeActions.creationInstance = data.instance;
+          break;
+        case "rename":
+          if (state.explorer.nodeActions.renameInstance !== null && state.explorer.nodeActions.renameInstance !== data.instance) {
+            state.explorer.nodeActions.renameInstance.state.renameTrigger = false;
+          }
+          state.explorer.nodeActions.renameInstance = data.instance;
+          break;
       }
-      state.explorer.rename.instanceActive = instance;
+    },
+
+    async createWorkspace(state: State, workspace) {
+      workspace.database = state.database;
+      await workspace.save();
+    },
+
+    async createDirectory(state: State, directory) {
+      directory.database = state.database;
+      await directory.save();
+    },
+
+    setWorkspace(state: State, workspace) {
+      state.explorer.workspace.current = workspace;
+    },
+
+    async fetchDirectories(state: State, workspace) {
+      const dirArr = await selectConnection("directory", Directory)
+        .where("directory.workspace_id = :id", {
+          id: workspace.id
+        })
+        .orderBy("deepth", "ASC")
+        .getMany();
+      state.explorer.directories = dirArr;
+    },
+
+    async fetchQueries(state: State, workspace) {
+      const queriesArr = await selectConnection("favorite_query", FavoriteQuery)
+        .innerJoinAndSelect(
+          "directory",
+          "directory",
+          "directory.id = favorite_query.directory_id"
+        )
+        .where("directory.workspace_id = :id or directory.id = :dirid", {
+          id: workspace.id,
+          dirid: workspace.id
+        })
+        .getMany();
+      state.explorer.files.queries = queriesArr;
+    },
+
+    async removeDirectory(state: State, dir) {
+      await dir.remove();
     }
   },
   actions: {
@@ -351,6 +431,16 @@ const store = new Vuex.Store<State>({
 
     async connect(context, config: SavedConnection) {
       if (context.state.username) {
+        // TODO select workspace from last session directly
+
+        await selectConnection("directory", Directory)
+          .where("isWorkspace = :id", { id: 1 })
+          .orderBy("createdAt", "DESC")
+          .getMany()
+          .then(res => {
+            context.state.explorer.workspace.all = res;
+          });
+
         const server = ConnectionProvider.for(config, context.state.username);
         // TODO: (geovannimp) Check case connection is been created with undefined as key
         const connection = server.createConnection(
@@ -562,7 +652,6 @@ const store = new Vuex.Store<State>({
       await query.save();
       // otherwise it's already there!
       if (!context.state.favorites.includes(query)) {
-        console.log("here");
         context.commit("favoritesAdd", query);
       }
     },
@@ -571,6 +660,11 @@ const store = new Vuex.Store<State>({
       await favorite.remove();
       context.commit("removeUsedFavorite", favorite);
     },
+
+    async removeDirectory(context, dir) {
+      context.commit("removeDirectory", dir);
+    },
+
     async removeHistoryQuery(context, historyQuery) {
       await historyQuery.remove();
       context.commit("historyRemove", historyQuery);
@@ -582,8 +676,28 @@ const store = new Vuex.Store<State>({
       context.commit("tabActive", value);
     },
 
-    async setRenameInstance(context, instance) {
-      context.commit("setRenameInstance", instance);
+    async setStateInstance(context, data) {
+      context.commit("setStateInstance", data);
+    },
+
+    async createWorkspace(context, workspace) {
+      context.commit("createWorkspace", workspace);
+    },
+
+    async setWorkspace(context, workspace) {
+      context.commit("setWorkspace", workspace);
+    },
+
+    async fetchDirectories(context, workspace) {
+      context.commit("fetchDirectories", workspace);
+    },
+
+    async fetchQueries(context, workspace) {
+      context.commit("fetchQueries", workspace);
+    },
+
+    async createDirectory(context, directory) {
+      context.commit("createDirectory", directory);
     }
   },
   plugins: []

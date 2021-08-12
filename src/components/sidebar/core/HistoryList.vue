@@ -35,7 +35,7 @@
   import { mapState } from 'vuex'
 
   export default {
-    data: function () {
+    data() {
       return {
         checkedHistoryQueries: []
       }

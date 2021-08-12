@@ -1,18 +1,18 @@
 <template>
   <div class="list-item extra-padding">
-    <a class="list-item-btn" role="button">
+    <a class="list-item-btn" role="button" @click="click(query.node)">
       <span class="item-wrapper flex flex-middle expand">
-        <i :class="`item-icon ${fileType.class} material-icons`">
-          {{ fileType.icon }}
+        <i :class="`item-icon query material-icons`">
+          code
         </i>
         <RenameNode
           :currentNode="currentNode"
-          :currentDir="currentDir"
-          @closeRename="close"
-          v-if="renameState.trigger"
+          :type="'file'"
+          @close="close"
+          v-if="state.renameTrigger"
         ></RenameNode>
         <span class="folder-name-unselected truncate" v-else>
-          {{ file.name }}
+          {{ query.node.title }}
         </span>
       </span>
       <x-contextmenu>
@@ -21,7 +21,7 @@
             <x-label>Rename</x-label>
           </x-menuitem>
           <hr />
-          <x-menuitem @click.prevent="remove">
+          <x-menuitem @click.prevent="remove(query)">
             <x-label class="text-danger">Remove</x-label>
           </x-menuitem>
         </x-menu>
@@ -36,41 +36,37 @@ import { mapState } from "vuex";
 
 export default {
   name: "explorer-list-file",
-  props: ["file", "currentNode", "currentDir"],
+  props: ["query", "currentNode"],
   data() {
     return {
-      renameState: {
-        trigger: false
+      state: {
+        renameTrigger: false
       }
     };
   },
   components: { RenameNode },
   computed: {
-    ...mapState(["favorites"]),
-    fileType() {
-      const result = { class: this.file.type, icon: "" };
-      switch (this.file.type) {
-        case "query":
-          result.icon = "code";
-          return result;
-        case "design":
-          result.icon = "device_hub";
-          return result;
-        default:
-          return result;
-      }
-    }
+    ...mapState(["favorites"])
   },
 
   methods: {
     async select() {
-      const query = await this.$store.state.connection.database;
-      this.$emit("selectFile", this.file);
-      this.renameState.trigger = true;
+      this.$emit("select", this.query);
+      this.state.renameTrigger = true;
+    },
+
+    click(query) {
+      this.$root.$emit("favoriteClick", query);
     },
 
     close() {
-      this.renameState.trigger = false;
+      this.state.renameTrigger = false;
+    },
+
+    async remove(query) {
+      await this.$store.dispatch("removeFavorite", query.node);
+
+      this.$root.$emit("refreshExplorer");
     }
   }
 };

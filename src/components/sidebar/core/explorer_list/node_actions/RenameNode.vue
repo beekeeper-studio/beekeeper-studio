@@ -1,5 +1,5 @@
 <template>
-  <div class="create-node-wrapper">
+  <div class="rename-node-wrapper" v-hotkey="keymap">
     <input
       type="text"
       v-model="name"
@@ -11,89 +11,77 @@
 </template>
 
 <script>
-const folderTree = require("../../../../../plugins/foldertree");
-
 export default {
-  props: ["currentNode", "currentDir"],
+  props: ["currentNode", "type"],
 
   mounted() {
     const input = this.$refs.nodeInput;
-    const store = this.$store;
     input.focus();
     input.setSelectionRange(0, this.nameLength);
-    // any other idea than this more then welcome bcause i could not figure out anything else (not that deep into vuejs apparently :) )
-    store.dispatch("setRenameInstance", this.$parent);
+    this.$store.dispatch("setStateInstance", {
+      instance: this.$parent,
+      type: "rename"
+    });
   },
 
   data() {
     return {
-      name: this.currentNode.name || ""
+      name: this.currentNode.node.title || ""
     };
   },
 
   computed: {
-    type() {
-      switch (this.currentNode.type) {
-        case "query":
-          return "file";
-        case "design":
-          return "file";
-        case "dir":
-          return "dir";
-        default:
-          return "";
-      }
+    keymap() {
+      return {
+        esc: this.close
+      };
     },
 
     nameLength() {
-      if (this.currentNode.type !== "dir") {
-        const nameSplitted = this.currentNode.name.split(".")[0];
-        return nameSplitted.length;
+      return this.currentNode.node.title.length;
+    },
+
+    errorType() {
+      if (this.type === "file") {
+        return `${this.type[0].toUpperCase()}ile`;
       } else {
-        return this.currentNode.name.length;
+        return `Directory`;
       }
     }
   },
 
   methods: {
-    rename() {
-      const node = new folderTree.TreeNode("");
-      node.name = this.name;
-      folderTree
-        .nodeNameValidation(node, this.type)
-        .then(() => {
-          folderTree
-            .renameNode(this.currentNode.path, this.name, this.currentDir)
-            .then(() => {
-              this.$noty.success("Successfully renamed!");
-              this.$root.$emit("refreshExplorer");
-              this.$emit("closeRename", this.type);
-            })
-            .catch(err => {
-              this.$noty.error(err.message);
-              this.$emit("closeRename", this.type);
-            });
-        })
-        .catch(type => {
-          if (type === "dir") {
-            this.$noty.error(`Directories can only contain letters`);
-          } else {
-            this.$noty.error(
-              `Files can only contain letters with the appropriate extensions.`
-            );
-          }
-        });
+    close(node) {
+      this.$emit("close", node);
     },
 
-    close() {
-      this.$emit("close");
+    async rename() {
+      const isExisting = this.$isExisting(
+        this.type,
+        this.name,
+        this.currentNode
+      );
+
+      if (isExisting) {
+        this.$noty.error(`${this.errorType} already exists`);
+        return;
+      }
+
+      this.currentNode.node.title = this.name;
+
+      if (this.type === "file") {
+        await this.$store.dispatch("saveFavorite", this.currentNode.node);
+      } else if (this.type === "dir") {
+        await this.$store.dispatch("createDirectory", this.currentNode.node);
+      }
+      this.close(this.currentNode);
     }
   }
 };
 </script>
 
 <style lang="scss" scoped>
-.create-node-wrapper {
+.rename-node-wrapper {
   display: flex;
   align-items: center;
 

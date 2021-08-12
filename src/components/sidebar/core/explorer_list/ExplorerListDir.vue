@@ -1,11 +1,7 @@
 <template>
   <div class="list-item" :style="indent">
     <a class="list-item-btn" role="button" :class="{ open: showColumns }">
-      <span
-        class="btn-fab open-close"
-        @mousedown.prevent="toggleColumns"
-        @click.prevent="select(node)"
-      >
+      <span class="btn-fab open-close" @click.prevent="selectDir(node)">
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
       <span class="item-wrapper flex flex-middle expand">
@@ -13,29 +9,33 @@
           folder
         </i>
         <RenameNode
-          :currentNode="currentNode"
-          :currentDir="currentDir"
-          @closeRename="close"
-          v-if="renameState.trigger"
+          :currentNode="currentDir"
+          :type="'dir'"
+          @close="closeRename"
+          v-if="state.renameTrigger"
         ></RenameNode>
-        <span class="folder-name-unselected truncate" :ref="node.name" v-else>
-          {{ node.name }}
+        <span
+          class="folder-name-unselected truncate"
+          :ref="node.node.title"
+          v-else
+        >
+          {{ node.node.title }}
         </span>
       </span>
 
       <x-contextmenu>
         <x-menu>
-          <x-menuitem @click.prevent="createState('dir')">
+          <x-menuitem @click.prevent="createState('dir', node)">
             <x-label>New Folder</x-label>
           </x-menuitem>
-          <x-menuitem @click.prevent="createState('file')">
+          <x-menuitem @click.prevent="createState('file', node)">
             <x-label>New File</x-label>
           </x-menuitem>
-          <x-menuitem @click.prevent="createState('rename')">
+          <x-menuitem @click.prevent="createState('rename', node)">
             <x-label>Rename</x-label>
           </x-menuitem>
           <hr />
-          <x-menuitem @click.prevent="remove">
+          <x-menuitem @click.prevent="remove(node.node)">
             <x-label class="text-danger">Remove</x-label>
           </x-menuitem>
         </x-menu>
@@ -44,7 +44,7 @@
 
     <div v-if="showColumns" class="sub-items">
       <NodeActions
-        v-show="nodeData.trigger && nodeData.actionType !== 'rename'"
+        v-show="state.creationTrigger"
         :placeholder="nodeData.placeholder"
         :type="nodeData.actionType"
         :currentDir="currentDir"
@@ -52,16 +52,15 @@
       ></NodeActions>
 
       <explorer-list-file
-        v-for="file in files"
-        :key="file.name"
-        :file="file"
-        @selectFile="selectFile"
+        v-for="query in queries"
+        :key="query.name"
+        :query="query"
+        @select="selectQuery"
         :currentNode="currentNode"
-        :currentDir="currentDir"
       ></explorer-list-file>
       <explorer-list-dir
         v-for="dir in directories"
-        :key="dir.name"
+        :key="dir.title"
         :node="dir"
         :depth="depth + 1"
       ></explorer-list-dir>
@@ -90,12 +89,12 @@ export default {
       showColumns: false,
       id: uuidv4(),
 
-      renameState: {
-        trigger: false
+      state: {
+        renameTrigger: false,
+        creationTrigger: false
       },
-
+      // nodeData is not really describing the variable good //TODO Rename it properly
       nodeData: {
-        trigger: false,
         placeholder: "",
         actionType: ""
       }
@@ -113,14 +112,14 @@ export default {
       return dirArr;
     },
 
-    files() {
-      const fileArr = this.node.children.filter(element => {
+    queries() {
+      const queriesArr = this.node.children.filter(element => {
         if (element.type !== "dir") {
           return element;
         }
       });
 
-      return fileArr;
+      return queriesArr;
     },
 
     indent() {
@@ -137,48 +136,105 @@ export default {
       this.showColumns = !this.showColumns;
     },
 
-    select(node) {
-      for (const key in this.$refs) {
-        const spanElement = this.$refs[key];
-        if (spanElement.classList.contains("folder-name-selected")) {
-          spanElement.classList.replace(
-            "folder-name-selected",
-            "folder-name-unselected"
-          );
-          return;
-        }
-        spanElement.classList.add("folder-name-selected");
+    selectDir(node) {
+      this.toggleColumns();
+      const spanElement = this.$refs[node.node.title];
+      if (spanElement.classList.contains("folder-name-selected")) {
+        spanElement.classList.replace(
+          "folder-name-selected",
+          "folder-name-unselected"
+        );
+        this.setDir();
+        return;
       }
 
-      this.selected.dir = node;
-      this.selected.node = node;
+      spanElement.classList.replace(
+        "folder-name-unselected",
+        "folder-name-selected"
+      );
+
+      this.setDir(node);
     },
 
-    createState(actionTyp) {
-      this.select(this.node);
-      this.nodeData.trigger = true;
-      this.showColumns = true;
-      this.nodeData.actionType = actionTyp;
-
-      switch (actionTyp) {
+    createState(actionType, node) {
+      this.nodeData.actionType = actionType;
+      switch (actionType) {
         case "dir":
+          this.correctSelection(node, actionType);
           this.nodeData.placeholder = "Foldername";
+          this.state.creationTrigger = true;
+
           break;
         case "file":
+          this.correctSelection(node, actionType);
           this.nodeData.placeholder = "Filename";
+          this.state.creationTrigger = true;
+
           break;
         case "rename":
-          this.renameState.trigger = true;
+          this.state.renameTrigger = true;
           break;
+      }
+    },
+
+    async remove(node) {
+      // safety measuere should be implemented because one time go and brrrr goes all files
+      // TODO find the las currentDir after the one is deleted (Treestructure would be best)
+      await this.$store.dispatch("removeDirectory", node);
+      setTimeout(() => {
+        this.$root.$emit("refreshExplorer");
+      }, 1);
+
+      console.log(this.selected);
+    },
+
+    correctSelection(node, actionType) {
+      if (actionType !== "rename") {
+        const span = this.$refs[node.node.title];
+        if (span.classList.contains("folder-name-unselected")) {
+          this.selectDir(node);
+          return;
+        }
+        this.setDir(node);
+      } else {
+        this.setDir(node);
       }
     },
 
     close() {
       this.nodeData = {
-        trigger: false,
         placeholder: "",
         type: ""
       };
+      this.state.creationTrigger = false;
+    },
+
+    closeRename(node) {
+      this.state.renameTrigger = false;
+      setTimeout(() => {
+        this.selectDirWithoutTooggle(node); // its acting here then as a normal file
+      }, 1);
+    },
+
+    setDir(node = null) {
+      this.selected.dir = node;
+      this.selected.node = node;
+    },
+
+    selectDirWithoutTooggle(node) {
+      const spanElement = this.$refs[node.node.title];
+      if (spanElement.classList.contains("folder-name-selected")) {
+        spanElement.classList.replace(
+          "folder-name-selected",
+          "folder-name-unselected"
+        );
+        return;
+      }
+
+      spanElement.classList.replace(
+        "folder-name-unselected",
+        "folder-name-selected"
+      );
     }
   }
 };

@@ -3,18 +3,18 @@
   <div class="schema-wrapper">
     <explorer-list-dir
       v-for="dir in directories"
-      :key="dir.name"
+      :key="dir.title"
       :node="dir"
       :depth="0"
     ></explorer-list-dir>
 
     <explorer-list-file
-      v-for="file in files"
-      :key="file.name"
-      :file="file"
+      v-for="query in queries"
+      :key="query.name"
+      :query="query"
       :currentNode="currentNode"
       :currentDir="currentDir"
-      @selectFile="selectFile"
+      @select="selectQuery"
     ></explorer-list-file>
   </div>
 </template>
@@ -53,14 +53,13 @@ export default {
       return dirArr;
     },
 
-    files() {
-      const fileArr = this.tree.children.filter(element => {
-        if (element.type !== "dir") {
+    queries() {
+      const queriesArr = this.tree.children.filter(element => {
+        if (element.type === "query") {
           return element;
         }
       });
-
-      return fileArr;
+      return queriesArr;
     }
   }
 };

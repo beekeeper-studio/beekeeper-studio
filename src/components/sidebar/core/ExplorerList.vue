@@ -1,16 +1,20 @@
 <template>
   <div class="flex-col expand" ref="wrapper">
     <!-- Fake splitjs Gutter styling -->
-    <div v-if="explorer.selected" class="table-list flex-col" ref="tables">
+    <div
+      v-if="explorer.workspaceSelected"
+      class="table-list flex-col"
+      ref="tables"
+    >
       <nav class="list-group flex-col">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
             <div>
-              {{ rootDirName }}
+              {{ workspaceName }}
             </div>
           </div>
           <div class="actions">
-            <a @click.prevent="collapseAll" title="'Collapse All'">
+            <!-- <a @click.prevent="collapseAll" title="'Collapse All'">
               <i class="material-icons">unfold_less</i>
             </a>
             <a title="New Folder">
@@ -18,40 +22,39 @@
             </a>
             <a title="New File">
               <i class="material-icons">add</i>
-            </a>
-            <a title="'Refresh'" @click.prevent="refreshExplorer">
+            </a> -->
+            <a title="'Refresh'">
               <i class="material-icons">refresh</i>
             </a>
           </div>
         </div>
 
-        <div class="list-body" ref="entityContainer">
+        <div class="list-body">
           <div class="with-schemas">
-            <explorer-list-schema
-              v-show="explorer.selected"
-              :tree="explorer.tree"
-            >
-            </explorer-list-schema>
+            <explorer-list-schema :tree="tree"> </explorer-list-schema>
           </div>
         </div>
       </nav>
     </div>
 
-    <div class="empty" v-if="explorer.tree.length === 0">
-      <button @click="selectWorkspace">
-        Workspace <i class="schema-icon material-icons">drive_folder_upload</i>
-      </button>
-    </div>
+    <WorkspaceList
+      @create="createWorkspace"
+      @select="selectWorkspace"
+      v-if="!explorer.workspaceSelected"
+    ></WorkspaceList>
   </div>
 </template>
 
 <script>
 import ExplorerListSchema from "./explorer_list/ExplorerListSchema.vue";
-import { Workspace } from "../../../common/appdb/models/workspace";
-const folderTree = require("../../../plugins/foldertree");
+import WorkspaceList from "./WorkspaceList.vue";
+import { Directory } from "@/common/appdb/models/directory";
+import { uuidv4 } from "@/lib/uuid";
+const tree = require("../../../plugins/TreePlugin");
 export default {
   components: {
-    ExplorerListSchema
+    ExplorerListSchema,
+    WorkspaceList
   },
 
   mounted() {
@@ -65,46 +68,64 @@ export default {
   data() {
     return {
       explorer: {
-        rootPath: this.$store.getters.selectedPath || "",
-        tree: [],
-        selected: false
+        workspaceSelected: false,
+        tree: null
       },
-      rootBindings: [
-        { event: "refreshExplorer", handler: this.refreshExplorer }
-      ]
+      rootBindings: [{ event: "refreshExplorer", handler: this.refresh }]
     };
   },
 
   computed: {
-    rootDirName() {
-      const nameArr = this.explorer.rootPath.split("\\");
-      return nameArr[nameArr.length - 1];
+    workspaceName() {
+      return this.$store.getters.currentWorkspace.title;
+    },
+
+    tree() {
+      return this.explorer.tree;
     }
   },
 
   methods: {
-    async selectWorkspace() {
-      const space = new Workspace();
-      space.name = "nahhh";
-      space.database = "nahhahahha";
-      await space.save(space);
+    async selectWorkspace(workspace) {
+      await this.$store.dispatch("setWorkspace", workspace);
+      await this.$store.dispatch("fetchDirectories", workspace);
+      await this.$store.dispatch("fetchQueries", workspace);
+      setTimeout(() => {
+        const dir = this.$store.getters.allDirectories;
+        const queries = this.$store.getters.allQueries;
+        const root = this.createTree(workspace, dir, queries);
+        this.explorer.tree = root;
+        this.explorer.workspaceSelected = true;
+      }, 1); // 1ms delay needed to get the value from the store otherwise its an empty array
+    },
+
+    createWorkspace() {
+      this.$store.dispatch("createWorkspace");
+    },
+
+    createTree(workspace = null, dir = null, queries = null) {
+      const d = dir || this.$store.getters.allDirectories;
+      const q = queries || this.$store.getters.allQueries;
+      const root = this.$createTree(workspace, d, q);
+      return root;
     },
 
     expandAll() {
       this.allExpanded = Date.now();
     },
+
     collapseAll() {
       this.allCollapsed = Date.now();
     },
-    refreshExplorer() {
-      this.createTree();
-    },
 
-    createTree(path, options) {
-      const finalPath = path || this.explorer.rootPath;
-      const tree = folderTree.buildTree(finalPath, options);
-      this.explorer.tree = tree;
-      return tree;
+    async refresh() {
+      const workspace = this.$store.getters.currentWorkspace;
+      await this.$store.dispatch("fetchQueries", workspace);
+      await this.$store.dispatch("fetchDirectories", workspace);
+      setTimeout(() => {
+        const root = this.createTree(workspace);
+        this.explorer.tree = root;
+      }, 2);
     }
   }
 };
