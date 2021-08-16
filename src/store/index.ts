@@ -101,6 +101,11 @@ const store = new Vuex.Store<State>({
       nodeActions: {
         renameInstance: null,
         creationInstance: null
+      },
+      selectState: {
+        dir: [],
+        node: null,
+        parentDir: null
       }
     }
   },
@@ -119,6 +124,20 @@ const store = new Vuex.Store<State>({
 
     currentWorkspace(state) {
       return state.explorer.workspace.current;
+    },
+
+    currentParentNode(state) {
+      return (
+        state.explorer.selectState.parentDir || state.explorer.workspace.current
+      );
+    },
+
+    currentDirectory(state) {
+      return (
+        state.explorer.selectState.dir[
+          state.explorer.selectState.dir.length - 1
+        ] || state.explorer.workspace.current
+      );
     },
 
     includedExtension(state) {
@@ -349,7 +368,10 @@ const store = new Vuex.Store<State>({
           state.explorer.nodeActions.creationInstance = data.instance;
           break;
         case "rename":
-          if (state.explorer.nodeActions.renameInstance !== null && state.explorer.nodeActions.renameInstance !== data.instance) {
+          if (
+            state.explorer.nodeActions.renameInstance !== null &&
+            state.explorer.nodeActions.renameInstance !== data.instance
+          ) {
             state.explorer.nodeActions.renameInstance.state.renameTrigger = false;
           }
           state.explorer.nodeActions.renameInstance = data.instance;
@@ -398,6 +420,25 @@ const store = new Vuex.Store<State>({
 
     async removeDirectory(state: State, dir) {
       await dir.remove();
+    },
+
+    setSelectDirectory(state: State, node) {
+      state.explorer.selectState.dir.push(node);
+    },
+
+    setSelectNode(state: State, node) {
+      state.explorer.selectState.node = node;
+    },
+
+    setParentNode(state: State, node) {
+      state.explorer.selectState.parentDir = node;
+    },
+
+    removeSelectDirectory(state: State, node) {
+      state.explorer.selectState.dir = _.without(
+        state.explorer.selectState.dir,
+        node
+      );
     }
   },
   actions: {
@@ -698,6 +739,23 @@ const store = new Vuex.Store<State>({
 
     async createDirectory(context, directory) {
       context.commit("createDirectory", directory);
+    },
+
+    async setSelectDirectory(context, node) {
+      context.commit("setSelectDirectory", node);
+      context.commit("setSelectNode", node);
+    },
+
+    async setSelectNode(context, node) {
+      context.commit("setSelectNode", node);
+    },
+
+    async removeSelectDirectory(context, node) {
+      context.commit("removeSelectDirectory", node);
+    },
+
+    async setParentNode(context, node) {
+      context.commit("setParentNode", node);
     }
   },
   plugins: []

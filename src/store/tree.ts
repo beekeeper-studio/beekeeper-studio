@@ -5,4 +5,5 @@ export interface FolderStructre {
   workspace: { [key: string]: any };
   directories: any;
   files: {[key:string]: any};
+  selectState: {[key:string]: any}
 }

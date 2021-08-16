@@ -12,7 +12,7 @@
 
 <script>
 export default {
-  props: ["currentNode", "type"],
+  props: ["currentNode", "type", "currentParentNode"],
 
   mounted() {
     const input = this.$refs.nodeInput;
@@ -51,15 +51,15 @@ export default {
   },
 
   methods: {
-    close(node) {
-      this.$emit("close", node);
+    close() {
+      this.$emit("close", this.currentNode);
     },
 
     async rename() {
       const isExisting = this.$isExisting(
-        this.type,
         this.name,
-        this.currentNode
+        this.currentParentNode,
+        this.type
       );
 
       if (isExisting) {

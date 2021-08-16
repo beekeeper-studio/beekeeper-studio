@@ -23,7 +23,7 @@
             <a title="New File">
               <i class="material-icons">add</i>
             </a> -->
-            <a title="'Refresh'">
+            <a title="'Refresh'" @click="refresh">
               <i class="material-icons">refresh</i>
             </a>
           </div>
@@ -38,7 +38,6 @@
     </div>
 
     <WorkspaceList
-      @create="createWorkspace"
       @select="selectWorkspace"
       v-if="!explorer.workspaceSelected"
     ></WorkspaceList>
@@ -77,7 +76,7 @@ export default {
 
   computed: {
     workspaceName() {
-      return this.$store.getters.currentWorkspace.title;
+      return this.$store.getters.currentWorkspace.node.title;
     },
 
     tree() {
@@ -90,17 +89,14 @@ export default {
       await this.$store.dispatch("setWorkspace", workspace);
       await this.$store.dispatch("fetchDirectories", workspace);
       await this.$store.dispatch("fetchQueries", workspace);
-      setTimeout(() => {
+      setTimeout(async () => {
         const dir = this.$store.getters.allDirectories;
         const queries = this.$store.getters.allQueries;
         const root = this.createTree(workspace, dir, queries);
+        await this.$store.dispatch("setWorkspace", root);
         this.explorer.tree = root;
         this.explorer.workspaceSelected = true;
-      }, 1); // 1ms delay needed to get the value from the store otherwise its an empty array
-    },
-
-    createWorkspace() {
-      this.$store.dispatch("createWorkspace");
+      }, 1); // 1ms delay is needed to get the value from the store otherwise its null
     },
 
     createTree(workspace = null, dir = null, queries = null) {
@@ -110,16 +106,10 @@ export default {
       return root;
     },
 
-    expandAll() {
-      this.allExpanded = Date.now();
-    },
+    async refresh(buttonTrigger = null) {
+      if (buttonTrigger !== null) this.$noty.info("Explorer refreshed");
 
-    collapseAll() {
-      this.allCollapsed = Date.now();
-    },
-
-    async refresh() {
-      const workspace = this.$store.getters.currentWorkspace;
+      const workspace = this.$store.getters.currentWorkspace.node;
       await this.$store.dispatch("fetchQueries", workspace);
       await this.$store.dispatch("fetchDirectories", workspace);
       setTimeout(() => {

@@ -1,0 +1,14 @@
+--- workspace
+     -- erster
+         -- file
+     -- zweiter
+         -- file
+         -- second_layer
+             -- file
+     -- file
+
+
+
+device_hub, design=class
+
+man muss zweimal new file anklicken damit es funktioniert

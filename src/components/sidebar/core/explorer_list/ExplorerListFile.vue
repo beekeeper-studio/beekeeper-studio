@@ -1,12 +1,13 @@
 <template>
   <div class="list-item extra-padding">
-    <a class="list-item-btn" role="button" @click="click(query.node)">
+    <a class="list-item-btn" role="button" @click="click(query)">
       <span class="item-wrapper flex flex-middle expand">
         <i :class="`item-icon query material-icons`">
           code
         </i>
         <RenameNode
           :currentNode="currentNode"
+          :currentParentNode="currentParentNode"
           :type="'file'"
           @close="close"
           v-if="state.renameTrigger"
@@ -17,7 +18,7 @@
       </span>
       <x-contextmenu>
         <x-menu>
-          <x-menuitem @click.prevent="select">
+          <x-menuitem @click.prevent="renameState">
             <x-label>Rename</x-label>
           </x-menuitem>
           <hr />
@@ -36,7 +37,7 @@ import { mapState } from "vuex";
 
 export default {
   name: "explorer-list-file",
-  props: ["query", "currentNode"],
+  props: ["query", "currentNode", "currentParentNode"],
   data() {
     return {
       state: {
@@ -50,13 +51,14 @@ export default {
   },
 
   methods: {
-    async select() {
+    async renameState() {
       this.$emit("select", this.query);
       this.state.renameTrigger = true;
     },
 
     click(query) {
-      this.$root.$emit("favoriteClick", query);
+      this.$root.$emit("favoriteClick", query.node);
+      this.$store.dispatch("setSelectNode", query);
     },
 
     close() {

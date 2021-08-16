@@ -37,19 +37,57 @@
         <i class="item-icon material-icons left-margin">widgets</i></span
       >
     </div>
+
+    <!-- create-modal -->
+    <modal
+      class="vue-dialog beekeeper-modal shorter-width"
+      name="workspace-create-modal"
+      @opened="selectTitleInput"
+      height="auto"
+      :scrollable="true"
+    >
+      <form @submit.prevent="create" v-hotkey="keymap">
+        <div class="dialog-content">
+          <div class="dialog-c-title">Workspace name</div>
+          <div class="modal-form">
+            <div class="alert alert-danger save-errors" v-if="error">
+              {{ saveError }}
+            </div>
+            <div class="form-group">
+              <input
+                type="text"
+                ref="titleInput"
+                name="title"
+                class="form-control"
+                placeholder="Your workpsace name"
+                v-model="title"
+                autofocus
+              />
+            </div>
+          </div>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button class="btn btn-flat" type="button" @click.prevent="cancel">
+            Cancel
+          </button>
+          <button class="btn btn-primary" type="submit">
+            Create
+          </button>
+        </div>
+      </form>
+    </modal>
   </div>
 </template>
 
 <script>
+import { Directory } from "@/common/appdb/models/directory";
 export default {
   data() {
-    return {};
-  },
-
-  mounted() {
-    if (this.workspaces.length === 0) {
-      this.$emit("empty");
-    }
+    return {
+      title: "",
+      error: false,
+      validation: this.$store.getters.explorerValidation
+    };
   },
 
   computed: {
@@ -63,6 +101,12 @@ export default {
       } else {
         return "";
       }
+    },
+
+    keymap() {
+      return {
+        esc: this.cancel
+      };
     }
   },
 
@@ -79,13 +123,34 @@ export default {
       this.$emit("select", workspace);
     },
 
-    create() {
-      this.$emit("create");
+    async create() {
+      const reg = new RegExp(this.validation.dir);
+
+      if (this.title === "") {
+        this.$modal.show("workspace-create-modal");
+      } else if (reg.test(this.title)) {
+        const workspace = new Directory();
+        workspace.title = this.title;
+        workspace.deepth = 0;
+        workspace.isWorkspace = 1;
+        await this.$store.dispatch("createWorkspace", workspace);
+      }
+    },
+
+    cancel() {
+      this.$modal.hide("workspace-create-modal");
+      this.title = "";
     },
 
     async remove(workspace) {
       await this.$store.dispatch("removeHistoryQuery", workspace);
-    }
+    },
+
+    selectTitleInput() {
+      this.$refs.titleInput.select();
+    },
+
+    refreshWorkspace() {}
   }
 };
 </script>
@@ -106,5 +171,9 @@ export default {
 
 .left-margin {
   margin-left: 5px;
+}
+
+.shoter-widht {
+  width: 300px !important;
 }
 </style>

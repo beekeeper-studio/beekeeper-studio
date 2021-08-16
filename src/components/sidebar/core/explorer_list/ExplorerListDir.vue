@@ -10,6 +10,7 @@
         </i>
         <RenameNode
           :currentNode="currentDir"
+          :currentParentNode="currentParentNode"
           :type="'dir'"
           @close="closeRename"
           v-if="state.renameTrigger"
@@ -57,12 +58,14 @@
         :query="query"
         @select="selectQuery"
         :currentNode="currentNode"
+        :currentParentNode="currentParentNode"
       ></explorer-list-file>
       <explorer-list-dir
         v-for="dir in directories"
         :key="dir.title"
         :node="dir"
         :depth="depth + 1"
+        @setParentNode="setParentNode"
       ></explorer-list-dir>
     </div>
   </div>
@@ -78,7 +81,6 @@ import explorer_actions from "@/mixins/explorer_actions";
 export default {
   name: "explorer-list-dir",
   props: ["node", "depth"],
-  mixins: [explorer_actions],
   components: { ExplorerListFile, NodeActions, RenameNode },
   mounted() {
     this.showColumns = !!false;
@@ -88,7 +90,6 @@ export default {
     return {
       showColumns: false,
       id: uuidv4(),
-
       state: {
         renameTrigger: false,
         creationTrigger: false
@@ -114,7 +115,7 @@ export default {
 
     queries() {
       const queriesArr = this.node.children.filter(element => {
-        if (element.type !== "dir") {
+        if (element.usage === "query") {
           return element;
         }
       });
@@ -128,6 +129,20 @@ export default {
       } else {
         return { transform: `translate(0.89rem)` };
       }
+    },
+
+    // EVERYTHING under here should be shared with root level
+
+    currentNode() {
+      return this.$store.state.explorer.selectState.node;
+    },
+
+    currentDir() {
+      return this.$store.getters.currentDirectory;
+    },
+
+    currentParentNode() {
+      return this.$store.getters.currentParentNode;
     }
   },
 
@@ -136,7 +151,7 @@ export default {
       this.showColumns = !this.showColumns;
     },
 
-    selectDir(node) {
+    async selectDir(node) {
       this.toggleColumns();
       const spanElement = this.$refs[node.node.title];
       if (spanElement.classList.contains("folder-name-selected")) {
@@ -144,7 +159,7 @@ export default {
           "folder-name-selected",
           "folder-name-unselected"
         );
-        this.setDir();
+        this.unselectDir(node);
         return;
       }
 
@@ -158,23 +173,29 @@ export default {
 
     createState(actionType, node) {
       this.nodeData.actionType = actionType;
-      switch (actionType) {
-        case "dir":
-          this.correctSelection(node, actionType);
-          this.nodeData.placeholder = "Foldername";
-          this.state.creationTrigger = true;
+      this.correctSelection(node, actionType);
 
-          break;
-        case "file":
-          this.correctSelection(node, actionType);
-          this.nodeData.placeholder = "Filename";
-          this.state.creationTrigger = true;
+      setTimeout(() => {
+        switch (actionType) {
+          case "dir":
+            this.nodeData.placeholder = "Foldername";
+            this.state.creationTrigger = true;
 
-          break;
-        case "rename":
-          this.state.renameTrigger = true;
-          break;
-      }
+            break;
+          case "file":
+            this.nodeData.placeholder = "Filename";
+            this.state.creationTrigger = true;
+
+            break;
+          case "rename":
+            if (this.depth > 0) {
+              this.$emit("setParentNode");
+            }
+
+            this.state.renameTrigger = true;
+            break;
+        }
+      }, 1);
     },
 
     async remove(node) {
@@ -184,8 +205,6 @@ export default {
       setTimeout(() => {
         this.$root.$emit("refreshExplorer");
       }, 1);
-
-      console.log(this.selected);
     },
 
     correctSelection(node, actionType) {
@@ -212,22 +231,22 @@ export default {
     closeRename(node) {
       this.state.renameTrigger = false;
       setTimeout(() => {
-        this.selectDirWithoutTooggle(node); // its acting here then as a normal file
+        if (this.showColumns) {
+          this.selectDirNoToggle(node);
+        } else {
+          this.correctSelection(node, "file");
+        }
       }, 1);
     },
 
-    setDir(node = null) {
-      this.selected.dir = node;
-      this.selected.node = node;
-    },
-
-    selectDirWithoutTooggle(node) {
+    async selectDirNoToggle(node) {
       const spanElement = this.$refs[node.node.title];
       if (spanElement.classList.contains("folder-name-selected")) {
         spanElement.classList.replace(
           "folder-name-selected",
           "folder-name-unselected"
         );
+        this.unselectDir(node);
         return;
       }
 
@@ -235,6 +254,25 @@ export default {
         "folder-name-unselected",
         "folder-name-selected"
       );
+
+      this.setDir(node);
+    },
+
+    // INFO all methods under here should be shared with main level
+    async setDir(node) {
+      await this.$store.dispatch("setSelectDirectory", node);
+    },
+
+    async unselectDir(node) {
+      await this.$store.dispatch("removeSelectDirectory", node);
+    },
+
+    async selectQuery(node) {
+      await this.$store.dispatch("setSelectNode", node);
+    },
+
+    async setParentNode() {
+      await this.$store.dispatch("setParentNode", this.node);
     }
   }
 };

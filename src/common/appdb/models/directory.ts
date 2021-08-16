@@ -6,6 +6,9 @@ export class Directory extends ApplicationEntity {
   @Column({ type: "text", nullable: false })
   title!: string;
 
+  @Column({ type: "text", nullable: false })
+  database!: string;
+
   @Column({ type: "integer", nullable: false })
   deepth!: number;
 

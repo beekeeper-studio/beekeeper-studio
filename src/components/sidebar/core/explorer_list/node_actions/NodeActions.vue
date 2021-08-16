@@ -83,11 +83,10 @@ export default {
   methods: {
     async create() {
       if (!this.inputValidation.hasOwnProperty("isValid")) {
-        if (!this.$isExisting(this.type, this.onlyTitle, this.currentDir)) {
+        if (!this.$isExisting(this.onlyTitle, this.currentDir, this.type)) {
           if (this.type === "file") {
-            const title = this.title.split(".")[0];
             const query = new FavoriteQuery();
-            query.title = title;
+            query.title = this.onlyTitle;
             query.directory_id = this.currentDir.node.id;
             query.text = "";
             await this.$store.dispatch("saveFavorite", query);
@@ -96,7 +95,7 @@ export default {
               this.close();
             }, 1);
           } else if (this.type == "dir") {
-            const currentworkspace = this.$store.getters.currentWorkspace;
+            const currentworkspace = this.$store.getters.currentWorkspace.node;
             const dir = new Directory();
             dir.title = this.title;
             dir.workspace_id = currentworkspace.id;

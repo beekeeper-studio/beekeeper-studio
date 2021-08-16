@@ -35,7 +35,7 @@ export default {
     };
   },
   mounted() {
-    this.selected.dir = this.tree;
+    this.selected.dir.push(this.tree);
     this.manuallyExpanded = false;
   },
   computed: {
