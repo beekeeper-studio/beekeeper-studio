@@ -26,7 +26,7 @@ export default {
 
   data() {
     return {
-      name: this.currentNode.node.title || ""
+      name: `${this.currentNode.node.title}.query`|| ""
     };
   },
 
@@ -66,7 +66,7 @@ export default {
         this.$noty.error(`${this.errorType} already exists`);
         return;
       }
-
+        
       this.currentNode.node.title = this.name;
 
       if (this.type === "file") {
