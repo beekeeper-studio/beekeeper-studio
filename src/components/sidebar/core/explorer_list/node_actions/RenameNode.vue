@@ -15,6 +15,7 @@ export default {
   props: ["currentNode", "type", "currentParentNode"],
 
   mounted() {
+    console.log(this.currentParentNode)
     const input = this.$refs.nodeInput;
     input.focus();
     input.setSelectionRange(0, this.nameLength);

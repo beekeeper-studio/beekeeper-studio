@@ -430,8 +430,8 @@ const store = new Vuex.Store<State>({
       state.explorer.selectState.node = node;
     },
 
-    setParentNode(state: State, node) {
-      state.explorer.selectState.parentDir = node;
+    setParentNode(state: State, node=null) {
+      state.explorer.selectState.parentDir = node || state.explorer.workspace.current
     },
 
     removeSelectDirectory(state: State, node) {

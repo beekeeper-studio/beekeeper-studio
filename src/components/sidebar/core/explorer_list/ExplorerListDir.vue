@@ -1,5 +1,5 @@
 <template>
-  <div class="list-item" :style="indent">
+  <div class="list-item" :style="indent" @contextmenu="isNotRootLevel">
     <a class="list-item-btn" role="button" :class="{ open: showColumns }">
       <span class="btn-fab open-close" @click.prevent="selectDir(node)">
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
@@ -72,16 +72,16 @@
 </template>
 
 <script type="text/javascript">
-import ExplorerListFile from "./ExplorerListFile.vue";
 import NodeActions from "./node_actions/NodeActions.vue";
 import RenameNode from "./node_actions/RenameNode.vue";
 import { uuidv4 } from "../../../../lib/uuid";
+import ExplorerListFile from "./ExplorerListFile.vue";
 import explorer_actions from "@/mixins/explorer_actions";
-
 export default {
   name: "explorer-list-dir",
   props: ["node", "depth"],
   components: { ExplorerListFile, NodeActions, RenameNode },
+  mixins: [explorer_actions],
   mounted() {
     this.showColumns = !!false;
   },
@@ -89,16 +89,7 @@ export default {
   data() {
     return {
       showColumns: false,
-      id: uuidv4(),
-      state: {
-        renameTrigger: false,
-        creationTrigger: false
-      },
-      // nodeData is not really describing the variable good //TODO Rename it properly
-      nodeData: {
-        placeholder: "",
-        actionType: ""
-      }
+      id: uuidv4()
     };
   },
 
@@ -129,24 +120,14 @@ export default {
       } else {
         return { transform: `translate(0.89rem)` };
       }
-    },
-
-    // EVERYTHING under here should be shared with root level
-
-    currentNode() {
-      return this.$store.state.explorer.selectState.node;
-    },
-
-    currentDir() {
-      return this.$store.getters.currentDirectory;
-    },
-
-    currentParentNode() {
-      return this.$store.getters.currentParentNode;
     }
   },
 
   methods: {
+    isNotRootLevel() {
+      this.$root.$emit("isNotRootLevel");
+    },
+
     async toggleColumns() {
       this.showColumns = !this.showColumns;
     },
@@ -188,9 +169,7 @@ export default {
 
             break;
           case "rename":
-            if (this.depth > 0) {
-              this.$emit("setParentNode");
-            }
+            this.$emit("setParentNode");
 
             this.state.renameTrigger = true;
             break;
@@ -218,14 +197,6 @@ export default {
       } else {
         this.setDir(node);
       }
-    },
-
-    close() {
-      this.nodeData = {
-        placeholder: "",
-        type: ""
-      };
-      this.state.creationTrigger = false;
     },
 
     closeRename(node) {
@@ -256,23 +227,6 @@ export default {
       );
 
       this.setDir(node);
-    },
-
-    // INFO all methods under here should be shared with main level
-    async setDir(node) {
-      await this.$store.dispatch("setSelectDirectory", node);
-    },
-
-    async unselectDir(node) {
-      await this.$store.dispatch("removeSelectDirectory", node);
-    },
-
-    async selectQuery(node) {
-      await this.$store.dispatch("setSelectNode", node);
-    },
-
-    async setParentNode() {
-      await this.$store.dispatch("setParentNode", this.node);
     }
   }
 };

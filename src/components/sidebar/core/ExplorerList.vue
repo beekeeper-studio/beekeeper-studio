@@ -14,25 +14,51 @@
             </div>
           </div>
           <div class="actions">
-            <!-- <a @click.prevent="collapseAll" title="'Collapse All'">
-              <i class="material-icons">unfold_less</i>
-            </a>
-            <a title="New Folder">
-              <i class="material-icons">create_new_folder</i>
-            </a>
-            <a title="New File">
-              <i class="material-icons">add</i>
-            </a> -->
             <a title="'Refresh'" @click="refresh">
               <i class="material-icons">refresh</i>
             </a>
           </div>
         </div>
 
-        <div class="list-body">
+        <div class="list-body" @contextmenu.self="rootLevel">
+          <x-contextmenu v-if="rootLevelCreation">
+            <x-menu>
+              <x-menuitem @click.prevent="createState('dir')">
+                <x-label>New Folder</x-label>
+              </x-menuitem>
+              <x-menuitem @click.prevent="createState('file')">
+                <x-label>New File</x-label>
+              </x-menuitem>
+            </x-menu>
+          </x-contextmenu>
+
           <div class="with-schemas">
-            <explorer-list-schema :tree="tree"> </explorer-list-schema>
+            <div class="schema-wrapper">
+              <explorer-list-dir
+                v-for="dir in directories"
+                :key="dir.title"
+                :node="dir"
+                :depth="0"
+              ></explorer-list-dir>
+
+              <explorer-list-file
+                v-for="query in queries"
+                :key="query.name"
+                :query="query"
+                :currentNode="currentNode"
+                :currentDir="currentDir"
+                @select="selectQuery"
+              ></explorer-list-file>
+            </div>
           </div>
+
+          <NodeActions
+            v-show="state.creationTrigger"
+            :placeholder="nodeData.placeholder"
+            :type="nodeData.actionType"
+            :currentDir="currentDir"
+            @close="close"
+          ></NodeActions>
         </div>
       </nav>
     </div>
@@ -45,16 +71,22 @@
 </template>
 
 <script>
-import ExplorerListSchema from "./explorer_list/ExplorerListSchema.vue";
 import WorkspaceList from "./WorkspaceList.vue";
+import ExplorerListDir from "./explorer_list/ExplorerListDir.vue";
+import ExplorerListFile from "./explorer_list/ExplorerListFile.vue";
+import NodeActions from "./explorer_list/node_actions/NodeActions.vue";
 import { Directory } from "@/common/appdb/models/directory";
 import { uuidv4 } from "@/lib/uuid";
+import explorer_actions from "@/mixins/explorer_actions";
 const tree = require("../../../plugins/TreePlugin");
 export default {
   components: {
-    ExplorerListSchema,
-    WorkspaceList
+    WorkspaceList,
+    ExplorerListDir,
+    ExplorerListFile,
+    NodeActions
   },
+  mixins: [explorer_actions],
 
   mounted() {
     this.registerHandlers(this.rootBindings);
@@ -70,11 +102,36 @@ export default {
         workspaceSelected: false,
         tree: null
       },
-      rootBindings: [{ event: "refreshExplorer", handler: this.refresh }]
+      rootLevelCreation: true,
+      rootBindings: [
+        { event: "refreshExplorer", handler: this.refresh },
+        { event: "createWorkspace", handler: this.createWorkspace },
+        { event: "selectWorkspace", handler: this.selectWorkspace },
+        { event: "createTree", handler: this.createNode },
+        { event: "isNotRootLevel", handler: this.isNotRootLevel }
+      ]
     };
   },
 
   computed: {
+    directories() {
+      const dirArr = this.explorer.tree.children.filter(element => {
+        if (element.type === "dir") {
+          return element;
+        }
+      });
+
+      return dirArr;
+    },
+
+    queries() {
+      const queriesArr = this.explorer.tree.children.filter(element => {
+        if (element.usage === "query") {
+          return element;
+        }
+      });
+      return queriesArr;
+    },
     workspaceName() {
       return this.$store.getters.currentWorkspace.node.title;
     },
@@ -116,6 +173,31 @@ export default {
         const root = this.createTree(workspace);
         this.explorer.tree = root;
       }, 2);
+    },
+
+    rootLevel() {
+      this.rootLevelCreation = true;
+    },
+
+    isNotRootLevel() {
+      this.rootLevelCreation = false;
+    },
+
+    createState(actionType) {
+      this.nodeData.actionType = actionType;
+
+      setTimeout(() => {
+        switch (actionType) {
+          case "dir":
+            this.nodeData.placeholder = "Foldername";
+            this.state.creationTrigger = true;
+            break;
+          case "file":
+            this.nodeData.placeholder = "Filename";
+            this.state.creationTrigger = true;
+            break;
+        }
+      }, 1);
     }
   }
 };
