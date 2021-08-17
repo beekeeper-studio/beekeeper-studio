@@ -1,5 +1,9 @@
 <template>
-  <div class="list-item" :style="indent" @contextmenu="isNotRootLevel">
+  <div
+    class="list-item"
+    :style="indent"
+    @contextmenu="$root.$emit('isNotRootLevel')"
+  >
     <a class="list-item-btn" role="button" :class="{ open: showColumns }">
       <span class="btn-fab open-close" @click.prevent="selectDir(node)">
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
@@ -124,10 +128,6 @@ export default {
   },
 
   methods: {
-    isNotRootLevel() {
-      this.$root.$emit("isNotRootLevel");
-    },
-
     async toggleColumns() {
       this.showColumns = !this.showColumns;
     },
@@ -181,6 +181,8 @@ export default {
       // safety measuere should be implemented because one time go and brrrr goes all files
       // TODO find the las currentDir after the one is deleted (Treestructure would be best)
       await this.$store.dispatch("removeDirectory", node);
+      this.$emit("setParentNode");
+      await this.$store.dispatch("setSelectDirectory", this.currentParentNode);
       setTimeout(() => {
         this.$root.$emit("refreshExplorer");
       }, 1);

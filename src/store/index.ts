@@ -422,6 +422,10 @@ const store = new Vuex.Store<State>({
       await dir.remove();
     },
 
+    async removeWorkspace(state: State, workspace) {
+      await workspace.remove();
+    },
+
     setSelectDirectory(state: State, node) {
       state.explorer.selectState.dir.push(node);
     },
@@ -430,8 +434,9 @@ const store = new Vuex.Store<State>({
       state.explorer.selectState.node = node;
     },
 
-    setParentNode(state: State, node=null) {
-      state.explorer.selectState.parentDir = node || state.explorer.workspace.current
+    setParentNode(state: State, node = null) {
+      state.explorer.selectState.parentDir =
+        node || state.explorer.workspace.current;
     },
 
     removeSelectDirectory(state: State, node) {
@@ -439,6 +444,8 @@ const store = new Vuex.Store<State>({
         state.explorer.selectState.dir,
         node
       );
+
+      console.log(state.explorer.selectState.dir, "##################");
     }
   },
   actions: {
@@ -752,6 +759,10 @@ const store = new Vuex.Store<State>({
 
     async removeSelectDirectory(context, node) {
       context.commit("removeSelectDirectory", node);
+    },
+
+    async removeWorkspace(context, workspace) {
+      context.commit("removeWorkspace", workspace);
     },
 
     async setParentNode(context, node) {

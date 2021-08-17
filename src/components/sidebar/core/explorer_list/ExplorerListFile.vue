@@ -1,5 +1,8 @@
 <template>
-  <div class="list-item extra-padding">
+  <div
+    class="list-item extra-padding"
+    @contextmenu="$root.$emit('isNotRootLevel')"
+  >
     <a class="list-item-btn" role="button" @click="click(query)">
       <span class="item-wrapper flex flex-middle expand">
         <i :class="`item-icon query material-icons`">

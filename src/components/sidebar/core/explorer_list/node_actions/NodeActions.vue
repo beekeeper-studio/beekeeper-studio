@@ -85,30 +85,10 @@ export default {
       if (!this.inputValidation.hasOwnProperty("isValid")) {
         if (!this.$isExisting(this.onlyTitle, this.currentDir, this.type)) {
           if (this.type === "file") {
-            const query = new FavoriteQuery();
-            query.title = this.onlyTitle;
-            query.directory_id = this.currentDir.node.id;
-            query.text = "";
-            await this.$store.dispatch("saveFavorite", query);
-            setTimeout(() => {
-              this.$root.$emit("refreshExplorer");
-              this.close();
-            }, 1);
+            this.createQuery();
           } else if (this.type == "dir") {
-            const currentworkspace = this.$store.getters.currentWorkspace.node;
-            const dir = new Directory();
-            dir.title = this.title;
-            dir.workspace_id = currentworkspace.id;
-            dir.parent_id = this.currentDir.node.id;
-            dir.deepth = this.currentDir.node.deepth + 1;
-            dir.isWorkspace = 0;
-            await this.$store.dispatch("createDirectory", dir);
-            setTimeout(() => {
-              this.$root.$emit("refreshExplorer");
-              this.close();
-            }, 1);
+            this.createDirectory();
           }
-
           return;
         } else {
           this.error("duplicate");
@@ -138,6 +118,34 @@ export default {
           this.$noty.error("File/Directory already exists.");
           break;
       }
+    },
+
+    async createQuery(title) {
+      const query = new FavoriteQuery();
+      query.title = title || this.onlyTitle;
+      query.directory_id = this.currentDir.node.id;
+      query.text = "";
+      await this.$store.dispatch("saveFavorite", query);
+      this.closeAndRefresh();
+    },
+
+    async createDirectory(title) {
+      const currentworkspace = this.$store.getters.currentWorkspace.node;
+      const dir = new Directory();
+      dir.title = title || this.title;
+      dir.workspace_id = currentworkspace.id;
+      dir.parent_id = this.currentDir.node.id;
+      dir.deepth = this.currentDir.node.deepth + 1;
+      dir.isWorkspace = 0;
+      await this.$store.dispatch("createDirectory", dir);
+      this.closeAndRefresh();
+    },
+
+    closeAndRefresh() {
+      setTimeout(() => {
+        this.$root.$emit("refreshExplorer");
+        this.close();
+      }, 1);
     }
   }
 };

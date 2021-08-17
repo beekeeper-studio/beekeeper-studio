@@ -46,7 +46,7 @@
                 :key="query.name"
                 :query="query"
                 :currentNode="currentNode"
-                :currentDir="currentDir"
+                :currentParentNode="currentParentNode"
                 @select="selectQuery"
               ></explorer-list-file>
             </div>
@@ -71,7 +71,7 @@
 </template>
 
 <script>
-import WorkspaceList from "./WorkspaceList.vue";
+import WorkspaceList from "./explorer_list/WorkspaceList.vue";
 import ExplorerListDir from "./explorer_list/ExplorerListDir.vue";
 import ExplorerListFile from "./explorer_list/ExplorerListFile.vue";
 import NodeActions from "./explorer_list/node_actions/NodeActions.vue";
