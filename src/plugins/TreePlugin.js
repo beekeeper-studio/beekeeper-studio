@@ -41,9 +41,7 @@ function createTree(workspace, directories, queries, options = {}) {
 }
 
 function isExisting(title, node, type) {
-  console.log(node);
   const result = node.children.filter(el => {
-    console.log(el.type);
     if (el.node.title == title && el.type === type) return el;
   });
 
