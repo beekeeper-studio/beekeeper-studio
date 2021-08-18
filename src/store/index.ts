@@ -26,6 +26,7 @@ import { entityFilter } from "../lib/db/sql_tools";
 
 import RawLog from "electron-log";
 import { Directory } from "@/common/appdb/models/directory";
+import { stat } from "fs";
 
 const log = RawLog.scope("store/index");
 
@@ -432,8 +433,15 @@ const store = new Vuex.Store<State>({
     },
 
     setSelectDirectory(state: State, node) {
-      state.explorer.selectState.openDir.push(node);
-      state.explorer.selectState.dir.push(node);
+      if (!state.explorer.selectState.openDir.includes(node)) {
+        state.explorer.selectState.openDir.push(node);
+      }
+
+      if (!state.explorer.selectState.dir.includes(node)) {
+        state.explorer.selectState.dir.push(node);
+      }
+
+      console.log(state.explorer.selectState.dir, "select ++++++++++++++++++");
     },
 
     setSelectNode(state: State, node) {
@@ -446,20 +454,16 @@ const store = new Vuex.Store<State>({
     },
 
     removeSelectDirectory(state: State, node) {
-      state.explorer.selectState.openDir = _.without(
-        state.explorer.selectState.openDir,
-        node
-      );
+      const newOpenDir = state.explorer.selectState.openDir.filter(el => {
+        if (el.node.id !== node.node.id) return el;
+      });
 
-      state.explorer.selectState.dir = _.without(
-        state.explorer.selectState.dir,
-        node
-      );
+      const newDir = state.explorer.selectState.dir.filter(el => {
+        if (el.node.id !== node.node.id) return el;
+      });
 
-      console.log(
-        state.explorer.selectState.openDir,
-        "open dir ##############"
-      );
+      state.explorer.selectState.openDir = newOpenDir;
+      state.explorer.selectState.dir = newDir;
     },
     // TODO better name
     removeSelectedDirectoriesAfterDelete(state: State, node) {
@@ -514,10 +518,7 @@ const store = new Vuex.Store<State>({
         });
       }
 
-      console.log(
-        state.explorer.selectState.dir,
-        "parent dir #################"
-      );
+      console.log(state.explorer.selectState.dir, "parent dir ###############");
     }
   },
   actions: {
@@ -782,8 +783,9 @@ const store = new Vuex.Store<State>({
     },
 
     async removeDirectory(context, dir) {
-      context.commit("removeDirectory", dir.node);
+      context.commit("removeSelectDirectory", dir);
       context.commit("removeSelectedDirectoriesAfterDelete", dir);
+      context.commit("removeDirectory", dir.node);
     },
 
     async removeHistoryQuery(context, historyQuery) {

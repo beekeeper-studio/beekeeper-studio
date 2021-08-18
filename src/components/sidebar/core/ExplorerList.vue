@@ -21,7 +21,7 @@
         </div>
 
         <div class="list-body" @contextmenu.self="rootLevel">
-          <x-contextmenu v-if="rootLevelCreation">
+          <x-contextmenu v-show="rootLevelCreation">
             <x-menu>
               <x-menuitem @click.prevent="createState('dir')">
                 <x-label>New Folder</x-label>
@@ -46,7 +46,7 @@
                 :key="query.name"
                 :query="query"
                 :currentNode="currentNode"
-                :currentParentNode="currentParentNode"
+                :currentDir="currentDir"
                 @select="selectQuery"
               ></explorer-list-file>
             </div>
@@ -71,7 +71,7 @@
 </template>
 
 <script>
-import WorkspaceList from "./explorer_list/WorkspaceList.vue";
+import WorkspaceList from "./WorkspaceList.vue";
 import ExplorerListDir from "./explorer_list/ExplorerListDir.vue";
 import ExplorerListFile from "./explorer_list/ExplorerListFile.vue";
 import NodeActions from "./explorer_list/node_actions/NodeActions.vue";
@@ -185,7 +185,7 @@ export default {
 
     createState(actionType) {
       this.nodeData.actionType = actionType;
-      this.
+
       setTimeout(() => {
         switch (actionType) {
           case "dir":

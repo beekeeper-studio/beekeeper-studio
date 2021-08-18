@@ -89,7 +89,7 @@ export default {
   mounted() {
     this.showColumns = !!false;
     if (this.$store.getters.allOpenDirectories.includes(this.node)) {
-      this.selectDir(this.node);
+      this.selectDirJustClass(this.node);
       this.showColumns = true;
     }
   },
@@ -136,26 +136,6 @@ export default {
       this.showColumns = !this.showColumns;
     },
 
-    async selectDir(node) {
-      this.toggleColumns();
-      const spanElement = this.$refs[node.node.title];
-      if (spanElement.classList.contains("folder-name-selected")) {
-        spanElement.classList.replace(
-          "folder-name-selected",
-          "folder-name-unselected"
-        );
-        this.unselectDir(node);
-        return;
-      }
-
-      spanElement.classList.replace(
-        "folder-name-unselected",
-        "folder-name-selected"
-      );
-
-      this.setDir(node);
-    },
-
     createState(actionType, node) {
       this.nodeData.actionType = actionType;
       this.correctSelection(node, actionType);
@@ -190,19 +170,6 @@ export default {
       }, 1);
     },
 
-    correctSelection(node, actionType) {
-      if (actionType !== "rename") {
-        const span = this.$refs[node.node.title];
-        if (span.classList.contains("folder-name-unselected")) {
-          this.selectDir(node);
-          return;
-        }
-        this.setDir(node);
-      } else {
-        this.setDir(node);
-      }
-    },
-
     closeRename(node) {
       this.state.renameTrigger = false;
       setTimeout(() => {
@@ -212,6 +179,26 @@ export default {
           this.correctSelection(node, "file");
         }
       }, 1);
+    },
+
+    async selectDir(node) {
+      this.toggleColumns();
+      const spanElement = this.$refs[node.node.title];
+      if (spanElement.classList.contains("folder-name-selected")) {
+        spanElement.classList.replace(
+          "folder-name-selected",
+          "folder-name-unselected"
+        );
+        this.unselectDir(node);
+        return;
+      }
+
+      spanElement.classList.replace(
+        "folder-name-unselected",
+        "folder-name-selected"
+      );
+
+      this.setDir(node);
     },
 
     async selectDirNoToggle(node) {
@@ -231,6 +218,35 @@ export default {
       );
 
       this.setDir(node);
+    },
+
+    selectDirJustClass(node) {
+      const spanElement = this.$refs[node.node.title];
+      if (spanElement.classList.contains("folder-name-selected")) {
+        spanElement.classList.replace(
+          "folder-name-selected",
+          "folder-name-unselected"
+        );
+        return;
+      }
+
+      spanElement.classList.replace(
+        "folder-name-unselected",
+        "folder-name-selected"
+      );
+    },
+
+    correctSelection(node, actionType) {
+      if (actionType !== "rename") {
+        const span = this.$refs[node.node.title];
+        if (span.classList.contains("folder-name-unselected")) {
+          this.selectDir(node);
+          return;
+        }
+        this.setDir(node);
+      } else {
+        this.setDir(node);
+      }
     }
   }
 };

@@ -27,7 +27,8 @@ export default {
     return {
       extensionValidation: this.$store.getters.explorerValidation,
       extension: this.$store.getters.includedExtension,
-      title: ""
+      title: "",
+      rootBindings: []
     };
   },
 
