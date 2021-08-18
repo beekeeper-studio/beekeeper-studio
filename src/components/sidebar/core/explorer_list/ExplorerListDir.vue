@@ -1,5 +1,9 @@
 <template>
-  <div class="list-item" :style="indent" @contextmenu="isNotRootLevel">
+  <div
+    class="list-item"
+    :style="indent"
+    @contextmenu="$root.$emit('isNotRootLevel')"
+  >
     <a class="list-item-btn" role="button" :class="{ open: showColumns }">
       <span class="btn-fab open-close" @click.prevent="selectDir(node)">
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
@@ -36,7 +40,7 @@
             <x-label>Rename</x-label>
           </x-menuitem>
           <hr />
-          <x-menuitem @click.prevent="remove(node.node)">
+          <x-menuitem @click.prevent="remove(node)">
             <x-label class="text-danger">Remove</x-label>
           </x-menuitem>
         </x-menu>
@@ -84,6 +88,10 @@ export default {
   mixins: [explorer_actions],
   mounted() {
     this.showColumns = !!false;
+    if (this.$store.getters.allOpenDirectories.includes(this.node)) {
+      this.selectDir(this.node);
+      this.showColumns = true;
+    }
   },
 
   data() {
@@ -124,10 +132,6 @@ export default {
   },
 
   methods: {
-    isNotRootLevel() {
-      this.$root.$emit("isNotRootLevel");
-    },
-
     async toggleColumns() {
       this.showColumns = !this.showColumns;
     },

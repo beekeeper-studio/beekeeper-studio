@@ -15,7 +15,6 @@ export default {
   props: ["currentNode", "type", "currentParentNode"],
 
   mounted() {
-    console.log(this.currentParentNode)
     const input = this.$refs.nodeInput;
     input.focus();
     input.setSelectionRange(0, this.nameLength);
@@ -27,7 +26,7 @@ export default {
 
   data() {
     return {
-      name: `${this.currentNode.node.title}.query`|| ""
+      name: `${this.currentNode.node.title}` || ""
     };
   },
 
@@ -67,7 +66,7 @@ export default {
         this.$noty.error(`${this.errorType} already exists`);
         return;
       }
-        
+
       this.currentNode.node.title = this.name;
 
       if (this.type === "file") {

@@ -1,5 +1,5 @@
 <template>
-  <div :class="`sidebar-history flex-col expand ${isEmpty}`">
+  <div :class="`sidebar-workspace flex-col expand ${isEmpty}`">
     <div class="sidebar-list" v-if="workspaces.length > 0">
       <nav class="list-group">
         <div
@@ -18,7 +18,7 @@
                 ><span>{{ workspace.createdAt }}</span></span
               >
             </div>
-            <x-contextmenu>
+            <x-contextmenu v-if="!noElement">
               <x-menu style="--target-align: right; --v-target-align: top;">
                 <x-menuitem @click="remove(workspace)">
                   <x-label class="text-danger">Remove</x-label>
@@ -28,7 +28,19 @@
           </a>
         </div>
       </nav>
+      <x-contextmenu v-if="noElement">
+        <x-menu>
+          <x-menuitem @click.prevent="renameState">
+            <x-label>Rename</x-label>
+          </x-menuitem>
+          <hr />
+          <x-menuitem @click.prevent="remove(query)">
+            <x-label class="text-danger">Remove</x-label>
+          </x-menuitem>
+        </x-menu>
+      </x-contextmenu>
     </div>
+
     <div class="empty" v-if="workspaces.length === 0">
       <span>No Workspaces found</span>
       <br />
@@ -38,7 +50,7 @@
       >
     </div>
 
-    <!-- create-modal -->
+    <!-- workspace-create-modal -->
     <modal
       class="vue-dialog beekeeper-modal shorter-width"
       name="workspace-create-modal"
@@ -86,7 +98,8 @@ export default {
     return {
       title: "",
       error: false,
-      validation: this.$store.getters.explorerValidation
+      validation: this.$store.getters.explorerValidation,
+      noElement: true
     };
   },
 
@@ -129,11 +142,7 @@ export default {
       if (this.title === "") {
         this.$modal.show("workspace-create-modal");
       } else if (reg.test(this.title)) {
-        const workspace = new Directory();
-        workspace.title = this.title;
-        workspace.deepth = 0;
-        workspace.isWorkspace = 1;
-        await this.$store.dispatch("createWorkspace", workspace);
+        this.createWorkspace(this.title);
       }
     },
 
@@ -143,14 +152,22 @@ export default {
     },
 
     async remove(workspace) {
-      await this.$store.dispatch("removeHistoryQuery", workspace);
+      await this.$store.dispatch("removeWorkspace", workspace);
     },
 
     selectTitleInput() {
       this.$refs.titleInput.select();
     },
 
-    refreshWorkspace() {}
+    refreshWorkspace() {},
+
+    async createWorkspace(title = `Workspace${this.workspaces.length + 1}`) {
+      const workspace = new Directory();
+      workspace.title = title;
+      workspace.deepth = 0;
+      workspace.isWorkspace = 1;
+      await this.$store.dispatch("createWorkspace", workspace);
+    }
   }
 };
 </script>

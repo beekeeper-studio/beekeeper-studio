@@ -12,3 +12,12 @@
 device_hub, design=class
 
 man muss zweimal new file anklicken damit es funktioniert
+
+context manchmal unter dir
+
+remove system/select system
+
+save system mit den bereits vorhanden favorite system
+
+two times rightclick 
+root and "normal" level; you can open two creation at the same time

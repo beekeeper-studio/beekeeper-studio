@@ -11,11 +11,12 @@ export default {
         "deepth" integer NOT NULL, 
         "workspace_id" integer, 
         "parent_id" integer, 
-        "isWorkspace" integer, 
-        foreign key (workspace_id) references directory(id), 
-        foreign key (parent_id) references directory(id)
+        "isWorkspace" integer,
+        "showColumns" integer NOT NULL DEFAULT 0, 
+        foreign key (workspace_id) references directory(id) ON DELETE CASCADE, 
+        foreign key (parent_id) references directory(id) ON DELETE CASCADE
       );`,
-    `ALTER TABLE favorite_query ADD COLUMN directory_id integer REFERENCES directory(id);`
+    `ALTER TABLE favorite_query ADD COLUMN directory_id integer REFERENCES directory(id) ON DELELTE CASCADE;`
   ],
 
   async run(runner) {
