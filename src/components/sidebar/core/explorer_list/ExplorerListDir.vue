@@ -40,7 +40,7 @@
             <x-label>Rename</x-label>
           </x-menuitem>
           <hr />
-          <x-menuitem @click.prevent="remove(node.node)">
+          <x-menuitem @click.prevent="remove(node)">
             <x-label class="text-danger">Remove</x-label>
           </x-menuitem>
         </x-menu>
@@ -88,6 +88,10 @@ export default {
   mixins: [explorer_actions],
   mounted() {
     this.showColumns = !!false;
+    if (this.$store.getters.allOpenDirectories.includes(this.node)) {
+      this.selectDir(this.node);
+      this.showColumns = true;
+    }
   },
 
   data() {
@@ -181,8 +185,6 @@ export default {
       // safety measuere should be implemented because one time go and brrrr goes all files
       // TODO find the las currentDir after the one is deleted (Treestructure would be best)
       await this.$store.dispatch("removeDirectory", node);
-      this.$emit("setParentNode");
-      await this.$store.dispatch("setSelectDirectory", this.currentParentNode);
       setTimeout(() => {
         this.$root.$emit("refreshExplorer");
       }, 1);

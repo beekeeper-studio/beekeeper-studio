@@ -30,7 +30,6 @@ export default {
   methods: {
     // INFO all methods under here should be shared with main level
     async setDir(node) {
-      console.log(node, this.$store.state.explorer.selectState.dir);
       await this.$store.dispatch("setSelectDirectory", node);
     },
 

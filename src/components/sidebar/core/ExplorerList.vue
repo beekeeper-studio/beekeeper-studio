@@ -185,7 +185,7 @@ export default {
 
     createState(actionType) {
       this.nodeData.actionType = actionType;
-
+      this.
       setTimeout(() => {
         switch (actionType) {
           case "dir":

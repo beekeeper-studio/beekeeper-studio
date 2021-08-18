@@ -103,15 +103,20 @@ const store = new Vuex.Store<State>({
         creationInstance: null
       },
       selectState: {
-        dir: [],
+        openDir: [],
         node: null,
-        parentDir: null
+        parentDir: null,
+        dir: []
       }
     }
   },
   getters: {
     allDirectories(state) {
       return state.explorer.directories;
+    },
+
+    allOpenDirectories(state) {
+      return state.explorer.selectState.openDir;
     },
 
     allWorkspaces(state) {
@@ -427,6 +432,7 @@ const store = new Vuex.Store<State>({
     },
 
     setSelectDirectory(state: State, node) {
+      state.explorer.selectState.openDir.push(node);
       state.explorer.selectState.dir.push(node);
     },
 
@@ -440,12 +446,78 @@ const store = new Vuex.Store<State>({
     },
 
     removeSelectDirectory(state: State, node) {
+      state.explorer.selectState.openDir = _.without(
+        state.explorer.selectState.openDir,
+        node
+      );
+
       state.explorer.selectState.dir = _.without(
         state.explorer.selectState.dir,
         node
       );
 
-      console.log(state.explorer.selectState.dir, "##################");
+      console.log(
+        state.explorer.selectState.openDir,
+        "open dir ##############"
+      );
+    },
+    // TODO better name
+    removeSelectedDirectoriesAfterDelete(state: State, node) {
+      const arr = [...node.children];
+      while (arr.length) {
+        const lastElement = arr.pop();
+
+        state.explorer.selectState.dir = _.without(
+          state.explorer.selectState.dir,
+          lastElement
+        );
+
+        state.explorer.selectState.openDir = _.without(
+          state.explorer.selectState.openDir,
+          lastElement
+        );
+
+        lastElement.children.forEach(el => {
+          state.explorer.selectState.dir = _.without(
+            state.explorer.selectState.dir,
+            node
+          );
+
+          state.explorer.selectState.openDir = _.without(
+            state.explorer.selectState.openDir,
+            node
+          );
+
+          arr.push(el);
+        });
+      }
+    },
+
+    // TODO better name
+    clearDir(state: State, node) {
+      const arr = [...node.children];
+      while (arr.length) {
+        const lastElement = arr.pop();
+
+        state.explorer.selectState.dir = _.without(
+          state.explorer.selectState.dir,
+          lastElement
+        );
+
+        lastElement.children.forEach(el => {
+          state.explorer.selectState.dir = _.without(
+            state.explorer.selectState.dir,
+            node
+          );
+
+          arr.push(el);
+        });
+      }
+
+      console.log(
+        state.explorer.selectState.dir,
+        "parent dir #################"
+      );
     }
   },
   actions: {
@@ -710,7 +782,8 @@ const store = new Vuex.Store<State>({
     },
 
     async removeDirectory(context, dir) {
-      context.commit("removeDirectory", dir);
+      context.commit("removeDirectory", dir.node);
+      context.commit("removeSelectedDirectoriesAfterDelete", dir);
     },
 
     async removeHistoryQuery(context, historyQuery) {
@@ -759,6 +832,7 @@ const store = new Vuex.Store<State>({
 
     async removeSelectDirectory(context, node) {
       context.commit("removeSelectDirectory", node);
+      context.commit("clearDir", node);
     },
 
     async removeWorkspace(context, workspace) {
