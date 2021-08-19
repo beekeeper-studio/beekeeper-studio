@@ -40,9 +40,20 @@ function createTree(workspace, directories, queries, options = {}) {
   return root;
 }
 
-function isExisting(title, node, type) {
+function isFileOrDirExisting(title, node, type) {
   const result = node.children.filter(el => {
     if (el.node.title == title && el.type === type) return el;
+  });
+
+  if (result.length > 0) return true;
+  return false;
+}
+
+function isWorkspaceExisting(title) {
+  const workspaces = this.$store.getters.allWorkspaces;
+
+  const result = workspaces.filter(el => {
+    if (el.title == title) return el;
   });
 
   if (result.length > 0) return true;
@@ -53,6 +64,7 @@ export default {
   // TODO bring functions under $explorer
   install(Vue, options) {
     Vue.prototype.$createTree = createTree;
-    Vue.prototype.$isExisting = isExisting;
+    Vue.prototype.$isFileOrDirExisting = isFileOrDirExisting;
+    Vue.prototype.$isWorkspaceExisting = isWorkspaceExisting;
   }
 };

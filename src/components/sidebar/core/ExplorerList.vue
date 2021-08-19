@@ -58,6 +58,8 @@
             :type="nodeData.actionType"
             :currentDir="currentDir"
             @close="close"
+            @createFile="createQuery"
+            @createDirectory="createDirectory"
           ></NodeActions>
         </div>
       </nav>
@@ -76,8 +78,10 @@ import ExplorerListDir from "./explorer_list/ExplorerListDir.vue";
 import ExplorerListFile from "./explorer_list/ExplorerListFile.vue";
 import NodeActions from "./explorer_list/node_actions/NodeActions.vue";
 import { Directory } from "@/common/appdb/models/directory";
+import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { uuidv4 } from "@/lib/uuid";
-import explorer_actions from "@/mixins/explorer_actions";
+import node_actions_integration from "@/mixins/explorer/node_actions_integration";
+import select_system from "@/mixins/explorer/select_system";
 const tree = require("../../../plugins/TreePlugin");
 export default {
   components: {
@@ -86,7 +90,7 @@ export default {
     ExplorerListFile,
     NodeActions
   },
-  mixins: [explorer_actions],
+  mixins: [node_actions_integration, select_system],
 
   mounted() {
     this.registerHandlers(this.rootBindings);
@@ -105,10 +109,11 @@ export default {
       rootLevelCreation: true,
       rootBindings: [
         { event: "refreshExplorer", handler: this.refresh },
-        { event: "createWorkspace", handler: this.createWorkspace },
         { event: "selectWorkspace", handler: this.selectWorkspace },
         { event: "createTree", handler: this.createNode },
-        { event: "isNotRootLevel", handler: this.isNotRootLevel }
+        { event: "isNotRootLevel", handler: this.isNotRootLevel },
+        { event: "createDirectory", handler: this.createDirectory },
+        { event: "createQuery", handler: this.createQuery }
       ]
     };
   },
@@ -197,6 +202,32 @@ export default {
             this.state.creationTrigger = true;
             break;
         }
+      }, 1);
+    },
+
+    async createQuery(title) {
+      const query = new FavoriteQuery();
+      query.title = title || this.onlyTitle;
+      query.directory_id = this.currentDir.node.id;
+      query.text = "";
+      await this.$store.dispatch("saveFavorite", query);
+      setTimeout(() => {
+        this.refresh();
+      }, 1);
+    },
+
+    async createDirectory(title) {
+      console.log("caleed ##################");
+      const currentworkspace = this.$store.getters.currentWorkspace.node;
+      const dir = new Directory();
+      dir.title = title || this.title;
+      dir.workspace_id = currentworkspace.id;
+      dir.parent_id = this.currentDir.node.id;
+      dir.deepth = this.currentDir.node.deepth + 1;
+      dir.isWorkspace = 0;
+      await this.$store.dispatch("createDirectory", dir);
+      setTimeout(() => {
+        this.refresh();
       }, 1);
     }
   }

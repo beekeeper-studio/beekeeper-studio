@@ -26,7 +26,6 @@ import { entityFilter } from "../lib/db/sql_tools";
 
 import RawLog from "electron-log";
 import { Directory } from "@/common/appdb/models/directory";
-import { stat } from "fs";
 
 const log = RawLog.scope("store/index");
 
@@ -424,6 +423,17 @@ const store = new Vuex.Store<State>({
       state.explorer.files.queries = queriesArr;
     },
 
+    async fetchWorkspaces(state: State) {
+      await selectConnection("directory", Directory)
+        .where("isWorkspace = :id", { id: 1 })
+        .orderBy("createdAt", "DESC")
+        .getMany()
+        .then(res => {
+          console.log(res, "response #################");
+          state.explorer.workspace.all = res;
+        });
+    },
+
     async removeDirectory(state: State, dir) {
       await dir.remove();
     },
@@ -553,15 +563,7 @@ const store = new Vuex.Store<State>({
     async connect(context, config: SavedConnection) {
       if (context.state.username) {
         // TODO select workspace from last session directly
-
-        await selectConnection("directory", Directory)
-          .where("isWorkspace = :id", { id: 1 })
-          .orderBy("createdAt", "DESC")
-          .getMany()
-          .then(res => {
-            context.state.explorer.workspace.all = res;
-          });
-
+        context.commit("fetchWorkspaces");
         const server = ConnectionProvider.for(config, context.state.username);
         // TODO: (geovannimp) Check case connection is been created with undefined as key
         const connection = server.createConnection(
@@ -817,6 +819,10 @@ const store = new Vuex.Store<State>({
 
     async fetchQueries(context, workspace) {
       context.commit("fetchQueries", workspace);
+    },
+
+    async fetchWorkspaces(context) {
+      context.commit("fetchWorkspaces");
     },
 
     async createDirectory(context, directory) {

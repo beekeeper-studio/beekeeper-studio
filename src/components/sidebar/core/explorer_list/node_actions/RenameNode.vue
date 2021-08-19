@@ -56,7 +56,7 @@ export default {
     },
 
     async rename() {
-      const isExisting = this.$isExisting(
+      const isExisting = this.$isFileOrDirExisting(
         this.name,
         this.currentParentNode,
         this.type

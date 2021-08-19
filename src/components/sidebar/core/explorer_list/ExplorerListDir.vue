@@ -54,6 +54,8 @@
         :type="nodeData.actionType"
         :currentDir="currentDir"
         @close="close"
+        @createFile="createQuery"
+        @createDirectory="createDirectory"
       ></NodeActions>
 
       <explorer-list-file
@@ -80,12 +82,13 @@ import NodeActions from "./node_actions/NodeActions.vue";
 import RenameNode from "./node_actions/RenameNode.vue";
 import { uuidv4 } from "../../../../lib/uuid";
 import ExplorerListFile from "./ExplorerListFile.vue";
-import explorer_actions from "@/mixins/explorer_actions";
+import node_actions_integration from "@/mixins/explorer/node_actions_integration";
+import select_system from "@/mixins/explorer/select_system";
 export default {
   name: "explorer-list-dir",
   props: ["node", "depth"],
   components: { ExplorerListFile, NodeActions, RenameNode },
-  mixins: [explorer_actions],
+  mixins: [node_actions_integration, select_system],
   mounted() {
     this.showColumns = !!false;
     if (this.$store.getters.allOpenDirectories.includes(this.node)) {
@@ -134,6 +137,14 @@ export default {
   methods: {
     async toggleColumns() {
       this.showColumns = !this.showColumns;
+    },
+
+    createQuery(title) {
+      this.$root.$emit("createQuery", title);
+    },
+
+    createDirectory(title) {
+      this.$root.$emit("createDirectory", title);
     },
 
     createState(actionType, node) {

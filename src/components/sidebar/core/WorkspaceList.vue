@@ -7,12 +7,20 @@
           :key="workspace.id"
           :workspace="workspace"
         ></workspace-list-item>
+        <NodeActions
+          v-show="state.creationTrigger"
+          :placeholder="nodeData.placeholder"
+          :type="nodeData.actionType"
+          :currentDir="currentDir"
+          @close="close"
+          @createWorkspace="createWorkspace"
+        ></NodeActions>
       </nav>
     </div>
 
     <x-contextmenu>
       <x-menu>
-        <x-menuitem>
+        <x-menuitem @click="createState">
           <x-label>Create Workspace</x-label>
         </x-menuitem>
       </x-menu>
@@ -26,21 +34,76 @@
         <i class="item-icon material-icons left-margin">widgets</i></span
       >
     </div>
+
+    <!-- workspace-create-modal -->
+    <modal
+      class="vue-dialog beekeeper-modal shorter-width"
+      name="workspace-create-modal"
+      @opened="selectTitleInput"
+      height="auto"
+      :scrollable="true"
+    >
+      <form @submit.prevent="create" v-hotkey="keymap">
+        <div class="dialog-content">
+          <div class="dialog-c-title">Workspace name</div>
+          <div class="modal-form">
+            <div class="alert alert-danger save-errors" v-if="error">
+              {{ saveError }}
+            </div>
+            <div class="form-group">
+              <input
+                type="text"
+                ref="titleInput"
+                name="title"
+                class="form-control"
+                placeholder="Your workpsace name"
+                v-model="title"
+                autofocus
+              />
+            </div>
+          </div>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button class="btn btn-flat" type="button" @click.prevent="cancel">
+            Cancel
+          </button>
+          <button class="btn btn-primary" type="submit">
+            Create
+          </button>
+        </div>
+      </form>
+    </modal>
   </div>
 </template>
 
 <script>
 import { Directory } from "@/common/appdb/models/directory";
 import WorkspaceListItem from "./explorer_list/WorkspaceListItem.vue";
+import NodeActions from "./explorer_list/node_actions/NodeActions.vue";
+import node_actions_data from "@/mixins/explorer/node_actions_integration";
 export default {
-  components: { WorkspaceListItem },
+  components: { WorkspaceListItem, NodeActions },
+  mixins: [node_actions_data],
   data() {
     return {
       title: "",
       error: false,
       validation: this.$store.getters.explorerValidation,
-      noElement: true
+      noElement: true,
+      rootBindings: [
+        { event: "refreshWorkspace", handler: this.refreshWorkspace },
+        { event: "createWorkspace", handler: this.refreshWorkspace }
+      ]
     };
+  },
+
+  mounted() {
+    this.registerHandlers(this.rootBindings);
+  },
+
+  // maybe do not9 let it go
+  beforeDestroy() {
+    this.unregisterHandlers(this.rootBindings);
   },
 
   computed: {
@@ -74,6 +137,15 @@ export default {
       }
     },
 
+    async createWorkspace(title) {
+      const workspace = new Directory();
+      workspace.title = title || this.title;
+      workspace.deepth = 0;
+      workspace.isWorkspace = 1;
+      await this.$store.dispatch("createWorkspace", workspace);
+      this.refreshWorkspace()
+    },
+
     cancel() {
       this.$modal.hide("workspace-create-modal");
       this.title = "";
@@ -87,14 +159,18 @@ export default {
       this.$refs.titleInput.select();
     },
 
-    refreshWorkspace() {},
+    async refreshWorkspace() {
+      await this.$store.dispatch("fetchWorkspaces");
+      console.log(this.workspaces, this.$store.getters.allWorkspaces);
+    },
 
-    async createWorkspace(title = `Workspace${this.workspaces.length + 1}`) {
-      const workspace = new Directory();
-      workspace.title = title;
-      workspace.deepth = 0;
-      workspace.isWorkspace = 1;
-      await this.$store.dispatch("createWorkspace", workspace);
+    createState() {
+      this.nodeData.actionType = "workspace";
+
+      setTimeout(() => {
+        this.nodeData.placeholder = "Workspacename";
+        this.state.creationTrigger = true;
+      }, 1);
     }
   }
 };
