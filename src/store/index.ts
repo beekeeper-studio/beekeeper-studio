@@ -429,7 +429,6 @@ const store = new Vuex.Store<State>({
         .orderBy("createdAt", "DESC")
         .getMany()
         .then(res => {
-          console.log(res, "response #################");
           state.explorer.workspace.all = res;
         });
     },
@@ -450,8 +449,6 @@ const store = new Vuex.Store<State>({
       if (!state.explorer.selectState.dir.includes(node)) {
         state.explorer.selectState.dir.push(node);
       }
-
-      console.log(state.explorer.selectState.dir, "select ++++++++++++++++++");
     },
 
     setSelectNode(state: State, node) {
@@ -527,8 +524,6 @@ const store = new Vuex.Store<State>({
           arr.push(el);
         });
       }
-
-      console.log(state.explorer.selectState.dir, "parent dir ###############");
     }
   },
   actions: {
@@ -770,8 +765,12 @@ const store = new Vuex.Store<State>({
       const items = await FavoriteQuery.find({ order: { createdAt: "DESC" } });
       context.commit("favorites", items);
     },
-    async saveFavorite(context, query: UsedQuery) {
+    async saveFavorite(context, query) {
       query.database = context.state.database || "default";
+      if (!query.directory_id) {
+        query.directory_id = context.getters.currentDirectory.node.id;
+      }
+
       await query.save();
       // otherwise it's already there!
       if (!context.state.favorites.includes(query)) {

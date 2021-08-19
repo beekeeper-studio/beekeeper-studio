@@ -453,6 +453,9 @@ export default {
         this.$noty.success("Saved");
         this.unsavedText = this.tab.query.text;
         this.tab.unsavedChanges = false;
+        setTimeout(() => {
+          this.$root.$emit("refreshExplorer");
+        }, 1);
       }
     },
     escapeRegExp(string) {

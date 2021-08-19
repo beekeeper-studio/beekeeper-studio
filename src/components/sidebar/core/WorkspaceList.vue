@@ -1,11 +1,16 @@
 <template>
   <div :class="`sidebar-workspace flex-col expand ${isEmpty}`">
-    <div class="sidebar-list" v-if="workspaces.length > 0">
+    <div
+      class="sidebar-list"
+      v-if="workspaces.length > 0"
+      @contextmenu.self="rootLevel"
+    >
       <nav class="list-group">
         <workspace-list-item
           v-for="workspace in workspaces"
           :key="workspace.id"
           :workspace="workspace"
+          @isNotRootLevel="isNotRootLevel"
         ></workspace-list-item>
         <NodeActions
           v-show="state.creationTrigger"
@@ -18,7 +23,7 @@
       </nav>
     </div>
 
-    <x-contextmenu>
+    <x-contextmenu v-show="rootLevelCreation">
       <x-menu>
         <x-menuitem @click="createState">
           <x-label>Create Workspace</x-label>
@@ -89,11 +94,11 @@ export default {
       title: "",
       error: false,
       validation: this.$store.getters.explorerValidation,
-      noElement: true,
       rootBindings: [
         { event: "refreshWorkspace", handler: this.refreshWorkspace },
         { event: "createWorkspace", handler: this.refreshWorkspace }
-      ]
+      ],
+      rootLevelCreation: true
     };
   },
 
@@ -134,6 +139,7 @@ export default {
         this.$modal.show("workspace-create-modal");
       } else if (reg.test(this.title)) {
         this.createWorkspace(this.title);
+        this.cancel();
       }
     },
 
@@ -143,7 +149,9 @@ export default {
       workspace.deepth = 0;
       workspace.isWorkspace = 1;
       await this.$store.dispatch("createWorkspace", workspace);
-      this.refreshWorkspace()
+      setTimeout(() => {
+        this.refreshWorkspace();
+      }, 1);
     },
 
     cancel() {
@@ -171,6 +179,14 @@ export default {
         this.nodeData.placeholder = "Workspacename";
         this.state.creationTrigger = true;
       }, 1);
+    },
+
+    rootLevel() {
+      this.rootLevelCreation = true;
+    },
+
+    isNotRootLevel() {
+      this.rootLevelCreation = false;
     }
   }
 };

@@ -26,7 +26,7 @@ export default {
 
   data() {
     return {
-      name: `${this.currentNode.node.title}` || ""
+      name: this.currentNode?.node?.title || this.currentNode.title
     };
   },
 
@@ -38,7 +38,11 @@ export default {
     },
 
     nameLength() {
-      return this.currentNode.node.title.length;
+      if (this.type === "file" || this.type === "dir") {
+        return this.currentNode.node.title.length;
+      } else {
+        return this.currentNode.title.length;
+      }
     },
 
     errorType() {
@@ -52,20 +56,25 @@ export default {
 
   methods: {
     close() {
+      console.log("called close rename #################");
       this.$emit("close", this.currentNode);
     },
 
-    async rename() {
+    rename() {
+      console.log(this.type, this.currentParentNode);
+      if (this.type === "file" || this.type === "dir") {
+        this.renameFileOrDirectory();
+      } else if (this.type === "workspace") {
+        this.renameWorkspace();
+      }
+    },
+
+    async renameFileOrDirectory() {
       const isExisting = this.$isFileOrDirExisting(
         this.name,
         this.currentParentNode,
         this.type
       );
-
-      if (isExisting) {
-        this.$noty.error(`${this.errorType} already exists`);
-        return;
-      }
 
       this.currentNode.node.title = this.name;
 
@@ -74,7 +83,20 @@ export default {
       } else if (this.type === "dir") {
         await this.$store.dispatch("createDirectory", this.currentNode.node);
       }
-      this.close(this.currentNode);
+      this.close();
+    },
+
+    async renameWorkspace() {
+      const isExisting = this.$isWorkspaceExisting(this.name);
+
+      if (isExisting) {
+        this.$noty.error(`${this.errorType} already exists`);
+        return;
+      }
+
+      this.currentNode.title = this.name;
+      await this.$store.dispatch("createWorkspace", this.currentNode);
+      this.close();
     }
   }
 };

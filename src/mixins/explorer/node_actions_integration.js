@@ -34,6 +34,7 @@ export default {
         type: ""
       };
       this.state.creationTrigger = false;
+      this.state.renameTrigger = false;
     }
   }
 };

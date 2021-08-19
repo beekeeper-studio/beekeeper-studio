@@ -42,10 +42,6 @@
         :class="tabClasses('queries')"
         v-show="activeItem === 'queries'"
       >
-        <folder-drop-down
-          @databaseSelected="databaseSelected"
-          :connection="connection"
-        ></folder-drop-down>
         <!-- <div class="sidebar-heading">
           <span class="sidebar-title">Explorer</span>
           <span class="expand"></span>
@@ -63,7 +59,6 @@ import TableList from "./core/TableList";
 import HistoryList from "./core/HistoryList";
 // import FavoriteList from './core/FavoriteList'
 import DatabaseDropdown from "./core/DatabaseDropdown";
-import FolderDropDown from "./core/FolderDropDown.vue";
 
 import { mapState } from "vuex";
 import ExplorerList from "./core/ExplorerList.vue";
@@ -73,7 +68,6 @@ export default {
   components: {
     TableList,
     DatabaseDropdown,
-    FolderDropDown,
     HistoryList,
     GlobalSidebar,
     ExplorerList

@@ -16,7 +16,7 @@ export default {
         foreign key (workspace_id) references directory(id) ON DELETE CASCADE, 
         foreign key (parent_id) references directory(id) ON DELETE CASCADE
       );`,
-    `ALTER TABLE favorite_query ADD COLUMN directory_id integer REFERENCES directory(id) ON DELELTE CASCADE;`
+    `ALTER TABLE favorite_query ADD COLUMN directory_id integer NOT NULL REFERENCES directory(id) ON DELELTE CASCADE;`
   ],
 
   async run(runner) {

@@ -78,6 +78,13 @@ export default {
     }
   },
 
+  mounted() {
+    this.$store.dispatch("setStateInstance", {
+      instance: this.$parent,
+      type: "creation"
+    });
+  },
+
   methods: {
     // TODO fix this mess
     async create() {

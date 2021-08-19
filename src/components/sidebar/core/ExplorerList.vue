@@ -9,16 +9,25 @@
       <nav class="list-group flex-col">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
-            <div>
-              {{ workspaceName }}
-            </div>
+            <a
+              title="Back to Workspaces"
+              @click="backToWorkspace"
+              style="display:flex; align-items:flex-end;"
+            >
+              <i class="material-icons item-icon">widgets</i>
+              <span>
+                {{ workspaceName }}
+              </span>
+            </a>
           </div>
           <div class="actions">
-            <a title="'Refresh'" @click="refresh">
+            <a title="Refresh" @click="refresh">
               <i class="material-icons">refresh</i>
             </a>
           </div>
         </div>
+
+        <hr style="margin-top:5px;" />
 
         <div class="list-body" @contextmenu.self="rootLevel">
           <x-contextmenu v-show="rootLevelCreation">
@@ -46,7 +55,7 @@
                 :key="query.name"
                 :query="query"
                 :currentNode="currentNode"
-                :currentDir="currentDir"
+                :currentParentNode="currentParentNode"
                 @select="selectQuery"
               ></explorer-list-file>
             </div>
@@ -147,6 +156,14 @@ export default {
   },
 
   methods: {
+    backToWorkspace() {
+      this.explorer = {
+        workspaceSelected: false,
+        tree: null
+      };
+      this.rootLevelCreation = true;
+    },
+
     async selectWorkspace(workspace) {
       await this.$store.dispatch("setWorkspace", workspace);
       await this.$store.dispatch("fetchDirectories", workspace);
@@ -217,7 +234,6 @@ export default {
     },
 
     async createDirectory(title) {
-      console.log("caleed ##################");
       const currentworkspace = this.$store.getters.currentWorkspace.node;
       const dir = new Directory();
       dir.title = title || this.title;

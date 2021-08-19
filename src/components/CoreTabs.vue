@@ -160,6 +160,7 @@ export default {
     }
   },
   methods: {
+    replaceDummyQuery(query) {},
     async setActiveTab(tab) {
       await this.$store.dispatch("tabActive", tab);
     },
@@ -212,6 +213,7 @@ export default {
       };
 
       this.addTab(result);
+      console.log(this.tabItems);
     },
     async loadTableCreate(table) {
       let method = null;

@@ -1,23 +1,21 @@
---- workspace
-     -- erster
-         -- file
-     -- zweiter
-         -- file
-         -- second_layer
-             -- file
-     -- file
 
 
 
 device_hub, design=class
 
-man muss zweimal new file anklicken damit es funktioniert
 
 context manchmal unter directory
 
-save system mit den bereits vorhanden favorite system
-
-two times rightclick 
-root and "normal" level; you can open two creation at the same time
+two times rightclick is gefixt aber es kommt da wo das andere vorher geklickt wurde
 
 createState in node_actions_integrations vesuchen zu bringen
+multiple renames verhindern
+
+
+drag system for future
+
+rootlevel etc vielleicht auch in mixin
+
+rename vielleicht extra mixin
+
+rename functions vielleicht wir node actions als emit damit man rootbinding machen kann

@@ -165,7 +165,6 @@ export default {
             break;
           case "rename":
             this.$emit("setParentNode");
-
             this.state.renameTrigger = true;
             break;
         }
@@ -182,6 +181,7 @@ export default {
     },
 
     closeRename(node) {
+      console.log("here")
       this.state.renameTrigger = false;
       setTimeout(() => {
         if (this.showColumns) {
@@ -214,14 +214,6 @@ export default {
 
     async selectDirNoToggle(node) {
       const spanElement = this.$refs[node.node.title];
-      if (spanElement.classList.contains("folder-name-selected")) {
-        spanElement.classList.replace(
-          "folder-name-selected",
-          "folder-name-unselected"
-        );
-        this.unselectDir(node);
-        return;
-      }
 
       spanElement.classList.replace(
         "folder-name-unselected",
