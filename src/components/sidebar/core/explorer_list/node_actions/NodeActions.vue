@@ -1,7 +1,5 @@
 <template>
   <div class="create-node-wrapper" v-hotkey="keymap">
-    <!-- create files -->
-
     <i :class="`item-icon  ${inputValidation.class} material-icons `">
       {{ inputValidation.icon }}
     </i>
@@ -13,6 +11,7 @@
       v-model="title"
       class="node-input"
       ref="nodeInput"
+      autofocus
     />
   </div>
 </template>
@@ -26,6 +25,9 @@ export default {
       extension: this.$store.getters.includedExtension,
       title: ""
     };
+  },
+  mounted() {
+    this.closeOpenComponents();
   },
 
   computed: {
@@ -76,13 +78,6 @@ export default {
         return this.title;
       }
     }
-  },
-
-  mounted() {
-    this.$store.dispatch("setStateInstance", {
-      instance: this.$parent,
-      type: "creation"
-    });
   },
 
   methods: {
@@ -142,6 +137,13 @@ export default {
           this.$noty.error("File/Directory already exists.");
           break;
       }
+    },
+
+    closeOpenComponents() {
+      this.$store.dispatch("setStateInstance", {
+        instance: this.$parent,
+        type: "creation"
+      });
     }
   }
 };

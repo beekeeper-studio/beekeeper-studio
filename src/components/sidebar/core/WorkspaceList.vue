@@ -1,5 +1,8 @@
 <template>
-  <div :class="`sidebar-workspace flex-col expand ${isEmpty}`">
+  <div
+    :class="`sidebar-workspace flex-col expand ${isEmpty}`"
+    v-hotkey="keymap"
+  >
     <div
       class="sidebar-list"
       v-if="workspaces.length > 0"
@@ -23,7 +26,7 @@
       </nav>
     </div>
 
-    <x-contextmenu v-show="rootLevelCreation">
+    <x-contextmenu v-if="rootLevelCreation">
       <x-menu>
         <x-menuitem @click="createState">
           <x-label>Create Workspace</x-label>
@@ -126,7 +129,8 @@ export default {
 
     keymap() {
       return {
-        esc: this.cancel
+        esc: this.cancel,
+        "ctrl+n": this.createState
       };
     }
   },

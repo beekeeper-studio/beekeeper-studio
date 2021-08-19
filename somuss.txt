@@ -9,7 +9,6 @@ context manchmal unter directory
 two times rightclick is gefixt aber es kommt da wo das andere vorher geklickt wurde
 
 createState in node_actions_integrations vesuchen zu bringen
-multiple renames verhindern
 
 
 drag system for future

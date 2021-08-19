@@ -1,6 +1,11 @@
 <template>
   <div class="list-item" @contextmenu="$emit('isNotRootLevel')">
-    <a class="list-item-btn" @click.self="select(workspace)">
+    <a
+      class="list-item-btn"
+      @click.exact="select(workspace)"
+      @click.shift.exact="createState('rename')"
+      @click.ctrl.exact="remove(workspace)"
+    >
       <i class="item-icon material-icons">widgets</i>
 
       <div class="list-title flex-col">
@@ -20,12 +25,14 @@
       </div>
       <x-contextmenu>
         <x-menu style="--target-align: right; --v-target-align: top;">
-          <x-menuitem @click="createState('rename')">
+          <x-menuitem @click.prevent="createState('rename')">
             <x-label>Rename</x-label>
+            <x-shortcut value="Control+LB"></x-shortcut>
           </x-menuitem>
           <hr />
-          <x-menuitem @click="remove(workspace)">
+          <x-menuitem @click.prevent="remove(workspace)">
             <x-label class="text-danger">Remove</x-label>
+            <x-shortcut value="Shift+LB"></x-shortcut>
           </x-menuitem>
         </x-menu>
       </x-contextmenu>

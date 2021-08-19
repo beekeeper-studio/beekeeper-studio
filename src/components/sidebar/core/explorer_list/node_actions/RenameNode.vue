@@ -56,12 +56,10 @@ export default {
 
   methods: {
     close() {
-      console.log("called close rename #################");
       this.$emit("close", this.currentNode);
     },
 
     rename() {
-      console.log(this.type, this.currentParentNode);
       if (this.type === "file" || this.type === "dir") {
         this.renameFileOrDirectory();
       } else if (this.type === "workspace") {

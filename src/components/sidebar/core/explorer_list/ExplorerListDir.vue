@@ -19,11 +19,7 @@
           @close="closeRename"
           v-if="state.renameTrigger"
         ></RenameNode>
-        <span
-          class="folder-name-unselected truncate"
-          :ref="node.node.title"
-          v-else
-        >
+        <span :class="selectClasses" v-else>
           {{ node.node.title }}
         </span>
       </span>
@@ -49,7 +45,7 @@
 
     <div v-if="showColumns" class="sub-items">
       <NodeActions
-        v-show="state.creationTrigger"
+        v-if="state.creationTrigger"
         :placeholder="nodeData.placeholder"
         :type="nodeData.actionType"
         :currentDir="currentDir"
@@ -89,10 +85,10 @@ export default {
   props: ["node", "depth"],
   components: { ExplorerListFile, NodeActions, RenameNode },
   mixins: [node_actions_integration, select_system],
+
   mounted() {
-    this.showColumns = !!false;
+    this.showColumns = false;
     if (this.$store.getters.allOpenDirectories.includes(this.node)) {
-      this.selectDirJustClass(this.node);
       this.showColumns = true;
     }
   },
@@ -131,6 +127,14 @@ export default {
       } else {
         return { transform: `translate(0.89rem)` };
       }
+    },
+
+    selectClasses() {
+      return {
+        "folder-name-selected": this.showColumns,
+        "folder-name-unselected": !this.showColumns,
+        truncate: true
+      };
     }
   },
 
@@ -150,18 +154,15 @@ export default {
     createState(actionType, node) {
       this.nodeData.actionType = actionType;
       this.correctSelection(node, actionType);
-
       setTimeout(() => {
         switch (actionType) {
           case "dir":
             this.nodeData.placeholder = "Foldername";
             this.state.creationTrigger = true;
-
             break;
           case "file":
             this.nodeData.placeholder = "Filename";
             this.state.creationTrigger = true;
-
             break;
           case "rename":
             this.$emit("setParentNode");
@@ -181,68 +182,30 @@ export default {
     },
 
     closeRename(node) {
-      console.log("here")
       this.state.renameTrigger = false;
       setTimeout(() => {
         if (this.showColumns) {
-          this.selectDirNoToggle(node);
+          this.setDir(node);
         } else {
           this.correctSelection(node, "file");
         }
-      }, 1);
+      }, 2);
     },
 
     async selectDir(node) {
       this.toggleColumns();
       const spanElement = this.$refs[node.node.title];
-      if (spanElement.classList.contains("folder-name-selected")) {
-        spanElement.classList.replace(
-          "folder-name-selected",
-          "folder-name-unselected"
-        );
+      if (!this.showColumns) {
         this.unselectDir(node);
         return;
       }
 
-      spanElement.classList.replace(
-        "folder-name-unselected",
-        "folder-name-selected"
-      );
-
       this.setDir(node);
-    },
-
-    async selectDirNoToggle(node) {
-      const spanElement = this.$refs[node.node.title];
-
-      spanElement.classList.replace(
-        "folder-name-unselected",
-        "folder-name-selected"
-      );
-
-      this.setDir(node);
-    },
-
-    selectDirJustClass(node) {
-      const spanElement = this.$refs[node.node.title];
-      if (spanElement.classList.contains("folder-name-selected")) {
-        spanElement.classList.replace(
-          "folder-name-selected",
-          "folder-name-unselected"
-        );
-        return;
-      }
-
-      spanElement.classList.replace(
-        "folder-name-unselected",
-        "folder-name-selected"
-      );
     },
 
     correctSelection(node, actionType) {
       if (actionType !== "rename") {
-        const span = this.$refs[node.node.title];
-        if (span.classList.contains("folder-name-unselected")) {
+        if (!this.showColumns) {
           this.selectDir(node);
           return;
         }

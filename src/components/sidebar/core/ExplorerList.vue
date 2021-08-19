@@ -29,8 +29,8 @@
 
         <hr style="margin-top:5px;" />
 
-        <div class="list-body" @contextmenu.self="rootLevel">
-          <x-contextmenu v-show="rootLevelCreation">
+        <div class="list-body" @contextmenu="rootLevel">
+          <x-contextmenu v-if="rootLevelCreation">
             <x-menu>
               <x-menuitem @click.prevent="createState('dir')">
                 <x-label>New Folder</x-label>

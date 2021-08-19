@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="list-item extra-padding"
-    @contextmenu="$root.$emit('isNotRootLevel')"
-  >
+  <div class="list-item extra-padding" @contextmenu="isNotRootLevel">
     <a class="list-item-btn" role="button" @click="click(query)">
       <span class="item-wrapper flex flex-middle expand">
         <i :class="`item-icon query material-icons`">
@@ -19,7 +16,7 @@
           {{ query.node.title }}
         </span>
       </span>
-      <x-contextmenu>
+      <x-contextmenu v-show="showContextMenu">
         <x-menu>
           <x-menuitem @click.prevent="renameState">
             <x-label>Rename</x-label>
@@ -45,7 +42,8 @@ export default {
     return {
       state: {
         renameTrigger: false
-      }
+      },
+      showContextMenu: false
     };
   },
   components: { RenameNode },
@@ -72,6 +70,11 @@ export default {
       await this.$store.dispatch("removeFavorite", query.node);
 
       this.$root.$emit("refreshExplorer");
+    },
+
+    isNotRootLevel() {
+      this.$root.$emit("isNotRootLevel");
+      this.showContextMenu = true;
     }
   }
 };

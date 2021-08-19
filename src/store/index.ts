@@ -367,7 +367,10 @@ const store = new Vuex.Store<State>({
     setStateInstance(state: State, data) {
       switch (data.type) {
         case "creation":
-          if (state.explorer.nodeActions.creationInstance !== null) {
+          if (
+            state.explorer.nodeActions.creationInstance !== null &&
+            state.explorer.nodeActions.creationInstance !== data.instance
+          ) {
             state.explorer.nodeActions.creationInstance.state.creationTrigger = false;
           }
           state.explorer.nodeActions.creationInstance = data.instance;
