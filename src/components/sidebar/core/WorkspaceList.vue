@@ -172,6 +172,7 @@ export default {
     },
 
     async refreshWorkspace() {
+      console.log("still getting called");
       await this.$store.dispatch("fetchWorkspaces");
       console.log(this.workspaces, this.$store.getters.allWorkspaces);
     },

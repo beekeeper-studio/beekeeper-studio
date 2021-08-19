@@ -5,7 +5,12 @@
     @contextmenu="$root.$emit('isNotRootLevel')"
   >
     <a class="list-item-btn" role="button" :class="{ open: showColumns }">
-      <span class="btn-fab open-close" @click.prevent="selectDir(node)">
+      <span
+        class="btn-fab open-close"
+        @click.exact="selectDir(node)"
+        @click.shift.exact="createState('rename', node)"
+        @click.ctrl.exact="remove(node)"
+      >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
       <span class="item-wrapper flex flex-middle expand">
@@ -134,6 +139,13 @@ export default {
         "folder-name-selected": this.showColumns,
         "folder-name-unselected": !this.showColumns,
         truncate: true
+      };
+    },
+
+    keymap() {
+      return {
+        "Ctrl+d": this.createState("dir", this.node),
+        "Ctrl+f": this.createState("file", this.node)
       };
     }
   },

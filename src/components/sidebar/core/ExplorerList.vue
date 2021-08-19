@@ -29,13 +29,17 @@
 
         <hr style="margin-top:5px;" />
 
-        <div class="list-body" @contextmenu="rootLevel">
-          <x-contextmenu v-if="rootLevelCreation">
+        <div class="list-body" @contextmenu.self="rootLevel">
+          <x-contextmenu v-show="rootLevelCreation && showContextMenu">
             <x-menu>
-              <x-menuitem @click.prevent="createState('dir')">
+              <x-menuitem
+                @click.stop="[createState('dir'), toggleOffContextMenu()]"
+              >
                 <x-label>New Folder</x-label>
               </x-menuitem>
-              <x-menuitem @click.prevent="createState('file')">
+              <x-menuitem
+                @click.stop="[createState('file'), toggleOffContextMenu()]"
+              >
                 <x-label>New File</x-label>
               </x-menuitem>
             </x-menu>
@@ -91,6 +95,7 @@ import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { uuidv4 } from "@/lib/uuid";
 import node_actions_integration from "@/mixins/explorer/node_actions_integration";
 import select_system from "@/mixins/explorer/select_system";
+import toggle_off_system from "@/mixins/explorer/toggle_off_system";
 const tree = require("../../../plugins/TreePlugin");
 export default {
   components: {
@@ -99,7 +104,7 @@ export default {
     ExplorerListFile,
     NodeActions
   },
-  mixins: [node_actions_integration, select_system],
+  mixins: [node_actions_integration, select_system, toggle_off_system],
 
   mounted() {
     this.registerHandlers(this.rootBindings);
@@ -199,10 +204,12 @@ export default {
 
     rootLevel() {
       this.rootLevelCreation = true;
+      this.showContextMenu = true;
     },
 
     isNotRootLevel() {
       this.rootLevelCreation = false;
+      this.showContextMenu = false;
     },
 
     createState(actionType) {

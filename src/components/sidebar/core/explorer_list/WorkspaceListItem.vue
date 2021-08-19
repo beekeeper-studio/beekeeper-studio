@@ -1,5 +1,5 @@
 <template>
-  <div class="list-item" @contextmenu="$emit('isNotRootLevel')">
+  <div class="list-item" @contextmenu="isNotRootLevel">
     <a
       class="list-item-btn"
       @click.exact="select(workspace)"
@@ -23,16 +23,18 @@
           <span>{{ workspace.createdAt }} </span>
         </span>
       </div>
-      <x-contextmenu>
+      <x-contextmenu v-show="showContextMenu">
         <x-menu style="--target-align: right; --v-target-align: top;">
-          <x-menuitem @click.prevent="createState('rename')">
+          <x-menuitem
+            @click.stop="[createState('rename'), toggleOffContextMenu()]"
+          >
             <x-label>Rename</x-label>
-            <x-shortcut value="Control+LB"></x-shortcut>
+            <x-shortcut value="Shift+LB"></x-shortcut>
           </x-menuitem>
           <hr />
-          <x-menuitem @click.prevent="remove(workspace)">
+          <x-menuitem @click.stop="[remove(workspace), toggleOffContextMenu()]">
             <x-label class="text-danger">Remove</x-label>
-            <x-shortcut value="Shift+LB"></x-shortcut>
+            <x-shortcut value="Control+LB"></x-shortcut>
           </x-menuitem>
         </x-menu>
       </x-contextmenu>
@@ -42,10 +44,11 @@
 
 <script>
 import node_actions_integration from "@/mixins/explorer/node_actions_integration";
+import toggle_off_system from "@/mixins/explorer/toggle_off_system";
 import RenameNode from "./node_actions/RenameNode.vue";
 export default {
   props: ["workspace"],
-  mixins: [node_actions_integration],
+  mixins: [node_actions_integration, toggle_off_system],
   components: { RenameNode },
   data() {
     return {};
@@ -76,6 +79,11 @@ export default {
     createState(actionType) {
       this.nodeData.actionType = actionType;
       this.state.renameTrigger = true;
+    },
+
+    isNotRootLevel() {
+      this.$emit("isNotRootLevel");
+      this.showContextMenu = true;
     }
   }
 };
