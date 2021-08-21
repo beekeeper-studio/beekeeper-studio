@@ -21,8 +21,7 @@ export default {
   props: ["placeholder", "type", "currentDir"],
   data() {
     return {
-      extensionValidation: this.$store.getters.explorerValidation,
-      extension: this.$store.getters.includedExtension,
+      extensionValidation: this.$store.getters.allValidation,
       title: ""
     };
   },
@@ -33,8 +32,8 @@ export default {
   computed: {
     inputValidation() {
       const result = { icon: "description", class: "schema-icon" };
-      const file = new RegExp(this.extensionValidation.file);
-      const dir = new RegExp(this.extensionValidation.dir);
+      const file = this.extensionValidation.fileCreation;
+      const dir = this.extensionValidation.dir;
       if (this.type === "file" && file.test(this.title)) {
         result.icon = "code";
         result.class = "query";
@@ -77,45 +76,56 @@ export default {
       } else {
         return this.title;
       }
+    },
+
+    inputIsValid() {
+      return !this.inputValidation.hasOwnProperty("isValid");
+    },
+
+    errorType() {
+      if (this.type === "dir") {
+        return "Directory";
+      } else {
+        return this.type;
+      }
     }
   },
 
   methods: {
     // TODO fix this mess
     async create() {
-      if (
-        !this.inputValidation.hasOwnProperty("isValid") &&
-        this.type !== "workspace"
-      ) {
-        if (
-          !this.$isFileOrDirExisting(this.onlyTitle, this.currentDir, this.type)
-        ) {
-          if (this.type === "file") {
-            this.$emit("createFile", this.onlyTitle);
-            this.close();
-          } else if (this.type == "dir") {
-            this.$emit("createDirectory", this.onlyTitle);
-            this.close();
-          }
-          return;
-        } else {
-          this.error("duplicate");
-          return;
-        }
-      } else if (
-        !this.inputValidation.hasOwnProperty("isValid") &&
-        this.type === "workspace"
-      ) {
-        if (!this.$isWorkspaceExisting(this.onlyTitle)) {
-          this.$emit("createWorkspace", this.onlyTitle);
-          this.close();
-        } else {
-          this.error("duplicate");
-          return;
-        }
-      }
+      if (this.inputIsValid) {
+        const isExisting = this.checkExistenz();
 
-      this.error(this.type);
+        if (isExisting) {
+          this.error("duplicate");
+          return;
+        }
+
+        switch (this.type) {
+          case "file":
+            this.$emit("createFile", this.onlyTitle);
+            break;
+          case "dir":
+            this.$emit("createDirectory", this.onlyTitle);
+            break;
+          case "workspace":
+            this.$emit("createWorkspace", this.onlyTitle);
+            break;
+        }
+
+        this.close();
+      }
+    },
+
+    checkExistenz() {
+      const isExisting = this.$isExisting(
+        this.type,
+        this.onlyTitle,
+        this.currentDir
+      );
+
+      return isExisting;
     },
 
     close() {
@@ -127,14 +137,14 @@ export default {
       switch (type) {
         case "dir":
           this.$noty.error(
-            "Directories can only contain letters, underscores(_) or dashes(-)"
+            "Directories can only contain letters and numbers, underscores(_) or dashes(-)"
           );
           break;
         case "file":
           this.$noty.error("Filename cannot have white spaces or numbers.");
           break;
         case "duplicate":
-          this.$noty.error("File/Directory already exists.");
+          this.$noty.error(`${this.errorType} already exists.`);
           break;
       }
     },

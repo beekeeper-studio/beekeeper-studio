@@ -12,7 +12,7 @@
 
 <script>
 export default {
-  props: ["currentNode", "type", "currentParentNode"],
+  props: ["currentNode", "type", "currentParentNode", "validation"],
 
   mounted() {
     const input = this.$refs.nodeInput;
@@ -60,41 +60,35 @@ export default {
     },
 
     rename() {
-      if (this.type === "file" || this.type === "dir") {
-        this.renameFileOrDirectory();
-      } else if (this.type === "workspace") {
-        this.renameWorkspace();
-      }
-    },
-
-    async renameFileOrDirectory() {
-      const isExisting = this.$isFileOrDirExisting(
-        this.name,
-        this.currentParentNode,
-        this.type
-      );
-
-      this.currentNode.node.title = this.name;
-
-      if (this.type === "file") {
-        await this.$store.dispatch("saveFavorite", this.currentNode.node);
-      } else if (this.type === "dir") {
-        await this.$store.dispatch("createDirectory", this.currentNode.node);
-      }
-      this.close();
-    },
-
-    async renameWorkspace() {
-      const isExisting = this.$isWorkspaceExisting(this.name);
+      const isExisting = this.checkExistenz();
 
       if (isExisting) {
         this.$noty.error(`${this.errorType} already exists`);
         return;
       }
 
-      this.currentNode.title = this.name;
-      await this.$store.dispatch("createWorkspace", this.currentNode);
+      const isValidName = this.validation.test(this.name);
+
+    
+
+      if (!isValidName) {
+        this.$noty.error(`Name not valid`);
+        return;
+      }
+
+      this.$emit("rename", this.name);
       this.close();
+
+      this.$noty.success("Successfully renamed");
+    },
+
+    checkExistenz() {
+      let isExisting = this.$isExisting(
+        this.type,
+        this.name,
+        this.currentParentNode
+      );
+      return isExisting;
     }
   }
 };

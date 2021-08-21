@@ -24,7 +24,7 @@ import "reflect-metadata";
 import { TypeOrmPlugin } from "./lib/typeorm_plugin";
 import config from "./config";
 import ConfigPlugin from "./plugins/ConfigPlugin";
-import TreePlugin from "./plugins/TreePlugin";
+import TreePlugin from "./plugins/ExplorerPlugin";
 import { VueElectronPlugin } from "./lib/NativeWrapper";
 import { ipcRenderer } from "electron";
 import AppEventHandler from "./lib/events/AppEventHandler";

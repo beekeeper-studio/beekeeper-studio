@@ -3,8 +3,8 @@
     <a
       class="list-item-btn"
       @click.exact="select(workspace)"
-      @click.shift.exact="createState('rename')"
-      @click.ctrl.exact="remove(workspace)"
+      @click.alt.exact="createState('rename')"
+      @click.ctrl.alt.exact="remove(workspace)"
     >
       <i class="item-icon material-icons">widgets</i>
 
@@ -12,7 +12,9 @@
         <RenameNode
           :currentNode="workspace"
           :type="'workspace'"
+          :validation="$store.getters.allValidation.dir"
           @close="close"
+          @rename="rename"
           v-if="state.renameTrigger"
         ></RenameNode>
         <span class="item-text expand truncate" v-else>
@@ -29,12 +31,12 @@
             @click.stop="[createState('rename'), toggleOffContextMenu()]"
           >
             <x-label>Rename</x-label>
-            <x-shortcut value="Shift+LB"></x-shortcut>
+            <x-shortcut value="Alt+LMB"></x-shortcut>
           </x-menuitem>
           <hr />
           <x-menuitem @click.stop="[remove(workspace), toggleOffContextMenu()]">
             <x-label class="text-danger">Remove</x-label>
-            <x-shortcut value="Control+LB"></x-shortcut>
+            <x-shortcut value="Ctrl+Alt+LMB"></x-shortcut>
           </x-menuitem>
         </x-menu>
       </x-contextmenu>
@@ -45,7 +47,7 @@
 <script>
 import node_actions_integration from "@/mixins/explorer/node_actions_integration";
 import toggle_off_system from "@/mixins/explorer/toggle_off_system";
-import RenameNode from "./node_actions/RenameNode.vue";
+import RenameNode from "../node_actions/RenameNode.vue";
 export default {
   props: ["workspace"],
   mixins: [node_actions_integration, toggle_off_system],
@@ -69,6 +71,7 @@ export default {
       await this.$store.dispatch("removeWorkspace", workspace);
       setTimeout(() => {
         this.$root.$emit("refreshWorkspace");
+        this.$noty.success("Deleted Workspace");
       }, 1);
     },
 
@@ -84,6 +87,11 @@ export default {
     isNotRootLevel() {
       this.$emit("isNotRootLevel");
       this.showContextMenu = true;
+    },
+
+    async rename(name) {
+      this.workspace.title = name;
+      await this.$store.dispatch("createWorkspace", this.workspace);
     }
   }
 };

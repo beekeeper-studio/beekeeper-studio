@@ -1,46 +1,67 @@
 <template>
   <div
-    :class="`sidebar-workspace flex-col expand ${isEmpty}`"
+    class="sidebar-workspace flex-col expand"
     v-hotkey="keymap"
+    style="position:relative;"
   >
-    <div
-      class="sidebar-list"
-      v-if="workspaces.length > 0"
-      @contextmenu.self="rootLevel"
-    >
-      <nav class="list-group">
-        <workspace-list-item
-          v-for="workspace in workspaces"
-          :key="workspace.id"
-          :workspace="workspace"
-          @isNotRootLevel="isNotRootLevel"
-        ></workspace-list-item>
-        <NodeActions
-          v-show="state.creationTrigger"
-          :placeholder="nodeData.placeholder"
-          :type="nodeData.actionType"
-          :currentDir="currentDir"
-          @close="close"
-          @createWorkspace="createWorkspace"
-        ></NodeActions>
-      </nav>
-    </div>
+    <nav class="list-group flex-col">
+      <div class="list-heading row">
+        <div class="sub row flex-middle expand">
+          <a style="display:flex; align-items:flex-end;">
+            <span>
+              Workspaces
+            </span>
+          </a>
+        </div>
+        <div class="actions">
+          <a title="Refresh">
+            <i class="material-icons">refresh</i>
+          </a>
+        </div>
+      </div>
 
-    <x-contextmenu v-if="rootLevelCreation">
-      <x-menu>
-        <x-menuitem @click="createState">
-          <x-label>Create Workspace</x-label>
-        </x-menuitem>
-      </x-menu>
-    </x-contextmenu>
+      <hr style="margin-top: 5px;" />
 
-    <div class="empty" v-if="workspaces.length === 0">
+      <div
+        class="sidebar-list"
+        v-if="workspaces.length > 0"
+        @contextmenu.self="rootLevel"
+      >
+        <nav class="list-group">
+          <workspace-list-item
+            v-for="workspace in workspaces"
+            :key="workspace.id"
+            :workspace="workspace"
+            @isNotRootLevel="isNotRootLevel"
+          ></workspace-list-item>
+          <NodeActions
+            v-show="state.creationTrigger && workspaces.length > 0"
+            :placeholder="nodeData.placeholder"
+            :type="nodeData.actionType"
+            :currentDir="currentDir"
+            @close="close"
+            @createWorkspace="createWorkspace"
+          ></NodeActions>
+        </nav>
+      </div>
+
+      <x-contextmenu v-if="rootLevelCreation && workspaces.length > 0">
+        <x-menu>
+          <x-menuitem @click="createState">
+            <x-label>Create Workspace</x-label>
+            <x-shortcut value="Control+N"></x-shortcut>
+          </x-menuitem>
+        </x-menu>
+      </x-contextmenu>
+    </nav>
+
+    <div class="empty center-empty" v-if="workspaces.length === 0">
       <span>No Workspaces found</span>
       <br />
-      <span class="text-info align" @click="create"
-        >Create Workspace
-        <i class="item-icon material-icons left-margin">widgets</i></span
-      >
+      <span class="text-info align" @click="create">
+        <i class="item-icon material-icons right-margin">widgets</i>
+        Create Workspace
+      </span>
     </div>
 
     <!-- workspace-create-modal -->
@@ -53,7 +74,7 @@
     >
       <form @submit.prevent="create" v-hotkey="keymap">
         <div class="dialog-content">
-          <div class="dialog-c-title">Workspace name</div>
+          <div class="dialog-c-title">Name</div>
           <div class="modal-form">
             <div class="alert alert-danger save-errors" v-if="error">
               {{ saveError }}
@@ -86,7 +107,7 @@
 
 <script>
 import { Directory } from "@/common/appdb/models/directory";
-import WorkspaceListItem from "./explorer_list/WorkspaceListItem.vue";
+import WorkspaceListItem from "./explorer_list/workspace/WorkspaceListItem.vue";
 import NodeActions from "./explorer_list/node_actions/NodeActions.vue";
 import node_actions_data from "@/mixins/explorer/node_actions_integration";
 export default {
@@ -96,7 +117,7 @@ export default {
     return {
       title: "",
       error: false,
-      validation: this.$store.getters.explorerValidation,
+      validation: this.$store.getters.allValidation.dir,
       rootBindings: [
         { event: "refreshWorkspace", handler: this.refreshWorkspace },
         { event: "createWorkspace", handler: this.refreshWorkspace }
@@ -137,11 +158,9 @@ export default {
 
   methods: {
     async create() {
-      const reg = new RegExp(this.validation.dir);
-
       if (this.title === "") {
         this.$modal.show("workspace-create-modal");
-      } else if (reg.test(this.title)) {
+      } else if (this.validation.test(this.title)) {
         this.createWorkspace(this.title);
         this.cancel();
       }
@@ -172,18 +191,16 @@ export default {
     },
 
     async refreshWorkspace() {
-      console.log("still getting called");
       await this.$store.dispatch("fetchWorkspaces");
-      console.log(this.workspaces, this.$store.getters.allWorkspaces);
     },
 
     createState() {
       this.nodeData.actionType = "workspace";
 
-      setTimeout(() => {
+      this.$nextTick(() => {
         this.nodeData.placeholder = "Workspacename";
         this.state.creationTrigger = true;
-      }, 1);
+      });
     },
 
     rootLevel() {
@@ -199,7 +216,13 @@ export default {
 
 <style lang="scss" scoped>
 .center-empty {
-  display: grid;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
   justify-content: center;
   align-items: center;
 }
@@ -211,8 +234,8 @@ export default {
   cursor: pointer;
 }
 
-.left-margin {
-  margin-left: 5px;
+.right-margin {
+  margin-right: 5px;
 }
 
 .shoter-widht {

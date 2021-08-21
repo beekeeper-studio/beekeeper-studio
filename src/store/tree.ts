@@ -1,9 +1,8 @@
 export interface FolderStructre {
-  extension: string[];
-  validation: { [key: string]: string };
+  validation: { [key: string]: any };
   nodeActions: { [key: string]: any };
   workspace: { [key: string]: any };
   directories: any;
-  files: {[key:string]: any};
-  selectState: {[key:string]: any}
+  files: { [key: string]: any };
+  selectState: { [key: string]: any };
 }

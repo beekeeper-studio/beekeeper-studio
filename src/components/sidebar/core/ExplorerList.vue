@@ -11,7 +11,6 @@
           <div class="sub row flex-middle expand">
             <a
               title="Back to Workspaces"
-              @click="backToWorkspace"
               style="display:flex; align-items:flex-end;"
             >
               <i class="material-icons item-icon">widgets</i>
@@ -24,22 +23,22 @@
             <a title="Refresh" @click="refresh">
               <i class="material-icons">refresh</i>
             </a>
+            <a title="Back to workspaces list" @click="backToWorkspace">
+              <i class="material-icons">view_list</i>
+            </a>
           </div>
         </div>
 
         <hr style="margin-top:5px;" />
 
-        <div class="list-body" @contextmenu.self="rootLevel">
-          <x-contextmenu v-show="rootLevelCreation && showContextMenu">
+        <div class="list-body" @contextmenu.self="rootLevel" ref="contextmenu">
+          <!-- // TODO fix that it shows up where the mouse is -->
+          <x-contextmenu v-show="rootLevelCreation">
             <x-menu>
-              <x-menuitem
-                @click.stop="[createState('dir'), toggleOffContextMenu()]"
-              >
+              <x-menuitem @click.prevent="createState('dir')">
                 <x-label>New Folder</x-label>
               </x-menuitem>
-              <x-menuitem
-                @click.stop="[createState('file'), toggleOffContextMenu()]"
-              >
+              <x-menuitem @click.prevent="createState('file')">
                 <x-label>New File</x-label>
               </x-menuitem>
             </x-menu>
@@ -71,7 +70,7 @@
             :type="nodeData.actionType"
             :currentDir="currentDir"
             @close="close"
-            @createFile="createQuery"
+            @createFile="saveQuery"
             @createDirectory="createDirectory"
           ></NodeActions>
         </div>
@@ -95,8 +94,7 @@ import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { uuidv4 } from "@/lib/uuid";
 import node_actions_integration from "@/mixins/explorer/node_actions_integration";
 import select_system from "@/mixins/explorer/select_system";
-import toggle_off_system from "@/mixins/explorer/toggle_off_system";
-const tree = require("../../../plugins/TreePlugin");
+const tree = require("../../../plugins/ExplorerPlugin");
 export default {
   components: {
     WorkspaceList,
@@ -104,7 +102,7 @@ export default {
     ExplorerListFile,
     NodeActions
   },
-  mixins: [node_actions_integration, select_system, toggle_off_system],
+  mixins: [node_actions_integration, select_system],
 
   mounted() {
     this.registerHandlers(this.rootBindings);
@@ -127,7 +125,7 @@ export default {
         { event: "createTree", handler: this.createNode },
         { event: "isNotRootLevel", handler: this.isNotRootLevel },
         { event: "createDirectory", handler: this.createDirectory },
-        { event: "createQuery", handler: this.createQuery }
+        { event: "saveQuery", handler: this.saveQuery }
       ]
     };
   },
@@ -161,12 +159,13 @@ export default {
   },
 
   methods: {
-    backToWorkspace() {
+    async backToWorkspace() {
       this.explorer = {
         workspaceSelected: false,
         tree: null
       };
       this.rootLevelCreation = true;
+      await this.$store.dispatch("setWorkspace", null);
     },
 
     async selectWorkspace(workspace) {
@@ -204,17 +203,15 @@ export default {
 
     rootLevel() {
       this.rootLevelCreation = true;
-      this.showContextMenu = true;
     },
 
     isNotRootLevel() {
       this.rootLevelCreation = false;
-      this.showContextMenu = false;
     },
 
     createState(actionType) {
       this.nodeData.actionType = actionType;
-
+      this.setDir();
       setTimeout(() => {
         switch (actionType) {
           case "dir":
@@ -229,7 +226,7 @@ export default {
       }, 1);
     },
 
-    async createQuery(title) {
+    async saveQuery(title) {
       const query = new FavoriteQuery();
       query.title = title || this.onlyTitle;
       query.directory_id = this.currentDir.node.id;

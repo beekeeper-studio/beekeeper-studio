@@ -1,4 +1,4 @@
-@import '../extends';
+@import "../extends";
 
 .vue-modal-resizer {
   display: block;
@@ -15,7 +15,7 @@
 .vue-modal-resizer::after {
   display: block;
   position: absolute;
-  content: '';
+  content: "";
   background: transparent;
   left: 0;
   top: 0;
@@ -78,9 +78,9 @@
   text-align: left !important;
   border-radius: 8px !important;
   padding: 0 !important;
-  width: 100%!important;
-  top: initial!important;
-  left: initial!important;
+  width: 100% !important;
+  top: initial !important;
+  left: initial !important;
   min-width: 380px;
   max-width: 600px;
   @extend .card-shadow;
@@ -156,9 +156,12 @@
 .vue-dialog .dialog-c-subtitle {
   font-size: 0.8rem;
 }
-// .vue-dialog .dialog-c-text {
-// }
-
+.vue-dialog .dialog-c-text {
+  font-size: 1rem;
+  font-weight: 400;
+  opacity: 0.8;
+  color: #eeeeee;
+}
 
 // Buttons
 // ---------------------------------

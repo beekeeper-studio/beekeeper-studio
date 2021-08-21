@@ -4,13 +4,14 @@
     :style="indent"
     @contextmenu="$root.$emit('isNotRootLevel')"
   >
-    <a class="list-item-btn" role="button" :class="{ open: showColumns }">
-      <span
-        class="btn-fab open-close"
-        @click.exact="selectDir(node)"
-        @click.shift.exact="createState('rename', node)"
-        @click.ctrl.exact="remove(node)"
-      >
+    <a
+      class="list-item-btn"
+      role="button"
+      :class="{ open: showColumns }"
+      @click.alt.exact="createState('rename', node)"
+      @click.ctrl.alt.exact="remove(null)"
+    >
+      <span class="btn-fab open-close" @click.exact="selectDir(node)">
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
       <span class="item-wrapper flex flex-middle expand">
@@ -21,7 +22,9 @@
           :currentNode="currentDir"
           :currentParentNode="currentParentNode"
           :type="'dir'"
+          :validation="$store.getters.allValidation.dir"
           @close="closeRename"
+          @rename="rename"
           v-if="state.renameTrigger"
         ></RenameNode>
         <span :class="selectClasses" v-else>
@@ -31,18 +34,20 @@
 
       <x-contextmenu>
         <x-menu>
-          <x-menuitem @click.prevent="createState('dir', node)">
+          <x-menuitem @click="createState('dir', node)">
             <x-label>New Folder</x-label>
           </x-menuitem>
-          <x-menuitem @click.prevent="createState('file', node)">
+          <x-menuitem @click="createState('file', node)">
             <x-label>New File</x-label>
           </x-menuitem>
-          <x-menuitem @click.prevent="createState('rename', node)">
+          <x-menuitem @click="createState('rename', node)">
             <x-label>Rename</x-label>
+            <x-shortcut value="Alt+LMB"></x-shortcut>
           </x-menuitem>
           <hr />
-          <x-menuitem @click.prevent="remove(node)">
+          <x-menuitem @click.stop="remove(null)">
             <x-label class="text-danger">Remove</x-label>
+            <x-shortcut value="Control+Alt+LMB"></x-shortcut>
           </x-menuitem>
         </x-menu>
       </x-contextmenu>
@@ -55,7 +60,7 @@
         :type="nodeData.actionType"
         :currentDir="currentDir"
         @close="close"
-        @createFile="createQuery"
+        @createFile="saveQuery"
         @createDirectory="createDirectory"
       ></NodeActions>
 
@@ -75,6 +80,48 @@
         @setParentNode="setParentNode"
       ></explorer-list-dir>
     </div>
+
+    <!-- remove-modal -->
+    <modal
+      class="vue-dialog beekeeper-modal shorter-width"
+      name="remove-modal"
+      height="auto"
+    >
+      <form @submit.prevent="remove(node)" @keydown.esc="cancel">
+        <div class="dialog-content">
+          <div class="dialog-c-title text-danger">Redbutton-Protocoll</div>
+          <p class="dialog-c-text">
+            Are you sure you want to delete the directory and all the content
+            inside it?
+          </p>
+          <label class="checkbox-group" for="rememberDeleteInfo">
+            <input
+              class="form-control"
+              id="rememberDeleteInfo"
+              type="checkbox"
+              name="rememberDeleteInfo"
+              v-model="dontAskAgain"
+            />
+            <span>Don't ask again</span>
+            <i
+              class="material-icons"
+              v-tooltip="
+                'If checked, we will not warn you in the future anymore'
+              "
+              >help_outlined</i
+            >
+          </label>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button class="btn btn-flat" type="button" @click.prevent="cancel">
+            Cancel
+          </button>
+          <button class="btn btn-danger" type="submit">
+            Remove
+          </button>
+        </div>
+      </form>
+    </modal>
   </div>
 </template>
 
@@ -101,7 +148,8 @@ export default {
   data() {
     return {
       showColumns: false,
-      id: uuidv4()
+      id: uuidv4(),
+      dontAskAgain: false
     };
   },
 
@@ -140,30 +188,27 @@ export default {
         "folder-name-unselected": !this.showColumns,
         truncate: true
       };
-    },
-
-    keymap() {
-      return {
-        "Ctrl+d": this.createState("dir", this.node),
-        "Ctrl+f": this.createState("file", this.node)
-      };
     }
   },
 
   methods: {
+    cancel() {
+      this.$modal.hide("remove-modal");
+    },
+
     async toggleColumns() {
       this.showColumns = !this.showColumns;
     },
 
-    createQuery(title) {
-      this.$root.$emit("createQuery", title);
+    saveQuery(title) {
+      this.$root.$emit("saveQuery", title);
     },
 
     createDirectory(title) {
       this.$root.$emit("createDirectory", title);
     },
 
-    createState(actionType, node) {
+    createState(actionType, node = this.node) {
       this.nodeData.actionType = actionType;
       this.correctSelection(node, actionType);
       setTimeout(() => {
@@ -185,12 +230,19 @@ export default {
     },
 
     async remove(node) {
-      // safety measuere should be implemented because one time go and brrrr goes all files
-      // TODO find the las currentDir after the one is deleted (Treestructure would be best)
-      await this.$store.dispatch("removeDirectory", node);
-      setTimeout(() => {
-        this.$root.$emit("refreshExplorer");
-      }, 1);
+      if (node === null) {
+        this.$modal.show("remove-modal");
+      } else {
+        await this.$store.dispatch("removeDirectory", node);
+        if (this.dontAskAgain) {
+          await this.$store.dispatch("dontAskAgainDirectory");
+        }
+        setTimeout(() => {
+          this.$root.$emit("refreshExplorer");
+          this.$noty.success("Deleted Directory");
+          this.$modal.hide("remove-modal");
+        }, 1);
+      }
     },
 
     closeRename(node) {
@@ -225,6 +277,11 @@ export default {
       } else {
         this.setDir(node);
       }
+    },
+
+    async rename(name) {
+      this.currentNode.node.title = name;
+      await this.$store.dispatch("createDirectory", this.currentNode.node);
     }
   }
 };

@@ -141,6 +141,7 @@ export default {
     activeIdx() {
       return _.indexOf(this.tabItems, this.activeTab);
     },
+
     keymap() {
       const meta = platformInfo.isMac ? "meta" : "ctrl";
       const closeTab = `${meta}+w`;
@@ -200,6 +201,7 @@ export default {
     },
     createQuery(optionalText) {
       // const text = optionalText ? optionalText : ""
+
       const query = new FavoriteQuery();
       query.text = optionalText;
 
@@ -213,7 +215,6 @@ export default {
       };
 
       this.addTab(result);
-      console.log(this.tabItems);
     },
     async loadTableCreate(table) {
       let method = null;
@@ -363,7 +364,6 @@ export default {
     this.tabItems = [];
   },
   mounted() {
-    this.createQuery();
     this.registerHandlers(this.rootBindings);
   }
 };

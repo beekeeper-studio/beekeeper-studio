@@ -64,7 +64,7 @@ export default class {
   }
 
   async run() {
-    console.log("running migrations, ###########################");
+    console.log("running migrations");
     const runner = this.connection.connection.createQueryRunner();
     await runner.query(setupSQL);
     try {

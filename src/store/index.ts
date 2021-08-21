@@ -84,14 +84,14 @@ const store = new Vuex.Store<State>({
     activeTab: null,
     selectedSidebarItem: null,
     explorer: {
-      extension: ["query"], // "design"
       validation: {
-        dir: "^[_A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*$",
-        file: "^[a-zA-Z_-]+\\.(query)$" // "^[a-zA-Z]+.(query|design)$"
+        dir: new RegExp("^[_A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*$"),
+        fileCreation: new RegExp("^[a-zA-Z_-]+\\.(query)$"), // "^[a-zA-Z]+.(query|design)$"
+        fileRename: new RegExp("^[a-zA-Z_-]+$")
       },
       workspace: {
         all: [],
-        current: ""
+        current: null
       },
       directories: [],
       files: {
@@ -131,6 +131,11 @@ const store = new Vuex.Store<State>({
       return state.explorer.workspace.current;
     },
 
+    isWorkspaceSelected(state) {
+      if (state.explorer.workspace.current === null) return false;
+      return true;
+    },
+
     currentParentNode(state) {
       return (
         state.explorer.selectState.parentDir || state.explorer.workspace.current
@@ -145,11 +150,7 @@ const store = new Vuex.Store<State>({
       );
     },
 
-    includedExtension(state) {
-      return state.explorer.extension;
-    },
-
-    explorerValidation(state) {
+    allValidation(state) {
       return state.explorer.validation;
     },
 
@@ -444,7 +445,12 @@ const store = new Vuex.Store<State>({
       await workspace.remove();
     },
 
-    setSelectDirectory(state: State, node) {
+    setSelectDirectory(state: State, node = null) {
+      if (node === null) {
+        state.explorer.selectState.dir = [];
+        return;
+      }
+
       if (!state.explorer.selectState.openDir.includes(node)) {
         state.explorer.selectState.openDir.push(node);
       }

@@ -226,6 +226,9 @@ export default {
     };
   },
   computed: {
+    workspaceSelected() {
+      return this.$store.getters.isWorkspaceSelected;
+    },
     dialect() {
       // dialect for sql-query-identifier
       const mappings = {
@@ -447,7 +450,7 @@ export default {
     async saveQuery() {
       if (!this.hasTitle || !this.hasText) {
         this.saveError = "You need both a title, and some query text.";
-      } else {
+      } else if (this.workspaceSelected) {
         await this.$store.dispatch("saveFavorite", this.query);
         this.$modal.hide("save-modal");
         this.$noty.success("Saved");
@@ -456,6 +459,8 @@ export default {
         setTimeout(() => {
           this.$root.$emit("refreshExplorer");
         }, 1);
+      } else {
+        this.$noty.info("You have to select a workspace to save a file.");
       }
     },
     escapeRegExp(string) {

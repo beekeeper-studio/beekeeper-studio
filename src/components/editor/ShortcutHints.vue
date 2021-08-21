@@ -18,7 +18,7 @@
     <div class="shortcut-item">
       <div>New Tab</div>
       <div class="shortcut" v-if="$config.isMac"><span>⌘</span><span>T</span></div>
-      <div class="shortcut" v-else><span>Ctrl</span><span>T</span></div>
+      <div class="shortcut" v-else><span>Ctrl</span><span>T</span>(If workspace selected)</div> 
     </div>
     <div class="shortcut-item">
       <div>Close Tab</div>
