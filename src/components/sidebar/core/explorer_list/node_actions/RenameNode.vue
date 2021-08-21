@@ -48,8 +48,12 @@ export default {
     errorType() {
       if (this.type === "file") {
         return `${this.type[0].toUpperCase()}ile`;
-      } else {
+      } else if (this.type === "dir") {
         return `Directory`;
+      } else if (this.type === "workspace") {
+        return `Workspace`;
+      } else {
+        return this.type;
       }
     }
   },
@@ -69,8 +73,6 @@ export default {
 
       const isValidName = this.validation.test(this.name);
 
-    
-
       if (!isValidName) {
         this.$noty.error(`Name not valid`);
         return;
@@ -79,7 +81,7 @@ export default {
       this.$emit("rename", this.name);
       this.close();
 
-      this.$noty.success("Successfully renamed");
+      this.$noty.success(`Successfully renamed to ${this.name}`);
     },
 
     checkExistenz() {

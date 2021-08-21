@@ -16,7 +16,7 @@
           :currentParentNode="currentParentNode"
           :validation="$store.getters.allValidation.fileRename"
           :type="'file'"
-          @close="close"
+          @close="defaultRenameClose"
           @rename="rename"
           v-if="state.renameTrigger"
         ></RenameNode>
@@ -44,20 +44,16 @@
 <script>
 import RenameNode from "./node_actions/RenameNode.vue";
 import toggle_off_system from "@/mixins/explorer/toggle_off_system";
+import rename_integration from "@/mixins/explorer/rename_integration";
 
 export default {
   name: "explorer-list-file",
   props: ["query", "currentNode", "currentParentNode"],
-  mixins: [toggle_off_system],
+  mixins: [toggle_off_system, rename_integration],
   data() {
-    return {
-      state: {
-        renameTrigger: false
-      }
-    };
+    return {};
   },
   components: { RenameNode },
-  computed: {},
 
   methods: {
     async renameState() {
@@ -70,15 +66,11 @@ export default {
       this.$store.dispatch("setSelectNode", query);
     },
 
-    close() {
-      this.state.renameTrigger = false;
-    },
-
     async remove(query) {
       await this.$store.dispatch("removeFavorite", query.node);
 
       this.$root.$emit("refreshExplorer");
-      this.$noty.success("Deleted Query");
+      this.$noty.success(`Deleted ${this.query.node.title}`);
     },
 
     isNotRootLevel() {

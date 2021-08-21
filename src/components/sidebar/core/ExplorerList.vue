@@ -69,7 +69,7 @@
             :placeholder="nodeData.placeholder"
             :type="nodeData.actionType"
             :currentDir="currentDir"
-            @close="close"
+            @close="defaultCreationClose"
             @createFile="saveQuery"
             @createDirectory="createDirectory"
           ></NodeActions>
@@ -94,6 +94,7 @@ import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { uuidv4 } from "@/lib/uuid";
 import node_actions_integration from "@/mixins/explorer/node_actions_integration";
 import select_system from "@/mixins/explorer/select_system";
+import rename_integration from "@/mixins/explorer/rename_integration";
 const tree = require("../../../plugins/ExplorerPlugin");
 export default {
   components: {
@@ -102,7 +103,7 @@ export default {
     ExplorerListFile,
     NodeActions
   },
-  mixins: [node_actions_integration, select_system],
+  mixins: [node_actions_integration, select_system, rename_integration],
 
   mounted() {
     this.registerHandlers(this.rootBindings);

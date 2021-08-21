@@ -92,7 +92,6 @@ export default {
   },
 
   methods: {
-    // TODO fix this mess
     async create() {
       if (this.inputIsValid) {
         const isExisting = this.checkExistenz();

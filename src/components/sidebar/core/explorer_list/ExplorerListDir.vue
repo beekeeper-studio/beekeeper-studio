@@ -132,11 +132,12 @@ import { uuidv4 } from "../../../../lib/uuid";
 import ExplorerListFile from "./ExplorerListFile.vue";
 import node_actions_integration from "@/mixins/explorer/node_actions_integration";
 import select_system from "@/mixins/explorer/select_system";
+import rename_integration from "@/mixins/explorer/rename_integration";
 export default {
   name: "explorer-list-dir",
   props: ["node", "depth"],
   components: { ExplorerListFile, NodeActions, RenameNode },
-  mixins: [node_actions_integration, select_system],
+  mixins: [node_actions_integration, select_system, rename_integration],
 
   mounted() {
     this.showColumns = false;
@@ -247,13 +248,13 @@ export default {
 
     closeRename(node) {
       this.state.renameTrigger = false;
-      setTimeout(() => {
+      this.$nextTick(() => {
         if (this.showColumns) {
           this.setDir(node);
         } else {
           this.correctSelection(node, "file");
         }
-      }, 2);
+      });
     },
 
     async selectDir(node) {

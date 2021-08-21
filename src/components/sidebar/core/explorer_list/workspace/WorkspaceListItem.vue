@@ -13,7 +13,7 @@
           :currentNode="workspace"
           :type="'workspace'"
           :validation="$store.getters.allValidation.dir"
-          @close="close"
+          @close="defaultRenameClose"
           @rename="rename"
           v-if="state.renameTrigger"
         ></RenameNode>
@@ -48,9 +48,10 @@
 import node_actions_integration from "@/mixins/explorer/node_actions_integration";
 import toggle_off_system from "@/mixins/explorer/toggle_off_system";
 import RenameNode from "../node_actions/RenameNode.vue";
+import rename_integration from "@/mixins/explorer/rename_integration";
 export default {
   props: ["workspace"],
-  mixins: [node_actions_integration, toggle_off_system],
+  mixins: [toggle_off_system, rename_integration],
   components: { RenameNode },
   data() {
     return {};

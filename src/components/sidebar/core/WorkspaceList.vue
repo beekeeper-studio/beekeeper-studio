@@ -39,7 +39,7 @@
             :placeholder="nodeData.placeholder"
             :type="nodeData.actionType"
             :currentDir="currentDir"
-            @close="close"
+            @close="defaultCreationClose"
             @createWorkspace="createWorkspace"
           ></NodeActions>
         </nav>
@@ -109,10 +109,10 @@
 import { Directory } from "@/common/appdb/models/directory";
 import WorkspaceListItem from "./explorer_list/workspace/WorkspaceListItem.vue";
 import NodeActions from "./explorer_list/node_actions/NodeActions.vue";
-import node_actions_data from "@/mixins/explorer/node_actions_integration";
+import node_actions_integration from "@/mixins/explorer/node_actions_integration";
 export default {
   components: { WorkspaceListItem, NodeActions },
-  mixins: [node_actions_data],
+  mixins: [node_actions_integration],
   data() {
     return {
       title: "",

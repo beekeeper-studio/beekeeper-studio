@@ -2,7 +2,6 @@ export default {
   data() {
     return {
       state: {
-        renameTrigger: false,
         creationTrigger: false
       },
       // nodeData is not really describing the variable good //TODO Rename it properly
@@ -28,13 +27,12 @@ export default {
   },
 
   methods: {
-    close() {
+    defaultCreationClose() {
       this.nodeData = {
         placeholder: "",
         type: ""
       };
       this.state.creationTrigger = false;
-      this.state.renameTrigger = false;
     }
   }
 };
