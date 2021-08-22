@@ -4,7 +4,7 @@
       class="list-item-btn"
       @click.exact="select(workspace)"
       @click.alt.exact="createState('rename')"
-      @click.ctrl.alt.exact="remove(workspace)"
+      @click.ctrl.alt.exact="remove(null, null)"
     >
       <i class="item-icon material-icons">widgets</i>
 
@@ -34,13 +34,22 @@
             <x-shortcut value="Alt+LMB"></x-shortcut>
           </x-menuitem>
           <hr />
-          <x-menuitem @click.stop="[remove(workspace), toggleOffContextMenu()]">
+          <x-menuitem
+            @click.stop="[remove(null, null), toggleOffContextMenu()]"
+          >
             <x-label class="text-danger">Remove</x-label>
-            <x-shortcut value="Ctrl+Alt+LMB"></x-shortcut>
+            <x-shortcut value="Control+Alt+LMB"></x-shortcut>
           </x-menuitem>
         </x-menu>
       </x-contextmenu>
     </a>
+
+    <ActionWarning
+      :type="'workspace'"
+      v-if="showWarning"
+      @close="toggleWarning"
+      @remove="remove(workspace, $event)"
+    ></ActionWarning>
   </div>
 </template>
 
@@ -48,16 +57,16 @@
 import node_actions_integration from "@/mixins/explorer/node_actions_integration";
 import toggle_off_system from "@/mixins/explorer/toggle_off_system";
 import RenameNode from "../node_actions/RenameNode.vue";
+import ActionWarning from "../node_actions/ActionWarning.vue";
 import rename_integration from "@/mixins/explorer/rename_integration";
+import warning_integration from "@/mixins/explorer/warning_integration";
 export default {
   props: ["workspace"],
-  mixins: [toggle_off_system, rename_integration],
-  components: { RenameNode },
+  mixins: [toggle_off_system, rename_integration, warning_integration],
+  components: { RenameNode, ActionWarning },
   data() {
     return {};
   },
-
-  computed: {},
 
   methods: {
     nicelySized(text) {
@@ -68,12 +77,17 @@ export default {
       }
     },
 
-    async remove(workspace) {
-      await this.$store.dispatch("removeWorkspace", workspace);
-      setTimeout(() => {
-        this.$root.$emit("refreshWorkspace");
-        this.$noty.success("Deleted Workspace");
-      }, 1);
+    async remove(workspace, options) {
+      console.log(options)
+      if (workspace !== null) {
+        await this.$store.dispatch("removeWorkspace", workspace);
+        setTimeout(() => {
+          this.$root.$emit("refreshWorkspace", false);
+          this.$noty.success("Deleted Workspace");
+        }, 1);
+      } else {
+        this.toggleWarning();
+      }
     },
 
     select(workspace) {

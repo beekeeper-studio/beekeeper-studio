@@ -364,6 +364,7 @@ export default {
     this.tabItems = [];
   },
   mounted() {
+    this.createQuery(null)
     this.registerHandlers(this.rootBindings);
   }
 };

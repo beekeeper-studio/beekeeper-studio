@@ -20,7 +20,7 @@
             </a>
           </div>
           <div class="actions">
-            <a title="Refresh" @click="refresh">
+            <a title="Refresh" @click="refresh(true)">
               <i class="material-icons">refresh</i>
             </a>
             <a title="Back to workspaces list" @click="backToWorkspace">
@@ -57,8 +57,6 @@
                 v-for="query in queries"
                 :key="query.name"
                 :query="query"
-                :currentNode="currentNode"
-                :currentParentNode="currentParentNode"
                 @select="selectQuery"
               ></explorer-list-file>
             </div>
@@ -190,8 +188,8 @@ export default {
       return root;
     },
 
-    async refresh(buttonTrigger = null) {
-      if (buttonTrigger !== null) this.$noty.info("Explorer refreshed");
+    async refresh(buttonTrigger) {
+      if (buttonTrigger) this.$noty.info("Explorer refreshed");
 
       const workspace = this.$store.getters.currentWorkspace.node;
       await this.$store.dispatch("fetchQueries", workspace);
@@ -234,7 +232,7 @@ export default {
       query.text = "";
       await this.$store.dispatch("saveFavorite", query);
       setTimeout(() => {
-        this.refresh();
+        this.refresh(false);
       }, 1);
     },
 
@@ -248,7 +246,7 @@ export default {
       dir.isWorkspace = 0;
       await this.$store.dispatch("createDirectory", dir);
       setTimeout(() => {
-        this.refresh();
+        this.refresh(false);
       }, 1);
     }
   }

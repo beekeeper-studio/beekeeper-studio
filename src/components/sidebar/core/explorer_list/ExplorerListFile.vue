@@ -48,7 +48,7 @@ import rename_integration from "@/mixins/explorer/rename_integration";
 
 export default {
   name: "explorer-list-file",
-  props: ["query", "currentNode", "currentParentNode"],
+  props: ["query"],
   mixins: [toggle_off_system, rename_integration],
   data() {
     return {};
@@ -69,7 +69,7 @@ export default {
     async remove(query) {
       await this.$store.dispatch("removeFavorite", query.node);
 
-      this.$root.$emit("refreshExplorer");
+      this.$root.$emit("refreshExplorer", false);
       this.$noty.success(`Deleted ${this.query.node.title}`);
     },
 

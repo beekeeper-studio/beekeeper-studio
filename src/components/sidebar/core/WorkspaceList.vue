@@ -14,7 +14,7 @@
           </a>
         </div>
         <div class="actions">
-          <a title="Refresh">
+          <a title="Refresh" @click="refreshWorkspace(true)">
             <i class="material-icons">refresh</i>
           </a>
         </div>
@@ -173,7 +173,7 @@ export default {
       workspace.isWorkspace = 1;
       await this.$store.dispatch("createWorkspace", workspace);
       setTimeout(() => {
-        this.refreshWorkspace();
+        this.refreshWorkspace(false);
       }, 1);
     },
 
@@ -190,7 +190,8 @@ export default {
       this.$refs.titleInput.select();
     },
 
-    async refreshWorkspace() {
+    async refreshWorkspace(buttonTrigger) {
+      if (buttonTrigger) this.$noty.info("Successfully refreshed workspace.");
       await this.$store.dispatch("fetchWorkspaces");
     },
 

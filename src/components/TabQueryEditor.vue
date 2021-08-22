@@ -457,7 +457,7 @@ export default {
         this.unsavedText = this.tab.query.text;
         this.tab.unsavedChanges = false;
         setTimeout(() => {
-          this.$root.$emit("refreshExplorer");
+          this.$root.$emit("refreshExplorer", false);
         }, 1);
       } else {
         this.$noty.info("You have to select a workspace to save a file.");

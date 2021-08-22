@@ -45,7 +45,7 @@
             <x-shortcut value="Alt+LMB"></x-shortcut>
           </x-menuitem>
           <hr />
-          <x-menuitem @click.stop="remove(null)">
+          <x-menuitem @click="remove(null)">
             <x-label class="text-danger">Remove</x-label>
             <x-shortcut value="Control+Alt+LMB"></x-shortcut>
           </x-menuitem>
@@ -59,7 +59,7 @@
         :placeholder="nodeData.placeholder"
         :type="nodeData.actionType"
         :currentDir="currentDir"
-        @close="close"
+        @close="defaultCreationClose"
         @createFile="saveQuery"
         @createDirectory="createDirectory"
       ></NodeActions>
@@ -69,8 +69,6 @@
         :key="query.name"
         :query="query"
         @select="selectQuery"
-        :currentNode="currentNode"
-        :currentParentNode="currentParentNode"
       ></explorer-list-file>
       <explorer-list-dir
         v-for="dir in directories"
@@ -81,63 +79,35 @@
       ></explorer-list-dir>
     </div>
 
-    <!-- remove-modal -->
-    <modal
-      class="vue-dialog beekeeper-modal shorter-width"
-      name="remove-modal"
-      height="auto"
-    >
-      <form @submit.prevent="remove(node)" @keydown.esc="cancel">
-        <div class="dialog-content">
-          <div class="dialog-c-title text-danger">Redbutton-Protocoll</div>
-          <p class="dialog-c-text">
-            Are you sure you want to delete the directory and all the content
-            inside it?
-          </p>
-          <label class="checkbox-group" for="rememberDeleteInfo">
-            <input
-              class="form-control"
-              id="rememberDeleteInfo"
-              type="checkbox"
-              name="rememberDeleteInfo"
-              v-model="dontAskAgain"
-            />
-            <span>Don't ask again</span>
-            <i
-              class="material-icons"
-              v-tooltip="
-                'If checked, we will not warn you in the future anymore'
-              "
-              >help_outlined</i
-            >
-          </label>
-        </div>
-        <div class="vue-dialog-buttons">
-          <button class="btn btn-flat" type="button" @click.prevent="cancel">
-            Cancel
-          </button>
-          <button class="btn btn-danger" type="submit">
-            Remove
-          </button>
-        </div>
-      </form>
-    </modal>
+    <ActionWarning
+      :type="'directory'"
+      v-if="showWarning"
+      @close="toggleWarning"
+      @remove="remove(options, node)"
+    ></ActionWarning>
   </div>
 </template>
 
 <script type="text/javascript">
 import NodeActions from "./node_actions/NodeActions.vue";
 import RenameNode from "./node_actions/RenameNode.vue";
+import ActionWarning from "./node_actions/ActionWarning.vue";
 import { uuidv4 } from "../../../../lib/uuid";
 import ExplorerListFile from "./ExplorerListFile.vue";
 import node_actions_integration from "@/mixins/explorer/node_actions_integration";
 import select_system from "@/mixins/explorer/select_system";
 import rename_integration from "@/mixins/explorer/rename_integration";
+import warning_integration from "@/mixins/explorer/warning_integration";
 export default {
   name: "explorer-list-dir",
   props: ["node", "depth"],
-  components: { ExplorerListFile, NodeActions, RenameNode },
-  mixins: [node_actions_integration, select_system, rename_integration],
+  components: { ExplorerListFile, NodeActions, RenameNode, ActionWarning },
+  mixins: [
+    node_actions_integration,
+    select_system,
+    rename_integration,
+    warning_integration
+  ],
 
   mounted() {
     this.showColumns = false;
@@ -149,8 +119,7 @@ export default {
   data() {
     return {
       showColumns: false,
-      id: uuidv4(),
-      dontAskAgain: false
+      id: uuidv4()
     };
   },
 
@@ -193,10 +162,6 @@ export default {
   },
 
   methods: {
-    cancel() {
-      this.$modal.hide("remove-modal");
-    },
-
     async toggleColumns() {
       this.showColumns = !this.showColumns;
     },
@@ -212,7 +177,7 @@ export default {
     createState(actionType, node = this.node) {
       this.nodeData.actionType = actionType;
       this.correctSelection(node, actionType);
-      setTimeout(() => {
+      this.$nextTick(() => {
         switch (actionType) {
           case "dir":
             this.nodeData.placeholder = "Foldername";
@@ -227,19 +192,19 @@ export default {
             this.state.renameTrigger = true;
             break;
         }
-      }, 1);
+      });
     },
 
     async remove(node) {
       if (node === null) {
-        this.$modal.show("remove-modal");
+        this.toggleWarning();
       } else {
         await this.$store.dispatch("removeDirectory", node);
         if (this.dontAskAgain) {
           await this.$store.dispatch("dontAskAgainDirectory");
         }
         setTimeout(() => {
-          this.$root.$emit("refreshExplorer");
+          this.$root.$emit("refreshExplorer", false);
           this.$noty.success("Deleted Directory");
           this.$modal.hide("remove-modal");
         }, 1);

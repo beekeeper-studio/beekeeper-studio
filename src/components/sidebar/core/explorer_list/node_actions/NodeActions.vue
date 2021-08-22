@@ -114,6 +114,8 @@ export default {
         }
 
         this.close();
+      } else {
+        this.error(this.type);
       }
     },
 
@@ -136,11 +138,13 @@ export default {
       switch (type) {
         case "dir":
           this.$noty.error(
-            "Directories can only contain letters and numbers, underscores(_) or dashes(-)"
+            "Directories can only contain letters and numbers, underscores(_) or dashes(-)."
           );
           break;
         case "file":
-          this.$noty.error("Filename cannot have white spaces or numbers.");
+          this.$noty.error(
+            "Filename cannot have white spaces or numbers and must end with an extension."
+          );
           break;
         case "duplicate":
           this.$noty.error(`${this.errorType} already exists.`);
