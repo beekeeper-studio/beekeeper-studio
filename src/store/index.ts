@@ -26,6 +26,7 @@ import { entityFilter } from "../lib/db/sql_tools";
 
 import RawLog from "electron-log";
 import { Directory } from "@/common/appdb/models/directory";
+import { UserSetting } from "@/common/appdb/models/user_setting";
 
 const log = RawLog.scope("store/index");
 
@@ -400,6 +401,10 @@ const store = new Vuex.Store<State>({
 
     setWorkspace(state: State, workspace) {
       state.explorer.workspace.current = workspace;
+    },
+
+    async setDefaultWorkspace(state: State, workspace) {
+      await UserSetting.set("lastWorkspace", workspace.id);
     },
 
     async fetchDirectories(state: State, workspace) {

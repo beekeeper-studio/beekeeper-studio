@@ -9,12 +9,10 @@
       <nav class="list-group flex-col">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
-            <a
-              title="Back to Workspaces"
-              style="display:flex; align-items:flex-end;"
-            >
+            <a style="display:flex; align-items:flex-end;">
               <i class="material-icons item-icon">widgets</i>
-              <span>
+
+              <span class="workspace-name">
                 {{ workspaceName }}
               </span>
             </a>

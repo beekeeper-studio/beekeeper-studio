@@ -12,6 +12,7 @@ import encrypt from "./20200917-encrypt-passwords";
 import sslFiles from "./20201008-add-ssl-files";
 import sslReject from "./20201231-ssl-reject-unauthorized";
 import explorerDesign from "./20210816_create_explorer_design";
+import explorerUserPrefences from "./20210822_add_explorer_prefences_to_settings";
 import createLogger from "../lib/logger";
 
 const logger = createLogger("migrations")();
@@ -33,7 +34,8 @@ const realMigrations = [
   addSc,
   sslFiles,
   sslReject,
-  explorerDesign
+  explorerDesign,
+  explorerUserPrefences
 ];
 
 // fixtures require the models
