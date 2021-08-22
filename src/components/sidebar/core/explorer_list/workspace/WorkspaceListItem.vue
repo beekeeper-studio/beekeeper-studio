@@ -78,7 +78,6 @@ export default {
     },
 
     async remove(workspace, options) {
-      console.log(options)
       if (workspace !== null) {
         await this.$store.dispatch("removeWorkspace", workspace);
         setTimeout(() => {
