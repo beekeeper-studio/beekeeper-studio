@@ -1,5 +1,6 @@
 import knexlib from 'knex'
 import Knex from "knex";
+import _ from 'lodash';
 import { DBConnection } from '../../db/client';
 import { TableFilter, TableOrView } from '../../db/models';
 import { Export } from '../export';
@@ -38,7 +39,7 @@ export class SqlExporter extends Export {
     if (!this.connection.connectionType || !this.knexTypes[this.connection.connectionType]) {
       throw new Error("SQL export not supported on connection type " + this.connection.connectionType)
     }
-
+    
     this.knex = knexlib({ client: this.knexTypes[this.connection.connectionType] || undefined })
   }
 
@@ -64,7 +65,13 @@ export class SqlExporter extends Export {
       knex = knex.withSchema(this.table.schema)
     }
 
-    const content = knex.insert(row).toQuery()
+    const result = _.mapValues(row, (v) => {
+      if (_.isObject(v)) return JSON.stringify(v)
+      return v
+    })
+
+
+    const content = knex.insert(result).toQuery()
     return content
   }
 }

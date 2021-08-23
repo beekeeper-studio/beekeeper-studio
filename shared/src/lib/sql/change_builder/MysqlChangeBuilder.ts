@@ -1,11 +1,7 @@
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { MysqlData } from "@shared/lib/dialects/mysql";
-import { Dialect } from "@shared/lib/dialects/models";
-
-interface LiteSchemaItem {
-  columnName: string
-  dataType: string
-}
+import { Dialect, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
+import _ from 'lodash'
 
 export class MySqlChangeBuilder extends ChangeBuilderBase {
   dialect: Dialect = 'mysql'
@@ -13,10 +9,17 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
   wrapLiteral = MysqlData.wrapLiteral
   escapeString = MysqlData.escapeString
 
-  existingColumns: LiteSchemaItem[]
-  constructor(table: string, existingColumns: LiteSchemaItem[]) {
+
+  existingColumns: SchemaItem[]
+  constructor(table: string, existingColumns: SchemaItem[]) {
     super(table)
     this.existingColumns = existingColumns
+  }
+  
+  defaultValue(defaultValue) {
+    if (defaultValue === 'CURRENT_TIMESTAMP') return defaultValue
+    if (defaultValue.toString().startsWith('(')) return defaultValue
+    return this.escapeString(defaultValue.toString(), true);
   }
 
   dropRelations(names: string[]): string | null {
@@ -28,19 +31,72 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     }).join(";")
   }
 
-  renameColumn(column: string, newName: string): string {
+  ddl(existing: SchemaItem, updated: SchemaItem): string {
+    const column = existing.columnName
+    const newName = updated.columnName
+    const nameChanged = column !== newName
 
-    const existingColumn = this.existingColumns.find((c) => c.columnName === column)
-    const existingType = existingColumn?.dataType
-    if (!existingType) {
-      throw new Error(`Unable to find type for column ${column} in order to rename it`)
-    }
+    // mysql 5.7 only allows literal values except CURRENT_TIMESTAMP
+    // mysql 8 allows literal values PLUS expressions like ('foo')
+    // https://dev.mysql.com/doc/refman/8.0/en/data-type-defaults.html
+    // it's very confusing.
 
     return [
-      `CHANGE`,
+      nameChanged ? `CHANGE` : 'MODIFY',
       this.wrapIdentifier(column),
-      this.wrapIdentifier(newName),
-      existingType
-    ].join(" ")
+      nameChanged ? this.wrapIdentifier(newName) : null,
+      updated.dataType,
+      updated.defaultValue ? `DEFAULT ${this.defaultValue(updated.defaultValue)}` : null,
+      updated.nullable ? 'NULL' : 'NOT NULL',
+      updated.extra,
+      updated.comment ? `COMMENT ${this.escapeString(updated.comment, true)}` : null,
+    ].filter((c) => !!c).join(" ")
   }
+
+
+  getExisting(column: string) {
+    const c: SchemaItem | undefined = this.existingColumns.find((c) => c.columnName === column)
+    if (!c) {
+      throw new Error(`Unable to find type for column ${column} in order to rename it`)
+    }
+    return c
+  }
+
+  buildUpdatedSchema(existing: SchemaItem, specs: SchemaItemChange[]) {
+    let result = { ...existing }
+    specs.forEach((spec) => {
+      if (spec.changeType === 'columnName') result = { ...result, columnName: spec.newValue.toString()}
+      if (spec.changeType === 'dataType') result = { ...result, dataType: spec.newValue.toString()}
+      if (spec.changeType === 'defaultValue') result = { ...result, defaultValue: spec.newValue.toString()}
+      if (spec.changeType === 'nullable') result = { ...result, nullable: !!spec.newValue}
+      if (spec.changeType === 'comment') result = { ...result, comment: spec.newValue.toString()}
+      if (spec.changeType === 'extra') result = { ...result, extra: spec.newValue.toString()}
+    })
+    return result
+  }
+
+  alterColumns(specs: SchemaItemChange[]) {
+    const groupedByName = _.groupBy(specs, 'columnName')
+    const existingGrouped = _.groupBy(this.existingColumns, 'columnName')
+
+    return Object.keys(groupedByName).map((name) => {
+      const changes = groupedByName[name];
+      const existing = existingGrouped[name][0];
+      if (!existing) return null;
+      const updated = this.buildUpdatedSchema(existing, changes)
+      return this.ddl(existing, updated)
+    }).filter((c)=> !!c)
+
+  }
+
+  renames() {
+    // return nothing, do it all in alterColumns:
+    return []
+  }
+
+  alterComments() {
+    // return nothing, do it all in alterColumns
+    return []
+  }
+
 }

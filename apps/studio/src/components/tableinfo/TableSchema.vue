@@ -163,6 +163,16 @@ export default Vue.extend({
           formatter: this.cellFormatter,
           editable: this.isCellEditable.bind(this, 'alterColumn'),
         },
+        (this.disabledFeatures?.informationSchema?.extra ? null : {
+          title: "Extra",
+          field: 'extra',
+          tooltip: true,
+          headerTooltip: 'eg AUTO_INCREMENT',
+          editable: this.isCellEditable.bind(this, 'alterColumn'),
+          formatter: this.cellFormatter,
+          cellEdited: this.cellEdited,
+          editor: vueEditor(NullableInputEditorVue)
+        }),
         {
           title: 'Primary',
           field: 'primary',

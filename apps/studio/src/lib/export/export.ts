@@ -52,8 +52,7 @@ export abstract class Export {
   abstract formatRow(data: any[]): string
 
   protected rowToObject(row: any[]): Object {
-    let columns = this.dedupedColumns
-    if (!columns) columns = row.map((_r, i) => {
+    const columns = this.dedupedColumns?.length ?  this.dedupedColumns : row.map((_r, i) => {
       return {dataType: 'unknown', columnName: `col_${i+1}`}
     })
     const names = columns.map(c => c.columnName)
@@ -155,8 +154,8 @@ export abstract class Export {
           const row = rows[rI];
           const mutated = Mutators.mutateRow(row, this.columns?.map((c) => c.dataType), this.preserveComplex)
           const formatted = this.formatRow(mutated)
-          this.fileHandle?.write(formatted)
-          this.fileHandle?.write(this.rowSeparator)
+          await this.fileHandle?.write(formatted)
+          await this.fileHandle?.write(this.rowSeparator)
         }
         this.countExported += rows.length
 

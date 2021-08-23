@@ -40,7 +40,7 @@ describe("Postgres Integration Tests", () => {
         domain: null,
         socketPath: null,
       }
-      util = new DBTestUtil(config, "banana")
+      util = new DBTestUtil(config, "banana", { dialect: 'postgresql'})
       await util.setupdb()
 
       await util.knex.schema.createTable('witharrays', (table) => {

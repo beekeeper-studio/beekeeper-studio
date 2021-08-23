@@ -1,16 +1,21 @@
 import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
-import Purify from 'dompurify'
 import helpers from '@shared/lib/tabulator'
 export const NULL = '(NULL)'
 import Tabulator from 'tabulator-tables'
 
+const htmlMap = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#039;'
+};
 
-function sanitizeHtml(value) {
-  if (!value) return null
-  return Purify.sanitize(value)
+function escapeHtml(text: string): string | null {
+  if (!text) return null
+  return text.replace(/[&<>"']/g, function (m) { return htmlMap[m]; });
 }
-
 
 export default {
 
@@ -35,7 +40,7 @@ export default {
         cellValue = cell.getValue().map((v) => v.toString()).join(", ")
       }
       cellValue = cellValue.replace(/\n/g, ' ↩ ');
-      cellValue = sanitizeHtml(cellValue);
+      cellValue = escapeHtml(cellValue);
       // removing the <pre> will break selection / copy paste, see ResultTable
       const result = `<pre>${cellValue}</pre>`
       return result;

@@ -70,6 +70,9 @@ export interface DialectData {
   escapeString: (s: string, quote?: boolean) => string
   wrapLiteral: (s: string) => string
   disabledFeatures?: {
+    informationSchema?: {
+      extra?: boolean
+    }
     alter?: {
       addColumn?: boolean
       dropColumn?: boolean
@@ -119,6 +122,7 @@ export interface SchemaConfig {
   comment?: string
   defaultValue?: string
   primaryKey?: boolean
+  extra?: string
 }
 
 // this is the flattened structure we actually render in a component
@@ -133,7 +137,7 @@ export interface Schema {
 }
 
 export interface SchemaItemChange {
-  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue' | 'comment'
+  changeType: 'columnName' | 'dataType' | 'nullable' | 'defaultValue' | 'comment' | 'extra'
   columnName: string
   newValue: string | boolean | null
 }

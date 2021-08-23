@@ -26,6 +26,9 @@ export const SqliteData: DialectData = {
       multiStatement: true,
       addConstraint: true,
       dropConstraint: true,
+    },
+    informationSchema: {
+      extra: true
     }
   }
 }

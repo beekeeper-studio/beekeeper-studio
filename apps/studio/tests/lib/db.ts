@@ -4,6 +4,9 @@ import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
 import { IDbConnectionPublicServer } from '@/lib/db/server'
+import { AlterTableSpec, Dialect, DialectData } from '../../../../shared/src/lib/dialects/models'
+import { getDialectData } from '../../../../shared/src/lib/dialects/'
+import _ from 'lodash'
 export const dbtimeout = 120000
 
 
@@ -17,6 +20,7 @@ const KnexTypes: any = {
 }
 
 interface Options {
+  dialect: Dialect,
   defaultSchema?: string
   version?: string,
   skipPkQuote?: boolean
@@ -28,7 +32,10 @@ export class DBTestUtil {
   public connection: DBConnection
   public extraTables: number = 0
   private options: Options
-  private dialect: string
+  private dbType: string
+
+  private dialect: Dialect
+  private data: DialectData
   
   public preInitCmd: string | undefined
   public defaultSchema: string = 'public'
@@ -37,12 +44,15 @@ export class DBTestUtil {
     return this.extraTables + 8
   }
 
-  constructor(config: IDbConnectionServerConfig, database: string, options: Options = {}) {
+  constructor(config: IDbConnectionServerConfig, database: string, options: Options) {
     log.transports.console.level = 'error'  
     if (platformInfo.debugEnabled) {
       log.transports.console.level = 'silly'
     }
-    this.dialect = config.client || 'generic'
+
+    this.dialect = options.dialect
+    this.data = getDialectData(this.dialect)
+    this.dbType = config.client || 'generic'
     this.options = options
     if (config.client === 'sqlite') {
       this.knex = Knex({
@@ -138,19 +148,76 @@ export class DBTestUtil {
 
     await this.knex.schema.dropTableIfExists("alter_test")
     await this.knex.schema.createTable("alter_test", (table) => {
-      table.specificType("id", 'varchar(255)')
-      table.specificType("first_name", "varchar(255)")
-      table.specificType("last_name", "varchar(255)")
-      table.specificType("age", "varchar(255)")
+      table.specificType("id", 'varchar(255)').notNullable()
+      table.specificType("first_name", "varchar(255)").nullable()
+      table.specificType("last_name", "varchar(255)").notNullable().defaultTo('Rathbone')
+      table.specificType("age", "varchar(255)").defaultTo('8').nullable()
     })
 
-    const input = {
+
+    const simpleChange = {
+      table: 'alter_test',
+      alterations: [
+        {
+          'columnName': 'last_name',
+          changeType: 'columnName',
+          newValue: 'family_name'
+        }
+      ]
+    }
+
+    await this.connection.alterTable(simpleChange)
+    const simpleResult = await this.connection.listTableColumns('alter_test')
+
+    console.log(simpleResult)
+    expect(simpleResult.find((c) => c.columnName === 'family_name')).toBeTruthy()
+
+
+    // only databases that can actually change things past this point.
+    if (this.data.disabledFeatures?.alter?.alterColumn) return
+
+    await this.knex.schema.dropTableIfExists("alter_test")
+    await this.knex.schema.createTable("alter_test", (table) => {
+      table.specificType("id", 'varchar(255)').notNullable()
+      table.specificType("first_name", "varchar(255)").nullable()
+      table.specificType("last_name", "varchar(255)").notNullable().defaultTo('Rathbone')
+      table.specificType("age", "varchar(255)").defaultTo('8').nullable()
+    })
+
+
+
+    const input: AlterTableSpec = {
       table: 'alter_test',
       alterations: [
         {
           columnName: 'last_name',
           changeType: 'columnName',
           newValue: 'family_name'
+        },
+        {
+          columnName: 'first_name',
+          changeType: 'dataType',
+          newValue: 'varchar(20)'
+        },
+        {
+          columnName: 'age',
+          changeType: 'nullable',
+          newValue: false
+        },
+        {
+          columnName: 'age',
+          changeType: 'defaultValue',
+          newValue: '99'
+        },
+        {
+          columnName: 'age',
+          changeType: 'dataType',
+          newValue: 'varchar(5)'
+        },
+        {
+          columnName: 'age',
+          changeType: 'comment',
+          newValue: "Age doesn't matter to me."
         }
       ]
     }
@@ -159,30 +226,54 @@ export class DBTestUtil {
     const schema = await this.connection.listTableColumns('alter_test')
     interface MiniColumn {
       columnName: string
-      dataType: string
+      dataType: string,
+      nullable: boolean,
+      defaultValue: string,
+      comment: string
     }
-    const rawResult: MiniColumn[] = schema.map((c) => ({columnName: c.columnName, dataType: c.dataType}))
+    const rawResult: MiniColumn[] = schema.map((c) => 
+      _.pick(c, 'nullable', 'defaultValue', 'columnName', 'dataType', 'comment')
+    )
     
 
     // cockroach adds a rowid column if there's no primary key.
     const result = rawResult.filter((r) => r.columnName !== 'rowid')
 
+
+    // this is different in each database.
+    const defaultValue = (s: string) => {
+      if (this.dialect === 'postgresql') return `'${s}'::character varying`
+      if (this.dialect === 'sqlserver') return `('${s}')`
+      return s
+    }
     const expected = [
       {
         columnName: 'id',
-        dataType: 'varchar(255)'
+        dataType: 'varchar(255)',
+        nullable: false,
+        defaultValue: null,
+        comment: null,
       },
       {
         columnName: 'first_name',
-        dataType: 'varchar(255)'
+        dataType: 'varchar(20)',
+        nullable: true,
+        defaultValue: null,
+        comment: null,
       },
       {
         columnName: 'family_name',
-        dataType: 'varchar(255)'
+        dataType: 'varchar(255)',
+        nullable: false,
+        defaultValue: defaultValue('Rathbone'),
+        comment: null,
       },
       {
         columnName: 'age',
-        dataType: 'varchar(255)'
+        dataType: 'varchar(5)',
+        nullable: false,
+        defaultValue: defaultValue('99'),
+        comment: "Age doesn't matter to me."
       }
     ]
     expect(result).toMatchObject(expected)
@@ -218,7 +309,7 @@ export class DBTestUtil {
   }
 
   async queryTests() {
-    if (this.dialect === 'sqlite') return
+    if (this.dbType === 'sqlite') return
     console.log('query tests')
     const q = await this.connection.query("select 'a' as total, 'b' as total")
     if(!q) throw new Error("no query result")

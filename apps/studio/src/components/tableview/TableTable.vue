@@ -132,6 +132,9 @@
             <span>Apply</span>
           </x-button>
         </template>
+        <template v-if="!editable">
+          <span class="statusbar-item" title="Only tables with a single primary key column are editable."><i class="material-icons-outlined">info</i> Read Only</span>
+        </template>
 
         <!-- Actions -->
         <x-button class="btn btn-flat" title="Refresh table" @click="refreshTable">

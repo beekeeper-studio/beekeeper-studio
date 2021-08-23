@@ -209,7 +209,9 @@ export async function listTableColumns(conn, database, table) {
       column_type AS 'data_type',
       is_nullable AS 'is_nullable',
       column_default as 'column_default',
-      ordinal_position as 'ordinal_position'
+      ordinal_position as 'ordinal_position',
+      COLUMN_COMMENT as 'column_comment',
+      extra as 'extra'
     FROM information_schema.columns
     WHERE table_schema = database()
     ${clause}
@@ -219,14 +221,15 @@ export async function listTableColumns(conn, database, table) {
   const params = table ? [table] : []
 
   const { data } = await driverExecuteQuery(conn, { query: sql, params });
-
   return data.map((row) => ({
     tableName: row.table_name,
     columnName: row.column_name,
     dataType: row.data_type,
     ordinalPosition: Number(row.ordinal_position),
     nullable: row.is_nullable === 'YES',
-    defaultValue: row.column_default
+    defaultValue: row.column_default,
+    extra: _.isEmpty(row.extra) ? null : row.extra,
+    comment: _.isEmpty(row.column_comment) ? null : row.column_comment
   }));
 }
 
@@ -709,9 +712,12 @@ async function alterTableSql(conn, change) {
   return builder.alterTable(change)
 }
 
-async function alterTable(conn, change) {
-  const sql = await alterTableSql(conn, change)
-  await executeWithTransaction(conn, { query: sql })
+async function alterTable(_conn, change) {
+  await runWithTransaction(_conn, async (connection) => {
+    const cli = { connection }
+    const query = await alterTableSql(cli, change)
+    return await driverExecuteQuery(cli, { query })
+  })
 }
 
 export function alterIndexSql(payload) {
@@ -904,6 +910,22 @@ async function runWithConnection({ pool }, run) {
       }
     });
   });
+}
+
+async function runWithTransaction(conn, func) {
+  await runWithConnection(conn, async (connection) => {
+    const cli = { connection }
+    try {
+      await driverExecuteQuery(cli, { query: 'START TRANSACTION' })
+      const result = await func(connection)
+      await driverExecuteQuery(cli, { query: 'COMMIT' })
+      return result
+    } catch (ex) {
+      await driverExecuteQuery(cli, { query: 'ROLLBACK' })
+      console.error(ex)
+      throw ex
+    }
+  })
 }
 
 export function filterDatabase(item, { database } = {}, databaseField) {
