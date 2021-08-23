@@ -403,6 +403,7 @@ const store = new Vuex.Store<State>({
       state.explorer.workspace.current = workspace;
     },
 
+    // is this approach appropiate?
     async setDefaultWorkspace(state: State, workspace) {
       await UserSetting.set("lastWorkspace", workspace.id);
     },

@@ -130,7 +130,6 @@ export default {
     this.registerHandlers(this.rootBindings);
   },
 
-  // maybe do not9 let it go
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings);
   },
