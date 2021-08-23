@@ -1285,8 +1285,6 @@ function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServe
     }
   }
 
-  logger().debug('connection config', config)
-
   return config;
 }
 

@@ -94,6 +94,9 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(['dialect']),
+    editable() {
+      return this.table.entityType === 'table' && !!this.primaryKeys.length
+    },
     notice() {
       if (this.dialect === 'sqlite') {
         return 'Note: SQLite does not support any column alterations except renaming.'
@@ -205,13 +208,11 @@ export default Vue.extend({
         }
       })
     },
-    editable() {
-      return this.table.entityType === 'table'
-    }
   },
   methods: {
     isCellEditable(feature: string, cell: CellComponent): boolean {
       // views and materialized views are not editable
+
       if (!this.editable) return false
       if (this.removedRows.includes(cell.getRow())) return false
 
