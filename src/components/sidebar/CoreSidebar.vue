@@ -57,7 +57,6 @@ import _ from "lodash";
 import GlobalSidebar from "./GlobalSidebar";
 import TableList from "./core/TableList";
 import HistoryList from "./core/HistoryList";
-// import FavoriteList from './core/FavoriteList'
 import DatabaseDropdown from "./core/DatabaseDropdown";
 
 import { mapState } from "vuex";
