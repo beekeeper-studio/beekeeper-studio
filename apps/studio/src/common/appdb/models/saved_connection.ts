@@ -231,14 +231,19 @@ export class SavedConnection extends DbConnectionBase {
   parse(url: string) {
     try {
       const goodEndings = ['.db', '.sqlite', '.sqlite3']
-      if(goodEndings.find((e) => url.endsWith(e)) && !this.smellsLikeUrl(url)) {
+      if (!this.smellsLikeUrl(url)) {
         // it's a sqlite file
-        this.connectionType = 'sqlite'
-        this.defaultDatabase = url
-        return true
+        if(goodEndings.find((e) => url.endsWith(e))) {
+          // it's a valid sqlite file
+          this.connectionType = 'sqlite'
+          this.defaultDatabase = url
+          return true
+        } else {
+          return false
+        }
       }
 
-      const parsed = new ConnectionString(url)      
+      const parsed = new ConnectionString(url)
       this.connectionType = parsed.protocol as IDbClients || this.connectionType || 'postgresql'
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
