@@ -228,7 +228,6 @@ export default Vue.extend({
       const isDisabled = this.disabledFeatures?.alter?.[feature]
       const isNewRow = this.newRows.includes(cell.getRow())
       const result = (isNewRow || !isDisabled)
-      console.log("Is editable? Cell: ", cell.getField(), "value:", cell.getValue())
       return result
     },
     async refreshColumns() {

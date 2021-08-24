@@ -25,7 +25,6 @@ export default {
           name: "View Data",
           slug: 'view-data',
           handler: ({ item }) => {
-            console.log("view data clicked!")
             this.$root.$emit(AppEvent.loadTable, { table: item })
           }
         },

@@ -143,7 +143,6 @@
     },
     methods: {
       maybeLoadSqlite(e) {
-        console.log("handling drop.")
         // cast to an array
         const files = [...e.dataTransfer.files || []]
         if (!files || !files.length) return
