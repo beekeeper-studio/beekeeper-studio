@@ -168,17 +168,8 @@
       align-items: center;
       justify-content: center;
       height: 100%;
-<<<<<<< HEAD:src/assets/styles/app/core-tabs.scss
-      min-width: 24px;
-      background: linear-gradient(
-        -90deg,
-        rgba(lighten($theme-bg, 3%), 100%) 80%,
-        rgba(lighten($theme-bg, 3%), 0) 100%
-      );
-=======
       min-width: 28px;
       background: linear-gradient(-90deg, rgba(lighten($theme-bg, 3%), 100%) 80%, rgba(lighten($theme-bg, 3%), 0) 100%);
->>>>>>> upstream/master:apps/studio/src/assets/styles/app/core-tabs.scss
     }
     .tab-close {
       position: absolute;
