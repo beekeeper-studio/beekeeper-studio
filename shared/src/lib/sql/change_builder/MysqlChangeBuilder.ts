@@ -81,7 +81,7 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
 
     return Object.keys(groupedByName).map((name) => {
       const changes = groupedByName[name];
-      const existing = existingGrouped[name][0];
+      const existing = existingGrouped?.[name]?.[0];
       if (!existing) return null;
       const updated = this.buildUpdatedSchema(existing, changes)
       return this.ddl(existing, updated)

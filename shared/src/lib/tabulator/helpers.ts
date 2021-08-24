@@ -106,6 +106,7 @@ export const TabulatorStateWatchers = {
   tableColumns: {
     deep: true,
     handler() {
+      console.log("updating tabulator with columns")
       if (!this.tabulator) return
       const t: Tabulator = this.tabulator
       t.setColumns(this.tableColumns)

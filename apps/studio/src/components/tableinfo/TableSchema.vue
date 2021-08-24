@@ -68,6 +68,15 @@ import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
 import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
+
+
+const FakeCell = {
+  getRow: () => ({}),
+  getField: () => 'fake',
+  getValue: () => 'fake'
+
+}
+
 export default Vue.extend({
   components: {
     StatusBar,
@@ -191,7 +200,7 @@ export default Vue.extend({
         this.editable ? trashButton(this.removeRow) : null
       ].filter((c) => !!c)
       return result.map((col) => {
-        const editable = _.isFunction(col.editable) ? col.editable({ getRow: () => ({})}) : col.editable
+        const editable = _.isFunction(col.editable) ? col.editable(FakeCell) : col.editable
         const cssBase = col.cssClass || null
         const extraCss = editable ? 'editable' : 'read-only'
         const cssClass = cssBase ? `${cssBase} ${extraCss}` : extraCss
@@ -218,8 +227,9 @@ export default Vue.extend({
 
       const isDisabled = this.disabledFeatures?.alter?.[feature]
       const isNewRow = this.newRows.includes(cell.getRow())
-
-      return (isNewRow || !isDisabled)
+      const result = (isNewRow || !isDisabled)
+      console.log("Is editable? Cell: ", cell.getField(), "value:", cell.getValue())
+      return result
     },
     async refreshColumns() {
       if(this.hasEdits) {
@@ -309,12 +319,10 @@ export default Vue.extend({
       const data = this.tabulator.getData()
       const name = `column_${data.length + 1}`
       const row: RowComponent = await this.tabulator.addRow({columnName: name, dataType: 'varchar(255)', nullable: true})
-      const cell = row.getCell('columnName')
       this.newRows.push(row)
-      if (cell) {
-        // don't know why I need this, but I do
-        setTimeout(() => cell.edit(), 50)
-      }
+      // TODO (fix): calling edit() on the column name cell isn't working here.
+      // ideally we could drop users into the first cell to make editing easier
+      // but right now if it fails it breaks the whole table.
     },
     removeRow(_e, cell: CellComponent): void {
       const row = cell.getRow()

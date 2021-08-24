@@ -760,9 +760,6 @@ export default Vue.extend({
       this.tabulator.addRow({}, true).then(row => { 
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
-        this.$nextTick(() => {
-          row.getCells()[0].edit();
-        })
       })
     },
     addRowToPendingInserts(row) {
