@@ -1,0 +1,36 @@
+name: Sqltools - Test
+
+on:
+  # Trigger the workflow on push or pull request,
+  # but only for the main branch
+  push:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - apps/studio/**
+  pull_request:
+    paths-ignore:
+      - apps/studio/**
+
+jobs:
+  testing:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint
+        run: yarn workspace sqltools run lint
+      
+      - name: Unit Tests
+        run: yarn workspace sqltools run jest

@@ -1,0 +1,40 @@
+name: Sqltools - Build & Publish
+
+on: 
+  push:
+    tags:
+      - "sqltools-v*"
+
+jobs:
+  buildandpublish:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-18.04]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14
+
+      - name: Check dependencies
+        run: "yarn install --frozen-lockfile"
+
+      - name: Build SQLTools
+        run: "yarn run sqltools:build"
+
+      - name: Netlify config setup
+        run: "cp apps/sqltools/netlify/* apps/sqltools/dist/"
+
+      - name: Publish
+        uses: netlify/actions/cli@master
+        with:
+          args: deploy --dir=apps/sqltools/dist --prod
+        env:
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SQLTOOLS_ID }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}

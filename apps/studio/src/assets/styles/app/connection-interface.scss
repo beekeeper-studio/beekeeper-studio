@@ -1,0 +1,143 @@
+.interface.connection-interface {
+  padding-top: 0;
+}
+.connection-interface,
+.interface-wrap {
+  overflow: hidden;
+}
+.app-version {
+  display: flex;
+  justify-content: center;
+  a {
+    color: rgba($theme-base, 0.2);
+    font-style: italic;
+    line-height: 2;
+  }
+}
+
+
+// Connection Body
+// --------------------------------
+.connection-main {
+  display: flex;
+  background: $query-editor-bg;    
+  height: 100%;
+  max-height: 100vh;
+  padding: 0 $gutter-w;
+  overflow-y: auto;
+  align-items: center;
+  -webkit-overflow-scrolling: touch;
+  .small-wrap {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 550px;
+    // max-height: -webkit-fill-available;
+  }
+  .card-flat {
+    background: $theme-bg;
+    margin: $gutter-w 0;
+  }
+  .sqlite-form {
+    margin-bottom: $gutter-h;
+  }
+  .text-connect {
+    padding-top: 0.25rem;
+  }
+  .save-connection {
+    margin-top: ($gutter-w * 1.25);
+    padding-top: ($gutter-w * 1.25);
+    border-top: 1px solid $border-color;
+    h3 {
+      color: $text-dark;
+      margin: 0 0 $gutter-h;
+    }
+    .btn {
+      margin-left: 0.5rem;
+    }
+    .form-group {
+      margin-bottom: $gutter-h;
+    }
+    .has-tooltip {
+      color: $text-lighter;
+      margin-left: $gutter-h;
+    }
+    .save-actions {
+      margin-top: $gutter-h;
+      .save {
+        @extend .btn-flat;
+      }
+    }
+  }
+}
+
+// Connection View & Modal
+.save-connection {
+  .save-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0;
+    margin-left: -($gutter-h * 0.65);
+    margin-right: -($gutter-h * 0.65);
+    .btn {
+      margin-left: ($gutter-h * 0.65);
+      margin-right: ($gutter-h * 0.65);
+    }
+  }
+}
+
+// Save Connection Modal
+.save-connection-modal {
+  .v--modal-box {
+    max-width: 500px;
+  }
+}
+
+// Import URL Modal
+.import-modal {
+  .v--modal-box {
+    max-width: 500px;
+  }
+}
+
+// Advanced Toggle
+// --------------------------------
+.advanced-connection-settings {
+  display: flex;
+  flex-direction: column;
+  background: darken($theme-bg, 4%);
+  border-radius: 8px;
+  margin: $gutter-w 0;
+  padding: $gutter-w ($gutter-w * 1.25);
+  .btn-fab {
+    margin-left: -$gutter-w * 0.75;
+    margin-right: $gutter-h * 0.5;
+    margin-top: -$gutter-h;
+    margin-bottom: -$gutter-h;
+  }
+}
+.advanced-heading {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  i {
+    font-size: 3rem;
+    color: $text-lighter;
+    transition: color 0.15s ease-in-out;
+    cursor: pointer;
+  }
+  &.enabled {
+    i {
+      color: $theme-primary;
+    }
+  }
+  x-switch {
+    margin-right: 0;
+  }
+}
+.advanced-body {
+  padding-top: 0.8rem;
+  .private-key {
+    margin-bottom: $gutter-h;
+  }
+}

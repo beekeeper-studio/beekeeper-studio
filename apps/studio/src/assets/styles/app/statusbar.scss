@@ -1,0 +1,346 @@
+$button-height:     $statusbar-height * 0.78;
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: $statusbar-bg;
+  color: rgba($statusbar-text, 0.87);
+  min-height: $statusbar-height;
+  height: $statusbar-height;
+  line-height: $statusbar-height;
+  font-size: 0.8rem;
+  padding: 0 $gutter-h;
+  overflow: hidden;
+
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+      /* display: none; <- Crashes Chrome on hover */
+      -webkit-appearance: none;
+      margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+  }
+
+
+  > .col {
+    display: flex;
+    align-items: center;
+  }
+  .badge {
+    border-radius: 1.8rem;
+  }
+  .btn {
+    &.error, &.error:hover {
+      pointer-events: all !important;
+    }
+  }
+  a {
+    color: $statusbar-text;
+  }
+  span.row {
+    .material-icons {
+      font-size: 16px;
+      margin-right: $gutter-h * 0.5;
+    }
+  }
+  &.tabulator-footer {
+    .tabulator-page {
+      color: $statusbar-text;
+      &.active {
+        background: rgba($statusbar-text, 0.15);
+      }
+    }
+  }
+
+  // No Data
+  // -----------------------
+  .empty {
+    padding: 0 $gutter-h;
+  }
+
+
+  // Row Actions
+  // -------------------------
+  .connection-button > .btn {
+    &:hover {
+      background: rgba(white, 0.1);
+    }
+  }
+
+
+  .connection-button { 
+    > .btn{
+      box-shadow: none!important;
+      background: transparent;
+      color: $statusbar-text;
+      height: $button-height;
+      line-height: $button-height;
+      min-width: min-content;
+      margin: 0 0.15rem;
+      margin-top: -1px;
+      padding: 0 0.35rem;
+      --ripple-background: none;
+      border-radius: $btn-border-radius-small;
+      transition: background 0.15s ease-in-out;
+      .material-icons {
+        width: 16px;
+      }
+    }
+  }
+
+  .statusbar-actions,
+  .statusbar-info {
+    display: flex;
+    align-items: center;
+  }
+
+  // Buttons
+  // ----------------------
+  .btn {
+    padding: 0 0.6rem;
+    min-width: min-content;
+    background: transparent;
+    color: $statusbar-text;
+    height: $button-height;
+    line-height: $button-height;
+    margin: 0 0.15rem;
+    // margin-top: -1px;
+    &:hover[expanded] {
+      background: rgba($statusbar-text, 0.15);
+    }
+    .material-icons {
+      font-size: 16px;
+    }
+    &.actions-btn {
+      padding: 0 0.35rem;
+      .material-icons {
+        width: 13px;
+      }
+    }
+    &.btn-flat {
+      box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.025);
+      background: rgba($statusbar-text, 0.15);
+      transition: background 0.2s ease-in-out;
+      &:hover {
+        background: rgba($statusbar-text, 0.2);
+      }
+    }
+    &.btn-icon {
+      &.end {
+        .material-icons {
+          margin: 0 -0.2rem 0 0.1rem;
+          font-size: 12px;
+        }
+      }
+    }
+    &.btn-badge {
+      .badge {
+        margin: 0;
+        margin-right: $gutter-h * 0.25;
+        background: transparent;
+        line-height: 1;
+        padding-left: 0;
+        color: $statusbar-text-default;
+      }
+    }
+    &.btn-primary {
+      background: rgba($statusbar-text, 0.35);
+      box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.025);
+      color: $statusbar-text-default;
+    }
+  }
+  
+  .download-results,
+  .pending-changes {
+    background: rgba($statusbar-text, 0.35);
+    box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.025);
+    border-radius: $btn-border-radius;
+    margin: 0 0.15rem;
+    overflow: hidden;
+    > .btn {
+      background: transparent;
+      color: $statusbar-text-default;
+      border-radius: 0!important;
+      margin-top: 0;
+      margin: 0;
+      &:hover, &:hover[expanded] {
+        background: rgba($statusbar-text, 0.05);
+      }
+      .material-icons {
+        color: $statusbar-text-default;
+        font-size: 14px;
+      }
+    }
+  }
+  .download-results {
+    margin-right: $gutter-h * 0.25;
+    .material-icons {
+      margin-right: $gutter-h * 0.25;
+    }
+  }
+  .pending-changes {
+    > .btn {
+      .material-icons {
+        margin-right: $gutter-h * 0.5;
+      }
+    }
+  }
+
+  // Pending Changes
+  .pending-changes {
+    margin-left: 0.1rem;
+    > .btn {
+      margin: 0;
+    }
+    .badge {
+      background: transparent;
+      padding: 0;
+      font-size: 14px;
+      min-width: 10px;
+      line-height: 16px;
+      margin-left: 0;
+      text-align: left;
+      color: $statusbar-text-default;
+    }
+    .material-icons {
+      font-size: 14px;
+      overflow: visible;
+      line-height: 1.1;
+    }
+  }
+
+  // Results Select
+  // -------------------------
+  .result-selector {
+    margin-left: -$gutter-h * 0.5;
+  }
+  .select-wrap {
+    box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.025);
+    background: rgba($statusbar-text, 0.1);
+    color: $statusbar-text;
+    height: $button-height;
+    border-radius: $btn-border-radius;
+    transition: background 0.2s ease-in-out;
+    &:hover {
+      background: rgba($statusbar-text, 0.15);
+    }
+    select {
+      color: $statusbar-text;
+      height: $button-height;
+      line-height: $button-height;
+      -webkit-appearance: none!important;
+      appearance: none!important;
+      font-weight: 600;
+      font-size: 12px;
+      background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
+      option {
+        color: $text;
+      }
+    }
+  }
+
+  // Query Status
+  // ----------------------------
+  .statusbar-item {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 $gutter-h;
+    font-weight: 500;
+    line-height: $statusbar-height;
+    overflow: hidden;
+    text-overflow:ellipsis;
+    i {
+      font-size: 18px;
+      line-height: $statusbar-height;
+      margin-right: 0.35rem;
+      width: 16px;
+    }
+    &.error {
+      color: $statusbar-text;
+      font-size: 0.75rem;
+      padding-right: 2rem;
+      i {
+        color: $statusbar-text;
+      }
+      > span {
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+    }
+  }
+
+  .statusbar-item.hoverable {
+    color: inherit;
+    transition: opacity 0.2s ease-in-out;
+    &:hover {
+      opacity: 0.5;
+    }
+  }
+
+  .row-counts {
+    .truncated-rows, .records {
+      margin-left: $gutter-h * 0.5;
+    }
+  }
+  .statusbar-info {
+    min-width: 33.3333%;
+  }
+
+  // Connection Status
+  // ---------------------------
+  .connection-button,
+  .connection-button > .btn {
+    height: $statusbar-height;
+    line-height: $statusbar-height;
+    margin: -$gutter-h;
+    padding: 0 $gutter-h;
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+  .connection-name {
+    font-size: 0.85rem;
+  }
+  .connection-button {
+    position: relative;
+    .material-icons {
+      font-size: 20px;
+      min-width: 38px;
+      text-align: center;
+    }
+    > .btn {
+      text-align: left;
+      border-radius: 0;
+      --trigger-effect: none;
+    }
+    x-menu {
+      width: 220px;
+    }
+    .badge {
+      font-size: 100%;
+      min-width: fit-content;
+      background: transparent;
+      color: rgba(black, 0.87);
+    }
+  }
+
+  // Scope issue with modals -- needs to portal to top level
+  .save-actions {
+    .btn-flat {
+      color: $theme-base;
+      background: rgba($theme-base, 0.06);
+      &:hover, &:focus {
+        background: rgba($theme-base, 0.12);
+      }
+    }
+    .btn-primary.save {
+      background: $theme-primary;
+      color: rgba(black, 0.87);
+      transition: background 0.15s ease-in-out;
+      &:hover, &:focus {
+        background: lighten($theme-primary, 8%);
+        color: rgba(black, 0.87);
+      }
+    }
+  }
+
+}

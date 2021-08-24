@@ -1,0 +1,77 @@
+// Theme
+// -----------------------------
+$theme-bg:               #181818!default;
+$theme-base:             #fff!default;
+$theme-primary:          #fad83b!default;
+$theme-secondary:        #4ad0ff!default;
+
+// Colors
+// -----------------------------
+$text-dark:                 rgba($theme-base, 0.87)!default;
+$text:                      rgba($theme-base, 0.67)!default;
+$text-light:                rgba($theme-base, 0.57)!default;
+$text-lighter:              rgba($theme-base, 0.37)!default;
+$text-hint:                 rgba($theme-base, 0.37)!default;
+$text-disabled:             rgba($theme-base, 0.37)!default;
+
+$brand-info:                $theme-secondary!default;
+$brand-success:             #15db95!default;
+$brand-warning:             #ff8d21!default;
+$brand-danger:              #ff5d59!default;
+$brand-default:             rgba($theme-base, 0.57)!default;
+$brand-purple:              #9858ff!default;
+$brand-pink:                #ff78f7!default;
+$brand-primary:             $theme-primary!default;
+$brand-secondary:           $theme-secondary!default;
+
+// App
+$border-color:              rgba($theme-base, 0.1)!default;
+$link-color:                $text-dark!default;
+$placeholder:               $text-hint!default;
+$selection:                 rgba($theme-primary, 0.2)!default;
+$input-highlight:           rgba($theme-base, 0.27)!default;
+
+$db-select-text:            white!default;
+$query-editor-bg:           darken($theme-bg, 6%)!default;
+
+$titlebar-bg:               transparent!default;
+$global-sidebar-bg:         transparent!default;
+$sidebar-bg:                darken($theme-bg, 3%)!default;
+$sidebar-heading-bg:        $theme-bg!default;
+$tabs-bg:                   transparent!default;
+$statusbar-bg:              rgba($theme-base, 0.1)!default;
+// $statusbar-bg:             rgba($theme-primary, 0.4);
+
+$statusbar-text:            black!default;
+$statusbar-text-default:    white!default;
+
+
+// Layout
+// ------------------------------
+
+// Buttons
+$btn-border-radius:         8px;
+$btn-border-radius-small:   6px;
+
+// Inputs
+$input-padding-h:           0;
+$input-height:              26px;
+$input-padding-w:           0.75rem;
+$input-radius:              4px;
+
+// Padding
+$gutter-w:                  0.8rem;
+$gutter-h:                  0.4rem;
+
+// Sidebar
+$sidebar-w:                 400px;
+$sidebar-min-w:             300px;
+$sidebar-max-w:             90%;
+$sidebar-icon-w:            1.4rem;
+
+// Query Editor
+$tab-height:                2.4rem;
+$tab-padding-w:             1rem;
+
+// Statusbar
+$statusbar-height:          2.6rem;

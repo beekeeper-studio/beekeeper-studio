@@ -1,0 +1,65 @@
+@import '../extends';
+
+// Note: Mint is the default Noty theme
+// '~vuejs-noty/dist/vuejs-noty.css';
+// '~noty/themes/mint.scss';
+// --------------------------------------
+.noty_theme__mint.noty_bar {
+  background: lighten($theme-bg, 5%);
+  border: 0;
+  border-radius: 4px;
+  @extend .card-shadow;
+  .noty_body {
+    font-size: 1rem;
+    line-height: 1.6;
+    padding: $gutter-w * 1.25;
+    padding-right: $gutter-w * 1.75;
+  }
+  .noty_buttons{
+    display: flex;
+    justify-content: flex-end;
+    margin: 0 -3px;
+    padding-top: 0;
+    > .btn {
+      margin: 0 3px;
+    };
+  }
+}
+#noty_layout__bottomRight {
+  bottom: $statusbar-height + ($gutter-h / 2);
+  right: $gutter-h;
+}
+.noty_progressbar {
+  display: none!important;
+}
+.noty_close_button {
+  top: $gutter-h;
+  right: $gutter-h;
+  background-color: transparent;
+  border-radius: 20px;
+  color: $text-lighter;
+  text-align: center;
+  font-weight: normal;
+  font-size: 24px;
+  &:hover {
+    color: $text-dark;
+    background: transparent;
+  }
+}
+.noty_theme__mint.noty_type__alert,
+.noty_theme__mint.noty_type__notification {
+  color: $text-dark;
+}
+.noty_theme__mint.noty_type__warning {
+  color: lighten($brand-warning, 5%);
+}
+.noty_theme__mint.noty_type__error {
+  color: lighten($brand-danger, 5%);
+}
+.noty_theme__mint.noty_type__info,
+.noty_theme__mint.noty_type__information {
+  color: lighten($brand-info, 5%);
+}
+.noty_theme__mint.noty_type__success {
+  color: lighten($brand-success, 5%);
+}

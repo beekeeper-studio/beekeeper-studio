@@ -1,0 +1,103 @@
+// @import "~codemirror/theme/monokai";
+// @import "./app/vendor/codemirror";
+
+& {
+  background: $theme-bg;
+  color: $text;
+}
+
+// Default Statusbar -- Invert text color
+.statusbar {
+
+  &.default {
+    color: $text;
+    .statusbar-item {
+      &.error {
+        color: $statusbar-text-default;
+        .material-icons {
+          color: $statusbar-text-default;
+        }
+      }
+    }
+
+    .statusbar-actions .btn,
+    .connection-button > .btn {
+      color: $statusbar-text-default;
+    }
+    .connection-button {
+      .badge {
+        color: $statusbar-text-default;
+      }
+    }
+    .connection-type {
+      color: $statusbar-text;
+    }
+
+    .btn {
+      &.btn-flat {
+        background: rgba($statusbar-text-default, 0.05);
+        color: $statusbar-text-default;
+        &:hover {
+          background: rgba($statusbar-text-default, 0.1);
+        }
+      }
+      &.btn-primary {
+        background: rgba($statusbar-text-default, 0.2);
+        &:hover {
+          background: rgba($statusbar-text-default, 0.25);
+        }
+      }
+    }
+
+    .select-wrap {
+      background: rgba($statusbar-text-default, 0.05);
+      &:hover {
+        background: rgba($statusbar-text-default, 0.1);
+      }
+      select {
+        color: $statusbar-text-default;
+        background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255,0.87'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
+      }
+    }
+
+    .download-results,
+    .pending-changes {
+      background: rgba($statusbar-text-default, 0.2);
+      > .btn {
+        &:hover, &:hover[expanded] {
+          background: rgba($statusbar-text-default, 0.25);
+        }
+        .material-icons {
+          color: $statusbar-text-default;
+        }
+      }
+    }
+    &.tabulator-footer {
+      .tabulator-page {
+        color: $statusbar-text-default;
+        &.active {
+          background: rgba($statusbar-text-default, 0.2);
+        }
+      }
+    }
+    
+    // New Pagination
+    .tabulator-paginator > div {
+      input[type="number"] {
+        color: $statusbar-text-default!important;
+        border-color: rgba($statusbar-text-default, 0.2);
+        &:hover, &:focus {
+          border-color: rgba($statusbar-text-default, 0.25);
+        }
+      }
+      a {
+        .material-icons {
+          color: rgba($statusbar-text-default, 0.68);
+          &:hover {
+            color: $statusbar-text-default;
+          }
+        }
+      }
+    }
+  }
+}
