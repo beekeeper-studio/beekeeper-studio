@@ -79,7 +79,10 @@ export default {
     },
 
     inputIsValid() {
-      return !this.inputValidation.hasOwnProperty("isValid");
+      return !Object.prototype.hasOwnProperty.call(
+        this.inputValidation,
+        "isValid"
+      );
     },
 
     errorType() {

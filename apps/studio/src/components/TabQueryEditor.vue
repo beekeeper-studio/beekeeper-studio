@@ -201,7 +201,7 @@ export default {
     ProgressBar,
     ShortcutHints,
     QueryEditorStatusBar,
-    ErrorAlert,
+    ErrorAlert
   },
   props: ["tab", "active"],
   data() {
@@ -223,7 +223,7 @@ export default {
       marker: null,
       queryParameterValues: {},
       queryForExecution: null,
-      executeTime: 0,
+      executeTime: 0
     };
   },
   computed: {
@@ -234,7 +234,7 @@ export default {
       // dialect for sql-query-identifier
       const mappings = {
         sqlserver: "mssql",
-        sqlite: "sqlite",
+        sqlite: "sqlite"
       };
       return mappings[this.connectionType] || "generic";
     },
@@ -280,7 +280,7 @@ export default {
       const end = this.currentlySelectedQuery.end;
       return {
         from: start,
-        to: end + 1,
+        to: end + 1
       };
     },
     rowCount() {
@@ -306,8 +306,8 @@ export default {
     },
     hintOptions() {
       const result = {};
-      this.tables.forEach((table) => {
-        const cleanColumns = table.columns.map((col) => {
+      this.tables.forEach(table => {
+        const cleanColumns = table.columns.map(col => {
           return /\./.test(col.columnName)
             ? `"${col.columnName}"`
             : col.columnName;
@@ -333,7 +333,7 @@ export default {
       if (_.isEmpty(query)) {
         return query;
       }
-      _.each(this.queryParameterPlaceholders, (param) => {
+      _.each(this.queryParameterPlaceholders, param => {
         query = query.replace(
           new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`),
           `$1${this.queryParameterValues[param]}$2`
@@ -341,7 +341,7 @@ export default {
       });
       return query;
     },
-    ...mapState(["usedConfig", "connection", "database", "tables"]),
+    ...mapState(["usedConfig", "connection", "database", "tables"])
   },
   watch: {
     active() {
@@ -369,11 +369,11 @@ export default {
       const lines = editorText.split(/\n/);
       const markStart = {
         line: null,
-        ch: null,
+        ch: null
       };
       const markEnd = {
         line: null,
-        ch: null,
+        ch: null
       };
       let startMarked = false;
       let endMarked = false;
@@ -402,7 +402,7 @@ export default {
       // this.editor.refresh()
     },
     queryText() {
-      const isEmpty = (s) => _.isEmpty(_.trim(s));
+      const isEmpty = s => _.isEmpty(_.trim(s));
       if (
         !this.query.id &&
         isEmpty(this.queryText) &&
@@ -417,7 +417,7 @@ export default {
       } else {
         this.tab.unsavedChanges = true;
       }
-    },
+    }
   },
   methods: {
     showContextMenu(event) {
@@ -427,10 +427,10 @@ export default {
           {
             name: "Format Query",
             slug: "format",
-            handler: this.formatSql,
-          },
+            handler: this.formatSql
+          }
         ],
-        event,
+        event
       });
     },
     async cancelQuery() {
@@ -480,6 +480,7 @@ export default {
         this.$noty.success("Saved");
         this.unsavedText = this.tab.query.text;
         this.tab.unsavedChanges = false;
+        this.$root.$emit("refreshExplorer");
       } else {
         this.$noty.info("You have to select a workspace to save a query");
       }
@@ -515,7 +516,7 @@ export default {
       try {
         identification = identify(rawQuery, {
           strict: false,
-          dialect: this.dialect,
+          dialect: this.dialect
         });
       } catch (ex) {
         log.error("Unable to identify query", ex);
@@ -533,7 +534,7 @@ export default {
         const queryEndTime = +new Date();
         this.executeTime = queryEndTime - queryStartTime;
         let totalRows = 0;
-        results.forEach((result) => {
+        results.forEach(result => {
           result.rowCount = result.rowCount || 0;
           // TODO (matthew): remove truncation logic somewhere sensible
           totalRows += result.rowCount;
@@ -546,7 +547,7 @@ export default {
         this.results = Object.freeze(results);
         this.$store.dispatch("logQuery", { text: query, rowCount: totalRows });
         log.debug("identification", identification);
-        const found = identification.find((i) => {
+        const found = identification.find(i => {
           return i.type === "CREATE_TABLE";
         });
         if (found) {
@@ -571,13 +572,13 @@ export default {
       //    - from, join
       const triggerWords = ["from", "join"];
       const triggers = {
-        190: "period",
+        190: "period"
       };
       const space = 32;
       if (editor.state.completionActive) return;
       if (triggers[e.keyCode] && !this.inQuote(editor, e)) {
         CodeMirror.commands.autocomplete(editor, null, {
-          completeSingle: false,
+          completeSingle: false
         });
         // return
       }
@@ -591,7 +592,7 @@ export default {
           const lastWord = editor.getRange(word.anchor, word.head);
           if (!triggerWords.includes(lastWord.toLowerCase())) return;
           CodeMirror.commands.autocomplete(editor, null, {
-            completeSingle: false,
+            completeSingle: false
           });
         } catch (ex) {
           // do nothing
@@ -604,7 +605,7 @@ export default {
     },
     toggleComment() {
       this.editor.execCommand("toggleComment");
-    },
+    }
   },
   mounted() {
     const $editor = this.$refs.editor;
@@ -622,7 +623,7 @@ export default {
     this.$nextTick(() => {
       this.split = Split(this.splitElements, {
         elementStyle: (dimension, size) => ({
-          "flex-basis": `calc(${size}%)`,
+          "flex-basis": `calc(${size}%)`
         }),
         sizes: [50, 50],
         gutterSize: 8,
@@ -632,7 +633,7 @@ export default {
             this.tableHeight = this.$refs.bottomPanel.clientHeight;
             this.updateEditorHeight();
           });
-        },
+        }
       });
       const runQueryKeyMap = {
         "Shift-Ctrl-Enter": this.submitCurrentQuery,
@@ -645,12 +646,12 @@ export default {
         "Shift-Cmd-F": this.formatSql,
         "Ctrl-/": this.toggleComment,
         "Cmd-/": this.toggleComment,
-        Esc: this.cancelQuery,
+        Esc: this.cancelQuery
       };
       const modes = {
         mysql: "text/x-mysql",
         postgresql: "text/x-pgsql",
-        sqlserver: "text/x-mssql",
+        sqlserver: "text/x-mssql"
       };
       this.editor = CodeMirror.fromTextArea($editor, {
         lineNumbers: true,
@@ -661,10 +662,10 @@ export default {
         theme: "monokai",
         extraKeys: {
           "Ctrl-Space": "autocomplete",
-          "Cmd-Space": "autocomplete",
+          "Cmd-Space": "autocomplete"
         },
         hint: CodeMirror.hint.sql,
-        hintOptions: this.hintOptions,
+        hintOptions: this.hintOptions
       });
       this.editor.setValue(startingValue);
       this.editor.addKeyMap(runQueryKeyMap);
@@ -673,16 +674,15 @@ export default {
           e.preventDefault();
         }
       });
-      this.editor.on("change", (cm) => {
+      this.editor.on("change", cm => {
         // this also updates `this.queryText`
         this.tab.query.text = cm.getValue();
       });
       if (this.connectionType === "postgresql") {
         this.editor.on("beforeChange", (cm, co) => {
           const { to, from, origin, text } = co;
-          const keywords = CodeMirror.resolveMode(
-            this.editor.options.mode
-          ).keywords;
+          const keywords = CodeMirror.resolveMode(this.editor.options.mode)
+            .keywords;
           // quote names when needed
           if (
             origin === "complete" &&
@@ -690,8 +690,8 @@ export default {
           ) {
             const names = text[0]
               .match(/("[^"]*"|[^.]+)/g)
-              .map((n) => (/^\d/.test(n) ? `"${n}"` : n))
-              .map((n) => (/[^a-z0-9_]/.test(n) && !/"/.test(n) ? `"${n}"` : n))
+              .map(n => (/^\d/.test(n) ? `"${n}"` : n))
+              .map(n => (/[^a-z0-9_]/.test(n) && !/"/.test(n) ? `"${n}"` : n))
               .join(".");
 
             co.update(from, to, [names], origin);
@@ -702,7 +702,7 @@ export default {
       this.editor.on("keyup", this.maybeAutoComplete);
       this.editor.on(
         "cursorActivity",
-        (editor) =>
+        editor =>
           (this.cursorIndex = editor
             .getDoc()
             .indexFromPos(editor.getCursor(true)))
@@ -725,6 +725,6 @@ export default {
     if (this.split) {
       this.split.destroy();
     }
-  },
+  }
 };
 </script>
