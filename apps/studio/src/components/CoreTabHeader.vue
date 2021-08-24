@@ -59,16 +59,25 @@ export default {
   props: ["tab", "tabsCount", "selected"],
   data() {
     return {
-      unsaved: false,
+      unsaved: false
     };
   },
   methods: {
+    maybeClose() {
+      if (this.tab.unsavedChanges) {
+        if (window.confirm("Are you sure? You will lose unsaved changes.")) {
+          this.$emit("close", this.tab);
+        }
+      } else {
+        this.$emit("close", this.tab);
+      }
+    },
     doNothing() {},
     mousedown(e) {
       if (e.which === 1) {
         this.$emit("click", this.tab);
       }
-    },
+    }
   },
   watch: {},
   computed: {
@@ -85,22 +94,12 @@ export default {
       result[`${this.tab.table.entityType}-icon`] = true;
       return result;
     },
-    methods: {
-      maybeClose() {
-        if (this.tab.unsavedChanges) {
-          if (window.confirm("Are you sure? You will lose unsaved changes.")) {
-            this.$emit("close", this.tab);
-          }
-        } else {
-          this.$emit("close", this.tab);
-        }
-      },
-      doNothing() {},
-      mousedown(e) {
-        if (e.which === 1) {
-          this.$emit("click", this.tab);
-        }
-      },
+    scope() {
+      if (this.tab.titleScope) {
+        return " " + "[" + this.tab.titleScope + "]";
+      } else {
+        return "";
+      }
     },
     tableTabTitle() {
       if (!this.tab.type === "table") return null;
@@ -115,7 +114,6 @@ export default {
       if (!this.cleanText) {
         return this.tab.title;
       }
-
       if (this.tab.query.text.length >= 32) {
         return `${this.tab.query.text.substring(0, 32)}...`;
       } else {
@@ -124,7 +122,7 @@ export default {
     },
     title() {
       return this.queryTabTitle || this.tableTabTitle || "Unknown";
-    },
-  },
+    }
+  }
 };
 </script>

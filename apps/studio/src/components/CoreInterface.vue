@@ -36,76 +36,68 @@ export default {
     Sidebar,
     Statusbar,
     ConnectionButton,
-    ExportManager,
+    ExportManager
   },
   props: ["connection"],
   data() {
     return {
       split: null,
       sidebarShown: true,
-      keymap: {},
+      keymap: {}
     };
+  },
+
+  mounted() {
+    this.$root.$on(AppEvent.toggleSidebar, this.toggleSidebar);
+    this.$store.dispatch("updateHistory");
+    this.$store.dispatch("updateFavorites");
+    this.$store.dispatch("pins/loadPins");
+
+    this.$nextTick(() => {
+      this.split = Split(this.splitElements, {
+        elementStyle: (dimension, size) => ({
+          "flex-basis": `calc(${size}%)`
+        }),
+        sizes: [25, 75],
+        minSize: 280,
+        expandToMin: true,
+        gutterSize: 5
+      });
+    });
+
+    this.$nextTick(() => {
+      this.split = Split(this.splitElements, {
+        elementStyle: (dimension, size) => ({
+          "flex-basis": `calc(${size}%)`
+        }),
+        sizes: [25, 75],
+        minSize: 280,
+        expandToMin: true,
+        gutterSize: 8
+      });
+    });
+  },
+  beforeDestroy() {
+    this.$store.dispatch("pins/unloadPins");
+    this.$root.$off(AppEvent.toggleSidebar, this.toggleSidebar);
+    if (this.split) {
+      this.split.destroy();
+    }
   },
   computed: {
     splitElements() {
       return [this.$refs.sidebar.$refs.sidebar, this.$refs.content];
-    },
-    computed: {
-      splitElements() {
-        return [this.$refs.sidebar.$refs.sidebar, this.$refs.content];
-      },
-    },
-    mounted() {
-      this.$root.$on(AppEvent.toggleSidebar, this.toggleSidebar);
-      this.$store.dispatch("updateHistory");
-      this.$store.dispatch("updateFavorites");
-      this.$store.dispatch("pins/loadPins");
-
-      this.$nextTick(() => {
-        this.split = Split(this.splitElements, {
-          elementStyle: (dimension, size) => ({
-            "flex-basis": `calc(${size}%)`,
-          }),
-          sizes: [25, 75],
-          minSize: 280,
-          expandToMin: true,
-          gutterSize: 5,
-        });
-      });
-
-      this.$nextTick(() => {
-        this.split = Split(this.splitElements, {
-          elementStyle: (dimension, size) => ({
-            "flex-basis": `calc(${size}%)`,
-          }),
-          sizes: [25, 75],
-          minSize: 280,
-          expandToMin: true,
-          gutterSize: 8,
-        });
-      });
-    },
-    beforeDestroy() {
-      this.$store.dispatch("pins/unloadPins");
-      this.$root.$off(AppEvent.toggleSidebar, this.toggleSidebar);
-      if (this.split) {
-        this.split.destroy();
-      }
-    },
-    methods: {
-      databaseSelected(database) {
-        this.$emit("databaseSelected", database);
-      },
-
-      methods: {
-        databaseSelected(database) {
-          this.$emit("databaseSelected", database);
-        },
-        toggleSidebar() {
-          this.sidebarShown = !this.sidebarShown;
-        },
-      },
-    },
+    }
   },
+
+  methods: {
+    databaseSelected(database) {
+      this.$emit("databaseSelected", database);
+    },
+
+    toggleSidebar() {
+      this.sidebarShown = !this.sidebarShown;
+    }
+  }
 };
 </script>

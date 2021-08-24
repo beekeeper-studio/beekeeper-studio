@@ -396,7 +396,7 @@ const store = new Vuex.Store<State>({
     },
 
     // is this approach appropiate?
-    async setDefaultWorkspace(state: State, workspace) {
+    async setDefaultWorkspace(_state: State, workspace) {
       await UserSetting.set("lastWorkspace", workspace.id);
     },
 
@@ -435,11 +435,11 @@ const store = new Vuex.Store<State>({
         });
     },
 
-    async removeDirectory(state: State, dir) {
+    async removeDirectory(_state: State, dir) {
       await dir.remove();
     },
 
-    async removeWorkspace(state: State, workspace) {
+    async removeWorkspace(_state: State, workspace) {
       await workspace.remove();
     },
 

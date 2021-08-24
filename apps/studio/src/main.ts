@@ -24,6 +24,7 @@ import "reflect-metadata";
 import { TypeOrmPlugin } from "./lib/typeorm_plugin";
 import config from "./config";
 import ConfigPlugin from "./plugins/ConfigPlugin";
+import ExplorerPlugin from "./plugins/ExplorerPlugin";
 import { VueElectronPlugin } from "./lib/NativeWrapper";
 import { ipcRenderer } from "electron";
 import AppEventHandler from "./lib/events/AppEventHandler";
@@ -41,9 +42,9 @@ import BeekeeperPlugin from "./plugins/BeekeeperPlugin";
   try {
     const transports = [log.transports.console, log.transports.file];
     if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
-      transports.forEach((t) => (t.level = "silly"));
+      transports.forEach(t => (t.level = "silly"));
     } else {
-      transports.forEach((t) => (t.level = "warn"));
+      transports.forEach(t => (t.level = "warn"));
     }
 
     log.info("starting logging");
@@ -78,8 +79,8 @@ import BeekeeperPlugin from "./plugins/BeekeeperPlugin";
           if (selection) {
             selection.selectAllChildren(element);
           }
-        },
-      },
+        }
+      }
     });
 
     Vue.config.productionTip = false;
@@ -89,6 +90,7 @@ import BeekeeperPlugin from "./plugins/BeekeeperPlugin";
     Vue.use(VModal);
     Vue.use(VueClipboard);
     Vue.use(ConfigPlugin);
+    Vue.use(ExplorerPlugin);
     Vue.use(BeekeeperPlugin);
     Vue.use(VueElectronPlugin);
     Vue.use(PortalVue);
@@ -97,12 +99,12 @@ import BeekeeperPlugin from "./plugins/BeekeeperPlugin";
       progressBar: true,
       layout: "bottomRight",
       theme: "mint",
-      closeWith: ["button", "click"],
+      closeWith: ["button", "click"]
     });
 
     const app = new Vue({
-      render: (h) => h(App),
-      store,
+      render: h => h(App),
+      store
     });
     await app.$store.dispatch("settings/initializeSettings");
     const handler = new AppEventHandler(ipcRenderer, app);
