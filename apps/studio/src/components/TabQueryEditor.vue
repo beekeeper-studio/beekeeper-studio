@@ -1,6 +1,6 @@
 <template>
   <div class="query-editor" v-hotkey="keymap">
-    <div 
+    <div
       class="top-panel"
       ref="topPanel"
       @contextmenu.prevent.stop="showContextMenu"
@@ -183,7 +183,7 @@
         return null
       },
       currentlySelectedQuery() {
-        if (this.currentlySelectedQueryIndex == null) return null
+        if (this.currentlySelectedQueryIndex === null) return null
         return this.individualQueries[this.currentlySelectedQueryIndex]
       },
       currentQueryPosition() {
@@ -236,8 +236,8 @@
           // add quoted option for everyone that needs to be quoted
           if (this.connectionType === 'postgresql' && (/[^a-z0-9_]/.test(table.name) || /^\d/.test(table.name)))
             result[`"${table.name}"`] = cleanColumns
-          
-          // don't add table names that can get in conflict with database schema 
+
+          // don't add table names that can get in conflict with database schema
           if (!/\./.test(table.name))
             result[table.name] = cleanColumns
         })
@@ -371,7 +371,7 @@
         this.$refs.titleInput.select()
       },
       selectFirstParameter() {
-        if (!this.$refs['paramInput'] || this.$refs['paramInput'].length == 0) return
+        if (!this.$refs['paramInput'] || this.$refs['paramInput'].length === 0) return
         this.$refs['paramInput'][0].select()
       },
       updateEditorHeight() {
@@ -599,7 +599,7 @@
                 .map(n => /^\d/.test(n) ? `"${n}"` : n)
                 .map(n => /[^a-z0-9_]/.test(n) && !/"/.test(n) ? `"${n}"` : n)
                 .join('.')
-  
+
               co.update(from, to, [names], origin)
             }
           })

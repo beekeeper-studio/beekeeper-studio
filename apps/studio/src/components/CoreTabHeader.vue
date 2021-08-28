@@ -44,7 +44,7 @@
         }
       },
       doNothing() {
-        
+
       },
       mousedown(e) {
         if (e.which === 1) {
@@ -61,7 +61,7 @@
           return null
         }
         const result = this.tab.text.replace(/\s+/, '')
-        return result.length == 0 ? null : result
+        return result.length === 0 ? null : result
       },
       iconClass() {
         const result = {}
@@ -82,18 +82,18 @@
       },
       queryTabTitle() {
         if (!this.tab.type === 'query') return null
-          if (this.tab.query && this.tab.query.title) {
-            return this.tab.query.title
-          }
-          if (!this.cleanText) {
-            return this.tab.title
-          }
+        if (this.tab.query && this.tab.query.title) {
+          return this.tab.query.title
+        }
+        if (!this.cleanText) {
+          return this.tab.title
+        }
 
-          if (this.tab.query.text.length >= 32) {
-            return `${this.tab.query.text.substring(0, 32)}...`
-          } else {
-            return this.tab.query.text
-          }
+        if (this.tab.query.text.length >= 32) {
+          return `${this.tab.query.text.substring(0, 32)}...`
+        } else {
+          return this.tab.query.text
+        }
       },
       title() {
         return this.queryTabTitle || this.tableTabTitle || "Unknown"

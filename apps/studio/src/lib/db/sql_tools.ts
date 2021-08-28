@@ -22,7 +22,7 @@ export function extractParams(query: string) {
     .filter(m => {
       return Array.from(m.matchAll(badMatch)).length === 0
     })
-  if (!result || result.length == 0) {
+  if (!result || result.length === 0) {
     return []
   }
 
