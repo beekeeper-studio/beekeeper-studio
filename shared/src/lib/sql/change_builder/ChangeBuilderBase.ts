@@ -44,7 +44,7 @@ export abstract class ChangeBuilderBase {
 
   }
 
-  alterNullable(column, nullable: boolean) {
+  alterNullable(column: string, nullable: boolean) {
     const direction = nullable ? 'DROP' : 'SET'
     return `ALTER COLUMN ${this.wrapIdentifier(column)} ${direction} NOT NULL`
   }
@@ -53,7 +53,7 @@ export abstract class ChangeBuilderBase {
     return `RENAME COLUMN ${this.wrapIdentifier(column)} TO ${this.wrapIdentifier(newName)}`
   }
 
-  setComment(tableName, column: string, newComment: string) {
+  setComment(tableName: string, column: string, newComment: string) {
     return `COMMENT ON COLUMN ${tableName}.${this.wrapIdentifier(column)} IS '${this.escapeString(newComment)}'`
   }
 
@@ -73,7 +73,9 @@ export abstract class ChangeBuilderBase {
       this.wrapIdentifier(item.columnName),
       this.wrapLiteral(item.dataType),
       item.nullable ? 'NULL' : 'NOT NULL',
-      item.defaultValue ? `DEFAULT ${this.wrapLiteral(item.defaultValue)}` : null
+      item.defaultValue ? `DEFAULT ${this.wrapLiteral(item.defaultValue)}` : null,
+      item.extra,
+      item.comment ? `COMMENT ${this.escapeString(item.comment, true)}` : null
     ].filter((i) => !!i).join(" ")
   }
   addColumns(items: SchemaItem[]): string[] {
@@ -172,6 +174,9 @@ export abstract class ChangeBuilderBase {
       }).join(';')
     }
 
+    // for most databases (excluding mysql)
+    // renames and comments happen outside the core ALTER COLUMN statement.
+    // eg psql SET COMMENT ON COLUMN, sql server is a stored procedure.
     const results = [
       initial,
       alterTable,

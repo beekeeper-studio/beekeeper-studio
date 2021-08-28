@@ -85,7 +85,7 @@
               <table-list-item
                 
                 v-for="table in blob.tables"
-                :key="table.name"
+                :key="entityKey(table)"
                 :pinned="pinnedEntities.includes(table)"
                 :container="$refs.entityContainer"
                 @selected="tableSelected"
@@ -97,7 +97,7 @@
               ></table-list-item>
               <routine-list-item
                 v-for="routine in blob.routines"
-                :key="routine.name"
+                :key="entityKey(routine)"
                 :pinned="pinnedEntities.includes(routine)"
                 :container="$refs.entityContainer"
                 :routine="routine"
@@ -224,7 +224,10 @@
       },
     },
     methods: {
-
+      entityKey(entity) {
+        const key = [entity.schema, entity.name, entity.entityType].filter((v) => !!v)
+        return key.join(".")
+      },
       tableSelected() {
         // this.selectedTable = table
       },

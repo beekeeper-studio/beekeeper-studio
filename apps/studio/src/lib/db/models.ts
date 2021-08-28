@@ -1,4 +1,4 @@
-import { TableKey } from '@shared/lib/dialects/models'
+import { SchemaItem, TableKey } from "@shared/lib/dialects/models";
 
 export abstract class BeeCursor {
   constructor(public chunkSize: number) {
@@ -73,10 +73,10 @@ export interface TableColumn {
   tableName?: string
 }
 
-export interface ExtendedTableColumn extends TableColumn {
+export interface ExtendedTableColumn extends SchemaItem {
   ordinalPosition: number
-  nullable: boolean
-  defaultValue: any
+  schemaName?: string
+  tableName: string
 }
 
 export interface PrimaryKeyColumn {

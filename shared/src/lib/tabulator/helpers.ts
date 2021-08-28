@@ -103,6 +103,15 @@ export const TabulatorStateWatchers = {
     newRemoved.forEach((r) => r.getElement().classList?.add('deleted'))
     removed.forEach((r) => r.getElement().classList?.remove('deleted'))
   },
+  tableColumns: {
+    deep: true,
+    handler() {
+      console.log("updating tabulator with columns")
+      if (!this.tabulator) return
+      const t: Tabulator = this.tabulator
+      t.setColumns(this.tableColumns)
+    }
+  },
   tableData: {
     deep: true,
       handler() {

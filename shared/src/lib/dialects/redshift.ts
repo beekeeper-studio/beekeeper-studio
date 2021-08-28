@@ -24,6 +24,9 @@ export const RedshiftData: DialectData = {
     alter: {
       multiStatement: true
     },
+    informationSchema: {
+      extra: true
+    },
     constraints: {
       onUpdate: true,
       onDelete: true

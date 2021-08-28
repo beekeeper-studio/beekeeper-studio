@@ -44,17 +44,17 @@ The only 'dial-home' the app does is to check for a new available version. This 
 
 We don't. The app is 100% open source and free. We will *never* hide any core database GUI features behind a paywall. 
 
-That said we do want to work on Beekeeper Studio full time. So there will be some sort of way to support us in the future, stay tuned!
+That said, we do want to work on Beekeeper Studio full time. So there will be some sort of way to support us in the future, stay tuned!
 
 ### Why do you spend time building a free app?
 
-We love writing software, and we love using nicely crafted software. When building apps and websites we've suffered through one too many clunky database interfaces, so decided to do something about it.
+We love writing software, and we love using nicely crafted software. When building apps and websites, we've suffered through one too many clunky database interfaces, so decided to do something about it.
 
 ### Why make it open source and not just free?
 
 The tools and databases we use are all open source, and we think they deserve quality open source tooling to go with them.
 
-Also, are commercial freemium apps ever really free? We don't want you to think we're collecting your personal information or stealing your company secrets. We [don't ever want to do that][mission]. Data privacy shouldn't be a privlige for those who can pay.
+Also, are commercial freemium apps ever really free? We don't want you to think we're collecting your personal information or stealing your company secrets. We [don't ever want to do that][mission]. Data privacy shouldn't be a privilege for those who can pay.
 
 [mission]: https://www.beekeeperstudio.io/mission/
 

@@ -178,7 +178,9 @@ export default Vue.extend({
         unique: true
       })
       this.newRows.push(row)
-      setTimeout(() => row.getCell('name').edit(), 50)
+      // TODO (fix): calling edit() on the column name cell isn't working here.
+      // ideally we could drop users into the first cell to make editing easier
+      // but right now if it fails it breaks the whole table.
     },
     async removeRow(_e: any, cell: CellComponent) {
       if (this.loading) return

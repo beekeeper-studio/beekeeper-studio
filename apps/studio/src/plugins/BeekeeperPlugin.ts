@@ -36,7 +36,6 @@ export const BeekeeperPlugin = {
     })
     cMenu.$on('close', () => {
       cMenu.$off()
-      console.log("closing menu")
       cMenu.$destroy()
     })
     cMenu.$mount()

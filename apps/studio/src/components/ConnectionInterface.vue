@@ -1,6 +1,6 @@
 <template>
   <div class="interface connection-interface">
-    <div class="interface-wrap row">
+    <div class="interface-wrap row" @dragover.prevent="" @drop.prevent="maybeLoadSqlite">
       <sidebar class="connection-sidebar" ref="sidebar" v-show="sidebarShown">
         <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @remove="remove" @duplicate="duplicate" @edit="edit" @connect="handleConnect"></connection-sidebar>
       </sidebar>
@@ -142,6 +142,22 @@
       }
     },
     methods: {
+      maybeLoadSqlite(e) {
+        // cast to an array
+        const files = [...e.dataTransfer.files || []]
+        if (!files || !files.length) return
+        if (!this.config) return;
+        // we only load the first
+        const file = files[0]
+        const allGood = this.config.parse(file.path)
+        if (!allGood) {
+          this.$noty.error(`Unable to open '${file.name}'. It is not a valid SQLite file.`);
+          return
+        } else {
+          this.submit()
+        }
+
+      },
       edit(config) {
         this.config = config
       },

@@ -68,6 +68,15 @@ import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
 import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
+
+
+const FakeCell = {
+  getRow: () => ({}),
+  getField: () => 'fake',
+  getValue: () => 'fake'
+
+}
+
 export default Vue.extend({
   components: {
     StatusBar,
@@ -94,6 +103,9 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(['dialect']),
+    editable() {
+      return this.table.entityType === 'table' && !!this.primaryKeys.length
+    },
     notice() {
       if (this.dialect === 'sqlite') {
         return 'Note: SQLite does not support any column alterations except renaming.'
@@ -163,6 +175,16 @@ export default Vue.extend({
           formatter: this.cellFormatter,
           editable: this.isCellEditable.bind(this, 'alterColumn'),
         },
+        (this.disabledFeatures?.informationSchema?.extra ? null : {
+          title: "Extra",
+          field: 'extra',
+          tooltip: true,
+          headerTooltip: 'eg AUTO_INCREMENT',
+          editable: this.isCellEditable.bind(this, 'alterColumn'),
+          formatter: this.cellFormatter,
+          cellEdited: this.cellEdited,
+          editor: vueEditor(NullableInputEditorVue)
+        }),
         {
           title: 'Primary',
           field: 'primary',
@@ -178,7 +200,7 @@ export default Vue.extend({
         this.editable ? trashButton(this.removeRow) : null
       ].filter((c) => !!c)
       return result.map((col) => {
-        const editable = _.isFunction(col.editable) ? col.editable({ getRow: () => ({})}) : col.editable
+        const editable = _.isFunction(col.editable) ? col.editable(FakeCell) : col.editable
         const cssBase = col.cssClass || null
         const extraCss = editable ? 'editable' : 'read-only'
         const cssClass = cssBase ? `${cssBase} ${extraCss}` : extraCss
@@ -195,20 +217,18 @@ export default Vue.extend({
         }
       })
     },
-    editable() {
-      return this.table.entityType === 'table'
-    }
   },
   methods: {
     isCellEditable(feature: string, cell: CellComponent): boolean {
       // views and materialized views are not editable
+
       if (!this.editable) return false
       if (this.removedRows.includes(cell.getRow())) return false
 
       const isDisabled = this.disabledFeatures?.alter?.[feature]
       const isNewRow = this.newRows.includes(cell.getRow())
-
-      return (isNewRow || !isDisabled)
+      const result = (isNewRow || !isDisabled)
+      return result
     },
     async refreshColumns() {
       if(this.hasEdits) {
@@ -298,12 +318,10 @@ export default Vue.extend({
       const data = this.tabulator.getData()
       const name = `column_${data.length + 1}`
       const row: RowComponent = await this.tabulator.addRow({columnName: name, dataType: 'varchar(255)', nullable: true})
-      const cell = row.getCell('columnName')
       this.newRows.push(row)
-      if (cell) {
-        // don't know why I need this, but I do
-        setTimeout(() => cell.edit(), 50)
-      }
+      // TODO (fix): calling edit() on the column name cell isn't working here.
+      // ideally we could drop users into the first cell to make editing easier
+      // but right now if it fails it breaks the whole table.
     },
     removeRow(_e, cell: CellComponent): void {
       const row = cell.getRow()

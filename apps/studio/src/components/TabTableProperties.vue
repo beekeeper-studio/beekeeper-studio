@@ -163,6 +163,9 @@ export default {
     }
   },
   computed: {
+    editable() {
+      return this.table.entityType === 'table' && !!this.primaryKeys.length
+    },
     unsavedChanges() {
       return this.pills.filter((p) => p.dirty).length > 0
     },
