@@ -49,7 +49,7 @@ export default Vue.extend({
       active: false,
       searchTerm: null,
       results: [],
-      worker: new FlexSearch.Index({ tokenize: 'forward', }),
+      worker: new FlexSearch.Worker({ tokenize: 'forward', }),
       selectedItem: 0
     }
   },
@@ -71,7 +71,7 @@ export default Vue.extend({
     async searchTerm() {
       if (this.searchTerm) {
         // eslint-disable-next-line no-debugger
-        const indexes = await this.worker.search(this.searchTerm, 10)
+        const indexes = await this.worker.searchAsync(this.searchTerm, 10)
         this.results = indexes.map((i) => {
           return this.database[i]
         })
