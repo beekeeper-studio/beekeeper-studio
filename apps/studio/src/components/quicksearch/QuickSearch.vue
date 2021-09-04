@@ -114,10 +114,12 @@ export default Vue.extend({
     }
   },
   methods: {
-    updateDatabase() {
-      this.database.forEach((item, idx) => {
-        this.worker.add(idx, item.item.name || item.item.title)
-      })
+    async updateDatabase() {
+      await Promise.all(
+        this.database.map((item, idx) => 
+          this.worker.addAsync(idx, item.item.name || item.item.title)
+        )
+      )
     },
     openSearch() {
       this.active = true
