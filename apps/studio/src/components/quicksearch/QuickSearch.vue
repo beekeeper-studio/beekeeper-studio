@@ -1,38 +1,24 @@
 <template>
   <div class="quicksearch" v-hotkey="keymap" v-show="active" >
-    <span class="top-right">
+    <!-- <span class="top-right">
       <a @click.prevent="active = false" class="btn btn-link">Close</a>
-    </span>
+    </span> -->
+    <div class="quicksearch-wrap"> 
     <div class="form-group">
       <input type="text" ref="searchBox" placeholder="Search" v-model="searchTerm">
-      <span class="clear" @click.prevent="searchTerm = null">x</span>
+      <span class="clear" @click.prevent="searchTerm = null"><i class="material-icons">cancel</i></span>
     </div>
+      <ul class="results empty" v-if="!results.length">
+        <li>No Results</li>
+      </ul>
       <ul class="results" v-if="results && results.length">
         <li class="result-item" v-for="(blob, idx) in results" :key="idx" :class="{selected: idx === selectedItem}">
           {{blob.item.name || blob.item.title}} -  {{blob.type}}
         </li>
       </ul>
+    </div>
   </div>
 </template>
-<style lang="scss" scoped>
-  .quicksearch {
-    position: fixed;
-    width: 500px;
-    margin-left: 250px;
-    top: 100;
-    z-index: 9999;
-    background-color: darkblue;
-    padding: 30px;
-
-    .result-item {
-      &.selected {
-        background-color:pink;
-        text-decoration: underline;
-      }
-    }
-  }
-</style>
-
 
 <script lang="ts">
 import _ from 'lodash'

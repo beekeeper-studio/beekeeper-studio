@@ -1,0 +1,71 @@
+.quicksearch {
+  $input-height:       3.2rem;
+
+  position: fixed;
+  left: 50%;
+  transform: translate(-50%, 0);
+  display: flex;
+  flex-direction: column;
+  z-index: 9999;
+  color: $text-dark;
+  padding: 0;
+  overflow: hidden;
+  width: 100%;
+  max-width: 500px;
+
+  // Search Input
+  .form-group {
+    position: relative;
+    padding: 0;
+  }
+  input {
+    height: $input-height;
+    line-height: $input-height;
+    font-size: 1.25rem;
+    border-radius: 6px;
+    background: lighten($theme-bg, 5%);
+    @extend .card-shadow-hover;
+  }
+  .clear {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    right: $gutter-w;
+    line-height: $input-height;
+    .material-icons {
+      display: block;
+      cursor: pointer;
+    }
+  }
+
+  // Results
+  .results {
+    margin: 0;
+    background: lighten($theme-bg, 5%);
+    padding-left: 0;
+    border-radius: 6px;
+    margin: ($gutter-h * 0.5) 0;
+    padding: $gutter-h 0;
+    // @extend .card-shadow;
+    &.empty {
+      color: $text-lighter;
+    }
+    li {
+      list-style: none;
+      height: 2.4rem;
+      line-height: 2.4rem;
+      padding: 0 $gutter-w * 1.25;
+    }
+  }
+  .result-item {
+    &:hover {
+      background: rgba($theme-base, 0.05);
+    }
+    &.selected, &.selected:hover {
+      background: rgba($theme-base, 0.1);
+      color: $text-dark;
+    }
+  }
+}
