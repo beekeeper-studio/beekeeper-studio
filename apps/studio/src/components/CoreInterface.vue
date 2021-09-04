@@ -1,5 +1,6 @@
 <template>
   <div id="interface" class="interface" v-hotkey="keymap">
+    <quick-search />
     <div class="interface-wrap row">
       <sidebar ref="sidebar" :class="{hide: !sidebarShown}">
         <core-sidebar @databaseSelected="databaseSelected" @toggleSidebar="toggleSidebar" :connection="connection" :sidebarShown="sidebarShown"></core-sidebar>
@@ -24,8 +25,9 @@
   import ConnectionButton from './sidebar/core/ConnectionButton'
   import ExportManager from './export/ExportManager'
   import {AppEvent} from '../common/AppEvent'
+  import QuickSearch from './quicksearch/QuickSearch.vue'
   export default {
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager },
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch },
     props: [ 'connection' ],
     data() {
       return {

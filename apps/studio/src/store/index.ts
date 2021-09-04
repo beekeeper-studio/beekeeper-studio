@@ -42,7 +42,7 @@ export interface State {
   tablesLoading: string,
   connectionConfigs: UsedConnection[],
   history: UsedQuery[],
-  favorites: UsedQuery[],
+  favorites: FavoriteQuery[],
   username: Nullable<string>,
   menuActive: boolean,
   activeTab: Nullable<CoreTab>,
@@ -255,7 +255,7 @@ const store = new Vuex.Store<State>({
     historyRemove(state, historyQuery) {
       state.history = _.without(state.history, historyQuery)
     },
-    favorites(state: State, list) {
+    favorites(state: State, list: FavoriteQuery[]) {
       state.favorites = list
     },
     favoritesAdd(state: State, query) {
@@ -461,7 +461,7 @@ const store = new Vuex.Store<State>({
       const items = await FavoriteQuery.find({order: { createdAt: 'DESC'}})
       context.commit('favorites', items)
     },
-    async saveFavorite(context, query: UsedQuery) {
+    async saveFavorite(context, query: FavoriteQuery) {
       query.database = context.state.database || 'default'
       await query.save()
       // otherwise it's already there!
