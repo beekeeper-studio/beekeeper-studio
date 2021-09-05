@@ -1,5 +1,5 @@
 <template>
-  <div class="quicksearch" v-show="active" v-hotkey="keymap">
+  <div class="quicksearch" v-if="active" v-hotkey="keymap">
     <div class="quicksearch-bg" @click.prevent="active = false"></div>
     <div class="quicksearch-wrap"> 
       <div class="form-group">
