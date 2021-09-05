@@ -90,8 +90,11 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'favorites']),
     database(): any[] {
-      const tables = this.tables.map((t) => ({item: t, type: 'table'}))
-      const favorites = this.favorites.map((f) => ({item: f, type: 'query'}))
+      const tables = this.tables.map((t) => {
+        const title = t.schema ? `${t.schema}.${t.name}` : t.name
+        return {item: t, type: 'table', title}
+      })
+      const favorites = this.favorites.map((f) => ({item: f, type: 'query', title: f.title}))
       return [ ...tables, ...favorites]
     },
     elements() {
@@ -125,7 +128,7 @@ export default Vue.extend({
   },
   methods: {
     highlight(blob) {
-      const dangerous = blob.item.name || blob.item.title
+      const dangerous = blob.title
       const text = escapeHtml(dangerous || "unknown item")
       const regex = new RegExp(this.searchTerm.split(/\s+/).filter((i) => i?.length).join("|"), 'gi')
       const result = text.replace(regex, (match) => `<strong>${match}</strong>`)
@@ -137,8 +140,7 @@ export default Vue.extend({
       await Promise.all(
         this.database.map((item, idx) => {
           const type = item.type
-          const name = item.item.name || item.item.title
-          const payload = `${name} ${type}`
+          const payload = `${item.title} ${type}`
           this.worker.addAsync(idx, payload)
         })
       )
