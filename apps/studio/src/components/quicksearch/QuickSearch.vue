@@ -1,14 +1,12 @@
 <template>
-  <div class="quicksearch" ref="menu" v-hotkey="keymap" v-show="active" >
-    <!-- <span class="top-right">
-      <a @click.prevent="active = false" class="btn btn-link">Close</a>
-    </span> -->
+  <div class="quicksearch" v-show="active" v-hotkey="keymap">
+    <div class="quicksearch-bg" @click.prevent="active = false"></div>
     <div class="quicksearch-wrap"> 
-    <div class="form-group">
-      <input type="text" ref="searchBox" placeholder="Search tables and queries by name" v-model="searchTerm">
-      <span class="clear" @click.prevent="searchTerm = null"><i class="material-icons">cancel</i></span>
-    </div>
-      <ul class="results empty" v-if="!results.length && searchTerm">
+      <div class="form-group">
+        <input type="text" ref="searchBox" placeholder="Search" v-model="searchTerm">
+        <span class="clear" @click.prevent="searchTerm = null"><i class="material-icons">cancel</i></span>
+      </div>
+      <ul class="results empty" v-if="!results.length">
         <li>No Results</li>
       </ul>
       <ul class="results empty" v-if="!results.length && !searchTerm">
@@ -18,8 +16,10 @@
         <li>{{ctrlOrCmd(" click or enter")}} - Alt Open (tables only)</li>
       </ul>
       <ul class="results" v-if="results && results.length">
-        <li @click.prevent="handleClick($event, blob)" class="flex result-item" v-for="(blob, idx) in results" :key="idx" :class="{selected: idx === selectedItem}">
-          <span class="first flex flex-middle expand" v-html="highlight(blob)"></span><span class=" badge">{{blob.type}}</span>
+        <li class="result-item" v-for="(blob, idx) in results" :key="idx" :class="{selected: idx === selectedItem}">
+          <i class="material-icons item-icon table-icon" v-if="blob.type === 'table'">grid_on</i> 
+          <i class="material-icons item-icon query" v-if="blob.type === 'favorite'">code</i> 
+          <span>{{blob.item.name || blob.item.title}}</span>
         </li>
       </ul>
     </div>

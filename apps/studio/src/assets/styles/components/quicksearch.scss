@@ -1,17 +1,35 @@
+
+.quicksearch-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: rgba($theme-bg, 0.85);
+}
 .quicksearch {
-  $input-height:       3.2rem;
+  $input-height:       2.6rem;
 
   position: fixed;
-  left: 50%;
-  transform: translate(-50%, 0);
-  display: flex;
-  flex-direction: column;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 9999;
   color: $text-dark;
   padding: 0;
-  overflow: hidden;
-  width: 100%;
-  max-width: 500px;
+
+  .quicksearch-wrap {
+    position: absolute;
+    top: $gutter-w * 3;
+    left: 50%;
+    transform: translate(-50%, 0);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 500px;
+    // overflow: hidden;
+  }
 
   // Search Input
   .form-group {
@@ -19,11 +37,13 @@
     padding: 0;
   }
   input {
+    display: block;
     height: $input-height;
     line-height: $input-height;
     font-size: 1.25rem;
     border-radius: 6px;
     background: lighten($theme-bg, 5%);
+    width: 100%;
     @extend .card-shadow-hover;
   }
   .clear {
@@ -58,14 +78,14 @@
       line-height: 2.4rem;
       padding: 0 $gutter-w * 1.25;
     }
+    .item-icon {
+      margin-right: $gutter-h;
+    }
   }
   .result-item {
-    span.first {
-      display: inline-block;
-      strong {
-        color: $brand-primary;
-      }
-    }
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
     cursor: pointer;
     &:hover {
       background: rgba($theme-base, 0.05);
