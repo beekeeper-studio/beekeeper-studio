@@ -1,19 +1,25 @@
 <template>
-  <div class="quicksearch" v-hotkey="keymap" v-show="active" >
+  <div class="quicksearch" ref="menu" v-hotkey="keymap" v-show="active" >
     <!-- <span class="top-right">
       <a @click.prevent="active = false" class="btn btn-link">Close</a>
     </span> -->
     <div class="quicksearch-wrap"> 
     <div class="form-group">
-      <input type="text" ref="searchBox" placeholder="Search" v-model="searchTerm">
+      <input type="text" ref="searchBox" placeholder="Search tables and queries by name" v-model="searchTerm">
       <span class="clear" @click.prevent="searchTerm = null"><i class="material-icons">cancel</i></span>
     </div>
-      <ul class="results empty" v-if="!results.length">
+      <ul class="results empty" v-if="!results.length && searchTerm">
         <li>No Results</li>
       </ul>
+      <ul class="results empty" v-if="!results.length && !searchTerm">
+        <li><strong>Quick Search</strong></li>
+        <li>Type a table name or query name</li>
+        <li>click or enter - Open</li>
+        <li>{{ctrlOrCmd(" click or enter")}} - Alt Open (tables only)</li>
+      </ul>
       <ul class="results" v-if="results && results.length">
-        <li class="result-item" v-for="(blob, idx) in results" :key="idx" :class="{selected: idx === selectedItem}">
-          {{blob.item.name || blob.item.title}} -  {{blob.type}}
+        <li @click.prevent="handleClick($event, blob)" class="flex result-item" v-for="(blob, idx) in results" :key="idx" :class="{selected: idx === selectedItem}">
+          <span class="first flex flex-middle expand" v-html="highlight(blob)"></span><span class=" badge">{{blob.type}}</span>
         </li>
       </ul>
     </div>
@@ -26,9 +32,14 @@ import Vue from 'vue'
 import FlexSearch from 'flexsearch'
 import { mapState } from 'vuex'
 import { AppEvent } from '@/common/AppEvent'
+import { escapeHtml } from '@/mixins/data_mutators'
 export default Vue.extend({
   mounted() {
     this.updateDatabase()
+    document.addEventListener('mousedown', this.maybeHide)
+  },
+  beforeDestroy() {
+    document.removeEventListener('mousedown', this.maybeHide)
   },
   data() {
     return {
@@ -80,31 +91,56 @@ export default Vue.extend({
     ...mapState(['tables', 'favorites']),
     database(): any[] {
       const tables = this.tables.map((t) => ({item: t, type: 'table'}))
-      const favorites = this.favorites.map((f) => ({item: f, type: 'favorite'}))
+      const favorites = this.favorites.map((f) => ({item: f, type: 'query'}))
       return [ ...tables, ...favorites]
+    },
+    elements() {
+      if (this.$refs.menu) {
+        return Array.from(this.$refs.menu.getElementsByTagName("*"))
+      } else {
+        return []
+      }
     },
     keymap() {
       const result = {}
+
+      result[this.ctrlOrCmd('k')] = this.openSearch
+      result[this.ctrlOrCmd('o')] = this.openSearch
       if (!this.active) {
-        result[this.ctrlOrCmd('k')] = this.openSearch
-        result[this.ctrlOrCmd('o')] = this.openSearch
+        // we always call openSearch, that way it can refocus the input
       } else {
         result['up'] = this.selectUp
         result['down'] = this.selectDown
         result['esc'] = this.closeSearch
-        result['enter'] = this.submit
-        result[this.ctrlOrCmd('enter')] = this.submitAlt
+        result['enter'] = this.enter
+        result[this.ctrlOrCmd('enter')] = this.metaEnter
+        // /announce I like emacs bindings and there's nothing you can do to stop me.
+        // /me *evil laugh*
+        result['ctrl+p'] = this.selectUp
+        result['ctrl+n'] = this.selectDown
       }
 
       return result
     }
   },
   methods: {
+    highlight(blob) {
+      const dangerous = blob.item.name || blob.item.title
+      const text = escapeHtml(dangerous || "unknown item")
+      const regex = new RegExp(this.searchTerm.split(/\s+/).filter((i) => i?.length).join("|"), 'gi')
+      const result = text.replace(regex, (match) => `<strong>${match}</strong>`)
+      // eslint-disable-next-line no-debugger
+
+      return result
+    },
     async updateDatabase() {
       await Promise.all(
-        this.database.map((item, idx) => 
-          this.worker.addAsync(idx, item.item.name || item.item.title)
-        )
+        this.database.map((item, idx) => {
+          const type = item.type
+          const name = item.item.name || item.item.title
+          const payload = `${name} ${type}`
+          this.worker.addAsync(idx, payload)
+        })
       )
     },
     openSearch() {
@@ -122,30 +158,47 @@ export default Vue.extend({
     selectDown() {
       this.selectedItem = this.selectedItem + 1
     },
-    submit() {
-      const result = this.results[this.selectedItem]
-
+    submit(result) {
       if(!result?.item) return
-
-
       if (result.type === 'table') {
         this.$root.$emit(AppEvent.loadTable, {table: result.item})
       } else {
         this.$root.$emit('favoriteClick', result.item)
       }
       this.active = false
+
     },
-    submitAlt() {
-      const result = this.results[this.selectedItem]
+    submitAlt(result) {
       if(!result?.item) return
 
       if (result.type === 'table') {
         this.$root.$emit(AppEvent.openTableProperties, { table: result.item })
       } else {
-        return this.submit()
+        return this.submit(result)
       }
       this.active = false
-      
+    },
+    handleClick(event: MouseEvent, result: any) {
+      if (event.ctrlKey) {
+        this.submitAlt(result)
+      } else {
+        this.submit(result)
+      }
+    },
+    enter() {
+      const result = this.results[this.selectedItem]
+      this.submit(result)
+    },
+    metaEnter() {
+      const result = this.results[this.selectedItem]
+      this.submitAlt(result)
+
+    },
+    maybeHide(event: MouseEvent) {
+      const target = event.target
+      if (!this.elements.includes(target)) {
+        this.closeSearch()
+      }
     }
 
   }

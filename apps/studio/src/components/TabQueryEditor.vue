@@ -557,7 +557,7 @@
           "Shift-Cmd-F": this.formatSql,
           "Ctrl-/": this.toggleComment,
           "Cmd-/": this.toggleComment,
-          "Esc": this.cancelQuery
+          "Esc": this.cancelQuery,
         }
 
         const modes = {
@@ -569,7 +569,7 @@
           lineNumbers: true,
           mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
           theme: 'monokai',
-          extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete"},
+          extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete", "Ctrl-w": _.noop, "Cmd-w": _.noop},
           hint: CodeMirror.hint.sql,
           hintOptions: this.hintOptions
         })

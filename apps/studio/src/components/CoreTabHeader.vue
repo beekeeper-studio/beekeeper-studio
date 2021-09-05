@@ -1,5 +1,5 @@
 <template>
-  <div class="nav-item-wrap" @contextmenu="$emit('contextmenu', $event)">
+  <div class="nav-item-wrap" v-hotkey="keymap" @contextmenu="$emit('contextmenu', $event)">
     <li class="nav-item" :title="title + scope">
       <a
         class="nav-link"
@@ -34,7 +34,9 @@
       }
     },
     methods: {
-      maybeClose() {
+      async maybeClose(event) {
+        event.stopPropagation()
+        event.preventDefault()
         if (this.tab.unsavedChanges) {
           if (window.confirm("Are you sure? You will lose unsaved changes.")) {
             this.$emit('close', this.tab)
@@ -55,6 +57,14 @@
     watch: {
     },
     computed: {
+      keymap() {
+        const result = {}
+        if (this.selected) {
+          result[this.ctrlOrCmd('w')] = this.maybeClose
+        }
+
+        return result
+      },
       cleanText() {
         // no spaces
         if (!this.tab.text) {

@@ -123,19 +123,11 @@
       },
       keymap() {
         const meta = platformInfo.isMac ? 'meta' : 'ctrl'
-        const closeTab = `${meta}+w`
         const result = {
           'ctrl+tab': this.nextTab,
           'ctrl+shift+tab': this.previousTab,
         }
 
-        // This is a hack because codemirror steals the shortcut
-        // when the shortcut is captured on the electron side
-        // but not on mac, on mac we don't wanna capture it. Because reasons.
-        // 'registerAccelerator' doesn't disable shortcuts on mac.
-        if (!platformInfo.isMac) {
-          result[closeTab] = this.closeCurrentTab
-        }
         return result
       }
     },

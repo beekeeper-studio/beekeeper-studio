@@ -60,6 +60,13 @@
     }
   }
   .result-item {
+    span.first {
+      display: inline-block;
+      strong {
+        color: $brand-primary;
+      }
+    }
+    cursor: pointer;
     &:hover {
       background: rgba($theme-base, 0.05);
     }
