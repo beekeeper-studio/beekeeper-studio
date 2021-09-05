@@ -569,7 +569,7 @@
           lineNumbers: true,
           mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
           theme: 'monokai',
-          extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete", "Ctrl-w": _.noop, "Cmd-w": _.noop},
+          extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete"},
           hint: CodeMirror.hint.sql,
           hintOptions: this.hintOptions
         })
