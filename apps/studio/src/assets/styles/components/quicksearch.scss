@@ -1,12 +1,5 @@
 
-.quicksearch-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  background: rgba($theme-bg, 0.85);
-}
+
 .quicksearch {
   $input-height:       2.6rem;
 
@@ -19,6 +12,17 @@
   color: $text-dark;
   padding: 0;
 
+  // Overlay
+  .quicksearch-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: rgba($theme-bg, 0.85);
+  }
+
+  // Quicksearch
   .quicksearch-wrap {
     position: absolute;
     top: $gutter-w * 3;
@@ -28,7 +32,6 @@
     flex-direction: column;
     width: 100%;
     max-width: 500px;
-    // overflow: hidden;
   }
 
   // Search Input
@@ -55,6 +58,7 @@
     right: $gutter-w;
     line-height: $input-height;
     .material-icons {
+      color: $text-light;
       display: block;
       cursor: pointer;
     }
