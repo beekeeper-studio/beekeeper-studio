@@ -2,8 +2,6 @@ import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import username from 'username'
-// import VueXPersistence from 'vuex-persist'
-
 import { UsedConnection } from '../common/appdb/models/used_connection'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
 import { FavoriteQuery } from '../common/appdb/models/favorite_query'
@@ -21,6 +19,7 @@ import RawLog from 'electron-log'
 import { Dialect, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
+import { SearchModule } from './modules/SearchModule'
 
 const log = RawLog.scope('store/index')
 
@@ -56,7 +55,8 @@ const store = new Vuex.Store<State>({
   modules: {
     exports: ExportStoreModule,
     settings: SettingStoreModule,
-    pins: PinModule
+    pins: PinModule,
+    search: SearchModule
   },
   state: {
     usedConfig: null,
@@ -79,7 +79,7 @@ const store = new Vuex.Store<State>({
     username: null,
     menuActive: false,
     activeTab: null,
-    selectedSidebarItem: null
+    selectedSidebarItem: null,
   },
   getters: {
     dialect(state: State): Dialect | null {

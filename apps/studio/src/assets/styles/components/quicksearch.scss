@@ -12,16 +12,6 @@
   color: $text-dark;
   padding: 0;
 
-  // Overlay
-  .quicksearch-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    background: rgba($theme-bg, 0.85);
-  }
-
   // Quicksearch
   .quicksearch-wrap {
     position: absolute;

@@ -1,6 +1,6 @@
 <template>
   <div id="interface" class="interface" v-hotkey="keymap">
-    <quick-search />
+    <quick-search v-if="quickSearchShown" @close="quickSearchShown=false" />
     <div class="interface-wrap row">
       <sidebar ref="sidebar" :class="{hide: !sidebarShown}">
         <core-sidebar @databaseSelected="databaseSelected" @toggleSidebar="toggleSidebar" :connection="connection" :sidebarShown="sidebarShown"></core-sidebar>
@@ -13,6 +13,7 @@
       </div>
     </div>
     <ExportManager :connection="connection"></ExportManager>
+    <StateManager />
   </div>
 </template>
 
@@ -26,18 +27,24 @@
   import ExportManager from './export/ExportManager'
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
+  import StateManager from './quicksearch/StateManager.vue'
   export default {
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch },
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, StateManager },
     props: [ 'connection' ],
     data() {
       return {
         split: null,
         sidebarShown: true,
-        keymap: {
-        }
+        quickSearchShown: false,
       }
     },
     computed: {
+      keymap() {
+        const results = {}
+        results[this.ctrlOrCmd('k')] = () => this.quickSearchShown = true
+        results[this.ctrlOrCmd('o')] = () => this.quickSearchShown = true
+        return results
+      },
       splitElements() {
         return [
           this.$refs.sidebar.$refs.sidebar,
