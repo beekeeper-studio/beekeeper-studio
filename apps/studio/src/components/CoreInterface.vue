@@ -1,6 +1,5 @@
 <template>
   <div id="interface" class="interface" v-hotkey="keymap">
-    <quick-search v-if="quickSearchShown" @close="quickSearchShown=false" />
     <div class="interface-wrap row">
       <sidebar ref="sidebar" :class="{hide: !sidebarShown}">
         <core-sidebar @databaseSelected="databaseSelected" @toggleSidebar="toggleSidebar" :connection="connection" :sidebarShown="sidebarShown"></core-sidebar>
@@ -12,6 +11,7 @@
         <core-tabs :connection="connection"></core-tabs>
       </div>
     </div>
+    <quick-search v-if="quickSearchShown" @close="quickSearchShown=false" />
     <ExportManager :connection="connection"></ExportManager>
   </div>
 </template>

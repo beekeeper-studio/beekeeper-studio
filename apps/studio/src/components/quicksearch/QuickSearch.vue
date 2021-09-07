@@ -1,5 +1,6 @@
 <template>
   <div class="quicksearch" v-hotkey="keymap">
+    <div class="quicksearch-bg"></div>
     <div class="quicksearch-wrap" ref="menu">
       <div class="form-group">
         <input type="text" ref="searchBox" placeholder="Search" v-model="searchTerm">
@@ -8,12 +9,25 @@
       <ul class="results empty" v-if="!results.length && searchTerm">
         <li>No Results</li>
       </ul>
-      <ul class="results empty" v-if="!results.length && !searchTerm">
-        <li><strong>Quick Search</strong></li>
-        <li>Type a table name or query name</li>
-        <li>click or enter - Open</li>
-        <li>{{ctrlOrCmd(" click or enter")}} - Alt Open (tables only)</li>
-      </ul>
+      <div class="results empty" v-if="!results.length && !searchTerm">
+        <strong>Quick Search</strong>
+        <p>Type a table name or query name</p>
+        <div class="shortcut-item">
+          <div>Open: </div>
+          <div class="shortcut">
+            <span>Click/Enter</span>
+          </div> 
+        </div>
+        <div class="shortcut-item">
+          <div>Alt Open:</div>
+          <div class="shortcut">
+            <span v-if="this.$config.isMac">Cmd</span>
+            <span v-if="!this.$config.isMac">Ctrl</span>
+            <span>Click/Enter</span>
+          </div>
+          <span class="hint">(tables only)</span>
+        </div>
+      </div>
       <ul class="results" v-if="results && results.length">
         <li 
           class="result-item" 

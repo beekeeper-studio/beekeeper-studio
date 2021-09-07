@@ -11,6 +11,16 @@
   z-index: 9999;
   color: $text-dark;
   padding: 0;
+  -webkit-app-region: no-drag;
+
+  .quicksearch-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba($theme-bg, 0.5);
+  }
 
   // Quicksearch
   .quicksearch-wrap {
@@ -22,6 +32,7 @@
     flex-direction: column;
     width: 100%;
     max-width: 500px;
+    -webkit-app-region: no-drag;
   }
 
   // Search Input
@@ -47,10 +58,16 @@
     align-items: center;
     right: $gutter-w;
     line-height: $input-height;
+    cursor: pointer;
     .material-icons {
-      color: $text-light;
+      color: $text-lighter;
       display: block;
       cursor: pointer;
+      font-size: 16px;
+      transition: color 0.2s ease-in-out;
+      &:hover {
+        color: $text-dark;
+      }
     }
   }
 
@@ -65,6 +82,24 @@
     // @extend .card-shadow;
     &.empty {
       color: $text-lighter;
+      padding: $gutter-w ($gutter-w * 1.25);
+      strong {
+        display: block;
+        color: $text-dark;
+        margin-bottom: $gutter-h * 1.5;
+      }
+      p {
+        margin: 0 0 $gutter-h;
+      }
+      li {
+        padding: 0;
+      }
+      .shortcut-item {
+        color: $text;
+      }
+      .hint {
+        color: $text-lighter;
+      }
     }
     li {
       list-style: none;
