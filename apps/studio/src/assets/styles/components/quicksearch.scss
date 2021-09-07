@@ -81,6 +81,9 @@
     padding: $gutter-h 0;
     z-index: 1;
     // @extend .card-shadow;
+    &.no-results {
+      color: $text-lighter;
+    }
     &.empty {
       color: $text-lighter;
       padding: $gutter-w ($gutter-w * 1.25);

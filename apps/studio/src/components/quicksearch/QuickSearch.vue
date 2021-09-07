@@ -6,7 +6,7 @@
         <input type="text" ref="searchBox" placeholder="Search" v-model="searchTerm">
         <span class="clear" @click.prevent="searchTerm = null"><i class="material-icons">cancel</i></span>
       </div>
-      <ul class="results empty" v-if="!results.length && searchTerm">
+      <ul class="results no-results" v-if="!results.length && searchTerm">
         <li>No Results</li>
       </ul>
       <div class="results empty" v-if="!results.length && !searchTerm">
