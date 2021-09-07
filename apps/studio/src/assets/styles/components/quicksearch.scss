@@ -79,6 +79,7 @@
     border-radius: 6px;
     margin: ($gutter-h * 0.5) 0;
     padding: $gutter-h 0;
+    z-index: 1;
     // @extend .card-shadow;
     &.empty {
       color: $text-lighter;
