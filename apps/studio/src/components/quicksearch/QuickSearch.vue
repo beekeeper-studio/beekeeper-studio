@@ -22,7 +22,7 @@
           :class="{selected: idx === selectedItem}"
           @click.prevent="handleClick($event, blob)"
         >
-          <i class="material-icons item-icon table-icon" v-if="blob.type === 'table'">grid_on</i> 
+          <table-icon v-if="blob.type === 'table'" :table="blob.item" />
           <i class="material-icons item-icon query" v-if="blob.type === 'query'">code</i> 
           <span v-html="highlight(blob)"></span>
         </li>
@@ -37,7 +37,9 @@ import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
 import { AppEvent } from '@/common/AppEvent'
 import { escapeHtml } from '@/mixins/data_mutators'
+import TableIcon from '@/components/common/TableIcon.vue'
 export default Vue.extend({
+  components: { TableIcon },
   mounted() {
     document.addEventListener('mousedown', this.maybeHide)
     this.$nextTick(() => {
@@ -67,10 +69,8 @@ export default Vue.extend({
     },
     async searchTerm() {
       if (this.searchTerm) {
-        const indexes = await this.searchIndex.searchAsync(this.searchTerm, 10)
-        this.results = indexes.map((i) => {
-          return this.database[i]
-        })
+        const ids: any[] = await this.searchIndex.searchAsync(this.searchTerm, 20)
+        this.results = this.database.filter((blob) => ids.includes(blob.id))
 
         if (this.selectedItem >= this.results.length) this.selectedItem = this.results.length - 1
       } else {

@@ -2,11 +2,15 @@
   <div v-if="false"></div>
 </template>
 <script lang="ts">
+import _ from 'lodash'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('StateManager')
 export default Vue.extend({
   mounted() {
-    this.updateDatabase()
+    this.updateDatabase(this.database)
   },
   computed: {
     ...mapState('search', ['searchIndex']),
@@ -16,20 +20,30 @@ export default Vue.extend({
   watch: {
     database: {
       deep: true,
-      handler() {
-        this.updateDatabase()
+      handler(newDb, oldDb) {
+        log.debug('search index comparing new vs old', newDb, oldDb)
+        const newIds = newDb.map((i) => i.id)
+        const oldIds = oldDb.map((i)=> i.id)
+        const removed = oldDb.filter((i) => !newIds.includes(i.id))
+        // const removed = _.without(oldDb, newDb)
+        log.debug("removing from search index", removed.length)
+        removed.forEach((blob) => {
+          this.searchIndex.removeAsync(blob.id)
+        })
+
+        const newItems = newDb.filter((i) => !oldIds.includes(i.id))
+        log.debug("adding to search index", newItems.length)
+        this.updateDatabase(newItems)
       }
     }
   },
   methods: {
-    async updateDatabase() {
-      await Promise.all(
-        this.database.map((item, idx) => {
-          const type = item.type
-          const payload = `${item.title} ${type}`
-          this.searchIndex.addAsync(idx, payload)
-        })
-      )
+    updateDatabase(items) {
+      items.map((item) => {
+        const type = item.type
+        const payload = `${item.title} ${type}`
+        this.searchIndex.addAsync(item.id, payload)
+      })
     },
   }
 

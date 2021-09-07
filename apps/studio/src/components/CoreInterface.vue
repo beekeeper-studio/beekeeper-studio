@@ -13,7 +13,6 @@
       </div>
     </div>
     <ExportManager :connection="connection"></ExportManager>
-    <StateManager />
   </div>
 </template>
 
@@ -27,9 +26,8 @@
   import ExportManager from './export/ExportManager'
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
-  import StateManager from './quicksearch/StateManager.vue'
   export default {
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, StateManager },
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch},
     props: [ 'connection' ],
     data() {
       return {

@@ -343,8 +343,17 @@ const store = new Vuex.Store<State>({
         await connection?.listMaterializedViewColumns(table.name, table.schema) :
         await connection?.listTableColumns(table.name, table.schema)) || []
 
-      table.columns = columns
-      context.commit('table', table)
+      // TODO (don't update columns if nothing has changed (use duck typing))
+      const updated = columns.find((c, idx) => {
+        const other = table.columns[idx]
+        
+        return !other || !_.isEqual(c, other)
+      })
+
+      if (updated) {
+        table.columns = columns
+        context.commit('table', table)
+      }
     },
 
     async updateTables(context) {

@@ -5,8 +5,9 @@ import { Module } from "vuex";
 import { State as RootState } from '../index'
 
 interface FlexWorker {
-  addAsync(id: number, item: string): Promise<void>
+  addAsync(id: any, item: string): Promise<void>
   searchAsync(term: string): Promise<number[]>
+  removeAsync(id: any): Promise<void>
 }
 
 interface IndexItem {
@@ -29,10 +30,13 @@ export const SearchModule: Module<State, RootState> = {
     database(_state: State, _getters, root: RootState): IndexItem[] {
       const tables: IndexItem[] = root.tables.map((t) => {
         const title = t.schema ? `${t.schema}.${t.name}` : t.name
-        return { item: t, type: 'table', title }
+        return { item: t, type: 'table', title, id: title }
       })
-      const favorites: IndexItem[] = root.favorites.map((f) => ({ item: f, type: 'query', title: f.title }))
+      const favorites: IndexItem[] = root.favorites.map((f) => ({ item: f, type: 'query', title: f.title, id: f.id }))
       return [...tables, ...favorites]
     },
-  }
+  },
+  mutations: {
+  },
+
 }
