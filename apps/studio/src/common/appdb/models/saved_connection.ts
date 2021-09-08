@@ -239,7 +239,7 @@ export class SavedConnection extends DbConnectionBase {
           this.defaultDatabase = url
           return true
         } else {
-          return false
+          // do nothing, continue url parsing
         }
       }
 
