@@ -94,12 +94,16 @@
       }
       p {
         margin: 0 0 $gutter-h;
+        color: $text;
       }
       li {
         padding: 0;
       }
       .shortcut-item {
-        color: $text;
+        color: $text-lighter;
+        .shortcut > span{
+          color: $text-dark;
+        }
       }
       .hint {
         color: $text-lighter;
