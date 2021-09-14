@@ -3,14 +3,13 @@
     <div class="quicksearch-bg"></div>
     <div class="quicksearch-wrap" ref="menu">
       <div class="form-group">
-        <input type="text" ref="searchBox" placeholder="Search" v-model="searchTerm">
+        <input type="text" ref="searchBox" placeholder="Quick Search" v-model="searchTerm">
         <span class="clear" @click.prevent="searchTerm = null"><i class="material-icons">cancel</i></span>
       </div>
       <ul class="results no-results" v-if="!results.length && searchTerm">
         <li>No Results</li>
       </ul>
       <div class="results empty" v-if="!results.length && !searchTerm">
-        <strong>Quick Search</strong>
         <p>Type a table name or query name</p>
         <div class="shortcut-item">
           <div>Open: </div>
