@@ -39,7 +39,7 @@
         :connection="connection"
       />
     </div>
-    
+
     <!-- Tables -->
     <hr v-show="pinnedEntities.length > 0"> <!-- Fake splitjs Gutter styling -->
     <div class="table-list flex-col" ref="tables">
@@ -83,7 +83,7 @@
               :forceCollapse="allCollapsed"
             >
               <table-list-item
-                
+
                 v-for="table in blob.tables"
                 :key="entityKey(table)"
                 :pinned="pinnedEntities.includes(table)"
@@ -112,7 +112,7 @@
         </div>
 
         <!-- TODO (gregory): Make the 'no tables div nicer' -->
-        <div class="empty truncate" v-if="!tables || tables.length == 0">
+        <div class="empty truncate" v-if="!tables || tables.length === 0">
           There are no entities in<br> <span>{{database}}</span>
         </div>
       </nav>
