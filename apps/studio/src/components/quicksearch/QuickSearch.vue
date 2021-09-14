@@ -12,13 +12,13 @@
       <div class="results empty" v-if="!results.length && !searchTerm">
         <p>Type a table name or query name</p>
         <div class="shortcut-item">
-          <div>Open: </div>
+          <div>Open </div>
           <div class="shortcut">
             <span>Enter</span>
           </div> 
         </div>
         <div class="shortcut-item">
-          <div>Alt Open:</div>
+          <div>Alt Open</div>
           <div class="shortcut">
             <span v-if="this.$config.isMac">Cmd</span>
             <span v-if="!this.$config.isMac">Ctrl</span>
