@@ -15,7 +15,7 @@
       </div>
       <div class="statusbar-item affected-rows" v-if="affectedRowsText " :title="affectedRowsText + ' ' + 'Rows Affected'">
         <i class="material-icons">clear_all</i>
-        <span>{{ affectedRowsText }}</span>
+        <span>{{ affectedRowsText }} rows affected</span>
       </div>
       <span class="statusbar-item execute-time row flex-middle" v-if="executeTimeText" :title="'Execution Time'">
         <i class="material-icons">update</i>
