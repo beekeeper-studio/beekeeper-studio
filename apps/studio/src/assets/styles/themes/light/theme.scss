@@ -475,10 +475,11 @@ select {
 .query-editor {
   .CodeMirror-code {
     .highlight {
-      background-color: rgba($brand-info, 0.2);
+      background-color: rgba($theme-secondary, 0.2);
     }
   }
 }
+
 .cm-s-monokai {
   font-weight: 500;
   span.cm-keyword {
@@ -488,7 +489,7 @@ select {
     color: $brand-secondary;
   }
   div.CodeMirror-selected {
-    background: rgba($theme-secondary, 0.2);
+    background: rgba($theme-secondary, 0.1);
   }
   .CodeMirror-linenumber {
     color: rgba($theme-base, 0.25);
