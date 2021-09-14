@@ -18,6 +18,7 @@ export default class {
     this.forward(AppEvent.closeTab)
     this.forward(AppEvent.newTab)
     this.forward(AppEvent.toggleSidebar)
+    this.forward(AppEvent.quickSearch)
   }
 
   forward(event) {

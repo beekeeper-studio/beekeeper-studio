@@ -19,6 +19,7 @@ export interface IMenuActionHandler {
   newQuery: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   closeTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  quickSearch: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   switchTheme: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   switchMenuStyle: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   reload: (menuItem: Electron.MenuItem, win: ElectronWindow) => void

@@ -21,11 +21,9 @@ export default Vue.extend({
     database: {
       deep: true,
       handler(newDb, oldDb) {
-        log.debug('search index comparing new vs old', newDb, oldDb)
         const newIds = newDb.map((i) => i.id)
         const oldIds = oldDb.map((i)=> i.id)
         const removed = oldDb.filter((i) => !newIds.includes(i.id))
-        // const removed = _.without(oldDb, newDb)
         log.debug("removing from search index", removed.length)
         removed.forEach((blob) => {
           this.searchIndex.removeAsync(blob.id)

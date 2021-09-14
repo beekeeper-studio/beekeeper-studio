@@ -123,6 +123,13 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.closeTab,
       registerAccelerator: false
     },
+    quickSearch: {
+      id: 'go-to',
+      label: "Quick Search",
+      accelerator: "CommandOrControl+K",
+      registerAccelerator: false,
+      click: actionHandler.quickSearch
+    },
     disconnect: {
       id: 'disconnect',
       label: "Disconnect",

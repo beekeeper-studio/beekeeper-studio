@@ -34,6 +34,10 @@
         split: null,
         sidebarShown: true,
         quickSearchShown: false,
+        rootBindings: [
+          { event: AppEvent.quickSearch, handler: this.showQuickSearch},
+          { event: AppEvent.toggleSidebar, handler: this.toggleSidebar }
+        ]
       }
     },
     computed: {
@@ -51,10 +55,10 @@
       }
     },
     mounted() {
-      this.$root.$on(AppEvent.toggleSidebar, this.toggleSidebar)
       this.$store.dispatch('updateHistory')
       this.$store.dispatch('updateFavorites')
       this.$store.dispatch('pins/loadPins')
+      this.registerHandlers(this.rootBindings)
 
       this.$nextTick(() => {
         this.split = Split(this.splitElements, {
@@ -71,12 +75,15 @@
     },
     beforeDestroy() {
       this.$store.dispatch('pins/unloadPins')
-      this.$root.$off(AppEvent.toggleSidebar, this.toggleSidebar)
+      this.unregisterHandlers(this.rootBindings)
       if(this.split) {
         this.split.destroy()
       }
     },
     methods: {
+      showQuickSearch() {
+        this.quickSearchShown = true
+      },
       databaseSelected(database) {
         this.$emit('databaseSelected', database)
       },

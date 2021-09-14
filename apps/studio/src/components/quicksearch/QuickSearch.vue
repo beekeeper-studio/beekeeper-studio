@@ -15,7 +15,7 @@
         <div class="shortcut-item">
           <div>Open: </div>
           <div class="shortcut">
-            <span>Click/Enter</span>
+            <span>Enter</span>
           </div> 
         </div>
         <div class="shortcut-item">
@@ -23,7 +23,7 @@
           <div class="shortcut">
             <span v-if="this.$config.isMac">Cmd</span>
             <span v-if="!this.$config.isMac">Ctrl</span>
-            <span>Click/Enter</span>
+            <span>Enter</span>
           </div>
           <span class="hint">(tables only)</span>
         </div>

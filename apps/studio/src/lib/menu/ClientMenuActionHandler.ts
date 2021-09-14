@@ -28,6 +28,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   newQuery = () => send('newQuery')
   newTab = () => send('newTab')
   closeTab = () => send('closeTab')
+  quickSearch  = () => send('quickSearch')
   switchTheme = (menuItem: Electron.MenuItem) => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
     send('switchTheme', label.toLowerCase())
