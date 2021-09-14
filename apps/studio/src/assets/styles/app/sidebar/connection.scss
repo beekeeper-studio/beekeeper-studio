@@ -38,6 +38,13 @@
         background-color: rgba($theme-base, 0.06);
       }
     }
+    .actions-btn {
+      min-width: 0;
+      padding: 0 0.6rem;
+      i {
+        margin-right: -($gutter-h);
+      }
+    }
   }
   .connection-title {
     overflow: hidden;
