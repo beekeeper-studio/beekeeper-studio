@@ -56,7 +56,7 @@ export class SqlServerChangeBuilder extends ChangeBuilderBase {
 
   alterDefault(column: string, newDefault: string | boolean | null) {
     // we drop the default in the initialSql
-    const newValue = newDefault ? this.wrapIdentifier(newDefault.toString()) : null
+    const newValue = newDefault ? this.wrapLiteral(newDefault.toString()) : null
     return `ADD DEFAULT ${newValue} FOR ${this.wrapIdentifier(column)}`
   }
 

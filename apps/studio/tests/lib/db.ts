@@ -200,6 +200,11 @@ export class DBTestUtil {
           newValue: 'varchar(20)'
         },
         {
+          columnName: 'first_name',
+          changeType: 'defaultValue',
+          newValue: "'Foo''bar'"
+        },
+        {
           columnName: 'age',
           changeType: 'nullable',
           newValue: false
@@ -253,7 +258,7 @@ export class DBTestUtil {
         columnName: 'first_name',
         dataType: 'varchar(20)',
         nullable: true,
-        defaultValue: null,
+        defaultValue: defaultValue("Foo'bar"),
       },
       {
         columnName: 'family_name',
