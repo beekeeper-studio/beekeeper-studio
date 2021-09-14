@@ -17,8 +17,13 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
   }
   
   defaultValue(defaultValue) {
+    // MySQL is a cluster when it comes to default values.
+    if (!defaultValue) return null
     if (defaultValue === 'CURRENT_TIMESTAMP') return defaultValue
     if (defaultValue.toString().startsWith('(')) return defaultValue
+    // string, already quoted
+    if (defaultValue.startsWith("'")) return this.wrapLiteral(defaultValue)
+    // string, not quoted.
     return this.escapeString(defaultValue.toString(), true);
   }
 
