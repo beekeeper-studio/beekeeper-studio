@@ -180,7 +180,7 @@ export class DBTestUtil {
     await this.knex.schema.createTable("alter_test", (table) => {
       table.specificType("id", 'varchar(255)').notNullable()
       table.specificType("first_name", "varchar(255)").nullable()
-      table.specificType("last_name", "varchar(255)").notNullable().defaultTo('Rathbone')
+      table.specificType("last_name", "varchar(255)").notNullable().defaultTo('Rath\'bone')
       table.specificType("age", "varchar(255)").defaultTo('8').nullable()
     })
 
@@ -237,9 +237,9 @@ export class DBTestUtil {
     // this is different in each database.
     const defaultValue = (s: any) => {
       if (this.dialect === 'postgresql' && _.isNumber(s)) return s.toString()
-      if (this.dialect === 'postgresql') return `'${s}'::character varying`
+      if (this.dialect === 'postgresql') return `'${s.replaceAll("'", "''")}'::character varying`
       if (this.dialect === 'sqlserver' && _.isNumber(s)) return `((${s}))`
-      if (this.dialect === 'sqlserver') return `('${s}')`
+      if (this.dialect === 'sqlserver') return `('${s.replaceAll("'", "''")}')`
       return s.toString()
     }
     const expected = [
@@ -259,7 +259,7 @@ export class DBTestUtil {
         columnName: 'family_name',
         dataType: 'varchar(255)',
         nullable: false,
-        defaultValue: defaultValue('Rathbone'),
+        defaultValue: defaultValue('Rath\'bone'),
       },
       {
         columnName: 'age',
