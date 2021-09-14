@@ -24,8 +24,8 @@
               <div class="sub row flex-middle noselect">
                 Saved Connections <span class="badge">{{connectionConfigs.length}}</span>
               </div>
-              <x-button class="actions-btn btn btn-flat" title="sort">
-                <i class="material-icons">reorder</i>
+              <x-button class="actions-btn btn btn-flat" title="Sort By">
+                <span>{{sortables[this.sortOrder]}}</span>
                 <i class="material-icons">arrow_drop_down</i>
                 <x-menu>
                   <x-menuitem
