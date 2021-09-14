@@ -31,7 +31,7 @@ export function runCommonTests(getUtil) {
       await prepareTestTable(getUtil())
     })
 
-    test("should past alter table tests", async () => {
+    test.only("should past alter table tests", async () => {
       await getUtil().alterTableTests()
     })
   })

@@ -91,7 +91,7 @@ export abstract class ChangeBuilderBase {
   alterComments(items: SchemaItemChange[]): string[] {
     if (this.dialectData.disabledFeatures?.comments) return []
     return items.filter((i) => i.changeType === 'comment').map((item) => {
-      return this.setComment(this.tableName, item.columnName, item.newValue.toString())
+      return this.setComment(this.table, item.columnName, item.newValue.toString())
     })
   }
 
