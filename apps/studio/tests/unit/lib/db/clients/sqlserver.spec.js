@@ -30,7 +30,7 @@ describe("SQL Server alter table codegen", () => {
 
     const builder = new SqlServerChangeBuilder('foo', 'dbo', [{columnName: 'a', dataType: 'int'}], [])
     const result = builder.alterTable(input)
-    const expected = "EXEC sp_rename 'dbo.foo.a', 'b', 'COLUMN';"
+    const expected = "EXEC sp_rename '[dbo].[foo].[a]', 'b', 'COLUMN';"
     expect(result).toBe(expected)
 
   })

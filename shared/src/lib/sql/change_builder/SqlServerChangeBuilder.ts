@@ -54,12 +54,13 @@ export class SqlServerChangeBuilder extends ChangeBuilderBase {
   }
 
 
-  alterDefault(column: string, newDefalt: string | boolean | null) {
+  alterDefault(column: string, newDefault: string | boolean | null) {
     // we drop the default in the initialSql
-    return `ADD DEFAULT ${this.wrapLiteral(newDefalt.toString())} FOR ${this.wrapIdentifier(column)}`
+    const newValue = newDefault ? this.wrapIdentifier(newDefault.toString()) : null
+    return `ADD DEFAULT ${newValue} FOR ${this.wrapIdentifier(column)}`
   }
 
-  setComment(_tableName: string, _column: string, _newComment: string) {
+  setComment(_column: string, _newComment: string) {
     return null
     // TODO (matthew): Before this can work you need to know if the column already has a comment
     // you have to run sp_addextendedproperty if no comment exists.
@@ -74,6 +75,7 @@ export class SqlServerChangeBuilder extends ChangeBuilderBase {
   }
 
   ddl(existing: SchemaItem, updated: SchemaItem): string {
+    if (!updated) return null
     const column = existing.columnName
 
     return [
@@ -85,6 +87,8 @@ export class SqlServerChangeBuilder extends ChangeBuilderBase {
   }
 
   buildUpdatedSchema(existing: SchemaItem, specs: SchemaItemChange[]) {
+    const updates = specs.filter((s) => ['dataType', 'nullable'].includes(s.changeType))
+    if (!updates.length) return null
     let result = { ...existing }
     specs.forEach((spec) => {
       if (spec.changeType === 'dataType') result = { ...result, dataType: spec.newValue.toString() }
@@ -124,7 +128,7 @@ export class SqlServerChangeBuilder extends ChangeBuilderBase {
 
   endSql(spec: AlterTableSpec) {
     return (spec.alterations || []).filter((a) => a.changeType === 'columnName').map((a) => {
-      return `EXEC sp_rename '${this.tableName}.${this.escapeString(a.columnName)}', '${this.escapeString(a.newValue.toString())}', 'COLUMN'`
+      return `EXEC sp_rename '${this.escapeString(this.tableName)}.${this.escapeString(this.wrapIdentifier(a.columnName))}', '${this.escapeString(a.newValue.toString())}', 'COLUMN'`
     }).join(";")
   }
 
