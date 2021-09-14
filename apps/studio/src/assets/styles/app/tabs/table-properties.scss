@@ -30,7 +30,9 @@ $cell-success:           $row-add;
     height: 100%;
   }
   .table-info-table-wrap {
-    padding: 0 1.5rem 3rem;
+    padding: 0 1.5rem 3rem;   
+    overflow: hidden;
+    overflow-y: auto;
   }
   .table-properties-content {
     display: flex;
