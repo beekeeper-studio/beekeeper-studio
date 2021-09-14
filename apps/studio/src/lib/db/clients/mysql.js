@@ -200,6 +200,29 @@ order by r.routine_schema,
   })
 }
 
+function resolveDefault(version, defaultValue) {
+  // adapted from https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql/pull/998/files
+  if (version.isMySql) return defaultValue
+
+  if (!defaultValue) return null
+
+  if (defaultValue.toString().toLowerCase() === "'null'") {
+    return null;
+  }
+
+  if (defaultValue.startsWith("'") &&
+    defaultValue.endsWith("'") &&
+    defaultValue.length >= 2) {
+    // MariaDb escapes all single quotes with two single quotes in default value strings, even if they are
+    // escaped with backslashes in the original `CREATE TABLE` statement.
+    return defaultValue.substring(1, defaultValue.length - 1)
+      .replaceAll("''", "'");
+  }
+
+  return defaultValue;
+
+}
+
 export async function listTableColumns(conn, database, table) {
   const clause = table ? `AND table_name = ?` : ''
   const sql = `
@@ -219,6 +242,7 @@ export async function listTableColumns(conn, database, table) {
   `;
 
   const params = table ? [table] : []
+  const version = await getVersion(conn)
 
   const { data } = await driverExecuteQuery(conn, { query: sql, params });
   return data.map((row) => ({
@@ -227,7 +251,7 @@ export async function listTableColumns(conn, database, table) {
     dataType: row.data_type,
     ordinalPosition: Number(row.ordinal_position),
     nullable: row.is_nullable === 'YES',
-    defaultValue: row.column_default,
+    defaultValue: resolveDefault(version, row.column_default),
     extra: _.isEmpty(row.extra) ? null : row.extra,
     comment: _.isEmpty(row.column_comment) ? null : row.column_comment
   }));

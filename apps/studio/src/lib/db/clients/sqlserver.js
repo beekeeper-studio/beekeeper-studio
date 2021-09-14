@@ -16,6 +16,7 @@ const log = logRaw.scope('sql-server')
 
 const logger = () => log;
 const D = SqlServerData
+const defaultSchema = 'dbo'
 const knex = knexlib({
   client: 'mssql'
 })
@@ -859,12 +860,11 @@ export async function setTableDescription(conn, table, desc, schema) {
   const existingDescription = await getTableDescription(conn, table, schema)
   const f = existingDescription ? 'sp_updateextendedproperty' : 'sp_addextendedproperty'
   const sql = `
-  EXEC sys.${f}
+  EXEC ${f}
     @name = N'MS_Description',
     @value = N${D.escapeString(desc, true)},
     @level0type = N'SCHEMA', @level0name = ${D.wrapIdentifier(schema)},
     @level1type = N'TABLE',  @level1name = ${D.wrapIdentifier(table)};
-  GO
   `
 }
 
@@ -892,7 +892,7 @@ FROM
         ON all_columns.default_object_id = default_constraints.object_id
 
 WHERE 
-        schemas.name = ${D.escapeString(schema, true)}
+        schemas.name = ${D.escapeString(schema || defaultSchema, true)}
     AND tables.name = ${D.escapeString(table, true)}
 
   `

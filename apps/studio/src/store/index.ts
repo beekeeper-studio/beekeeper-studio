@@ -2,8 +2,6 @@ import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import username from 'username'
-// import VueXPersistence from 'vuex-persist'
-
 import { UsedConnection } from '../common/appdb/models/used_connection'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
 import { FavoriteQuery } from '../common/appdb/models/favorite_query'
@@ -21,6 +19,7 @@ import RawLog from 'electron-log'
 import { Dialect, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
+import { SearchModule } from './modules/SearchModule'
 
 const log = RawLog.scope('store/index')
 
@@ -42,7 +41,7 @@ export interface State {
   tablesLoading: string,
   connectionConfigs: UsedConnection[],
   history: UsedQuery[],
-  favorites: UsedQuery[],
+  favorites: FavoriteQuery[],
   username: Nullable<string>,
   menuActive: boolean,
   activeTab: Nullable<CoreTab>,
@@ -56,7 +55,8 @@ const store = new Vuex.Store<State>({
   modules: {
     exports: ExportStoreModule,
     settings: SettingStoreModule,
-    pins: PinModule
+    pins: PinModule,
+    search: SearchModule
   },
   state: {
     usedConfig: null,
@@ -79,7 +79,7 @@ const store = new Vuex.Store<State>({
     username: null,
     menuActive: false,
     activeTab: null,
-    selectedSidebarItem: null
+    selectedSidebarItem: null,
   },
   getters: {
     dialect(state: State): Dialect | null {
@@ -255,7 +255,7 @@ const store = new Vuex.Store<State>({
     historyRemove(state, historyQuery) {
       state.history = _.without(state.history, historyQuery)
     },
-    favorites(state: State, list) {
+    favorites(state: State, list: FavoriteQuery[]) {
       state.favorites = list
     },
     favoritesAdd(state: State, query) {
@@ -343,8 +343,17 @@ const store = new Vuex.Store<State>({
         await connection?.listMaterializedViewColumns(table.name, table.schema) :
         await connection?.listTableColumns(table.name, table.schema)) || []
 
-      table.columns = columns
-      context.commit('table', table)
+      // TODO (don't update columns if nothing has changed (use duck typing))
+      const updated = columns.find((c, idx) => {
+        const other = table.columns[idx]
+        
+        return !other || !_.isEqual(c, other)
+      })
+
+      if (updated) {
+        table.columns = columns
+        context.commit('table', table)
+      }
     },
 
     async updateTables(context) {
@@ -461,7 +470,7 @@ const store = new Vuex.Store<State>({
       const items = await FavoriteQuery.find({order: { createdAt: 'DESC'}})
       context.commit('favorites', items)
     },
-    async saveFavorite(context, query: UsedQuery) {
+    async saveFavorite(context, query: FavoriteQuery) {
       query.database = context.state.database || 'default'
       await query.save()
       // otherwise it's already there!

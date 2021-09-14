@@ -1,4 +1,4 @@
-import { AlterTableSpec, Dialect, DropIndexSpec, SchemaItem } from "@shared/lib/dialects/models";
+import { AlterTableSpec, Dialect, DropIndexSpec, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
 import { DefaultConstraint, SqlServerData } from "@shared/lib/dialects/sqlserver";
 import _ from "lodash";
 import { ChangeBuilderBase } from "./ChangeBuilderBase";
@@ -44,38 +44,92 @@ export class SqlServerChangeBuilder extends ChangeBuilderBase {
     ].filter((i) => !!i).join(" ")
   }
 
-  alterType(column: string, newType: string) {
-    return `ALTER COLUMN ${this.wrapIdentifier(column)} ${this.wrapLiteral(newType)}`
+  // we handle these two in the `DDL` method
+  alterType() {
+    return null
   }
 
-  alterDefault(column: string, newDefalt: string | boolean | null) {
+  alterNullable() {
+    return null
+  }
+
+
+  alterDefault(column: string, newDefault: string | boolean | null) {
     // we drop the default in the initialSql
+    const newValue = newDefault ? this.wrapLiteral(newDefault.toString()) : null
+    return `ADD DEFAULT ${newValue} FOR ${this.wrapIdentifier(column)}`
+  }
 
-    const constraint: DefaultConstraint | null = this.getDefaultConstraint(column)
+  setComment(_column: string, _newComment: string) {
+    return null
+    // TODO (matthew): Before this can work you need to know if the column already has a comment
+    // you have to run sp_addextendedproperty if no comment exists.
+    // return `
+    //   EXEC sp_updateextendedproperty
+    //     @name = N'MS_Description',
+    //     @value = N${this.escapeString(newComment, true)},
+    //     @level0type = N'SCHEMA', @level0name = ${this.wrapIdentifier(this.schema)},
+    //     @level1type = N'TABLE',  @level1name = ${this.wrapIdentifier(tableName)},
+    //     @level2type = N'COLUMN', @level2name = ${this.wrapIdentifier(column)};
+    // `
+  }
 
-    const drop = constraint ? `DROP CONSTRAINT ${this.wrapIdentifier(constraint.name)}` : null
+  ddl(existing: SchemaItem, updated: SchemaItem): string {
+    if (!updated) return null
+    const column = existing.columnName
+
+    return [
+      'ALTER COLUMN',
+      this.wrapIdentifier(column),
+      updated.dataType,
+      updated.nullable ? 'NULL' : 'NOT NULL',
+    ].filter((c) => !!c).join(" ")
+  }
+
+  buildUpdatedSchema(existing: SchemaItem, specs: SchemaItemChange[]) {
+    const updates = specs.filter((s) => ['dataType', 'nullable'].includes(s.changeType))
+    if (!updates.length) return null
+    let result = { ...existing }
+    specs.forEach((spec) => {
+      if (spec.changeType === 'dataType') result = { ...result, dataType: spec.newValue.toString() }
+      if (spec.changeType === 'nullable') result = { ...result, nullable: !!spec.newValue }
+    })
+    return result
+  }
 
 
-    if (newDefalt === null) return drop
+  alterColumns(specs: SchemaItemChange[]) {
+    const groupedByName = _.groupBy(specs, 'columnName')
+    const existingGrouped = _.groupBy(this.existingColumns, 'columnName')
 
-    const add = `ADD DEFAULT ${this.wrapLiteral(newDefalt.toString())} FOR ${this.wrapIdentifier(column)}`
+    const dataAndNullables = Object.keys(groupedByName).map((name) => {
+      const changes = groupedByName[name];
+      const existing = existingGrouped?.[name]?.[0];
+      if (!existing) return null;
+      const updated = this.buildUpdatedSchema(existing, changes)
+      return this.ddl(existing, updated)
+    }).filter((c) => !!c)
 
-    return drop ? `${drop}, ${add}` : add
+    const others = super.alterColumns(specs)
+    return [...dataAndNullables, ...others]
+  }
+
+  initialSql(spec: AlterTableSpec) {
+    const defaults = (spec.alterations || []).filter((a) => a.changeType === 'defaultValue')
+    const results = defaults.map((change) => {
+      const existing = this.getDefaultConstraint(change.columnName)
+      if (!existing) return null
+      return `DROP CONSTRAINT ${this.wrapIdentifier(existing.name)}`
+    }).filter((f) => !!f)
+
+    if (!results.length) return null;
+    return `ALTER TABLE ${this.tableName} ${results.join("\n")}`
   }
 
   endSql(spec: AlterTableSpec) {
-    const tablePrefix = spec.schema ? `${this.escapeString(spec.schema)}.` : ''
-    const tableName = `${tablePrefix}${this.escapeString(spec.table)}`
     return (spec.alterations || []).filter((a) => a.changeType === 'columnName').map((a) => {
-      return `EXEC sp_rename '${tableName}.${this.escapeString(a.columnName)}', '${this.escapeString(a.newValue.toString())}', 'COLUMN'`
+      return `EXEC sp_rename '${this.escapeString(this.tableName)}.${this.escapeString(this.wrapIdentifier(a.columnName))}', '${this.escapeString(a.newValue.toString())}', 'COLUMN'`
     }).join(";")
-  }
-
-  alterNullable(column: string, nullable: boolean) {
-    const existingType = this.existingColumns.find((c) => c.columnName === column)?.dataType
-    if (!existingType) throw new Error("Can't change nullability without a type for column " + column)
-    const direction = nullable ? 'NULL' : 'NOT NULL'
-    return `ALTER COLUMN ${this.wrapIdentifier(column)} ${this.wrapLiteral(existingType)} ${direction}`
   }
 
   getDefaultConstraint(column: string): DefaultConstraint | null {

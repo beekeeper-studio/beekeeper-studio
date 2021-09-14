@@ -117,6 +117,9 @@
     display: table-cell;
     padding: $gutter-h;
   }
+  .new {
+    margin-right: $gutter-h;
+  }
 }
 .shortcut {
   text-align: left;

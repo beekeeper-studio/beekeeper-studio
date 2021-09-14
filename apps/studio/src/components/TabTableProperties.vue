@@ -95,18 +95,16 @@
 <script>
 import Tabulator from 'tabulator-tables'
 import Statusbar from './common/StatusBar'
-// import TableInfoVue from './tableinfo/TableInfo.vue'
 import TableSchemaVue from './tableinfo/TableSchema.vue'
 import TableIndexesVue from './tableinfo/TableIndexes.vue'
 import TableRelationsVue from './tableinfo/TableRelations.vue'
 import TableTriggersVue from './tableinfo/TableTriggers.vue'
 import { format as humanBytes } from 'bytes'
 import platformInfo from '../common/platform_info'
-import TableInfo from './tableinfo/TableInfo.vue'
 import { AppEvent } from '@/common/AppEvent'
 export default {
   props: ["table", "connection", "tabId", "active", "tab"],
-  components: { Statusbar, TableInfo },
+  components: { Statusbar },
   data() {
     return {
       dev: platformInfo.isDevelopment,

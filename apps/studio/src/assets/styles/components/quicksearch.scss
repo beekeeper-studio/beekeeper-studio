@@ -1,0 +1,135 @@
+
+
+.quicksearch {
+  $input-height:       2.6rem;
+
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  color: $text-dark;
+  padding: 0;
+  -webkit-app-region: no-drag;
+
+  .quicksearch-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba($theme-bg, 0.5);
+  }
+
+  // Quicksearch
+  .quicksearch-wrap {
+    position: absolute;
+    top: $gutter-w * 3;
+    left: 50%;
+    transform: translate(-50%, 0);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 500px;
+    -webkit-app-region: no-drag;
+  }
+
+  // Search Input
+  .form-group {
+    position: relative;
+    padding: 0;
+  }
+  input {
+    display: block;
+    height: $input-height;
+    line-height: $input-height;
+    font-size: 1.1rem;
+    border-radius: 6px;
+    background: lighten($theme-bg, 5%);
+    width: 100%;
+    @extend .card-shadow-hover;
+  }
+  .clear {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    right: $gutter-w;
+    line-height: $input-height;
+    cursor: pointer;
+    .material-icons {
+      color: $text-lighter;
+      display: block;
+      cursor: pointer;
+      font-size: 16px;
+      transition: color 0.2s ease-in-out;
+      &:hover {
+        color: $text-dark;
+      }
+    }
+  }
+
+  // Results
+  .results {
+    margin: 0;
+    background: lighten($theme-bg, 5%);
+    padding-left: 0;
+    border-radius: 6px;
+    margin: ($gutter-h * 0.5) 0;
+    padding: $gutter-h 0;
+    z-index: 1;
+    // @extend .card-shadow;
+    &.no-results {
+      color: $text-lighter;
+    }
+    &.empty {
+      color: $text-lighter;
+      padding: $gutter-w ($gutter-w * 1.25);
+      strong {
+        display: block;
+        color: $text-dark;
+        margin-bottom: $gutter-h * 1.5;
+      }
+      p {
+        margin: 0 0 $gutter-h;
+        color: $text;
+      }
+      li {
+        padding: 0;
+      }
+      .shortcut-item {
+        color: $text-lighter;
+        .shortcut > span{
+          color: $text-dark;
+        }
+      }
+      .hint {
+        color: $text-lighter;
+      }
+    }
+    li {
+      list-style: none;
+      height: 2.4rem;
+      line-height: 2.4rem;
+      padding: 0 $gutter-w * 1.25;
+    }
+    .item-icon {
+      margin-right: $gutter-h;
+    }
+  }
+  .result-item {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    cursor: pointer;
+    &:hover {
+      background: rgba($theme-base, 0.05);
+    }
+    &.selected, &.selected:hover {
+      background: rgba($theme-base, 0.1);
+      color: $text-dark;
+    }
+  }
+}

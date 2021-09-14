@@ -180,7 +180,7 @@ export class DBTestUtil {
     await this.knex.schema.createTable("alter_test", (table) => {
       table.specificType("id", 'varchar(255)').notNullable()
       table.specificType("first_name", "varchar(255)").nullable()
-      table.specificType("last_name", "varchar(255)").notNullable().defaultTo('Rathbone')
+      table.specificType("last_name", "varchar(255)").notNullable().defaultTo('Rath\'bone')
       table.specificType("age", "varchar(255)").defaultTo('8').nullable()
     })
 
@@ -200,6 +200,11 @@ export class DBTestUtil {
           newValue: 'varchar(20)'
         },
         {
+          columnName: 'first_name',
+          changeType: 'defaultValue',
+          newValue: "'Foo''bar'"
+        },
+        {
           columnName: 'age',
           changeType: 'nullable',
           newValue: false
@@ -213,11 +218,6 @@ export class DBTestUtil {
           columnName: 'age',
           changeType: 'dataType',
           newValue: 'varchar(5)'
-        },
-        {
-          columnName: 'age',
-          changeType: 'comment',
-          newValue: "Age doesn't matter to me."
         }
       ]
     }
@@ -229,10 +229,9 @@ export class DBTestUtil {
       dataType: string,
       nullable: boolean,
       defaultValue: string,
-      comment: string
     }
     const rawResult: MiniColumn[] = schema.map((c) => 
-      _.pick(c, 'nullable', 'defaultValue', 'columnName', 'dataType', 'comment')
+      _.pick(c, 'nullable', 'defaultValue', 'columnName', 'dataType')
     )
     
 
@@ -241,10 +240,12 @@ export class DBTestUtil {
 
 
     // this is different in each database.
-    const defaultValue = (s: string) => {
-      if (this.dialect === 'postgresql') return `'${s}'::character varying`
-      if (this.dialect === 'sqlserver') return `('${s}')`
-      return s
+    const defaultValue = (s: any) => {
+      if (this.dialect === 'postgresql' && _.isNumber(s)) return s.toString()
+      if (this.dialect === 'postgresql') return `'${s.replaceAll("'", "''")}'::character varying`
+      if (this.dialect === 'sqlserver' && _.isNumber(s)) return `((${s}))`
+      if (this.dialect === 'sqlserver') return `('${s.replaceAll("'", "''")}')`
+      return s.toString()
     }
     const expected = [
       {
@@ -252,28 +253,24 @@ export class DBTestUtil {
         dataType: 'varchar(255)',
         nullable: false,
         defaultValue: null,
-        comment: null,
       },
       {
         columnName: 'first_name',
         dataType: 'varchar(20)',
         nullable: true,
-        defaultValue: null,
-        comment: null,
+        defaultValue: defaultValue("Foo'bar"),
       },
       {
         columnName: 'family_name',
         dataType: 'varchar(255)',
         nullable: false,
-        defaultValue: defaultValue('Rathbone'),
-        comment: null,
+        defaultValue: defaultValue('Rath\'bone'),
       },
       {
         columnName: 'age',
         dataType: 'varchar(5)',
         nullable: false,
-        defaultValue: defaultValue('99'),
-        comment: "Age doesn't matter to me."
+        defaultValue: defaultValue(99),
       }
     ]
     expect(result).toMatchObject(expected)

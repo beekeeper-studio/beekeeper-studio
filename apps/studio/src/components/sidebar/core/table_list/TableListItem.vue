@@ -5,7 +5,7 @@
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
       <span class="item-wrapper flex flex-middle expand" @dblclick.prevent="openTable" @mousedown="selectItem">
-        <i :title="title" :class="iconClass" class="item-icon material-icons">grid_on</i>
+        <table-icon :table="table" />
         <span class="table-name truncate" :title="table.name">{{table.name}}</span>
       </span>
       <span class="actions" v-bind:class="{'pinned': pinned}">
@@ -39,8 +39,10 @@ import { mapGetters, mapState } from 'vuex'
 import _ from 'lodash'
 import { AppEvent } from '../../../../common/AppEvent'
 import { uuidv4 } from '../../../../lib/uuid'
+import TableIcon from '@/components/common/TableIcon.vue'
 	export default {
 		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container", "pinned"],
+    components: { TableIcon },
     mounted() {
       this.showColumns = !!this.table.showColumns
     },

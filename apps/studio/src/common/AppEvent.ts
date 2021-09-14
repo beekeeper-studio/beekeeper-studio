@@ -16,7 +16,8 @@ export enum AppEvent {
   beginExport = 'be',
   createTable = 'new_table',
   openTableProperties = 'loadTableProperties',
-  loadTable = 'loadTable'
+  loadTable = 'loadTable',
+  quickSearch = 'quickSearch'
 }
 
 

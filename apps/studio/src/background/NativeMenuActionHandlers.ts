@@ -97,6 +97,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.closeTab)
   }
 
+  quickSearch = (_1: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.quickSearch)
+  }
+
   switchTheme = async (menuItem: Electron.MenuItem) => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
     this.settings.theme.userValue = label.toLowerCase()
