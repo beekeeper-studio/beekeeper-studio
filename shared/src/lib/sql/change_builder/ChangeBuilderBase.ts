@@ -53,8 +53,8 @@ export abstract class ChangeBuilderBase {
     return `RENAME COLUMN ${this.wrapIdentifier(column)} TO ${this.wrapIdentifier(newName)}`
   }
 
-  setComment(tableName: string, column: string, newComment: string) {
-    return `COMMENT ON COLUMN ${tableName}.${this.wrapIdentifier(column)} IS '${this.escapeString(newComment)}'`
+  setComment(column: string, newComment: string) {
+    return `COMMENT ON COLUMN ${this.tableName}.${this.wrapIdentifier(column)} IS '${this.escapeString(newComment)}'`
   }
 
   dropColumn(column: string) {
@@ -91,7 +91,7 @@ export abstract class ChangeBuilderBase {
   alterComments(items: SchemaItemChange[]): string[] {
     if (this.dialectData.disabledFeatures?.comments) return []
     return items.filter((i) => i.changeType === 'comment').map((item) => {
-      return this.setComment(this.tableName, item.columnName, item.newValue.toString())
+      return this.setComment(item.columnName, item.newValue.toString())
     })
   }
 

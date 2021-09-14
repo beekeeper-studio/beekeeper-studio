@@ -86,7 +86,7 @@
           handle: '.nav-item'
         },
         rootBindings: [
-          { event: AppEvent.closeTab, handler: this.closeTab },
+          { event: AppEvent.closeTab, handler: this.closeCurrentTab },
           { event: AppEvent.newTab, handler: this.createQuery},
           { event: AppEvent.createTable, handler: this.openTableBuilder},
           { event: 'historyClick', handler: this.createQueryFromItem},
@@ -123,19 +123,11 @@
       },
       keymap() {
         const meta = platformInfo.isMac ? 'meta' : 'ctrl'
-        const closeTab = `${meta}+w`
         const result = {
           'ctrl+tab': this.nextTab,
           'ctrl+shift+tab': this.previousTab,
         }
 
-        // This is a hack because codemirror steals the shortcut
-        // when the shortcut is captured on the electron side
-        // but not on mac, on mac we don't wanna capture it. Because reasons.
-        // 'registerAccelerator' doesn't disable shortcuts on mac.
-        if (!platformInfo.isMac) {
-          result[closeTab] = this.closeTab
-        }
         return result
       }
     },
@@ -186,9 +178,9 @@
       setTabTitleScope(id, value) {
         this.tabItems.filter(t => t.id === id).forEach(t => t.titleScope = value)
       },
-      closeTab(id) {
-        const tab = id ? this.tabItems.find((t) => t.id === id) : this.activeTab
-        this.close(tab)
+      closeCurrentTab() {
+        // eslint-disable-next-line no-debugger
+        if (this.activeTab) this.close(this.activeTab)
       },
       handleCreateTab() {
         this.createQuery()

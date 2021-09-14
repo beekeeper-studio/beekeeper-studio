@@ -1,6 +1,11 @@
 <template>
   <div class="shortcuts">
     <div class="shortcut-item">
+      <div><span class="text-info new">(New)</span>Quick Search</div>
+      <div class="shortcut" v-if="$config.isMac"><span>⌘</span><span>K</span></div>
+      <div class="shortcut" v-else><span>Ctrl</span><span>K</span></div>
+    </div>
+    <div class="shortcut-item">
       <div>Run</div>
       <div class="shortcut" v-if="$config.isMac"><span>⌘</span><span>Enter</span></div>
       <div class="shortcut" v-else><span>Ctrl</span><span>Enter</span></div>

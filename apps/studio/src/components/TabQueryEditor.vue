@@ -557,7 +557,7 @@
           "Shift-Cmd-F": this.formatSql,
           "Ctrl-/": this.toggleComment,
           "Cmd-/": this.toggleComment,
-          "Esc": this.cancelQuery
+          "Esc": this.cancelQuery,
         }
 
         const modes = {

@@ -529,3 +529,10 @@ x-switch {
     }
   }
 }
+
+// Quicksearch
+.quicksearch {
+  .quicksearch-bg {
+    background: rgba(darken($theme-bg, 8%), 0.5);
+  }
+}

@@ -1,5 +1,5 @@
 <template>
-  <div class="nav-item-wrap" @contextmenu="$emit('contextmenu', $event)">
+  <div class="nav-item-wrap" v-hotkey="keymap" @contextmenu="$emit('contextmenu', $event)">
     <li class="nav-item" :title="title + scope">
       <a
         class="nav-link"
@@ -7,7 +7,7 @@
         @click.middle.prevent="$emit('close', tab)"
         :class="{ active: selected }"
       >
-        <i v-if="tab.type === 'table'" :class="iconClass" class="material-icons item-icon table">grid_on</i>
+        <table-icon v-if="tab.type === 'table'" :table="tab.table" />
         <i v-else-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
         <i v-else-if="tab.type === 'table-properties'" class="material-icons-outlined item-icon table-properties" :class="iconClass">construction</i>
         <i v-else-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
@@ -25,16 +25,20 @@
   </div>
 </template>
 <script>
+  import TableIcon from '@/components/common/TableIcon.vue'
 
   export default {
     props: ['tab', 'tabsCount', 'selected'],
+    components: {TableIcon},
     data() {
       return {
         unsaved: false,
       }
     },
     methods: {
-      maybeClose() {
+      async maybeClose(event) {
+        event.stopPropagation()
+        event.preventDefault()
         if (this.tab.unsavedChanges) {
           if (window.confirm("Are you sure? You will lose unsaved changes.")) {
             this.$emit('close', this.tab)
@@ -55,6 +59,14 @@
     watch: {
     },
     computed: {
+      keymap() {
+        const result = {}
+        if (this.selected) {
+          result[this.ctrlOrCmd('w')] = this.maybeClose
+        }
+
+        return result
+      },
       cleanText() {
         // no spaces
         if (!this.tab.text) {

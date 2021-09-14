@@ -12,7 +12,7 @@ const htmlMap = {
   "'": '&#039;'
 };
 
-function escapeHtml(text: string): string | null {
+export function escapeHtml(text: string): string | null {
   if (!text) return null
   return text.replace(/[&<>"']/g, function (m) { return htmlMap[m]; });
 }
