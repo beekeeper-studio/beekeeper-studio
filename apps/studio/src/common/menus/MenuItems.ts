@@ -126,7 +126,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     quickSearch: {
       id: 'go-to',
       label: "Quick Search",
-      accelerator: "CommandOrControl+K",
+      accelerator: "CommandOrControl+P",
       registerAccelerator: false,
       click: actionHandler.quickSearch
     },

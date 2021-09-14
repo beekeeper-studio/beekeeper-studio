@@ -1,38 +1,24 @@
 
+# Version 2.1.0 - QuickSearch and 2.0 tidy up
 
-We are absolutely thrilled to announce that Beekeeper Studio 2.0 is now available for download. 🎉🎉
+A small-but-mighty release for you today.
 
-It has been over a year since we initially launched Beekeeper Studio, and we've added so many new features and UI tweaks in that time. We're finally `2.0`, and there's no looking back!
+## Headline Feature - Quicksearch
 
-> Read the full blog post, complete with growth metrics [on our website](https://beekeeperstudio.io/blog/release-2.0)
+The headline feature is that we've added `quick search` to Beekeeper Studio.
 
-## New Features in 2.0
-
-Brand New Features
-- Table Schema editing
-- Table index editing
-- Table relation editing
-- Drag/Drop SQLite files
-- Persistent pinned tables
-- We have our own new context menu code
-
-Bug fixes
-- MySQL schema editing works properly
-- Index column order in PSQL fixed
-- Debian 11 DEB file compatibility
-- Fixed some visual bugs with read-only / writable data
-- Context menu memory leak fix for the sidebaryarn workspace v1.22.10
+Simply Hit `ctrl-p` / `cmd-p` and start typing to jump to any table or saved query. Hit enter to open, hit ctrl+enter go to the structure view (tables only).
 
 
-## Merged PRs
-- 63e097e1 Merge pull request #772 from janusheide/libappindicator-dependency-update
-- 9fb3af07 Merge pull request #759 from beekeeper-studio/mysql-schema-editing
-- 12cab479 Merge pull request #769 from MasterOdin/patch-7
-- 62aea4e2 Merge pull request #761 from beekeeper-studio/context-fix
-- 84876f85 Merge pull request #738 from beekeeper-studio/index-crud
-- b7e6f917 Merge pull request #756 from henrynguyen6677/ft/sqltools/dev/fix-typo-css
-- 2c91964b Merge pull request #742 from emersonsm/master
-- 6f8858b2 Merge pull request #757 from Kalissaac/fix-azure-sqlserver
-- 738bd264 Merge pull request #684 from beekeeper-studio/connection-ssh-label
-- c8c91511 Merge pull request #741 from beekeeper-studio/sqltools-bugs
+## Also in this release
 
+- bug fixes for tab management
+- bug fixes for default values in MySQL and MariaDB
+- bug fixes for changing nullable and datatype for Sql Server
+- Affected columns more obvious
+- Saved connections are now sortable
+
+
+- 9dc644c1 Merge pull request #781 from Zerotask/chore/minor-code-adjustments
+- 2bda01a2 Merge pull request #782 from nmelnick/wip-connection-sort
+- 3556c225 Merge pull request #789 from beekeeper-studio/quick-search

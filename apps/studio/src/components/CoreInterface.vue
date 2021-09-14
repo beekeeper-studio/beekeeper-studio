@@ -43,8 +43,7 @@
     computed: {
       keymap() {
         const results = {}
-        results[this.ctrlOrCmd('k')] = () => this.quickSearchShown = true
-        results[this.ctrlOrCmd('o')] = () => this.quickSearchShown = true
+        results[this.ctrlOrCmd('p')] = () => this.quickSearchShown = true
         return results
       },
       splitElements() {
