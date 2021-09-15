@@ -33,7 +33,7 @@
       </div>
     </div>
     <div class="bottom-panel" ref="bottomPanel">
-      <progress-bar @cancel="cancelQuery" v-if="running"></progress-bar>
+      <progress-bar @cancel="cancelQuery" :message="runningText" v-if="running"></progress-bar>
       <result-table ref="table" v-else-if="rowCount > 0" :active="active" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
       <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results. {{result.affectedRows || 0}} rows affected.</span></div></div>
       <div class="message" v-else-if="error">
@@ -111,6 +111,7 @@
   import Split from 'split.js'
   import { mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
+  import pluralize from 'pluralize'
 
   import { splitQueries, extractParams } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar.vue'
@@ -132,6 +133,8 @@
       return {
         results: [],
         running: false,
+        runningCount: 1,
+        runningType: 'all queries',
         selectedResult: 0,
         editor: null,
         runningQuery: null,
@@ -158,6 +161,9 @@
           'sqlite': 'sqlite'
         }
         return mappings[this.connectionType] || 'generic'
+      },
+      runningText() {
+        return `Running ${this.runningType} (${pluralize('query', this.runningCount, true)})`
       },
       hasSelectedText() {
         return this.editor ? !!this.editor.getSelection() : false
@@ -402,6 +408,7 @@
       },
       async submitCurrentQuery() {
         if (this.currentlySelectedQuery) {
+          this.runningType = 'current'
           this.submitQuery(this.currentlySelectedQuery.text)
         } else {
           this.results = []
@@ -410,6 +417,7 @@
       },
       async submitTabQuery() {
         const text = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
+        this.runningType = this.hasSelectedText ? 'selection' : 'everything'
         if (text.trim()) {
           this.submitQuery(text)
         } else {
@@ -437,11 +445,11 @@
 
           const query = this.deparameterizedQuery
           this.$modal.hide('parameters-modal')
-
+          this.runningCount = identification.length || 1
           this.runningQuery = this.connection.query(query)
-          const queryStartTime = +new Date()
+          const queryStartTime = new Date()
           const results = await this.runningQuery.execute()
-          const queryEndTime = +new Date()
+          const queryEndTime = new Date()
           this.executeTime = queryEndTime - queryStartTime
           let totalRows = 0
           results.forEach(result => {
