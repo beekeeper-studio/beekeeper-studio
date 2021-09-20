@@ -22,7 +22,7 @@ Top feature: It's smooth 🍫, fast 🏎, and you'll actually enjoy using it �
 
 One of our frustrations with other open-source SQL editors and database managers is that they take a 'kitchen sink' approach to features, adding so many features that the UI becomes cluttered and hard to navigate. We wanted a good looking, open source SQL workbench that's powerful, but also easy to use. We couldn't find one, so we created it!
 
-![Beekeeper Studio Screenshot](beehttps://docs.beekeeperstudio.io/assets/img/hero.289d6ce0.jpg)
+![Beekeeper Studio Screenshot](https://docs.beekeeperstudio.io/assets/img/hero.289d6ce0.jpg)
 
 Beekeeper Studio supports connecting to the following databases:
 
