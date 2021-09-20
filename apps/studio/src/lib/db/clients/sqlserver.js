@@ -5,7 +5,7 @@ import { parse as bytesParse } from 'bytes'
 import { ConnectionPool } from 'mssql';
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
-import _ from 'lodash';
+import _, { defaults } from 'lodash';
 
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
 import logRaw from 'electron-log'
@@ -47,7 +47,7 @@ export default async function (server, database) {
     listRoutines: (filter) => listRoutines(conn, filter),
     listTableColumns: (db, table, schema) => listTableColumns(conn, db, table, schema),
     listTableTriggers: (table, schema) => listTableTriggers(conn, table, schema),
-    listTableIndexes: (db, table, schema) => listTableIndexes(conn, db, table, schema),
+    listTableIndexes: (db, table, schema) => listTableIndexes(conn, table, schema),
     listSchemas: () => listSchemas(conn),
     getTableReferences: (table) => getTableReferences(conn, table),
     getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
@@ -485,7 +485,7 @@ export async function listTableTriggers(conn, table, schema) {
   })
 }
 
-export async function listTableIndexes(conn, table, schema) {
+export async function listTableIndexes(conn, table, schema = defaultSchema) {
 
   const sql = `
 
@@ -515,7 +515,7 @@ export async function listTableIndexes(conn, table, schema) {
         ind.is_unique_constraint = 0
         AND t.is_ms_shipped = 0
         AND t.name = '${escapeString(table)}'
-        AND s.name = '${escapeString(schema || 'dbo')}'
+        AND s.name = '${escapeString(schema)}'
     ORDER BY
         t.name, ind.name, ind.index_id, ic.is_included_column, ic.key_ordinal;
 
@@ -523,7 +523,6 @@ export async function listTableIndexes(conn, table, schema) {
   `;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
-
 
   const grouped = _.groupBy(data.recordset, 'index_name')
 
@@ -817,7 +816,7 @@ export async function truncateAllTables(conn) {
   });
 }
 
-async function getTableDescription(conn, table, schema) {
+async function getTableDescription(conn, table, schema = defaultSchema) {
   const query = `SELECT *
     FROM fn_listextendedproperty (
       'MS_Description',
@@ -835,7 +834,7 @@ async function getTableDescription(conn, table, schema) {
   return data.recordset[0].MS_Description
 }
 
-export async function getTableProperties(conn, table, schema) {
+export async function getTableProperties(conn, table, schema = defaultSchema) {
 
   const triggers = await listTableTriggers(conn, table, schema)
   const indexes = await listTableIndexes(conn, table, schema)
