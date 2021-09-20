@@ -329,6 +329,11 @@ export class DBTestUtil {
   // lets start simple, it should resolve for all connection types
   async tablePropertiesTests() {
     await this.connection.getTableProperties('group')
+
+    const indexes = await this.connection.listTableIndexes('has_index')
+    const names = indexes.map((i) => i.name)
+    expect(names).toContain('has_index_id_idx')
+
   }
 
   async streamTests() {
@@ -416,6 +421,11 @@ export class DBTestUtil {
       table.timestamps()
       table.string("job_name").notNullable()
       table.decimal("hourly_rate")
+    })
+
+    await this.knex.schema.createTable('has_index', (table) => {
+      table.integer('id')
+      table.index('id', 'has_index_id_idx')
     })
 
     await this.knex.schema.createTable("people_jobs", (table) => {

@@ -8,7 +8,7 @@ const tags = [['5.7'], ['8']]
 
 
 function testWith(tag) {
-  describe(`Mysql ${tag}`, () => {
+  describe(`Mysql [${tag}]`, () => {
 
     let container;
     let util

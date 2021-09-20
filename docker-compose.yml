@@ -3,6 +3,7 @@ volumes:
   mssql:
   mssqllatin:
   psql:
+  psql9:
   mysql:
   mysql8:
   mariadb:
@@ -20,6 +21,17 @@ services:
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
+  psql9:
+    image: postgres:9.6
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: saklia
+    volumes:
+      - psql9:/var/lib/postgresql/data
+      - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
+    ports:
+      - 5433:5432
   mariadb:
     image: mariadb
     restart: always

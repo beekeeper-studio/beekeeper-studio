@@ -605,7 +605,6 @@ export async function listTableIndexes(
     SELECT i.indexrelid::regclass AS indexname,
         k.i AS index_order,
         i.indexrelid as id,
-        i.indnkeyatts,
         i.indisunique,
         i.indisprimary,
         coalesce(a.attname,
@@ -616,8 +615,7 @@ export async function listTableIndexes(
                         || '}')::text[]
                   )[k.i]
                 ) AS index_column,
-        i.indoption[k.i - 1] = 0 AS ascending,
-        k.i <= i.indnkeyatts AS is_key
+        i.indoption[k.i - 1] = 0 AS ascending
       FROM pg_index i
         CROSS JOIN LATERAL unnest(i.indkey) WITH ORDINALITY AS k(attnum, i)
         LEFT JOIN pg_attribute AS a

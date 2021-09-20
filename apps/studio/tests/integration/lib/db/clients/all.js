@@ -37,7 +37,13 @@ export function runCommonTests(getUtil) {
   })
 
 
-  describe("Change Application Tests", () => {
+  describe("Table Structure", () => {
+    test("should fetch table properties", async() => {
+      await getUtil().tablePropertiesTests()
+    })
+  })
+
+  describe("Data modification", () => {
     beforeEach(async () => {
       await prepareTestTable(getUtil())
     })
