@@ -33,9 +33,9 @@ jobs:
         run: yarn workspace beekeeper-studio run lint
       
       - name: Unit Tests
-        run: yarn workspace beekeeper-studio run test:unit
+        run: yarn workspace beekeeper-studio run test:unit --ci --silent
 
       - name: Integration Tests
-        run: yarn workspace beekeeper-studio run test:integration --runInBand
+        run: yarn workspace beekeeper-studio run test:integration --runInBand --ci --silent
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
