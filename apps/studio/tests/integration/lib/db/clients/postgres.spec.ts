@@ -42,7 +42,7 @@ function testWith(dockerTag) {
           domain: null,
           socketPath: null,
         }
-        util = new DBTestUtil(config, "banana", { dialect: 'postgresql' })
+        util = new DBTestUtil(config, "banana", { dialect: 'postgresql', defaultSchema: 'public' })
         await util.setupdb()
 
         await util.knex.schema.createTable('witharrays', (table) => {

@@ -1,6 +1,6 @@
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { MysqlData } from "@shared/lib/dialects/mysql";
-import { Dialect, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
+import { Dialect, DropIndexSpec, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
 import _ from 'lodash'
 
 export class MySqlChangeBuilder extends ChangeBuilderBase {
@@ -34,6 +34,14 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
       const c = this.wrapIdentifier(name)
       return `ALTER TABLE ${t} DROP FOREIGN KEY ${c}`
     }).join(";")
+  }
+
+  dropIndexes(drops: DropIndexSpec[]): string | null {
+    if (!drops?.length) return null
+    return drops.map((spec) => {
+      const name = this.wrapIdentifier(spec.name)
+      return `DROP INDEX ${name} on ${this.tableName}`
+    }).join(';')
   }
 
   ddl(existing: SchemaItem, updated: SchemaItem): string {

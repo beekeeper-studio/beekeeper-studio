@@ -7,6 +7,7 @@ import { IDbConnectionPublicServer } from '@/lib/db/server'
 import { AlterTableSpec, Dialect, DialectData } from '../../../../shared/src/lib/dialects/models'
 import { getDialectData } from '../../../../shared/src/lib/dialects/'
 import _ from 'lodash'
+import { TableIndex } from '../../src/lib/db/models'
 export const dbtimeout = 120000
 
 
@@ -35,10 +36,10 @@ export class DBTestUtil {
   private dbType: string
 
   private dialect: Dialect
-  private data: DialectData
+  public data: DialectData
   
   public preInitCmd: string | undefined
-  public defaultSchema: string = 'public'
+  public defaultSchema: string = undefined
   
   get expectedTables() {
     return this.extraTables + 8
@@ -328,11 +329,52 @@ export class DBTestUtil {
   async tablePropertiesTests() {
     await this.connection.getTableProperties('group', this.defaultSchema)
 
-    if (!this.data.disabledFeatures.createIndex) {
+    if (!this.data.disabledFeatures?.createIndex) {
       const indexes = await this.connection.listTableIndexes('has_index', this.defaultSchema)
       const names = indexes.map((i) => i.name)
       expect(names).toContain('has_index_foo_idx')
     }
+  }
+
+  async indexTests() {
+    if (this.data.disabledFeatures?.createIndex) return;
+    await this.knex.schema.createTable("index_test", (table) => {
+      table.increments('id').primary()
+      table.integer('index_me')
+      table.integer('me_too')
+    } )
+    await this.connection.alterIndex({
+      table: 'index_test',
+      schema: this.defaultSchema,
+      drops: [],
+      additions: [{
+        name: 'it_idx',
+        columns: [{ name: 'index_me', order: 'ASC' }]
+      }]
+    })
+    const indexes = await this.connection.listTableIndexes('index_test', this.defaultSchema)
+    expect(indexes.map((i) => i.name)).toContain('it_idx')
+    await this.connection.alterIndex({
+      drops: [{ name: 'it_idx' }],
+      additions: [{ name: 'it_idx2', columns: [{ name: 'me_too', order: 'ASC'}] }],
+      table: 'index_test',
+      schema: this.defaultSchema 
+    })
+    const updatedIndexesRaw: TableIndex[] = await this.connection.listTableIndexes('index_test', this.defaultSchema)
+
+    const updatedIndexes = updatedIndexesRaw.filter((i) => !i.primary)
+
+    const picked = updatedIndexes.map((i) => _.pick(i, ['name', 'columns', 'table', 'schema']))
+    expect(picked).toEqual(
+      [
+        {
+        name: 'it_idx2',
+        columns: [{name: 'me_too', order: 'ASC'}],
+        table: 'index_test',
+        schema: this.defaultSchema,
+      }]
+    )
+
   }
 
   async streamTests() {
@@ -424,7 +466,7 @@ export class DBTestUtil {
 
     await this.knex.schema.createTable('has_index', (table) => {
       table.integer('foo')
-      if (!this.data.disabledFeatures.createIndex) {
+      if (!this.data.disabledFeatures?.createIndex) {
         table.index('foo', 'has_index_foo_idx')
       }
     })

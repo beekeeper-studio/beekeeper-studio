@@ -20,7 +20,7 @@ describe("CockroachDB Tests", () => {
       port: container.getMappedPort(26257),
       user: 'root',
     }
-    util = new DBTestUtil(config, "defaultdb", {version: '7.2', skipPkQuote: true})
+    util = new DBTestUtil(config, "defaultdb", {version: '7.2', skipPkQuote: true, defaultSchema: 'public'})
     await util.setupdb()
 
   })

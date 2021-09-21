@@ -349,7 +349,8 @@ export async function listTableIndexes(conn, database, table) {
     name: row.name,
     unique: row.unique === 1,
     primary: row.origin === 'pk',
-    columns: indexColumns[idx]
+    columns: indexColumns[idx],
+    table
   }))
 }
 

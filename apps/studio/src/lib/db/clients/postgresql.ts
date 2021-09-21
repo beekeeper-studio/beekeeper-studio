@@ -596,10 +596,41 @@ export async function listTableTriggers(conn: Conn, table: string, schema: strin
     schema: schema
   }));
 }
+
+
+async function listCockroachIndexes(conn: Conn, table: string, schema: string): Promise<TableIndex[]> {
+  const sql = `
+   show indexes from ${tableName(table, schema)};
+  `
+
+  const result = await driverExecuteSingle(conn, { query: sql })
+  const grouped = _.groupBy(result.rows, 'index_name')
+  return Object.keys(grouped).map((indexName: string, idx) => {
+    const columns = grouped[indexName].filter((c) => !c.implicit)
+    const first: any = grouped[indexName][0]
+    return {
+      id: idx.toString(),
+      name: indexName,
+      table: table,
+      schema: schema,
+      primary: first.index_name === 'primary',
+      unique: !first.non_unique,
+      columns: _.sortBy(columns, ['seq_in_index']).map((c: any) => ({
+        name: c.column_name,
+        order: c.direction
+      }))
+      
+    }
+  })
+
+}
+
 export async function listTableIndexes(
-  conn: Conn, table: string, schema: string
+  conn: HasPool, table: string, schema: string
   ): Promise<TableIndex[]> {
 
+  const version = await getVersion(conn)
+  if (version.isCockroach) return await listCockroachIndexes(conn, table, schema)
 
   const sql = `
     SELECT i.indexrelid::regclass AS indexname,

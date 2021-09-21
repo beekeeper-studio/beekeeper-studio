@@ -34,6 +34,9 @@ export function runCommonTests(getUtil) {
     test("should past alter table tests", async () => {
       await getUtil().alterTableTests()
     })
+    test("should alter indexes", async () => {
+      await getUtil().indexTests()
+    })
   })
 
 
