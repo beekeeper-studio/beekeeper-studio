@@ -93,6 +93,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       nonNativeMacOSRole: true,
       click: actionHandler.devtools
     },
+    opendocs : {
+      id: 'opendocs',
+      label: 'Beekeper Studio Documentation',
+      click: actionHandler.opendocs
+    },
     reload: {
       id: 'reload-window',
       label: "DEV Force Reload",
