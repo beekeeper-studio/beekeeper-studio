@@ -38,9 +38,9 @@ export function KnexDialect(d: Dialect): KnexDialect {
 
 export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift'
 export function FormatterDialect(d: Dialect): FormatterDialect {
-  if (!d) return 'sql'
+  if (!d) return 'mysql'
   if (d === 'sqlserver') return 'tsql'
-  if (d === 'sqlite') return 'sql'
+  if (d === 'sqlite') return 'mysql'
   return d
 }
 
@@ -58,7 +58,7 @@ export class ColumnType {
   get pretty() {
     if (this.supportsLength) {
       return `${this.name.toUpperCase()}(${this.defaultLength})`
-    } 
+    }
     return this.name.toUpperCase()
   }
 }
