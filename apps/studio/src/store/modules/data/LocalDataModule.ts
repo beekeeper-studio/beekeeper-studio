@@ -3,27 +3,12 @@ import ISavedQuery from '@/common/interfaces/ISavedQuery'
 import _ from 'lodash'
 import { Module } from 'vuex'
 import { State as RootState } from '../../index'
-import { DataModuleState } from './BaseDataModule'
+import { DataModuleState, StateAndMutations } from './BaseDataModule'
 
 
 export const LocalDataModule: Module<DataModuleState, RootState> = {
   namespaced: true,
-  state: {
-    queryFolders: [],
-    savedQueries: []
-  },
-
-  mutations: {
-    queriesReplace(state, list: ISavedQuery[]) {
-      state.savedQueries = list
-    },
-    queriesAdd(state, item: ISavedQuery) {
-      state.savedQueries.unshift(item)
-    },
-    queriesRemove(state, item: ISavedQuery) {
-      state.savedQueries = _.without(state.savedQueries, item)
-    }
-  },
+  ...StateAndMutations,
   actions: {
     async load(context) {
       const items = await FavoriteQuery.find({ order: { createdAt: 'DESC' } })
