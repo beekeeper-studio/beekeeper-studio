@@ -123,6 +123,7 @@
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from 'electron-log'
   import ErrorAlert from './common/ErrorAlert.vue'
+  import {FormatterDialect} from "@shared/lib/dialects/models";
   const log = rawlog.scope('query-editor')
 
   export default {
@@ -517,7 +518,7 @@
         }
       },
       formatSql() {
-        this.editor.setValue(format(this.editor.getValue()))
+        this.editor.setValue(format(this.editor.getValue(), { language: FormatterDialect(this.dialect) }))
         this.selectEditor()
       },
       toggleComment() {
