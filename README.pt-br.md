@@ -26,7 +26,7 @@ Principais funcionalidades: é leve 🍫, rápido 🏎 e você realmente vai gos
 
 Uma de nossas frustrações com outros editores e gerenciadores SQL de código aberto é que eles usam uma abordagem de "pia na cozinha" para suas funcionalidades, adicionando tantas funcionalidades que tornam a interface desordenada e difícil de navegar. Nós queremos um visual legal, uma ferramenta SQL de código aberto que seja poderosa, mas fácil de usar. Não encontramos uma que atendesse esses requisitos, então resolvemos criar uma.
 
-![SQL Editing Demo](https://raw.githubusercontent.com/beekeeper-studio/beekeeper-studio/master/screenshots/beekeeper-studio-demo.gif)
+![Beekeeper Studio Screenshot](https://docs.beekeeperstudio.io/assets/img/hero.289d6ce0.jpg)
 
 Beekeeper Studio suporta conexão com os seguintes bancos de dados:
 
@@ -41,11 +41,19 @@ Beekeeper Studio suporta conexão com os seguintes bancos de dados:
 
 Baixe a última release na nossa [página de releases](https://github.com/beekeeper-studio/beekeeper-studio/releases), ou do nosso [site](https://beekeeperstudio.io).
 
+## Documentação
+
+Acesse o site [docs.beekeeperstudio.io](https://docs.beekeeperstudio.io) para acessar o guia de usuário, FAQs, dicas de soluções de problemas, e mais.
+
 ## Contribuindo com Beekeeper Studio
 
 Nós amamos _qualquer_ engajamento da comunidade, mesmo que seja uma crítica de algo que você não goste na aplicação.
 
 Construir uma comunidade inclusiva e acolhedora é importante pra gente, então por favor, siga o nosso código de conduta ao se envolver no projeto.
+
+### Contribuições sem código
+
+Nós queremos a sua contribuição, leia nosso [guia de contribuição de 10 minutos sem códificação](https://github.com/beekeeper-studio/beekeeper-studio/issues/287).
 
 ### Inicializando o Beekeeper Studio na versão de Desenvolvimento
 
