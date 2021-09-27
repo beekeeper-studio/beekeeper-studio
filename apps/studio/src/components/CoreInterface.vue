@@ -26,6 +26,7 @@
   import ExportManager from './export/ExportManager'
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
+import { LocalDataModule } from '@/store/modules/data/LocalDataModule'
   export default {
     components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch},
     props: [ 'connection' ],
@@ -54,8 +55,11 @@
       }
     },
     mounted() {
+      if (this.$store.state.workspace.type === 'local') {
+        this.$store.registerModule('data/queries', LocalDataModule)
+      }
       this.$store.dispatch('updateHistory')
-      this.$store.dispatch('updateFavorites')
+      this.$store.dispatch('data/queries/load')
       this.$store.dispatch('pins/loadPins')
       this.registerHandlers(this.rootBindings)
 

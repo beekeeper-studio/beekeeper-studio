@@ -396,7 +396,7 @@
         if (!this.hasTitle || !this.hasText) {
           this.saveError = "You need both a title, and some query text."
         } else {
-          await this.$store.dispatch('saveFavorite', this.query)
+          await this.$store.dispatch('data/queries/save', this.query)
           this.$modal.hide('save-modal')
           this.$noty.success('Saved')
           this.unsavedText = this.tab.query.text

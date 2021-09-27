@@ -20,6 +20,7 @@ import { Dialect, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
 import { SearchModule } from './modules/SearchModule'
+import { IWorkspace } from '@/common/interfaces/IWorkspace'
 
 const log = RawLog.scope('store/index')
 
@@ -46,6 +47,7 @@ export interface State {
   menuActive: boolean,
   activeTab: Nullable<CoreTab>,
   selectedSidebarItem: Nullable<string>,
+  workspace: IWorkspace
 }
 
 Vue.use(Vuex)
@@ -80,6 +82,11 @@ const store = new Vuex.Store<State>({
     menuActive: false,
     activeTab: null,
     selectedSidebarItem: null,
+    workspace: {
+      type: 'local',
+      id: 0,
+      name: "Local Workspace"
+    }
   },
   getters: {
     dialect(state: State): Dialect | null {

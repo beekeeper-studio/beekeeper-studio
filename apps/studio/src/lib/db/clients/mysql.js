@@ -87,7 +87,6 @@ export function disconnect(conn) {
 async function getVersion(conn) {
   const { data } = await driverExecuteQuery(conn, { query: 'SELECT VERSION() as v'})
   const version = data[0]['v']
-
   if (!version) {
     return {
       versionString: '',

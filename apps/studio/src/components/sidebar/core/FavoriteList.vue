@@ -1,8 +1,8 @@
 <template>
   <div class="sidebar-favorites flex-col expand">
     <div class="sidebar-list">
-      <nav class="list-group" v-if="favorites.length > 0">
-        <div @contextmenu.prevent.stop="openContextMenu($event, item)" class="list-item" v-for="item in favorites" v-bind:key="item.id">
+      <nav class="list-group" v-if="savedQueries.length > 0">
+        <div @contextmenu.prevent.stop="openContextMenu($event, item)" class="list-item" v-for="item in savedQueries" v-bind:key="item.id">
           <a class="list-item-btn" @click.prevent="click(item)" :class="{active: selected(item)}">
             <i class="item-icon query material-icons">code</i>
             <!-- <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedFavorites" :class="{ shown: checkedFavorites.length > 0 }"> -->
@@ -13,7 +13,7 @@
           </a>
         </div>
       </nav>
-      <div class="empty" v-if="favorites.length === 0">
+      <div class="empty" v-if="savedQueries.length === 0">
         <span>No Saved Queries</span>
       </div>
     </div>
@@ -33,7 +33,8 @@
       }
     },
     computed: {
-      ...mapState(['favorites', 'activeTab']),
+      ...mapState(['activeTab']),
+      ...mapState('data/queries', ['savedQueries']),
       removeTitle() {
         return `Remove ${this.checkedFavorites.length} saved queries`;
       }
@@ -58,7 +59,7 @@
         this.$root.$emit('favoriteClick', item)
       },
       async remove(favorite) {
-        await this.$store.dispatch('removeFavorite', favorite)
+        await this.$store.dispatch('data/queries/remove', favorite)
       },
       async removeCheckedFavorites() {
         for(let i = 0; i < this.checkedFavorites.length; i++) {
