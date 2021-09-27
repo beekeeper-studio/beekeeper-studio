@@ -1,6 +1,9 @@
 <template>
   <div id="interface" class="interface" v-hotkey="keymap">
-    <div class="interface-wrap row">
+    <div v-if="initializing">
+      <progress-bar />
+    </div>
+    <div v-else class="interface-wrap row">
       <sidebar ref="sidebar" :class="{hide: !sidebarShown}">
         <core-sidebar @databaseSelected="databaseSelected" @toggleSidebar="toggleSidebar" :connection="connection" :sidebarShown="sidebarShown"></core-sidebar>
         <statusbar>
@@ -27,8 +30,10 @@
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
 import { LocalDataModule } from '@/store/modules/data/LocalDataModule'
+import ProgressBar from './editor/ProgressBar.vue'
+import { CloudDataModule } from '@/store/modules/data/CloudDataModule'
   export default {
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch},
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar},
     props: [ 'connection' ],
     data() {
       return {
@@ -38,7 +43,8 @@ import { LocalDataModule } from '@/store/modules/data/LocalDataModule'
         rootBindings: [
           { event: AppEvent.quickSearch, handler: this.showQuickSearch},
           { event: AppEvent.toggleSidebar, handler: this.toggleSidebar }
-        ]
+        ],
+        initializing: true
       }
     },
     computed: {
@@ -55,14 +61,27 @@ import { LocalDataModule } from '@/store/modules/data/LocalDataModule'
       }
     },
     mounted() {
-      if (this.$store.state.workspace.type === 'local') {
-        this.$store.registerModule('data/queries', LocalDataModule)
+      // if (this.$store.state.workspace.type === 'local') {
+      //   this.$store.registerModule('data/queries', LocalDataModule)
+      // }
+
+      if (!this.$store.hasModule('data/queries')) {
+        this.$store.registerModule('data/queries', CloudDataModule)
       }
+
+      this.$store.dispatch('data/queries/initialize', {
+        baseUrl: 'http://localhost:3000',
+        app: 'dev',
+        email: 'matthew@beekeeperstudio.io',
+        token: 'token123',
+        workspace: 1
+      })
+
       this.$store.dispatch('updateHistory')
       this.$store.dispatch('data/queries/load')
       this.$store.dispatch('pins/loadPins')
       this.registerHandlers(this.rootBindings)
-
+      this.initializing = false
       this.$nextTick(() => {
         this.split = Split(this.splitElements, {
           elementStyle: (dimension, size) => ({
