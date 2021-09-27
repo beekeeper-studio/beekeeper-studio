@@ -3,6 +3,26 @@
     display: flex;
     flex-direction: column;
     background: $global-sidebar-bg;
+    &.workspace {
+      margin-top: $gutter-h * 0.5;
+      .nav-item {
+        &.active {
+          // box-shadow: inset 1px 0 $theme-base;
+          .avatar {
+            background: rgba($theme-base, 0.15);
+            box-shadow: none;
+            opacity: 1
+          }
+        }
+      }
+      .divider {
+        padding: $gutter-h;
+        hr {
+          display: block;
+          margin: 0;
+        }
+      }
+    }
     .nav-item {
       display: flex;
       align-items: center;
@@ -35,6 +55,12 @@
       .material-icons {
         font-size: 24px;
       }
+    }
+    .avatar {
+      // background: $brand-info;
+      color: $theme-base;
+      box-shadow: inset 0 0 0 1px rgba($theme-base, 0.2);
+      opacity: 0.5;
     }
   }
 }
