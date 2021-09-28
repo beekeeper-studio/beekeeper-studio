@@ -44,8 +44,8 @@
               </div>
             </div>
             <nav class="list-body">
-                <div class="list-item">
-                  <a class="list-item-btn" v-bind:class="{'open': expanded}" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
+                <div class="list-item folder-group">
+                  <a class="list-item-btn folder-btn" v-bind:class="{'open': expanded}" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
                     <span class="btn-fab open-close" >
                       <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
                     </span>
