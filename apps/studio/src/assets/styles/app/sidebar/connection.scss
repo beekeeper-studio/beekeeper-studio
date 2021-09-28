@@ -21,6 +21,7 @@
     .list-item {
       position: relative;
       padding-left: $gutter-w * 1.75;
+      padding-right: 0;
       &:before {
         content: '';
         position: absolute;
