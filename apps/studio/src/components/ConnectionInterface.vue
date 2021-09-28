@@ -11,15 +11,7 @@
               <h3 class="card-title">{{pageTitle}}</h3>
               <ImportButton :config="config">Import from URL</ImportButton>
             </div>
-            <div class="alert alert-danger" v-show="errors">
-              <i class="material-icons">warning</i>
-              <div>
-                <span>Please fix the following errors:</span>
-                <ul>
-                  <li v-for="(e, i) in errors" :key="i">{{e}}</li>
-                </ul>
-              </div>
-            </div>
+            <error-alert :error="errors" />
             <form @action="submit" v-if="config">
               <div class="form-group">
                 <label for="connectionType">Connection Type</label>
@@ -76,10 +68,11 @@
   import ImportButton from './connection/ImportButton'
   import _ from 'lodash'
   import platformInfo from '@/common/platform_info'
+  import ErrorAlert from './common/ErrorAlert.vue'
   // import ImportUrlForm from './connection/ImportUrlForm';
 
   export default {
-    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, },
 
     data() {
       return {

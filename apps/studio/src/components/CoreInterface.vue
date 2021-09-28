@@ -65,9 +65,12 @@ import { CloudDataModule } from '@/store/modules/data/CloudDataModule'
       //   this.$store.registerModule('data/queries', LocalDataModule)
       // }
 
+      // only a dev problem with hot reloading
       if (!this.$store.hasModule('data/queries')) {
-        this.$store.registerModule('data/queries', CloudDataModule)
+        this.$store.unregisterModule('data/queries')
       }
+      
+      this.$store.registerModule('data/queries', CloudDataModule)
 
       this.$store.dispatch('data/queries/initialize', {
         baseUrl: 'http://localhost:3000',
