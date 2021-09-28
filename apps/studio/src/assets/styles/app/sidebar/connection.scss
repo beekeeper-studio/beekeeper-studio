@@ -30,7 +30,12 @@
         left: 14px;
         border-left: 1px solid rgba($theme-base,0.08);
       }
-
+    }
+    .btn-fab {
+      margin: 0;
+      .dropdown-icon {
+        margin-left: -4px;
+      }
     }
   }
   .connection-wrap {
@@ -103,8 +108,8 @@
     line-height: initial;
     padding: $gutter-h ($gutter-w * 0.75);
     .btn-fab {
-      display: none;
-      flex: 0;
+      // display: none;
+      // flex: 0;
       .material-icons {
         color: $text-dark;
       }
