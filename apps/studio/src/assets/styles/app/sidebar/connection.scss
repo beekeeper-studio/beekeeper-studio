@@ -18,6 +18,19 @@
     .badge {
       min-width: fit-content;
     }
+    .list-item {
+      position: relative;
+      padding-left: $gutter-w * 1.75;
+      &:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 14px;
+        border-left: 1px solid rgba($theme-base,0.08);
+      }
+
+    }
   }
   .connection-wrap {
     height: 100%;
