@@ -1,5 +1,3 @@
-import { run } from "jest-cli";
-
 
 export default {
   name: 'add-app-id',
