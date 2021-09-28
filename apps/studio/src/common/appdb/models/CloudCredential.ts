@@ -18,8 +18,4 @@ export class CloudCredential extends ApplicationEntity {
 
   @Column({ type: 'varchar', nullable: false, transformer: [encrypt]})
   token: string | null
-
-  @Column({ type: 'datetime', nullable: false })
-  tokenExpiresAt: Date | null
-
 }

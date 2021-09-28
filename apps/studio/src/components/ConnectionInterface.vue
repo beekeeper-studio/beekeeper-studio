@@ -109,6 +109,9 @@
       }
     },
     async mounted() {
+      if (!this.$store.state.workspace) {
+        await this.$store.commit('workspace', this.$store.state.localWorkspace)
+      }
       await this.$store.dispatch('credentials/load')
       await this.$store.dispatch('loadSavedConfigs')
       await this.$store.dispatch('loadUsedConfigs')

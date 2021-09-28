@@ -44,7 +44,7 @@
           { event: AppEvent.quickSearch, handler: this.showQuickSearch},
           { event: AppEvent.toggleSidebar, handler: this.toggleSidebar }
         ],
-        initializing: true
+        initializing: false
       }
     },
     computed: {
@@ -90,6 +90,7 @@
 
     },
     beforeDestroy() {
+      this.$store.unregisterModule('data/queries')
       this.$store.dispatch('pins/unloadPins')
       this.unregisterHandlers(this.rootBindings)
       if(this.split) {

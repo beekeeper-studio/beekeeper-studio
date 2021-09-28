@@ -20,6 +20,7 @@ interface State {
 
 
 export const CredentialsModule: Module<State, RootState> = {
+  namespaced: true,
   state: {
     credentials: [],
     workspaces: [],

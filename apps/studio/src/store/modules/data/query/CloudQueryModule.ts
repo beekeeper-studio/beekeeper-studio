@@ -23,8 +23,11 @@ export const CloudQueryModule: Module<State, RootState> = {
   },
   actions: {
     async load(context) {
+      console.log("init load queries")
       safelyDo(context, async (cli) => {
+        console.log("getting queries")
         const queries = await cli.queries.list()
+        console.log("queries", queries)
         context.commit('replace', queries)
       })
     },

@@ -50,6 +50,7 @@ export class CloudClient {
 
   setWorkspace(workspaceId: number) {
     this.workspaceId = workspaceId
+    if (!this.axios.defaults.params) this.axios.defaults.params = {}
     this.axios.defaults.params['workspace_id'] = workspaceId
   }
 

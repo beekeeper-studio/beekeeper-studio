@@ -1,9 +1,10 @@
 <template>
     <div class="workspace global-items">
       <a
-        class="nav-item active"
+        class="nav-item"
         title="Personal Workspace"
-        @click.prevent="click(localWorkspace)"
+        :class="{active: localWorkspace === workspace}"
+        @click.prevent="click({ workspace: localWorkspace })"
       >
         <span class="avatar"><i class="material-icons">person</i></span>
       </a>
@@ -12,6 +13,7 @@
       <a
         v-for="blob in workspaces"
         :key="blob.workspace.id"
+        :class="{active: blob.workspace === workspace}"
         class="nav-item"
         :title="blob.workspace.name"
         @click.prevent="click(blob)"
@@ -34,7 +36,7 @@ import NewWorkspaceButton from './connection/NewWorkspaceButton.vue'
     props: ['activeItem'],
     computed: {
       ...mapState('credentials', ['workspaces']),
-      ...mapState(['localWorkspace'])
+      ...mapState(['localWorkspace', 'workspace'])
     },
     methods: {
       click(blob: { workspace: IWorkspace, client: CloudClient}) {
