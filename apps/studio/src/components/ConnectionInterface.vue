@@ -109,6 +109,7 @@
       }
     },
     async mounted() {
+      await this.$store.dispatch('credentials/load')
       await this.$store.dispatch('loadSavedConfigs')
       await this.$store.dispatch('loadUsedConfigs')
       this.config = this.defaultConfig

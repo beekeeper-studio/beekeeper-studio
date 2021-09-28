@@ -21,6 +21,8 @@ import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
 import { SearchModule } from './modules/SearchModule'
 import { IWorkspace } from '@/common/interfaces/IWorkspace'
+import { CloudClient } from '@/lib/cloud/CloudClient'
+import { CredentialsModule } from './modules/CredentialsModule'
 
 const log = RawLog.scope('store/index')
 
@@ -47,7 +49,9 @@ export interface State {
   menuActive: boolean,
   activeTab: Nullable<CoreTab>,
   selectedSidebarItem: Nullable<string>,
-  workspace: IWorkspace
+  localWorkspace: IWorkspace,
+  workspace: IWorkspace | null,
+  cloudClient: CloudClient | null
 }
 
 Vue.use(Vuex)
@@ -58,7 +62,8 @@ const store = new Vuex.Store<State>({
     exports: ExportStoreModule,
     settings: SettingStoreModule,
     pins: PinModule,
-    search: SearchModule
+    search: SearchModule,
+    credentials: CredentialsModule
   },
   state: {
     usedConfig: null,
@@ -82,11 +87,13 @@ const store = new Vuex.Store<State>({
     menuActive: false,
     activeTab: null,
     selectedSidebarItem: null,
-    workspace: {
+    localWorkspace: {
       type: 'local',
       id: 0,
       name: "Local Workspace"
-    }
+    },
+    workspace: null,
+    cloudClient: null
   },
   getters: {
     dialect(state: State): Dialect | null {
@@ -146,6 +153,12 @@ const store = new Vuex.Store<State>({
     }
   },
   mutations: {
+    workspace(state, item: IWorkspace) {
+      state.workspace = item
+    },
+    client(state, item: CloudClient) {
+      state.cloudClient = item
+    },
     selectSidebarItem(state, item: string) {
       state.selectedSidebarItem = item
     },

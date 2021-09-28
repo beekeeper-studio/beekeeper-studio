@@ -1,9 +1,10 @@
 import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import _ from "lodash";
+import { upsert } from "../StoreHelpers";
 
 
-export interface DataModuleState {
+export interface QueryModuleState {
   queryFolders: IQueryFolder[]
   savedQueries: ISavedQuery[]
 }
@@ -14,18 +15,18 @@ export const StateAndMutations = {
     queryFolders: [],
     savedQueries: []
   },
-
+  
   mutations: {
-    queriesReplace(state, list: ISavedQuery[]) {
+    replace(state, list: ISavedQuery[]) {
       state.savedQueries = list
     },
-    queriesAdd(state, item: ISavedQuery) {
-      state.savedQueries.unshift(item)
+    add(state: QueryModuleState, item: ISavedQuery) {
+      upsert(state.savedQueries, item)
     },
-    queriesRemove(state, item: ISavedQuery) {
+    remove(state, item: ISavedQuery) {
       state.savedQueries = _.without(state.savedQueries, item)
     }
   },
-
+  
 }
 

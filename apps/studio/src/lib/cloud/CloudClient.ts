@@ -1,58 +1,56 @@
-import ISavedQuery from "@/common/interfaces/ISavedQuery";
-import axios, { AxiosResponse, AxiosInstance} from 'axios'
-
-class CloudError extends Error {
-  constructor(status: number, message?: string, errors?: string[]) {
-    const result = [`Cloud error [${status}]:`]
-    if (message) result.push(message)
-    if (errors?.length) result.push(...errors)
-    super(result.join(" "))
-  }
-}
+import axios, { AxiosInstance} from 'axios'
+import { res } from './ClientHelpers';
+import { QueriesController } from "./controllers/QueriesController";
+import { WorkspacesController } from './controllers/WorkspacesController';
 
 
-interface CloudResponseBase {
-  code: number,
-  errors: [],
-  message: string | null,
-}
 
-interface QueriesResponse extends CloudResponseBase {
-  queries: ISavedQuery[]
-}
 
 export interface CloudClientOptions {
   token: string,
   app: string,
   email: string
   baseUrl: string,
-  workspace: number
+  workspace?: number
 }
 
 export class CloudClient {
-  axois: AxiosInstance
+
+  static async login(baseUrl, email, password, app): Promise<string> {
+    const cli = axios.create({
+      baseURL: baseUrl,
+      timeout: 5000
+    })
+
+    const response = await cli.post('/api/login', {
+      email, password, app
+    })
+
+    return res(response, 'token')
+  }
+
+
+  axios: AxiosInstance
+  public queries: QueriesController
+  public workspaces: WorkspacesController
+  public workspaceId: number
   constructor(public options: CloudClientOptions) {
-    this.axois = axios.create({
+    this.axios = axios.create({
       baseURL: `${options.baseUrl}/api`,
       timeout: 5000,
       headers: {
         email: options.email,
         token: options.token,
         app: options.app
-      }
+      },
     })
+    this.queries = new QueriesController(this.axios)
+    this.workspaces = new WorkspacesController(this.axios)
   }
 
-  async queriesList(): Promise<ISavedQuery[]> {
-    const response: AxiosResponse<QueriesResponse> = await this.axois.get('/queries',{ params: { workspace_id: this.options.workspace}})
-    return this.result(response, 'queries')
+  setWorkspace(workspaceId: number) {
+    this.workspaceId = workspaceId
+    this.axios.defaults.params['workspace_id'] = workspaceId
   }
-
-
-  private result<T extends CloudResponseBase>(response: AxiosResponse<T>, key: string) {
-    if (response.status !== 200) throw new CloudError(response.status, response.data?.message, response.data?.errors)
-    return response.data[key]
-  }
-
 
 }

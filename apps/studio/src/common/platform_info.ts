@@ -44,7 +44,8 @@ const platformInfo = {
   testMode,
   appDbPath: path.join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
   updatesDisabled,
-  appVersion: testMode ? 'test-mode' : e.app.getVersion()
+  appVersion: testMode ? 'test-mode' : e.app.getVersion(),
+  cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://cloud.beekeeperstudio.io'
 }
 
 export default platformInfo

@@ -29,9 +29,9 @@
   import ExportManager from './export/ExportManager'
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
-import { LocalDataModule } from '@/store/modules/data/LocalDataModule'
-import ProgressBar from './editor/ProgressBar.vue'
-import { CloudDataModule } from '@/store/modules/data/CloudDataModule'
+  import { LocalQueryModule } from '@/store/modules/data/query/LocalQueryModule'
+  import ProgressBar from './editor/ProgressBar.vue'
+  import { CloudQueryModule } from '@/store/modules/data/query/CloudQueryModule'
   export default {
     components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar},
     props: [ 'connection' ],
@@ -61,25 +61,16 @@ import { CloudDataModule } from '@/store/modules/data/CloudDataModule'
       }
     },
     mounted() {
-      // if (this.$store.state.workspace.type === 'local') {
-      //   this.$store.registerModule('data/queries', LocalDataModule)
-      // }
-
       // only a dev problem with hot reloading
       if (!this.$store.hasModule('data/queries')) {
         this.$store.unregisterModule('data/queries')
       }
-      
-      this.$store.registerModule('data/queries', CloudDataModule)
 
-      this.$store.dispatch('data/queries/initialize', {
-        baseUrl: 'http://localhost:3000',
-        app: 'dev',
-        email: 'matthew@beekeeperstudio.io',
-        token: 'token123',
-        workspace: 1
-      })
-
+      if (this.$store.state.workspace.type === 'local') {
+        this.$store.registerModule('data/queries', LocalQueryModule)
+      } else {
+        this.$store.registerModule('data/queries', CloudQueryModule)
+      }
       this.$store.dispatch('updateHistory')
       this.$store.dispatch('data/queries/load')
       this.$store.dispatch('pins/loadPins')
