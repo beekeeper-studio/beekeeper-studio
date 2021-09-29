@@ -6,9 +6,9 @@
         :class="{active: localWorkspace === workspace}"
         @click.prevent="click({ workspace: localWorkspace })"
       >
-        <span class="avatar"><i class="material-icons">person</i></span>
+        <span class="avatar"><i class="material-icons">computer</i></span>
       </a>
-      <div class="divider"><hr></div>
+      <!-- <div class="divider"><hr></div> -->
 
       <a
         v-for="blob in workspaces"
@@ -21,6 +21,14 @@
         <span class="avatar">{{blob.workspace.name.toUpperCase()[0]}}</span>
       </a>
       <new-workspace-button />
+      <span class="expand"></span>
+      <a
+        class="nav-item account"
+        title="Personal Workspace"
+        @click.prevent=""
+      >
+        <span class="avatar"><i class="material-icons">person</i><span class="badge success">1</span></span>
+      </a>
     </div>
 </template>
 

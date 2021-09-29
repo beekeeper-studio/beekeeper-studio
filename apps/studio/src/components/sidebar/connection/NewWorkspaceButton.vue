@@ -1,7 +1,7 @@
 <template>
   <div class="add-workspace-button">
     <a @click.prevent="addWorkspace" class="nav-item">
-      <i class="material-icons">add</i>
+      <span class="avatar btn-link"><i class="material-icons">add</i></span>
     </a>
     <modal name="workspace" class="vue-dialog beekeeper-modal" >
       <form @submit.prevent="login">

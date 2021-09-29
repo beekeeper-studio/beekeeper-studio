@@ -49,6 +49,9 @@
     a {
       &.active {
         background-color: rgba($theme-base, 0.06);
+        .avatar {
+          box-shadow: 0 0 0 2px transparent, 0 0 0 4px white;
+        }
       }
     }
     .actions-btn {
