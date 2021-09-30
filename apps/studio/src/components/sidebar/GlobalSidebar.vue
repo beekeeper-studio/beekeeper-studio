@@ -27,6 +27,17 @@
       >
         <span class="material-icons">history</span>
       </a>
+      <span class="expand"></span>
+      <a
+        class="nav-item account"
+        title="Personal Workspace"
+        @click.prevent=""
+      >
+        <span class="avatar">
+          <i class="material-icons">person</i>
+          <span class="badge success"><i class="material-icons">check</i></span>
+        </span>
+      </a>
     </div>
 </template>
 

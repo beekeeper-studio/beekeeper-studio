@@ -6,39 +6,6 @@
     &.workspace {
       margin-top: $gutter-h * 0.5;
       .nav-item {
-        .avatar {
-          // padding: 2px;
-          position: relative;
-          background-clip: content-box; /* support: IE9+ */
-          transition: border 0.2s ease-in-out;
-          .material-icons {
-            font-size: 18px;
-          }
-          .badge {
-            $badge-size:     14px;
-
-            position: absolute;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            bottom: 0;
-            right: 0;
-            height: $badge-size;
-            width: $badge-size;
-            border-radius: $badge-size;
-            font-size: 10px;
-            font-weight: bold;
-            margin: 0;
-            background: #666;
-            color: rgba(black, 0.87);
-            &.danger {
-              background: $brand-danger;
-            }
-            &.success {
-              background: $brand-success;
-            }
-          }
-        }
         &.active {
           // box-shadow: inset 1px 0 $theme-base;
           .avatar {
@@ -93,16 +60,6 @@
         margin-bottom: $gutter-h * 0.75;
       }
     }
-    .avatar {
-      // background: $brand-info;
-      color: $theme-base;
-      box-shadow: inset 0 0 0 1px rgba($theme-base, 0.1);
-      color: $text-lighter;
-      transition: color 0.2s ease-in-out;
-      &:hover {
-        color: $text;
-      }
-    }
     .add-workspace-button {
       .v--modal-box {
         height: auto!important;
@@ -114,6 +71,52 @@
             font-size: 24px;
           }
         }
+      }
+    }
+  }
+  .avatar {
+    // background: $brand-info;
+    color: $theme-base;
+    box-shadow: inset 0 0 0 1px rgba($theme-base, 0.1);
+    color: $text-lighter;
+    transition: color 0.2s ease-in-out;
+    &:hover {
+      color: $text;
+    }
+  }
+  .avatar {
+    // padding: 2px;
+    position: relative;
+    background-clip: content-box; /* support: IE9+ */
+    transition: border 0.2s ease-in-out;
+    > .material-icons {
+      font-size: 18px;
+    }
+    .badge {
+      $badge-size:     14px;
+
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      top: 0;
+      right: 0;
+      height: $badge-size;
+      width: $badge-size;
+      border-radius: $badge-size;
+      font-size: 10px;
+      font-weight: bold;
+      margin: 0;
+      background: #666;
+      color: rgba(black, 0.87);
+      &.danger {
+        background: $brand-danger;
+      }
+      &.success {
+        background: $brand-success;
+      }
+      .material-icons {
+        font-size: 12px;
       }
     }
   }
