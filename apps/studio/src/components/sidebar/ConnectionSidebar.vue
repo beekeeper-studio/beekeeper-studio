@@ -1,9 +1,9 @@
 <template>
-  <div class="sidebar-wrap flex">
+  <div class="sidebar-wrap row">
     <workspace-sidebar></workspace-sidebar>
 
     <!-- QUICK CONNECT -->
-    <div class="flex-col expand">
+    <div class="tab-content flex-col expand">
       <div class="btn-wrap quick-connect">
         <a
           href=""

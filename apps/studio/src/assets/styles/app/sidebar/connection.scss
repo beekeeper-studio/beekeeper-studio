@@ -20,16 +20,16 @@
     }
     .list-item {
       position: relative;
-      padding-left: $gutter-w * 1.2;
+      padding-left: $gutter-w * 1.1;
       padding-right: 0;
-      &:before {
-        content: '';
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 8px;
-        border-left: 1px solid rgba($theme-base,0.08);
-      }
+      // &:before {
+      //   content: '';
+      //   position: absolute;
+      //   top: 0;
+      //   bottom: 0;
+      //   left: 8px;
+      //   border-left: 1px solid rgba($theme-base,0.08);
+      // }
     }
   }
   .connection-wrap {
@@ -49,9 +49,6 @@
     a {
       &.active {
         background-color: rgba($theme-base, 0.06);
-        .avatar {
-          box-shadow: 0 0 0 2px transparent, 0 0 0 4px white;
-        }
       }
     }
     .actions-btn {
