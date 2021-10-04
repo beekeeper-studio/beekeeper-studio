@@ -101,13 +101,16 @@
     height: initial;
     line-height: initial;
     padding: $gutter-h ($gutter-w * 0.75);
-    &.folder-btn {
-      padding-left: 0;
-      .btn-fab {
-        display: inline-flex;
-        margin-right: 0;
-      }
-    }
+    // &.folder-btn {
+    //   padding-left: 0;
+    //   .btn-fab {
+    //     display: inline-flex;
+    //     margin-right: 0;
+    //   }
+    //   &:hover {
+    //     background: transparent;
+    //   }
+    // }
     .btn-fab {
       .material-icons {
         color: $text-dark;

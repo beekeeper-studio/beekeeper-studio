@@ -16,7 +16,7 @@
         :class="{ active: activeItem === 'queries'}"
         title="Saved Queries"
       >
-        <span class="material-icons">star</span>
+        <span class="material-icons">code</span>
       </a>
       <a
         href=""

@@ -508,4 +508,27 @@
       display: flex;
     }
   }
+
+}
+
+// Folder Group
+.folder-group {
+  .folder-btn {
+    display: flex;
+    align-items: center;
+    padding-left: 0;
+    .btn-fab {
+      display: inline-flex!important;
+      margin-right: 0;
+    }
+    &:hover {
+      background: transparent;
+    }
+    .schema-icon {
+      line-height: 1.9;
+    }
+  }
+  .list-item {
+    padding-left: $gutter-w * 2.1;
+  }
 }
