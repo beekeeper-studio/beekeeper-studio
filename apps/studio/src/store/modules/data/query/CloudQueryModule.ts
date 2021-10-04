@@ -3,20 +3,16 @@ import { QueryModuleState, StateAndMutations } from "./BaseQueryModule";
 import { State as RootState } from '../../../index'
 import { Module } from "vuex";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
-import { ClientError, safelyDo } from "../StoreHelpers";
+import { safelyDo } from "../StoreHelpers";
 
 
 interface State extends QueryModuleState {
-  loading: boolean
-  error: ClientError
 }
 
 export const CloudQueryModule: Module<State, RootState> = {
   namespaced: true,
   state: {
     ...StateAndMutations.state,
-    loading: false,
-    error: null
   },
   mutations: {
     ...StateAndMutations.mutations,
@@ -24,7 +20,7 @@ export const CloudQueryModule: Module<State, RootState> = {
   actions: {
     async load(context) {
       console.log("init load queries")
-      safelyDo(context, async (cli) => {
+      await safelyDo(context, async (cli) => {
         console.log("getting queries")
         const queries = await cli.queries.list()
         console.log("queries", queries)
@@ -32,13 +28,14 @@ export const CloudQueryModule: Module<State, RootState> = {
       })
     },
     async save(context, query: ISavedQuery) {
-      safelyDo(context, async (cli) => {
+      await safelyDo(context, async (cli) => {
+        console.log("saving", query)
         const updated = await cli.queries.upsert(query)
         context.commit('add', updated)
       })
     },
     async remove(context, query: ISavedQuery) {
-      safelyDo(context, async (cli) => {
+      await safelyDo(context, async (cli) => {
         await cli.queries.delete(query)
         context.commit('remove', query)
       })

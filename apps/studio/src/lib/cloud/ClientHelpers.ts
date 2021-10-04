@@ -18,6 +18,7 @@ export class CloudError extends Error {
 
 
 export function res<T extends CloudResponseBase>(response: AxiosResponse < T >, key: string) {
+  console.log('creating result from - ', response)
   if (response.status !== 200) throw new CloudError(response.status, response.data?.message, response.data?.errors)
   return response.data[key]
 }

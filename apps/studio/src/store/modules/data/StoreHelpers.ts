@@ -24,6 +24,7 @@ export function safelyDo<U>(context: BasicContext, f: (c: CloudClient) => Promis
       await f(c)
     } catch (error) {
       context.commit('error', error)
+      throw error
     } finally {
       context.commit('loading', false)
     }

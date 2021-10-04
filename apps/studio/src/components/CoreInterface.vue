@@ -44,7 +44,7 @@
           { event: AppEvent.quickSearch, handler: this.showQuickSearch},
           { event: AppEvent.toggleSidebar, handler: this.toggleSidebar }
         ],
-        initializing: false
+        initializing: true
       }
     },
     computed: {
@@ -58,6 +58,22 @@
           this.$refs.sidebar.$refs.sidebar,
           this.$refs.content
         ]
+      }
+    },
+    watch: {
+      initializing() {
+        if (this.initializing) return;
+        this.$nextTick(() => {
+          this.split = Split(this.splitElements, {
+            elementStyle: (dimension, size) => ({
+                'flex-basis': `calc(${size}%)`,
+            }),
+            sizes: [25,75],
+            minSize: 280,
+            expandToMin: true,
+            gutterSize: 5,
+          })
+        })
       }
     },
     mounted() {
@@ -75,17 +91,9 @@
       this.$store.dispatch('data/queries/load')
       this.$store.dispatch('pins/loadPins')
       this.registerHandlers(this.rootBindings)
-      this.initializing = false
       this.$nextTick(() => {
-        this.split = Split(this.splitElements, {
-          elementStyle: (dimension, size) => ({
-              'flex-basis': `calc(${size}%)`,
-          }),
-          sizes: [25,75],
-          minSize: 280,
-          expandToMin: true,
-          gutterSize: 5,
-        })
+        this.initializing = false
+
       })
 
     },

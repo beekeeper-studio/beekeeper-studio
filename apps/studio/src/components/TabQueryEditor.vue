@@ -36,8 +36,8 @@
       <progress-bar @cancel="cancelQuery" :message="runningText" v-if="running"></progress-bar>
       <result-table ref="table" v-else-if="rowCount > 0" :active="active" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
       <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results. {{result.affectedRows || 0}} rows affected.</span></div></div>
-      <div class="message" v-else-if="error">
-        <error-alert :error="error" />
+      <div class="message" v-else-if="errors">
+        <error-alert :error="errors" />
       </div>
       <div class="message" v-else-if="info"><div class="alert alert-info"><i class="material-icons">warning</i><span>{{info}}</span></div></div>
       <div class="layout-center expand" v-else>
@@ -140,12 +140,12 @@
         editor: null,
         runningQuery: null,
         error: null,
+        saveError: null,
         info: null,
         split: null,
         tableHeight: 0,
         savePrompt: false,
         unsavedText: null,
-        saveError: null,
         lastWord: null,
         cursorIndex: null,
         marker: null,
@@ -162,6 +162,14 @@
           'sqlite': 'sqlite'
         }
         return mappings[this.connectionType] || 'generic'
+      },
+      errors() {
+        const result = [
+          this.error,
+          this.saveError
+        ].filter((e) => e)
+
+        return result.length ? result : null
       },
       runningText() {
         return `Running ${this.runningType} (${pluralize('query', this.runningCount, true)})`
@@ -395,13 +403,18 @@
       },
       async saveQuery() {
         if (!this.hasTitle || !this.hasText) {
-          this.saveError = "You need both a title, and some query text."
+          this.saveError = new Error("You need both a title, and some query text.")
         } else {
-          await this.$store.dispatch('data/queries/save', this.query)
-          this.$modal.hide('save-modal')
-          this.$noty.success('Saved')
-          this.unsavedText = this.tab.query.text
-          this.tab.unsavedChanges = false
+          try {
+            await this.$store.dispatch('data/queries/save', this.query)
+            this.$modal.hide('save-modal')
+            this.$noty.success('Query Saved')
+            this.unsavedText = this.tab.query.text
+            this.tab.unsavedChanges = false
+          } catch (ex) {
+            this.saveError = ex
+            this.$noty.error(`Save Error: ${ex.message}`)
+          }
         }
       },
       escapeRegExp(string) {
