@@ -27,6 +27,9 @@ export const StateAndMutations = {
       state.error = error
     },
     replace(state, list: ISavedQuery[]) {
+      list.forEach((item) => {
+        upsert(state.savedQueries, item)
+      })
       state.savedQueries = list
     },
     add(state: QueryModuleState, item: ISavedQuery) {
@@ -34,6 +37,9 @@ export const StateAndMutations = {
     },
     remove(state, item: ISavedQuery) {
       state.savedQueries = _.without(state.savedQueries, item)
+    },
+    upsert(state, item: ISavedQuery) {
+      upsert(state.savedQueries, item)
     }
   },
   

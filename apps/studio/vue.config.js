@@ -166,7 +166,13 @@ module.exports = {
   configureWebpack: {
     plugins: [
       new webpack.IgnorePlugin(/pg-native/, /pg/),
-      new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/)
+      new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/),
+      new webpack.ProvidePlugin({
+        diff_match_patch: 'diff-match-patch',
+        DIFF_EQUAL: ['diff-match-patch', 'DIFF_EQUAL'],
+        DIFF_INSERT: ['diff-match-patch', 'DIFF_INSERT'],
+        DIFF_DELETE: ['diff-match-patch', 'DIFF_DELETE'],
+      }),
     ],
 
     // externals: {

@@ -14,11 +14,12 @@ import 'typeface-roboto'
 import 'typeface-source-code-pro'
 import './assets/styles/app.scss'
 import $ from 'jquery'
-// @ts-ignore
-import SQL from 'codemirror/mode/sql/sql'
-import Hint from 'codemirror/addon/hint/show-hint.js'
-// @ts-ignore
-import SQLHint from 'codemirror/addon/hint/sql-hint.js'
+
+import 'codemirror/mode/sql/sql'
+import 'codemirror/mode/diff/diff'
+import 'codemirror/addon/hint/show-hint.js'
+import 'codemirror/addon/hint/sql-hint.js'
+
 import store from './store/index'
 import 'reflect-metadata'
 import {TypeOrmPlugin} from './lib/typeorm_plugin'
@@ -36,6 +37,7 @@ import VueClipboard from 'vue-clipboard2'
 import platformInfo from './common/platform_info'
 import { AppEventMixin } from './common/AppEvent'
 import BeekeeperPlugin from './plugins/BeekeeperPlugin'
+import 'codemirror/addon/merge/merge'
 
 (async () => {
   try {
@@ -58,9 +60,9 @@ import BeekeeperPlugin from './plugins/BeekeeperPlugin'
 
     (window as any).$ = $;
     (window as any).jQuery = $;
-    (window as any).sql = SQL;
-    (window as any).hint = Hint;
-    (window as any).SQLHint = SQLHint;
+    // (window as any).sql = SQL;
+    // (window as any).hint = Hint;
+    // (window as any).SQLHint = SQLHint;
     (window as any).XLSX = xlsx;
     Vue.config.devtools = platformInfo.isDevelopment;
 

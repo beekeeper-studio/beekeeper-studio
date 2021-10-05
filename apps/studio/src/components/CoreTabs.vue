@@ -289,7 +289,7 @@
 
         this.tabItems = _.without(this.tabItems, tab)
         if (tab.query && tab.query.id) {
-          tab.query.reload()
+          this.$store.dispatch('data/queries/reload', tab.query.id)
         }
       },
       closeAll() {
@@ -300,7 +300,7 @@
         this.tabItems = [tab]
         this.setActiveTab(tab)
         if (tab.query && tab.query.id) {
-          tab.query.reload()
+          this.$store.dispatch('data/queries/reload', tab.query.id)
         }
       },
       duplicate(tab) {

@@ -17,13 +17,16 @@ export const LocalQueryModule: Module<QueryModuleState, RootState> = {
       query.database = context.rootState.database || 'default'
       await query.save()
       // otherwise it's already there!
-      if (!context.state.savedQueries.includes(query)) {
-        context.commit('add', query)
-      }
+      context.commit('add', query)
+      return query
     },
     async remove(context, favorite) {
       await favorite.remove()
       context.commit('remove', favorite)
     },
+    async reload(_context, query) {
+      await query.reload()
+      return query
+    }
   }
 }

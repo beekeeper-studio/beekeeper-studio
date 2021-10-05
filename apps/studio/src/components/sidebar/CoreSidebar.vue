@@ -42,10 +42,6 @@
         :class="tabClasses('queries')"
         v-show="activeItem === 'queries'"
       >
-        <div class="sidebar-heading">
-          <span class="sidebar-title">Saved Queries</span>
-          <span class="expand"></span>
-        </div>
         <favorite-list></favorite-list>
       </div>
 

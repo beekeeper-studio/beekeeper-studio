@@ -17,6 +17,13 @@ export class QueriesController {
     return res(response, 'queries')
   }
 
+  async get(id: number): Promise<ISavedQuery> {
+    const response = await this.axios.get(
+      `/queries/${id}`
+    )
+    return res(response, 'query')
+  }
+
   async create(q: ISavedQuery): Promise<ISavedQuery> {
     console.log('creating query')
     if (q.id) throw new CloudError(400, "Cannot create - query already has an ID")
@@ -27,7 +34,6 @@ export class QueriesController {
 
   async update(q: ISavedQuery): Promise<ISavedQuery> {
     console.log('updating')
-    throw new Error("bananas")
     if (!q.id) throw new CloudError(400, "Must provide Query ID to update a query.")
     const response = await this.axios.patch(`/queries/${q.id}`, q)
     return res(response, 'query')

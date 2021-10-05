@@ -15,21 +15,23 @@ interface BasicContext {
   commit(str: string, item: any)
 }
 
+export function havingCli<U>(context: BasicContext, f: (c: CloudClient) => Promise<U>) {
+  return having(context.rootState.cloudClient, f, "You are not logged in")
+}
+
 export function safelyDo<U>(context: BasicContext, f: (c: CloudClient) => Promise<U>) {
   
-  const cli = context.rootState.cloudClient
   const safeRunner = async (c: CloudClient) => {
     try {
       context.commit('loading', true)
       await f(c)
     } catch (error) {
       context.commit('error', error)
-      throw error
     } finally {
       context.commit('loading', false)
     }
   }
-  return having(cli, safeRunner, "You are not logged in.")
+  return havingCli(context, safeRunner)
 }
 
 interface HasID {

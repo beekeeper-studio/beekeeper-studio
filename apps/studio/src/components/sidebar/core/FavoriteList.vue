@@ -1,5 +1,14 @@
 <template>
   <div class="sidebar-favorites flex-col expand">
+    <div class="sidebar-heading">
+      <span class="title">Saved Queries</span>
+      <span class="expand"></span>
+      <span class="buttons">
+        <a class="btn btn-link" @click.prevent="refresh">
+          <i class="material-icons">refresh</i>
+        </a>
+      </span>
+    </div>
     <div class="sidebar-list">
       <nav class="list-group folder-group" v-if="savedQueries.length > 0">   
         <a class="list-item-btn folder-btn" >
@@ -46,6 +55,9 @@
       }
     },
     methods: {
+      refresh() {
+        this.$store.dispatch("data/queries", 'reload')
+      },
       openContextMenu(event, item) {
         this.$bks.openMenu({
           item, event,

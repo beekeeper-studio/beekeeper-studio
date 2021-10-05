@@ -5,10 +5,12 @@
       ref="topPanel"
       @contextmenu.prevent.stop="showContextMenu"
     >
+      <merge-manager v-if="query.id" :originalText="originalText" :query="query" :unsavedText="unsavedText" @change="onChange" @mergeAccepted="originalText = query.text" />
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
       <div class="toolbar text-right">
         <div class="actions btn-group" ref="actions">
+          <x-button class="btn btn-danger" @click.prevent="fakeRemoteChange" >[DEV] Make Fake Remote Change </x-button>
           <x-button @click.prevent="triggerSave" class="btn btn-flat btn-small">Save</x-button>
 
           <x-buttons class="">
@@ -67,7 +69,7 @@
             </div>
           </div>
         </div>
-        <div class="vue-dialog-buttons">
+        <div class="vue-dialog-buttons">          
           <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('save-modal')">Cancel</button>
           <button class="btn btn-primary" type="submit">Save</button>
         </div>
@@ -98,7 +100,6 @@
       </form>
     </modal>
 
-
   </div>
 </template>
 
@@ -124,11 +125,15 @@
   import rawlog from 'electron-log'
   import ErrorAlert from './common/ErrorAlert.vue'
   import {FormatterDialect} from "@shared/lib/dialects/models";
+  import MergeManager from '@/components/editor/MergeManager.vue'
+  
   const log = rawlog.scope('query-editor')
+  const isEmpty = (s) => _.isEmpty(_.trim(s))
+  const editorDefault = "\n\n\n\n\n\n\n\n\n\n"
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert},
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager},
     props: ['tab', 'active'],
     data() {
       return {
@@ -145,13 +150,14 @@
         split: null,
         tableHeight: 0,
         savePrompt: false,
-        unsavedText: null,
         lastWord: null,
         cursorIndex: null,
         marker: null,
         queryParameterValues: {},
         queryForExecution: null,
-        executeTime: 0
+        executeTime: 0,
+        originalText: null,
+        unsavedText: null,
       }
     },
     computed: {
@@ -184,7 +190,7 @@
         return this.tab.query
       },
       queryText() {
-        return this.tab.query.text || null
+        return this.query.text || null
       },
       individualQueries() {
         if (!this.queryText) return []
@@ -221,7 +227,7 @@
         return this.result && this.result.rows ? this.result.rows.length : 0
       },
       hasText() {
-        return this.query.text && this.query.text.replace(/\s+/, '').length > 0
+        return !isEmpty(this.unsavedText)
       },
       hasTitle() {
         return this.query.title && this.query.title.replace(/\s+/, '').length > 0
@@ -272,9 +278,15 @@
         });
         return query;
       },
+      unsavedChanges() {
+        return _.trim(this.unsavedText) !== _.trim(this.originalText)
+      },
       ...mapState(['usedConfig', 'connection', 'database', 'tables'])
     },
     watch: {
+      unsavedChanges() {
+        this.tab.unsavedChanges = this.unsavedChanges
+      },
       active() {
         if(this.active && this.editor) {
           this.$nextTick(() => {
@@ -334,22 +346,6 @@
         // this.editor.setOptions('hint', CodeMirror.hint.sql)
         // this.editor.refresh()
       },
-      queryText() {
-
-        const isEmpty = (s) => _.isEmpty(_.trim(s))
-
-        if (!this.query.id && isEmpty(this.queryText) && isEmpty(this.unsavedText)) {
-          this.tab.unsavedChanges = false
-          return
-        }
-
-        if (this.query.id && this.unsavedText === this.queryText) {
-          this.tab.unsavedChanges = false
-          return
-        } else {
-          this.tab.unsavedChanges = true
-        }
-      }
     },
     methods: {
       showContextMenu(event) {
@@ -404,18 +400,26 @@
       async saveQuery() {
         if (!this.hasTitle || !this.hasText) {
           this.saveError = new Error("You need both a title, and some query text.")
+          return
         } else {
           try {
-            await this.$store.dispatch('data/queries/save', this.query)
+            const payload = _.clone(this.query)
+            payload.text = this.unsavedText
             this.$modal.hide('save-modal')
+            const updated = await this.$store.dispatch('data/queries/save', payload)
+            this.unsavedText = updated.text
+            this.originalText = updated.text
             this.$noty.success('Query Saved')
-            this.unsavedText = this.tab.query.text
-            this.tab.unsavedChanges = false
           } catch (ex) {
             this.saveError = ex
             this.$noty.error(`Save Error: ${ex.message}`)
           }
         }
+      },
+      onChange(text) {
+        console.log("change!", text)
+        this.unsavedText = text
+        this.editor.setValue(text)
       },
       escapeRegExp(string) {
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
@@ -537,20 +541,22 @@
       toggleComment() {
         this.editor.execCommand('toggleComment')
       },
+      initializeQueries() {
+        if (this.query?.text) {
+          this.originalText = this.query.text
+          this.unsavedText = this.query.text
+        }
+      },
+      fakeRemoteChange() {
+        this.query.text = "select * from foo"
+      }
     },
     mounted() {
+
       const $editor = this.$refs.editor
-      // TODO (matthew): Add hint options for all tables and columns
-      let startingValue = ""
-      if (this.query.text) {
-        startingValue = this.query.text
-        this.unsavedText = this.query.text
-        this.tab.unsavedChanges = false
-      } else {
-        for (var i = 0; i < 9; i++) {
-            startingValue += '\n';
-        }
-      }
+      const startingValue = this.query?.text ? this.query.text : editorDefault
+      // TODO (matthew): Add hint options for all tables and columns\
+      this.initializeQueries()
 
       this.$nextTick(() => {
         this.split = Split(this.splitElements, {
@@ -605,7 +611,8 @@
 
         this.editor.on("change", (cm) => {
           // this also updates `this.queryText`
-          this.tab.query.text = cm.getValue()
+          // this.tab.query.text = cm.getValue()
+          this.unsavedText = cm.getValue()
         })
 
         if (this.connectionType === 'postgresql')  {
