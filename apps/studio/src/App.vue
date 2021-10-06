@@ -7,6 +7,7 @@
       <auto-updater></auto-updater>
     </div>
     <portal-target name="menus" multiple />
+    <data-manager />
     <state-manager />
 </div>
 
@@ -20,11 +21,12 @@ import CoreInterface from './components/CoreInterface'
 import ConnectionInterface from './components/ConnectionInterface'
 import AutoUpdater from './components/AutoUpdater'
 import StateManager from './components/quicksearch/StateManager.vue'
+import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
 export default {
   name: 'app',
   components: {
-    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, StateManager
+    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, StateManager, DataManager
   },
   data() {
     return {

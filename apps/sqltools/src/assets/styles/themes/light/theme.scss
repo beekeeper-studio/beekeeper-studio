@@ -176,47 +176,46 @@ select {
 
 
 
-  .tabulator-row {
-    &.inserted, 
-    &.inserted:hover {
-      background: $row-add;
+.tabulator-row {
+  &.inserted, 
+  &.inserted:hover {
+    background: $row-add;
+  }
+  &.deleted,
+  &.deleted:hover {
+    background: $row-delete;
+  }
+  &.edit-error {
+    background: $row-error!important;
+  }
+  .tabulator-cell {
+    &.edited,
+    &.edit-error,
+    &.edit-success {
+      @include cell-shadow;
     }
-    &.deleted,
-    &.deleted:hover {
-      background: $row-delete;
+    &.edited {
+      background: $cell-edited;
+      &:hover {
+        background: darken($cell-edited, 5%);
+      }
     }
     &.edit-error {
-      background: $row-error!important;
+      background: $cell-error;
+      &:hover {
+        background: darken($cell-error, 5%);
+      }
     }
-    .tabulator-cell {
-      &.edited,
-      &.edit-error,
-      &.edit-success {
-        @include cell-shadow;
+    &.edit-success {
+      background: $cell-success;
+      &:hover {
+        background: darken($cell-success, 5%);
       }
-      &.edited {
-        background: $cell-edited;
+    }
+    &.foreign-key-button {
+      .material-icons {
         &:hover {
-          background: darken($cell-edited, 5%);
-        }
-      }
-      &.edit-error {
-        background: $cell-error;
-        &:hover {
-          background: darken($cell-error, 5%);
-        }
-      }
-      &.edit-success {
-        background: $cell-success;
-        &:hover {
-          background: darken($cell-success, 5%);
-        }
-      }
-      &.foreign-key-button {
-        .material-icons {
-          &:hover {
-            color: $text-dark;
-          }
+          color: $text-dark;
         }
       }
     }
@@ -255,13 +254,6 @@ select {
   span {
     .cm-string {
       color: darken($theme-primary, 25%);
-    }
-  }
-}
-.query-editor {
-  .CodeMirror-code {
-    .highlight {
-      background-color: rgba($theme-base, 0.2);
     }
   }
 }

@@ -16,6 +16,10 @@ export class CloudError extends Error {
   }
 }
 
+export function url(...parts: (string | number)[]) {
+  const res = parts.map((p) => p.toString()).join("/")
+  return res.startsWith('/') ? res : `/${res}`
+}
 
 export function res<T extends CloudResponseBase>(response: AxiosResponse < T >, key: string) {
   console.log('creating result from - ', response)

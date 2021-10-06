@@ -472,13 +472,7 @@ select {
     }
   }
 }
-.query-editor {
-  .CodeMirror-code {
-    .highlight {
-      background-color: rgba($theme-secondary, 0.2);
-    }
-  }
-}
+
 
 .cm-s-monokai {
   font-weight: 500;
@@ -489,7 +483,7 @@ select {
     color: $brand-secondary;
   }
   div.CodeMirror-selected {
-    background: rgba($theme-secondary, 0.1);
+    background: rgba($theme-secondary, 0.25);
   }
   .CodeMirror-linenumber {
     color: rgba($theme-base, 0.25);

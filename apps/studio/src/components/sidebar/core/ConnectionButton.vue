@@ -1,5 +1,5 @@
 <template>
-<div class="connection-button flex flex-middle" v-if="config" :title="config.fullConnectionString">
+<div class="connection-button flex flex-middle" v-if="config" :title="$bks.buildConnectionString(config)">
   <x-button class="btn btn-link btn-icon" menu>
     <i class="material-icons">check_circle</i>
     <span class="connection-name truncate expand">{{connectionName}}</span>
@@ -62,7 +62,7 @@ export default {
       connectionName() {
         const config = this.config
         if (!config) return 'Connection'
-        const name = config.name ? config.name : config.simpleConnectionString
+        const name = config.name ? config.name : this.$bks.simpleConnectionString(config)
         return name
       },
       connectionType() {

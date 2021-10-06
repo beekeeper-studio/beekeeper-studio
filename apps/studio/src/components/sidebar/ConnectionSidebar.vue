@@ -44,27 +44,18 @@
               </div>
             </div>
             <nav class="list-body">
-                <div class="list-item folder-group">
-                  <a class="list-item-btn folder-btn" v-bind:class="{'open': true}" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
-                    <span class="btn-fab open-close" >
-                      <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
-                    </span>
-                    <i title="Schema" class="schema-icon item-icon material-icons">folder</i>
-                    <span class="table-name truncate expand" :title="title">Folder Name</span>
-                  </a>
-                  <connection-list-item
-                    v-for="c in orderedConnectionConfigs"
-                    :key="c.id"
-                    :config="c"
-                    :selectedConfig="selectedConfig"
-                    :showDuplicate="true"
-                    @edit="edit"
-                    @remove="remove"
-                    @duplicate="duplicate"
-                    @doubleClick="connect"
-                  >
-                  </connection-list-item>
-                </div>
+              <connection-list-item
+                v-for="c in orderedConnectionConfigs"
+                :key="c.id"
+                :config="c"
+                :selectedConfig="selectedConfig"
+                :showDuplicate="true"
+                @edit="edit"
+                @remove="remove"
+                @duplicate="duplicate"
+                @doubleClick="connect"
+              >
+              </connection-list-item>
             </nav>
           </div>
         </div>
@@ -120,7 +111,7 @@
       }
     }),
     computed: {
-      ...mapState(['connectionConfigs']),
+      ...mapState('data/connections', {'connectionConfigs': 'items'}),
       ...mapGetters({
         'usedConfigs': 'orderedUsedConfigs',
         'settings': 'settings/settings',

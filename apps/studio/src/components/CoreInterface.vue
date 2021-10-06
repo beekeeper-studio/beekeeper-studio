@@ -77,23 +77,12 @@
       }
     },
     mounted() {
-      // only a dev problem with hot reloading
-      if (!this.$store.hasModule('data/queries')) {
-        this.$store.unregisterModule('data/queries')
-      }
 
-      if (this.$store.state.workspace.type === 'local') {
-        this.$store.registerModule('data/queries', LocalQueryModule)
-      } else {
-        this.$store.registerModule('data/queries', CloudQueryModule)
-      }
       this.$store.dispatch('updateHistory')
-      this.$store.dispatch('data/queries/load')
       this.$store.dispatch('pins/loadPins')
       this.registerHandlers(this.rootBindings)
       this.$nextTick(() => {
         this.initializing = false
-
       })
 
     },

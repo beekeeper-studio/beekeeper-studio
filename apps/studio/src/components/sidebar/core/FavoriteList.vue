@@ -10,14 +10,7 @@
       </span>
     </div>
     <div class="sidebar-list">
-      <nav class="list-group folder-group" v-if="savedQueries.length > 0">   
-        <a class="list-item-btn folder-btn" >
-          <span class="btn-fab open-close" >
-            <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
-          </span>
-          <i title="Schema" class="schema-icon item-icon material-icons">folder</i>
-          <span class="table-name truncate expand">Folder Name</span>
-        </a>
+      <nav class="list-group" v-if="savedQueries.length > 0">   
         <div class="list-item" @contextmenu.prevent.stop="openContextMenu($event, item)" v-for="item in savedQueries" v-bind:key="item.id">
           <a class="list-item-btn" @click.prevent="click(item)" :class="{active: selected(item)}">
             <i class="item-icon query material-icons">code</i>

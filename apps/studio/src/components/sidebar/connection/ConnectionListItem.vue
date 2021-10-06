@@ -16,10 +16,10 @@
         <div class="title">{{label}}</div>
         <div class="subtitle"> 
           <span class="bastion" v-if="this.config.sshBastionHost">
-            <span class="truncate">{{ this.config.bastionHostString }}</span>&nbsp;>&nbsp;
+            <span class="truncate">{{ this.config.sshBastionHost }}</span>&nbsp;>&nbsp;
           </span>
           <span class="ssh" v-if="this.config.sshHost">
-            <span class="truncate">{{ this.config.sshHostString }}</span>&nbsp;>&nbsp;
+            <span class="truncate">{{ this.config.sshHost }}</span>&nbsp;>&nbsp;
           </span>
           <span class="connection">
             <span>{{ subtitleSimple }}</span>
@@ -33,6 +33,7 @@
 <script>
 import path from 'path'
 import TimeAgo from 'javascript-time-ago'
+import { mapState } from 'vuex'
 export default {
   // recent list is 'recent connections'
   // if that is true, we need to find the companion saved connection
@@ -42,9 +43,10 @@ export default {
     split: null
   }),
   computed: {
+    ...mapState('data/connections', {'items': 'connectionConfigs'}),
     classList() {
       return {
-        'active': this.savedConnection && this.selectedConfig ? this.savedConnection.id === this.selectedConfig.id : false
+        'active': this.savedConnection && this.selectedConfig ? this.savedConnection === this.selectedConfig : false
       }
     },
     labelColor() {
@@ -57,7 +59,7 @@ export default {
         return path.basename(this.config.defaultDatabase)
       }
 
-      return this.config.simpleConnectionString
+      return this.$bks.simpleConnectionString(this.config)
     },
     connectionType() {
       if (this.config.connectionType === 'sqlite') {
@@ -70,17 +72,21 @@ export default {
       if (this.isRecentList) {
         return this.timeAgo.format(this.config.updatedAt)
       } else {
-        return this.config.simpleConnectionString
+        return this.$bks.simpleConnectionString(this.config)
       }
     },
     title() {
-      return this.config.fullConnectionString
+      return this.$bks.buildConnectionString(this.config)
     },
     savedConnection() {
 
       if (this.isRecentList) {
-        if (!this.config.savedConnectionId) return null
-        return this.$store.state.connectionConfigs.find(c => c.id === this.config.savedConnectionId)
+        if (!this.config.savedConnectionId || !this.config.workspaceId) return null
+
+        return this.connectionConfigs.find((c) => 
+          c.id === this.config.savedConnectionId &&
+          c.workspaceId === this.config.workspaceId
+        )
       } else {
         return this.config
       }
@@ -111,18 +117,20 @@ export default {
         ]
       })
     },
-    click() {
+    async click() {
       if (this.savedConnection) {
         this.$emit('edit', this.savedConnection)
       } else {
-        this.$emit('edit', this.config.toNewConnection())
+        const editable = await this.$store.dispatch('data/connections/clone', this.config)
+        this.$emit('edit', editable)
       }
     },
-    doubleClick() {
+    async doubleClick() {
       if (this.savedConnection) {
         this.$emit('doubleClick', this.savedConnection)
       } else {
-        this.$emit('doubleClick', this.config.toNewConnection())
+        const editable = await this.$store.dispatch('data/connections/clone', this.config)
+        this.$emit('doubleClick', editable)
       }
     },
     remove() {
@@ -133,7 +141,7 @@ export default {
     },
     async copyUrl() {
       try {
-        await this.$copyText(this.config.fullConnectionString)
+        await this.$copyText(this.$bks.buildConnectionString(this.config))
         this.$noty.success(`The ${this.connectionType} was successfully copied!`)
       } catch (err) {
         this.$noty.success(`The ${this.connectionType} could not be copied!`)

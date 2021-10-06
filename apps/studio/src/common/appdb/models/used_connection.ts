@@ -1,13 +1,14 @@
+import { IConnection } from '@/common/interfaces/IConnection'
 import _ from 'lodash'
 import { Entity, Column} from "typeorm"
-import { DbConnectionBase, SavedConnection } from './saved_connection'
+import { DbConnectionBase } from './saved_connection'
 
 @Entity({ name: 'used_connection' })
 export class UsedConnection extends DbConnectionBase {
 
   name?: string
 
-  constructor(other: SavedConnection) {
+  constructor(other: IConnection) {
     super()
     if (other) {
       this.connectionType = other.connectionType
@@ -29,13 +30,6 @@ export class UsedConnection extends DbConnectionBase {
       }
     }
 
-  }
-
-  toNewConnection() {
-    const result = new SavedConnection()
-    _.assign(result, this)
-    result.id = null
-    return result
   }
 
   @Column({type: 'int', nullable: true})

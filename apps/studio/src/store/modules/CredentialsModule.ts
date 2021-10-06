@@ -94,7 +94,7 @@ export const CredentialsModule: Module<State, RootState> = {
       cred.token = token
       await cred.save()
       context.commit('add', cred)
-      context.dispatch('loadWorkspaces')
+      await context.dispatch('loadWorkspaces')
     }
   }
 } 

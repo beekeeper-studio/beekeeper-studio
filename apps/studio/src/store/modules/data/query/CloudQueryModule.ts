@@ -1,37 +1,35 @@
-import { QueryModuleState, StateAndMutations } from "./BaseQueryModule";
+import { DataState, mutationsFor } from "../DataModuleBase";
 
-import { State as RootState } from '../../../index'
+import { State as RootState } from '@/store/index'
 import { Module } from "vuex";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { safelyDo, havingCli } from "../StoreHelpers";
 
 
-interface State extends QueryModuleState {
+interface State extends DataState<ISavedQuery> {
 }
 
 export const CloudQueryModule: Module<State, RootState> = {
   namespaced: true,
   state: {
-    ...StateAndMutations.state,
+    items: [],
+    loading: false,
+    error: null
   },
-  mutations: {
-    ...StateAndMutations.mutations,
-  },
+  mutations: mutationsFor<ISavedQuery>({
+    // more mutations go here
+  }),
   actions: {
     async load(context) {
-      console.log("init load queries")
       await safelyDo(context, async (cli) => {
-        console.log("getting queries")
         const queries = await cli.queries.list()
-        console.log("queries", queries)
-        context.commit('replace', queries)
+        context.commit('upsert', queries)
       })
     },
     async save(context, query: ISavedQuery) {
       return await havingCli(context, async (cli) => {
-        console.log("saving", query)
         const updated = await cli.queries.upsert(query)
-        context.commit('add', updated)
+        context.commit('upsert', updated)
         return updated
       })
     },

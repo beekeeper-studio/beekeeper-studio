@@ -1,4 +1,3 @@
-import path from 'path'
 import Crypto from 'crypto'
 import { Entity, Column, BeforeInsert, BeforeUpdate, OneToMany } from "typeorm"
 
@@ -10,6 +9,7 @@ import log from 'electron-log'
 import { IDbClients } from '@/lib/db/client'
 import { EncryptTransformer } from '../transformers/Transformers'
 import { PinnedEntity } from './PinnedEntity'
+import { IConnection, SshMode } from '@/common/interfaces/IConnection'
 
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
@@ -132,49 +132,10 @@ export class DbConnectionBase extends ApplicationEntity {
     return Crypto.createHash('md5').update(str).digest('hex')
   }
 
-  get simpleConnectionString() {
-    let connectionString = `${this.host}:${this.port}`;
-    if (this.connectionType === 'sqlite') {
-      return path.basename(this.defaultDatabase || "./unknown.db")
-    } else {
-      if (this.defaultDatabase) {
-        connectionString += `/${this.defaultDatabase}`
-      }
-      return connectionString
-    }
-  }
-
-  get bastionHostString() {
-    return `${this.sshBastionHost}`
-  }
-
-  get sshHostString() {
-    return `${this.sshHost}`
-  }
-
-  get fullConnectionString() {
-    if (this.connectionType === 'sqlite') {
-      return this.defaultDatabase || "./unknown.db"
-    } else {
-      let result = `${this.username || 'user'}@${this.host}:${this.port}`
-
-      if (this.defaultDatabase) {
-        result += `/${this.defaultDatabase}`
-      }
-
-      if (this.sshHost) {
-        result += ` via ${this.sshUsername}@${this.sshHost}`
-        if (this.sshBastionHost) result += ` jump(${this.sshBastionHost})`
-      }
-      return result
-    }
-  }
-
-
 }
 
 @Entity({ name: 'saved_connection'} )
-export class SavedConnection extends DbConnectionBase {
+export class SavedConnection extends DbConnectionBase implements IConnection {
 
   @Column("varchar")
   name!: string
@@ -185,6 +146,8 @@ export class SavedConnection extends DbConnectionBase {
     default: null
   })
   labelColor?: string = 'default'
+
+  workspaceId: -1
 
   @Column({type: 'boolean', default: true})
   rememberPassword: boolean = true
@@ -201,10 +164,10 @@ export class SavedConnection extends DbConnectionBase {
   @OneToMany(() => PinnedEntity, pin => pin.savedConnection, {eager: true})
   pinnedEntities!: PinnedEntity[]
 
-  _sshMode: string = "agent"
+  _sshMode: SshMode = "agent"
 
   @Column({name: "sshMode", type: "varchar", length: "8", nullable: false, default: "agent"})
-  set sshMode(value: string) {
+  set sshMode(value: SshMode) {
     this._sshMode = value
     if (this._sshMode !== 'userpass') {
       this.sshPassword = null

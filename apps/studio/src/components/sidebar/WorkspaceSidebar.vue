@@ -22,13 +22,6 @@
       </a>
       <new-workspace-button />
       <span class="expand"></span>
-      <a
-        class="nav-item account"
-        title="Personal Workspace"
-        @click.prevent=""
-      >
-        <span class="avatar"><i class="material-icons">person</i><span class="badge success">1</span></span>
-      </a>
     </div>
 </template>
 
@@ -48,11 +41,11 @@ import NewWorkspaceButton from './connection/NewWorkspaceButton.vue'
     },
     methods: {
       click(blob: { workspace: IWorkspace, client: CloudClient}) {
+        this.$store.commit('client', blob.client || null)
         this.$store.commit('workspace', blob.workspace)
         if (blob.client) {
           blob.client.setWorkspace(blob.workspace.id)
         }
-        this.$store.commit('client', blob.client || null)
       }
     },
     mounted() {

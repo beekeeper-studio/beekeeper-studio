@@ -189,12 +189,9 @@
       query() {
         return this.tab.query
       },
-      queryText() {
-        return this.query.text || null
-      },
       individualQueries() {
-        if (!this.queryText) return []
-        return splitQueries(this.queryText)
+        if (!this.unsavedText) return []
+        return splitQueries(this.unsavedText)
       },
       currentlySelectedQueryIndex() {
         const queries = this.individualQueries

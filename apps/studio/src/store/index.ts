@@ -20,9 +20,10 @@ import { Dialect, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
 import { SearchModule } from './modules/SearchModule'
-import { IWorkspace } from '@/common/interfaces/IWorkspace'
+import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { CredentialsModule } from './modules/CredentialsModule'
+import { IConnection } from '@/common/interfaces/IConnection'
 
 const log = RawLog.scope('store/index')
 
@@ -87,11 +88,7 @@ const store = new Vuex.Store<State>({
     menuActive: false,
     activeTab: null,
     selectedSidebarItem: null,
-    localWorkspace: {
-      type: 'local',
-      id: 0,
-      name: "Local Workspace"
-    },
+    localWorkspace: LocalWorkspace,
     workspace: null,
     cloudClient: null
   },
@@ -313,25 +310,25 @@ const store = new Vuex.Store<State>({
       }
     },
 
-    async connect(context, config: SavedConnection) {
+    async connect(context, config: IConnection) {
       if (context.state.username) {
         const server = ConnectionProvider.for(config, context.state.username)
         // TODO: (geovannimp) Check case connection is been created with undefined as key
         const connection = server.createConnection(config.defaultDatabase || undefined)
         await connection.connect()
         connection.connectionType = config.connectionType;
-        const lastUsedConnection = context.state.usedConfigs.find(c => c.hash === config.hash)
-        if (!lastUsedConnection) {
-          const usedConfig = new UsedConnection(config)
-          await usedConfig.save()
-          context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
-        } else {
-          lastUsedConnection.updatedAt = new Date()
-          if (config.id) {
-            lastUsedConnection.savedConnectionId = config.id
-          }
-          await lastUsedConnection.save()
-        }
+        // const lastUsedConnection = context.state.usedConfigs.find(c => c.hash === config.hash)
+        // if (!lastUsedConnection) {
+        //   const usedConfig = new UsedConnection(config)
+        //   await usedConfig.save()
+        //   context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
+        // } else {
+        //   lastUsedConnection.updatedAt = new Date()
+        //   if (config.id) {
+        //     lastUsedConnection.savedConnectionId = config.id
+        //   }
+        //   await lastUsedConnection.save()
+        // }
         context.commit('newConnection', {config: config, server, connection})
       } else {
         throw "No username provided"
@@ -450,22 +447,9 @@ const store = new Vuex.Store<State>({
       routine.pinned = true
       context.commit('addPinned', routine)
     },
-    async saveConnectionConfig(context, newConfig) {
-      await newConfig.save()
-      context.commit('config', newConfig)
-    },
-    async removeConnectionConfig(context, config) {
-      await config.remove()
-      await context.dispatch('loadUsedConfigs')
-      context.commit('removeConfig', config)
-    },
     async removeUsedConfig(context, config) {
       await config.remove()
       context.commit('removeUsedConfig', config)
-    },
-    async loadSavedConfigs(context) {
-      const configs = await SavedConnection.find()
-      context.commit('configs', configs)
     },
     async loadUsedConfigs(context) {
       const configs = await UsedConnection.find({take: 10, order: {createdAt: 'DESC'}})
@@ -485,22 +469,6 @@ const store = new Vuex.Store<State>({
         await run.save()
         context.commit('historyAdd', run)
       }
-    },
-    async updateFavorites(context) {
-      const items = await FavoriteQuery.find({order: { createdAt: 'DESC'}})
-      context.commit('favorites', items)
-    },
-    async saveFavorite(context, query: FavoriteQuery) {
-      query.database = context.state.database || 'default'
-      await query.save()
-      // otherwise it's already there!
-      if (!context.state.favorites.includes(query)) {
-        context.commit('favoritesAdd', query)
-      }
-    },
-    async removeFavorite(context, favorite) {
-      await favorite.remove()
-      context.commit('removeUsedFavorite', favorite)
     },
     async removeHistoryQuery(context, historyQuery) {
       await historyQuery.remove()
