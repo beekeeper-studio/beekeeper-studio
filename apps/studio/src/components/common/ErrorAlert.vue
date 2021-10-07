@@ -8,8 +8,6 @@
           <span class="message">
             {{e.message || e.toString()}}
           </span>
-          <hr v-if="dev">
-          <span v-if="dev">DEV STACK TRACE:{{e.stack}}</span>
         </li>
       </ul>
 

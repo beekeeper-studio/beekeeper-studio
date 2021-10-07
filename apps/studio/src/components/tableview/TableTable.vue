@@ -62,6 +62,7 @@
                 type="text"
                 v-model="filter.value"
                 placeholder="Enter Value"
+                ref="valueInput"
               />
               <button
                 type="button"
@@ -577,6 +578,12 @@ export default Vue.extend({
 
       ]
     });
+
+    this.$nextTick(() => {
+      if (this.$refs.valueInput) {
+        this.$refs.valueInput.focus()
+      }
+    })
 
   },
   methods: {

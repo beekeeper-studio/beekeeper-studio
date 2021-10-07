@@ -15,6 +15,19 @@
       </a>
       <new-workspace-button />
       <span class="expand"></span>
+      <a @click.prevent="refresh" class="nav-item refresh" title="Refresh Workspaces">
+        <span class="avatar"><i class="material-icons">refresh</i></span>
+      </a>
+      <a
+        class="nav-item account"
+        title="Personal Workspace"
+        @click.prevent=""
+      >
+        <span class="avatar">
+          <i class="material-icons">person</i>
+          <span class="badge success"><i class="material-icons">check</i></span>
+        </span>
+      </a>
     </div>
 </template>
 
