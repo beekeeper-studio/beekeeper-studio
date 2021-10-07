@@ -4,7 +4,7 @@ import { GenericController } from '@/lib/cloud/controllers/GenericController'
 
 
 export class QueriesController extends GenericController<ISavedQuery> {
-  name: 'query'
-  plural: 'queries'
-  path: '/queries'
+  name = 'query'
+  plural = 'queries'
+  path = '/queries'
 }

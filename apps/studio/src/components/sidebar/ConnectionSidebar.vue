@@ -43,7 +43,8 @@
                 </x-button>
               </div>
             </div>
-            <sidebar-loading v-if="loading" />
+            <error-alert :error="error" v-if="error" title="Problem loading connections" />
+            <sidebar-loading v-else-if="loading" />
             <nav v-else class="list-body">
               <connection-list-item
                 v-for="c in orderedConnectionConfigs"
@@ -98,9 +99,10 @@
   import { mapState, mapGetters } from 'vuex'
   import ConnectionListItem from './connection/ConnectionListItem'
   import SidebarLoading from '@/components/common/SidebarLoading.vue'
+  import ErrorAlert from '@/components/common/ErrorAlert.vue'
   import Split from 'split.js'
   export default {
-    components: { ConnectionListItem, WorkspaceSidebar, SidebarLoading },
+    components: { ConnectionListItem, WorkspaceSidebar, SidebarLoading, ErrorAlert },
     props: ['defaultConfig', 'selectedConfig'],
     data: () => ({
       split: null,
@@ -113,7 +115,7 @@
       }
     }),
     computed: {
-      ...mapState('data/connections', {'connectionConfigs': 'items', 'loading': 'loading'}),
+      ...mapState('data/connections', {'connectionConfigs': 'items', 'loading': 'loading', 'error': 'error'}),
       ...mapGetters({
         'usedConfigs': 'orderedUsedConfigs',
         'settings': 'settings/settings',

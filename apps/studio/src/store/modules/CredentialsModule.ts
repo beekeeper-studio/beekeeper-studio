@@ -52,7 +52,7 @@ export const CredentialsModule: Module<State, RootState> = {
     add(state, cred: CloudCredential) {
       upsert(state.credentials, cred)
     },
-    workspaces(state, workspaces: IWorkspace[]) {
+    workspaces(state, workspaces: WSWithClient[]) {
       state.workspaces = workspaces
     },
     loading(state, v: boolean) {
@@ -73,7 +73,7 @@ export const CredentialsModule: Module<State, RootState> = {
           const client: CloudClient = context.getters.clients[i];
           const workspaces = await client.workspaces.list()
           workspaces.forEach((ws) => {
-            results.push({workspace: ws, client})
+            results.push({workspace: ws, client: client.cloneWithWorkspace(ws.id)})
           })
         }
         context.commit('workspaces', results)

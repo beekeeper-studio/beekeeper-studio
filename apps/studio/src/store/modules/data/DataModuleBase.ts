@@ -71,7 +71,7 @@ const buildBasicMutations = <T extends HasId>() => ({
   },
 })
 
-export function mutationsFor<T>(obj: any) {
+export function mutationsFor<T extends HasId>(obj: any) {
   return {
     ...buildBasicMutations<T>(),
     ...obj

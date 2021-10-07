@@ -72,15 +72,23 @@ export class CloudClient {
     this.connections = new ConnectionsController(this.axios)
     this.workspaces = new WorkspacesController(this.axios)
 
-    axios.interceptors.request.use(request => {
+    this.axios.interceptors.request.use(request => {
       log.debug('REQ', JSON.stringify(request, null, 2))
       return request
     })
 
-    axios.interceptors.response.use(response => {
+    this.axios.interceptors.response.use(response => {
       log.debug('RES:', JSON.stringify(response, null, 2))
       return response
     })
+
+    if (options.workspace) {
+      this.setWorkspace(options.workspace)
+    }
+  }
+
+  cloneWithWorkspace(workspace: number): CloudClient {
+    return new CloudClient({...this.options, workspace})
   }
 
   setWorkspace(workspaceId: number) {
