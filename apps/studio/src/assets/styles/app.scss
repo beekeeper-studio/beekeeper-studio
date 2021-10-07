@@ -3,6 +3,7 @@
 @import './app/variables';
 @import './app/flex-grid';
 @import './app/base';
+@import './components/content-placeholders.scss';
 
 body.theme-dark {
   @import './themes/dark/variables.scss';

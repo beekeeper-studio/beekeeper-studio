@@ -2,12 +2,13 @@
   <div v-if="false"></div>
 </template>
 <script lang="ts">
+import { LocalWorkspace } from '@/common/interfaces/IWorkspace'
 import { CloudConnectionModule } from '@/store/modules/data/connection/CloudConnectionModule'
 import { LocalConnectionModule } from '@/store/modules/data/connection/LocalConnectionModule'
 import { CloudQueryModule } from '@/store/modules/data/query/CloudQueryModule'
 import { LocalQueryModule } from '@/store/modules/data/query/LocalQueryModule'
 import Vue from 'vue'
-import { mapState } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 
 
 const dataModules = [
@@ -25,7 +26,7 @@ const dataModules = [
 
 export default Vue.extend({
   mounted() {
-    if (this.workspace) this.mountAndRefresh()
+    this.mountAndRefresh()
   },
   beforeDestroy() {
     dataModules.forEach((module) => {
@@ -36,14 +37,12 @@ export default Vue.extend({
   },
 
   computed: {
-    ...mapState(['workspace']),
-    workspaceId() {
-      return this.workspace?.id
-    }
+    ...mapState(['workspaceId']),
+    ...mapGetters(['workspace']),
   },
   watch: {
     workspaceId() {
-      if (this.workspaceId) this.mountAndRefresh()
+      this.mountAndRefresh()
     }
   },
   methods: {

@@ -1,8 +1,7 @@
+import { HasId } from "@/common/interfaces/IGeneric";
 import { CloudError, res, url } from "@/lib/cloud/ClientHelpers";
 import { AxiosInstance } from "axios";
-interface HasId {
-  id: number | null
-}
+
 
 export abstract class GenericController<T extends HasId> {
   constructor(protected axios: AxiosInstance) {

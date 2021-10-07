@@ -22,7 +22,7 @@ import { getDialectData } from '@shared/lib/dialects'
 import { SearchModule } from './modules/SearchModule'
 import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
 import { CloudClient } from '@/lib/cloud/CloudClient'
-import { CredentialsModule } from './modules/CredentialsModule'
+import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
 import { IConnection } from '@/common/interfaces/IConnection'
 
 const log = RawLog.scope('store/index')
@@ -50,9 +50,7 @@ export interface State {
   menuActive: boolean,
   activeTab: Nullable<CoreTab>,
   selectedSidebarItem: Nullable<string>,
-  localWorkspace: IWorkspace,
-  workspace: IWorkspace | null,
-  cloudClient: CloudClient | null
+  workspaceId: number,
 }
 
 Vue.use(Vuex)
@@ -88,11 +86,27 @@ const store = new Vuex.Store<State>({
     menuActive: false,
     activeTab: null,
     selectedSidebarItem: null,
-    localWorkspace: LocalWorkspace,
-    workspace: null,
-    cloudClient: null
+    workspaceId: LocalWorkspace.id
   },
   getters: {
+    workspace(state: State): IWorkspace {
+      if (state.workspaceId === LocalWorkspace.id) return LocalWorkspace
+      
+      const workspaces: WSWithClient[] = state['credentials']['workspaces']
+      const result = workspaces.find(({workspace }) => workspace.id === state.workspaceId)
+
+      if (!result) return LocalWorkspace
+      return result.workspace
+    },
+    cloudClient(state: State): CloudClient | null {
+      if (state.workspaceId === LocalWorkspace.id) return null
+
+      const workspaces: WSWithClient[] = state['credentials']['workspaces']
+      const result = workspaces.find(({workspace}) => workspace.id === state.workspaceId)
+      if (!result) return null
+      return result.client
+
+    },
     dialect(state: State): Dialect | null {
       if (!state.usedConfig) return null
       return dialectFor(state.usedConfig.connectionType)
@@ -147,14 +161,12 @@ const store = new Vuex.Store<State>({
         return _.uniq(state.tables.map((t) => t.schema));
       }
       return []
-    }
+    },
+
   },
   mutations: {
-    workspace(state, item: IWorkspace) {
-      state.workspace = item
-    },
-    client(state, item: CloudClient) {
-      state.cloudClient = item
+    workspaceId(state, id: number) {
+      state.workspaceId = id
     },
     selectSidebarItem(state, item: string) {
       state.selectedSidebarItem = item

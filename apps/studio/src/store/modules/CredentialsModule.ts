@@ -11,9 +11,14 @@ function genAppId() {
   return `beekeeper-app-${uuidv4()}`
 }
 
+export interface WSWithClient {
+  workspace: IWorkspace,
+  client: CloudClient
+}
+
 interface State {
   credentials: CloudCredential[]
-  workspaces: IWorkspace[]
+  workspaces: WSWithClient[]
   loading: boolean
   error: Error | null
 }
