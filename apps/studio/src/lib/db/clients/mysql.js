@@ -786,6 +786,13 @@ function configDatabase(server, database) {
     supportBigNumbers: true,
     bigNumberStrings: true,
     connectTimeout  : 60 * 60 * 1000,
+    authPlugins: {
+      mysql_clear_password: pluginOptions => ({ connection, command }) => {
+        const password =
+          command.password || pluginOptions.password || connection.config.password;
+        return Buffer.from(`${password}\0`)
+      }
+    }
   };
 
   if (server.sshTunnel) {
