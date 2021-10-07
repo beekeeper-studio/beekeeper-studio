@@ -69,6 +69,9 @@
   import _ from 'lodash'
   import platformInfo from '@/common/platform_info'
   import ErrorAlert from './common/ErrorAlert.vue'
+  import rawLog from 'electron-log'
+
+  const log = rawLog.scope('ConnectionInterface')
   // import ImportUrlForm from './connection/ImportUrlForm';
 
   export default {
@@ -186,6 +189,7 @@
         } catch(ex) {
           this.connectionError = ex.message
           this.$noty.error("Error establishing a connection")
+          log.error(ex)
         }
       },
       async handleConnect(config) {

@@ -4,7 +4,6 @@ import { State as RootState } from '@/store/index'
 import { Module } from "vuex";
 import _ from "lodash";
 import { IConnection } from "@/common/interfaces/IConnection";
-import { wait } from "@shared/lib/wait";
 import { safely } from "@/store/modules/data/StoreHelpers";
 
 

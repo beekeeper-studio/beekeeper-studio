@@ -2,7 +2,9 @@ import { HasId } from "@/common/interfaces/IGeneric";
 import { having } from "@/common/utils";
 import { CloudClient } from "@/lib/cloud/CloudClient";
 import _ from "lodash";
+import rawLog from 'electron-log'
 
+const log = rawLog.scope('StoreHelpers')
 export type ClientError = Error | string | Error[] | string[] | null
 
 interface BasicContext {
@@ -28,6 +30,7 @@ export function safelyDo<U>(context: BasicContext, f: (c: CloudClient) => Promis
       await f(c)
     } catch (error) {
       context.commit('error', error)
+      log.error('safelyDo', error)
     } finally {
       context.commit('loading', false)
     }
@@ -41,6 +44,7 @@ export async function safely<U>(context: BasicContext, f: () => Promise<U>) {
     await f()
   } catch (error) {
     context.commit('error', error)
+    log.error('safely', error)
   } finally {
     context.commit('loading', false)
   }

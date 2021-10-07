@@ -19,7 +19,7 @@ export default {
 
     return {
       client: config.connectionType,
-      host: config.host.trim(),
+      host: config.host ? config.host.trim() : null,
       port: config.port,
       domain: config.domain || null,
       socketPath: null,

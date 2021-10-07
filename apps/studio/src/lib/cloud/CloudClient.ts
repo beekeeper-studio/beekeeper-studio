@@ -21,7 +21,15 @@ const snakeCaseData: AxiosTransformer = (data) => {
 }
 
 const camelCaseData: AxiosTransformer = (data) => {
-  return _.mapKeys(data, (_value, key) => _.camelCase(key))
+  if (_.isPlainObject(data)) {
+    console.log('camel yes')
+    const result = _.deepMapKeys(data, (_value, key) => _.camelCase(key))
+    log.info('camel result', result)
+    return result
+
+  }
+  console.log('camel no')
+  return data
 }
 
 

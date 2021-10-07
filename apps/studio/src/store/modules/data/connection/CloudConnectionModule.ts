@@ -4,7 +4,6 @@ import { Module } from "vuex";
 import { State as RootState } from '@/store/index'
 import { safelyDo } from '../StoreHelpers'
 import _ from "lodash";
-import { wait } from "@shared/lib/wait";
 
 interface State extends DataState<ICloudSavedConnection> {
 

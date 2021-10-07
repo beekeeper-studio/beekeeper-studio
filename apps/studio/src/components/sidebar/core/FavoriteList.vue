@@ -42,7 +42,7 @@
     },
     computed: {
       ...mapState(['activeTab']),
-      ...mapState('data/queries', ['savedQueries']),
+      ...mapState('data/queries', {'savedQueries': 'items'}),
       removeTitle() {
         return `Remove ${this.checkedFavorites.length} saved queries`;
       }
