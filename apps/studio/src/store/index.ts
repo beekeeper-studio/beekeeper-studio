@@ -2,6 +2,8 @@ import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import username from 'username'
+import Crypto from 'crypto'
+
 import { UsedConnection } from '../common/appdb/models/used_connection'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
 import { FavoriteQuery } from '../common/appdb/models/favorite_query'
@@ -23,7 +25,7 @@ import { SearchModule } from './modules/SearchModule'
 import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
-import { IConnection } from '@/common/interfaces/IConnection'
+import { IConnection, ISimpleConnection } from '@/common/interfaces/IConnection'
 
 const log = RawLog.scope('store/index')
 
@@ -33,8 +35,26 @@ const tablesMatch = (t: TableOrView, t2: TableOrView) => {
     t2.entityType === t.entityType
 }
 
+function hash(conn: ISimpleConnection): string {
+  const str = [
+    conn.workspaceId,
+    conn.host,
+    conn.port,
+    conn.uri,
+    conn.sshHost,
+    conn.sshPort,
+    conn.defaultDatabase,
+    conn.sshBastionHost,
+    conn.sslCaFile,
+    conn.sslCertFile,
+    conn.sslKeyFile
+  ].map(part => part || "").join("")
+  return Crypto.createHash('md5').update(str).digest('hex')
+
+}
+
 export interface State {
-  usedConfig: Nullable<SavedConnection>,
+  usedConfig: Nullable<IConnection>,
   usedConfigs: UsedConnection[],
   server: Nullable<IDbConnectionPublicServer>,
   connection: Nullable<DBConnection>,
@@ -329,21 +349,27 @@ const store = new Vuex.Store<State>({
         const connection = server.createConnection(config.defaultDatabase || undefined)
         await connection.connect()
         connection.connectionType = config.connectionType;
-        // const lastUsedConnection = context.state.usedConfigs.find(c => c.hash === config.hash)
-        // if (!lastUsedConnection) {
-        //   const usedConfig = new UsedConnection(config)
-        //   await usedConfig.save()
-        //   context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
-        // } else {
-        //   lastUsedConnection.updatedAt = new Date()
-        //   if (config.id) {
-        //     lastUsedConnection.savedConnectionId = config.id
-        //   }
-        //   await lastUsedConnection.save()
-        // }
+
         context.commit('newConnection', {config: config, server, connection})
+        context.dispatch('recordUsedConfig', config)
       } else {
         throw "No username provided"
+      }
+    },
+    async recordUsedConfig(context, config: IConnection) {
+
+      const lastUsedConnection = context.state.usedConfigs.find(c => 
+        hash(c) === hash(config)
+      )
+      if (!lastUsedConnection) {
+        const usedConfig = new UsedConnection(config)
+        await usedConfig.save()
+        context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
+      } else {
+        lastUsedConnection.updatedAt = new Date()
+        lastUsedConnection.connectionId = config.id
+        lastUsedConnection.workspaceId = config.workspaceId
+        await lastUsedConnection.save()
       }
     },
     async disconnect(context) {
@@ -464,7 +490,13 @@ const store = new Vuex.Store<State>({
       context.commit('removeUsedConfig', config)
     },
     async loadUsedConfigs(context) {
-      const configs = await UsedConnection.find({take: 10, order: {createdAt: 'DESC'}})
+      const configs = await UsedConnection.find(
+        {
+          take: 10,
+          order: {createdAt: 'DESC'},
+          where: { workspaceId: context.state.workspaceId}
+        }
+      )
       context.commit('usedConfigs', configs)
     },
     async updateHistory(context) {

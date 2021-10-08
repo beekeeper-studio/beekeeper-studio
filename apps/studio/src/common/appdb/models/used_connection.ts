@@ -1,12 +1,10 @@
-import { IConnection } from '@/common/interfaces/IConnection'
+import { IConnection, ISimpleConnection } from '@/common/interfaces/IConnection'
 import _ from 'lodash'
 import { Entity, Column} from "typeorm"
 import { DbConnectionBase } from './saved_connection'
 
 @Entity({ name: 'used_connection' })
-export class UsedConnection extends DbConnectionBase {
-
-  name?: string
+export class UsedConnection extends DbConnectionBase implements ISimpleConnection {
 
   constructor(other: IConnection) {
     super()
@@ -24,15 +22,18 @@ export class UsedConnection extends DbConnectionBase {
       this.sslCaFile = other.sslCaFile
       this.sslCertFile = other.sslCertFile
       this.sslKeyFile = other.sslKeyFile
-      this.name = other.name
-      if (other.id) {
-        this.savedConnectionId = other.id
+      if (other.id && other.workspaceId) {
+        this.connectionId = other.id
+        this.workspaceId = other.workspaceId
       }
     }
 
   }
 
   @Column({type: 'int', nullable: true})
-  savedConnectionId?: Nullable<number> = null
+  connectionId?: Nullable<number> = null
+
+  @Column({ type: 'int', nullable: false})
+  workspaceId: number = -1
 
 }

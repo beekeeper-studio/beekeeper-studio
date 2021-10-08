@@ -2,9 +2,8 @@
 export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra'
 export type SshMode = null | 'agent' | 'userpass' | 'keyfile'
 
-export interface IConnection {
+export interface ISimpleConnection {
   id: number | null
-  name: Nullable<string>
   workspaceId: Nullable<number>
   connectionType: ConnectionType
   host: Nullable<string>
@@ -16,7 +15,6 @@ export interface IConnection {
   sshEnabled: boolean
   sshHost: Nullable<string>
   sshPort: Nullable<number>
-  sshMode: SshMode
   sshKeyfile: Nullable<string>
   sshUsername: Nullable<string>
   sshBastionHost: Nullable<string>
@@ -25,7 +23,13 @@ export interface IConnection {
   sslCertFile: Nullable<string>
   sslKeyFile: Nullable<string>
   sslRejectUnauthorized: boolean
+  labelColor?: Nullable<string>
+}
+
+export interface IConnection extends ISimpleConnection {
+  name: Nullable<string>
   
+  sshMode: SshMode
   password: Nullable<string>
   sshPassword: Nullable<string>
   sshKeyfilePassword: Nullable<string>

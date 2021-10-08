@@ -24,7 +24,6 @@
   },
   "main": "background.js",
   "dependencies": {
-    "automerge": "^1.0.1-preview.5",
     "axios": "^0.21.4",
     "base64-url": "^2.3.3",
     "better-sqlite3": "^7.4.1",

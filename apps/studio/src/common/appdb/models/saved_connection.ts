@@ -1,5 +1,5 @@
-import Crypto from 'crypto'
-import { Entity, Column, BeforeInsert, BeforeUpdate, OneToMany } from "typeorm"
+
+import { Entity, Column, BeforeInsert, BeforeUpdate } from "typeorm"
 
 import {ApplicationEntity} from './application_entity'
 import { resolveHomePathToAbsolute } from '../../utils'
@@ -8,7 +8,6 @@ import { ConnectionString } from 'connection-string'
 import log from 'electron-log'
 import { IDbClients } from '@/lib/db/client'
 import { EncryptTransformer } from '../transformers/Transformers'
-import { PinnedEntity } from './PinnedEntity'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
 
 
@@ -115,23 +114,6 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'boolean', nullable: false})
   sslRejectUnauthorized: boolean = true
 
-  // GETTERS
-  get hash() {
-    const str = [
-      this.host,
-      this.port,
-      this.uri,
-      this.sshHost,
-      this.sshPort,
-      this.defaultDatabase,
-      this.sshBastionHost,
-      this.sslCaFile,
-      this.sslCertFile,
-      this.sslKeyFile
-    ].map(part => part || "").join("")
-    return Crypto.createHash('md5').update(str).digest('hex')
-  }
-
 }
 
 @Entity({ name: 'saved_connection'} )
@@ -160,9 +142,6 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshPassword: Nullable<string> = null
-
-  @OneToMany(() => PinnedEntity, pin => pin.savedConnection, {eager: true})
-  pinnedEntities!: PinnedEntity[]
 
   _sshMode: SshMode = "agent"
 

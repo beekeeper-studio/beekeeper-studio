@@ -27,6 +27,7 @@ export function safelyDo<U>(context: BasicContext, f: (c: CloudClient) => Promis
   const safeRunner = async (c: CloudClient) => {
     try {
       context.commit('loading', true)
+      context.commit('error', null)
       await f(c)
     } catch (error) {
       context.commit('error', error)
@@ -41,6 +42,7 @@ export function safelyDo<U>(context: BasicContext, f: (c: CloudClient) => Promis
 export async function safely<U>(context: BasicContext, f: () => Promise<U>) {
   try {
     context.commit('loading', true)
+    context.commit('error', null)
     await f()
   } catch (error) {
     context.commit('error', error)
