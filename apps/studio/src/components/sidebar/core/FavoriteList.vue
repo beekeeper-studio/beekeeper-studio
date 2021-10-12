@@ -49,7 +49,7 @@
     },
     methods: {
       refresh() {
-        this.$store.dispatch("data/queries", 'reload')
+        this.$store.dispatch("data/queries/load")
       },
       openContextMenu(event, item) {
         this.$bks.openMenu({

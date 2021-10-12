@@ -1,5 +1,5 @@
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
-import { DataState, mutationsFor } from "@/store/modules/data/DataModuleBase";
+import { DataState, DataStore, localActionsFor, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { State as RootState } from '@/store/index'
 import { Module } from "vuex";
 import _ from "lodash";
@@ -12,7 +12,7 @@ interface State extends DataState<SavedConnection> {
 }
 
 
-export const LocalConnectionModule: Module<State, RootState> = {
+export const LocalConnectionModule: DataStore<SavedConnection, State> = {
   namespaced: true,
   state: {
     items: [],
@@ -22,19 +22,6 @@ export const LocalConnectionModule: Module<State, RootState> = {
   mutations: mutationsFor<SavedConnection>({
 
   }),
-  actions: {
-    async load(context) {
-      await safely(context, async () => {
-        const configs = await SavedConnection.find()
-        context.commit('upsert', configs)
-      })
-    },
-    async clone(_context, config: IConnection) {
-      const result = new SavedConnection()
-      Object.assign(result, config)
-      result.id = null
-      return result
-    }
-  }
+  actions: localActionsFor<SavedConnection>(SavedConnection, {})
 
 }

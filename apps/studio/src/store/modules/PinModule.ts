@@ -45,7 +45,7 @@ export const PinModule: Module<State, RootState> = {
       const { usedConfig } = context.rootState
       if (usedConfig && usedConfig.id) {
         // await usedConfig.reload()
-        const pins = PinnedEntity.find({
+        const pins = await PinnedEntity.find({
           where: {
             connectionId: usedConfig.id,
             workspaceId: usedConfig.workspaceId

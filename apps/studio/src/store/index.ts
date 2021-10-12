@@ -35,23 +35,6 @@ const tablesMatch = (t: TableOrView, t2: TableOrView) => {
     t2.entityType === t.entityType
 }
 
-function hash(conn: ISimpleConnection): string {
-  const str = [
-    conn.workspaceId,
-    conn.host,
-    conn.port,
-    conn.uri,
-    conn.sshHost,
-    conn.sshPort,
-    conn.defaultDatabase,
-    conn.sshBastionHost,
-    conn.sslCaFile,
-    conn.sslCertFile,
-    conn.sslKeyFile
-  ].map(part => part || "").join("")
-  return Crypto.createHash('md5').update(str).digest('hex')
-
-}
 
 export interface State {
   usedConfig: Nullable<IConnection>,
@@ -358,9 +341,11 @@ const store = new Vuex.Store<State>({
     },
     async recordUsedConfig(context, config: IConnection) {
 
-      const lastUsedConnection = context.state.usedConfigs.find(c => 
-        hash(c) === hash(config)
-      )
+      console.log("finding last used connection")
+      const lastUsedConnection = context.state.usedConfigs.find(c => {
+        console.log("looking at config", config.id)
+        return c.connectionId === config.id && c.workspaceId === config.workspaceId
+      })
       if (!lastUsedConnection) {
         const usedConfig = new UsedConnection(config)
         await usedConfig.save()

@@ -8,11 +8,15 @@ export interface CloudResponseBase {
 }
 
 export class CloudError extends Error {
+  public status: number
+  public errors: string[]
   constructor(status: number, message?: string, errors?: string[]) {
     const result = [`Cloud error [${status}]:`]
     if (message) result.push(message)
     if (errors?.length) result.push(...errors)
     super(result.join(" "))
+    this.status = status
+    this.errors = errors
   }
 }
 

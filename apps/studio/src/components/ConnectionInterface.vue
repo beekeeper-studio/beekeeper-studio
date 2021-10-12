@@ -116,7 +116,6 @@
         await this.$store.commit('workspace', this.$store.state.localWorkspace)
       }
       await this.$store.dispatch('credentials/load')
-      await this.$store.dispatch('loadSavedConfigs')
       await this.$store.dispatch('loadUsedConfigs')
       this.config = this.defaultConfig
       this.config.sshUsername = os.userInfo().username
@@ -170,12 +169,11 @@
       },
       async duplicate(config) {
         // Duplicates ES 6 class of the connection, without any reference to the old one.
-        const duplicateConfig = Object.assign( Object.create( Object.getPrototypeOf(config)), config);
-        duplicateConfig.id = null
+        const duplicateConfig = await this.$store.dispatch('data/connections/clone', config)
         duplicateConfig.name = 'Copy of ' + duplicateConfig.name
 
         try {
-          await this.$store.dispatch('saveConnectionConfig', duplicateConfig)
+          await this.$store.dispatch('data/connections/save', duplicateConfig)
           this.$noty.success(`The connection was successfully duplicated!`)
         } catch (ex) {
           this.$noty.error(`Could not duplicate Connection: ${ex.message}`)
@@ -218,7 +216,7 @@
         try {
           this.errors = null
           this.connectionError = null
-          await this.$store.dispatch('saveConnectionConfig', this.config)
+          await this.$store.dispatch('data/connections/save', this.config)
           if(this.config === this.defaultConfig) {
             this.defaultConfig = new SavedConnection()
           }

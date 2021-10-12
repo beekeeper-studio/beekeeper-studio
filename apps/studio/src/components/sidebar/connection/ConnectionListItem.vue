@@ -43,7 +43,7 @@ export default {
     split: null
   }),
   computed: {
-    ...mapState('data/connections', {'items': 'connectionConfigs'}),
+    ...mapState('data/connections', {'connectionConfigs': 'items'}),
     classList() {
       return {
         'active': this.savedConnection && this.selectedConfig ? this.savedConnection === this.selectedConfig : false
@@ -81,10 +81,10 @@ export default {
     savedConnection() {
 
       if (this.isRecentList) {
-        if (!this.config.savedConnectionId || !this.config.workspaceId) return null
+        if (!this.config.connectionId || !this.config.workspaceId) return null
 
         return this.connectionConfigs.find((c) => 
-          c.id === this.config.savedConnectionId &&
+          c.id === this.config.connectionId &&
           c.workspaceId === this.config.workspaceId
         )
       } else {

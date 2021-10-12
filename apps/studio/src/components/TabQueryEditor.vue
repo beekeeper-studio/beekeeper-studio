@@ -403,7 +403,9 @@
             const payload = _.clone(this.query)
             payload.text = this.unsavedText
             this.$modal.hide('save-modal')
+            console.log("TQE Saving", payload)
             const updated = await this.$store.dispatch('data/queries/save', payload)
+            this.tab.query = updated
             this.unsavedText = updated.text
             this.originalText = updated.text
             this.$noty.success('Query Saved')
