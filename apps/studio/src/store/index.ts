@@ -484,7 +484,7 @@ const store = new Vuex.Store<State>({
       context.commit('usedConfigs', configs)
     },
     async updateHistory(context) {
-      const historyItems = await UsedQuery.find({ take: 100, order: { createdAt: 'DESC' } });
+      const historyItems = await UsedQuery.find({ take: 100, order: { createdAt: 'DESC' }, where: { workspaceId: context.state.workspaceId} });
       context.commit('history', historyItems)
     },
     async logQuery(context, details) {

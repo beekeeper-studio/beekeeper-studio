@@ -1,5 +1,5 @@
 <template>
-  <div :style="style" :class="className" />
+  <div :style="extraStyles" :class="className" />
 </template>
 
 <script>
@@ -12,7 +12,7 @@ export default {
       type: Boolean,
       default: false,
     },
-    style: {
+    extraStyles: {
       tpe: String,
       default: ""
     }

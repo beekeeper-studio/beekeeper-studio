@@ -1,22 +1,24 @@
 <template>
   <div class="add-workspace-button">
-    <a @click.prevent="addWorkspace" class="nav-item">
+    <a @click.prevent="addWorkspace" title="Connect another account" class="nav-item">
       <span class="avatar btn-link"><i class="material-icons">add</i></span>
     </a>
-    <modal name="workspace" class="vue-dialog beekeeper-modal" >
+    <modal name="workspace" class="vue-dialog beekeeper-modal" @opened="focus" >
       <form @submit.prevent="login">
         <div class="dialog-content">
           <div class="dialog-c-title">Workspace Sign-in</div>
           <error-alert :error="error" />
           <div class="form-group">
             <label for="email">Email Address</label>
-            <input type="text" :disabled="lockEmail" v-model="email" placeholder="e.g. matthew@example.com">
+            <input ref="email" type="text" :disabled="lockEmail" v-model="email" placeholder="e.g. matthew@example.com">
           </div>
           <div class="form-group">
-            <label for="password">Password</label><input type="password" v-model="password" placeholder="Shh...">
+            <label for="password">Password</label>
+            <input type="password" ref="password" v-model="password" placeholder="Shh...">
           </div>
         </div>
         <div class="vue-dialog-buttons">
+          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('workspace')">Cancel</button>
           <button class="btn btn-primary" type="submit">Submit</button>
         </div>
       </form>
@@ -50,6 +52,10 @@ export default Vue.extend({
     }
   },
   methods: {
+    focus() {
+      const element = this.lockEmail ? this.$refs.password : this.$refs.email
+      element.focus()
+    },
     handleLogin(c?: CredentialBlob) {
       if (c) {
         this.email = c.credential.email

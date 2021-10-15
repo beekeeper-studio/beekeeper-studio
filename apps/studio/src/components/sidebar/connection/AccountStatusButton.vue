@@ -33,7 +33,7 @@
                     <i class="material-icons">arrow_drop_down</i>
                     <x-menu>
                       <x-menuitem @click.prevent="refresh">
-                        <x-labe>Refresh</x-labe>
+                        <x-label>Refresh</x-label>
                       </x-menuitem>
                       <x-menuitem @click.prevent="reauth(blob)" title="Sign in again with the same email and a new password">
                         <x-label>Re-authenticate</x-label>
@@ -96,7 +96,7 @@ export default Vue.extend({
     },
     refresh() {
       this.$modal.hide('account-status-modal')
-      this.$store.commit('credentials/load')
+      this.$store.dispatch('credentials/load')
     },
     login() {
       this.$modal.hide('account-status-modal')
