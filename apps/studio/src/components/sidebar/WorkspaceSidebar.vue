@@ -1,18 +1,27 @@
 <template>
     <div class="workspace global-items">
       <!-- <div class="divider"><hr></div> -->
-      <a
-        v-for="blob in availableWorkspaces"
-        :key="blob.workspace.id"
-        :class="{active: blob.workspace.id === workspaceId}"
-        class="nav-item"
-        :title="blob.workspace.name"
-        @click.prevent="click(blob)"
-      >
-        <span class="avatar">
-          <workspace-avatar :workspace="blob.workspace" />
-        </span>
-      </a>
+
+      <div>
+        <a
+          v-for="blob in availableWorkspaces"
+          :key="blob.workspace.id"
+          :class="{active: blob.workspace.id === workspaceId}"
+          class="nav-item"
+          :title="blob.workspace.name"
+          @click.prevent="click(blob)"
+        >
+          <span class="avatar">
+            <workspace-avatar :workspace="blob.workspace" />
+          </span>
+        </a>
+
+      </div>
+      <div v-if="loading" class="global-loading">
+        <content-placeholder :rounded="true">
+          <content-placeholder-img style="margin-bottom:10px; margin-top: 0px;" v-for="x in 3" :key="x" :circle="true" />
+        </content-placeholder>
+      </div>
       <new-workspace-button />
       <span class="expand"></span>
       <a @click.prevent="refresh" class="nav-item refresh" title="Refresh Workspaces">
@@ -24,6 +33,8 @@
 
 <script lang="ts">
 import { IWorkspace } from '@/common/interfaces/IWorkspace'
+import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
+import ContentPlaceholderImg from '@/components/common/loading/ContentPlaceholderImg.vue'
 import WorkspaceAvatar from '@/components/common/WorkspaceAvatar.vue'
 import AccountStatusButton from '@/components/sidebar/connection/AccountStatusButton.vue'
 import { CloudClient } from '@/lib/cloud/CloudClient'
@@ -32,12 +43,12 @@ import { mapGetters, mapState } from 'vuex'
 import NewWorkspaceButton from './connection/NewWorkspaceButton.vue'
 
 export default Vue.extend({
-components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton },
+components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentPlaceholderImg, ContentPlaceholder },
   props: ['activeItem'],
   computed: {
-    ...mapState('credentials', ['credentials']),
+    ...mapState('credentials', ['credentials', 'loading']),
     ...mapState(['workspaceId']),
-    ...mapGetters('credentials', { 'availableWorkspaces': 'workspaces' })
+    ...mapGetters('credentials', { 'availableWorkspaces': 'workspaces'})
   },
   methods: {
     refresh() {
@@ -52,3 +63,9 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton },
   }
 })
 </script>
+<style scoped>
+  .global-loading {
+    margin-left:5px;
+    margin-right: 5px;
+  }
+</style>

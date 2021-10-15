@@ -125,4 +125,9 @@ $vue-content-placeholders-spacing: 10px !default;
   @include vue-content-placeholders-spacing;
   width: 100%;
   height: 120px;
+  &.vue-content-placeholders-img-is-circle {
+    border-radius: 50%;
+    height: 0;
+    padding-bottom: 100%;
+  }
 }

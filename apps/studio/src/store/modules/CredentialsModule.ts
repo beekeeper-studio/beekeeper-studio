@@ -26,6 +26,7 @@ export interface CredentialBlob {
 
 interface State {
   credentials: CredentialBlob[]
+  loading: boolean
 }
 
 async function credentialToBlob(c: CloudCredential): Promise<CredentialBlob> {
@@ -59,6 +60,7 @@ export const CredentialsModule: Module<State, RootState> = {
   namespaced: true,
   state: {
     credentials: [],
+    loading: false,
   },
   getters: {
     clients(state): CloudClient[] {
@@ -78,6 +80,9 @@ export const CredentialsModule: Module<State, RootState> = {
     }
   },
   mutations: {
+    loading(state, loading: boolean)  {
+      state.loading = loading
+    },
     replace(state, creds: CredentialBlob[]) {
       state.credentials = creds
     },
@@ -88,14 +93,19 @@ export const CredentialsModule: Module<State, RootState> = {
 
   actions: {
     async load(context) {
-      const creds = await CloudCredential.find()
-      const results: CredentialBlob[] = []
-      for (let index = 0; index < creds.length; index++) {
-        const c = creds[index];
-        const r = await credentialToBlob(c)
-        results.push(r)
+      context.commit('loading', true)
+      try {
+        const creds = await CloudCredential.find()
+        const results: CredentialBlob[] = []
+        for (let index = 0; index < creds.length; index++) {
+          const c = creds[index];
+          const r = await credentialToBlob(c)
+          results.push(r)
+        }
+        context.commit('replace', results)
+      } finally {
+        context.commit('loading', false)
       }
-      context.commit('replace', results)
     },
     async login(context, { email, password }) {
       const existing = await CloudCredential.findOne({ email })

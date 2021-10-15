@@ -33,6 +33,9 @@
                     <span>Actions</span>
                     <i class="material-icons">arrow_drop_down</i>
                     <x-menu>
+                      <x-menuitem @click.prevent="refresh">
+                        <x-labe>Refresh</x-labe>
+                      </x-menuitem>
                       <x-menuitem @click.prevent="reauth(blob)" title="Sign in again with the same email and a new password">
                         <x-label>Re-authenticate</x-label>
                       </x-menuitem>
@@ -91,6 +94,10 @@ export default Vue.extend({
     reauth(c: CredentialBlob) {
       this.$modal.hide('account-status-modal')
       this.$root.$emit(AppEvent.promptLogin, c)
+    },
+    refresh() {
+      this.$modal.hide('account-status-modal')
+      this.$store.commit('credentials/load')
     },
     login() {
       this.$modal.hide('account-status-modal')

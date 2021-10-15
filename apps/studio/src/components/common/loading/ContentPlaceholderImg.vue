@@ -1,5 +1,5 @@
 <template>
-  <div :class="className" />
+  <div :style="style" :class="className" />
 </template>
 
 <script>
@@ -7,9 +7,26 @@
 
 export default {
   name: 'content-placeholders-img',
+  props: {
+    circle: {
+      type: Boolean,
+      default: false,
+    },
+    style: {
+      tpe: String,
+      default: ""
+    }
+  },
+  computed: {
+    className() {
+      return {
+        'vue-content-placeholders-img': true,
+        'vue-content-placeholders-img-is-circle': this.circle
+      }
+    },
+  },
   data () {
     return {
-      className: 'vue-content-placeholders-img',
     }
   },
 }
