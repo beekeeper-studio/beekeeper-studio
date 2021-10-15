@@ -1,16 +1,21 @@
 <template>
   <div class="sidebar-favorites flex-col expand">
-    <div class="sidebar-heading">
-      <span class="title">Saved Queries</span>
-      <span class="expand"></span>
-      <span class="buttons">
-        <a class="btn btn-link" @click.prevent="refresh">
-          <i class="material-icons">refresh</i>
-        </a>
-      </span>
-    </div>
     <div class="sidebar-list">
-      <nav class="list-group" v-if="savedQueries.length > 0">   
+      <div class="list-group">
+        <div class="list-heading row">
+          <div class="sub row flex-middle expand">
+            <div class="expand">Saved Queries</div>
+            <div class="actions">
+              <a class="" @click.prevent="refresh">
+                <i title="Refresh Saved Queries" class="material-icons">refresh</i>
+              </a>
+            </div>
+
+          </div>
+
+        </div>
+      <sidebar-loading v-if="loading" />
+      <nav v-else-if="savedQueries.length > 0" class="list-body">
         <div class="list-item" @contextmenu.prevent.stop="openContextMenu($event, item)" v-for="item in savedQueries" v-bind:key="item.id">
           <a class="list-item-btn" @click.prevent="click(item)" :class="{active: selected(item)}">
             <i class="item-icon query material-icons">code</i>
@@ -21,8 +26,9 @@
           </a>
         </div>
       </nav>
-      <div class="empty" v-if="savedQueries.length === 0">
+      <div class="empty" v-else>
         <span>No Saved Queries</span>
+      </div>
       </div>
     </div>
     <!-- <div class="toolbar btn-group row flex-right" v-show="checkedFavorites.length > 0">
@@ -34,7 +40,9 @@
 
 <script>
   import { mapState } from 'vuex'
+  import SidebarLoading from '../../common/SidebarLoading.vue'
   export default {
+    components: { SidebarLoading },
     data: function () {
       return {
         checkedFavorites: []
@@ -42,7 +50,7 @@
     },
     computed: {
       ...mapState(['activeTab']),
-      ...mapState('data/queries', {'savedQueries': 'items'}),
+      ...mapState('data/queries', {'savedQueries': 'items', 'loading': 'loading'}),
       removeTitle() {
         return `Remove ${this.checkedFavorites.length} saved queries`;
       }

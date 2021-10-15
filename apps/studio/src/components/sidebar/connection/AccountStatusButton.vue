@@ -8,7 +8,6 @@
       <span class="avatar">
         <i class="material-icons">person</i>
         <status-badge :credentials="credentials" />
-        <span class="badge" v-if="status"><i class="material-icons">{{status}}</i></span>
       </span>
     </a>
     <modal class="beekeeper-dialog vue-dialog" name="account-status-modal" height="auto" :scrollable="true" >
