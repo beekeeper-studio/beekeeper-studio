@@ -87,7 +87,6 @@
 
     },
     beforeDestroy() {
-      this.$store.unregisterModule('data/queries')
       this.$store.dispatch('pins/unloadPins')
       this.unregisterHandlers(this.rootBindings)
       if(this.split) {

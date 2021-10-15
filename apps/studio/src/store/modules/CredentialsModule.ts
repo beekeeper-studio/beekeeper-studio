@@ -1,5 +1,5 @@
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
-import { IWorkspace } from "@/common/interfaces/IWorkspace";
+import { IWorkspace, LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import platformInfo from "@/common/platform_info";
 import { CloudClient, CloudClientOptions } from "@/lib/cloud/CloudClient";
 import { uuidv4 } from "@/lib/uuid";
@@ -16,11 +16,42 @@ export interface WSWithClient {
   client: CloudClient
 }
 
+export interface CredentialBlob {
+  id: number
+  credential: CloudCredential
+  error?: Error
+  client: CloudClient
+  workspaces: IWorkspace[]
+}
+
 interface State {
-  credentials: CloudCredential[]
-  workspaces: WSWithClient[]
-  loading: boolean
-  error: Error | null
+  credentials: CredentialBlob[]
+}
+
+async function credentialToBlob(c: CloudCredential): Promise<CredentialBlob> {
+  const clientOptions: CloudClientOptions = {
+    app: c.appId, email: c.email, token: c.token, baseUrl: platformInfo.cloudUrl
+  }
+  const client = new CloudClient(clientOptions)
+  try {
+    const workspaces = await client.workspaces.list()
+
+    return {
+      id: c.id,
+      credential: c,
+      client,
+      workspaces,
+      error: undefined
+    }
+  } catch (error) {
+    return {
+      id: c.id,
+      credential: c,
+      client,
+      workspaces: [],
+      error
+    }
+  }
 }
 
 
@@ -28,65 +59,43 @@ export const CredentialsModule: Module<State, RootState> = {
   namespaced: true,
   state: {
     credentials: [],
-    workspaces: [],
-    loading: false,
-    error: null
   },
   getters: {
     clients(state): CloudClient[] {
-      return state.credentials.map((cred) => {
-        const o: CloudClientOptions = {
-          token: cred.token,
-          app: cred.appId,
-          email: cred.email,
-          baseUrl: platformInfo.cloudUrl
-        }
-        return new CloudClient(o)
-      })
+      return state.credentials.map((cred) => cred.client)
     },
+    workspaces(state): WSWithClient[] {
+      const c: CredentialBlob[] = state.credentials
+      const result = c.flatMap((cred) => {
+        return cred.workspaces.map((ws) => ({
+          workspace: ws, client: cred.client
+        }))
+      })
+      return [
+        { workspace: LocalWorkspace, client: null },
+        ...result
+      ]
+    }
   },
   mutations: {
-    replace(state, creds: CloudCredential[]) {
+    replace(state, creds: CredentialBlob[]) {
       state.credentials = creds
     },
-    add(state, cred: CloudCredential) {
+    add(state, cred: CredentialBlob) {
       upsert(state.credentials, cred)
     },
-    workspaces(state, workspaces: WSWithClient[]) {
-      state.workspaces = workspaces
-    },
-    loading(state, v: boolean) {
-      state.loading = v
-      if (v) state.error = null
-    },
-    error(state, error: Error | null) {
-      state.error = error
-    }
   },
 
   actions: {
-    async loadWorkspaces(context) {
-      try {
-        context.commit('loading', true)
-        const results = []
-        for (let i = 0; i < context.getters.clients.length; i++) {
-          const client: CloudClient = context.getters.clients[i];
-          const workspaces = await client.workspaces.list()
-          workspaces.forEach((ws) => {
-            results.push({workspace: ws, client: client.cloneWithWorkspace(ws.id)})
-          })
-        }
-        context.commit('workspaces', results)
-      } catch (ex) {
-        context.commit('error', ex)
-      } finally {
-        context.commit('loading', false)
-      }
-    },
     async load(context) {
       const creds = await CloudCredential.find()
-      context.commit('replace', creds)
-      context.dispatch('loadWorkspaces')
+      const results: CredentialBlob[] = []
+      for (let index = 0; index < creds.length; index++) {
+        const c = creds[index];
+        const r = await credentialToBlob(c)
+        results.push(r)
+      }
+      context.commit('replace', results)
     },
     async login(context, { email, password }) {
       const existing = await CloudCredential.findOne({ email })
@@ -98,8 +107,12 @@ export const CredentialsModule: Module<State, RootState> = {
       const token = await CloudClient.login(platformInfo.cloudUrl, email, password, appId )
       cred.token = token
       await cred.save()
-      context.commit('add', cred)
-      await context.dispatch('loadWorkspaces')
+      const result = await credentialToBlob(cred)
+      context.commit('add', result)
+    },
+    async logout(context, blob: CredentialBlob) {
+      await blob.credential.remove()
+      await context.dispatch('load')
     }
   }
 } 

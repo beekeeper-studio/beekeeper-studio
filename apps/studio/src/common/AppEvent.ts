@@ -17,7 +17,8 @@ export enum AppEvent {
   createTable = 'new_table',
   openTableProperties = 'loadTableProperties',
   loadTable = 'loadTable',
-  quickSearch = 'quickSearch'
+  quickSearch = 'quickSearch',
+  promptLogin = 'cloud_signin',
 }
 
 

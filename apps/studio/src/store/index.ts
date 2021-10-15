@@ -2,7 +2,6 @@ import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import username from 'username'
-import Crypto from 'crypto'
 
 import { UsedConnection } from '../common/appdb/models/used_connection'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
@@ -25,7 +24,7 @@ import { SearchModule } from './modules/SearchModule'
 import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
-import { IConnection, ISimpleConnection } from '@/common/interfaces/IConnection'
+import { IConnection } from '@/common/interfaces/IConnection'
 
 const log = RawLog.scope('store/index')
 
@@ -92,22 +91,22 @@ const store = new Vuex.Store<State>({
     workspaceId: LocalWorkspace.id
   },
   getters: {
-    workspace(state: State): IWorkspace {
+    workspace(state: State, getters): IWorkspace {
       if (state.workspaceId === LocalWorkspace.id) return LocalWorkspace
       
-      const workspaces: WSWithClient[] = state['credentials']['workspaces']
+      const workspaces: WSWithClient[] = getters['credentials/workspaces']
       const result = workspaces.find(({workspace }) => workspace.id === state.workspaceId)
 
       if (!result) return LocalWorkspace
       return result.workspace
     },
-    cloudClient(state: State): CloudClient | null {
+    cloudClient(state: State, getters): CloudClient | null {
       if (state.workspaceId === LocalWorkspace.id) return null
 
-      const workspaces: WSWithClient[] = state['credentials']['workspaces']
+      const workspaces: WSWithClient[] = getters['credentials/workspaces']
       const result = workspaces.find(({workspace}) => workspace.id === state.workspaceId)
       if (!result) return null
-      return result.client
+      return result.client.cloneWithWorkspace(result.workspace.id)
 
     },
     dialect(state: State): Dialect | null {

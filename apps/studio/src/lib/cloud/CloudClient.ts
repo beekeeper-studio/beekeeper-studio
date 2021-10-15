@@ -75,6 +75,7 @@ export class CloudClient {
         token: options.token,
         app: options.app
       },
+      validateStatus: (status) => status < 500
     })
     this.queries = new QueriesController(this.axios)
     this.connections = new ConnectionsController(this.axios)
@@ -103,6 +104,11 @@ export class CloudClient {
     this.workspaceId = workspaceId
     if (!this.axios.defaults.params) this.axios.defaults.params = {}
     this.axios.defaults.params['workspace_id'] = workspaceId
+  }
+
+  async validateToken() {
+    const response = await this.axios.get('/check')
+    return res(response, 'valid')
   }
 
 }

@@ -53,9 +53,12 @@ export default Vue.extend({
       dataModules.forEach((module) => {
         const choice = module[scope]
         if (!choice) throw new Error(`No module defined for ${scope} - ${module.path}`)
+        console.log("DataManager checking", module.path)
         if (this.$store.hasModule(module.path)) {
+          console.log("DataManager --> unregistering", module.path)
           this.$store.unregisterModule(module.path)
         }
+        console.log("DataManager --> registering", module.path)
         this.$store.registerModule(module.path, choice)
         this.$store.dispatch(`${module.path}/load`)
       })

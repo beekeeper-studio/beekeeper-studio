@@ -10,13 +10,16 @@ export interface CloudResponseBase {
 export class CloudError extends Error {
   public status: number
   public errors: string[]
-  constructor(status: number, message?: string, errors?: string[]) {
-    const result = [`Cloud error [${status}]:`]
+  constructor(status: number, message?: string, errors?: any[]) {
+    const result = [`Workspace Error [${status}]:`]
+    const errorStrings: string[] = errors ? errors.map((e) => {
+      return _.isString(e) ? e : e.message
+    }) : []
     if (message) result.push(message)
-    if (errors?.length) result.push(...errors)
+    if (errors?.length) result.push(...errorStrings)
     super(result.join(" "))
     this.status = status
-    this.errors = errors
+    this.errors = errorStrings
   }
 }
 

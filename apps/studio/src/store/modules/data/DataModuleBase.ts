@@ -8,7 +8,6 @@ import { ClientError } from '@/store/modules/data/StoreHelpers'
 import { ActionContext, ActionTree, Module, MutationTree } from "vuex";
 import { State as RootState } from '../../index'
 import { ApplicationEntity } from "@/common/appdb/models/application_entity";
-import { Repository } from "typeorm";
 
 export interface QueryModuleState {
   queryFolders: IQueryFolder[]
