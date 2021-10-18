@@ -5,7 +5,7 @@
           v-for="blob in availableWorkspaces"
           :key="blob.workspace.id"
           :class="{active: blob.workspace.id === workspaceId}"
-          class="workspace-item nav-item"
+          class="workspace-item nav-item selectable"
           :title="blob.workspace.name"
           @click.prevent="click(blob)"
         >

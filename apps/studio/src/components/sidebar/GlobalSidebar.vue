@@ -3,7 +3,7 @@
       <a
         href=""
         @click.prevent="click('tables')"
-        class="nav-item"
+        class="nav-item selectable"
         :class="{ active: activeItem === 'tables'}"
         title="Database"
       >
@@ -12,7 +12,7 @@
       <a
         href=""
         @click.prevent="click('queries')"
-        class="nav-item"
+        class="nav-item selectable"
         :class="{ active: activeItem === 'queries'}"
         title="Saved Queries"
       >
@@ -21,7 +21,7 @@
       <a
         href=""
         @click.prevent="click('history')"
-        class="nav-item"
+        class="nav-item selectable"
         :class="{ active: activeItem === 'history'}"
         title="Run History"
       >

@@ -29,49 +29,51 @@
           }
         }
       }
-      .workspace-item {
-        &:before {
-          opacity: 0;
-          transition: opacity 0.15s ease-in-out;
-        }
-        &:hover {
-          .avatar {
-            color: rgba($theme-base, 0.38);
-          }
-          &:before {
-            content: '';
-            position: absolute;
-            left: 0;
-            width: 1px;
-            height: 20px;
-            background: rgba($theme-base, 0.2);
-            border-radius: 3px;
-            overflow: hidden;
-            opacity: 1;
-          }
-        }
-        &.active, &.active:hover {
-          .avatar {
-            color: $text-dark;
-          }
-          &:before {
-            content: '';
-            position: absolute;
-            left: 0;
-            width: 1px;
-            height: 20px;
-            background: white;
-            border-radius: 3px;
-            overflow: hidden;
-            opacity: 1;
-          }
-          > span {
-            background: rgba($theme-base, 0.08);
-          }
-        }
+    }
+    
+    // Items with an Active state
+    .nav-item.selectable {
+      &:before {
+        opacity: 0;
+        transition: opacity 0.15s ease-in-out;
+      }
+      &:hover {
         .avatar {
+          color: rgba($theme-base, 0.38);
+        }
+        &:before {
+          content: '';
+          position: absolute;
+          left: 0;
+          width: 1px;
+          height: 20px;
+          background: rgba($theme-base, 0.2);
+          border-radius: 3px;
+          overflow: hidden;
+          opacity: 1;
+        }
+      }
+      &.active, &.active:hover {
+        .avatar {
+          color: $text-dark;
+        }
+        &:before {
+          content: '';
+          position: absolute;
+          left: 0;
+          width: 1px;
+          height: 20px;
+          background: white;
+          border-radius: 3px;
+          overflow: hidden;
+          opacity: 1;
+        }
+        > span {
           background: rgba($theme-base, 0.08);
         }
+      }
+      .avatar {
+        background: rgba($theme-base, 0.08);
       }
     }
     .nav-item {
