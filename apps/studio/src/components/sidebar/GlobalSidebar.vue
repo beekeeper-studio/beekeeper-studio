@@ -35,7 +35,7 @@
       >
         <span class="avatar">
           <i class="material-icons">person</i>
-          <span class="badge success"><i class="material-icons">check</i></span>
+          <!-- <span class="badge success"><i class="material-icons">check</i></span> -->
         </span>
       </a>
     </div>

@@ -1,7 +1,5 @@
 <template>
     <div class="workspace global-items">
-      <!-- <div class="divider"><hr></div> -->
-
       <div>
         <a
           v-for="blob in availableWorkspaces"
@@ -15,15 +13,14 @@
             <workspace-avatar :workspace="blob.workspace" />
           </span>
         </a>
-
       </div>
+      <new-workspace-button />
       <div v-if="loading" class="global-loading">
         <content-placeholder :rounded="true">
           <content-placeholder-img extraStyles="margin-bottom:10px; margin-top: 0px;" v-for="x in 3" :key="x" :circle="true" />
         </content-placeholder>
       </div>
       <span class="expand"></span>
-      <new-workspace-button />
       <a @click.prevent="refresh" class="nav-item refresh" title="Refresh Workspaces">
         <span class="avatar"><i class="material-icons">refresh</i></span>
       </a>

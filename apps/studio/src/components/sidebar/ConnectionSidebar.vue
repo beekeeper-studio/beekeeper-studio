@@ -11,8 +11,8 @@
           :class="{'active': defaultConfig == selectedConfig }"
           @click.prevent="edit(defaultConfig)"
         >
-        <i class="material-icons">offline_bolt</i>
-        <span>Quick Connect</span>
+        <i class="material-icons">add</i>
+        <span>New Connection</span>
         </a>
       </div>
   
@@ -24,7 +24,7 @@
             <div class="list-heading">
               <div class="flex flex-between">
                 <div class="sub row flex-middle noselect">
-                  Saved Connections <span class="badge">{{connectionConfigs.length}}</span>
+                  Saved <span class="badge">{{connectionConfigs.length}}</span>
                 </div>
                 <x-button class="actions-btn btn btn-link" title="Sort By">
                   <span>{{sortables[this.sortOrder]}}</span>
@@ -69,7 +69,7 @@
           <div class="list-group">
             <div class="list-heading">
               <div class="sub row flex-middle noselect">
-                Recent Connections <span class="badge">{{usedConfigs.length}}</span>
+                Recent <span class="badge">{{usedConfigs.length}}</span>
               </div>
             </div>
             <nav class="list-body">

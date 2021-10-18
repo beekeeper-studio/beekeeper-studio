@@ -97,7 +97,7 @@
       },
       pageTitle() {
         if(_.isNull(this.config) || _.isUndefined(this.config.id)) {
-          return "Quick Connect"
+          return "New Connection"
         } else {
           return this.config.name
         }

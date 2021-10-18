@@ -1,7 +1,7 @@
 <template>
 <div class="connection-button flex flex-middle" v-if="config" :title="$bks.buildConnectionString(config)">
   <x-button class="btn btn-link btn-icon" menu>
-    <i class="material-icons">check_circle</i>
+    <i class="material-icons">link</i>
     <span class="connection-name truncate expand">{{connectionName}}</span>
     <span class="connection-type badge truncate">{{connectionType}}</span>
     <x-menu>

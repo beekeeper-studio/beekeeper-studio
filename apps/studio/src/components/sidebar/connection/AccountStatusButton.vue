@@ -50,8 +50,8 @@
         </div>
       </div>
       <div class="vue-dialog-buttons">
-        <button class="btn btn-primary" type="button" @click.prevent="login"><i class="material-icons">add</i> Add Account</button>
         <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('account-status-modal')">Close</button>
+        <button class="btn btn-primary" type="button" @click.prevent="login">Add Account</button>
       </div>
     </modal>
   </div>
