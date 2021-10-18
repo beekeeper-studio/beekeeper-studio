@@ -5,7 +5,7 @@
         <div v-if="filterMode === 'raw'" class="filter-group row gutter">
           <div class="btn-wrap">
             <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('builder')" title="Toggle Filter Type">
-              <i class="material-icons">sort</i>
+              <i class="material-icons-outlined">filter_alt</i>
             </button>
           </div>
           <div class="expand filter">

@@ -9,7 +9,7 @@
           <x-buttons class="filter-actions">
             <x-button @click="clearFilter" v-if="filterQuery"><i class="clear material-icons">cancel</i></x-button>
             <x-button :title="entitiesHidden ? 'Filter active' : 'No filters'" class="btn btn-fab btn-link action-item" :class="{active: entitiesHidden}" menu>
-              <i class="material-icons">filter_list</i>
+              <i class="material-icons-outlined">filter_alt</i>
               <x-menu style="--target-align: right; --v-target-align: top;">
                 <label>
                   <input type="checkbox" v-model="showTables">

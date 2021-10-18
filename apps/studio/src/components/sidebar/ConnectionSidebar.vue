@@ -22,12 +22,17 @@
         <div class="list saved-connection-list expand" ref="savedConnectionList">
           <div class="list-group">
             <div class="list-heading">
-              <div class="flex flex-between">
+              <div class="flex">
                 <div class="sub row flex-middle noselect">
                   Saved <span class="badge">{{connectionConfigs.length}}</span>
                 </div>
-                <x-button class="actions-btn btn btn-link" title="Sort By">
+                <span class="expand"></span>
+                <div class="actions">
+                  <span class="material-icons">refresh</span>
+                </div>
+                <x-button class="actions-btn btn btn-link btn-small" title="Sort By">
                   <span>{{sortables[this.sortOrder]}}</span>
+                  <!-- <i class="material-icons-outlined">filter_alt</i> -->
                   <i class="material-icons">arrow_drop_down</i>
                   <x-menu>
                     <x-menuitem

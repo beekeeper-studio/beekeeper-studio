@@ -198,7 +198,7 @@
           display: none;
         }
       }
-      .material-icons {
+      .material-icons, .material-icons-outlined {
         font-size: 14px;
         line-height: 26px;
         width: 14px;
@@ -271,12 +271,12 @@
   }
   .actions {
     padding-right: $gutter-h;
-    a {
+    a, .btn-link {
       margin: 0 ($gutter-h * 0.5);
       margin-right: 0;
       padding: 0;
     }
-    .material-icons {
+    .material-icons, .material-icons-outlined {
       font-size: 16px;
       color: $text-light;
       &:hover {
@@ -300,6 +300,7 @@
   flex-direction: column;
   padding: 0;    
   flex: 1 1 auto;
+  height: 100%;
   &:hover{
     .list-heading .actions {
       visibility: visible;

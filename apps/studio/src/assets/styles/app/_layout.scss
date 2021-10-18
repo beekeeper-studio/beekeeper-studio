@@ -119,11 +119,11 @@ hr {
   }
 }
 .btn-primary {
-  background: $theme-primary;
+  background: $theme-base;
   color: rgba(black, 0.87);
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
-    background: lighten($theme-primary, 8%);
+    background: lighten($theme-base, 8%);
     color: rgba(black, 0.87);
   }
 }
@@ -207,12 +207,12 @@ hr {
     color: $text-dark;
   }
   &.btn-primary {
-    background: $theme-primary;
+    background: $theme-base;
     .material-icons {
       color: rgba(black, 0.87);
     }
     &:hover, &:focus {
-      background: lighten($theme-primary, 8%);
+      background: lighten($theme-base, 8%);
       .material-icons {
         color: rgba(black, 0.87);
       }
@@ -238,7 +238,7 @@ hr {
   }
   &.btn-primary {
     &:hover, &:focus {
-      background: $brand-primary!important;
+      background: $theme-base!important;
     }
   }
   &.btn-flat {

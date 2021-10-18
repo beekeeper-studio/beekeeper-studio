@@ -54,8 +54,11 @@
     .actions-btn {
       min-width: 0;
       padding: 0 0.6rem;
+      font-weight: normal;
+      font-size: 0.8rem;
       i {
         margin-right: -($gutter-h);
+        color: $text-light;
       }
     }
   }
