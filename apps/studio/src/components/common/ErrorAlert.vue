@@ -1,22 +1,17 @@
 <template>
-  <div v-if="error" class="error-alert alert text-danger">
+  <div v-if="error" class="error-alert alert alert-danger">
+    <i class="material-icons">error_outline</i>
     <div class="alert-body">
-      <i class="material-icons">error_outline</i>
-      <div class="flex-col">
-        <b v-if="title" class="error-title">{{title}}</b>
-        <ul>
-          <li class="error-item" v-for="(e, idx) in errors" :key="idx">
-            <span class="message">
-              {{e.message || e.toString()}}
-            </span>
-          </li>
-        </ul>
-      </div>
+      <b v-if="title" class="error-title">{{title}}</b>
+      <ul>
+        <li class="error-item" v-for="(e, idx) in errors" :key="idx">
+          <span class="message">
+            {{e.message || e.toString()}}
+          </span>
+        </li>
+      </ul>
     </div>
-    <div class="alert-footer" v-if="error.helpLink">
-      <span class="expand"></span>
-      <a :href="error.helpLink">Learn more about this error</a>
-    </div>
+    <a :href="error.helpLink">Learn more</a>
   </div>
 </template>
 <script lang="ts">
@@ -45,16 +40,12 @@ export default Vue.extend({
   .alert.error-alert {
     display: flex;
     flex-direction: column;
-
     .alert-body {
       display: flex;
       flex-direction: row;
       align-items: flex-start;
       line-height: 18px;
-      > i {
-        padding-right: $gutter-w;
-        line-height: 18px;
-      }
+      padding-top: 8px;
       ul {
         padding-left: 0;
         margin: 0;

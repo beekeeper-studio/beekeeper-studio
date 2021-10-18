@@ -18,8 +18,8 @@
   <modal class="vue-dialog beekeeper-modal save-connection-modal" name="config-save-modal" height="auto" :scrollable="true">
     <div class="dialog-content">
       <div v-if="errors" class="alert alert-danger">
-        <i class="material-icons">warning</i>
-        <div>
+        <i class="material-icons">error_outline</i>
+        <div class="alert-body flex-col">
           <span>Please fix the following errors:</span>
           <ul>
             <li v-for="(e, i) in errors" :key="i">{{e}}</li>

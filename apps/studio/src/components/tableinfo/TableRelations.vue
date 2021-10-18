@@ -18,8 +18,8 @@
         <div class="notices" v-if="notice">
           <div class="alert alert-info">
             <i class="material-icons-outlined">info</i> 
-            {{notice}}
-            </div>
+            <div>{{notice}}</div>
+          </div>
         </div>
       </div>
     </div>

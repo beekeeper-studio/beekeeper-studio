@@ -32,23 +32,23 @@
           <input class="form-control" type="text" v-model="config.sshUsername">
         </div>
         <div class="alert alert-warning" v-if="$config.isSnap">
-          <i class="material-icons">warning</i>
-          <p>
+          <i class="material-icons">error_outline</i>
+          <div>
             SSH Agent Forwarding is not possible with the Snap version of Beekeeper Studio due to the security model of Snap apps.
             <external-link :href="enableSshLink">Read more</external-link>
-          </p>
+          </div>
         </div>
         <div v-else-if="$config.sshAuthSock" class="alert alert-success">
           <i class="material-icons">check</i>
-          We found your SSH Agent. You're good to go!
+          <div>We found your SSH Agent. You're good to go!</div>
         </div>
         <div v-else-if="$config.isWindows" class="alert alert-info">
-          <i class="material-icons">info</i>
-          We didn't find a *nix ssh-agent running, so we'll attempt to use the PuTTY agent, pageant.
+          <i class="material-icons-outlined">info</i>
+          <div>We didn't find a *nix ssh-agent running, so we'll attempt to use the PuTTY agent, pageant.</div>
         </div>
         <div v-else class="alert alert-warning">
-          <i class="material-icons">warning</i>
-          You don't seem to have an SSH agent running.
+          <i class="material-icons">error_outline</i>
+          <div>You don't seem to have an SSH agent running.</div>
         </div>
       </div>
 
@@ -63,11 +63,10 @@
         </div>
         <div v-if="$config.isSnap && !$config.snapSshPlug" class="row">
           <div class="alert alert-warning">
-            <i class="material-icons">warning</i>
-            <p>
+            <i class="material-icons">error_outline</i>
+            <div>
               Hey snap user! You need to <external-link :href="enableSshLink">enable SSH access</external-link>, then restart Beekeeper to provide access to your .ssh directory.
-            </p>
-
+            </div>
           </div>
         </div>
         <div class="row gutter">

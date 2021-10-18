@@ -37,11 +37,21 @@
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar @cancel="cancelQuery" :message="runningText" v-if="running"></progress-bar>
       <result-table ref="table" v-else-if="rowCount > 0" :active="active" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
-      <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results. {{result.affectedRows || 0}} rows affected.</span></div></div>
+      <div class="message" v-else-if="result">
+        <div class="alert alert-info">
+          <i class="material-icons-outlined">info</i>
+          <span>Query Executed Successfully. No Results. {{result.affectedRows || 0}} rows affected.</span>
+        </div>
+      </div>
       <div class="message" v-else-if="errors">
         <error-alert :error="errors" />
       </div>
-      <div class="message" v-else-if="info"><div class="alert alert-info"><i class="material-icons">warning</i><span>{{info}}</span></div></div>
+      <div class="message" v-else-if="info">
+        <div class="alert alert-info">
+          <i class="material-icon-outlined">info</i>
+          <span>{{info}}</span>
+        </div>
+      </div>
       <div class="layout-center expand" v-else>
         <shortcut-hints></shortcut-hints>
       </div>

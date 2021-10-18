@@ -724,10 +724,10 @@ input[type=file] {
   background: rgba($theme-base, 0.035);
   margin: 0.5rem 0;
   font-size: 0.85rem;
-  line-height: 1.1rem;
+  line-height: 24px;
   > i {
     font-size: 18px;
-    line-height: 1.1rem;
+    line-height: 24px;
     margin-right: 1rem;
   }
   ul {
@@ -736,6 +736,19 @@ input[type=file] {
   }
   p {
     margin: 0;
+  }
+  .alert-body {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-grow: 1;
+    line-height: 24px;
+  }
+  .alert-footer {
+    display: flex;
+    line-height: 24px;
+    min-height: 26px;
+    margin-top: -1px;
   }
 }
 .alert-danger {

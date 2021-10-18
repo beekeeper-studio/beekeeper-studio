@@ -25,7 +25,10 @@
         </div>
       </div>
       <div class="notices" v-if="notice">
-        <div class="alert alert-info"><i class="material-icons-outlined">info</i> {{notice}}</div>
+        <div class="alert alert-info">
+          <i class="material-icons-outlined">info</i> 
+          <div>{{notice}}</div>
+        </div>
       </div>
     </div>
   

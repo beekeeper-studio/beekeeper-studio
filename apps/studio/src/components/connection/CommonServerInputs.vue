@@ -25,11 +25,9 @@
       <div class="advanced-body" v-show="sslToggled">
         <div class="row gutter">
           <div class="alert alert-info">
-            <i class="material-icons">info</i>
-            <p>
-              Providing certificate files is optional. By default Beekeeper will just trust the server certificate.
-              <external-link href="https:/docs.beekeeperstudio.io/guide/#ssl">Read More</external-link>
-            </p>
+            <i class="material-icons-outlined">info</i>
+            <div>Providing certificate files is optional. By default Beekeeper will just trust the server certificate.
+              <external-link href="https:/docs.beekeeperstudio.io/guide/#ssl">Read More</external-link></div>
           </div>
         </div>
         <div class="row gutter">
