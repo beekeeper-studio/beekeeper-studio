@@ -1,6 +1,6 @@
 <template>
     <div class="workspace-items global-items">
-      <div>
+      <div v-if="!loading">
         <a
           v-for="blob in availableWorkspaces"
           :key="blob.workspace.id"
@@ -13,11 +13,11 @@
             <workspace-avatar :workspace="blob.workspace" />
           </span>
         </a>
+        <new-workspace-button />
       </div>
-      <new-workspace-button />
       <div v-if="loading" class="global-loading">
         <content-placeholder :rounded="true">
-          <content-placeholder-img extraStyles="margin-bottom:10px; margin-top: 0px;" v-for="x in 3" :key="x" :circle="true" />
+          <content-placeholder-img extraStyles="margin: 5px 0 10px;" v-for="x in 3" :key="x" :circle="true" />
         </content-placeholder>
       </div>
       <span class="expand"></span>
