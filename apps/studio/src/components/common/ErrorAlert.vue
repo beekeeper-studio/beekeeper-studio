@@ -1,15 +1,17 @@
 <template>
   <div v-if="error" class="error-alert alert text-danger">
-    <h3 v-if="title" class="error-title">{{title}}</h3>
     <div class="alert-body">
       <i class="material-icons">error_outline</i>
-      <ul>
-        <li class="error-item" v-for="(e, idx) in errors" :key="idx">
-          <span class="message">
-            {{e.message || e.toString()}}
-          </span>
-        </li>
-      </ul>
+      <div class="flex-col">
+        <b v-if="title" class="error-title">{{title}}</b>
+        <ul>
+          <li class="error-item" v-for="(e, idx) in errors" :key="idx">
+            <span class="message">
+              {{e.message || e.toString()}}
+            </span>
+          </li>
+        </ul>
+      </div>
     </div>
     <div class="alert-footer" v-if="error.helpLink">
       <span class="expand"></span>

@@ -307,6 +307,9 @@
       visibility: visible;
     }
   }
+  .error-alert {
+    margin: $gutter-h $gutter-w;
+  }
   .list-heading .actions {
     display: flex;
     align-items: center;

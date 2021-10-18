@@ -1,11 +1,11 @@
 <template>
-    <div class="workspace global-items">
+    <div class="workspace-items global-items">
       <div>
         <a
           v-for="blob in availableWorkspaces"
           :key="blob.workspace.id"
           :class="{active: blob.workspace.id === workspaceId}"
-          class="nav-item"
+          class="workspace-item nav-item"
           :title="blob.workspace.name"
           @click.prevent="click(blob)"
         >

@@ -3,28 +3,15 @@
     display: flex;
     flex-direction: column;
     background: $global-sidebar-bg;
-    &.workspace {
+    &.workspace-items {
       margin-top: $gutter-h * 0.5;
-      // &:hover {
-      //   .add-workspace-button {
-      //     opacity: 1;
-      //   }
-      // }
+
       .nav-item {
         &.active {
-          // &:before {
-          //   content: '';
-          //   position: absolute;
-          //   left: 0;
-          //   width: 1px;
-          //   height: 22px;
-          //   background: white;
-          //   border-radius: 3px;
-          //   overflow: hidden;
-          // }
           .avatar {
             box-shadow: none;
             color: $text-dark;
+            background: rgba($theme-base, 0.1);
           }
         }
         .workspace-avatar {
@@ -36,17 +23,18 @@
           }
         }
       }
-      // .add-workspace-button {
-      //   opacity: 0;
-      //   transition: opacity 0.15s ease-in-out;
-      // }
-      // .divider {
-      //   padding: $gutter-h * 0.5;
-      //   hr {
-      //     display: block;
-      //     margin: 0;
-      //   }
-      // }
+      .add-workspace-button {
+        .avatar {
+          &:hover {
+            background: transparent;
+          }
+        }
+      }
+      .workspace-item {
+        .avatar {
+          background: rgba($theme-base, 0.035);
+        }
+      }
     }
     .nav-item {
       $nav-item-size:     34px;
@@ -109,13 +97,11 @@
     }
   }
   .avatar {
-    // background: $brand-info;
-    color: $theme-base;
-    // box-shadow: inset 0 0 0 1px rgba($theme-base, 0.1);
     color: $text-lighter;
-    transition: color 0.2s ease-in-out;
+    transition: color 0.2s ease-in-out, background 0.2s ease-in-out;
     &:hover {
-      color: $text;
+      color: $text-dark;
+      // background: rgba($theme-base, 0.05);
     }
   }
   .avatar {
