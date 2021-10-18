@@ -11,7 +11,6 @@
           .avatar {
             box-shadow: none;
             color: $text-dark;
-            background: rgba($theme-base, 0.1);
           }
         }
         .workspace-avatar {
@@ -31,8 +30,47 @@
         }
       }
       .workspace-item {
+        &:before {
+          opacity: 0;
+          transition: opacity 0.15s ease-in-out;
+        }
+        &:hover {
+          .avatar {
+            color: rgba($theme-base, 0.38);
+          }
+          &:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            width: 1px;
+            height: 20px;
+            background: rgba($theme-base, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            opacity: 1;
+          }
+        }
+        &.active, &.active:hover {
+          .avatar {
+            color: $text-dark;
+          }
+          &:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            width: 1px;
+            height: 20px;
+            background: white;
+            border-radius: 3px;
+            overflow: hidden;
+            opacity: 1;
+          }
+          > span {
+            background: rgba($theme-base, 0.08);
+          }
+        }
         .avatar {
-          background: rgba($theme-base, 0.035);
+          background: rgba($theme-base, 0.08);
         }
       }
     }
@@ -46,25 +84,9 @@
       height: 44px;
       font-size: 18px;
       color: rgba($theme-base, 0.38);
-      &:hover {
-        color: $text-dark;
-        transition: color 0.15s ease-in-out;
-      }
+      transition: color 0.15s ease-in-out;
       &.active {
         color: $text-dark;
-        &:before {
-          content: '';
-          position: absolute;
-          left: 0;
-          width: 1px;
-          height: 20px;
-          background: white;
-          border-radius: 3px;
-          overflow: hidden;
-        }
-        > span {
-          background: rgba($theme-base, 0.08);
-        }
       }
       > span {  
         height: $nav-item-size;
@@ -101,11 +123,9 @@
     transition: color 0.2s ease-in-out, background 0.2s ease-in-out;
     &:hover {
       color: $text-dark;
-      // background: rgba($theme-base, 0.05);
     }
   }
   .avatar {
-    // padding: 2px;
     position: relative;
     background-clip: content-box; /* support: IE9+ */
     transition: border 0.2s ease-in-out;

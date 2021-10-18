@@ -709,6 +709,10 @@ input[type=file] {
     background: $brand-info;
     color: rgba(black, 0.87);
   }
+  &.badge-error {
+    background: $brand-info;
+    color: rgba(black, 0.87);
+  }
 }
 
 // Alerts

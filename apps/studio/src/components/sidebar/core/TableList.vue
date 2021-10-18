@@ -46,9 +46,6 @@
       <nav class="list-group flex-col" v-if="!tablesLoading">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
-            <!-- <span class="btn-fab open">
-              <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
-            </span> -->
             <div>Entities
               <span :title="`Total Entities`" class="badge" v-if="!hiddenEntities">{{totalEntities}}</span>
               <span :title="`${hiddenEntities} hidden by filters`" class="badge" v-if="hiddenEntities" :class="{active: entitiesHidden}">{{shownEntities}} / {{totalEntities}}</span>

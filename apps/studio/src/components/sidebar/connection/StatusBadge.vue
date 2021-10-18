@@ -1,5 +1,5 @@
 <template>
-  <span :title="error ? error.message : ''" class="badge" :class="classes" v-if="status">
+  <span :title="error ? error.message : ''" class="badge" :class="classes" v-if="this.error">
     <i class="material-icons">{{status}}</i>
   </span>
 </template>
