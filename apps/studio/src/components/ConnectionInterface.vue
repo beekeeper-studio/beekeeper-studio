@@ -8,7 +8,8 @@
         <div class="small-wrap expand">
           <div class="card-flat padding">
             <div class="flex flex-between">
-              <h3 class="card-title">{{pageTitle}}</h3>
+              <h3 class="card-title" v-if="!pageTitle">New Connection</h3>
+              <h3 class="card-title" v-if="pageTitle">{{pageTitle}}</h3>
               <ImportButton :config="config">Import from URL</ImportButton>
             </div>
             <error-alert :error="errors" />

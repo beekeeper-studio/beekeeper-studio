@@ -67,7 +67,7 @@
   // Empty
   // ---------------------------------
   .empty {
-    padding: $gutter-h ($gutter-w + $gutter-h);
+    padding: $gutter-w ($gutter-w + $gutter-h);
     color: $text;
     font-size: 90%;
   }
@@ -246,6 +246,7 @@
   padding: $gutter-w $gutter-w ($gutter-h * 0.5);
   padding-right: $gutter-h;
   background: transparent;
+  min-height: 33px;
   .sub {
     color: $text-dark;
     line-height: 1;
