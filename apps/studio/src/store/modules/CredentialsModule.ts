@@ -123,6 +123,7 @@ export const CredentialsModule: Module<State, RootState> = {
     async logout(context, blob: CredentialBlob) {
       await blob.credential.remove()
       await context.dispatch('load')
+      await context.commit('workspaceId', -1, { root: true})
     }
   }
 } 

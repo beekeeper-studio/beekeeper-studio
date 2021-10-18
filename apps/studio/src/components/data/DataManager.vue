@@ -2,6 +2,7 @@
   <div v-if="false"></div>
 </template>
 <script lang="ts">
+import globals from '@/common/globals'
 import { CloudConnectionModule } from '@/store/modules/data/connection/CloudConnectionModule'
 import { LocalConnectionModule } from '@/store/modules/data/connection/LocalConnectionModule'
 import { CloudQueryModule } from '@/store/modules/data/query/CloudQueryModule'
@@ -24,6 +25,9 @@ const dataModules = [
 ]
 
 export default Vue.extend({
+  data: () => ({
+    scheduler: null,
+  }),
   mounted() {
     this.mountAndRefresh()
   },

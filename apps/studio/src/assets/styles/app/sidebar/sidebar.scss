@@ -287,8 +287,8 @@
 }
 .list-body {
   flex: 1 1 auto;
-  // Why was this 0?
-  // height: 0;
+  // Why was this 0? Because of Chrome being a derp.
+  height: 0;
   // max-height: -webkit-fill-available;
   padding: $gutter-h 0 ($gutter * 0.75);
   overflow: hidden;
