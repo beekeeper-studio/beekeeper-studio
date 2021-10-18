@@ -5,7 +5,7 @@
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
             <div class="expand">Saved Queries</div>
-            <div>
+            <div class="actions">
               <a class="" @click.prevent="refresh">
                 <i title="Refresh Saved Queries" class="material-icons">refresh</i>
               </a>

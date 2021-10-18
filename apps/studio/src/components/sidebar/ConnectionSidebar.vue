@@ -34,7 +34,7 @@
                   <span>{{sortables[this.sortOrder]}}</span>
                   <!-- <i class="material-icons-outlined">filter_alt</i> -->
                   <i class="material-icons">arrow_drop_down</i>
-                  <x-menu>
+                  <x-menu style="--target-align: right;">
                     <x-menuitem
                       v-for="i in Object.keys(sortables)"
                       :key="i"
