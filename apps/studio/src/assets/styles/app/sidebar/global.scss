@@ -5,11 +5,11 @@
     background: $global-sidebar-bg;
     &.workspace {
       margin-top: $gutter-h * 0.5;
-      &:hover {
-        .add-workspace-button {
-          opacity: 1;
-        }
-      }
+      // &:hover {
+      //   .add-workspace-button {
+      //     opacity: 1;
+      //   }
+      // }
       .nav-item {
         &.active {
           // &:before {
@@ -36,10 +36,10 @@
           }
         }
       }
-      .add-workspace-button {
-        opacity: 0;
-        transition: opacity 0.15s ease-in-out;
-      }
+      // .add-workspace-button {
+      //   opacity: 0;
+      //   transition: opacity 0.15s ease-in-out;
+      // }
       // .divider {
       //   padding: $gutter-h * 0.5;
       //   hr {

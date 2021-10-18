@@ -1,18 +1,18 @@
 <template>
   <div v-if="error" class="error-alert alert text-danger">
     <h3 v-if="title" class="error-title">{{title}}</h3>
-    <div class="error-wrapper">
-      <i class="material-icons">error</i>
-      <ul class="error-list">
+    <div class="alert-body">
+      <i class="material-icons">error_outline</i>
+      <ul>
         <li class="error-item" v-for="(e, idx) in errors" :key="idx">
           <span class="message">
             {{e.message || e.toString()}}
           </span>
         </li>
       </ul>
-
     </div>
-    <div class="help-links" v-if="error.helpLink">
+    <div class="alert-footer" v-if="error.helpLink">
+      <span class="expand"></span>
       <a :href="error.helpLink">Learn more about this error</a>
     </div>
   </div>
@@ -44,10 +44,14 @@ export default Vue.extend({
     display: flex;
     flex-direction: column;
 
-    .error-wrapper {
+    .alert-body {
+      display: flex;
       flex-direction: row;
+      align-items: flex-start;
+      line-height: 18px;
       > i {
-        padding-top: 4px;
+        padding-right: $gutter-w;
+        line-height: 18px;
       }
       ul {
         padding-left: 0;
@@ -56,7 +60,6 @@ export default Vue.extend({
         list-style-type: none;
       }
     }
-
 
     a {
       font-weight: 600;
