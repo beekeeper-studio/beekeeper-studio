@@ -258,6 +258,7 @@ hr {
   display: flex;
   flex-direction: column;
   padding-top: $gutter-h;
+  margin-bottom: $gutter-h * 0.5;
   &.inline {
     display: flex;
     flex-direction: row;
