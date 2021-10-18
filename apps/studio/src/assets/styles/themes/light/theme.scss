@@ -147,6 +147,20 @@ select {
       }
     }
   }
+  .global-items {
+    .nav-item.selectable {
+      &:hover {   
+        &:before {
+          background: rgba($theme-base, 0.38);
+        }
+      }
+      &:hover, &.active, &.active:hover {
+        &:before {
+          width: 2px;
+        }
+      }
+    }
+  }
 }
 .list-heading {
   .sub {

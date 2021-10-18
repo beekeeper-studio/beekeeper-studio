@@ -1,8 +1,8 @@
 // Original Copyright https://github.com/michalsnik/vue-content-placeholders
 
 // Variables
-$vue-content-placeholders-primary-color: #ccc !default;
-$vue-content-placeholders-secondary-color: #eee !default;
+$vue-content-placeholders-primary-color: rgba($theme-base, 0.28) !default;
+$vue-content-placeholders-secondary-color: rgba($theme-base, 0.12);
 $vue-content-placeholders-border-radius: 6px !default;
 $vue-content-placeholders-line-height: 15px !default;
 $vue-content-placeholders-spacing: 10px !default;
