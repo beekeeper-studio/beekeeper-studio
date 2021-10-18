@@ -11,7 +11,7 @@ export class CloudError extends Error {
   public status: number
   public errors: string[]
   constructor(status: number, message?: string, errors?: any[]) {
-    const result = [`Workspace Error [${status}]:`]
+    const result = [`Cloud Error (${status}):`]
     const errorStrings: string[] = errors ? errors.map((e) => {
       return _.isString(e) ? e : e.message
     }) : []

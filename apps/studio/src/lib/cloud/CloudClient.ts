@@ -49,6 +49,7 @@ export class CloudClient {
       timeout: 5000,
       transformRequest: [snakeCaseData, ...defaultTransformRequest],
       transformResponse: [...defaultTransformResponse, camelCaseData],
+      validateStatus: (status) => status < 500
     })
 
     const response = await cli.post('/api/login', {
