@@ -46,6 +46,9 @@
   .saved-connection-list {
     padding: 0;
     // margin-bottom: $gutter-h * 0.5;
+    .actions {
+      padding-right: 0;
+    }
     a {
       &.active {
         background-color: rgba($theme-base, 0.06);
@@ -53,11 +56,17 @@
     }
     .actions-btn {
       min-width: 0;
-      padding: 0 0.6rem;
+      padding: 0 $gutter-h;
       font-weight: normal;
       font-size: 0.8rem;
+      &:hover {
+        background: transparent;
+        i {
+          color: $text-dark;
+        }
+      }
       i {
-        margin-right: -($gutter-h);
+        font-size: 16px;
         color: $text-light;
       }
     }
