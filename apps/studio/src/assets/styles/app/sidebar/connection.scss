@@ -14,7 +14,7 @@
     height: 100%;
   }
   .list-item {
-    border-bottom: 1px solid $theme-bg;
+    // border-bottom: 1px solid $border-color;
     .badge {
       min-width: fit-content;
     }
@@ -22,14 +22,6 @@
       position: relative;
       padding-left: $gutter-w * 1.1;
       padding-right: 0;
-      // &:before {
-      //   content: '';
-      //   position: absolute;
-      //   top: 0;
-      //   bottom: 0;
-      //   left: 8px;
-      //   border-left: 1px solid rgba($theme-base,0.08);
-      // }
     }
   }
   .connection-wrap {

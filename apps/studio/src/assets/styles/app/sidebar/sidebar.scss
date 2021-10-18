@@ -307,6 +307,22 @@
       visibility: visible;
     }
   }
+  .title, .subtitle {
+    line-height: 1.6;
+  }
+  .actions-btn {
+    i {
+      color: $text-light;
+      transition: color 0.15s ease-in-out;
+      &:hover {
+        color: $text-dark;
+      }
+    }
+  }
+  .subtitle {
+    color: $text-lighter;
+    font-size: 85%;
+  }
   .error-alert {
     margin: $gutter-h $gutter-w;
   }

@@ -10,7 +10,7 @@
         <status-badge :credentials="credentials" />
       </span>
     </a>
-    <modal class="beekeeper-dialog vue-dialog" name="account-status-modal" height="auto" :scrollable="true" >
+    <modal class="beekeeper-dialog vue-dialog account-status-modal" name="account-status-modal" height="auto" :scrollable="true" >
       <div class="dialog-content">
         <div class="dialog-c-title">Connected Accounts</div>
         <div class="list-group">
@@ -28,10 +28,10 @@
                 </div>
 
                 <div>
-                  <x-button class="actions-btn btn btn-flat" title="actions">
-                    <span>Actions</span>
-                    <i class="material-icons">arrow_drop_down</i>
-                    <x-menu>
+                  <x-button class="actions-btn btn btn-link btn-fab" title="actions">
+                    <!-- <span>Actions</span> -->
+                    <i class="material-icons">more_horiz</i>
+                    <x-menu style="--target-align: right;">
                       <x-menuitem @click.prevent="refresh">
                         <x-label>Refresh</x-label>
                       </x-menuitem>
@@ -108,3 +108,25 @@ export default Vue.extend({
   }
 })
 </script>
+
+<style lang="scss" scoped>
+  .account-status-modal {
+    .list-group {
+      min-height: 0!important;
+      .list-item {
+        padding-left: 0;
+        padding-right: 0;
+      }
+      .actions-btn {
+        .material-icons {
+          font-size: 20px;
+        }
+      }
+      .btn-fab {
+        min-width: 24px;
+        width: 24px;
+        height: 24px;
+      }
+    }
+  }
+</style>
