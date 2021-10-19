@@ -120,11 +120,11 @@ hr {
 }
 .btn-primary {
   background: $theme-base;
-  color: rgba(black, 0.87);
+  color: $theme-bg;
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
     background: lighten($theme-base, 8%);
-    color: rgba(black, 0.87);
+    color: $theme-bg;
   }
 }
 .btn-flat {
@@ -709,8 +709,12 @@ input[type=file] {
     background: $brand-info;
     color: rgba(black, 0.87);
   }
-  &.badge-error {
-    background: $brand-info;
+  &.badge-error, &.badge-danger {
+    background: $brand-danger;
+    color: rgba(black, 0.87);
+  }
+  &.badge-success {
+    background: $brand-success;
     color: rgba(black, 0.87);
   }
 }

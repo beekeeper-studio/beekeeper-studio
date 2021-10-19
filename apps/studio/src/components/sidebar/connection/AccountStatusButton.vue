@@ -6,7 +6,7 @@
       @click.prevent="showAccountsModal"
     >
       <span class="avatar">
-        <i class="material-icons">person</i>
+        <i class="material-icons-outlined">account_circle</i>
         <status-badge :credentials="credentials" />
       </span>
     </a>
@@ -20,7 +20,7 @@
                 <div class="content expand">
                   <div class="title">{{blob.credential.email}}</div>
                   <div class="subtitle">
-                    <status-badge :credentials="[blob]" v-if="blob.error" />
+                    <!-- <status-badge :credentials="[blob]" v-if="blob.error" /> -->
                     <span v-if="blob.error" class="text-danger">{{blob.error.message}}</span>
                     <span v-else>{{workspaceText(blob)}}</span>
 

@@ -12,7 +12,7 @@ export default Vue.extend({
       return this.credentials.map((c) => c.error).find((c) => c)
     },
     status() {
-      if (this.error) return 'error_outline'
+      if (this.error) return 'priority_high'
       if (this.credentials?.length) return 'check'
       return null
     },

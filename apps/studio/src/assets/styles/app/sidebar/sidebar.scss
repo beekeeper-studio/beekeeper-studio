@@ -322,6 +322,8 @@
   .subtitle {
     color: $text-lighter;
     font-size: 85%;
+    display: flex;
+    align-items: center;
   }
   .error-alert {
     margin: $gutter-h $gutter-w;
