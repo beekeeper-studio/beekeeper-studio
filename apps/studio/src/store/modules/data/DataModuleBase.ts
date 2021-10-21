@@ -144,7 +144,7 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
     async load(context) {
       await safelyDo(context, async (cli) => {
         const queries = await cli[scope].list()
-        context.commit('upsert', queries)
+        context.commit('replace', queries)
       })
     },
     async save(context, query: T): Promise<T> {

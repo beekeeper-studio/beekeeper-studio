@@ -28,11 +28,11 @@
                 </div>
                 <span class="expand"></span>
                 <div class="actions">
-                  <a><i class="material-icons">refresh</i></a>
+                  <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
                 </div>
                 <x-button class="actions-btn btn btn-link btn-small" title="Sort By">
                   <!-- <span>{{sortables[this.sortOrder]}}</span> -->
-                  <i class="material-icons-outlined">filter_alt</i>
+                  <i class="material-icons-outlined">sort</i>
                   <!-- <i class="material-icons">arrow_drop_down</i> -->
                   <x-menu style="--target-align: right;">
                     <x-menuitem
@@ -146,6 +146,9 @@
       })
     },
     methods: {
+      refresh() {
+        this.$store.dispatch('data/connections/load')
+      },
       edit(config) {
         this.$emit('edit', config)
       },
