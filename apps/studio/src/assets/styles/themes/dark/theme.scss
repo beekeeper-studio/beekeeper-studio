@@ -62,13 +62,17 @@
 
     .download-results,
     .pending-changes {
-      background: rgba($statusbar-text-default, 0.2);
+      background: $statusbar-text-default;
       > .btn {
+        color: $statusbar-text;
         &:hover, &:hover[expanded] {
           background: rgba($statusbar-text-default, 0.25);
         }
+        &[menu], &[menu]:hover {
+          border-left: 1px solid rgba($statusbar-text, 0.35);
+        }
         .material-icons {
-          color: $statusbar-text-default;
+          color: $statusbar-text;
         }
       }
     }

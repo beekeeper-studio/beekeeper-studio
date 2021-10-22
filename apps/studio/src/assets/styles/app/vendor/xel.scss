@@ -456,14 +456,13 @@ x-buttons {
   > x-button {
     margin: 0;
     &[menu] {
-      border-left: 1px solid rgba(black, 0.35);
+      border-left: 1px solid rgba($theme-bg, 0.35);
       padding: 0!important;
       min-width: 0;
       &:hover {
-        border-left: 1px solid rgba(black, 0.35);
+        border-left: 1px solid rgba($theme-bg, 0.35);
       }
       .material-icons {
-        font-size: 20px;
         width: 20px;
       }
     }
