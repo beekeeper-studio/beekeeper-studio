@@ -135,8 +135,8 @@ export default Vue.extend({
 <style lang="scss" scoped>
   @import '@/assets/styles/app/_variables';
   
-  .alert {
-    margin: $gutter-h;
+  .merge-manager {
+    margin: 0 $gutter-h;
     > i {
       line-height: 26px; // button height;
     }

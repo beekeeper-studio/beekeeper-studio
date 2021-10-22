@@ -751,8 +751,7 @@ input[type=file] {
   .alert-footer {
     display: flex;
     line-height: 24px;
-    min-height: 26px;
-    margin-top: -1px;
+    height: 26px; // button height
   }
 }
 .alert-danger {
