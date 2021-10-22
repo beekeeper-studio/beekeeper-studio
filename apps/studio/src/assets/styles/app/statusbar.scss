@@ -339,11 +339,11 @@ $button-height:     $statusbar-height * 0.72;
       }
     }
     .btn-primary.save {
-      background: $theme-primary;
+      background: $theme-base;
       color: rgba(black, 0.87);
       transition: background 0.15s ease-in-out;
       &:hover, &:focus {
-        background: lighten($theme-primary, 8%);
+        background: rgba($theme-base, 0.87);
         color: rgba(black, 0.87);
       }
     }

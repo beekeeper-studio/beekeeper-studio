@@ -123,7 +123,7 @@ hr {
   color: $theme-bg;
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
-    background: lighten($theme-base, 8%);
+    background: rgba($theme-base, 0.87);
     color: $theme-bg;
   }
 }
