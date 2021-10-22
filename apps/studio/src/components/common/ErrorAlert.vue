@@ -39,13 +39,15 @@ export default Vue.extend({
 
   .alert.error-alert {
     display: flex;
-    flex-direction: column;
+    min-width: 280px;
     .alert-body {
       display: flex;
       flex-direction: row;
       align-items: flex-start;
+      flex-direction: column;
+      flex-grow: 1;
       line-height: 18px;
-      padding-top: 8px;
+      padding-top: 6px;
       ul {
         padding-left: 0;
         margin: 0;
@@ -53,12 +55,15 @@ export default Vue.extend({
       li {
         list-style-type: none;
       }
+      i {
+        line-height: 28px;
+      }
     }
 
     a {
       font-weight: 600;
       margin-top: $gutter-h / 2;
-      padding-left: $gutter-w * 1.8;
+      padding-left: $gutter-w;
     }
   }
 </style>
