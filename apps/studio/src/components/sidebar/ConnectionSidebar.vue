@@ -111,7 +111,7 @@
     props: ['defaultConfig', 'selectedConfig'],
     data: () => ({
       split: null,
-      sizes: [25,75],
+      sizes: [50,50],
       sortables: {
         labelColor: "Color",
         id: "Created",

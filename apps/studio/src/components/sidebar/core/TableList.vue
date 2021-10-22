@@ -141,7 +141,7 @@
         allCollapsed: null,
         activeItem: 'tables',
         split: null,
-        sizes: [50,50],
+        sizes: [25,75],
 
       }
     },
