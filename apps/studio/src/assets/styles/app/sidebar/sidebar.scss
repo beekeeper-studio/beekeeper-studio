@@ -382,7 +382,7 @@
     }
     .item-text {
       font-size: 1rem;
-      padding-bottom: $gutter-h * 0.5;
+      // padding-bottom: $gutter-h * 0.5;
     }
     .title {
       @extend .truncate;
