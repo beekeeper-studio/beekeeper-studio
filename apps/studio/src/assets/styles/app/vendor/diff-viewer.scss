@@ -1,0 +1,19 @@
+.diff-viewer {
+  font-family: $font-family-mono;
+  background: $query-editor-bg;
+  margin-left: -($gutter-w * 1.5);
+  margin-right: -($gutter-w * 1.5);
+  padding: $gutter-w * 1.25;
+  del {
+    background: rgba($brand-danger, 0.3)!important;
+  }
+  ins {
+    background: rgba($brand-success, 0.3)!important;
+  }
+}
+
+
+.diff-modal .v--modal {
+  height: auto!important;
+  min-height: 150px;
+}
