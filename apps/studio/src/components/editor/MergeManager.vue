@@ -10,7 +10,7 @@
       </span>
     </div>
     
-    <div v-else-if="pendingRemoteChanges" class="alert alert-warning">
+    <div v-else-if="pendingRemoteChanges" class="alert alert-info">
       <i class="material-icons">error_outline</i> 
       <div class="alert-body">This query has been updated by someone else.</div>
       <span class="alert-footer btn-group">
