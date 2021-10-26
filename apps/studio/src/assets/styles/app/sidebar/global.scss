@@ -3,6 +3,13 @@
     display: flex;
     flex-direction: column;
     background: $global-sidebar-bg;
+    &:hover {
+      .nav-item {
+        &.refresh {
+          display: flex;
+        }
+      }
+    }
     &.workspace-items {
       margin-top: $gutter-h * 0.5;
 
@@ -101,6 +108,9 @@
       }
       .material-icons {
         font-size: 24px;
+      }
+      &.refresh {
+        display: none;
       }
       &.account {
         margin-bottom: $gutter-h * 0.75;

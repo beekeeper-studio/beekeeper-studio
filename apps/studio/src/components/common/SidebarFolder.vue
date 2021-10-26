@@ -1,19 +1,19 @@
 <template>
   <div class="schema-wrapper">
-    <div class="list-item schema" v-if="!skipDisplay">
-      <a class="list-item-btn" :class="{'open': expanded}" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
+    <div class="folder-group schema" v-if="!skipDisplay">
+      <a class="folder-btn" :class="{'open': expanded}" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
         <span class="btn-fab open-close" >
           <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
         </span>
         <i title="Schema" class="schema-icon item-icon material-icons">folder</i>
         <span class="table-name truncate expand" :title="title">{{title}}</span>
       </a>
-      <div v-if="expanded" class="sub-items">
+      <div v-if="expanded">
         <template v-if="hasSlot">
           <slot></slot>
         </template>
         <template v-else>
-          <div class="alert alert-info">{{placeholder || "No items"}}</div>
+          <div class="list-item empty">{{placeholder || "No items"}}</div>
         </template>
       </div>
     </div>
@@ -24,9 +24,8 @@
 </template>
 
 <script type="text/javascript">
-
 	export default {
-    props: ["title", "forceExpand", "forceCollapse", "expandedInitially", "skipDisplay", "placeholder"],
+    props: ["title", "forceExpand", "forceCollapse", "expandedInitially", "skipDisplay", "placeholder", "connections"],
     data() {
       return {
         manuallyExpanded: false,
@@ -56,7 +55,9 @@
 	}
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+  @import '@/assets/styles/app/_variables';
+  
   .schema > .sub-items {
     padding-left: 18px!important;
   }

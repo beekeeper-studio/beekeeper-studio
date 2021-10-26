@@ -55,7 +55,7 @@
                 v-for="{ folder, connections } in foldersWithConnections"
                 :key="folder.id"
                 :title="`${folder.name} (${connections.length})`"
-                placeholder="Empty"
+                placeholder="No Items"
                 :expandedInitially="true"
               >
                 <connection-list-item

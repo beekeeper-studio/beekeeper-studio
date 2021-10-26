@@ -536,23 +536,42 @@
 }
 
 // Folder Group
-.folder-group {
-  .folder-btn {
-    display: flex;
-    align-items: center;
-    padding-left: 0;
-    .btn-fab {
-      display: inline-flex!important;
-      margin-right: 0;
+#sidebar {
+  .folder-group {
+    margin-bottom: $gutter-h;
+    padding-left: $gutter-w;
+    .folder-btn {
+      display: flex;
+      align-items: center;
+      padding-left: 0;
+      margin-bottom: $gutter-h * 0.5;
+      .btn-fab {
+        display: inline-flex!important;
+        margin-right: 0;
+      }
+      &:hover {
+        background: transparent;
+        .material-icons:first-child {
+          color: $text-dark;
+        }
+      }
+      .schema-icon {
+        line-height: 1.9;
+      }
+      &.open {
+        .open-close {
+          transform: rotate(90deg);
+        }
+      }
     }
-    &:hover {
-      background: transparent;
-    }
-    .schema-icon {
-      line-height: 1.9;
+    .list-item {
+      padding-left: 0;
+      &.empty {
+        padding: $gutter-h;
+        padding-left: $gutter-w * 1.8;
+        color: $text-light;
+      }
     }
   }
-  .list-item {
-    padding-left: $gutter-w * 2.1;
-  }
+
 }
