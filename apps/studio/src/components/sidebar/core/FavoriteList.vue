@@ -29,6 +29,8 @@
             :key="item.id"
             :item="item"
             :selected="selected(item)"
+            @remove="remove"
+            @select="select"
           />
         </sidebar-folder>
         <favorite-list-item
@@ -36,6 +38,8 @@
           :key="item.id"
           :item="item"
           :selected="selected(item)"
+          @remove="remove"
+          @select="select"
          />
       </nav>
       <div class="empty" v-else>
@@ -93,22 +97,11 @@ import ErrorAlert from '@/components/common/ErrorAlert.vue'
       refresh() {
         this.$store.dispatch("data/queries/load")
       },
-      openContextMenu(event, item) {
-        this.$bks.openMenu({
-          item, event,
-          options: [
-            {
-              name: "Remove",
-              handler: ({ item }) => this.remove(item)
-            }
-          ]
-        })
-      },
       selected(item) {
         return this.activeTab && this.activeTab.query &&
           this.activeTab.query.id === item.id
       },
-      click(item) {
+      select(item) {
         this.$root.$emit('favoriteClick', item)
       },
       async remove(favorite) {
