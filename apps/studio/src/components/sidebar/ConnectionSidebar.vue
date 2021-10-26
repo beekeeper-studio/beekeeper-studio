@@ -51,8 +51,27 @@
             <error-alert :error="error" v-if="error" title="Problem loading connections" />
             <sidebar-loading v-else-if="loading" />
             <nav v-else class="list-body">
-              <connection-list-item
-                v-for="c in orderedConnectionConfigs"
+              <sidebar-folder
+                v-for="{ folder, connections } in foldersWithConnections"
+                :key="folder.id"
+                :title="`${folder.name} (${connections.length})`"
+                placeholder="Empty"
+                :expandedInitially="true"
+              >
+                <connection-list-item
+                  v-for="c in connections"
+                  :key="c.id"
+                  :config="c"
+                  :selectedConfig="selectedConfig"
+                  :showDuplicate="true"
+                  @edit="edit"
+                  @remove="remove"
+                  @duplicate="duplicate"
+                  @doubleClick="connect"
+                >
+                </connection-list-item>
+              </sidebar-folder>
+              <connection-list-item v-for="c in lonelyConnections"
                 :key="c.id"
                 :config="c"
                 :selectedConfig="selectedConfig"
@@ -61,8 +80,8 @@
                 @remove="remove"
                 @duplicate="duplicate"
                 @doubleClick="connect"
-              >
-              </connection-list-item>
+
+              />
             </nav>
           </div>
         </div>
@@ -106,8 +125,9 @@
   import SidebarLoading from '@/components/common/SidebarLoading.vue'
   import ErrorAlert from '@/components/common/ErrorAlert.vue'
   import Split from 'split.js'
+import SidebarFolder from '@/components/common/SidebarFolder.vue'
   export default {
-    components: { ConnectionListItem, WorkspaceSidebar, SidebarLoading, ErrorAlert },
+    components: { ConnectionListItem, WorkspaceSidebar, SidebarLoading, ErrorAlert, SidebarFolder },
     props: ['defaultConfig', 'selectedConfig'],
     data: () => ({
       split: null,
@@ -120,12 +140,40 @@
       }
     }),
     computed: {
-      ...mapState('data/connections', {'connectionConfigs': 'items', 'loading': 'loading', 'error': 'error'}),
+      ...mapState('data/connections', {'connectionConfigs': 'items', 'connectionsLoading': 'loading', 'connectionsError': 'error'}),
+      ...mapState('data/connectionFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error', 'foldersUnsupported': 'unsupported'}),
       ...mapGetters({
         'usedConfigs': 'orderedUsedConfigs',
         'settings': 'settings/settings',
         'sortOrder': 'settings/sortOrder'
       }),
+      foldersSupported() {
+        return !this.foldersUnsupported
+      },
+      lonelyConnections() {
+        const folderIds = this.folders.map((c) => c.id)
+        return this.connectionConfigs.filter((config) => {
+          return !config.connectionFolderId || !folderIds.includes(config.connectionFolderId)
+        })
+      },
+      foldersWithConnections() {
+        if (this.loading) return []
+
+        const result = this.folders.map((folder) => {
+          return {
+            folder,
+            connections: this.connectionConfigs.filter((c) => c.connectionFolderId === folder.id)
+          }
+        })
+
+        return result
+      },
+      loading() {
+        return this.connectionsLoading || this.foldersLoading
+      },
+      error() {
+        return this.connectionsError || this.foldersError || null
+      },
       orderedConnectionConfigs() {
         return _.orderBy(this.connectionConfigs, this.sortOrder)
       },
@@ -147,6 +195,7 @@
     },
     methods: {
       refresh() {
+        this.$store.dispatch('data/connectionFolders/load')
         this.$store.dispatch('data/connections/load')
       },
       edit(config) {

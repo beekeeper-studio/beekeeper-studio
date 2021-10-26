@@ -55,7 +55,7 @@ export class PinnedEntity extends ApplicationEntity {
   connectionId
 
   @Column({type: 'integer', nullable: false, default: -1})
-  workspaceId
+  workspaceId: number = -1
 
 
   entity?: DatabaseEntity

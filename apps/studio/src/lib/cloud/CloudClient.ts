@@ -5,6 +5,8 @@ import { res } from './ClientHelpers';
 import { QueriesController } from "./controllers/QueriesController";
 import { WorkspacesController } from './controllers/WorkspacesController';
 import rawLog from 'electron-log'
+import { ConnectionFoldersController } from '@/lib/cloud/controllers/ConnectionFoldersController';
+import { QueryFoldersController } from '@/lib/cloud/controllers/QueryFoldersController';
 
 const log = rawLog.scope('Cloud')
 
@@ -63,6 +65,8 @@ export class CloudClient {
   axios: AxiosInstance
   public queries: QueriesController
   public connections: ConnectionsController
+  public connectionFolders: ConnectionFoldersController
+  public queryFolders: QueryFoldersController
   public workspaces: WorkspacesController
   public workspaceId: number
   constructor(public options: CloudClientOptions) {
@@ -80,6 +84,8 @@ export class CloudClient {
     })
     this.queries = new QueriesController(this.axios)
     this.connections = new ConnectionsController(this.axios)
+    this.connectionFolders = new ConnectionFoldersController(this.axios)
+    this.queryFolders = new QueryFoldersController(this.axios)
     this.workspaces = new WorkspacesController(this.axios)
 
     this.axios.interceptors.request.use(request => {

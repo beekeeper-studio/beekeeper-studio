@@ -70,11 +70,11 @@
         </div>
         <div class="list-body" ref="entityContainer" v-show="tables.length > 0">
           <div class="with-schemas">
-            <TableListSchema
+            <sidebar-folder
               v-for="(blob, index) in schemaTables"
               :title="blob.schema"
               :key="blob.schema"
-              :skipSchemaDisplay="blob.skipSchemaDisplay"
+              :skipDisplay="blob.skipSchemaDisplay"
               :expandedInitially="index === 0"
               :forceExpand="allExpanded || filterQuery"
               :forceCollapse="allCollapsed"
@@ -104,7 +104,7 @@
                 @contextmenu.prevent.stop="$bks.openMenu({item: routine, event: $event, options: routineMenuOptions})"
               >
               </routine-list-item>
-            </TableListSchema>
+            </sidebar-folder>
           </div>
         </div>
 
@@ -124,16 +124,16 @@
 <script>
   import TableListItem from './table_list/TableListItem'
   import RoutineListItem from './table_list/RoutineListItem'
-  import TableListSchema from './table_list/TableListSchema'
   import Split from 'split.js'
   import { mapState, mapGetters } from 'vuex'
   import TableFilter from '../../../mixins/table_filter'
   import TableListContextMenus from '../../../mixins/TableListContextMenus'
   import PinnedTableList from '@/components/sidebar/core/PinnedTableList.vue'
+  import SidebarFolder from '@/components/common/SidebarFolder.vue'
   import { AppEvent } from '@/common/AppEvent'
   export default {
     mixins: [TableFilter, TableListContextMenus],
-    components: { TableListItem, TableListSchema, RoutineListItem, PinnedTableList},
+    components: { TableListItem, RoutineListItem, PinnedTableList, SidebarFolder },
     data() {
       return {
         tableLoadError: null,

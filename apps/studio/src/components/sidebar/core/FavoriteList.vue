@@ -14,35 +14,46 @@
           </div>
 
         </div>
-      <sidebar-loading v-if="loading" />
+      <error-alert v-if="error" :error="error" title="Problem loading queries" />
+      <sidebar-loading v-else-if="loading" />
       <nav v-else-if="savedQueries.length > 0" class="list-body">
-        <div class="list-item" @contextmenu.prevent.stop="openContextMenu($event, item)" v-for="item in savedQueries" v-bind:key="item.id">
-          <a class="list-item-btn" @click.prevent="click(item)" :class="{active: selected(item)}">
-            <i class="item-icon query material-icons">code</i>
-            <div class="list-title flex-col">
-              <span class="item-text title truncate expand" :title="item.title">{{item.title}}</span>
-              <span class="database subtitle"><span :title="item.database" >{{item.database}}</span></span>
-            </div>
-          </a>
-        </div>
+        <sidebar-folder
+          v-for="{ folder, queries } in foldersWithQueries"
+          :key="folder.id"
+          :title="`${folder.name} (${queries.length})`"
+          placeholder="No Queries"
+          :expandedInitially="true"
+        >
+          <favorite-list-item
+            v-for="item in queries"
+            :key="item.id"
+            :item="item"
+            :selected="selected(item)"
+          />
+        </sidebar-folder>
+        <favorite-list-item
+          v-for="item in lonelyQueries"
+          :key="item.id"
+          :item="item"
+          :selected="selected(item)"
+         />
       </nav>
       <div class="empty" v-else>
         <span>No Saved Queries</span>
       </div>
       </div>
     </div>
-    <!-- <div class="toolbar btn-group row flex-right" v-show="checkedFavorites.length > 0">
-      <a class="btn btn-link" @click="discardCheckedFavorites">Cancel</a>
-      <a class="btn btn-primary" :title="removeTitle" @click="removeCheckedFavorites">Remove</a>
-    </div> -->
   </div>
 </template>
 
 <script>
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
   import { mapState } from 'vuex'
   import SidebarLoading from '../../common/SidebarLoading.vue'
+  import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
+  import SidebarFolder from '@/components/common/SidebarFolder.vue'
   export default {
-    components: { SidebarLoading },
+    components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder },
     data: function () {
       return {
         checkedFavorites: []
@@ -50,7 +61,30 @@
     },
     computed: {
       ...mapState(['activeTab']),
-      ...mapState('data/queries', {'savedQueries': 'items', 'loading': 'loading'}),
+      ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error'}),
+      ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
+      loading() {
+        return this.queriesLoading || this.foldersLoading || null
+      },
+      error() {
+        return this.queriesError || this.foldersError || null
+      },
+      foldersWithQueries() {
+        return this.folders.map((folder) => {
+          return {
+            folder,
+            queries: this.savedQueries.filter((q) => 
+              q.queryFolderId === folder.id
+            )
+          }
+        })
+      },
+      lonelyQueries() {
+        return this.savedQueries.filter((query) => {
+          const folderIds = this.folders.map((f) => f.id)
+          return !query.queryFolderId || !folderIds.includes(query.queryFolderId)
+        })
+      },
       removeTitle() {
         return `Remove ${this.checkedFavorites.length} saved queries`;
       }

@@ -1,7 +1,7 @@
 <template>
   <div class="schema-wrapper">
-    <div class="list-item schema" v-if="!skipSchemaDisplay">
-      <a class="list-item-btn" v-bind:class="{'open': expanded}" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
+    <div class="list-item schema" v-if="!skipDisplay">
+      <a class="list-item-btn" :class="{'open': expanded}" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
         <span class="btn-fab open-close" >
           <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
         </span>
@@ -9,7 +9,12 @@
         <span class="table-name truncate expand" :title="title">{{title}}</span>
       </a>
       <div v-if="expanded" class="sub-items">
-        <slot></slot>
+        <template v-if="hasSlot">
+          <slot></slot>
+        </template>
+        <template v-else>
+          <div class="alert alert-info">{{placeholder || "No items"}}</div>
+        </template>
       </div>
     </div>
     <div v-else>
@@ -21,7 +26,7 @@
 <script type="text/javascript">
 
 	export default {
-    props: ["title", "forceExpand", "forceCollapse", "expandedInitially", "skipSchemaDisplay"],
+    props: ["title", "forceExpand", "forceCollapse", "expandedInitially", "skipDisplay", "placeholder"],
     data() {
       return {
         manuallyExpanded: false,
@@ -31,6 +36,9 @@
       this.manuallyExpanded = this.expandedInitially
     },
     computed: {
+      hasSlot() {
+        return !!this.$slots.default
+      },
       expanded() {
         return this.manuallyExpanded
       }
@@ -45,11 +53,6 @@
         }
       },
     },
-    methods: {
-      tableSelected(table) {
-        this.$emit("tableSelected", table)
-      }
-    }
 	}
 </script>
 
