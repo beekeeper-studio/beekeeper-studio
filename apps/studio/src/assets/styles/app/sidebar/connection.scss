@@ -9,6 +9,7 @@
     flex-grow: 1;
   }
   .list-group {
+    position: relative;
     padding: 0;
     min-height: 105px;
     height: 100%;
@@ -32,6 +33,17 @@
       overflow: hidden;
       &.recent-connection-list {
         min-height: 185px;
+      }
+      .list-body {   
+        &:after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 18px;
+          background: linear-gradient(0deg, rgba($theme-bg, 1) 0%, rgba($theme-bg, 0) 100%);
+        }
       }
     }
   }
