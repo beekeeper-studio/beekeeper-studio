@@ -24,6 +24,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   fullscreen = () => send('fullscreen')
   about = () => send('about')
   devtools = () => send('devtools')
+  opendocs = () => send('opendocs')
   newWindow = () => send('newWindow')
   newQuery = () => send('newQuery')
   newTab = () => send('newTab')

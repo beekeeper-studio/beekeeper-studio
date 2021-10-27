@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import {AppEvent} from '../common/AppEvent'
 import { buildWindow, getActiveWindows } from './WindowBuilder'
-import { app } from 'electron'
+import { app , shell } from 'electron'
 import platformInfo from '../common/platform_info'
 import path from 'path'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
@@ -80,6 +80,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
       iconPath: getIcon()
     })
     app.showAboutPanel()
+  }
+
+  opendocs() {
+    shell.openExternal("http://docs.beekeeperstudio.io/guide/")
   }
 
   devtools(_1: Electron.MenuItem, win: ElectronWindow) {

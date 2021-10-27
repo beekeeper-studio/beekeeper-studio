@@ -15,6 +15,7 @@ export interface IMenuActionHandler {
   fullscreen: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   about: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   devtools: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  opendocs: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newWindow: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newQuery: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
