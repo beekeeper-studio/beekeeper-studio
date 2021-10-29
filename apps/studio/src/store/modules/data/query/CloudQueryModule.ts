@@ -11,7 +11,8 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
   state: {
     items: [],
     loading: false,
-    error: null
+    error: null,
+    pollError: null,
   },
   mutations: mutationsFor<ISavedQuery>({
     // more mutations go here

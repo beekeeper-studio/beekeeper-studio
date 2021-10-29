@@ -6,11 +6,12 @@
         <connection-interface v-if="!connection"></connection-interface>
         <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
         <auto-updater></auto-updater>
+        <state-manager />
       </template>
     </div>
     <portal-target name="menus" multiple />
     <data-manager />
-    <state-manager />
+    <workspace-sign-in-modal />
 </div>
 
 </template>
@@ -25,10 +26,11 @@ import AutoUpdater from './components/AutoUpdater'
 import StateManager from './components/quicksearch/StateManager.vue'
 import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
+import WorkspaceSignInModal from '@/components/data/WorkspaceSignInModal.vue'
 export default {
   name: 'app',
   components: {
-    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, StateManager, DataManager
+    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, StateManager, DataManager, WorkspaceSignInModal
   },
   data() {
     return {

@@ -12,7 +12,8 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
   state: {
     items: [],
     loading: false,
-    error: null
+    error: null,
+    pollError: null
   },
   mutations: mutationsFor<IQueryFolder>({}),
   actions: actionsFor<IQueryFolder>('queryFolders', {

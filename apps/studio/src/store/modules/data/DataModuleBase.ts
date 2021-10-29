@@ -21,6 +21,7 @@ export interface DataState<T> {
   items: T[]
   loading: boolean
   error: ClientError
+  pollError: ClientError
 }
 
 
@@ -60,6 +61,9 @@ const buildBasicMutations = <T extends HasId>() => ({
   },
   error(state, error: Error | null) {
     state.error = error
+  },
+  pollError(state, error: Error | null) {
+    state.pollError = error
   },
   upsert(state, items: T[] | T) {
     const stateItems = [...state.items]
@@ -106,6 +110,12 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
         context.commit('upsert', items)
       })
     },
+
+    async poll() {
+      // do nothing, locally we don't need to poll.
+      // nothing else can change anything.
+    },
+
     async clone(_context, item: T) {
       const result = new cls()
       Object.assign(result, item)
@@ -133,6 +143,7 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
       } else {
         context.commit('remove', id)
         return null
+
       }
     },
     ...other
@@ -150,8 +161,13 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
     async poll(context) {
       // TODO (matthew): This should only fetch items since last update.
       await havingCli(context, async (cli) => {
-        const items = await cli[scope].list()
-        context.commit('replace', items)
+        try {
+          const items = await cli[scope].list()
+          context.commit('replace', items)
+          context.commit('pollError', null)
+        } catch (ex) {
+          context.commit('pollError', ex)
+        }
       })
     },
     async save(context, query: T): Promise<T> {

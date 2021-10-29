@@ -13,7 +13,8 @@ export const LocalConnectionModule: DataStore<SavedConnection, State> = {
   state: {
     items: [],
     loading: false,
-    error: null
+    error: null,
+    pollError: null
   },
   mutations: mutationsFor<SavedConnection>({
 

@@ -28,23 +28,15 @@
         <span class="material-icons">history</span>
       </a>
       <span class="expand"></span>
-      <a
-        class="nav-item account"
-        title="Personal Workspace"
-        @click.prevent=""
-      >
-        <span class="avatar">
-          <i class="material-icons-outlined">account_circle</i>
-          <!-- <span class="badge success"><i class="material-icons">check</i></span> -->
-        </span>
-      </a>
+      <core-account-button v-if="$store.state.workspaceId > 0" />
     </div>
 </template>
 
 <script>
-
+  import CoreAccountButton from './core/CoreAccountButton.vue'
   export default {
     props: ['activeItem'],
+    components: { CoreAccountButton },
     computed: {
     },
     methods: {

@@ -11,7 +11,8 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   state: {
     items: [],
     loading: false,
-    error: null
+    error: null,
+    pollError: null
   },
   mutations: mutationsFor<IConnectionFolder>({}),
   actions: actionsFor<IConnectionFolder>('connectionFolders', {})

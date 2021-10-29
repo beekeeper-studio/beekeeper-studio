@@ -11,7 +11,8 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     items: [],
     loading: false,
     error: null,
-    unsupported: true
+    unsupported: true,
+    pollError: null
   },
   mutations: mutationsFor<IConnectionFolder>({}),
   actions: {

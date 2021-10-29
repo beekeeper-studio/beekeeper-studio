@@ -25,6 +25,7 @@ import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
 import { IConnection } from '@/common/interfaces/IConnection'
+import { DataModules } from '@/store/DataModules'
 
 const log = RawLog.scope('store/index')
 
@@ -90,8 +91,9 @@ const store = new Vuex.Store<State>({
     activeTab: null,
     selectedSidebarItem: null,
     workspaceId: LocalWorkspace.id,
-    storeInitialized: false
+    storeInitialized: false,
   },
+
   getters: {
     workspace(state: State, getters): IWorkspace {
       if (state.workspaceId === LocalWorkspace.id) return LocalWorkspace
@@ -99,8 +101,18 @@ const store = new Vuex.Store<State>({
       const workspaces: WSWithClient[] = getters['credentials/workspaces']
       const result = workspaces.find(({workspace }) => workspace.id === state.workspaceId)
 
+
       if (!result) return LocalWorkspace
       return result.workspace
+    },
+    workspaceEmail(_state: State, getters): string | null {
+      return getters.cloudClient?.options?.email || null
+    },
+    pollError(state) {
+      return DataModules.map((module) => {
+        const pollError = state[module.path]['pollError']
+        return pollError || null
+      }).find((e) => !!e)
     },
     cloudClient(state: State, getters): CloudClient | null {
       if (state.workspaceId === LocalWorkspace.id) return null

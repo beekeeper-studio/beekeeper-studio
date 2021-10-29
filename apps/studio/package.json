@@ -25,6 +25,7 @@
   "main": "background.js",
   "dependencies": {
     "axios": "^0.21.4",
+    "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
     "better-sqlite3": "^7.4.1",
     "bytes": "^3.1.0",

@@ -1,14 +1,16 @@
 import { ConnectionsController } from '@/lib/cloud/controllers/ConnectionsController';
 import axios, { AxiosInstance, AxiosTransformer} from 'axios'
 import _ from 'lodash';
+import rawLog from 'electron-log'
+import axiosRetry from 'axios-retry'
+
 import { res } from './ClientHelpers';
 import { QueriesController } from "./controllers/QueriesController";
 import { WorkspacesController } from './controllers/WorkspacesController';
-import rawLog from 'electron-log'
 import { ConnectionFoldersController } from '@/lib/cloud/controllers/ConnectionFoldersController';
 import { QueryFoldersController } from '@/lib/cloud/controllers/QueryFoldersController';
 
-const log = rawLog.scope('Cloud')
+const log = rawLog.scope('cloudClient')
 
 const ad = axios.defaults
 
@@ -82,6 +84,9 @@ export class CloudClient {
       },
       validateStatus: (status) => status < 500
     })
+
+    axiosRetry(this.axios, { retries: 3, retryDelay: () => 2000, shouldResetTimeout: true})
+
     this.queries = new QueriesController(this.axios)
     this.connections = new ConnectionsController(this.axios)
     this.connectionFolders = new ConnectionFoldersController(this.axios)

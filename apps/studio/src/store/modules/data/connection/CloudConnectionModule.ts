@@ -11,7 +11,8 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
   state: {
     items: [],
     loading: false,
-    error: null
+    error: null,
+    pollError: null,
   },
   mutations: mutationsFor<ICloudSavedConnection>({
 

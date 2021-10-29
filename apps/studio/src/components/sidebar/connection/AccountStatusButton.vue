@@ -7,7 +7,7 @@
     >
       <span class="avatar">
         <i class="material-icons-outlined">account_circle</i>
-        <status-badge :credentials="credentials" />
+        <status-badge :errors="credentials.map((c) => c.error).filter((e) => !!e)" :display="!!credentials.length" />
       </span>
     </a>
     <modal class="beekeeper-dialog vue-dialog account-status-modal" name="account-status-modal" height="auto" :scrollable="true" >
@@ -92,7 +92,7 @@ export default Vue.extend({
     },
     reauth(c: CredentialBlob) {
       this.$modal.hide('account-status-modal')
-      this.$root.$emit(AppEvent.promptLogin, c)
+      this.$root.$emit(AppEvent.promptLogin, c.credential.email)
     },
     refresh() {
       this.$modal.hide('account-status-modal')

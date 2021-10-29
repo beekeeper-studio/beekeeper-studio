@@ -11,7 +11,8 @@ export const LocalQueryModule: DataStore<FavoriteQuery, State> = {
   state: {
     items: [],
     loading: false,
-    error: null
+    error: null,
+    pollError: null,
   },
   mutations: mutationsFor<FavoriteQuery>({
     // more mutations go here
