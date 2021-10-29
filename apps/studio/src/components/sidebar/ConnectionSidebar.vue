@@ -24,7 +24,7 @@
             <div class="list-heading">
               <div class="flex">
                 <div class="sub row flex-middle noselect">
-                  Saved <span class="badge">{{connectionConfigs.length}}</span>
+                  Saved <span class="badge">{{(connectionConfigs || []).length}}</span>
                 </div>
                 <span class="expand"></span>
                 <div class="actions">

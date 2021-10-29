@@ -44,6 +44,7 @@ export default Vue.extend({
   }),
   mounted() {
     this.mountAndRefresh()
+    this.$store.commit('storeInitialized', true)
   },
   beforeDestroy() {
     dataModules.forEach((module) => {

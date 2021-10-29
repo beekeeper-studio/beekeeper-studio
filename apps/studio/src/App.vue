@@ -2,9 +2,11 @@
 <div class="style-wrapper">
     <div class="beekeeper-studio-wrapper">
       <titlebar v-if="$config.isMac || menuStyle === 'client'"></titlebar>
-      <connection-interface v-if="!connection"></connection-interface>
-      <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
-      <auto-updater></auto-updater>
+      <template v-if="storeInitialized">
+        <connection-interface v-if="!connection"></connection-interface>
+        <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
+        <auto-updater></auto-updater>
+      </template>
     </div>
     <portal-target name="menus" multiple />
     <data-manager />
@@ -15,7 +17,7 @@
 
 <script>
 import { ipcRenderer } from 'electron'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import Titlebar from './components/Titlebar'
 import CoreInterface from './components/CoreInterface'
 import ConnectionInterface from './components/ConnectionInterface'
@@ -37,6 +39,7 @@ export default {
     connection() {
       return this.$store.state.connection
     },
+    ...mapState(['storeInitialized']),
     ...mapGetters({
       'themeValue': 'settings/themeValue',
       'menuStyle': 'settings/menuStyle'

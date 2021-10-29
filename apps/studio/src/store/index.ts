@@ -53,6 +53,7 @@ export interface State {
   activeTab: Nullable<CoreTab>,
   selectedSidebarItem: Nullable<string>,
   workspaceId: number,
+  storeInitialized: boolean
 }
 
 Vue.use(Vuex)
@@ -88,7 +89,8 @@ const store = new Vuex.Store<State>({
     menuActive: false,
     activeTab: null,
     selectedSidebarItem: null,
-    workspaceId: LocalWorkspace.id
+    workspaceId: LocalWorkspace.id,
+    storeInitialized: false
   },
   getters: {
     workspace(state: State, getters): IWorkspace {
@@ -167,6 +169,9 @@ const store = new Vuex.Store<State>({
 
   },
   mutations: {
+    storeInitialized(state, b: boolean) {
+      state.storeInitialized = b
+    },
     workspaceId(state, id: number) {
       state.workspaceId = id
     },
