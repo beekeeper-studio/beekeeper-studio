@@ -1,5 +1,5 @@
 <template>
-  <div class="sidebar-favorites flex-col expand">
+  <div class="sidebar-favorites flex-col expand" ref="wrapper">
     <div class="sidebar-list">
       <div class="list-group">
         <div class="list-heading row">
@@ -28,18 +28,22 @@
             v-for="item in queries"
             :key="item.id"
             :item="item"
-            :selected="selected(item)"
+            :active="isActive(item)"
+            :selected="selected === item"
             @remove="remove"
             @select="select"
+            @open="open"
           />
         </sidebar-folder>
         <favorite-list-item
           v-for="item in lonelyQueries"
           :key="item.id"
           :item="item"
-          :selected="selected(item)"
+          :active="isActive(item)"
+          :selected="selected === item"
           @remove="remove"
           @select="select"
+          @open="open"
          />
       </nav>
       <div class="empty" v-else>
@@ -60,8 +64,15 @@ import ErrorAlert from '@/components/common/ErrorAlert.vue'
     components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder },
     data: function () {
       return {
-        checkedFavorites: []
+        checkedFavorites: [],
+        selected: null,
       }
+    },
+    mounted() {
+      document.addEventListener('mousedown', this.maybeUnselect)
+    },
+    beforeDestroy() {
+      document.removeEventListener('mousedown', this.maybeUnselect)
     },
     computed: {
       ...mapState(['activeTab']),
@@ -94,18 +105,31 @@ import ErrorAlert from '@/components/common/ErrorAlert.vue'
       }
     },
     methods: {
+      maybeUnselect(e) {
+        if (!this.selected) return
+        if (this.$refs.wrapper.contains(e.target)) {
+          return
+        } else {
+          this.selected = null
+        }
+      },
       refresh() {
         this.$store.dispatch("data/queries/load")
       },
-      selected(item) {
+      isActive(item) {
         return this.activeTab && this.activeTab.query &&
           this.activeTab.query.id === item.id
       },
       select(item) {
+        this.selected = item
+      },
+      open(item) {
         this.$root.$emit('favoriteClick', item)
       },
       async remove(favorite) {
-        await this.$store.dispatch('data/queries/remove', favorite)
+        if (window.confirm("Really delete?")) {
+          await this.$store.dispatch('data/queries/remove', favorite)
+        }
       },
       async removeCheckedFavorites() {
         for(let i = 0; i < this.checkedFavorites.length; i++) {

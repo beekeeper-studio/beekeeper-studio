@@ -499,6 +499,7 @@ const store = new Vuex.Store<State>({
         run.database = context.state.database
         run.status = 'completed'
         run.numberOfRecords = details.rowCount
+        run.workspaceId = context.state.workspaceId
         await run.save()
         context.commit('historyAdd', run)
       }

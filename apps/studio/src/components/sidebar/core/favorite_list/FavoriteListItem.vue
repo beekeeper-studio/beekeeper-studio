@@ -1,6 +1,6 @@
 <template>
 <div class="list-item" @contextmenu.prevent.stop="openContextMenu($event, item)">
-  <a class="list-item-btn" @dblclick.prevent="$emit('select', item)" :class="{active: selected}">
+  <a class="list-item-btn" @click.prevent="$emit('select', item)" @dblclick.prevent="$emit('open', item)" :class="{active, selected}">
     <i class="item-icon query material-icons">code</i>
     <div class="list-title flex-col">
       <span class="item-text title truncate expand" :title="item.title">{{item.title}}</span>
@@ -16,7 +16,7 @@ import { IQueryFolder } from '@/common/interfaces/IQueryFolder'
 import Vue from 'vue'
 import { mapState } from 'vuex'
 export default Vue.extend({
-  props: ['item', 'selected'],
+  props: ['item', 'selected', 'active'],
 
   computed: {
     ...mapState('data/queryFolders', {'folders': 'items'}),
@@ -46,7 +46,11 @@ export default Vue.extend({
         item, event,
         options: [
           {
-            name: "Remove",
+            name: "Open",
+            handler: ({ item }) => this.$emit('open', item)
+          },
+          {
+            name: "Delete",
             handler: ({ item }) => this.$emit('remove', item)
           },
           {
