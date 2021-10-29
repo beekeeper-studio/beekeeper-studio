@@ -12,13 +12,14 @@ import { CloudConnectionFolderModule } from '@/store/modules/data/connection_fol
 import { LocalConnectionFolderModule } from '@/store/modules/data/connection_folder/LocalConnectionFolderModule'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
+import globals from '@/common/globals'
 
   
 const dataModules = [
   {
     path: 'data/queries',
     local: LocalQueryModule,
-    cloud: CloudQueryModule
+    cloud: CloudQueryModule,
   },
   {
     path: 'data/connections',
@@ -40,18 +41,21 @@ const dataModules = [
 
 export default Vue.extend({
   data: () => ({
-    scheduler: null,
+    interval: null,
   }),
   mounted() {
     this.mountAndRefresh()
     this.$store.commit('storeInitialized', true)
+    this.interval = setInterval(this.poll, globals.dataCheckInterval)
   },
   beforeDestroy() {
+    if (this.interval) clearInterval(this.interval);
     dataModules.forEach((module) => {
       if (this.$store.hasModule(module.path)) {
         this.$store.unregisterModule(module.path)
       }
     })
+
   },
 
   computed: {
@@ -65,6 +69,13 @@ export default Vue.extend({
     }
   },
   methods: {
+    poll() {
+      dataModules.forEach((module) => {
+        if (this.$store.hasModule(module.path)) {
+          this.$store.dispatch(`${module.path}/poll`)
+        }
+      })
+    },
     mountAndRefresh() {
       console.log('mount and refresh')
       if (!this.workspace) return

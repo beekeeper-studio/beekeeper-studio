@@ -147,6 +147,13 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
         context.commit('replace', queries)
       })
     },
+    async poll(context) {
+      // TODO (matthew): This should only fetch items since last update.
+      await havingCli(context, async (cli) => {
+        const items = await cli[scope].list()
+        context.commit('replace', items)
+      })
+    },
     async save(context, query: T): Promise<T> {
       return await havingCli(context, async (cli) => {
         const updated = await cli[scope].upsert(query)
