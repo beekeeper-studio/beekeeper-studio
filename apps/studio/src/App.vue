@@ -12,6 +12,7 @@
     <portal-target name="menus" multiple />
     <data-manager />
     <workspace-sign-in-modal />
+    <import-queries-modal />
 </div>
 
 </template>
@@ -27,10 +28,11 @@ import StateManager from './components/quicksearch/StateManager.vue'
 import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
 import WorkspaceSignInModal from '@/components/data/WorkspaceSignInModal.vue'
+import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
 export default {
   name: 'app',
   components: {
-    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, StateManager, DataManager, WorkspaceSignInModal
+    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, StateManager, DataManager, WorkspaceSignInModal, ImportQueriesModal
   },
   data() {
     return {

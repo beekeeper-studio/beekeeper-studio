@@ -1,21 +1,22 @@
 <template>
-  <div :title="title" class="core-account-button">
+  <div class="core-account-button">
     <x-button class="nav-item account" menu>
-      <span class="avatar">
+      <span :title="title" class="avatar">
         <i class="material-icons-outlined">account_circle</i>
         <status-badge :errors="[pollError]" :display="true" />
       </span>
-      <x-menu v-if="pollError">
+      <x-menu>
         <x-menuitem disabled>
           <x-label>{{title}}</x-label>
         </x-menuitem>
-        <x-menuitem @click.prevent="reAuthenticate">
+        <x-menuitem title="Import queries from your local workspace" @click.prevent="triggerImport">
+
+          <x-label>Import queries</x-label>
+        </x-menuitem>
+        <x-menuitem v-if="pollError" @click.prevent="reAuthenticate">
           <x-label>
             Log In Again
           </x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="disconnectAndLogOut">
-          <x-label>Sign out of {{workspace.name}}</x-label>
         </x-menuitem>
       </x-menu>
     </x-button>
@@ -38,8 +39,8 @@ export default Vue.extend({
     },
   },
   methods: {
-    disconnectAndLogOut() {
-
+    triggerImport() {
+      this.$root.$emit(AppEvent.promptQueryImport)
     },
     reAuthenticate() {
       this.$root.$emit(AppEvent.promptLogin, this.$store.getters.workspaceEmail)

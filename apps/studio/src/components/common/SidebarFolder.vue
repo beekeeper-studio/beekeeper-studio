@@ -13,7 +13,10 @@
           <slot></slot>
         </template>
         <template v-else>
-          <div class="list-item empty">{{placeholder || "No items"}}</div>
+          <template v-if="$slots.placeholder">
+            <slot name="placeholder"></slot>
+          </template>
+          <div v-else class="list-item empty">{{placeholder || "No items"}}</div>
         </template>
       </div>
     </div>

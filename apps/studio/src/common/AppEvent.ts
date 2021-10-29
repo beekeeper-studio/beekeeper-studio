@@ -19,6 +19,7 @@ export enum AppEvent {
   loadTable = 'loadTable',
   quickSearch = 'quickSearch',
   promptLogin = 'cloud_signin',
+  promptQueryImport = 'cloud_q_import',
 }
 
 

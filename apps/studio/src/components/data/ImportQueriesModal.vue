@@ -1,0 +1,77 @@
+<template>
+  <modal name="import-queries" class="vue-dialog beekeeper-modal">
+    <div class="dialog-content">
+      <div class="dialog-c-title">Choose queries to import</div>
+      <error-alert :error="error" v-if="error" />
+      <div class="list-group">
+        <div class="list-body">
+
+          <div 
+            class="list-item" 
+            v-for="query in queries"
+            :key="query.id"
+          >
+          <input type="checkbox" name="" v-model="query.checked" id="">
+          {{query.title}}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="vue-dialog-buttons">
+      <button :disabled="loading" class="btn btn-primary" @click.prevent="doImport">{{loading ? '...' : 'Import'}}</button>
+    </div>
+  </modal>
+</template>
+<script lang="ts">
+import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
+import { AppEvent } from '@/common/AppEvent'
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import Vue from 'vue'
+export default Vue.extend({
+  components: { ErrorAlert },
+  mounted() {
+    this.registerHandlers(this.rootBindings)
+  },
+  data: () => ({
+    queries: [],
+    loading: false,
+    error: null
+  }),
+  computed: {
+    rootBindings() {
+      return [
+        {
+          event: AppEvent.promptQueryImport,
+          handler: this.openModal
+        }
+      ]
+    }
+  },
+  methods: {
+    async openModal() {
+      this.queries = (await FavoriteQuery.find()).map((q) => {
+        return {
+          ...q,
+          checked: false
+        }
+      })
+      this.$modal.show('import-queries')
+    },
+    async doImport() {
+      this.loading = true
+      const candidates = this.queries.filter((q) => q.checked)
+      try {
+        await Promise.all(candidates.map((q) => {
+          const payload = {...q, id: null}
+          return this.$store.dispatch('data/queries/save', payload)
+        }))
+        this.$modal.hide('import-queries')
+      } catch (error) {
+        this.error = error
+      } finally {
+        this.loading = false
+      }
+    }
+  }
+})
+</script>

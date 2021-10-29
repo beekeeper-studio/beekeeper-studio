@@ -18,12 +18,19 @@
       <sidebar-loading v-else-if="loading" />
       <nav v-else-if="savedQueries.length > 0" class="list-body">
         <sidebar-folder
-          v-for="{ folder, queries } in foldersWithQueries"
+          v-for="({ folder, queries }, idx) in foldersWithQueries"
           :key="folder.id"
           :title="`${folder.name} (${queries.length})`"
-          placeholder="No Queries"
+
           :expandedInitially="true"
         >
+          <template v-slot:placeholder>
+            <div class="list-item empty">
+              <p>
+                No saved queries. <a title="Import queries from your local workspace" v-if="idx === 0" @click.prevent="importFromLocal">Import</a>
+              </p>
+            </div>
+          </template>
           <favorite-list-item
             v-for="item in queries"
             :key="item.id"
@@ -56,10 +63,11 @@
 
 <script>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-  import { mapState } from 'vuex'
+  import { mapGetters, mapState } from 'vuex'
   import SidebarLoading from '../../common/SidebarLoading.vue'
   import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
   import SidebarFolder from '@/components/common/SidebarFolder.vue'
+import { AppEvent } from '@/common/AppEvent'
   export default {
     components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder },
     data: function () {
@@ -75,6 +83,7 @@ import ErrorAlert from '@/components/common/ErrorAlert.vue'
       document.removeEventListener('mousedown', this.maybeUnselect)
     },
     computed: {
+      ...mapGetters(['workspace']),
       ...mapState(['activeTab']),
       ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error'}),
       ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
@@ -105,6 +114,9 @@ import ErrorAlert from '@/components/common/ErrorAlert.vue'
       }
     },
     methods: {
+      importFromLocal() {
+        this.$root.$emit(AppEvent.promptQueryImport)
+      },
       maybeUnselect(e) {
         if (!this.selected) return
         if (this.$refs.wrapper.contains(e.target)) {
