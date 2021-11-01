@@ -535,6 +535,7 @@
 // Folder Group
 #sidebar {
   .folder-group {
+    position: relative;
     margin-bottom: $gutter-h;
     padding-left: $gutter-w;
     .folder-btn {
@@ -561,12 +562,26 @@
         }
       }
     }
+    > div {
+      position: relative;
+    }
     .list-item {
-      padding-left: 0;
+      padding-left: $gutter-h * 0.5;
+      &:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 9px;
+        border-left: 1px solid rgba($theme-base,0.08);
+      }
+      .list-item-btn {
+        margin-left: $gutter-w;
+      }
       &.empty {
         padding: $gutter-h;
         padding-left: $gutter-w * 1.8;
-        color: $text-light;
+        color: $text-lighter;
       }
     }
   }

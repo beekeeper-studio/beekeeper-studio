@@ -15,3 +15,9 @@ export default Vue.extend({
   
 })
 </script>
+
+<style scoped>
+  .list-item-btn:hover {
+    background: transparent!important;
+  }
+</style>
