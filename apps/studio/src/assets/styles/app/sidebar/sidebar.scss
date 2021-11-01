@@ -70,6 +70,11 @@
     padding: $gutter-w ($gutter-w + $gutter-h);
     color: $text;
     font-size: 90%;
+    .empty-actions {
+      .btn {
+        margin-top: $gutter-h;
+      }
+    }
   }
 
   // Sidebar Header

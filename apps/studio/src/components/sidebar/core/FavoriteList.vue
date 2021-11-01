@@ -50,7 +50,7 @@
       <div class="empty" v-else>
         <span class="empty-title">No Saved Queries</span>
         <span class="empty-actions" v-if="isCloud">
-          <a cls="btn btn-link" @click.prevent="importFromLocal" title="Import queries from local workspace"><i class="material-icons">save_alt</i> Import</a>
+          <a class="btn btn-flat btn-block btn-icon" @click.prevent="importFromLocal" title="Import queries from local workspace"><i class="material-icons">save_alt</i> Import</a>
         </span>
       </div>
       </div>
