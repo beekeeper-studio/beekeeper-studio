@@ -1,5 +1,5 @@
 <template>
-  <span :title="error ? error.message : ''" class="badge" :class="classes">
+  <span v-if="error" :title="error ? error.message : ''" class="badge" :class="classes">
     <i class="material-icons">{{status}}</i>
   </span>
 </template>
@@ -23,12 +23,10 @@ export default Vue.extend({
     },
     status() {
       if (this.error) return 'priority_high'
-      if (this.display) return 'check'
       return null
     },
     classes() {
       if (this.error) return 'badge-danger'
-      if (this.display) return 'badge-info'
       return null
     }
   }

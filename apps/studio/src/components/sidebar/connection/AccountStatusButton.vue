@@ -128,5 +128,8 @@ export default Vue.extend({
         height: 24px;
       }
     }
+    .content {
+      line-height: 1.6;
+    }
   }
 </style>

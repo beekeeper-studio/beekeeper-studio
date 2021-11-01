@@ -43,6 +43,9 @@ $titlebar-actions-height:   30px;
     color: $text-light;
     font-size: 0.85rem;
     line-height: 2;
+    @media (max-width: 600px) {
+      display: none;
+    }
   }
   .titlebar-actions {
     display: flex;

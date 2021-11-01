@@ -202,7 +202,7 @@ hr {
   &:hover, &:focus {
     background: rgba($theme-base, 0.1);
   }
-  .material-icons {
+  .material-icons, .material-icons-outlined {
     font-size: 20px;
     color: $text-dark;
   }
@@ -279,6 +279,13 @@ hr {
       textarea {
         height: auto;
       }
+    }
+  }
+  input {
+    &[disabled="disabled"], &[disabled="disabled"]:hover, &[disabled="disabled"]:focus {
+      color: $text-lighter!important;
+      cursor: not-allowed!important;
+      border-style: dotted!important;
     }
   }
   label {
