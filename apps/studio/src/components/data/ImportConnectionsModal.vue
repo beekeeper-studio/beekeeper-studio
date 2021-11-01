@@ -4,15 +4,17 @@
       <div class="dialog-c-title">Import Connections</div>
       <div class="dialog-c-subtitle">Importing a connection will copy it from your local workspace into your cloud workspace. Imported connections are private to you by default.</div>
       <error-alert :error="error" />
-      <div class="list-group">
-        <div class="list-body">
-          <div 
-            class="list-item"
-            v-for="connection in connections"
-            :key="connection.id"
-          >
-            <input type="checkbox" v-model="connection.checked">
-            {{connection.name}}
+      <div>
+        <div class="list-group">
+          <div class="list-body">
+            <div 
+              class="list-item"
+              v-for="connection in connections"
+              :key="connection.id"
+            >
+              <input type="checkbox" v-model="connection.checked">
+              {{connection.name}}
+            </div>
           </div>
         </div>
       </div>

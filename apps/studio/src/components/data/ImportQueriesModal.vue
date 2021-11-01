@@ -4,16 +4,18 @@
       <div class="dialog-c-title">Import Queries</div>
       <div class="dialog-c-subtitle">Importing a query will copy it from your local workspace into your online workspace. Imported queries are private to you by default.</div>
       <error-alert :error="error" v-if="error" />
-      <div class="list-group">
-        <div class="list-body">
-
-          <div 
-            class="list-item" 
-            v-for="query in queries"
-            :key="query.id"
-          >
-          <input type="checkbox" name="" v-model="query.checked" id="">
-          {{query.title}}
+      <div>
+        <div class="list-group">
+          <div class="list-body">
+  
+            <div 
+              class="list-item" 
+              v-for="query in queries"
+              :key="query.id"
+            >
+            <input type="checkbox" name="" v-model="query.checked" id="">
+            {{query.title}}
+            </div>
           </div>
         </div>
       </div>

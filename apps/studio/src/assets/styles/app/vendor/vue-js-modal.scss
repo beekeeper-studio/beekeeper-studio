@@ -138,6 +138,16 @@
     flex-direction: column;
     flex-grow: 1;
   }
+  .list-body {
+    height: initial;
+    margin: $gutter-h 0;
+    max-height: 600px;
+    .list-item {
+      display: flex;
+      align-items: center;
+      line-height: 1.6;
+    }
+  }
 }
 
 .vue-dialog div {
@@ -164,7 +174,9 @@
 }
 
 .vue-dialog .dialog-c-subtitle {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: $text;
 }
 // .vue-dialog .dialog-c-text {
 // }
