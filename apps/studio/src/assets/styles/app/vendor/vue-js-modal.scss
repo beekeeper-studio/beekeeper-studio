@@ -83,6 +83,9 @@
   left: initial!important;
   min-width: 380px;
   max-width: 600px;
+  height: auto!important;
+  min-height: 120px;
+  max-height: 80vh;
   @extend .card-shadow;
 }
 .v--modal.v--modal-fullscreen {
@@ -119,6 +122,8 @@
 //   transform: translateY(-20px);
 // }
 .vue-dialog {
+  display: flex;
+  flex-direction: column;
   .close-btn {
     position: absolute;
     top: $gutter-w;
@@ -127,6 +132,11 @@
     &:hover {
       opacity: 1;
     }
+  }
+  form {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
   }
 }
 
