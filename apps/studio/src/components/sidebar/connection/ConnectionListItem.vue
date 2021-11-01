@@ -32,8 +32,9 @@
 </template>
 <script>
 import path from 'path'
+import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
-import { mapState } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 export default {
   // recent list is 'recent connections'
   // if that is true, we need to find the companion saved connection
@@ -44,6 +45,20 @@ export default {
   }),
   computed: {
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
+    ...mapState('data/connectionFolders', {'folders': 'items'}),
+    ...mapGetters(['isCloud']),
+    moveToOptions() {
+      return this.folders
+        .filter((folder) => folder.id !== this.config.connectionFolderId)
+        .map((folder) => {
+        return {
+          name: `Move to ${folder.name}`,
+          slug: `move-${folder.id}`,
+          handler: this.moveItem,
+          folder
+        }
+      })
+    },
     classList() {
       return {
         'active': this.savedConnection && this.selectedConfig ? this.savedConnection === this.selectedConfig : false
@@ -97,25 +112,59 @@ export default {
   },
   methods: {
     showContextMenu(event) {
+      const options = [
+        {
+          name: "View",
+          slug: 'view',
+          handler: (blob) => this.click(blob.item)
+        },
+        {
+          name: 'Connect',
+          slug: 'connect',
+          handler: (blob) => this.doubleClick(blob.item)
+        },
+        {
+          name: "Duplicate",
+          slug: 'duplicate',
+          handler: this.duplicate
+        },
+        {
+          name: `Copy ${this.connectionType}`,
+          handler: this.copyUrl
+        },
+        {
+          name: "Remove",
+          handler: this.remove
+        },
+      ]
+
+      if (this.isCloud) {
+        options.push(...[
+          {
+            type: 'divider'
+          },
+          ...this.moveToOptions
+        ])
+      }
+      console.log('options', options)
+
       this.$bks.openMenu({
         event,
         item: this.config,
-        options: [
-          {
-            name: "Duplicate",
-            slug: 'duplicate',
-            handler: this.duplicate
-          },
-          {
-            name: `Copy ${this.connectionType}`,
-            handler: this.copyUrl
-          },
-          {
-            name: "Remove",
-            handler: this.remove
-          },
-        ]
+        options
       })
+    },
+    async moveItem({ item, option }) {
+      try {
+        const folder = option.folder
+        if (!folder || !folder.id) return
+        const updated = _.clone(item)
+        updated.connectionFolderId = folder.id
+        await this.$store.dispatch('data/connections/save', updated)
+      } catch(ex) {
+        this.$noty.error(`Move Error: ${ex.message}`)
+        console.error(ex)
+      }
     },
     async click() {
       if (this.savedConnection) {

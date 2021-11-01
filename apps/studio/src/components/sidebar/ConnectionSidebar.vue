@@ -28,6 +28,7 @@
                 </div>
                 <span class="expand"></span>
                 <div class="actions">
+                  <a v-if="isCloud" @click.prevent="importFromLocal" title="Import connections from local workspace"><i class="material-icons">save_alt</i></a>
                   <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
                 </div>
                 <x-button class="actions-btn btn btn-link btn-small" title="Sort By">
@@ -53,7 +54,7 @@
             <nav v-else class="list-body">
               <sidebar-folder
                 v-for="{ folder, connections } in foldersWithConnections"
-                :key="folder.id"
+                :key="`${folder.id}-${connections.length}`"
                 :title="`${folder.name} (${connections.length})`"
                 placeholder="No Items"
                 :expandedInitially="true"
@@ -126,6 +127,7 @@
   import ErrorAlert from '@/components/common/ErrorAlert.vue'
   import Split from 'split.js'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
+import { AppEvent } from '@/common/AppEvent'
   export default {
     components: { ConnectionListItem, WorkspaceSidebar, SidebarLoading, ErrorAlert, SidebarFolder },
     props: ['defaultConfig', 'selectedConfig'],
@@ -145,7 +147,8 @@ import SidebarFolder from '@/components/common/SidebarFolder.vue'
       ...mapGetters({
         'usedConfigs': 'orderedUsedConfigs',
         'settings': 'settings/settings',
-        'sortOrder': 'settings/sortOrder'
+        'sortOrder': 'settings/sortOrder',
+        'isCloud': 'isCloud'
       }),
       foldersSupported() {
         return !this.foldersUnsupported
@@ -194,6 +197,10 @@ import SidebarFolder from '@/components/common/SidebarFolder.vue'
       })
     },
     methods: {
+      importFromLocal() {
+        console.log("triggering import")  
+        this.$root.$emit(AppEvent.promptConnectionImport)
+      },
       refresh() {
         this.$store.dispatch('data/connectionFolders/load')
         this.$store.dispatch('data/connections/load')

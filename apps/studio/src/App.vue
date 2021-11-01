@@ -13,6 +13,7 @@
     <data-manager />
     <workspace-sign-in-modal />
     <import-queries-modal />
+    <import-connections-modal />
 </div>
 
 </template>
@@ -29,10 +30,13 @@ import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
 import WorkspaceSignInModal from '@/components/data/WorkspaceSignInModal.vue'
 import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
+import ImportConnectionsModal from '@/components/data/ImportConnectionsModal.vue'
 export default {
   name: 'app',
   components: {
-    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, StateManager, DataManager, WorkspaceSignInModal, ImportQueriesModal
+    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater,
+    StateManager, DataManager, WorkspaceSignInModal, ImportQueriesModal,
+    ImportConnectionsModal
   },
   data() {
     return {
@@ -41,6 +45,7 @@ export default {
   },
   computed: {
     connection() {
+      
       return this.$store.state.connection
     },
     ...mapState(['storeInitialized']),

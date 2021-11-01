@@ -1,7 +1,8 @@
 <template>
   <modal name="import-queries" class="vue-dialog beekeeper-modal">
     <div class="dialog-content">
-      <div class="dialog-c-title">Choose queries to import</div>
+      <div class="dialog-c-title">Import Queries</div>
+      <div class="dialog-c-subtitle">Importing a query will copy it from your local workspace into your online workspace. Imported queries are private to you by default.</div>
       <error-alert :error="error" v-if="error" />
       <div class="list-group">
         <div class="list-body">

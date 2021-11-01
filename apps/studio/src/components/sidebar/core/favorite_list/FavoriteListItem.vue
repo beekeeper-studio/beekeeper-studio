@@ -34,12 +34,18 @@ export default Vue.extend({
   },
   methods: {
     async moveItem({ item, option }) {
-      const folder = option.folder
-      console.log("moving item!", folder)
-      if (!folder || !folder.id) return
-      const updated = _.clone(item)
-      updated.queryFolderId = folder.id
-      await this.$store.dispatch('data/queries/save', updated)
+      try {
+        const folder = option.folder
+        console.log("moving item!", folder)
+        if (!folder || !folder.id) return
+        const updated = _.clone(item)
+        updated.queryFolderId = folder.id
+        await this.$store.dispatch('data/queries/save', updated)
+
+      } catch (ex) {
+        this.$noty.error(`Move Error: ${ex.message}`)
+        console.error(ex)
+      }
     },
     openContextMenu(event, item) {
       this.$bks.openMenu({
