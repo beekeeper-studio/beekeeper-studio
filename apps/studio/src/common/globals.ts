@@ -11,7 +11,7 @@ export default {
   bigTableColumnWidth: 125,
   maxColumnWidthTableInfo: 300,
   workspaceCheckInterval: 5000, // 5 seconds
-  dataCheckInterval: 30000,
+  dataCheckInterval: 10000, // 10 secs
 
 }
 

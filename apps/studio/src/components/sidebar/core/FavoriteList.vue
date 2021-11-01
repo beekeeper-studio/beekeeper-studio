@@ -6,6 +6,7 @@
           <div class="sub row flex-middle expand">
             <div class="expand">Saved Queries</div>
             <div class="actions">
+              <a v-if="isCloud" title="Import queries from local workspace" @click.prevent="importFromLocal"><i class="material-icons">save_alt</i></a>
               <a class="" @click.prevent="refresh">
                 <i title="Refresh Saved Queries" class="material-icons">refresh</i>
               </a>
@@ -15,22 +16,15 @@
 
         </div>
       <error-alert v-if="error" :error="error" title="Problem loading queries" />
-      <sidebar-loading v-else-if="loading" />
+      <sidebar-loading v-if="loading" />
       <nav v-else-if="savedQueries.length > 0" class="list-body">
         <sidebar-folder
-          v-for="({ folder, queries }, idx) in foldersWithQueries"
-          :key="folder.id"
+          v-for="({ folder, queries }) in foldersWithQueries"
+          :key="`${folder.id}-${queries.length}`"
           :title="`${folder.name} (${queries.length})`"
 
           :expandedInitially="true"
         >
-          <template v-slot:placeholder>
-            <div class="list-item empty">
-              <p>
-                No saved queries. <a title="Import queries from your local workspace" v-if="idx === 0" @click.prevent="importFromLocal">Import</a>
-              </p>
-            </div>
-          </template>
           <favorite-list-item
             v-for="item in queries"
             :key="item.id"
@@ -54,7 +48,10 @@
          />
       </nav>
       <div class="empty" v-else>
-        <span>No Saved Queries</span>
+        <span class="empty-title">No Saved Queries</span>
+        <span class="empty-actions" v-if="isCloud">
+          <a cls="btn btn-link" @click.prevent="importFromLocal" title="Import queries from local workspace"><i class="material-icons">save_alt</i> Import</a>
+        </span>
       </div>
       </div>
     </div>
@@ -83,7 +80,7 @@ import { AppEvent } from '@/common/AppEvent'
       document.removeEventListener('mousedown', this.maybeUnselect)
     },
     computed: {
-      ...mapGetters(['workspace']),
+      ...mapGetters(['workspace', 'isCloud']),
       ...mapState(['activeTab']),
       ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error'}),
       ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),

@@ -35,7 +35,7 @@ export const SearchModule: Module<State, RootState> = {
       const folders = root['data/queryFolders']['items']
       const favorites: IndexItem[] = root['data/queries']['items'].map((f) => {
         const folder = folders.find((folder) => folder.id === f.queryFolderId)
-        const title = folder ? `${folder.name} / ${f.title}` : f.title
+        const title = folder ? `${folder.name} > ${f.title}` : f.title
         return { item: f, type: 'query', title: title, id: f.id }
       })
       return [...tables, ...favorites]

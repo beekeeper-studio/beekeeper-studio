@@ -105,6 +105,9 @@ const store = new Vuex.Store<State>({
       if (!result) return LocalWorkspace
       return result.workspace
     },
+    isCloud(state: State) {
+      return state.workspaceId !== LocalWorkspace.id
+    },
     workspaceEmail(_state: State, getters): string | null {
       return getters.cloudClient?.options?.email || null
     },

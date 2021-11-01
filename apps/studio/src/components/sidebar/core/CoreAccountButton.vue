@@ -9,10 +9,6 @@
         <x-menuitem disabled>
           <x-label>{{title}}</x-label>
         </x-menuitem>
-        <x-menuitem title="Import queries from your local workspace" @click.prevent="triggerImport">
-
-          <x-label>Import queries</x-label>
-        </x-menuitem>
         <x-menuitem v-if="pollError" @click.prevent="reAuthenticate">
           <x-label>
             Log In Again
