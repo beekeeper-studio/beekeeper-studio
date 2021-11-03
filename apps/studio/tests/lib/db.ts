@@ -103,6 +103,13 @@ export class DBTestUtil {
     expect(columns.length).toBe(7)
   }
 
+
+  async tableColumnsTests() {
+    const columns = await this.connection.listTableColumns(null, this.defaultSchema)
+    const groupColumns = columns.filter((row) => row.tableName === 'group')
+    expect(groupColumns.length).toBe(2)
+  }
+
   /**
    * Tests related to the table view
    * fetching PK, selecting data, etc.

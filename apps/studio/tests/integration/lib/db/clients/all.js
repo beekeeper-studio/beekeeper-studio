@@ -5,12 +5,16 @@ export function runCommonTests(getUtil) {
     await getUtil().listTableTests()
   })
 
+  test.only("column tests", async() => {
+    await getUtil().tableColumnsTests()
+  })
+
   test("table view tests", async () => {
     await getUtil().tableViewTests()
   })
 
   test("stream tests", async () => {
-    await getUtil().streamTests
+    await getUtil().streamTests()
   })
 
   test("query tests", async () => {
