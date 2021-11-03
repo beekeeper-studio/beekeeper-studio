@@ -300,7 +300,7 @@ export async function listTableColumns(conn, database, table) {
   const everything = tables.map((table) => {
     return {
       tableName: table.name,
-      sql: `PRAGMA table_info(${table.name})`,
+      sql: `PRAGMA table_info('${table.name}')`,
       results: null
     }
   })
