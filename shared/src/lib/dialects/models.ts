@@ -41,7 +41,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (!d) return 'mysql'
   if (d === 'sqlserver') return 'tsql'
   if (d === 'sqlite') return 'mysql'
-  return d
+  return 'mysql' // we want this as the default
 }
 
 

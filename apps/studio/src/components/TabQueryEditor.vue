@@ -109,7 +109,7 @@
   import CodeMirror from 'codemirror'
   import 'codemirror/addon/comment/comment'
   import Split from 'split.js'
-  import { mapState } from 'vuex'
+  import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
   import pluralize from 'pluralize'
 
@@ -155,7 +155,8 @@
       }
     },
     computed: {
-      dialect() {
+      ...mapGetters('dialect'),
+      identifyDialect() {
         // dialect for sql-query-identifier
         const mappings = {
           'sqlserver': 'mssql',
@@ -433,7 +434,7 @@
         this.selectedResult = 0
         let identification = []
         try {
-          identification = identify(rawQuery, { strict: false, dialect: this.dialect })
+          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect })
         } catch (ex) {
           log.error("Unable to identify query", ex)
         }
