@@ -2,7 +2,7 @@
   <div v-if="error" class="error-alert alert text-danger">
     <i class="material-icons">error</i>
     <ul class="error-list">
-      <li class="error-item" v-for="(e, idx) in errors" :key="idx">
+      <li class="error-item" v-on:click="click(e)" v-for="(e, idx) in errors" :key="idx">
         {{e.message || e.toString()}}
       </li>
     </ul>
@@ -14,6 +14,7 @@
 <script lang="ts">
 import _ from 'lodash'
 import Vue from 'vue'
+import { clipboard } from 'electron'
 export default Vue.extend({
   props: ['error'],
   computed: {
@@ -22,6 +23,11 @@ export default Vue.extend({
       return result.map((e) => {
         return e.message ? e : { message: e.toString()}
       })
+    }
+  },
+  methods: {
+    click(e) {
+      clipboard.writeText(e.message || e.toString())
     }
   }
 })
@@ -46,6 +52,9 @@ export default Vue.extend({
       font-weight: 600;
       margin-top: $gutter-h / 2;
       padding-left: $gutter-w * 1.8;
+    }
+    &:hover{
+      cursor: pointer;
     }
   }
 </style>
