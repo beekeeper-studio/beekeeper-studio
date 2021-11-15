@@ -2,7 +2,12 @@
   <div v-if="error" class="error-alert alert text-danger">
     <i class="material-icons">error</i>
     <ul class="error-list">
-      <li class="error-item" v-on:click="click(e)" v-for="(e, idx) in errors" :key="idx">
+      <li
+        class="error-item"
+        v-on:click="click(e)"
+        v-for="(e, idx) in errors" :key="idx"
+        v-b-tooltip.hover title="Click to copy"
+      >
         {{e.message || e.toString()}}
       </li>
     </ul>
