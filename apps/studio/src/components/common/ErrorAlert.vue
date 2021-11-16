@@ -19,7 +19,6 @@
 <script lang="ts">
 import _ from 'lodash'
 import Vue from 'vue'
-import { clipboard } from 'electron'
 export default Vue.extend({
   props: ['error'],
   computed: {
@@ -32,7 +31,7 @@ export default Vue.extend({
   },
   methods: {
     click(e) {
-      clipboard.writeText(e.message || e.toString())
+      this.$native.clipboard.writeText(e.message || e.toString())
     }
   }
 })
