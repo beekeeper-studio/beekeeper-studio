@@ -190,12 +190,33 @@
   justify-content: flex-end;
   border: 0 !important;
   padding: 0 $gutter-h $gutter-w;
-  margin-left: -0.25rem;
+  padding-left: $gutter-w * 1.5;
+  padding-right: $gutter-w;
   margin-right: -0.25rem;
+  a {
+   line-height: 26px;
+   margin-left: 0.25rem;
+   margin-right: 0.25rem;
+
+   &:hover {
+     text-decoration: underline;
+   }
+   &.small {
+     font-size: 0.8rem;
+   }
+  }
   .btn {
     margin-left: 0.25rem;
     margin-right: 0.25rem;
   }
+
+  .left {
+    a, .btn {
+        margin-left: 0;
+        margin-right: 0.5rem;
+    }
+  }
+
 }
 .vue-dialog .vue-dialog-buttons-none {
   width: 100%;

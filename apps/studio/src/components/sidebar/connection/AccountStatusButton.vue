@@ -15,6 +15,7 @@
         <div class="dialog-c-title">Connected Accounts</div>
         <div class="list-group">
           <div class="list-body">
+
             <div class="list-item account" v-for="blob in credentials" :key="blob.id">
               <a class="list-item-btn">
                 <div class="content expand">
@@ -32,6 +33,11 @@
                     <!-- <span>Actions</span> -->
                     <i class="material-icons">more_horiz</i>
                     <x-menu style="--target-align: right;">
+                      <x-menuitem>
+                        <x-label>
+                          <a href="https://app.beekeeperstudio.io">Account Dashboard</a>
+                        </x-label>
+                      </x-menuitem>
                       <x-menuitem @click.prevent="refresh">
                         <x-label>Refresh</x-label>
                       </x-menuitem>
@@ -84,11 +90,18 @@ export default Vue.extend({
     },
   },
   methods: {
+    goToAccountDashboard() {
+      window.location.href = "https://app.beekeeperstudio.io"
+    },
     workspaceText(blob: CredentialBlob) {
       return pluralize("Workspace", blob.workspaces.length, true)
     },
     showAccountsModal() {
-      this.$modal.show('account-status-modal')
+      if (this.credentials.length) {
+        this.$modal.show('account-status-modal')
+      } else {
+        this.$root.$emit(AppEvent.promptLogin)
+      }
     },
     reauth(c: CredentialBlob) {
       this.$modal.hide('account-status-modal')

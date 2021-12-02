@@ -17,6 +17,7 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
   mutations: mutationsFor<IQueryFolder>({}),
   actions: {
     async load() {},
+    async poll() {},
     async save(_context, item) { return item },
     async remove() {},
     async clone(_c, item) { return item},

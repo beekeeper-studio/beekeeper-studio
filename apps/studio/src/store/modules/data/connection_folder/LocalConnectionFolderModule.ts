@@ -17,6 +17,7 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   mutations: mutationsFor<IConnectionFolder>({}),
   actions: {
     async load() { },
+    async poll() { },
     async save(_context, item) { return item },
     async remove() { },
     async clone(_c, item) { return item },

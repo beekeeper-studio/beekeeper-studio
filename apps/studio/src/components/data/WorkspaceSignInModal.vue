@@ -2,7 +2,14 @@
   <modal name="workspace" class="vue-dialog beekeeper-modal" @opened="focus" >
     <form @submit.prevent="login">
       <div class="dialog-content">
-        <div class="dialog-c-title">Workspace Sign-in</div>
+        <div v-if="lockEmail" class="dialoc-c-title">Reauthenticate {{email ? email : ''}}</div>
+        <div v-else class="dialog-c-title">Team Workspace Sign-in</div>
+        <div v-if="!error && !lockEmail" class="alert alert-info">
+          <i class="material-icons-outlined">info</i>
+          <div class="alert-body">
+            <p>Workspaces let you share connections and queries with your team members. <a href="https://beekeeperstudio.io/pricing">Learn More</a></p>
+          </div>
+        </div>
         <error-alert :error="error" />
         <div class="form-group">
           <label for="email">Email Address</label>
@@ -13,9 +20,15 @@
           <input type="password" ref="password" v-model="password" placeholder="Shh...">
         </div>
       </div>
-      <div class="vue-dialog-buttons">
-        <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('workspace')">Cancel</button>
-        <button class="btn btn-primary" :disabled="loading" type="submit">{{loading ? '...' : 'Submit'}}</button>
+      <div class="vue-dialog-buttons flex-between">
+        <span class="left">
+          <a href="https://app.beekeeperstudio.io/users/sign_up" class="small text-muted">Create Account</a>
+          <a href="https://app.beekeeperstudio.io/users/sign_in" class="small text-muted">Forgot Password</a>
+        </span>
+        <span class="right">
+          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('workspace')">Cancel</button>
+          <button class="btn btn-primary" :disabled="loading" type="submit">{{loading ? '...' : 'Submit'}}</button>
+        </span>
       </div>
     </form>
   </modal>
