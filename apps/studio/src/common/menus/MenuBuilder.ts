@@ -73,9 +73,10 @@ export default class extends DefaultMenu {
       {
         label: "Help",
         submenu: [
-          this.menuItems.about,
+          this.menuItems.opendocs,
           this.menuItems.addBeekeeper,
           this.menuItems.devtools,
+          this.menuItems.about,
         ]
       }
     ]

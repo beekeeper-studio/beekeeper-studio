@@ -9,6 +9,7 @@ import rawLog from 'electron-log'
 import { buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery } from './utils';
 import { SqliteCursor } from './sqlite/SqliteCursor';
 import { SqliteChangeBuilder } from '@shared/lib/sql/change_builder/SqliteChangeBuilder';
+import { SqliteData } from '@shared/lib/dialects/sqlite';
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
@@ -17,6 +18,8 @@ const knex = knexlib({ client: 'sqlite3'})
 const sqliteErrors = {
   CANCELED: 'SQLITE_INTERRUPT',
 }; 
+
+const PD = SqliteData
 
 
 export default async function (server, database) {
@@ -284,7 +287,7 @@ function dataToColumns(data, tableName) {
 }
 
 async function listTableColumnsSimple(conn, database, table) {
-  const sql = `PRAGMA table_info('${table}')`;
+  const sql = `PRAGMA table_info(${PD.escapeString(table, true)})`;
 
   const { data } = await driverExecuteQuery(conn, { query: sql });
   return dataToColumns(data, table)
@@ -297,10 +300,11 @@ export async function listTableColumns(conn, database, table) {
   const allTables = (await listTables(conn)) || []
   const allViews = (await listViews(conn)) || []
   const tables = allTables.concat(allViews)
+  
   const everything = tables.map((table) => {
     return {
       tableName: table.name,
-      sql: `PRAGMA table_info(${table.name})`,
+      sql: `PRAGMA table_info(${PD.escapeString(table.name, true)})`,
       results: null
     }
   })
