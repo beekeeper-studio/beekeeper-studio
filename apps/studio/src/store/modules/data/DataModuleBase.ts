@@ -8,6 +8,7 @@ import { ClientError } from '@/store/modules/data/StoreHelpers'
 import { ActionContext, ActionTree, Module, MutationTree } from "vuex";
 import { State as RootState } from '../../index'
 import { ApplicationEntity } from "@/common/appdb/models/application_entity";
+import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 
 export interface QueryModuleState {
   queryFolders: IQueryFolder[]
@@ -65,7 +66,7 @@ const buildBasicMutations = <T extends HasId>() => ({
   pollError(state, error: Error | null) {
     state.pollError = error
   },
-  upsert(state, items: T[] | T) {
+  upsert(state, items: T[] | T, rootState) {
     const stateItems = [...state.items]
     const list = _.isArray(items) ? items : [items]
     list.forEach((item) => {
@@ -107,7 +108,9 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
     async load(context) {
       await safely(context, async () => {
         const items = await cls.find()
-        context.commit('upsert', items)
+        if (context.rootState.workspaceId === LocalWorkspace.id) {
+          context.commit('upsert', items)
+        }
       })
     },
 
@@ -154,16 +157,27 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
   return {
     async load(context) {
       await safelyDo(context, async (cli) => {
-        const queries = await cli[scope].list()
-        context.commit('replace', queries)
+        const items: any[] = await cli[scope].list()
+        // this is to account for when the store module changes
+        const rightItems = items.filter((i) => i.workspaceId === context.rootState.workspaceId)
+        if (rightItems.length === items.length) {
+          context.commit('replace', rightItems)
+        }
       })
     },
     async poll(context) {
       // TODO (matthew): This should only fetch items since last update.
       await havingCli(context, async (cli) => {
         try {
-          const items = await cli[scope].list()
-          context.commit('replace', items)
+          const is: T[] = context.state.items
+          const latest = _.sortBy(is, 'updatedAt').reverse()[0]
+          const latest_date = parseInt((Date.parse(latest['updatedAt'] || 0) / 1000).toFixed(0))
+          const items = await cli[scope].list(latest_date)
+          // this is to account for when the store module changes
+          const rightItems = items.filter((item) => item.workspaceId === context.rootState.workspaceId)
+          if (rightItems.length === items.length) {
+            context.commit('replace', rightItems)
+          }
           context.commit('pollError', null)
         } catch (ex) {
           context.commit('pollError', ex)

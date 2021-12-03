@@ -12,8 +12,11 @@ export abstract class GenericController<T extends HasId> {
   name: string
   plural: string
 
-  async list(): Promise<T[]> {
-    const response = await this.axios.get(url(this.path))
+  async list(updated_since?: Date): Promise<T[]> {
+    const params = updated_since ? {
+      updated_since
+    } : {}
+    const response = await this.axios.get(url(this.path), { params })
     return res(response, this.plural)
   }
 

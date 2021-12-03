@@ -15,5 +15,9 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     pollError: null
   },
   mutations: mutationsFor<IConnectionFolder>({}),
-  actions: actionsFor<IConnectionFolder>('connectionFolders', {})
+  actions: actionsFor<IConnectionFolder>('connectionFolders', {
+    async poll() {
+      
+    }
+  })
 }
