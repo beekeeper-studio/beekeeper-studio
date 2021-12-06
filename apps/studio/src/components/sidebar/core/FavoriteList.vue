@@ -111,6 +111,9 @@ import { AppEvent } from '@/common/AppEvent'
       }
     },
     methods: {
+      createQuery() {
+        this.$root.$emit(AppEvent.newTab)
+      },
       importFromLocal() {
         this.$root.$emit(AppEvent.promptQueryImport)
       },

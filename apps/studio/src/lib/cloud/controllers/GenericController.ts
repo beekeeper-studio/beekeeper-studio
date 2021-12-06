@@ -2,6 +2,14 @@ import { HasId } from "@/common/interfaces/IGeneric";
 import { CloudError, res, url } from "@/lib/cloud/ClientHelpers";
 import { AxiosInstance } from "axios";
 
+interface Changes {
+  changed: number
+  deleted: number
+}
+
+// function unixtime(date:Date): number {
+//   return (date.getTime() / 1000)
+// }
 
 export abstract class GenericController<T extends HasId> {
   constructor(protected axios: AxiosInstance) {
@@ -12,11 +20,17 @@ export abstract class GenericController<T extends HasId> {
   name: string
   plural: string
 
-  async list(updated_since?: Date): Promise<T[]> {
-    const params = updated_since ? {
-      updated_since
+  async list(updatedSince?: number): Promise<T[]> {
+    const params = updatedSince ? {
+      updated_since: updatedSince
     } : {}
     const response = await this.axios.get(url(this.path), { params })
+    return res(response, this.plural)
+  }
+
+  async changed(updatedSince: number): Promise<Changes> {
+    const params = { updated_since: updatedSince }
+    const response = await this.axios.get(url(this.path, 'changed'), { params })
     return res(response, this.plural)
   }
 

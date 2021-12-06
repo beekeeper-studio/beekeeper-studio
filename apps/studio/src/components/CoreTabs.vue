@@ -196,7 +196,8 @@
           title: "Query #" + this.newTabId,
           connection: this.connection,
           query: query,
-          unsavedChanges: query.text?.length ? true : false
+          unsavedChanges: query.text?.length ? true : false,
+          alert: false
         }
 
         this.addTab(result)
@@ -336,7 +337,8 @@
             title: item.title,
             connection: this.connection,
             query: item,
-            unsavedChanges: false
+            unsavedChanges: false,
+            alert: false
           }
           this.addTab(result)
         }        

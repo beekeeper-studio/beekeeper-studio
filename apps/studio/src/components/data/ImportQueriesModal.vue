@@ -1,8 +1,8 @@
 <template>
-  <modal name="import-queries" class="vue-dialog beekeeper-modal">
+  <modal name="import-queries" class="vue-dialog beekeeper-modal" @closed="clear">
     <div class="dialog-content">
       <div class="dialog-c-title">Import Queries</div>
-      <div class="dialog-c-subtitle">Importing a query will copy it from your local workspace into your online workspace. Imported queries are private to you by default.</div>
+      <div class="dialog-c-subtitle">Importing a query will <strong>copy</strong> it from your local workspace into the personal folder of your team workspace.</div>
       <error-alert :error="error" v-if="error" />
       <div>
         <div class="list-group">
@@ -51,6 +51,11 @@ export default Vue.extend({
     }
   },
   methods: {
+    clear() {
+      this.queries = []
+      this.loading = false
+      this.error = null
+    },
     async openModal() {
       this.queries = (await FavoriteQuery.find()).map((q) => {
         return {

@@ -66,7 +66,7 @@ const buildBasicMutations = <T extends HasId>() => ({
   pollError(state, error: Error | null) {
     state.pollError = error
   },
-  upsert(state, items: T[] | T, rootState) {
+  upsert(state, items: T[] | T) {
     const stateItems = [...state.items]
     const list = _.isArray(items) ? items : [items]
     list.forEach((item) => {
@@ -165,14 +165,15 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
         }
       })
     },
+    // TODO THIS ISNT WORKING
     async poll(context) {
       // TODO (matthew): This should only fetch items since last update.
       await havingCli(context, async (cli) => {
         try {
-          const is: T[] = context.state.items
-          const latest = _.sortBy(is, 'updatedAt').reverse()[0]
-          const latest_date = parseInt((Date.parse(latest['updatedAt'] || 0) / 1000).toFixed(0))
-          const items = await cli[scope].list(latest_date)
+          // we just re-fetch everything. It's pretty heavy handed
+          // we don't call load because that updates `loading`.
+
+          const items = await cli[scope].list()
           // this is to account for when the store module changes
           const rightItems = items.filter((item) => item.workspaceId === context.rootState.workspaceId)
           if (rightItems.length === items.length) {

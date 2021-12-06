@@ -6,6 +6,13 @@
       @contextmenu.prevent.stop="showContextMenu"
     >
       <merge-manager v-if="query.id" :originalText="originalText" :query="query" :unsavedText="unsavedText" @change="onChange" @mergeAccepted="originalText = query.text" />
+      <div v-if="remoteDeleted" class="alert alert-danger">
+        <i class="material-icons">error_outline</i>
+        <div class="alert-body">
+          This query was deleted by someone else. It is no longer editable.
+        </div>
+        <a @click.prevent="close" class="btn btn-flat">Close Tab</a>
+      </div>
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
       <div class="toolbar text-right">
@@ -33,6 +40,8 @@
           </x-buttons>
         </div>
       </div>
+
+
     </div>
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar @cancel="cancelQuery" :message="runningText" v-if="running"></progress-bar>
@@ -136,6 +145,7 @@
   import ErrorAlert from './common/ErrorAlert.vue'
   import {FormatterDialect} from "@shared/lib/dialects/models";
   import MergeManager from '@/components/editor/MergeManager.vue'
+import { AppEvent } from '@/common/AppEvent'
   
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -171,7 +181,12 @@
       }
     },
     computed: {
-      ...mapGetters('dialect'),
+      ...mapGetters(['dialect']),
+      ...mapState(['usedConfig', 'connection', 'database', 'tables']),
+      ...mapState('data/queries', {'savedQueries': 'items'}),
+      remoteDeleted() {
+        return this.tab.query.id && !this.savedQueries.includes(this.tab.query)
+      },
       identifyDialect() {
         // dialect for sql-query-identifier
         const mappings = {
@@ -289,9 +304,18 @@
       unsavedChanges() {
         return _.trim(this.unsavedText) !== _.trim(this.originalText)
       },
-      ...mapState(['usedConfig', 'connection', 'database', 'tables'])
     },
     watch: {
+      remoteDeleted() {
+        // eslint-disable-next-line no-debugger
+        if (this.remoteDeleted) {
+          this.editor.setOption('readOnly', 'nocursor')
+          this.tab.unsavedChanges = false
+          this.tab.alert = true
+        } else {
+          this.editor.setOption('readOnly', false)
+        }
+      },
       unsavedChanges() {
         this.tab.unsavedChanges = this.unsavedChanges
       },
@@ -356,6 +380,9 @@
       },
     },
     methods: {
+      close() {
+        this.$root.$emit(AppEvent.closeTab)
+      },
       showContextMenu(event) {
         this.$bks.openMenu({
           item: this.tab,
@@ -406,6 +433,7 @@
         }
       },
       async saveQuery() {
+        if (this.remoteDeleted) return
         if (!this.hasTitle || !this.hasText) {
           this.saveError = new Error("You need both a title, and some query text.")
           return
@@ -453,6 +481,7 @@
         }
       },
       async submitQuery(rawQuery, skipModal) {
+        if (this.remoteDeleted) return;
         this.running = true
         this.error = null
         this.queryForExecution = rawQuery

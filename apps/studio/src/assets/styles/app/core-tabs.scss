@@ -92,16 +92,7 @@
           .close {
             display: inline-block;
           }
-          &.unsaved {
-            .close {
-              display: none;
-            }
-            &:hover {
-              .unsaved-icon {
-                display: none;
-              }
-            }
-          }
+
         }
       }
       &:hover {
