@@ -133,23 +133,25 @@ export abstract class Export {
     this.countTotal = results.totalRows
     await this.cursor?.start()
     const header = await this.getHeader(results.columns)
+    log.debug("got header", header)
 
     if (header) {
       await this.fileHandle.write(header)
       await this.fileHandle.write(this.rowSeparator)
+      log.debug("written header")
     }
   }
 
   async exportData(): Promise<void> {
       // keep going until we don't get any more results.
+      log.debug("running export")
       let rows: any[][]
       do {
-        log.info('exportData')
         if (!this.cursor) {
           throw new Error("Something went wrong")
         }
         rows = await this.cursor?.read()
-        // log.info(`read ${rows.length} rows`)
+        log.debug(`read ${rows.length} rows`)
         for (let rI = 0; rI < rows.length; rI++) {
           const row = rows[rI];
           const mutated = Mutators.mutateRow(row, this.columns?.map((c) => c.dataType), this.preserveComplex)

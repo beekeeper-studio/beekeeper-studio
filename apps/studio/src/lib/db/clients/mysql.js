@@ -295,7 +295,7 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
   const qs = buildSelectTopQuery(table, null, null, orderBy, filters)
   const columns = await listTableColumns(conn, db, table)
   const rowCount = await getTableLength(conn, table, filters)
-
+  // TODO: DEBUG HERE
   const { query, params } = qs
 
   return {
