@@ -7,7 +7,9 @@
       <div>
         <div class="list-group">
           <div class="list-body">
-  
+            <div v-if="!queries || !queries.length" class="list-item">
+              Import not available: You don't have any queries in your local workspace.
+            </div>
             <div 
               class="list-item" 
               v-for="query in queries"
@@ -21,7 +23,7 @@
       </div>
     </div>
     <div class="vue-dialog-buttons">
-      <button :disabled="loading" class="btn btn-primary" @click.prevent="doImport">{{loading ? '...' : 'Import'}}</button>
+      <button v-if="queries && queries.length" :disabled="loading" class="btn btn-primary" @click.prevent="doImport">{{loading ? '...' : 'Import'}}</button>
     </div>
   </modal>
 </template>
