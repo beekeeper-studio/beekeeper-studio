@@ -92,7 +92,7 @@
                 :table="table"
                 :connection="connection"
                 :forceExpand="allExpanded"
-                :forceCollapse="allCollapsed"
+                :forceCollapse="listItemsCollapsed"
                 @contextmenu.prevent.stop="$bks.openMenu({ item: table, event: $event, options: tableMenuOptions})"
               ></table-list-item>
               <routine-list-item
@@ -103,7 +103,7 @@
                 :routine="routine"
                 :connection="connection"
                 :forceExpand="allExpanded"
-                :forceCollapse="allCollapsed"
+                :forceCollapse="listItemsCollapsed"
                 @contextmenu.prevent.stop="$bks.openMenu({item: routine, event: $event, options: routineMenuOptions})"
               >
               </routine-list-item>
@@ -142,6 +142,7 @@
         tableLoadError: null,
         allExpanded: null,
         allCollapsed: null,
+        listItemsCollapsed: null,
         activeItem: 'tables',
         split: null,
         sizes: [25,75],
@@ -235,10 +236,15 @@
         this.filterQuery = null
       },
       expandAll() {
+        this.listItemsCollapsed = null;
         this.allExpanded = Date.now()
       },
       collapseAll() {
-        this.allCollapsed = Date.now()
+        if (this.listItemsCollapsed) {
+          this.allCollapsed = Date.now()
+        } else {
+          this.listItemsCollapsed = Date.now()
+        }
       },
       refreshTables() {
         this.$store.dispatch('updateTables')
