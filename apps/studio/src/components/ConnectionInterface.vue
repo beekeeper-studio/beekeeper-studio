@@ -45,10 +45,12 @@
             </form>
 
           </div>
+          <div class="pitch"><span class="badge">NEW</span> Collaborate with co-workers using <a href="https://beekeeperstudio.io/pricing">team workspaces.</a></div>
           <div v-if="connectionError" class="alert alert-danger">
             {{connectionError}}
           </div>
         </div>
+        
         <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{version}}</a></small>
       </div>
     </div>

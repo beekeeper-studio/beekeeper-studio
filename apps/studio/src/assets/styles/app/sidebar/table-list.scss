@@ -28,6 +28,12 @@
   .list-group {
     min-height: 105px;
     // height: 100%;
+
+    .list-item {
+      &:before {
+        border-left: 0 !important;
+      }
+    }
     .list-item-btn {
       padding: 0;
       padding-right: $gutter-h * 0.5;
