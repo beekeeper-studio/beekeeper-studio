@@ -3,6 +3,9 @@ import PoolConnection from "mysql2/typings/mysql/lib/PoolConnection";
 import Query from "mysql2/typings/mysql/lib/protocol/sequences/Query";
 import { BeeCursor } from "../../models";
 import { waitFor } from "../base/wait";
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('msqlcursor');
 
 interface Conn {
   pool: Pool
@@ -31,10 +34,11 @@ export class MysqlCursor extends BeeCursor {
   }
 
   start(): Promise<void> {
+    log.debug("start")
     const promise = new Promise<void>((resolve, reject) => {
       this.conn.pool.getConnection((err, connection) => {
         if (err) reject(err)
-
+        connection.release
         // @ts-ignore rowsAsArray not in typings yet
         const q = connection.query({ sql: this.query, values: this.params, rowsAsArray: true })
         q.on('result', this.handleRow.bind(this) )
@@ -56,13 +60,13 @@ export class MysqlCursor extends BeeCursor {
   }
 
   private handleEnd(){
-
-    this.bufferReady = true
+    log.debug("handling end")
     this.end = true
-    this.cursor?.connection.release()
+    this.cursor?.connection.destroy()
   }
   
   private handleError(error: Error) {
+    log.debug("handling error")
     this.error = error
     console.error(error)
   }
@@ -79,16 +83,18 @@ export class MysqlCursor extends BeeCursor {
   }
 
   async read(): Promise<any[][]> {
+    await waitFor(() => this.bufferReady || this.end || !!this.error)
     if (this.error) throw this.error
     if (this.end) return this.pop()
-    await waitFor(() => this.bufferReady)
     const results = this.pop()
     this.resume()
     return results
   }
 
   async cancel(): Promise<void> {
-    return this.cursor?.connection.release()
+    log.debug('cursor cancelled')
+    this.cursor?.connection.destroy()
+    
   }
 
 }

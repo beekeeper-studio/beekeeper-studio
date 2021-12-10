@@ -896,6 +896,7 @@ function driverExecuteQuery(conn, queryArgs) {
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});
       if (err) return reject(getRealError(connection, err));
 
+      logger().info(`Running Query Finished`)
       resolve({ data, fields });
     });
   });

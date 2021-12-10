@@ -21,7 +21,7 @@ import { TableFilter, TableOrView } from '../../lib/db/models'
 import ExportNotification from './ExportNotification.vue'
 import ExportModal from './ExportModal.vue'
 import { CsvExporter, JsonExporter, JsonLineExporter, SqlExporter } from '../../lib/export'
-import { ExportProgress } from '../../lib/export/models'
+import { ExportProgress, ExportStatus } from '../../lib/export/models'
 
 interface ExportTriggerOptions {
   table?: TableOrView,
@@ -84,6 +84,7 @@ export default Vue.extend({
         this.addExport(exporter)
         exporter.onProgress(this.notifyProgress.bind(this))
         await exporter.exportToFile()
+        if (exporter.status !== ExportStatus.Completed) return;
         const n = this.$noty.success(`Export of ${options.table.name} complete`, {
           buttons: [
             Noty.button('Show', "btn btn-primary", () => {

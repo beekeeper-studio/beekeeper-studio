@@ -1,11 +1,11 @@
 
 export enum ExportStatus {
-  Idle,
-  Exporting,
-  Paused,
-  Aborted,
-  Completed,
-  Error
+  Idle = 'idle',
+  Exporting = 'exporting',
+  Paused = 'paused',
+  Aborted = 'aborted',
+  Completed = 'completed',
+  Error = 'error'
 }
 
 export interface ExportOptions {
