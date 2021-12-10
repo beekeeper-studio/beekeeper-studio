@@ -1,17 +1,20 @@
 <template>
-  <div v-if="error" class="error-alert alert alert-danger">
-    <i class="material-icons">error_outline</i>
-    <div class="alert-body">
-      <b v-if="title" class="error-title">{{title}}</b>
-      <ul>
-        <li class="error-item" v-for="(e, idx) in errors" :key="idx">
-          <span class="message">
-            {{e.message || e.toString()}}
-          </span>
-        </li>
-      </ul>
+  <div v-if="error" class="error-alert alert text-danger">
+    <i class="material-icons">error</i>
+    <b v-if="title" class="error-title">{{title}}</b>
+    <ul class="error-list">
+      <li
+        class="error-item"
+        v-on:click="click(e)"
+        v-for="(e, idx) in errors" :key="idx"
+        v-b-tooltip.hover title="Click to copy"
+      >
+        {{e.message || e.toString()}}
+      </li>
+    </ul>
+    <div class="help-links" v-if="error.helpLink">
+      <a :href="error.helpLink">Learn more about this error</a>
     </div>
-    <a :href="error.helpLink">Learn more</a>
   </div>
 </template>
 <script lang="ts">
@@ -29,6 +32,11 @@ export default Vue.extend({
       return result.map((e) => {
         return e.message ? e : { message: e.toString()}
       })
+    }
+  },
+  methods: {
+    click(e) {
+      this.$native.clipboard.writeText(e.message || e.toString())
     }
   }
 })
@@ -64,6 +72,9 @@ export default Vue.extend({
       font-weight: 600;
       margin-top: $gutter-h / 2;
       padding-left: $gutter-w;
+    }
+    &:hover{
+      cursor: pointer;
     }
   }
 </style>

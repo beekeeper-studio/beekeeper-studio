@@ -294,7 +294,7 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
   const qs = buildSelectTopQuery(table, null, null, orderBy, filters)
   const columns = await listTableColumns(conn, db, table)
   const rowCount = await getTableLength(conn, table, filters)
-
+  // TODO: DEBUG HERE
   const { query, params } = qs
 
   return {
@@ -353,7 +353,7 @@ export async function listTableIndexes(conn, database, table) {
     return {
       id: idx,
       name: row.Key_name,
-      unique: row.Non_unique === 0,
+      unique: row.Non_unique === '0',
       primary: row.Key_name === 'PRIMARY',
       columns,
       table,
@@ -895,6 +895,7 @@ function driverExecuteQuery(conn, queryArgs) {
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});
       if (err) return reject(getRealError(connection, err));
 
+      logger().info(`Running Query Finished`)
       resolve({ data, fields });
     });
   });

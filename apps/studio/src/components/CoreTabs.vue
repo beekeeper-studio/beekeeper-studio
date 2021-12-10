@@ -62,6 +62,7 @@
   import { mapGetters, mapState } from 'vuex'
   import Draggable from 'vuedraggable'
   import ShortcutHints from './editor/ShortcutHints.vue'
+import { FormatterDialect } from '@shared/lib/dialects/models';
 
   export default {
     props: [ 'connection' ],
@@ -111,7 +112,7 @@
     },
     computed: {
       ...mapState(["activeTab"]),
-      ...mapGetters({ 'menuStyle': 'settings/menuStyle' }),
+      ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialect': 'dialect'}),
       lastTab() {
         return this.tabItems[this.tabItems.length - 1];
       },
@@ -211,12 +212,12 @@
           return
         }
         const result = await method(table.name, table.schema)
-        const stringResult = format(_.isArray(result) ? result[0] : result)
+        const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
         this.createQuery(stringResult)
       },
       async loadRoutineCreate(routine) {
         const result = await this.connection.getRoutineCreateScript(routine.name, routine.schema)
-        const stringResult = format(_.isArray(result) ? result[0] : result)
+        const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
         this.createQuery(stringResult)
       },
       openTableBuilder() {

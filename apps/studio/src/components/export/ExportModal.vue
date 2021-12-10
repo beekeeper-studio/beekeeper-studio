@@ -248,14 +248,17 @@ export default {
       if (!this.filePath) {
         return;
       }
-      this.$emit('export', { 
+      const component = this;
+
+      const payload = { 
         table: this.table,
         filters: this.filters,
         filePath: this.filePath,
         options: this.options,
         outputOptions: this.outputOptions,
         exporter: this.selectedExportFormat.key
-      })
+      }
+      this.$emit('export', payload)
       this.$modal.hide('export-modal')
     },
     closeModal () {
