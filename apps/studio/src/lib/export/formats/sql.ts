@@ -57,7 +57,7 @@ export class SqlExporter extends Export {
   }
 
   getFooter() {
-    return this.rowSeparator
+    return ""
   }
 
   formatRow(rowArray: any): string {
