@@ -580,9 +580,9 @@
         left: 9px;
         border-left: 1px solid rgba($theme-base,0.08);
       }
-      
+
       .sub-items {
-        margin-left: 10px;
+        margin-left: $gutter-h * 2;
       }
       .list-item-btn {
         margin-left: $gutter-w;
