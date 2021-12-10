@@ -44,18 +44,21 @@ export class SqlExporter extends Export {
   }
 
   async getHeader(): Promise<string> {
+    console.log("getting header")
     if (this.outputOptions.createTable) {
       const schema = this.table.schema && this.outputOptions.schema ? this.table.schema : ''
       const result = await this.connection.getTableCreateScript(this.table.name, schema)
       if (result) {
-        return result
+        console.log("returning header ", result)
+        const returnValue: string = _.isArray(result) ? result[0] : result
+        return returnValue.endsWith(';') ? returnValue : `#{returnValue};`
       }
     }
     return ""
   }
 
   getFooter() {
-    return this.rowSeparator
+    return ""
   }
 
   formatRow(rowArray: any): string {

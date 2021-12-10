@@ -42,7 +42,7 @@ export class CsvExporter extends Export {
   async getHeader(columns: TableColumn[]): Promise<string> {
     const fields = columns.map(c => c.columnName)
     if (fields.length > 0 && this.outputOptions.header) {
-      return Papa.unparse([fields], this.headerConfig)
+      return Papa.unparse([fields], this.headerConfig) + this.rowSeparator
     }
     return ""
   }

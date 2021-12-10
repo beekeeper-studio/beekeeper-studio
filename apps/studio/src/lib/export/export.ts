@@ -129,27 +129,24 @@ export abstract class Export {
     this.columns = results.columns
     this.cursor = results.cursor
 
-    log.debug('initializing export', results)
     this.countTotal = results.totalRows
     await this.cursor?.start()
     const header = await this.getHeader(results.columns)
 
     if (header) {
       await this.fileHandle.write(header)
-      await this.fileHandle.write(this.rowSeparator)
     }
   }
 
   async exportData(): Promise<void> {
       // keep going until we don't get any more results.
+      log.debug("running export")
       let rows: any[][]
       do {
-        log.info('exportData')
         if (!this.cursor) {
           throw new Error("Something went wrong")
         }
         rows = await this.cursor?.read()
-        // log.info(`read ${rows.length} rows`)
         for (let rI = 0; rI < rows.length; rI++) {
           const row = rows[rI];
           const mutated = Mutators.mutateRow(row, this.columns?.map((c) => c.dataType), this.preserveComplex)
@@ -170,37 +167,39 @@ export abstract class Export {
   }
 
   async finalizeExport(): Promise<void> {
+    // we don't do final stuff if we aborted.
+    if (this.status === ExportStatus.Aborted) {
+      return;
+    }
     const footer = await this.getFooter()
     await this.fileHandle?.write(footer)
-    await this.fileHandle?.close()
-    this.fileHandle = undefined
     this.status = ExportStatus.Completed
   }
 
   async exportToFile(): Promise<void> {
     try {
+      log.debug("starting export")
       await this.initExport()
       await this.exportData()
       await this.finalizeExport()
 
+      await this.fileHandle?.close()
       if (this.status === ExportStatus.Aborted) {
         if (this.options.deleteOnAbort) {
           await promises.unlink(this.filePath)
         }
       }
-
-
     } catch (error) {
       this.status = ExportStatus.Error
       this.error = error
       log.error(error)
       await this.fileHandle?.close()
-
-
       if (this.options.deleteOnAbort) {
         await promises.unlink(this.filePath)
       }
       throw error
+    } finally {
+      this.fileHandle = undefined
     }
   }
 
