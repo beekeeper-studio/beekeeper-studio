@@ -354,7 +354,7 @@ export async function listTableIndexes(conn, database, table) {
     return {
       id: idx,
       name: row.Key_name,
-      unique: row.Non_unique === 0,
+      unique: row.Non_unique === '0',
       primary: row.Key_name === 'PRIMARY',
       columns,
       table,
