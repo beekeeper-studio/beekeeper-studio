@@ -135,7 +135,6 @@ export abstract class Export {
 
     if (header) {
       await this.fileHandle.write(header)
-      await this.fileHandle.write(this.rowSeparator)
     }
   }
 

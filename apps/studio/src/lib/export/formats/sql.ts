@@ -50,7 +50,8 @@ export class SqlExporter extends Export {
       const result = await this.connection.getTableCreateScript(this.table.name, schema)
       if (result) {
         console.log("returning header ", result)
-        return _.isArray(result) ? result[0] : result
+        const returnValue: string = _.isArray(result) ? result[0] : result
+        return returnValue.endsWith(';') ? returnValue : `#{returnValue};`
       }
     }
     return ""
