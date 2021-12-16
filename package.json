@@ -17,6 +17,7 @@
     "sqltools:dev": "yarn workspace sqltools serve",
     "electron:build": "yarn bks:build",
     "electron:serve": "yarn bks:dev",
+    "docs:serve": "yarn workspace beekeeper-studio docs:serve",
     "web:serve": "yarn sqltools:dev"
   },
   "devDependencies": {

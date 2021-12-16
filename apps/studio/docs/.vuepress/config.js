@@ -15,6 +15,7 @@ module.exports = {
       ['/', 'Overview'],
       '/installation/',
       '/guide/',
+      '/team_workspaces/',
       '/troubleshooting/'
     ]
   }
