@@ -83,6 +83,9 @@
   left: initial!important;
   min-width: 380px;
   max-width: 600px;
+  height: auto!important;
+  min-height: 120px;
+  max-height: 80vh;
   @extend .card-shadow;
 }
 .v--modal.v--modal-fullscreen {
@@ -119,6 +122,8 @@
 //   transform: translateY(-20px);
 // }
 .vue-dialog {
+  display: flex;
+  flex-direction: column;
   .close-btn {
     position: absolute;
     top: $gutter-w;
@@ -126,6 +131,21 @@
     opacity: 0.5;
     &:hover {
       opacity: 1;
+    }
+  }
+  form {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+  .list-body {
+    height: initial;
+    margin: $gutter-h 0;
+    max-height: 600px;
+    .list-item {
+      display: flex;
+      align-items: center;
+      line-height: 1.6;
     }
   }
 }
@@ -154,7 +174,9 @@
 }
 
 .vue-dialog .dialog-c-subtitle {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: $text;
 }
 // .vue-dialog .dialog-c-text {
 // }
@@ -168,12 +190,33 @@
   justify-content: flex-end;
   border: 0 !important;
   padding: 0 $gutter-h $gutter-w;
-  margin-left: -0.25rem;
+  padding-left: $gutter-w * 1.5;
+  padding-right: $gutter-w;
   margin-right: -0.25rem;
+  a {
+   line-height: 26px;
+   margin-left: 0.25rem;
+   margin-right: 0.25rem;
+
+   &:hover {
+     text-decoration: underline;
+   }
+   &.small {
+     font-size: 0.8rem;
+   }
+  }
   .btn {
     margin-left: 0.25rem;
     margin-right: 0.25rem;
   }
+
+  .left {
+    a, .btn {
+        margin-left: 0;
+        margin-right: 0.5rem;
+    }
+  }
+
 }
 .vue-dialog .vue-dialog-buttons-none {
   width: 100%;

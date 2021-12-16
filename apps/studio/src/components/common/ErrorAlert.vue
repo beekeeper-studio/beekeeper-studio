@@ -1,6 +1,7 @@
 <template>
   <div v-if="error" class="error-alert alert text-danger">
     <i class="material-icons">error</i>
+    <b v-if="title" class="error-title">{{title}}</b>
     <ul class="error-list">
       <li
         class="error-item"
@@ -17,11 +18,15 @@
   </div>
 </template>
 <script lang="ts">
+import platformInfo from '@/common/platform_info'
 import _ from 'lodash'
 import Vue from 'vue'
 export default Vue.extend({
-  props: ['error'],
+  props: ['error', 'title'],
   computed: {
+    dev() {
+      return platformInfo.isDevelopment
+    },
     errors() {
       const result = _.isArray(this.error) ? this.error : [this.error]
       return result.map((e) => {
@@ -42,20 +47,31 @@ export default Vue.extend({
 
   .alert.error-alert {
     display: flex;
-    flex-direction: row;
-    > i {
-      padding-top: 4px;
+    min-width: 280px;
+    .alert-body {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      flex-direction: column;
+      flex-grow: 1;
+      line-height: 18px;
+      padding-top: 6px;
+      ul {
+        padding-left: 0;
+        margin: 0;
+      }
+      li {
+        list-style-type: none;
+      }
+      i {
+        line-height: 28px;
+      }
     }
-    ul {
-      padding-left: 0;
-    }
-    li {
-      list-style-type: none;
-    }
+
     a {
       font-weight: 600;
       margin-top: $gutter-h / 2;
-      padding-left: $gutter-w * 1.8;
+      padding-left: $gutter-w;
     }
     &:hover{
       cursor: pointer;

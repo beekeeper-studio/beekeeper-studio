@@ -119,12 +119,12 @@ hr {
   }
 }
 .btn-primary {
-  background: $theme-primary;
-  color: rgba(black, 0.87);
+  background: $theme-base;
+  color: $theme-bg;
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
-    background: lighten($theme-primary, 8%);
-    color: rgba(black, 0.87);
+    background: rgba($theme-base, 0.87);
+    color: $theme-bg;
   }
 }
 .btn-flat {
@@ -202,17 +202,17 @@ hr {
   &:hover, &:focus {
     background: rgba($theme-base, 0.1);
   }
-  .material-icons {
+  .material-icons, .material-icons-outlined {
     font-size: 20px;
     color: $text-dark;
   }
   &.btn-primary {
-    background: $theme-primary;
+    background: $theme-base;
     .material-icons {
       color: rgba(black, 0.87);
     }
     &:hover, &:focus {
-      background: lighten($theme-primary, 8%);
+      background: lighten($theme-base, 8%);
       .material-icons {
         color: rgba(black, 0.87);
       }
@@ -238,7 +238,7 @@ hr {
   }
   &.btn-primary {
     &:hover, &:focus {
-      background: $brand-primary!important;
+      background: $theme-base!important;
     }
   }
   &.btn-flat {
@@ -258,6 +258,7 @@ hr {
   display: flex;
   flex-direction: column;
   padding-top: $gutter-h;
+  margin-bottom: $gutter-h * 0.5;
   &.inline {
     display: flex;
     flex-direction: row;
@@ -278,6 +279,13 @@ hr {
       textarea {
         height: auto;
       }
+    }
+  }
+  input {
+    &[disabled="disabled"], &[disabled="disabled"]:hover, &[disabled="disabled"]:focus {
+      color: $text-lighter!important;
+      cursor: not-allowed!important;
+      border-style: dotted!important;
     }
   }
   label {
@@ -708,6 +716,14 @@ input[type=file] {
     background: $brand-info;
     color: rgba(black, 0.87);
   }
+  &.badge-error, &.badge-danger {
+    background: $brand-danger;
+    color: rgba(black, 0.87);
+  }
+  &.badge-success {
+    background: $brand-success;
+    color: rgba(black, 0.87);
+  }
 }
 
 // Alerts
@@ -719,10 +735,10 @@ input[type=file] {
   background: rgba($theme-base, 0.035);
   margin: 0.5rem 0;
   font-size: 0.85rem;
-  line-height: 1.1rem;
+  line-height: 24px;
   > i {
     font-size: 18px;
-    line-height: 1.1rem;
+    line-height: 24px;
     margin-right: 1rem;
   }
   ul {
@@ -731,6 +747,18 @@ input[type=file] {
   }
   p {
     margin: 0;
+  }
+  .alert-body {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-grow: 1;
+    line-height: 24px;
+  }
+  .alert-footer {
+    display: flex;
+    line-height: 24px;
+    height: 26px; // button height
   }
 }
 .alert-danger {

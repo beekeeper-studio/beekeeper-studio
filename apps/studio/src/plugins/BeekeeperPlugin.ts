@@ -1,6 +1,8 @@
 import { AppEvent } from "@/common/AppEvent"
 import Vue from 'vue'
 import ContextMenu from '@/components/common/ContextMenu.vue'
+import { IConnection } from "@/common/interfaces/IConnection"
+import path from 'path'
 
 export interface ContextOption {
   name: string,
@@ -39,6 +41,34 @@ export const BeekeeperPlugin = {
       cMenu.$destroy()
     })
     cMenu.$mount()
+  },
+  buildConnectionString(config: IConnection): string {
+    if (config.connectionType === 'sqlite') {
+      return config.defaultDatabase || "./unknown.db"
+    } else {
+      let result = `${config.username || 'user'}@${config.host}:${config.port}`
+
+      if (config.defaultDatabase) {
+        result += `/${config.defaultDatabase}`
+      }
+
+      if (config.sshHost) {
+        result += ` via ${config.sshUsername}@${config.sshHost}`
+        if (config.sshBastionHost) result += ` jump(${config.sshBastionHost})`
+      }
+      return result
+    }
+  },
+  simpleConnectionString(config: IConnection): string {
+    let connectionString = `${config.host}:${config.port}`;
+    if (config.connectionType === 'sqlite') {
+      return path.basename(config.defaultDatabase || "./unknown.db")
+    } else {
+      if (config.defaultDatabase) {
+        connectionString += `/${config.defaultDatabase}`
+      }
+      return connectionString
+    }
   }
 }
 

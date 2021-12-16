@@ -15,6 +15,9 @@ import sslFiles from './20201008-add-ssl-files'
 import sslReject from './20201231-ssl-reject-unauthorized'
 import pinned from './20210713_create_pins'
 import addSort from './20210811_add_sort_to_settings'
+import createCreds from './20210927_create_cloud_credentials'
+import workspaceScoping from './20211007_workspace_scoping'
+import workspace2 from './20211015_workspace_used_query'
 import createLogger from '../lib/logger'
 
 const logger = createLogger('migrations')()
@@ -26,7 +29,7 @@ const setupSQL = `
  )
 `
 const realMigrations = [
-  a, b, c, d, domains, createSettings, addZoom, addSc, sslFiles, sslReject, pinned, addSort
+  a, b, c, d, domains, createSettings, addZoom, addSc, sslFiles, sslReject, pinned, addSort, createCreds, workspaceScoping, workspace2
 ]
 
 // fixtures require the models

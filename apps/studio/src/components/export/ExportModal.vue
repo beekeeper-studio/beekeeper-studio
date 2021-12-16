@@ -21,7 +21,7 @@
             <i class="material-icons" @click.prevent="closeModal">clear</i>
           </span>
           <div v-if="error" class="alert alert-danger">
-            <i class="material-icons">warning</i>
+            <i class="material-icons">error_outline</i>
             <div>Error: {{ error.message }}</div>
           </div>
           <div class="modal-form export-form">

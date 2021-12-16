@@ -29,6 +29,7 @@ export default Vue.extend({
           this.searchIndex.removeAsync(blob.id)
         })
 
+
         const newItems = newDb.filter((i) => !oldIds.includes(i.id))
         log.debug("adding to search index", newItems.length)
         this.updateDatabase(newItems)

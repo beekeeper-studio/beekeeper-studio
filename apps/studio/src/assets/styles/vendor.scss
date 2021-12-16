@@ -3,6 +3,7 @@
 @import "~vuejs-noty/dist/vuejs-noty.css";
 @import "~tabulator-tables/dist/css/tabulator_midnight.css";
 @import "~codemirror/theme/monokai";
+@import "~codemirror/addon/merge/merge";
 
 @import "./app/vendor/xel";
 @import "./app/vendor/tabulator";
@@ -11,3 +12,4 @@
 @import "./app/vendor/vueable";
 @import "./app/vendor/noty";
 @import "./app/vendor/vue-js-modal";
+@import "./app/vendor/diff-viewer";

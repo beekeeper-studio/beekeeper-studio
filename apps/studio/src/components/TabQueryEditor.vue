@@ -5,6 +5,14 @@
       ref="topPanel"
       @contextmenu.prevent.stop="showContextMenu"
     >
+      <merge-manager v-if="query.id" :originalText="originalText" :query="query" :unsavedText="unsavedText" @change="onChange" @mergeAccepted="originalText = query.text" />
+      <div v-if="remoteDeleted" class="alert alert-danger">
+        <i class="material-icons">error_outline</i>
+        <div class="alert-body">
+          This query was deleted by someone else. It is no longer editable.
+        </div>
+        <a @click.prevent="close" class="btn btn-flat">Close Tab</a>
+      </div>
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
       <div class="toolbar text-right">
@@ -31,15 +39,27 @@
           </x-buttons>
         </div>
       </div>
+
+
     </div>
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar @cancel="cancelQuery" :message="runningText" v-if="running"></progress-bar>
       <result-table ref="table" v-else-if="rowCount > 0" :active="active" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
-      <div class="message" v-else-if="result"><div class="alert alert-info"><i class="material-icons">info</i><span>Query Executed Successfully. No Results. {{result.affectedRows || 0}} rows affected.</span></div></div>
-      <div class="message" v-else-if="error">
-        <error-alert :error="error" />
+      <div class="message" v-else-if="result">
+        <div class="alert alert-info">
+          <i class="material-icons-outlined">info</i>
+          <span>Query Executed Successfully. No Results. {{result.affectedRows || 0}} rows affected.</span>
+        </div>
       </div>
-      <div class="message" v-else-if="info"><div class="alert alert-info"><i class="material-icons">warning</i><span>{{info}}</span></div></div>
+      <div class="message" v-else-if="errors">
+        <error-alert :error="errors" />
+      </div>
+      <div class="message" v-else-if="info">
+        <div class="alert alert-info">
+          <i class="material-icon-outlined">info</i>
+          <span>{{info}}</span>
+        </div>
+      </div>
       <div class="layout-center expand" v-else>
         <shortcut-hints></shortcut-hints>
       </div>
@@ -67,7 +87,7 @@
             </div>
           </div>
         </div>
-        <div class="vue-dialog-buttons">
+        <div class="vue-dialog-buttons">          
           <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('save-modal')">Cancel</button>
           <button class="btn btn-primary" type="submit">Save</button>
         </div>
@@ -98,7 +118,6 @@
       </form>
     </modal>
 
-
   </div>
 </template>
 
@@ -124,11 +143,16 @@
   import rawlog from 'electron-log'
   import ErrorAlert from './common/ErrorAlert.vue'
   import {FormatterDialect} from "@shared/lib/dialects/models";
+  import MergeManager from '@/components/editor/MergeManager.vue'
+import { AppEvent } from '@/common/AppEvent'
+  
   const log = rawlog.scope('query-editor')
+  const isEmpty = (s) => _.isEmpty(_.trim(s))
+  const editorDefault = "\n\n\n\n\n\n\n\n\n\n"
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert},
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager},
     props: ['tab', 'active'],
     data() {
       return {
@@ -140,22 +164,28 @@
         editor: null,
         runningQuery: null,
         error: null,
+        saveError: null,
         info: null,
         split: null,
         tableHeight: 0,
         savePrompt: false,
-        unsavedText: null,
-        saveError: null,
         lastWord: null,
         cursorIndex: null,
         marker: null,
         queryParameterValues: {},
         queryForExecution: null,
-        executeTime: 0
+        executeTime: 0,
+        originalText: null,
+        unsavedText: null,
       }
     },
     computed: {
-      ...mapGetters('dialect'),
+      ...mapGetters(['dialect']),
+      ...mapState(['usedConfig', 'connection', 'database', 'tables']),
+      ...mapState('data/queries', {'savedQueries': 'items'}),
+      remoteDeleted() {
+        return this.tab.query.id && !this.savedQueries.includes(this.tab.query)
+      },
       identifyDialect() {
         // dialect for sql-query-identifier
         const mappings = {
@@ -163,6 +193,14 @@
           'sqlite': 'sqlite'
         }
         return mappings[this.connectionType] || 'generic'
+      },
+      errors() {
+        const result = [
+          this.error,
+          this.saveError
+        ].filter((e) => e)
+
+        return result.length ? result : null
       },
       runningText() {
         return `Running ${this.runningType} (${pluralize('query', this.runningCount, true)})`
@@ -176,12 +214,9 @@
       query() {
         return this.tab.query
       },
-      queryText() {
-        return this.tab.query.text || null
-      },
       individualQueries() {
-        if (!this.queryText) return []
-        return splitQueries(this.queryText)
+        if (!this.unsavedText) return []
+        return splitQueries(this.unsavedText)
       },
       currentlySelectedQueryIndex() {
         const queries = this.individualQueries
@@ -214,7 +249,7 @@
         return this.result && this.result.rows ? this.result.rows.length : 0
       },
       hasText() {
-        return this.query.text && this.query.text.replace(/\s+/, '').length > 0
+        return !isEmpty(this.unsavedText)
       },
       hasTitle() {
         return this.query.title && this.query.title.replace(/\s+/, '').length > 0
@@ -265,9 +300,24 @@
         });
         return query;
       },
-      ...mapState(['usedConfig', 'connection', 'database', 'tables'])
+      unsavedChanges() {
+        return _.trim(this.unsavedText) !== _.trim(this.originalText)
+      },
     },
     watch: {
+      remoteDeleted() {
+        // eslint-disable-next-line no-debugger
+        if (this.remoteDeleted) {
+          this.editor.setOption('readOnly', 'nocursor')
+          this.tab.unsavedChanges = false
+          this.tab.alert = true
+        } else {
+          this.editor.setOption('readOnly', false)
+        }
+      },
+      unsavedChanges() {
+        this.tab.unsavedChanges = this.unsavedChanges
+      },
       active() {
         if(this.active && this.editor) {
           this.$nextTick(() => {
@@ -327,24 +377,11 @@
         // this.editor.setOptions('hint', CodeMirror.hint.sql)
         // this.editor.refresh()
       },
-      queryText() {
-
-        const isEmpty = (s) => _.isEmpty(_.trim(s))
-
-        if (!this.query.id && isEmpty(this.queryText) && isEmpty(this.unsavedText)) {
-          this.tab.unsavedChanges = false
-          return
-        }
-
-        if (this.query.id && this.unsavedText === this.queryText) {
-          this.tab.unsavedChanges = false
-          return
-        } else {
-          this.tab.unsavedChanges = true
-        }
-      }
     },
     methods: {
+      close() {
+        this.$root.$emit(AppEvent.closeTab)
+      },
       showContextMenu(event) {
         this.$bks.openMenu({
           item: this.tab,
@@ -395,15 +432,34 @@
         }
       },
       async saveQuery() {
+        if (this.remoteDeleted) return
         if (!this.hasTitle || !this.hasText) {
-          this.saveError = "You need both a title, and some query text."
+          this.saveError = new Error("You need both a title, and some query text.")
+          return
         } else {
-          await this.$store.dispatch('saveFavorite', this.query)
-          this.$modal.hide('save-modal')
-          this.$noty.success('Saved')
-          this.unsavedText = this.tab.query.text
-          this.tab.unsavedChanges = false
+          try {
+            const payload = _.clone(this.query)
+            payload.text = this.unsavedText
+            this.$modal.hide('save-modal')
+            console.log("TQE Saving", payload)
+            await this.$store.dispatch('data/queries/save', payload)
+            // we don't do this becuase we object assign.
+            // this.tab.query = updated
+            this.$nextTick(() => {
+              this.unsavedText = this.tab.query.text
+              this.originalText = this.tab.query.text
+            })
+            this.$noty.success('Query Saved')
+          } catch (ex) {
+            this.saveError = ex
+            this.$noty.error(`Save Error: ${ex.message}`)
+          }
         }
+      },
+      onChange(text) {
+        console.log("change!", text)
+        this.unsavedText = text
+        this.editor.setValue(text)
       },
       escapeRegExp(string) {
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
@@ -427,6 +483,7 @@
         }
       },
       async submitQuery(rawQuery, skipModal) {
+        if (this.remoteDeleted) return;
         this.running = true
         this.error = null
         this.queryForExecution = rawQuery
@@ -525,20 +582,22 @@
       toggleComment() {
         this.editor.execCommand('toggleComment')
       },
+      initializeQueries() {
+        if (this.query?.text) {
+          this.originalText = this.query.text
+          this.unsavedText = this.query.text
+        }
+      },
+      fakeRemoteChange() {
+        this.query.text = "select * from foo"
+      }
     },
     mounted() {
+
       const $editor = this.$refs.editor
-      // TODO (matthew): Add hint options for all tables and columns
-      let startingValue = ""
-      if (this.query.text) {
-        startingValue = this.query.text
-        this.unsavedText = this.query.text
-        this.tab.unsavedChanges = false
-      } else {
-        for (var i = 0; i < 9; i++) {
-            startingValue += '\n';
-        }
-      }
+      const startingValue = this.query?.text ? this.query.text : editorDefault
+      // TODO (matthew): Add hint options for all tables and columns\
+      this.initializeQueries()
 
       this.$nextTick(() => {
         this.split = Split(this.splitElements, {
@@ -595,7 +654,8 @@
 
         this.editor.on("change", (cm) => {
           // this also updates `this.queryText`
-          this.tab.query.text = cm.getValue()
+          // this.tab.query.text = cm.getValue()
+          this.unsavedText = cm.getValue()
         })
 
         if (this.connectionType === 'postgresql')  {

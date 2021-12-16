@@ -1,8 +1,5 @@
 {
   "extends": "../tsconfig.base.json",
-  "files": [
-    "src/main.ts"
-  ],
   "compilerOptions": {
     "target": "es2018",
     "module": "esnext",

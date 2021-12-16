@@ -1,9 +1,10 @@
+import ISavedQuery from '@/common/interfaces/ISavedQuery'
 import { Entity, Column, Index, BeforeInsert, BeforeUpdate } from 'typeorm'
 import { ApplicationEntity  } from './application_entity'
 import { QueryLike } from './base'
 
 @Entity({ name: 'favorite_query' })
-export class FavoriteQuery extends ApplicationEntity implements QueryLike {
+export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISavedQuery {
 
   @Column({type: "varchar", nullable: false})
   title!: string

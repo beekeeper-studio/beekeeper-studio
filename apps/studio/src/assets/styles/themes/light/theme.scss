@@ -46,6 +46,19 @@ select {
 ::selection {
   background: rgba($brand-info, 0.25);
 }
+
+x-buttons {
+  > x-button {
+    &.btn-primary {
+      &[menu] {
+        border-left: 1px solid rgba(white, 0.35);
+        &:hover {
+          border-left: 1px solid rgba(white, 0.35);
+        }
+      }
+    }
+  }
+}
 .btn {
   box-shadow: inset 0 0 0 1px rgba($theme-base, 0.035);
 }
@@ -144,6 +157,20 @@ select {
         }
       }
 
+      }
+    }
+  }
+  .global-items {
+    .nav-item.selectable {
+      &:hover {   
+        &:before {
+          background: rgba($theme-base, 0.38);
+        }
+      }
+      &:hover, &.active, &.active:hover {
+        &:before {
+          width: 2px;
+        }
       }
     }
   }
@@ -287,6 +314,7 @@ select {
     background: rgba($theme-base, 0.025);
   }
 }
+
 // Table Builder
 // -------------------------
 .table-builder .table-builder-wrap,
@@ -472,13 +500,7 @@ select {
     }
   }
 }
-.query-editor {
-  .CodeMirror-code {
-    .highlight {
-      background-color: rgba($theme-secondary, 0.2);
-    }
-  }
-}
+
 
 .cm-s-monokai {
   font-weight: 500;
@@ -489,7 +511,7 @@ select {
     color: $brand-secondary;
   }
   div.CodeMirror-selected {
-    background: rgba($theme-secondary, 0.1);
+    background: rgba($theme-secondary, 0.25);
   }
   .CodeMirror-linenumber {
     color: rgba($theme-base, 0.25);

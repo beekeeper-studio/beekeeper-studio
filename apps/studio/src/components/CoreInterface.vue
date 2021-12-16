@@ -1,6 +1,9 @@
 <template>
   <div id="interface" class="interface" v-hotkey="keymap">
-    <div class="interface-wrap row">
+    <div v-if="initializing">
+      <progress-bar />
+    </div>
+    <div v-else class="interface-wrap row">
       <sidebar ref="sidebar" :class="{hide: !sidebarShown}">
         <core-sidebar @databaseSelected="databaseSelected" @toggleSidebar="toggleSidebar" :connection="connection" :sidebarShown="sidebarShown"></core-sidebar>
         <statusbar>
@@ -26,8 +29,11 @@
   import ExportManager from './export/ExportManager'
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
+  import { LocalQueryModule } from '@/store/modules/data/query/LocalQueryModule'
+  import ProgressBar from './editor/ProgressBar.vue'
+  import { CloudQueryModule } from '@/store/modules/data/query/CloudQueryModule'
   export default {
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch},
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar},
     props: [ 'connection' ],
     data() {
       return {
@@ -37,7 +43,8 @@
         rootBindings: [
           { event: AppEvent.quickSearch, handler: this.showQuickSearch},
           { event: AppEvent.toggleSidebar, handler: this.toggleSidebar }
-        ]
+        ],
+        initializing: true
       }
     },
     computed: {
@@ -53,22 +60,29 @@
         ]
       }
     },
+    watch: {
+      initializing() {
+        if (this.initializing) return;
+        this.$nextTick(() => {
+          this.split = Split(this.splitElements, {
+            elementStyle: (dimension, size) => ({
+                'flex-basis': `calc(${size}%)`,
+            }),
+            sizes: [25,75],
+            minSize: 280,
+            expandToMin: true,
+            gutterSize: 5,
+          })
+        })
+      }
+    },
     mounted() {
+
       this.$store.dispatch('updateHistory')
-      this.$store.dispatch('updateFavorites')
       this.$store.dispatch('pins/loadPins')
       this.registerHandlers(this.rootBindings)
-
       this.$nextTick(() => {
-        this.split = Split(this.splitElements, {
-          elementStyle: (dimension, size) => ({
-              'flex-basis': `calc(${size}%)`,
-          }),
-          sizes: [25,75],
-          minSize: 280,
-          expandToMin: true,
-          gutterSize: 5,
-        })
+        this.initializing = false
       })
 
     },

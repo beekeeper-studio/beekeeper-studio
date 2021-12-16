@@ -19,6 +19,10 @@ export class UsedQuery extends ApplicationEntity {
   @Column({ type:'bigint', nullable: true})
   numberOfRecords?: BigInt
 
+  @Column({ type: 'integer', nullable: false, default: -1 })
+  workspaceId: number = -1
+
+
   @BeforeInsert()
   @BeforeUpdate()
   setDefaultDatabase() {

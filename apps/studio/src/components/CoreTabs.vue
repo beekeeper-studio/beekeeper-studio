@@ -197,7 +197,8 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
           title: "Query #" + this.newTabId,
           connection: this.connection,
           query: query,
-          unsavedChanges: query.text?.length ? true : false
+          unsavedChanges: query.text?.length ? true : false,
+          alert: false
         }
 
         this.addTab(result)
@@ -290,7 +291,7 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
 
         this.tabItems = _.without(this.tabItems, tab)
         if (tab.query && tab.query.id) {
-          tab.query.reload()
+          this.$store.dispatch('data/queries/reload', tab.query.id)
         }
       },
       closeAll() {
@@ -301,7 +302,7 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
         this.tabItems = [tab]
         this.setActiveTab(tab)
         if (tab.query && tab.query.id) {
-          tab.query.reload()
+          this.$store.dispatch('data/queries/reload', tab.query.id)
         }
       },
       duplicate(tab) {
@@ -337,7 +338,8 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
             title: item.title,
             connection: this.connection,
             query: item,
-            unsavedChanges: false
+            unsavedChanges: false,
+            alert: false
           }
           this.addTab(result)
         }        

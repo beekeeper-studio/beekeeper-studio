@@ -2,6 +2,7 @@ import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import username from 'username'
+
 import { UsedConnection } from '../common/appdb/models/used_connection'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
 import { FavoriteQuery } from '../common/appdb/models/favorite_query'
@@ -20,6 +21,11 @@ import { Dialect, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
 import { SearchModule } from './modules/SearchModule'
+import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
+import { CloudClient } from '@/lib/cloud/CloudClient'
+import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
+import { IConnection } from '@/common/interfaces/IConnection'
+import { DataModules } from '@/store/DataModules'
 
 const log = RawLog.scope('store/index')
 
@@ -29,8 +35,9 @@ const tablesMatch = (t: TableOrView, t2: TableOrView) => {
     t2.entityType === t.entityType
 }
 
+
 export interface State {
-  usedConfig: Nullable<SavedConnection>,
+  usedConfig: Nullable<IConnection>,
   usedConfigs: UsedConnection[],
   server: Nullable<IDbConnectionPublicServer>,
   connection: Nullable<DBConnection>,
@@ -46,6 +53,8 @@ export interface State {
   menuActive: boolean,
   activeTab: Nullable<CoreTab>,
   selectedSidebarItem: Nullable<string>,
+  workspaceId: number,
+  storeInitialized: boolean
 }
 
 Vue.use(Vuex)
@@ -56,7 +65,8 @@ const store = new Vuex.Store<State>({
     exports: ExportStoreModule,
     settings: SettingStoreModule,
     pins: PinModule,
-    search: SearchModule
+    search: SearchModule,
+    credentials: CredentialsModule
   },
   state: {
     usedConfig: null,
@@ -80,8 +90,42 @@ const store = new Vuex.Store<State>({
     menuActive: false,
     activeTab: null,
     selectedSidebarItem: null,
+    workspaceId: LocalWorkspace.id,
+    storeInitialized: false,
   },
+
   getters: {
+    workspace(state: State, getters): IWorkspace {
+      if (state.workspaceId === LocalWorkspace.id) return LocalWorkspace
+      
+      const workspaces: WSWithClient[] = getters['credentials/workspaces']
+      const result = workspaces.find(({workspace }) => workspace.id === state.workspaceId)
+
+
+      if (!result) return LocalWorkspace
+      return result.workspace
+    },
+    isCloud(state: State) {
+      return state.workspaceId !== LocalWorkspace.id
+    },
+    workspaceEmail(_state: State, getters): string | null {
+      return getters.cloudClient?.options?.email || null
+    },
+    pollError(state) {
+      return DataModules.map((module) => {
+        const pollError = state[module.path]['pollError']
+        return pollError || null
+      }).find((e) => !!e)
+    },
+    cloudClient(state: State, getters): CloudClient | null {
+      if (state.workspaceId === LocalWorkspace.id) return null
+
+      const workspaces: WSWithClient[] = getters['credentials/workspaces']
+      const result = workspaces.find(({workspace}) => workspace.id === state.workspaceId)
+      if (!result) return null
+      return result.client.cloneWithWorkspace(result.workspace.id)
+
+    },
     dialect(state: State): Dialect | null {
       if (!state.usedConfig) return null
       return dialectFor(state.usedConfig.connectionType)
@@ -136,9 +180,16 @@ const store = new Vuex.Store<State>({
         return _.uniq(state.tables.map((t) => t.schema));
       }
       return []
-    }
+    },
+
   },
   mutations: {
+    storeInitialized(state, b: boolean) {
+      state.storeInitialized = b
+    },
+    workspaceId(state, id: number) {
+      state.workspaceId = id
+    },
     selectSidebarItem(state, item: string) {
       state.selectedSidebarItem = item
     },
@@ -293,28 +344,36 @@ const store = new Vuex.Store<State>({
       }
     },
 
-    async connect(context, config: SavedConnection) {
+    async connect(context, config: IConnection) {
       if (context.state.username) {
         const server = ConnectionProvider.for(config, context.state.username)
         // TODO: (geovannimp) Check case connection is been created with undefined as key
         const connection = server.createConnection(config.defaultDatabase || undefined)
         await connection.connect()
         connection.connectionType = config.connectionType;
-        const lastUsedConnection = context.state.usedConfigs.find(c => c.hash === config.hash)
-        if (!lastUsedConnection) {
-          const usedConfig = new UsedConnection(config)
-          await usedConfig.save()
-          context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
-        } else {
-          lastUsedConnection.updatedAt = new Date()
-          if (config.id) {
-            lastUsedConnection.savedConnectionId = config.id
-          }
-          await lastUsedConnection.save()
-        }
+
         context.commit('newConnection', {config: config, server, connection})
+        context.dispatch('recordUsedConfig', config)
       } else {
         throw "No username provided"
+      }
+    },
+    async recordUsedConfig(context, config: IConnection) {
+
+      console.log("finding last used connection")
+      const lastUsedConnection = context.state.usedConfigs.find(c => {
+        console.log("looking at config", config.id)
+        return c.connectionId === config.id && c.workspaceId === config.workspaceId
+      })
+      if (!lastUsedConnection) {
+        const usedConfig = new UsedConnection(config)
+        await usedConfig.save()
+        context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
+      } else {
+        lastUsedConnection.updatedAt = new Date()
+        lastUsedConnection.connectionId = config.id
+        lastUsedConnection.workspaceId = config.workspaceId
+        await lastUsedConnection.save()
       }
     },
     async disconnect(context) {
@@ -430,29 +489,22 @@ const store = new Vuex.Store<State>({
       routine.pinned = true
       context.commit('addPinned', routine)
     },
-    async saveConnectionConfig(context, newConfig) {
-      await newConfig.save()
-      context.commit('config', newConfig)
-    },
-    async removeConnectionConfig(context, config) {
-      await config.remove()
-      await context.dispatch('loadUsedConfigs')
-      context.commit('removeConfig', config)
-    },
     async removeUsedConfig(context, config) {
       await config.remove()
       context.commit('removeUsedConfig', config)
     },
-    async loadSavedConfigs(context) {
-      const configs = await SavedConnection.find()
-      context.commit('configs', configs)
-    },
     async loadUsedConfigs(context) {
-      const configs = await UsedConnection.find({take: 10, order: {createdAt: 'DESC'}})
+      const configs = await UsedConnection.find(
+        {
+          take: 10,
+          order: {createdAt: 'DESC'},
+          where: { workspaceId: context.state.workspaceId}
+        }
+      )
       context.commit('usedConfigs', configs)
     },
     async updateHistory(context) {
-      const historyItems = await UsedQuery.find({ take: 100, order: { createdAt: 'DESC' } });
+      const historyItems = await UsedQuery.find({ take: 100, order: { createdAt: 'DESC' }, where: { workspaceId: context.state.workspaceId} });
       context.commit('history', historyItems)
     },
     async logQuery(context, details) {
@@ -462,25 +514,10 @@ const store = new Vuex.Store<State>({
         run.database = context.state.database
         run.status = 'completed'
         run.numberOfRecords = details.rowCount
+        run.workspaceId = context.state.workspaceId
         await run.save()
         context.commit('historyAdd', run)
       }
-    },
-    async updateFavorites(context) {
-      const items = await FavoriteQuery.find({order: { createdAt: 'DESC'}})
-      context.commit('favorites', items)
-    },
-    async saveFavorite(context, query: FavoriteQuery) {
-      query.database = context.state.database || 'default'
-      await query.save()
-      // otherwise it's already there!
-      if (!context.state.favorites.includes(query)) {
-        context.commit('favoritesAdd', query)
-      }
-    },
-    async removeFavorite(context, favorite) {
-      await favorite.remove()
-      context.commit('removeUsedFavorite', favorite)
     },
     async removeHistoryQuery(context, historyQuery) {
       await historyQuery.remove()

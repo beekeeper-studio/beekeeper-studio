@@ -1,11 +1,11 @@
-import { SavedConnection } from '@/common/appdb/models/saved_connection'
+import { IConnection } from '@/common/interfaces/IConnection'
 import { IDbConnectionServerConfig } from './db/client'
 import { createServer } from './db/index'
 import { IDbConnectionPublicServer } from './db/server'
 
 export default {
 
-  convertConfig(config: SavedConnection, osUsername: string): IDbConnectionServerConfig {
+  convertConfig(config: IConnection, osUsername: string): IDbConnectionServerConfig {
     const ssh = config.sshEnabled ? {
       host: config.sshHost ? config.sshHost.trim() : null,
       port: config.sshPort,
@@ -19,7 +19,7 @@ export default {
 
     return {
       client: config.connectionType,
-      host: config.host.trim(),
+      host: config.host ? config.host.trim() : null,
       port: config.port,
       domain: config.domain || null,
       socketPath: null,
@@ -35,7 +35,7 @@ export default {
     }
   },
 
-  for(config: SavedConnection, osUsername: string): IDbConnectionPublicServer {
+  for(config: IConnection, osUsername: string): IDbConnectionPublicServer {
     const convertedConfig = this.convertConfig(config, osUsername)
     const server = createServer(convertedConfig)
     return server

@@ -1,64 +1,147 @@
 <template>
-  <div class="sidebar-favorites flex-col expand">
+  <div class="sidebar-favorites flex-col expand" ref="wrapper">
     <div class="sidebar-list">
-      <nav class="list-group" v-if="favorites.length > 0">
-        <div @contextmenu.prevent.stop="openContextMenu($event, item)" class="list-item" v-for="item in favorites" v-bind:key="item.id">
-          <a class="list-item-btn" @click.prevent="click(item)" :class="{active: selected(item)}">
-            <i class="item-icon query material-icons">code</i>
-            <!-- <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedFavorites" :class="{ shown: checkedFavorites.length > 0 }"> -->
-            <div class="list-title flex-col">
-              <span class="item-text title truncate expand" :title="item.title">{{item.title}}</span>
-              <span class="database subtitle"><span :title="item.database" >{{item.database}}</span></span>
+      <div class="list-group">
+        <div class="list-heading row">
+          <div class="sub row flex-middle expand">
+            <div class="expand">Saved Queries</div>
+            <div class="actions">
+              <a v-if="isCloud" title="Import queries from local workspace" @click.prevent="importFromLocal"><i class="material-icons">save_alt</i></a>
+              <a class="" @click.prevent="refresh">
+                <i title="Refresh Saved Queries" class="material-icons">refresh</i>
+              </a>
             </div>
-          </a>
+
+          </div>
+
         </div>
+      <error-alert v-if="error" :error="error" title="Problem loading queries" />
+      <sidebar-loading v-if="loading" />
+      <nav v-else-if="savedQueries.length > 0" class="list-body">
+        <sidebar-folder
+          v-for="({ folder, queries }) in foldersWithQueries"
+          :key="`${folder.id}-${queries.length}`"
+          :title="`${folder.name} (${queries.length})`"
+
+          :expandedInitially="true"
+        >
+          <favorite-list-item
+            v-for="item in queries"
+            :key="item.id"
+            :item="item"
+            :active="isActive(item)"
+            :selected="selected === item"
+            @remove="remove"
+            @select="select"
+            @open="open"
+          />
+        </sidebar-folder>
+        <favorite-list-item
+          v-for="item in lonelyQueries"
+          :key="item.id"
+          :item="item"
+          :active="isActive(item)"
+          :selected="selected === item"
+          @remove="remove"
+          @select="select"
+          @open="open"
+         />
       </nav>
-      <div class="empty" v-if="favorites.length === 0">
-        <span>No Saved Queries</span>
+      <div class="empty" v-else>
+        <span class="empty-title">No Saved Queries</span>
+        <span class="empty-actions" v-if="isCloud">
+          <a class="btn btn-flat btn-block btn-icon" @click.prevent="importFromLocal" title="Import queries from local workspace"><i class="material-icons">save_alt</i> Import</a>
+        </span>
+      </div>
       </div>
     </div>
-    <!-- <div class="toolbar btn-group row flex-right" v-show="checkedFavorites.length > 0">
-      <a class="btn btn-link" @click="discardCheckedFavorites">Cancel</a>
-      <a class="btn btn-primary" :title="removeTitle" @click="removeCheckedFavorites">Remove</a>
-    </div> -->
   </div>
 </template>
 
 <script>
-  import { mapState } from 'vuex'
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+  import { mapGetters, mapState } from 'vuex'
+  import SidebarLoading from '../../common/SidebarLoading.vue'
+  import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
+  import SidebarFolder from '@/components/common/SidebarFolder.vue'
+import { AppEvent } from '@/common/AppEvent'
   export default {
+    components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder },
     data: function () {
       return {
-        checkedFavorites: []
+        checkedFavorites: [],
+        selected: null,
       }
     },
+    mounted() {
+      document.addEventListener('mousedown', this.maybeUnselect)
+    },
+    beforeDestroy() {
+      document.removeEventListener('mousedown', this.maybeUnselect)
+    },
     computed: {
-      ...mapState(['favorites', 'activeTab']),
+      ...mapGetters(['workspace', 'isCloud']),
+      ...mapState(['activeTab']),
+      ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error'}),
+      ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
+      loading() {
+        return this.queriesLoading || this.foldersLoading || null
+      },
+      error() {
+        return this.queriesError || this.foldersError || null
+      },
+      foldersWithQueries() {
+        return this.folders.map((folder) => {
+          return {
+            folder,
+            queries: this.savedQueries.filter((q) => 
+              q.queryFolderId === folder.id
+            )
+          }
+        })
+      },
+      lonelyQueries() {
+        return this.savedQueries.filter((query) => {
+          const folderIds = this.folders.map((f) => f.id)
+          return !query.queryFolderId || !folderIds.includes(query.queryFolderId)
+        })
+      },
       removeTitle() {
         return `Remove ${this.checkedFavorites.length} saved queries`;
       }
     },
     methods: {
-      openContextMenu(event, item) {
-        this.$bks.openMenu({
-          item, event,
-          options: [
-            {
-              name: "Remove",
-              handler: ({ item }) => this.remove(item)
-            }
-          ]
-        })
+      createQuery() {
+        this.$root.$emit(AppEvent.newTab)
       },
-      selected(item) {
+      importFromLocal() {
+        this.$root.$emit(AppEvent.promptQueryImport)
+      },
+      maybeUnselect(e) {
+        if (!this.selected) return
+        if (this.$refs.wrapper.contains(e.target)) {
+          return
+        } else {
+          this.selected = null
+        }
+      },
+      refresh() {
+        this.$store.dispatch("data/queries/load")
+      },
+      isActive(item) {
         return this.activeTab && this.activeTab.query &&
           this.activeTab.query.id === item.id
       },
-      click(item) {
+      select(item) {
+        this.selected = item
+      },
+      open(item) {
         this.$root.$emit('favoriteClick', item)
       },
       async remove(favorite) {
-        await this.$store.dispatch('removeFavorite', favorite)
+        if (window.confirm("Really delete?")) {
+          await this.$store.dispatch('data/queries/remove', favorite)
+        }
       },
       async removeCheckedFavorites() {
         for(let i = 0; i < this.checkedFavorites.length; i++) {

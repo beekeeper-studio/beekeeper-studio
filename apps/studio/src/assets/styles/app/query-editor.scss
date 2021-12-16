@@ -13,7 +13,9 @@
   }
   .CodeMirror-code {
     .highlight {
-      background-color: rgba($theme-base, 0.2);
+      font-weight: bold;
+      background-color: inherit;
+      // background-color: rgba($theme-base, 0.2);
     }
   }
   .top-panel, .bottom-panel {
@@ -98,9 +100,6 @@
 
   // Modal
   // ------------------------------
-  .v--modal {
-    max-width: 400px;
-  }
 }
 
 // Shortcut

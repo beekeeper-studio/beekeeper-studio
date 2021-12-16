@@ -3,6 +3,12 @@
     <div class="table-info-table-wrap">
       <div class="center-wrap">
         <error-alert :error="error" v-if="error" />
+        <div class="notices" v-if="notice">
+          <div class="alert alert-info">
+            <i class="material-icons-outlined">info</i> 
+            <div>{{notice}}</div>
+          </div>
+        </div>
 
         <div class="table-subheader">
           <div class="table-title">
@@ -15,12 +21,6 @@
           </div>
         </div>
         <div class="table-relations" ref="tabulator"></div>
-        <div class="notices" v-if="notice">
-          <div class="alert alert-info">
-            <i class="material-icons-outlined">info</i> 
-            {{notice}}
-            </div>
-        </div>
       </div>
     </div>
     

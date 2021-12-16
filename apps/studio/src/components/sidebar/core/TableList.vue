@@ -9,8 +9,8 @@
           <x-buttons class="filter-actions">
             <x-button @click="clearFilter" v-if="filterQuery"><i class="clear material-icons">cancel</i></x-button>
             <x-button :title="entitiesHidden ? 'Filter active' : 'No filters'" class="btn btn-fab btn-link action-item" :class="{active: entitiesHidden}" menu>
-              <i class="material-icons">filter_list</i>
-              <x-menu style="--target-align: right; --v-target-align: top;">
+              <i class="material-icons-outlined">filter_alt</i>
+              <x-menu style="--target-align: right;">
                 <label>
                   <input type="checkbox" v-model="showTables">
                   <span>Tables</span>
@@ -46,9 +46,6 @@
       <nav class="list-group flex-col" v-if="!tablesLoading">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
-            <!-- <span class="btn-fab open">
-              <i class="dropdown-icon material-icons">keyboard_arrow_down</i>
-            </span> -->
             <div>Entities
               <span :title="`Total Entities`" class="badge" v-if="!hiddenEntities">{{totalEntities}}</span>
               <span :title="`${hiddenEntities} hidden by filters`" class="badge" v-if="hiddenEntities" :class="{active: entitiesHidden}">{{shownEntities}} / {{totalEntities}}</span>
@@ -73,11 +70,11 @@
         </div>
         <div class="list-body" ref="entityContainer" v-show="tables.length > 0">
           <div class="with-schemas">
-            <TableListSchema
+            <sidebar-folder
               v-for="(blob, index) in schemaTables"
               :title="blob.schema"
               :key="blob.schema"
-              :skipSchemaDisplay="blob.skipSchemaDisplay"
+              :skipDisplay="blob.skipSchemaDisplay"
               :expandedInitially="index === 0"
               :forceExpand="allExpanded || filterQuery"
               :forceCollapse="allCollapsed"
@@ -107,7 +104,7 @@
                 @contextmenu.prevent.stop="$bks.openMenu({item: routine, event: $event, options: routineMenuOptions})"
               >
               </routine-list-item>
-            </TableListSchema>
+            </sidebar-folder>
           </div>
         </div>
 
@@ -127,16 +124,16 @@
 <script>
   import TableListItem from './table_list/TableListItem'
   import RoutineListItem from './table_list/RoutineListItem'
-  import TableListSchema from './table_list/TableListSchema'
   import Split from 'split.js'
   import { mapState, mapGetters } from 'vuex'
   import TableFilter from '../../../mixins/table_filter'
   import TableListContextMenus from '../../../mixins/TableListContextMenus'
   import PinnedTableList from '@/components/sidebar/core/PinnedTableList.vue'
+  import SidebarFolder from '@/components/common/SidebarFolder.vue'
   import { AppEvent } from '@/common/AppEvent'
   export default {
     mixins: [TableFilter, TableListContextMenus],
-    components: { TableListItem, TableListSchema, RoutineListItem, PinnedTableList},
+    components: { TableListItem, RoutineListItem, PinnedTableList, SidebarFolder },
     data() {
       return {
         tableLoadError: null,

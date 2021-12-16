@@ -1,49 +1,78 @@
 <template>
-  <div class="sidebar-wrap flex-col">
+  <div class="sidebar-wrap row">
+    <workspace-sidebar></workspace-sidebar>
 
     <!-- QUICK CONNECT -->
-    <div class="btn-wrap quick-connect">
-      <a
-        href=""
-        class="btn btn-flat btn-icon btn-block"
-        :class="{'active': defaultConfig == selectedConfig }"
-        @click.prevent="edit(defaultConfig)"
-      >
-      <i class="material-icons">offline_bolt</i>
-      <span>Quick Connect</span>
-      </a>
-    </div>
-
-    <div class="connection-wrap expand flex-col">
-
-      <!-- Saved Connections -->
-      <div class="list saved-connection-list expand" ref="savedConnectionList">
-        <div class="list-group">
-          <div class="list-heading">
-            <div class="flex flex-between">
-              <div class="sub row flex-middle noselect">
-                Saved Connections <span class="badge">{{connectionConfigs.length}}</span>
+    <div class="tab-content flex-col expand">
+      <div class="btn-wrap quick-connect">
+        <a
+          href=""
+          class="btn btn-flat btn-icon btn-block"
+          :class="{'active': defaultConfig == selectedConfig }"
+          @click.prevent="edit(defaultConfig)"
+        >
+        <i class="material-icons">add</i>
+        <span>New Connection</span>
+        </a>
+      </div>
+  
+      <div class="connection-wrap expand flex-col">
+  
+        <!-- Saved Connections -->
+        <div class="list saved-connection-list expand" ref="savedConnectionList">
+          <div class="list-group">
+            <div class="list-heading">
+              <div class="flex">
+                <div class="sub row flex-middle noselect">
+                  Saved <span class="badge">{{(connectionConfigs || []).length}}</span>
+                </div>
+                <span class="expand"></span>
+                <div class="actions">
+                  <a v-if="isCloud" @click.prevent="importFromLocal" title="Import connections from local workspace"><i class="material-icons">save_alt</i></a>
+                  <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
+                </div>
+                <x-button class="actions-btn btn btn-link btn-small" title="Sort By">
+                  <!-- <span>{{sortables[this.sortOrder]}}</span> -->
+                  <i class="material-icons-outlined">sort</i>
+                  <!-- <i class="material-icons">arrow_drop_down</i> -->
+                  <x-menu style="--target-align: right;">
+                    <x-menuitem
+                      v-for="i in Object.keys(sortables)"
+                      :key="i"
+                      :toggled="i === sortOrder"
+                      togglable
+                      @click="sortConnections(i)"
+                    >
+                      <x-label>{{ sortables[i] }}</x-label>
+                    </x-menuitem>
+                  </x-menu>
+                </x-button>
               </div>
-              <x-button class="actions-btn btn btn-link" title="Sort By">
-                <span>{{sortables[this.sortOrder]}}</span>
-                <i class="material-icons">arrow_drop_down</i>
-                <x-menu>
-                  <x-menuitem
-                    v-for="i in Object.keys(sortables)"
-                    :key="i"
-                    :toggled="i === sortOrder"
-                    togglable
-                    @click="sortConnections(i)"
-                  >
-                    <x-label>{{ sortables[i] }}</x-label>
-                  </x-menuitem>
-                </x-menu>
-              </x-button>
             </div>
-          </div>
-          <nav class="list-body">
-              <connection-list-item
-                v-for="c in orderedConnectionConfigs"
+            <error-alert :error="error" v-if="error" title="Problem loading connections" />
+            <sidebar-loading v-else-if="loading" />
+            <nav v-else class="list-body">
+              <sidebar-folder
+                v-for="{ folder, connections } in foldersWithConnections"
+                :key="`${folder.id}-${connections.length}`"
+                :title="`${folder.name} (${connections.length})`"
+                placeholder="No Items"
+                :expandedInitially="true"
+              >
+                <connection-list-item
+                  v-for="c in connections"
+                  :key="c.id"
+                  :config="c"
+                  :selectedConfig="selectedConfig"
+                  :showDuplicate="true"
+                  @edit="edit"
+                  @remove="remove"
+                  @duplicate="duplicate"
+                  @doubleClick="connect"
+                >
+                </connection-list-item>
+              </sidebar-folder>
+              <connection-list-item v-for="c in lonelyConnections"
                 :key="c.id"
                 :config="c"
                 :selectedConfig="selectedConfig"
@@ -52,36 +81,37 @@
                 @remove="remove"
                 @duplicate="duplicate"
                 @doubleClick="connect"
-              >
-              </connection-list-item>
-          </nav>
-        </div>
-      </div>
 
-      <hr> <!-- Fake gutter for split.js -->
-
-      <!-- Recent Connections -->
-      <div class="list recent-connection-list expand" ref="recentConnectionList">
-        <div class="list-group">
-          <div class="list-heading">
-            <div class="sub row flex-middle noselect">
-              Recent Connections <span class="badge">{{usedConfigs.length}}</span>
-            </div>
+              />
+            </nav>
           </div>
-          <nav class="list-body">
-              <connection-list-item
-                v-for="c in usedConfigs"
-                :key="c.id"
-                :config="c"
-                :selectedConfig="selectedConfig"
-                :isRecentList="true"
-                :showDuplicate="false"
-                @edit="edit"
-                @remove="removeUsedConfig"
-                @doubleClick="connect"
-              >
-              </connection-list-item>
-          </nav>
+        </div>
+  
+        <hr> <!-- Fake gutter for split.js -->
+  
+        <!-- Recent Connections -->
+        <div class="list recent-connection-list expand" ref="recentConnectionList">
+          <div class="list-group">
+            <div class="list-heading">
+              <div class="sub row flex-middle noselect">
+                Recent <span class="badge">{{usedConfigs.length}}</span>
+              </div>
+            </div>
+            <nav class="list-body">
+                <connection-list-item
+                  v-for="c in usedConfigs"
+                  :key="c.id"
+                  :config="c"
+                  :selectedConfig="selectedConfig"
+                  :isRecentList="true"
+                  :showDuplicate="false"
+                  @edit="edit"
+                  @remove="removeUsedConfig"
+                  @doubleClick="connect"
+                >
+                </connection-list-item>
+            </nav>
+          </div>
         </div>
       </div>
     </div>
@@ -90,15 +120,20 @@
 
 <script>
   import _ from 'lodash'
+  import WorkspaceSidebar from './WorkspaceSidebar'
   import { mapState, mapGetters } from 'vuex'
   import ConnectionListItem from './connection/ConnectionListItem'
+  import SidebarLoading from '@/components/common/SidebarLoading.vue'
+  import ErrorAlert from '@/components/common/ErrorAlert.vue'
   import Split from 'split.js'
+import SidebarFolder from '@/components/common/SidebarFolder.vue'
+import { AppEvent } from '@/common/AppEvent'
   export default {
-    components: { ConnectionListItem },
+    components: { ConnectionListItem, WorkspaceSidebar, SidebarLoading, ErrorAlert, SidebarFolder },
     props: ['defaultConfig', 'selectedConfig'],
     data: () => ({
       split: null,
-      sizes: [60, 40],
+      sizes: [50,50],
       sortables: {
         labelColor: "Color",
         id: "Created",
@@ -107,12 +142,41 @@
       }
     }),
     computed: {
-      ...mapState(['connectionConfigs']),
+      ...mapState('data/connections', {'connectionConfigs': 'items', 'connectionsLoading': 'loading', 'connectionsError': 'error'}),
+      ...mapState('data/connectionFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error', 'foldersUnsupported': 'unsupported'}),
       ...mapGetters({
         'usedConfigs': 'orderedUsedConfigs',
         'settings': 'settings/settings',
-        'sortOrder': 'settings/sortOrder'
+        'sortOrder': 'settings/sortOrder',
+        'isCloud': 'isCloud'
       }),
+      foldersSupported() {
+        return !this.foldersUnsupported
+      },
+      lonelyConnections() {
+        const folderIds = this.folders.map((c) => c.id)
+        return this.connectionConfigs.filter((config) => {
+          return !config.connectionFolderId || !folderIds.includes(config.connectionFolderId)
+        })
+      },
+      foldersWithConnections() {
+        if (this.loading) return []
+
+        const result = this.folders.map((folder) => {
+          return {
+            folder,
+            connections: this.connectionConfigs.filter((c) => c.connectionFolderId === folder.id)
+          }
+        })
+
+        return result
+      },
+      loading() {
+        return this.connectionsLoading || this.foldersLoading
+      },
+      error() {
+        return this.connectionsError || this.foldersError || null
+      },
       orderedConnectionConfigs() {
         return _.orderBy(this.connectionConfigs, this.sortOrder)
       },
@@ -133,6 +197,14 @@
       })
     },
     methods: {
+      importFromLocal() {
+        console.log("triggering import")  
+        this.$root.$emit(AppEvent.promptConnectionImport)
+      },
+      refresh() {
+        this.$store.dispatch('data/connectionFolders/load')
+        this.$store.dispatch('data/connections/load')
+      },
       edit(config) {
         this.$emit('edit', config)
       },

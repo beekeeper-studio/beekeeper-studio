@@ -1,5 +1,4 @@
-
-const wait = (time: number) => new Promise((resolve) => setTimeout(resolve, time));
+import { wait } from "@shared/lib/wait"
 
 export async function waitFor(conditional: () => boolean) {
   while (!conditional()) {

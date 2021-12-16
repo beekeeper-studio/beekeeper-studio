@@ -6,6 +6,7 @@
 
 body.theme-dark {
   @import './themes/dark/variables.scss';
+  @import './components/content-placeholders.scss';
   @import './components/context-menu.scss';
   @import './components/quicksearch.scss';
   @import './vendor.scss';
@@ -15,6 +16,7 @@ body.theme-dark {
 
 body.theme-light {
   @import './themes/light/variables.scss';
+  @import './components/content-placeholders.scss';
   @import './components/context-menu.scss';
   @import './components/quicksearch.scss';
   @import './vendor.scss';

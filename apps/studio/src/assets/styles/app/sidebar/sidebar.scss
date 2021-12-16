@@ -67,9 +67,14 @@
   // Empty
   // ---------------------------------
   .empty {
-    padding: $gutter-h ($gutter-w + $gutter-h);
+    padding: $gutter-w ($gutter-w + $gutter-h);
     color: $text;
     font-size: 90%;
+    .empty-actions {
+      .btn {
+        margin-top: $gutter-h * 2;
+      }
+    }
   }
 
   // Sidebar Header
@@ -163,7 +168,7 @@
         }
         &:hover, &:focus {
           box-shadow: none;
-          .material-icons {
+          .material-icons, .material-icons-outlined {
             color: $text-dark;
           }
         }
@@ -198,7 +203,7 @@
           display: none;
         }
       }
-      .material-icons {
+      .material-icons, .material-icons-outlined {
         font-size: 14px;
         line-height: 26px;
         width: 14px;
@@ -246,6 +251,7 @@
   padding: $gutter-w $gutter-w ($gutter-h * 0.5);
   padding-right: $gutter-h;
   background: transparent;
+  min-height: 33px;
   .sub {
     color: $text-dark;
     line-height: 1;
@@ -271,12 +277,12 @@
   }
   .actions {
     padding-right: $gutter-h;
-    a {
+    a, .btn-link {
       margin: 0 ($gutter-h * 0.5);
       margin-right: 0;
       padding: 0;
     }
-    .material-icons {
+    .material-icons, .material-icons-outlined {
       font-size: 16px;
       color: $text-light;
       &:hover {
@@ -287,6 +293,7 @@
 }
 .list-body {
   flex: 1 1 auto;
+  // Why was this 0? Because of Chrome being a derp.
   height: 0;
   // max-height: -webkit-fill-available;
   padding: $gutter-h 0 ($gutter * 0.75);
@@ -299,10 +306,29 @@
   flex-direction: column;
   padding: 0;    
   flex: 1 1 auto;
+  height: 100%;
   &:hover{
     .list-heading .actions {
       visibility: visible;
     }
+  }
+  .actions-btn {
+    i {
+      color: $text-light;
+      transition: color 0.15s ease-in-out;
+      &:hover {
+        color: $text-dark;
+      }
+    }
+  }
+  .subtitle {
+    color: $text-lighter;
+    font-size: 85%;
+    display: flex;
+    align-items: center;
+  }
+  .error-alert {
+    margin: $gutter-h $gutter-w;
   }
   .list-heading .actions {
     display: flex;
@@ -358,7 +384,7 @@
     }
     .item-text {
       font-size: 1rem;
-      padding-bottom: $gutter-h * 0.5;
+      // padding-bottom: $gutter-h * 0.5;
     }
     .title {
       @extend .truncate;
@@ -508,4 +534,65 @@
       display: flex;
     }
   }
+
+}
+
+// Folder Group
+#sidebar {
+  .folder-group {
+    position: relative;
+    margin-bottom: $gutter-h;
+    padding-left: $gutter-w;
+    .folder-btn {
+      display: flex;
+      align-items: center;
+      padding-left: 0;
+      margin-bottom: $gutter-h * 0.5;
+      .btn-fab {
+        display: inline-flex!important;
+        margin-right: 0;
+      }
+      &:hover {
+        background: transparent;
+        .material-icons:first-child {
+          color: $text-dark;
+        }
+      }
+      .schema-icon {
+        line-height: 1.9;
+      }
+      &.open {
+        .open-close {
+          transform: rotate(90deg);
+        }
+      }
+    }
+    > div {
+      position: relative;
+    }
+    .list-item {
+      padding-left: $gutter-h * 0.5;
+      &:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 9px;
+        border-left: 1px solid rgba($theme-base,0.08);
+      }
+
+      .sub-items {
+        margin-left: $gutter-h * 2;
+      }
+      .list-item-btn {
+        margin-left: $gutter-w;
+      }
+      &.empty {
+        padding: $gutter-h;
+        padding-left: $gutter-w * 1.8;
+        color: $text-lighter;
+      }
+    }
+  }
+
 }

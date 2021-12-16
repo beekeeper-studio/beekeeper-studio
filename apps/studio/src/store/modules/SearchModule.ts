@@ -32,7 +32,12 @@ export const SearchModule: Module<State, RootState> = {
         const title = t.schema ? `${t.schema}.${t.name}` : t.name
         return { item: t, type: 'table', title, id: title }
       })
-      const favorites: IndexItem[] = root.favorites.map((f) => ({ item: f, type: 'query', title: f.title, id: f.id }))
+      const folders = root['data/queryFolders']['items']
+      const favorites: IndexItem[] = root['data/queries']['items'].map((f) => {
+        const folder = folders.find((folder) => folder.id === f.queryFolderId)
+        const title = folder ? `${folder.name} > ${f.title}` : f.title
+        return { item: f, type: 'query', title: title, id: f.id }
+      })
       return [...tables, ...favorites]
     },
   },

@@ -28,10 +28,6 @@
         v-show="activeItem === 'history'"
         :class="tabClasses('history')"
       >
-        <div class="sidebar-heading">
-          <span class="sidebar-title">History</span>
-          <span class="expand"></span>
-        </div>
         <history-list></history-list>
       </div>
 
@@ -42,10 +38,6 @@
         :class="tabClasses('queries')"
         v-show="activeItem === 'queries'"
       >
-        <div class="sidebar-heading">
-          <span class="sidebar-title">Saved Queries</span>
-          <span class="expand"></span>
-        </div>
         <favorite-list></favorite-list>
       </div>
 

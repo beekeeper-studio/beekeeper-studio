@@ -125,6 +125,7 @@ code {
 }
 .btn-primary {
   background: $theme-primary;
+  background: $theme-base;
   color: rgba(black, 0.87);
   transition: background 0.15s ease-in-out;
   &:hover {

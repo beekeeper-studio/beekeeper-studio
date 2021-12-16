@@ -95,7 +95,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     },
     opendocs : {
       id: 'opendocs',
-      label: 'Beekeper Studio Documentation',
+      label: 'Documentation and Support',
       click: actionHandler.opendocs
     },
     reload: {

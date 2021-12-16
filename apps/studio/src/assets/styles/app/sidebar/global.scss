@@ -3,7 +3,89 @@
     display: flex;
     flex-direction: column;
     background: $global-sidebar-bg;
+    &:hover {
+      .nav-item {
+        &.refresh {
+          display: flex;
+        }
+      }
+    }
+    &.workspace-items {
+      margin-top: $gutter-h * 0.5;
+
+      .nav-item {
+        &.active {
+          .avatar {
+            box-shadow: none;
+            color: $text-dark;
+          }
+        }
+        .workspace-avatar {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          .workspace-icon {
+            font-size: 18px;
+          }
+        }
+      }
+      .add-workspace-button {
+        .avatar {
+          &:hover {
+            background: transparent;
+          }
+        }
+      }
+    }
+    
+    // Items with an Active state
+    .nav-item.selectable {
+      &:before {
+        opacity: 0;
+        transition: opacity 0.15s ease-in-out;
+      }
+      &:hover {
+        .avatar {
+          color: rgba($theme-base, 0.38);
+        }
+        &:before {
+          content: '';
+          position: absolute;
+          left: 0;
+          width: 1px;
+          height: 20px;
+          background: rgba($theme-base, 0.2);
+          border-radius: 3px;
+          overflow: hidden;
+          opacity: 1;
+        }
+      }
+      &.active, &.active:hover {
+        .avatar {
+          color: $text-dark;
+        }
+        &:before {
+          content: '';
+          position: absolute;
+          left: 0;
+          width: 1px;
+          height: 20px;
+          background: $theme-base;
+          border-radius: 3px;
+          overflow: hidden;
+          opacity: 1;
+        }
+        // > span {
+        //   background: rgba($theme-base, 0.08);
+        // }
+      }
+      .avatar {
+        background: rgba($theme-base, 0.08);
+      }
+    }
     .nav-item {
+      $nav-item-size:     34px;
+
       display: flex;
       align-items: center;
       justify-content: center;
@@ -11,22 +93,14 @@
       height: 44px;
       font-size: 18px;
       color: rgba($theme-base, 0.38);
-      &:hover {
-        color: $text-dark;
-        transition: color 0.15s ease-in-out;
-      }
+      transition: color 0.15s ease-in-out;
       &.active {
         color: $text-dark;
-        > span {
-          background: rgba($theme-base, 0.08);
-        }
       }
       > span {  
-        height: 36px;
-        // width: 100%;
-        // border-radius: 0 36px 36px 0;
-        width: 36px;
-        border-radius: 36px;
+        height: $nav-item-size;
+        width: $nav-item-size;
+        border-radius: $nav-item-size;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -34,6 +108,67 @@
       }
       .material-icons {
         font-size: 24px;
+      }
+      &.refresh {
+        display: none;
+      }
+      &.account {
+        margin-bottom: $gutter-h * 0.75;
+      }
+    }
+    .add-workspace-button {
+      .v--modal-box {
+        height: auto!important;
+      }
+      .nav-item {
+        .avatar {
+          box-shadow: none;
+          .material-icons {
+            font-size: 24px;
+          }
+        }
+      }
+    }
+  }
+  .avatar {
+    color: $text-lighter;
+    transition: color 0.2s ease-in-out, background 0.2s ease-in-out;
+    &:hover {
+      color: $text-dark;
+    }
+  }
+  .avatar {
+    position: relative;
+    background-clip: content-box; /* support: IE9+ */
+    transition: border 0.2s ease-in-out;
+    > .material-icons {
+      font-size: 18px;
+    }
+    .badge {
+      $badge-size:     14px;
+
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      top: 0;
+      right: 0;
+      height: $badge-size;
+      width: $badge-size;
+      border-radius: $badge-size;
+      font-size: 10px;
+      font-weight: bold;
+      margin: 0;
+      background: #666;
+      color: rgba(black, 0.87);
+      &.badge-danger {
+        background: $brand-danger;
+      }
+      &.badge-success {
+        background: $brand-success;
+      }
+      .material-icons {
+        font-size: 12px;
       }
     }
   }

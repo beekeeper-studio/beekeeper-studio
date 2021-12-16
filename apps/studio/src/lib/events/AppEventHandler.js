@@ -34,7 +34,7 @@ export default class {
 
   addBeekeeper() {
     this.vueApp.$noty.success("Beekeeper's Database has been added to your Saved Connections")
-    this.vueApp.$store.dispatch('loadSavedConfigs')
+    this.vueApp.$store.dispatch('data/connections/load')
   }
 
   disconnect() {

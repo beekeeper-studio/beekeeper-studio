@@ -6,6 +6,11 @@ import path from 'path';
 import mkdirp from 'mkdirp';
 import { Error as CustomError } from '../lib/errors'
 
+export function having<T, U>(item: T | undefined | null, f: (T) => U, errorOnNone?: string): U | null {
+  if (item) return f(item)
+  if (errorOnNone) throw new Error(errorOnNone)
+  return null
+}
 
 export function fileExists(filename: string) {
   return new Promise((resolve) => {

@@ -43,9 +43,14 @@ export const PinModule: Module<State, RootState> = {
   actions: {
     async loadPins(context) {
       const { usedConfig } = context.rootState
-      if (usedConfig && usedConfig.hasId()) {
-        await usedConfig.reload()
-        const pins = usedConfig.pinnedEntities
+      if (usedConfig && usedConfig.id) {
+        // await usedConfig.reload()
+        const pins = await PinnedEntity.find({
+          where: {
+            connectionId: usedConfig.id,
+            workspaceId: usedConfig.workspaceId
+          }
+        })
         context.commit('set', pins || [])
       }
     },
@@ -56,7 +61,7 @@ export const PinModule: Module<State, RootState> = {
       const { usedConfig } = context.rootState
       const unsavedPins = context.state.pins.filter((p)=> !p.hasId())
       await Promise.all(unsavedPins.map((p) => {
-        p.savedConnection = usedConfig
+        p.connectionId === usedConfig.id && p.workspaceId === usedConfig.id
         p.save()
       }))
     },
@@ -68,7 +73,7 @@ export const PinModule: Module<State, RootState> = {
       if (database && usedConfig) {
         const newPin = new PinnedEntity(item, database, usedConfig)
         newPin.position = (context.getters.orderedPins.reverse()[0]?.position || 0) + 1
-        if(usedConfig.hasId()) await newPin.save()
+        if(usedConfig.id) await newPin.save()
         context.commit('add', newPin)
       }
     },
@@ -76,14 +81,14 @@ export const PinModule: Module<State, RootState> = {
       pins.forEach((p, idx) => p.position = idx)
       const { usedConfig } = context.rootState
       context.commit('set', pins)
-      if (usedConfig.hasId()) await PinnedEntity.save(pins)
+      if (usedConfig.id) await PinnedEntity.save(pins)
     },
     async remove(context, item: DatabaseEntity) {
       const { database } = context.rootState
 
       const existing = context.state.pins.find((p) => p.matches(item, database || undefined))
       if (existing) {
-        if (existing.hasId()) await existing.remove()
+        if (existing.id) await existing.remove()
         context.commit('remove', existing)
       }
     }

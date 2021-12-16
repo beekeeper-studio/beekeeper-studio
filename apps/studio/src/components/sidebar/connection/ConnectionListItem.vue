@@ -16,10 +16,10 @@
         <div class="title">{{label}}</div>
         <div class="subtitle"> 
           <span class="bastion" v-if="this.config.sshBastionHost">
-            <span class="truncate">{{ this.config.bastionHostString }}</span>&nbsp;>&nbsp;
+            <span class="truncate">{{ this.config.sshBastionHost }}</span>&nbsp;>&nbsp;
           </span>
           <span class="ssh" v-if="this.config.sshHost">
-            <span class="truncate">{{ this.config.sshHostString }}</span>&nbsp;>&nbsp;
+            <span class="truncate">{{ this.config.sshHost }}</span>&nbsp;>&nbsp;
           </span>
           <span class="connection">
             <span>{{ subtitleSimple }}</span>
@@ -32,7 +32,9 @@
 </template>
 <script>
 import path from 'path'
+import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
+import { mapGetters, mapState } from 'vuex'
 export default {
   // recent list is 'recent connections'
   // if that is true, we need to find the companion saved connection
@@ -42,9 +44,24 @@ export default {
     split: null
   }),
   computed: {
+    ...mapState('data/connections', {'connectionConfigs': 'items'}),
+    ...mapState('data/connectionFolders', {'folders': 'items'}),
+    ...mapGetters(['isCloud']),
+    moveToOptions() {
+      return this.folders
+        .filter((folder) => folder.id !== this.config.connectionFolderId)
+        .map((folder) => {
+        return {
+          name: `Move to ${folder.name}`,
+          slug: `move-${folder.id}`,
+          handler: this.moveItem,
+          folder
+        }
+      })
+    },
     classList() {
       return {
-        'active': this.savedConnection && this.selectedConfig ? this.savedConnection.id === this.selectedConfig.id : false
+        'active': this.savedConnection && this.selectedConfig ? this.savedConnection === this.selectedConfig : false
       }
     },
     labelColor() {
@@ -57,7 +74,7 @@ export default {
         return path.basename(this.config.defaultDatabase)
       }
 
-      return this.config.simpleConnectionString
+      return this.$bks.simpleConnectionString(this.config)
     },
     connectionType() {
       if (this.config.connectionType === 'sqlite') {
@@ -70,17 +87,21 @@ export default {
       if (this.isRecentList) {
         return this.timeAgo.format(this.config.updatedAt)
       } else {
-        return this.config.simpleConnectionString
+        return this.$bks.simpleConnectionString(this.config)
       }
     },
     title() {
-      return this.config.fullConnectionString
+      return this.$bks.buildConnectionString(this.config)
     },
     savedConnection() {
 
       if (this.isRecentList) {
-        if (!this.config.savedConnectionId) return null
-        return this.$store.state.connectionConfigs.find(c => c.id === this.config.savedConnectionId)
+        if (!this.config.connectionId || !this.config.workspaceId) return null
+
+        return this.connectionConfigs.find((c) => 
+          c.id === this.config.connectionId &&
+          c.workspaceId === this.config.workspaceId
+        )
       } else {
         return this.config
       }
@@ -91,38 +112,74 @@ export default {
   },
   methods: {
     showContextMenu(event) {
+      const options = [
+        {
+          name: "View",
+          slug: 'view',
+          handler: (blob) => this.click(blob.item)
+        },
+        {
+          name: 'Connect',
+          slug: 'connect',
+          handler: (blob) => this.doubleClick(blob.item)
+        },
+        {
+          name: "Duplicate",
+          slug: 'duplicate',
+          handler: this.duplicate
+        },
+        {
+          name: `Copy ${this.connectionType}`,
+          handler: this.copyUrl
+        },
+        {
+          name: "Remove",
+          handler: this.remove
+        },
+      ]
+
+      if (this.isCloud) {
+        options.push(...[
+          {
+            type: 'divider'
+          },
+          ...this.moveToOptions
+        ])
+      }
+      console.log('options', options)
+
       this.$bks.openMenu({
         event,
         item: this.config,
-        options: [
-          {
-            name: "Duplicate",
-            slug: 'duplicate',
-            handler: this.duplicate
-          },
-          {
-            name: `Copy ${this.connectionType}`,
-            handler: this.copyUrl
-          },
-          {
-            name: "Remove",
-            handler: this.remove
-          },
-        ]
+        options
       })
     },
-    click() {
+    async moveItem({ item, option }) {
+      try {
+        const folder = option.folder
+        if (!folder || !folder.id) return
+        const updated = _.clone(item)
+        updated.connectionFolderId = folder.id
+        await this.$store.dispatch('data/connections/save', updated)
+      } catch(ex) {
+        this.$noty.error(`Move Error: ${ex.message}`)
+        console.error(ex)
+      }
+    },
+    async click() {
       if (this.savedConnection) {
         this.$emit('edit', this.savedConnection)
       } else {
-        this.$emit('edit', this.config.toNewConnection())
+        const editable = await this.$store.dispatch('data/connections/clone', this.config)
+        this.$emit('edit', editable)
       }
     },
-    doubleClick() {
+    async doubleClick() {
       if (this.savedConnection) {
         this.$emit('doubleClick', this.savedConnection)
       } else {
-        this.$emit('doubleClick', this.config.toNewConnection())
+        const editable = await this.$store.dispatch('data/connections/clone', this.config)
+        this.$emit('doubleClick', editable)
       }
     },
     remove() {
@@ -133,7 +190,7 @@ export default {
     },
     async copyUrl() {
       try {
-        await this.$copyText(this.config.fullConnectionString)
+        await this.$copyText(this.$bks.buildConnectionString(this.config))
         this.$noty.success(`The ${this.connectionType} was successfully copied!`)
       } catch (err) {
         this.$noty.success(`The ${this.connectionType} could not be copied!`)

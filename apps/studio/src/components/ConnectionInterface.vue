@@ -8,18 +8,11 @@
         <div class="small-wrap expand">
           <div class="card-flat padding">
             <div class="flex flex-between">
-              <h3 class="card-title">{{pageTitle}}</h3>
+              <h3 class="card-title" v-if="!pageTitle">New Connection</h3>
+              <h3 class="card-title" v-if="pageTitle">{{pageTitle}}</h3>
               <ImportButton :config="config">Import from URL</ImportButton>
             </div>
-            <div class="alert alert-danger" v-show="errors">
-              <i class="material-icons">warning</i>
-              <div>
-                <span>Please fix the following errors:</span>
-                <ul>
-                  <li v-for="(e, i) in errors" :key="i">{{e}}</li>
-                </ul>
-              </div>
-            </div>
+            <error-alert :error="errors" />
             <form @action="submit" v-if="config">
               <div class="form-group">
                 <label for="connectionType">Connection Type</label>
@@ -52,10 +45,12 @@
             </form>
 
           </div>
+          <div class="pitch"><span class="badge">NEW</span> Collaborate with co-workers using <a href="https://beekeeperstudio.io/pricing">team workspaces.</a></div>
           <div v-if="connectionError" class="alert alert-danger">
             {{connectionError}}
           </div>
         </div>
+        
         <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{version}}</a></small>
       </div>
     </div>
@@ -76,10 +71,14 @@
   import ImportButton from './connection/ImportButton'
   import _ from 'lodash'
   import platformInfo from '@/common/platform_info'
+  import ErrorAlert from './common/ErrorAlert.vue'
+  import rawLog from 'electron-log'
+
+  const log = rawLog.scope('ConnectionInterface')
   // import ImportUrlForm from './connection/ImportUrlForm';
 
   export default {
-    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, },
 
     data() {
       return {
@@ -101,7 +100,7 @@
       },
       pageTitle() {
         if(_.isNull(this.config) || _.isUndefined(this.config.id)) {
-          return "Quick Connect"
+          return "New Connection"
         } else {
           return this.config.name
         }
@@ -116,7 +115,10 @@
       }
     },
     async mounted() {
-      await this.$store.dispatch('loadSavedConfigs')
+      if (!this.$store.getters.workspace) {
+        await this.$store.commit('workspace', this.$store.state.localWorkspace)
+      }
+      await this.$store.dispatch('credentials/load')
       await this.$store.dispatch('loadUsedConfigs')
       this.config = this.defaultConfig
       this.config.sshUsername = os.userInfo().username
@@ -170,12 +172,11 @@
       },
       async duplicate(config) {
         // Duplicates ES 6 class of the connection, without any reference to the old one.
-        const duplicateConfig = Object.assign( Object.create( Object.getPrototypeOf(config)), config);
-        duplicateConfig.id = null
+        const duplicateConfig = await this.$store.dispatch('data/connections/clone', config)
         duplicateConfig.name = 'Copy of ' + duplicateConfig.name
 
         try {
-          await this.$store.dispatch('saveConnectionConfig', duplicateConfig)
+          await this.$store.dispatch('data/connections/save', duplicateConfig)
           this.$noty.success(`The connection was successfully duplicated!`)
         } catch (ex) {
           this.$noty.error(`Could not duplicate Connection: ${ex.message}`)
@@ -189,6 +190,7 @@
         } catch(ex) {
           this.connectionError = ex.message
           this.$noty.error("Error establishing a connection")
+          log.error(ex)
         }
       },
       async handleConnect(config) {
@@ -217,7 +219,7 @@
         try {
           this.errors = null
           this.connectionError = null
-          await this.$store.dispatch('saveConnectionConfig', this.config)
+          await this.$store.dispatch('data/connections/save', this.config)
           if(this.config === this.defaultConfig) {
             this.defaultConfig = new SavedConnection()
           }
