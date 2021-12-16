@@ -88,8 +88,7 @@
     "vuex-persist": "^2.0.1",
     "xel": "beekeeper-studio/xel",
     "xlsx": "^0.17.0",
-    "yargs-parser": "^20.2.7",
-    "yup": "^0.27.0"
+    "yargs-parser": "^20.2.7"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^5.4.1",
