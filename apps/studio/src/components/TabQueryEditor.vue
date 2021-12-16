@@ -17,7 +17,6 @@
       <span class="expand"></span>
       <div class="toolbar text-right">
         <div class="actions btn-group" ref="actions">
-          <x-button class="btn btn-danger" @click.prevent="fakeRemoteChange" >[DEV] Make Fake Remote Change </x-button>
           <x-button @click.prevent="triggerSave" class="btn btn-flat btn-small">Save</x-button>
 
           <x-buttons class="">
@@ -443,10 +442,13 @@ import { AppEvent } from '@/common/AppEvent'
             payload.text = this.unsavedText
             this.$modal.hide('save-modal')
             console.log("TQE Saving", payload)
-            const updated = await this.$store.dispatch('data/queries/save', payload)
-            this.tab.query = updated
-            this.unsavedText = updated.text
-            this.originalText = updated.text
+            await this.$store.dispatch('data/queries/save', payload)
+            // we don't do this becuase we object assign.
+            // this.tab.query = updated
+            this.$nextTick(() => {
+              this.unsavedText = this.tab.query.text
+              this.originalText = this.tab.query.text
+            })
             this.$noty.success('Query Saved')
           } catch (ex) {
             this.saveError = ex
