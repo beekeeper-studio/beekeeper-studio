@@ -83,7 +83,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   }
 
   opendocs() {
-    shell.openExternal("http://docs.beekeeperstudio.io/guide/")
+    shell.openExternal("https://docs.beekeeperstudio.io/")
   }
 
   devtools(_1: Electron.MenuItem, win: ElectronWindow) {
