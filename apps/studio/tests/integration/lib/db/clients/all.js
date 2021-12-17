@@ -45,7 +45,7 @@ export function runCommonTests(getUtil) {
 
 
   describe("Table Structure", () => {
-    test.only("should fetch table properties", async() => {
+    test("should fetch table properties", async() => {
       await getUtil().tablePropertiesTests()
     })
   })

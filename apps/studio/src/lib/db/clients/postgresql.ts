@@ -494,7 +494,7 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
 }
 
 export async function listTableColumns(
-  conn: Conn,
+  conn: HasPool,
   _database: string,
   table?: string,
   schema?: string
@@ -505,6 +505,7 @@ export async function listTableColumns(
   if (table && !schema) {
     throw new Error("Table '${table}' provided for listTableColumns, but no schema name")
   }
+
   const sql = `
     SELECT
       table_schema,
@@ -566,11 +567,13 @@ export async function listMaterializedViewColumns(conn: Conn, _database: string,
 }
 
 
-export async function listTableTriggers(conn: Conn, table: string, schema: string) {
+export async function listTableTriggers(conn: HasPool, table: string, schema: string) {
+  const version = await getVersion(conn)
+  const timing_column = version.isPostgres && version.number < 90000 ? 'condition_timing' : 'action_timing';
   const sql = `
     SELECT 
       trigger_name,
-      action_timing as timing,
+      ${timing_column} as timing,
       event_manipulation as manipulation,
       action_statement as action,
       action_condition as condition
@@ -626,34 +629,6 @@ async function listCockroachIndexes(conn: Conn, table: string, schema: string): 
 }
 
 
-const psql93sql = `
-    SELECT i.indexrelid::regclass AS indexname,
-        row_number() over (partition by i.id) AS index_order,
-        i.indexrelid as id,
-        i.indisunique,
-        i.indisprimary,
-        coalesce(a.attname,
-                  (('{' || pg_get_expr(
-                              i.indexprs,
-                              i.indrelid
-                          )
-                        || '}')::text[]
-                  )[k.i]
-                ) AS index_column,
-        i.indoption[k.i - 1] = 0 AS ascending
-      FROM 
-      pg_index i
-        CROSS JOIN LATERAL unnest(i.indkey) AS k(attnum)
-        LEFT JOIN pg_attribute AS a
-            ON i.indrelid = a.attrelid AND k.attnum = a.attnum
-        JOIN pg_class t on t.oid = i.indrelid
-        JOIN pg_namespace c on c.oid = t.relnamespace
-      WHERE
-       c.nspname = $1 AND
-       t.relname = $2
-`
-
-
 export async function listTableIndexes(
   conn: HasPool, table: string, schema: string
   ): Promise<TableIndex[]> {
@@ -661,31 +636,31 @@ export async function listTableIndexes(
   const version = await getVersion(conn)
   if (version.isCockroach) return await listCockroachIndexes(conn, table, schema)
   
-  console.log("VERSION", version.number)
-  const sql = version.number < 90400 ? psql93sql : `
-    SELECT i.indexrelid::regclass AS indexname,
-        k.i AS index_order,
-        i.indexrelid as id,
-        i.indisunique,
-        i.indisprimary,
-        coalesce(a.attname,
-                  (('{' || pg_get_expr(
-                              i.indexprs,
-                              i.indrelid
-                          )
-                        || '}')::text[]
-                  )[k.i]
-                ) AS index_column,
-        i.indoption[k.i - 1] = 0 AS ascending
-      FROM pg_index i
-        CROSS JOIN LATERAL unnest(i.indkey) WITH ORDINALITY AS k(attnum, i)
-        LEFT JOIN pg_attribute AS a
-            ON i.indrelid = a.attrelid AND k.attnum = a.attnum
-        JOIN pg_class t on t.oid = i.indrelid
-        JOIN pg_namespace c on c.oid = t.relnamespace
-      WHERE
-       c.nspname = $1 AND
-       t.relname = $2
+  const sql = `
+  SELECT i.indexrelid::regclass AS indexname,
+      k.i AS index_order,
+      i.indexrelid as id,
+      i.indisunique,
+      i.indisprimary,
+      coalesce(a.attname,
+                (('{' || pg_get_expr(
+                            i.indexprs,
+                            i.indrelid
+                        )
+                      || '}')::text[]
+                )[k.i]
+              ) AS index_column,
+      i.indoption[k.i - 1] = 0 AS ascending
+    FROM pg_index i
+      CROSS JOIN LATERAL (SELECT unnest(i.indkey), generate_subscripts(i.indkey, 1) + 1) AS k(attnum, i)
+      LEFT JOIN pg_attribute AS a
+          ON i.indrelid = a.attrelid AND k.attnum = a.attnum
+      JOIN pg_class t on t.oid = i.indrelid
+      JOIN pg_namespace c on c.oid = t.relnamespace
+    WHERE
+    c.nspname = $1 AND
+    t.relname = $2
+
 `
   const params = [
     schema,
@@ -760,12 +735,21 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
   }
   const identifier = wrapTable(table, schema)
   
-  const sql = `
-    SELECT 
-      pg_indexes_size('${identifier}') as index_size,
-      pg_relation_size('${identifier}') as table_size,
-      obj_description('${identifier}'::regclass) as description
-  `
+
+
+
+
+  const statements = [
+    `pg_indexes_size('${identifier}') as index_size`,
+      `pg_relation_size('${identifier}') as table_size`,
+      `obj_description('${identifier}'::regclass) as description`
+  ]
+
+  if (version.isPostgres && version.number < 90000) {
+    statements[0] = `0 as index_size`
+  }
+
+  const sql = `SELECT ${statements.join(",")}`
 
   const detailsPromise =  version.isPostgres ? driverExecuteSingle(conn, { query: sql }) :
     Promise.resolve({ rows:[]})
