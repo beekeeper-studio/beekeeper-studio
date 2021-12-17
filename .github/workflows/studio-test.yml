@@ -32,6 +32,9 @@ jobs:
       - name: Lint
         run: yarn workspace beekeeper-studio run lint
       
+      - name: Check for bad files
+        run: bin/check-for-only-tests.sh
+      
       - name: Unit Tests
         run: yarn workspace beekeeper-studio run test:unit --ci --silent
 
