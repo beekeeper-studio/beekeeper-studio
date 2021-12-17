@@ -144,7 +144,8 @@
   import ErrorAlert from './common/ErrorAlert.vue'
   import {FormatterDialect} from "@shared/lib/dialects/models";
   import MergeManager from '@/components/editor/MergeManager.vue'
-import { AppEvent } from '@/common/AppEvent'
+  import { AppEvent } from '@/common/AppEvent'
+import platformInfo from '@/common/platform_info'
   
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -184,13 +185,15 @@ import { AppEvent } from '@/common/AppEvent'
       ...mapState(['usedConfig', 'connection', 'database', 'tables']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       remoteDeleted() {
-        return this.tab.query.id && !this.savedQueries.includes(this.tab.query)
+        return this.tab.query && this.tab.query.id && !this.savedQueries.includes(this.tab.query)
       },
       identifyDialect() {
         // dialect for sql-query-identifier
         const mappings = {
           'sqlserver': 'mssql',
-          'sqlite': 'sqlite'
+          'sqlite': 'sqlite',
+          'mysql': 'mysql',
+          'postgresql': 'psql',
         }
         return mappings[this.connectionType] || 'generic'
       },
@@ -600,6 +603,9 @@ import { AppEvent } from '@/common/AppEvent'
       this.initializeQueries()
 
       this.$nextTick(() => {
+        if (platformInfo.testMode) {
+          return
+        }
         this.split = Split(this.splitElements, {
           elementStyle: (dimension, size) => ({
               'flex-basis': `calc(${size}%)`,

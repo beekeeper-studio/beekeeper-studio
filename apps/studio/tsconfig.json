@@ -30,7 +30,7 @@
     "src/**/*.vue",
     "../../shared/src/**/*.ts",
     "../../shared/src/**/*.tsx",
-    "../../shared/src/**/*.vue",
+    "../../shared/src/**/*.vue"
   ],
   "exclude": [
     "node_modules", "dist", "dist_electron"

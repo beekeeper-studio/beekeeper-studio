@@ -10,7 +10,7 @@
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
   import Mutators from '../../mixins/data_mutators'
-import globals from '@/common/globals'
+  import globals from '@/common/globals'
 
   export default {
     mixins: [Converter, Mutators],
