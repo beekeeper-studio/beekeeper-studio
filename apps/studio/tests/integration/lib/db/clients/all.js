@@ -13,7 +13,7 @@ export function runCommonTests(getUtil) {
     await getUtil().tableViewTests()
   })
 
-  test("stream tests", async () => {
+  test.only("stream tests", async () => {
     await getUtil().streamTests()
   })
 

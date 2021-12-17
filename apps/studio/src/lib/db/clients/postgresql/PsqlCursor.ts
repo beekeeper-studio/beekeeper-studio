@@ -47,7 +47,7 @@ export class PsqlCursor extends BeeCursor {
       } else {
         this.cursor.read(this.chunkSize, (err, rows) => {
           if (err) {
-            reject(err.message)
+            reject(`READ ERROR, query ${this.options.query}: ${err.message}`)
           } else {
             resolve(rows)
           }
