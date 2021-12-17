@@ -4,7 +4,8 @@ import { Duration, TemporalUnit } from "node-duration"
 import { runCommonTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/client'
 
-const TEST_VERSIONS = ['9.4', 'latest']
+const TEST_VERSIONS = ['9.3', '9.4', 'latest']
+// const TEST_VERSIONS = ['9.3']
 
 function testWith(dockerTag) {
   describe(`Postgres [${dockerTag}]`, () => {

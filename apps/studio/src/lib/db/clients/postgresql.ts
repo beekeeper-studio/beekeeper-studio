@@ -625,14 +625,44 @@ async function listCockroachIndexes(conn: Conn, table: string, schema: string): 
 
 }
 
+
+const psql93sql = `
+    SELECT i.indexrelid::regclass AS indexname,
+        row_number() over (partition by i.id) AS index_order,
+        i.indexrelid as id,
+        i.indisunique,
+        i.indisprimary,
+        coalesce(a.attname,
+                  (('{' || pg_get_expr(
+                              i.indexprs,
+                              i.indrelid
+                          )
+                        || '}')::text[]
+                  )[k.i]
+                ) AS index_column,
+        i.indoption[k.i - 1] = 0 AS ascending
+      FROM 
+      pg_index i
+        CROSS JOIN LATERAL unnest(i.indkey) AS k(attnum)
+        LEFT JOIN pg_attribute AS a
+            ON i.indrelid = a.attrelid AND k.attnum = a.attnum
+        JOIN pg_class t on t.oid = i.indrelid
+        JOIN pg_namespace c on c.oid = t.relnamespace
+      WHERE
+       c.nspname = $1 AND
+       t.relname = $2
+`
+
+
 export async function listTableIndexes(
   conn: HasPool, table: string, schema: string
   ): Promise<TableIndex[]> {
 
   const version = await getVersion(conn)
   if (version.isCockroach) return await listCockroachIndexes(conn, table, schema)
-
-  const sql = `
+  
+  console.log("VERSION", version.number)
+  const sql = version.number < 90400 ? psql93sql : `
     SELECT i.indexrelid::regclass AS indexname,
         k.i AS index_order,
         i.indexrelid as id,
