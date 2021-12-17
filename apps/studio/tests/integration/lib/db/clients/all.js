@@ -5,7 +5,7 @@ export function runCommonTests(getUtil) {
     await getUtil().listTableTests()
   })
 
-  test.only("column tests", async() => {
+  test("column tests", async() => {
     await getUtil().tableColumnsTests()
   })
 
