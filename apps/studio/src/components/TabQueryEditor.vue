@@ -99,13 +99,13 @@
       <form @submit.prevent="submitQuery(queryForExecution, true)">
         <div class="dialog-content">
           <div class="dialog-c-title">Provide parameter values</div>
-          <div class="dialog-c-subtitle">Don't forget to use single quotes around string values</div>
+          <div class="dialog-c-subtitle">You need to use single quotes around string values. Blank values are invalid</div>
           <div class="modal-form">
             <div class="form-group">
                 <div v-for="(param, index) in queryParameterPlaceholders" v-bind:key="index">
                   <div class="form-group row">
                     <label>{{param}}</label>
-                    <input type="text" class="form-control" v-model="queryParameterValues[param]" autofocus ref="paramInput">
+                    <input type="text" class="form-control" required v-model="queryParameterValues[param]" autofocus ref="paramInput">
                   </div>
                 </div>
             </div>
@@ -190,9 +190,24 @@ import { AppEvent } from '@/common/AppEvent'
         // dialect for sql-query-identifier
         const mappings = {
           'sqlserver': 'mssql',
-          'sqlite': 'sqlite'
+          'sqlite': 'sqlite',
+          'cockroachdb': 'psql',
+          'postgresql': 'psql',
+          'mysql': 'mysql',
+          'mariadb': 'mysql',
+          'redshift': 'psql',
         }
         return mappings[this.connectionType] || 'generic'
+      },
+      paramsModalRequired() {
+        let result = false
+        this.queryParameterPlaceholders.forEach((param) => {
+          const v = this.queryParameterValues[param]
+          if (!v || _.isEmpty(v.trim())) {
+            result = true
+          } 
+        })
+        return result
       },
       errors() {
         const result = [
@@ -216,7 +231,7 @@ import { AppEvent } from '@/common/AppEvent'
       },
       individualQueries() {
         if (!this.unsavedText) return []
-        return splitQueries(this.unsavedText)
+        return splitQueries(this.unsavedText, this.identifyDialect)
       },
       currentlySelectedQueryIndex() {
         const queries = this.individualQueries
@@ -287,8 +302,12 @@ import { AppEvent } from '@/common/AppEvent'
         return { tables: result }
       },
       queryParameterPlaceholders() {
-        let query = this.queryForExecution
-        return extractParams(query)
+        const params = this.individualQueries.flatMap((qs) => qs.parameters)
+        if (params.length && params[0] === '?') {
+          return []
+        } else {
+          return _.uniq(params)
+        }
       },
       deparameterizedQuery() {
         let query = this.queryForExecution
@@ -296,7 +315,7 @@ import { AppEvent } from '@/common/AppEvent'
           return query;
         }
         _.each(this.queryParameterPlaceholders, param => {
-          query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`), `$1${this.queryParameterValues[param]}$2`)
+          query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`, 'g'), `$1${this.queryParameterValues[param]}$2`)
         });
         return query;
       },
@@ -482,7 +501,7 @@ import { AppEvent } from '@/common/AppEvent'
           this.error = 'No query to run'
         }
       },
-      async submitQuery(rawQuery, skipModal) {
+      async submitQuery(rawQuery, fromModal = false) {
         if (this.remoteDeleted) return;
         this.running = true
         this.error = null
@@ -497,7 +516,7 @@ import { AppEvent } from '@/common/AppEvent'
         }
 
         try {
-          if (this.queryParameterPlaceholders.length > 0 && !skipModal) {
+          if (!fromModal || this.paramsModalRequired) {
             this.$modal.show('parameters-modal')
             return
           }
