@@ -28,44 +28,4 @@ describe("Query Splitter", () => {
   })
 })
 
-describe("extractParams", () => {
-  it("should extract params", () => {
-    const testCases = {
-      ":foo": [":foo"],
-      "$1, $2": ["$1", "$2"],
-      "select * from :bar": [":bar"],
-      "select * from :bananas where :bananas": [":bananas"]
-    }
 
-    Object.keys(testCases).forEach(query => {
-      const expected = testCases[query]
-      expect(extractParams(query)).toStrictEqual(expected)
-    })
-  })
-
-  it("shouldn't extract typecast params", () => {
-    const testCases = {
-      ":: foo": [],
-      "Something :: float": [],
-      "select lifetime_session_count / days_since_birth ::float as avg_daily_sessions": []
-    }
-    Object.keys(testCases).forEach(query => {
-      const expected = testCases[query]
-      expect(extractParams(query)).toStrictEqual(expected)
-    })
-  })
-
-  it("shouldn't extract these params", () => {
-    const testCases = {
-      ":one:": [],
-      ": two :": [],
-      "SELECT 'a' REGEXP '^[[:alpha:]]'": [],
-      "update products set title='{\"desc\":null}' where id='aa';": [], // literal JSON null
-      "update products set title='{\"desc\": null}' where id='aa';": [], // literal JSON null
-    }
-    Object.keys(testCases).forEach(query => {
-      const expected = testCases[query]
-      expect(extractParams(query)).toStrictEqual(expected)
-    })
-  })
-})

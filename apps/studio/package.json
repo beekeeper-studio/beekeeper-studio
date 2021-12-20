@@ -68,7 +68,7 @@
     "simple-encryptor": "^3.0.0",
     "split.js": "^1.5.11",
     "sql-formatter": "^4.0.0",
-    "sql-query-identifier": "^2.1.0",
+    "sql-query-identifier": "^2.2.0",
     "ssh2": "beekeeper-studio/ssh2#electron-detection",
     "tabulator-tables": "rathboma/tabulator#max-initial-width-with-dist",
     "typeface-roboto": "^0.0.75",
