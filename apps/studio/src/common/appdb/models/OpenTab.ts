@@ -10,7 +10,7 @@ type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-buil
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName']
 
 
-Entity({ name: 'tabs'})
+@Entity({ name: 'tabs'})
 export class OpenTab extends ApplicationEntity {
 
 
