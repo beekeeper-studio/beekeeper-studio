@@ -31,7 +31,7 @@ export default Vue.extend({
   computed: {
     ...mapState(['workspaceId', 'usedConfig']),
     ...mapGetters(['workspace']),
-    ...mapState({'activeTab': 'tabs/active'}),
+    ...mapState('tabs', {'activeTab': 'active'}),
     importantTabStuff() {
       if (!this.activeTab) return []
 

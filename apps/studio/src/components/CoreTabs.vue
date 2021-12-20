@@ -90,7 +90,7 @@ import { OpenTab } from '@/common/appdb/models/OpenTab';
 
     },
     computed: {
-      ...mapState({ 'activeTab': 'tabs/active', 'tabItems': 'tabs/tabs'}),
+      ...mapState('tabs', { 'activeTab': 'active', 'tabItems': 'tabs'}),
       ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialect': 'dialect'}),
       rootBindings() {
         return [
@@ -225,15 +225,13 @@ import { OpenTab } from '@/common/appdb/models/OpenTab';
             t.table === table
         })
 
-        if (existing) return this.click(existing)
+        if (existing) return this.$store.dispatch('tabs/setActive', existing)
 
-        const t = {
-          id: uuidv4(),
-          type: 'table-properties',
-          table: table,
-          connection: this.connection,
-          title: `${table.name}`,
-        }
+        const t = new OpenTab()
+        t.tabType = 'table-properties'
+        t.tableName = table.name
+        t.schemaName = table.schema
+        t.title = table.name
         this.addTab(t)
       },
       openTable({ table, filter}) {
@@ -318,8 +316,8 @@ import { OpenTab } from '@/common/appdb/models/OpenTab';
     },
     async mounted() {
       await this.$store.dispatch('tabs/load')
-      if (!this.tabItems.length) {
-        this.createQuery()
+      if (!this.tabItems?.length) {
+        // this.createQuery()
       }
       this.registerHandlers(this.rootBindings)
     }

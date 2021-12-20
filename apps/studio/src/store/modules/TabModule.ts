@@ -2,6 +2,9 @@ import _ from 'lodash'
 import { OpenTab } from "@/common/appdb/models/OpenTab";
 import { Module } from "vuex";
 import { State as RootState } from '../index'
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('TabModule')
 
 interface State {
   tabs: OpenTab[],
@@ -49,11 +52,12 @@ export const TabModule: Module<State, RootState> = {
   actions: {
     async load(context) {
       const { usedConfig } = context.rootState
-      if (usedConfig && usedConfig.id) {
+      if (usedConfig?.id) {
+        log.info("Loading tabs for ", context.rootState.workspaceId, usedConfig.id)
         const tabs = await OpenTab.find({
           where: {
             connectionId: usedConfig.id,
-            workspaceId: usedConfig.workspaceId
+            workspaceId: context.rootState.workspaceId
           }
         })
         context.commit('set', tabs || [])
@@ -71,10 +75,12 @@ export const TabModule: Module<State, RootState> = {
     async add(context, item: OpenTab) {
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {
-        item.workspaceId = usedConfig.workspaceId
+        log.info("saving tab", item)
+        item.workspaceId = context.rootState.workspaceId
         item.connectionId = usedConfig.id
         await item.save()
       }
+      context.commit('add', item)
     },
     async reorder(context, items: OpenTab[]) {
       items.forEach((p, idx) => p.position = idx)
