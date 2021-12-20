@@ -14,6 +14,9 @@ export function runCommonTests(getUtil) {
   })
 
   test("stream tests", async () => {
+    if (getUtil().dbType === 'cockroachdb') {
+      return
+    }
     await getUtil().streamTests()
   })
 
