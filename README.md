@@ -1,4 +1,4 @@
-> **Next Release**: January 2022. Code freeze until then.
+## >>> **Next Release**: January 2022. Code freeze until then. ❄
 
 # Beekeeper Studio
 
