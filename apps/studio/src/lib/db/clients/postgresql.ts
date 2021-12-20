@@ -503,7 +503,7 @@ export async function listTableColumns(
   const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : ""
   const params = table ? [schema, table] : []
   if (table && !schema) {
-    throw new Error("Table '${table}' provided for listTableColumns, but no schema name")
+    throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`)
   }
   const sql = `
     SELECT
@@ -992,25 +992,46 @@ export async function setTableDescription(conn: HasPool, table: string, descript
   return result?.description
 }
 
-async function insertRows(cli: any, inserts: TableInsert[]) {
-  await driverExecuteQuery(cli, { query: buildInsertQueries(knex, inserts).join(";") })
+async function insertRows(cli: any, rawInserts: TableInsert[]) {
+  const columnsList = await Promise.all(rawInserts.map((insert) => {
+    return listTableColumns(cli, null, insert.table, insert.schema) 
+  }))
+
+  const fixedInserts = rawInserts.map((insert, idx) => {
+    const result = { ...insert}
+    const columns = columnsList[idx]
+    result.data = result.data.map((obj) => {
+      return _.mapValues(obj, (value, key) => {
+        const column = columns.find((c) => c.columnName === key)
+        if (column && column.dataType.startsWith('_')) {
+          return JSON.parse(value)
+        } else {
+          return value
+        }
+      })
+    })
+    return result
+  })
+  await driverExecuteQuery(cli, { query: buildInsertQueries(knex, fixedInserts).join(";") })
 
   return true
 }
 
-async function updateValues(cli: any, updates: TableUpdate[]): Promise<TableUpdateResult[]> {
+async function updateValues(cli: any, rawUpdates: TableUpdate[]): Promise<TableUpdateResult[]> {
 
   // If a type starts with an underscore - it's an array
   // so we need to turn the string representation back to an array
   // if a type is BYTEA, decodes BASE64 URL encoded to hex
-  updates.forEach((update) => {
+  const updates = rawUpdates.map((update) => {
+    const result = { ...update}
     if (update.columnType?.startsWith('_')) {
-      update.value = JSON.parse(update.value)
+      result.value = JSON.parse(update.value)
     } else if (update.columnType === 'bytea' && update.value) {
-        update.value = '\\x' + base64.decode(update.value, 'hex')
+        result.value = '\\x' + base64.decode(update.value, 'hex')
     }
+    return result
   })
-
+  log.info("applying updates", updates)
   let results: TableUpdateResult[] = []
   await driverExecuteQuery(cli, { query: buildUpdateQueries(knex, updates).join(";") })
   const data = await driverExecuteSingle(cli, { query: buildSelectQueriesFromUpdates(knex, updates).join(";"), multiple: true })

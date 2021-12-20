@@ -95,19 +95,21 @@ export const itShouldInsertGoodData = async function(util) {
   const inserts = [
     {
       table: 'test_inserts',
-      data: {
+      schema: util.options.defaultSchema,
+      data: [{
         id: 1,
         firstName: 'Terry',
         lastName: 'Tester'
-      }
+      }]
     },
     {
       table: 'test_inserts',
-      data: {
+      schema: util.options.defaultSchema,
+      data: [{
         id: 2,
         firstName: 'John',
         lastName: 'Doe'
-      }
+      }]
     }
   ]
   await util.connection.applyChanges({ inserts: inserts })
@@ -121,19 +123,21 @@ export const itShouldNotInsertBadData = async function(util) {
   const inserts = [
     {
       table: 'test_inserts',
-      data: {
+      schema: util.options.defaultSchema,
+      data: [{
         id: 1,
         firstName: 'Terry',
         lastName: 'Tester'
-      }
+      }]
     },
     {
       table: 'test_inserts',
-      data: {
+      schema: util.options.defaultSchema,
+      data: [{
         id: 1,
         firstName: 'John',
         lastName: 'Doe'
-      }
+      }]
     }
   ]
 
@@ -149,24 +153,27 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
     inserts: [
       {
         table: 'test_inserts',
-        data: {
+        schema: util.options.defaultSchema,
+        data: [{
           id: 1,
           firstName: 'Tom',
           lastName: 'Tester'
-        }
+        }]
       },
       {
         table: 'test_inserts',
-        data: {
+        schema: util.options.defaultSchema,
+        data: [{
           id: 2,
           firstName: 'Jane',
           lastName: 'Doe'
-        }
+        }]
       }
     ],
     updates: [
       {
         table: 'test_inserts',
+        schema: util.options.defaultSchema,
         pkColumn: 'id',
         primaryKey: 1,
         column: 'firstName',
@@ -176,6 +183,7 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
     deletes: [
       {
         table: 'test_inserts',
+        schema: util.options.defaultSchema,
         pkColumn: 'id',
         primaryKey: 2,
       }
@@ -201,11 +209,12 @@ export const itShouldNotCommitOnChangeError = async function(util) {
   const inserts = [
     {
       table: 'test_inserts',
-      data: {
+      schema: util.options.defaultSchema,
+      data: [{
         id: 1,
         firstName: 'Terry',
         lastName: 'Tester'
-      }
+      }]
     }
   ]
   await util.connection.applyChanges({ inserts: inserts })
@@ -214,24 +223,27 @@ export const itShouldNotCommitOnChangeError = async function(util) {
     inserts: [
       {
         table: 'test_inserts',
-        data: {
+        schema: util.options.defaultSchema,
+        data: [{
           id: 2,
           firstName: 'Tom',
           lastName: 'Tester'
-        }
+        }]
       },
       {
         table: 'test_inserts',
-        data: {
+        schema: util.options.defaultSchema,
+        data: [{
           id: 3,
           firstName: 'Jane',
           lastName: 'Doe'
-        }
+        }]
       }
     ],
     updates: [
       {
         table: 'test_inserts',
+        schema: util.options.defaultSchema,
         pkColumn: 'id',
         primaryKey: 1,
         column: 'id',
@@ -241,6 +253,7 @@ export const itShouldNotCommitOnChangeError = async function(util) {
     deletes: [
       {
         table: 'test_inserts',
+        schema: util.options.defaultSchema,
         pkColumn: 'id',
         primaryKey: 1,
       }

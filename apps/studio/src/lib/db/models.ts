@@ -139,9 +139,9 @@ export interface TableChanges {
 // AlterTableSpec is in @shared
 
 export interface TableInsert {
-  table: string;
+  table: string
   schema?: string
-  data: object[];
+  data: object[]
 }
 
 export interface TableUpdate {

@@ -3,6 +3,7 @@ import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
 import { runCommonTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/client'
+import { TableInsert } from '../../../../../src/lib/db/models'
 
 const TEST_VERSIONS = ['9.4', 'latest']
 
@@ -66,6 +67,40 @@ function testWith(dockerTag) {
       if (container) {
         await container.stop()
       }
+    })
+
+
+    it("Should allow me to update rows with an empty array", async () => {
+      const updates = [
+        {
+          value: "[]",
+          column: "names",
+          pkColumn: "id",
+          primaryKey: 1,
+          columnType: "_text",
+          table: "witharrays"
+        }
+      ]
+
+      const result = await util.connection.applyChanges({ updates, inserts: [], deletes: []})
+      expect(result).toMatchObject([
+        { id: 1, names: [], normal: 'foo' }
+      ])
+    })
+
+    it("Should allow me to insert a row with an array", async () => {
+      const newRow: TableInsert = {
+        table:'witharrays',
+        schema: 'public',
+        data: [
+          {names: '[]', id: 2, normal: 'xyz'}
+        ]
+      }
+
+      const result = await util.connection.applyChanges(
+        { updates: [], inserts: [newRow], deletes: []}
+      )
+      expect(result).not.toBeNull()
     })
 
     it("Should allow me to update rows with array types", async () => {

@@ -615,7 +615,7 @@ export default Vue.extend({
         return {
           table: this.table.name,
           schema: this.table.schema,
-          data: result
+          data: [result]
         }
       })
       return inserts
