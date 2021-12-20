@@ -5,7 +5,7 @@ import { runCommonTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/client'
 import { TableInsert } from '../../../../../src/lib/db/models'
 
-const TEST_VERSIONS = ['9.4', 'latest']
+const TEST_VERSIONS = ['9.3', '9.4', 'latest']
 
 function testWith(dockerTag) {
   describe(`Postgres [${dockerTag}]`, () => {
