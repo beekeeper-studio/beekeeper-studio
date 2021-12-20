@@ -13,6 +13,8 @@ export default {
           "queryId" integer NULL,
           "unsavedChanges" boolean NOT NULL DEFAULT false,
           "unsavedQueryText" text NULL,
+          "tableName" varchar(255) NULL,
+          "schemaName" varchar(255) NULL,
           "workspaceId" integer NOT NULL DEFAULT -1,
           "connectionId" integer NULL,
           "filters" text NULL DEFAULT '[]',
@@ -20,7 +22,7 @@ export default {
           "active" boolean NOT NULL default FALSE,
           "createdAt" datetime NOT NULL DEFAULT (datetime('now')),
           "updatedAt" datetime NOT NULL DEFAULT (datetime('now')),
-          "version" integer NOT NULL DEFAULT 0,
+          "version" integer NOT NULL DEFAULT 0
         )
       `,
       'CREATE INDEX tabs_index on tabs(workspaceId, connectionId)'

@@ -70,7 +70,7 @@ export const TabModule: Module<State, RootState> = {
     },
     async add(context, item: OpenTab) {
       const { usedConfig } = context.rootState
-      if (usedConfig.id) {
+      if (usedConfig?.id) {
         item.workspaceId = usedConfig.workspaceId
         item.connectionId = usedConfig.id
         await item.save()
@@ -80,20 +80,20 @@ export const TabModule: Module<State, RootState> = {
       items.forEach((p, idx) => p.position = idx)
       const { usedConfig } = context.rootState
       context.commit('set', items)
-      if (usedConfig.id) await OpenTab.save(items)
+      if (usedConfig?.id) await OpenTab.save(items)
     },
     async remove(context, rawItems: OpenTab | OpenTab[]) {
       const items = _.isArray(rawItems) ? rawItems : [rawItems]
       items.forEach((i) => context.commit('remove', i))
       const { usedConfig } = context.rootState
-      if (usedConfig.id) {
+      if (usedConfig?.id) {
         await OpenTab.remove(items)
       }
     },
     async save(context, rawTabs: OpenTab[] | OpenTab) {
       const tabs = _.isArray(rawTabs) ? rawTabs : [rawTabs]
       const { usedConfig } = context.rootState
-      if (usedConfig.id) {
+      if (usedConfig?.id) {
         await OpenTab.save(tabs)
       }
     },

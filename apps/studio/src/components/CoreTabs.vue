@@ -154,7 +154,7 @@ import { OpenTab } from '@/common/appdb/models/OpenTab';
       },
       async addTab(item: OpenTab) {
         await this.$store.dispatch('tabs/add', item)
-        await this.setActive(item)
+        await this.setActiveTab(item)
       },
       nextTab() {
         if(this.activeTab == this.lastTab) {
@@ -316,8 +316,11 @@ import { OpenTab } from '@/common/appdb/models/OpenTab';
     beforeDestroy() {
       this.unregisterHandlers(this.rootBindings)
     },
-    mounted() {
-      this.createQuery()
+    async mounted() {
+      await this.$store.dispatch('tabs/load')
+      if (!this.tabItems.length) {
+        this.createQuery()
+      }
       this.registerHandlers(this.rootBindings)
     }
   })
