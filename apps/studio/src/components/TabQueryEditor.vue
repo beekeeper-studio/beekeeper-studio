@@ -5,7 +5,7 @@
       ref="topPanel"
       @contextmenu.prevent.stop="showContextMenu"
     >
-      <merge-manager v-if="query.id" :originalText="originalText" :query="query" :unsavedText="unsavedText" @change="onChange" @mergeAccepted="originalText = query.text" />
+      <merge-manager v-if="query.id" :originalText="originalText" :query="query" :unsavedText="tab.unsavedText" @change="onChange" @mergeAccepted="originalText = query.text" />
       <div v-if="remoteDeleted" class="alert alert-danger">
         <i class="material-icons">error_outline</i>
         <div class="alert-body">
@@ -83,7 +83,7 @@
           <div class="modal-form">
             <div class="alert alert-danger save-errors" v-if="saveError">{{saveError}}</div>
             <div class="form-group">
-                <input type="text" ref="titleInput" name="title" class="form-control"  v-model="tab.query.title" autofocus>
+                <input type="text" ref="titleInput" name="title" class="form-control"  v-model="query.title" autofocus>
             </div>
           </div>
         </div>
@@ -145,6 +145,7 @@
   import {FormatterDialect} from "@shared/lib/dialects/models";
   import MergeManager from '@/components/editor/MergeManager.vue'
 import { AppEvent } from '@/common/AppEvent'
+import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
   
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -156,6 +157,7 @@ import { AppEvent } from '@/common/AppEvent'
     props: ['tab', 'active'],
     data() {
       return {
+        query: null,
         results: [],
         running: false,
         runningCount: 1,
@@ -176,7 +178,6 @@ import { AppEvent } from '@/common/AppEvent'
         queryForExecution: null,
         executeTime: 0,
         originalText: null,
-        unsavedText: null,
       }
     },
     computed: {
@@ -184,7 +185,10 @@ import { AppEvent } from '@/common/AppEvent'
       ...mapState(['usedConfig', 'connection', 'database', 'tables']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       remoteDeleted() {
-        return this.tab.query.id && !this.savedQueries.includes(this.tab.query)
+        return this.query.id && !this.savedQueries.includes(this.query)
+      },
+      unsavedText() {
+        return this.tab.unsavedText
       },
       identifyDialect() {
         // dialect for sql-query-identifier
@@ -226,12 +230,9 @@ import { AppEvent } from '@/common/AppEvent'
       result() {
         return this.results[this.selectedResult]
       },
-      query() {
-        return this.tab.query
-      },
       individualQueries() {
-        if (!this.unsavedText) return []
-        return splitQueries(this.unsavedText, this.identifyDialect)
+        if (!this.tab.unsavedText) return []
+        return splitQueries(this.tab.unsavedText, this.identifyDialect)
       },
       currentlySelectedQueryIndex() {
         const queries = this.individualQueries
@@ -324,6 +325,9 @@ import { AppEvent } from '@/common/AppEvent'
       },
     },
     watch: {
+      unsavedText() {
+        this.saveTab()
+      },
       remoteDeleted() {
         // eslint-disable-next-line no-debugger
         if (this.remoteDeleted) {
@@ -398,6 +402,9 @@ import { AppEvent } from '@/common/AppEvent'
       },
     },
     methods: {
+      saveTab: _.debounce(function() {
+        this.$store.dispatch('tabs/save', this.tab)
+      }, 1000),
       close() {
         this.$root.$emit(AppEvent.closeTab)
       },
@@ -465,8 +472,8 @@ import { AppEvent } from '@/common/AppEvent'
             // we don't do this becuase we object assign.
             // this.tab.query = updated
             this.$nextTick(() => {
-              this.unsavedText = this.tab.query.text
-              this.originalText = this.tab.query.text
+              this.tab.unsavedText = this.query.text
+              this.originalText = this.query.text
             })
             this.$noty.success('Query Saved')
           } catch (ex) {
@@ -477,7 +484,7 @@ import { AppEvent } from '@/common/AppEvent'
       },
       onChange(text) {
         console.log("change!", text)
-        this.unsavedText = text
+        this.tab.unsavedText = text
         this.editor.setValue(text)
       },
       escapeRegExp(string) {
@@ -604,7 +611,7 @@ import { AppEvent } from '@/common/AppEvent'
       initializeQueries() {
         if (this.query?.text) {
           this.originalText = this.query.text
-          this.unsavedText = this.query.text
+          this.tab.unsavedText = this.query.text
         }
       },
       fakeRemoteChange() {
@@ -612,6 +619,12 @@ import { AppEvent } from '@/common/AppEvent'
       }
     },
     mounted() {
+
+      if (this.tab.queryId) {
+        this.query = this.savedQueries.find((q) => q.id === this.tab.queryId)
+      } else {
+        this.query = new FavoriteQuery()
+      }
 
       const $editor = this.$refs.editor
       const startingValue = this.query?.text ? this.query.text : editorDefault
@@ -674,7 +687,7 @@ import { AppEvent } from '@/common/AppEvent'
         this.editor.on("change", (cm) => {
           // this also updates `this.queryText`
           // this.tab.query.text = cm.getValue()
-          this.unsavedText = cm.getValue()
+          this.tab.unsavedText = cm.getValue()
         })
 
         if (this.connectionType === 'postgresql')  {

@@ -36,20 +36,19 @@
         v-show="activeTab === tab"
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
-        <TableTable @setTabTitleScope="setTabTitleScope" :tab="tab" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="tab.connection" :initialFilter="tab.initialFilter" :table="tab.table"></TableTable>
-        <TableProperties v-if="tab.type === 'table-properties'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="tab.connection" :table="tab.table"></TableProperties>
-        <TableBuilder v-if="tab.type === 'table-builder'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="tab.connection"></TableBuilder>
+        <TableTable @setTabTitleScope="setTabTitleScope" :tab="tab" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="connection" :initialFilter="tab.filter"></TableTable>
+        <TableProperties v-if="tab.type === 'table-properties'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection" :table="tab.table"></TableProperties>
+        <TableBuilder v-if="tab.type === 'table-builder'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></TableBuilder>
         
       </div>
     </div>
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
   import _ from 'lodash'
   import { format } from 'sql-formatter';
-  import {FavoriteQuery} from '../common/appdb/models/favorite_query'
   import QueryEditor from './TabQueryEditor.vue'
   import Statusbar from './common/StatusBar.vue'
   import CoreTabHeader from './CoreTabHeader.vue'
@@ -58,13 +57,14 @@
   import TableProperties from './TabTableProperties.vue'
   import TableBuilder from './TabTableBuilder.vue'
   import {AppEvent} from '../common/AppEvent'
-  import platformInfo from '../common/platform_info'
   import { mapGetters, mapState } from 'vuex'
   import Draggable from 'vuedraggable'
   import ShortcutHints from './editor/ShortcutHints.vue'
 import { FormatterDialect } from '@shared/lib/dialects/models';
+import Vue from 'vue';
+import { OpenTab } from '@/common/appdb/models/OpenTab';
 
-  export default {
+  export default Vue.extend({
     props: [ 'connection' ],
     components: { 
       Statusbar,
@@ -78,15 +78,22 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
     },
     data() {
       return {
-        tabItems: [],
-        activeItem: 0,
         newTabId: 1,
         showExportModal: false,
         tableExportOptions: null,
         dragOptions: {
           handle: '.nav-item'
         },
-        rootBindings: [
+      }
+    },
+    watch: {
+
+    },
+    computed: {
+      ...mapState({ 'activeTab': 'tabs/active', 'tabItems': 'tabs/tabs'}),
+      ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialect': 'dialect'}),
+      rootBindings() {
+        return [
           { event: AppEvent.closeTab, handler: this.closeCurrentTab },
           { event: AppEvent.newTab, handler: this.createQuery},
           { event: AppEvent.createTable, handler: this.openTableBuilder},
@@ -98,21 +105,16 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
           { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
           { event: 'favoriteClick', handler: this.favoriteClick },
           { event: 'exportTable', handler: this.openExportModal },
-        ],
-        contextOptions: [
+        ]
+      },
+      contextOptions() {
+        return [
           { name: "Close", slug: 'close', handler: ({item}) => this.close(item)},
           { name: "Close Others", slug: 'close-others', handler: ({item}) => this.closeOther(item)},
           { name: 'Close All', slug: 'close-all', handler: this.closeAll},
           { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.duplicate(item)}
-        ],
-      }
-    },
-    watch: {
-
-    },
-    computed: {
-      ...mapState(["activeTab"]),
-      ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialect': 'dialect'}),
+        ]
+      },
       lastTab() {
         return this.tabItems[this.tabItems.length - 1];
       },
@@ -123,7 +125,6 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
         return _.indexOf(this.tabItems, this.activeTab)
       },
       keymap() {
-        const meta = platformInfo.isMac ? 'meta' : 'ctrl'
         const result = {
           'ctrl+tab': this.nextTab,
           'ctrl+shift+tab': this.previousTab,
@@ -149,17 +150,11 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
         }
       },
       async setActiveTab(tab) {
-        await this.$store.dispatch('tabActive', tab)
+        await this.$store.dispatch('tabs/setActive', tab)
       },
-      addTab(item) {
-        if (_.isNil(item.unsavedChanges)) {
-          item.unsavedChanges = false
-        }
-        this.tabItems.push(item)
-        this.newTabId += 1
-        this.$nextTick(() => {
-          this.click(item)
-        })
+      async addTab(item: OpenTab) {
+        await this.$store.dispatch('tabs/add', item)
+        await this.setActive(item)
       },
       nextTab() {
         if(this.activeTab == this.lastTab) {
@@ -176,9 +171,6 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
           this.setActiveTab(this.tabItems[this.activeIdx - 1])
         }
       },
-      setTabTitleScope(id, value) {
-        this.tabItems.filter(t => t.id === id).forEach(t => t.titleScope = value)
-      },
       closeCurrentTab() {
         // eslint-disable-next-line no-debugger
         if (this.activeTab) this.close(this.activeTab)
@@ -188,18 +180,11 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
       },
       createQuery(optionalText) {
         // const text = optionalText ? optionalText : ""
-        const query = new FavoriteQuery()
-        query.text = optionalText
-
-        const result = {
-          id: uuidv4(),
-          type: "query",
-          title: "Query #" + this.newTabId,
-          connection: this.connection,
-          query: query,
-          unsavedChanges: query.text?.length ? true : false,
-          alert: false
-        }
+        const result = new OpenTab()
+        result.title = "Query #" + this.newTabId,
+        result.tabType = 'query'
+        result.unsavedChanges = false
+        result.unsavedQueryText = optionalText
 
         this.addTab(result)
       },
@@ -221,6 +206,10 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
         this.createQuery(stringResult)
       },
       openTableBuilder() {
+        const tab = new OpenTab()
+        tab.tabType = 'table-builder'
+        tab.title = "New Table"
+        tab.unsavedChanges = true
         const t = {
           id: uuidv4(),
           type: 'table-builder',
@@ -247,40 +236,30 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
         }
         this.addTab(t)
       },
-      openTable({ table, filter, tableName }) {
+      openTable({ table, filter}) {
 
-        let resolvedTable = null
-
-        if (!table && tableName) {
-          resolvedTable = this.$store.state.tables.find(t => t.name === tableName)
-        }
-        const t = {
-          id: uuidv4(),
-          type: 'table',
-          table: resolvedTable || table,
-          connection: this.connection,
-          initialFilter: filter,
-          titleScope: "all",
-        }
-        this.addTab(t)
+        const tab = new OpenTab()
+        tab.title = table.name
+        tab.tabType = "table"
+        tab.filters = filter
+        tab.titleScope = "all"
+        this.addTab(tab)
       },
       openExportModal(options) {
         this.tableExportOptions = options
         this.showExportModal = true
       },
-      openSettings(settings) {
-        const t = {
-          title: "Settings",
-          settings,
-          type: 'settings'
-        }
-        this.addTab(t)
+      openSettings() {
+        const tab = new OpenTab()
+        tab.tabType = "settings"
+        tab.title = "Settings"
+        this.addTab(tab)
       },
       async click(tab) {
         await this.setActiveTab(tab)
 
       },
-      close(tab) {
+      async close(tab) {
         if (this.activeTab === tab) {
           if(tab === this.lastTab) {
             this.previousTab()
@@ -288,60 +267,46 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
             this.nextTab()
           }
         }
-
-        this.tabItems = _.without(this.tabItems, tab)
-        if (tab.query && tab.query.id) {
-          this.$store.dispatch('data/queries/reload', tab.query.id)
+        await this.$store.dispatch("tabs/remove", tab)
+        if (tab.queryId) {
+          await this.$store.dispatch('data/queries/reload', tab.queryId)
         }
       },
       closeAll() {
-        this.tabItems = []
-        this.setActiveTab(null)
+        this.dispatch('tabs/unload')
       },
       closeOther(tab) {
-        this.tabItems = [tab]
+        const others = _.without(this.tabItems, tab)
+        this.$store.dispatch('remove', others)
         this.setActiveTab(tab)
-        if (tab.query && tab.query.id) {
-          this.$store.dispatch('data/queries/reload', tab.query.id)
+        if (tab.queryId) {
+          this.$store.dispatch('data/queries/reload', tab.queryId)
         }
       },
-      duplicate(tab) {
-        const duplicatedTab = {
-            id: uuidv4(),
-            type: tab.type,
-            connection: tab.connection,
-        }
+      duplicate(other: OpenTab) {
+        const tab = other.duplicate()
 
         if(tab.type === 'query') {
-          const query = new FavoriteQuery()
-          query.text = tab.query.text
-
-          duplicatedTab['title'] = "Query #" + this.newTabId
-          duplicatedTab['unsavedChanges'] = true
-          duplicatedTab['query'] = query
-        } else if(tab.type === 'table') {
-          duplicatedTab['table'] = tab.table
+          tab.title = "Query #" + this.newTabId
+          tab.unsavedChanges = true
         }
-        this.addTab(duplicatedTab)
+        this.addTab(tab)
       },
       favoriteClick(item) {
         const queriesOnly = this.tabItems.map((item) => {
-          return item.query
+          return item.queryId
         })
 
         if (queriesOnly.includes(item)) {
-          this.click(this.tabItems[queriesOnly.indexOf(item)])
+          this.click(this.tabItems[queriesOnly.indexOf(item.id)])
         } else {
-          const result = {
-            id: uuidv4(),
-            type: 'query',
-            title: item.title,
-            connection: this.connection,
-            query: item,
-            unsavedChanges: false,
-            alert: false
-          }
-          this.addTab(result)
+          const tab = new OpenTab()
+          tab.tabType = 'query'
+          tab.title = item.title
+          tab.queryId = item.id
+          tab.unsavedChanges = false
+
+          this.addTab(tab)
         }        
       },
       createQueryFromItem(item) {
@@ -350,11 +315,10 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
     },
     beforeDestroy() {
       this.unregisterHandlers(this.rootBindings)
-      this.tabItems = []
     },
     mounted() {
       this.createQuery()
       this.registerHandlers(this.rootBindings)
     }
-  }
+  })
 </script>

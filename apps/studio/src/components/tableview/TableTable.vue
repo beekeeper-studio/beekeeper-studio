@@ -187,6 +187,7 @@ import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
+import { mapState } from 'vuex';
 
 const CHANGE_TYPE_INSERT = 'insert'
 const CHANGE_TYPE_UPDATE = 'update'
@@ -249,6 +250,7 @@ export default Vue.extend({
     };
   },
   computed: {
+    ...mapState(['tables']),
     loadingLength() {
       return this.totalRecords === null
     },
@@ -515,7 +517,7 @@ export default Vue.extend({
         this.clearFilter()
       }
     },
-    lastUpdated() {
+    async lastUpdated() {
       this.setlastUpdatedText()
       let result = 'all'
       if (this.primaryKey && this.filter.value && this.filter.type === '=' && this.filter.field === this.primaryKey) {
@@ -524,7 +526,8 @@ export default Vue.extend({
       } else {
         if (this.filter.value) result = 'filtered'
       }
-      this.$emit('setTabTitleScope', this.tabId, result)
+      this.tab.titleScope = result
+      await this.dispatch('tabs/save', this.tab)
     },
     filterMode() {
       this.triggerFilter()
@@ -540,6 +543,10 @@ export default Vue.extend({
     }
   },
   async mounted() {
+    this.table = this.tables.find((t) => {
+      this.tab.tableName === t.name &&
+      this.tab.schemaName === t.schema
+    })
     if (this.initialFilter) {
       this.filter = _.clone(this.initialFilter)
     }

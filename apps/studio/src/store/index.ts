@@ -26,6 +26,7 @@ import { CloudClient } from '@/lib/cloud/CloudClient'
 import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
 import { IConnection } from '@/common/interfaces/IConnection'
 import { DataModules } from '@/store/DataModules'
+import { TabModule } from './modules/TabModule'
 
 const log = RawLog.scope('store/index')
 
@@ -65,6 +66,7 @@ const store = new Vuex.Store<State>({
     exports: ExportStoreModule,
     settings: SettingStoreModule,
     pins: PinModule,
+    tabs: TabModule,
     search: SearchModule,
     credentials: CredentialsModule
   },
