@@ -15,6 +15,7 @@ export default {
           "unsavedQueryText" text NULL,
           "tableName" varchar(255) NULL,
           "schemaName" varchar(255) NULL,
+          "entityType" varchar(255) NULL,
           "workspaceId" integer NOT NULL DEFAULT -1,
           "connectionId" integer NULL,
           "filters" text NULL DEFAULT '[]',

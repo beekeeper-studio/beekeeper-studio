@@ -102,11 +102,16 @@ import TableTriggersVue from './tableinfo/TableTriggers.vue'
 import { format as humanBytes } from 'bytes'
 import platformInfo from '../common/platform_info'
 import { AppEvent } from '@/common/AppEvent'
+import { mapState } from 'vuex'
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('TabTableProperties')
 export default {
-  props: ["table", "connection", "tabId", "active", "tab"],
+  props: ["connection", "tabId", "active", "tab"],
   components: { Statusbar },
   data() {
     return {
+      initialized: false,
       dev: platformInfo.isDevelopment,
       loading: true,
       error: null,
@@ -158,9 +163,19 @@ export default {
   watch: {
     unsavedChanges() {
       this.tab.unsavedChanges = this.unsavedChanges
+    },
+    shouldInitialize() {
+      if (this.shouldInitialize) this.initialize()
     }
   },
   computed: {
+    ...mapState(['tables', 'tablesInitialLoaded']),
+    shouldInitialize() {
+      return this.tablesInitialLoaded && this.active && !this.initialized
+    },
+    table() {
+      return this.tab.findTable(this.tables);
+    },
     editable() {
       return this.table.entityType === 'table' && !!this.primaryKeys.length
     },
@@ -210,7 +225,13 @@ export default {
         this.totalRecords = 0
       } 
     },
+    async initialize() {
+      log.info("initializing")
+      this.initialized = true
+      await this.refresh()
+    },
     async refresh() {
+      log.info("refresh")
       this.loading = true
       this.error = null
       // this.properties = null
@@ -224,6 +245,7 @@ export default {
       } catch (ex) {
         this.error = ex
       } finally {
+        log.info("setting loaded = false")
         this.loading = false
       }
     },
@@ -232,7 +254,7 @@ export default {
     }
   },
   async mounted() {
-    this.refresh()
+    if (this.shouldInitialize) this.initialize()
   }
 }
 </script>

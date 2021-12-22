@@ -19,6 +19,9 @@ export const TabModule: Module<State, RootState> = {
     active: undefined
   }),
   getters: {
+    sortedTabs(state) {
+      return _.sortBy(state.tabs, 'position')
+    },
     fatTabs(state, _getters, rootState) {
       return state.tabs.map((tab) => {
         const query = tab.queryId ? rootState['data/queries']['items'].find((q) => q.id === tab.queryId) : null
@@ -38,6 +41,9 @@ export const TabModule: Module<State, RootState> = {
   mutations: {
     set(state, tabs: OpenTab[]) {
       state.tabs = tabs
+      if (!tabs?.length) {
+        state.active = undefined
+      }
     },
     add(state, nu: OpenTab) {
       state.tabs.push(nu)

@@ -36,8 +36,8 @@
         v-show="activeTab === tab"
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
-        <TableTable @setTabTitleScope="setTabTitleScope" :tab="tab" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="connection" :initialFilter="tab.filter"></TableTable>
-        <TableProperties v-if="tab.type === 'table-properties'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection" :table="tab.table"></TableProperties>
+        <TableTable :tab="tab" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="connection" :initialFilter="tab.filter"></TableTable>
+        <TableProperties v-if="tab.type === 'table-properties'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></TableProperties>
         <TableBuilder v-if="tab.type === 'table-builder'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></TableBuilder>
         
       </div>
@@ -90,8 +90,16 @@ import { OpenTab } from '@/common/appdb/models/OpenTab';
 
     },
     computed: {
-      ...mapState('tabs', { 'activeTab': 'active', 'tabItems': 'tabs'}),
+      ...mapState('tabs', { 'activeTab': 'active'}),
       ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialect': 'dialect'}),
+      tabItems: {
+        get() {
+          return this.$store.getters['tabs/sortedTabs']
+        },
+        set(newTabs: OpenTab[]) {
+          this.$store.dispatch('tabs/reorder', newTabs)
+        }
+      },
       rootBindings() {
         return [
           { event: AppEvent.closeTab, handler: this.closeCurrentTab },
@@ -238,9 +246,14 @@ import { OpenTab } from '@/common/appdb/models/OpenTab';
 
         const tab = new OpenTab()
         tab.title = table.name
+        tab.tableName = table.name
+        tab.schemaName = table.schema
+        tab.entityType = table.entityType
         tab.tabType = "table"
         tab.filters = filter
         tab.titleScope = "all"
+
+        // eslint-disable-next-line no-debugger
         this.addTab(tab)
       },
       openExportModal(options) {

@@ -47,6 +47,7 @@ export interface State {
   routines: Routine[],
   entityFilter: EntityFilter,
   tablesLoading: string,
+  tablesInitialLoaded: boolean,
   connectionConfigs: UsedConnection[],
   history: UsedQuery[],
   favorites: FavoriteQuery[],
@@ -85,6 +86,7 @@ const store = new Vuex.Store<State>({
       showViews: true
     },
     tablesLoading: "loading tables...",
+    tablesInitialLoaded: false,
     connectionConfigs: [],
     history: [],
     favorites: [],
@@ -244,25 +246,31 @@ const store = new Vuex.Store<State>({
       state.connection = connection
       state.database = database
     },
+    unloadTables(state) {
+      state.tables = []
+      state.tablesInitialLoaded = false
+    },
     tables(state, tables: TableOrView[]) {
 
       if(state.tables.length === 0) {
         state.tables = tables
-        return
+      } else {
+        // TODO: make this not O(n^2)
+        const result = tables.map((t) => {
+          const existingIdx = state.tables.findIndex((st) => tablesMatch(st, t))
+          if (existingIdx >= 0) {
+            const existing = state.tables[existingIdx]
+            Object.assign(existing, t)
+            return existing
+          } else {
+            return t
+          }
+        })
+        state.tables = result
       }
+
+      if (!state.tablesInitialLoaded) state.tablesInitialLoaded = true
       
-      // TODO: make this not O(n^2)
-      const result = tables.map((t) => {
-        const existingIdx = state.tables.findIndex((st) => tablesMatch(st, t))
-        if ( existingIdx >= 0) {
-          const existing = state.tables[existingIdx]
-          Object.assign(existing, t)
-          return existing
-        } else {
-          return t
-        }
-      })
-      state.tables = result
     },
 
     table(state, table: TableOrView) {

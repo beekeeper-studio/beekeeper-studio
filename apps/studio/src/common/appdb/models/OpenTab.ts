@@ -1,4 +1,4 @@
-import { TableFilter } from "@/lib/db/models";
+import { TableFilter, TableOrView } from "@/lib/db/models";
 import { Column, Entity } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 
@@ -24,7 +24,7 @@ export class OpenTab extends ApplicationEntity {
   }
 
   @Column({type: 'varchar', nullable: false})
-  tabType: TabType
+  tabType: TabType = 'query'
 
   @Column({type: 'boolean', nullable: false, default: false})
   unsavedChanges: boolean = false
@@ -58,6 +58,9 @@ export class OpenTab extends ApplicationEntity {
   @Column({type: 'varchar', nullable: true})
   schemaName?: string
 
+  @Column({type: 'varchar', nullable: true})
+  entityType?: string
+
   @Column({ type: 'integer', nullable: false })
   connectionId
 
@@ -69,6 +72,14 @@ export class OpenTab extends ApplicationEntity {
 
   duplicate(): OpenTab {
     return new OpenTab(this)
+  }
+
+  findTable(tables: TableOrView[]): TableOrView | null {
+    const result = tables.find((t) => {
+      return this.tableName === t.name &&
+        (!this.schemaName || this.schemaName === t.schema)
+    })
+    return result
   }
 
 }

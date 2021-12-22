@@ -4,10 +4,10 @@
       <a
         class="nav-link"
         @mousedown="mousedown"
-        @click.middle.prevent="$emit('close', tab)"
+        @click.middle.prevent="maybeClose"
         :class="{ active: selected }"
       >
-        <table-icon v-if="tab.type === 'table'" :table="tab.table" />
+        <table-icon v-if="tab.type === 'table'" :table="tab" />
         <i v-else-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
         <i v-else-if="tab.type === 'table-properties'" class="material-icons-outlined item-icon table-properties" :class="iconClass">construction</i>
         <i v-else-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
@@ -83,7 +83,7 @@
       },
       iconClass() {
         const result = {}
-        result[`${this.tab.table.entityType}-icon`] = true
+        result[`${this.tab.entityType}-icon`] = true
         return result
       },
       scope() {

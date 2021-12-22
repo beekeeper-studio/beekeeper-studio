@@ -200,7 +200,7 @@ const FILTER_MODE_RAW = 'raw'
 export default Vue.extend({
   components: { Statusbar },
   mixins: [data_converter, DataMutators],
-  props: ["table", "connection", "initialFilter", "tabId", "active", 'tab'],
+  props: ["connection", "initialFilter", "tabId", "active", 'tab'],
   data() {
     return {
       filterTypes: {
@@ -215,7 +215,7 @@ export default Vue.extend({
       filter: {
         value: null,
         type: "=",
-        field: this.table.columns[0].columnName
+        field: null
       },
       filterRaw: null,
       filterMode: FILTER_MODE_BUILDER,
@@ -246,11 +246,15 @@ export default Vue.extend({
       interval: setInterval(this.setlastUpdatedText, 10000),
 
       forceRedraw: false,
-      rawPage: 1
+      rawPage: 1,
+      initialized: false
     };
   },
   computed: {
-    ...mapState(['tables']),
+    ...mapState(['tables', 'tablesInitialLoaded']),
+    table() {
+      return this.tab.findTable(this.tables)
+    },
     loadingLength() {
       return this.totalRecords === null
     },
@@ -469,10 +473,18 @@ export default Vue.extend({
 
       return [{ column: this.table.columns[0].columnName, dir: "asc" }];
     },
+    shouldInitialize() {
+      return this.tablesInitialLoaded && this.active && !this.initialized
+    }
 
   },
 
   watch: {
+    shouldInitialize() {
+      if (this.shouldInitialize) {
+        this.initialize()
+      }
+    },
     page: _.debounce(function () {
       this.tabulator.setPage(this.page || 1)
     }, 500),
@@ -527,7 +539,7 @@ export default Vue.extend({
         if (this.filter.value) result = 'filtered'
       }
       this.tab.titleScope = result
-      await this.dispatch('tabs/save', this.tab)
+      await this.$store.dispatch('tabs/save', this.tab)
     },
     filterMode() {
       this.triggerFilter()
@@ -543,57 +555,58 @@ export default Vue.extend({
     }
   },
   async mounted() {
-    this.table = this.tables.find((t) => {
-      this.tab.tableName === t.name &&
-      this.tab.schemaName === t.schema
-    })
-    if (this.initialFilter) {
-      this.filter = _.clone(this.initialFilter)
-    }
-    this.fetchTableLength()
-    this.resetPendingChanges()
-    await this.$store.dispatch('updateTableColumns', this.table)
-    this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
-    this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
-    this.tabulator = new Tabulator(this.$refs.table, {
-      height: this.actualTableHeight,
-      columns: this.tableColumns,
-      nestedFieldSeparator: false,
-      placeholder: "No Data",
-      virtualDomHoz: false,
-      ajaxURL: "http://fake",
-      ajaxSorting: true,
-      ajaxFiltering: true,
-      ajaxLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
-      pagination: "remote",
-      paginationSize: this.limit,
-      paginationElement: this.$refs.paginationArea,
-      paginationButtonCount: 0,
-      initialSort: this.initialSort,
-      initialFilter: [this.initialFilter || {}],
-      lastUpdated: null,
-      // callbacks
-      ajaxRequestFunc: this.dataFetch,
-      index: this.primaryKey,
-      keybindings: {
-        scrollToEnd: false,
-        scrollToStart: false,
-        scrollPageUp: false,
-        scrollPageDown: false
-      },
-      rowContextMenu:[
-
-      ]
-    });
-
-    this.$nextTick(() => {
-      if (this.$refs.valueInput) {
-        this.$refs.valueInput.focus()
-      }
-    })
-
+    if (this.shouldInitialize) this.initialize()
   },
   methods: {
+    async initialize() {
+      log.info("initializing tab ", this.tab.title, this.tab.tabType)
+      this.initialized = true
+      this.filter.field = this.table?.columns[0]?.columnName
+      if (this.initialFilter) {
+        this.filter = _.clone(this.initialFilter)
+      }
+      this.fetchTableLength()
+      this.resetPendingChanges()
+      await this.$store.dispatch('updateTableColumns', this.table)
+      this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
+      this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
+      this.tabulator = new Tabulator(this.$refs.table, {
+        height: this.actualTableHeight,
+        columns: this.tableColumns,
+        nestedFieldSeparator: false,
+        placeholder: "No Data",
+        virtualDomHoz: false,
+        ajaxURL: "http://fake",
+        ajaxSorting: true,
+        ajaxFiltering: true,
+        ajaxLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
+        pagination: "remote",
+        paginationSize: this.limit,
+        paginationElement: this.$refs.paginationArea,
+        paginationButtonCount: 0,
+        initialSort: this.initialSort,
+        initialFilter: [this.initialFilter || {}],
+        lastUpdated: null,
+        // callbacks
+        ajaxRequestFunc: this.dataFetch,
+        index: this.primaryKey,
+        keybindings: {
+          scrollToEnd: false,
+          scrollToStart: false,
+          scrollPageUp: false,
+          scrollPageDown: false
+        },
+        rowContextMenu:[
+
+        ]
+      });
+
+      this.$nextTick(() => {
+        if (this.$refs.valueInput) {
+          this.$refs.valueInput.focus()
+        }
+      })
+    },
     async fetchTableLength() {
       try {
         const length = await this.connection.getTableLength(this.table.name, this.table.schema)
