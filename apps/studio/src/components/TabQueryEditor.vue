@@ -207,6 +207,9 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         }
         return mappings[this.connectionType] || 'generic'
       },
+      hasParams() {
+        return !!this.queryParameterPlaceholders?.length
+      },
       paramsModalRequired() {
         let result = false
         this.queryParameterPlaceholders.forEach((param) => {
@@ -637,7 +640,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         }
 
         try {
-          if (!fromModal || this.paramsModalRequired) {
+          if (this.hasParams && (!fromModal || this.paramsModalRequired)) {
             this.$modal.show('parameters-modal')
             return
           }
