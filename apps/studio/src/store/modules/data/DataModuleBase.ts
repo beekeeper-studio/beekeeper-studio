@@ -130,7 +130,7 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
     async save(context, item: T) {
       await item.save()
       context.commit('upsert', item)
-      return item
+      return item.id
     },
 
     async remove(context, item: T) {
@@ -189,7 +189,7 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
       return await havingCli(context, async (cli) => {
         const updated = await cli[scope].upsert(query)
         context.commit('upsert', updated)
-        return updated
+        return updated.id
       })
     },
     async remove(context, query: T) {

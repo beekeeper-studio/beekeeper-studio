@@ -1,3 +1,4 @@
+import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { TableFilter, TableOrView } from "@/lib/db/models";
 import { Column, Entity } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
@@ -80,6 +81,10 @@ export class OpenTab extends ApplicationEntity {
         (!this.schemaName || this.schemaName === t.schema)
     })
     return result
+  }
+
+  findQuery(queries: ISavedQuery[]): ISavedQuery | null {
+    return queries.find((q) => q.id === this.queryId)
   }
 
 }

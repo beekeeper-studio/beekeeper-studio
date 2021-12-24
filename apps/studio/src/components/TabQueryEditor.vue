@@ -5,7 +5,7 @@
       ref="topPanel"
       @contextmenu.prevent.stop="showContextMenu"
     >
-      <merge-manager v-if="query && query.id" :originalText="originalText" :query="query" :unsavedText="tab.unsavedText" @change="onChange" @mergeAccepted="originalText = query.text" />
+      <merge-manager v-if="query && query.id" :originalText="originalText" :query="query" :unsavedText="unsavedText" @change="onChange" @mergeAccepted="originalText = query.text" />
       <div v-if="remoteDeleted" class="alert alert-danger">
         <i class="material-icons">error_outline</i>
         <div class="alert-body">
@@ -77,7 +77,7 @@
 
     <!-- Save Modal -->
     <modal class="vue-dialog beekeeper-modal" name="save-modal" @closed="selectEditor" @opened="selectTitleInput" height="auto" :scrollable="true">
-      <form @submit.prevent="saveQuery">
+      <form v-if="query" @submit.prevent="saveQuery">
         <div class="dialog-content">
           <div class="dialog-c-title">Saved Query Name</div>
           <div class="modal-form">
@@ -178,7 +178,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         executeTime: 0,
         originalText: null,
         initialized: false,
-        query: null,
+        blankQuery: new FavoriteQuery(),
       }
     },
     computed: {
@@ -189,10 +189,18 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         return this.storeInitialized && this.active && !this.initialized
       },
       remoteDeleted() {
-        return this.tab.queryId && !this.savedQueries.includes(this.query)
+        return this.storeInitialized && this.tab.queryId && !this.query
       },
-      unsavedText() {
-        return this.tab.unsavedText
+      query() {
+        return this.tab.findQuery(this.savedQueries || []) || this.blankQuery
+      },
+      unsavedText: {
+        get () {
+          return this.tab.unsavedQueryText
+        },
+        set(value) {
+          this.tab.unsavedQueryText = value
+        },
       },
       identifyDialect() {
         // dialect for sql-query-identifier
@@ -238,8 +246,8 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         return this.results[this.selectedResult]
       },
       individualQueries() {
-        if (!this.tab.unsavedText) return []
-        return splitQueries(this.tab.unsavedText, this.identifyDialect)
+        if (!this.unsavedText) return []
+        return splitQueries(this.unsavedText, this.identifyDialect)
       },
       currentlySelectedQueryIndex() {
         const queries = this.individualQueries
@@ -328,7 +336,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         return query;
       },
       unsavedChanges() {
-        return _.trim(this.unsavedText) !== _.trim(this.originalText)
+        return !this.query?.id || _.trim(this.unsavedText) !== _.trim(this.originalText)
       },
     },
     watch: {
@@ -341,11 +349,11 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       remoteDeleted() {
         // eslint-disable-next-line no-debugger
         if (this.remoteDeleted) {
-          this.editor.setOption('readOnly', 'nocursor')
+          this.editor?.setOption('readOnly', 'nocursor')
           this.tab.unsavedChanges = false
           this.tab.alert = true
         } else {
-          this.editor.setOption('readOnly', false)
+          this.editor?.setOption('readOnly', false)
         }
       },
       unsavedChanges() {
@@ -415,9 +423,8 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       initialize() {
         this.initialized = true
 
-        this.query = this.savedQueries.find((q) => q.id === this.tab.queryId) || new FavoriteQuery()
-        const startingValue = this.query?.text || editorDefault
-
+        const startingValue = this.unsavedText || this.query?.text || editorDefault
+        this.tab.unsavedChanges = this.unsavedChanges
         // TODO (matthew): Add hint options for all tables and columns\
         this.initializeQueries()
 
@@ -478,7 +485,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
           this.editor.on("change", (cm) => {
             // this also updates `this.queryText`
             // this.tab.query.text = cm.getValue()
-            this.tab.unsavedText = cm.getValue()
+            this.unsavedText = cm.getValue()
           })
 
           if (this.connectionType === 'postgresql')  {
@@ -585,11 +592,12 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             payload.text = this.unsavedText
             this.$modal.hide('save-modal')
             console.log("TQE Saving", payload)
-            await this.$store.dispatch('data/queries/save', payload)
-            // we don't do this becuase we object assign.
-            // this.tab.query = updated
+            const id = await this.$store.dispatch('data/queries/save', payload)
+            this.tab.queryId = id
+            
             this.$nextTick(() => {
-              this.tab.unsavedText = this.query.text
+              this.unsavedText = this.query.text
+              this.tab.title = this.query.title
               this.originalText = this.query.text
             })
             this.$noty.success('Query Saved')
@@ -601,7 +609,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       },
       onChange(text) {
         console.log("change!", text)
-        this.tab.unsavedText = text
+        this.unsavedText = text
         this.editor.setValue(text)
       },
       escapeRegExp(string) {
@@ -728,7 +736,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       initializeQueries() {
         if (this.query?.text) {
           this.originalText = this.query.text
-          this.tab.unsavedText = this.query.text
+          if (!this.unsavedText) this.unsavedText = this.query.text
         }
       },
       fakeRemoteChange() {
