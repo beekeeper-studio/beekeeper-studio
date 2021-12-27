@@ -129,7 +129,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   })
   labelColor?: string = 'default'
 
-  workspaceId: -1
+  @Column({update: false, default: -1, type: 'integer'})
+  workspaceId: number = -1
 
   @Column({type: 'boolean', default: true})
   rememberPassword: boolean = true

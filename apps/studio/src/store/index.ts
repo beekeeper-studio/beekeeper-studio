@@ -370,13 +370,14 @@ const store = new Vuex.Store<State>({
     },
     async recordUsedConfig(context, config: IConnection) {
 
-      console.log("finding last used connection")
+      log.info("finding last used connection", config)
       const lastUsedConnection = context.state.usedConfigs.find(c => {
         console.log("looking at config", config.id)
         return c.connectionId === config.id && c.workspaceId === config.workspaceId
       })
       if (!lastUsedConnection) {
         const usedConfig = new UsedConnection(config)
+        log.info("logging used connection", usedConfig, config)
         await usedConfig.save()
         context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
       } else {
