@@ -1632,10 +1632,10 @@
   resolved "https://registry.yarnpkg.com/@types/strip-json-comments/-/strip-json-comments-0.0.30.tgz#9aa30c04db212a9a0649d6ae6fd50accc40748a1"
   integrity sha512-7NQmHra/JILCd1QqpSzl8+mJRc8ZHz3uDm8YV1Ks9IhK0epEiTw8aIErbvH9PI+6XbqhyIQy3462nEsn7UVzjQ==
 
-"@types/tabulator-tables@^4.9.2":
-  version "4.9.2"
-  resolved "https://registry.yarnpkg.com/@types/tabulator-tables/-/tabulator-tables-4.9.2.tgz#5e1773caea664acec0224dd7cd1b6632cf6ddc61"
-  integrity sha512-0Pczxn83HtBqHDIbWVtrlG+OuBFiqwd669TzKw5cOwfryBGobe5Y3yVRKqpqTTfW9bSK0j87xVmvGAFwGVyREg==
+"@types/tabulator-tables@^5.0.1":
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/@types/tabulator-tables/-/tabulator-tables-5.0.1.tgz#824fef3bef01c38a3bd934016a25e52e1043bf35"
+  integrity sha512-ieidxy+/bzMCPZsDeSw56DN9ipQ0K4Ts3ZUxPy4yCVExcAsezL4u2UYHBA+BxQ8l7QmEaERT/ctmBqjkRUhh+w==
 
 "@types/tapable@^1":
   version "1.0.7"
@@ -13424,9 +13424,8 @@ table@^5.2.3:
     slice-ansi "^2.1.0"
     string-width "^3.0.0"
 
-tabulator-tables@rathboma/tabulator#max-initial-width-with-dist:
-  version "4.9.3"
-  resolved "https://codeload.github.com/rathboma/tabulator/tar.gz/7702b23b0ad0fefe44c163f2e2148644c1bc94b9"
+"tabulator-tables@file:../../oli/tabulator":
+  version "5.0.8"
 
 tapable@^1.0.0, tapable@^1.1.3:
   version "1.1.3"

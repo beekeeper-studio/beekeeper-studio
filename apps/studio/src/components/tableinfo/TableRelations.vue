@@ -53,7 +53,11 @@
 </template>
 <script lang="ts">
 import Vue from 'vue'
-import Tabulator, { CellComponent, ColumnDefinition, Editor, RowComponent } from 'tabulator-tables'
+import { Tabulator } from 'tabulator-tables'
+type CellComponent = Tabulator.CellComponent
+type RowComponent = Tabulator.RowComponent
+type ColumnDefinition = Tabulator.ColumnDefinition
+
 import StatusBar from '../common/StatusBar.vue'
 import { TabulatorStateWatchers, trashButton, vueEditor } from '@shared/lib/tabulator/helpers'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
@@ -136,7 +140,7 @@ export default Vue.extend({
           field: 'toSchema',
           title: "FK Schema",
           editable,
-          editor: 'select' as Editor,
+          editor: 'select' as any,
           editorParams: {
             values: [...this.schemas]
           },
@@ -300,7 +304,10 @@ export default Vue.extend({
       this.tabulator = new Tabulator(this.$refs.tabulator, {
         columns: this.tableColumns,
         data: this.tableData,
-        tooltips: true,
+        columnDefaults: {
+          title:'',
+          tooltip: true,
+        },
         placeholder: "No Relations",
         layout: 'fitColumns'
       })

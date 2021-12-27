@@ -31,7 +31,10 @@ $cell-padding:           $gutter-w;
 // -------------------------------
 
 
-.tabulator-table {
+.tabulator .tabulator-tableholder .tabulator-table {
+
+  background-color: transparent;
+  color: $theme-base;
 
   .tabulator-row {
     &.inserted, 
@@ -116,6 +119,7 @@ $cell-padding:           $gutter-w;
       }
     }
   }
+
   .tabulator-cell {
     border: 0;
     padding: 0 $cell-padding;

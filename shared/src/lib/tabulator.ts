@@ -1,6 +1,6 @@
 import Purify from 'dompurify'
 import _ from 'lodash'
-import Tabulator from 'tabulator-tables'
+import {Tabulator} from 'tabulator-tables'
 
 function sanitizeHtml(value) {
   if (!value) return null

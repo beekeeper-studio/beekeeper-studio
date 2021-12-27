@@ -93,7 +93,7 @@
 </template>
 
 <script>
-import Tabulator from 'tabulator-tables'
+import {Tabulator} from 'tabulator-tables'
 import Statusbar from './common/StatusBar'
 import TableSchemaVue from './tableinfo/TableSchema.vue'
 import TableIndexesVue from './tableinfo/TableIndexes.vue'

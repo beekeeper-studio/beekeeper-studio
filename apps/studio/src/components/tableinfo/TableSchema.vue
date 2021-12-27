@@ -53,7 +53,9 @@
   </div>
 </template>
 <script lang="ts">
-import Tabulator, { CellComponent, RowComponent } from 'tabulator-tables'
+import { Tabulator } from 'tabulator-tables'
+type CellComponent = Tabulator.CellComponent
+type RowComponent = Tabulator.RowComponent
 import DataMutators from '../../mixins/data_mutators'
 import { format } from 'sql-formatter'
 import _ from 'lodash'
@@ -364,9 +366,12 @@ export default Vue.extend({
       this.tabulator = new Tabulator(this.$refs.tableSchema, {
         columns: this.tableColumns,
         layout: 'fitColumns',
-        tooltips: true,
+        columnDefaults: {
+          title: '',
+          tooltip: true,
+          resizable: false
+        },
         data: this.tableData,
-        resizableColumns: false,
         placeholder: "No Columns",
         headerSort: false,
       })

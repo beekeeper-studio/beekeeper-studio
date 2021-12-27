@@ -175,7 +175,7 @@
 <script>
 import Vue from 'vue'
 import pluralize from 'pluralize'
-import Tabulator from "tabulator-tables";
+import { TabulatorFull as Tabulator } from 'tabulator-tables'
 // import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
@@ -416,7 +416,6 @@ export default Vue.extend({
             //   maxLength: column.columnLength // TODO
             // }
           },
-          cellEdited: this.cellEdited
         }
         results.push(result)
 
@@ -555,10 +554,11 @@ export default Vue.extend({
       placeholder: "No Data",
       virtualDomHoz: false,
       ajaxURL: "http://fake",
-      ajaxSorting: true,
+      sortMode: 'remote',
       ajaxFiltering: true,
       ajaxLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
-      pagination: "remote",
+      pagination: true,
+      paginationMode: 'remote',
       paginationSize: this.limit,
       paginationElement: this.$refs.paginationArea,
       paginationButtonCount: 0,
@@ -578,6 +578,7 @@ export default Vue.extend({
 
       ]
     });
+    this.tabulator.on('cellEdited', this.cellEdited)
 
     this.$nextTick(() => {
       if (this.$refs.valueInput) {
@@ -708,7 +709,6 @@ export default Vue.extend({
       return this.editable && cell.getColumn().getField() !== this.primaryKey && !pendingDelete
     },
     cellEdited(cell) {
-      log.info('edit', cell)
       const pkCell = cell.getRow().getCells().find(c => c.getField() === this.primaryKey)
 
       if (!pkCell) {
@@ -867,6 +867,7 @@ export default Vue.extend({
 
 
         } catch (ex) {
+          console.error(ex)
           
           this.pendingChanges.updates.forEach(edit => {
               edit.cell.getElement().classList.add('edit-error')
@@ -936,13 +937,14 @@ export default Vue.extend({
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
+      log.info("fetch params", params)
       let offset = 0;
       let limit = this.limit;
       let orderBy = null;
       let filters = this.filterForTabulator;
 
-      if (params.sorters) {
-        orderBy = params.sorters
+      if (params.sort) {
+        orderBy = params.sort
       }
 
       if (params.size) {

@@ -14,7 +14,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from 'vue'
-import Tabulator, { RowComponent } from 'tabulator-tables'
+import { Tabulator } from 'tabulator-tables'
 import { getDialectData } from '../lib/dialects'
 import tab from '../lib/tabulator'
 import {vueEditor, vueFormatter} from '../lib/tabulator/helpers'
@@ -184,7 +184,7 @@ export default Vue.extend({
       const num = this.tabulator.getData().length + 1
       const columnName = `column_${num}`
 
-      const row: RowComponent = await this.tabulator.addRow({ columnName, dataType: 'varchar(255)', nullable: true})
+      const row: Tabulator.RowComponent = await this.tabulator.addRow({ columnName, dataType: 'varchar(255)', nullable: true})
       const nameCell = row.getCell('columnName')
       if (nameCell){
         // don't know why we need this, but we do.
@@ -208,12 +208,15 @@ export default Vue.extend({
       movableRows: this.editable,
       headerSort: false,
       rowMoved: () => this.getData(),
-      resizableColumns: false,
-      columnMinWidth: 56,
+      columnDefaults: {
+        title: '',
+        resizable: false,
+        minWidth: 56,
+      },
       layout: 'fitColumns',
-      dataChanged: () => this.getData()
     })
     this.getData(!!this.initialEmit)
+    this.tabulator.on('dataChanged', () => this.getData())
   }
 })
 </script>
