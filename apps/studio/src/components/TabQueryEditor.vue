@@ -6,12 +6,14 @@
       @contextmenu.prevent.stop="showContextMenu"
     >
       <merge-manager v-if="query && query.id" :originalText="originalText" :query="query" :unsavedText="unsavedText" @change="onChange" @mergeAccepted="originalText = query.text" />
-      <div v-if="remoteDeleted" class="alert alert-danger">
-        <i class="material-icons">error_outline</i>
-        <div class="alert-body">
-          This query was deleted by someone else. It is no longer editable.
+      <div class="no-content" v-if="remoteDeleted">
+        <div class="alert alert-danger">
+          <i class="material-icons">error_outline</i>
+          <div class="alert-body">
+            This query was deleted by someone else. It is no longer editable.
+          </div>
+          <a @click.prevent="close" class="btn btn-flat">Close Tab</a>
         </div>
-        <a @click.prevent="close" class="btn btn-flat">Close Tab</a>
       </div>
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
@@ -414,9 +416,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         this.marker = this.editor.getDoc().markText(markStart, markEnd, {className: 'highlight'})
       },
       hintOptions() {
-        this.editor.setOption('hintOptions',this.hintOptions)
-        // this.editor.setOptions('hint', CodeMirror.hint.sql)
-        // this.editor.refresh()
+        this.editor?.setOption('hintOptions',this.hintOptions)
       },
     },
     methods: {

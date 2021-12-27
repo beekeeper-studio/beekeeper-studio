@@ -1,87 +1,95 @@
 <template>
   <div class="tabletable flex-col" :class="{'view-only': !editable}">
-    <div class="table-filter">
-      <form @submit.prevent="triggerFilter">
-        <div v-if="filterMode === 'raw'" class="filter-group row gutter">
-          <div class="btn-wrap">
-            <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('builder')" title="Toggle Filter Type">
-              <i class="material-icons-outlined">filter_alt</i>
-            </button>
-          </div>
-          <div class="expand filter">
-            <div class="filter-wrap">
-              <input
-                class="form-control"
-                type="text"
-                v-model="filterRaw"
-                :placeholder=filterPlaceholder
-              />
-              <button
-                type="button"
-                class="clear btn-link"
-                @click.prevent="filterRaw = ''"
-              >
-                <i class="material-icons">cancel</i>
+    <template v-if="!table && initialized">
+      <div class="no-content">
+
+      </div>
+    </template>
+    <template v-else >
+      <div class="table-filter">
+        <form @submit.prevent="triggerFilter">
+          <div v-if="filterMode === 'raw'" class="filter-group row gutter">
+            <div class="btn-wrap">
+              <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('builder')" title="Toggle Filter Type">
+                <i class="material-icons-outlined">filter_alt</i>
+              </button>
+            </div>
+            <div class="expand filter">
+              <div class="filter-wrap">
+                <input
+                  class="form-control"
+                  type="text"
+                  v-model="filterRaw"
+                  :placeholder=filterPlaceholder
+                />
+                <button
+                  type="button"
+                  class="clear btn-link"
+                  @click.prevent="filterRaw = ''"
+                >
+                  <i class="material-icons">cancel</i>
+                </button>
+              </div>
+            </div>
+            <div class="btn-wrap">
+              <button class="btn btn-primary btn-fab" type="submit" title="Filter">
+                <i class="material-icons">search</i>
               </button>
             </div>
           </div>
-          <div class="btn-wrap">
-            <button class="btn btn-primary btn-fab" type="submit" title="Filter">
-              <i class="material-icons">search</i>
-            </button>
-          </div>
-        </div>
-        <div v-else-if="filterMode === 'builder'" class="filter-group row gutter">
-          <div class="btn-wrap">
-            <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('raw')" title="Toggle Filter Type">
-              <i class="material-icons">code</i>
-            </button>
-          </div>
-          <div>
-            <div class="select-wrap">
-              <select name="Filter Field" class="form-control" v-model="filter.field">
-                <option
-                  v-for="column in table.columns"
-                  v-bind:key="column.columnName"
-                  :value="column.columnName"
-                >{{column.columnName}}</option>
-              </select>
+          <div v-else-if="filterMode === 'builder'" class="filter-group row gutter">
+            <div class="btn-wrap">
+              <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('raw')" title="Toggle Filter Type">
+                <i class="material-icons">code</i>
+              </button>
             </div>
-          </div>
-          <div>
-            <div class="select-wrap">
-              <select name="Filter Type" class="form-control" v-model="filter.type">
-                <option v-for="(v, k) in filterTypes" v-bind:key="k" :value="v">{{k}}</option>
-              </select>
+            <div>
+              <div class="select-wrap" >
+                <select name="Filter Field" class="form-control" v-model="filter.field">
+                  <option
+                    v-for="column in table.columns"
+                    v-bind:key="column.columnName"
+                    :value="column.columnName"
+                  >{{column.columnName}}</option>
+                </select>
+              </div>
             </div>
-          </div>
-          <div class="expand filter">
-            <div class="filter-wrap">
-              <input
-                class="form-control"
-                type="text"
-                v-model="filter.value"
-                placeholder="Enter Value"
-                ref="valueInput"
-              />
-              <button
-                type="button"
-                class="clear btn-link"
-                @click.prevent="filter.value = ''"
-              >
-                <i class="material-icons">cancel</i>
+            <div>
+              <div class="select-wrap">
+                <select name="Filter Type" class="form-control" v-model="filter.type">
+                  <option v-for="(v, k) in filterTypes" v-bind:key="k" :value="v">{{k}}</option>
+                </select>
+              </div>
+            </div>
+            <div class="expand filter">
+              <div class="filter-wrap">
+                <input
+                  class="form-control"
+                  type="text"
+                  v-model="filter.value"
+                  placeholder="Enter Value"
+                  ref="valueInput"
+                />
+                <button
+                  type="button"
+                  class="clear btn-link"
+                  @click.prevent="filter.value = ''"
+                >
+                  <i class="material-icons">cancel</i>
+                </button>
+              </div>
+            </div>
+            <div class="btn-wrap">
+              <button class="btn btn-primary btn-fab" type="submit" title="Filter">
+                <i class="material-icons">search</i>
               </button>
             </div>
           </div>
-          <div class="btn-wrap">
-            <button class="btn btn-primary btn-fab" type="submit" title="Filter">
-              <i class="material-icons">search</i>
-            </button>
-          </div>
-        </div>
-      </form>
-    </div>
-    <div ref="table"></div>
+        </form>
+      </div>
+      <div ref="table"></div>
+    </template>
+
     <statusbar :mode="statusbarMode">
 
       
@@ -172,14 +180,14 @@
 }
 </style>
 
-<script>
+<script lang="ts">
 import Vue from 'vue'
 import pluralize from 'pluralize'
 import Tabulator from "tabulator-tables";
 // import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
 import DataMutators from '../../mixins/data_mutators'
-import Statusbar from '../common/StatusBar'
+import Statusbar from '../common/StatusBar.vue'
 import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
@@ -189,10 +197,6 @@ import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
 import { mapState } from 'vuex';
 
-const CHANGE_TYPE_INSERT = 'insert'
-const CHANGE_TYPE_UPDATE = 'update'
-const CHANGE_TYPE_DELETE = 'delete'
-
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
@@ -200,7 +204,7 @@ const FILTER_MODE_RAW = 'raw'
 export default Vue.extend({
   components: { Statusbar },
   mixins: [data_converter, DataMutators],
-  props: ["connection", "initialFilter", "tabId", "active", 'tab'],
+  props: ["connection", "initialFilter", "active", 'tab', 'table'],
   data() {
     return {
       filterTypes: {
@@ -243,6 +247,7 @@ export default Vue.extend({
       timeAgo: new TimeAgo('en-US'),
       lastUpdated: null,
       lastUpdatedText: null,
+      // @ts-ignore
       interval: setInterval(this.setlastUpdatedText, 10000),
 
       forceRedraw: false,
@@ -252,9 +257,6 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded']),
-    table() {
-      return this.tab.findTable(this.tables)
-    },
     loadingLength() {
       return this.totalRecords === null
     },
@@ -282,7 +284,7 @@ export default Vue.extend({
     cellContextMenu() {
       return [{
           label: '<x-menuitem><x-label>Set Null</x-label></x-menuitem>',
-          action: (e, cell) => {
+          action: (_e, cell) => {
             cell.setValue(null);
           },
           disabled: !this.editable
@@ -290,13 +292,13 @@ export default Vue.extend({
         { separator: true },
         {
           label: '<x-menuitem><x-label>Copy</x-label></x-menuitem>',
-          action: (e, cell) => {
+          action: (_e, cell) => {
             this.$native.clipboard.writeText(cell.getValue());
           },
         },
         {
           label: '<x-menuitem><x-label>Paste</x-label></x-menuitem>',
-          action: (e, cell) => {
+          action: (_e, cell) => {
             cell.setValue(this.$native.clipboard.readText())
           },
           disabled: !this.editable
@@ -314,7 +316,7 @@ export default Vue.extend({
         },
         {
           label: '<x-menuitem><x-label>Delete row</x-label></x-menuitem>',
-          action: (e, cell) => this.addRowToPendingDeletes(cell.getRow()),
+          action: (_e, cell) => this.addRowToPendingDeletes(cell.getRow()),
           disabled: !this.editable
         },
       ]
@@ -364,6 +366,7 @@ export default Vue.extend({
     tableColumns() {
       const keyWidth = 40
       const results = []
+      if (!this.table) return []
       // 1. add a column for a real column
       // if a FK, add another column with the link
       // to the FK table.
@@ -467,7 +470,7 @@ export default Vue.extend({
       }
     },
     initialSort() {
-      if (this.table.columns.length === 0) {
+      if (!this.table?.columns?.length) {
         return [];
       }
 
@@ -497,7 +500,6 @@ export default Vue.extend({
           this.forceRedraw = false
           this.$nextTick(() => {
             log.debug('forceredraw')
-            log.debug(`force redraw, table ${this.table.name}, tab ${this.tabId}`)
             this.tabulator.redraw(true)
           })
         }
@@ -558,6 +560,9 @@ export default Vue.extend({
     if (this.shouldInitialize) this.initialize()
   },
   methods: {
+    async close() {
+      this.$root.$emit(AppEvent.closeTab)
+    },
     async initialize() {
       log.info("initializing tab ", this.tab.title, this.tab.tabType)
       this.initialized = true
@@ -586,6 +591,7 @@ export default Vue.extend({
         paginationButtonCount: 0,
         initialSort: this.initialSort,
         initialFilter: [this.initialFilter || {}],
+        // @ts-ignore
         lastUpdated: null,
         // callbacks
         ajaxRequestFunc: this.dataFetch,
@@ -609,6 +615,7 @@ export default Vue.extend({
     },
     async fetchTableLength() {
       try {
+        if (!this.table) return;
         const length = await this.connection.getTableLength(this.table.name, this.table.schema)
         this.totalRecords = length
       } catch(ex) {
@@ -620,6 +627,7 @@ export default Vue.extend({
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
     },
     buildPendingInserts() {
+      if (!this.table) return
       const inserts = this.pendingChanges.inserts.map((item) => {
         const columnNames = this.table.columns.map((c) => c.columnName)
         const rowData = item.row.getData()
@@ -674,7 +682,7 @@ export default Vue.extend({
         default: return ne
       }
     },
-    fkClick(e, cell) {
+    fkClick(_e, cell) {
       log.info('fk-click', cell)
       const fromColumn = cell.getField().replace(/-link$/g, "")
       const valueCell = this.valueCellFor(cell)
@@ -701,7 +709,7 @@ export default Vue.extend({
       log.debug('fk-click: clicked ', value, keyData)
       this.$root.$emit('loadTable', payload)
     },
-    cellClick(e, cell) {
+    cellClick(_e, cell) {
       // this makes it easier to select text if not editing
       if (!this.editable) {
         this.selectChildren(cell.getElement())
@@ -774,7 +782,7 @@ export default Vue.extend({
       pendingUpdates.push(payload)
       this.$set(this.pendingChanges, 'updates', pendingUpdates)
     },
-    cellCloneRow(e, cell) {
+    cellCloneRow(_e, cell) {
       const row = cell.getRow()
       const data = { ...row.getData() }
 
@@ -952,7 +960,7 @@ export default Vue.extend({
 
       this.filterMode = filterMode
     },
-    dataFetch(url, config, params) {
+    dataFetch(_url, _config, params) {
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info

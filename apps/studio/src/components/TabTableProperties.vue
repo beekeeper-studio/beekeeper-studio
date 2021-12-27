@@ -107,7 +107,7 @@ import rawLog from 'electron-log'
 
 const log = rawLog.scope('TabTableProperties')
 export default {
-  props: ["connection", "tabId", "active", "tab"],
+  props: ["connection", "tabId", "active", "tab", "table"],
   components: { Statusbar },
   data() {
     return {
@@ -171,10 +171,8 @@ export default {
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded']),
     shouldInitialize() {
+      // TODO (matthew): Move this to the wrapper TabWithTable
       return this.tablesInitialLoaded && this.active && !this.initialized
-    },
-    table() {
-      return this.tab.findTable(this.tables);
     },
     editable() {
       return this.table.entityType === 'table' && !!this.primaryKeys.length
@@ -210,6 +208,9 @@ export default {
     },
   },
   methods: {
+    close() {
+      this.$root.$emit(AppEvent.closeTab)
+    },
     openData() {
       this.$root.$emit(AppEvent.loadTable, { table: this.table })
     },
@@ -231,6 +232,7 @@ export default {
       await this.refresh()
     },
     async refresh() {
+      if (!this.table) return;
       log.info("refresh")
       this.loading = true
       this.error = null

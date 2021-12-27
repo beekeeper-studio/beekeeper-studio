@@ -16,8 +16,8 @@
         <span class="tab-title truncate" :title="title + scope">{{title}} <span v-if="scope" class="tab-title-scope">{{scope}}</span></span>
         <div class="tab-action">
           <span class="tab-close" @mouseenter="hover=true" @mouseleave="hover=false" @mousedown.stop="doNothing" @click.prevent.stop="maybeClose">
-            <i class="material-icons close" v-if="hover">close</i>
-            <i class="material-icons close" v-else>{{closeIcon}}</i>
+            <i class="material-icons close" v-if="hover || !closeIcon">close</i>
+            <i class="material-icons unsaved" v-else>{{closeIcon}}</i>
           </span>
         </div>
       </a>
@@ -63,7 +63,7 @@
       closeIcon() {
         if (this.tab.alert) return 'error_outline'
         if (this.tab.unsavedChanges) return 'fiber_manual_record'
-        return 'close'
+        return null
       },
       keymap() {
         const result = {}

@@ -36,8 +36,27 @@
         v-show="activeTab === tab"
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
-        <TableTable :tab="tab" v-if="tab.type === 'table'" :active="activeTab === tab" :tabId="tab.id" :connection="connection" :initialFilter="tab.filter"></TableTable>
-        <TableProperties v-if="tab.type === 'table-properties'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></TableProperties>
+        <tab-with-table v-if="tab.type === 'table'" :tab="tab">
+          <template v-slot:default="slotProps">
+            <TableTable 
+              :tab="tab" 
+              :active="activeTab === tab" 
+              :connection="connection" 
+              :initialFilter="tab.filter"
+              :table="slotProps.table"
+            ></TableTable>
+          </template>
+        </tab-with-table>
+        <tab-with-table v-if="tab.type === 'table-properties'" :tab="tab">
+          <template v-slot:default="slotProps">
+            <TableProperties 
+              :active="activeTab === tab" 
+              :tab="tab" :tabId="tab.id" 
+              :connection="connection"
+              :table="slotProps.table"
+            ></TableProperties>
+          </template>
+        </tab-with-table>
         <TableBuilder v-if="tab.type === 'table-builder'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></TableBuilder>
         
       </div>
@@ -52,7 +71,6 @@
   import QueryEditor from './TabQueryEditor.vue'
   import Statusbar from './common/StatusBar.vue'
   import CoreTabHeader from './CoreTabHeader.vue'
-  import { uuidv4 } from '@/lib/uuid'
   import TableTable from './tableview/TableTable.vue'
   import TableProperties from './TabTableProperties.vue'
   import TableBuilder from './TabTableBuilder.vue'
@@ -63,6 +81,7 @@
 import { FormatterDialect } from '@shared/lib/dialects/models';
 import Vue from 'vue';
 import { OpenTab } from '@/common/appdb/models/OpenTab';
+import TabWithTable from './common/TabWithTable.vue';
 
   export default Vue.extend({
     props: [ 'connection' ],
@@ -75,6 +94,7 @@ import { OpenTab } from '@/common/appdb/models/OpenTab';
       Draggable,
       ShortcutHints,
       TableBuilder,
+        TabWithTable,
     },
     data() {
       return {
@@ -218,14 +238,7 @@ import { OpenTab } from '@/common/appdb/models/OpenTab';
         tab.tabType = 'table-builder'
         tab.title = "New Table"
         tab.unsavedChanges = true
-        const t = {
-          id: uuidv4(),
-          type: 'table-builder',
-          connection: this.connection,
-          title: "New Table",
-          unsavedChanges: true,
-        }
-        this.addTab(t)
+        this.addTab(tab)
       },
       openTableProperties({ table }) {
         const existing = this.tabItems.find((t) => {
