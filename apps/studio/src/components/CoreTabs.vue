@@ -343,7 +343,7 @@ import TabWithTable from './common/TabWithTable.vue';
     async mounted() {
       await this.$store.dispatch('tabs/load')
       if (!this.tabItems?.length) {
-        // this.createQuery()
+        this.createQuery()
       }
       this.registerHandlers(this.rootBindings)
     }
