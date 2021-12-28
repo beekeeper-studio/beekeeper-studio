@@ -34,6 +34,7 @@
             @remove="remove"
             @select="select"
             @open="open"
+            @rename="rename"
           />
         </sidebar-folder>
         <favorite-list-item
@@ -45,6 +46,7 @@
           @remove="remove"
           @select="select"
           @open="open"
+          @rename="rename"
          />
       </nav>
       <div class="empty" v-else>
@@ -55,6 +57,13 @@
       </div>
       </div>
     </div>
+    <modal class="vue-dialog beekeeper-modal" name="rename-modal" @closed="renameMe=null" height="auto" :scrollable="true">
+      <div class="dialog-content" v-if="renameMe">
+        <div class="dialog-c-title">Rename {{renameMe.title}}</div>
+        <query-rename-form :query="renameMe" @done="$modal.hide('rename-modal')" />
+      </div>
+    </modal>
+
   </div>
 </template>
 
@@ -65,12 +74,14 @@ import ErrorAlert from '@/components/common/ErrorAlert.vue'
   import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
   import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
+import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
   export default {
-    components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder },
+    components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, QueryRenameForm },
     data: function () {
       return {
         checkedFavorites: [],
         selected: null,
+        renameMe: null
       }
     },
     mounted() {
@@ -113,6 +124,10 @@ import { AppEvent } from '@/common/AppEvent'
     methods: {
       createQuery() {
         this.$root.$emit(AppEvent.newTab)
+      },
+      rename(query) {
+        this.$modal.show('rename-modal')
+        this.renameMe = query
       },
       importFromLocal() {
         this.$root.$emit(AppEvent.promptQueryImport)
