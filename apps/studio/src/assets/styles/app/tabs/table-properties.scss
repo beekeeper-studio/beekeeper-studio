@@ -294,7 +294,7 @@ $cell-success:           $row-add;
           padding: 0!important;
           // Make checkboxes behave correctly
           .tabulator-bks-checkbox {
-            padding: $cell-padding / 2;
+            padding: calc($cell-padding / 2);
           }
           pre, input:not([type="checkbox"]) {
             padding: 0 $cell-padding;
