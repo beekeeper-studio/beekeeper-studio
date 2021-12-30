@@ -132,7 +132,7 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
       await FavoriteQuery.update(item.id, item)
       const updated = await FavoriteQuery.findOne(item.id)
       context.commit('upsert', updated)
-      return item
+      return updated.id
     },
 
     async remove(context, item: T) {
@@ -191,7 +191,7 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
       return await havingCli(context, async (cli) => {
         const updated = await cli[scope].upsert(query)
         context.commit('upsert', updated)
-        return updated
+        return updated.id
       })
     },
     async remove(context, query: T) {

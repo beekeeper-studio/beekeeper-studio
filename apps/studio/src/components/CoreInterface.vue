@@ -88,6 +88,8 @@
     },
     beforeDestroy() {
       this.$store.dispatch('pins/unloadPins')
+      this.$store.commit('unloadTables')
+      this.$store.commit('tabs/set', [])
       this.unregisterHandlers(this.rootBindings)
       if(this.split) {
         this.split.destroy()

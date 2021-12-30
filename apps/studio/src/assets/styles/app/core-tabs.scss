@@ -100,19 +100,16 @@
           .close {
             display: inline-block;
           }
+
+          .unsaved {
+            display: inline-block;
+          }
           &:hover {
             .unsaved-icon {
               display: none;
             }
-          }
-          &.unsaved {
             .close {
-              display: none;
-            }
-            &:hover {
-              .close {
-                display: inline-block;
-              }
+              display: inline-block;
             }
           }
         }
@@ -164,9 +161,17 @@
       align-items: center;
       justify-content: center;
       min-width: 24px;
+
+      .close {
+        display: none;
+      }
+
+      .unsaved {
+        display: inline-block;
+      }
       .material-icons {
         position: absolute;
-        display: none;
+
         font-size: 12px;
         font-weight: bold;
         color: $text;
@@ -184,7 +189,10 @@
     -webkit-app-region: no-drag;
   }
 }
-
+.no-content {
+  padding-left: 5px;
+  padding-right: 5px;
+}
 // Move Later
 .tabletable {
   position: absolute;
@@ -193,6 +201,7 @@
   bottom: 0;
   left: 0;
   padding-bottom: $statusbar-height;
+
   .statusbar {
     position: absolute;
     bottom: 0;

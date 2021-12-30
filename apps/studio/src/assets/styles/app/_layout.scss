@@ -207,12 +207,12 @@ hr {
     color: $text-dark;
   }
   &.btn-primary {
-    background: $theme-base;
+    background: $theme-primary;
     .material-icons {
       color: rgba(black, 0.87);
     }
     &:hover, &:focus {
-      background: lighten($theme-base, 8%);
+      background: darken($theme-primary, 8%);
       .material-icons {
         color: rgba(black, 0.87);
       }
@@ -378,7 +378,7 @@ select {
   option {
     background: lighten($theme-bg, 3%);
     color: $text;
-    &:checked, 
+    &:checked,
     &:hover {
       color: white;
       box-shadow: 0 0 10px 100px $brand-info inset;
