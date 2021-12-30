@@ -56,6 +56,11 @@ export default Vue.extend({
             handler: ({ item }) => this.$emit('open', item)
           },
           {
+            name: "Rename",
+            handler: ({ item }) => this.$emit('rename', item)
+            
+          },
+          {
             name: "Delete",
             handler: ({ item }) => this.$emit('remove', item)
           },

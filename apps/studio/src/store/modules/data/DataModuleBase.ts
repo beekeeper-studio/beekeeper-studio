@@ -9,6 +9,7 @@ import { ActionContext, ActionTree, Module, MutationTree } from "vuex";
 import { State as RootState } from '../../index'
 import { ApplicationEntity } from "@/common/appdb/models/application_entity";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
+import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 
 export interface QueryModuleState {
   queryFolders: IQueryFolder[]
@@ -128,8 +129,9 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
     },
 
     async save(context, item: T) {
-      await item.save()
-      context.commit('upsert', item)
+      await FavoriteQuery.update(item.id, item)
+      const updated = await FavoriteQuery.findOne(item.id)
+      context.commit('upsert', updated)
       return item
     },
 
