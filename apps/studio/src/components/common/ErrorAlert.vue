@@ -1,19 +1,24 @@
 <template>
   <div v-if="error" class="error-alert alert text-danger">
-    <i class="material-icons">error</i>
-    <b v-if="title" class="error-title">{{title}}</b>
-    <ul class="error-list">
-      <li
-        class="error-item"
-        v-on:click="click(e)"
-        v-for="(e, idx) in errors" :key="idx"
-        v-b-tooltip.hover title="Click to copy"
-      >
-        {{e.message || e.toString()}}
-      </li>
-    </ul>
-    <div class="help-links" v-if="error.helpLink">
-      <a :href="error.helpLink">Learn more about this error</a>
+    <div class="alert-title">
+      <i class="material-icons">error</i>
+      <b v-if="title" class="error-title">{{title}}</b>
+    </div>
+    <div class="alert-body">
+      <ul class="error-list">
+        <li
+          class="error-item"
+          v-on:click="click(e)"
+          v-for="(e, idx) in errors" :key="idx"
+          v-b-tooltip.hover title="Click to copy"
+        >
+          {{e.message || e.toString()}}
+        </li>
+      </ul>
+      <div class="help-links" v-if="error.helpLink">
+        <a :href="error.helpLink">Learn more about this error</a>
+      </div>
+
     </div>
   </div>
 </template>
@@ -47,7 +52,16 @@ export default Vue.extend({
 
   .alert.error-alert {
     display: flex;
-    min-width: 280px;
+    min-width: 200px;
+    flex-direction: column;
+    .alert-title {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      i {
+        margin-right: 5px;
+      }
+    }
     .alert-body {
       display: flex;
       flex-direction: row;
