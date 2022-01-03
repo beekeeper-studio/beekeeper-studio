@@ -7,7 +7,6 @@ Team workspaces allow multiple people to work with the same set of connections a
 
 Queries and Connections in your team workspace are only available for use through the Beekeeper Studio app.
 
-![Team workspaces walkthrough](https://via.placeholder.com/800x200?text=Video_Walkthrough)
 
 ## Team Workspace Key Concepts
 
