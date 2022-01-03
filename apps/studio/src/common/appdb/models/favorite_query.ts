@@ -30,5 +30,6 @@ export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISave
       this.connectionHash = 'DEPRECATED'
     }
   }
+  
 
 }

@@ -15,9 +15,9 @@ const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tab
 export class OpenTab extends ApplicationEntity {
 
 
-  constructor(options = {}) {
+  constructor(tabType: TabType) {
     super()
-    _.assign(this, _.pick(options, pickable))
+    this.tabType = tabType
   }
 
   get type() {
@@ -72,7 +72,9 @@ export class OpenTab extends ApplicationEntity {
   filters: TableFilter[]
 
   duplicate(): OpenTab {
-    return new OpenTab(this)
+    const result = new OpenTab(this.tabType)
+    _.assign(result, _.pick(this, pickable))
+    return result
   }
 
   findTable(tables: TableOrView[]): TableOrView | null {

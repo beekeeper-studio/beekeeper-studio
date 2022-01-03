@@ -208,9 +208,8 @@ import TabWithTable from './common/TabWithTable.vue';
       },
       createQuery(optionalText) {
         // const text = optionalText ? optionalText : ""
-        const result = new OpenTab()
+        const result = new OpenTab('query')
         result.title = "Query #" + this.newTabId,
-        result.tabType = 'query'
         result.unsavedChanges = false
         result.unsavedQueryText = optionalText
 
@@ -234,8 +233,7 @@ import TabWithTable from './common/TabWithTable.vue';
         this.createQuery(stringResult)
       },
       openTableBuilder() {
-        const tab = new OpenTab()
-        tab.tabType = 'table-builder'
+        const tab = new OpenTab('table-builder')
         tab.title = "New Table"
         tab.unsavedChanges = true
         this.addTab(tab)
@@ -248,8 +246,7 @@ import TabWithTable from './common/TabWithTable.vue';
 
         if (existing) return this.$store.dispatch('tabs/setActive', existing)
 
-        const t = new OpenTab()
-        t.tabType = 'table-properties'
+        const t = new OpenTab('table-properties')
         t.tableName = table.name
         t.schemaName = table.schema
         t.title = table.name
@@ -257,12 +254,11 @@ import TabWithTable from './common/TabWithTable.vue';
       },
       openTable({ table, filter}) {
 
-        const tab = new OpenTab()
+        const tab = new OpenTab('table')
         tab.title = table.name
         tab.tableName = table.name
         tab.schemaName = table.schema
         tab.entityType = table.entityType
-        tab.tabType = "table"
         tab.filters = filter
         tab.titleScope = "all"
 
@@ -274,8 +270,7 @@ import TabWithTable from './common/TabWithTable.vue';
         this.showExportModal = true
       },
       openSettings() {
-        const tab = new OpenTab()
-        tab.tabType = "settings"
+        const tab = new OpenTab('settings')
         tab.title = "Settings"
         this.addTab(tab)
       },
@@ -324,8 +319,7 @@ import TabWithTable from './common/TabWithTable.vue';
         if (queriesOnly.includes(item)) {
           this.click(this.tabItems[queriesOnly.indexOf(item.id)])
         } else {
-          const tab = new OpenTab()
-          tab.tabType = 'query'
+          const tab = new OpenTab('query')
           tab.title = item.title
           tab.queryId = item.id
           tab.unsavedChanges = false

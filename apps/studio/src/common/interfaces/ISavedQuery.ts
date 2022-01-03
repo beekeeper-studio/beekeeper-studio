@@ -9,7 +9,11 @@ export default interface ISavedQuery {
   // TODO (matthew)
   // queryFolderId: number | null
   // userId: number | null
-  createdAt: Date | null
+  createdAt: Date | number | null
   updatedAt: Date | null
+  user?: {
+    id: number
+    name: string
+  }
 
 }

@@ -4,7 +4,7 @@
     <i class="item-icon query material-icons">code</i>
     <div class="list-title flex-col">
       <span class="item-text title truncate expand" :title="item.title">{{item.title}}</span>
-      <span class="database subtitle"><span :title="item.database" >{{item.database}}</span></span>
+      <span :title="subtitle" class="database subtitle"><span>{{subtitle}}</span></span>
     </div>
   </a>
 </div>
@@ -15,9 +15,13 @@ import _ from 'lodash'
 import { IQueryFolder } from '@/common/interfaces/IQueryFolder'
 import Vue from 'vue'
 import { mapState } from 'vuex'
+import TimeAgo from 'javascript-time-ago'
+
 export default Vue.extend({
   props: ['item', 'selected', 'active'],
-
+  data: () => ({
+    timeAgo: new TimeAgo('en-US')
+  }),
   computed: {
     ...mapState('data/queryFolders', {'folders': 'items'}),
     moveToOptions() {
@@ -31,6 +35,18 @@ export default Vue.extend({
         }
       })
     },
+    subtitle() {
+      const result = []
+      if (this.item.user?.name) result.push(`${this.item.user.name}`)
+      if (this.item.createdAt) {
+        if (_.isNumber(this.item.createdAt)) {
+          result.push(this.timeAgo.format(new Date(this.item.createdAt * 1000)))
+        } else {
+          result.push(this.timeAgo.format(this.item.createdAt))
+        }
+      }
+      return result.join(" ")
+    }
   },
   methods: {
     async moveItem({ item, option }) {
