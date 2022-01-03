@@ -259,7 +259,9 @@ import TabWithTable from './common/TabWithTable.vue';
         tab.filters = filter
         tab.titleScope = "all"
 
+        console.log("comparison", table.name, table.schema, filter, table.entityType)
         const existing = this.tabItems.find((t) => t.matches(tab))
+        console.log("comparison existing", existing)
         if (existing) return this.$store.dispatch('tabs/setActive', existing)
         this.addTab(tab)
       },
