@@ -89,4 +89,24 @@ export class OpenTab extends ApplicationEntity {
     return queries.find((q) => q.id === this.queryId)
   }
 
+  // we want a loose match here, this is used to determine if we open a new tab or not
+  matches(other: OpenTab): boolean {
+    // new tabs don't have a workspace set
+    if (other.workspaceId && this.workspaceId && this.workspaceId !== other.workspaceId) {
+      return false;
+    }
+    switch (other.tabType) {
+      case 'table-properties':
+        return this.tableName === other.tableName && this.schemaName === other.schemaName
+      case 'table':
+        return this.tableName === other.tableName &&
+          this.schemaName === other.schemaName &&
+          _.isEqual(this.filters, other.filters)
+      case 'query':
+        return this.queryId === other.queryId
+      default:
+        return false
+    }
+  }
+
 }

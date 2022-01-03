@@ -239,17 +239,14 @@ import TabWithTable from './common/TabWithTable.vue';
         this.addTab(tab)
       },
       openTableProperties({ table }) {
-        const existing = this.tabItems.find((t) => {
-          return t.type === 'table-properties' &&
-            t.table === table
-        })
-
-        if (existing) return this.$store.dispatch('tabs/setActive', existing)
-
         const t = new OpenTab('table-properties')
         t.tableName = table.name
         t.schemaName = table.schema
         t.title = table.name
+        
+        const existing = this.tabItems.find((tab) => tab.matches(t))
+        if (existing) return this.$store.dispatch('tabs/setActive', existing)
+
         this.addTab(t)
       },
       openTable({ table, filter}) {
@@ -262,7 +259,8 @@ import TabWithTable from './common/TabWithTable.vue';
         tab.filters = filter
         tab.titleScope = "all"
 
-        // eslint-disable-next-line no-debugger
+        const existing = this.tabItems.find((t) => t.matches(tab))
+        if (existing) return this.$store.dispatch('tabs/setActive', existing)
         this.addTab(tab)
       },
       openExportModal(options) {
@@ -312,20 +310,16 @@ import TabWithTable from './common/TabWithTable.vue';
         this.addTab(tab)
       },
       favoriteClick(item) {
-        const queriesOnly = this.tabItems.map((item) => {
-          return item.queryId
-        })
+        const tab = new OpenTab('query')
+        tab.title = item.title
+        tab.queryId = item.id
+        tab.unsavedChanges = false
 
-        if (queriesOnly.includes(item)) {
-          this.click(this.tabItems[queriesOnly.indexOf(item.id)])
-        } else {
-          const tab = new OpenTab('query')
-          tab.title = item.title
-          tab.queryId = item.id
-          tab.unsavedChanges = false
+        const existing = this.tabItems.find((t) => t.matches(tab))
+        if (existing) return this.$store.dispatch('tabs/setActive', existing)
 
-          this.addTab(tab)
-        }        
+        this.addTab(tab)
+
       },
       createQueryFromItem(item) {
         this.createQuery(item.text)

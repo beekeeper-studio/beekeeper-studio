@@ -92,7 +92,7 @@ import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
     },
     computed: {
       ...mapGetters(['workspace', 'isCloud']),
-      ...mapState(['activeTab']),
+      ...mapState('tabs', {'activeTab': 'active'}),
       ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error'}),
       ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
       loading() {
@@ -144,8 +144,7 @@ import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
         this.$store.dispatch("data/queries/load")
       },
       isActive(item) {
-        return this.activeTab && this.activeTab.query &&
-          this.activeTab.query.id === item.id
+        return this.activeTab && this.activeTab.queryId === item.id
       },
       select(item) {
         this.selected = item
