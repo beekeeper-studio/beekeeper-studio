@@ -1,7 +1,7 @@
 <template>
   <div v-if="error" class="error-alert alert text-danger">
     <div class="alert-title">
-      <i class="material-icons">error</i>
+      <i class="material-icons">error_outline</i>
       <b v-if="title" class="error-title">{{title}}</b>
     </div>
     <div class="alert-body">
@@ -10,7 +10,7 @@
           class="error-item"
           v-on:click="click(e)"
           v-for="(e, idx) in errors" :key="idx"
-          v-b-tooltip.hover title="Click to copy"
+          title="Click to copy"
         >
           {{e.message || e.toString()}}
         </li>

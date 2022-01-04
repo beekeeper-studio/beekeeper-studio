@@ -196,6 +196,9 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       query() {
         return this.tab.findQuery(this.savedQueries || []) || this.blankQuery
       },
+      queryTitle() {
+        return this.query?.title
+      },
       unsavedText: {
         get () {
           return this.tab.unsavedQueryText
@@ -342,6 +345,9 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       },
     },
     watch: {
+      queryTitle() {
+        if (this.queryTitle) this.tab.title = this.queryTitle
+      },
       shouldInitialize() {
         if (this.shouldInitialize) this.initialize()
       },

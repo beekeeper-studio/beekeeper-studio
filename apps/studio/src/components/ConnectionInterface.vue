@@ -12,7 +12,7 @@
               <h3 class="card-title" v-if="pageTitle">{{pageTitle}}</h3>
               <ImportButton :config="config">Import from URL</ImportButton>
             </div>
-            <error-alert :error="errors" />
+            <error-alert :error="errors" title="Please fix the following errors" />
             <form @action="submit" v-if="config">
               <div class="form-group">
                 <label for="connectionType">Connection Type</label>
@@ -162,9 +162,11 @@
       },
       edit(config) {
         this.config = config
+        this.errors = null
+        this.connectionError = null
       },
       async remove(config) {
-        await this.$store.dispatch('removeConnectionConfig', config)
+        await this.$store.dispatch('data/connections/remove', config)
         if (this.config === config) {
           this.config = this.defaultConfig
         }
@@ -219,12 +221,16 @@
         try {
           this.errors = null
           this.connectionError = null
+          if (!this.config.name) {
+            throw new Error("Name is required")
+          }
           await this.$store.dispatch('data/connections/save', this.config)
           if(this.config === this.defaultConfig) {
             this.defaultConfig = new SavedConnection()
           }
           this.$noty.success("Connection Saved")
         } catch (ex) {
+          console.error(ex)
           this.errors = [ex.message]
           this.$noty.error("Could not save connection information")
         }

@@ -9,7 +9,6 @@ import { ActionContext, ActionTree, Module, MutationTree } from "vuex";
 import { State as RootState } from '../../index'
 import { ApplicationEntity } from "@/common/appdb/models/application_entity";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 
 export interface QueryModuleState {
   queryFolders: IQueryFolder[]
@@ -128,11 +127,28 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
       return result
     },
 
+    async create(context, item: T) {
+      const q = new cls()
+      cls.merge(q, item)
+      await q.save()
+      context.commit('upsert', q)
+      return q.id
+    },
+
+    async update(context, item: T) {
+      const existing = context.state.items.find((i) => i.id === item.id)
+      if (!existing) throw new Error("Could not find this item")
+      cls.merge(existing, item)
+      await existing.save()
+      return existing.id
+    },
+
     async save(context, item: T) {
-      await FavoriteQuery.update(item.id, item)
-      const updated = await FavoriteQuery.findOne(item.id)
-      context.commit('upsert', updated)
-      return updated.id
+      if (item.id) {
+        return await context.dispatch('update', item)
+      } else {
+        return await context.dispatch('create', item)
+      }
     },
 
     async remove(context, item: T) {
