@@ -568,8 +568,9 @@ export async function listMaterializedViewColumns(conn: Conn, _database: string,
 
 
 export async function listTableTriggers(conn: HasPool, table: string, schema: string) {
-  const version = await getVersion(conn)
-  const timing_column = version.isPostgres && version.number < 90000 ? 'condition_timing' : 'action_timing';
+  // TODO fix for psql < 9
+  // const version = await getVersion(conn)
+  const timing_column = 'action_timing' // version.isPostgres && version.version < '9' ? 'condition_timing' : 'action_timing';
   const sql = `
     SELECT 
       trigger_name,

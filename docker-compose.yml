@@ -5,10 +5,22 @@ volumes:
   mysql:
   mysql8:
   psql96:
+  psql12:
   mariadb:
   cockroachdb:
 
 services:
+  psql12:
+    image: postgres:12
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: saklia
+    volumes:
+      - psql12:/var/lib/postgresql/data
+      - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
+    ports:
+      - 5433:5432
   psql:
     image: postgres:9.6
     environment:
