@@ -191,6 +191,9 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
       }
+      if (parsed.params?.sslmode && parsed.params.sslmode !== 'disable') {
+        this.ssl = true
+      }
       this.host = parsed.hostname || this.host
       this.port = parsed.port || this.port
       this.username = parsed.user || this.username

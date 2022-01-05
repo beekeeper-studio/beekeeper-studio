@@ -381,7 +381,6 @@ const store = new Vuex.Store<State>({
         await usedConfig.save()
         context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
       } else {
-        lastUsedConnection.updatedAt = new Date()
         lastUsedConnection.connectionId = config.id
         lastUsedConnection.workspaceId = config.workspaceId
         await lastUsedConnection.save()

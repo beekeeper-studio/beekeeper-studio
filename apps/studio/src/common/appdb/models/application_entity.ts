@@ -12,10 +12,10 @@ export abstract class ApplicationEntity extends BaseEntity {
   id: Nullable<number> = null
 
   @CreateDateColumn()
-  createdAt!: Date
+  createdAt: Date = new Date()
 
   @UpdateDateColumn()
-  updatedAt!: Date
+  updatedAt: Date = new Date()
 
   @VersionColumn()
   version!: number

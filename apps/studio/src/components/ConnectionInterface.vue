@@ -2,7 +2,7 @@
   <div class="interface connection-interface">
     <div class="interface-wrap row" @dragover.prevent="" @drop.prevent="maybeLoadSqlite">
       <sidebar class="connection-sidebar" ref="sidebar" v-show="sidebarShown">
-        <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @remove="remove" @duplicate="duplicate" @edit="edit" @connect="handleConnect"></connection-sidebar>
+        <connection-sidebar :selectedConfig="config" @remove="remove" @duplicate="duplicate" @edit="edit" @connect="handleConnect" @create="create"></connection-sidebar>
       </sidebar>
       <div ref="content" class="connection-main page-content flex-col" id="page-content">
         <div class="small-wrap expand">
@@ -73,6 +73,7 @@
   import platformInfo from '@/common/platform_info'
   import ErrorAlert from './common/ErrorAlert.vue'
   import rawLog from 'electron-log'
+import { mapState } from 'vuex'
 
   const log = rawLog.scope('ConnectionInterface')
   // import ImportUrlForm from './connection/ImportUrlForm';
@@ -82,7 +83,6 @@
 
     data() {
       return {
-        defaultConfig: new SavedConnection(),
         config: null,
         errors: null,
         connectionError: null,
@@ -95,6 +95,7 @@
       }
     },
     computed: {
+      ...mapState(['workspaceId']),
       connectionTypes() {
         return this.$config.defaults.connectionTypes
       },
@@ -107,6 +108,9 @@
       }
     },
     watch: {
+      workspaceId() {
+        this.config = new SavedConnection()
+      },
       config: {
         deep: true,
         handler() {
@@ -120,7 +124,7 @@
       }
       await this.$store.dispatch('credentials/load')
       await this.$store.dispatch('loadUsedConfigs')
-      this.config = this.defaultConfig
+      this.config = new SavedConnection()
       this.config.sshUsername = os.userInfo().username
       this.$nextTick(() => {
         const components = [
@@ -160,6 +164,9 @@
         }
 
       },
+      create() {
+        this.config = new SavedConnection()
+      },
       edit(config) {
         this.config = config
         this.errors = null
@@ -168,7 +175,7 @@
       async remove(config) {
         await this.$store.dispatch('data/connections/remove', config)
         if (this.config === config) {
-          this.config = this.defaultConfig
+          this.config = new SavedConnection()
         }
         this.$noty.success(`${config.name} deleted`)
       },
@@ -225,9 +232,6 @@
             throw new Error("Name is required")
           }
           await this.$store.dispatch('data/connections/save', this.config)
-          if(this.config === this.defaultConfig) {
-            this.defaultConfig = new SavedConnection()
-          }
           this.$noty.success("Connection Saved")
         } catch (ex) {
           console.error(ex)

@@ -8,8 +8,7 @@
         <a
           href=""
           class="btn btn-flat btn-icon btn-block"
-          :class="{'active': defaultConfig == selectedConfig }"
-          @click.prevent="edit(defaultConfig)"
+          @click.prevent="$emit('create')"
         >
         <i class="material-icons">add</i>
         <span>New Connection</span>
@@ -130,7 +129,7 @@ import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
   export default {
     components: { ConnectionListItem, WorkspaceSidebar, SidebarLoading, ErrorAlert, SidebarFolder },
-    props: ['defaultConfig', 'selectedConfig'],
+    props: ['selectedConfig'],
     data: () => ({
       split: null,
       sizes: [50,50],

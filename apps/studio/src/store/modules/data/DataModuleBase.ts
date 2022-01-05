@@ -121,9 +121,9 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
 
     async clone(_context, item: T) {
       const result = new cls()
-      Object.assign(result, item)
+      cls.merge(result, item)
       result.id = null
-      result.createdAt = null
+      result.createdAt = new Date()
       return result
     },
 
