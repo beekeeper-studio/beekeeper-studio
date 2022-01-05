@@ -96,6 +96,7 @@ import { mapState } from 'vuex'
     },
     computed: {
       ...mapState(['workspaceId']),
+      ...mapState('data/connections', {'connections': 'items'}),
       connectionTypes() {
         return this.$config.defaults.connectionTypes
       },
@@ -173,10 +174,10 @@ import { mapState } from 'vuex'
         this.connectionError = null
       },
       async remove(config) {
-        await this.$store.dispatch('data/connections/remove', config)
         if (this.config === config) {
           this.config = new SavedConnection()
         }
+        await this.$store.dispatch('data/connections/remove', config)
         this.$noty.success(`${config.name} deleted`)
       },
       async duplicate(config) {
@@ -185,8 +186,9 @@ import { mapState } from 'vuex'
         duplicateConfig.name = 'Copy of ' + duplicateConfig.name
 
         try {
-          await this.$store.dispatch('data/connections/save', duplicateConfig)
+          const id = await this.$store.dispatch('data/connections/save', duplicateConfig)
           this.$noty.success(`The connection was successfully duplicated!`)
+          this.config = this.connections.find((c) => c.id === id) || this.config
         } catch (ex) {
           this.$noty.error(`Could not duplicate Connection: ${ex.message}`)
         }
