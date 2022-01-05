@@ -526,6 +526,13 @@ export default Vue.extend({
         this.clearFilter();
       }
     },
+    filter: {
+      deep: true,
+      handler() {
+        this.tab.filter = this.filter
+        this.$store.dispatch('tabs/save', this.tab)
+      }
+    },
     filterRaw() {
       if (this.filterRaw === '') {
         this.clearFilter()
@@ -538,7 +545,7 @@ export default Vue.extend({
         log.info("setting scope", this.filter.value)
         result = this.filter.value
       } else {
-        if (this.filter.value) result = 'filtered'
+        if (this.filterRaw) result = 'custom'
       }
       this.tab.titleScope = result
       await this.$store.dispatch('tabs/save', this.tab)
@@ -967,6 +974,7 @@ export default Vue.extend({
       let offset = 0;
       let limit = this.limit;
       let orderBy = null;
+      // eslint-disable-next-line no-debugger
       let filters = this.filterForTabulator;
 
       if (params.sorters) {

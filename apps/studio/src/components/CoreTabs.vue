@@ -39,7 +39,7 @@
         <tab-with-table v-if="tab.type === 'table'" :tab="tab">
           <template v-slot:default="slotProps">
             <TableTable 
-              :tab="tab" 
+              :tab="tab"
               :active="activeTab === tab" 
               :connection="connection" 
               :initialFilter="tab.filter"
@@ -248,18 +248,14 @@ import TabWithTable from './common/TabWithTable.vue';
         this.addTab(t)
       },
       openTable({ table, filter}) {
-
         const tab = new OpenTab('table')
         tab.title = table.name
         tab.tableName = table.name
         tab.schemaName = table.schema
         tab.entityType = table.entityType
-        tab.filters = filter
+        tab.filter = filter
         tab.titleScope = "all"
-
-        console.log("comparison", table.name, table.schema, filter, table.entityType)
         const existing = this.tabItems.find((t) => t.matches(tab))
-        console.log("comparison existing", existing)
         if (existing) return this.$store.dispatch('tabs/setActive', existing)
         this.addTab(tab)
       },
