@@ -98,7 +98,6 @@ import TabWithTable from './common/TabWithTable.vue';
     },
     data() {
       return {
-        newTabId: 1,
         showExportModal: false,
         tableExportOptions: null,
         dragOptions: {
@@ -209,10 +208,9 @@ import TabWithTable from './common/TabWithTable.vue';
       createQuery(optionalText) {
         // const text = optionalText ? optionalText : ""
         const result = new OpenTab('query')
-        result.title = "Query #" + this.newTabId,
+        result.title = "Query #" + (this.tabItems.length + 1),
         result.unsavedChanges = false
         result.unsavedQueryText = optionalText
-
         this.addTab(result)
       },
       async loadTableCreate(table) {
@@ -306,7 +304,7 @@ import TabWithTable from './common/TabWithTable.vue';
         const tab = other.duplicate()
 
         if(tab.type === 'query') {
-          tab.title = "Query #" + this.newTabId
+          tab.title = "Query #" + (this.tabItems.length + 1)
           tab.unsavedChanges = true
         }
         this.addTab(tab)

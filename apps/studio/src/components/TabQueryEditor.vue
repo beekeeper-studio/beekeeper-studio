@@ -178,7 +178,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         queryParameterValues: {},
         queryForExecution: null,
         executeTime: 0,
-        originalText: null,
+        originalText: "",
         initialized: false,
         blankQuery: new FavoriteQuery(),
       }
@@ -201,7 +201,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       },
       unsavedText: {
         get () {
-          return this.tab.unsavedQueryText
+          return this.tab.unsavedQueryText || ""
         },
         set(value) {
           this.tab.unsavedQueryText = value
@@ -341,7 +341,10 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         return query;
       },
       unsavedChanges() {
-        return !this.query?.id || _.trim(this.unsavedText) !== _.trim(this.originalText)
+        if (_.trim(this.unsavedText) === "" && _.trim(this.originalText) === "") return false
+
+        return !this.query?.id || 
+          _.trim(this.unsavedText) !== _.trim(this.originalText)
       },
     },
     watch: {
