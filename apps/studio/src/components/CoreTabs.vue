@@ -286,11 +286,11 @@ import TabWithTable from './common/TabWithTable.vue';
         }
       },
       closeAll() {
-        this.dispatch('tabs/unload')
+        this.$store.dispatch('tabs/unload')
       },
       closeOther(tab) {
         const others = _.without(this.tabItems, tab)
-        this.$store.dispatch('remove', others)
+        this.$store.dispatch('tabs/remove', others)
         this.setActiveTab(tab)
         if (tab.queryId) {
           this.$store.dispatch('data/queries/reload', tab.queryId)
