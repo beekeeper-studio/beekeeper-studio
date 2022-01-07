@@ -6,6 +6,9 @@ export interface IWorkspace {
   name: string,
   logo?: string
   icon?: string
+  trialEndsAt?: number
+  trialEndsIn?: string
+  active: boolean
 }
 
 export const LocalWorkspace: IWorkspace = {
@@ -13,6 +16,7 @@ export const LocalWorkspace: IWorkspace = {
   id: -1,
   type: 'local',
   name: 'Local Workspace',
-  icon: 'laptop'
+  icon: 'laptop',
+  active: true
 
 }

@@ -6,7 +6,7 @@
           :key="blob.workspace.id"
           :class="{active: blob.workspace.id === workspaceId}"
           class="workspace-item nav-item selectable"
-          :title="blob.workspace.name"
+          :title="workspaceTitle(blob.workspace)"
           @click.prevent="click(blob)"
         >
           <span class="avatar">
@@ -48,6 +48,17 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
     ...mapGetters('credentials', { 'availableWorkspaces': 'workspaces'})
   },
   methods: {
+    workspaceTitle(workspace: IWorkspace) {
+      const result = [workspace.name]
+      if (workspace.trialEndsIn) {
+        result.push(`[trial ends ${workspace.trialEndsIn}]`)
+      }
+
+      if (!workspace.active) {
+        result.push('[disabled]')
+      }
+      return result.join(" ")
+    },
     refresh() {
       this.$store.dispatch('credentials/load')
     },
