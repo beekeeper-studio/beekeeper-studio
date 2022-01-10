@@ -45,7 +45,7 @@
             </form>
 
           </div>
-          <div class="pitch"><span class="badge">NEW</span> Collaborate with co-workers using <a href="https://beekeeperstudio.io/pricing">team workspaces.</a></div>
+          <div class="pitch"><span class="badge">NEW</span> Share data across devices (or with your team) using <a href="https://www.beekeeperstudio.io/blog/release-3.0">workspaces</a>.</div>
           <div v-if="connectionError" class="alert alert-danger">
             {{connectionError}}
           </div>
