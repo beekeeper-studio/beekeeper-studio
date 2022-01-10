@@ -53,7 +53,7 @@
             <div v-else-if="empty" class="empty">
               <div class="empty-title">No Saved Connections</div>
               <div class="empty-actions" v-if="isCloud">
-                <a class="btn btn-flat btn-block btn-icon" @click.prevent="importFromLocal" title="Import queries from local workspace"><i class="material-icons">save_alt</i> Import</a>
+                <a class="btn btn-flat btn-block btn-icon" @click.prevent="importFromLocal" title="Import connections from local workspace"><i class="material-icons">save_alt</i> Import</a>
               </div>
             </div>
             <nav v-else class="list-body">
