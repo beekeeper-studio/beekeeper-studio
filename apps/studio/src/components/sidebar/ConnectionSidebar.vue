@@ -156,7 +156,7 @@ import { AppEvent } from '@/common/AppEvent'
         'isCloud': 'isCloud'
       }),
       empty() {
-        return !this.foldersWithConnections?.length && !this.lonelyConnections?.length
+        return !this.connectionConfigs?.length
       },
       foldersSupported() {
         return !this.foldersUnsupported

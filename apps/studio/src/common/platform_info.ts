@@ -45,8 +45,8 @@ const platformInfo = {
   appDbPath: path.join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
   updatesDisabled,
   appVersion: testMode ? 'test-mode' : e.app.getVersion(),
-  // cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io'
-  cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
+  cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io'
+  // cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
 }
 
 export default platformInfo
