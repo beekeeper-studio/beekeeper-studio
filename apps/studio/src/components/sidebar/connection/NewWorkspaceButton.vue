@@ -1,24 +1,18 @@
 <template>
-  <div class="add-workspace-button" title="Online Workspace">
+  <div class="add-workspace-button" :class="{disabled: !credentials.length}" v-tooltip="title">
     <x-button class="nav-item">
       <span class="avatar-btn-link"><i class="material-icons">add</i></span>
-      <x-menu>
-        <template v-if="credentials.length">
-          <x-menuitem @click.prevent="createWorkspace">
-            <x-label>Create a new workspace</x-label>
-          </x-menuitem>
-          <x-menuitem @click.prevent="addWorkspace">
-            <x-label>Sign in to another account</x-label>
-          </x-menuitem>
-        </template>
-        <template v-else>
-          <x-menuitem @click.prevent="addWorkspace">
-            <x-label>Sign in</x-label>
-          </x-menuitem>
-          <x-menuitem @click.prevent="signup">
-            <x-label>Create an account</x-label>
-          </x-menuitem>
-        </template>
+      <x-menu v-if="credentials.length">
+        <x-menuitem 
+          v-if="credentials.length"
+          @click.prevent="createWorkspace"
+        >
+          <x-label>Create a new workspace</x-label>
+        </x-menuitem>
+        <x-menuitem @click.prevent="addWorkspace">
+          <x-label>{{credentials.length ? 'Sign in to another account' : 'Sign in'}}</x-label>
+        </x-menuitem>
+
       </x-menu>
     </x-button>
   </div>
@@ -31,7 +25,10 @@ import Vue from 'vue'
 import { mapState } from 'vuex'
 export default Vue.extend({
   computed: {
-    ...mapState('credentials', {credentials: 'credentials'})
+    ...mapState('credentials', {credentials: 'credentials'}),
+    title() {
+      return this.credentials.length ? '' : 'Create Workspace - Please sign in to your account first'
+    },
   },
   methods: {
     addWorkspace() {

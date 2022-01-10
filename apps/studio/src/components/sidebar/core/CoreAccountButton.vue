@@ -9,6 +9,12 @@
         <x-menuitem disabled>
           <x-label>{{title}}</x-label>
         </x-menuitem>
+        <x-menuitem @click.prevent="manage">
+          <x-label>Manage Workspace</x-label>
+        </x-menuitem>
+        <x-menuitem v-if="workspace.level === 'team' && workspace.isOwner" @click.prevent="invite">
+          <x-label>Add Users</x-label>
+        </x-menuitem>
         <x-menuitem v-if="pollError" @click.prevent="reAuthenticate">
           <x-label>
             Log In Again
@@ -35,6 +41,12 @@ export default Vue.extend({
     },
   },
   methods: {
+    manage() {
+      window.location.href = this.workspace.url
+    },
+    invite() {
+      window.location.href = `${this.workspace.url}/invitations/new`
+    },
     triggerImport() {
       this.$root.$emit(AppEvent.promptQueryImport)
     },
