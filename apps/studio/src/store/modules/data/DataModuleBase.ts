@@ -157,14 +157,13 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
     },
 
     async reload(context, id: number) {
-      const item = cls.findOne(id)
+      const item = await cls.findOne(id)
       if (item) {
         context.commit('upsert', item)
-        return item
+        return item.id
       } else {
         context.commit('remove', id)
         return null
-
       }
     },
     ...other
@@ -221,7 +220,7 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
         try {
           const updated = await cli[scope].get(id)
           context.commit('upsert', updated)
-          return updated
+          return updated.id
         } catch (ex) {
           if (ex.status && ex.status === 404) {
             context.commit('remove', id)
