@@ -103,14 +103,23 @@ export const TabModule: Module<State, RootState> = {
       }
     },
     async save(context, rawTabs: OpenTab[] | OpenTab) {
-      const tabs = _.isArray(rawTabs) ? rawTabs : [rawTabs]
-      const { usedConfig } = context.rootState
-      if (usedConfig?.id) {
-        await OpenTab.save(tabs)
+      try {
+        const tabs = _.isArray(rawTabs) ? rawTabs : [rawTabs]
+        const { usedConfig } = context.rootState
+        if (usedConfig?.id) {
+          await OpenTab.save(tabs)
+        }
+      } catch (ex) {
+        console.error("tab/save", ex)
       }
     },
     async saveAll(context) {
-      await context.dispatch('save', context.state.tabs)
+      try {
+        await context.dispatch('save', context.state.tabs)  
+      } catch (ex) {
+        console.error("tab/saveAll", ex)
+      }
+      
     },
     async setActive(context, tab: OpenTab) {
       const oldActive = context.state.active
@@ -119,7 +128,7 @@ export const TabModule: Module<State, RootState> = {
         oldActive.active = false
       }
       tab.active = true
-      await context.dispatch('save', [tab, oldActive])
+      await context.dispatch('save', [tab, oldActive].filter((x) => x))
 
     }
 

@@ -177,6 +177,7 @@ import TabWithTable from './common/TabWithTable.vue';
         }
       },
       async setActiveTab(tab) {
+        console.log("setting active tab", tab)
         await this.$store.dispatch('tabs/setActive', tab)
       },
       async addTab(item: OpenTab) {

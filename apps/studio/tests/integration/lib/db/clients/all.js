@@ -29,6 +29,10 @@ export function runCommonTests(getUtil) {
     await getUtil().filterTests()
   })
 
+  test("table triggers", async () => {
+    await getUtil().triggerTests()
+  })
+
   test("primary key tests", async () => {
     await getUtil().primaryKeyTests()
   })

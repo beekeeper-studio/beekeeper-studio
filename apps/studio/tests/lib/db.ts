@@ -296,6 +296,11 @@ export class DBTestUtil {
     expect(result).toMatchObject(['pears'])
   }
 
+  async trigerTests() {
+    // it should just complete without erroring
+    await this.connection.listTableTriggers("MixedCase", this.defaultSchema)
+  }
+
   async primaryKeyTests() {
     // primary key tests
     let pk = await this.connection.getPrimaryKey("people", this.defaultSchema)

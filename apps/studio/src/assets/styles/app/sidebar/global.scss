@@ -30,10 +30,16 @@
         }
       }
       .add-workspace-button {
+        &.disabled {
+          x-button {
+            cursor: not-allowed;
+          }
+        }
         .avatar {
           &:hover {
             background: transparent;
           }
+
         }
       }
     }

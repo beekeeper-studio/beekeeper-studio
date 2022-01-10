@@ -85,6 +85,8 @@ If you're on another platform, please [open a ticket][bug] and we'll try to help
 
 ## PostgreSQL
 
+Please note that Beekeeper Studio only officially supports Postgres 9.3+, although older versions may mostly work.
+
 ### I get a `column does not exist` error, but the column does exist!
 
 Postgres is weird with case sensitivity. This is usually the cause of the dreaded `column does not exist` error.

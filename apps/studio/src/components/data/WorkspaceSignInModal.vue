@@ -3,13 +3,7 @@
     <form @submit.prevent="login">
       <div class="dialog-content">
         <div v-if="lockEmail" class="dialoc-c-title">Reauthenticate {{email ? email : ''}}</div>
-        <div v-else class="dialog-c-title">Team Workspace Sign-in</div>
-        <div v-if="!error && !lockEmail" class="alert alert-info">
-          <i class="material-icons-outlined">info</i>
-          <div class="alert-body">
-            <p>Workspaces let you share connections and queries with your team members. <a href="https://beekeeperstudio.io/pricing">Learn More</a></p>
-          </div>
-        </div>
+        <div v-else class="dialog-c-title">Account sign-in</div>
         <error-alert :error="error" />
         <div class="form-group">
           <label for="email">Email Address</label>
