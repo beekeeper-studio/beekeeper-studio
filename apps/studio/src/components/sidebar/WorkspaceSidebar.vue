@@ -65,7 +65,7 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
       return result
     },
     workspaceTitle(workspace: IWorkspace) {
-      const result = [workspace.name]
+      const result = [workspace.name, `(${workspace.level})`]
       if (workspace.trialEndsIn) {
         result.push(`[trial ends ${workspace.trialEndsIn}]`)
       }

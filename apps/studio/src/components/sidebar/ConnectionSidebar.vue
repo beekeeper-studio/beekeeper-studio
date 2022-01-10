@@ -50,6 +50,12 @@
             </div>
             <error-alert :error="error" v-if="error" title="Problem loading connections" />
             <sidebar-loading v-else-if="loading" />
+            <div v-else-if="empty" class="empty">
+              <div class="empty-title">No Saved Connections</div>
+              <div class="empty-actions" v-if="isCloud">
+                <a class="btn btn-flat btn-block btn-icon" @click.prevent="importFromLocal" title="Import queries from local workspace"><i class="material-icons">save_alt</i> Import</a>
+              </div>
+            </div>
             <nav v-else class="list-body">
               <sidebar-folder
                 v-for="{ folder, connections } in foldersWithConnections"
@@ -149,6 +155,9 @@ import { AppEvent } from '@/common/AppEvent'
         'sortOrder': 'settings/sortOrder',
         'isCloud': 'isCloud'
       }),
+      empty() {
+        return !this.foldersWithConnections?.length && !this.lonelyConnections?.length
+      },
       foldersSupported() {
         return !this.foldersUnsupported
       },

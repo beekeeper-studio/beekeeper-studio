@@ -72,6 +72,7 @@ pg.types.setTypeParser(17, 'text', (val) => val ? base64.encode(val.substring(2)
  */
 async function getVersion(conn: HasPool): Promise<VersionInfo> {
   const { version } = (await driverExecuteSingle(conn, {query: "select version()"})).rows[0]
+  
   if (!version) {
     return {
       version: '',
@@ -96,7 +97,6 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
     )
   }
 }
-
 
 async function getTypes(conn: HasPool): Promise<any> {
   const version = await getVersion(conn)
@@ -256,8 +256,13 @@ export async function listMaterializedViews(conn: HasPool, filter: FilterOptions
     order by schemaname, matviewname;
   `
 
-  const data = await driverExecuteSingle(conn, {query: sql});
-  return data.rows;
+  try {
+    const data = await driverExecuteSingle(conn, {query: sql});
+    return data.rows;
+  } catch (error) {
+    log.warn("Unable to fetch materialized views", error)
+    return []
+  }
 }
 
 interface STQOptions {
@@ -568,27 +573,31 @@ export async function listMaterializedViewColumns(conn: Conn, _database: string,
 
 
 export async function listTableTriggers(conn: HasPool, table: string, schema: string) {
-  // TODO fix for psql < 9
-  // const version = await getVersion(conn)
-  const timing_column = 'action_timing' // version.isPostgres && version.version < '9' ? 'condition_timing' : 'action_timing';
-  const sql = `
+  
+  // action_timing has taken over from condition_timing
+  // this way we try both, and take the one that works.
+  const timing_columns = ['action_timing', 'condition_timing']
+  // const timing_column = 'action_timing'
+  const sequels = timing_columns.map((c) => `
     SELECT 
       trigger_name,
-      ${timing_column} as timing,
+      ${c} as timing,
       event_manipulation as manipulation,
       action_statement as action,
       action_condition as condition
     FROM information_schema.triggers
     WHERE event_object_schema = $1
     AND event_object_table = $2
-  `;
-
+  `)
   const params = [
     schema,
     table,
   ];
+  const promises = sequels.map((sql) => {
+    return driverExecuteSingle(conn, { query: sql, params });
+  })
 
-  const data = await driverExecuteSingle(conn, { query: sql, params });
+  const data = await Promise.any(promises)
 
   return data.rows.map((row) => ({
     name: row.trigger_name,
