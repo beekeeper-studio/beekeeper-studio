@@ -6,7 +6,7 @@
           :key="blob.workspace.id"
           :class="{active: blob.workspace.id === workspaceId}"
           class="workspace-item nav-item selectable"
-          :title="workspaceTitle(blob.workspace)"
+          v-tooltip.right-end="workspaceTitle(blob.workspace)"
           @contextmenu="$bks.openMenu({item: blob, options: contextOptionsFor(blob), event: $event})"
           @click.prevent="click(blob)"
         >
