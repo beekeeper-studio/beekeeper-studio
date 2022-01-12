@@ -106,6 +106,7 @@ export function mutationsFor<T extends HasId>(obj: any) {
 export function localActionsFor<T extends ApplicationEntity>(cls: any, other: any) {
   return {
     async load(context) {
+      context.commit("error", null)
       await safely(context, async () => {
         const items = await cls.find()
         if (context.rootState.workspaceId === LocalWorkspace.id) {
@@ -117,6 +118,10 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
     async poll() {
       // do nothing, locally we don't need to poll.
       // nothing else can change anything.
+    },
+
+    async clearError(context) {
+      context.commit('error', null)
     },
 
     async clone(_context, item: T) {
@@ -173,6 +178,7 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
 export function actionsFor<T extends HasId>(scope: string, obj: any) {
   return {
     async load(context) {
+      context.commit("error", null)
       await safelyDo(context, async (cli) => {
         const items: any[] = await cli[scope].list()
         // this is to account for when the store module changes
@@ -214,6 +220,10 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
         await cli[scope].delete(query)
         context.commit('remove', query)
       })
+    },
+
+    async clearError(context) {
+      context.commit('error', null)
     },
     async reload(context, id: number): Promise<T | null> {
       return await havingCli(context, async (cli) => {

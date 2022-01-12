@@ -1,5 +1,8 @@
 <template>
   <div v-if="error" class="error-alert alert text-danger">
+    <a @click.prevent="$emit('close')" v-if="closable" class="close-button">
+      <i class="material-icons">close</i>
+    </a>
     <div class="alert-title">
       <i class="material-icons">error_outline</i>
       <b v-if="title" class="error-title">{{title}}</b>
@@ -27,7 +30,7 @@ import platformInfo from '@/common/platform_info'
 import _ from 'lodash'
 import Vue from 'vue'
 export default Vue.extend({
-  props: ['error', 'title'],
+  props: ['error', 'title', 'closable'],
   computed: {
     dev() {
       return platformInfo.isDevelopment
@@ -54,6 +57,12 @@ export default Vue.extend({
     display: flex;
     min-width: 200px;
     flex-direction: column;
+    position:relative;
+    .close-button {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+    }
     .alert-title {
       display: flex;
       flex-direction: row;

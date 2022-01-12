@@ -1,37 +1,60 @@
 ---
-title: Team Workspaces
+title: Using Workspaces
 sidebarDepth: 2
 ---
 
-Team workspaces allow multiple people to work with the same set of connections and queries.
+# Workspaces
 
-Queries and Connections in your team workspace are only available for use through the Beekeeper Studio app.
+Workspaces make it easy to work on multiple computers by storing your data (connections and queries) in the cloud.
 
+Even better, team workspaces allow multiple people to work from the same set of data collaboratively.
 
-## Team Workspace Key Concepts
+Queries and Connections workspace are only available for use through the Beekeeper Studio app (for now).
 
-1. **Workspace** - An online collaborative space for `members` to work on `queries` and `connections`.
+![Workspaces preview](../assets/img/workspace-preview.png)
+
+## Concepts
+
+1. **Workspace** - An online collaborative space for `members` to work on `queries` and `connections`. You get one of these when you create a subscription on the [account dashboard](https://app.beekeeperstudio.io)
 2. **Workspace Member** - Someone with access to view and edit queries & connections. The workspace owner (the person who created it) can add and remove members from the workspace.
-2. **Personal Folder** - Every workspace member has a `personal` folder where new queries and connections are saved by default. Items in your personal folder are *not* shared with teammates, but they are stored in the online workspace, not on your local machine.
-3. **Team Folder** - If you want to share a connection or query with teammates, move it to the team folder. Everyone in the workspace has access to this folder.
+1. **Pro Account - Workspace Folder** - This is where all your connections and queries are stored. They are private to you.
+2. **Team Account - Personal Folder** - Every workspace member has a `personal` folder where new queries and connections are saved by default. Items in your personal folder are *not* shared with teammates.
+3. **Team Account - Team Folder** - If you want to share a connection or query with teammates, move it to the team folder. Everyone in the workspace has access to this folder.
 
-## Creating a Workspace
+## Getting Started
+
+It only takes a few minutes to get started with workspaces. 
+
+### 1. Sign up and create a workspace
 
 Workspaces must be created and managed through the [Beekeeper Studio dashboard][dashboard].
 
+Simply sign in and click `New Subscription` to sign up for either a pro or team subscription plan.
+
 Each new workspace gets a full-featured 14 day trial with no usage limits, and no credit card required.
 
-## Subscriptions
+### 2. Activate Your Subscription
 
-Team workspaces is a paid service. If you do not upgrade to a paid subscription before the end of your free trial, your workspace will deactivate.
+Workspaces is a paid service. To keep using your workspace past 14 days you need to activate a paid subscription.
 
-This is very sad, so instead you'll hopefully decide that workspaces are *awesome sauce*. The owner of the workspace needs to open the [dashboard][dashboard], and click the 'subscribe' button.
+Not activating your subscription would be very sad, so instead you'll hopefully decide that workspaces are *awesome sauce*. 
 
-### What you pay for
-
-Subscriptions are billed on a per-seat basis. The more people you add to your workspace, the more it costs.
+As the owner of the workspace, open the [dashboard][dashboard], and click the 'subscribe' button. Done.
 
 [View current pricing](https://beekeeperstudio.io/pricing)
+
+### 3. Start using your workspace
+
+Open the Beekeeper Studio app and sign in to your account by clicking on the little person icon in the sidebar.
+
+Once you're signed in to your account, all of your workspaces will appear in the sidebar for you to use.
+
+After connecting to a workspace, Beekeeper works just the same as it does usually, except anything you save will be available across all of your devices.
+
+
+## Workspace Billing
+
+- [View Pricing](https://app.beekeeperstudio.io/pricing)
 
 ### When you get charged
 

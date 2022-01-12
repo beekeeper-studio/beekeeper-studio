@@ -48,7 +48,7 @@
                 </x-button>
               </div>
             </div>
-            <error-alert :error="error" v-if="error" title="Problem loading connections" />
+            <error-alert :error="error" v-if="error" title="Problem loading connections" @close="error = null" :closable="true" />
             <sidebar-loading v-else-if="loading" />
             <div v-else-if="empty" class="empty">
               <div class="empty-title">No Saved Connections</div>
@@ -133,6 +133,10 @@
   import Split from 'split.js'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('connection-sidebar');
+
   export default {
     components: { ConnectionListItem, WorkspaceSidebar, SidebarLoading, ErrorAlert, SidebarFolder },
     props: ['selectedConfig'],
@@ -146,6 +150,8 @@ import { AppEvent } from '@/common/AppEvent'
         connectionType: "Type"
       }
     }),
+    watch: {
+    },
     computed: {
       ...mapState('data/connections', {'connectionConfigs': 'items', 'connectionsLoading': 'loading', 'connectionsError': 'error'}),
       ...mapState('data/connectionFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error', 'foldersUnsupported': 'unsupported'}),
@@ -182,8 +188,18 @@ import { AppEvent } from '@/common/AppEvent'
       loading() {
         return this.connectionsLoading || this.foldersLoading
       },
-      error() {
-        return this.connectionsError || this.foldersError || null
+      error: {
+        get() {
+          return this.connectionsError || this.foldersError || null
+        },
+        set(value) {
+          if (!value) {
+            this.$store.dispatch('data/connections/clearError');
+            this.$store.dispatch('data/connectionFolders/clearError')
+          } else {
+            log.warn("Unable to set an actual error, sorry")
+          }
+        }
       },
       orderedConnectionConfigs() {
         return _.orderBy(this.connectionConfigs, this.sortOrder)
