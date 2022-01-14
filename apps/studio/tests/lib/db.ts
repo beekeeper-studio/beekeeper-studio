@@ -296,7 +296,7 @@ export class DBTestUtil {
     expect(result).toMatchObject(['pears'])
   }
 
-  async trigerTests() {
+  async triggerTests() {
     // it should just complete without erroring
     await this.connection.listTableTriggers("MixedCase", this.defaultSchema)
   }

@@ -574,6 +574,11 @@ export async function listMaterializedViewColumns(conn: Conn, _database: string,
 
 export async function listTableTriggers(conn: HasPool, table: string, schema: string) {
   
+  const version = await getVersion(conn)
+
+  // unsupported https://www.cockroachlabs.com/docs/stable/sql-feature-support.html
+  
+  if (version.isCockroach) return []
   // action_timing has taken over from condition_timing
   // this way we try both, and take the one that works.
   const timing_columns = ['action_timing', 'condition_timing']
