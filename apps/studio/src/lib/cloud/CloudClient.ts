@@ -9,6 +9,7 @@ import { QueriesController } from "./controllers/QueriesController";
 import { WorkspacesController } from './controllers/WorkspacesController';
 import { ConnectionFoldersController } from '@/lib/cloud/controllers/ConnectionFoldersController';
 import { QueryFoldersController } from '@/lib/cloud/controllers/QueryFoldersController';
+import { UsedQueriesController } from '@/lib/cloud/controllers/UsedQueriesController';
 
 const log = rawLog.scope('cloudClient')
 
@@ -69,6 +70,7 @@ export class CloudClient {
   public connections: ConnectionsController
   public connectionFolders: ConnectionFoldersController
   public queryFolders: QueryFoldersController
+  public usedQueries: UsedQueriesController
   public workspaces: WorkspacesController
   public workspaceId: number
   constructor(public options: CloudClientOptions) {
@@ -92,6 +94,7 @@ export class CloudClient {
     this.connectionFolders = new ConnectionFoldersController(this.axios)
     this.queryFolders = new QueryFoldersController(this.axios)
     this.workspaces = new WorkspacesController(this.axios)
+    this.usedQueries = new UsedQueriesController(this.axios)
 
     this.axios.interceptors.request.use(request => {
       log.debug('REQ', JSON.stringify(request, null, 2))

@@ -55,8 +55,12 @@ export interface DataStore<T, X extends DataState<T>> extends Module<X, RootStat
   actions: DataStoreActions<T, X>
 }
 
+interface SortSpec {
+  field: string
+  direction: 'asc' | 'desc'
+}
 
-const buildBasicMutations = <T extends HasId>() => ({
+const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
   loading(state, loading: boolean) {
     state.loading = loading
   },
@@ -72,7 +76,8 @@ const buildBasicMutations = <T extends HasId>() => ({
     list.forEach((item) => {
       upsert(stateItems, item)
     })
-    state.items = stateItems
+    const sorted = sortBy ? _.sortBy(stateItems, sortBy.field) : stateItems
+    state.items = sortBy?.direction === 'desc' ? sorted.reverse() : sorted
   },
   replace(state, items: T[]) {
     const itemIds = items.map((i) => i.id)
@@ -96,9 +101,9 @@ const buildBasicMutations = <T extends HasId>() => ({
   },
 })
 
-export function mutationsFor<T extends HasId>(obj: any) {
+export function mutationsFor<T extends HasId>(obj: any, sortBy?: SortSpec) {
   return {
-    ...buildBasicMutations<T>(),
+    ...buildBasicMutations<T>(sortBy),
     ...obj
   }
 }
@@ -208,17 +213,17 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
         }
       })
     },
-    async save(context, query: T): Promise<T> {
+    async save(context, item: T): Promise<T> {
       return await havingCli(context, async (cli) => {
-        const updated = await cli[scope].upsert(query)
+        const updated = await cli[scope].upsert(item)
         context.commit('upsert', updated)
         return updated.id
       })
     },
-    async remove(context, query: T) {
+    async remove(context, item: T) {
       await havingCli(context, async (cli) => {
-        await cli[scope].delete(query)
-        context.commit('remove', query)
+        await cli[scope].delete(item)
+        context.commit('remove', item)
       })
     },
 

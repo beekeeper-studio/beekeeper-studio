@@ -59,6 +59,6 @@ export function upsert<T extends HasId>(list: T[], item: T) {
     // we do this so that the object itself stays the same
     Object.assign(found, item)
   } else {
-    list.unshift(item)
+    list.push(item)
   }
 }
