@@ -46,7 +46,7 @@
     "jquery": "^3.5.0",
     "knex": "^0.21.2",
     "lodash": "^4.17.21",
-    "marked": "^2.0.3",
+    "marked": "^4.0.10",
     "material-icons": "^0.7.6",
     "mkdirp": "^1.0.4",
     "mssql": "^6.3.1",
