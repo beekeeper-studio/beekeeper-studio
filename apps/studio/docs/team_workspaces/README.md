@@ -54,7 +54,7 @@ After connecting to a workspace, Beekeeper works just the same as it does usuall
 
 ## Workspace Billing
 
-- [View Pricing](https://app.beekeeperstudio.io/pricing)
+- [View Pricing](https://beekeeperstudio.io/pricing)
 
 ### When you get charged
 
