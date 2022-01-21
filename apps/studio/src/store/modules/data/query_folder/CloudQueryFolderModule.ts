@@ -15,7 +15,7 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
     error: null,
     pollError: null
   },
-  mutations: mutationsFor<IQueryFolder>({}),
+  mutations: mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc'}),
   actions: actionsFor<IQueryFolder>('queryFolders', {
     async poll() {}
   })

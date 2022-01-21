@@ -37,9 +37,9 @@ export interface DataStoreMutations<T, X extends DataState<T>> extends MutationT
   //   state: DataState<T>
   //   mutations: DataStoreMutations<T>
   // }
-  
+
   export interface DataStoreActions<T, X extends DataState<T>> extends ActionTree<X, RootState> {
-    
+
     save(context: ActionContext<X, RootState>, item: T): Promise<T>
     load(context: ActionContext<X, RootState>): Promise<void>
     remove(context: ActionContext<X, RootState>, item: T): Promise<void>
@@ -84,15 +84,16 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
     const stateIds = state.items.map((i) => i.id)
 
     const toUpdate = items.filter((i) => stateIds.includes(i.id))
-    const toInsert = items.filter((i) => !stateIds.includes(i.id))    
+    const toInsert = items.filter((i) => !stateIds.includes(i.id))
 
     const stateItems = _.reject(state.items, (item) => !itemIds.includes(item.id))
     const upsertable = [...toUpdate, ...toInsert]
     upsertable.forEach((i) => upsert(stateItems, i))
-    state.items = stateItems
+    const sorted = sortBy ? _.sortBy(stateItems, sortBy.field) : stateItems
+    state.items = sortBy?.direction === 'desc' ? sorted.reverse() : sorted
   },
   remove(state, item: T | T[] | number) {
-    
+
     const list = _.isArray(item) ? item : [item]
     const ids = list.map((item) => {
       return _.isNumber(item) ? item : item.id
