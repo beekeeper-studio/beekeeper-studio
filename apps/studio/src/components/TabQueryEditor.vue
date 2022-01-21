@@ -683,8 +683,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             }
           })
           this.results = Object.freeze(results);
-
-          this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
+          this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.connection.id })
           log.debug('identification', identification)
           const found = identification.find(i => {
             return i.type === 'CREATE_TABLE'

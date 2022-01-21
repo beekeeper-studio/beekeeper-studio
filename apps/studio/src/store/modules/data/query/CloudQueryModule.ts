@@ -16,6 +16,6 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
   },
   mutations: mutationsFor<ISavedQuery>({
     // more mutations go here
-  }),
+  }, { field: 'title', direction: 'asc'}),
   actions: actionsFor<ISavedQuery>('queries', {})
 }

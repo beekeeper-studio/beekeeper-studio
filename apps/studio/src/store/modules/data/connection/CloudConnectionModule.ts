@@ -14,8 +14,6 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     error: null,
     pollError: null,
   },
-  mutations: mutationsFor<ICloudSavedConnection>({
-
-  }),
+  mutations: mutationsFor<ICloudSavedConnection>({}, { field: 'name', direction: 'asc'}),
   actions: actionsFor<ICloudSavedConnection>('connections', {})
 }

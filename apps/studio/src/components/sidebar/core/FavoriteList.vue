@@ -1,5 +1,5 @@
 <template>
-  <div class="sidebar-favorites flex-col expand" ref="wrapper">
+  <div class="sidebar-favorites flex-col expand">
     <div class="sidebar-list">
       <div class="list-group">
         <div class="list-heading row">
@@ -17,7 +17,7 @@
         </div>
       <error-alert v-if="error" :error="error" title="Problem loading queries" />
       <sidebar-loading v-if="loading" />
-      <nav v-else-if="savedQueries.length > 0" class="list-body">
+      <nav v-else-if="savedQueries.length > 0" class="list-body" ref="wrapper">
         <sidebar-folder
           v-for="({ folder, queries }) in foldersWithQueries"
           :key="`${folder.id}-${queries.length}`"

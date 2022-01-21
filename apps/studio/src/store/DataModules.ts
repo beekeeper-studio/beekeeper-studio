@@ -6,6 +6,8 @@ import { CloudQueryModule } from "@/store/modules/data/query/CloudQueryModule";
 import { LocalQueryModule } from "@/store/modules/data/query/LocalQueryModule";
 import { CloudQueryFolderModule } from "@/store/modules/data/query_folder/CloudQueryFolderModule";
 import { LocalQueryFolderModule } from "@/store/modules/data/query_folder/LocalQueryFolderModule";
+import { CloudUsedQueryModule } from "@/store/modules/data/used_query/CloudUsedQueryModule";
+import { LocalUsedQueryModule } from "@/store/modules/data/used_query/LocalUsedQueryModule";
 
 
 export const DataModules = [
@@ -28,6 +30,11 @@ export const DataModules = [
     path: 'data/connectionFolders',
     cloud: CloudConnectionFolderModule,
     local: LocalConnectionFolderModule
+  },
+  {
+    path: 'data/usedQueries',
+    cloud: CloudUsedQueryModule,
+    local: LocalUsedQueryModule,
   }
 
 ]
