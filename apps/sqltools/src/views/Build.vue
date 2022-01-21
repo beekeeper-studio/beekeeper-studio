@@ -2,7 +2,7 @@
   <div class="home">
     <section class="subheader">
       <div class="small-wrap">
-        <h1>SQL Table Builder</h1>
+        <h1>{{dialectTitle}} Create Table SQL Generator</h1>
         <div class="subtitle">This is a SQL table builder for Postgres, MySQL, SQL Server, SQLite, and Redshift databases from the makers of  <a class="text-primary" href="https://beekeeperstudio.io" target="_blank">Beekeeper Studio</a>. We also provide some simple sql table starter templates, check them out above 👆.</div>
       </div>
     </section>
