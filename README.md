@@ -1,12 +1,10 @@
 # Beekeeper Studio
 
-Beekeeper Studio is a cross-platform SQL editor and database manager available for Linux, Mac, and Windows.
-
-Beekeeper Studio is MIT licensed so it is free (libre) and free (gratis). 
+Beekeeper Studio is a cross-platform SQL editor and database manager available for Linux, Mac, and Windows. Beekeeper Studio is MIT licensed so it is free (libre) and free (gratis). 
 
 Download now [from our website](https://beekeeperstudio.io)
 
-Love Beekeeper Studio and want to help, but can't write code? [We have some ideas for you](https://github.com/beekeeper-studio/beekeeper-studio/issues/287).
+Hey! Please complete my [user survey](https://forms.gle/AjXYJG4ktXYhDZUc7) to help me get to know you better (and thus focus on features that are important to you)
 
 ## Features
 
