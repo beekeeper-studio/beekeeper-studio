@@ -18,3 +18,6 @@ A clear and concise description of any alternative solutions or features you've 
 
 **Additional context**
 Add any other context or screenshots about the feature request here. (we love screenshots with red circles if the request is for something visual)
+
+**Database type, if appropriate**
+Does this feature only relate to a specific type of database? (eg Postgresql)

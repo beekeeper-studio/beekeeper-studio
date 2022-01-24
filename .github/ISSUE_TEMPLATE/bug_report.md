@@ -26,6 +26,7 @@ If applicable, add screenshots or GIFS to help explain your problem.
 **Version Information (please complete the following information):**
  - OS: [e.g. Windows/Mac/Ubuntu]
  - App Version [e.g. help -> About Beekeeper Studio]
+ - Database type and version [eg Posgresql 9.3]
 
 **Additional context**
 Anything else you think might be helpful
