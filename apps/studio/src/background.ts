@@ -67,11 +67,25 @@ async function initBasics() {
   log.info("Building the window")
   log.info("managing updates")
   manageUpdates()
+  
   ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
     const url = args[0]
     if (!url) return
     electron.shell.openExternal(url)
   })
+
+  ipcMain.on('openDialog',(event)=> {
+    require('electron').dialog.showMessageBox(this, {
+      type: 'question',
+      buttons: ['Yes', 'No'],
+      title: 'beekeeper-studio',
+      message: 'Are you sure? You will lose unsaved changes.'
+    }).then(function (result) {
+      if(result.response === 0)
+        event.sender.send('closeDialog',result);
+      });
+  })
+
   return settings
 }
 
