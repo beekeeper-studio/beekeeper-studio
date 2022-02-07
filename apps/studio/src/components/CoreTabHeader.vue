@@ -26,6 +26,7 @@
 </template>
 <script>
   import TableIcon from '@/components/common/TableIcon.vue'
+  import { ipcRenderer } from 'electron'
 
   export default {
     props: ['tab', 'tabsCount', 'selected'],
@@ -41,11 +42,10 @@
         event.stopPropagation()
         event.preventDefault()
         if (this.tab.unsavedChanges) {
-          if (window.confirm("Are you sure? You will lose unsaved changes.")) {
-            this.$emit('close', this.tab)
-          }
+          ipcRenderer.on('closeDialog',(event,data) => this.$emit('close', this.tab));
+          ipcRenderer.send('openDialog');
         } else {
-          this.$emit('close', this.tab)
+          this.$emit('close', this.tab);
         }
       },
       doNothing() {
