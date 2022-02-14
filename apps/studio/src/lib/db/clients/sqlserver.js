@@ -502,15 +502,15 @@ export async function listTableIndexes(conn, table, schema = defaultSchema) {
     ind.is_primary_key as is_primary
 
     FROM
-        SYS.INDEXES ind
+        sys.indexes ind
     INNER JOIN
-        SYS.INDEX_COLUMNS ic ON  ind.object_id = ic.object_id and ind.index_id = ic.index_id
+        sys.index_columns ic ON  ind.object_id = ic.object_id and ind.index_id = ic.index_id
     INNER JOIN
-        SYS.COLUMNS col ON ic.object_id = col.object_id and ic.column_id = col.column_id
+        sys.columns col ON ic.object_id = col.object_id and ic.column_id = col.column_id
     INNER JOIN
-        SYS.TABLES t ON ind.object_id = t.object_id
+        sys.tables t ON ind.object_id = t.object_id
     INNER JOIN
-        SYS.SCHEMAS s on t.schema_id = s.schema_id
+        sys.schemas s on t.schema_id = s.schema_id
     WHERE
         ind.is_unique_constraint = 0
         AND t.is_ms_shipped = 0
@@ -596,8 +596,8 @@ export async function getTableKeys(conn, database, table, schema) {
         to_table = PK.TABLE_NAME,
         to_column = PT.COLUMN_NAME,
         constraint_name = C.CONSTRAINT_NAME,
-        on_update = c.UPDATE_RULE,
-        on_delete = c.DELETE_RULE
+        on_update = C.UPDATE_RULE,
+        on_delete = C.DELETE_RULE
     FROM
         INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
     INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
