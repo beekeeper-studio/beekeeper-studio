@@ -49,7 +49,7 @@
     margin: 0;
     height: $tab-height;
     -webkit-app-region: no-drag;
-    .nav-item-wrap {    
+    .nav-item-wrap {
       min-width: 28px;
       overflow: hidden;
     }
@@ -58,7 +58,7 @@
       opacity: 0.5;
     }
     .nav-item {
-      max-width: 200px;    
+      max-width: 200px;
       min-width: 28px;
       overflow: hidden;
     }
@@ -113,7 +113,7 @@
             }
           }
         }
-      } 
+      }
     }
     .tab-title {
       text-overflow: initial;
@@ -189,6 +189,16 @@
     -webkit-app-region: no-drag;
   }
 }
+
+.vue-dialog.sure {
+  .btn {
+    font-weight: 400;
+
+    &:focus {
+      font-weight: 800;
+    }
+  }
+}
 .no-content {
   padding-left: 5px;
   padding-right: 5px;
@@ -248,7 +258,7 @@
     }
     .btn-primary {
       // background: $text-dark;
-      &:hover, 
+      &:hover,
       &:focus {
         // background: lighten($text-dark, 10%);
         background: lighten($theme-primary, 10%);
@@ -307,4 +317,3 @@
     }
   }
 }
-  
