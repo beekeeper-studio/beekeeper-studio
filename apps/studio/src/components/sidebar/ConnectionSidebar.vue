@@ -1,6 +1,6 @@
 <template>
   <div class="sidebar-wrap row">
-    <workspace-sidebar></workspace-sidebar>
+    <workspace-sidebar v-if="activeWorkspaces.length"></workspace-sidebar>
 
     <!-- QUICK CONNECT -->
     <div class="tab-content flex-col expand">
@@ -14,9 +14,9 @@
         <span>New Connection</span>
         </a>
       </div>
-  
+
       <div class="connection-wrap expand flex-col">
-  
+
         <!-- Saved Connections -->
         <div class="list saved-connection-list expand" ref="savedConnectionList">
           <div class="list-group">
@@ -91,9 +91,9 @@
             </nav>
           </div>
         </div>
-  
+
         <hr> <!-- Fake gutter for split.js -->
-  
+
         <!-- Recent Connections -->
         <div class="list recent-connection-list expand" ref="recentConnectionList">
           <div class="list-group">
@@ -159,7 +159,8 @@ const log = rawLog.scope('connection-sidebar');
         'usedConfigs': 'orderedUsedConfigs',
         'settings': 'settings/settings',
         'sortOrder': 'settings/sortOrder',
-        'isCloud': 'isCloud'
+        'isCloud': 'isCloud',
+        'activeWorkspaces': 'credentials/activeWorkspaces'
       }),
       empty() {
         return !this.connectionConfigs?.length
@@ -222,7 +223,7 @@ const log = rawLog.scope('connection-sidebar');
     },
     methods: {
       importFromLocal() {
-        console.log("triggering import")  
+        console.log("triggering import")
         this.$root.$emit(AppEvent.promptConnectionImport)
       },
       refresh() {
