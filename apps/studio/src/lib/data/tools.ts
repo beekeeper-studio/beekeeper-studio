@@ -56,7 +56,8 @@ export const Mutators = {
    * @returns JsonFriendly
    */
   bit1Mutator(value: any): JsonFriendly {
-    return value[0]
+    if (!value) return 0
+    return Number(value[0])
   },
 
   /**

@@ -97,6 +97,30 @@ function testWith(tag) {
       expect(functions.find((p) => (p.name === 'isEligible')).routineParams.length).toBe(2)
     })
 
+    it("Should insert bit values properly", async() => {
+      await util.knex.schema.createTable("insertbits", (table) => {
+        table.integer("id").primary()
+        table.specificType("thirtytwo", "bit(32)")
+        table.specificType("onebit", "bit(1)")
+      })
+
+      const inserts = [
+        {
+          table: 'insertbits',
+          data: [
+            { id: 1, onebit: '1', thirtytwo: "b'00000000000000000000010000000000'"},
+          ]
+        }
+      ]
+      await util.connection.applyChanges({ inserts })
+      const data = await util.connection.selectTop('insertbits', 0, 10, [])
+
+
+      expect(data.result.length).toBe(1)
+      const single = data_mutators.methods.bit1Mutator(data.result[0].onebit)
+      expect(single).toBe(1)
+    })
+
     it("Should update bit values properly", async () => {
       await util.knex.schema.createTable("withbits", (table) => {
         table.integer("id").primary()
