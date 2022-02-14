@@ -144,6 +144,7 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
 }
 
 export function buildInsertQuery(knex, insert, columns = []) {
+
   const data = _.cloneDeep(insert.data)
   data.forEach((item) => {
     const insertColumns = Object.keys(item)
@@ -168,7 +169,7 @@ export function buildInsertQuery(knex, insert, columns = []) {
 }
 
 export function buildInsertQueries(knex, inserts) {
-  return inserts.map(insert => buildInsertQuery(insert))
+  return inserts.map(insert => buildInsertQuery(knex, insert))
 }
 
 export function buildUpdateQueries(knex, updates) {
