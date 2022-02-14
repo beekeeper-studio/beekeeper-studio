@@ -36,29 +36,29 @@
         v-show="activeTab === tab"
       >
         <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
-        <tab-with-table v-if="tab.type === 'table'" :tab="tab">
+        <tab-with-table v-if="tab.type === 'table'" :tab="tab" @close="close">
           <template v-slot:default="slotProps">
-            <TableTable 
+            <TableTable
               :tab="tab"
-              :active="activeTab === tab" 
-              :connection="connection" 
+              :active="activeTab === tab"
+              :connection="connection"
               :initialFilter="tab.filter"
               :table="slotProps.table"
             ></TableTable>
           </template>
         </tab-with-table>
-        <tab-with-table v-if="tab.type === 'table-properties'" :tab="tab">
+        <tab-with-table v-if="tab.type === 'table-properties'" :tab="tab" @close="close">
           <template v-slot:default="slotProps">
-            <TableProperties 
-              :active="activeTab === tab" 
-              :tab="tab" :tabId="tab.id" 
+            <TableProperties
+              :active="activeTab === tab"
+              :tab="tab" :tabId="tab.id"
               :connection="connection"
               :table="slotProps.table"
             ></TableProperties>
           </template>
         </tab-with-table>
         <TableBuilder v-if="tab.type === 'table-builder'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></TableBuilder>
-        
+
       </div>
     </div>
   </div>
@@ -85,7 +85,7 @@ import TabWithTable from './common/TabWithTable.vue';
 
   export default Vue.extend({
     props: [ 'connection' ],
-    components: { 
+    components: {
       Statusbar,
       QueryEditor,
       CoreTabHeader,
@@ -242,7 +242,7 @@ import TabWithTable from './common/TabWithTable.vue';
         t.tableName = table.name
         t.schemaName = table.schema
         t.title = table.name
-        
+
         const existing = this.tabItems.find((tab) => tab.matches(t))
         if (existing) return this.$store.dispatch('tabs/setActive', existing)
 
