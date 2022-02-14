@@ -1,5 +1,5 @@
 <template>
-  <div class="tabletable flex-col" :class="{'view-only': !editable}">
+  <div v-hotkey="keymap" class="tabletable flex-col" :class="{'view-only': !editable}">
     <template v-if="!table && initialized">
       <div class="no-content">
 
@@ -20,6 +20,7 @@
                   class="form-control"
                   type="text"
                   v-model="filterRaw"
+                  ref="valueInput"
                   :placeholder=filterPlaceholder
                 />
                 <button
@@ -92,7 +93,7 @@
 
     <statusbar :mode="statusbarMode">
 
-      
+
       <div class="truncate statusbar-info">
         <x-button @click.prevent="openProperties" class="btn btn-flat btn-icon end" title="View Structure">
           Structure <i class="material-icons">north_east</i>
@@ -167,7 +168,7 @@
         </x-button>
 
       </div>
-      
+
     </statusbar>
   </div>
 </template>
@@ -232,7 +233,7 @@ export default Vue.extend({
       // table data
       data: null, // array of data
       totalRecords: null,
-      // 
+      //
       response: null,
       limit: 100,
       rawTableKeys: [],
@@ -281,6 +282,14 @@ export default Vue.extend({
       result.push(`${this.pendingChangesCount} pending changes`)
       return result.join(" ")
     },
+    keymap() {
+      const result = {}
+      result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
+      result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
+      result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
+      result[this.ctrlOrCmd('f')] = () => this.$refs.valueInput.focus()
+      return result
+    },
     cellContextMenu() {
       return [{
           label: '<x-menuitem><x-label>Set Null</x-label></x-menuitem>',
@@ -328,8 +337,8 @@ export default Vue.extend({
       return `~${this.totalRecords.toLocaleString()}`
     },
     pendingChangesCount() {
-      return this.pendingChanges.inserts.length 
-             + this.pendingChanges.updates.length 
+      return this.pendingChanges.inserts.length
+             + this.pendingChanges.updates.length
              + this.pendingChanges.deletes.length
     },
     hasPendingChanges() {
@@ -499,7 +508,6 @@ export default Vue.extend({
         if (this.forceRedraw) {
           this.forceRedraw = false
           this.$nextTick(() => {
-            log.debug('forceredraw')
             this.tabulator.redraw(true)
           })
         }
@@ -765,7 +773,7 @@ export default Vue.extend({
       cell.getElement().classList.add('edited')
       const key = `${pkCell.getValue()}-${cell.getField()}`
       const currentEdit = _.find(this.pendingChanges.updates, { key: key })
-      
+
       if (currentEdit && currentEdit.cell.getInitialValue() === cell.getValue()) {
         this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit))
         cell.getElement().classList.remove('edited')
@@ -799,7 +807,7 @@ export default Vue.extend({
       })
     },
     cellAddRow() {
-      this.tabulator.addRow({}, true).then(row => { 
+      this.tabulator.addRow({}, true).then(row => {
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
       })
@@ -820,7 +828,7 @@ export default Vue.extend({
       const pkCell = row.getCells().find(c => c.getField() === this.primaryKey)
 
       if (!pkCell) {
-        this.$noty.error("Can't delete row -- couldn't figure out primary key")       
+        this.$noty.error("Can't delete row -- couldn't figure out primary key")
         return
       }
 
@@ -902,7 +910,7 @@ export default Vue.extend({
 
 
         } catch (ex) {
-          
+
           this.pendingChanges.updates.forEach(edit => {
               edit.cell.getElement().classList.add('edit-error')
           })
@@ -918,7 +926,7 @@ export default Vue.extend({
             ex
           }
           this.$noty.error(ex.message)
-          
+
           return
         } finally {
           if (!this.active) {
@@ -959,6 +967,7 @@ export default Vue.extend({
       if (
         filterMode === FILTER_MODE_RAW &&
         !_.isNil(this.filter.value) &&
+        !_.isEmpty(this.filter.value) &&
         _.isEmpty(this.filterRaw)
       ) {
         const rawFilter = _.join([this.filter.field, this.filter.type, this.filter.value], ' ')
@@ -966,6 +975,9 @@ export default Vue.extend({
       }
 
       this.filterMode = filterMode
+      this.$nextTick(() => {
+        this.$refs.valueInput.focus()
+      })
     },
     dataFetch(_url, _config, params) {
       // this conforms to the Tabulator API
