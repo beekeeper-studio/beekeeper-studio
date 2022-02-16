@@ -25,7 +25,7 @@ jobs:
           node-version: 14
 
       - name: Clean cache
-        run: yarn clean cache
+        run: yarn cache clean
 
       - name: Check dependencies
         run: "yarn install --frozen-lockfile --network-timeout 100000"
