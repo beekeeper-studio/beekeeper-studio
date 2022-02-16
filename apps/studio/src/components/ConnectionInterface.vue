@@ -45,13 +45,13 @@
             </form>
 
           </div>
-          <div class="pitch"></div>
+          <div class="pitch" v-if="!config.connectionType"><span class="badge badge-primary">NEW</span> Check out <a href="https://beekeeperstudio.io/get" class="">Beekeeper Studio Ultimate Edition</a></div>
           <div v-if="connectionError" class="alert alert-danger">
             {{connectionError}}
           </div>
         </div>
 
-        <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio Ultimate {{version}}</a></small>
+        <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{version}}</a></small>
       </div>
     </div>
   </div>
