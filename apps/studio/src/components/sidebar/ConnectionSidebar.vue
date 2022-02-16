@@ -249,6 +249,7 @@ const log = rawLog.scope('connection-sidebar');
         return `label-${color}`
       },
       sortConnections(by) {
+        this.connectionConfigs.sort((a, b) => a[by].toString().localeCompare(b[by].toString()))
         this.settings.sortOrder.userValue = by
         this.settings.sortOrder.save()
       }
