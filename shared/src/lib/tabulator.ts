@@ -1,10 +1,18 @@
-import Purify from 'dompurify'
 import _ from 'lodash'
 import Tabulator from 'tabulator-tables'
 
-function sanitizeHtml(value) {
-  if (!value) return null
-  return Purify.sanitize(value)
+
+const htmlMap = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#039;'
+};
+
+export function escapeHtml(text: string): string | null {
+  if (!text) return null
+  return text.replace(/[&<>"']/g, function (m) { return htmlMap[m]; });
 }
 
 export interface YesNoParams {
@@ -30,7 +38,7 @@ export default {
 
     let cellValue = cell.getValue().toString();
     cellValue = cellValue.replace(/\n/g, ' ↩ ');
-    cellValue = sanitizeHtml(cellValue);
+    cellValue = escapeHtml(cellValue);
     // removing the <pre> will break selection / copy paste, see ResultTable
     const result = `<pre>${cellValue}</pre>`
     return result;

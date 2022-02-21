@@ -187,7 +187,7 @@ import pluralize from 'pluralize'
 import Tabulator from "tabulator-tables";
 // import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
-import DataMutators from '../../mixins/data_mutators'
+import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
 import Statusbar from '../common/StatusBar.vue'
 import rawLog from 'electron-log'
 import _ from 'lodash'
@@ -395,7 +395,7 @@ export default Vue.extend({
           undefined
 
         const formatter = () => {
-          return `<span class="tabletable-title">${column.columnName} <span class="badge">${slimDataType}</span></span>`
+          return `<span class="tabletable-title">${escapeHtml(column.columnName)} <span class="badge">${escapeHtml(slimDataType)}</span></span>`
         }
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
