@@ -143,7 +143,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     sidebarToggle: {
       id: 'menu-toggle-sidebar',
       label: 'Toggle Sidebar',
-      accelerator: "Alt+S",
+      accelerator: "Shift+CommandOrControl+S",
       click: actionHandler.toggleSidebar,
     },
     menuStyleToggle: {
