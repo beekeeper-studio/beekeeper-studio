@@ -83,7 +83,7 @@ import { mapState } from 'vuex'
 
     data() {
       return {
-        config: null,
+        config: new SavedConnection(),
         errors: null,
         connectionError: null,
         testing: false,
@@ -125,7 +125,6 @@ import { mapState } from 'vuex'
       }
       await this.$store.dispatch('credentials/load')
       await this.$store.dispatch('loadUsedConfigs')
-      this.config = new SavedConnection()
       this.config.sshUsername = os.userInfo().username
       this.$nextTick(() => {
         const components = [
