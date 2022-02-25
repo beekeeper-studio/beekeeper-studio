@@ -202,7 +202,7 @@ async function getTableLength(conn, table, schema) {
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
   log.debug("filters", filters)
   const version = await getVersion(conn);
-  const query = version.supportOffsetFetch ? 
+  const query = version.supportOffsetFetch ?
     genSelectNew(table, offset, limit, orderBy, filters, schema) :
     genSelectOld(table, offset, limit, orderBy, filters, schema)
   logger().debug(query)
@@ -221,7 +221,7 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
   const query = genSelectNew(table, null, null, orderBy, filters, schema);
   const columns = await listTableColumns(conn, db, table);
   const rowCount = await getTableLength(conn, table, filters);
-  
+
   return {
     totalRows: Number(rowCount),
     columns,
@@ -234,7 +234,7 @@ export function wrapIdentifier(value) {
   if (_.isString(value)) {
     return (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*');
   } return value
-  
+
 }
 
 export function wrapValue(value) {
@@ -375,7 +375,7 @@ export async function listRoutines(conn, filter) {
   `;
 
   const paramsSQL = `
-    select 
+    select
         r.routine_schema as routine_schema,
         r.specific_name as specific_name,
         p.parameter_name as parameter_name,
@@ -425,7 +425,7 @@ export async function listTableColumns(conn, database, table, schema) {
   if (schema) clauses.push(`table_schema = ${D.escapeString(schema, true)}`)
   const clause = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ''
   const sql = `
-    SELECT 
+    SELECT
       table_schema as "table_schema",
       table_name as "table_name",
       column_name as "column_name",
@@ -436,7 +436,7 @@ export async function listTableColumns(conn, database, table, schema) {
       CASE
         WHEN character_maximum_length is not null AND data_type != 'text'
           THEN character_maximum_length
-        WHEN datetime_precision is not null THEN 
+        WHEN datetime_precision is not null THEN
           datetime_precision
         ELSE null
       END as length
@@ -676,15 +676,15 @@ export async function applyChanges(conn, changes) {
       if (changes.updates) {
         sql = sql.concat(buildUpdateQueries(knex, changes.updates))
       }
-  
+
       if (changes.deletes) {
         sql = sql.concat(buildDeleteQueries(knex, changes.deletes))
       }
-  
+
       sql.push('COMMIT')
 
       await driverExecuteQuery(cli, { query: sql.join(';')})
-      
+
       if (changes.updates) {
         const selectQueries = buildSelectQueriesFromUpdates(knex, changes.updates)
         for (let index = 0; index < selectQueries.length; index++) {
@@ -824,7 +824,7 @@ async function getTableDescription(conn, table, schema = defaultSchema) {
       '${escapeString(schema)}',
       'table',
       '${escapeString(table)}',
-      default, 
+      default,
     default);
   `
   const data = await driverExecuteQuery(conn, { query })
@@ -840,7 +840,7 @@ export async function getTableProperties(conn, table, schema = defaultSchema) {
   const indexes = await listTableIndexes(conn, table, schema)
 
   const description = await getTableDescription(conn, table, schema)
-  const sizeQuery = `EXEC sp_spaceused N'dbo.${escapeString(table)}'; `
+  const sizeQuery = `EXEC sp_spaceused N'${escapeString(schema)}.${escapeString(table)}'; `
   const { data }  = await driverExecuteQuery(conn, { query: sizeQuery })
   const row = data.recordset ? data.recordset[0] || {} : {}
   const relations = await getTableKeys(conn, null, table, schema)
@@ -869,20 +869,20 @@ export async function setTableDescription(conn, table, desc, schema) {
 
 async function listDefaultConstraints(conn, table, schema) {
   const sql = `
--- returns name of a column's default value constraint 
+-- returns name of a column's default value constraint
 SELECT
     all_columns.name as columnName,
     tables.name as tableName,
     schemas.name as schemaName,
     default_constraints.name as name
-FROM 
+FROM
     sys.all_columns
 
         INNER JOIN
     sys.tables
         ON all_columns.object_id = tables.object_id
 
-        INNER JOIN 
+        INNER JOIN
     sys.schemas
         ON tables.schema_id = schemas.schema_id
 
@@ -890,7 +890,7 @@ FROM
     sys.default_constraints
         ON all_columns.default_object_id = default_constraints.object_id
 
-WHERE 
+WHERE
         schemas.name = ${D.escapeString(schema || defaultSchema, true)}
     AND tables.name = ${D.escapeString(table, true)}
 
