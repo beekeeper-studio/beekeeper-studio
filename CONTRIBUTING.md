@@ -20,3 +20,6 @@ We have templates for questions, features, or bug reports, please follow the dir
 We welcome code contributions. You maintain all copyright to your code, but agree that:
 
 - All contributions to this repository are made under the [MIT License](https://opensource.org/licenses/MIT)
+
+What this means practically:
+If you make a PR, the PR code is licensed as MIT. As soon as I merge the code into this repository it is relicensed under GPLv3 as part of Beekeeper Studio. the code is still copyright to you.
