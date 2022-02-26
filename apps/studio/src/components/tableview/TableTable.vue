@@ -909,12 +909,6 @@ export default Vue.extend({
 
 
         } catch (ex) {
-<<<<<<< HEAD
-          console.error(ex)
-          
-=======
-
->>>>>>> origin/master
           this.pendingChanges.updates.forEach(edit => {
               edit.cell.getElement().classList.add('edit-error')
           })
