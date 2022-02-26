@@ -22,4 +22,9 @@ We welcome code contributions. You maintain all copyright to your code, but agre
 - All contributions to this repository are made under the [MIT License](https://opensource.org/licenses/MIT)
 
 What this means practically:
+
 If you make a PR, the PR code is licensed as MIT. As soon as I merge the code into this repository it is relicensed under GPLv3 as part of Beekeeper Studio. the code is still copyright to you.
+
+Why do it this way?
+
+This makes it easier to ensure that Beekeeper Studio code, and third party derivatives, stay open source, but also allows me to use contributed code as part of the ultimate edition.
