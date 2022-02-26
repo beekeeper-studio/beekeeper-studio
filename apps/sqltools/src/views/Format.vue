@@ -42,11 +42,11 @@ import _ from 'lodash'
 export default Vue.extend({
   metaInfo() {
     return {
-      title: "SQL Table Templates and Examples",
+      title: "SQL Query Formatter for MySQL, PostgreSQL, SQLite, and SQL Server",
       meta: [
         {
           name: "description",
-          content: "Use these SQL table templates to bootstrap your database. Available for Postgres, MySQL, Sqlite, SQL Server, and Redshift."
+          content: "Paste unformatted SQL, get formatted SQL back. Format SQL for Postgres, MySQL, SQLite, and more."
         }
       ]
     }
@@ -82,5 +82,6 @@ export default Vue.extend({
   textarea {
     resize: vertical;
     height: initial;
+    line-height: 1.2rem;
   }
 </style>

@@ -1,5 +1,5 @@
 ---
-title: User Guide
+title: Getting Started
 sidebarDepth: 2
 ---
 

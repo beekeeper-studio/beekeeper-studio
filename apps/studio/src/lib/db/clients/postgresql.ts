@@ -72,6 +72,7 @@ pg.types.setTypeParser(17, 'text', (val) => val ? base64.encode(val.substring(2)
  */
 async function getVersion(conn: HasPool): Promise<VersionInfo> {
   const { version } = (await driverExecuteSingle(conn, {query: "select version()"})).rows[0]
+
   if (!version) {
     return {
       version: '',
@@ -96,7 +97,6 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
     )
   }
 }
-
 
 async function getTypes(conn: HasPool): Promise<any> {
   const version = await getVersion(conn)
@@ -149,7 +149,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
   const version = await getVersion(conn)
 
   const features = version.isRedshift ? { customRoutines: true, comments: false, properties: false } : { customRoutines: true, comments: true, properties: true}
-   
+
 
 
   return {
@@ -256,8 +256,13 @@ export async function listMaterializedViews(conn: HasPool, filter: FilterOptions
     order by schemaname, matviewname;
   `
 
-  const data = await driverExecuteSingle(conn, {query: sql});
-  return data.rows;
+  try {
+    const data = await driverExecuteSingle(conn, {query: sql});
+    return data.rows;
+  } catch (error) {
+    log.warn("Unable to fetch materialized views", error)
+    return []
+  }
 }
 
 interface STQOptions {
@@ -317,7 +322,7 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   // https://wiki.postgresql.org/wiki/Count_estimate
   // however it doesn't work in redshift or cockroach.
   const tuplesQuery = `
-  
+
   SELECT
     reltuples as total
   FROM
@@ -568,26 +573,36 @@ export async function listMaterializedViewColumns(conn: Conn, _database: string,
 
 
 export async function listTableTriggers(conn: HasPool, table: string, schema: string) {
+
   const version = await getVersion(conn)
-  const timing_column = version.isPostgres && version.number < 90000 ? 'condition_timing' : 'action_timing';
-  const sql = `
-    SELECT 
+
+  // unsupported https://www.cockroachlabs.com/docs/stable/sql-feature-support.html
+
+  if (version.isCockroach) return []
+  // action_timing has taken over from condition_timing
+  // this way we try both, and take the one that works.
+  const timing_columns = ['action_timing', 'condition_timing']
+  // const timing_column = 'action_timing'
+  const sequels = timing_columns.map((c) => `
+    SELECT
       trigger_name,
-      ${timing_column} as timing,
+      ${c} as timing,
       event_manipulation as manipulation,
       action_statement as action,
       action_condition as condition
     FROM information_schema.triggers
     WHERE event_object_schema = $1
     AND event_object_table = $2
-  `;
-
+  `)
   const params = [
     schema,
     table,
   ];
+  const promises = sequels.map((sql) => {
+    return driverExecuteSingle(conn, { query: sql, params });
+  })
 
-  const data = await driverExecuteSingle(conn, { query: sql, params });
+  const data = await Promise.any(promises)
 
   return data.rows.map((row) => ({
     name: row.trigger_name,
@@ -622,7 +637,7 @@ async function listCockroachIndexes(conn: Conn, table: string, schema: string): 
         name: c.column_name,
         order: c.direction
       }))
-      
+
     }
   })
 
@@ -635,7 +650,7 @@ export async function listTableIndexes(
 
   const version = await getVersion(conn)
   if (version.isCockroach) return await listCockroachIndexes(conn, table, schema)
-  
+
   const sql = `
   SELECT i.indexrelid::regclass AS indexname,
       k.i AS index_order,
@@ -669,10 +684,10 @@ export async function listTableIndexes(
 
   const data = await driverExecuteSingle(conn, { query: sql, params });
 
-  
+
 
   const grouped = _.groupBy(data.rows, 'indexname')
-  
+
   const result = Object.keys(grouped).map((indexName) => {
     const blob = grouped[indexName]
     const unique = blob[0].indisunique
@@ -734,7 +749,7 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     return getTablePropertiesRedshift()
   }
   const identifier = wrapTable(table, schema)
-  
+
 
 
 
@@ -753,7 +768,7 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
 
   const detailsPromise =  version.isPostgres ? driverExecuteSingle(conn, { query: sql }) :
     Promise.resolve({ rows:[]})
-  
+
   const triggersPromise = version.isPostgres ? listTableTriggers(conn, table, schema) : Promise.resolve([])
 
   const [
@@ -861,7 +876,7 @@ export async function getPrimaryKeys(conn: HasPool, _database: string, table: st
   const version = await getVersion(conn)
   const tablename = PD.escapeString(tableName(table, schema), true)
   const psqlQuery = `
-    SELECT 
+    SELECT
       a.attname as column_name,
       format_type(a.atttypid, a.atttypmod) AS data_type,
       a.attnum as position
@@ -869,7 +884,7 @@ export async function getPrimaryKeys(conn: HasPool, _database: string, table: st
     JOIN   pg_attribute a ON a.attrelid = i.indrelid
                         AND a.attnum = ANY(i.indkey)
     WHERE  i.indrelid = ${tablename}::regclass
-    AND    i.indisprimary 
+    AND    i.indisprimary
     ORDER BY a.attnum
   `
 
@@ -919,7 +934,7 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
       if (changes.updates) {
         results = await updateValues(cli, changes.updates)
       }
-    
+
       if (changes.deletes) {
         await deleteRows(cli, changes.deletes)
       }
@@ -950,7 +965,7 @@ export async function alterTableSql(conn: HasPool, change: AlterTableSpec): Prom
 
 export async function alterTable(_conn: HasPool, change: AlterTableSpec) {
   const version = await getVersion(_conn)
-  
+
   await runWithConnection(_conn, async (connection) => {
 
     const cli = { connection }
@@ -1008,7 +1023,7 @@ export async function setTableDescription(conn: HasPool, table: string, descript
 
 async function insertRows(cli: any, rawInserts: TableInsert[]) {
   const columnsList = await Promise.all(rawInserts.map((insert) => {
-    return listTableColumns(cli, null, insert.table, insert.schema) 
+    return listTableColumns(cli, null, insert.table, insert.schema)
   }))
 
   const fixedInserts = rawInserts.map((insert, idx) => {
@@ -1167,12 +1182,28 @@ export async function getTableCreateScript(conn: Conn, table: string, schema: st
       'CREATE TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) || E' (\n' ||
       array_to_string(
         array_agg(
-          '  ' || quote_ident(tabdef.column_name) || ' ' ||  tabdef.type || ' '|| tabdef.not_null
+          '  ' || quote_ident(tabdef.column_name) || ' ' ||
+          case when tabdef.def_val like 'nextval('''||tabdef.table_name||'_'||tabdef.column_name||'_seq'||'%' then
+            case when tabdef.type = 'integer' then 'serial'
+                 when tabdef.type = 'smallint' then 'smallserial'
+                 when tabdef.type = 'bigint' then 'bigserial'
+                 else tabdef.type end
+          else
+            tabdef.type
+          end || ' ' ||
+          tabdef.not_null ||
+          CASE WHEN tabdef.def_val IS NOT NULL
+                    AND NOT (tabdef.def_val like 'nextval('''||tabdef.table_name||'_'||tabdef.column_name||'_seq'||'%'
+                             AND (tabdef.type = 'integer' OR tabdef.type = 'smallint' OR tabdef.type = 'bigint'))
+               THEN ' DEFAULT ' || tabdef.def_val
+          ELSE '' END ||
+          CASE WHEN tabdef.identity IS NOT NULL THEN ' ' || tabdef.identity ELSE '' END
+          ORDER BY tabdef.column_idx ASC
         )
         , E',\n'
       ) || E'\n);\n' ||
       CASE WHEN tc.constraint_name IS NULL THEN ''
-           ELSE E'\nALTER TABLE ' || quote_ident($2) || '.' || quote_ident(tabdef.table_name) ||
+           ELSE E'\nALTER TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) ||
            ' ADD CONSTRAINT ' || quote_ident(tc.constraint_name)  ||
            ' PRIMARY KEY ' || '(' || substring(constr.column_name from 0 for char_length(constr.column_name)-1) || ')'
       END AS createtable
@@ -1180,21 +1211,21 @@ export async function getTableCreateScript(conn: Conn, table: string, schema: st
     ( SELECT
         c.relname AS table_name,
         a.attname AS column_name,
+        a.attnum AS column_idx,
         pg_catalog.format_type(a.atttypid, a.atttypmod) AS type,
         CASE
-          WHEN a.attnotnull THEN 'NOT NULL'
+          WHEN a.attnotnull OR a.attidentity != '' THEN 'NOT NULL'
         ELSE 'NULL'
         END AS not_null,
+        CASE WHEN a.atthasdef THEN pg_catalog.pg_get_expr(ad.adbin, ad.adrelid) ELSE null END AS def_val,
+        CASE WHEN a.attidentity = 'a' THEN 'GENERATED ALWAYS AS IDENTITY' when a.attidentity = 'd' THEN 'GENERATED BY DEFAULT AS IDENTITY' ELSE null END AS identity,
         n.nspname as schema_name
-      FROM pg_class c,
-       pg_attribute a,
-       pg_type t,
-       pg_namespace n
+      FROM pg_class c
+       JOIN pg_namespace n ON (n.oid = c.relnamespace)
+       JOIN pg_attribute a ON (a.attnum > 0 AND a.attrelid = c.oid)
+       JOIN pg_type t ON (a.atttypid = t.oid)
+       LEFT JOIN pg_attrdef ad ON (a.attrelid = ad.adrelid AND a.attnum = ad.adnum)
       WHERE c.relname = $1
-      AND a.attnum > 0
-      AND a.attrelid = c.oid
-      AND a.atttypid = t.oid
-      AND n.oid = c.relnamespace
       AND n.nspname = $2
       ORDER BY a.attnum DESC
     ) AS tabdef

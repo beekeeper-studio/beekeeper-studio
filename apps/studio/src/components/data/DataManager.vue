@@ -2,6 +2,7 @@
   <div v-if="false"></div>
 </template>
 <script lang="ts">
+import _ from 'lodash'
 import {DataModules} from '@/store/DataModules'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
@@ -28,16 +29,37 @@ export default Vue.extend({
   },
 
   computed: {
-    ...mapState(['workspaceId']),
+    ...mapState(['workspaceId', 'usedConfig']),
     ...mapGetters(['workspace']),
+    ...mapState('tabs', {'activeTab': 'active'}),
+    importantTabStuff() {
+      if (!this.activeTab) return []
+
+      return [
+        this.activeTab.unsavedText,
+        this.activeTab.filters,
+        this.activeTab.title,
+      ]
+    }
+    
   },
   watch: {
     workspaceId() {
       this.mountAndRefresh()
       this.$store.dispatch('loadUsedConfigs')
+    },
+    importantTabStuff: {
+      deep: true,
+      handler() {
+        this.saveTab()
+        _.debounce(this.saveTab, 2000)
+      }
     }
   },
   methods: {
+    saveTab: _.debounce(function() {
+      this.$store.dispatch('tabs/save', this.activeTab)
+    }, 500),
     poll() {
       DataModules.forEach((module) => {
         if (this.$store.hasModule(module.path)) {

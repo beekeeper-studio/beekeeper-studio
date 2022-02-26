@@ -12,6 +12,12 @@
     "fs": false
   },
   "dependencies": {
+    "@vue/cli-plugin-babel": "~4.5.15",
+    "@vue/cli-plugin-eslint": "~4.5.15",
+    "@vue/cli-plugin-router": "~4.5.15",
+    "@vue/cli-plugin-typescript": "~4.5.15",
+    "@vue/cli-plugin-unit-jest": "~4.5.15",
+    "@vue/cli-service": "~4.5.15",
     "core-js": "^3.6.5",
     "highlight.js": "^10.4.1",
     "knex": "~0.21.17",

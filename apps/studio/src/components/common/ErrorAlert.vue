@@ -1,19 +1,27 @@
 <template>
   <div v-if="error" class="error-alert alert text-danger">
-    <i class="material-icons">error</i>
-    <b v-if="title" class="error-title">{{title}}</b>
-    <ul class="error-list">
-      <li
-        class="error-item"
-        v-on:click="click(e)"
-        v-for="(e, idx) in errors" :key="idx"
-        v-b-tooltip.hover title="Click to copy"
-      >
-        {{e.message || e.toString()}}
-      </li>
-    </ul>
-    <div class="help-links" v-if="error.helpLink">
-      <a :href="error.helpLink">Learn more about this error</a>
+    <a @click.prevent="$emit('close')" v-if="closable" class="close-button">
+      <i class="material-icons">close</i>
+    </a>
+    <div class="alert-title">
+      <i class="material-icons">error_outline</i>
+      <b v-if="title" class="error-title">{{title}}</b>
+    </div>
+    <div class="alert-body">
+      <ul class="error-list">
+        <li
+          class="error-item"
+          v-on:click="click(e)"
+          v-for="(e, idx) in errors" :key="idx"
+          title="Click to copy"
+        >
+          {{e.message || e.toString()}}
+        </li>
+      </ul>
+      <div class="help-links" v-if="error.helpLink">
+        <a :href="error.helpLink">Learn more about this error</a>
+      </div>
+
     </div>
   </div>
 </template>
@@ -22,7 +30,7 @@ import platformInfo from '@/common/platform_info'
 import _ from 'lodash'
 import Vue from 'vue'
 export default Vue.extend({
-  props: ['error', 'title'],
+  props: ['error', 'title', 'closable'],
   computed: {
     dev() {
       return platformInfo.isDevelopment
@@ -47,7 +55,22 @@ export default Vue.extend({
 
   .alert.error-alert {
     display: flex;
-    min-width: 280px;
+    min-width: 200px;
+    flex-direction: column;
+    position:relative;
+    .close-button {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+    }
+    .alert-title {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      i {
+        margin-right: 5px;
+      }
+    }
     .alert-body {
       display: flex;
       flex-direction: row;

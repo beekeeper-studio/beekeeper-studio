@@ -8,7 +8,7 @@
     <template  v-else>
       <div class="table-properties-header">
         <div class="nav-pills" v-if="pills.length > 1">
-          <a 
+          <a
             v-for="(pill) in pills"
             :key="pill.id"
             class="nav-pill"
@@ -34,7 +34,7 @@
           :connection="connection"
           :active="pill.id === activePill && active"
           v-show="pill.id === activePill"
-          v-for="(pill) in pills" 
+          v-for="(pill) in pills"
           :key="pill.id"
           @actionCompleted="refresh"
           @refresh="refresh"
@@ -45,11 +45,12 @@
                 Data <i class="material-icons">north_east</i>
               </x-button>
               <template v-if="properties">
-                <span class="statusbar-item" :title="totalRecords === null ? 'Loading Total Records...' : `Approximately ${totalRecords} Records`">
+                <a class="statusbar-item hoverable" @click.prevent="fetchTotalRecords" :title="totalRecords === null ? 'Click to fetch total record count' : `Approximately ${totalRecords} Records`">
                   <i class="material-icons">list_alt</i>
-                  <span v-if="totalRecords === null">Loading...</span>
+                  <span v-if="fetchingTotalRecords">loading...</span>
+                  <span v-else-if="totalRecords === null">Unknown</span>
                   <span v-else>~{{totalRecords.toLocaleString()}}</span>
-                </span>
+                </a>
                 <span class="statusbar-item" v-if="humanSize !== null" :title="`Table Size ${humanSize}`">
                   <i class="material-icons">aspect_ratio</i>
                   <span>{{humanSize}}</span>
@@ -102,17 +103,23 @@ import TableTriggersVue from './tableinfo/TableTriggers.vue'
 import { format as humanBytes } from 'bytes'
 import platformInfo from '../common/platform_info'
 import { AppEvent } from '@/common/AppEvent'
+import { mapState } from 'vuex'
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('TabTableProperties')
 export default {
-  props: ["table", "connection", "tabId", "active", "tab"],
+  props: ["connection", "tabId", "active", "tab", "table"],
   components: { Statusbar },
   data() {
     return {
+      initialized: false,
       dev: platformInfo.isDevelopment,
       loading: true,
       error: null,
       primaryKeys: [],
       properties: {},
       totalRecords: null,
+      fetchingTotalRecords: false,
       dirtyPills: {},
       rawPills: [
         {
@@ -158,9 +165,17 @@ export default {
   watch: {
     unsavedChanges() {
       this.tab.unsavedChanges = this.unsavedChanges
+    },
+    shouldInitialize() {
+      if (this.shouldInitialize) this.initialize()
     }
   },
   computed: {
+    ...mapState(['tables', 'tablesInitialLoaded']),
+    shouldInitialize() {
+      // TODO (matthew): Move this to the wrapper TabWithTable
+      return this.tablesInitialLoaded && this.active && !this.initialized
+    },
     editable() {
       return this.table.entityType === 'table' && !!this.primaryKeys.length
     },
@@ -177,7 +192,7 @@ export default {
             return false
           }
         }
-        
+
         if (p.needsProperties && !this.connection.supportedFeatures().properties) {
           return false
         }
@@ -195,6 +210,9 @@ export default {
     },
   },
   methods: {
+    close() {
+      this.$root.$emit(AppEvent.closeTab)
+    },
     openData() {
       this.$root.$emit(AppEvent.loadTable, { table: this.table })
     },
@@ -203,18 +221,27 @@ export default {
       this.error = new Error("Something went wrong")
     },
     async fetchTotalRecords() {
+      this.fetchingTotalRecords = true
       try {
         this.totalRecords = await this.connection.getTableLength(this.table.name, this.table.schema)
       } catch (ex) {
         console.error("unable to fetch total records", ex)
         this.totalRecords = 0
-      } 
+      } finally {
+        this.fetchingTotalRecords = false
+      }
+    },
+    async initialize() {
+      log.info("initializing")
+      this.initialized = true
+      await this.refresh()
     },
     async refresh() {
+      if (!this.table) return;
+      log.info("refresh")
       this.loading = true
       this.error = null
       // this.properties = null
-      this.fetchTotalRecords()
       try {
         this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
         if (this.table.entityType === 'table') {
@@ -224,6 +251,7 @@ export default {
       } catch (ex) {
         this.error = ex
       } finally {
+        log.info("setting loaded = false")
         this.loading = false
       }
     },
@@ -232,7 +260,7 @@ export default {
     }
   },
   async mounted() {
-    this.refresh()
+    if (this.shouldInitialize) this.initialize()
   }
 }
 </script>

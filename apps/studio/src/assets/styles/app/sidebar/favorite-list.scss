@@ -57,6 +57,9 @@
       font-size: 80%;
       color: $text-lighter;
       @extend .truncate;
+      span {
+        @extend .truncate;
+      }
     }
   }
   .list-item-btn {

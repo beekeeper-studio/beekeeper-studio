@@ -42,6 +42,21 @@ $editor-statusbar:         rgba($theme-base, 0.035);
 }
 select {
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
+  option {
+    &:hover {
+      color: white;
+      box-shadow: 0 0 10px 100px $brand-info inset;
+    }
+
+    &:checked {
+      color: inherit;
+      font-weight: bold;
+    }
+    &:disabled, &:disabled:hover, &:disabled:focus {
+      background: transparent!important;
+      color: $text-lighter!important;
+    }
+  }
 }
 ::selection {
   background: rgba($brand-info, 0.25);

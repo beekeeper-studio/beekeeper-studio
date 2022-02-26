@@ -71,6 +71,12 @@
   }
   .pitch {
     text-align: center;
+    a {
+      color: $theme-primary;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 }
 

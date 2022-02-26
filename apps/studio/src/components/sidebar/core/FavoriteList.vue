@@ -1,5 +1,5 @@
 <template>
-  <div class="sidebar-favorites flex-col expand" ref="wrapper">
+  <div class="sidebar-favorites flex-col expand">
     <div class="sidebar-list">
       <div class="list-group">
         <div class="list-heading row">
@@ -17,7 +17,7 @@
         </div>
       <error-alert v-if="error" :error="error" title="Problem loading queries" />
       <sidebar-loading v-if="loading" />
-      <nav v-else-if="savedQueries.length > 0" class="list-body">
+      <nav v-else-if="savedQueries.length > 0" class="list-body" ref="wrapper">
         <sidebar-folder
           v-for="({ folder, queries }) in foldersWithQueries"
           :key="`${folder.id}-${queries.length}`"
@@ -34,6 +34,7 @@
             @remove="remove"
             @select="select"
             @open="open"
+            @rename="rename"
           />
         </sidebar-folder>
         <favorite-list-item
@@ -45,6 +46,7 @@
           @remove="remove"
           @select="select"
           @open="open"
+          @rename="rename"
          />
       </nav>
       <div class="empty" v-else>
@@ -55,6 +57,13 @@
       </div>
       </div>
     </div>
+    <modal class="vue-dialog beekeeper-modal" name="rename-modal" @closed="renameMe=null" height="auto" :scrollable="true">
+      <div class="dialog-content" v-if="renameMe">
+        <div class="dialog-c-title">Rename {{renameMe.title}}</div>
+        <query-rename-form :query="renameMe" @done="$modal.hide('rename-modal')" />
+      </div>
+    </modal>
+
   </div>
 </template>
 
@@ -65,12 +74,14 @@ import ErrorAlert from '@/components/common/ErrorAlert.vue'
   import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
   import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
+import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
   export default {
-    components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder },
+    components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, QueryRenameForm },
     data: function () {
       return {
         checkedFavorites: [],
         selected: null,
+        renameMe: null
       }
     },
     mounted() {
@@ -81,7 +92,7 @@ import { AppEvent } from '@/common/AppEvent'
     },
     computed: {
       ...mapGetters(['workspace', 'isCloud']),
-      ...mapState(['activeTab']),
+      ...mapState('tabs', {'activeTab': 'active'}),
       ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error'}),
       ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
       loading() {
@@ -114,6 +125,10 @@ import { AppEvent } from '@/common/AppEvent'
       createQuery() {
         this.$root.$emit(AppEvent.newTab)
       },
+      rename(query) {
+        this.$modal.show('rename-modal')
+        this.renameMe = query
+      },
       importFromLocal() {
         this.$root.$emit(AppEvent.promptQueryImport)
       },
@@ -129,8 +144,7 @@ import { AppEvent } from '@/common/AppEvent'
         this.$store.dispatch("data/queries/load")
       },
       isActive(item) {
-        return this.activeTab && this.activeTab.query &&
-          this.activeTab.query.id === item.id
+        return this.activeTab && this.activeTab.queryId === item.id
       },
       select(item) {
         this.selected = item

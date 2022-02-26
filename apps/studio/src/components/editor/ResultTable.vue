@@ -9,7 +9,7 @@
   import _ from 'lodash'
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
-  import Mutators from '../../mixins/data_mutators'
+  import Mutators, { escapeHtml } from '../../mixins/data_mutators'
 import globals from '@/common/globals'
 
   export default {
@@ -59,8 +59,9 @@ import globals from '@/common/globals'
         return this.result.fields.map((column) => {
           const result = {
             title: column.name,
+            titleFormatter: 'plaintext',
             field: column.id,
-            titleDownload: column.name,
+            titleDownload: escapeHtml(column.name),
             dataType: column.dataType,
             width: columnWidth,
             maxInitialWidth: globals.maxInitialWidth,

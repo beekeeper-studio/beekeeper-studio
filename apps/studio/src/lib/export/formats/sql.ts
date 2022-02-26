@@ -39,7 +39,7 @@ export class SqlExporter extends Export {
     if (!this.connection.connectionType || !this.knexTypes[this.connection.connectionType]) {
       throw new Error("SQL export not supported on connection type " + this.connection.connectionType)
     }
-    
+
     this.knex = knexlib({ client: this.knexTypes[this.connection.connectionType] || undefined })
   }
 
@@ -51,7 +51,7 @@ export class SqlExporter extends Export {
       if (result) {
         console.log("returning header ", result)
         const returnValue: string = _.isArray(result) ? result[0] : result
-        return returnValue.endsWith(';') ? returnValue : `#{returnValue};`
+        return returnValue.endsWith(';') ? returnValue : `${returnValue};`
       }
     }
     return ""

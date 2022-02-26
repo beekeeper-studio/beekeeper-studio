@@ -6,7 +6,8 @@
           :key="blob.workspace.id"
           :class="{active: blob.workspace.id === workspaceId}"
           class="workspace-item nav-item selectable"
-          :title="blob.workspace.name"
+          v-tooltip.right-end="workspaceTitle(blob.workspace)"
+          @contextmenu="$bks.openMenu({item: blob, options: contextOptionsFor(blob), event: $event})"
           @click.prevent="click(blob)"
         >
           <span class="avatar">
@@ -35,6 +36,7 @@ import ContentPlaceholderImg from '@/components/common/loading/ContentPlaceholde
 import WorkspaceAvatar from '@/components/common/WorkspaceAvatar.vue'
 import AccountStatusButton from '@/components/sidebar/connection/AccountStatusButton.vue'
 import { CloudClient } from '@/lib/cloud/CloudClient'
+import { WSWithClient } from '@/store/modules/CredentialsModule'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
 import NewWorkspaceButton from './connection/NewWorkspaceButton.vue'
@@ -45,9 +47,34 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
   computed: {
     ...mapState('credentials', ['credentials', 'loading']),
     ...mapState(['workspaceId']),
-    ...mapGetters('credentials', { 'availableWorkspaces': 'workspaces'})
+    ...mapGetters('credentials', { 'availableWorkspaces': 'workspaces'}),
+    
   },
   methods: {
+    contextOptionsFor(blob: WSWithClient ) {
+      const result = [
+        { name: "Manage Workspace", slug: "manage", handler: ({item}) => window.location.href = item.workspace.url}
+      ]
+      if (blob.workspace.isOwner) {
+        result.push({
+          name: "Add Users",
+          slug: 'invite',
+          handler: ({item}) => window.location.href = `${item.workspace.url}/invitations/new`
+        })
+      }
+      return result
+    },
+    workspaceTitle(workspace: IWorkspace) {
+      const result = [workspace.name, `(${workspace.level})`]
+      if (workspace.trialEndsIn) {
+        result.push(`[trial ends ${workspace.trialEndsIn}]`)
+      }
+
+      if (!workspace.active) {
+        result.push('[disabled]')
+      }
+      return result.join(" ")
+    },
     refresh() {
       this.$store.dispatch('credentials/load')
     },

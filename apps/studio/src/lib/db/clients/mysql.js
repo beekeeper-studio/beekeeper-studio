@@ -10,7 +10,7 @@ import globals from '../../../common/globals';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import { MysqlCursor } from './mysql/MySqlCursor';
-import { buildDeleteQueries, buildInsertQueries, buildSelectTopQuery, escapeString, joinQueries } from './utils';
+import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries } from './utils';
 
 const log = rawLog.scope('mysql')
 const logger = () => log
@@ -138,7 +138,7 @@ export async function listViews(conn) {
 export async function listRoutines(conn) {
 
   const routinesSQL = `
-    select 
+    select
       r.specific_name as specific_name,
       r.routine_name as routine_name,
       r.routine_type as routine_type,
@@ -152,7 +152,7 @@ export async function listRoutines(conn) {
   `
 
   const paramsSQL = `
-select 
+select
        r.routine_schema as routine_schema,
        r.specific_name as specific_name,
        p.parameter_name as parameter_name,
@@ -176,7 +176,7 @@ order by r.routine_schema,
   const routinesResult = await driverExecuteQuery(conn, { query: routinesSQL })
   const paramsResult = await driverExecuteQuery(conn, { query: paramsSQL })
 
-    
+
   const grouped = _.groupBy(paramsResult.data, 'specific_name')
 
   return routinesResult.data.map((r) => {
@@ -286,7 +286,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   return {
     result: result.data,
     fields: Object.keys(result.data[0] || {})
-  }  
+  }
 
 }
 
@@ -407,7 +407,7 @@ export async function getPrimaryKey(conn, database, table) {
 
 export async function getTableKeys(conn, database, table) {
   const sql = `
-    SELECT 
+    SELECT
       cu.constraint_name as 'constraint_name',
       cu.column_name as 'column_name',
       cu.referenced_table_name as 'referenced_table_name',
@@ -511,11 +511,11 @@ export function query(conn, queryText) {
 
 export async function applyChanges(conn, changes) {
   let results = []
-  
+
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
     await driverExecuteQuery(cli, { query: 'START TRANSACTION'})
-    
+
     try {
       if (changes.inserts) {
         await insertRows(cli, changes.inserts)
@@ -524,11 +524,11 @@ export async function applyChanges(conn, changes) {
       if (changes.updates) {
         results = await updateValues(cli, changes.updates)
       }
-  
+
       if (changes.deletes) {
         await deleteRows(cli, changes.deletes)
       }
-  
+
       await driverExecuteQuery(cli, { query: 'COMMIT'})
     } catch (ex) {
       logger().error("query exception: ", ex)
@@ -541,11 +541,12 @@ export async function applyChanges(conn, changes) {
 }
 
 export async function insertRows(cli, inserts) {
+  for (const insert of inserts) {
 
-  for (const command of buildInsertQueries(knex, inserts)) {
+    const columns = await listTableColumns(cli, null, insert.table)
+    const command = buildInsertQuery(knex, insert, columns)
     await driverExecuteQuery(cli, { query: command })
   }
-
   return true
 }
 
@@ -844,7 +845,7 @@ function parseFields(fields, rowsAsArray) {
 
 function parseRowQueryResult(data, rawFields, command, rowsAsArray = false) {
   // Fallback in case the identifier could not reconize the command
-  const fields = parseFields(rawFields, rowsAsArray) 
+  const fields = parseFields(rawFields, rowsAsArray)
   const fieldIds = fields.map(f => f.id)
   const isSelect = Array.isArray(data);
   return {

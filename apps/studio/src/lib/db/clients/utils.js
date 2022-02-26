@@ -11,7 +11,7 @@ export function escapeString(value) {
 }
 
 export function escapeLiteral(value) {
-  
+
   return value.replaceAll(';', '')
 }
 
@@ -135,7 +135,7 @@ export async function executeSelectTop(queries, conn, executor) {
   return {
     result: result.data,
     fields: Object.keys(result.data[0] || {})
-  }  
+  }
 }
 
 export async function genericSelectTop(conn, table, offset, limit, orderBy, filters, executor){
@@ -143,14 +143,33 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
   return await executeSelectTop(queries, conn, executor)
 }
 
-export function buildInsertQueries(knex, inserts) {
-  return inserts.map(insert => {
-    const query = knex(insert.table)
-      .withSchema(insert.schema)
-      .insert(insert.data)
-      .toQuery()
-    return query
+export function buildInsertQuery(knex, insert, columns = []) {
+
+  const data = _.cloneDeep(insert.data)
+  data.forEach((item) => {
+    const insertColumns = Object.keys(item)
+    insertColumns.forEach((ic) => {
+      const matching = _.find(columns, (c) => c.columnName === ic)
+      if (matching && matching.dataType && matching.dataType.startsWith('bit(')) {
+        if (matching.dataType === 'bit(1)') {
+          item[ic] = _.toNumber(item[ic])
+        } else {
+          item[ic] = parseInt(item[ic].split("'")[1], 2)
+        }
+      }
+    })
+
   })
+
+  const query = knex(insert.table)
+    .withSchema(insert.schema)
+    .insert(data)
+    .toQuery()
+  return query
+}
+
+export function buildInsertQueries(knex, inserts) {
+  return inserts.map(insert => buildInsertQuery(knex, insert))
 }
 
 export function buildUpdateQueries(knex, updates) {
@@ -187,7 +206,7 @@ export function buildDeleteQueries(knex, deletes) {
   return deletes.map(deleteRow => {
     let where = {}
     where[deleteRow.pkColumn] = deleteRow.primaryKey
-    
+
     return knex(deleteRow.table)
       .withSchema(deleteRow.schema)
       .where(where)

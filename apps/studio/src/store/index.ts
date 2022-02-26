@@ -26,6 +26,7 @@ import { CloudClient } from '@/lib/cloud/CloudClient'
 import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
 import { IConnection } from '@/common/interfaces/IConnection'
 import { DataModules } from '@/store/DataModules'
+import { TabModule } from './modules/TabModule'
 
 const log = RawLog.scope('store/index')
 
@@ -46,6 +47,7 @@ export interface State {
   routines: Routine[],
   entityFilter: EntityFilter,
   tablesLoading: string,
+  tablesInitialLoaded: boolean,
   connectionConfigs: UsedConnection[],
   history: UsedQuery[],
   favorites: FavoriteQuery[],
@@ -65,6 +67,7 @@ const store = new Vuex.Store<State>({
     exports: ExportStoreModule,
     settings: SettingStoreModule,
     pins: PinModule,
+    tabs: TabModule,
     search: SearchModule,
     credentials: CredentialsModule
   },
@@ -83,6 +86,7 @@ const store = new Vuex.Store<State>({
       showViews: true
     },
     tablesLoading: "loading tables...",
+    tablesInitialLoaded: false,
     connectionConfigs: [],
     history: [],
     favorites: [],
@@ -242,25 +246,31 @@ const store = new Vuex.Store<State>({
       state.connection = connection
       state.database = database
     },
+    unloadTables(state) {
+      state.tables = []
+      state.tablesInitialLoaded = false
+    },
     tables(state, tables: TableOrView[]) {
 
       if(state.tables.length === 0) {
         state.tables = tables
-        return
+      } else {
+        // TODO: make this not O(n^2)
+        const result = tables.map((t) => {
+          const existingIdx = state.tables.findIndex((st) => tablesMatch(st, t))
+          if (existingIdx >= 0) {
+            const existing = state.tables[existingIdx]
+            Object.assign(existing, t)
+            return existing
+          } else {
+            return t
+          }
+        })
+        state.tables = result
       }
+
+      if (!state.tablesInitialLoaded) state.tablesInitialLoaded = true
       
-      // TODO: make this not O(n^2)
-      const result = tables.map((t) => {
-        const existingIdx = state.tables.findIndex((st) => tablesMatch(st, t))
-        if ( existingIdx >= 0) {
-          const existing = state.tables[existingIdx]
-          Object.assign(existing, t)
-          return existing
-        } else {
-          return t
-        }
-      })
-      state.tables = result
     },
 
     table(state, table: TableOrView) {
@@ -360,17 +370,17 @@ const store = new Vuex.Store<State>({
     },
     async recordUsedConfig(context, config: IConnection) {
 
-      console.log("finding last used connection")
+      log.info("finding last used connection", config)
       const lastUsedConnection = context.state.usedConfigs.find(c => {
         console.log("looking at config", config.id)
         return c.connectionId === config.id && c.workspaceId === config.workspaceId
       })
       if (!lastUsedConnection) {
         const usedConfig = new UsedConnection(config)
+        log.info("logging used connection", usedConfig, config)
         await usedConfig.save()
         context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
       } else {
-        lastUsedConnection.updatedAt = new Date()
         lastUsedConnection.connectionId = config.id
         lastUsedConnection.workspaceId = config.workspaceId
         await lastUsedConnection.save()

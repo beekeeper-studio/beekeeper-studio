@@ -1,6 +1,6 @@
 <template>
   <div class="sidebar-wrap row">
-    <workspace-sidebar></workspace-sidebar>
+    <workspace-sidebar v-if="activeWorkspaces.length"></workspace-sidebar>
 
     <!-- QUICK CONNECT -->
     <div class="tab-content flex-col expand">
@@ -8,16 +8,15 @@
         <a
           href=""
           class="btn btn-flat btn-icon btn-block"
-          :class="{'active': defaultConfig == selectedConfig }"
-          @click.prevent="edit(defaultConfig)"
+          @click.prevent="$emit('create')"
         >
         <i class="material-icons">add</i>
         <span>New Connection</span>
         </a>
       </div>
-  
+
       <div class="connection-wrap expand flex-col">
-  
+
         <!-- Saved Connections -->
         <div class="list saved-connection-list expand" ref="savedConnectionList">
           <div class="list-group">
@@ -49,8 +48,14 @@
                 </x-button>
               </div>
             </div>
-            <error-alert :error="error" v-if="error" title="Problem loading connections" />
+            <error-alert :error="error" v-if="error" title="Problem loading connections" @close="error = null" :closable="true" />
             <sidebar-loading v-else-if="loading" />
+            <div v-else-if="empty" class="empty">
+              <div class="empty-title">No Saved Connections</div>
+              <div class="empty-actions" v-if="isCloud">
+                <a class="btn btn-flat btn-block btn-icon" @click.prevent="importFromLocal" title="Import connections from local workspace"><i class="material-icons">save_alt</i> Import</a>
+              </div>
+            </div>
             <nav v-else class="list-body">
               <sidebar-folder
                 v-for="{ folder, connections } in foldersWithConnections"
@@ -86,9 +91,9 @@
             </nav>
           </div>
         </div>
-  
+
         <hr> <!-- Fake gutter for split.js -->
-  
+
         <!-- Recent Connections -->
         <div class="list recent-connection-list expand" ref="recentConnectionList">
           <div class="list-group">
@@ -128,9 +133,13 @@
   import Split from 'split.js'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('connection-sidebar');
+
   export default {
     components: { ConnectionListItem, WorkspaceSidebar, SidebarLoading, ErrorAlert, SidebarFolder },
-    props: ['defaultConfig', 'selectedConfig'],
+    props: ['selectedConfig'],
     data: () => ({
       split: null,
       sizes: [50,50],
@@ -141,6 +150,8 @@ import { AppEvent } from '@/common/AppEvent'
         connectionType: "Type"
       }
     }),
+    watch: {
+    },
     computed: {
       ...mapState('data/connections', {'connectionConfigs': 'items', 'connectionsLoading': 'loading', 'connectionsError': 'error'}),
       ...mapState('data/connectionFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error', 'foldersUnsupported': 'unsupported'}),
@@ -148,8 +159,12 @@ import { AppEvent } from '@/common/AppEvent'
         'usedConfigs': 'orderedUsedConfigs',
         'settings': 'settings/settings',
         'sortOrder': 'settings/sortOrder',
-        'isCloud': 'isCloud'
+        'isCloud': 'isCloud',
+        'activeWorkspaces': 'credentials/activeWorkspaces'
       }),
+      empty() {
+        return !this.connectionConfigs?.length
+      },
       foldersSupported() {
         return !this.foldersUnsupported
       },
@@ -174,8 +189,18 @@ import { AppEvent } from '@/common/AppEvent'
       loading() {
         return this.connectionsLoading || this.foldersLoading
       },
-      error() {
-        return this.connectionsError || this.foldersError || null
+      error: {
+        get() {
+          return this.connectionsError || this.foldersError || null
+        },
+        set(value) {
+          if (!value) {
+            this.$store.dispatch('data/connections/clearError');
+            this.$store.dispatch('data/connectionFolders/clearError')
+          } else {
+            log.warn("Unable to set an actual error, sorry")
+          }
+        }
       },
       orderedConnectionConfigs() {
         return _.orderBy(this.connectionConfigs, this.sortOrder)
@@ -198,7 +223,7 @@ import { AppEvent } from '@/common/AppEvent'
     },
     methods: {
       importFromLocal() {
-        console.log("triggering import")  
+        console.log("triggering import")
         this.$root.$emit(AppEvent.promptConnectionImport)
       },
       refresh() {
@@ -224,6 +249,7 @@ import { AppEvent } from '@/common/AppEvent'
         return `label-${color}`
       },
       sortConnections(by) {
+        this.connectionConfigs.sort((a, b) => a[by].toString().localeCompare(b[by].toString()))
         this.settings.sortOrder.userValue = by
         this.settings.sortOrder.save()
       }

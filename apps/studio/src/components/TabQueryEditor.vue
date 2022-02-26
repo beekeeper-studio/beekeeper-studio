@@ -5,13 +5,15 @@
       ref="topPanel"
       @contextmenu.prevent.stop="showContextMenu"
     >
-      <merge-manager v-if="query.id" :originalText="originalText" :query="query" :unsavedText="unsavedText" @change="onChange" @mergeAccepted="originalText = query.text" />
-      <div v-if="remoteDeleted" class="alert alert-danger">
-        <i class="material-icons">error_outline</i>
-        <div class="alert-body">
-          This query was deleted by someone else. It is no longer editable.
+      <merge-manager v-if="query && query.id" :originalText="originalText" :query="query" :unsavedText="unsavedText" @change="onChange" @mergeAccepted="originalText = query.text" />
+      <div class="no-content" v-if="remoteDeleted">
+        <div class="alert alert-danger">
+          <i class="material-icons">error_outline</i>
+          <div class="alert-body">
+            This query was deleted by someone else. It is no longer editable.
+          </div>
+          <a @click.prevent="close" class="btn btn-flat">Close Tab</a>
         </div>
-        <a @click.prevent="close" class="btn btn-flat">Close Tab</a>
       </div>
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
@@ -77,13 +79,13 @@
 
     <!-- Save Modal -->
     <modal class="vue-dialog beekeeper-modal" name="save-modal" @closed="selectEditor" @opened="selectTitleInput" height="auto" :scrollable="true">
-      <form @submit.prevent="saveQuery">
+      <form v-if="query" @submit.prevent="saveQuery">
         <div class="dialog-content">
           <div class="dialog-c-title">Saved Query Name</div>
           <div class="modal-form">
             <div class="alert alert-danger save-errors" v-if="saveError">{{saveError}}</div>
             <div class="form-group">
-                <input type="text" ref="titleInput" name="title" class="form-control"  v-model="tab.query.title" autofocus>
+                <input type="text" ref="titleInput" name="title" class="form-control"  v-model="query.title" autofocus>
             </div>
           </div>
         </div>
@@ -145,6 +147,7 @@
   import {FormatterDialect} from "@shared/lib/dialects/models";
   import MergeManager from '@/components/editor/MergeManager.vue'
 import { AppEvent } from '@/common/AppEvent'
+import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
   
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -175,16 +178,34 @@ import { AppEvent } from '@/common/AppEvent'
         queryParameterValues: {},
         queryForExecution: null,
         executeTime: 0,
-        originalText: null,
-        unsavedText: null,
+        originalText: "",
+        initialized: false,
+        blankQuery: new FavoriteQuery(),
       }
     },
     computed: {
       ...mapGetters(['dialect']),
-      ...mapState(['usedConfig', 'connection', 'database', 'tables']),
+      ...mapState(['usedConfig', 'connection', 'database', 'tables', 'storeInitialized']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
+      shouldInitialize() {
+        return this.storeInitialized && this.active && !this.initialized
+      },
       remoteDeleted() {
-        return this.tab.query.id && !this.savedQueries.includes(this.tab.query)
+        return this.storeInitialized && this.tab.queryId && !this.query
+      },
+      query() {
+        return this.tab.findQuery(this.savedQueries || []) || this.blankQuery
+      },
+      queryTitle() {
+        return this.query?.title
+      },
+      unsavedText: {
+        get () {
+          return this.tab.unsavedQueryText || ""
+        },
+        set(value) {
+          this.tab.unsavedQueryText = value
+        },
       },
       identifyDialect() {
         // dialect for sql-query-identifier
@@ -198,6 +219,9 @@ import { AppEvent } from '@/common/AppEvent'
           'redshift': 'psql',
         }
         return mappings[this.connectionType] || 'generic'
+      },
+      hasParams() {
+        return !!this.queryParameterPlaceholders?.length
       },
       paramsModalRequired() {
         let result = false
@@ -225,9 +249,6 @@ import { AppEvent } from '@/common/AppEvent'
       },
       result() {
         return this.results[this.selectedResult]
-      },
-      query() {
-        return this.tab.query
       },
       individualQueries() {
         if (!this.unsavedText) return []
@@ -320,18 +341,30 @@ import { AppEvent } from '@/common/AppEvent'
         return query;
       },
       unsavedChanges() {
-        return _.trim(this.unsavedText) !== _.trim(this.originalText)
+        if (_.trim(this.unsavedText) === "" && _.trim(this.originalText) === "") return false
+
+        return !this.query?.id || 
+          _.trim(this.unsavedText) !== _.trim(this.originalText)
       },
     },
     watch: {
+      queryTitle() {
+        if (this.queryTitle) this.tab.title = this.queryTitle
+      },
+      shouldInitialize() {
+        if (this.shouldInitialize) this.initialize()
+      },
+      unsavedText() {
+        this.saveTab()
+      },
       remoteDeleted() {
         // eslint-disable-next-line no-debugger
         if (this.remoteDeleted) {
-          this.editor.setOption('readOnly', 'nocursor')
+          this.editor?.setOption('readOnly', 'nocursor')
           this.tab.unsavedChanges = false
           this.tab.alert = true
         } else {
-          this.editor.setOption('readOnly', false)
+          this.editor?.setOption('readOnly', false)
         }
       },
       unsavedChanges() {
@@ -392,12 +425,119 @@ import { AppEvent } from '@/common/AppEvent'
         this.marker = this.editor.getDoc().markText(markStart, markEnd, {className: 'highlight'})
       },
       hintOptions() {
-        this.editor.setOption('hintOptions',this.hintOptions)
-        // this.editor.setOptions('hint', CodeMirror.hint.sql)
-        // this.editor.refresh()
+        this.editor?.setOption('hintOptions',this.hintOptions)
       },
     },
     methods: {
+      initialize() {
+        this.initialized = true
+
+        const startingValue = this.unsavedText || this.query?.text || editorDefault
+        this.tab.unsavedChanges = this.unsavedChanges
+        // TODO (matthew): Add hint options for all tables and columns\
+        this.initializeQueries()
+
+        this.$nextTick(() => {
+          this.split = Split(this.splitElements, {
+            elementStyle: (dimension, size) => ({
+                'flex-basis': `calc(${size}%)`,
+            }),
+            sizes: [50,50],
+            gutterSize: 8,
+            direction: 'vertical',
+            onDragEnd: () => {
+              this.$nextTick(() => {
+                this.tableHeight = this.$refs.bottomPanel.clientHeight
+                this.updateEditorHeight()
+              })
+            }
+          })
+
+          const runQueryKeyMap = {
+            "Shift-Ctrl-Enter": this.submitCurrentQuery,
+            "Shift-Cmd-Enter": this.submitCurrentQuery,
+            "Ctrl-Enter": this.submitTabQuery,
+            "Cmd-Enter": this.submitTabQuery,
+            "Ctrl-S": this.triggerSave,
+            "Cmd-S": this.triggerSave,
+            "Shift-Ctrl-F": this.formatSql,
+            "Shift-Cmd-F": this.formatSql,
+            "Ctrl-/": this.toggleComment,
+            "Cmd-/": this.toggleComment,
+            "Esc": this.cancelQuery,
+            "F5": this.submitTabQuery,
+            "Shift-F5": this.submitCurrentQuery
+          }
+
+          const modes = {
+            'mysql': 'text/x-mysql',
+            'postgresql': 'text/x-pgsql',
+            'sqlserver': 'text/x-mssql',
+          };
+
+          this.editor = CodeMirror.fromTextArea(this.$refs.editor, {
+            lineNumbers: true,
+            mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
+            theme: 'monokai',
+            extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete"},
+            hint: CodeMirror.hint.sql,
+            hintOptions: this.hintOptions
+          })
+          this.editor.setValue(startingValue)
+          this.editor.addKeyMap(runQueryKeyMap)
+          this.editor.on("keydown", (cm, e) => {
+            if (this.$store.state.menuActive) {
+              e.preventDefault()
+            }
+          })
+
+          this.editor.on("change", (cm) => {
+            // this also updates `this.queryText`
+            // this.tab.query.text = cm.getValue()
+            this.unsavedText = cm.getValue()
+          })
+
+          if (this.connectionType === 'postgresql')  {
+            this.editor.on("beforeChange", (cm, co) => {
+              const { to, from, origin, text } = co;
+
+              const keywords = CodeMirror.resolveMode(this.editor.options.mode).keywords
+
+              // quote names when needed
+              if (origin === 'complete' && keywords[text[0].toLowerCase()] != true) {
+                const names = text[0]
+                  .match(/("[^"]*"|[^.]+)/g)
+                  .map(n => /^\d/.test(n) ? `"${n}"` : n)
+                  .map(n => /[^a-z0-9_]/.test(n) && !/"/.test(n) ? `"${n}"` : n)
+                  .join('.')
+
+                co.update(from, to, [names], origin)
+              }
+            })
+          }
+
+          // TODO: make this not suck
+          this.editor.on('keyup', this.maybeAutoComplete)
+          this.editor.on('cursorActivity', (editor) => this.cursorIndex = editor.getDoc().indexFromPos(editor.getCursor(true)))
+          this.editor.focus()
+
+          setTimeout(() => {
+            // this fixes the editor not showing because it doesn't think it's dom element is in view.
+            // its a hit and miss error
+            this.editor.refresh()
+          }, 1)
+
+          // this gives the dom a chance to kick in and render these
+          // before we try to read their heights
+          setTimeout(() => {
+            this.tableHeight = this.$refs.bottomPanel.clientHeight
+            this.updateEditorHeight()
+          }, 1)
+        })
+      },
+      saveTab: _.debounce(function() {
+        this.$store.dispatch('tabs/save', this.tab)
+      }, 1000),
       close() {
         this.$root.$emit(AppEvent.closeTab)
       },
@@ -444,7 +584,7 @@ import { AppEvent } from '@/common/AppEvent'
         this.editor.setSize(null, height)
       },
       triggerSave() {
-        if (this.query.id) {
+        if (this.query?.id) {
           this.saveQuery()
         } else {
           this.$modal.show('save-modal')
@@ -461,12 +601,13 @@ import { AppEvent } from '@/common/AppEvent'
             payload.text = this.unsavedText
             this.$modal.hide('save-modal')
             console.log("TQE Saving", payload)
-            await this.$store.dispatch('data/queries/save', payload)
-            // we don't do this becuase we object assign.
-            // this.tab.query = updated
+            const id = await this.$store.dispatch('data/queries/save', payload)
+            this.tab.queryId = id
+            
             this.$nextTick(() => {
-              this.unsavedText = this.tab.query.text
-              this.originalText = this.tab.query.text
+              this.unsavedText = this.query.text
+              this.tab.title = this.query.title
+              this.originalText = this.query.text
             })
             this.$noty.success('Query Saved')
           } catch (ex) {
@@ -516,7 +657,7 @@ import { AppEvent } from '@/common/AppEvent'
         }
 
         try {
-          if (!fromModal || this.paramsModalRequired) {
+          if (this.hasParams && (!fromModal || this.paramsModalRequired)) {
             this.$modal.show('parameters-modal')
             return
           }
@@ -542,8 +683,7 @@ import { AppEvent } from '@/common/AppEvent'
             }
           })
           this.results = Object.freeze(results);
-
-          this.$store.dispatch('logQuery', { text: query, rowCount: totalRows})
+          this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.connection.id })
           log.debug('identification', identification)
           const found = identification.find(i => {
             return i.type === 'CREATE_TABLE'
@@ -604,7 +744,7 @@ import { AppEvent } from '@/common/AppEvent'
       initializeQueries() {
         if (this.query?.text) {
           this.originalText = this.query.text
-          this.unsavedText = this.query.text
+          if (!this.unsavedText) this.unsavedText = this.query.text
         }
       },
       fakeRemoteChange() {
@@ -612,108 +752,8 @@ import { AppEvent } from '@/common/AppEvent'
       }
     },
     mounted() {
+      if (this.shouldInitialize) this.initialize()
 
-      const $editor = this.$refs.editor
-      const startingValue = this.query?.text ? this.query.text : editorDefault
-      // TODO (matthew): Add hint options for all tables and columns\
-      this.initializeQueries()
-
-      this.$nextTick(() => {
-        this.split = Split(this.splitElements, {
-          elementStyle: (dimension, size) => ({
-              'flex-basis': `calc(${size}%)`,
-          }),
-          sizes: [50,50],
-          gutterSize: 8,
-          direction: 'vertical',
-          onDragEnd: () => {
-            this.$nextTick(() => {
-              this.tableHeight = this.$refs.bottomPanel.clientHeight
-              this.updateEditorHeight()
-            })
-          }
-        })
-
-        const runQueryKeyMap = {
-          "Shift-Ctrl-Enter": this.submitCurrentQuery,
-          "Shift-Cmd-Enter": this.submitCurrentQuery,
-          "Ctrl-Enter": this.submitTabQuery,
-          "Cmd-Enter": this.submitTabQuery,
-          "Ctrl-S": this.triggerSave,
-          "Cmd-S": this.triggerSave,
-          "Shift-Ctrl-F": this.formatSql,
-          "Shift-Cmd-F": this.formatSql,
-          "Ctrl-/": this.toggleComment,
-          "Cmd-/": this.toggleComment,
-          "Esc": this.cancelQuery,
-          "F5": this.submitTabQuery,
-          "Shift-F5": this.submitCurrentQuery
-        }
-
-        const modes = {
-          'mysql': 'text/x-mysql',
-          'postgresql': 'text/x-pgsql',
-          'sqlserver': 'text/x-mssql',
-        };
-        this.editor = CodeMirror.fromTextArea($editor, {
-          lineNumbers: true,
-          mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
-          theme: 'monokai',
-          extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete"},
-          hint: CodeMirror.hint.sql,
-          hintOptions: this.hintOptions
-        })
-        this.editor.setValue(startingValue)
-        this.editor.addKeyMap(runQueryKeyMap)
-        this.editor.on("keydown", (cm, e) => {
-          if (this.$store.state.menuActive) {
-            e.preventDefault()
-          }
-        })
-
-        this.editor.on("change", (cm) => {
-          // this also updates `this.queryText`
-          // this.tab.query.text = cm.getValue()
-          this.unsavedText = cm.getValue()
-        })
-
-        if (this.connectionType === 'postgresql')  {
-          this.editor.on("beforeChange", (cm, co) => {
-            const { to, from, origin, text } = co;
-
-            const keywords = CodeMirror.resolveMode(this.editor.options.mode).keywords
-
-            // quote names when needed
-            if (origin === 'complete' && keywords[text[0].toLowerCase()] != true) {
-              const names = text[0]
-                .match(/("[^"]*"|[^.]+)/g)
-                .map(n => /^\d/.test(n) ? `"${n}"` : n)
-                .map(n => /[^a-z0-9_]/.test(n) && !/"/.test(n) ? `"${n}"` : n)
-                .join('.')
-
-              co.update(from, to, [names], origin)
-            }
-          })
-        }
-
-        // TODO: make this not suck
-        this.editor.on('keyup', this.maybeAutoComplete)
-        this.editor.on('cursorActivity', (editor) => this.cursorIndex = editor.getDoc().indexFromPos(editor.getCursor(true)))
-        this.editor.focus()
-
-        setTimeout(() => {
-          // this fixes the editor not showing because it doesn't think it's dom element is in view.
-          // its a hit and miss error
-          this.editor.refresh()
-        }, 1)
-
-        // this gives the dom a chance to kick in and render these
-        // before we try to read their heights
-        setTimeout(() => {
-          this.tableHeight = this.$refs.bottomPanel.clientHeight
-          this.updateEditorHeight()
-        }, 1)
-      })
     },
     beforeDestroy() {
       if(this.split) {

@@ -2,14 +2,41 @@
 title: Troubleshooting
 ---
 
+
 # Troubleshooting
 
 Hopefully you can solve your problems with the details below. If not please [contact us][/contact/] and we'll try our best to help.
 
 [[toc]]
 
+## Don't be shy, say hi!
+
+Feel free to file an issue or start a discussion, even if you're not sure if something is wrong. We're a super nice community, and we all help each other out.
+
+- [File an issue](https://github.com/beekeeper-studio/beekeeper-studio/issues/new/choose)
+- [Start a discussion](https://github.com/beekeeper-studio/beekeeper-studio/discussions/new)
+
+
+## Tools for taking screen recordings when reporting issues.
+
+Screen recordings are SUPER helpful when a problem is hard for me to replicate.
+
+Here are the tooks I recommend for taking quick and easy screen captures as GIF or MKV files:
+
+1. MacOS: [Kap](https://getkap.co/) - it's fully open source. It works great. I use this.
+2. Linux: [Peek](https://github.com/phw/peek) - also fully open source. Works great. I use this.
+3. Windows: [Captura](https://github.com/MathewSachin/Captura) - Also open source, also works great.
+
+Just copy/paste the screen recording into your Github issue and GitHub will figure out the rest.
+
 
 ## How to Debug Beekeeper Studio
+
+### Check Developer Tools for errors
+
+Click on `help -> show developer tools`, then at the top right of the console change the 'levels' dropdown to 'errors' only.
+
+Are there any errors here? Take a screenshot and attach them to a new issue!
 
 ### Enable Debug Mode and Collect Logs
 
@@ -84,6 +111,8 @@ If you're on another platform, please [open a ticket][bug] and we'll try to help
 [bug]: https://github.com/beekeeper-studio/beekeeper-studio/issues/new?template=bug_report.md&title=BUG:
 
 ## PostgreSQL
+
+Please note that Beekeeper Studio only officially supports Postgres 9.3+, although older versions may mostly work.
 
 ### I get a `column does not exist` error, but the column does exist!
 

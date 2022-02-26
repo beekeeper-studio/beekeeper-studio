@@ -49,7 +49,7 @@
     margin: 0;
     height: $tab-height;
     -webkit-app-region: no-drag;
-    .nav-item-wrap {    
+    .nav-item-wrap {
       min-width: 28px;
       overflow: hidden;
     }
@@ -58,7 +58,7 @@
       opacity: 0.5;
     }
     .nav-item {
-      max-width: 200px;    
+      max-width: 200px;
       min-width: 28px;
       overflow: hidden;
     }
@@ -100,23 +100,20 @@
           .close {
             display: inline-block;
           }
+
+          .unsaved {
+            display: inline-block;
+          }
           &:hover {
             .unsaved-icon {
               display: none;
             }
-          }
-          &.unsaved {
             .close {
-              display: none;
-            }
-            &:hover {
-              .close {
-                display: inline-block;
-              }
+              display: inline-block;
             }
           }
         }
-      } 
+      }
     }
     .tab-title {
       text-overflow: initial;
@@ -164,9 +161,17 @@
       align-items: center;
       justify-content: center;
       min-width: 24px;
+
+      .close {
+        display: none;
+      }
+
+      .unsaved {
+        display: inline-block;
+      }
       .material-icons {
         position: absolute;
-        display: none;
+
         font-size: 12px;
         font-weight: bold;
         color: $text;
@@ -185,6 +190,19 @@
   }
 }
 
+.vue-dialog.sure {
+  .btn {
+    font-weight: 400;
+
+    &:focus {
+      font-weight: 800;
+    }
+  }
+}
+.no-content {
+  padding-left: 5px;
+  padding-right: 5px;
+}
 // Move Later
 .tabletable {
   position: absolute;
@@ -193,6 +211,7 @@
   bottom: 0;
   left: 0;
   padding-bottom: $statusbar-height;
+
   .statusbar {
     position: absolute;
     bottom: 0;
@@ -239,7 +258,7 @@
     }
     .btn-primary {
       // background: $text-dark;
-      &:hover, 
+      &:hover,
       &:focus {
         // background: lighten($text-dark, 10%);
         background: lighten($theme-primary, 10%);
@@ -298,4 +317,3 @@
     }
   }
 }
-  

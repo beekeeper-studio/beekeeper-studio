@@ -77,7 +77,12 @@ export const CredentialsModule: Module<State, RootState> = {
         { workspace: LocalWorkspace, client: null },
         ...result
       ]
-    }
+    },
+    activeWorkspaces(state) {
+      return state.credentials.flatMap((cred) => {
+        return cred.workspaces.filter((ws: IWorkspace) => ws.active)
+      })
+    },
   },
   mutations: {
     loading(state, loading: boolean)  {
@@ -126,4 +131,4 @@ export const CredentialsModule: Module<State, RootState> = {
       await context.commit('workspaceId', -1, { root: true})
     }
   }
-} 
+}

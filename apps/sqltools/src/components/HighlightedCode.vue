@@ -5,7 +5,7 @@
         <slot></slot>
         <span class="expand"></span>
         <div class="actions" v-if="code">
-          <a v-clipboard:copy="code"
+          <a v-clipboard:copy="formattedCode"
              v-clipboard:success="onCopySuccess"
              v-clipboard:error="onCopyError"
              class="btn btn-icon" :class="copyClass"

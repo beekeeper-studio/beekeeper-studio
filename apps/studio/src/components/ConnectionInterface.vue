@@ -2,7 +2,7 @@
   <div class="interface connection-interface">
     <div class="interface-wrap row" @dragover.prevent="" @drop.prevent="maybeLoadSqlite">
       <sidebar class="connection-sidebar" ref="sidebar" v-show="sidebarShown">
-        <connection-sidebar :defaultConfig="defaultConfig" :selectedConfig="config" @remove="remove" @duplicate="duplicate" @edit="edit" @connect="handleConnect"></connection-sidebar>
+        <connection-sidebar :selectedConfig="config" @remove="remove" @duplicate="duplicate" @edit="edit" @connect="handleConnect" @create="create"></connection-sidebar>
       </sidebar>
       <div ref="content" class="connection-main page-content flex-col" id="page-content">
         <div class="small-wrap expand">
@@ -12,7 +12,7 @@
               <h3 class="card-title" v-if="pageTitle">{{pageTitle}}</h3>
               <ImportButton :config="config">Import from URL</ImportButton>
             </div>
-            <error-alert :error="errors" />
+            <error-alert :error="errors" title="Please fix the following errors" />
             <form @action="submit" v-if="config">
               <div class="form-group">
                 <label for="connectionType">Connection Type</label>
@@ -22,7 +22,7 @@
                 </select>
               </div>
               <div v-if="config.connectionType">
-                
+
                 <!-- INDIVIDUAL DB CONFIGS -->
                 <postgres-form v-if="config.connectionType === 'cockroachdb'" :config="config" :testing="testing"></postgres-form>
                 <mysql-form v-if="['mysql', 'mariadb'].includes(config.connectionType)" :config="config" :testing="testing" @save="save" @test="testConnection" @connect="submit"></mysql-form>
@@ -45,12 +45,12 @@
             </form>
 
           </div>
-          <div class="pitch"><span class="badge">NEW</span> Collaborate with co-workers using <a href="https://beekeeperstudio.io/pricing">team workspaces.</a></div>
+          <div class="pitch" v-if="!config.connectionType"><span class="badge badge-primary">NEW</span> Check out <a href="https://beekeeperstudio.io/get" class="">Beekeeper Studio Ultimate Edition</a></div>
           <div v-if="connectionError" class="alert alert-danger">
             {{connectionError}}
           </div>
         </div>
-        
+
         <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{version}}</a></small>
       </div>
     </div>
@@ -73,6 +73,7 @@
   import platformInfo from '@/common/platform_info'
   import ErrorAlert from './common/ErrorAlert.vue'
   import rawLog from 'electron-log'
+import { mapState } from 'vuex'
 
   const log = rawLog.scope('ConnectionInterface')
   // import ImportUrlForm from './connection/ImportUrlForm';
@@ -82,8 +83,7 @@
 
     data() {
       return {
-        defaultConfig: new SavedConnection(),
-        config: null,
+        config: new SavedConnection(),
         errors: null,
         connectionError: null,
         testing: false,
@@ -95,6 +95,8 @@
       }
     },
     computed: {
+      ...mapState(['workspaceId']),
+      ...mapState('data/connections', {'connections': 'items'}),
       connectionTypes() {
         return this.$config.defaults.connectionTypes
       },
@@ -107,6 +109,9 @@
       }
     },
     watch: {
+      workspaceId() {
+        this.config = new SavedConnection()
+      },
       config: {
         deep: true,
         handler() {
@@ -120,7 +125,6 @@
       }
       await this.$store.dispatch('credentials/load')
       await this.$store.dispatch('loadUsedConfigs')
-      this.config = this.defaultConfig
       this.config.sshUsername = os.userInfo().username
       this.$nextTick(() => {
         const components = [
@@ -160,14 +164,19 @@
         }
 
       },
+      create() {
+        this.config = new SavedConnection()
+      },
       edit(config) {
         this.config = config
+        this.errors = null
+        this.connectionError = null
       },
       async remove(config) {
-        await this.$store.dispatch('removeConnectionConfig', config)
         if (this.config === config) {
-          this.config = this.defaultConfig
+          this.config = new SavedConnection()
         }
+        await this.$store.dispatch('data/connections/remove', config)
         this.$noty.success(`${config.name} deleted`)
       },
       async duplicate(config) {
@@ -176,8 +185,9 @@
         duplicateConfig.name = 'Copy of ' + duplicateConfig.name
 
         try {
-          await this.$store.dispatch('data/connections/save', duplicateConfig)
+          const id = await this.$store.dispatch('data/connections/save', duplicateConfig)
           this.$noty.success(`The connection was successfully duplicated!`)
+          this.config = this.connections.find((c) => c.id === id) || this.config
         } catch (ex) {
           this.$noty.error(`Could not duplicate Connection: ${ex.message}`)
         }
@@ -219,12 +229,13 @@
         try {
           this.errors = null
           this.connectionError = null
-          await this.$store.dispatch('data/connections/save', this.config)
-          if(this.config === this.defaultConfig) {
-            this.defaultConfig = new SavedConnection()
+          if (!this.config.name) {
+            throw new Error("Name is required")
           }
+          await this.$store.dispatch('data/connections/save', this.config)
           this.$noty.success("Connection Saved")
         } catch (ex) {
+          console.error(ex)
           this.errors = [ex.message]
           this.$noty.error("Could not save connection information")
         }

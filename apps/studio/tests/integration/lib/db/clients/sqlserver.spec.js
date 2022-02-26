@@ -43,6 +43,10 @@ describe("SQL Server Tests", () => {
     }
     util = new DBTestUtil(config, "tempdb", { defaultSchema: 'dbo', dialect: 'sqlserver'})
     await util.setupdb()
+
+    await util.knex.schema.raw("CREATE SCHEMA hello")
+    await util.knex.schema.raw("CREATE TABLE hello.world(id int, name varchar(255))")
+    await util.knex.schema.raw("INSERT INTO hello.world(id, name) VALUES(1, 'spiderman')")
   })
 
   afterAll(async () => {
@@ -56,5 +60,17 @@ describe("SQL Server Tests", () => {
 
   describe("Common DB Tests", () => {
     runCommonTests(getUtil)
+  })
+
+  describe("Multi schema", () => {
+    it("should fetch table properties for a non-dbo schema", async () => {
+      await util.connection.getTableProperties('world', 'hello')
+    })
+
+    it("should fetch data for a non-dbo schema", async () => {
+      const result = await util.connection.selectTop('world', 0, 100, [], [], 'hello')
+      expect(result.result.length).toBe(1)
+      expect(result.fields.length).toBe(2)
+    })
   })
 })

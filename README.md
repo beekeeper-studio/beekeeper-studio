@@ -1,19 +1,24 @@
-## >>> **Next Release**: January 2022. Code freeze until then. ❄
-
 # Beekeeper Studio
 
-Beekeeper Studio is a cross-platform SQL editor and database manager available for Linux, Mac, and Windows.
+Beekeeper Studio is a cross-platform SQL editor and database manager available for Linux, Mac, and Windows. Beekeeper Studio is GPL licensed so it is free (libre) and free (gratis).
 
-Beekeeper Studio is MIT licensed so it is free (libre) and free (gratis). 
+![Beekeeper Studio Screenshot](https://docs.beekeeperstudio.io/assets/img/hero.289d6ce0.jpg)
 
-Download now [from our website](https://beekeeperstudio.io)
+## Editions of Beekeeper Studio
 
-Love Beekeeper Studio and want to help, but can't write code? [We have some ideas for you](https://github.com/beekeeper-studio/beekeeper-studio/issues/287).
+1. **Beekeeper Studio Community Edition** - This repository. This is the open source version of Beekeeper Studio. It is a full featured database management client that is totally free and open source.
 
-## Features
+2. **Beekeeper Studio Ultimate Edition** - A commercial version of Beekeeper Studio with extra features and provided with a business-friendly commercial license.
+
+👉 [Compare Beekeeper Studio Editions](https://beekeeperstudio.io/get)
+
+👉 [Download Beekeeper Studio](https://beekeeperstudio.io/get)
+
+## Beekeeper Studio Features
 
 Top feature: It's smooth 🍫, fast 🏎, and you'll actually enjoy using it 🥰
 
+- Truly cross-platform: Windows, MacOS, and Linux
 - Autocomplete SQL query editor with syntax highlighting
 - Tabbed interface, so you can multitask
 - Sort and filter table data to find just what you need
@@ -22,9 +27,7 @@ Top feature: It's smooth 🍫, fast 🏎, and you'll actually enjoy using it �
 - Query run-history, so you can find that one query you got working 3 days ago
 - Default dark theme
 
-One of our frustrations with other open-source SQL editors and database managers is that they take a 'kitchen sink' approach to features, adding so many features that the UI becomes cluttered and hard to navigate. We wanted a good looking, open source SQL workbench that's powerful, but also easy to use. We couldn't find one, so we created it!
-
-![Beekeeper Studio Screenshot](https://docs.beekeeperstudio.io/assets/img/hero.289d6ce0.jpg)
+One of our frustrations with other open-source SQL editors and database managers is that they take a 'kitchen sink' approach to features, adding so many features that the UI becomes cluttered and hard to navigate. We wanted a good looking, open source SQL workbench that's powerful, but also easy to use. We couldn't find one, so we created Beekeeper Studio!
 
 Beekeeper Studio supports connecting to the following databases:
 
@@ -38,28 +41,49 @@ Beekeeper Studio supports connecting to the following databases:
 
 ## Installation
 
-Download the latest release from the [releases page](https://github.com/beekeeper-studio/beekeeper-studio/releases), or from [our website](https://beekeeperstudio.io)
+Download the latest release from [our website](https://beekeeperstudio.io/get)
 
 ## Documentation
 
 Check out [docs.beekeeperstudio.io](https://docs.beekeeperstudio.io) for user guides, FAQs, troubleshooting tips, and more.
 
+## License
+
+Beekeeper Studio Community Edition (the code in this repository) is licensed under the GPLv3 license.
+
+Beekeeper Studio Ultimate Edition contains extra features and is licensed under a [commercial end user agreement (EULA)](https://beekeeperstudio.io/legal/commercial-eula/).
+
+Beekeeper Studio's trademarks (words marks and logos) are not open source. See our [trademark guidelines](https://beekeeperstudio.io/legal/trademark/) for more information.
+
+## Trademark Guidelines
+
+Trademarks can be complicated with open source projects, so we have adapted a set of standard guidelines for using our trademarks that are common to many open source projects.
+
+If you are just using the Beekeeper Studio app, and you are not forking or distributing Beekeeper Studio code in any way, these probably don't apply to you.
+
+👉 [Beekeeper Studio Trademark Guidelines](https://beekeeperstudio.io/legal/trademark/)
+
 ## Contributing to Beekeeper Studio
 
 We love *any* community engagement. Even if you're complaining because you don't like something about the app!
 
-Because building an inclusive and welcoming community is important to us, please follow our code of conduct as you engage with the project.
+
+### Contributor Agreements
+
+- Building an inclusive and welcoming community is important to us, so please follow our [code of conduct](code_of_conduct.md) as you engage with the project.
+
+- By contributing to the project you agree to the terms of our [contributor guidelines](CONTRIBUTING.md).
 
 ### Contribute without coding
 
 We have you covered, read our [guide to contributing in 10 minutes without coding](https://github.com/beekeeper-studio/beekeeper-studio/issues/287).
 
-### Starting the Dev version of Beekeeper Studio
+### Compiling and Running Beekeeper Studio Locally
 
 Want to write some code and improve Beekeeper Studio? Getting set-up is easy on Mac, Linux, or Windows.
 
 ```bash
-# First: Install NodeJS 12+, NPM, and Yarn
+# First: Install NodeJS 12 or 14, NPM, and Yarn
 # ...
 
 # 1. Fork the Beekeeper Studio Repo (click fork button at top right of this screen)
@@ -94,7 +118,7 @@ Beekeeper Studio has two entry points:
 ## Maintainer notes (casual readers can ignore this stuff)
 
 
-### Release Process 
+### Release Process
 
 1. Up the version number in package.json
 2. Replace `build/release-notes.md` with the latest release notes. Follow the format that is there.

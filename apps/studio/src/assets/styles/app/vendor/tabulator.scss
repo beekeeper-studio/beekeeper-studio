@@ -37,7 +37,7 @@ $cell-padding:           $gutter-w;
   color: $theme-base;
 
   .tabulator-row {
-    &.inserted, 
+    &.inserted,
     &.inserted:hover {
       position: relative;
       background: $row-add;
@@ -56,7 +56,7 @@ $cell-padding:           $gutter-w;
         box-shadow: inset 0 -1px $theme-base!important;
       }
     }
-    &.deleted, 
+    &.deleted,
     &.deleted:hover {
       background: $row-delete;
     }
@@ -77,7 +77,7 @@ $cell-padding:           $gutter-w;
           }
         }
       }
-    } 
+    }
     &.deleted {
       .tabulator-cell {
         cursor: default!important;
@@ -172,8 +172,8 @@ $cell-padding:           $gutter-w;
     }
 
     // Cell States
-    &.edited, 
-    &.edit-error, 
+    &.edited,
+    &.edit-error,
     &.edit-success {
       border-radius: $cell-radius;
       color: $theme-base;
@@ -357,6 +357,11 @@ $cell-padding:           $gutter-w;
       height: 32px!important;
       font-size: 90%;
       line-height: 1;
+
+      .tabulator-col-title {
+        color: $text-dark;
+      }
+
       &:first-of-type .tabulator-col-content {
         padding-left: $gutter-w * 1.5;
       }
@@ -375,7 +380,6 @@ $cell-padding:           $gutter-w;
         }
         .tabulator-col-title {
           padding-right: 16px;
-          color: $text-dark;
         }
       }
       &.tabulator-sortable[aria-sort="asc"] {

@@ -58,7 +58,7 @@ export default {
   },
   computed: {
       ...mapState({'config': 'usedConfig'}),
-      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports'}),
+      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace'}),
       connectionName() {
         const config = this.config
         if (!config) return 'Connection'

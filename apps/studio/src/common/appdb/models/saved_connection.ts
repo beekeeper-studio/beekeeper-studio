@@ -42,29 +42,42 @@ export class DbConnectionBase extends ApplicationEntity {
   _connectionType: Nullable<IDbClients> = null
 
   @Column({ type: 'varchar', name: 'connectionType'})
-  set connectionType(value: Nullable<IDbClients>) {
+  public set connectionType(value: Nullable<IDbClients>) {
     this._connectionType = parseConnectionType(value)
-    if (['mysql', 'mariadb'].includes(this._connectionType || '')) {
-      this.port = 3306
-    } else if (this._connectionType === 'postgresql') {
-      this.port = 5432
-    } else if (this._connectionType === 'sqlserver') {
-      this.port = 1433
-    } else if (this._connectionType === 'cockroachdb') {
-      this.port = 26257
-    }
   }
 
-  get connectionType() {
+  public get connectionType() {
     return this._connectionType
   }
 
   @Column({type:"varchar", nullable: true})
   host: string = 'localhost'
 
-  @Column({type: "int", nullable: true})
-  port: Nullable<number> = null
+  _port: Nullable<number> = null
 
+  @Column({type: "int", nullable: true})
+  public set port(v : Nullable<number>) {
+    this._port = v
+  }
+ 
+  public get port() : Nullable<number> {
+    return this._port || this.defaultPort
+  }
+  
+  
+  public get defaultPort() : Nullable<number> {
+    if (['mysql', 'mariadb'].includes(this.connectionType || '')) {
+      return 3306
+    } else if (this.connectionType === 'postgresql') {
+      return 5432
+    } else if (this.connectionType === 'sqlserver') {
+      return 1433
+    } else if (this.connectionType === 'cockroachdb') {
+      return 26257
+    }
+    return null
+  }
+  
   @Column({type: "varchar", nullable: true})
   username: Nullable<string> = null
 
@@ -129,7 +142,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   })
   labelColor?: string = 'default'
 
-  workspaceId: -1
+  @Column({update: false, default: -1, type: 'integer'})
+  workspaceId: number = -1
 
   @Column({type: 'boolean', default: true})
   rememberPassword: boolean = true
@@ -189,6 +203,9 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       this.connectionType = parsed.protocol as IDbClients || this.connectionType || 'postgresql'
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
+      }
+      if (parsed.params?.sslmode && parsed.params.sslmode !== 'disable') {
+        this.ssl = true
       }
       this.host = parsed.hostname || this.host
       this.port = parsed.port || this.port

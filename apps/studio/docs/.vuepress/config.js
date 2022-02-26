@@ -5,8 +5,7 @@ module.exports = {
   themeConfig: {
     logo: '/bk-logo-yellow-icon.svg',
     nav: [
-      { text: 'Installation', link: '/installation/' },
-      { text: 'User Guide', link: '/guide/' },
+      { text: 'User Guide', link: '/installation/' },
       { text: 'Troubleshooting', link: '/troubleshooting/' },
       { text: 'Contact', link: '/contact/' },
       { text: 'Homepage', link: 'https://www.beekeeperstudio.io' }

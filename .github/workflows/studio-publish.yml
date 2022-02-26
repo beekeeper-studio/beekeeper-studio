@@ -1,6 +1,6 @@
 name: Studio - Build & Publish
 
-on: 
+on:
   push:
     tags:
       - "v*"
@@ -43,6 +43,12 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 14
+
+      - name: Clean cache
+        run: yarn cache clean
+
+      - name: Check dependencies
+        run: "yarn install --frozen-lockfile --network-timeout 100000"
 
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v1

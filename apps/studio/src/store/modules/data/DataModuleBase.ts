@@ -37,9 +37,9 @@ export interface DataStoreMutations<T, X extends DataState<T>> extends MutationT
   //   state: DataState<T>
   //   mutations: DataStoreMutations<T>
   // }
-  
+
   export interface DataStoreActions<T, X extends DataState<T>> extends ActionTree<X, RootState> {
-    
+
     save(context: ActionContext<X, RootState>, item: T): Promise<T>
     load(context: ActionContext<X, RootState>): Promise<void>
     remove(context: ActionContext<X, RootState>, item: T): Promise<void>
@@ -55,8 +55,12 @@ export interface DataStore<T, X extends DataState<T>> extends Module<X, RootStat
   actions: DataStoreActions<T, X>
 }
 
+interface SortSpec {
+  field: string
+  direction: 'asc' | 'desc'
+}
 
-const buildBasicMutations = <T extends HasId>() => ({
+const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
   loading(state, loading: boolean) {
     state.loading = loading
   },
@@ -72,22 +76,24 @@ const buildBasicMutations = <T extends HasId>() => ({
     list.forEach((item) => {
       upsert(stateItems, item)
     })
-    state.items = stateItems
+    const sorted = sortBy ? _.sortBy(stateItems, sortBy.field) : stateItems
+    state.items = sortBy?.direction === 'desc' ? sorted.reverse() : sorted
   },
   replace(state, items: T[]) {
     const itemIds = items.map((i) => i.id)
     const stateIds = state.items.map((i) => i.id)
 
     const toUpdate = items.filter((i) => stateIds.includes(i.id))
-    const toInsert = items.filter((i) => !stateIds.includes(i.id))    
+    const toInsert = items.filter((i) => !stateIds.includes(i.id))
 
     const stateItems = _.reject(state.items, (item) => !itemIds.includes(item.id))
     const upsertable = [...toUpdate, ...toInsert]
     upsertable.forEach((i) => upsert(stateItems, i))
-    state.items = stateItems
+    const sorted = sortBy ? _.sortBy(stateItems, sortBy.field) : stateItems
+    state.items = sortBy?.direction === 'desc' ? sorted.reverse() : sorted
   },
   remove(state, item: T | T[] | number) {
-    
+
     const list = _.isArray(item) ? item : [item]
     const ids = list.map((item) => {
       return _.isNumber(item) ? item : item.id
@@ -96,9 +102,9 @@ const buildBasicMutations = <T extends HasId>() => ({
   },
 })
 
-export function mutationsFor<T extends HasId>(obj: any) {
+export function mutationsFor<T extends HasId>(obj: any, sortBy?: SortSpec) {
   return {
-    ...buildBasicMutations<T>(),
+    ...buildBasicMutations<T>(sortBy),
     ...obj
   }
 }
@@ -106,6 +112,7 @@ export function mutationsFor<T extends HasId>(obj: any) {
 export function localActionsFor<T extends ApplicationEntity>(cls: any, other: any) {
   return {
     async load(context) {
+      context.commit("error", null)
       await safely(context, async () => {
         const items = await cls.find()
         if (context.rootState.workspaceId === LocalWorkspace.id) {
@@ -119,18 +126,40 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
       // nothing else can change anything.
     },
 
+    async clearError(context) {
+      context.commit('error', null)
+    },
+
     async clone(_context, item: T) {
       const result = new cls()
-      Object.assign(result, item)
+      cls.merge(result, item)
       result.id = null
-      result.createdAt = null
+      result.createdAt = new Date()
       return result
     },
 
+    async create(context, item: T) {
+      const q = new cls()
+      cls.merge(q, item)
+      await q.save()
+      context.commit('upsert', q)
+      return q.id
+    },
+
+    async update(context, item: T) {
+      const existing = context.state.items.find((i) => i.id === item.id)
+      if (!existing) throw new Error("Could not find this item")
+      cls.merge(existing, item)
+      await existing.save()
+      return existing.id
+    },
+
     async save(context, item: T) {
-      await item.save()
-      context.commit('upsert', item)
-      return item
+      if (item.id) {
+        return await context.dispatch('update', item)
+      } else {
+        return await context.dispatch('create', item)
+      }
     },
 
     async remove(context, item: T) {
@@ -139,14 +168,13 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
     },
 
     async reload(context, id: number) {
-      const item = cls.findOne(id)
+      const item = await cls.findOne(id)
       if (item) {
         context.commit('upsert', item)
-        return item
+        return item.id
       } else {
         context.commit('remove', id)
         return null
-
       }
     },
     ...other
@@ -156,6 +184,7 @@ export function localActionsFor<T extends ApplicationEntity>(cls: any, other: an
 export function actionsFor<T extends HasId>(scope: string, obj: any) {
   return {
     async load(context) {
+      context.commit("error", null)
       await safelyDo(context, async (cli) => {
         const items: any[] = await cli[scope].list()
         // this is to account for when the store module changes
@@ -185,25 +214,29 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
         }
       })
     },
-    async save(context, query: T): Promise<T> {
+    async save(context, item: T): Promise<T> {
       return await havingCli(context, async (cli) => {
-        const updated = await cli[scope].upsert(query)
+        const updated = await cli[scope].upsert(item)
         context.commit('upsert', updated)
-        return updated
+        return updated.id
       })
     },
-    async remove(context, query: T) {
+    async remove(context, item: T) {
       await havingCli(context, async (cli) => {
-        await cli[scope].delete(query)
-        context.commit('remove', query)
+        await cli[scope].delete(item)
+        context.commit('remove', item)
       })
+    },
+
+    async clearError(context) {
+      context.commit('error', null)
     },
     async reload(context, id: number): Promise<T | null> {
       return await havingCli(context, async (cli) => {
         try {
           const updated = await cli[scope].get(id)
           context.commit('upsert', updated)
-          return updated
+          return updated.id
         } catch (ex) {
           if (ex.status && ex.status === 404) {
             context.commit('remove', id)

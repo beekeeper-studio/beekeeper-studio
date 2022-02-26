@@ -1,8 +1,8 @@
 name: Studio - PR Build
 
-on: 
+on:
   pull_request:
-    paths-ignore: 
+    paths-ignore:
       - apps/sqltools/**
 
 jobs:
@@ -22,8 +22,11 @@ jobs:
         with:
           node-version: 14
 
+      - name: Clean cache
+        run: yarn cache clean
+
       - name: Check dependencies
-        run: "yarn install --frozen-lockfile"
+        run: "yarn install --frozen-lockfile --network-timeout 100000"
 
       - name: Build Electron app
         run: "yarn run electron:build --publish never"
