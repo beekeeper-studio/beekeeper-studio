@@ -23,13 +23,13 @@ Sometimes we don't merge pull requests if they don't meet our design goals, but 
 
 ### Legal
 
-We welcome code contributions. All contributions to this repository are made under the [MIT License](https://opensource.org/licenses/MIT).
+All contributions to this repository are made under the [MIT License](https://opensource.org/licenses/MIT).
 
-What this means practically:
+#### What this means practically
 
 If you make a PR, the PR code is licensed as MIT. As soon as I merge the code into this repository it is relicensed under GPLv3 as part of Beekeeper Studio. the code is still copyright to you.
 
-Why do it this way?
+#### Why do it this way
 
 Practically speaking, we need to have the ability to relicense Beekeeper Studio in the future if we need to, licensing contributions as MIT lets us do that without requiring all contributors to sign a [CLA](https://en.wikipedia.org/wiki/Contributor_License_Agreement) or requiring them to hand over their copyright to us. This is a pretty common way to manage contributions for a large-ish open source project, so it should be totally fine for 99% of contributors.
 
