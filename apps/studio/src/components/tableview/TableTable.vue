@@ -184,7 +184,7 @@
 <script lang="ts">
 import Vue from 'vue'
 import pluralize from 'pluralize'
-import { TabulatorFull as Tabulator } from 'tabulator-tables'
+import { TabulatorFull } from 'tabulator-tables'
 // import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
@@ -571,7 +571,12 @@ export default Vue.extend({
     }
   },
   async mounted() {
-    if (this.shouldInitialize) this.initialize()
+    if (this.shouldInitialize) {
+      this.$nextTick(async() => {
+        await this.initialize()
+      })
+
+    }
   },
   methods: {
     async close() {
@@ -589,16 +594,17 @@ export default Vue.extend({
       await this.$store.dispatch('updateTableColumns', this.table)
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
-      this.tabulator = new Tabulator(this.$refs.table, {
+      // @ts-ignore-error
+      this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,
         columns: this.tableColumns,
         nestedFieldSeparator: false,
         placeholder: "No Data",
-        virtualDomHoz: false,
+        renderHorizontal: 'virtual',
         ajaxURL: "http://fake",
         sortMode: 'remote',
-        ajaxFiltering: true,
-        ajaxLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
+        filterMode: 'remote',
+        dataLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
         pagination: true,
         paginationMode: 'remote',
         paginationSize: this.limit,
@@ -606,7 +612,6 @@ export default Vue.extend({
         paginationButtonCount: 0,
         initialSort: this.initialSort,
         initialFilter: [this.initialFilter || {}],
-        lastUpdated: null,
         // callbacks
         ajaxRequestFunc: this.dataFetch,
         index: this.primaryKey,

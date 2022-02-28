@@ -82,7 +82,7 @@ import globals from '@/common/globals'
       this.tabulator = new Tabulator(this.$refs.tabulator, {
         data: this.tableData, //link data to table
         reactiveData: true,
-        virtualDomHoz: false,
+        renderHoriziontal: 'virtual',
         columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,
         columnMaxWidth: globals.maxColumnWidth,
