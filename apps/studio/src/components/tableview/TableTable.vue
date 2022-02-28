@@ -117,9 +117,9 @@
       <!-- Pagination -->
       <div class="tabulator-paginator">
         <div class="flex-center flex-middle flex">
-          <a @click="page = page  - 1"><i class="material-icons">navigate_before</i></a>
+          <a @click="page = page  - 1" v-tooltip="ctrlOrCmd('left')"><i class="material-icons">navigate_before</i></a>
           <input type="number" v-model="page" />
-          <a @click="page = page + 1"><i class="material-icons">navigate_next</i></a>
+          <a @click="page = page + 1" v-tooltip="ctrlOrCmd('right')"><i class="material-icons">navigate_next</i></a>
         </div>
       </div>
 
@@ -147,10 +147,10 @@
         </template>
 
         <!-- Actions -->
-        <x-button class="btn btn-flat" title="Refresh table" @click="refreshTable">
+        <x-button v-tooltip="`${ctrlOrCmd('r')} or F5`" class="btn btn-flat" title="Refresh table" @click="refreshTable">
           <i class="material-icons">refresh</i>
         </x-button>
-        <x-button class="btn btn-flat" title="Add row" @click.prevent="cellAddRow">
+        <x-button class="btn btn-flat" v-tooltip="ctrlOrCmd('n')" title="Add row" @click.prevent="cellAddRow">
           <i class="material-icons">add</i>
         </x-button>
         <x-button class="actions-btn btn btn-flat" title="actions">
@@ -283,7 +283,11 @@ export default Vue.extend({
       return result.join(" ")
     },
     keymap() {
+      if (!this.active) return {}
       const result = {}
+      result['f5'] = this.refreshTable.bind(this)
+      result[this.ctrlOrCmd('right')] = () => this.page = this.page + 1
+      result[this.ctrlOrCmd('left')] = () => this.page = this.page - 1
       result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
