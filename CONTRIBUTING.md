@@ -31,7 +31,7 @@ If you make a PR, the PR code is licensed as MIT. As soon as I copy (merge) the 
 
 #### Why do it this way
 
-Practically speaking, we need to have the ability to relicense Beekeeper Studio in the future if we need to, licensing contributions as MIT lets us do that without requiring all contributors to sign a [CLA](https://en.wikipedia.org/wiki/Contributor_License_Agreement) or requiring them to hand over their copyright to us. This is a pretty common way to manage contributions for a large-ish open source project, so it should be totally fine for 99% of contributors.
+Practically speaking, we need to have the ability to change the Beekeeper Studio license in the future if we need to, by providing your contributions under the MIT license, we can do so without requiring that all contributors sign a [CLA](https://en.wikipedia.org/wiki/Contributor_License_Agreement) or hand over their copyright to us. This is a pretty common way to manage contributions for a large-ish open source project, so it should be totally fine for 99% of contributors.
 
 #### MIT License for Contributions
 
