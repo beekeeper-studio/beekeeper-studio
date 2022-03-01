@@ -27,7 +27,7 @@ All contributions to this repository are made under the [MIT License](https://op
 
 #### What this means practically
 
-If you make a PR, the PR code is licensed as MIT. As soon as I merge the code into this repository it is relicensed under GPLv3 as part of Beekeeper Studio. the code is still copyright to you.
+If you make a PR, the PR code is licensed as MIT. As soon as I copy (merge) the code into this repository it is then made available under the GPLv3 as part of Beekeeper Studio. The code is still copyright to you, and your original MIT license still applies to the code in your PR. The MIT license requires that I maintain the copyright notice, which is made available below.
 
 #### Why do it this way
 
