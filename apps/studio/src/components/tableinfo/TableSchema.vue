@@ -1,11 +1,11 @@
 <template>
-  <div class="table-info-table table-schema">
+  <div class="table-info-table table-schema" v-hotkey="hotkeys">
     <div class="table-info-table-wrap">
       <div class="center-wrap">
         <error-alert :error="error" v-if="error" />
         <div class="notices" v-if="notice">
           <div class="alert alert-info">
-            <i class="material-icons-outlined">info</i> 
+            <i class="material-icons-outlined">info</i>
             <div>{{notice}}</div>
           </div>
         </div>
@@ -17,8 +17,8 @@
           <slot />
           <span class="expand"></span>
           <div class="actions">
-            <a @click.prevent="refreshColumns" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
-            <a v-if="editable" @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
+            <a @click.prevent="refreshColumns" v-tooltip="`${ctrlOrCmd('r')} or F5`" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
+            <a v-if="editable" v-tooltip="ctrlOrCmd('n')" @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
           </div>
         </div>
         <div ref="tableSchema"></div>
@@ -41,8 +41,13 @@
           <x-button class="btn btn-primary" menu>
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
+              <x-menuitem @click.prevent="submitApply">
+                <x-label>Apply</x-label>
+                <x-shortcut value="Control+S"></x-shortcut>
+              </x-menuitem>
               <x-menuitem @click.prevent="submitSql">
-                Copy to SQL
+                <x-label>Copy to SQL</x-label>
+                <x-shortcut value="Control+Shift+S"></x-shortcut>
               </x-menuitem>
             </x-menu>
           </x-button>
@@ -104,6 +109,16 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(['dialect']),
+    hotkeys() {
+      if (!this.active) return {}
+      const result = {}
+      result['f5'] = this.refreshColumns.bind(this)
+      result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
+      result[this.ctrlOrCmd('r')] = this.refreshColumns.bind(this)
+      result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
+      result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
+      return result
+    },
     editable() {
       return this.table.entityType === 'table' && !!this.primaryKeys.length
     },
@@ -137,11 +152,11 @@ export default Vue.extend({
 
       const result = [
         {
-          title: 'Name', 
-          field: 'columnName', 
-          editor: vueEditor(NullableInputEditorVue), 
-          cellEdited: this.cellEdited, 
-          headerFilter: true, 
+          title: 'Name',
+          field: 'columnName',
+          editor: vueEditor(NullableInputEditorVue),
+          cellEdited: this.cellEdited,
+          headerFilter: true,
           formatter: this.cellFormatter,
           editable: this.isCellEditable.bind(this, 'renameColumn')
         },
@@ -152,7 +167,7 @@ export default Vue.extend({
           editorParams: autocompleteOptions,
           cellEdited: this.cellEdited,
           editable: this.isCellEditable.bind(this, 'alterColumn')
-          }, 
+          },
         {
           title: 'Nullable',
           field: 'nullable',
@@ -212,7 +227,7 @@ export default Vue.extend({
       const keys = _.keyBy(this.primaryKeys, 'columnName')
       return this.table.columns.map((c) => {
         const key = keys[c.columnName]
-        return { 
+        return {
           primary: !!key || null,
           ...c
         }
@@ -302,7 +317,7 @@ export default Vue.extend({
       this.editedCells.forEach((c) => {
         c.restoreInitialValue()
       })
-      
+
       this.newRows.forEach((r) => r.delete())
       this.clearChanges()
     },
