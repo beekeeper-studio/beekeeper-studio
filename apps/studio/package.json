@@ -54,7 +54,7 @@
     "mkdirp": "^1.0.4",
     "mssql": "^6.3.1",
     "mysql2": "^2.2.0",
-    "node-sass": "^6.0.1",
+    "node-sass": "^7.0.0",
     "node-ssh-forward": "^0.7.2",
     "papaparse": "^5.3.0",
     "pg": "^8.4.2",
