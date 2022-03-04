@@ -614,7 +614,6 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             const payload = _.clone(this.query)
             payload.text = this.unsavedText
             this.$modal.hide('save-modal')
-            console.log("TQE Saving", payload)
             const id = await this.$store.dispatch('data/queries/save', payload)
             this.tab.queryId = id
 
@@ -631,7 +630,6 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         }
       },
       onChange(text) {
-        console.log("change!", text)
         this.unsavedText = text
         this.editor.setValue(text)
       },
