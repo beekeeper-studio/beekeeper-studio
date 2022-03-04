@@ -89,7 +89,7 @@
             </div>
           </div>
         </div>
-        <div class="vue-dialog-buttons">          
+        <div class="vue-dialog-buttons">
           <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('save-modal')">Cancel</button>
           <button class="btn btn-primary" type="submit">Save</button>
         </div>
@@ -148,7 +148,7 @@
   import MergeManager from '@/components/editor/MergeManager.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
-  
+
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
   const editorDefault = "\n\n\n\n\n\n\n\n\n\n"
@@ -167,6 +167,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         editor: null,
         runningQuery: null,
         error: null,
+        errorMarker: null,
         saveError: null,
         info: null,
         split: null,
@@ -229,7 +230,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
           const v = this.queryParameterValues[param]
           if (!v || _.isEmpty(v.trim())) {
             result = true
-          } 
+          }
         })
         return result
       },
@@ -343,11 +344,21 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       unsavedChanges() {
         if (_.trim(this.unsavedText) === "" && _.trim(this.originalText) === "") return false
 
-        return !this.query?.id || 
+        return !this.query?.id ||
           _.trim(this.unsavedText) !== _.trim(this.originalText)
       },
     },
     watch: {
+      error() {
+        if (this.errorMarker) {
+          this.errorMarker.clear()
+        }
+        if (this.dialect === 'postgresql' && this.error && this.error.position) {
+          const [a, b] = this.locationFromPosition(this.queryForExecution, parseInt(this.error.position) - 1, parseInt(this.error.position))
+          this.errorMarker = this.editor.getDoc().markText(a, b, { className: 'error'})
+          this.error.marker = {line: b.line + 1, ch: b.ch}
+        }
+      },
       queryTitle() {
         if (this.queryTitle) this.tab.title = this.queryTitle
       },
@@ -397,31 +408,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         const editorText = this.editor.getValue()
         const lines = editorText.split(/\n/)
 
-        const markStart = {
-          line: null,
-          ch: null
-        }
-        const markEnd = {
-          line: null,
-          ch: null
-        }
-        let startMarked = false
-        let endMarked = false
-        let startOfLine = 0
-        lines.forEach((line, idx) => {
-          const eol = startOfLine + line.length + 1
-          if (startOfLine <= from && from <= eol && !startMarked) {
-            markStart.line = idx
-            markStart.ch = from - startOfLine
-            startMarked = true
-          }
-          if (startOfLine <= to && to <= eol && !endMarked) {
-            markEnd.line = idx
-            markEnd.ch = to - startOfLine
-            endMarked = true
-          }
-          startOfLine += line.length + 1
-        })
+        const [markStart, markEnd] = this.locationFromPosition(editorText, from, to)
         this.marker = this.editor.getDoc().markText(markStart, markEnd, {className: 'highlight'})
       },
       hintOptions() {
@@ -429,6 +416,33 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       },
     },
     methods: {
+      locationFromPosition(queryText, ...rawPositions) {
+        // 1. find the query text inside the editor
+        // 2.
+
+        const editorText = this.editor.getValue()
+
+        const startCharacter = editorText.indexOf(queryText)
+        const lines = editorText.split(/\n/)
+        const positions = rawPositions.map((p) => p + startCharacter)
+
+        const finished = positions.map((p) => false)
+        const results = positions.map((p) => ({ line: null, ch: null}))
+
+        let startOfLine = 0
+        lines.forEach((line, idx) => {
+          const eol = startOfLine + line.length + 1
+          positions.forEach((p, pIndex) => {
+            if (startOfLine <= p && p <= eol && !finished[pIndex]) {
+              results[pIndex].line = idx
+              results[pIndex].ch = p - startOfLine
+              finished[pIndex] = true
+            }
+          })
+          startOfLine += line.length + 1
+        })
+        return results
+      },
       initialize() {
         this.initialized = true
 
@@ -603,7 +617,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             console.log("TQE Saving", payload)
             const id = await this.$store.dispatch('data/queries/save', payload)
             this.tab.queryId = id
-            
+
             this.$nextTick(() => {
               this.unsavedText = this.query.text
               this.tab.title = this.query.title
@@ -686,7 +700,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
           this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.connection.id })
           log.debug('identification', identification)
           const found = identification.find(i => {
-            return i.type === 'CREATE_TABLE'
+            return i.type === 'CREATE_TABLE' || i.type === 'DROP_TABLE'
           })
           if (found) {
             this.$store.dispatch('updateTables')

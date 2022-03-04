@@ -101,7 +101,7 @@ const store = new Vuex.Store<State>({
   getters: {
     workspace(state: State, getters): IWorkspace {
       if (state.workspaceId === LocalWorkspace.id) return LocalWorkspace
-      
+
       const workspaces: WSWithClient[] = getters['credentials/workspaces']
       const result = workspaces.find(({workspace }) => workspace.id === state.workspaceId)
 
@@ -270,7 +270,7 @@ const store = new Vuex.Store<State>({
       }
 
       if (!state.tablesInitialLoaded) state.tablesInitialLoaded = true
-      
+
     },
 
     table(state, table: TableOrView) {
@@ -401,7 +401,7 @@ const store = new Vuex.Store<State>({
         }
         context.commit('updateConnection', {connection, database: newDatabase})
         await context.dispatch('updateTables')
-        await context.dispatch('updateRoutines') 
+        await context.dispatch('updateRoutines')
       }
     },
 
@@ -415,7 +415,7 @@ const store = new Vuex.Store<State>({
       // TODO (don't update columns if nothing has changed (use duck typing))
       const updated = columns.find((c, idx) => {
         const other = table.columns[idx]
-        
+
         return !other || !_.isEqual(c, other)
       })
 
@@ -513,32 +513,12 @@ const store = new Vuex.Store<State>({
       )
       context.commit('usedConfigs', configs)
     },
-    async updateHistory(context) {
-      const historyItems = await UsedQuery.find({ take: 100, order: { createdAt: 'DESC' }, where: { workspaceId: context.state.workspaceId} });
-      context.commit('history', historyItems)
-    },
-    async logQuery(context, details) {
-      if (context.state.database) {
-        const run = new UsedQuery()
-        run.text = details.text
-        run.database = context.state.database
-        run.status = 'completed'
-        run.numberOfRecords = details.rowCount
-        run.workspaceId = context.state.workspaceId
-        await run.save()
-        context.commit('historyAdd', run)
-      }
-    },
-    async removeHistoryQuery(context, historyQuery) {
-      await historyQuery.remove()
-      context.commit('historyRemove', historyQuery)
-    },
     async menuActive(context, value) {
       context.commit('menuActive', value)
     },
     async tabActive(context, value: CoreTab) {
       context.commit('tabActive', value)
-    } 
+    }
   },
   plugins: []
 })
