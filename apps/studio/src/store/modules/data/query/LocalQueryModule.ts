@@ -16,6 +16,6 @@ export const LocalQueryModule: DataStore<FavoriteQuery, State> = {
   },
   mutations: mutationsFor<FavoriteQuery>({
     // more mutations go here
-  }),
+  }, { field: 'title', direction : 'asc'}),
   actions: localActionsFor<FavoriteQuery>(FavoriteQuery, {})
 }

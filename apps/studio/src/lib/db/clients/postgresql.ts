@@ -1183,7 +1183,7 @@ export async function getTableCreateScript(conn: Conn, table: string, schema: st
       array_to_string(
         array_agg(
           '  ' || quote_ident(tabdef.column_name) || ' ' ||
-          case when tabdef.def_val like 'nextval('''||tabdef.table_name||'_'||tabdef.column_name||'_seq'||'%' then
+          case when tabdef.def_val like 'nextval(%_seq%' then
             case when tabdef.type = 'integer' then 'serial'
                  when tabdef.type = 'smallint' then 'smallserial'
                  when tabdef.type = 'bigint' then 'bigserial'
@@ -1193,7 +1193,7 @@ export async function getTableCreateScript(conn: Conn, table: string, schema: st
           end || ' ' ||
           tabdef.not_null ||
           CASE WHEN tabdef.def_val IS NOT NULL
-                    AND NOT (tabdef.def_val like 'nextval('''||tabdef.table_name||'_'||tabdef.column_name||'_seq'||'%'
+                    AND NOT (tabdef.def_val like 'nextval(%_seq%'
                              AND (tabdef.type = 'integer' OR tabdef.type = 'smallint' OR tabdef.type = 'bigint'))
                THEN ' DEFAULT ' || tabdef.def_val
           ELSE '' END ||

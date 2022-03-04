@@ -5,7 +5,7 @@
     </a>
     <div class="alert-title">
       <i class="material-icons">error_outline</i>
-      <b v-if="title" class="error-title">{{title}}</b>
+      <b class="error-title">{{title || "There was a problem"}}</b>
     </div>
     <div class="alert-body">
       <ul class="error-list">
@@ -16,6 +16,7 @@
           title="Click to copy"
         >
           {{e.message || e.toString()}}
+          {{e.marker ? ` - line ${e.marker.line}, ch ${e.marker.ch}` : ''}}
         </li>
       </ul>
       <div class="help-links" v-if="error.helpLink">

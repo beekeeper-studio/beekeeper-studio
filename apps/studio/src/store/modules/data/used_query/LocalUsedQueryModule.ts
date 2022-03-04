@@ -18,6 +18,6 @@ export const LocalUsedQueryModule: DataStore<UsedQuery, State> = {
   },
   mutations: mutationsFor<UsedQuery>({
 
-  }),
-  actions: localActionsFor<UsedQuery>(UsedQuery, {})
+  }, { field: 'createdAt', direction: 'desc'}),
+  actions: localActionsFor<UsedQuery>(UsedQuery, {}, { take: 100, order: { createdAt: 'DESC' } })
 }
