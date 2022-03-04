@@ -698,7 +698,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
           this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.connection.id })
           log.debug('identification', identification)
           const found = identification.find(i => {
-            return i.type === 'CREATE_TABLE' || i.type === 'DROP_TABLE'
+            return i.type === 'CREATE_TABLE' || i.type === 'DROP_TABLE' || i.type === 'ALTER_TABLE'
           })
           if (found) {
             this.$store.dispatch('updateTables')
