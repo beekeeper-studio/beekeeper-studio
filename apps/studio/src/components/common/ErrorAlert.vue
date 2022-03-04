@@ -32,10 +32,6 @@ import _ from 'lodash'
 import Vue from 'vue'
 export default Vue.extend({
   props: ['error', 'title', 'closable'],
-  mounted() {
-    // @ts-ignore
-    window.alertErrors = this.error
-  },
   computed: {
     dev() {
       return platformInfo.isDevelopment
