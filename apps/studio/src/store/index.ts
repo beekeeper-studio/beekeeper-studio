@@ -5,8 +5,6 @@ import username from 'username'
 
 import { UsedConnection } from '../common/appdb/models/used_connection'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
-import { FavoriteQuery } from '../common/appdb/models/favorite_query'
-import { UsedQuery } from '../common/appdb/models/used_query'
 import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
@@ -49,8 +47,6 @@ export interface State {
   tablesLoading: string,
   tablesInitialLoaded: boolean,
   connectionConfigs: UsedConnection[],
-  history: UsedQuery[],
-  favorites: FavoriteQuery[],
   username: Nullable<string>,
   menuActive: boolean,
   activeTab: Nullable<CoreTab>,
@@ -88,8 +84,6 @@ const store = new Vuex.Store<State>({
     tablesLoading: "loading tables...",
     tablesInitialLoaded: false,
     connectionConfigs: [],
-    history: [],
-    favorites: [],
     username: null,
     menuActive: false,
     activeTab: null,
@@ -306,24 +300,6 @@ const store = new Vuex.Store<State>({
     },
     usedConfigs(state, configs: UsedConnection[]) {
       Vue.set(state, 'usedConfigs', configs)
-    },
-    history(state: State, history) {
-      state.history = history
-    },
-    historyAdd(state: State, run: UsedQuery) {
-      state.history.unshift(run)
-    },
-    historyRemove(state, historyQuery) {
-      state.history = _.without(state.history, historyQuery)
-    },
-    favorites(state: State, list: FavoriteQuery[]) {
-      state.favorites = list
-    },
-    favoritesAdd(state: State, query) {
-      state.favorites.unshift(query)
-    },
-    removeUsedFavorite(state: State, favorite) {
-      state.favorites = _.without(state.favorites, favorite)
     },
 
   },
