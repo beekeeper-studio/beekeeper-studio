@@ -30,6 +30,9 @@ jobs:
 
       - name: Build Electron app
         run: "arch -arm64 yarn run electron:build --publish never --arm64"
+        env:
+          CSC_LINK: ${{secrets.mac_dev}}
+          CSC_KEY_PASSWORD: ${{secrets.mac_dev_pw}}
 
       - name: Cleanup artifacts
         if: matrix.os != 'windows-latest'
