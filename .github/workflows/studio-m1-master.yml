@@ -1,4 +1,4 @@
-name: Studio - Master build
+name: Studio - M1 Build
 
 on:
   push:
@@ -6,6 +6,9 @@ on:
       - "master"
     paths-ignore:
       - 'apps/sqltools/**'
+  pull_request:
+    paths-ignore:
+      - apps/studio/**
 
 jobs:
   masterbuild:
