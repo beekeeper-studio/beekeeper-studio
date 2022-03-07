@@ -34,7 +34,7 @@ jobs:
       - name: Cleanup artifacts
         if: matrix.os != 'windows-latest'
         run: |
-          npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.zip)"
+          npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v1

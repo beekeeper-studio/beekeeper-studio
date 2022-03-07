@@ -49,4 +49,4 @@ jobs:
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
         run: |
-          npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.zip)"
+          npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
