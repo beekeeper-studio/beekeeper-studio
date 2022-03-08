@@ -39,7 +39,9 @@ describe("SQL Server Tests", () => {
       host: container.getContainerIpAddress(),
       port: container.getMappedPort(1433),
       user: 'sa',
-      password: 'Example*1'
+      password: 'Example*1',
+      ssl: true,
+      sslRejectUnauthorized: false
     }
     util = new DBTestUtil(config, "tempdb", { defaultSchema: 'dbo', dialect: 'sqlserver'})
     await util.setupdb()

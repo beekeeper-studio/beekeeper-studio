@@ -14,7 +14,6 @@ function testWith(dockerTag) {
 
 
     beforeAll(async () => {
-      try {
         const timeoutDefault = 10000
         jest.setTimeout(dbtimeout)
         // environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
@@ -53,11 +52,6 @@ function testWith(dockerTag) {
         })
 
         await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
-
-      } catch (ex) {
-        console.log("ERROR")
-        console.log(ex)
-      }
     })
 
     afterAll(async () => {

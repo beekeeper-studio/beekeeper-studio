@@ -1,4 +1,5 @@
-import Knex from 'knex'
+import {Knex} from 'knex'
+import knex from 'knex'
 import { DBConnection, IDbConnectionServerConfig } from '../../src/lib/db/client'
 import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
@@ -37,16 +38,16 @@ export class DBTestUtil {
 
   private dialect: Dialect
   public data: DialectData
-  
+
   public preInitCmd: string | undefined
   public defaultSchema: string = undefined
-  
+
   get expectedTables() {
     return this.extraTables + 8
   }
 
   constructor(config: IDbConnectionServerConfig, database: string, options: Options) {
-    log.transports.console.level = 'error'  
+    log.transports.console.level = 'error'
     if (platformInfo.debugEnabled) {
       log.transports.console.level = 'silly'
     }
@@ -56,14 +57,14 @@ export class DBTestUtil {
     this.dbType = config.client || 'generic'
     this.options = options
     if (config.client === 'sqlite') {
-      this.knex = Knex({
-        client: "sqlite3",
+      this.knex = knex({
+        client: "better-sqlite3",
         connection: {
           filename: database
         }
       })
     } else {
-      this.knex = Knex({
+      this.knex = knex({
         client: KnexTypes[config.client || ""] || config.client,
         version: options?.version,
         connection: {
@@ -76,20 +77,30 @@ export class DBTestUtil {
         pool: { min: 0, max: 50 }
       })
     }
-    
+
     this.defaultSchema = options?.defaultSchema || this.defaultSchema
     this.server = createServer(config)
     this.connection = this.server.createConnection(database)
   }
 
+  maybeArrayToObject(items, key) {
+    return items.map((item) => {
+      if(_.isObject(item)) return item
+      const result = {}
+      result[key] = item
+      return result
+    })
+  }
+
   async setupdb() {
     await this.connection.connect()
     await this.createTables()
-    const address = await this.knex("addresses").insert({country: "US"}).returning("id")
+    const address = this.maybeArrayToObject(await this.knex("addresses").insert({country: "US"}).returning("id"), 'id')
+    console.log("address result:", address)
     await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
-    const people = await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0]}).returning("id")
-    const jobs = await this.knex("jobs").insert({job_name: "Programmer"}).returning("id")
-    await this.knex("people_jobs").insert({job_id: jobs[0], person_id: people[0] })
+    const people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0].id}).returning("id"), 'id')
+    const jobs = this.maybeArrayToObject(await this.knex("jobs").insert({job_name: "Programmer"}).returning("id"), 'id')
+    await this.knex("people_jobs").insert({job_id: jobs[0].id, person_id: people[0].id })
   }
 
   testdb() {
@@ -113,21 +124,21 @@ export class DBTestUtil {
   /**
    * Tests related to the table view
    * fetching PK, selecting data, etc.
-   */ 
+   */
   async tableViewTests() {
 
     console.log("table tests")
     // reserved word as table name
     expect(await this.connection.getPrimaryKey("group", this.defaultSchema))
       .toBe("id");
-    
+
     expect(await this.connection.getPrimaryKey("MixedCase", this.defaultSchema))
       .toBe("id");
-    
+
     const stR = await this.connection.selectTop("group", 0, 10, [{ field: "select", dir: 'ASC'} ], [], this.defaultSchema)
     expect(stR)
       .toMatchObject({ result: [] })
-    
+
     await this.knex("group").insert([{select: "bar"}, {select: "abc"}])
 
     let r = await this.connection.selectTop("group", 0, 10, [{field: "select", dir: 'ASC'}], [], this.defaultSchema)
@@ -237,10 +248,10 @@ export class DBTestUtil {
       nullable: boolean,
       defaultValue: string,
     }
-    const rawResult: MiniColumn[] = schema.map((c) => 
+    const rawResult: MiniColumn[] = schema.map((c) =>
       _.pick(c, 'nullable', 'defaultValue', 'columnName', 'dataType')
     )
-    
+
 
     // cockroach adds a rowid column if there's no primary key.
     const result = rawResult.filter((r) => r.columnName !== 'rowid')
@@ -281,7 +292,7 @@ export class DBTestUtil {
       }
     ]
     expect(result).toMatchObject(expected)
-    
+
   }
 
   async filterTests() {
@@ -370,7 +381,7 @@ export class DBTestUtil {
       drops: [{ name: 'it_idx' }],
       additions: [{ name: 'it_idx2', columns: [{ name: 'me_too', order: 'ASC'}] }],
       table: 'index_test',
-      schema: this.defaultSchema 
+      schema: this.defaultSchema
     })
     const updatedIndexesRaw: TableIndex[] = await this.connection.listTableIndexes('index_test', this.defaultSchema)
 
@@ -435,7 +446,7 @@ export class DBTestUtil {
     await cursor.close()
 
 
-    
+
   }
 
   private async createTables() {
