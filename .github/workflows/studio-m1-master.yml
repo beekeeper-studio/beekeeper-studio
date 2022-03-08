@@ -1,0 +1,43 @@
+name: Studio - M1 Build
+
+on:
+  push:
+    branches:
+      - "master"
+    paths-ignore:
+      - 'apps/sqltools/**'
+
+jobs:
+  masterbuild:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-arm64]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Clean cache
+        run: arch -arm64 yarn cache clean
+
+      - name: Check dependencies
+        run: "arch -arm64 yarn install --frozen-lockfile --network-timeout 100000"
+
+      - name: Build Electron app
+        run: "arch -arm64 yarn run electron:build --publish never --arm64"
+        env:
+          CSC_LINK: ${{secrets.mac_dev}}
+          CSC_KEY_PASSWORD: ${{secrets.mac_dev_pw}}
+
+      - name: Cleanup artifacts
+        if: matrix.os != 'windows-latest'
+        run: |
+          npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}
+          path: apps/studio/dist_electron
