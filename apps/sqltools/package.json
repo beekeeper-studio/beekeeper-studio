@@ -20,7 +20,7 @@
     "@vue/cli-service": "~4.5.15",
     "core-js": "^3.6.5",
     "highlight.js": "^10.4.1",
-    "knex": "~0.21.17",
+    "knex": "^1.0.3",
     "lodash": "^4.17.21",
     "sql-formatter": "^4.0.0",
     "typeface-roboto": "^1.1.13",

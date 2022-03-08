@@ -23,14 +23,12 @@
   },
   "main": "background.js",
   "dependencies": {
-
     "axios": "^0.21.4",
     "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
     "better-sqlite3": "^7.5.0",
     "bytes": "^3.1.0",
     "cassandra-driver": "^4.4.0",
-    "cli-highlight": "2.0.0",
     "codemirror": "^5.63.1",
     "connection-string": "^3.4.2",
     "core-js": "3",
@@ -68,7 +66,7 @@
     "split.js": "^1.5.11",
     "sql-formatter": "^4.0.0",
     "sql-query-identifier": "^2.2.0",
-    "ssh2": "beekeeper-studio/ssh2#electron-detection",
+    "ssh2": "beekeeper-studio/ssh2#electron-path-require",
     "tabulator-tables": "rathboma/tabulator#max-initial-width-with-dist",
     "typeface-roboto": "^0.0.75",
     "typeface-source-code-pro": "^1.1.3",
@@ -148,7 +146,7 @@
   "repository": "git@github.com:beekeeper-studio/beekeeper-studio.git",
   "resolutions": {
     "watchpack": "1.6.1",
-    "node-ssh-forward/ssh2": "beekeeper-studio/ssh2#electron-detection",
+    "node-ssh-forward/ssh2": "beekeeper-studio/ssh2#electron-path-require",
     "node-pre-gyp": "0.12.0",
     "electron-builder": "22.10.5"
   }
