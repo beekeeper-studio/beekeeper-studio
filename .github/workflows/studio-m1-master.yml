@@ -6,9 +6,6 @@ on:
       - "master"
     paths-ignore:
       - 'apps/sqltools/**'
-  pull_request:
-    paths-ignore:
-      - apps/studio/**
 
 jobs:
   masterbuild:
