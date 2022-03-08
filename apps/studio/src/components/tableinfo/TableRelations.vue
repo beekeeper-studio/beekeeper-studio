@@ -1,11 +1,11 @@
 <template>
-  <div class="table-info-table view-only">
+  <div class="table-info-table view-only" v-hotkey="hotkeys">
     <div class="table-info-table-wrap">
       <div class="center-wrap">
         <error-alert :error="error" v-if="error" />
         <div class="notices" v-if="notice">
           <div class="alert alert-info">
-            <i class="material-icons-outlined">info</i> 
+            <i class="material-icons-outlined">info</i>
             <div>{{notice}}</div>
           </div>
         </div>
@@ -16,14 +16,14 @@
           </div>
           <div class="expand"></div>
           <div class="actions">
-              <a @click.prevent="$emit('refresh')" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
-              <a v-if="canAdd" @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
+              <a @click.prevent="$emit('refresh')" v-tooltip="`${ctrlOrCmd('r')} or F5`" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
+              <a v-if="canAdd" @click.prevent="addRow" v-tooltip="ctrlOrCmd('n')" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
           </div>
         </div>
         <div class="table-relations" ref="tabulator"></div>
       </div>
     </div>
-    
+
     <div class="expand" />
 
     <status-bar class="tabulator-footer">
@@ -39,8 +39,13 @@
           <x-button class="btn btn-primary" menu>
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
+              <x-menuitem @click.prevent="submitApply">
+                <x-label>Apply</x-label>
+                <x-shortcut value="Control+S"></x-shortcut>
+              </x-menuitem>
               <x-menuitem @click.prevent="submitSql">
-                Copy to SQL
+                <x-label>Copy to SQL</x-label>
+                <x-shortcut value="Control+Shift+S"></x-shortcut>
               </x-menuitem>
             </x-menu>
           </x-button>
@@ -89,6 +94,16 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables']),
     ...mapGetters(['schemas', 'dialect', 'schemaTables', 'dialectData']),
+    hotkeys() {
+      if (!this.active) return {}
+      const result = {}
+      result['f5'] = () => this.$emit('refresh')
+      result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
+      result[this.ctrlOrCmd('r')] = () => this.$emit('refresh')
+      result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
+      result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
+      return result
+    },
     notice() {
       const results = []
       if (!this.canAdd) {
@@ -127,7 +142,7 @@ export default Vue.extend({
           editor: vueEditor(NullableInputEditorVue),
 
         },
-        { 
+        {
           field: 'fromColumn',
           title: "Column",
           editable,
@@ -146,7 +161,7 @@ export default Vue.extend({
           },
           cellEdited: (cell) => cell.getRow().getCell('toTable')?.setValue(null)
         }] : []),
-        { 
+        {
           field: 'toTable',
           title: "FK Table",
           editable,
@@ -155,9 +170,9 @@ export default Vue.extend({
             values: this.getTables
           },
           cellEdited: (cell) => cell.getRow().getCell('toColumn')?.setValue(null)
-          
+
         },
-        { 
+        {
           field: 'toColumn',
           title: "FK Column",
           editable,
@@ -166,7 +181,7 @@ export default Vue.extend({
             values: this.getColumns
           },
         },
-        { 
+        {
           field: 'onUpdate',
           title: "On Update",
           editor: 'select',
@@ -176,7 +191,7 @@ export default Vue.extend({
             defaultValue: 'NO ACTION'
           }
         },
-        { 
+        {
           field: 'onDelete',
           title: 'On Delete',
           editable,
@@ -208,8 +223,8 @@ export default Vue.extend({
     },
     getTables(cell: CellComponent): string[] {
         const schema = cell.getRow().getData()['toSchema']
-        return schema ? 
-          this.schemaTables.find((st) => st.schema === schema)?.tables.map((t) => t.name) : 
+        return schema ?
+          this.schemaTables.find((st) => st.schema === schema)?.tables.map((t) => t.name) :
           this.tables.map((t) => t.name)
     },
     getColumns(cell: CellComponent): string[] {
@@ -219,7 +234,7 @@ export default Vue.extend({
       if (!schema) {
         return this.tables.find((t: TableOrView) => t.name === table)?.columns.map((c: TableColumn) => c.columnName) || []
       } else {
-        return this.tables.find((t: TableOrView) => 
+        return this.tables.find((t: TableOrView) =>
           t.name === table && t.schema === schema
         )?.columns.map((c: TableColumn) => c.columnName) || []
       }
@@ -239,7 +254,7 @@ export default Vue.extend({
         return payload
       })
       const drops = this.removedRows.map((row: RowComponent) => {
-        return row.getData()['constraintName'];        
+        return row.getData()['constraintName'];
       })
       return { additions, drops, table: this.table.name, schema: this.table.schema }
     },

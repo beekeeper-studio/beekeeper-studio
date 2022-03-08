@@ -17,6 +17,10 @@
       background-color: inherit;
       // background-color: rgba($theme-base, 0.2);
     }
+
+    .error {
+      border-bottom: solid 1px $brand-danger;
+    }
   }
   .top-panel, .bottom-panel {
     overflow: hidden;

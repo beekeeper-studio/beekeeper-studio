@@ -109,12 +109,13 @@ export function mutationsFor<T extends HasId>(obj: any, sortBy?: SortSpec) {
   }
 }
 
-export function localActionsFor<T extends ApplicationEntity>(cls: any, other: any) {
+export function localActionsFor<T extends ApplicationEntity>(cls: any, other: any, loadOptions: any = {}) {
   return {
     async load(context) {
       context.commit("error", null)
       await safely(context, async () => {
-        const items = await cls.find()
+
+        const items = await cls.find(loadOptions)
         if (context.rootState.workspaceId === LocalWorkspace.id) {
           context.commit('upsert', items)
         }

@@ -77,14 +77,11 @@
       }
     },
     mounted() {
-
-      this.$store.dispatch('updateHistory')
       this.$store.dispatch('pins/loadPins')
       this.registerHandlers(this.rootBindings)
       this.$nextTick(() => {
         this.initializing = false
       })
-
     },
     beforeDestroy() {
       this.$store.dispatch('pins/unloadPins')
