@@ -65,7 +65,7 @@
 </div>
 </template>
 <script lang="ts">
-import { Tabulator } from 'tabulator-tables'
+import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
 import { TabulatorStateWatchers, trashButton, vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
@@ -157,7 +157,7 @@ export default Vue.extend({
           field: 'name',
           editable,
           editor: vueEditor(NullableInputEditorVue),
-          formatter: this.cellFormatter
+          formatter: this.cellFormatter,
         },
         {
           title: 'Unique',
@@ -168,7 +168,7 @@ export default Vue.extend({
           },
           width: 80,
           editable,
-          editor: vueEditor(CheckboxEditorVue)
+          editor: vueEditor(CheckboxEditorVue),
         },
         {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue), width: 85},
         {
@@ -283,7 +283,8 @@ export default Vue.extend({
   mounted() {
     // this.initializeTabulator()
     this.tabState.dirty = false
-      this.tabulator = new Tabulator(this.$refs.tabulator, {
+      // @ts-ignore
+      this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         data: this.tableData,
         columns: this.tableColumns,
         layout: 'fitColumns',
@@ -291,8 +292,8 @@ export default Vue.extend({
         columnDefaults: {
           title: '',
           resizable: false,
+          headerSort: false,
         },
-        headerSort: false,
       })
   }
 })

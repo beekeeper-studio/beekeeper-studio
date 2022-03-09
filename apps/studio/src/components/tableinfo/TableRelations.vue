@@ -58,7 +58,7 @@
 </template>
 <script lang="ts">
 import Vue from 'vue'
-import { Tabulator } from 'tabulator-tables'
+import { Tabulator, TabulatorFull } from 'tabulator-tables'
 type CellComponent = Tabulator.CellComponent
 type RowComponent = Tabulator.RowComponent
 type ColumnDefinition = Tabulator.ColumnDefinition
@@ -316,12 +316,14 @@ export default Vue.extend({
     initializeTabulator() {
 
       this.tabulator?.destroy()
-      this.tabulator = new Tabulator(this.$refs.tabulator, {
+      // @ts-ignore
+      this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         columns: this.tableColumns,
         data: this.tableData,
         columnDefaults: {
           title:'',
           tooltip: true,
+          headerSort: false,
         },
         placeholder: "No Relations",
         layout: 'fitColumns'

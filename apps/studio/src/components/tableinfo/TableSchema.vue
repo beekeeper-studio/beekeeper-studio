@@ -58,7 +58,7 @@
   </div>
 </template>
 <script lang="ts">
-import { Tabulator } from 'tabulator-tables'
+import { TabulatorFull, Tabulator } from 'tabulator-tables'
 type CellComponent = Tabulator.CellComponent
 type RowComponent = Tabulator.RowComponent
 import DataMutators from '../../mixins/data_mutators'
@@ -378,17 +378,18 @@ export default Vue.extend({
     },
     initializeTabulator() {
       if (this.tabulator) this.tabulator.destroy()
-      this.tabulator = new Tabulator(this.$refs.tableSchema, {
+      // @ts-ignore
+      this.tabulator = new TabulatorFull(this.$refs.tableSchema, {
         columns: this.tableColumns,
         layout: 'fitColumns',
         columnDefaults: {
           title: '',
           tooltip: true,
-          resizable: false
+          resizable: false,
+          headerSort: false,
         },
         data: this.tableData,
         placeholder: "No Columns",
-        headerSort: false,
       })
 
     }

@@ -13,7 +13,7 @@
         <div class="table-triggers" ref="tabulator"></div>
       </div>
     </div>
-    
+
     <div class="expand" />
 
     <status-bar class="tabulator-footer">
@@ -25,7 +25,7 @@
   </div>
 </template>
 <script>
-import {Tabulator} from 'tabulator-tables'
+import {Tabulator, TabulatorFull} from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
 import globals from '../../common/globals'
 import StatusBar from '../common/StatusBar.vue'
@@ -70,11 +70,14 @@ export default {
     }
   },
   mounted() {
-    this.tabulator = new Tabulator(this.$refs.tabulator, {
+    this.tabulator = new TabulatorFull(this.$refs.tabulator, {
       columns: this.tableColumns,
       data: this.tableData,
-      tooltips: true,
-      columnMaxInitialWidth: globals.maxColumnWidthTableInfo,
+      columnDefaults: {
+        tooltip: true,
+        headerSort: true,
+        maxInitialWidth: globals.maxColumnWidthTableInfo,
+      },
       placeholder: "No triggers",
       layout: 'fitColumns'
 
