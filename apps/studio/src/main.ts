@@ -75,6 +75,8 @@ import _ from 'lodash'
     TimeAgo.addLocale(en)
     // @ts-ignore
     Tabulator.defaultOptions.layout = "fitDataFill";
+    // @ts-ignore
+    Tabulator.defaultOptions.menuContainer = ".beekeeper-studio-wrapper";
     // Tabulator.prototype.bindModules([EditModule]);
     const appDb = platformInfo.appDbPath
     const connection = new Connection(appDb, config.isDevelopment ? true : ['error'])
@@ -101,6 +103,9 @@ import _ from 'lodash'
             selection.selectAllChildren(
               element
             );
+
+          } else {
+            console.log("no selection")
           }
         },
 

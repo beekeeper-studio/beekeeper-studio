@@ -183,6 +183,7 @@
 
 <script lang="ts">
 import Vue from 'vue'
+import Papa from 'papaparse'
 import pluralize from 'pluralize'
 import { TabulatorFull } from 'tabulator-tables'
 // import pluralize from 'pluralize'
@@ -304,24 +305,30 @@ export default Vue.extend({
         },
         { separator: true },
         {
-          label: '<x-menuitem><x-label>Copy</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Copy Cell</x-label></x-menuitem>',
           action: (_e, cell) => {
             this.$native.clipboard.writeText(cell.getValue());
           },
         },
         {
-          label: '<x-menuitem><x-label>Paste</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Copy Row (JSON)</x-label></x-menuitem>',
           action: (_e, cell) => {
-            cell.setValue(this.$native.clipboard.readText())
-          },
-          disabled: !this.editable
+            const data = cell.getRow().getData()
+            const fixed = {}
+            Object.keys(data).forEach((key) => {
+              const v = data[key]
+              const column = this.tableColumns.find((c) => c.field === key)
+              const nuKey = column ? column.title : key
+              fixed[nuKey] = v
+            })
+            this.$native.clipboard.writeText(JSON.stringify(fixed))
+          }
+        },
+        {
+          label: '<x-menuitem><x-label>Copy Row (TSV / Excel)</x-label></x-menuitem>',
+          action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([cell.getRow().getData()], { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
         },
         { separator: true },
-        {
-          label: '<x-menuitem><x-label>Add row</x-label></x-menuitem>',
-          action: this.cellAddRow.bind(this),
-          disabled: !this.editable
-        },
         {
           label: '<x-menuitem><x-label>Clone row</x-label></x-menuitem>',
           action: this.cellCloneRow.bind(this),
@@ -616,6 +623,7 @@ export default Vue.extend({
         paginationButtonCount: 0,
         initialSort: this.initialSort,
         initialFilter: [this.initialFilter || {}],
+
         // callbacks
         ajaxRequestFunc: this.dataFetch,
         index: this.primaryKey,

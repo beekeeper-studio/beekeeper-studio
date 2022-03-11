@@ -5,12 +5,13 @@
 </template>
 
 <script type="text/javascript">
-  import {TabulatorFull as Tabulator} from 'tabulator-tables'
+  import {TabulatorFull} from 'tabulator-tables'
   import _ from 'lodash'
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
   import Mutators, { escapeHtml } from '../../mixins/data_mutators'
 import globals from '@/common/globals'
+import Papa from 'papaparse'
 
   export default {
     mixins: [Converter, Mutators],
@@ -54,6 +55,32 @@ import globals from '@/common/globals'
       tableTruncated() {
           return this.result.truncated
       },
+      cellContextMenu() {
+        return [
+          {
+            label: '<x-menuitem><x-label>Copy Cell</x-label></x-menuitem>',
+            action: (_e, cell) => this.$native.clipboard.writeText(cell.getValue())
+          },
+          {
+            label: '<x-menuitem><x-label>Copy Row (JSON)</x-label></x-menuitem>',
+            action: (_e, cell) => {
+              const data = cell.getRow().getData()
+              const fixed = {}
+              Object.keys(data).forEach((key) => {
+                const v = data[key]
+                const column = this.tableColumns.find((c) => c.field === key)
+                const nuKey = column ? column.title : key
+                fixed[nuKey] = v
+              })
+              this.$native.clipboard.writeText(JSON.stringify(fixed))
+            }
+          },
+          {
+            label: '<x-menuitem><x-label>Copy Row (TSV / Excel)</x-label></x-menuitem>',
+            action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([cell.getRow().getData()], { header: false, quotes: true, delimiter: "\t", escapeFormulae: true }))
+          }
+        ]
+      },
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
         return this.result.fields.map((column) => {
@@ -64,10 +91,11 @@ import globals from '@/common/globals'
             titleDownload: escapeHtml(column.name),
             dataType: column.dataType,
             width: columnWidth,
-            maxInitialWidth: globals.maxInitialWidth,
             mutator: this.resolveTabulatorMutator(column.dataType),
             formatter: this.cellFormatter,
+            maxInitialWidth: globals.maxColumnWidth,
             tooltip: true,
+            contextMenu: this.cellContextMenu
           }
           return result;
         })
@@ -79,15 +107,13 @@ import globals from '@/common/globals'
       }
     },
     async mounted() {
-      this.tabulator = new Tabulator(this.$refs.tabulator, {
+      this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         data: this.tableData, //link data to table
         reactiveData: true,
-        renderHoriziontal: 'virtual',
+        renderHorizontal: 'virtual',
         columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,
-        columnMaxWidth: globals.maxColumnWidth,
         nestedFieldSeparator: false,
-        cellClick: this.cellClick,
         clipboard: true,
         keybindings: {
           copyToClipboard: false
@@ -98,9 +124,6 @@ import globals from '@/common/globals'
       });
     },
     methods: {
-      cellClick(e, cell) {
-        this.selectChildren(cell.getElement().querySelector('pre'))
-      },
       download(format) {
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
