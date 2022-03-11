@@ -1,6 +1,10 @@
 import Vue from 'vue'
-import Tabulator, { CellComponent, ColumnDefinition, RowComponent } from 'tabulator-tables'
+import { Tabulator } from 'tabulator-tables'
 import _ from 'lodash'
+
+type CellComponent = Tabulator.CellComponent
+type RowComponent = Tabulator.RowComponent
+type ColumnDefinition = Tabulator.ColumnDefinition
 
 export function vueFormatter(component: any) {
   const ComponentClass = Vue.extend(component)
@@ -56,7 +60,7 @@ export function vueEditor(component: any) {
   }
 }
 
-export function trashButton(handler: (e, c: CellComponent) => void): ColumnDefinition {
+export function trashButton(handler: (e, c: Tabulator.CellComponent) => void): ColumnDefinition {
   return {
     field: 'trash-button',
     title: null,

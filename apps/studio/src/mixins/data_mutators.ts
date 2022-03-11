@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
 import helpers from '@shared/lib/tabulator'
 export const NULL = '(NULL)'
-import Tabulator from 'tabulator-tables'
+import {Tabulator} from 'tabulator-tables'
 
 const htmlMap = {
   '&': '&amp;',

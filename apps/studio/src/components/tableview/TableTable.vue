@@ -183,8 +183,9 @@
 
 <script lang="ts">
 import Vue from 'vue'
+import Papa from 'papaparse'
 import pluralize from 'pluralize'
-import Tabulator from "tabulator-tables";
+import { TabulatorFull } from 'tabulator-tables'
 // import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
@@ -304,24 +305,30 @@ export default Vue.extend({
         },
         { separator: true },
         {
-          label: '<x-menuitem><x-label>Copy</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Copy Cell</x-label></x-menuitem>',
           action: (_e, cell) => {
             this.$native.clipboard.writeText(cell.getValue());
           },
         },
         {
-          label: '<x-menuitem><x-label>Paste</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Copy Row (JSON)</x-label></x-menuitem>',
           action: (_e, cell) => {
-            cell.setValue(this.$native.clipboard.readText())
-          },
-          disabled: !this.editable
+            const data = cell.getRow().getData()
+            const fixed = {}
+            Object.keys(data).forEach((key) => {
+              const v = data[key]
+              const column = this.tableColumns.find((c) => c.field === key)
+              const nuKey = column ? column.title : key
+              fixed[nuKey] = v
+            })
+            this.$native.clipboard.writeText(JSON.stringify(fixed))
+          }
+        },
+        {
+          label: '<x-menuitem><x-label>Copy Row (TSV / Excel)</x-label></x-menuitem>',
+          action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([cell.getRow().getData()], { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
         },
         { separator: true },
-        {
-          label: '<x-menuitem><x-label>Add row</x-label></x-menuitem>',
-          action: this.cellAddRow.bind(this),
-          disabled: !this.editable
-        },
         {
           label: '<x-menuitem><x-label>Clone row</x-label></x-menuitem>',
           action: this.cellCloneRow.bind(this),
@@ -438,7 +445,6 @@ export default Vue.extend({
             //   maxLength: column.columnLength // TODO
             // }
           },
-          cellEdited: this.cellEdited
         }
         results.push(result)
 
@@ -576,7 +582,12 @@ export default Vue.extend({
     }
   },
   async mounted() {
-    if (this.shouldInitialize) this.initialize()
+    if (this.shouldInitialize) {
+      this.$nextTick(async() => {
+        await this.initialize()
+      })
+
+    }
   },
   methods: {
     async close() {
@@ -586,7 +597,7 @@ export default Vue.extend({
       log.info("initializing tab ", this.tab.title, this.tab.tabType)
       this.initialized = true
       this.filter.field = this.table?.columns[0]?.columnName
-      if (this.initialFilter) {
+    if (this.initialFilter) {
         this.filter = _.clone(this.initialFilter)
       }
       this.fetchTableLength()
@@ -594,24 +605,25 @@ export default Vue.extend({
       await this.$store.dispatch('updateTableColumns', this.table)
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
-      this.tabulator = new Tabulator(this.$refs.table, {
+      // @ts-ignore-error
+      this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,
         columns: this.tableColumns,
         nestedFieldSeparator: false,
         placeholder: "No Data",
-        virtualDomHoz: false,
+        renderHorizontal: 'virtual',
         ajaxURL: "http://fake",
-        ajaxSorting: true,
-        ajaxFiltering: true,
-        ajaxLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
-        pagination: "remote",
+        sortMode: 'remote',
+        filterMode: 'remote',
+        dataLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
+        pagination: true,
+        paginationMode: 'remote',
         paginationSize: this.limit,
         paginationElement: this.$refs.paginationArea,
         paginationButtonCount: 0,
         initialSort: this.initialSort,
         initialFilter: [this.initialFilter || {}],
-        // @ts-ignore
-        lastUpdated: null,
+
         // callbacks
         ajaxRequestFunc: this.dataFetch,
         index: this.primaryKey,
@@ -625,6 +637,7 @@ export default Vue.extend({
 
         ]
       });
+      this.tabulator.on('cellEdited', this.cellEdited)
 
       this.$nextTick(() => {
         if (this.$refs.valueInput) {
@@ -755,7 +768,6 @@ export default Vue.extend({
       return this.editable && cell.getColumn().getField() !== this.primaryKey && !pendingDelete
     },
     cellEdited(cell) {
-      log.info('edit', cell)
       const pkCell = cell.getRow().getCells().find(c => c.getField() === this.primaryKey)
 
       if (!pkCell) {
@@ -914,7 +926,6 @@ export default Vue.extend({
 
 
         } catch (ex) {
-
           this.pendingChanges.updates.forEach(edit => {
               edit.cell.getElement().classList.add('edit-error')
           })
@@ -987,14 +998,15 @@ export default Vue.extend({
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
+      log.info("fetch params", params)
       let offset = 0;
       let limit = this.limit;
       let orderBy = null;
       // eslint-disable-next-line no-debugger
       let filters = this.filterForTabulator;
 
-      if (params.sorters) {
-        orderBy = params.sorters
+      if (params.sort) {
+        orderBy = params.sort
       }
 
       if (params.size) {
