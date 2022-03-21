@@ -148,7 +148,6 @@
   "repository": "git@github.com:beekeeper-studio/beekeeper-studio.git",
   "resolutions": {
     "watchpack": "1.6.1",
-    "*/ssh2": "beekeeper-studio/ssh2#dd37550fa221eb8678792f681815170894aedea7",
     "node-pre-gyp": "0.12.0",
     "electron-builder": "22.10.5"
   }

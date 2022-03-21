@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
+import * as path from 'path'
 import { Client } from 'ssh2'
 import * as net from 'net'
 import * as fs from 'fs'
 import * as os from 'os'
-import * as path from 'path'
 import rawLog from 'electron-log'
 
 interface Options {
@@ -124,6 +124,7 @@ class SSHConnection {
 
   private async establish() {
     let connection: Client
+    this.debug("establish with options", this.options)
     if (this.options.bastionHost) {
       connection = await this.connectViaBastion(this.options.bastionHost)
     } else {
@@ -207,8 +208,10 @@ class SSHConnection {
   }
 
   async forward(options: ForwardingOptions) {
+    this.debug("Starting forward")
     const connection = await this.establish()
-    return new Promise<void>((resolve, reject) => {
+    this.debug("connection established")
+    return new Promise<any>((resolve, reject) => {
       this.server = net.createServer((socket) => {
         this.debug('Forwarding connection from "localhost:%d" to "%s:%d"', options.fromPort, options.toHost, options.toPort)
         connection.forwardOut('localhost', options.fromPort, options.toHost || 'localhost', options.toPort, (error, stream) => {
@@ -219,8 +222,10 @@ class SSHConnection {
           stream.pipe(socket)
         })
       }).listen(options.fromPort, 'localhost', () => {
-        return resolve()
+        this.debug("Tunnel listening configured")
+        resolve({})
       })
+
     })
   }
 }
