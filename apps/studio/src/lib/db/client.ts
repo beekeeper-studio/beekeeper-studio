@@ -2,7 +2,7 @@
 import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
-import { SSHConnection } from 'node-ssh-forward';
+import { SSHConnection } from '@/vendor/node-ssh-forward';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, } from './models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 
@@ -147,7 +147,7 @@ export class DBConnection {
 
   alterRelationSql = bind.bind(null, 'alterRelationSql', this.server, this.database)
   alterRelation = bindAsync.bind(null, 'alterRelation', this.server, this.database)
-  
+
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
   getTableCreateScript = getTableCreateScript.bind(null, this.server, this.database)
   getTableSelectScript = getTableSelectScript.bind(null, this.server, this.database)

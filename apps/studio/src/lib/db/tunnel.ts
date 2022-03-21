@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import pf from 'portfinder'
 import createLogger from '../logger';
-import { Options, SSHConnection } from 'node-ssh-forward'
+import { Options, SSHConnection } from '@/vendor/node-ssh-forward'
 import appConfig from '../../config'
 
 import { resolveHomePathToAbsolute } from '../../common/utils'
