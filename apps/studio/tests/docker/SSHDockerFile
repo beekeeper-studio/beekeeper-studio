@@ -1,0 +1,3 @@
+FROM lscr.io/linuxserver/openssh-server:latest
+
+RUN sed -i '/^AllowTcpForwarding/cAllowTcpForwarding yes' /etc/ssh/sshd_config

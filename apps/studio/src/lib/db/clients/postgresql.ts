@@ -1346,6 +1346,7 @@ function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServe
 
 
   if (server.sshTunnel) {
+    console.log("server has sshTunnel")
     config.host = server.config.localHost;
     config.port = server.config.localPort;
   }
