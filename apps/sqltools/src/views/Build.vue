@@ -30,7 +30,7 @@
           <template>
             <h3 class="title">Generated SQL for {{dialectTitle}}</h3>
           </template>
-          
+
           <template v-slot:alert v-if="dialectWarning">
             <div class="alert alert-warning">
             <i class="material-icons">warning</i>
@@ -63,7 +63,7 @@ interface Data {
   template: Template
   schema: Schema
   sql?: string,
-  knex?: Knex,
+  knex?: {Knex},
   generator: SqlGenerator
   schemaChanges: number
   defaultName: string
@@ -84,7 +84,7 @@ export default Vue.extend ({
     }
   },
   name: 'Home',
-  components: { 
+  components: {
     SchemaBuilder,
     DialectPicker,
     HighlightedCode
