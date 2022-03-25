@@ -53,7 +53,6 @@ import { UserTemplate as users } from '../lib/templates/user'
 import { DialectTitles, FormatterDialect, Schema, SchemaItem } from '@shared/lib/dialects/models'
 import SchemaBuilder from '@shared/components/SchemaBuilder.vue'
 import { format } from 'sql-formatter'
-import Knex from 'knex'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator';
 import DialectPicker from '@/components/DialectPicker.vue'
 import templates from '@/lib/templates';
@@ -63,7 +62,6 @@ interface Data {
   template: Template
   schema: Schema
   sql?: string,
-  knex?: {Knex},
   generator: SqlGenerator
   schemaChanges: number
   defaultName: string
