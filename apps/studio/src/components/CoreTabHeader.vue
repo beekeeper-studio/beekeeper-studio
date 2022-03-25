@@ -7,12 +7,7 @@
         @click.middle.prevent="maybeClose"
         :class="{ active: selected }"
       >
-        <table-icon v-if="tab.type === 'table'" :table="tab" />
-        <i v-else-if="tab.type === 'query'" class="material-icons item-icon query">code</i>
-        <i v-else-if="tab.type === 'table-properties'" class="material-icons-outlined item-icon table-properties" :class="iconClass">construction</i>
-        <i v-else-if="tab.type === 'settings'" class="material-icons item-icon settings">settings</i>
-        <i v-else-if="tab.type ==='table-builder'" class="material-icons item-icon table-builder">add</i>
-        <i v-else class="material-icons item-icon">new_releases</i>
+        <tab-icon :tab="tab" />
         <span class="tab-title truncate" :title="title + scope">{{title}} <span v-if="scope" class="tab-title-scope">{{scope}}</span></span>
         <div class="tab-action">
           <span class="tab-close" @mouseenter="hover=true" @mouseleave="hover=false" @mousedown.stop="doNothing" @click.prevent.stop="maybeClose">
@@ -24,8 +19,8 @@
     </li>
     <modal :name="modalName" class="beekeeper-modal vue-dialog sure" @opened="$refs.no.focus()">
       <div class="dialog-content">
-        <div class="dialog-c-title">Are you sure?</div>
-        <p>You will lose unsaved changes to '{{this.tab.title}}'</p>
+        <div class="dialog-c-title">Really close tab <tab-icon :tab="tab" /> {{this.tab.title}}?</div>
+        <p>You will lose unsaved changes</p>
       </div>
       <div class="vue-dialog-buttons">
         <span class="expand"></span>
@@ -36,11 +31,11 @@
   </div>
 </template>
 <script>
-  import TableIcon from '@/components/common/TableIcon.vue'
+import TabIcon from './tab/TabIcon.vue'
 
   export default {
+  components: { TabIcon },
     props: ['tab', 'tabsCount', 'selected'],
-    components: {TableIcon},
     data() {
       return {
         unsaved: false,
@@ -98,11 +93,6 @@
         }
         const result = this.tab.text.replace(/\s+/, '')
         return result.length === 0 ? null : result
-      },
-      iconClass() {
-        const result = {}
-        result[`${this.tab.entityType}-icon`] = true
-        return result
       },
       scope() {
         if (this.tab.titleScope) {
