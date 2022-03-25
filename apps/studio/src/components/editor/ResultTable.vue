@@ -100,6 +100,13 @@ import Papa from 'papaparse'
           return result;
         })
       },
+      columnIdTitleMap() {
+        const result = {}
+        this.tableColumns.forEach((column) => {
+          result[column.field] = column.title
+        })
+        return result
+      }
     },
     beforeDestroy() {
       if (this.tabulator) {
@@ -130,8 +137,31 @@ import Papa from 'papaparse'
         this.tabulator.download(format, `${title}-${dateString}.${format}`, 'all')
       },
       clipboard() {
-        this.tabulator.copyToClipboard("table", true)
-        this.$noty.info("Table data copied to clipboard")
+        // this.tabulator.copyToClipboard("all")
+
+        const allRows = this.tabulator.getData()
+        if (allRows.length == 0) {
+          return
+        }
+        const columnTitles = {}
+
+        const result = allRows.map((data) => {
+          const fixed = {}
+          Object.keys(data).forEach((key) => {
+            const v = data[key]
+            const nuKey = this.columnIdTitleMap[key] || key
+            fixed[nuKey] = v
+          })
+          return fixed
+        })
+
+
+        this.$native.clipboard.writeText(
+          Papa.unparse(
+            result,
+            { header: true, delimiter: "\t", quotes: true, escapeFormulae: true }
+          )
+        )
       }
     }
 	}

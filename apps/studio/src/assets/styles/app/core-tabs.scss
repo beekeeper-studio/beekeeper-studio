@@ -191,15 +191,21 @@
 }
 
 .vue-dialog.sure {
+  .v--modal-box {
+    max-width: 375px;
+  }
   .btn {
     font-weight: 400;
 
     &:focus {
       font-weight: 800;
+      border: $theme-primary solid 2px;
+      line-height: 22px;
     }
   }
 
   .tab-like {
+    line-height: 2rem ;
     background-color: rgba($theme-base, 0.1);
     padding: 5px;
     padding-left: 7px;
