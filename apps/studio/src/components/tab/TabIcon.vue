@@ -8,7 +8,9 @@
 </template>
 <script lang="ts">
 import Vue from 'vue'
+import TableIcon from '../common/TableIcon.vue'
 export default Vue.extend({
+  components: { TableIcon },
   props: ['tab'],
   computed: {
     iconClass() {

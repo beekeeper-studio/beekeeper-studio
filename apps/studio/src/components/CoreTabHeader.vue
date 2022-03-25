@@ -17,9 +17,9 @@
         </div>
       </a>
     </li>
-    <modal :name="modalName" class="beekeeper-modal vue-dialog sure" @opened="$refs.no.focus()">
+    <modal :name="modalName" class="beekeeper-modal vue-dialog sure header-sure" @opened="$refs.no.focus()">
       <div class="dialog-content">
-        <div class="dialog-c-title">Really close tab <tab-icon :tab="tab" /> {{this.tab.title}}?</div>
+        <div class="dialog-c-title">Really close <span class="tab-like"><tab-icon :tab="tab" /> {{this.tab.title}}</span>?</div>
         <p>You will lose unsaved changes</p>
       </div>
       <div class="vue-dialog-buttons">

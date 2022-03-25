@@ -445,11 +445,10 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       },
       initialize() {
         this.initialized = true
-
-        const startingValue = this.unsavedText || this.query?.text || editorDefault
-        this.tab.unsavedChanges = this.unsavedChanges
         // TODO (matthew): Add hint options for all tables and columns\
         this.initializeQueries()
+        const startingValue = this.unsavedText || this.query?.text || this.editorDefault
+        this.tab.unsavedChanges = this.unsavedChanges
 
         this.$nextTick(() => {
           this.split = Split(this.splitElements, {
@@ -754,6 +753,9 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         this.editor.execCommand('toggleComment')
       },
       initializeQueries() {
+        if (!this.tab.unsavedChanges && this.query?.text) {
+          this.unsavedText = null
+        }
         if (this.query?.text) {
           this.originalText = this.query.text
           if (!this.unsavedText) this.unsavedText = this.query.text
