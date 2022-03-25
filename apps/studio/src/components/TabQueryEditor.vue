@@ -694,10 +694,12 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
               result.totalRowCount = result.rowCount
             }
           })
-
-          this.selectedResult = results.findIndex((r) => r.rowCount > 0)
-          if (this.selectedResult < 0) this.selectedResult = 0
           this.results = Object.freeze(results);
+
+          this.selectedResult = Math.max(results.length - 1, 0)
+
+          // this.selectedResult = results.findIndex((r) => r.rowCount > 0)
+          // if (this.selectedResult < 0) this.selectedResult = 0
 
           this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.connection.id })
           log.debug('identification', identification)

@@ -5,7 +5,7 @@
         <span v-show="results.length > 1" class="statusbar-item result-selector" :title="'Results'">
         <div class="select-wrap" v-tooltip="{content: 'More query results in here', placement: 'top', show: showHint, trigger: 'manual', classes: ['tooltip-info']}">
           <select name="resultSelector" id="resultSelector" @change="updateValue" class="form-control">
-            <option v-for="(result, index) in results" :selected="value == index" :key="index" :value="index">Result {{index + 1}}: {{shortNum(result.rowCount, 0)}} rows</option>
+            <option v-for="(result, index) in results" :selected="value == index" :key="index" :value="index">Result {{index + 1}}: {{shortNum(result.rowCount, 0)}} {{pluralize('row', result.rowCount, false)}}</option>
           </select>
         </div>
         </span>
@@ -56,6 +56,7 @@
 // import Pluralize from 'pluralize'
 import humanizeDuration from 'humanize-duration'
 import Statusbar from '../common/StatusBar'
+import pluralize from 'pluralize'
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({
   language: "shortEn",
@@ -121,6 +122,9 @@ export default {
     mounted() {
     },
     methods: {
+      pluralize(word, amount, flag) {
+        return pluralize(word, amount, flag)
+      },
       // Attribution: https://stackoverflow.com/questions/10599933/convert-long-number-into-abbreviated-string-in-javascript-with-a-special-shortn/10601315
       shortNum(num, fixed) {
         if (num === null) { return null; } // terminate early
