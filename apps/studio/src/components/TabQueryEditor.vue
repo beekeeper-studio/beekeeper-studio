@@ -447,7 +447,8 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         this.initialized = true
         // TODO (matthew): Add hint options for all tables and columns\
         this.initializeQueries()
-        const startingValue = this.unsavedText || this.query?.text || this.editorDefault
+        const startingValue = this.unsavedText || this.query?.text || editorDefault
+        console.log("starting value", startingValue)
         this.tab.unsavedChanges = this.unsavedChanges
 
         this.$nextTick(() => {
