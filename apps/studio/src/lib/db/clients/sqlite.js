@@ -13,11 +13,11 @@ import { SqliteData } from '@shared/lib/dialects/sqlite';
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
-const knex = knexlib({ client: 'sqlite3'})
+const knex = knexlib({ client: 'better-sqlite3'})
 
 const sqliteErrors = {
   CANCELED: 'SQLITE_INTERRUPT',
-}; 
+};
 
 const PD = SqliteData
 
@@ -181,11 +181,11 @@ export async function applyChanges(conn, changes) {
       if (changes.updates) {
         results = await updateValues(cli, changes.updates)
       }
-  
+
       if (changes.deletes) {
         await deleteRows(cli, changes.deletes)
       }
-  
+
       await driverExecuteQuery(cli, { query: 'COMMIT'})
     } catch (ex) {
       log.error("query exception: ", ex)
@@ -300,7 +300,7 @@ export async function listTableColumns(conn, database, table) {
   const allTables = (await listTables(conn)) || []
   const allViews = (await listViews(conn)) || []
   const tables = allTables.concat(allViews)
-  
+
   const everything = tables.map((table) => {
     return {
       tableName: table.name,

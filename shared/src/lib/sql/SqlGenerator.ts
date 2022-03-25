@@ -1,5 +1,6 @@
 import { Dialect, KnexDialect, Schema, SchemaItem } from '../dialects/models'
-import Knex from 'knex'
+import {Knex} from 'knex'
+import knexlib from 'knex'
 
 export class SqlGenerator {
   private _dialect: Dialect
@@ -15,13 +16,13 @@ export class SqlGenerator {
 
   public set dialect(v : Dialect) {
     this._dialect = v;
-    this.knex = Knex({client: this.knexDialect})
+    this.knex = knexlib({client: this.knexDialect})
   }
 
 
   public buildSql(schema: Schema): string {
     const k = schema.schema ? this.knex.schema.withSchema(schema.schema) : this.knex.schema
-    
+
     const sql = k.createTable(schema.name, (table) => {
 
       const primaries = schema.columns.filter((c) => c.primaryKey && c.dataType !== 'autoincrement')
