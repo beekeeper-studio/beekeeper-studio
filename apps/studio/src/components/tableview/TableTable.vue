@@ -1016,6 +1016,12 @@ export default Vue.extend({
       if (params.page) {
         offset = (params.page - 1) * limit;
       }
+
+      // like if you change a filter
+      if (params.page && params.page !== this.page) {
+        this.page = params.page
+      }
+
       log.info("filters", filters)
 
       const result = new Promise((resolve, reject) => {
