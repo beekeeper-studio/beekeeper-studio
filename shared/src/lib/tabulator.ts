@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import Tabulator from 'tabulator-tables'
+import {Tabulator} from 'tabulator-tables'
 
 
 const htmlMap = {

@@ -170,7 +170,7 @@ const log = rawLog.scope('connection-sidebar');
       },
       lonelyConnections() {
         const folderIds = this.folders.map((c) => c.id)
-        return this.connectionConfigs.filter((config) => {
+        return this.sortedConnections.filter((config) => {
           return !config.connectionFolderId || !folderIds.includes(config.connectionFolderId)
         })
       },
@@ -180,7 +180,7 @@ const log = rawLog.scope('connection-sidebar');
         const result = this.folders.map((folder) => {
           return {
             folder,
-            connections: this.connectionConfigs.filter((c) => c.connectionFolderId === folder.id)
+            connections: this.sortedConnections.filter((c) => c.connectionFolderId === folder.id)
           }
         })
 
@@ -202,7 +202,19 @@ const log = rawLog.scope('connection-sidebar');
           }
         }
       },
-      orderedConnectionConfigs() {
+      sortedConnections() {
+        if (this.sortOrder === 'labelColor') {
+          const mappings = {
+            red: 0,
+            orange: 1,
+            yellow: 2,
+            green: 3,
+            blue: 4,
+            purple: 5,
+            pink: 6
+          }
+          return _.orderBy(this.connectionConfigs, (c) => mappings[c.color]).reverse()
+        }
         return _.orderBy(this.connectionConfigs, this.sortOrder)
       },
       components() {
@@ -249,7 +261,7 @@ const log = rawLog.scope('connection-sidebar');
         return `label-${color}`
       },
       sortConnections(by) {
-        this.connectionConfigs.sort((a, b) => a[by].toString().localeCompare(b[by].toString()))
+        // this.connectionConfigs.sort((a, b) => a[by].toString().localeCompare(b[by].toString()))
         this.settings.sortOrder.userValue = by
         this.settings.sortOrder.save()
       }

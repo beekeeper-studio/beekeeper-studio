@@ -30,14 +30,3 @@ jobs:
         env:
           CSC_LINK: ${{secrets.mac_dev}}
           CSC_KEY_PASSWORD: ${{secrets.mac_dev_pw}}
-
-      - name: Cleanup artifacts
-        if: matrix.os != 'windows-latest'
-        run: |
-          npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v1
-        with:
-          name: ${{ matrix.os }}
-          path: apps/studio/dist_electron

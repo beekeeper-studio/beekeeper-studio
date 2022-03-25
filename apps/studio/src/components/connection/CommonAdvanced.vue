@@ -6,6 +6,12 @@
     </h4>
     <div class="advanced-body" v-show="config.sshEnabled">
       <div class="row gutter">
+        <div class="alert alert-info">
+          <i class="material-icons-outlined">info</i>
+          <div>For the SSH tunnel to work, AllowTcpForwarding must be set to "yes" in your ssh server config.</div>
+        </div>
+      </div>
+      <div class="row gutter">
         <div class="col s9 form-group">
           <label for="sshHost">SSH Hostname</label>
           <input type="text" v-model="config.sshHost">

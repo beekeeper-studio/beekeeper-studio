@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import pf from 'portfinder'
 import createLogger from '../logger';
-import { Options, SSHConnection } from 'node-ssh-forward'
+import { Options, SSHConnection } from '../../vendor/node-ssh-forward/index'
 import appConfig from '../../config'
 
 import { resolveHomePathToAbsolute } from '../../common/utils'
@@ -45,6 +45,7 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
         logger().debug("connection created!")
 
         const localPort = await pf.getPortPromise({ port: 10000, stopPort: 60000 })
+        console.log("tunnel/ GOT TUNNEL PORT", localPort)
         // workaround for `getPortPromise` not releasing the port quickly enough
         await new Promise(resolve => setTimeout(resolve, 500));
         const tunnelConfig = {
@@ -52,6 +53,7 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           toPort: config.port || 22,
           toHost: config.host
         }
+        console.log("tunnel config: ", tunnelConfig)
         const tunnel = await connection.forward(tunnelConfig)
         logger().debug('tunnel created!')
         const result = {

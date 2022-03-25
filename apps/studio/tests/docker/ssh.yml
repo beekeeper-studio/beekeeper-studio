@@ -1,0 +1,28 @@
+version: '3'
+volumes:
+  psql:
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: integration_test
+    volumes:
+      - psql:/var/lib/postgresql/data
+    ports:
+      - 6666:5432
+  ssh:
+    build:
+      context: ./
+      dockerfile: ./SSHDockerFile
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - PASSWORD_ACCESS=true #optional
+      - USER_PASSWORD=password #optional
+      - USER_NAME=beekeeper #optional
+      - SUDO_ACCESS=true
+    ports:
+      - 7777:2222
