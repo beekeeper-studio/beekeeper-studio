@@ -10,6 +10,14 @@
     border-radius: 6px;
     padding: $gutter-h ($gutter-w * 0.8);
   }
+
+  &.tooltip-info  {
+    .tooltip-inner {
+      background: $brand-info;
+      color: rgba(black, 0.87);
+
+    }
+  }
   .tooltip-arrow {
     display: none;
   }

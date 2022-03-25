@@ -50,7 +50,7 @@
       <div class="message" v-else-if="result">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
-          <span>Query Executed Successfully. No Results. {{result.affectedRows || 0}} rows affected.</span>
+          <span>Query {{selectedResult + 1}}/{{results.length}}: No Results. {{result.affectedRows || 0}} rows affected. See the select box in the bottom left ↙ for more query results.</span>
         </div>
       </div>
       <div class="message" v-else-if="errors">
@@ -694,7 +694,11 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
               result.totalRowCount = result.rowCount
             }
           })
+
+          this.selectedResult = results.findIndex((r) => r.rowCount > 0)
+          if (this.selectedResult < 0) this.selectedResult = 0
           this.results = Object.freeze(results);
+
           this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.connection.id })
           log.debug('identification', identification)
           const found = identification.find(i => {

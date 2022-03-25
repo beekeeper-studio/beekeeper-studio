@@ -3,9 +3,9 @@
     <template v-if="results.length > 0">
       <div class="truncate statusbar-info">
         <span v-show="results.length > 1" class="statusbar-item result-selector" :title="'Results'">
-        <div class="select-wrap">
+        <div class="select-wrap" v-tooltip="{content: 'More query results in here', placement: 'top', show: showHint, trigger: 'manual', classes: ['tooltip-info']}">
           <select name="resultSelector" id="resultSelector" @change="updateValue" class="form-control">
-            <option v-for="(result, index) in results" :selected="value == index" :key="index" :value="index">Result {{index + 1}}</option>
+            <option v-for="(result, index) in results" :selected="value == index" :key="index" :value="index">Result {{index + 1}}: {{shortNum(result.rowCount, 0)}} rows</option>
           </select>
         </div>
         </span>
@@ -76,7 +76,20 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 export default {
     props: ['results', 'running', 'value', 'executeTime'],
     components: { Statusbar },
+    data() {
+      return {
+        showHint: false
+      }
+    },
 
+    watch: {
+      results() {
+        if (this.results && this.results.length > 1) {
+          this.showHint = true
+          setTimeout(() => this.showHint = false, 2000)
+        }
+      }
+    },
     computed: {
       rowCount() {
         return this.result && this.result.rows ? this.result.rows.length : 0
@@ -108,8 +121,20 @@ export default {
     mounted() {
     },
     methods: {
+      // Attribution: https://stackoverflow.com/questions/10599933/convert-long-number-into-abbreviated-string-in-javascript-with-a-special-shortn/10601315
+      shortNum(num, fixed) {
+        if (num === null) { return null; } // terminate early
+        if (num === 0) { return '0'; } // terminate early
+        fixed = (!fixed || fixed < 0) ? 0 : fixed; // number of decimal places to show
+        const b = (num).toPrecision(2).split("e"), // get power
+            k = b.length === 1 ? 0 : Math.floor(Math.min(b[1].slice(1), 14) / 3), // floor at decimals, ceiling at trillions
+            c = k < 1 ? num.toFixed(0 + fixed) : (num / Math.pow(10, k * 3) ).toFixed(1 + fixed), // divide by power
+            d = c < 0 ? c : Math.abs(c), // enforce -0 is 0
+            e = d + ['', 'K', 'M', 'B', 'T'][k]; // append power
+        return e;
+      },
       updateValue(event) {
-        this.$emit('input', event.target.value)
+        this.$emit('input', parseInt(event.target.value))
       },
       download(format) {
         this.$emit('download', format)
