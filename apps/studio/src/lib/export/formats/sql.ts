@@ -1,5 +1,5 @@
-import knexlib from 'knex'
-import Knex from "knex";
+import knexlib from "knex";
+import { Knex } from 'knex';
 import _ from 'lodash';
 import { DBConnection } from '../../db/client';
 import { TableFilter, TableOrView } from '../../db/models';

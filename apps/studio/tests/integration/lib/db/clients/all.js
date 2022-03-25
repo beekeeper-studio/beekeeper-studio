@@ -61,7 +61,7 @@ export function runCommonTests(getUtil) {
     beforeEach(async () => {
       await prepareTestTable(getUtil())
     })
-  
+
     test("should insert good data", async () => {
       await itShouldInsertGoodData(getUtil())
     })

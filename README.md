@@ -112,6 +112,7 @@ Beekeeper Studio has two entry points:
 
 ### How to submit a change?
 
+
 - Push your changes to your repository and open a Pull Request from our github page (this page)
 - Make sure to write some notes about what your change does! A gif is always welcome for visual changes.
 
