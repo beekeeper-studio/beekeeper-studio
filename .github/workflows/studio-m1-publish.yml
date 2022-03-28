@@ -46,6 +46,7 @@ jobs:
           CSC_KEY_PASSWORD: ${{secrets.mac_dev_pw}}
           API_KEY_ID: ${{ secrets.apple_key_id }}
           API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
+          GH_TOKEN: ${{ secrets.github_token }}
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
         run: |
