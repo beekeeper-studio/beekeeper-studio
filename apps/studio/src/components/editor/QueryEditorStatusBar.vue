@@ -57,6 +57,8 @@
 import humanizeDuration from 'humanize-duration'
 import Statusbar from '../common/StatusBar'
 import pluralize from 'pluralize'
+import { UserSetting } from '@/common/appdb/models/user_setting';
+import { mapState } from 'vuex';
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({
   language: "shortEn",
@@ -79,19 +81,30 @@ export default {
     components: { Statusbar },
     data() {
       return {
-        showHint: false
+        showHint: false,
+
       }
     },
 
     watch: {
       results() {
-        if (this.results && this.results.length > 1) {
+        if (this.results && this.results.length > 1 && !this.hasUsedDropdown) {
           this.showHint = true
           setTimeout(() => this.showHint = false, 2000)
         }
       }
     },
     computed: {
+      ...mapState('settings', ['settings']),
+      hasUsedDropdown: {
+        get() {
+          const s = this.settings.hideResultsDropdown
+          return s ? s.value : false
+        },
+        set(value) {
+          this.$store.dispatch('settings/save', { key: 'hideResultsDropdown', value })
+        }
+      },
       rowCount() {
         return this.result && this.result.rows ? this.result.rows.length : 0
       },
@@ -139,6 +152,7 @@ export default {
       },
       updateValue(event) {
         this.$emit('input', parseInt(event.target.value))
+        this.hasUsedDropdown = true
       },
       download(format) {
         this.$emit('download', format)

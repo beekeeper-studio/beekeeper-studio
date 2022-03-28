@@ -8,7 +8,7 @@ export interface IGroupedUserSettings {
   [x: string]: UserSetting
 }
 
-enum UserSettingValueType {
+export enum UserSettingValueType {
   string = 0,
   int = 1,
   float = 2,
