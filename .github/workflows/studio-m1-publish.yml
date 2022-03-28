@@ -40,7 +40,7 @@ jobs:
           echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
 
       - name: Build and Publish
-        run: cd apps/studio && arch -arm64 yarn run electron:build --arm64 --publish always
+        run: cd apps/studio && arch -arm64 yarn run electron:build --arm64 -x64 --publish always
         env:
           CSC_LINK: ${{secrets.mac_dev}}
           CSC_KEY_PASSWORD: ${{secrets.mac_dev_pw}}

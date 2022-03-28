@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-18.04, windows-latest, ubuntu-arm64]
+        os: [ubuntu-18.04, windows-latest, ubuntu-arm64]
 
     steps:
       - name: Import GPG key
