@@ -49,7 +49,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
         window.webContents.zoomLevel = level
       }
     })
-    this.settings.zoomLevel.userValue = level
+    this.settings.zoomLevel.value = level
     await this.settings.zoomLevel.save()
   }
 

@@ -1,8 +1,7 @@
 import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash'
 import platformInfo from '../../platform_info';
-
-const { Entity, Column } = require("typeorm");
+import { Entity, Column } from 'typeorm'
 
 export interface IGroupedUserSettings {
   [x: string]: UserSetting
@@ -49,6 +48,7 @@ function getValue(valueType: UserSettingValueType, valueString: Nullable<string>
 
 function setValue(updated: UserSettingValue): Nullable<string> {
   if (_.isNull(updated)) return null
+  if (_.isBoolean(updated)) return updated ? 'true' : 'false'
   if (_.isString(updated)) {
     return updated
   }
@@ -80,8 +80,9 @@ export class UserSetting extends ApplicationEntity {
   @Column({type: 'varchar', nullable: false, unique: true})
   key!: string
 
+  @Column({ type: 'varchar', nullable: false, name: 'userValue' })
   _userValue: Nullable<string> = null
-  @Column({type: 'varchar', nullable: false})
+
   set userValue(updated) {
     this._userValue = setValue(updated)
   }

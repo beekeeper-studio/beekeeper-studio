@@ -262,7 +262,7 @@ const log = rawLog.scope('connection-sidebar');
       },
       sortConnections(by) {
         // this.connectionConfigs.sort((a, b) => a[by].toString().localeCompare(b[by].toString()))
-        this.settings.sortOrder.userValue = by
+        this.settings.sortOrder.value = by
         this.settings.sortOrder.save()
       }
     }
