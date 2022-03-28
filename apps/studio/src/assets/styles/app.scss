@@ -4,8 +4,29 @@
 @import './app/flex-grid';
 @import './app/base';
 
+
+body.theme-system {
+  @media (prefers-color-scheme: dark) {
+    @import './components/content-placeholders.scss';
+    @import './components/context-menu.scss';
+    @import './components/quicksearch.scss';
+    @import './vendor.scss';
+    @import './app/_all.scss';
+    @import './themes/dark/theme.scss';
+  }
+
+  @media (prefers-color-scheme: light) {
+    @import './themes/light/variables.scss';
+    @import './components/content-placeholders.scss';
+    @import './components/context-menu.scss';
+    @import './components/quicksearch.scss';
+    @import './vendor.scss';
+    @import './app/_all.scss';
+    @import './themes/light/theme.scss';
+  }
+}
+
 body.theme-dark {
-  @import './themes/dark/variables.scss';
   @import './components/content-placeholders.scss';
   @import './components/context-menu.scss';
   @import './components/quicksearch.scss';

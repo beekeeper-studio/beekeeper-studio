@@ -171,6 +171,12 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: "Theme",
       submenu: [
         {
+          type: 'radio',
+          label: "System",
+          click: actionHandler.switchTheme,
+          checked: settings.theme.value === 'system'
+        },
+        {
           type: "radio",
           label: "Light",
           click: actionHandler.switchTheme,

@@ -55,10 +55,10 @@ const SettingStoreModule: Module<State, any> = {
     },
     themeValue(state) {
       if (!state.settings.theme.value) return null
-      if (['dark', 'light'].includes(state.settings.theme.value as string)) {
+      if (['system', 'dark', 'light'].includes(state.settings.theme.value as string)) {
         return state.settings.theme.value
       }
-      return 'dark'
+      return 'system'
     },
     menuStyle(state) {
       if (!state.settings.menuStyle) return 'native'
