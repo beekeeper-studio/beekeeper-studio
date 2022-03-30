@@ -176,7 +176,9 @@ export function buildUpdateQueries(knex, updates) {
   return updates.map(update => {
     const where = {}
     const updateblob = {}
-    where[update.pkColumn] = update.primaryKey
+    for(let i = 0; i < update.pkColumn.length; i++) {
+      where[update.pkColumn[i]] = update.primaryKey[i];
+    }
     updateblob[update.column] = update.value
 
     const query = knex(update.table)
@@ -191,7 +193,9 @@ export function buildUpdateQueries(knex, updates) {
 export function buildSelectQueriesFromUpdates(knex, updates) {
   return updates.map(update => {
     const where = {}
-    where[update.pkColumn] = update.primaryKey
+    for(let i = 0; i < update.pkColumn.length; i++) {
+      where[update.pkColumn[i]] = update.primaryKey[i];
+    }
 
     const query = knex(update.table)
       .withSchema(update.schema)
@@ -205,7 +209,9 @@ export function buildSelectQueriesFromUpdates(knex, updates) {
 export function buildDeleteQueries(knex, deletes) {
   return deletes.map(deleteRow => {
     let where = {}
-    where[deleteRow.pkColumn] = deleteRow.primaryKey
+    for(let i = 0; i < deleteRow.pkColumn.length; i++) {
+      where[deleteRow.pkColumn[i]] = deleteRow.primaryKey[i];
+    }
 
     return knex(deleteRow.table)
       .withSchema(deleteRow.schema)
