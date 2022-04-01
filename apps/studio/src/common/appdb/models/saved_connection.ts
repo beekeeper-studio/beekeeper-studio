@@ -59,12 +59,12 @@ export class DbConnectionBase extends ApplicationEntity {
   public set port(v : Nullable<number>) {
     this._port = v
   }
- 
+
   public get port() : Nullable<number> {
     return this._port || this.defaultPort
   }
-  
-  
+
+
   public get defaultPort() : Nullable<number> {
     if (['mysql', 'mariadb'].includes(this.connectionType || '')) {
       return 3306
@@ -77,7 +77,7 @@ export class DbConnectionBase extends ApplicationEntity {
     }
     return null
   }
-  
+
   @Column({type: "varchar", nullable: true})
   username: Nullable<string> = null
 
@@ -127,6 +127,9 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'boolean', nullable: false})
   sslRejectUnauthorized: boolean = true
 
+  // this is only for SQL Server.
+  @Column({type: 'boolean', nullable: false})
+  trustServerCertificate
 }
 
 @Entity({ name: 'saved_connection'} )

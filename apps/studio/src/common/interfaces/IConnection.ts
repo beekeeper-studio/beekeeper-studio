@@ -24,11 +24,12 @@ export interface ISimpleConnection {
   sslKeyFile: Nullable<string>
   sslRejectUnauthorized: boolean
   labelColor?: Nullable<string>
+  trustServerCertificate?: boolean
 }
 
 export interface IConnection extends ISimpleConnection {
   name: Nullable<string>
-  
+
   sshMode: SshMode
   password: Nullable<string>
   sshPassword: Nullable<string>

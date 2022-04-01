@@ -83,6 +83,7 @@ export interface IDbConnectionServerConfig {
   ssl: boolean
   localHost?: string,
   localPort?: number,
+  trustServerCertificate?: boolean
 }
 
 export interface IDbSshTunnel {
