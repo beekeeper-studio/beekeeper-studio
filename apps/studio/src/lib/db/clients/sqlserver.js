@@ -951,7 +951,6 @@ export async function alterRelation(conn, payload) {
 
 
 function configDatabase(server, database) {
-  console.log("Server config", server.config)
   const config = {
     user: server.config.user,
     password: server.config.password,
