@@ -129,7 +129,7 @@ export class DbConnectionBase extends ApplicationEntity {
 
   // this is only for SQL Server.
   @Column({type: 'boolean', nullable: false})
-  trustServerCertificate
+  trustServerCertificate = false
 }
 
 @Entity({ name: 'saved_connection'} )
