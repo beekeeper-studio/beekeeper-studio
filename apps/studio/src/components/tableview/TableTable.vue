@@ -365,11 +365,11 @@ export default Vue.extend({
       return this.pendingChanges.deletes.length > 0
     },
     editable() {
-      return this.primaryKeys && this.table.entityType === 'table'
+      return this.primaryKeys?.length && this.table.entityType === 'table'
     },
     // it's a table, but there's no primary key
     missingPrimaryKey() {
-      return this.table.entityType === 'table' && !this.primaryKeys
+      return this.table.entityType === 'table' && !this.primaryKeys?.length
     },
     statusbarMode() {
       if (this.queryError) return 'failure'
@@ -400,7 +400,7 @@ export default Vue.extend({
         const slimDataType = this.slimDataType(column.dataType)
         const editorType = this.editorType(column.dataType)
         const useVerticalNavigation = editorType === 'textarea'
-        const isPK = this.primaryKeys && this.isPrimaryKey(column.columnName)
+        const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
         const columnWidth = this.table.columns.length > 30 ?
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
           undefined
@@ -559,7 +559,7 @@ export default Vue.extend({
     async lastUpdated() {
       this.setlastUpdatedText()
       let result = 'all'
-      if (this.primaryKeys && this.filter.value && this.filter.type === '=' && this.isPrimaryKey(this.filter.field)) {
+      if (this.primaryKeys?.length && this.filter.value && this.filter.type === '=' && this.isPrimaryKey(this.filter.field)) {
         log.info("setting scope", this.filter.value)
         result = this.filter.value
       } else {
