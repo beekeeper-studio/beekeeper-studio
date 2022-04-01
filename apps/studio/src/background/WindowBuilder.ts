@@ -7,7 +7,6 @@ import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from 'electron-log'
 import querystring from 'query-string'
-import { platform } from 'os'
 
 const log = rawLog.scope('WindowBuilder')
 
