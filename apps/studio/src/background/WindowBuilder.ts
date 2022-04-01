@@ -27,6 +27,7 @@ class BeekeeperWindow {
   constructor(settings: IGroupedUserSettings, openOptions?: OpenOptions) {
     const theme = settings.theme
     const showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
+    const titleBarStyle = platformInfo.isWindows && settings.menuStyle.value == 'native' ? 'default' : 'hidden'
       log.info('constructing the window')
     this.win = new BrowserWindow({
       width: 1200,
@@ -34,7 +35,7 @@ class BeekeeperWindow {
       minWidth: 800,
       minHeight: 600,
       backgroundColor: theme.value === 'dark' ? "#252525" : '#ffffff',
-      titleBarStyle: 'hidden',
+      titleBarStyle,
       frame: showFrame,
       webPreferences: {
         enableRemoteModule: true,
