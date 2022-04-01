@@ -972,6 +972,8 @@ function configDatabase(server, database) {
     config.port = server.config.localPort;
   }
 
+  config.options = { trustServerCertificate: server.config.trustServerCertificate }
+
   if (server.config.ssl) {
     const options = {
       encrypt: server.config.ssl,
@@ -990,9 +992,8 @@ function configDatabase(server, database) {
       options.cryptoCredentialsDetails.key = readFileSync(server.config.sslKeyFile);
     }
 
-    if (!server.config.sslCaFile && !server.config.sslCertFile && !server.config.sslKeyFile) {
-      options.trustServerCertificate = true
-    } else {
+
+    if (server.config.sslCaFile && server.config.sslCertFile && server.config.sslKeyFile) {
       // trust = !reject
       // mssql driver reverses this setting for no obvious reason
       // other drivers simply pass through to the SSL library.
