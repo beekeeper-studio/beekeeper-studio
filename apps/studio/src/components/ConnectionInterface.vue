@@ -46,9 +46,7 @@
 
           </div>
           <div class="pitch" v-if="!config.connectionType"><span class="badge badge-primary">NEW</span> Check out <a href="https://beekeeperstudio.io/get" class="">Beekeeper Studio Ultimate Edition</a></div>
-          <div v-if="connectionError" class="alert alert-danger">
-            {{connectionError}}
-          </div>
+          <error-alert :error="connectionError" />
         </div>
 
         <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{version}}</a></small>
@@ -73,7 +71,7 @@
   import platformInfo from '@/common/platform_info'
   import ErrorAlert from './common/ErrorAlert.vue'
   import rawLog from 'electron-log'
-import { mapState } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 
   const log = rawLog.scope('ConnectionInterface')
   // import ImportUrlForm from './connection/ImportUrlForm';
@@ -96,6 +94,7 @@ import { mapState } from 'vuex'
     },
     computed: {
       ...mapState(['workspaceId']),
+      ...mapGetters(['dialect']),
       ...mapState('data/connections', {'connections': 'items'}),
       connectionTypes() {
         return this.$config.defaults.connectionTypes
@@ -116,6 +115,15 @@ import { mapState } from 'vuex'
         deep: true,
         handler() {
           this.connectionError = null
+        }
+      },
+      connectionError() {
+        if (this.connectionError &&
+          this.dialect == 'sqlserver' &&
+          this.connectionError.message &&
+          this.connectionError.message.includes('self signed certificate')
+        ) {
+          this.connectionError.message = `${this.connectionError.message} - you might need to check 'Trust Server Certificate'`
         }
       }
     },
@@ -198,7 +206,7 @@ import { mapState } from 'vuex'
         try {
           await this.$store.dispatch('connect', this.config)
         } catch(ex) {
-          this.connectionError = ex.message
+          this.connectionError = ex
           this.$noty.error("Error establishing a connection")
           log.error(ex)
         }
@@ -216,7 +224,7 @@ import { mapState } from 'vuex'
           this.$noty.success("Connection looks good!")
           return true
         } catch(ex) {
-          this.connectionError = ex.message
+          this.connectionError = ex
           this.$noty.error("Error establishing a connection")
         } finally {
           this.testing = false
