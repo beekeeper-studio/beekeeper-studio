@@ -38,6 +38,7 @@
                     <button :disabled="testing" class="btn btn-flat" type="button" @click.prevent="testConnection">Test</button>
                     <button :disabled="testing" class="btn btn-primary" type="submit" @click.prevent="submit">Connect</button>
                   </div>
+                  <error-alert :error="connectionError" :helpText="errorHelp" @close="connectionError = null" :closable="true" />
                 </div>
                 <SaveConnectionForm :config="config" @save="save"></SaveConnectionForm>
               </div>
@@ -46,7 +47,6 @@
 
           </div>
           <div class="pitch" v-if="!config.connectionType"><span class="badge badge-primary">NEW</span> Check out <a href="https://beekeeperstudio.io/get" class="">Beekeeper Studio Ultimate Edition</a></div>
-          <error-alert :error="connectionError" />
         </div>
 
         <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{version}}</a></small>
@@ -72,6 +72,7 @@
   import ErrorAlert from './common/ErrorAlert.vue'
   import rawLog from 'electron-log'
 import { mapGetters, mapState } from 'vuex'
+import { dialectFor } from '@shared/lib/dialects/models'
 
   const log = rawLog.scope('ConnectionInterface')
   // import ImportUrlForm from './connection/ImportUrlForm';
@@ -84,6 +85,7 @@ import { mapGetters, mapState } from 'vuex'
         config: new SavedConnection(),
         errors: null,
         connectionError: null,
+        errorHelp: null,
         testing: false,
         split: null,
         url: null,
@@ -94,7 +96,6 @@ import { mapGetters, mapState } from 'vuex'
     },
     computed: {
       ...mapState(['workspaceId']),
-      ...mapGetters(['dialect']),
       ...mapState('data/connections', {'connections': 'items'}),
       connectionTypes() {
         return this.$config.defaults.connectionTypes
@@ -105,6 +106,9 @@ import { mapGetters, mapState } from 'vuex'
         } else {
           return this.config.name
         }
+      },
+      dialect() {
+        return dialectFor(this.config.connectionType)
       }
     },
     watch: {
@@ -118,12 +122,15 @@ import { mapGetters, mapState } from 'vuex'
         }
       },
       connectionError() {
+        console.log("error watch", this.connectionError, this.dialect)
         if (this.connectionError &&
           this.dialect == 'sqlserver' &&
           this.connectionError.message &&
           this.connectionError.message.includes('self signed certificate')
         ) {
-          this.connectionError.message = `${this.connectionError.message} - you might need to check 'Trust Server Certificate'`
+          this.errorHelp = `You might need to check 'Trust Server Certificate'`
+        } else {
+        this.errorHelp = null
         }
       }
     },
