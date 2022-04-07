@@ -31,7 +31,6 @@
   import QuickSearch from './quicksearch/QuickSearch.vue'
   import { LocalQueryModule } from '@/store/modules/data/query/LocalQueryModule'
   import ProgressBar from './editor/ProgressBar.vue'
-  import { CloudQueryModule } from '@/store/modules/data/query/CloudQueryModule'
   export default {
     components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar},
     props: [ 'connection' ],

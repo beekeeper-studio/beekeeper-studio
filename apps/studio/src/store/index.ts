@@ -20,8 +20,6 @@ import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
 import { SearchModule } from './modules/SearchModule'
 import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
-import { CloudClient } from '@/lib/cloud/CloudClient'
-import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
 import { IConnection } from '@/common/interfaces/IConnection'
 import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
@@ -65,7 +63,6 @@ const store = new Vuex.Store<State>({
     pins: PinModule,
     tabs: TabModule,
     search: SearchModule,
-    credentials: CredentialsModule
   },
   state: {
     usedConfig: null,
@@ -93,15 +90,8 @@ const store = new Vuex.Store<State>({
   },
 
   getters: {
-    workspace(state: State, getters): IWorkspace {
-      if (state.workspaceId === LocalWorkspace.id) return LocalWorkspace
-
-      const workspaces: WSWithClient[] = getters['credentials/workspaces']
-      const result = workspaces.find(({workspace }) => workspace.id === state.workspaceId)
-
-
-      if (!result) return LocalWorkspace
-      return result.workspace
+    workspace(): IWorkspace {
+      return LocalWorkspace
     },
     isCloud(state: State) {
       return state.workspaceId !== LocalWorkspace.id
@@ -114,15 +104,6 @@ const store = new Vuex.Store<State>({
         const pollError = state[module.path]['pollError']
         return pollError || null
       }).find((e) => !!e)
-    },
-    cloudClient(state: State, getters): CloudClient | null {
-      if (state.workspaceId === LocalWorkspace.id) return null
-
-      const workspaces: WSWithClient[] = getters['credentials/workspaces']
-      const result = workspaces.find(({workspace}) => workspace.id === state.workspaceId)
-      if (!result) return null
-      return result.client.cloneWithWorkspace(result.workspace.id)
-
     },
     dialect(state: State): Dialect | null {
       if (!state.usedConfig) return null

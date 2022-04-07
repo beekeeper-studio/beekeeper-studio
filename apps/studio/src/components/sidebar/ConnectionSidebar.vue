@@ -1,6 +1,5 @@
 <template>
   <div class="sidebar-wrap row">
-    <workspace-sidebar v-if="activeWorkspaces.length"></workspace-sidebar>
 
     <!-- QUICK CONNECT -->
     <div class="tab-content flex-col expand">
@@ -125,7 +124,6 @@
 
 <script>
   import _ from 'lodash'
-  import WorkspaceSidebar from './WorkspaceSidebar'
   import { mapState, mapGetters } from 'vuex'
   import ConnectionListItem from './connection/ConnectionListItem'
   import SidebarLoading from '@/components/common/SidebarLoading.vue'
@@ -138,7 +136,7 @@ import rawLog from 'electron-log'
 const log = rawLog.scope('connection-sidebar');
 
   export default {
-    components: { ConnectionListItem, WorkspaceSidebar, SidebarLoading, ErrorAlert, SidebarFolder },
+    components: { ConnectionListItem, SidebarLoading, ErrorAlert, SidebarFolder },
     props: ['selectedConfig'],
     data: () => ({
       split: null,
