@@ -44,6 +44,7 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'varchar', name: 'connectionType'})
   public set connectionType(value: Nullable<IDbClients>) {
     this._connectionType = parseConnectionType(value)
+    this._port = this.defaultPort
   }
 
   public get connectionType() {
@@ -61,7 +62,7 @@ export class DbConnectionBase extends ApplicationEntity {
   }
 
   public get port() : Nullable<number> {
-    return this._port || this.defaultPort
+    return this._port
   }
 
 
