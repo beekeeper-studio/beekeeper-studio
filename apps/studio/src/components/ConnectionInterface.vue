@@ -138,7 +138,6 @@ import { dialectFor } from '@shared/lib/dialects/models'
       if (!this.$store.getters.workspace) {
         await this.$store.commit('workspace', this.$store.state.localWorkspace)
       }
-      await this.$store.dispatch('credentials/load')
       await this.$store.dispatch('loadUsedConfigs')
       this.config.sshUsername = os.userInfo().username
       this.$nextTick(() => {
