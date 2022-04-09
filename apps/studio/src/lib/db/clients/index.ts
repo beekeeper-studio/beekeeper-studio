@@ -6,10 +6,22 @@ import sqlserver from './sqlserver';
 import sqlite from './sqlite';
 import cassandra from './cassandra';
 
+export function isClientFeatureSupported(client: ClientType, feature: string): boolean {
+  return !client.disabledFeatures?.includes(feature);
+}
+
+type ClientType = {
+  key: string,
+  name: string,
+  defaultPort?: number,
+  defaultDatabase?: string,
+  disabledFeatures?: string[],
+};
+
 /**
  * List of supported database clients
  */
-export const CLIENTS = [
+export const CLIENTS: ClientType[] = [
   {
     key: 'cockroachdb',
     name: 'CockroachDB',
