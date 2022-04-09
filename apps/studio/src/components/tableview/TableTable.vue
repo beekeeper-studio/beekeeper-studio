@@ -254,7 +254,9 @@ export default Vue.extend({
 
       forceRedraw: false,
       rawPage: 1,
-      initialized: false
+      initialized: false,
+      internalColumnPrefix: "__beekeeper_internal_",
+      internalIndexColumn: "__beekeeper_internal_index"
     };
   },
   computed: {
@@ -313,7 +315,7 @@ export default Vue.extend({
         {
           label: '<x-menuitem><x-label>Copy Row (JSON)</x-label></x-menuitem>',
           action: (_e, cell) => {
-            const data = cell.getRow().getData()
+            const data = this.modifyRowData(cell.getRow().getData())
             const fixed = {}
             Object.keys(data).forEach((key) => {
               const v = data[key]
@@ -326,16 +328,16 @@ export default Vue.extend({
         },
         {
           label: '<x-menuitem><x-label>Copy Row (TSV / Excel)</x-label></x-menuitem>',
-          action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([cell.getRow().getData()], { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
+          action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([this.modifyRowData(cell.getRow().getData())], { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
         },
         { separator: true },
         {
-          label: '<x-menuitem><x-label>Clone row</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Clone Row</x-label></x-menuitem>',
           action: this.cellCloneRow.bind(this),
           disabled: !this.editable
         },
         {
-          label: '<x-menuitem><x-label>Delete row</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Delete Row</x-label></x-menuitem>',
           action: (_e, cell) => this.addRowToPendingDeletes(cell.getRow()),
           disabled: !this.editable
         },
@@ -471,6 +473,25 @@ export default Vue.extend({
         }
 
       });
+
+      // add internal index column
+      const result = {
+        title: this.internalIndexColumn,
+        field: this.internalIndexColumn,
+        cellClick: this.cellClick,
+        maxWidth: globals.maxColumnWidth,
+        maxInitialWidth: globals.maxInitialWidth,
+        editable: false,
+        variableHeight: true,
+        cellEditCancelled: cell => cell.getRow().normalizeHeight(),
+        formatter: this.cellFormatter,
+        visible: false,
+        clipboard: false,
+        print: false,
+        download: false
+      }
+      results.push(result)
+
       return results
     },
     filterValue() {
@@ -630,7 +651,7 @@ export default Vue.extend({
 
         // callbacks
         ajaxRequestFunc: this.dataFetch,
-        index: this.primaryKeys,
+        index: this.internalIndexColumn,
         keybindings: {
           scrollToEnd: false,
           scrollToStart: false,
@@ -1048,6 +1069,13 @@ export default Vue.extend({
             this.response = response
             this.resetPendingChanges()
             this.clearQueryError()
+
+            // fill internal index column with primary keys
+            r.forEach(row => {
+              const primaryValues = this.primaryKeys.map(key => row[key]);
+              row[this.internalIndexColumn] = primaryValues.join(",");
+            });
+
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
@@ -1099,6 +1127,19 @@ export default Vue.extend({
     },
     exportFiltered() {
       this.trigger(AppEvent.beginExport, {table: this.table, filters: this.filterForTabulator} )
+    },
+    modifyRowData(data) {
+      const output = {};
+      const keys = Object.keys(data);
+
+      for(const key of keys) {
+        // skip internal columns
+        if(key.startsWith(this.internalColumnPrefix)) continue;
+
+        output[key] = data[key];
+      }
+
+      return output;
     }
   }
 });
