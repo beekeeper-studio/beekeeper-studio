@@ -9,7 +9,7 @@ export interface ISimpleConnection {
   host: Nullable<string>
   port: Nullable<number>
   socketPath: Nullable<string>
-  useSocket: boolean
+  socketPathEnabled: boolean
   username: Nullable<string>
   domain: Nullable<string>
   defaultDatabase: Nullable<string>

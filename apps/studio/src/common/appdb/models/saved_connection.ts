@@ -99,7 +99,7 @@ export class DbConnectionBase extends ApplicationEntity {
   }
 
   @Column({type: 'boolean', nullable: false, default: false})
-  useSocket = false
+  socketPathEnabled = false
 
   @Column({type: "varchar", nullable: true})
   username: Nullable<string> = null

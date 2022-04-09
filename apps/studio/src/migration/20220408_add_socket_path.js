@@ -1,9 +1,9 @@
 export default {
-  name: "20220408-add-use-socket",
+  name: "20220408-add-socket-path",
   async run(runner) {
     const queries = [
-      `ALTER TABLE saved_connection ADD COLUMN useSocket boolean not null default false`,
-      `ALTER TABLE used_connection ADD COLUMN useSocket boolean not null default false`,
+      `ALTER TABLE saved_connection ADD COLUMN socketPathEnabled boolean not null default false`,
+      `ALTER TABLE used_connection ADD COLUMN socketPathEnabled boolean not null default false`,
       `ALTER TABLE saved_connection ADD COLUMN socketPath varchar(255) null`,
       `ALTER TABLE used_connection ADD COLUMN socketPath varchar(255) null`
     ];

@@ -1,6 +1,6 @@
 <template>
   <div class="host-port-user-password">
-    <div class="row gutter" v-show="!config.useSocket">
+    <div class="row gutter" v-show="!config.socketPathEnabled">
       <div class="col s9 form-group">
         <label for="Host">Host</label>
         <input type="text" class="form-control" @paste="onPaste" name="host" v-model="config.host">
@@ -12,11 +12,11 @@
     </div>
 
     <div class="advanced-connection-settings">
-      <h4 class="advanced-heading flex" :class="{enabled: config.useSocket}">
+      <h4 class="advanced-heading flex" :class="{enabled: config.socketPathEnabled}">
         <span class="expand">Use Socket</span>
-        <x-switch @click.prevent="config.useSocket = !config.useSocket" :toggled="config.useSocket"></x-switch>
+        <x-switch @click.prevent="config.socketPathEnabled = !config.socketPathEnabled" :toggled="config.socketPathEnabled"></x-switch>
       </h4>
-      <div class="advanced-body" v-show="config.useSocket">
+      <div class="advanced-body" v-show="config.socketPathEnabled">
         <div class="form-group">
           <label for="socketPath">Socket path</label>
           <input id="socketPath" class="form-control" v-model="config.socketPath" type="text" name="socketPath">
@@ -24,7 +24,7 @@
       </div>
     </div>
 
-    <div class="advanced-connection-settings" v-show="!config.useSocket">
+    <div class="advanced-connection-settings" v-show="!config.socketPathEnabled">
       <div class="flex flex-middle">
         <span @click.prevent="toggleSslAdvanced" class="btn btn-link btn-fab">
           <i class="material-icons">{{toggleIcon}}</i>
