@@ -41,6 +41,7 @@ function testWith(dockerTag) {
           ssl: false,
           domain: null,
           socketPath: null,
+          socketPathEnabled: false,
         }
         util = new DBTestUtil(config, "banana", { dialect: 'postgresql', defaultSchema: 'public' })
         await util.setupdb()

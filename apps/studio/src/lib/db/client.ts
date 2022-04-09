@@ -72,6 +72,7 @@ export interface IDbConnectionServerConfig {
   port: Nullable<number>,
   domain: Nullable<string>,
   socketPath: Nullable<string>,
+  socketPathEnabled: boolean,
   user: Nullable<string>,
   osUser: string,
   password: Nullable<string>,
