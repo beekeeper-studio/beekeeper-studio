@@ -70,6 +70,9 @@ export const CLIENTS: ClientType[] = [
     key: 'sqlserver',
     name: 'Microsoft SQL Server',
     defaultPort: 1433,
+    disabledFeatures: [
+      'server:socketPath',
+    ],
   },
   {
     key: 'sqlite',
