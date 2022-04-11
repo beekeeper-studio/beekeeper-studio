@@ -11,7 +11,7 @@
       </div>
     </div>
 
-    <div class="advanced-connection-settings" v-show="supportingSocketPath">
+    <div class="advanced-connection-settings" v-show="supportsSocketPath">
       <h4 class="advanced-heading flex" :class="{enabled: config.socketPathEnabled}">
         <span class="expand">Use Socket</span>
         <x-switch @click.prevent="config.socketPathEnabled = !config.socketPathEnabled" :toggled="config.socketPathEnabled"></x-switch>
@@ -98,7 +98,7 @@
 <script>
 import FilePicker from '@/components/common/form/FilePicker'
 import ExternalLink from '@/components/common/ExternalLink'
-import { CLIENTS, isClientFeatureSupported } from '@/lib/db/clients'
+import { findClient } from '@/lib/db/clients'
 
   export default {
     props: ['config'],
@@ -118,9 +118,8 @@ import { CLIENTS, isClientFeatureSupported } from '@/lib/db/clients'
       toggleIcon() {
         return this.sslToggled ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
       },
-      supportingSocketPath() {
-        const client = CLIENTS.find((cli) => cli.key === this.config.connectionType);
-        return isClientFeatureSupported(client, 'server:socketPath');
+      supportsSocketPath() {
+        return findClient(this.config.connectionType).supportsSocketPath
       },
     },
     methods: {

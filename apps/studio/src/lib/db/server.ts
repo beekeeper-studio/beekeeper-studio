@@ -1,6 +1,6 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { createConnection, DBConnection, IDbConnectionServer, IDbConnectionServerConfig } from './client';
-import { CLIENTS, isClientFeatureSupported } from './clients';
+import { findClient } from './clients';
 
 export interface IDbConnectionPublicServer {
   db: (dbName: string) => DBConnection
@@ -14,13 +14,13 @@ export function createServer(config: IDbConnectionServerConfig): IDbConnectionPu
     throw new Error('Missing server configuration');
   }
 
-  const client = CLIENTS.find((cli) => cli.key === config.client)
+  const client = findClient(config.client)
 
   if (!client) {
     throw new Error('Invalid SQL client');
   }
 
-  if(config.socketPathEnabled && !isClientFeatureSupported(client, 'server:socketPath')) {
+  if(config.socketPathEnabled && !client.supportsSocketPath) {
     throw new Error(`${client.name} does not support socket path`);
   }
 
