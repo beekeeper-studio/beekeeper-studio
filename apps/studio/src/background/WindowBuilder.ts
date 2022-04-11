@@ -26,6 +26,7 @@ class BeekeeperWindow {
 
   constructor(settings: IGroupedUserSettings, openOptions?: OpenOptions) {
     const theme = settings.theme
+    const dark = electron.nativeTheme.shouldUseDarkColors || theme.value.toString().includes('dark')
     const showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
     const titleBarStyle = platformInfo.isWindows && settings.menuStyle.value == 'native' ? 'default' : 'hidden'
       log.info('constructing the window')
@@ -34,7 +35,7 @@ class BeekeeperWindow {
       height: 800,
       minWidth: 800,
       minHeight: 600,
-      backgroundColor: theme.value === 'dark' ? "#252525" : '#ffffff',
+      backgroundColor: dark ? "#252525" : '#ffffff',
       titleBarStyle,
       frame: showFrame,
       webPreferences: {
