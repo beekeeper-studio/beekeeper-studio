@@ -7,6 +7,7 @@
   }
   .sidebar-wrap {
     flex-grow: 1;
+    height: 100%;
   }
   .list-group {
     position: relative;
@@ -34,7 +35,7 @@
       &.recent-connection-list {
         min-height: 185px;
       }
-      .list-body {   
+      .list-body {
         &:after {
           content: '';
           position: absolute;
