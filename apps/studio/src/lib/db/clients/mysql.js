@@ -788,6 +788,13 @@ function configDatabase(server, database) {
     connectTimeout  : 60 * 60 * 1000,
   };
 
+  if(server.config.socketPathEnabled) {
+    config.socketPath = server.config.socketPath;
+    config.host = null;
+    config.port = null;
+    return config;
+  }
+
   if (server.sshTunnel) {
     config.host = server.config.localHost;
     config.port = server.config.localPort;
