@@ -9,7 +9,7 @@ import cassandra from './cassandra';
 
 export function findClient(key: string): Client | undefined {
   const client = CLIENTS.find((cli) => cli.key === key);
-  if(!client) return null;
+  if(!client) return undefined;
 
   return {
     ...client,
