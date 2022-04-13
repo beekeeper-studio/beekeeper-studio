@@ -25,7 +25,7 @@
         ></schema-builder>
       </div>
     </div>
-    <span class="expand"></span>
+    <div class="expand"></div>
     <status-bar class="tabulator-footer">
       <span class="expand"></span>
       <div class="col flex-right statusbar-actions">
@@ -178,10 +178,13 @@ export default Vue.extend({
 
     }
   },
-  mounted() {
+  beforeMount() {
     const schema = BasicTable.toSchema(this.dialect)
     this.initialColumns = schema.columns
     this.generator = new SqlGenerator(this.dialect)
+  },
+  mounted() {
+
   }
 })
 </script>
