@@ -175,7 +175,6 @@ export default Vue.extend({
     getData(markModified: boolean = true) {
       const data = this.tabulator.getData()
       this.builtColumns = data
-      console.log("sb", "getData", data)
       this.columnsModified = markModified
     },
     removeRow(_e, cell: Tabulator.CellComponent) {
@@ -205,7 +204,6 @@ export default Vue.extend({
   },
   mounted() {
     const initial = [...this.initialColumns]
-    console.log("sb", "initializing with data", initial)
     // @ts-ignore-error
     this.tabulator = new TabulatorFull(this.$refs.tabulator, {
       data: initial,
@@ -219,6 +217,7 @@ export default Vue.extend({
         minWidth: 56,
       },
       layout: 'fitColumns',
+      height: 'auto'
     })
     this.getData(!!this.initialEmit)
     this.tabulator.on('dataChanged', () => this.getData())
@@ -281,6 +280,10 @@ export default Vue.extend({
           }
         }
       }
+    }
+
+    .tabulator .tabulator-tableholder .tabulator-table {
+      background-color: transparent;
     }
 
     // Field Rows

@@ -17,6 +17,7 @@
           </div>
         </div>
         <schema-builder
+          ref="sb"
           :dialect="dialect"
           :resetOnUpdate="true"
           :initialColumns="initialColumns"
@@ -105,6 +106,7 @@ export default Vue.extend({
 
       results[this.ctrlOrCmd('s')] = this.create.bind(this)
       results[this.ctrlOrCmd('shift+s')] = this.sql.bind(this)
+      results[this.ctrlOrCmd('n')] = () => this.$refs.sb.addRow()
       return results
     },
     defaultSchema() {
