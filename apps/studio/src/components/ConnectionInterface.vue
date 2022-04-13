@@ -38,6 +38,7 @@
                     <button :disabled="testing" class="btn btn-flat" type="button" @click.prevent="testConnection">Test</button>
                     <button :disabled="testing" class="btn btn-primary" type="submit" @click.prevent="submit">Connect</button>
                   </div>
+                  <error-alert :error="connectionError" :helpText="errorHelp" @close="connectionError = null" :closable="true" />
                 </div>
                 <SaveConnectionForm :config="config" @save="save"></SaveConnectionForm>
               </div>
@@ -46,9 +47,6 @@
 
           </div>
           <div class="pitch" v-if="!config.connectionType"><span class="badge badge-primary">NEW</span> Check out <a href="https://beekeeperstudio.io/get" class="">Beekeeper Studio Ultimate Edition</a></div>
-          <div v-if="connectionError" class="alert alert-danger">
-            {{connectionError}}
-          </div>
         </div>
 
         <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{version}}</a></small>
@@ -73,7 +71,8 @@
   import platformInfo from '@/common/platform_info'
   import ErrorAlert from './common/ErrorAlert.vue'
   import rawLog from 'electron-log'
-import { mapState } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
+import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
 
   const log = rawLog.scope('ConnectionInterface')
@@ -87,6 +86,7 @@ import { findClient } from '@/lib/db/clients'
         config: new SavedConnection(),
         errors: null,
         connectionError: null,
+        errorHelp: null,
         testing: false,
         split: null,
         url: null,
@@ -107,6 +107,9 @@ import { findClient } from '@/lib/db/clients'
         } else {
           return this.config.name
         }
+      },
+      dialect() {
+        return dialectFor(this.config.connectionType)
       }
     },
     watch: {
@@ -123,13 +126,24 @@ import { findClient } from '@/lib/db/clients'
         if(!findClient(newConnectionType).supportsSocketPath) {
           this.config.socketPathEnabled = false
         }
+      },
+      connectionError() {
+        console.log("error watch", this.connectionError, this.dialect)
+        if (this.connectionError &&
+          this.dialect == 'sqlserver' &&
+          this.connectionError.message &&
+          this.connectionError.message.includes('self signed certificate')
+        ) {
+          this.errorHelp = `You might need to check 'Trust Server Certificate'`
+        } else {
+        this.errorHelp = null
+        }
       }
     },
     async mounted() {
       if (!this.$store.getters.workspace) {
         await this.$store.commit('workspace', this.$store.state.localWorkspace)
       }
-      await this.$store.dispatch('credentials/load')
       await this.$store.dispatch('loadUsedConfigs')
       this.config.sshUsername = os.userInfo().username
       this.$nextTick(() => {
@@ -204,7 +218,7 @@ import { findClient } from '@/lib/db/clients'
         try {
           await this.$store.dispatch('connect', this.config)
         } catch(ex) {
-          this.connectionError = ex.message
+          this.connectionError = ex
           this.$noty.error("Error establishing a connection")
           log.error(ex)
         }
@@ -222,7 +236,7 @@ import { findClient } from '@/lib/db/clients'
           this.$noty.success("Connection looks good!")
           return true
         } catch(ex) {
-          this.connectionError = ex.message
+          this.connectionError = ex
           this.$noty.error("Error establishing a connection")
         } finally {
           this.testing = false

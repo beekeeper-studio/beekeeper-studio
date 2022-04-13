@@ -1,6 +1,6 @@
 <template>
-  <div class="nav-item-wrap" v-hotkey="keymap" @contextmenu="$emit('contextmenu', $event)">
-    <li class="nav-item" :title="title + scope">
+  <div class="nav-item-wrap" v-hotkey="keymap">
+    <li class="nav-item" :title="title + scope" @contextmenu="$emit('contextmenu', $event)">
       <a
         class="nav-link"
         @mousedown="mousedown"

@@ -8,7 +8,7 @@ import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
 import globals from '@/common/globals'
 
-  
+
 export default Vue.extend({
   data: () => ({
     interval: null,
@@ -41,7 +41,7 @@ export default Vue.extend({
         this.activeTab.title,
       ]
     }
-    
+
   },
   watch: {
     workspaceId() {
@@ -70,7 +70,7 @@ export default Vue.extend({
     mountAndRefresh() {
       console.log('mount and refresh')
       if (!this.workspace) return
-      const scope = this.workspace.type
+      const scope = 'local'
       DataModules.forEach((module) => {
         const choice = module[scope]
         if (!choice) throw new Error(`No module defined for ${scope} - ${module.path}`)
