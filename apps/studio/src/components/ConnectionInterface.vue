@@ -74,6 +74,7 @@
   import ErrorAlert from './common/ErrorAlert.vue'
   import rawLog from 'electron-log'
 import { mapState } from 'vuex'
+import { findClient } from '@/lib/db/clients'
 
   const log = rawLog.scope('ConnectionInterface')
   // import ImportUrlForm from './connection/ImportUrlForm';
@@ -116,6 +117,11 @@ import { mapState } from 'vuex'
         deep: true,
         handler() {
           this.connectionError = null
+        }
+      },
+      'config.connectionType'(newConnectionType) {
+        if(!findClient(newConnectionType).supportsSocketPath) {
+          this.config.socketPathEnabled = false
         }
       }
     },
