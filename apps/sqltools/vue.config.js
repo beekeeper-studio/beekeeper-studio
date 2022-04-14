@@ -22,6 +22,8 @@ module.exports = {
       'pg-query-stream': 'pg-query-stream'
     },
     plugins: [
+      new webpack.NormalModuleReplacementPlugin(/\.\.\/migrations\/migrate\/Migrator/, '../util/noop.js'),
+      new webpack.NormalModuleReplacementPlugin(/\.\.\/migrations\/seed\/Seeder/, '../util/noop.js'),
       // new webpack.NormalModuleReplacementPlugin(/m[sy]sql2?|oracle(db)?|sqlite3/, "node-noop"),
       // new webpack.NormalModuleReplacementPlugin(/\.\.\/migrate/, "node-noop"),
       // new webpack.NormalModuleReplacementPlugin(/\.\.\/seed/, "node-noop")
