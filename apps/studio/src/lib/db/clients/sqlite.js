@@ -199,9 +199,25 @@ export async function applyChanges(conn, changes) {
 
 export async function updateValues(cli, updates) {
   const commands = updates.map(update => {
+    let where;
+    let params;
+
+    if(!(update.pkColumn instanceof Array) && !(update.primaryKey instanceof Array)) {
+      where = `${update.pkColumn} = ?`;
+      params = [update.value, update.primaryKey];
+    } else {
+      const whereList = [];
+      params = [update.value];
+      for(let i = 0; i < update.pkColumn.length; i++) {
+        whereList.push(`${update.pkColumn[i]} = ?`);
+        params.push(update.primaryKey[i]);
+      }
+      where = whereList.join(" AND ");
+    }
+
     return {
-      query: `UPDATE ${update.table} SET ${update.column} = ? WHERE ${update.pkColumn} = ?`,
-      params: [update.value, update.primaryKey]
+      query: `UPDATE ${update.table} SET ${update.column} = ? WHERE ${where}`,
+      params: params
     }
   })
 
@@ -213,11 +229,25 @@ export async function updateValues(cli, updates) {
   }
 
   const returnQueries = updates.map(update => {
+    let where;
+    let params;
+
+    if(!(update.pkColumn instanceof Array) && !(update.primaryKey instanceof Array)) {
+      where = `${wrapIdentifier(update.pkColumn)} = ?`;
+      params = [update.primaryKey];
+    } else {
+      const whereList = [];
+      params = [];
+      for(let i = 0; i < update.pkColumn.length; i++) {
+        whereList.push(`${wrapIdentifier(update.pkColumn[i])} = ?`);
+        params.push(update.primaryKey[i]);
+      }
+      where = whereList.join(" AND ");
+    }
+
     return {
-      query: `select * from "${update.table}" where "${update.pkColumn}" = ?`,
-      params: [
-        update.primaryKey
-      ]
+      query: `select * from "${update.table}" where ${where}`,
+      params: params
     }
   })
 

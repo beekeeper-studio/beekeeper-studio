@@ -322,9 +322,9 @@ export class DBTestUtil {
       expect(pk).toBe("one")
     }
 
-    // composite primary key tests. Just disable them for now
-    const pkres = await this.connection.getPrimaryKey('with_composite_pk', this.defaultSchema)
-    expect(pkres).toBeNull()
+    const rawPkres = await this.connection.getPrimaryKeys('with_composite_pk', this.defaultSchema)
+    const pkres = rawPkres.map((key) => key.columnName);
+    expect(pkres).toEqual(expect.arrayContaining(["id1", "id2"]))
   }
 
   async queryTests() {
