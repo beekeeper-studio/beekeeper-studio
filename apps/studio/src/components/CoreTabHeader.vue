@@ -5,6 +5,7 @@
         class="nav-link"
         @mousedown="mousedown"
         @click.middle.prevent="maybeClose"
+        @contextmenu="$bks.openMenu({item: tab, options: contextOptions, event: $event})"
         :class="{ active: selected }"
       >
         <tab-icon :tab="tab" />
@@ -25,7 +26,7 @@
       <div class="vue-dialog-buttons">
         <span class="expand"></span>
         <button ref="no" @click.prevent="$modal.hide(modalName)" class="btn btn-sm btn-flat">Cancel</button>
-        <button @focusout="sureOpen && $refs.no.focus()" @click.prevent="closeForReal" class="btn btn-sm btn-primary">Close Tab</button>
+        <button @focusout="sureOpen && $refs.no && $refs.no.focus()" @click.prevent="closeForReal" class="btn btn-sm btn-primary">Close Tab</button>
       </div>
     </modal>
   </div>
@@ -85,6 +86,14 @@ import TabIcon from './tab/TabIcon.vue'
     watch: {
     },
     computed: {
+      contextOptions() {
+        return [
+          { name: "Close", slug: 'close', handler: ({event}) => this.maybeClose(event)},
+          { name: "Close Others", slug: 'close-others', handler: ({item}) => this.$emit('closeOther', item)},
+          { name: 'Close All', slug: 'close-all', handler: ({item}) => this.$emit('closeAll', item)},
+          { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) }
+        ]
+      },
       modalName() {
         return `sure-${this.tab.id}`
       },
