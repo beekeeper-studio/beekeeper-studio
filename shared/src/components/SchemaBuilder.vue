@@ -218,12 +218,11 @@ export default Vue.extend({
       layout: 'fitColumns',
       height: 'auto'
     })
-    this.getData(!!this.initialEmit)
+    // this.getData(!!this.initialEmit)
+    this.tabulator.on('tableBuilt', () => this.getData(!!this.initialEmit))
     this.tabulator.on('dataChanged', () => this.getData())
     this.tabulator.on('rowMoved', () => this.getData())
 
-    // @ts-ignore
-    window.tabulator = this.tabulator
   }
 })
 </script>
