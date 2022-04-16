@@ -198,7 +198,6 @@ import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
 import { mapState } from 'vuex';
-import tabulator from '../../../../../shared/src/lib/tabulator';
 
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
