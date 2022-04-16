@@ -198,6 +198,7 @@ import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
 import { mapState } from 'vuex';
+import tabulator from '../../../../../shared/src/lib/tabulator';
 
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
@@ -330,13 +331,24 @@ export default Vue.extend({
         },
         { separator: true },
         {
-          label: '<x-menuitem><x-label>Clone row</x-label></x-menuitem>',
-          action: this.cellCloneRow.bind(this),
+          label: '<x-menuitem><x-label>Clone</x-label></x-menuitem>',
+          action: this.selectedRowsClone.bind(this),
           disabled: !this.editable
         },
         {
-          label: '<x-menuitem><x-label>Delete row</x-label></x-menuitem>',
-          action: (_e, cell) => this.addRowToPendingDeletes(cell.getRow()),
+          label: '<x-menuitem><x-label>Delete</x-label></x-menuitem>',
+          action: (_e, cell) => {
+              const selectedrows = this.tabulator.getSelectedRows()
+              if(selectedrows.includes(cell.getRow())){
+                for(const row of selectedrows){
+                  this.addRowToPendingDeletes(row)
+                }
+              }
+              else{
+                this.addRowToPendingDeletes(cell.getRow())
+                this.tabulator.deselectRow();
+              }
+            },
           disabled: !this.editable
         },
       ]
@@ -623,6 +635,10 @@ export default Vue.extend({
         paginationButtonCount: 0,
         initialSort: this.initialSort,
         initialFilter: [this.initialFilter || {}],
+        selectable:true,
+        selectableRangeMode:"click",
+        selectablePersistence:false,
+        
 
         // callbacks
         ajaxRequestFunc: this.dataFetch,
@@ -821,6 +837,26 @@ export default Vue.extend({
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
       })
+    },
+    rowCloneRow(row) {
+      const data = { ...row.getData() }
+
+      this.tabulator.addRow(data, true).then(row => {
+        this.addRowToPendingInserts(row)
+        this.tabulator.scrollToRow(row, 'center', true)
+      })
+    },
+    selectedRowsClone(_e, cell){
+      const selectedrows = this.tabulator.getSelectedRows();
+      if(selectedrows.includes(cell.getRow())){
+        for(const row of selectedrows){
+          this.rowCloneRow(row);
+        }
+      }
+      else{
+          this.tabulator.deselectRow();
+          this.cellCloneRow(_e, cell)
+      }
     },
     cellAddRow() {
       this.tabulator.addRow({}, true).then(row => {
