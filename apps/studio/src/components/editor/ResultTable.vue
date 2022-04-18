@@ -59,7 +59,7 @@ import Papa from 'papaparse'
         return [
           {
             label: '<x-menuitem><x-label>Copy Cell</x-label></x-menuitem>',
-            action: (_e, cell) => this.$native.clipboard.writeText(cell.getValue())
+            action: (_e, cell) => this.$native.clipboard.writeText(String(cell.getValue()))
           },
           {
             label: '<x-menuitem><x-label>Copy Row (JSON)</x-label></x-menuitem>',
