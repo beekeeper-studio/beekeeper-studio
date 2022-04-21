@@ -10,7 +10,7 @@ import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig } from '../client'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
@@ -177,6 +177,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getTableLength: (table: string, schema: string) => getTableLength(conn, table, schema),
     selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
     selectTopStream: (database: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema: string = defaultSchema) => selectTopStream(conn, database, table, orderBy, filters, chunkSize, schema),
+    getInsertQuery: (tableInsert: TableInsert): Promise<string> => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
     getTableCreateScript: (table, schema = defaultSchema) => getTableCreateScript(conn, table, schema),
     getViewCreateScript: (view, schema = defaultSchema) => getViewCreateScript(conn, view, schema),
@@ -1170,6 +1171,10 @@ export async function listDatabases(conn: Conn, filter?: DatabaseFilterOptions) 
   return data.rows.map((row) => row.datname);
 }
 
+export async function getInsertQuery(conn: HasPool, database: string, tableInsert: TableInsert): Promise<string> {
+  const columns = await listTableColumns(conn, database, tableInsert.table, tableInsert.schema)
+  return buildInsertQuery(knex, tableInsert, columns)
+}
 
 export function getQuerySelectTop(_conn: Conn, table: string, limit: number, schema: string) {
   return `SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)} LIMIT ${limit}`;

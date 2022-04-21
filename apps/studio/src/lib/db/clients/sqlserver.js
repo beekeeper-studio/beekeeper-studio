@@ -7,7 +7,7 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _, { defaults } from 'lodash';
 
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
 import { SqlServerData } from '@shared/lib/dialects/sqlserver';
@@ -60,6 +60,7 @@ export default async function (server, database) {
     getTableLength: (table, schema) => getTableLength(conn, table, schema),
     selectTop: (table, offset, limit, orderBy, filters, schema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
+    getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -241,6 +242,10 @@ export function wrapValue(value) {
   return `'${value.replaceAll(/'/g, "''")}'`
 }
 
+async function getInsertQuery(conn, database, tableInsert) {
+  const columns = await listTableColumns(conn, database, tableInsert.table, tableInsert.schema)
+  return buildInsertQuery(knex, tableInsert, columns)
+}
 
 export function getQuerySelectTop(client, table, limit) {
   return `SELECT TOP ${limit} * FROM ${wrapIdentifier(table)}`;

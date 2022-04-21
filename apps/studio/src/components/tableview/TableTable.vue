@@ -311,6 +311,18 @@ export default Vue.extend({
           },
         },
         {
+          label: '<x-menuitem><x-label>Copy Row (Query)</x-label></x-menuitem>',
+          action: async (_e, cell) => {
+            const tableInsert = {
+              table: this.table.name,
+              schema: this.table.schema,
+              data: [cell.getRow().getData()],
+            }
+            const query = await this.connection.getInsertQuery(tableInsert)
+            this.$native.clipboard.writeText(query)
+          }
+        },
+        {
           label: '<x-menuitem><x-label>Copy Row (JSON)</x-label></x-menuitem>',
           action: (_e, cell) => {
             const data = cell.getRow().getData()
