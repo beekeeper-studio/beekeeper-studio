@@ -198,7 +198,7 @@ import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
 import { mapState } from 'vuex';
-
+import { Tabulator } from 'tabulator-tables'
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
@@ -298,8 +298,12 @@ export default Vue.extend({
     cellContextMenu() {
       return [{
           label: '<x-menuitem><x-label>Set Null</x-label></x-menuitem>',
-          action: (_e, cell) => {
-            cell.setValue(null);
+          action: (_e, cell: Tabulator.CellComponent) => {
+            if (this.primaryKey === cell.getField()) {
+              // do nothing
+            } else {
+              cell.setValue(null);
+            }
           },
           disabled: !this.editable
         },
@@ -431,7 +435,7 @@ export default Vue.extend({
           headerSort: this.allowHeaderSort(column),
           editor: editorType,
           tooltip: true,
-          contextMenu: this.editable ? this.cellContextMenu : null,
+          contextMenu: this.cellContextMenu,
           variableHeight: true,
           headerTooltip: headerTooltip,
           cellEditCancelled: cell => cell.getRow().normalizeHeight(),
