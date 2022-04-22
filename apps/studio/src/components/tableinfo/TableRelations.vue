@@ -326,7 +326,8 @@ export default Vue.extend({
           headerSort: false,
         },
         placeholder: "No Relations",
-        layout: 'fitColumns'
+        layout: 'fitColumns',
+        height: 'auto',
       })
       this.newRows = []
       this.removedRows = []

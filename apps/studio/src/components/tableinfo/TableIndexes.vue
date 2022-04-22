@@ -289,6 +289,7 @@ export default Vue.extend({
         columns: this.tableColumns,
         layout: 'fitColumns',
         placeholder: "No Indexes",
+        height: 'auto',
         columnDefaults: {
           title: '',
           resizable: false,
