@@ -890,9 +890,10 @@ async function executeWithTransaction(conn, queryArgs) {
 }
 
 function driverExecuteQuery(conn, queryArgs) {
-  logger().info(`Running Query ${queryArgs.query}`)
   const runQuery = (connection) => new Promise((resolve, reject) => {
-    connection.query({ sql: queryArgs.query, values: queryArgs.params, rowsAsArray: queryArgs.rowsAsArray }, (err, data, fields) => {
+    const params = !queryArgs.params || _.isEmpty(queryArgs.params) ? undefined : queryArgs.params
+    logger().info(`Running Query`, queryArgs.query, params)
+    connection.query({ sql: queryArgs.query, values: params, rowsAsArray: queryArgs.rowsAsArray }, (err, data, fields) => {
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});
       if (err) return reject(getRealError(connection, err));
 
