@@ -1396,11 +1396,12 @@ function parseRowQueryResult(data: QueryResult, command: string, rowResults: boo
   const fields = parseFields(data.fields, rowResults)
   const fieldIds = fields.map(f => f.id)
   const isSelect = data.command === 'SELECT';
+  const rowCount = data.rowCount || data.rows?.length || 0
   return {
     command: command || data.command,
     rows: rowResults ? data.rows.map(r => _.zipObject(fieldIds, r)) : data.rows,
     fields: fields,
-    rowCount: isSelect ? (data.rowCount || data.rows.length) : undefined,
+    rowCount: rowCount,
     affectedRows: !isSelect && !isNaN(data.rowCount) ? data.rowCount : undefined,
   };
 }
