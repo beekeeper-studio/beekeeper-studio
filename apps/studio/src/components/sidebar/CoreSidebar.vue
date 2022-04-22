@@ -99,7 +99,8 @@
         }
       },
       async databaseSelected(db) {
-        await this.$store.dispatch('changeDatabase', db)
+        console.log('database selected')
+        this.$store.dispatch('changeDatabase', db)
         this.allExpanded = false
       },
       async disconnect() {
