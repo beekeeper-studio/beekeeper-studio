@@ -44,7 +44,10 @@
           </x-menuitem>
           <hr>
           <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboard">
-            <x-label>Copy to Clipboard</x-label>
+            <x-label>Copy to Clipboard (TSV / Excel)</x-label>
+          </x-menuitem>
+          <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboardJson">
+            <x-label>Copy to Clipboard (JSON)</x-label>
           </x-menuitem>
         </x-menu>
       </x-button>
@@ -159,7 +162,11 @@ export default {
       },
       copyToClipboard() {
         this.$emit('clipboard')
+      },
+      copyToClipboardJson() {
+        this.$emit('clipboardJson')
       }
+
     }
 }
 </script>

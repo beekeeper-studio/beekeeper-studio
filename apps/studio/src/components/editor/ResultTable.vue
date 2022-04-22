@@ -1,4 +1,4 @@
-<template>
+e<template>
   <div class="result-table">
     <div ref="tabulator"></div>
   </div>
@@ -65,13 +65,7 @@ import Papa from 'papaparse'
             label: '<x-menuitem><x-label>Copy Row (JSON)</x-label></x-menuitem>',
             action: (_e, cell) => {
               const data = cell.getRow().getData()
-              const fixed = {}
-              Object.keys(data).forEach((key) => {
-                const v = data[key]
-                const column = this.tableColumns.find((c) => c.field === key)
-                const nuKey = column ? column.title : key
-                fixed[nuKey] = v
-              })
+              const fixed = this.dataToJson(data, true)
               this.$native.clipboard.writeText(JSON.stringify(fixed))
             }
           },
@@ -131,12 +125,26 @@ import Papa from 'papaparse'
       });
     },
     methods: {
+      dataToJson(rawData, firstObjectOnly) {
+        const rows = _.isArray(rawData) ? rawData : [rawData]
+        const result = rows.map((data) => {
+          const fixed = {}
+          Object.keys(data).forEach((key) => {
+              const v = data[key]
+              const column = this.tableColumns.find((c) => c.field === key)
+              const nuKey = column ? column.title : key
+              fixed[nuKey] = v
+            })
+          return fixed
+        })
+        return firstObjectOnly ? result[0] : result
+      },
       download(format) {
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
         this.tabulator.download(format, `${title}-${dateString}.${format}`, 'all')
       },
-      clipboard() {
+      clipboard(json) {
         // this.tabulator.copyToClipboard("all")
 
         const allRows = this.tabulator.getData()
@@ -145,23 +153,18 @@ import Papa from 'papaparse'
         }
         const columnTitles = {}
 
-        const result = allRows.map((data) => {
-          const fixed = {}
-          Object.keys(data).forEach((key) => {
-            const v = data[key]
-            const nuKey = this.columnIdTitleMap[key] || key
-            fixed[nuKey] = v
-          })
-          return fixed
-        })
+        const result = this.dataToJson(allRows, false)
 
-
-        this.$native.clipboard.writeText(
-          Papa.unparse(
-            result,
-            { header: true, delimiter: "\t", quotes: true, escapeFormulae: true }
+        if (json) {
+          this.$native.clipboard.writeText(JSON.stringify(result))
+        } else {
+          this.$native.clipboard.writeText(
+            Papa.unparse(
+              result,
+              { header: true, delimiter: "\t", quotes: true, escapeFormulae: true }
+            )
           )
-        )
+        }
       }
     }
 	}
