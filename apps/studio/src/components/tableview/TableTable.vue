@@ -719,7 +719,6 @@ export default Vue.extend({
       }
     },
     fkClick(_e, cell) {
-      log.info('fk-click', cell)
       const fromColumn = cell.getField().replace(/-link$/g, "")
       const valueCell = this.valueCellFor(cell)
       const value = valueCell.getValue()
