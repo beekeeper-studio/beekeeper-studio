@@ -23,6 +23,8 @@ import scWorkspace from './20211227_add_workspaceId_to_saved_connections'
 import createLogger from '../lib/logger'
 import systemTheme from './20220307-default-theme-system'
 import serverCerts from './20220401_add_trust_server_certificate_to_connections'
+import connectionOptions from './20220426_connection_options'
+
 
 const logger = createLogger('migrations')()
 
@@ -36,7 +38,7 @@ const realMigrations = [
   a, b, c, d, domains, createSettings, addZoom,
   addSc, sslFiles, sslReject, pinned, addSort,
   createCreds, workspaceScoping, workspace2, addTabs, scWorkspace, systemTheme,
-  serverCerts
+  serverCerts, connectionOptions
 ]
 
 // fixtures require the models

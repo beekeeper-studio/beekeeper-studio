@@ -23,6 +23,10 @@ export const ConnectionTypes = [
   { name: 'CockroachDB', value: 'cockroachdb' }
 ]
 
+export interface ConnectionOptions {
+
+}
+
 function parseConnectionType(t: Nullable<IDbClients>) {
   if (!t) return null
 
@@ -127,6 +131,10 @@ export class DbConnectionBase extends ApplicationEntity {
   // this only takes effect if SSL certs are provided
   @Column({type: 'boolean', nullable: false})
   sslRejectUnauthorized: boolean = true
+
+
+  @Column({type: 'simple-json', nullable: false})
+  options: ConnectionOptions = {}
 
   // this is only for SQL Server.
   @Column({type: 'boolean', nullable: false})
