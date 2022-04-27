@@ -833,6 +833,9 @@ export default Vue.extend({
       })
     },
     cellAddRow() {
+      if (this.dialectData.disabledFeatures?.tableTable) {
+        return;
+      }
       this.tabulator.addRow({}, true).then(row => {
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
