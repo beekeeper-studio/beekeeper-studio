@@ -140,7 +140,6 @@ import Papa from 'papaparse'
         const target = event.target
         if (this.selectedCell) {
           const targets = Array.from(this.selectedCell.getElement().getElementsByTagName("*"))
-          console.log(targets, target)
           if (!targets.includes(target)) {
             this.selectedCell.getElement().classList.remove('selected')
             this.selectedCell = null

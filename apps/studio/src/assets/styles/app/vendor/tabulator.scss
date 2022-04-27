@@ -173,6 +173,7 @@ $cell-padding:           $gutter-w;
 
     &.selected {
       background: rgba($theme-base, 0.10);
+      opacity: 1!important;
       &:hover {
         background: rgba($theme-base, 0.10) !important;
       }
@@ -321,6 +322,9 @@ $cell-padding:           $gutter-w;
       cursor: default!important;
       &:hover {
         background: transparent!important;
+        &.selected {
+          background: rgba($theme-base, 0.10) !important;
+        }
       }
     }
   }
