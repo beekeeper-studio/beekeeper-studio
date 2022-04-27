@@ -143,7 +143,7 @@
           </x-button>
         </template>
         <template v-if="!editable">
-          <span class="statusbar-item" title="Only tables with a single primary key column are editable."><i class="material-icons-outlined">info</i> Read Only</span>
+          <span class="statusbar-item" :title="readOnlyNotice"><i class="material-icons-outlined">info</i> Read Only</span>
         </template>
 
         <!-- Actions -->
@@ -197,7 +197,7 @@ import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
-import { mapState } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import { Tabulator } from 'tabulator-tables'
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
@@ -259,6 +259,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded']),
+    ...mapGetters(['dialectData']),
     loadingLength() {
       return this.totalRecords === null
     },
@@ -369,7 +370,13 @@ export default Vue.extend({
       return this.pendingChanges.deletes.length > 0
     },
     editable() {
-      return this.primaryKey && this.table.entityType === 'table'
+      return this.primaryKey &&
+        this.table.entityType === 'table' &&
+        !this.dialectData.disabledFeatures?.tableTable
+    },
+    readOnlyNotice() {
+      return this.dialectData.notices?.tableTable ||
+        "Only tables with a single primary key column are editable."
     },
     // it's a table, but there's no primary key
     missingPrimaryKey() {
