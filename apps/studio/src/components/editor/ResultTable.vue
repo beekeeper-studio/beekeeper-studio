@@ -1,5 +1,5 @@
-e<template>
-  <div class="result-table">
+<template>
+  <div class="result-table" v-hotkey="keymap">
     <div ref="tabulator"></div>
   </div>
 </template>
@@ -19,6 +19,7 @@ import Papa from 'papaparse'
       return {
         tabulator: null,
         actualTableHeight: '100%',
+        selectedCell: null
       }
     },
     props: ['result', 'tableHeight', 'query', 'active'],
@@ -49,6 +50,11 @@ import Papa from 'papaparse'
       }
     },
     computed: {
+      keymap() {
+        const result = {}
+        result[this.ctrlOrCmd('c')] = this.copyCell
+        return result
+      },
       tableData() {
           return this.dataToTableData(this.result, this.tableColumns)
       },
@@ -89,7 +95,8 @@ import Papa from 'papaparse'
             formatter: this.cellFormatter,
             maxInitialWidth: globals.maxColumnWidth,
             tooltip: true,
-            contextMenu: this.cellContextMenu
+            contextMenu: this.cellContextMenu,
+            cellClick: this.cellClick.bind(this)
           }
           return result;
         })
@@ -106,6 +113,7 @@ import Papa from 'papaparse'
       if (this.tabulator) {
         this.tabulator.destroy()
       }
+      document.removeEventListener('click', this.maybeUnselectCell)
     },
     async mounted() {
       this.tabulator = new TabulatorFull(this.$refs.tabulator, {
@@ -115,6 +123,7 @@ import Papa from 'papaparse'
         columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,
         nestedFieldSeparator: false,
+
         clipboard: true,
         keybindings: {
           copyToClipboard: false
@@ -123,8 +132,35 @@ import Papa from 'papaparse'
           columnHeaders: true
         }
       });
+      document.addEventListener('click', this.maybeUnselectCell)
     },
     methods: {
+      maybeUnselectCell(event) {
+        if (!this.active) return
+        const target = event.target
+        if (this.selectedCell) {
+          const targets = Array.from(this.selectedCell.getElement().getElementsByTagName("*"))
+          console.log(targets, target)
+          if (!targets.includes(target)) {
+            this.selectedCell.getElement().classList.remove('selected')
+            this.selectedCell = null
+          }
+        }
+      },
+      copyCell() {
+        if (!this.active) return;
+        if (!this.selectedCell) return;
+
+        this.$native.clipboard.writeText(this.selectedCell.getValue())
+      },
+      cellClick(e, cell) {
+        if (this.selectedCell) {
+          this.selectedCell.getElement().classList.remove('selected')
+        }
+        this.selectedCell = cell
+        console.log(cell)
+        cell.getElement().classList.add('selected')
+      },
       dataToJson(rawData, firstObjectOnly) {
         const rows = _.isArray(rawData) ? rawData : [rawData]
         const result = rows.map((data) => {

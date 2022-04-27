@@ -171,6 +171,13 @@ $cell-padding:           $gutter-w;
       color: $db-select-text;
     }
 
+    &.selected {
+      background: rgba($theme-base, 0.10);
+      &:hover {
+        background: rgba($theme-base, 0.10) !important;
+      }
+    }
+
     // Cell States
     &.edited,
     &.edit-error,
