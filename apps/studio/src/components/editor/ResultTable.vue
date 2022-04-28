@@ -149,8 +149,10 @@ import Papa from 'papaparse'
       copyCell() {
         if (!this.active) return;
         if (!this.selectedCell) return;
-
-        this.$native.clipboard.writeText(this.selectedCell.getValue())
+        this.selectedCell.getElement().classList.add('copied')
+        const cell = this.selectedCell
+        setTimeout(() => cell.getElement().classList.remove('copied'), 500)
+        this.$native.clipboard.writeText(this.selectedCell.getValue(), false)
       },
       cellClick(e, cell) {
         if (this.selectedCell) {

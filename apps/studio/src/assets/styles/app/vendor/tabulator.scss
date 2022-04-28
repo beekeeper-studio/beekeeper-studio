@@ -179,6 +179,13 @@ $cell-padding:           $gutter-w;
       }
     }
 
+    &.copied {
+      background: rgba($theme-base, 0.4) !important;
+      &:hover {
+        background: rgba($theme-base, 0.4) !important;
+      }
+    }
+
     // Cell States
     &.edited,
     &.edit-error,
@@ -324,6 +331,9 @@ $cell-padding:           $gutter-w;
         background: transparent!important;
         &.selected {
           background: rgba($theme-base, 0.10) !important;
+        }
+        &.copied {
+          background: rgba($theme-base, 0.4) !important;
         }
       }
     }

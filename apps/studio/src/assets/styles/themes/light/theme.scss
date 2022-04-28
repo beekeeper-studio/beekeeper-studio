@@ -133,7 +133,7 @@ x-buttons {
   }
 }
 
-// Connection Label 
+// Connection Label
 // -----------------------------------------
 .connection-label {
   &.connection-label-color-yellow {
@@ -175,7 +175,7 @@ x-buttons {
   }
   .global-items {
     .nav-item.selectable {
-      &:hover {   
+      &:hover {
         &:before {
           background: rgba($theme-base, 0.38);
         }
@@ -214,8 +214,8 @@ x-buttons {
         background: $query-editor-bg;
         .tab-action {
           background: linear-gradient(
-            90deg, 
-            rgba($query-editor-bg,0) 0%, 
+            90deg,
+            rgba($query-editor-bg,0) 0%,
             rgba($query-editor-bg,1) 20%
           );
         }
@@ -227,8 +227,8 @@ x-buttons {
       bottom: 1px;
       border-radius: 0 6px 0 0;
       background: linear-gradient(
-        90deg, 
-        rgba($tab-link,0) 0%, 
+        90deg,
+        rgba($tab-link,0) 0%,
         rgba($tab-link,1) 20%
       );
     }
@@ -245,58 +245,64 @@ x-buttons {
 
 // Tabulator
 // -------------------------------
-.tabulator-table {
-  .tabulator-row {
-    &.tabulator-row-even,
-    &:nth-child(odd) {
-      &.inserted, 
-      &.inserted:hover {
-        background: $row-add!important;
-      }
-      &.deleted,
-      &.deleted:hover {
-        background: $row-delete!important;
-      }
-      &.edit-error {
-        background: $row-error!important;
-      }
-    }
-    .tabulator-cell {
-      &.edited,
-      &.edit-error,
-      &.edit-success {
-        @include cell-shadow;
-      }
-      &.edited {
-        background: $cell-edited;
-        &:hover {
-          background: darken($cell-edited, 5%);
+.tabulator-tableholder {
+  .tabulator-table {
+    .tabulator-row {
+      &.tabulator-row-even,
+      &:nth-child(odd) {
+        &.inserted,
+        &.inserted:hover {
+          background: $row-add!important;
+        }
+        &.deleted,
+        &.deleted:hover {
+          background: $row-delete!important;
+        }
+        &.edit-error {
+          background: $row-error!important;
         }
       }
       &.edit-error {
-        background: $cell-error;
-        &:hover {
-          background: darken($cell-error, 5%);
-        }
+        background: $row-error !important;
       }
-      &.edit-success {
-        background: $cell-success;
-        &:hover {
-          background: darken($cell-success, 5%);
+      .tabulator-cell {
+        &.edited,
+        &.edit-error,
+        &.edit-success {
+          @include cell-shadow;
         }
-      }
-      &.foreign-key-button {
-        .material-icons {
+        &.edited {
+          background: $cell-edited;
           &:hover {
-            color: $text-dark;
+            background: darken($cell-edited, 5%);
           }
         }
-      }
-      .null-value {
-        color: $text-light;
+        &.edit-error {
+          background: $cell-error;
+          &:hover {
+            background: darken($cell-error, 5%);
+          }
+        }
+        &.edit-success {
+          background: $cell-success;
+          &:hover {
+            background: darken($cell-success, 5%);
+          }
+        }
+        &.foreign-key-button {
+          .material-icons {
+            &:hover {
+              color: $text-dark;
+            }
+          }
+        }
+        .null-value {
+          color: $text-light;
+        }
       }
     }
   }
+
 }
 .tabulator {
 
@@ -305,7 +311,7 @@ x-buttons {
       &.tabulator-loading {
         background-color: white;
       }
-      
+
     }
   }
 
@@ -343,7 +349,7 @@ x-buttons {
   }
 }
 .table-builder {
-  
+
   .table-builder-header {
     .form-group {
       label {
@@ -391,8 +397,8 @@ x-buttons {
       &.no-edit-highlight {
         &.tabulator-editing {
           input {
-            &[type="checkbox"]:active, 
-            &[type="checkbox"]:checked, 
+            &[type="checkbox"]:active,
+            &[type="checkbox"]:checked,
             &[type="checkbox"]:checked:active {
               background: rgba($theme-base, 0.5)!important;
               color: $theme-bg!important;
@@ -401,8 +407,8 @@ x-buttons {
         }
         &.edited {
           input {
-            &[type="checkbox"]:active, 
-            &[type="checkbox"]:checked, 
+            &[type="checkbox"]:active,
+            &[type="checkbox"]:checked,
             &[type="checkbox"]:checked:active {
               &:after {
                 color: white!important;
@@ -413,8 +419,8 @@ x-buttons {
       }
       &.read-only {
         input[type="checkbox"] {
-          &:active, 
-          &:checked, 
+          &:active,
+          &:checked,
           &:checked:active {
             &:after {
               color: $theme-base!important;

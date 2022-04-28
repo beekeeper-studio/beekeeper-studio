@@ -34,12 +34,13 @@ const copyNotification = new Noty({
 
 export const ElectronPlugin: NativePlugin = {
   clipboard: {
-    writeText(rawText: any) {
+    writeText(rawText: any, notify: boolean = true) {
       const text = _.toString(rawText)
       Noty.closeAll('clipboard')
-      copyNotification.show()
       remote.clipboard.writeText(text)
 
+      if (!notify) return;
+      copyNotification.show()
     },
     readText(): string {
       return remote.clipboard.readText()
