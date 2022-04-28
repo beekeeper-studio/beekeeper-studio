@@ -259,8 +259,17 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(['tables', 'tablesInitialLoaded']),
+    ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database']),
     ...mapGetters(['dialectData']),
+    persistenceId() {
+      if (!this.usedConfig?.id) return null
+      return [
+        this.usedConfig.id,
+        this.database || 'noDatabase',
+        this.table?.schema || 'noSchema',
+        this.table.name
+      ].join("-")
+    },
     loadingLength() {
       return this.totalRecords === null
     },
@@ -297,6 +306,17 @@ export default Vue.extend({
       result[this.ctrlOrCmd('f')] = () => this.$refs.valueInput.focus()
       result[this.ctrlOrCmd('c')] = this.copyCell
       return result
+    },
+    headerMenu() {
+      return [{
+        label: '<x-menuitem><x-label>Hide Column</x-label></x-menuitem>',
+        action: (_e, column) => column.hide()
+      },
+      {
+        label: '<x-menuitem><x-label>Freeze Column</x-label></x-menuitem>',
+        action: (_e, column) => column.freeze()
+      }
+      ]
     },
     cellContextMenu() {
       return [{
@@ -445,6 +465,7 @@ export default Vue.extend({
           editor: editorType,
           tooltip: true,
           contextMenu: this.cellContextMenu,
+          headerContextMenu: this.headerMenu,
           variableHeight: true,
           headerTooltip: headerTooltip,
           cellEditCancelled: cell => cell.getRow().normalizeHeight(),
@@ -632,6 +653,17 @@ export default Vue.extend({
       await this.$store.dispatch('updateTableColumns', this.table)
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
+
+
+      const persistenceOptions: any = {}
+
+      if (this.persistenceId) {
+        persistenceOptions.persistenceID = this.persistenceId
+        persistenceOptions.persistence = {
+          columns: true
+        }
+      }
+
       // @ts-ignore-error
       this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,
@@ -660,9 +692,8 @@ export default Vue.extend({
           scrollPageUp: false,
           scrollPageDown: false
         },
-        rowContextMenu:[
-
-        ]
+        movableColumns: true,
+        ...persistenceOptions
       });
       this.tabulator.on('cellEdited', this.cellEdited)
 
