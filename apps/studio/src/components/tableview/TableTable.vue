@@ -318,34 +318,31 @@ export default Vue.extend({
           },
         },
         {
-          label: '<x-menuitem><x-label>Copy Row (Query)</x-label></x-menuitem>',
-          action: async (_e, cell) => {
-            const tableInsert = {
-              table: this.table.name,
-              schema: this.table.schema,
-              data: [cell.getRow().getData()],
-            }
-            const query = await this.connection.getInsertQuery(tableInsert)
-            this.$native.clipboard.writeText(query)
-          }
-        },
-        {
           label: '<x-menuitem><x-label>Copy Row (JSON)</x-label></x-menuitem>',
           action: (_e, cell) => {
             const data = cell.getRow().getData()
-            const fixed = {}
-            Object.keys(data).forEach((key) => {
-              const v = data[key]
-              const column = this.tableColumns.find((c) => c.field === key)
-              const nuKey = column ? column.title : key
-              fixed[nuKey] = v
-            })
+            const fixed = this.$bks.cleanData(data, this.tableColumns)
             this.$native.clipboard.writeText(JSON.stringify(fixed))
           }
         },
         {
           label: '<x-menuitem><x-label>Copy Row (TSV / Excel)</x-label></x-menuitem>',
-          action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([cell.getRow().getData()], { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
+          action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([this.$bks.cleanData(cell.getRow().getData())], { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
+        },
+        {
+          label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
+          action: async (_e, cell) => {
+
+            const fixed = this.$bks.cleanData(cell.getRow().getData(), this.tableColumns)
+
+            const tableInsert = {
+              table: this.table.name,
+              schema: this.table.schema,
+              data: [fixed],
+            }
+            const query = await this.connection.getInsertQuery(tableInsert)
+            this.$native.clipboard.writeText(query)
+          }
         },
         { separator: true },
         {
@@ -484,7 +481,7 @@ export default Vue.extend({
             download: false,
             width: keyWidth,
             resizable: false,
-            field: column.columnName + '-link',
+            field: column.columnName + '-link--bks',
             title: "",
             cssClass: "foreign-key-button",
             cellClick: this.fkClick,
@@ -722,7 +719,7 @@ export default Vue.extend({
       return defaultValue
     },
     valueCellFor(cell) {
-      const fromColumn = cell.getField().replace(/-link$/g, "")
+      const fromColumn = cell.getField().replace(/-link--bks$/g, "")
       const valueCell = cell.getRow().getCell(fromColumn)
       return valueCell
     },

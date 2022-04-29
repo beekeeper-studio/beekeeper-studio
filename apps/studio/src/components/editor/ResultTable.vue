@@ -12,6 +12,7 @@
   import Mutators, { escapeHtml } from '../../mixins/data_mutators'
 import globals from '@/common/globals'
 import Papa from 'papaparse'
+import { mapState } from 'vuex'
 
   export default {
     mixins: [Converter, Mutators],
@@ -50,6 +51,7 @@ import Papa from 'papaparse'
       }
     },
     computed: {
+      ...mapState(['connection']),
       keymap() {
         const result = {}
         result[this.ctrlOrCmd('c')] = this.copyCell
@@ -77,7 +79,21 @@ import Papa from 'papaparse'
           },
           {
             label: '<x-menuitem><x-label>Copy Row (TSV / Excel)</x-label></x-menuitem>',
-            action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([cell.getRow().getData()], { header: false, quotes: true, delimiter: "\t", escapeFormulae: true }))
+            action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([this.$bks.cleanData(cell.getRow().getData())], { header: false, quotes: true, delimiter: "\t", escapeFormulae: true }))
+          },
+          {
+            label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
+            action: async (_e, cell) => {
+              const fixed = this.$bks.cleanData(cell.getRow().getData(), this.tableColumns)
+
+              const tableInsert = {
+                table: 'mytable',
+                schema: null,
+                data: [fixed],
+              }
+              const query = await this.connection.getInsertQuery(tableInsert)
+              this.$native.clipboard.writeText(query)
+            }
           }
         ]
       },
@@ -164,14 +180,7 @@ import Papa from 'papaparse'
       dataToJson(rawData, firstObjectOnly) {
         const rows = _.isArray(rawData) ? rawData : [rawData]
         const result = rows.map((data) => {
-          const fixed = {}
-          Object.keys(data).forEach((key) => {
-              const v = data[key]
-              const column = this.tableColumns.find((c) => c.field === key)
-              const nuKey = column ? column.title : key
-              fixed[nuKey] = v
-            })
-          return fixed
+          return this.$bks.cleanData(data, this.tableColumns)
         })
         return firstObjectOnly ? result[0] : result
       },

@@ -1,6 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
 import logRaw from 'electron-log'
+import { TableInsert } from '../models'
 
 const log = logRaw.scope('db/util')
 
@@ -142,7 +143,7 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
   return await executeSelectTop(queries, conn, executor)
 }
 
-export function buildInsertQuery(knex, insert, columns = []) {
+export function buildInsertQuery(knex, insert: TableInsert, columns = []) {
 
   const data = _.cloneDeep(insert.data)
   data.forEach((item) => {
@@ -159,9 +160,11 @@ export function buildInsertQuery(knex, insert, columns = []) {
     })
 
   })
-
-  const query = knex(insert.table)
-    .withSchema(insert.schema)
+  const builder = knex(insert.table)
+  if (insert.schema) {
+    builder.withSchema(insert.schema)
+  }
+  const query = builder
     .insert(data)
     .toQuery()
   return query
