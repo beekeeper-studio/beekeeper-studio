@@ -68,7 +68,8 @@ export class DBTestUtil {
         client: KnexTypes[config.client || ""] || config.client,
         version: options?.version,
         connection: {
-          host: config.host,
+          host: config.socketPathEnabled ? undefined : config.host,
+          socketPath: config.socketPathEnabled ? config.socketPath : undefined,
           port: config.port || undefined,
           user: config.user || undefined,
           password: config.password || undefined,
