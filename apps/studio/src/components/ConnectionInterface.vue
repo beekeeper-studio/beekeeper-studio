@@ -38,7 +38,12 @@
                     <button :disabled="testing" class="btn btn-flat" type="button" @click.prevent="testConnection">Test</button>
                     <button :disabled="testing" class="btn btn-primary" type="submit" @click.prevent="submit">Connect</button>
                   </div>
-                  <error-alert :error="connectionError" :helpText="errorHelp" @close="connectionError = null" :closable="true" />
+                </div>
+                <div class="row" v-if="connectionError">
+                  <div class="col">
+                    <error-alert :error="connectionError" :helpText="errorHelp" @close="connectionError = null" :closable="true" />
+
+                  </div>
                 </div>
                 <SaveConnectionForm :config="config" @save="save"></SaveConnectionForm>
               </div>
