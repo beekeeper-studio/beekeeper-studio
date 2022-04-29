@@ -24,6 +24,10 @@ export function runCommonTests(getUtil) {
     await getUtil().queryTests()
   })
 
+  test("get insert query tests", async () => {
+    await getUtil().getInsertQueryTests()
+  })
+
 
   test("table filter tests", async () => {
     await getUtil().filterTests()

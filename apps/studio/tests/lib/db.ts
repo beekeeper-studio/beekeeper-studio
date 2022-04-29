@@ -348,6 +348,22 @@ export class DBTestUtil {
 
   }
 
+  async getInsertQueryTests() {
+    const row = { job_name: "Programmer", hourly_rate: 41 }
+    const tableInsert = { table: 'jobs', schema: this.defaultSchema, data: [row] }
+    const insertQuery = await this.connection.getInsertQuery(tableInsert)
+    const expectedQueries = {
+      postgresql: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
+      mysql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
+      mariadb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
+      sqlite: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
+      sqlserver: "insert into [dbo].[jobs] ([hourly_rate], [job_name]) values (41, 'Programmer')",
+      cockroachdb: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`
+    }
+
+    expect(insertQuery).toBe(expectedQueries[this.dbType])
+  }
+
   // lets start simple, it should resolve for all connection types
   async tablePropertiesTests() {
     await this.connection.getTableProperties('group', this.defaultSchema)
