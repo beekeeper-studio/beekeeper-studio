@@ -609,10 +609,7 @@ export default Vue.extend({
       if (!this.active) return
       const target = event.target
       const targets = Array.from(this.selectedCell.getElement().getElementsByTagName("*"))
-      console.log("maybe", target, targets)
-      console.log("targets?", targets.includes(target))
       if (!targets.includes(target)) {
-        console.log("maybe - yes!")
         this.selectedCell.getElement().classList.remove('selected')
         this.selectedCell = null
       }
@@ -776,7 +773,6 @@ export default Vue.extend({
         this.$native.clipboard.writeText(this.selectedCell.getValue(), false)
     },
     cellClick(_e, cell) {
-      console.log("cell click")
       if (this.selectedCell) this.selectedCell.getElement().classList.remove("selected")
       this.selectedCell = null
       // this makes it easier to select text if not editing
