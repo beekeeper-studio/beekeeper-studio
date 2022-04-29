@@ -159,7 +159,6 @@ import Papa from 'papaparse'
           this.selectedCell.getElement().classList.remove('selected')
         }
         this.selectedCell = cell
-        console.log(cell)
         cell.getElement().classList.add('selected')
       },
       dataToJson(rawData, firstObjectOnly) {
