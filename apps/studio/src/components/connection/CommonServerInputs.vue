@@ -1,5 +1,19 @@
 <template>
   <div class="host-port-user-password">
+    <div class="row">
+      <div class="form-group col" v-if="supportsSocketPath">
+        <label for="connectionMode">Connection Mode</label>
+        <select name="" v-model="config.socketPathEnabled" id="">
+          <option :value="false">Host and Port</option>
+          <option :value="true">Socket</option>
+        </select>
+      </div>
+      <div class="form-group col" v-show="config.socketPathEnabled">
+        <label for="socketPath">Socket Path</label>
+        <input id="socketPath" class="form-control" v-model="config.socketPath" type="text" name="socketPath">
+      </div>
+
+    </div>
     <div class="row gutter" v-show="!config.socketPathEnabled">
       <div class="col s9 form-group">
         <label for="Host">Host</label>
@@ -8,19 +22,6 @@
       <div class="col s3 form-group">
         <label for="port">Port</label>
         <input type="number" class="form-control" name="port" v-model.number="config.port">
-      </div>
-    </div>
-
-    <div class="advanced-connection-settings" v-show="supportsSocketPath">
-      <h4 class="advanced-heading flex" :class="{enabled: config.socketPathEnabled}">
-        <span class="expand">Use Socket</span>
-        <x-switch @click.prevent="config.socketPathEnabled = !config.socketPathEnabled" :toggled="config.socketPathEnabled"></x-switch>
-      </h4>
-      <div class="advanced-body" v-show="config.socketPathEnabled">
-        <div class="form-group">
-          <label for="socketPath">Socket path</label>
-          <input id="socketPath" class="form-control" v-model="config.socketPath" type="text" name="socketPath">
-        </div>
       </div>
     </div>
 

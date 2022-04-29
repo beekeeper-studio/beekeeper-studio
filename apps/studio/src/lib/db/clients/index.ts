@@ -45,6 +45,7 @@ export const CLIENTS: ClientConfig[] = [
     defaultPort: 26257,
     disabledFeatures: [
       'server:domain',
+      'server:socketPath'
     ],
   },
   {
@@ -81,6 +82,7 @@ export const CLIENTS: ClientConfig[] = [
     defaultPort: 5432,
     disabledFeatures: [
       'server:domain',
+      'server:socketPath'
     ],
   },
   {
@@ -88,7 +90,7 @@ export const CLIENTS: ClientConfig[] = [
     name: 'Microsoft SQL Server',
     defaultPort: 1433,
     disabledFeatures: [
-      'server:socketPath',
+      'server:socketPath'
     ],
   },
   {
