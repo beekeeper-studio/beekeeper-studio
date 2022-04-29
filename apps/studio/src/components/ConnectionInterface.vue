@@ -73,6 +73,7 @@
   import rawLog from 'electron-log'
 import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
+import { findClient } from '@/lib/db/clients'
 
   const log = rawLog.scope('ConnectionInterface')
   // import ImportUrlForm from './connection/ImportUrlForm';
@@ -119,6 +120,11 @@ import { dialectFor } from '@shared/lib/dialects/models'
         deep: true,
         handler() {
           this.connectionError = null
+        }
+      },
+      'config.connectionType'(newConnectionType) {
+        if(!findClient(newConnectionType).supportsSocketPath) {
+          this.config.socketPathEnabled = false
         }
       },
       connectionError() {

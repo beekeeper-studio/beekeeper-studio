@@ -83,6 +83,29 @@ export class DbConnectionBase extends ApplicationEntity {
     return null
   }
 
+  _socketPath: Nullable<string> = null
+
+  @Column({type: 'varchar', nullable: true})
+  public set socketPath(v : Nullable<string>) {
+    this._socketPath = v
+  }
+
+  public get socketPath() : Nullable<string> {
+    return this._socketPath || this.defaultSocketPath
+  }
+
+  public get defaultSocketPath() : Nullable<string> {
+    if(['mysql', 'mariadb'].includes(this.connectionType || '')) {
+      return '/var/run/mysqld/mysqld.sock'
+    } else if (this.connectionType === 'postgresql') {
+      return '/var/run/postgresql'
+    }
+    return null
+  }
+
+  @Column({type: 'boolean', nullable: false, default: false})
+  socketPathEnabled = false
+
   @Column({type: "varchar", nullable: true})
   username: Nullable<string> = null
 

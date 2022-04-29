@@ -1349,6 +1349,11 @@ function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServe
     config.user = server.config.osUser
   }
 
+  if(server.config.socketPathEnabled) {
+    config.host = server.config.socketPath;
+    config.port = null;
+    return config;
+  }
 
   if (server.sshTunnel) {
     console.log("server has sshTunnel")

@@ -43,6 +43,8 @@ export const BeekeeperPlugin = {
     cMenu.$mount()
   },
   buildConnectionString(config: IConnection): string {
+    if (config.socketPathEnabled) return config.socketPath;
+
     if (config.connectionType === 'sqlite') {
       return config.defaultDatabase || "./unknown.db"
     } else {
@@ -60,6 +62,8 @@ export const BeekeeperPlugin = {
     }
   },
   simpleConnectionString(config: IConnection): string {
+    if (config.socketPathEnabled) return config.socketPath;
+
     let connectionString = `${config.host}:${config.port}`;
     if (config.connectionType === 'sqlite') {
       return path.basename(config.defaultDatabase || "./unknown.db")
