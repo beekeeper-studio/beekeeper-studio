@@ -9,7 +9,7 @@
         <li
           v-for="(option, index) in options"
           :key="index"
-          @click.stop="optionClicked(option)"
+          @click.stop="optionClicked(option, $event)"
           class="vue-simple-context-menu__item"
           :class="[option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : '')]"
         >
@@ -86,8 +86,8 @@ export default Vue.extend({
     onClickOutside () {
       this.hideContextMenu()
     },
-    optionClicked (option: ContextOption) {
-      option.handler({ item: this.item, option })
+    optionClicked (option: ContextOption, event: any) {
+      option.handler({ item: this.item, option, event })
       this.hideContextMenu()
     },
     onEscKeyRelease (event) {

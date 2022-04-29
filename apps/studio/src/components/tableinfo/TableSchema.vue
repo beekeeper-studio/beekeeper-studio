@@ -110,7 +110,7 @@ export default Vue.extend({
     ...TabulatorStateWatchers
   },
   computed: {
-    ...mapGetters(['dialect']),
+    ...mapGetters(['dialect', 'dialectData']),
     hotkeys() {
       if (!this.active) return {}
       const result = {}
@@ -122,13 +122,12 @@ export default Vue.extend({
       return result
     },
     editable() {
-      return this.table.entityType === 'table' && !!this.primaryKeys.length
+      return this.table.entityType === 'table' &&
+        !!this.primaryKeys.length &&
+        !this.dialectData.disabledFeatures?.alter?.everything
     },
     notice() {
-      if (this.dialect === 'sqlite') {
-        return 'Note: SQLite does not support any column alterations except renaming.'
-      }
-      return null
+      return this.dialectData.notices?.infoSchema || null
     },
     disabledFeatures() {
       return getDialectData(this.dialect).disabledFeatures

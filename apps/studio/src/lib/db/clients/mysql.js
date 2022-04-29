@@ -56,6 +56,7 @@ export default async function (server, database) {
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
+    getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -625,6 +626,10 @@ export async function listDatabases(conn, filter) {
     .map((row) => row.Database);
 }
 
+async function getInsertQuery(conn, database, tableInsert) {
+  const columns = await listTableColumns(conn, database, tableInsert.table, tableInsert.schema)
+  return buildInsertQuery(knex, tableInsert, columns)
+}
 
 export function getQuerySelectTop(conn, table, limit) {
   return `SELECT * FROM ${wrapIdentifier(table)} LIMIT ${limit}`;
@@ -897,9 +902,10 @@ async function executeWithTransaction(conn, queryArgs) {
 }
 
 function driverExecuteQuery(conn, queryArgs) {
-  logger().info(`Running Query ${queryArgs.query}`)
   const runQuery = (connection) => new Promise((resolve, reject) => {
-    connection.query({ sql: queryArgs.query, values: queryArgs.params, rowsAsArray: queryArgs.rowsAsArray }, (err, data, fields) => {
+    const params = !queryArgs.params || _.isEmpty(queryArgs.params) ? undefined : queryArgs.params
+    logger().info(`Running Query`, queryArgs.query, params)
+    connection.query({ sql: queryArgs.query, values: params, rowsAsArray: queryArgs.rowsAsArray }, (err, data, fields) => {
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});
       if (err) return reject(getRealError(connection, err));
 

@@ -7,12 +7,12 @@ const log = logRaw.scope('db/util')
 
 export function escapeString(value) {
   if (_.isNil(value)) return null
-  return value.replaceAll("'", "''")
+  return value.toString().replaceAll("'", "''")
 }
 
 export function escapeLiteral(value) {
-
-  return value.replaceAll(';', '')
+  if (_.isNil(value)) return null
+  return value.toString().replaceAll(';', '')
 }
 
 export function joinQueries(queries) {
@@ -94,9 +94,9 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
   let orderByString = ""
 
   if (orderBy && orderBy.length > 0) {
-    orderByString = "order by " + (orderBy.map((item) => {
+    orderByString = "order by " + (orderBy.map((item: any) => {
       if (_.isObject(item)) {
-        return `\`${item.field}\` ${item.dir}`
+        return `\`${item['field']}\` ${item['dir']}`
       } else {
         return `\`${item}\``
       }
@@ -112,14 +112,14 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
     filterParams = filterBlob.filterParams
   }
 
-  let baseSQL = `
+  const baseSQL = `
     FROM \`${table}\`
     ${filterString}
   `
-  let countSQL = `
+  const countSQL = `
     select count(*) as ${countTitle} ${baseSQL}
   `
-  let sql = `
+  const sql = `
     SELECT * ${baseSQL}
     ${orderByString}
     ${_.isNumber(limit) ? `LIMIT ${limit}` : ''}
@@ -129,8 +129,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
 }
 
 export async function executeSelectTop(queries, conn, executor) {
-  const { query, countQuery, params } = queries
-  const countResults = await executor(conn, { query: countQuery, params })
+  const { query, params } = queries
   const result = await executor(conn, { query, params })
   return {
     result: result.data,
@@ -202,9 +201,20 @@ export function buildSelectQueriesFromUpdates(knex, updates) {
   })
 }
 
+export async function withClosable<T>(item, func): Promise<T> {
+  try {
+    return await func(item)
+  } finally {
+    if (item) {
+      await item.close();
+    }
+  }
+
+}
+
 export function buildDeleteQueries(knex, deletes) {
   return deletes.map(deleteRow => {
-    let where = {}
+    const where = {}
     where[deleteRow.pkColumn] = deleteRow.primaryKey
 
     return knex(deleteRow.table)

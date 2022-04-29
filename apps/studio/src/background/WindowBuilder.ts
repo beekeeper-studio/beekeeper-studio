@@ -67,7 +67,9 @@ class BeekeeperWindow {
       if (url === appUrl) return // this is good
       log.info("navigate to", url)
       e.preventDefault()
-      electron.shell.openExternal(url);
+      const u = new URL(url)
+      u.searchParams.append('ref', 'bks-app')
+      electron.shell.openExternal(u.toString());
     })
   }
 

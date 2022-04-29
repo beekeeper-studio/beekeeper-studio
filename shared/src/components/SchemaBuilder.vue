@@ -8,7 +8,7 @@
       <span class="expand"></span>
       <button class="btn btn-primary btn-fab" @click.prevent="addRow" title="Add Field"><i class="material-icons">add</i></button>
     </div>
-    <div ref="tabulator"></div>
+    <div id="tabulator-goes-here" ref="tabulator"></div>
   </div>
 </template>
 
@@ -47,9 +47,9 @@ export default Vue.extend({
     }
   },
   watch: {
-    initialColumns() {
+    async initialColumns() {
       if (this.resetOnUpdate && this.initialColumns && this.tabulator) {
-        this.tabulator.replaceData([...this.initialColumns])
+        await this.tabulator.replaceData([...this.initialColumns])
         this.getData(!!this.initialEmit)
       }
     },
@@ -173,7 +173,8 @@ export default Vue.extend({
 
   methods: {
     getData(markModified: boolean = true) {
-      this.builtColumns = this.tabulator.getData()
+      const data = this.tabulator.getData()
+      this.builtColumns = data
       this.columnsModified = markModified
     },
     removeRow(_e, cell: Tabulator.CellComponent) {
@@ -202,22 +203,26 @@ export default Vue.extend({
     }
   },
   mounted() {
+    const initial = [...this.initialColumns]
     // @ts-ignore-error
     this.tabulator = new TabulatorFull(this.$refs.tabulator, {
-      data: [...this.initialColumns],
+      data: initial,
       columns: this.tableColumns,
       movableRows: this.editable,
-      headerSort: false,
-      rowMoved: () => this.getData(),
       columnDefaults: {
         title: '',
         resizable: false,
         minWidth: 56,
+        headerSort: false
       },
       layout: 'fitColumns',
+      height: 'auto'
     })
-    this.getData(!!this.initialEmit)
+    // this.getData(!!this.initialEmit)
+    this.tabulator.on('tableBuilt', () => this.getData(!!this.initialEmit))
     this.tabulator.on('dataChanged', () => this.getData())
+    this.tabulator.on('rowMoved', () => this.getData())
+
   }
 })
 </script>
@@ -274,6 +279,10 @@ export default Vue.extend({
           }
         }
       }
+    }
+
+    .tabulator .tabulator-tableholder .tabulator-table {
+      background-color: transparent;
     }
 
     // Field Rows

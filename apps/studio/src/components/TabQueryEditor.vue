@@ -73,6 +73,7 @@
         :running="running"
         @download="download"
         @clipboard="clipboard"
+        @clipboardJson="clipboardJson"
         :executeTime="executeTime"
       ></query-editor-status-bar>
     </div>
@@ -582,6 +583,9 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       clipboard() {
         this.$refs.table.clipboard()
       },
+      clipboardJson() {
+        const data = this.$refs.table.clipboard(true)
+      },
       selectEditor() {
         this.editor.focus()
       },
@@ -696,10 +700,11 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
           })
           this.results = Object.freeze(results);
 
-          this.selectedResult = Math.max(results.length - 1, 0)
+          const defaultResult = Math.max(results.length - 1, 0)
 
-          // this.selectedResult = results.findIndex((r) => r.rowCount > 0)
-          // if (this.selectedResult < 0) this.selectedResult = 0
+          const nonEmptyResult = _.chain(results).findLastIndex((r) => !!r.rows?.length).value()
+          console.log("non empty result", nonEmptyResult)
+          this.selectedResult = nonEmptyResult === -1 ? results.length - 1 : nonEmptyResult
 
           this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.connection.id })
           log.debug('identification', identification)
