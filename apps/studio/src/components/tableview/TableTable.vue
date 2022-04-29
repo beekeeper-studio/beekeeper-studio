@@ -109,7 +109,7 @@
           <span>{{lastUpdatedText}}</span>
         </a>
         <span v-if="error" class="statusbar-item error" :title="error.message">
-          <i class="material-icons">error</i>
+          <i class="material-icons">error_outline</i>
           <span class="">{{ error.title }}</span>
         </span>
       </div>
@@ -136,8 +136,8 @@
 
         <template v-if="pendingChangesCount > 0">
           <x-button class="btn btn-flat" @click.prevent="discardChanges">Reset</x-button>
-          <x-button class="btn btn-primary btn-badge" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
-            <i v-if="error" class="material-icons">error</i>
+          <x-button class="btn btn-primary btn-badge btn-icon" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
+            <i v-if="error" class="material-icons ">error_outline</i>
             <span class="badge" v-if="!error">{{pendingChangesCount}}</span>
             <span>Apply</span>
           </x-button>
@@ -254,7 +254,8 @@ export default Vue.extend({
 
       forceRedraw: false,
       rawPage: 1,
-      initialized: false
+      initialized: false,
+      selectedCell: null,
     };
   },
   computed: {
@@ -294,6 +295,7 @@ export default Vue.extend({
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
       result[this.ctrlOrCmd('f')] = () => this.$refs.valueInput.focus()
+      result[this.ctrlOrCmd('c')] = this.copyCell
       return result
     },
     cellContextMenu() {
@@ -587,20 +589,31 @@ export default Vue.extend({
     }
   },
   beforeDestroy() {
+    document.removeEventListener('click', this.maybeUnselectCell)
     if(this.interval) clearInterval(this.interval)
     if (this.tabulator) {
       this.tabulator.destroy()
     }
   },
   async mounted() {
+    document.addEventListener('click', this.maybeUnselectCell)
     if (this.shouldInitialize) {
       this.$nextTick(async() => {
         await this.initialize()
       })
-
     }
   },
   methods: {
+    maybeUnselectCell(event) {
+      if (!this.selectedCell) return
+      if (!this.active) return
+      const target = event.target
+      const targets = Array.from(this.selectedCell.getElement().getElementsByTagName("*"))
+      if (!targets.includes(target)) {
+        this.selectedCell.getElement().classList.remove('selected')
+        this.selectedCell = null
+      }
+    },
     async close() {
       this.$root.$emit(AppEvent.closeTab)
     },
@@ -751,10 +764,21 @@ export default Vue.extend({
       log.debug('fk-click: clicked ', value, keyData)
       this.$root.$emit('loadTable', payload)
     },
+    copyCell() {
+        if (!this.active) return;
+        if (!this.selectedCell) return;
+        this.selectedCell.getElement().classList.add('copied')
+        const cell = this.selectedCell
+        setTimeout(() => cell.getElement().classList.remove('copied'), 500)
+        this.$native.clipboard.writeText(this.selectedCell.getValue(), false)
+    },
     cellClick(_e, cell) {
+      if (this.selectedCell) this.selectedCell.getElement().classList.remove("selected")
+      this.selectedCell = null
       // this makes it easier to select text if not editing
-      if (!this.editable) {
-        this.selectChildren(cell.getElement())
+      if (!this.cellEditCheck(cell)) {
+        this.selectedCell = cell
+        cell.getElement().classList.add("selected")
       } else {
         setTimeout(() => {
           cell.getRow().normalizeHeight();

@@ -171,6 +171,21 @@ $cell-padding:           $gutter-w;
       color: $db-select-text;
     }
 
+    &.selected {
+      background: rgba($theme-base, 0.10);
+      opacity: 1!important;
+      &:hover {
+        background: rgba($theme-base, 0.10) !important;
+      }
+    }
+
+    &.copied {
+      background: rgba($theme-base, 0.4) !important;
+      &:hover {
+        background: rgba($theme-base, 0.4) !important;
+      }
+    }
+
     // Cell States
     &.edited,
     &.edit-error,
@@ -314,6 +329,12 @@ $cell-padding:           $gutter-w;
       cursor: default!important;
       &:hover {
         background: transparent!important;
+        &.selected {
+          background: rgba($theme-base, 0.10) !important;
+        }
+        &.copied {
+          background: rgba($theme-base, 0.4) !important;
+        }
       }
     }
   }
