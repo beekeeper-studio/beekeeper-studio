@@ -51,7 +51,7 @@
             </form>
 
           </div>
-          <div class="pitch" v-if="!config.connectionType"><span class="badge badge-primary">NEW</span> Get Extra Themes With <a href="https://beekeeperstudio.io/get#ultimate-features" class="">The Ultimate Edition</a></div>
+          <div class="pitch" v-if="!config.connectionType"><span class="badge badge-primary">NEW</span> Check out <a href="https://beekeeperstudio.io/get#ultimate-features" class="">Beekeeper Studio Ultimate Edition</a></div>
         </div>
 
         <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{version}}</a></small>
