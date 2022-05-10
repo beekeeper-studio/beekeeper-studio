@@ -135,6 +135,7 @@ import { mapState } from 'vuex'
       this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         data: this.tableData, //link data to table
         reactiveData: true,
+        selectable: true,
         renderHorizontal: 'virtual',
         columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,

@@ -285,6 +285,7 @@ export default Vue.extend({
       result.push(`${this.pendingChangesCount} pending changes`)
       return result.join(" ")
     },
+    
     keymap() {
       if (!this.active) return {}
       const result = {}
@@ -642,6 +643,7 @@ export default Vue.extend({
       this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,
         columns: this.tableColumns,
+        selectable: true,
         nestedFieldSeparator: false,
         placeholder: "No Data",
         renderHorizontal: 'virtual',

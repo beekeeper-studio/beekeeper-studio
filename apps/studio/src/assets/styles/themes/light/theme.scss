@@ -16,7 +16,7 @@ $row-highlight:            darken($query-editor-bg, 3%);
 $row-add:                  #5ff3c0;
 $row-delete:               #FC8A87;
 $row-error:                #F9B8B7;
-
+$row-selected:             lighten($query-editor-bg, 10%);
 $cell-edited:              #EDDFA1;
 $cell-error:               $row-error;
 $cell-success:             $row-add;

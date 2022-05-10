@@ -381,6 +381,7 @@ export default Vue.extend({
       this.tabulator = new TabulatorFull(this.$refs.tableSchema, {
         columns: this.tableColumns,
         layout: 'fitColumns',
+        selectable: true,
         columnDefaults: {
           title: '',
           tooltip: true,

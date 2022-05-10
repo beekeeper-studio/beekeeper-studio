@@ -73,6 +73,7 @@ export default {
     this.tabulator = new TabulatorFull(this.$refs.tabulator, {
       columns: this.tableColumns,
       data: this.tableData,
+      selectable: true,
       height: 'auto',
       columnDefaults: {
         tooltip: true,
