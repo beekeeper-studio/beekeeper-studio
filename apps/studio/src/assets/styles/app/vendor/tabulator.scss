@@ -38,6 +38,10 @@ $cell-padding:           $gutter-w;
   color: $theme-base;
 
   .tabulator-row {
+    border-bottom:  1px solid $row-selected;
+    .tabulator-cell.select-row-col {
+      background: lighten($query-editor-bg, 7%);
+    }
     
     &.inserted,
     &.inserted:hover {

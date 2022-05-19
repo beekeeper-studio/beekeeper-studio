@@ -407,12 +407,21 @@ export default Vue.extend({
       return result
     },
     tableColumns() {
+      const selectRowCol = {
+        title: '',
+        editable: false,
+        headerSort: false,
+        cssClass: 'select-row-col',
+        cellClick: (_, cell) => {console.log(cell.getRow().toggleSelect())},
+      }
       const keyWidth = 40
       const results = []
+      
       if (!this.table) return []
       // 1. add a column for a real column
       // if a FK, add another column with the link
       // to the FK table.
+      results.push(selectRowCol)
       this.table.columns.forEach(column => {
 
         const keyData = this.tableKeys[column.columnName]
@@ -643,7 +652,7 @@ export default Vue.extend({
       this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,
         columns: this.tableColumns,
-        selectable: true,
+        // selectable: true,
         nestedFieldSeparator: false,
         placeholder: "No Data",
         renderHorizontal: 'virtual',
