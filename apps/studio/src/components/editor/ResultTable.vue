@@ -1,5 +1,5 @@
 <template>
-  <div class="result-table" v-hotkey="keymap">
+  <div class="result-table" v-hotkey="keymap" v-on:click="deselect">
     <div ref="tabulator"></div>
   </div>
 </template>
@@ -160,6 +160,11 @@ import { mapState } from 'vuex'
       document.addEventListener('click', this.maybeUnselectCell)
     },
     methods: {
+      deselect(e) {
+      if(e.target.className == "tabulator-tableholder") {
+        this.tabulator.deselectRow()
+      }
+    },
       maybeUnselectCell(event) {
         if (!this.active) return
         const target = event.target

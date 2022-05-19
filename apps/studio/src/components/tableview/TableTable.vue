@@ -1,5 +1,5 @@
 <template>
-  <div v-hotkey="keymap" class="tabletable flex-col" :class="{'view-only': !editable}">
+  <div v-hotkey="keymap" class="tabletable flex-col" :class="{'view-only': !editable}" v-on:click="deselect">
     <template v-if="!table && initialized">
       <div class="no-content">
 
@@ -622,6 +622,11 @@ export default Vue.extend({
     }
   },
   methods: {
+    deselect(e) {
+      if(e.target.className == "tabulator-tableholder") {
+        this.tabulator.deselectRow()
+      }
+    },
     maybeUnselectCell(event) {
       if (!this.selectedCell) return
       if (!this.active) return
