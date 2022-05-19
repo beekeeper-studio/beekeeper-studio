@@ -38,7 +38,12 @@
                     <button :disabled="testing" class="btn btn-flat" type="button" @click.prevent="testConnection">Test</button>
                     <button :disabled="testing" class="btn btn-primary" type="submit" @click.prevent="submit">Connect</button>
                   </div>
-                  <error-alert :error="connectionError" :helpText="errorHelp" @close="connectionError = null" :closable="true" />
+                </div>
+                <div class="row" v-if="connectionError">
+                  <div class="col">
+                    <error-alert :error="connectionError" :helpText="errorHelp" @close="connectionError = null" :closable="true" />
+
+                  </div>
                 </div>
                 <SaveConnectionForm :config="config" @save="save"></SaveConnectionForm>
               </div>
@@ -73,6 +78,7 @@
   import rawLog from 'electron-log'
 import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
+import { findClient } from '@/lib/db/clients'
 
   const log = rawLog.scope('ConnectionInterface')
   // import ImportUrlForm from './connection/ImportUrlForm';
@@ -119,6 +125,11 @@ import { dialectFor } from '@shared/lib/dialects/models'
         deep: true,
         handler() {
           this.connectionError = null
+        }
+      },
+      'config.connectionType'(newConnectionType) {
+        if(!findClient(newConnectionType).supportsSocketPath) {
+          this.config.socketPathEnabled = false
         }
       },
       connectionError() {

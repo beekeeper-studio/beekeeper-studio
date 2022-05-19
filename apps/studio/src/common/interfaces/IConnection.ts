@@ -8,6 +8,8 @@ export interface ISimpleConnection {
   connectionType: ConnectionType
   host: Nullable<string>
   port: Nullable<number>
+  socketPath: Nullable<string>
+  socketPathEnabled: boolean
   username: Nullable<string>
   domain: Nullable<string>
   defaultDatabase: Nullable<string>

@@ -109,7 +109,7 @@
           <span>{{lastUpdatedText}}</span>
         </a>
         <span v-if="error" class="statusbar-item error" :title="error.message">
-          <i class="material-icons">error</i>
+          <i class="material-icons">error_outline</i>
           <span class="">{{ error.title }}</span>
         </span>
       </div>
@@ -136,14 +136,14 @@
 
         <template v-if="pendingChangesCount > 0">
           <x-button class="btn btn-flat" @click.prevent="discardChanges">Reset</x-button>
-          <x-button class="btn btn-primary btn-badge" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
-            <i v-if="error" class="material-icons">error</i>
+          <x-button class="btn btn-primary btn-badge btn-icon" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
+            <i v-if="error" class="material-icons ">error_outline</i>
             <span class="badge" v-if="!error">{{pendingChangesCount}}</span>
             <span>Apply</span>
           </x-button>
         </template>
         <template v-if="!editable">
-          <span class="statusbar-item" title="Only tables with a single primary key column are editable."><i class="material-icons-outlined">info</i> Read Only</span>
+          <span class="statusbar-item" :title="readOnlyNotice"><i class="material-icons-outlined">info</i> Read Only</span>
         </template>
 
         <!-- Actions -->
@@ -197,8 +197,8 @@ import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
-import { mapState } from 'vuex';
-
+import { mapGetters, mapState } from 'vuex';
+import { Tabulator } from 'tabulator-tables'
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
@@ -254,11 +254,13 @@ export default Vue.extend({
 
       forceRedraw: false,
       rawPage: 1,
-      initialized: false
+      initialized: false,
+      selectedCell: null,
     };
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded']),
+    ...mapGetters(['dialectData']),
     loadingLength() {
       return this.totalRecords === null
     },
@@ -293,13 +295,18 @@ export default Vue.extend({
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
       result[this.ctrlOrCmd('f')] = () => this.$refs.valueInput.focus()
+      result[this.ctrlOrCmd('c')] = this.copyCell
       return result
     },
     cellContextMenu() {
       return [{
           label: '<x-menuitem><x-label>Set Null</x-label></x-menuitem>',
-          action: (_e, cell) => {
-            cell.setValue(null);
+          action: (_e, cell: Tabulator.CellComponent) => {
+            if (this.primaryKey === cell.getField()) {
+              // do nothing
+            } else {
+              cell.setValue(null);
+            }
           },
           disabled: !this.editable
         },
@@ -314,19 +321,28 @@ export default Vue.extend({
           label: '<x-menuitem><x-label>Copy Row (JSON)</x-label></x-menuitem>',
           action: (_e, cell) => {
             const data = cell.getRow().getData()
-            const fixed = {}
-            Object.keys(data).forEach((key) => {
-              const v = data[key]
-              const column = this.tableColumns.find((c) => c.field === key)
-              const nuKey = column ? column.title : key
-              fixed[nuKey] = v
-            })
+            const fixed = this.$bks.cleanData(data, this.tableColumns)
             this.$native.clipboard.writeText(JSON.stringify(fixed))
           }
         },
         {
           label: '<x-menuitem><x-label>Copy Row (TSV / Excel)</x-label></x-menuitem>',
-          action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([cell.getRow().getData()], { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
+          action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([this.$bks.cleanData(cell.getRow().getData())], { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
+        },
+        {
+          label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
+          action: async (_e, cell) => {
+
+            const fixed = this.$bks.cleanData(cell.getRow().getData(), this.tableColumns)
+
+            const tableInsert = {
+              table: this.table.name,
+              schema: this.table.schema,
+              data: [fixed],
+            }
+            const query = await this.connection.getInsertQuery(tableInsert)
+            this.$native.clipboard.writeText(query)
+          }
         },
         { separator: true },
         {
@@ -376,7 +392,13 @@ export default Vue.extend({
       return this.pendingChanges.deletes.length > 0
     },
     editable() {
-      return this.primaryKey && this.table.entityType === 'table'
+      return this.primaryKey &&
+        this.table.entityType === 'table' &&
+        !this.dialectData.disabledFeatures?.tableTable
+    },
+    readOnlyNotice() {
+      return this.dialectData.notices?.tableTable ||
+        "Only tables with a single primary key column are editable."
     },
     // it's a table, but there's no primary key
     missingPrimaryKey() {
@@ -442,7 +464,7 @@ export default Vue.extend({
           headerSort: this.allowHeaderSort(column),
           editor: editorType,
           tooltip: true,
-          contextMenu: this.editable ? this.cellContextMenu : null,
+          contextMenu: this.cellContextMenu,
           variableHeight: true,
           headerTooltip: headerTooltip,
           cellEditCancelled: cell => cell.getRow().normalizeHeight(),
@@ -470,7 +492,7 @@ export default Vue.extend({
             download: false,
             width: keyWidth,
             resizable: false,
-            field: column.columnName + '-link',
+            field: column.columnName + '-link--bks',
             title: "",
             cssClass: "foreign-key-button",
             cellClick: this.fkClick,
@@ -587,20 +609,31 @@ export default Vue.extend({
     }
   },
   beforeDestroy() {
+    document.removeEventListener('click', this.maybeUnselectCell)
     if(this.interval) clearInterval(this.interval)
     if (this.tabulator) {
       this.tabulator.destroy()
     }
   },
   async mounted() {
+    document.addEventListener('click', this.maybeUnselectCell)
     if (this.shouldInitialize) {
       this.$nextTick(async() => {
         await this.initialize()
       })
-
     }
   },
   methods: {
+    maybeUnselectCell(event) {
+      if (!this.selectedCell) return
+      if (!this.active) return
+      const target = event.target
+      const targets = Array.from(this.selectedCell.getElement().getElementsByTagName("*"))
+      if (!targets.includes(target)) {
+        this.selectedCell.getElement().classList.remove('selected')
+        this.selectedCell = null
+      }
+    },
     async close() {
       this.$root.$emit(AppEvent.closeTab)
     },
@@ -701,7 +734,7 @@ export default Vue.extend({
       return defaultValue
     },
     valueCellFor(cell) {
-      const fromColumn = cell.getField().replace(/-link$/g, "")
+      const fromColumn = cell.getField().replace(/-link--bks$/g, "")
       const valueCell = cell.getRow().getCell(fromColumn)
       return valueCell
     },
@@ -730,7 +763,6 @@ export default Vue.extend({
       }
     },
     fkClick(_e, cell) {
-      log.info('fk-click', cell)
       const fromColumn = cell.getField().replace(/-link$/g, "")
       const valueCell = this.valueCellFor(cell)
       const value = valueCell.getValue()
@@ -756,10 +788,21 @@ export default Vue.extend({
       log.debug('fk-click: clicked ', value, keyData)
       this.$root.$emit('loadTable', payload)
     },
+    copyCell() {
+        if (!this.active) return;
+        if (!this.selectedCell) return;
+        this.selectedCell.getElement().classList.add('copied')
+        const cell = this.selectedCell
+        setTimeout(() => cell.getElement().classList.remove('copied'), 500)
+        this.$native.clipboard.writeText(this.selectedCell.getValue(), false)
+    },
     cellClick(_e, cell) {
+      if (this.selectedCell) this.selectedCell.getElement().classList.remove("selected")
+      this.selectedCell = null
       // this makes it easier to select text if not editing
-      if (!this.editable) {
-        this.selectChildren(cell.getElement())
+      if (!this.cellEditCheck(cell)) {
+        this.selectedCell = cell
+        cell.getElement().classList.add("selected")
       } else {
         setTimeout(() => {
           cell.getRow().normalizeHeight();
@@ -858,6 +901,9 @@ export default Vue.extend({
       }
     },
     cellAddRow() {
+      if (this.dialectData.disabledFeatures?.tableTable) {
+        return;
+      }
       this.tabulator.addRow({}, true).then(row => {
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)

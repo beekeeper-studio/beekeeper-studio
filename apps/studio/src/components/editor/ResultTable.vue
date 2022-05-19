@@ -1,5 +1,5 @@
 <template>
-  <div class="result-table">
+  <div class="result-table" v-hotkey="keymap">
     <div ref="tabulator"></div>
   </div>
 </template>
@@ -12,6 +12,7 @@
   import Mutators, { escapeHtml } from '../../mixins/data_mutators'
 import globals from '@/common/globals'
 import Papa from 'papaparse'
+import { mapState } from 'vuex'
 
   export default {
     mixins: [Converter, Mutators],
@@ -19,6 +20,7 @@ import Papa from 'papaparse'
       return {
         tabulator: null,
         actualTableHeight: '100%',
+        selectedCell: null
       }
     },
     props: ['result', 'tableHeight', 'query', 'active'],
@@ -49,6 +51,12 @@ import Papa from 'papaparse'
       }
     },
     computed: {
+      ...mapState(['connection']),
+      keymap() {
+        const result = {}
+        result[this.ctrlOrCmd('c')] = this.copyCell
+        return result
+      },
       tableData() {
           return this.dataToTableData(this.result, this.tableColumns)
       },
@@ -65,19 +73,27 @@ import Papa from 'papaparse'
             label: '<x-menuitem><x-label>Copy Row (JSON)</x-label></x-menuitem>',
             action: (_e, cell) => {
               const data = cell.getRow().getData()
-              const fixed = {}
-              Object.keys(data).forEach((key) => {
-                const v = data[key]
-                const column = this.tableColumns.find((c) => c.field === key)
-                const nuKey = column ? column.title : key
-                fixed[nuKey] = v
-              })
+              const fixed = this.dataToJson(data, true)
               this.$native.clipboard.writeText(JSON.stringify(fixed))
             }
           },
           {
             label: '<x-menuitem><x-label>Copy Row (TSV / Excel)</x-label></x-menuitem>',
-            action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([cell.getRow().getData()], { header: false, quotes: true, delimiter: "\t", escapeFormulae: true }))
+            action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([this.$bks.cleanData(cell.getRow().getData())], { header: false, quotes: true, delimiter: "\t", escapeFormulae: true }))
+          },
+          {
+            label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
+            action: async (_e, cell) => {
+              const fixed = this.$bks.cleanData(cell.getRow().getData(), this.tableColumns)
+
+              const tableInsert = {
+                table: 'mytable',
+                schema: null,
+                data: [fixed],
+              }
+              const query = await this.connection.getInsertQuery(tableInsert)
+              this.$native.clipboard.writeText(query)
+            }
           }
         ]
       },
@@ -95,7 +111,8 @@ import Papa from 'papaparse'
             formatter: this.cellFormatter,
             maxInitialWidth: globals.maxColumnWidth,
             tooltip: true,
-            contextMenu: this.cellContextMenu
+            contextMenu: this.cellContextMenu,
+            cellClick: this.cellClick.bind(this)
           }
           return result;
         })
@@ -112,6 +129,7 @@ import Papa from 'papaparse'
       if (this.tabulator) {
         this.tabulator.destroy()
       }
+      document.removeEventListener('click', this.maybeUnselectCell)
     },
     async mounted() {
       this.tabulator = new TabulatorFull(this.$refs.tabulator, {
@@ -121,6 +139,7 @@ import Papa from 'papaparse'
         columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,
         nestedFieldSeparator: false,
+
         clipboard: true,
         keybindings: {
           copyToClipboard: false
@@ -129,14 +148,48 @@ import Papa from 'papaparse'
           columnHeaders: true
         }
       });
+      document.addEventListener('click', this.maybeUnselectCell)
     },
     methods: {
+      maybeUnselectCell(event) {
+        if (!this.active) return
+        const target = event.target
+        if (this.selectedCell) {
+          const targets = Array.from(this.selectedCell.getElement().getElementsByTagName("*"))
+          if (!targets.includes(target)) {
+            this.selectedCell.getElement().classList.remove('selected')
+            this.selectedCell = null
+          }
+        }
+      },
+      copyCell() {
+        if (!this.active) return;
+        if (!this.selectedCell) return;
+        this.selectedCell.getElement().classList.add('copied')
+        const cell = this.selectedCell
+        setTimeout(() => cell.getElement().classList.remove('copied'), 500)
+        this.$native.clipboard.writeText(this.selectedCell.getValue(), false)
+      },
+      cellClick(e, cell) {
+        if (this.selectedCell) {
+          this.selectedCell.getElement().classList.remove('selected')
+        }
+        this.selectedCell = cell
+        cell.getElement().classList.add('selected')
+      },
+      dataToJson(rawData, firstObjectOnly) {
+        const rows = _.isArray(rawData) ? rawData : [rawData]
+        const result = rows.map((data) => {
+          return this.$bks.cleanData(data, this.tableColumns)
+        })
+        return firstObjectOnly ? result[0] : result
+      },
       download(format) {
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
         this.tabulator.download(format, `${title}-${dateString}.${format}`, 'all')
       },
-      clipboard() {
+      clipboard(json) {
         // this.tabulator.copyToClipboard("all")
 
         const allRows = this.tabulator.getData()
@@ -145,23 +198,18 @@ import Papa from 'papaparse'
         }
         const columnTitles = {}
 
-        const result = allRows.map((data) => {
-          const fixed = {}
-          Object.keys(data).forEach((key) => {
-            const v = data[key]
-            const nuKey = this.columnIdTitleMap[key] || key
-            fixed[nuKey] = v
-          })
-          return fixed
-        })
+        const result = this.dataToJson(allRows, false)
 
-
-        this.$native.clipboard.writeText(
-          Papa.unparse(
-            result,
-            { header: true, delimiter: "\t", quotes: true, escapeFormulae: true }
+        if (json) {
+          this.$native.clipboard.writeText(JSON.stringify(result))
+        } else {
+          this.$native.clipboard.writeText(
+            Papa.unparse(
+              result,
+              { header: true, delimiter: "\t", quotes: true, escapeFormulae: true }
+            )
           )
-        )
+        }
       }
     }
 	}

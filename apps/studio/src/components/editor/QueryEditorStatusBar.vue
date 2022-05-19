@@ -5,7 +5,7 @@
         <span v-show="results.length > 1" class="statusbar-item result-selector" :title="'Results'">
         <div class="select-wrap" v-tooltip="{content: 'More query results in here', placement: 'top', show: showHint, trigger: 'manual', classes: ['tooltip-info']}">
           <select name="resultSelector" id="resultSelector" @change="updateValue" class="form-control">
-            <option v-for="(result, index) in results" :selected="value == index" :key="index" :value="index">Result {{index + 1}}: {{shortNum(result.rowCount, 0)}} {{pluralize('row', result.rowCount, false)}}</option>
+            <option v-for="(result, index) in results" :selected="value == index" :key="index" :value="index">Result {{index + 1}}: {{shortNum(result.rows.length, 0)}} {{pluralize('row', result.rows.length, false)}}</option>
           </select>
         </div>
         </span>
@@ -44,7 +44,10 @@
           </x-menuitem>
           <hr>
           <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboard">
-            <x-label>Copy to Clipboard</x-label>
+            <x-label>Copy to Clipboard (TSV / Excel)</x-label>
+          </x-menuitem>
+          <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboardJson">
+            <x-label>Copy to Clipboard (JSON)</x-label>
           </x-menuitem>
         </x-menu>
       </x-button>
@@ -159,7 +162,11 @@ export default {
       },
       copyToClipboard() {
         this.$emit('clipboard')
+      },
+      copyToClipboardJson() {
+        this.$emit('clipboardJson')
       }
+
     }
 }
 </script>

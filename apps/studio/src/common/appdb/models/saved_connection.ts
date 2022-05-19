@@ -23,6 +23,10 @@ export const ConnectionTypes = [
   { name: 'CockroachDB', value: 'cockroachdb' }
 ]
 
+export interface ConnectionOptions {
+
+}
+
 function parseConnectionType(t: Nullable<IDbClients>) {
   if (!t) return null
 
@@ -43,8 +47,10 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({ type: 'varchar', name: 'connectionType'})
   public set connectionType(value: Nullable<IDbClients>) {
-    this._connectionType = parseConnectionType(value)
-    this._port = this.defaultPort
+    if (this._connectionType !== value) {
+      this._connectionType = parseConnectionType(value)
+      this._port = this.defaultPort
+    }
   }
 
   public get connectionType() {
@@ -78,6 +84,29 @@ export class DbConnectionBase extends ApplicationEntity {
     }
     return null
   }
+
+  _socketPath: Nullable<string> = null
+
+  @Column({type: 'varchar', nullable: true})
+  public set socketPath(v : Nullable<string>) {
+    this._socketPath = v
+  }
+
+  public get socketPath() : Nullable<string> {
+    return this._socketPath || this.defaultSocketPath
+  }
+
+  public get defaultSocketPath() : Nullable<string> {
+    if(['mysql', 'mariadb'].includes(this.connectionType || '')) {
+      return '/var/run/mysqld/mysqld.sock'
+    } else if (this.connectionType === 'postgresql') {
+      return '/var/run/postgresql'
+    }
+    return null
+  }
+
+  @Column({type: 'boolean', nullable: false, default: false})
+  socketPathEnabled = false
 
   @Column({type: "varchar", nullable: true})
   username: Nullable<string> = null
@@ -127,6 +156,10 @@ export class DbConnectionBase extends ApplicationEntity {
   // this only takes effect if SSL certs are provided
   @Column({type: 'boolean', nullable: false})
   sslRejectUnauthorized: boolean = true
+
+
+  @Column({type: 'simple-json', nullable: false})
+  options: ConnectionOptions = {}
 
   // this is only for SQL Server.
   @Column({type: 'boolean', nullable: false})
