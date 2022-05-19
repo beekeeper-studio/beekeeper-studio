@@ -323,7 +323,6 @@ export default Vue.extend({
       this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         columns: this.tableColumns,
         data: this.tableData,
-        selectable: true,
         columnDefaults: {
           title:'',
           tooltip: true,

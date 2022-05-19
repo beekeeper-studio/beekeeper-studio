@@ -290,7 +290,6 @@ export default Vue.extend({
       this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         data: this.tableData,
         columns: this.tableColumns,
-        selectable: true,
         layout: 'fitColumns',
         placeholder: "No Indexes",
         height: 'auto',

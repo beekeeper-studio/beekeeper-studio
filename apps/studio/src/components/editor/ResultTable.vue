@@ -99,7 +99,15 @@ import { mapState } from 'vuex'
       },
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
-        return this.result.fields.map((column) => {
+        const results = []
+        results.push({
+        title: '',
+        editable: false,
+        headerSort: false,
+        cssClass: 'select-row-col',
+        cellClick: (_, cell) => {console.log(cell.getRow().toggleSelect())},
+      })
+        this.result.fields.map((column) => {
           const result = {
             title: column.name,
             titleFormatter: 'plaintext',
@@ -114,8 +122,9 @@ import { mapState } from 'vuex'
             contextMenu: this.cellContextMenu,
             cellClick: this.cellClick.bind(this)
           }
-          return result;
+          results.push(result)
         })
+        return results
       },
       columnIdTitleMap() {
         const result = {}
@@ -135,7 +144,6 @@ import { mapState } from 'vuex'
       this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         data: this.tableData, //link data to table
         reactiveData: true,
-        selectable: true,
         renderHorizontal: 'virtual',
         columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,
