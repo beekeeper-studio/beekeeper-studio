@@ -419,7 +419,7 @@ export default Vue.extend({
         editable: false,
         headerSort: false,
         cssClass: 'select-row-col',
-        cellClick: (_, cell) => {console.log(cell.getRow().toggleSelect())},
+        cellClick: (_, cell) => {cell.getRow().toggleSelect()},
       })
       this.table.columns.forEach(column => {
 

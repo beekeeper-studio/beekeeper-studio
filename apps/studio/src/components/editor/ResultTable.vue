@@ -105,7 +105,7 @@ import { mapState } from 'vuex'
         editable: false,
         headerSort: false,
         cssClass: 'select-row-col',
-        cellClick: (_, cell) => {console.log(cell.getRow().toggleSelect())},
+        cellClick: (_, cell) => {cell.getRow().toggleSelect()},
       })
         this.result.fields.map((column) => {
           const result = {
