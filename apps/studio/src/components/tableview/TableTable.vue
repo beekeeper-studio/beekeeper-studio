@@ -1,5 +1,5 @@
 <template>
-  <div v-hotkey="keymap" class="tabletable flex-col" :class="{'view-only': !editable}">
+  <div v-hotkey="keymap" class="tabletable flex-col" :class="{'view-only': !editable}" v-on:click="deselect">
     <template v-if="!table && initialized">
       <div class="no-content">
 
@@ -285,6 +285,7 @@ export default Vue.extend({
       result.push(`${this.pendingChangesCount} pending changes`)
       return result.join(" ")
     },
+    
     keymap() {
       if (!this.active) return {}
       const result = {}
@@ -419,10 +420,18 @@ export default Vue.extend({
     tableColumns() {
       const keyWidth = 40
       const results = []
+      
       if (!this.table) return []
       // 1. add a column for a real column
       // if a FK, add another column with the link
       // to the FK table.
+      results.push({
+        title: '',
+        editable: false,
+        headerSort: false,
+        cssClass: 'select-row-col',
+        cellClick: (_, cell) => {cell.getRow().toggleSelect()},
+      })
       this.table.columns.forEach(column => {
 
         const keyData = this.tableKeys[column.columnName]
@@ -624,6 +633,11 @@ export default Vue.extend({
     }
   },
   methods: {
+    deselect(e) {
+      if(e.target.className == "tabulator-tableholder") {
+        this.tabulator.deselectRow()
+      }
+    },
     maybeUnselectCell(event) {
       if (!this.selectedCell) return
       if (!this.active) return

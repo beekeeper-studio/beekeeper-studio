@@ -6,6 +6,7 @@ $row-highlight:          lighten($query-editor-bg, 1%);
 $row-add:                #18855F;
 $row-delete:             #8A3937;
 $row-error:              #38201F;
+$row-selected:           lighten($query-editor-bg, 10%);
 
 $cell-edited:            #50492A;
 $cell-error:             $row-error;
@@ -37,6 +38,11 @@ $cell-padding:           $gutter-w;
   color: $theme-base;
 
   .tabulator-row {
+    border-bottom:  1px solid $row-selected;
+    .tabulator-cell.select-row-col {
+      background: lighten($query-editor-bg, 7%);
+    }
+    
     &.inserted,
     &.inserted:hover {
       position: relative;
@@ -89,6 +95,12 @@ $cell-padding:           $gutter-w;
             cursor: default!important;
           }
         }
+      }
+    }
+    &.tabulator-selected {
+      background: $row-selected;
+      .tabulator-cell {
+        background: $row-selected;
       }
     }
   }

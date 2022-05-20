@@ -1,5 +1,5 @@
 <template>
-  <div class="result-table" v-hotkey="keymap">
+  <div class="result-table" v-hotkey="keymap" v-on:click="deselect">
     <div ref="tabulator"></div>
   </div>
 </template>
@@ -99,7 +99,15 @@ import { mapState } from 'vuex'
       },
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
-        return this.result.fields.map((column) => {
+        const results = []
+        results.push({
+        title: '',
+        editable: false,
+        headerSort: false,
+        cssClass: 'select-row-col',
+        cellClick: (_, cell) => {cell.getRow().toggleSelect()},
+      })
+        this.result.fields.map((column) => {
           const result = {
             title: column.name,
             titleFormatter: 'plaintext',
@@ -114,8 +122,9 @@ import { mapState } from 'vuex'
             contextMenu: this.cellContextMenu,
             cellClick: this.cellClick.bind(this)
           }
-          return result;
+          results.push(result)
         })
+        return results
       },
       columnIdTitleMap() {
         const result = {}
@@ -151,6 +160,11 @@ import { mapState } from 'vuex'
       document.addEventListener('click', this.maybeUnselectCell)
     },
     methods: {
+      deselect(e) {
+      if(e.target.className == "tabulator-tableholder") {
+        this.tabulator.deselectRow()
+      }
+    },
       maybeUnselectCell(event) {
         if (!this.active) return
         const target = event.target
