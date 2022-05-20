@@ -12705,6 +12705,13 @@ sql-formatter@*, sql-formatter@^4.0.0:
   dependencies:
     argparse "^2.0.1"
 
+sql-formatter@^6.1.1:
+  version "6.1.1"
+  resolved "https://registry.yarnpkg.com/sql-formatter/-/sql-formatter-6.1.1.tgz#ec9d4c6fc90c2839885cf36ca7b0755a84527802"
+  integrity sha512-NiUP90vNb6NjQryWz0bPsvv4BTqe/wY75mRbh2E6M1kKZIoCKtueeKIDMQBB+RI8pjxVUQy7e35JUXQj6YYonQ==
+  dependencies:
+    argparse "^2.0.1"
+
 sql-query-identifier@^2.2.0:
   version "2.2.4"
   resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.2.4.tgz#6f719d880dff28231b76dbec17f86f69fc16e0c5"

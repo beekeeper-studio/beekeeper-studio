@@ -62,7 +62,7 @@
     "sass-loader": "^10.1.1",
     "simple-encryptor": "^3.0.0",
     "split.js": "^1.5.11",
-    "sql-formatter": "^4.0.0",
+    "sql-formatter": "^6.1.1",
     "sql-query-identifier": "^2.2.0",
     "ssh2": "beekeeper-studio/ssh2#d4da40f9da1985063ea9462a609f6b6c3b999375",
     "tabulator-tables": "^5.1.8",
