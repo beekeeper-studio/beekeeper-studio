@@ -748,11 +748,15 @@ export default Vue.extend({
       }
     },
     fkClick(_e, cell) {
-      const fromColumn = cell.getField().replace(/-link$/g, "")
+      const fromColumn = cell.getField().replace(/-link--bks$/g, "")
       const valueCell = this.valueCellFor(cell)
       const value = valueCell.getValue()
 
       const keyData = this.tableKeys[fromColumn]
+      if (!keyData) {
+        log.error("fk-click, couldn't find key data. Please open an issue. fromColumn:", fromColumn)
+        this.$noty.error("Unable to open foreign key. See dev console")
+      }
       const tableName = keyData.toTable
       const schemaName = keyData.toSchema
       const table = this.$store.state.tables.find(t => {

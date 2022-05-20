@@ -247,6 +247,7 @@ $cell-padding:           $gutter-w;
       padding-left: 0!important;
       padding-right: 0.35rem!important;
       margin-left: -$foreign-key-width;
+      cursor: pointer!important;
       &:hover {
         background: transparent!important;
       }
@@ -254,6 +255,7 @@ $cell-padding:           $gutter-w;
         font-size: 14px;
         line-height: 22px;
         color: $text-light;
+        cursor: pointer;
       }
       .tabulator-col-resize-handle.prev {
         display: none;
