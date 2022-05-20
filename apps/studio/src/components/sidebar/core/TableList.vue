@@ -245,17 +245,6 @@
         }
         }
       },
-      expandAll() {
-        this.listItemsCollapsed = null;
-        this.allExpanded = Date.now()
-      },
-      collapseAll() {
-        if (this.listItemsCollapsed) {
-          this.allCollapsed = Date.now()
-        } else {
-          this.listItemsCollapsed = Date.now()
-        }
-      },
       refreshTables() {
         this.$store.dispatch('updateTables')
         this.$store.dispatch('updateRoutines')
