@@ -52,12 +52,10 @@
             </div>
           </div>
           <div class="actions">
-            <a @click.prevent="collapseAll" :title="'Collapse All'">
-              <i class="material-icons">unfold_less</i>
+            <a @click.prevent="toggleExpandCollapse" :title="isExpanded ? 'Collapse All' : 'Expand All'">
+              <i class="material-icons">{{isExpanded ? 'unfold_less' : 'unfold_more'}}</i>
             </a>
-            <a @click.prevent="expandAll" :title="'Expand All'">
-              <i class="material-icons">unfold_more</i>
-            </a>
+          
             <a @click.prevent="refreshTables" :title="'Refresh'">
               <i class="material-icons">refresh</i>
             </a>
@@ -139,6 +137,7 @@
         tableLoadError: null,
         allExpanded: null,
         allCollapsed: null,
+        isExpanded: false,
         listItemsCollapsed: null,
         activeItem: 'tables',
         split: null,
@@ -232,15 +231,18 @@
       clearFilter() {
         this.filterQuery = null
       },
-      expandAll() {
-        this.listItemsCollapsed = null;
+      toggleExpandCollapse() {
+        if(!this.isExpanded) {
+          this.isExpanded = true
+           this.listItemsCollapsed = null;
         this.allExpanded = Date.now()
-      },
-      collapseAll() {
-        if (this.listItemsCollapsed) {
+        } else {
+          this.isExpanded = false
+           if (this.listItemsCollapsed) {
           this.allCollapsed = Date.now()
         } else {
           this.listItemsCollapsed = Date.now()
+        }
         }
       },
       refreshTables() {
