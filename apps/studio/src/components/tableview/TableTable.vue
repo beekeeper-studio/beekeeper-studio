@@ -681,9 +681,6 @@ export default Vue.extend({
         paginationButtonCount: 0,
         initialSort: this.initialSort,
         initialFilter: [this.initialFilter || {}],
-        selectable:true,
-        selectableRangeMode:"click",
-        selectablePersistence:false,
         
 
         // callbacks
