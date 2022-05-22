@@ -1,10 +1,10 @@
 <template>
   <div class="with-connection-type">
-    <div class="alert alert-info" v-if="isCockroach">
-      <i class="material-icons">info_outlined</i>
-      <span class="">For CockroachDB Cloud your database name should be [cluster].[database]</span>
-    </div>
     <common-server-inputs :config="config"></common-server-inputs>
+    <div class="form-group">
+      <label for="Cluster ID">CockroachDB Cloud Cluster ID</label>
+      <input type="text" class="form-control" v-model="config.options.cluster">
+    </div>
     <common-advanced :config="config"></common-advanced>
   </div>
 </template>

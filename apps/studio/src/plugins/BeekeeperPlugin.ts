@@ -67,12 +67,14 @@ export const BeekeeperPlugin = {
     let connectionString = `${config.host}:${config.port}`;
     if (config.connectionType === 'sqlite') {
       return path.basename(config.defaultDatabase || "./unknown.db")
+    } else if (config.connectionType === 'cockroachdb' && config.options?.cluster) {
+      connectionString = `${config.options.cluster}/${config.defaultDatabase || 'cloud'}`
     } else {
       if (config.defaultDatabase) {
         connectionString += `/${config.defaultDatabase}`
       }
-      return connectionString
     }
+    return connectionString
   },
 
   cleanData(data: any, columns: {title: string, field: string}[] = []) {

@@ -1333,6 +1333,15 @@ export async function truncateAllTables(conn: Conn, schema: string) {
 
 
 function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
+
+  let optionsString = undefined
+  if (server.config.client === 'cockroachdb') {
+    const cluster = server.config.options?.cluster || undefined
+    if (cluster) {
+      optionsString = `--cluster=${cluster}`
+    }
+  }
+
   const config: PoolConfig = {
     host: server.config.host,
     port: server.config.port || undefined,
@@ -1340,7 +1349,10 @@ function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServe
     database: database.database,
     max: 5, // max idle connections per time (30 secs)
     connectionTimeoutMillis: globals.psqlTimeout,
-    idleTimeoutMillis: globals.psqlIdleTimeout
+    idleTimeoutMillis: globals.psqlIdleTimeout,
+    // not in the typings, but works.
+    // @ts-ignore
+    options: optionsString
   };
 
   if (server.config.user) {

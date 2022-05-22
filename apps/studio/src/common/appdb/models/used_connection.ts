@@ -26,6 +26,8 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
         this.connectionId = other.id
         this.workspaceId = other.workspaceId
       }
+      this.options = other.options
+      this.trustServerCertificate = other.trustServerCertificate
     }
 
   }

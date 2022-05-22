@@ -20,11 +20,12 @@ export const ConnectionTypes = [
   { name: 'SQLite', value: 'sqlite' },
   { name: 'SQL Server', value: 'sqlserver' },
   { name: 'Amazon Redshift', value: 'redshift' },
-  { name: 'CockroachDB', value: 'cockroachdb' }
+  { name: 'CockroachDB', value: 'cockroachdb' },
+  { name: 'Other (Oracle, etc)', value: 'other'}
 ]
 
 export interface ConnectionOptions {
-
+  cluster?: string
 }
 
 function parseConnectionType(t: Nullable<IDbClients>) {
@@ -48,8 +49,9 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'varchar', name: 'connectionType'})
   public set connectionType(value: Nullable<IDbClients>) {
     if (this._connectionType !== value) {
+      const changePort = this._port === this.defaultPort
       this._connectionType = parseConnectionType(value)
-      this._port = this.defaultPort
+      this._port = changePort ? this.defaultPort : this._port
     }
   }
 
@@ -236,11 +238,22 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
         }
       }
 
-      const parsed = new ConnectionString(url)
+      const parsed = new ConnectionString(url.replaceAll(/\s/g, "%20"))
       this.connectionType = parsed.protocol as IDbClients || this.connectionType || 'postgresql'
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
       }
+
+      if (parsed.hostname && parsed.hostname.includes('cockroachlabs.cloud')) {
+        this.connectionType = 'cockroachdb'
+        if (parsed.params?.options) {
+          // TODO: fix this
+          const regex = /--cluster=([A-Za-z0-9\-_]+)/
+          const clusters = parsed.params.options.match(regex)
+          this.options['cluster'] = clusters ? clusters[1] : undefined
+        }
+      }
+
       if (parsed.params?.sslmode && parsed.params.sslmode !== 'disable') {
         this.ssl = true
       }

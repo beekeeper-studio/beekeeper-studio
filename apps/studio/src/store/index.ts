@@ -329,9 +329,12 @@ const store = new Vuex.Store<State>({
 
       log.info("finding last used connection", config)
       const lastUsedConnection = context.state.usedConfigs.find(c => {
-        console.log("looking at config", config.id)
-        return c.connectionId === config.id && c.workspaceId === config.workspaceId
+        return config.id &&
+          config.workspaceId &&
+          c.connectionId === config.id &&
+          c.workspaceId === config.workspaceId
       })
+      console.log("Found used config", lastUsedConnection)
       if (!lastUsedConnection) {
         const usedConfig = new UsedConnection(config)
         log.info("logging used connection", usedConfig, config)

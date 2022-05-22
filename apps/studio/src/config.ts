@@ -2,6 +2,7 @@ import { remote } from 'electron'
 import { execSync } from 'child_process'
 import platformInfo from './common/platform_info'
 import { loadEncryptionKey } from './common/encryption_key'
+import { ConnectionTypes } from './common/appdb/models/saved_connection'
 
 const userDirectory = platformInfo.userDirectory
 
@@ -28,15 +29,7 @@ export default {
   snapSshPlug: hasSshKeysPlug(),
 
   defaults: {
-    connectionTypes: [
-      { name: 'MySQL', value: 'mysql' },
-      { name: 'MariaDB', value: 'mariadb'},
-      { name: 'Postgres', value: 'postgresql' },
-      { name: 'SQLite', value: 'sqlite' },
-      { name: 'SQL Server', value: 'sqlserver' },
-      { name: 'Amazon Redshift', value: 'redshift' },
-      { name: 'CockroachDB', value: 'cockroachdb' }
-    ],
+    connectionTypes: ConnectionTypes,
   },
   maxResults: 50000
 }
