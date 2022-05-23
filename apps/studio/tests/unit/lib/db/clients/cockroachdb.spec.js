@@ -2,7 +2,7 @@ import { SavedConnection } from '../../../../../src/common/appdb/models/saved_co
 
 describe("CockroachDB", () => {
 
-  it.only("Should parse a cockroach cloud connection url", () => {
+  it("Should parse a cockroach cloud connection url", () => {
     const config = new SavedConnection()
     const url = "postgresql://matthew:password@free.1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&options=--cluster%3Dbks-tester-12345"
     config.parse(url)
