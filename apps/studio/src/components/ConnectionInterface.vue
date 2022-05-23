@@ -30,9 +30,10 @@
                 <postgres-form v-if="config.connectionType === 'redshift'" :config="config" :testing="testing"></postgres-form>
                 <sqlite-form v-if="config.connectionType === 'sqlite'" :config="config" :testing="testing"></sqlite-form>
                 <sql-server-form v-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"></sql-server-form>
+                <other-database-notice v-if="config.connectionType === 'other'" />
 
                 <!-- TEST AND CONNECT -->
-                <div class="test-connect row flex-middle">
+                <div v-if="config.connectionType !== 'other'" class="test-connect row flex-middle">
                   <span class="expand"></span>
                   <div class="btn-group">
                     <button :disabled="testing" class="btn btn-flat" type="button" @click.prevent="testConnection">Test</button>
@@ -45,7 +46,7 @@
 
                   </div>
                 </div>
-                <SaveConnectionForm :config="config" @save="save"></SaveConnectionForm>
+                <SaveConnectionForm v-if="config.connectionType !== 'other'" :config="config" @save="save"></SaveConnectionForm>
               </div>
 
             </form>
@@ -79,12 +80,13 @@
 import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
+import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
 
   const log = rawLog.scope('ConnectionInterface')
   // import ImportUrlForm from './connection/ImportUrlForm';
 
   export default {
-    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OtherDatabaseNotice, },
 
     data() {
       return {
@@ -128,7 +130,7 @@ import { findClient } from '@/lib/db/clients'
         }
       },
       'config.connectionType'(newConnectionType) {
-        if(!findClient(newConnectionType).supportsSocketPath) {
+        if(!findClient(newConnectionType)?.supportsSocketPath) {
           this.config.socketPathEnabled = false
         }
       },

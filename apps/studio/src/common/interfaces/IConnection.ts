@@ -27,6 +27,7 @@ export interface ISimpleConnection {
   sslRejectUnauthorized: boolean
   labelColor?: Nullable<string>
   trustServerCertificate?: boolean
+  options?: any
 }
 
 export interface IConnection extends ISimpleConnection {
