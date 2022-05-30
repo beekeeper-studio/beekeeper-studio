@@ -906,12 +906,15 @@ export default Vue.extend({
 
       row.getElement().classList.add('deleted')
 
+      const column = this.table.columns.find(c => c.columnName === pkCell.getField())
+      const isPrimaryKeyBinary = column.dataType.toUpperCase().includes('BINARY')
+
       const payload = {
         table: this.table.name,
         row: row,
         schema: this.table.schema,
         pkColumn: this.primaryKey,
-        primaryKey: pkCell.getValue()
+        primaryKey: isPrimaryKeyBinary ? Buffer.from(pkCell.getValue(), 'hex') : pkCell.getValue()
       }
 
         // remove pending updates for the row marked for deletion
