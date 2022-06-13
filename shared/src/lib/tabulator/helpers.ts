@@ -93,8 +93,8 @@ export const TabulatorStateWatchers = {
   },
   editedCells(newCells: CellComponent[], oldCells: CellComponent[]) {
     const removed = oldCells.filter((c) => !newCells.includes(c))
-    newCells.forEach((c) => c.getElement().classList.add('edited'))
-    removed.forEach((c) => c.getElement().classList.remove('edited'))
+    newCells.forEach((c) => c.getElement().classList?.add('edited'))
+    removed.forEach((c) => c.getElement().classList?.remove('edited'))
   },
   newRows(nuRows: RowComponent[], oldRows: RowComponent[]) {
     const removed = oldRows.filter((r) => !nuRows.includes(r))
