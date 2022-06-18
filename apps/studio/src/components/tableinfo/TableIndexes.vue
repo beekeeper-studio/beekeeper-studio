@@ -22,7 +22,7 @@
             <span class="expand"></span>
             <div class="actions">
               <a @click.prevent="$emit('refresh')" v-tooltip="`${ctrlOrCmd('r')} or F5`" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
-              <a @click.prevent="addRow" v-tooltip="ctrlOrCmd('n')" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
+              <a v-if="enabled" @click.prevent="addRow" v-tooltip="ctrlOrCmd('n')" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
             </div>
 
           </div>
@@ -114,7 +114,10 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapGetters(['dialect']),
+    ...mapGetters(['dialect', 'dialectData']),
+    enabled() {
+      return !this.dialectData.disabledFeatures?.alter?.everything
+    },
     hotkeys() {
       if (!this.active) return {}
       const result = {}
@@ -289,6 +292,7 @@ export default Vue.extend({
         columns: this.tableColumns,
         layout: 'fitColumns',
         placeholder: "No Indexes",
+        height: 'auto',
         columnDefaults: {
           title: '',
           resizable: false,

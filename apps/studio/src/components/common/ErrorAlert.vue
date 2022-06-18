@@ -17,6 +17,7 @@
         >
           {{e.message || e.toString()}}
           {{e.marker ? ` - line ${e.marker.line}, ch ${e.marker.ch}` : ''}}
+          {{helpText ? ` - ${helpText}` : ''}}
         </li>
       </ul>
       <div class="help-links" v-if="error.helpLink">
@@ -31,7 +32,7 @@ import platformInfo from '@/common/platform_info'
 import _ from 'lodash'
 import Vue from 'vue'
 export default Vue.extend({
-  props: ['error', 'title', 'closable'],
+  props: ['error', 'title', 'closable', 'helpText'],
   computed: {
     dev() {
       return platformInfo.isDevelopment

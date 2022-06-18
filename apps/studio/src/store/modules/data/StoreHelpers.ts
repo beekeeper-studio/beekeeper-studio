@@ -1,6 +1,5 @@
 import { HasId } from "@/common/interfaces/IGeneric";
 import { having } from "@/common/utils";
-import { CloudClient } from "@/lib/cloud/CloudClient";
 import _ from "lodash";
 import rawLog from 'electron-log'
 
@@ -13,18 +12,18 @@ interface BasicContext {
     error: ClientError
   }
   rootGetters: {
-    cloudClient: CloudClient | null
+    cloudClient: any | null
   }
   commit(str: string, item: any)
 }
 
-export function havingCli<U>(context: BasicContext, f: (c: CloudClient) => Promise<U>) {
+export function havingCli<U>(context: BasicContext, f: (c: any) => Promise<U>) {
   return having(context.rootGetters.cloudClient, f, "You are not logged in")
 }
 
-export function safelyDo<U>(context: BasicContext, f: (c: CloudClient) => Promise<U>) {
-  
-  const safeRunner = async (c: CloudClient) => {
+export function safelyDo<U>(context: BasicContext, f: (c: any) => Promise<U>) {
+
+  const safeRunner = async (c: any) => {
     try {
       context.commit('loading', true)
       context.commit('error', null)

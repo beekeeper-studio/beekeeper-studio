@@ -1,6 +1,7 @@
 
 import { remote } from 'electron'
 import Noty from 'noty'
+import _ from 'lodash'
 /*
   Ok this is a little late in the game, but starting to move electron
   remote calls to this object. The hope is that when we support other platforms
@@ -33,11 +34,13 @@ const copyNotification = new Noty({
 
 export const ElectronPlugin: NativePlugin = {
   clipboard: {
-    writeText(text: string) {
+    writeText(rawText: any, notify: boolean = true) {
+      const text = _.toString(rawText)
       Noty.closeAll('clipboard')
-      copyNotification.show()
       remote.clipboard.writeText(text)
 
+      if (!notify) return;
+      copyNotification.show()
     },
     readText(): string {
       return remote.clipboard.readText()

@@ -22,7 +22,8 @@ export default {
       host: config.host ? config.host.trim() : null,
       port: config.port,
       domain: config.domain || null,
-      socketPath: null,
+      socketPath: config.socketPath,
+      socketPathEnabled: config.socketPathEnabled,
       user: config.username ? config.username.trim() : null,
       osUser: osUsername,
       password: config.password,
@@ -32,6 +33,8 @@ export default {
       sslCertFile: config.sslCertFile,
       sslKeyFile: config.sslKeyFile,
       sslRejectUnauthorized: config.sslRejectUnauthorized,
+      trustServerCertificate: config.trustServerCertificate,
+      options: config.options
     }
   },
 

@@ -26,15 +26,17 @@ class BeekeeperWindow {
 
   constructor(settings: IGroupedUserSettings, openOptions?: OpenOptions) {
     const theme = settings.theme
+    const dark = electron.nativeTheme.shouldUseDarkColors || theme.value.toString().includes('dark')
     const showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
+    const titleBarStyle = platformInfo.isWindows && settings.menuStyle.value == 'native' ? 'default' : 'hidden'
       log.info('constructing the window')
     this.win = new BrowserWindow({
       width: 1200,
       height: 800,
       minWidth: 800,
       minHeight: 600,
-      backgroundColor: theme.value === 'dark' ? "#252525" : '#ffffff',
-      titleBarStyle: 'hidden',
+      backgroundColor: dark ? "#252525" : '#ffffff',
+      titleBarStyle,
       frame: showFrame,
       webPreferences: {
         enableRemoteModule: true,
@@ -65,7 +67,9 @@ class BeekeeperWindow {
       if (url === appUrl) return // this is good
       log.info("navigate to", url)
       e.preventDefault()
-      electron.shell.openExternal(url);
+      const u = new URL(url)
+      u.searchParams.append('ref', 'bks-app')
+      electron.shell.openExternal(u.toString());
     })
   }
 

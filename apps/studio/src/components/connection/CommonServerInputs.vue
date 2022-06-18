@@ -1,6 +1,20 @@
 <template>
   <div class="host-port-user-password">
-    <div class="row gutter">
+    <div class="row">
+      <div class="form-group col" v-if="supportsSocketPath">
+        <label for="connectionMode">Connection Mode</label>
+        <select name="" v-model="config.socketPathEnabled" id="">
+          <option :value="false">Host and Port</option>
+          <option :value="true">Socket</option>
+        </select>
+      </div>
+      <div class="form-group col" v-show="config.socketPathEnabled">
+        <label for="socketPath">Socket Path</label>
+        <input id="socketPath" class="form-control" v-model="config.socketPath" type="text" name="socketPath">
+      </div>
+
+    </div>
+    <div class="row gutter" v-show="!config.socketPathEnabled">
       <div class="col s9 form-group">
         <label for="Host">Host</label>
         <input type="text" class="form-control" @paste="onPaste" name="host" v-model="config.host">
@@ -11,7 +25,7 @@
       </div>
     </div>
 
-    <div class="advanced-connection-settings">
+    <div class="advanced-connection-settings" v-show="!config.socketPathEnabled">
       <div class="flex flex-middle">
         <span @click.prevent="toggleSslAdvanced" class="btn btn-link btn-fab">
           <i class="material-icons">{{toggleIcon}}</i>
@@ -85,6 +99,7 @@
 <script>
 import FilePicker from '@/components/common/form/FilePicker'
 import ExternalLink from '@/components/common/ExternalLink'
+import { findClient } from '@/lib/db/clients'
 
   export default {
     props: ['config'],
@@ -103,7 +118,10 @@ import ExternalLink from '@/components/common/ExternalLink'
       },
       toggleIcon() {
         return this.sslToggled ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
-      }
+      },
+      supportsSocketPath() {
+        return findClient(this.config.connectionType).supportsSocketPath
+      },
     },
     methods: {
       onPaste(event) {

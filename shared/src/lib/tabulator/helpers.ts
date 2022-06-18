@@ -1,6 +1,9 @@
 import Vue from 'vue'
 import { Tabulator } from 'tabulator-tables'
 import _ from 'lodash'
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('tabulator/helpers')
 
 type CellComponent = Tabulator.CellComponent
 type RowComponent = Tabulator.RowComponent
@@ -90,8 +93,8 @@ export const TabulatorStateWatchers = {
   },
   editedCells(newCells: CellComponent[], oldCells: CellComponent[]) {
     const removed = oldCells.filter((c) => !newCells.includes(c))
-    newCells.forEach((c) => c.getElement().classList.add('edited'))
-    removed.forEach((c) => c.getElement().classList.remove('edited'))
+    newCells.forEach((c) => c.getElement().classList?.add('edited'))
+    removed.forEach((c) => c.getElement().classList?.remove('edited'))
   },
   newRows(nuRows: RowComponent[], oldRows: RowComponent[]) {
     const removed = oldRows.filter((r) => !nuRows.includes(r))
@@ -110,7 +113,7 @@ export const TabulatorStateWatchers = {
   tableColumns: {
     deep: true,
     handler() {
-      console.log("updating tabulator with columns")
+      log.debug("updating tabulator with columns")
       if (!this.tabulator) return
       const t: Tabulator = this.tabulator
       t.setColumns(this.tableColumns)
@@ -118,8 +121,12 @@ export const TabulatorStateWatchers = {
   },
   tableData: {
     deep: true,
-      handler() {
+      handler(nu, old) {
       if (!this.tabulator) return
+      const different = _.xorWith(nu, old, _.isEqual)
+      // deep equality sometimes makes this fire when data hasn't really changed...
+      if (!different?.length) return
+      log.debug("replacing data in tabulator")
       this.tabulator.replaceData(this.tableData)
       this.newRows = []
       this.removedRows = []

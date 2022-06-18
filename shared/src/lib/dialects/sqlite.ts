@@ -29,6 +29,9 @@ export const SqliteData: DialectData = {
     },
     informationSchema: {
       extra: true
-    }
+    },
+  },
+  notices: {
+    infoSchema: "Note: SQLite does not support any column alterations except renaming"
   }
 }

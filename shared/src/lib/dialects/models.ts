@@ -86,6 +86,7 @@ export interface DialectData {
     informationSchema?: {
       extra?: boolean
     }
+    tableTable?: boolean,
     alter?: {
       addColumn?: boolean
       dropColumn?: boolean
@@ -94,6 +95,7 @@ export interface DialectData {
       multiStatement?: boolean
       addConstraint?: boolean
       dropConstraint?: boolean
+      everything?: boolean
     },
     constraints?: {
       onUpdate?: boolean,
@@ -104,6 +106,14 @@ export interface DialectData {
     }
     createIndex?: boolean
     comments?: boolean
+  },
+  notices?: {
+    infoSchema?: string
+    infoIndexes?: string
+    infoRelations?: string
+    infoTriggers?: string
+    tableTable?: string
+    query?: string
   }
 }
 

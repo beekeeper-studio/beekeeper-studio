@@ -68,13 +68,8 @@ export class SqlExporter extends Export {
       knex = knex.withSchema(this.table.schema)
     }
 
-    const result = _.mapValues(row, (v) => {
-      if (_.isObject(v)) return JSON.stringify(v)
-      return v
-    })
 
-
-    const content = knex.insert(result).toQuery()
+    const content = knex.insert(row).toQuery()
     return content
   }
 }
