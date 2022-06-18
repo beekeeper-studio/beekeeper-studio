@@ -1,6 +1,8 @@
-# Beekeeper Studio
+# Beekeeper Studio (Community Edition)
 
-Beekeeper Studio is a cross-platform SQL editor and database manager available for Linux, Mac, and Windows. Beekeeper Studio is GPL licensed so it is free (libre) and free (gratis).
+Beekeeper Studio is a cross-platform SQL editor and database manager available for Linux, Mac, and Windows. Beekeeper Studio Community Edition is GPL licensed so it is free (libre) and free (gratis).
+
+👉 [Download Beekeeper Studio](https://beekeeperstudio.io/get)
 
 ![Beekeeper Studio Screenshot](https://docs.beekeeperstudio.io/assets/img/hero.289d6ce0.jpg)
 
@@ -8,11 +10,10 @@ Beekeeper Studio is a cross-platform SQL editor and database manager available f
 
 1. **Beekeeper Studio Community Edition** - This repository. This is the open source version of Beekeeper Studio. It is a full featured database management client that is totally free and open source.
 
-2. **Beekeeper Studio Ultimate Edition** - A commercial version of Beekeeper Studio with extra features and provided with a business-friendly commercial license.
+2. **Beekeeper Studio Ultimate Edition** - A commercial version of Beekeeper Studio with extra features and provided with a business-friendly commercial license. Buying the Ultimate Edition is the best way to support Beekeeper Studio.
 
 👉 [Compare Beekeeper Studio Editions](https://beekeeperstudio.io/get)
 
-👉 [Download Beekeeper Studio](https://beekeeperstudio.io/get)
 
 ## Beekeeper Studio Features
 
@@ -39,9 +40,16 @@ Beekeeper Studio supports connecting to the following databases:
 - SQL Server
 - Amazon Redshift
 
-## Installation
+## Supporting Beekeeper Studio
 
-Download the latest release from [our website](https://beekeeperstudio.io/get)
+I love working on Beekeeper Studio, and I'd love to keep growing and improving it forever. To do that I need your help.
+
+The best way to support Beekeeper Studio is to purchase the [Ultimate Edition](https://beekeeperstudio.io/get). Every purchase directly supports my work on Beekeeper Studio.
+
+If you can't afford a license, please consider [becoming a project sponsor](https://github.com/sponsors/beekeeper-studio).
+
+Thank you for your continued support!
+
 
 ## Documentation
 

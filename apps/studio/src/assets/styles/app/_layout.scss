@@ -120,7 +120,7 @@ hr {
 }
 .btn-primary {
   background: $theme-base;
-  color: $theme-bg;
+  color: rgba($theme-bg, 0.87);
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
     background: rgba($theme-base, 0.87);

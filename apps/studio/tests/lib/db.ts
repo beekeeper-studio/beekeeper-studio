@@ -68,7 +68,8 @@ export class DBTestUtil {
         client: KnexTypes[config.client || ""] || config.client,
         version: options?.version,
         connection: {
-          host: config.host,
+          host: config.socketPathEnabled ? undefined : config.host,
+          socketPath: config.socketPathEnabled ? config.socketPath : undefined,
           port: config.port || undefined,
           user: config.user || undefined,
           password: config.password || undefined,
@@ -346,6 +347,22 @@ export class DBTestUtil {
     expect(r2[0].fields.map((f: any) => [f.id, f.name])).toMatchObject([['c0', 'a']])
     expect(r2[1].fields.map((f: any) => [f.id, f.name])).toMatchObject([['c0', 'b']])
 
+  }
+
+  async getInsertQueryTests() {
+    const row = { job_name: "Programmer", hourly_rate: 41 }
+    const tableInsert = { table: 'jobs', schema: this.defaultSchema, data: [row] }
+    const insertQuery = await this.connection.getInsertQuery(tableInsert)
+    const expectedQueries = {
+      postgresql: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
+      mysql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
+      mariadb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
+      sqlite: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
+      sqlserver: "insert into [dbo].[jobs] ([hourly_rate], [job_name]) values (41, 'Programmer')",
+      cockroachdb: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`
+    }
+
+    expect(insertQuery).toBe(expectedQueries[this.dbType])
   }
 
   // lets start simple, it should resolve for all connection types

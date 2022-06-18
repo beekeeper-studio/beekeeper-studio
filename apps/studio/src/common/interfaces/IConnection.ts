@@ -8,6 +8,8 @@ export interface ISimpleConnection {
   connectionType: ConnectionType
   host: Nullable<string>
   port: Nullable<number>
+  socketPath: Nullable<string>
+  socketPathEnabled: boolean
   username: Nullable<string>
   domain: Nullable<string>
   defaultDatabase: Nullable<string>
@@ -24,11 +26,13 @@ export interface ISimpleConnection {
   sslKeyFile: Nullable<string>
   sslRejectUnauthorized: boolean
   labelColor?: Nullable<string>
+  trustServerCertificate?: boolean
+  options?: any
 }
 
 export interface IConnection extends ISimpleConnection {
   name: Nullable<string>
-  
+
   sshMode: SshMode
   password: Nullable<string>
   sshPassword: Nullable<string>

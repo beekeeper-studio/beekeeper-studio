@@ -1,4 +1,4 @@
-import { buildSelectTopQuery, escapeString } from "../../../../../src/lib/db/clients/utils.js";
+import { buildSelectTopQuery, escapeString } from "../../../../../src/lib/db/clients/utils";
 
 describe('Escape String', () => {
   it("should escape single quotes", () => {

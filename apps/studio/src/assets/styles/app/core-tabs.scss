@@ -135,12 +135,12 @@
       }
     }
     .item-icon {
+      display: inline-block;
       font-size: 15px;
       padding-left: ($gutter-h * 1.5);
       padding-right: $gutter-h;
       max-width: $gutter-w * 2.8;
       min-width: $gutter-w * 2.6;
-      line-height: $tab-height;
     }
     .tab-action {
       position: absolute;

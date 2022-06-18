@@ -1,14 +1,21 @@
 import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { Duration, TemporalUnit } from "node-duration"
+import os from 'os'
+import fs from 'fs'
+import path from 'path'
 import data_mutators from '../../../../../src/mixins/data_mutators';
 import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests } from './all'
 
-const tags = [['5.7'], ['8']]
+const TEST_VERSIONS = [
+  {version: '5.7'}, 
+  { version: '8', socket: false},
+  { version: '8', socket: true }
+]
 
 
-function testWith(tag) {
-  describe(`Mysql [${tag}]`, () => {
+function testWith(tag, socket = false) {
+  describe(`Mysql [${tag} socket? ${socket}]`, () => {
 
     let container;
     let util
@@ -16,12 +23,15 @@ function testWith(tag) {
     beforeAll(async () => {
       const timeoutDefault = 5000
       jest.setTimeout(dbtimeout)
+      const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'mysql-'));
+      fs.chmodSync(temp, "777")
       container = await new GenericContainer("mysql", tag)
         .withName("testmysql")
         .withEnv("MYSQL_ROOT_PASSWORD", "test")
         .withEnv("MYSQL_DATABASE", "test")
         .withExposedPorts(3306)
         .withStartupTimeout(new Duration(dbtimeout, TemporalUnit.MILLISECONDS))
+        .withBindMount(temp, '/var/run/mysqld/', 'rw')
         .start()
       jest.setTimeout(timeoutDefault)
       const config = {
@@ -30,6 +40,11 @@ function testWith(tag) {
         port: container.getMappedPort(3306),
         user: 'root',
         password: 'test'
+      }
+      if (socket) {
+        config.host = 'somefakehost'
+        config.socketPathEnabled = true
+        config.socketPath = path.join(temp, 'mysqld.sock')
       }
       util = new DBTestUtil(config, "test", { dialect: 'mysql' })
       await util.setupdb()
@@ -97,6 +112,12 @@ function testWith(tag) {
       expect(functions.find((p) => (p.name === 'isEligible')).routineParams.length).toBe(2)
     })
 
+    it("Should not think there are params when there aren't", async () => {
+      const runner = util.connection.query('SELECT CONCAT("A", "?", "B") as a limit 1')
+      const results = await runner.execute()
+      expect(results[0].rows[0]['c0']).toEqual('A?B')
+    })
+
     it("Should insert bit values properly", async() => {
       await util.knex.schema.createTable("insertbits", (table) => {
         table.integer("id").primary()
@@ -162,7 +183,5 @@ function testWith(tag) {
 
 }
 
-
-testWith('5.7')
-testWith('8')
+TEST_VERSIONS.forEach(({ version, socket }) => testWith(version, socket))
 

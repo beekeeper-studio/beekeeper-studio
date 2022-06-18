@@ -6,7 +6,7 @@ import Database from 'better-sqlite3'
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import rawLog from 'electron-log'
-import { buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery } from './utils';
+import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery } from './utils';
 import { SqliteCursor } from './sqlite/SqliteCursor';
 import { SqliteChangeBuilder } from '@shared/lib/sql/change_builder/SqliteChangeBuilder';
 import { SqliteData } from '@shared/lib/dialects/sqlite';
@@ -54,6 +54,7 @@ export default async function (server, database) {
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
     selectTopStream: (db, table, orderBy, filters, chunkSize) => selectTopStream(conn, db, table, orderBy, filters, chunkSize),
+    getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -96,6 +97,10 @@ function escapeString(value) {
   return value.replace("'", "''")
 }
 
+async function getInsertQuery(conn, database, tableInsert) {
+  const columns = await listTableColumns(conn, database, tableInsert.table, tableInsert.schema)
+  return buildInsertQuery(knex, tableInsert, columns)
+}
 
 export function getQuerySelectTop(client, table, limit) {
   return `SELECT * FROM ${wrapIdentifier(table)} LIMIT ${limit}`;
