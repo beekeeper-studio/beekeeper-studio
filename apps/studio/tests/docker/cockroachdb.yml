@@ -1,7 +1,7 @@
 version: '3'
 services:
   cockroachdb:
-    image: cockroachdb/cockroach
+    image: cockroachdb/cockroach:v22.1.1
     ports:
       - 26257
     command: start-single-node --insecure
