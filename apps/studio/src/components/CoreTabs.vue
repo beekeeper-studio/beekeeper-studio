@@ -207,8 +207,15 @@ import TabWithTable from './common/TabWithTable.vue';
       },
       createQuery(optionalText) {
         // const text = optionalText ? optionalText : ""
+        let qNum = 0
+        let tabName = "New Query"
+        do {
+          qNum = qNum + 1
+          tabName = `Query #${qNum}`
+        } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
+
         const result = new OpenTab('query')
-        result.title = "Query #" + (this.tabItems.length + 1),
+        result.title = tabName,
         result.unsavedChanges = false
         result.unsavedQueryText = optionalText
         this.addTab(result)
