@@ -23,7 +23,7 @@ if [ ! -f $NEW_FILE ] || ! grep -iq 'signed-by' $NEW_FILE; then
   echo "deb [signed-by=$KEY_FILE] https://deb.beekeeperstudio.io stable main" > $NEW_FILE
 fi
 
-if available apt-key && grep -iq 'beekeeper' <<< $(apt-key list 2>/dev/null); then
+if available apt-key && grep -iq 'beekeeper' <<< "$(apt-key list 2>/dev/null)"; then
   apt-key del 'AD1B460B' &>/dev/null
 fi
 
