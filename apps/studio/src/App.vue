@@ -7,6 +7,7 @@
         <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
         <auto-updater></auto-updater>
         <state-manager />
+        <notification-manager />
       </template>
     </div>
     <portal-target name="menus" multiple />
