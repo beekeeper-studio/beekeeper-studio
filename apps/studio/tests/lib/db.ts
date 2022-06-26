@@ -378,7 +378,7 @@ export class DBTestUtil {
       table.increments('id').primary()
       table.integer('index_me')
       table.integer('me_too')
-    } )
+    })
     await this.connection.alterIndex({
       table: 'index_test',
       schema: this.defaultSchema,
@@ -401,13 +401,14 @@ export class DBTestUtil {
     const updatedIndexes = updatedIndexesRaw.filter((i) => !i.primary)
 
     const picked = updatedIndexes.map((i) => _.pick(i, ['name', 'columns', 'table', 'schema']))
+    const schemaDefault = this.defaultSchema ? { schema: this.defaultSchema } : {}
     expect(picked).toMatchObject(
       [
         {
+        ...schemaDefault,
         name: 'it_idx2',
         columns: [{name: 'me_too', order: 'ASC'}],
         table: 'index_test',
-        schema: this.defaultSchema,
       }]
     )
 
