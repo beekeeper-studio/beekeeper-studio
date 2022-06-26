@@ -1116,7 +1116,7 @@ export default Vue.extend({
               filters,
               this.table.schema
             );
-            if (_.difference(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
+            if (_.xor(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
               await this.$store.dispatch('updateTableColumns', this.table)
             }

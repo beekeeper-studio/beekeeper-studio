@@ -632,7 +632,8 @@ async function listCockroachIndexes(conn: Conn, table: string, schema: string): 
       name: indexName,
       table: table,
       schema: schema,
-      primary: first.index_name === 'primary',
+      // v21.2 onwards changes index names for primary keys
+      primary: first.index_name === 'primary' || first.index_name.endsWith('pkey'),
       unique: !first.non_unique,
       columns: _.sortBy(columns, ['seq_in_index']).map((c: any) => ({
         name: c.column_name,

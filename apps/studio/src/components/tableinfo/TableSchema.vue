@@ -254,6 +254,7 @@ export default Vue.extend({
         }
       }
       this.submitUndo()
+      this.error = null;
       await this.$store.dispatch('updateTableColumns', this.table)
     },
     collectChanges(): AlterTableSpec {
