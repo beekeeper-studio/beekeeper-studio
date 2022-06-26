@@ -863,6 +863,8 @@ export default Vue.extend({
       }
 
       const column = this.table.columns.find(c => c.columnName === cell.getField())
+      const pkValues = pkCells.map((cell) => cell.getValue()).join('-')
+      const key = `${pkValues}-${cell.getField()}`
 
       cell.getElement().classList.add('edited')
       const currentEdit = _.find(this.pendingChanges.updates, { key: key })
@@ -879,7 +881,6 @@ export default Vue.extend({
           value: cell.getValue()
         }
       })
-      const key = primaryKeys.map(({column, value})=> `${column}-${value}`).join(":")
 
       const payload: TableUpdate & { key: string, oldValue: any, cell: any } = {
         key: key,
