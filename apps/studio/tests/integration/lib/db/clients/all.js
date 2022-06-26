@@ -96,7 +96,7 @@ export function runCommonTests(getUtil) {
       await itShouldNotInsertBadDataCompositePK(getUtil())
     })
 
-    test("should apply all types of changes", async () => {
+    test.only("should apply all types of changes", async () => {
       await itShouldApplyAllTypesOfChangesCompositePK(getUtil())
     })
 
