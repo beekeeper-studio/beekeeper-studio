@@ -203,8 +203,12 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
       {
         table: 'test_inserts',
         schema: util.options.defaultSchema,
-        pkColumn: 'id',
-        primaryKey: 1,
+        primaryKeys: [
+          {
+            column: 'id',
+            value: 1
+          }
+        ],
         column: 'firstName',
         value: 'Testy'
       }
@@ -213,8 +217,9 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
       {
         table: 'test_inserts',
         schema: util.options.defaultSchema,
-        pkColumn: 'id',
-        primaryKey: 2,
+        primaryKeys: [{
+          column: 'id', value: 2
+        }],
       }
     ]
   }
@@ -273,8 +278,9 @@ export const itShouldNotCommitOnChangeError = async function(util) {
       {
         table: 'test_inserts',
         schema: util.options.defaultSchema,
-        pkColumn: 'id',
-        primaryKey: 1,
+        primaryKeys: [{
+          column: 'id', value: 1
+        }],
         column: 'id',
         value: 2
       }
@@ -283,8 +289,9 @@ export const itShouldNotCommitOnChangeError = async function(util) {
       {
         table: 'test_inserts',
         schema: util.options.defaultSchema,
-        pkColumn: 'id',
-        primaryKey: 1,
+        primaryKeys: [{
+          column: 'id', value: 1
+        }],
       }
     ]
   }
@@ -428,16 +435,20 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
       {
         table: 'test_inserts_composite_pk',
         schema: util.options.defaultSchema,
-        pkColumn: ['id1', 'id2'],
-        primaryKey: [1, 1],
+        primaryKeys: [
+          { column: 'id1', value: 1},
+          { column: 'id2', value: 1}
+        ],
         column: 'firstName',
         value: 'Testy'
       },
       {
         table: 'test_inserts_composite_pk',
         schema: util.options.defaultSchema,
-        pkColumn: ['id1', 'id2'],
-        primaryKey: [2, 1],
+        primaryKeys: [
+          { column: 'id1', value: 2},
+          { column: 'id2', value: 1}
+        ],
         column: 'firstName',
         value: 'Tester'
       }
@@ -446,8 +457,10 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
       {
         table: 'test_inserts_composite_pk',
         schema: util.options.defaultSchema,
-        pkColumn: ['id1', 'id2'],
-        primaryKey: [1, 2],
+        primaryKeys: [
+          { column: 'id1', value: 1},
+          { column: 'id2', value: 2}
+        ],
       }
     ]
   }
@@ -524,8 +537,10 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
       {
         table: 'test_inserts_composite_pk',
         schema: util.options.defaultSchema,
-        pkColumn: ['id1', 'id2'],
-        primaryKey: [1, 1],
+        primaryKeys: [
+          { column: 'id1', value: 1},
+          { column: 'id2', value: 1}
+        ],
         column: 'id1',
         value: 2
       }
@@ -534,8 +549,10 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
       {
         table: 'test_inserts_composite_pk',
         schema: util.options.defaultSchema,
-        pkColumn: ['id1', 'id2'],
-        primaryKey: [1, 1],
+        primaryKeys: [
+          { column: 'id1', value: 1 },
+          { column: 'id2', value: 1 }
+        ],
       }
     ]
   }

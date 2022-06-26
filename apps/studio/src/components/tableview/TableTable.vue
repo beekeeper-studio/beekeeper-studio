@@ -199,6 +199,7 @@ import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
 import { mapGetters, mapState } from 'vuex';
 import { Tabulator } from 'tabulator-tables'
+import { TableUpdate } from '@/lib/db/models';
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
@@ -863,9 +864,7 @@ export default Vue.extend({
 
       const column = this.table.columns.find(c => c.columnName === cell.getField())
 
-
       cell.getElement().classList.add('edited')
-      const key = `${pkCells.map(pkCell => pkCell.getValue())}-${cell.getField()}`
       const currentEdit = _.find(this.pendingChanges.updates, { key: key })
 
       if (currentEdit && currentEdit.cell.getInitialValue() === cell.getValue()) {
@@ -874,14 +873,21 @@ export default Vue.extend({
         return
       }
 
-      const payload = {
+      const primaryKeys = pkCells.map((cell) => {
+        return {
+          column: cell.getField(),
+          value: cell.getValue()
+        }
+      })
+      const key = primaryKeys.map(({column, value})=> `${column}-${value}`).join(":")
+
+      const payload: TableUpdate & { key: string, oldValue: any, cell: any } = {
         key: key,
         table: this.table.name,
         schema: this.table.schema,
         column: cell.getField(),
-        pkColumn: this.primaryKeys,
         columnType: column ? column.dataType : undefined,
-        primaryKey: pkCells.map(pkCell => pkCell.getValue()),
+        primaryKeys,
         oldValue: cell.getInitialValue(),
         cell: cell,
         value: cell.getValue(0)

@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
 import logRaw from 'electron-log'
-import { TableInsert } from '../models'
+import { TableDelete, TableInsert, TableUpdate } from '../models'
 
 const log = logRaw.scope('db/util')
 
@@ -174,18 +174,14 @@ export function buildInsertQueries(knex, inserts) {
   return inserts.map(insert => buildInsertQuery(knex, insert))
 }
 
-export function buildUpdateQueries(knex, updates) {
+export function buildUpdateQueries(knex, updates: TableUpdate[]) {
   return updates.map(update => {
     const where = {}
     const updateblob = {}
-
-    if(!(update.pkColumn instanceof Array) && !(update.primaryKey instanceof Array)) {
-      where[update.pkColumn] = update.primaryKey;
-    } else {
-      for(let i = 0; i < update.pkColumn.length; i++) {
-        where[update.pkColumn[i]] = update.primaryKey[i];
-      }
-    }
+    console.log(update)
+    update.primaryKeys.forEach(({column, value}) => {
+      where[column] = value
+    })
 
     updateblob[update.column] = update.value
 
@@ -198,17 +194,12 @@ export function buildUpdateQueries(knex, updates) {
   })
 }
 
-export function buildSelectQueriesFromUpdates(knex, updates) {
+export function buildSelectQueriesFromUpdates(knex, updates: TableUpdate[]) {
   return updates.map(update => {
     const where = {}
-
-    if(!(update.pkColumn instanceof Array) && !(update.primaryKey instanceof Array)) {
-      where[update.pkColumn] = update.primaryKey;
-    } else {
-      for(let i = 0; i < update.pkColumn.length; i++) {
-        where[update.pkColumn[i]] = update.primaryKey[i];
-      }
-    }
+    update.primaryKeys.forEach(({ column, value }) => {
+      where[column] = value
+    })
 
     const query = knex(update.table)
       .withSchema(update.schema)
@@ -230,17 +221,13 @@ export async function withClosable<T>(item, func): Promise<T> {
 
 }
 
-export function buildDeleteQueries(knex, deletes) {
+export function buildDeleteQueries(knex, deletes: TableDelete[]) {
   return deletes.map(deleteRow => {
     const where = {}
 
-    if(!(deleteRow.pkColumn instanceof Array) && !(deleteRow.primaryKey instanceof Array)) {
-      where[deleteRow.pkColumn] = deleteRow.primaryKey;
-    } else {
-      for(let i = 0; i < deleteRow.pkColumn.length; i++) {
-        where[deleteRow.pkColumn[i]] = deleteRow.primaryKey[i];
-      }
-    }
+    deleteRow.primaryKeys.forEach(({ column, value }) => {
+      where[column] = value
+    })
 
     return knex(deleteRow.table)
       .withSchema(deleteRow.schema)

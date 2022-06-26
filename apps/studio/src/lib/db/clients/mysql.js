@@ -561,21 +561,15 @@ export async function updateValues(cli, updates) {
       value = parseInt(update.value.split("'")[1], 2)
     }
 
-    let where;
-    let params;
+    const params = [value];
+    const whereList = []
+    update.primaryKeys.forEach(({ column, value }) => {
+      whereList.push(`${wrapIdentifier(column)} = ?`);
+      params.push(value);
+    })
 
-    if(!(update.pkColumn instanceof Array) && !(update.primaryKey instanceof Array)) {
-      where = `${wrapIdentifier(update.pkColumn)} = ?`;
-      params = [value, update.primaryKey];
-    } else {
-      const whereList = [];
-      params = [value];
-      for(let i = 0; i < update.pkColumn.length; i++) {
-        whereList.push(`${wrapIdentifier(update.pkColumn[i])} = ?`);
-        params.push(update.primaryKey[i]);
-      }
-      where = whereList.join(" AND ");
-    }
+    const where = whereList.join(" AND ");
+
 
     return {
       query: `UPDATE ${wrapIdentifier(update.table)} SET ${wrapIdentifier(update.column)} = ? WHERE ${where}`,
