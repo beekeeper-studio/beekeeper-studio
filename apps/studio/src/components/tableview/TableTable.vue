@@ -305,7 +305,7 @@ export default Vue.extend({
       return [{
           label: '<x-menuitem><x-label>Set Null</x-label></x-menuitem>',
           action: (_e, cell: Tabulator.CellComponent) => {
-            if (this.primaryKey === cell.getField()) {
+            if (this.isPrimaryKey(cell.getField())) {
               // do nothing
             } else {
               cell.setValue(null);
@@ -841,8 +841,8 @@ export default Vue.extend({
         return true
       }
 
-      const primaryKey = cell.getRow().getCells().filter(c => this.isPrimaryKey(c.getField())).map(pkCell => pkCell.getValue())
-      const pendingDelete = _.find(this.pendingChanges.deletes, { primaryKey: primaryKey })
+      const primaryKeys = cell.getRow().getCells().filter(c => this.isPrimaryKey(c.getField())).map(pkCell => ({ value: pkCell.getValue(), column: pkCell.getField()}))
+      const pendingDelete = _.find(this.pendingChanges.deletes, (item) => _.isEqual(item.primaryKeys, primaryKeys))
 
       return this.editable && !this.isPrimaryKey(cell.getColumn().getField()) && !pendingDelete
     },
@@ -944,24 +944,30 @@ export default Vue.extend({
 
       row.getElement().classList.add('deleted')
 
+      const primaryKeys = pkCells.map((cell) => {
+        return {
+          column: cell.getField(),
+          value: cell.getValue()
+        }
+      })
+
       const payload = {
         table: this.table.name,
         row: row,
         schema: this.table.schema,
-        pkColumn: this.primaryKeys,
-        primaryKey: pkCells.map(pkCell => pkCell.getValue())
+        primaryKeys,
       }
 
+      const matchesFn =  (update) => _.isEqual(update.primaryKeys, payload.primaryKeys)
       // remove pending updates for the row marked for deletion
-      const filter = { 'primaryKey': payload.primaryKey }
-      const discardedUpdates = _.filter(this.pendingChanges.updates, filter)
-      const pendingUpdates = _.reject(this.pendingChanges.updates, filter)
+      const discardedUpdates = _.filter(this.pendingChanges.updates, matchesFn)
+      const pendingUpdates = _.without(this.pendingChanges.updates, discardedUpdates)
 
       discardedUpdates.forEach(update => this.discardColumnUpdate(update))
 
       this.$set(this.pendingChanges, 'updates', pendingUpdates)
 
-      if (!_.find(this.pendingChanges.deletes, { 'primaryKey': payload.primaryKey })) {
+      if (!_.find(this.pendingChanges.deletes, matchesFn)) {
         this.pendingChanges.deletes.push(payload)
       }
     },
@@ -1051,13 +1057,9 @@ export default Vue.extend({
       this.resetPendingChanges()
     },
     discardColumnUpdate(pendingUpdate) {
-      const update = {}
-      update[pendingUpdate.pkColumn] = pendingUpdate.primaryKey
-      update[pendingUpdate.column] = pendingUpdate.oldValue
+      pendingUpdate.cell.setValue(pendingUpdate.oldValue)
       pendingUpdate.cell.getElement().classList.remove('edited')
       pendingUpdate.cell.getElement().classList.remove('edit-error')
-
-      this.tabulator.updateData([update])
     },
     triggerFilter() {
       if (this.tabulator) this.tabulator.setData()
