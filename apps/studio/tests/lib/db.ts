@@ -320,9 +320,9 @@ export class DBTestUtil {
       expect(pk).toBe("one")
     }
 
-    // composite primary key tests. Just disable them for now
-    const pkres = await this.connection.getPrimaryKey('with_composite_pk', this.defaultSchema)
-    expect(pkres).toBeNull()
+    const rawPkres = await this.connection.getPrimaryKeys('with_composite_pk', this.defaultSchema)
+    const pkres = rawPkres.map((key) => key.columnName);
+    expect(pkres).toEqual(expect.arrayContaining(["id1", "id2"]))
   }
 
   async queryTests() {
@@ -378,7 +378,7 @@ export class DBTestUtil {
       table.increments('id').primary()
       table.integer('index_me')
       table.integer('me_too')
-    } )
+    })
     await this.connection.alterIndex({
       table: 'index_test',
       schema: this.defaultSchema,
@@ -401,13 +401,14 @@ export class DBTestUtil {
     const updatedIndexes = updatedIndexesRaw.filter((i) => !i.primary)
 
     const picked = updatedIndexes.map((i) => _.pick(i, ['name', 'columns', 'table', 'schema']))
+    const schemaDefault = this.defaultSchema ? { schema: this.defaultSchema } : {}
     expect(picked).toMatchObject(
       [
         {
+        ...schemaDefault,
         name: 'it_idx2',
         columns: [{name: 'me_too', order: 'ASC'}],
         table: 'index_test',
-        schema: this.defaultSchema,
       }]
     )
 

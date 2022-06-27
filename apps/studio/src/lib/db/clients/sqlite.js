@@ -204,9 +204,18 @@ export async function applyChanges(conn, changes) {
 
 export async function updateValues(cli, updates) {
   const commands = updates.map(update => {
+    const params = [update.value];
+    const whereList = []
+    update.primaryKeys.forEach(({ column, value }) => {
+      whereList.push(`${wrapIdentifier(column)} = ?`);
+      params.push(value);
+    })
+    
+    const where = whereList.join(" AND ");
+
     return {
-      query: `UPDATE ${update.table} SET ${update.column} = ? WHERE ${update.pkColumn} = ?`,
-      params: [update.value, update.primaryKey]
+      query: `UPDATE ${update.table} SET ${update.column} = ? WHERE ${where}`,
+      params: params
     }
   })
 
@@ -218,11 +227,20 @@ export async function updateValues(cli, updates) {
   }
 
   const returnQueries = updates.map(update => {
+
+    const params = [];
+    const whereList = []
+    update.primaryKeys.forEach(({ column, value }) => {
+      console.log('updateValues, column, value', column, value)
+      whereList.push(`${wrapIdentifier(column)} = ?`);
+      params.push(value);
+    })
+
+    const where = whereList.join(" AND ");
+
     return {
-      query: `select * from "${update.table}" where "${update.pkColumn}" = ?`,
-      params: [
-        update.primaryKey
-      ]
+      query: `select * from "${update.table}" where ${where}`,
+      params: params
     }
   })
 

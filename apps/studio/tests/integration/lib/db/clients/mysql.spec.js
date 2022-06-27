@@ -152,8 +152,9 @@ function testWith(tag, socket = false) {
       await util.knex("withbits").insert({ id: 1, thirtytwo: 1, onebit: 1 })
 
       const basics = {
-        primaryKey: 1,
-        pkColumn: 'id',
+        primaryKeys: [
+          { column: 'id', value: 1}
+        ],
         table: 'withbits',
       }
 

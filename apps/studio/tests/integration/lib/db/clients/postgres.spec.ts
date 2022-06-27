@@ -86,8 +86,9 @@ function testWith(dockerTag, socket = false) {
         {
           value: "[]",
           column: "names",
-          pkColumn: "id",
-          primaryKey: 1,
+          primaryKeys: [{
+            column: 'id', value: 1
+          }],
           columnType: "_text",
           table: "witharrays"
         }
@@ -119,8 +120,9 @@ function testWith(dockerTag, socket = false) {
       const updates = [{
         value: '["x", "y", "z"]',
         column: "names",
-        pkColumn: "id",
-        primaryKey: 1,
+        primaryKeys: [
+          { column: 'id', value: 1}
+        ],
         columnType: "_text",
         table: "witharrays",
       },
@@ -128,9 +130,10 @@ function testWith(dockerTag, socket = false) {
         value: 'Bananas',
         table: 'witharrays',
         column: 'normal',
-        primaryKey: 1,
+        primaryKeys: [
+          { column: 'id', value: 1}
+        ],
         columnType: 'text',
-        pkColumn: 'id'
       }
       ]
       const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
