@@ -410,7 +410,8 @@ export default Vue.extend({
     tableKeys() {
       const result = {}
       this.rawTableKeys.forEach((item) => {
-        result[item.fromColumn] = item
+        if (!result[item.fromColumn]) result[item.fromColumn] = [];
+        result[item.fromColumn].push(item);
       })
       return result
     },
@@ -423,7 +424,7 @@ export default Vue.extend({
       // to the FK table.
       this.table.columns.forEach(column => {
 
-        const keyData = this.tableKeys[column.columnName]
+        const keyDatas: any[] = this.tableKeys[column.columnName]
 
         // this needs fixing
         // currently it doesn't fetch the right result if you update the PK
@@ -441,8 +442,11 @@ export default Vue.extend({
         }
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
-        if (keyData) {
-          headerTooltip += ` -> ${keyData.toTable}(${keyData.toColumn})`
+        if (keyDatas && keyDatas.length > 0) {
+          if (keyDatas.length === 1)
+            headerTooltip += ` -> ${keyDatas[0].toTable}(${keyDatas[0].toColumn})`
+          else
+            headerTooltip += ` -> ${keyDatas.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`
         } else if (isPK) {
           headerTooltip += ' [Primary Key]'
         }
@@ -479,12 +483,27 @@ export default Vue.extend({
         }
         results.push(result)
 
-
-        if (keyData) {
+        if (keyDatas && keyDatas.length > 0) {
           const icon = () => "<i class='material-icons fk-link'>launch</i>"
           const tooltip = () => {
-            return `View record in ${keyData.toTable}`
+            if (keyDatas.length == 1)
+              return `View record in ${keyDatas[0].toTable}`
+            else 
+              return `View records in ${(keyDatas.map(item => item.toTable).join(', ') as string).replace(/, (?![\s\S]*, )/, ', or ')}`
           }
+          let clickMenu = null;
+          if (keyDatas.length > 1) {
+            clickMenu = [];
+            keyDatas.forEach(x => {
+              clickMenu.push({
+                label: `<x-menuitem><x-label>${x.toTable}(${x.toColumn})</x-label></x-menuitem>`,
+                action: (_e, cell) => {
+                  this.fkClick(_e, cell, x.toTable, x.toColumn);
+                }
+              })
+            })
+          }
+
           const keyResult = {
             headerSort: false,
             download: false,
@@ -493,8 +512,9 @@ export default Vue.extend({
             field: column.columnName + '-link--bks',
             title: "",
             cssClass: "foreign-key-button",
-            cellClick: this.fkClick,
+            cellClick: clickMenu == null ? this.fkClick : null,
             formatter: icon,
+            clickMenu,
             tooltip
           }
           result.cssClass = 'foreign-key'
@@ -779,18 +799,20 @@ export default Vue.extend({
         default: return ne
       }
     },
-    fkClick(_e, cell) {
+    fkClick(_e, cell, toTable = null, toColumn = null) {
       const fromColumn = cell.getField().replace(/-link--bks$/g, "")
       const valueCell = this.valueCellFor(cell)
       const value = valueCell.getValue()
 
-      const keyData = this.tableKeys[fromColumn]
-      if (!keyData) {
+      const keyDatas = this.tableKeys[fromColumn]
+      if (!keyDatas || keyDatas.length === 0) {
         log.error("fk-click, couldn't find key data. Please open an issue. fromColumn:", fromColumn)
         this.$noty.error("Unable to open foreign key. See dev console")
       }
-      const tableName = keyData.toTable
-      const schemaName = keyData.toSchema
+      const keyData = toColumn == null || toTable == null ? keyDatas[0] : keyDatas.find(x => x.toTable === toTable && x.toColumn === toColumn);
+
+      const tableName = keyData.toTable;
+      const schemaName = keyData.toSchema;
       const table = this.$store.state.tables.find(t => {
         return (!schemaName || schemaName === t.schema) && t.name === tableName
       })
