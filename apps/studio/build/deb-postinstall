@@ -27,6 +27,11 @@ if available apt-key && grep -iq 'beekeeper' <<< "$(apt-key list 2>/dev/null)"; 
   apt-key del 'AD1B460B' &>/dev/null
 fi
 
+key_dir=$(dirname $KEY_FILE)
+if [ ! -d "$key_dir" ]; then
+  mkdir -p -m 755 "$key_dir"
+fi
+
 if [ ! -f $KEY_FILE ]; then
   curl -s https://deb.beekeeperstudio.io/beekeeper.key | gpg --dearmor > $KEY_FILE
 fi
