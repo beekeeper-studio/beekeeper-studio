@@ -869,7 +869,7 @@ export default Vue.extend({
       cell.getElement().classList.add('edited')
       const currentEdit = _.find(this.pendingChanges.updates, { key: key })
 
-      if (currentEdit && currentEdit.cell.getInitialValue() === cell.getValue()) {
+      if (currentEdit?.oldValue === cell.getValue()) {
         this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit))
         cell.getElement().classList.remove('edited')
         return
@@ -881,22 +881,25 @@ export default Vue.extend({
           value: cell.getValue()
         }
       })
-
-      const payload: TableUpdate & { key: string, oldValue: any, cell: any } = {
-        key: key,
-        table: this.table.name,
-        schema: this.table.schema,
-        column: cell.getField(),
-        columnType: column ? column.dataType : undefined,
-        primaryKeys,
-        oldValue: cell.getInitialValue(),
-        cell: cell,
-        value: cell.getValue(0)
+      if (currentEdit) {
+        currentEdit.value = cell.getValue()
+      } else {
+        const payload: TableUpdate & { key: string, oldValue: any, cell: any } = {
+          key: key,
+          table: this.table.name,
+          schema: this.table.schema,
+          column: cell.getField(),
+          columnType: column ? column.dataType : undefined,
+          primaryKeys,
+          oldValue: cell.getOldValue(),
+          cell: cell,
+          value: cell.getValue(0)
+        }
+        // remove existing pending updates with identical pKey-column combo
+        let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
+        pendingUpdates.push(payload)
+        this.$set(this.pendingChanges, 'updates', pendingUpdates)
       }
-      // remove existing pending updates with identical pKey-column combo
-      let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
-      pendingUpdates.push(payload)
-      this.$set(this.pendingChanges, 'updates', pendingUpdates)
     },
     cellCloneRow(_e, cell) {
       const row = cell.getRow()
