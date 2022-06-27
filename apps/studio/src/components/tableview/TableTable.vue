@@ -1200,6 +1200,7 @@ export default Vue.extend({
       for(const key of keys) {
         // skip internal columns
         if(key.startsWith(this.internalColumnPrefix)) continue;
+        if(key.endsWith('--bks')) continue
 
         output[key] = data[key];
       }
