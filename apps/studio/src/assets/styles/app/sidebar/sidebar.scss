@@ -420,8 +420,20 @@
         }
         &.pinned {
           display: inline-flex;
-          i {
+          i.bk-pin {
             color: $theme-primary;
+          }
+          i.material-icons {
+            display:none;
+          }
+
+          &:hover {
+            i.material-icons {
+              display: inline;
+            }
+            i.bk-pin {
+              display: none;
+            }
           }
         }
       }
