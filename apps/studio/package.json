@@ -41,7 +41,7 @@
     "indent-string": "^4.0.0",
     "javascript-time-ago": "^2.0.8",
     "jquery": "^3.5.0",
-    "knex": "^1.0.3",
+    "knex": "^2.0.0",
     "lodash": "^4.17.21",
     "marked": "^4.0.10",
     "material-icons": "^0.7.6",
