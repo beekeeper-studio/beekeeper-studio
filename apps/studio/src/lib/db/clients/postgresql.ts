@@ -155,6 +155,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
   return {
     /* eslint max-len:0 */
     supportedFeatures: () => features,
+    versionString: () => getVersionString(version),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: (_db: string, filter: FilterOptions | undefined) => listTables(conn, filter),
@@ -1500,6 +1501,10 @@ async function runWithConnection<T>(x: Conn, run: (p: PoolClient) => Promise<T>)
   } finally {
     connection.release();
   }
+}
+
+function getVersionString(version: VersionInfo): string {
+  return version.version.split(" on ")[0];
 }
 
 

@@ -29,10 +29,11 @@ export default async function (server, database) {
   const conn = { dbConfig };
 
   // light solution to test connection with with the server
-  await driverExecuteQuery(conn, { query: 'SELECT sqlite_version()' });
+  const version = await driverExecuteQuery(conn, { query: 'SELECT sqlite_version()' });
 
   return {
     supportedFeatures: () => ({ customRoutines: false, comments: false, properties: true }),
+    versionString: () => getVersionString(version),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
@@ -210,7 +211,7 @@ export async function updateValues(cli, updates) {
       whereList.push(`${wrapIdentifier(column)} = ?`);
       params.push(value);
     })
-    
+
     const where = whereList.join(" AND ");
 
     return {
@@ -627,6 +628,10 @@ export async function executeWithTransaction(conn, queryArgs) {
       throw ex
     }
   })
+}
+
+function getVersionString(version) {
+  return version.data[0]["sqlite_version()"];
 }
 
 

@@ -7,6 +7,7 @@ export interface IDbConnectionPublicServer {
   disconnect: () => void
   end: () => void
   createConnection: (dbName?: string, cryptoSecret?: string) => DBConnection
+  versionString: () => string
 }
 
 export function createServer(config: IDbConnectionServerConfig): IDbConnectionPublicServer {
@@ -78,5 +79,10 @@ export function createServer(config: IDbConnectionServerConfig): IDbConnectionPu
       // @ts-ignore
       return server.db[dbName];
     },
+
+    versionString() {
+      // get version string from the first db, since all db's on the server have the same version
+      return server.db[Object.keys(server.db)[0]].versionString();
+    }
   } as IDbConnectionPublicServer;
 }

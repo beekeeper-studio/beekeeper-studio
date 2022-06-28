@@ -37,8 +37,11 @@ export default async function (server, database) {
   // light solution to test connection with with the server
   await driverExecuteQuery(conn, { query: 'SELECT 1' });
 
+  const version = await getVersion(conn);
+
   return {
     supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true}),
+    versionString: () => getVersionString(version),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),
@@ -96,6 +99,10 @@ async function getVersion(conn) {
     releaseYear,
     versionString
   }
+}
+
+function getVersionString(version) {
+  return version.versionString.split(" \n\t")[0];
 }
 
 export async function disconnect(conn) {
