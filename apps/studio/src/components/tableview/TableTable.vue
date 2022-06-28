@@ -505,6 +505,7 @@ export default Vue.extend({
         this.filterMode === FILTER_MODE_BUILDER &&
         this.filter.type && this.filter.field && this.filter.value
       ) {
+        
         return [this.filter]
       } else {
         return null
@@ -751,7 +752,6 @@ export default Vue.extend({
       const fromColumn = cell.getField().replace(/-link--bks$/g, "")
       const valueCell = this.valueCellFor(cell)
       const value = valueCell.getValue()
-
       const keyData = this.tableKeys[fromColumn]
       if (!keyData) {
         log.error("fk-click, couldn't find key data. Please open an issue. fromColumn:", fromColumn)

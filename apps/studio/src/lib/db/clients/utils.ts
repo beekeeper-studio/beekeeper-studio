@@ -73,11 +73,15 @@ function wrapIdentifier(value) {
 }
 
 
-export function buildFilterString(filters) {
+export function buildFilterString(filters, columns = []) {
   let filterString = ""
   let filterParams = []
   if (filters && _.isArray(filters) && filters.length > 0) {
     filterString = "WHERE " + filters.map((item) => {
+      const column = columns.find((c) => c.columnName === item.field)
+      if (column && column.dataType.toUpperCase().includes('BINARY')) {
+        return `HEX(${wrapIdentifier(item.field)}) ${item.type} ?`
+      }
       return `${wrapIdentifier(item.field)} ${item.type} ?`
     }).join(" AND ")
 
@@ -90,7 +94,7 @@ export function buildFilterString(filters) {
   }
 }
 
-export function buildSelectTopQuery(table, offset, limit, orderBy, filters, countTitle = 'total') {
+export function buildSelectTopQuery(table, offset, limit, orderBy, filters, countTitle = 'total', columns = []) {
   log.debug('building selectTop for', table, offset, limit, orderBy)
   let orderByString = ""
 
@@ -108,7 +112,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
   if (_.isString(filters)) {
     filterString = `WHERE ${filters}`
   } else {
-    const filterBlob = buildFilterString(filters)
+    const filterBlob = buildFilterString(filters, columns)
     filterString = filterBlob.filterString
     filterParams = filterBlob.filterParams
   }
