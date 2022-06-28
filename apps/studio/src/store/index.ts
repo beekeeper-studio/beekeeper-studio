@@ -373,12 +373,8 @@ const store = new Vuex.Store<State>({
         await connection?.listTableColumns(table.name, table.schema)) || []
 
       // TODO (don't update columns if nothing has changed (use duck typing))
-      const updated = columns.find((c, idx) => {
-        const other = table.columns[idx]
-
-        return !other || !_.isEqual(c, other)
-      })
-
+      const updated = _.xorWith(table.columns, columns, _.isEqual)
+      log.debug('Should I update table columns?', updated)
       if (updated) {
         table.columns = columns
         context.commit('table', table)

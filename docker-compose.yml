@@ -95,7 +95,7 @@ services:
       - 1434:1433
     command: sh -c ' chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /opt/mssql/bin/sqlservr;'
   cockroachdb:
-    image: cockroachdb/cockroach
+    image: cockroachdb/cockroach:v22.1.1
     volumes:
       - cockroachdb:/cockroach/cockroach-data
     ports:

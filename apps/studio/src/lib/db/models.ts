@@ -144,11 +144,15 @@ export interface TableInsert {
   data: object[]
 }
 
+export interface PKSelector {
+  column: string
+  value: any
+}
+
 export interface TableUpdate {
   table: string;
   column: string;
-  pkColumn: string;
-  primaryKey: any;
+  primaryKeys: PKSelector[]
   schema?: string;
   columnType?: string;
   value: any;
@@ -156,9 +160,8 @@ export interface TableUpdate {
 
 export interface TableDelete {
   table: string;
-  pkColumn: string;
+  primaryKeys: PKSelector[]
   schema?: string;
-  primaryKey: string;
 }
 
 export type TableUpdateResult = any;

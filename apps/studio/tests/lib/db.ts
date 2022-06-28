@@ -4,7 +4,7 @@ import { DBConnection, IDbConnectionServerConfig } from '../../src/lib/db/client
 import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
-import { IDbConnectionPublicServer } from '@/lib/db/server'
+import { IDbConnectionPublicServer } from '../../src/lib/db/server'
 import { AlterTableSpec, Dialect, DialectData } from '../../../../shared/src/lib/dialects/models'
 import { getDialectData } from '../../../../shared/src/lib/dialects/'
 import _ from 'lodash'
@@ -97,7 +97,6 @@ export class DBTestUtil {
     await this.connection.connect()
     await this.createTables()
     const address = this.maybeArrayToObject(await this.knex("addresses").insert({country: "US"}).returning("id"), 'id')
-    console.log("address result:", address)
     await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
     const people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0].id}).returning("id"), 'id')
     const jobs = this.maybeArrayToObject(await this.knex("jobs").insert({job_name: "Programmer"}).returning("id"), 'id')
@@ -128,7 +127,6 @@ export class DBTestUtil {
    */
   async tableViewTests() {
 
-    console.log("table tests")
     // reserved word as table name
     expect(await this.connection.getPrimaryKey("group", this.defaultSchema))
       .toBe("id");
@@ -188,7 +186,6 @@ export class DBTestUtil {
     await this.connection.alterTable(simpleChange)
     const simpleResult = await this.connection.listTableColumns('alter_test')
 
-    console.log(simpleResult)
     expect(simpleResult.find((c) => c.columnName === 'family_name')).toBeTruthy()
 
 
@@ -323,14 +320,13 @@ export class DBTestUtil {
       expect(pk).toBe("one")
     }
 
-    // composite primary key tests. Just disable them for now
-    const pkres = await this.connection.getPrimaryKey('with_composite_pk', this.defaultSchema)
-    expect(pkres).toBeNull()
+    const rawPkres = await this.connection.getPrimaryKeys('with_composite_pk', this.defaultSchema)
+    const pkres = rawPkres.map((key) => key.columnName);
+    expect(pkres).toEqual(expect.arrayContaining(["id1", "id2"]))
   }
 
   async queryTests() {
     if (this.dbType === 'sqlite') return
-    console.log('query tests')
     const q = await this.connection.query("select 'a' as total, 'b' as total")
     if(!q) throw new Error("no query result")
     const result = await q.execute()
@@ -382,7 +378,7 @@ export class DBTestUtil {
       table.increments('id').primary()
       table.integer('index_me')
       table.integer('me_too')
-    } )
+    })
     await this.connection.alterIndex({
       table: 'index_test',
       schema: this.defaultSchema,
@@ -405,20 +401,20 @@ export class DBTestUtil {
     const updatedIndexes = updatedIndexesRaw.filter((i) => !i.primary)
 
     const picked = updatedIndexes.map((i) => _.pick(i, ['name', 'columns', 'table', 'schema']))
-    expect(picked).toEqual(
+    const schemaDefault = this.defaultSchema ? { schema: this.defaultSchema } : {}
+    expect(picked).toMatchObject(
       [
         {
+        ...schemaDefault,
         name: 'it_idx2',
         columns: [{name: 'me_too', order: 'ASC'}],
         table: 'index_test',
-        schema: this.defaultSchema,
       }]
     )
 
   }
 
   async streamTests() {
-    console.log('selectTopStream tests')
     const names = [
       { name: "Matthew" },
       { name: "Nicoll" },
@@ -440,30 +436,19 @@ export class DBTestUtil {
       5,
       undefined,
     )
-    console.log("checking columns and total row count")
     expect(result.columns.map(c => c.columnName)).toMatchObject(['id', 'name'])
     expect(result.totalRows).toBe(6)
     const cursor = result.cursor
-    console.log("starting cursor")
     await cursor.start()
-    console.log("length?")
     const b1 = await cursor.read()
     expect(b1.length).toBe(5)
-    console.log("reading first five names and checking those")
-    console.log(b1)
     expect(b1.map(r => r[1])).toMatchObject(names.map(r => r.name).slice(0, 5))
-    console.log("read2")
     const b2 = await cursor.read()
     expect(b2.length).toBe(1)
     expect(b2[0][1]).toBe(names[names.length - 1].name)
-    console.log("read 3")
     const b3 = await cursor.read()
     expect(b3).toMatchObject([])
-    console.log("closing")
     await cursor.close()
-
-
-
   }
 
   private async createTables() {

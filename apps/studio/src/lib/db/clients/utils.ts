@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
 import logRaw from 'electron-log'
-import { TableInsert } from '../models'
+import { TableDelete, TableInsert, TableUpdate } from '../models'
 
 const log = logRaw.scope('db/util')
 
@@ -178,11 +178,15 @@ export function buildInsertQueries(knex, inserts) {
   return inserts.map(insert => buildInsertQuery(knex, insert))
 }
 
-export function buildUpdateQueries(knex, updates) {
+export function buildUpdateQueries(knex, updates: TableUpdate[]) {
   return updates.map(update => {
     const where = {}
     const updateblob = {}
-    where[update.pkColumn] = update.primaryKey
+    console.log(update)
+    update.primaryKeys.forEach(({column, value}) => {
+      where[column] = value
+    })
+
     updateblob[update.column] = update.value
 
     const query = knex(update.table)
@@ -194,10 +198,12 @@ export function buildUpdateQueries(knex, updates) {
   })
 }
 
-export function buildSelectQueriesFromUpdates(knex, updates) {
+export function buildSelectQueriesFromUpdates(knex, updates: TableUpdate[]) {
   return updates.map(update => {
     const where = {}
-    where[update.pkColumn] = update.primaryKey
+    update.primaryKeys.forEach(({ column, value }) => {
+      where[column] = value
+    })
 
     const query = knex(update.table)
       .withSchema(update.schema)
@@ -219,10 +225,13 @@ export async function withClosable<T>(item, func): Promise<T> {
 
 }
 
-export function buildDeleteQueries(knex, deletes) {
+export function buildDeleteQueries(knex, deletes: TableDelete[]) {
   return deletes.map(deleteRow => {
     const where = {}
-    where[deleteRow.pkColumn] = deleteRow.primaryKey
+
+    deleteRow.primaryKeys.forEach(({ column, value }) => {
+      where[column] = value
+    })
 
     return knex(deleteRow.table)
       .withSchema(deleteRow.schema)
