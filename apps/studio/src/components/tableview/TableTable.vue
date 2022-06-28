@@ -553,6 +553,7 @@ export default Vue.extend({
         this.filterMode === FILTER_MODE_BUILDER &&
         this.filter.type && this.filter.field && this.filter.value
       ) {
+        
         return [this.filter]
       } else {
         return null
@@ -970,9 +971,11 @@ export default Vue.extend({
       row.getElement().classList.add('deleted')
 
       const primaryKeys = pkCells.map((cell) => {
+        const column = this.table.columns.find(c => c.columnName === cell.getField())
+        const isBinary = column.dataType.toUpperCase().includes('BINARY')
         return {
           column: cell.getField(),
-          value: cell.getValue()
+          value: isBinary ? Buffer.from(cell.getValue(), 'hex') : cell.getValue()
         }
       })
 

@@ -278,8 +278,8 @@ async function getTableLength(conn, table) {
 
 
 export async function selectTop(conn, table, offset, limit, orderBy, filters) {
-
-  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters)
+  const columns = await listTableColumns(conn, null, table)
+  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters, 'total', columns)
 
   const { query, params } = queries
 
