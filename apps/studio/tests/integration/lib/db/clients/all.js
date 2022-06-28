@@ -1,6 +1,10 @@
 
 export function runCommonTests(getUtil) {
 
+  test("get database version should work", async() => {
+    await getUtil().databaseVersionTest()
+  })
+
   test("list tables should work", async() => {
     await getUtil().listTableTests()
   })
