@@ -21,7 +21,7 @@ export const ConnectionTypes = [
   { name: 'SQL Server', value: 'sqlserver' },
   { name: 'Amazon Redshift', value: 'redshift' },
   { name: 'CockroachDB', value: 'cockroachdb' },
-  { name: 'Other (Oracle, etc)', value: 'other'}
+  { name: 'Oracle (ultimate)', value: 'other'}
 ]
 
 export interface ConnectionOptions {
