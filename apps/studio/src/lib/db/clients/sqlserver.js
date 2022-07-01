@@ -34,9 +34,7 @@ export default async function (server, database) {
 
   const conn = { dbConfig };
 
-  // light solution to test connection with with the server
-  await driverExecuteQuery(conn, { query: 'SELECT 1' });
-
+  // get version and test connection
   const version = await getVersion(conn);
 
   return {
