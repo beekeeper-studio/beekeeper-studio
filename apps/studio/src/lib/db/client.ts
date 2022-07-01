@@ -9,7 +9,8 @@ import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/l
 const logger = createLogger('db');
 
 export interface DatabaseClient {
-  supportedFeatures: () => SupportedFeatures
+  supportedFeatures: () => SupportedFeatures,
+  versionString: () => string,
   disconnect: () => void,
   listTables: (db: string, filter?: FilterOptions) => Promise<TableOrView[]>,
   listViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
@@ -166,6 +167,7 @@ export class DBConnection {
   async currentDatabase() {
     return this.database.database
   }
+  versionString = versionString.bind(null, this.server, this.database)
 }
 
 export function createConnection(server: IDbConnectionServer, database: IDbConnectionDatabase ) {
@@ -481,4 +483,8 @@ function checkIsConnected(_server: IDbConnectionServer, database: IDbConnectionD
   if (database.connecting || !database.connection) {
     throw new Error('There is no connection available.');
   }
+}
+
+function versionString(_server: IDbConnectionServer, database: IDbConnectionDatabase): string {
+  return database.connection?.versionString();
 }

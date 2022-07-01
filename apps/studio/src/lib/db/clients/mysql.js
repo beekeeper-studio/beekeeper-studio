@@ -34,6 +34,7 @@ export default async function (server, database) {
 
   return {
     supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true }),
+    versionString: () => getVersionString(versionInfo),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
@@ -106,6 +107,10 @@ async function getVersion(conn) {
     version: Number(stuff[0] || 0)
   }
 
+}
+
+function getVersionString(versionInfo) {
+  return versionInfo.versionString
 }
 
 

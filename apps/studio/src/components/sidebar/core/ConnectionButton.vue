@@ -3,7 +3,7 @@
   <x-button class="btn btn-link btn-icon" menu>
     <i class="material-icons">link</i>
     <span class="connection-name truncate expand">{{connectionName}}</span>
-    <span class="connection-type badge truncate">{{connectionType}}</span>
+    <span class="connection-type badge truncate" v-tooltip="databaseVersion">{{connectionType}}</span>
     <x-menu>
       <x-menuitem @click.prevent="disconnect(false)" class="red">
         <x-label><i class="material-icons">power_settings_new</i>Disconnect</x-label>
@@ -30,7 +30,7 @@
     </div>
   </modal>
   <modal class="vue-dialog beekeeper-modal" name="running-exports-modal" height="auto" :scrollable="true">
-    <form @submit.prevent="disconnect(true)">      
+    <form @submit.prevent="disconnect(true)">
       <div class="dialog-content">
         <div class="dialog-c-title">Confirm Disconnect</div>
         There are active exports running. Are you sure you want to disconnect?
@@ -58,7 +58,7 @@ export default {
   },
   computed: {
       ...mapState({'config': 'usedConfig'}),
-      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace'}),
+      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace', 'versionString': 'versionString'}),
       connectionName() {
         const config = this.config
         if (!config) return 'Connection'
@@ -67,6 +67,9 @@ export default {
       },
       connectionType() {
         return `${this.config.connectionType}`
+      },
+      databaseVersion() {
+        return this.versionString
       }
   },
   methods: {

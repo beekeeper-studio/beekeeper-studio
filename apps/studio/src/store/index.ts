@@ -160,7 +160,9 @@ const store = new Vuex.Store<State>({
       }
       return []
     },
-
+    versionString(state) {
+      return state.server.versionString();
+    }
   },
   mutations: {
     storeInitialized(state, b: boolean) {

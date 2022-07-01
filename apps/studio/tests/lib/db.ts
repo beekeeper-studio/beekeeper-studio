@@ -515,4 +515,9 @@ export class DBTestUtil {
       table.integer("one").unsigned().notNullable().primary()
     })
   }
+
+  async databaseVersionTest() {
+    const version = this.connection.versionString();
+    expect(version).toBeDefined()
+  }
 }
