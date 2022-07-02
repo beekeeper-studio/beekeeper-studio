@@ -7,6 +7,7 @@
         <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
         <auto-updater></auto-updater>
         <state-manager />
+        <notification-manager />
       </template>
     </div>
     <portal-target name="menus" multiple />
@@ -25,10 +26,12 @@ import AutoUpdater from './components/AutoUpdater'
 import StateManager from './components/quicksearch/StateManager.vue'
 import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
+import NotificationManager from './components/NotificationManager.vue'
+
 export default {
   name: 'app',
   components: {
-    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater,
+    CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     StateManager, DataManager
   },
   data() {
