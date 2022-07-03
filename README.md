@@ -4,6 +4,8 @@ Beekeeper Studio is a cross-platform SQL editor and database manager available f
 
 👉 [Download Beekeeper Studio](https://beekeeperstudio.io/get)
 
+👉 [Join the community Slack](https://launchpass.com/beekeeperstud-lvg5276)
+
 👉 Love Beekeeper Studio? [Leave us a testimonial!](https://testimonial.to/beekeeper-studio)
 
 ![Beekeeper Studio Screenshot](https://docs.beekeeperstudio.io/assets/img/hero.289d6ce0.jpg)
