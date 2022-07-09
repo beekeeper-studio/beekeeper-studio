@@ -68,7 +68,7 @@
                   class="form-control"
                   type="text"
                   v-model="filter.value"
-                  placeholder="Enter Value"
+                  :placeholder=builderPlaceholder
                   ref="valueInput"
                 />
                 <button
@@ -217,7 +217,8 @@ export default Vue.extend({
         "less than": "<",
         "less than or equal": "<=",
         "greater than": ">",
-        "greater than or equal": ">="
+        "greater than or equal": ">=",
+        in: "in"
       },
       filter: {
         value: null,
@@ -369,6 +370,9 @@ export default Vue.extend({
     filterPlaceholder() {
       return `Enter condition, eg: name like 'Matthew%'`
     },
+    builderPlaceholder() {
+      return this.filter.type === 'in' ? `Enter values separated by comma, eg: 'foo','bar'` : 'Enter Value'
+    },
     totalRecordsText() {
       return `~${this.totalRecords.toLocaleString()}`
     },
@@ -488,7 +492,7 @@ export default Vue.extend({
           const tooltip = () => {
             if (keyDatas.length == 1)
               return `View record in ${keyDatas[0].toTable}`
-            else 
+            else
               return `View records in ${(keyDatas.map(item => item.toTable).join(', ') as string).replace(/, (?![\s\S]*, )/, ', or ')}`
           }
           let clickMenu = null;
@@ -553,8 +557,15 @@ export default Vue.extend({
         this.filterMode === FILTER_MODE_BUILDER &&
         this.filter.type && this.filter.field && this.filter.value
       ) {
-        
-        return [this.filter]
+        if (this.filter.type === 'in') {
+          const vals = this.filter.value.split(/,/)
+          return [{
+            ...this.filter,
+            value: vals
+          }]
+        } else {
+          return [this.filter]
+        }
       } else {
         return null
       }

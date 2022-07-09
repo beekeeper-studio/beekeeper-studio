@@ -81,6 +81,8 @@ export function buildFilterString(filters, columns = []) {
       const column = columns.find((c) => c.columnName === item.field)
       if (column && column.dataType.toUpperCase().includes('BINARY')) {
         return `HEX(${wrapIdentifier(item.field)}) ${item.type} ?`
+      } else if (item.type === 'in') {
+        return `${wrapIdentifier(item.field)} ${item.type} (?)`
       }
       return `${wrapIdentifier(item.field)} ${item.type} ?`
     }).join(" AND ")
@@ -115,6 +117,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
     const filterBlob = buildFilterString(filters, columns)
     filterString = filterBlob.filterString
     filterParams = filterBlob.filterParams
+    console.log(filterParams)
   }
 
   const baseSQL = `
