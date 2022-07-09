@@ -117,7 +117,6 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
     const filterBlob = buildFilterString(filters, columns)
     filterString = filterBlob.filterString
     filterParams = filterBlob.filterParams
-    console.log(filterParams)
   }
 
   const baseSQL = `
