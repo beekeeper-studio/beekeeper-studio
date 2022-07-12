@@ -27,6 +27,31 @@ Here's a table of how the various `sslmode` flags from command line clients map 
 | verify-ca |	yes | 	false |
 | verify-full |	yes | 	true |
 
+### SSH Tunnel
+
+To connect to a remote database using your SSH account on that machine:
+
+1. **Activate the SSH Tunnel** to reveal the ssh connection detail fields
+
+2. **Enter the SSH Hostname** or IP address of the remote SSH server
+
+3. **Change the SSH server's Port** if it doesn't accept connections on the default port 22
+
+4. **Enter Bastion Host (JumpHost)** (optional) if your server's network requires that you connect through a [JumpHost](https://www.redhat.com/sysadmin/ssh-proxy-bastion-proxyjump)
+
+5. **Enter the Keepalive Interval** (optional) to specify, _in seconds_, how often to ping the server while idle to prevent getting disconnected due to a timeout.  This is equivalent to the [ServerAliveInterval](https://superuser.com/questions/37738/how-to-reliably-keep-an-ssh-tunnel-open#answer-601644) option you might use on the ssh commmand line, or in your `~/.ssh/config` file -- **Entering 0 (zero) disables this feature**
+
+6. **Select your SSH Authentication method**:
+
+    * `SSH Agent` if your local machine is running an SSH Agent, you only need to provide the remote **SSH Username** of your ssh account on the server
+
+    * `Username and Password` to enter both your **SSH Username** and **SSH Password** (also see the _Save Passwords_ option, below)
+
+    * `Key File` Select your **SSH Private key File** (and optionally enter your **Key File PassPhrase**) if you use your [SSH Public Key](https://stackoverflow.com/questions/7260/how-do-i-setup-public-key-authentication#answers-header) on the server for authentication
+
+7. ***Enter a name for your Connection** (optionally check the **Save Passords** checkbox) and Press **Save** to have Beekeeper remember all of the above for you
+
+8. **Press the Connect button** to access your database!
 
 Once you are connected to your database Beekeeper Studio allows you to open tabs to do the following things:
 

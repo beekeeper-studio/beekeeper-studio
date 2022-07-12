@@ -26,6 +26,10 @@
         <input class="form-control" v-model="config.sshBastionHost" type="text" name="bastionHost">
       </div>
       <div class="form-group">
+        <label for="sshKeepaliveInterval">KeepAlive Interval (Seconds)</label>
+        <input type="number" v-model.number="config.sshKeepaliveInterval" name="sshKeepaliveInterval">
+      </div>
+      <div class="form-group">
         <label>SSH Authentication</label>
         <select class="form-control" v-model="config.sshMode">
           <option v-for="option in sshModeOptions" :key="option.mode" :value="option.mode">{{option.label}}</option>
