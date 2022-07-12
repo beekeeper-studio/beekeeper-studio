@@ -49,7 +49,7 @@ To connect to a remote database using your SSH account on that machine:
 
     * `Key File` Select your **SSH Private key File** (and optionally enter your **Key File PassPhrase**) if you use your [SSH Public Key](https://stackoverflow.com/questions/7260/how-do-i-setup-public-key-authentication#answers-header) on the server for authentication
 
-7. ***Enter a name for your Connection** (optionally check the **Save Passords** checkbox) and Press **Save** to have Beekeeper remember all of the above for you
+7. **Enter a name for your Connection** (optionally check the **Save Passords** checkbox) and Press **Save** to have Beekeeper remember all of the above for you
 
 8. **Press the Connect button** to access your database!
 
