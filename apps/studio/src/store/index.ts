@@ -376,8 +376,8 @@ const store = new Vuex.Store<State>({
 
       // TODO (don't update columns if nothing has changed (use duck typing))
       const updated = _.xorWith(table.columns, columns, _.isEqual)
-      log.debug('Should I update table columns?', updated)
-      if (updated) {
+      console.log('Should I update table columns?', updated)
+      if (updated?.length) {
         table.columns = columns
         context.commit('table', table)
       }
