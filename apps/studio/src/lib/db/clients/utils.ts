@@ -94,8 +94,8 @@ export function buildFilterString(filters, columns = []) {
   }
 }
 
-export function buildSelectTopQuery(table, offset, limit, orderBy, filters, countTitle = 'total', columns = []) {
-  log.debug('building selectTop for', table, offset, limit, orderBy)
+export function buildSelectTopQuery(table, offset, limit, orderBy, filters, countTitle = 'total', columns = [], selects = ['*']) {
+  log.debug('building selectTop for', table, offset, limit, orderBy, selects)
   let orderByString = ""
 
   if (orderBy && orderBy.length > 0) {
@@ -117,6 +117,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
     filterParams = filterBlob.filterParams
   }
 
+  const selectSQL = `SELECT ${selects.join(', ')}`
   const baseSQL = `
     FROM \`${table}\`
     ${filterString}
@@ -125,7 +126,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
     select count(*) as ${countTitle} ${baseSQL}
   `
   const sql = `
-    SELECT * ${baseSQL}
+    ${selectSQL} ${baseSQL}
     ${orderByString}
     ${_.isNumber(limit) ? `LIMIT ${limit}` : ''}
     ${_.isNumber(offset) ? `OFFSET ${offset}` : ""}
@@ -142,8 +143,8 @@ export async function executeSelectTop(queries, conn, executor) {
   }
 }
 
-export async function genericSelectTop(conn, table, offset, limit, orderBy, filters, executor){
-  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters)
+export async function genericSelectTop(conn, table, offset, limit, orderBy, filters, executor, selects){
+  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters, selects)
   return await executeSelectTop(queries, conn, executor)
 }
 

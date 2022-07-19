@@ -7,8 +7,18 @@
     </template>
     <template v-else >
       <div class="table-filter">
-        <form @submit.prevent="triggerFilter">
-          <div v-if="filterMode === 'raw'" class="filter-group row gutter">
+        <form @submit.prevent="triggerFilter" class="flex flex-middle">
+          <div class="filter-group" style="margin-left: 0.2rem">
+            <button
+              type="button"
+              class="btn btn-flat"
+              title="Filter Columns"
+              @click="showColumnFilterModal()"
+            >
+              Columns ({{ allColumnsSelected ? 'All' : selectedColumnNames.length}})
+            </button>
+          </div>
+          <div v-if="filterMode === 'raw'" class="filter-group row gutter expand">
             <div class="btn-wrap">
               <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('builder')" title="Toggle Filter Type">
                 <i class="material-icons-outlined">filter_alt</i>
@@ -38,7 +48,7 @@
               </button>
             </div>
           </div>
-          <div v-else-if="filterMode === 'builder'" class="filter-group row gutter">
+          <div v-else-if="filterMode === 'builder'" class="filter-group row gutter expand">
             <div class="btn-wrap">
               <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('raw')" title="Toggle Filter Type">
                 <i class="material-icons">code</i>
@@ -227,6 +237,7 @@ export default Vue.extend({
       filterRaw: null,
       filterMode: FILTER_MODE_BUILDER,
       headerFilter: true,
+      selectedColumnNames: this.table.columns.map(({columnName}) => columnName),
       columnsSet: false,
       tabulator: null,
       actualTableHeight: "100%",
@@ -369,6 +380,9 @@ export default Vue.extend({
     filterPlaceholder() {
       return `Enter condition, eg: name like 'Matthew%'`
     },
+    allColumnsSelected() {
+      return this.selectedColumnNames.length === this.table.columns.length
+    },
     totalRecordsText() {
       return `~${this.totalRecords.toLocaleString()}`
     },
@@ -488,7 +502,7 @@ export default Vue.extend({
           const tooltip = () => {
             if (keyDatas.length == 1)
               return `View record in ${keyDatas[0].toTable}`
-            else 
+            else
               return `View records in ${(keyDatas.map(item => item.toTable).join(', ') as string).replace(/, (?![\s\S]*, )/, ', or ')}`
           }
           let clickMenu = null;
@@ -553,7 +567,7 @@ export default Vue.extend({
         this.filterMode === FILTER_MODE_BUILDER &&
         this.filter.type && this.filter.field && this.filter.value
       ) {
-        
+
         return [this.filter]
       } else {
         return null
@@ -1089,6 +1103,28 @@ export default Vue.extend({
       pendingUpdate.cell.getElement().classList.remove('edited')
       pendingUpdate.cell.getElement().classList.remove('edit-error')
     },
+    showColumnFilterModal() {
+      this.$modal.show('column-filter-modal', {
+        allColumns: [...this.table.columns],
+        selectedColumnNames: [...this.selectedColumnNames],
+        onApply: (selectedColumnNames) => {
+          if (!this.tabulator) return;
+
+          this.tabulator.blockRedraw();
+
+          this.tabulator.getColumns().forEach((col) => {
+            if(selectedColumnNames.includes(col.getField())) col.show()
+            else col.hide()
+          })
+
+          this.tabulator.restoreRedraw();
+
+          this.selectedColumnNames = selectedColumnNames
+
+          this.tabulator.setData()
+        }
+      })
+    },
     triggerFilter() {
       if (this.tabulator) this.tabulator.setData()
     },
@@ -1151,7 +1187,8 @@ export default Vue.extend({
               limit,
               orderBy,
               filters,
-              this.table.schema
+              this.table.schema,
+              this.allColumnsSelected ? ['*'] : this.selectedColumnNames,
             );
             if (_.xor(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')

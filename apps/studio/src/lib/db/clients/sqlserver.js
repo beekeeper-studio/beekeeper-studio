@@ -59,7 +59,7 @@ export default async function (server, database) {
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     getTableLength: (table, schema) => getTableLength(conn, table, schema),
-    selectTop: (table, offset, limit, orderBy, filters, schema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
+    selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -174,12 +174,13 @@ function genCountQuery(table, filters, schema) {
   return countQuery
 }
 
-function genSelectNew(table, offset, limit, orderBy, filters, schema) {
+function genSelectNew(table, offset, limit, orderBy, filters, schema, selects) {
   const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
 
   const orderByString = genOrderByString(orderBy)
   const schemaString = schema ? `${wrapIdentifier(schema)}.` : ''
 
+  const selectSQL = `SELECT ${selects.join(', ')}`
   let baseSQL = `
     FROM ${schemaString}${wrapIdentifier(table)}
     ${filterString}
@@ -190,7 +191,7 @@ function genSelectNew(table, offset, limit, orderBy, filters, schema) {
 
 
   let query = `
-    SELECT * ${baseSQL}
+    ${selectSQL} ${baseSQL}
     ${orderByString}
     ${offsetString}
     `
@@ -205,12 +206,12 @@ async function getTableLength(conn, table, schema) {
   return totalRecords
 }
 
-export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
+export async function selectTop(conn, table, offset, limit, orderBy, filters, schema, selects) {
   log.debug("filters", filters)
   const version = await getVersion(conn);
   const query = version.supportOffsetFetch ?
-    genSelectNew(table, offset, limit, orderBy, filters, schema) :
-    genSelectOld(table, offset, limit, orderBy, filters, schema)
+    genSelectNew(table, offset, limit, orderBy, filters, schema, selects) :
+    genSelectOld(table, offset, limit, orderBy, filters, schema, selects)
   logger().debug(query)
 
   const result = await driverExecuteQuery(conn, { query })
