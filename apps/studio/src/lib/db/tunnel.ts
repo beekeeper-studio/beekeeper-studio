@@ -29,7 +29,8 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           username: config.ssh.user || undefined,
           password: config.ssh.password || undefined,
           skipAutoPrivateKey: true,
-          noReadline: true
+          noReadline: true,
+          keepaliveInterval: config.ssh.keepaliveInterval
         }
 
         if (config.ssh.useAgent && appConfig.sshAuthSock) {
