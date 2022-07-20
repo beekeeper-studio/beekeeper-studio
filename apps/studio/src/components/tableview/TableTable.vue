@@ -558,7 +558,7 @@ export default Vue.extend({
         this.filter.type && this.filter.field && this.filter.value
       ) {
         if (this.filter.type === 'in') {
-          const vals = this.filter.value.split(/,/)
+          const vals = this.filter.value.split(/\s*,\s*/)
           return [{
             ...this.filter,
             value: vals
