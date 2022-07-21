@@ -9,14 +9,15 @@
       <div class="table-filter">
         <form @submit.prevent="triggerFilter" class="flex flex-middle">
           <div class="filter-group" style="margin-left: 0.2rem">
-            <button
+            <span
               type="button"
-              class="btn btn-flat"
+              class="btn btn-flat btn-fab"
+              :class="{'btn-primary': !allColumnsSelected}"
               title="Filter Columns"
               @click="showColumnFilterModal()"
             >
-              Columns ({{ allColumnsSelected ? 'All' : selectedColumnNames.length}})
-            </button>
+              <i class="material-icons">filter_alt</i>
+            </span>
           </div>
           <div v-if="filterMode === 'raw'" class="filter-group row gutter expand">
             <div class="btn-wrap">

@@ -1,6 +1,6 @@
 <template>
   <modal
-    class="vue-dialog beekeeper-modal export-modal"
+    class="vue-dialog beekeeper-modal"
     name="column-filter-modal"
     @before-open="onBeforeOpen"
     @opened="onOpened"
@@ -14,21 +14,34 @@
         <span class="close-btn btn btn-fab">
           <i class="material-icons" @click.prevent="closeModal">clear</i>
         </span>
-        <div class="flex flex-middle" style="gap: 0.5rem">
-          <input type="checkbox" ref="mainCheckbox" @click="toggleSelectAllColumn()"/>
-          <input type="text" placeholder="Search column" v-model="searchQuery" @click.stop/>
-        </div>
-        <div style="margin-top: 0.5rem; height: 12.75rem; overflow-y: scroll;">
-          <div
-            v-for="{columnName, dataType} in searchFilteredColumns"
-            :key="columnName"
-            class="flex flex-middle"
-            style="padding: 0.25rem 0"
-          >
-            <input type="checkbox" @click.stop="toggleSelectColumn(columnName)" :checked="selectedColumnNames.includes(columnName)" />
-            <span>
-              {{columnName}}&nbsp;<span style="opacity: 0.5">{{dataType}}</span>
-            </span>
+        <div class="modal-form">
+          <input type="text" placeholder="Search column" v-model="searchQuery"/>
+          <div class="list-wrapper">
+            <div
+              v-show="searchQuery.length === 0"
+              class="flex flex-middle list-item basis-0"
+            >
+              <input type="checkbox" ref="mainCheckbox" @click="toggleSelectAllColumn()" />
+              <span
+                class="inline-flex flex-between expand all-label"
+              >
+                All
+              </span>
+            </div>
+            <div class="list-container">
+              <div
+                v-for="{columnName, dataType} in searchFilteredColumns"
+                :key="columnName"
+                class="flex flex-middle list-item"
+              >
+                <input type="checkbox" @click.stop="toggleSelectColumn(columnName)" :checked="selectedColumnNames.includes(columnName)" />
+                <span class="inline-flex flex-between expand">
+                  <span>{{columnName}}</span>
+                  <span style="opacity: 0.5">{{dataType}}</span>
+                </span>
+              </div>
+            </div>
+            <span class="no-matching-results" v-show="searchFilteredColumns.length === 0">No matching results</span>
           </div>
         </div>
       </div>
@@ -51,6 +64,51 @@
     </form>
   </modal>
 </template>
+
+<style>
+  .modal-form {
+    margin-top: 0.25rem;
+  }
+
+  .list-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 14.5rem;
+    margin-top: 0.5rem;
+    font-size: 13px;
+  }
+
+  .list-container {
+    flex-grow: 0;
+    overflow-y: scroll;
+    padding-right: 0.5rem;
+  }
+
+  .no-matching-results {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 1rem;
+    text-align: center;
+  }
+
+  .list-item {
+    padding: 0.5rem 0;
+  }
+
+  .basis-0 {
+    flex-basis: 0;
+  }
+
+  .all-label {
+    font-style: italic
+  }
+
+  .no-matching-results, .all-label {
+    opacity: 0.5;
+  }
+</style>
 
 <script lang="ts">
   export default {
