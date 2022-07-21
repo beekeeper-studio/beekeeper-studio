@@ -118,7 +118,8 @@ function buildFilterString(filters) {
   return filterString
 }
 
-function genSelectOld(table, offset, limit, orderBy, filters, schema) {
+function genSelectOld(table, offset, limit, orderBy, filters, schema, selects) {
+  const selectString = selects.join(', ')
   const orderByString = genOrderByString(orderBy)
   const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
   const lastRow = offset + limit
@@ -127,7 +128,7 @@ function genSelectOld(table, offset, limit, orderBy, filters, schema) {
   const query = `
     WITH CTE AS
     (
-        SELECT *
+        SELECT ${selectString}
               , ROW_NUMBER() OVER (${orderByString}) as RowNumber
         FROM ${schemaString}${wrapIdentifier(table)}
         ${filterString}
@@ -206,7 +207,7 @@ async function getTableLength(conn, table, schema) {
   return totalRecords
 }
 
-export async function selectTop(conn, table, offset, limit, orderBy, filters, schema, selects) {
+export async function selectTop(conn, table, offset, limit, orderBy, filters, schema, selects = ['*']) {
   log.debug("filters", filters)
   const version = await getVersion(conn);
   const query = version.supportOffsetFetch ?
@@ -222,10 +223,10 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
   }
 }
 
-export async function selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema) {
+export async function selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema, selects = ['*']) {
   const version = await getVersion(conn);
   // no limit or offset, so don't need the old version of paging
-  const query = genSelectNew(table, null, null, orderBy, filters, schema);
+  const query = genSelectNew(table, null, null, orderBy, filters, schema, selects);
   const columns = await listTableColumns(conn, db, table);
   const rowCount = await getTableLength(conn, table, filters);
 
