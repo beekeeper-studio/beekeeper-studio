@@ -305,6 +305,27 @@ export class DBTestUtil {
     expect(result).toMatchObject(['pears'])
   }
 
+  async columnFilterTests() {
+    let r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema)
+    expect(r.result).toEqual([{
+      person_id: 1,
+      job_id: 1,
+      created_at: null,
+      updated_at: null,
+    }])
+
+    r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id'])
+    expect(r.result).toEqual([{
+      person_id: 1,
+    }])
+
+    r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id', 'job_id'])
+    expect(r.result).toEqual([{
+      person_id: 1,
+      job_id: 1,
+    }])
+  }
+
   async triggerTests() {
     // it should just complete without erroring
     await this.connection.listTableTriggers("MixedCase", this.defaultSchema)
