@@ -119,7 +119,7 @@ function buildFilterString(filters) {
 }
 
 function genSelectOld(table, offset, limit, orderBy, filters, schema, selects) {
-  const selectString = selects.join(', ')
+  const selectString = selects.map((s) => wrapIdentifier(s)).join(", ")
   const orderByString = genOrderByString(orderBy)
   const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
   const lastRow = offset + limit
@@ -181,7 +181,7 @@ function genSelectNew(table, offset, limit, orderBy, filters, schema, selects) {
   const orderByString = genOrderByString(orderBy)
   const schemaString = schema ? `${wrapIdentifier(schema)}.` : ''
 
-  const selectSQL = `SELECT ${selects.join(', ')}`
+  const selectSQL = `SELECT ${selects.map((s) => wrapIdentifier(s)).join(", ")}`
   let baseSQL = `
     FROM ${schemaString}${wrapIdentifier(table)}
     ${filterString}

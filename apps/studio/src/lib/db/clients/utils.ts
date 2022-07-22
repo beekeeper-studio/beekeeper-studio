@@ -117,7 +117,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
     filterParams = filterBlob.filterParams
   }
 
-  const selectSQL = `SELECT ${selects.join(', ')}`
+  const selectSQL = `SELECT ${selects.map((s) => wrapIdentifier(s)).join(", ")}`
   const baseSQL = `
     FROM \`${table}\`
     ${filterString}

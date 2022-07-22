@@ -1,10 +1,8 @@
 <template>
   <modal
     class="vue-dialog beekeeper-modal"
-    name="column-filter-modal"
-    @before-open="onBeforeOpen"
-    @opened="onOpened"
-    @closed="onClosed"
+    @before-open="onBeforeOpened"
+    :name="modalName"
   >
     <form @submit.prevent="onSubmit">
       <div class="dialog-content">
@@ -15,13 +13,26 @@
           <i class="material-icons" @click.prevent="closeModal">clear</i>
         </span>
         <div class="modal-form">
-          <input type="text" placeholder="Search column" v-model="searchQuery"/>
+          <div class="search-wrapper">
+            <input type="text" placeholder="Search column" v-model="searchQuery"/>
+            <span
+              class="clear"
+              @click="searchQuery = ''"
+            >
+              <i class="material-icons">cancel</i>
+            </span>
+          </div>
           <div class="list-wrapper">
             <div
               v-show="searchQuery.length === 0"
-              class="flex flex-middle list-item basis-0"
+              class="list-item"
             >
-              <input type="checkbox" ref="mainCheckbox" @click="toggleSelectAllColumn()" />
+              <input
+                type="checkbox"
+                ref="mainCheckbox"
+                @click="toggleSelectAllColumn()"
+                :checked="allSelected"
+              />
               <span
                 class="inline-flex flex-between expand all-label"
               >
@@ -30,18 +41,18 @@
             </div>
             <div class="list-container">
               <div
-                v-for="{columnName, dataType} in searchFilteredColumns"
-                :key="columnName"
-                class="flex flex-middle list-item"
+                v-for="column in searchedColumns"
+                :key="column.name"
+                class="list-item"
               >
-                <input type="checkbox" @click.stop="toggleSelectColumn(columnName)" :checked="selectedColumnNames.includes(columnName)" />
+                <input type="checkbox" @click.stop="toggleSelectColumn(column)" :checked="column.filter" />
                 <span class="inline-flex flex-between expand">
-                  <span>{{columnName}}</span>
-                  <span style="opacity: 0.5">{{dataType}}</span>
+                  <span>{{column.name}}</span>
+                  <span style="opacity: 0.5">{{column.dataType}}</span>
                 </span>
               </div>
             </div>
-            <span class="no-matching-results" v-show="searchFilteredColumns.length === 0">No matching results</span>
+            <span class="no-matching-results" v-show="searchedColumns.length === 0">No matching results</span>
           </div>
         </div>
       </div>
@@ -65,9 +76,34 @@
   </modal>
 </template>
 
-<style>
+<style lang="scss">
   .modal-form {
     margin-top: 0.25rem;
+  }
+
+  .search-wrapper {
+    position: relative;
+
+    input {
+      padding-right: 26px !important;
+    }
+
+    .clear {
+      position: absolute;
+      right: 0;
+      top: 56%;
+      transform: translate(0, -50%);
+      opacity: 0.5;
+      outline: none;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+
+      i {
+        font-size: 16px;
+        width: 26px;
+      }
+    }
   }
 
   .list-wrapper {
@@ -94,11 +130,9 @@
   }
 
   .list-item {
+    display: flex;
+    align-items: center;
     padding: 0.5rem 0;
-  }
-
-  .basis-0 {
-    flex-basis: 0;
   }
 
   .all-label {
@@ -111,67 +145,45 @@
 </style>
 
 <script lang="ts">
+  import _ from 'lodash'
+
   export default {
+    props: ['modalName', 'columnsWithFilterAndOrder'],
     data() {
       return {
         searchQuery: '',
-        allColumns: [],
-        selectedColumnNames: [],
-        applyHandler: () => {},
+        columns: [],
       }
     },
     computed: {
       allSelected() {
-        return this.selectedColumnNames.length === this.allColumns.length
-      },
-      someSelected() {
-        return this.selectedColumnNames?.length > 0 && this.selectedColumnNames?.length < this.allColumns.length
+        return this.columns.every((column) => column.filter)
       },
       noneSelected() {
-        return this.selectedColumnNames.length === 0
+        return this.columns.every((column) => !column.filter)
       },
-      searchFilteredColumns() {
-        return this.allColumns.filter(
-          ({columnName}) => columnName.toLowerCase().includes(this.searchQuery)
-        )
+      searchedColumns() {
+        return this.columns.filter(({name}) => name.toLowerCase().includes(this.searchQuery))
       },
     },
     methods: {
-      toggleSelectColumn(name) {
-        if(this.selectedColumnNames.includes(name)) {
-          this.selectedColumnNames = this.selectedColumnNames.filter(columnName => columnName !== name)
-        } else {
-          this.selectedColumnNames.push(name)
-        }
-        this.handleMainCheckbox()
+      toggleSelectColumn(column) {
+        column.filter = !column.filter
       },
       toggleSelectAllColumn() {
-        this.selectedColumnNames = this.allSelected ? [] : this.allColumns.map(({columnName}) => columnName)
-        this.handleMainCheckbox()
+        const mustSelect = !this.allSelected
+        this.columns.forEach((column) => column.filter = mustSelect)
       },
-      handleMainCheckbox() {
-        this.$refs.mainCheckbox.checked = this.allSelected
-        this.$refs.mainCheckbox.indeterminate = this.someSelected
-      },
-      closeModal() {
-        this.$modal.hide('column-filter-modal')
-      },
-      onBeforeOpen(event) {
-        this.allColumns = event.params.allColumns
-        this.selectedColumnNames = event.params.selectedColumnNames
-        this.applyHandler = event.params.onApply
-      },
-      onOpened() {
-        this.handleMainCheckbox()
+      onBeforeOpened() {
+        this.columns = _.cloneDeep(this.columnsWithFilterAndOrder)
       },
       onSubmit() {
-        this.applyHandler(this.selectedColumnNames)
+        const changed = !_.isEqual(this.columns, this.columnsWithFilterAndOrder)
+        if(changed) this.$emit('changed', this.columns)
         this.closeModal()
       },
-      onClosed() {
-        this.allColumns = []
-        this.selectedColumnNames = []
-        this.applyHandler = () => {}
+      closeModal() {
+        this.$modal.hide(this.modalName)
       },
     },
   }

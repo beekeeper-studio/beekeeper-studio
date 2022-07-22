@@ -100,6 +100,11 @@
         </form>
       </div>
       <div ref="table"></div>
+      <ColumnFilterModal
+        :modalName="columnFilterModalName"
+        :columnsWithFilterAndOrder="columnsWithFilterAndOrder"
+        @changed="applyColumnChanges"
+      />
     </template>
 
     <statusbar :mode="statusbarMode">
@@ -201,6 +206,7 @@ import { TabulatorFull } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
 import Statusbar from '../common/StatusBar.vue'
+import ColumnFilterModal from './ColumnFilterModal.vue'
 import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
@@ -216,7 +222,7 @@ const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
 
 export default Vue.extend({
-  components: { Statusbar },
+  components: { Statusbar, ColumnFilterModal },
   mixins: [data_converter, DataMutators],
   props: ["connection", "initialFilter", "active", 'tab', 'table'],
   data() {
@@ -238,7 +244,7 @@ export default Vue.extend({
       filterRaw: null,
       filterMode: FILTER_MODE_BUILDER,
       headerFilter: true,
-      selectedColumnNames: this.table.columns.map(({columnName}) => columnName),
+      columnsWithFilterAndOrder: [],
       columnsSet: false,
       tabulator: null,
       actualTableHeight: "100%",
@@ -382,7 +388,7 @@ export default Vue.extend({
       return `Enter condition, eg: name like 'Matthew%'`
     },
     allColumnsSelected() {
-      return this.selectedColumnNames.length === this.table.columns.length
+      return this.columnsWithFilterAndOrder.every((column) => column.filter)
     },
     totalRecordsText() {
       return `~${this.totalRecords.toLocaleString()}`
@@ -583,8 +589,10 @@ export default Vue.extend({
     },
     shouldInitialize() {
       return this.tablesInitialLoaded && this.active && !this.initialized
-    }
-
+    },
+    columnFilterModalName() {
+      return `column-filter-modal-${this.tab.id}`
+    },
   },
 
   watch: {
@@ -706,6 +714,12 @@ export default Vue.extend({
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
+      this.columnsWithFilterAndOrder = this.table.columns.map(({columnName, dataType}) => ({
+        name: columnName,
+        dataType,
+        filter: true,
+        order: 0,
+      }))
       // @ts-ignore-error
       this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,
@@ -1105,26 +1119,7 @@ export default Vue.extend({
       pendingUpdate.cell.getElement().classList.remove('edit-error')
     },
     showColumnFilterModal() {
-      this.$modal.show('column-filter-modal', {
-        allColumns: [...this.table.columns],
-        selectedColumnNames: [...this.selectedColumnNames],
-        onApply: (selectedColumnNames) => {
-          if (!this.tabulator) return;
-
-          this.tabulator.blockRedraw();
-
-          this.tabulator.getColumns().forEach((col) => {
-            if(selectedColumnNames.includes(col.getField())) col.show()
-            else col.hide()
-          })
-
-          this.tabulator.restoreRedraw();
-
-          this.selectedColumnNames = selectedColumnNames
-
-          this.tabulator.setData()
-        }
-      })
+      this.$modal.show(this.columnFilterModalName)
     },
     triggerFilter() {
       if (this.tabulator) this.tabulator.setData()
@@ -1182,6 +1177,10 @@ export default Vue.extend({
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
+            const selects = this.allColumnsSelected
+              ? ['*']
+              : this.columnsWithFilterAndOrder.filter(({filter}) => filter).map(({name}) => name)
+
             const response = await this.connection.selectTop(
               this.table.name,
               offset,
@@ -1189,7 +1188,7 @@ export default Vue.extend({
               orderBy,
               filters,
               this.table.schema,
-              this.allColumnsSelected ? ['*'] : this.selectedColumnNames,
+              selects,
             );
             if (_.xor(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
@@ -1272,6 +1271,22 @@ export default Vue.extend({
       }
 
       return output;
+    },
+    applyColumnChanges(columns) {
+      if (!this.tabulator) return;
+
+      this.tabulator.blockRedraw();
+
+      columns.forEach(({name, filter}) => {
+        if(filter) this.tabulator.showColumn(name)
+        else this.tabulator.hideColumn(name)
+      })
+
+      this.tabulator.restoreRedraw();
+
+      this.columnsWithFilterAndOrder = columns
+
+      this.tabulator.setData()
     }
   }
 });

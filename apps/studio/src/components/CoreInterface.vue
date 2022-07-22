@@ -16,7 +16,6 @@
     </div>
     <quick-search v-if="quickSearchShown" @close="quickSearchShown=false" />
     <ExportManager :connection="connection"></ExportManager>
-    <ColumnFilterModal />
   </div>
 </template>
 
@@ -28,13 +27,12 @@
   import Statusbar from './common/StatusBar'
   import ConnectionButton from './sidebar/core/ConnectionButton'
   import ExportManager from './export/ExportManager'
-  import ColumnFilterModal from './tableview/ColumnFilterModal.vue'
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
   import { LocalQueryModule } from '@/store/modules/data/query/LocalQueryModule'
   import ProgressBar from './editor/ProgressBar.vue'
   export default {
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, ColumnFilterModal },
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar },
     props: [ 'connection' ],
     data() {
       return {
