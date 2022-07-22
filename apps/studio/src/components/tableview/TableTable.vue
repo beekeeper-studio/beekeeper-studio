@@ -371,7 +371,7 @@ export default Vue.extend({
       return `Enter condition, eg: name like 'Matthew%'`
     },
     builderPlaceholder() {
-      return this.filter.type === 'in' ? `Enter values separated by comma, eg: 'foo','bar'` : 'Enter Value'
+      return this.filter.type === 'in' ? `Enter values separated by comma, eg: foo,bar` : 'Enter Value'
     },
     totalRecordsText() {
       return `~${this.totalRecords.toLocaleString()}`

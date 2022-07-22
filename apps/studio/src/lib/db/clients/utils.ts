@@ -80,7 +80,11 @@ export function buildFilterString(filters, columns = []) {
     filterString = "WHERE " + filters.map((item) => {
       const column = columns.find((c) => c.columnName === item.field)
       if (column && column.dataType.toUpperCase().includes('BINARY')) {
-        return `HEX(${wrapIdentifier(item.field)}) ${item.type} ?`
+        if (item.type === 'in') {
+          return `HEX(${wrapIdentifier(item.field)}) ${item.type} (?)`
+        } else {
+          return `HEX(${wrapIdentifier(item.field)}) ${item.type} ?`
+        }
       } else if (item.type === 'in') {
         return `${wrapIdentifier(item.field)} ${item.type} (?)`
       }

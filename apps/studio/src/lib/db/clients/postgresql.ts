@@ -307,7 +307,7 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   } else if (filters && filters.length > 0) {
     filterString = "WHERE " + filters.map((item, index) => {
       if (item.type === 'in') {
-        return `${wrapIdentifier(item.field)} ${item.type} (${index + 1})`
+        return `${wrapIdentifier(item.field)} ${item.type} ($${index + 1})`
       }
       return `${wrapIdentifier(item.field)} ${item.type} $${index + 1}`
     }).join(" AND ")

@@ -19,7 +19,7 @@
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
     "release:prs": "./build/get-prs.sh",
-    "test:integration": "TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js"
+    "test:integration": "yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js"
   },
   "main": "background.js",
   "dependencies": {
