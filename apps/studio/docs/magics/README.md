@@ -4,6 +4,12 @@ title: Query Magics
 
 # Query Magics
 
+
+<iframe width="100%" height="400" src="https://www.youtube-nocookie.com/embed/27xYE423Xqw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+<br/>
+
+
 **Query Magics are only available in Beekeeper Studio Ultimate Edition** - [download here](https://beekeeperstudio.io/get)
 
 Query Magics provide a way to customize the results of a SQL query.
