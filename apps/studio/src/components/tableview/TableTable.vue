@@ -928,7 +928,15 @@ export default Vue.extend({
       const row = cell.getRow()
       const data = { ...row.getData() }
 
-      this.tabulator.addRow(data, true).then(row => {
+      const dataParsed = Object.keys(data).reduce((acc, d) => {
+        if (!this.primaryKeys.find(element => element === d)) {
+          acc[d] = data[d]
+        }
+        return acc
+      }, {})
+
+
+      this.tabulator.addRow(dataParsed, true).then(row => {
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
       })

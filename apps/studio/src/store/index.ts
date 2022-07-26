@@ -228,7 +228,6 @@ const store = new Vuex.Store<State>({
       state.tablesInitialLoaded = false
     },
     tables(state, tables: TableOrView[]) {
-
       if(state.tables.length === 0) {
         state.tables = tables
       } else {
@@ -423,6 +422,9 @@ const store = new Vuex.Store<State>({
               return row.tableName === table.name && (!table.schema || table.schema === row.schemaName)
             })
           })
+
+          // eslint-disable-next-line no-debugger
+          // debugger
 
           context.commit('tables', tables)
 
