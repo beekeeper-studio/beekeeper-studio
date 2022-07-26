@@ -144,7 +144,7 @@ export async function executeSelectTop(queries, conn, executor) {
 }
 
 export async function genericSelectTop(conn, table, offset, limit, orderBy, filters, executor, selects){
-  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters, selects)
+  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters, undefined, undefined, selects)
   return await executeSelectTop(queries, conn, executor)
 }
 
