@@ -1126,7 +1126,6 @@ export default Vue.extend({
       let offset = 0;
       let limit = this.limit;
       let orderBy = null;
-      // eslint-disable-next-line no-debugger
       let filters = this.filterForTabulator;
 
       if (params.sort) {

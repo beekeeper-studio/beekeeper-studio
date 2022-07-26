@@ -906,8 +906,6 @@ WHERE
 
   `
   const { data } = await driverExecuteQuery(conn, { query: sql})
-  // eslint-disable-next-line no-debugger
-  // debugger
   return data.recordset.map((d) => {
     return {
       column: d.columnName,

@@ -223,8 +223,6 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
 
   const data = await driverExecuteSingle(conn, { query: sql });
 
-  // eslint-disable-next-line no-debugger
-  // debugger
   return data.rows;
 }
 
