@@ -281,7 +281,7 @@ interface STQOptions {
 interface STQResults {
   query: string,
   countQuery: string,
-  params: string[],
+  params: (string | string[])[],
 
 }
 
@@ -290,7 +290,7 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   const orderBy = options.orderBy
   let orderByString = ""
   let filterString = ""
-  let params: string[] = []
+  let params: (string | string[])[] = []
 
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
@@ -306,6 +306,9 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
     filterString = `WHERE ${filters}`
   } else if (filters && filters.length > 0) {
     filterString = "WHERE " + filters.map((item, index) => {
+      if (item.type === 'in') {
+        return `${wrapIdentifier(item.field)} ${item.type} ($${index + 1})`
+      }
       return `${wrapIdentifier(item.field)} ${item.type} $${index + 1}`
     }).join(" AND ")
 

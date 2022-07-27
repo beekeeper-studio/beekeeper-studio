@@ -42,7 +42,7 @@ export interface TableIndex {
   name: string
   columns: IndexedColumn[]
   unique: boolean
-  primary: boolean  
+  primary: boolean
 }
 
 export interface TableTrigger {
@@ -111,7 +111,7 @@ export interface OrderBy {
 export interface TableFilter {
   field: string;
   type: string;
-  value: string;
+  value: string | string[];
 }
 
 export interface IDbInsertValue {
