@@ -20,6 +20,7 @@ export interface ISimpleConnection {
   sshKeyfile: Nullable<string>
   sshUsername: Nullable<string>
   sshBastionHost: Nullable<string>
+  sshKeepaliveInterval: Nullable<number>
   ssl: boolean
   sslCaFile: Nullable<string>
   sslCertFile: Nullable<string>

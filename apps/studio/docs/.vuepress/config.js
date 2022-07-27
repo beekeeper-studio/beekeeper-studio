@@ -15,6 +15,7 @@ module.exports = {
       '/installation/',
       '/guide/',
       '/team_workspaces/',
+      '/magics/',
       '/troubleshooting/'
     ]
   }

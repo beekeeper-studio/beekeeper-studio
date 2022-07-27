@@ -143,6 +143,9 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'varchar', nullable: true})
   sshBastionHost: Nullable<string> = null
 
+  @Column({type: 'int', nullable: true})
+  sshKeepaliveInterval: Nullable<number> = null
+
   @Column({type: 'boolean', nullable: false, default: false})
   ssl: boolean = false
 
@@ -196,6 +199,9 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshPassword: Nullable<string> = null
 
+  @Column({ type: 'integer', default: 0})
+  sshKeepaliveInterval: Nullable<number> = null
+
   _sshMode: SshMode = "agent"
 
   @Column({name: "sshMode", type: "varchar", length: "8", nullable: false, default: "agent"})
@@ -212,6 +218,11 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
     if (this._sshMode === 'keyfile' && !this.sshKeyfile) {
       this.sshKeyfile = resolveHomePathToAbsolute("~/.ssh/id_rsa")
+    }
+
+    if (!this.sshKeepaliveInterval || this.sshKeepaliveInterval < 0) {
+      // store null if zero, empty or negative
+      this.sshKeepaliveInterval = null
     }
   }
 
