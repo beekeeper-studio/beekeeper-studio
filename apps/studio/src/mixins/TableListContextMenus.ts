@@ -62,8 +62,37 @@ export default {
             this.$root.$emit('loadTableCreate', item)
           }
         },
-
-
+        {
+          type: 'divider'
+        },
+        {
+          name: "Refresh",
+          slug: 'refresh',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.loadTable, { table: item })
+          }
+        },
+        {
+          name: "Rename",
+          slug: 'rename',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.loadTable, { table: item })
+          }
+        },
+        {
+          name: "Delete",
+          slug: 'sql-delete',
+          handler: ({ item }) => {
+            this.$root.$emit('deleteDatabaseElement', item)
+          }
+        },
+        {
+          name: "Truncate",
+          slug: 'sql-truncate',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.loadTable, { table: item })
+          }
+        },
       ]
     }
   },

@@ -8,7 +8,7 @@ import _  from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { DatabaseClient, IDbConnectionServerConfig } from '../client'
+import { DatabaseClient, IDbConnectionServerConfig, DatabaseElement } from '../client'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
@@ -199,6 +199,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     alterRelation: (payload) => alterRelation(conn, payload),
 
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
+    dropElement: (elementName: string, typeOfElement: DatabaseElement) => dropElement(conn, elementName, typeOfElement)
   };
 }
 
@@ -1330,6 +1331,15 @@ export async function truncateAllTables(conn: Conn, schema: string) {
     `).join('');
 
     await driverExecuteQuery(connClient, { query: truncateAll, multiple: true });
+  });
+}
+
+export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement): Promise<void> {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `DROP ${typeOfElement} ${elementName}`
+
+    await driverExecuteSingle(connClient, { query: sql })
   });
 }
 

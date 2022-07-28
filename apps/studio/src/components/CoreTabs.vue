@@ -131,6 +131,7 @@ import TabWithTable from './common/TabWithTable.vue';
           { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
           { event: 'favoriteClick', handler: this.favoriteClick },
           { event: 'exportTable', handler: this.openExportModal },
+          { event: 'deleteDatabaseElement', handler: this.deleteDatabaseElement },
         ]
       },
       contextOptions() {
@@ -231,6 +232,12 @@ import TabWithTable from './common/TabWithTable.vue';
         const result = await method(table.name, table.schema)
         const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
         this.createQuery(stringResult)
+      },
+      async deleteDatabaseElement(table) {
+        // going to need to call the "you suuuuuuure" thing first
+        const result = await this.connection.dropElement(table.name, table.entityType.toUpperCase())
+        // after calling and getting a good result, then reset the table list
+        console.log(result)
       },
       async loadRoutineCreate(routine) {
         const result = await this.connection.getRoutineCreateScript(routine.name, routine.schema)
