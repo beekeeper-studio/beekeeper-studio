@@ -235,9 +235,13 @@ import TabWithTable from './common/TabWithTable.vue';
       },
       async deleteDatabaseElement(table) {
         // going to need to call the "you suuuuuuure" thing first
-        const result = await this.connection.dropElement(table.name, table.entityType.toUpperCase())
-        // after calling and getting a good result, then reset the table list
-        console.log(result)
+        await this.connection.dropElement(table.name, table.entityType.toUpperCase())
+
+        // timeout is more about aesthetics so it doesn't refresh the table right away.
+        setTimeout(() => {
+          this.$store.dispatch('updateTables')
+          this.$store.dispatch('updateRoutines')
+        }, 500)
       },
       async loadRoutineCreate(routine) {
         const result = await this.connection.getRoutineCreateScript(routine.name, routine.schema)
