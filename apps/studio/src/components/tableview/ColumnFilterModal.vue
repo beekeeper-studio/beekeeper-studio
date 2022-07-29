@@ -3,9 +3,10 @@
     class="vue-dialog beekeeper-modal"
     @before-open="onBeforeOpened"
     :name="modalName"
+    height="auto"
+    :scrollable="true"
   >
-    <form @submit.prevent="onSubmit">
-      <div class="dialog-content">
+      <div class="dialog-content column-filter-modal">
         <div class="dialog-c-title flex flex-middle">
           Filter Columns
         </div>
@@ -68,15 +69,17 @@
           class="btn btn-primary"
           type="submit"
           :disabled="noneSelected"
+          @click.prevent="onSubmit"
         >
           Apply
         </button>
       </div>
-    </form>
   </modal>
 </template>
 
 <style lang="scss">
+
+.column-filter-modal {
   .modal-form {
     margin-top: 0.25rem;
   }
@@ -110,7 +113,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    height: 14.5rem;
+    height: 60vh;
     margin-top: 0.5rem;
     font-size: 13px;
   }
@@ -142,6 +145,8 @@
   .no-matching-results, .all-label {
     opacity: 0.5;
   }
+}
+
 </style>
 
 <script lang="ts">
@@ -179,8 +184,11 @@
       },
       onSubmit() {
         const changed = !_.isEqual(this.columns, this.columnsWithFilterAndOrder)
-        if(changed) this.$emit('changed', this.columns)
-        this.closeModal()
+        this.closeModal();
+        setTimeout(() => {
+          if(changed) this.$emit('changed', this.columns)
+        }, 200)
+
       },
       closeModal() {
         this.$modal.hide(this.modalName)

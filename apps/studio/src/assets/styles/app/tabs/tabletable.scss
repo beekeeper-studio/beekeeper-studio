@@ -1,0 +1,56 @@
+
+.tabletable {
+
+  .tabulator {
+    .tabulator-header {
+      .tabulator-col.select-row-col {
+        .tabulator-col-content {
+          padding-left: 0;
+          text-align: center;
+        }
+        background: rgba($theme-base, 0.035);
+        cursor: pointer;
+        span.material-icons {
+          font-size: inherit;
+          line-height: inherit;
+        }
+        &:hover {
+          span.material-icons {
+            color: $theme-primary
+          }
+        }
+      }
+    }
+
+    .tabulator-cell.select-row-col {
+      border-radius: 0;
+      padding-left: 0;
+      padding-right: 0;
+      text-align: center;
+      font-size: 0.8em;
+      // color: $text-lighter;
+      background: $row-handle;
+      color: $text-light;
+      .row-handle {
+        display: none;
+        font-size: 0.8rem;
+        line-height: inherit;
+      }
+      &:hover {
+        background: adjust-color($row-handle, $lightness: 10%);
+        .row-handle {
+          display: inline-block;
+        }
+      }
+    }
+
+    .tabulator-row.tabulator-selectable.tabulator-selected {
+      .select-row-col {
+        background: rgba($theme-base, 0.1);
+      }
+    }
+
+  }
+
+
+}

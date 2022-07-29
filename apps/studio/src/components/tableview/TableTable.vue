@@ -340,25 +340,32 @@ export default Vue.extend({
           },
         },
         {
-          label: '<x-menuitem><x-label>Copy Row (JSON)</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Copy Row(s) as JSON</x-label></x-menuitem>',
           action: (_e, cell) => {
-            const data = this.modifyRowData(cell.getRow().getData())
-            const fixed = this.$bks.cleanData(data, this.tableColumns)
-            Object.keys(data).forEach((key) => {
-              const v = data[key]
-              const column = this.tableColumns.find((c) => c.field === key)
-              const nuKey = column ? column.title : key
-              fixed[nuKey] = v
-            })
-            this.$native.clipboard.writeText(JSON.stringify(fixed))
+            const selectedRows = this.tabulator.getSelectedRows()
+            const rowData = selectedRows?.length ? selectedRows : [cell.getRow()]
+
+            const results = rowData.map((row) => {
+              const data = this.modifyRowData(row.getData())
+              const fixed = this.$bks.cleanData(data, this.tableColumns)
+              Object.keys(data).forEach((key) => {
+                const v = data[key]
+                const column = this.tableColumns.find((c) => c.field === key)
+                const nuKey = column ? column.title : key
+                fixed[nuKey] = v
+              })
+              return fixed
+
+            });
+            this.$native.clipboard.writeText(JSON.stringify(results))
           }
         },
         {
-          label: '<x-menuitem><x-label>Copy Row (TSV / Excel)</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Copy Row(s) as TSV for Excel</x-label></x-menuitem>',
           action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([this.$bks.cleanData(this.modifyRowData(cell.getRow().getData()))], { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
         },
         {
-          label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Copy Row(s) as SQL</x-label></x-menuitem>',
           action: async (_e, cell) => {
 
             const fixed = this.$bks.cleanData(this.modifyRowData(cell.getRow().getData()), this.tableColumns)
@@ -374,12 +381,12 @@ export default Vue.extend({
         },
         { separator: true },
         {
-          label: '<x-menuitem><x-label>Clone Row</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Clone Row(s)</x-label></x-menuitem>',
           action: this.cellCloneRow.bind(this),
           disabled: !this.editable
         },
         {
-          label: '<x-menuitem><x-label>Delete Row</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Delete Row(s)</x-label></x-menuitem>',
           action: (_e, cell) => this.addRowToPendingDeletes(cell.getRow()),
           disabled: !this.editable
         },
@@ -444,6 +451,22 @@ export default Vue.extend({
       const keyWidth = 40
       const results = []
       if (!this.table) return []
+
+
+      results.push({
+        title: '<span class="column-config material-icons">settings</span>',
+        editable: false,
+        field: 'row-selector--bks',
+        headerSort: false,
+        resizable: false,
+        cssClass: 'select-row-col',
+        formatter: () => '<span class="row-handle material-icons">chevron_right</span>',
+        frozen: true,
+        maxWidth: '30',
+        cellClick: this.handleRowHandleClick,
+        headerClick: () => this.showColumnFilterModal()
+      })
+
       // 1. add a column for a real column
       // if a FK, add another column with the link
       // to the FK table.
@@ -696,6 +719,41 @@ export default Vue.extend({
     }
   },
   methods: {
+    handleRowHandleClick(event: MouseEvent, cell: Tabulator.CellComponent) {
+      const row = cell.getRow()
+      const selectedRows: Tabulator.RowComponent[] = this.tabulator.getSelectedRows();
+
+      if (event.shiftKey) {
+        if (!selectedRows?.length) {
+          row.select();
+          return;
+        }
+
+        const firstSelected = _.minBy(selectedRows, (r) => r.getPosition())
+        const lastSelected = _.maxBy(selectedRows, (r) => r.getPosition())
+        if (row.getPosition() > lastSelected.getPosition()) {
+          const toSelect = this.tabulator.getRows().filter((r) =>
+            r.getPosition() > lastSelected.getPosition() &&
+            r.getPosition() <= row.getPosition()
+          )
+          this.tabulator.selectRow(toSelect)
+        } else {
+          const toSelect = this.tabulator.getRows().filter((r) =>
+            r.getPosition() < firstSelected.getPosition() &&
+            r.getPosition() >= row.getPosition()
+          )
+          this.tabulator.selectRow(toSelect)
+        }
+
+      } else if (event.ctrlKey) {
+        row.toggleSelect()
+      } else {
+        // clicking a row doesn't deselect it
+        this.tabulator.deselectRow();
+        row.select();
+      }
+
+    },
     maybeUnselectCell(event) {
       if (!this.selectedCell) return
       if (!this.active) return
@@ -881,6 +939,7 @@ export default Vue.extend({
         this.$native.clipboard.writeText(this.selectedCell.getValue(), false)
     },
     cellClick(_e, cell) {
+      this.tabulator.deselectRow()
       if (this.selectedCell) this.selectedCell.getElement().classList.remove("selected")
       this.selectedCell = null
       // this makes it easier to select text if not editing
@@ -1136,7 +1195,7 @@ export default Vue.extend({
       pendingUpdate.cell.getElement().classList.remove('edit-error')
     },
     showColumnFilterModal() {
-      this.$modal.show(this.columnFilterModalName)
+      this.$modal.show(this.columnFilterModalName, )
     },
     triggerFilter() {
       if (this.tabulator) this.tabulator.setData()
@@ -1193,9 +1252,7 @@ export default Vue.extend({
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
-            const selects = this.allColumnsSelected
-              ? ['*']
-              : this.columnsWithFilterAndOrder.filter(({filter}) => filter).map(({name}) => name)
+            const selects = ['*']
 
             const response = await this.connection.selectTop(
               this.table.name,
@@ -1302,7 +1359,7 @@ export default Vue.extend({
 
       this.columnsWithFilterAndOrder = columns
 
-      this.tabulator.setData()
+      // this.tabulator.setData()
     }
   }
 });

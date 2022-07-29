@@ -290,18 +290,24 @@ $cell-padding:           $gutter-w;
     }
   }
 
-  &.tabulator-selectable:hover {
-    background: rgba($theme-base, 0.05);
-    cursor: default;
-    i.fk-link {
-      display: inline-block;
-      &:hover {
-        color: white;
+  &.tabulator-selectable {
+    &:hover {
+      background: rgba($theme-base, 0.05);
+      cursor: default;
+      i.fk-link {
+        display: inline-block;
+        &:hover {
+          color: white;
+        }
+      }
+      &.tabulator-selected {
+        background: rgba($theme-base, 0.1);
       }
     }
-  }
-  &.tabulator-selected {
-    background: rgba($theme-base, 0.05);
+    &.tabulator-selected {
+      background: rgba($theme-base, 0.1);
+    }
+
   }
 
 }
