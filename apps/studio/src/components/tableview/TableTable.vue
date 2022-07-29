@@ -938,8 +938,14 @@ export default Vue.extend({
     cellCloneRow(_e, cell) {
       const row = cell.getRow()
       const data = { ...row.getData() }
+      const dataParsed = Object.keys(data).reduce((acc, d) => {
+        if (!this.primaryKeys?.includes(d)) {
+          acc[d] = data[d]
+        }
+        return acc
+      }, {})
 
-      this.tabulator.addRow(data, true).then(row => {
+      this.tabulator.addRow(dataParsed, true).then(row => {
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
       })
@@ -1131,7 +1137,6 @@ export default Vue.extend({
       let offset = 0;
       let limit = this.limit;
       let orderBy = null;
-      // eslint-disable-next-line no-debugger
       let filters = this.filterForTabulator;
 
       if (params.sort) {
