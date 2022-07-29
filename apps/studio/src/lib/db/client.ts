@@ -48,7 +48,7 @@ export interface DatabaseClient {
   getPrimaryKeys: (db: string, table: string, schema?: string) => Promise<PrimaryKeyColumn[]>,
   // for tabletable
   getTableLength(table: string, schema?: string): Promise<number>
-  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string): Promise<TableResult>,
+  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string, selects?: string[]): Promise<TableResult>,
   selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema?: string ): Promise<StreamResults>,
 
   wrapIdentifier: (value: string) => string
@@ -248,11 +248,12 @@ function selectTop(
   limit: number,
   orderBy: OrderBy[],
   filters: TableFilter[] | string,
-  schema: string
+  schema: string,
+  selects: string[],
 ): Promise<TableResult> {
   checkIsConnected(server, database)
   if (!database.connection) throw "No database connection available, please reconnect"
-  return database.connection?.selectTop(table, offset, limit, orderBy, filters, schema);
+  return database.connection?.selectTop(table, offset, limit, orderBy, filters, schema, selects);
 }
 
 function selectTopStream(

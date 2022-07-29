@@ -59,7 +59,7 @@ export default async function (server, database) {
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     getTableLength: (table, schema) => getTableLength(conn, table, schema),
-    selectTop: (table, offset, limit, orderBy, filters, schema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
+    selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -123,7 +123,8 @@ function buildFilterString(filters) {
   return filterString
 }
 
-function genSelectOld(table, offset, limit, orderBy, filters, schema) {
+function genSelectOld(table, offset, limit, orderBy, filters, schema, selects) {
+  const selectString = selects.map((s) => wrapIdentifier(s)).join(", ")
   const orderByString = genOrderByString(orderBy)
   const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
   const lastRow = offset + limit
@@ -132,7 +133,7 @@ function genSelectOld(table, offset, limit, orderBy, filters, schema) {
   const query = `
     WITH CTE AS
     (
-        SELECT *
+        SELECT ${selectString}
               , ROW_NUMBER() OVER (${orderByString}) as RowNumber
         FROM ${schemaString}${wrapIdentifier(table)}
         ${filterString}
@@ -179,12 +180,13 @@ function genCountQuery(table, filters, schema) {
   return countQuery
 }
 
-function genSelectNew(table, offset, limit, orderBy, filters, schema) {
+function genSelectNew(table, offset, limit, orderBy, filters, schema, selects) {
   const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
 
   const orderByString = genOrderByString(orderBy)
   const schemaString = schema ? `${wrapIdentifier(schema)}.` : ''
 
+  const selectSQL = `SELECT ${selects.map((s) => wrapIdentifier(s)).join(", ")}`
   let baseSQL = `
     FROM ${schemaString}${wrapIdentifier(table)}
     ${filterString}
@@ -195,7 +197,7 @@ function genSelectNew(table, offset, limit, orderBy, filters, schema) {
 
 
   let query = `
-    SELECT * ${baseSQL}
+    ${selectSQL} ${baseSQL}
     ${orderByString}
     ${offsetString}
     `
@@ -210,12 +212,12 @@ async function getTableLength(conn, table, schema) {
   return totalRecords
 }
 
-export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
+export async function selectTop(conn, table, offset, limit, orderBy, filters, schema, selects = ['*']) {
   log.debug("filters", filters)
   const version = await getVersion(conn);
   const query = version.supportOffsetFetch ?
-    genSelectNew(table, offset, limit, orderBy, filters, schema) :
-    genSelectOld(table, offset, limit, orderBy, filters, schema)
+    genSelectNew(table, offset, limit, orderBy, filters, schema, selects) :
+    genSelectOld(table, offset, limit, orderBy, filters, schema, selects)
   logger().debug(query)
 
   const result = await driverExecuteQuery(conn, { query })
@@ -226,10 +228,10 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
   }
 }
 
-export async function selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema) {
+export async function selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema, selects = ['*']) {
   const version = await getVersion(conn);
   // no limit or offset, so don't need the old version of paging
-  const query = genSelectNew(table, null, null, orderBy, filters, schema);
+  const query = genSelectNew(table, null, null, orderBy, filters, schema, selects);
   const columns = await listTableColumns(conn, db, table);
   const rowCount = await getTableLength(conn, table, filters);
 

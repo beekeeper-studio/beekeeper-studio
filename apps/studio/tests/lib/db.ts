@@ -42,6 +42,9 @@ export class DBTestUtil {
   public preInitCmd: string | undefined
   public defaultSchema: string = undefined
 
+  private personId: number
+  private jobId: number
+
   get expectedTables() {
     return this.extraTables + 8
   }
@@ -100,7 +103,10 @@ export class DBTestUtil {
     await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
     const people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0].id}).returning("id"), 'id')
     const jobs = this.maybeArrayToObject(await this.knex("jobs").insert({job_name: "Programmer"}).returning("id"), 'id')
-    await this.knex("people_jobs").insert({job_id: jobs[0].id, person_id: people[0].id })
+
+    this.jobId = jobs[0].id
+    this.personId = people[0].id
+    await this.knex("people_jobs").insert({job_id: this.jobId, person_id: this.personId })
   }
 
   testdb() {
@@ -320,6 +326,27 @@ export class DBTestUtil {
     r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], "bananas = 'pears'", this.defaultSchema)
     result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(['pears'])
+  }
+
+  async columnFilterTests() {
+    let r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema)
+    expect(r.result).toEqual([{
+      person_id: this.personId,
+      job_id: this.jobId,
+      created_at: null,
+      updated_at: null,
+    }])
+
+    r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id'])
+    expect(r.result).toEqual([{
+      person_id: this.personId,
+    }])
+
+    r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id', 'job_id'])
+    expect(r.result).toEqual([{
+      person_id: this.personId,
+      job_id: this.jobId,
+    }])
   }
 
   async triggerTests() {
