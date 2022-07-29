@@ -68,7 +68,7 @@
                   class="form-control"
                   type="text"
                   v-model="filter.value"
-                  placeholder="Enter Value"
+                  :placeholder=builderPlaceholder
                   ref="valueInput"
                 />
                 <button
@@ -217,7 +217,8 @@ export default Vue.extend({
         "less than": "<",
         "less than or equal": "<=",
         "greater than": ">",
-        "greater than or equal": ">="
+        "greater than or equal": ">=",
+        in: "in"
       },
       filter: {
         value: null,
@@ -369,6 +370,9 @@ export default Vue.extend({
     filterPlaceholder() {
       return `Enter condition, eg: name like 'Matthew%'`
     },
+    builderPlaceholder() {
+      return this.filter.type === 'in' ? `Enter values separated by comma, eg: foo,bar` : 'Enter Value'
+    },
     totalRecordsText() {
       return `~${this.totalRecords.toLocaleString()}`
     },
@@ -488,7 +492,7 @@ export default Vue.extend({
           const tooltip = () => {
             if (keyDatas.length == 1)
               return `View record in ${keyDatas[0].toTable}`
-            else 
+            else
               return `View records in ${(keyDatas.map(item => item.toTable).join(', ') as string).replace(/, (?![\s\S]*, )/, ', or ')}`
           }
           let clickMenu = null;
@@ -553,8 +557,15 @@ export default Vue.extend({
         this.filterMode === FILTER_MODE_BUILDER &&
         this.filter.type && this.filter.field && this.filter.value
       ) {
-        
-        return [this.filter]
+        if (this.filter.type === 'in') {
+          const vals = this.filter.value.split(/\s*,\s*/)
+          return [{
+            ...this.filter,
+            value: vals
+          }]
+        } else {
+          return [this.filter]
+        }
       } else {
         return null
       }
@@ -927,8 +938,14 @@ export default Vue.extend({
     cellCloneRow(_e, cell) {
       const row = cell.getRow()
       const data = { ...row.getData() }
+      const dataParsed = Object.keys(data).reduce((acc, d) => {
+        if (!this.primaryKeys?.includes(d)) {
+          acc[d] = data[d]
+        }
+        return acc
+      }, {})
 
-      this.tabulator.addRow(data, true).then(row => {
+      this.tabulator.addRow(dataParsed, true).then(row => {
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
       })
@@ -1120,7 +1137,6 @@ export default Vue.extend({
       let offset = 0;
       let limit = this.limit;
       let orderBy = null;
-      // eslint-disable-next-line no-debugger
       let filters = this.filterForTabulator;
 
       if (params.sort) {

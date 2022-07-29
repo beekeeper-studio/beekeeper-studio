@@ -8,7 +8,7 @@ const log = rawlog.scope('postgresql/cursor')
 
 interface CursorOptions {
   query: string,
-  params: string[],
+  params: (string | string[])[],
   conn: HasPool,
   chunkSize: number
 }
@@ -64,7 +64,7 @@ export class PsqlCursor extends BeeCursor {
           } else {
             try {
               this.client?.release()
-            
+
             } catch(ex) {
               log.warn(ex.message)
             }finally {

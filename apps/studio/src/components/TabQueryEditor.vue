@@ -370,7 +370,6 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         this.saveTab()
       },
       remoteDeleted() {
-        // eslint-disable-next-line no-debugger
         if (this.remoteDeleted) {
           this.editor?.setOption('readOnly', 'nocursor')
           this.tab.unsavedChanges = false

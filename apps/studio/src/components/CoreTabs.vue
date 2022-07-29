@@ -200,7 +200,6 @@
         }
       },
       closeCurrentTab() {
-        // eslint-disable-next-line no-debugger
         if (this.activeTab) this.close(this.activeTab)
       },
       handleCreateTab() {
