@@ -74,6 +74,7 @@
         @download="download"
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
+        @clipboardMarkdown="clipboardMarkdown"
         :executeTime="executeTime"
       ></query-editor-status-bar>
     </div>
@@ -583,7 +584,10 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         this.$refs.table.clipboard()
       },
       clipboardJson() {
-        const data = this.$refs.table.clipboard(true)
+        const data = this.$refs.table.clipboard('json')
+      },
+      clipboardMarkdown() {
+        const data = this.$refs.table.clipboard('md')
       },
       selectEditor() {
         this.editor.focus()

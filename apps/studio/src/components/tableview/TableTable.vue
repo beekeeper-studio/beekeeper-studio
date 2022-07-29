@@ -200,6 +200,7 @@ import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEd
 import { mapGetters, mapState } from 'vuex';
 import { Tabulator } from 'tabulator-tables'
 import { TableUpdate } from '@/lib/db/models';
+import { markdownTable } from 'markdown-table'
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
@@ -338,6 +339,18 @@ export default Vue.extend({
         {
           label: '<x-menuitem><x-label>Copy Row (TSV / Excel)</x-label></x-menuitem>',
           action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([this.$bks.cleanData(this.modifyRowData(cell.getRow().getData()))], { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
+        },
+        {
+          label: '<x-menuitem><x-label>Copy Row (Markdown)</x-label></x-menuitem>',
+          action: (_e, cell) => {
+            const data = this.modifyRowData(cell.getRow().getData())
+            const fixed = this.$bks.cleanData(data, this.tableColumns)
+
+            return this.$native.clipboard.writeText(markdownTable([
+              Object.keys(fixed),
+              Object.values(fixed),
+            ]))
+          }
         },
         {
           label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
