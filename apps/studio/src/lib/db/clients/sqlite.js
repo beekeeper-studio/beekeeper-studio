@@ -74,6 +74,9 @@ export default async function (server, database) {
     // relations
     alterRelationSql: (payload) => alterRelationSql(payload),
     alterRelation: (payload) => alterRelation(conn, payload),
+
+    // delete stuff
+    dropElement: (elementName, typeOfElement) => dropElement(conn, elementName, typeOfElement)
   };
 }
 
@@ -472,6 +475,15 @@ export async function truncateAllTables(conn) {
     // DELETE FROM sqlite_sequence WHERE name='${table}';
 
     await driverExecuteQuery(connClient, { query: truncateAll });
+  });
+}
+
+export async function dropElement (conn, elementName, typeOfElement) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `DROP ${typeOfElement} ${elementName}`
+
+    await driverExecuteQuery(connClient, { query: sql })
   });
 }
 
