@@ -928,7 +928,7 @@ export default Vue.extend({
       const row = cell.getRow()
       const data = { ...row.getData() }
       const dataParsed = Object.keys(data).reduce((acc, d) => {
-        if (!this.primaryKeys.find(element => element === d)) {
+        if (!this.primaryKeys?.includes(d)) {
           acc[d] = data[d]
         }
         return acc
