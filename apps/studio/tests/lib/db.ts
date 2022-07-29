@@ -308,6 +308,14 @@ export class DBTestUtil {
     result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject([])
 
+    await this.knex("MixedCase").insert({bananas: "cheese"}).returning("id")
+
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: 'in', value: ["pears", 'cheese'] }], this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas)
+    expect(result).toMatchObject(['pears', 'cheese'])
+
+    await this.knex('MixedCase').where({bananas: 'cheese'}).delete()
+
     // filter test - raw
     r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], "bananas = 'pears'", this.defaultSchema)
     result = r.result.map((r: any) => r.bananas)

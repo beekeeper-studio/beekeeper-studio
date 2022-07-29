@@ -79,20 +79,22 @@ export function buildFilterString(filters, columns = []) {
   if (filters && _.isArray(filters) && filters.length > 0) {
     filterString = "WHERE " + filters.map((item) => {
       const column = columns.find((c) => c.columnName === item.field)
-      if (column && column.dataType.toUpperCase().includes('BINARY')) {
-        if (item.type === 'in') {
-          return `HEX(${wrapIdentifier(item.field)}) ${item.type} (?)`
-        } else {
-          return `HEX(${wrapIdentifier(item.field)}) ${item.type} ?`
-        }
-      } else if (item.type === 'in') {
-        return `${wrapIdentifier(item.field)} ${item.type} (?)`
+      const field = column?.dataType.toUpperCase().includes('BINARY') ?
+        `HEX(${wrapIdentifier(item.field)})` :
+        wrapIdentifier(item.field);
+
+      if (item.type === 'in') {
+        const questionMarks = _.isArray(item.value) ?
+          item.value.map(() => '?').join(',')
+          : '?'
+
+        return `${field} ${item.type} (${questionMarks})`
       }
-      return `${wrapIdentifier(item.field)} ${item.type} ?`
+      return `${field} ${item.type} ?`
     }).join(" AND ")
 
-    filterParams = filters.map((item) => {
-      return item.value
+    filterParams = filters.flatMap((item) => {
+      return _.isArray(item.value) ? item.value : [item.value]
     })
   }
   return {

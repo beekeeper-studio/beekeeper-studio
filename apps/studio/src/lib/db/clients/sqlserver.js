@@ -112,7 +112,12 @@ function buildFilterString(filters) {
   let filterString = ""
   if (filters && filters.length > 0) {
     filterString = "WHERE " + filters.map((item) => {
-      return `${wrapIdentifier(item.field)} ${item.type} ${D.escapeString(item.value, true)}`
+
+      let wrappedValue = _.isArray(item.value) ?
+        `(${item.value.map((v) => D.escapeString(v, true)).join(',')})` :
+        D.escapeString(item.value, true)
+
+      return `${wrapIdentifier(item.field)} ${item.type} ${wrappedValue}`
     }).join(" AND ")
   }
   return filterString

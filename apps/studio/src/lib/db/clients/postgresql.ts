@@ -305,15 +305,22 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   if (_.isString(filters)) {
     filterString = `WHERE ${filters}`
   } else if (filters && filters.length > 0) {
-    filterString = "WHERE " + filters.map((item, index) => {
-      if (item.type === 'in') {
-        return `${wrapIdentifier(item.field)} ${item.type} ($${index + 1})`
+    let paramIdx = 1
+    filterString = "WHERE " + filters.map((item) => {
+      if (item.type === 'in' && _.isArray(item.value)) {
+        const values = item.value.map((_v, idx) => {
+          return `$${paramIdx + idx}`
+        })
+        paramIdx += values.length
+        return `${wrapIdentifier(item.field)} ${item.type} (${values.join(',')})`
       }
-      return `${wrapIdentifier(item.field)} ${item.type} $${index + 1}`
+      const value = `$${paramIdx}`
+      paramIdx += 1
+      return `${wrapIdentifier(item.field)} ${item.type} ${value}`
     }).join(" AND ")
 
-    params = filters.map((item) => {
-      return item.value
+    params = filters.flatMap((item) => {
+      return _.isArray(item.value) ? item.value : [item.value]
     })
   }
 
@@ -349,6 +356,7 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
     ${_.isNumber(options.limit) ? `LIMIT ${options.limit}` : ''}
     ${_.isNumber(options.offset) ? `OFFSET ${options.offset}` : ''}
     `
+  console.log("select top query", params, query)
   return {
     query, countQuery, params
   }
