@@ -356,7 +356,6 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
     ${_.isNumber(options.limit) ? `LIMIT ${options.limit}` : ''}
     ${_.isNumber(options.offset) ? `OFFSET ${options.offset}` : ''}
     `
-  console.log("select top query", params, query)
   return {
     query, countQuery, params
   }

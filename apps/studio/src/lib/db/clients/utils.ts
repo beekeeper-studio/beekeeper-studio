@@ -190,7 +190,6 @@ export function buildUpdateQueries(knex, updates: TableUpdate[]) {
   return updates.map(update => {
     const where = {}
     const updateblob = {}
-    console.log(update)
     update.primaryKeys.forEach(({column, value}) => {
       where[column] = value
     })
