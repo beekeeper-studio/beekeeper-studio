@@ -60,6 +60,17 @@
 
       </div>
     </div>
+  <modal :name="modalName" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened" @closed="sureClosed" @before-open="beforeOpened">
+    <div class="dialog-content">
+      <div class="dialog-c-title">Really {{this.dbAction}} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{this.dbElement}}</span>?</div>
+      <p>This change cannot be undone</p>
+    </div>
+    <div class="vue-dialog-buttons">
+      <span class="expand"></span>
+      <button ref="no" @click.prevent="$modal.hide(modalName)" class="btn btn-sm btn-flat">Cancel</button>
+      <button @focusout="sureOpen && $refs.no && $refs.no.focus()" @click.prevent="completeDeleteAction" class="btn btn-sm btn-primary">{{this.dbAction}} {{this.dbElement}}</button>
+    </div>
+  </modal>
   </div>
 </template>
 
@@ -102,6 +113,13 @@
         dragOptions: {
           handle: '.nav-item'
         },
+        // below are connected to the modal for delete/truncate
+        sureOpen: false,
+        lastFocused: null,
+        dbAction: null,
+        dbElement: null,
+        dbEntityType: null,
+        dbDeleteElementParams: null
       }
     },
     watch: {
@@ -110,6 +128,14 @@
     computed: {
       ...mapState('tabs', { 'activeTab': 'active'}),
       ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialect': 'dialect'}),
+      tabIcon() {
+        return {
+          type: this.dbEntityType
+        }
+      },
+      modalName() {
+        return `${this.menuAction}-${this.dbElement}`
+      },
       tabItems: {
         get() {
           return this.$store.getters['tabs/sortedTabs']
@@ -161,6 +187,34 @@
       },
     },
     methods: {
+      completeDeleteAction() {
+        const { schema, name: dbName, entityType } = this.dbDeleteElementParams
+        this.$modal.hide(this.modalName)
+        this.$nextTick(async() => {
+          if (this.dbAction.toLowerCase() === 'delete') {
+            await this.connection.dropElement(dbName, entityType?.toUpperCase(), schema)
+  
+            // timeout is more about aesthetics so it doesn't refresh the table right away.
+            setTimeout(() => {
+              this.$store.dispatch('updateTables')
+              this.$store.dispatch('updateRoutines')
+            }, 500)
+          }
+        })
+      },
+      beforeOpened() {
+        this.lastFocused = document.activeElement
+      },
+      sureOpened() {
+        this.sureOpen = true
+        this.$refs.no.focus()
+      },
+      sureClosed() {
+        this.sureOpen = false
+        if (this.lastFocused) {
+          this.lastFocused.focus()
+        }
+      },
       openContextMenu(event, item) {
         this.contextEvent = { event, item }
       },
@@ -232,15 +286,13 @@
         const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
         this.createQuery(stringResult)
       },
-      async deleteDatabaseElement({schema, name: dbName, entityType}) {
-        // going to need to call the "you suuuuuuure" thing first
-        await this.connection.dropElement(dbName, entityType?.toUpperCase(), schema)
+      deleteDatabaseElement(dbActionParams, dbAction) { 
+        this.dbElement = dbActionParams.name
+        this.dbAction = dbAction
+        this.dbEntityType = dbActionParams.entityType
+        this.dbDeleteElementParams = dbActionParams
 
-        // timeout is more about aesthetics so it doesn't refresh the table right away.
-        setTimeout(() => {
-          this.$store.dispatch('updateTables')
-          this.$store.dispatch('updateRoutines')
-        }, 500)
+        this.$nextTick(() => this.$modal.show(this.modalName))
       },
       async loadRoutineCreate(routine) {
         const result = await this.connection.getRoutineCreateScript(routine.name, routine.schema)

@@ -69,7 +69,7 @@ export default {
           name: "Delete",
           slug: 'sql-delete',
           handler: ({ item }) => {
-            this.$root.$emit('deleteDatabaseElement', item)
+            this.$root.$emit('deleteDatabaseElement', item, 'Delete') // please format last argument in a nice way because it's shown in a modal (can move to a compute in the modal, but that's not today)
           }
         },
       ]
