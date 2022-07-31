@@ -2,6 +2,7 @@
 import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
+import { escapeLiteral } from './clients/utils';
 import { SSHConnection } from '@/vendor/node-ssh-forward/index';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert } from './models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
@@ -61,7 +62,7 @@ export interface DatabaseClient {
   setTableDescription: (table: string, description: string, schema?: string) => Promise<string>
 
   // delete stuff
-  dropElement: (elementName: string, typeOfElement: DatabaseElement) => Promise<void>
+  dropElement: (elementName: string, typeOfElement: DatabaseElement, schema: string) => Promise<void>
 }
 
 export type IDbClients = keyof typeof clients
@@ -479,9 +480,9 @@ async function getTableColumnNames(server: IDbConnectionServer, database: IDbCon
   }
 }
 
-function dropElement(server: IDbConnectionServer, database: IDbConnectionDatabase, elementName: string, typeOfElement: DatabaseElement) {
+function dropElement(server: IDbConnectionServer, database: IDbConnectionDatabase, elementName: string, typeOfElement: DatabaseElement, schema:string) {
   checkIsConnected(server, database)
-  return database.connection?.dropElement(elementName, typeOfElement)
+  return database.connection?.dropElement(elementName, escapeLiteral(typeOfElement), schema)
 }
 
 function resolveSchema(database: IDbConnectionDatabase, schema: string) {

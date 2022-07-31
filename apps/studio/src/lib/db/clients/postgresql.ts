@@ -199,7 +199,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     alterRelation: (payload) => alterRelation(conn, payload),
 
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
-    dropElement: (elementName: string, typeOfElement: DatabaseElement) => dropElement(conn, elementName, typeOfElement)
+    dropElement: (elementName: string, typeOfElement: DatabaseElement, schema: string) => dropElement(conn, elementName, typeOfElement, schema)
   };
 }
 
@@ -1337,10 +1337,10 @@ export async function truncateAllTables(conn: Conn, schema: string) {
   });
 }
 
-export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement): Promise<void> {
+export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
-    const sql = `DROP ${typeOfElement} ${elementName}`
+    const sql = `DROP ${typeOfElement} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
 
     await driverExecuteSingle(connClient, { query: sql })
   });

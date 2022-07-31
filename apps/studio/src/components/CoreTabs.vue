@@ -232,9 +232,9 @@
         const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
         this.createQuery(stringResult)
       },
-      async deleteDatabaseElement({name: dbName, entityType}) {
+      async deleteDatabaseElement({schema, name: dbName, entityType}) {
         // going to need to call the "you suuuuuuure" thing first
-        await this.connection.dropElement(dbName, entityType?.toUpperCase())
+        await this.connection.dropElement(dbName, entityType?.toUpperCase(), schema)
 
         // timeout is more about aesthetics so it doesn't refresh the table right away.
         setTimeout(() => {
