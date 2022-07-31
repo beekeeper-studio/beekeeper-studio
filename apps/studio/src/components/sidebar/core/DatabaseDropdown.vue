@@ -1,13 +1,7 @@
 <template>
-  <!-- TODO (matthew): either not use select or find good library for dropdowns, this is hideous -- no way to style currently -->
   <div class="fixed">
     <div class="data-select-wrap">
-      <div class="select-wrap">
-        <select :title="'Database: ' + selectedDatabase" class="database-select" v-model="selectedDatabase">
-          <option selected :value="selectedDatabase">{{selectedDatabase}}</option>
-          <option v-for="db in availableDatabases" v-bind:key="db" :value="db">{{db}}</option>
-        </select>
-      </div>
+      <v-select :title="'Database: ' + selectedDatabase" v-model="selectedDatabase" :options="availableDatabases" :components="{OpenIndicator}" class="database-select"></v-select>
       <a class="refresh" @click.prevent="refreshDatabases" :title="'Refresh Databases'">
         <i class="material-icons">refresh</i>
       </a>
@@ -17,6 +11,7 @@
 
 <script type="text/javascript">
   import _ from 'lodash'
+  import vSelect from 'vue-select'
 
   export default {
     props: [ 'connection' ],
@@ -25,7 +20,13 @@
         currentDatabase: null,
         selectedDatabase: null,
         dbs: [],
+        OpenIndicator: {
+          render: createElement => createElement('i', {class: {'material-icons': true}}, 'arrow_drop_down')
+        }
       }
+    },
+    components: {
+      vSelect
     },
     methods: {
       async refreshDatabases() {
