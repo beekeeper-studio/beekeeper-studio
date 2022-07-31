@@ -115,31 +115,6 @@
       }
     }
   }
-  .database-select {
-    display: block;
-    font-size: 100%;
-    margin: 0;
-    width: 100%;
-    border: 0;
-    .vs__clear{
-      display: none;
-    }
-    .vs__dropdown-toggle{
-      border: unset;
-      padding: 0;
-      background: unset;
-    }
-    .vs__selected {
-      position: absolute;
-      top: 2px;
-    }
-    .vs__actions {
-      padding: 0
-    }
-    input {
-      border: unset;
-    }
-  }
 
   // Search
   // ---------------------------------

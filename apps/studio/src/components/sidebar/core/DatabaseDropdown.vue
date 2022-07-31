@@ -1,7 +1,7 @@
 <template>
   <div class="fixed">
     <div class="data-select-wrap">
-      <v-select :title="'Database: ' + selectedDatabase" v-model="selectedDatabase" :options="availableDatabases" :components="{OpenIndicator}" class="database-select"></v-select>
+      <v-select :title="'Database: ' + selectedDatabase" v-model="selectedDatabase" :options="availableDatabases" :components="{OpenIndicator}" class="dropdown-search"></v-select>
       <a class="refresh" @click.prevent="refreshDatabases" :title="'Refresh Databases'">
         <i class="material-icons">refresh</i>
       </a>
