@@ -77,7 +77,7 @@ export default {
     async save() {
       try {
         this.errors = null
-        await this.$store.dispatch('data/connections/save', this.config)
+        await this.$store.dispatch('saveConnection', this.config)
         await this.$store.dispatch('pins/maybeSavePins')
         this.$modal.hide('config-save-modal')
         this.$noty.success("Connection Saved")

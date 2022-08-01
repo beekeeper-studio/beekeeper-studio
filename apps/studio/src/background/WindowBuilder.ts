@@ -71,6 +71,13 @@ class BeekeeperWindow {
       u.searchParams.append('ref', 'bks-app')
       electron.shell.openExternal(u.toString());
     })
+
+    this.win.webContents.on('ipc-message', (e, channel, ...args) => {
+      if(channel === 'setWindowTitle') {
+        this.win.setTitle(args[0])
+        e.preventDefault()
+      }
+    })
   }
 
   get webContents() {
