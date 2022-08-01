@@ -60,10 +60,7 @@ export default {
       ...mapState({'config': 'usedConfig'}),
       ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace', 'versionString': 'versionString'}),
       connectionName() {
-        const config = this.config
-        if (!config) return 'Connection'
-        const name = config.name ? config.name : this.$bks.simpleConnectionString(config)
-        return name
+        return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
       },
       connectionType() {
         return `${this.config.connectionType}`

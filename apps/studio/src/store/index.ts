@@ -319,12 +319,9 @@ const store = new Vuex.Store<State>({
     },
 
     updateWindowTitle(context, config: Nullable<IConnection>) {
-      let title = 'Beekeeper Studio'
-
-      if(config) {
-        const connectionName = config.name || BeekeeperPlugin.simpleConnectionString(config)
-        title = `${connectionName} - Beekeeper Studio`
-      }
+      const title = config 
+        ? `${BeekeeperPlugin.buildConnectionName(config)} - Beekeeper Studio`
+        : 'Beekeeper Studio'
 
       context.commit('updateWindowTitle', title)
       ipcRenderer.send('setWindowTitle', title)
