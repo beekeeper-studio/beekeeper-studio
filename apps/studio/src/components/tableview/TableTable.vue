@@ -9,15 +9,15 @@
       <div class="table-filter">
         <form @submit.prevent="triggerFilter" class="flex flex-middle">
           <div class="filter-group" style="margin-left: 0.2rem">
-            <span
+            <button
               type="button"
               class="btn btn-flat btn-fab"
               :class="{'btn-primary': !allColumnsSelected}"
-              title="Filter Columns"
+              :title="`Set column visibility (${hiddenColumnCount} hidden)`"
               @click="showColumnFilterModal()"
             >
-              <i class="material-icons">filter_alt</i>
-            </span>
+              <i class="material-icons-outlined">visibility</i>
+            </button>
           </div>
           <div v-if="filterMode === 'raw'" class="filter-group row gutter expand">
             <div class="btn-wrap">
@@ -390,6 +390,9 @@ export default Vue.extend({
     },
     allColumnsSelected() {
       return this.columnsWithFilterAndOrder.every((column) => column.filter)
+    },
+    hiddenColumnCount() {
+      return this.columnsWithFilterAndOrder.filter((c) => !c.filter).length
     },
     builderPlaceholder() {
       return this.filter.type === 'in' ? `Enter values separated by comma, eg: foo,bar` : 'Enter Value'
@@ -1301,7 +1304,6 @@ export default Vue.extend({
 
       this.columnsWithFilterAndOrder = columns
 
-      // this.tabulator.setData()
       this.tabulator.redraw(true)
     }
   }

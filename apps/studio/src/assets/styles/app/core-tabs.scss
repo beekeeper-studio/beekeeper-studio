@@ -286,7 +286,7 @@
         // background: lighten($text-dark, 10%);
         background: lighten($theme-primary, 10%);
       }
-      .material-icons {
+      .material-icons, .material-icons-outlined {
         color: rgba(black, 0.87);
         font-weight: bold;
       }
@@ -376,13 +376,13 @@
     flex-direction: column;
     max-height: 50vh;
     margin-top: 0.5rem;
+    padding-right: 0.5rem;
     font-size: 13px;
   }
 
   .list-container {
     flex-grow: 0;
-    overflow-y: scroll;
-    padding-right: 0.5rem;
+    overflow-y: auto;
   }
 
   .no-matching-results {
