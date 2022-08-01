@@ -1193,10 +1193,9 @@ export default Vue.extend({
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
-            const selects = this.allColumnsSelected
-              ? ['*']
-              : this.columnsWithFilterAndOrder.filter(({filter}) => filter).map(({name}) => name)
 
+            // lets just make column selection a front-end only thing
+            const selects = ['*']
             const response = await this.connection.selectTop(
               this.table.name,
               offset,
@@ -1302,7 +1301,8 @@ export default Vue.extend({
 
       this.columnsWithFilterAndOrder = columns
 
-      this.tabulator.setData()
+      // this.tabulator.setData()
+      this.tabulator.redraw(true)
     }
   }
 });
