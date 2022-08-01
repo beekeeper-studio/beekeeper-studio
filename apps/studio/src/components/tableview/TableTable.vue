@@ -1359,7 +1359,7 @@ export default Vue.extend({
 
       this.columnsWithFilterAndOrder = columns
 
-      // this.tabulator.setData()
+      this.tabulator.redraw(true)
     }
   }
 });

@@ -8,7 +8,7 @@
   >
       <div class="dialog-content column-filter-modal">
         <div class="dialog-c-title flex flex-middle">
-          Filter Columns
+          Column Configuration
         </div>
         <span class="close-btn btn btn-fab">
           <i class="material-icons" @click.prevent="closeModal">clear</i>
@@ -113,7 +113,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    height: 60vh;
+    max-height: 50vh;
     margin-top: 0.5rem;
     font-size: 13px;
   }
