@@ -113,13 +113,26 @@ export class DBTestUtil {
 
   }
 
+  async dropTableTests() {
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
+    await this.connection.dropElement('test_inserts', 'TABLE', this.defaultSchema)
+    const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+    expect(newTablesCount.length).toBeLessThan(tables.length)
+  }
+
+  async badDropTableTests() {
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
+    await this.connection.dropElement('test_inserts"drop table test_inserts"', 'TABLE', this.defaultSchema)
+    const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+    expect(newTablesCount.length).toEqual(tables.length)
+  }
+
   async listTableTests() {
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
     expect(tables.length).toBeGreaterThanOrEqual(this.expectedTables)
     const columns = await this.connection.listTableColumns("people", this.defaultSchema)
     expect(columns.length).toBe(7)
   }
-
 
   async tableColumnsTests() {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)
