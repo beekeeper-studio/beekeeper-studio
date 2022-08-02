@@ -92,6 +92,7 @@
   import Vue from 'vue';
   import { OpenTab } from '@/common/appdb/models/OpenTab';
   import TabWithTable from './common/TabWithTable.vue';
+  import TabIcon from './tab/TabIcon.vue'
 
   export default Vue.extend({
     props: [ 'connection' ],
@@ -104,7 +105,8 @@
       Draggable,
       ShortcutHints,
       TableBuilder,
-        TabWithTable,
+      TabWithTable,
+      TabIcon,
     },
     data() {
       return {
@@ -130,7 +132,8 @@
       ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialect': 'dialect'}),
       tabIcon() {
         return {
-          type: this.dbEntityType
+          type: this.dbEntityType,
+          entityType: this.dbEntityType
         }
       },
       modalName() {
