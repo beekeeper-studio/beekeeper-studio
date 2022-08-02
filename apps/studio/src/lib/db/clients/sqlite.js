@@ -53,7 +53,7 @@ export default async function (server, database) {
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: () => listDatabases(conn),
     getTableLength: (table) => getTableLength(conn, table),
-    selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
+    selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize) => selectTopStream(conn, db, table, orderBy, filters, chunkSize),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -118,8 +118,8 @@ export async function getTableLength(conn, table) {
   return Number(totalRecords)
 }
 
-export async function selectTop(conn, table, offset, limit, orderBy, filters) {
-  return genericSelectTop(conn, table, offset, limit, orderBy, filters, driverExecuteQuery)
+export async function selectTop(conn, table, offset, limit, orderBy, filters, selects) {
+  return genericSelectTop(conn, table, offset, limit, orderBy, filters, driverExecuteQuery, selects)
 
 }
 

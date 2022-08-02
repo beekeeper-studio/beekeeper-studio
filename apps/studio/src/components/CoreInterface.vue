@@ -32,7 +32,7 @@
   import { LocalQueryModule } from '@/store/modules/data/query/LocalQueryModule'
   import ProgressBar from './editor/ProgressBar.vue'
   export default {
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar},
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar },
     props: [ 'connection' ],
     data() {
       return {

@@ -176,7 +176,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     executeQuery: (queryText, _schema = defaultSchema) => executeQuery(conn, queryText),
     listDatabases: (filter?: DatabaseFilterOptions) => listDatabases(conn, filter),
     getTableLength: (table: string, schema: string) => getTableLength(conn, table, schema),
-    selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
+    selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema, selects: string[] = ['*']) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (database: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema: string = defaultSchema) => selectTopStream(conn, database, table, orderBy, filters, chunkSize, schema),
     getInsertQuery: (tableInsert: TableInsert): Promise<string> => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
@@ -276,7 +276,8 @@ interface STQOptions {
   limit?: number,
   schema: string,
   version: VersionInfo
-  forceSlow?: boolean
+  forceSlow?: boolean,
+  selects?: string[],
 }
 
 interface STQResults {
@@ -289,6 +290,7 @@ interface STQResults {
 function buildSelectTopQueries(options: STQOptions): STQResults {
   const filters = options.filters
   const orderBy = options.orderBy
+  const selects = options.selects ?? ['*']
   let orderByString = ""
   let filterString = ""
   let params: (string | string[])[] = []
@@ -306,18 +308,26 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   if (_.isString(filters)) {
     filterString = `WHERE ${filters}`
   } else if (filters && filters.length > 0) {
-    filterString = "WHERE " + filters.map((item, index) => {
-      if (item.type === 'in') {
-        return `${wrapIdentifier(item.field)} ${item.type} ($${index + 1})`
+    let paramIdx = 1
+    filterString = "WHERE " + filters.map((item) => {
+      if (item.type === 'in' && _.isArray(item.value)) {
+        const values = item.value.map((_v, idx) => {
+          return `$${paramIdx + idx}`
+        })
+        paramIdx += values.length
+        return `${wrapIdentifier(item.field)} ${item.type} (${values.join(',')})`
       }
-      return `${wrapIdentifier(item.field)} ${item.type} $${index + 1}`
+      const value = `$${paramIdx}`
+      paramIdx += 1
+      return `${wrapIdentifier(item.field)} ${item.type} ${value}`
     }).join(" AND ")
 
-    params = filters.map((item) => {
-      return item.value
+    params = filters.flatMap((item) => {
+      return _.isArray(item.value) ? item.value : [item.value]
     })
   }
 
+  const selectSQL = `SELECT ${selects.join(', ')}`
   const baseSQL = `
     FROM ${wrapIdentifier(options.schema)}.${wrapIdentifier(options.table)}
     ${filterString}
@@ -345,7 +355,7 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   }
 
   const query = `
-    SELECT * ${baseSQL}
+    ${selectSQL} ${baseSQL}
     ${orderByString}
     ${_.isNumber(options.limit) ? `LIMIT ${options.limit}` : ''}
     ${_.isNumber(options.offset) ? `OFFSET ${options.offset}` : ''}
@@ -387,13 +397,14 @@ async function selectTop(
   limit: number,
   orderBy: OrderBy[],
   filters: TableFilter[] | string,
-  schema = 'public'
+  schema = 'public',
+  selects = ['*'],
 ): Promise<TableResult> {
 
   const version = await getVersion(conn)
   version.isPostgres
   const qs = buildSelectTopQueries({
-    table, offset, limit, orderBy, filters, schema, version
+    table, offset, limit, orderBy, filters, schema, version, selects
   })
   const result = await driverExecuteSingle(conn, { query: qs.query, params: qs.params })
 

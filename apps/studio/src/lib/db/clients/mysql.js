@@ -55,7 +55,7 @@ export default async function (server, database) {
     listDatabases: (filter) => listDatabases(conn, filter),
     // tabletable
     getTableLength: (table) => getTableLength(conn, table),
-    selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
+    selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -284,9 +284,9 @@ async function getTableLength(conn, table) {
 
 
 
-export async function selectTop(conn, table, offset, limit, orderBy, filters) {
+export async function selectTop(conn, table, offset, limit, orderBy, filters, selects) {
   const columns = await listTableColumns(conn, null, table)
-  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters, 'total', columns)
+  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters, 'total', columns, selects)
 
   const { query, params } = queries
 
