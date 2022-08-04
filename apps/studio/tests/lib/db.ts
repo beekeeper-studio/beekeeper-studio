@@ -122,9 +122,22 @@ export class DBTestUtil {
 
   async badDropTableTests() {
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
-    await this.connection.dropElement('test_inserts"drop table test_inserts"', 'TABLE', this.defaultSchema)
-    const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
-    expect(newTablesCount.length).toEqual(tables.length)
+    const expectedQueries = {
+      postgresql: 'test_inserts"drop table test_inserts"',
+      mysql: "test_inserts'drop table test_inserts'",
+      mariadb: "test_inserts'drop table test_inserts'",
+      sqlite: 'test_inserts"drop table test_inserts"',
+      sqlserver: 'test_inserts[drop table test_inserts]',
+      cockroachdb: 'test_inserts"drop table test_inserts"'
+    }
+    try {
+      await this.connection.dropElement(expectedQueries[this.dbType], 'TABLE', this.defaultSchema)
+      const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+      expect(newTablesCount.length).toEqual(tables.length)
+    } catch (err) {
+      const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+      expect(newTablesCount.length).toEqual(tables.length)
+    }
   }
 
   async listTableTests() {
