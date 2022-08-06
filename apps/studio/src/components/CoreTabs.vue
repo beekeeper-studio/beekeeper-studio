@@ -62,7 +62,11 @@
     </div>
   <modal :name="modalName" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened" @closed="sureClosed" @before-open="beforeOpened">
     <div class="dialog-content">
+<<<<<<< HEAD
       <div class="dialog-c-title">Really {{this.titleCaseAction}} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{this.dbElement}}</span>?</div>
+=======
+      <div class="dialog-c-title">Really {{this.dbAction | titleCase}} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{this.dbElement}}</span>?</div>
+>>>>>>> 9a65503c (feat(coretabs): add truncate action to drop down)
       <p>This change cannot be undone</p>
     </div>
     <div class="vue-dialog-buttons">
@@ -126,6 +130,13 @@
     },
     watch: {
 
+    },
+    filters: {
+      titleCase: function (value) {
+        if (!value) return ''
+        value = value.toString()
+        return value.charAt(0).toUpperCase() + value.slice(1)
+      }
     },
     computed: {
       ...mapState('tabs', { 'activeTab': 'active'}),
@@ -199,13 +210,18 @@
         this.$nextTick(async() => {
           if (this.dbAction.toLowerCase() === 'delete') {
             await this.connection.dropElement(dbName, entityType?.toUpperCase(), schema)
-  
             // timeout is more about aesthetics so it doesn't refresh the table right away.
-            setTimeout(() => {
+
+            return setTimeout(() => {
               this.$store.dispatch('updateTables')
               this.$store.dispatch('updateRoutines')
             }, 500)
           }
+
+          if (this.dbAction.toLowerCase() === 'truncate') {
+            await this.connection.truncateElement(dbName, entityType?.toUpperCase(), schema)
+          }
+          
         })
       },
       beforeOpened() {
@@ -237,7 +253,6 @@
         }
       },
       async setActiveTab(tab) {
-        console.log("setting active tab", tab)
         await this.$store.dispatch('tabs/setActive', tab)
       },
       async addTab(item: OpenTab) {

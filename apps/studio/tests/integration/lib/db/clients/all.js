@@ -80,11 +80,11 @@ export function runCommonTests(getUtil) {
       await prepareTestTable(getUtil())
     })
 
-    test.only("Should truncate table", async () => {
+    test("Should truncate table", async () => {
       await getUtil().truncateTableTests()
     })
 
-    test.only("Bad input shouldn't allow table truncate", async () => {
+    test("Bad input shouldn't allow table truncate", async () => {
       await getUtil().badTruncateTableTests()
     })
   })
