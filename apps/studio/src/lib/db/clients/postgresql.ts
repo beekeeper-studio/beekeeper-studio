@@ -199,7 +199,8 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     alterRelation: (payload) => alterRelation(conn, payload),
 
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
-    dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string|null) => dropElement(conn, elementName, typeOfElement, schema)
+    dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string|null) => dropElement(conn, elementName, typeOfElement, schema),
+    truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema: string) => truncateElement(conn, elementName, typeOfElement, schema)
   };
 }
 
@@ -1352,6 +1353,15 @@ export async function dropElement (conn: Conn, elementName: string, typeOfElemen
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `DROP ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
+
+    await driverExecuteSingle(connClient, { query: sql })
+  });
+}
+
+export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string): Promise<void> {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `TRUNCATE ${typeOfElement} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
 
     await driverExecuteSingle(connClient, { query: sql })
   });

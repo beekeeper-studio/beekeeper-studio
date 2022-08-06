@@ -83,7 +83,8 @@ export default async function (server, database) {
     alterRelation: (payload) => alterRelation(conn, payload),
 
     // remove things
-    dropElement: (elementName, typeOfElement, schema) => dropElement(conn, elementName, typeOfElement, schema)
+    dropElement: (elementName, typeOfElement, schema) => dropElement(conn, elementName, typeOfElement, schema),
+    truncateElement: (elementName, typeOfElement, schema) => truncateElement(conn, elementName, typeOfElement, schema)
   };
 }
 
@@ -838,6 +839,15 @@ export async function dropElement (conn, elementName, typeOfElement, schema = 'd
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
+  });
+}
+
+export async function truncateElement (conn, elementName, typeOfElement, schema) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `TRUNCATE ${typeOfElement} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
 
     await driverExecuteQuery(connClient, { query: sql })
   });

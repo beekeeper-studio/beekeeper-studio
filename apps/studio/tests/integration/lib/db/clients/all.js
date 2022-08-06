@@ -75,6 +75,20 @@ export function runCommonTests(getUtil) {
     })
   })
 
+  describe("Truncate Table Tests", () => {
+    beforeEach(async() => {
+      await prepareTestTable(getUtil())
+    })
+
+    test.only("Should truncate table", async () => {
+      await getUtil().truncateTableTests()
+    })
+
+    test.only("Bad input shouldn't allow table truncate", async () => {
+      await getUtil().badTruncateTableTests()
+    })
+  })
+
   describe("Table Structure", () => {
     test("should fetch table properties", async() => {
       await getUtil().tablePropertiesTests()
