@@ -63,6 +63,7 @@ export interface DatabaseClient {
 
   // delete stuff
   dropElement: (elementName: string, typeOfElement: DatabaseElement, schema: string) => Promise<void>
+  truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema: string) => Promise<void>
 }
 
 export type IDbClients = keyof typeof clients
@@ -178,6 +179,7 @@ export class DBConnection {
 
   // delete stuff
   dropElement = dropElement.bind(null, this.server, this.database)
+  truncateElement = truncateElement.bind(null, this.server, this.database)
 
   async currentDatabase() {
     return this.database.database
@@ -484,6 +486,11 @@ async function getTableColumnNames(server: IDbConnectionServer, database: IDbCon
 function dropElement(server: IDbConnectionServer, database: IDbConnectionDatabase, elementName: string, typeOfElement: DatabaseElement, schema:string) {
   checkIsConnected(server, database)
   return database.connection?.dropElement(elementName, escapeLiteral(typeOfElement), schema)
+}
+
+function truncateElement(server: IDbConnectionServer, database: IDbConnectionDatabase, elementName: string, typeOfElement: DatabaseElement, schema:string) {
+  checkIsConnected(server, database)
+  return database.connection?.truncateElement(elementName, escapeLiteral(typeOfElement), schema)
 }
 
 function resolveSchema(database: IDbConnectionDatabase, schema: string) {
