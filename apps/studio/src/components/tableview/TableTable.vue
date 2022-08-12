@@ -1279,8 +1279,6 @@ export default Vue.extend({
         output[key] = data[key];
       }
 
-console.log('~~~output~~~')
-console.log(output)
       return output;
     },
     applyColumnChanges(columns) {
