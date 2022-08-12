@@ -77,17 +77,21 @@ export const BeekeeperPlugin = {
     return connectionString
   },
 
-  cleanData(data: any, columns: {title: string, field: string}[] = []) {
+  cleanData(data: any, columns: {title: string, field: string, dataType?: string}[] = []) {
     const fixed = {}
     Object.keys(data).forEach((key) => {
-      const v = data[key]
+      let v = data[key]
       // internal table fields used just for us
       if (!key.endsWith('--bks')) {
         const column = columns.find((c) => c.field === key)
         const nuKey = column ? column.title : key
+        if (column?.dataType?.toLowerCase() === 'bit') {
+          v = v?.toString().toLowerCase() === 'true' ? 1 : 0
+        }
         fixed[nuKey] = v
       }
     })
+
     return fixed
   }
 }

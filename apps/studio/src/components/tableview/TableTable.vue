@@ -344,12 +344,6 @@ export default Vue.extend({
           action: (_e, cell) => {
             const data = this.modifyRowData(cell.getRow().getData())
             const fixed = this.$bks.cleanData(data, this.tableColumns)
-            Object.keys(data).forEach((key) => {
-              const v = data[key]
-              const column = this.tableColumns.find((c) => c.field === key)
-              const nuKey = column ? column.title : key
-              fixed[nuKey] = v
-            })
             this.$native.clipboard.writeText(JSON.stringify(fixed))
           }
         },
@@ -360,7 +354,6 @@ export default Vue.extend({
         {
           label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
           action: async (_e, cell) => {
-
             const fixed = this.$bks.cleanData(this.modifyRowData(cell.getRow().getData()), this.tableColumns)
 
             const tableInsert = {
@@ -1286,6 +1279,8 @@ export default Vue.extend({
         output[key] = data[key];
       }
 
+console.log('~~~output~~~')
+console.log(output)
       return output;
     },
     applyColumnChanges(columns) {
