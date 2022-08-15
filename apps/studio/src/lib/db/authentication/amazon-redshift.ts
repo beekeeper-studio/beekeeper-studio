@@ -1,0 +1,121 @@
+import { GetClusterCredentialsCommand, RedshiftClient } from '@aws-sdk/client-redshift';
+
+// The number of minutes to consider credentials expired *before* their actual expiration.
+// This accounts for potential client clock drift.
+const CREDENTIAL_EXPIRATION_THRESHOLD_MINUTES = 5;
+
+export interface AWSCredentials {
+    accessKeyId: string;
+    secretAccessKey: string;
+}
+
+export interface ClusterCredentialConfiguration {
+    awsRegion: string;
+    clusterIdentifier: string;
+    dbName: string;
+    dbUser: string;
+    dbGroup: string;
+    durationSeconds: number;
+}
+
+export interface TemporaryClusterCredentials {
+    dbUser: string;
+    dbPassword: string;
+    expiration: Date;
+}
+
+/**
+ * RedshiftCredentialResolver provides the ability to use temporary cluster credentials to access
+ * an Amazon Redshift cluster. 
+ * 
+ * See: https://docs.aws.amazon.com/redshift/latest/mgmt/generating-user-credentials.html
+ */
+export class RedshiftCredentialResolver {
+    // This class uses a singleton pattern to maintain internal state.
+    private static instance: RedshiftCredentialResolver;
+    private constructor() {}
+    public static getInstance(): RedshiftCredentialResolver {
+        if (!RedshiftCredentialResolver.instance) {
+            RedshiftCredentialResolver.instance = new RedshiftCredentialResolver();
+        }
+        return RedshiftCredentialResolver.instance;
+    }
+
+    private credentials: TemporaryClusterCredentials;
+
+    /**
+     * Determines whether credentials managed by the resolver should be refreshed.
+     * 
+     * @returns true if the credentials should be refreshed
+     */
+    private shouldRefreshCredentials(): Boolean {
+        // If no credentials have been set, refresh.
+        if (!this.credentials) {
+            return true;
+        }
+
+        // Return true if the credentials have passed the cache expiration threshold period.
+        const expiration = this.credentials.expiration.getTime();
+        const now = new Date().getTime();
+        return now >= expiration - (CREDENTIAL_EXPIRATION_THRESHOLD_MINUTES * 60 * 1000);
+    }
+
+    /**
+     * Exchanges a set of AWS credentials and configuration for a temporary set of credentials
+     * to a Redshift cluster.
+     * 
+     * @param awsCreds the AWS credentials
+     * @param config the credential configuration
+     * @returns the temporary credentials
+     */
+    async getClusterCredentials(awsCreds: AWSCredentials, config: ClusterCredentialConfiguration): Promise<TemporaryClusterCredentials> {
+      // Validate that all required fields have been provided
+      if (!awsCreds.accessKeyId) {
+        throw new Error('Please provide an Access Key ID for IAM authentication.');
+      }
+      if (!awsCreds.secretAccessKey) {
+        throw new Error('Please provide a Secret Access Key for IAM authentication.');
+      }
+      if (!config.awsRegion) {
+        throw new Error('Please provide an AWS Region for IAM authentication.');
+      }
+      if (!config.clusterIdentifier) {
+        throw new Error('Please provide a Cluster Identifier for IAM authentication.');
+      }
+
+      // If the current credentials were created <= credentialCacheSeconds ago, return them
+      // instead of refreshing. This prevents excessive calling to Redshift's control plane
+      // in the event of a database connection issue or other need to get credentials within 
+      // a short time period.
+      if (!this.shouldRefreshCredentials()) {
+        console.log(`Re-using existing Redshift cluster credentials.`);
+        return this.credentials;
+      }
+
+      // Construct the client
+      const redshiftClient = new RedshiftClient({ 
+        credentials: awsCreds,
+        region: config.awsRegion
+      });
+
+      // Get the credentials
+      console.log(`Calling Redshift to get temporary cluster credentials with config ${JSON.stringify(config)}`)
+      const tempCredsResponse = await redshiftClient.send(new GetClusterCredentialsCommand({
+        ClusterIdentifier: config.clusterIdentifier,
+        DbName: config.dbName,
+        DbUser: config.dbUser,
+        DbGroups: [config.dbGroup],
+        DurationSeconds: config.durationSeconds || undefined,
+        AutoCreate: true
+      }));
+      console.log(`Redshift temporary cluster credentials will expire at ${tempCredsResponse.Expiration!}`)
+
+      this.credentials = {
+          dbUser: tempCredsResponse.DbUser!,
+          dbPassword: tempCredsResponse.DbPassword!,
+          expiration: new Date(tempCredsResponse.Expiration!)
+      }
+
+      return this.credentials;
+    }
+}
