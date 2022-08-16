@@ -446,9 +446,6 @@ const store = new Vuex.Store<State>({
             })
           })
 
-          // eslint-disable-next-line no-debugger
-          // debugger
-
           context.commit('tables', tables)
 
         } finally {
