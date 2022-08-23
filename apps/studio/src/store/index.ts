@@ -2,6 +2,7 @@ import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import username from 'username'
+import { ipcRenderer } from 'electron'
 
 import { UsedConnection } from '../common/appdb/models/used_connection'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
@@ -13,6 +14,7 @@ import { ExtendedTableColumn, Routine, TableColumn, TableOrView } from "../lib/d
 import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
+import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'
 
 import RawLog from 'electron-log'
 import { Dialect, dialectFor } from '@shared/lib/dialects/models'
@@ -50,7 +52,8 @@ export interface State {
   activeTab: Nullable<CoreTab>,
   selectedSidebarItem: Nullable<string>,
   workspaceId: number,
-  storeInitialized: boolean
+  storeInitialized: boolean,
+  windowTitle: string,
 }
 
 Vue.use(Vuex)
@@ -87,6 +90,7 @@ const store = new Vuex.Store<State>({
     selectedSidebarItem: null,
     workspaceId: LocalWorkspace.id,
     storeInitialized: false,
+    windowTitle: 'Beekeeper Studio',
   },
 
   getters: {
@@ -283,7 +287,9 @@ const store = new Vuex.Store<State>({
     usedConfigs(state, configs: UsedConnection[]) {
       Vue.set(state, 'usedConfigs', configs)
     },
-
+    updateWindowTitle(state, title: string) {
+      state.windowTitle = title
+    }
   },
   actions: {
 
@@ -312,6 +318,21 @@ const store = new Vuex.Store<State>({
       }
     },
 
+    updateWindowTitle(context, config: Nullable<IConnection>) {
+      const title = config 
+        ? `${BeekeeperPlugin.buildConnectionName(config)} - Beekeeper Studio`
+        : 'Beekeeper Studio'
+
+      context.commit('updateWindowTitle', title)
+      ipcRenderer.send('setWindowTitle', title)
+    },
+
+    async saveConnection(context, config: IConnection) {
+      await context.dispatch('data/connections/save', config)
+      const isConnected = !!context.state.server
+      if(isConnected) context.dispatch('updateWindowTitle', config)
+    },
+
     async connect(context, config: IConnection) {
       if (context.state.username) {
         const server = ConnectionProvider.for(config, context.state.username)
@@ -322,6 +343,7 @@ const store = new Vuex.Store<State>({
 
         context.commit('newConnection', {config: config, server, connection})
         context.dispatch('recordUsedConfig', config)
+        context.dispatch('updateWindowTitle', config)
       } else {
         throw "No username provided"
       }
@@ -351,6 +373,7 @@ const store = new Vuex.Store<State>({
       const server = context.state.server
       server?.disconnect()
       context.commit('clearConnection')
+      context.dispatch('updateWindowTitle', null)
     },
     async changeDatabase(context, newDatabase: string) {
       if (context.state.server) {
@@ -422,9 +445,6 @@ const store = new Vuex.Store<State>({
               return row.tableName === table.name && (!table.schema || table.schema === row.schemaName)
             })
           })
-
-          // eslint-disable-next-line no-debugger
-          // debugger
 
           context.commit('tables', tables)
 

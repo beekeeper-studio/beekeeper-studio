@@ -42,6 +42,9 @@ export const BeekeeperPlugin = {
     })
     cMenu.$mount()
   },
+  buildConnectionName(config: IConnection) {
+    return config.name || this.simpleConnectionString(config)
+  },
   buildConnectionString(config: IConnection): string {
     if (config.socketPathEnabled) return config.socketPath;
 
