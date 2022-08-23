@@ -2,7 +2,6 @@
 import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
-import { escapeLiteral } from './clients/utils';
 import { SSHConnection } from '@/vendor/node-ssh-forward/index';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert } from './models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
@@ -177,7 +176,7 @@ export class DBConnection {
   setTableDescription = setTableDescription.bind(null, this.server, this.database)
 
   // delete stuff
-  dropElement = dropElement.bind(null, this.server, this.database)
+  dropElement = bindAsync.bind(null, 'dropElement', this.server, this.database)
 
   async currentDatabase() {
     return this.database.database
@@ -479,11 +478,6 @@ async function getTableColumnNames(server: IDbConnectionServer, database: IDbCon
   } else {
     return []
   }
-}
-
-function dropElement(server: IDbConnectionServer, database: IDbConnectionDatabase, elementName: string, typeOfElement: DatabaseElement, schema:string) {
-  checkIsConnected(server, database)
-  return database.connection?.dropElement(elementName, escapeLiteral(typeOfElement), schema)
 }
 
 function resolveSchema(database: IDbConnectionDatabase, schema: string) {
