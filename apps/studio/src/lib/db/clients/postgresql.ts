@@ -1351,7 +1351,7 @@ export async function truncateAllTables(conn: Conn, schema: string) {
 export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string|null): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
-    const sql = `DROP ${escapeLiteral(typeOfElement)} ${schema ? wrapIdentifier(schema) : '"public"'}.${wrapIdentifier(elementName)}`
+    const sql = `DROP ${escapeLiteral(typeOfElement)} ${schema ? wrapIdentifier(schema) : wrapIdentifier('public')}.${wrapIdentifier(elementName)}`
 
     await driverExecuteSingle(connClient, { query: sql })
   });

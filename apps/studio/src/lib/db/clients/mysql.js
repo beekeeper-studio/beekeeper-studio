@@ -10,7 +10,7 @@ import globals from '../../../common/globals';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import { MysqlCursor } from './mysql/MySqlCursor';
-import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries } from './utils';
+import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral } from './utils';
 
 const log = rawLog.scope('mysql')
 const logger = () => log
@@ -727,7 +727,7 @@ export async function truncateAllTables(conn) {
 export async function dropElement (conn, elementName, typeOfElement) {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection }
-    const sql = `DROP ${typeOfElement} ${wrapIdentifier(elementName)}`
+    const sql = `DROP ${escapeLiteral(typeOfElement)} ${wrapIdentifier(elementName)}`
 
     await driverExecuteQuery(connClient, { query: sql })
   });
