@@ -3,11 +3,11 @@
     <common-server-inputs :config="config"></common-server-inputs>
 
     <div class="advanced-connection-settings">
-      <h4 class="advanced-heading flex" :class="{enabled: config.options.useIAM}">
+      <h4 class="advanced-heading flex" :class="{enabled: iamAuthenticationEnabled}">
         <span class="expand">IAM Authentication</span>
-        <x-switch @click.prevent="config.options.useIAM = !config.options.useIAM" :toggled="config.options.useIAM"></x-switch>
+        <x-switch @click.prevent="toggleIAMAuthentication"></x-switch>
       </h4>
-      <div class="advanced-body" v-show="config.options.useIAM">
+      <div class="advanced-body" v-show="iamAuthenticationEnabled">
         <div class="row gutter">
           <div class="alert alert-info">
             <i class="material-icons-outlined">info</i>
@@ -19,31 +19,31 @@
           <label for="AWS Region">
             AWS Region
           </label>
-          <input type="text" class="form-control" v-model="config.options.awsRegion"/>
+          <input type="text" class="form-control" v-model="config.redshiftOptions.awsRegion"/>
         </div>
         <div class="form-group">
           <label for="Access Key ID">
             Access Key ID
           </label>
-          <input type="text" class="form-control" v-model="config.options.awsAccessKeyId"/>
+          <input type="text" class="form-control" v-model="config.redshiftOptions.accessKeyId"/>
         </div>
         <div class="form-group">
           <label for="Secret Access Key">
             Secret Access Key
           </label>
-          <input type="password" class="form-control" v-model="config.options.awsSecretAccessKey"/>
+          <input type="password" class="form-control" v-model="config.redshiftOptions.secretAccessKey"/>
         </div>
         <div class="form-group">
           <label for="Cluster Identifier">Cluster Identifier</label>
-          <input type="text" class="form-control" v-model="config.options.clusterIdentifier"/>
+          <input type="text" class="form-control" v-model="config.redshiftOptions.clusterIdentifier"/>
         </div>
         <div class="form-group">
           <label for="Database Group">Database Group <span class="hint">(optional)</span></label>
-          <input type="text" class="form-control" v-model="config.options.databaseGroup"/>
+          <input type="text" class="form-control" v-model="config.redshiftOptions.databaseGroup"/>
         </div>
         <div class="form-group">
           <label for="Token Duration">Token Duration <span class="hint">(optional, in seconds)</span></label>
-          <input type="text" class="form-control" v-model="config.options.tokenDurationSeconds"/>
+          <input type="text" class="form-control" v-model="config.redshiftOptions.tokenDurationSeconds"/>
         </div>
       </div>
     </div>
@@ -58,6 +58,16 @@
 
   export default {
     components: { CommonServerInputs, CommonAdvanced },
-    props: ['config']
+    data() {
+      return {
+        iamAuthenticationEnabled: false
+      }
+    },
+    methods: {
+      toggleIAMAuthentication() {
+        this.config.redshiftOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled = !this.iamAuthenticationEnabled
+      }
+    },
+    props: ['config'],
   }
 </script>

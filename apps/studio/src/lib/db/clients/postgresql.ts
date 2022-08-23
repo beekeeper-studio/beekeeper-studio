@@ -1377,18 +1377,19 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
   let passwordResolver: () => Promise<string>;
 
   // For Redshift Only -- IAM authentication and credential exchange
-  if (server.config.client === 'redshift' && server.config.options?.useIAM) {
+  const redshiftOptions = server.config.redshiftOptions;
+  if (server.config.client === 'redshift' && redshiftOptions?.iamAuthenticationEnabled) {
     const awsCreds: AWSCredentials = {
-      accessKeyId: server.config.options.awsAccessKeyId,
-      secretAccessKey: server.config.options.awsSecretAccessKey
+      accessKeyId: redshiftOptions.accessKeyId,
+      secretAccessKey: redshiftOptions.secretAccessKey
     };
 
     const clusterConfig: ClusterCredentialConfiguration = {
-      awsRegion: server.config.options.awsRegion,
-      clusterIdentifier: server.config.options.clusterIdentifier,
+      awsRegion: redshiftOptions.awsRegion,
+      clusterIdentifier: redshiftOptions.clusterIdentifier,
       dbName: database.database,
       dbUser: server.config.user,
-      dbGroup: server.config.options.databaseGroup,
+      dbGroup: redshiftOptions.databaseGroup,
       durationSeconds: server.config.options.tokenDurationSeconds
     };
 
@@ -1396,7 +1397,7 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
 
     // We need resolve credentials once to get the temporary database user, which does not change
     // on each call to get credentials.
-    // This is usually something like "IAM:<user>:<group>" or "IAMA:<user>:<group>".
+    // This is usually something like "IAMA:<user>" or "IAMA:<user>:<group>".
     tempUser = (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbUser;
 
     // Set the password resolver to resolve the Redshift credentials and return the password.

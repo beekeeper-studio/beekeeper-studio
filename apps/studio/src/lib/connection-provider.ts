@@ -35,7 +35,8 @@ export default {
       sslKeyFile: config.sslKeyFile,
       sslRejectUnauthorized: config.sslRejectUnauthorized,
       trustServerCertificate: config.trustServerCertificate,
-      options: config.options
+      options: config.options,
+      redshiftOptions: config.redshiftOptions
     }
   },
 
