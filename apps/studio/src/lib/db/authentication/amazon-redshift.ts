@@ -41,21 +41,25 @@ export class RedshiftCredentialResolver {
         return RedshiftCredentialResolver.instance;
     }
 
-    private credentials: TemporaryClusterCredentials;
+    private credentials: Map<string, TemporaryClusterCredentials> = new Map();
+
+    private getCacheKey(awsCreds: AWSCredentials, config: ClusterCredentialConfiguration): string {
+      return JSON.stringify({awsCreds, config});
+    }
 
     /**
      * Determines whether credentials managed by the resolver should be refreshed.
      * 
      * @returns true if the credentials should be refreshed
      */
-    private shouldRefreshCredentials(): Boolean {
+    private shouldRefreshCredentials(credentials: TemporaryClusterCredentials): Boolean {
         // If no credentials have been set, refresh.
-        if (!this.credentials) {
+        if (!credentials) {
             return true;
         }
 
         // Return true if the credentials have passed the cache expiration threshold period.
-        const expiration = this.credentials.expiration.getTime();
+        const expiration = credentials.expiration.getTime();
         const now = new Date().getTime();
         return now >= expiration - (CREDENTIAL_EXPIRATION_THRESHOLD_MINUTES * 60 * 1000);
     }
@@ -64,16 +68,16 @@ export class RedshiftCredentialResolver {
      * Exchanges a set of AWS credentials and configuration for a temporary set of credentials
      * to a Redshift cluster.
      * 
-     * @param awsCreds the AWS credentials
+     * @param awsCredentials the AWS credentials
      * @param config the credential configuration
      * @returns the temporary credentials
      */
-    async getClusterCredentials(awsCreds: AWSCredentials, config: ClusterCredentialConfiguration): Promise<TemporaryClusterCredentials> {
+    async getClusterCredentials(awsCredentials: AWSCredentials, config: ClusterCredentialConfiguration): Promise<TemporaryClusterCredentials> {
       // Validate that all required fields have been provided
-      if (!awsCreds.accessKeyId) {
+      if (!awsCredentials.accessKeyId) {
         throw new Error('Please provide an Access Key ID for IAM authentication.');
       }
-      if (!awsCreds.secretAccessKey) {
+      if (!awsCredentials.secretAccessKey) {
         throw new Error('Please provide a Secret Access Key for IAM authentication.');
       }
       if (!config.awsRegion) {
@@ -83,18 +87,21 @@ export class RedshiftCredentialResolver {
         throw new Error('Please provide a Cluster Identifier for IAM authentication.');
       }
 
-      // If the current credentials were created <= credentialCacheSeconds ago, return them
+      // Get any existing credentials
+      const cacheKey = this.getCacheKey(awsCredentials, config);
+      const credentials = this.credentials.get(cacheKey);
+
+      // If the credentials exist and were created <= credentialCacheSeconds ago, return them
       // instead of refreshing. This prevents excessive calling to Redshift's control plane
-      // in the event of a database connection issue or other need to get credentials within 
-      // a short time period.
-      if (!this.shouldRefreshCredentials()) {
+      // when we have credentials that we know with high confidence are still valid.
+      if (!this.shouldRefreshCredentials(credentials)) {
         console.log(`Re-using existing Redshift cluster credentials.`);
-        return this.credentials;
+        return credentials;
       }
 
       // Construct the client
       const redshiftClient = new RedshiftClient({ 
-        credentials: awsCreds,
+        credentials: awsCredentials,
         region: config.awsRegion
       });
 
@@ -110,12 +117,13 @@ export class RedshiftCredentialResolver {
       }));
       console.log(`Redshift temporary cluster credentials will expire at ${tempCredsResponse.Expiration!}`)
 
-      this.credentials = {
-          dbUser: tempCredsResponse.DbUser!,
-          dbPassword: tempCredsResponse.DbPassword!,
-          expiration: new Date(tempCredsResponse.Expiration!)
+      const newCredentials = {
+        dbUser: tempCredsResponse.DbUser!,
+        dbPassword: tempCredsResponse.DbPassword!,
+        expiration: new Date(tempCredsResponse.Expiration!)
       }
+      this.credentials.set(cacheKey, newCredentials);
 
-      return this.credentials;
+      return newCredentials;
     }
 }
