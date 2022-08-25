@@ -25,6 +25,7 @@ import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
 import { IConnection } from '@/common/interfaces/IConnection'
 import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
+import { ExcludeEntityModule } from './modules/ExcludeModule'
 
 const log = RawLog.scope('store/index')
 
@@ -64,6 +65,7 @@ const store = new Vuex.Store<State>({
     exports: ExportStoreModule,
     settings: SettingStoreModule,
     pins: PinModule,
+    excludeEntities: ExcludeEntityModule,
     tabs: TabModule,
     search: SearchModule,
   },

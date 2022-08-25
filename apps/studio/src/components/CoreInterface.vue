@@ -77,6 +77,7 @@
     },
     mounted() {
       this.$store.dispatch('pins/loadPins')
+      this.$store.dispatch('excludeEntities/loadEntities')
       this.registerHandlers(this.rootBindings)
       this.$nextTick(() => {
         this.initializing = false
@@ -84,6 +85,7 @@
     },
     beforeDestroy() {
       this.$store.dispatch('pins/unloadPins')
+      this.$store.dispatch('excludeEntities/unloadEntities')
       this.$store.commit('unloadTables')
       this.$store.commit('tabs/set', [])
       this.unregisterHandlers(this.rootBindings)

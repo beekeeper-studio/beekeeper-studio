@@ -131,6 +131,7 @@ import TabWithTable from './common/TabWithTable.vue';
           { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
           { event: 'favoriteClick', handler: this.favoriteClick },
           { event: 'exportTable', handler: this.openExportModal },
+          { event: AppEvent.hideEntity, handler: this.hideEntity },
         ]
       },
       contextOptions() {
@@ -268,6 +269,9 @@ import TabWithTable from './common/TabWithTable.vue';
       openExportModal(options) {
         this.tableExportOptions = options
         this.showExportModal = true
+      },
+      hideEntity(item) {
+        this.$store.dispatch('excludeEntities/add', item)
       },
       openSettings() {
         const tab = new OpenTab('settings')

@@ -62,8 +62,16 @@ export default {
             this.$root.$emit('loadTableCreate', item)
           }
         },
-
-
+        {
+          type: 'divider'
+        },
+        {
+          name: "Hide",
+          slug: 'sql-create',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.hideEntity, item)
+          }
+        },
       ]
     }
   },

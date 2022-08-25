@@ -77,31 +77,33 @@
               :forceExpand="allExpanded || filterQuery"
               :forceCollapse="allCollapsed"
             >
-              <table-list-item
-
-                v-for="table in blob.tables"
-                :key="entityKey(table)"
-                :pinned="pinnedEntities.includes(table)"
-                :container="$refs.entityContainer"
-                @selected="tableSelected"
-                :table="table"
-                :connection="connection"
-                :forceExpand="allExpanded"
-                :forceCollapse="listItemsCollapsed"
-                @contextmenu.prevent.stop="$bks.openMenu({ item: table, event: $event, options: tableMenuOptions})"
-              ></table-list-item>
-              <routine-list-item
-                v-for="routine in blob.routines"
-                :key="entityKey(routine)"
-                :pinned="pinnedEntities.includes(routine)"
-                :container="$refs.entityContainer"
-                :routine="routine"
-                :connection="connection"
-                :forceExpand="allExpanded"
-                :forceCollapse="listItemsCollapsed"
-                @contextmenu.prevent.stop="$bks.openMenu({item: routine, event: $event, options: routineMenuOptions})"
-              >
-              </routine-list-item>
+              <template v-for="table in blob.tables">
+                <table-list-item
+                  v-if="!excludedEntities.includes(table)"
+                  :key="entityKey(table)"
+                  :pinned="pinnedEntities.includes(table)"
+                  :container="$refs.entityContainer"
+                  @selected="tableSelected"
+                  :table="table"
+                  :connection="connection"
+                  :forceExpand="allExpanded"
+                  :forceCollapse="listItemsCollapsed"
+                  @contextmenu.prevent.stop="$bks.openMenu({ item: table, event: $event, options: tableMenuOptions})"
+                />
+              </template>
+              <template v-for="routine in blob.routines">
+                <routine-list-item
+                  v-if="!excludedEntities.includes(routine)"
+                  :key="entityKey(routine)"
+                  :pinned="pinnedEntities.includes(routine)"
+                  :container="$refs.entityContainer"
+                  :routine="routine"
+                  :connection="connection"
+                  :forceExpand="allExpanded"
+                  :forceCollapse="listItemsCollapsed"
+                  @contextmenu.prevent.stop="$bks.openMenu({item: routine, event: $event, options: routineMenuOptions})"
+                />
+              </template>
             </sidebar-folder>
           </div>
         </div>
@@ -207,6 +209,7 @@
       ...mapGetters({
           pinnedEntities: 'pins/pinnedEntities',
           orderedPins: 'pins/orderedPins',
+          excludedEntities: 'excludeEntities/databaseEntities'
       }),
     },
     watch: {
