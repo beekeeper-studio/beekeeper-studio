@@ -200,7 +200,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
     dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string|null) => dropElement(conn, elementName, typeOfElement, schema),
-    truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema: string) => truncateElement(conn, elementName, typeOfElement, schema)
+    truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema)
   };
 }
 
@@ -1366,7 +1366,6 @@ export async function truncateElement (conn: Conn, elementName: string, typeOfEl
     await driverExecuteSingle(connClient, { query: sql })
   });
 }
-
 
 function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
 
