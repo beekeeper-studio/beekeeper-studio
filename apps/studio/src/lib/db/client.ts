@@ -9,9 +9,9 @@ import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/l
 const logger = createLogger('db');
 
 export enum DatabaseElement {
-  TABLE,
-  VIEW,
-  DATABASE
+  TABLE = 'TABLE',
+  VIEW = 'VIEW',
+  DATABASE = 'DATABASE'
 }
 
 export interface DatabaseClient {

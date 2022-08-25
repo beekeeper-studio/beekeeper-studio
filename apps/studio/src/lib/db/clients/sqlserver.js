@@ -834,10 +834,10 @@ export async function truncateAllTables(conn) {
   });
 }
 
-export async function dropElement (conn, elementName, typeOfElement, schema) {
+export async function dropElement (conn, elementName, typeOfElement, schema = 'dbo') {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
-    const sql = `DROP ${escapeLiteral(typeOfElement)} ${schema ? wrapIdentifier(schema) : wrapIdentifier('dbo')}.${wrapIdentifier(elementName)}`
+    const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
 
     await driverExecuteQuery(connClient, { query: sql })
   });

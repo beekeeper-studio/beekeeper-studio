@@ -11,6 +11,7 @@ import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import { MysqlCursor } from './mysql/MySqlCursor';
 import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral } from './utils';
+import { MysqlData } from '@shared/lib/dialects/mysql'
 
 const log = rawLog.scope('mysql')
 const logger = () => log
@@ -727,7 +728,7 @@ export async function truncateAllTables(conn) {
 export async function dropElement (conn, elementName, typeOfElement) {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection }
-    const sql = `DROP ${escapeLiteral(typeOfElement)} ${wrapIdentifier(elementName)}`
+    const sql = `DROP ${MysqlData.wrapLiteral(typeOfElement)} ${wrapIdentifier(elementName)}`
 
     await driverExecuteQuery(connClient, { query: sql })
   });
