@@ -491,7 +491,7 @@ export async function dropElement (conn, elementName, typeOfElement) {
 export async function truncateElement (conn, elementName) {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
-    const sql = `Delete from ${wrapIdentifier(elementName)}; vacuum;`
+    const sql = `Delete from ${PD.wrapIdentifier(elementName)}; vacuum;`
 
     await driverExecuteQuery(connClient, { query: sql })
   });

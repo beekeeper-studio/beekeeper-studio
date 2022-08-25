@@ -737,7 +737,7 @@ export async function dropElement (conn, elementName, typeOfElement) {
 export async function truncateElement (conn, elementName, typeOfElement) {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection }
-    const sql = `TRUNCATE ${typeOfElement} ${wrapIdentifier(elementName)}`
+    const sql = `TRUNCATE ${MysqlData.wrapLiteral(typeOfElement)} ${wrapIdentifier(elementName)}`
 
     await driverExecuteQuery(connClient, { query: sql })
   });

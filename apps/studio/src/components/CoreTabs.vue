@@ -62,11 +62,7 @@
     </div>
   <modal :name="modalName" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened" @closed="sureClosed" @before-open="beforeOpened">
     <div class="dialog-content">
-<<<<<<< HEAD
-      <div class="dialog-c-title">Really {{this.titleCaseAction}} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{this.dbElement}}</span>?</div>
-=======
-      <div class="dialog-c-title">Really {{this.dbAction | titleCase}} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{this.dbElement}}</span>?</div>
->>>>>>> 9a65503c (feat(coretabs): add truncate action to drop down)
+      <div class="dialog-c-title">Really {{this.dbAction}} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{this.dbElement}}</span>?</div>
       <p>This change cannot be undone</p>
     </div>
     <div class="vue-dialog-buttons">
