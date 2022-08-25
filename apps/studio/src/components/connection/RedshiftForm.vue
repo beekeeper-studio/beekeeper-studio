@@ -5,7 +5,7 @@
     <div class="advanced-connection-settings">
       <h4 class="advanced-heading flex" :class="{enabled: iamAuthenticationEnabled}">
         <span class="expand">IAM Authentication</span>
-        <x-switch @click.prevent="toggleIAMAuthentication"></x-switch>
+        <x-switch @click.prevent="toggleIAMAuthentication" :toggled="iamAuthenticationEnabled"></x-switch>
       </h4>
       <div class="advanced-body" v-show="iamAuthenticationEnabled">
         <div class="row gutter">
@@ -60,7 +60,7 @@
     components: { CommonServerInputs, CommonAdvanced },
     data() {
       return {
-        iamAuthenticationEnabled: false
+        iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled || false
       }
     },
     methods: {
