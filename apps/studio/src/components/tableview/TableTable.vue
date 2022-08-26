@@ -360,7 +360,6 @@ export default Vue.extend({
         {
           label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
           action: async (_e, cell) => {
-
             const fixed = this.$bks.cleanData(this.modifyRowData(cell.getRow().getData()), this.tableColumns)
 
             const tableInsert = {
