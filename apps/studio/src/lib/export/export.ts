@@ -150,6 +150,8 @@ export abstract class Export {
         for (let rI = 0; rI < rows.length; rI++) {
           const row = rows[rI];
           const mutated = Mutators.mutateRow(row, this.columns?.map((c) => c.dataType), this.preserveComplex)
+          console.log('~~~mutated~~~')
+          console.log(mutated)
           const formatted = this.formatRow(mutated)
           await this.fileHandle?.write(formatted)
           await this.fileHandle?.write(this.rowSeparator)
