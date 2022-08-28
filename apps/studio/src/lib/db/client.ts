@@ -8,6 +8,12 @@ import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/l
 
 const logger = createLogger('db');
 
+export enum DatabaseElement {
+  TABLE = 'TABLE',
+  VIEW = 'VIEW',
+  DATABASE = 'DATABASE'
+}
+
 export interface DatabaseClient {
   supportedFeatures: () => SupportedFeatures,
   versionString: () => string,
@@ -53,6 +59,9 @@ export interface DatabaseClient {
 
   wrapIdentifier: (value: string) => string
   setTableDescription: (table: string, description: string, schema?: string) => Promise<string>
+
+  // delete stuff
+  dropElement: (elementName: string, typeOfElement: DatabaseElement, schema: string) => Promise<void>
 }
 
 export type IDbClients = keyof typeof clients
@@ -165,6 +174,10 @@ export class DBConnection {
   getRoutineCreateScript = getRoutineCreateScript.bind(null, this.server, this.database)
   truncateAllTables = truncateAllTables.bind(null, this.server, this.database)
   setTableDescription = setTableDescription.bind(null, this.server, this.database)
+
+  // delete stuff
+  dropElement = bindAsync.bind(null, 'dropElement', this.server, this.database)
+
   async currentDatabase() {
     return this.database.database
   }

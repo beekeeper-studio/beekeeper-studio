@@ -43,6 +43,7 @@
     "jquery": "^3.5.0",
     "knex": "^2.0.0",
     "lodash": "^4.17.21",
+    "markdown-table": "^3.0.2",
     "marked": "^4.0.10",
     "material-icons": "^0.7.6",
     "mkdirp": "^1.0.4",
