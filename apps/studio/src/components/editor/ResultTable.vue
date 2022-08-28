@@ -96,8 +96,6 @@
           {
             label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
             action: async (_e, cell) => {
-              console.log('~~~ copy row ~~~')
-              console.log(cell.getRow().getData())
               const fixed = this.$bks.cleanData(cell.getRow().getData(), this.tableColumns)
 
               const tableInsert = {
