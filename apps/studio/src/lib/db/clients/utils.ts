@@ -157,7 +157,6 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
 }
 
 export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitConversionFunc: any = _.toNumber) {
-
   const data = _.cloneDeep(insert.data)
   data.forEach((item) => {
     const insertColumns = Object.keys(item)

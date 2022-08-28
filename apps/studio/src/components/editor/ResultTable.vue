@@ -96,6 +96,8 @@
           {
             label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
             action: async (_e, cell) => {
+              console.log('~~~ copy row ~~~')
+              console.log(cell.getRow().getData())
               const fixed = this.$bks.cleanData(cell.getRow().getData(), this.tableColumns)
 
               const tableInsert = {
@@ -119,7 +121,7 @@
             titleDownload: escapeHtml(column.name),
             dataType: column.dataType,
             width: columnWidth,
-            mutator: this.resolveTabulatorMutator(column.dataType),
+            mutator: this.resolveTabulatorMutator(column.dataType, this.connection),
             formatter: this.cellFormatter,
             maxInitialWidth: globals.maxColumnWidth,
             tooltip: true,

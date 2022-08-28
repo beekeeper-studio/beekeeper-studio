@@ -1,5 +1,5 @@
 import _ from 'lodash'
-
+import { DBConnection } from '../db/client';
 type JsonFriendly = string | boolean | number | null | JsonFriendly[] | object
 
 function dec28bits(num: any): string {
@@ -9,26 +9,26 @@ function dec28bits(num: any): string {
 
 export const Mutators = {
 
-  resolveTabulatorMutator(dataType?: string): (v: any) => JsonFriendly {
-    const mutator = this.resolveDataMutator(dataType)
+  resolveTabulatorMutator(dataType?: string, conn: DBConnection = null): (v: any) => JsonFriendly {
+    const mutator = this.resolveDataMutator(dataType, conn)
     return (v: any) => mutator(v) // this cleans off the additional params
   },
 
-  resolveDataMutator(dataType?: string): (v: any, p?: boolean) => JsonFriendly {
+  resolveDataMutator(dataType?: string, conn: DBConnection = null): (v: any, p?: boolean) => JsonFriendly {
     if (dataType && dataType === 'bit(1)') {
       return this.bit1Mutator.bind(this)
     }
     if (dataType && dataType.startsWith('bit')) {
-      return this.bitMutator.bind(this)
+      return this.bitMutator.bind(this, conn)
     }
     return this.genericMutator.bind(this)
   },
 
 
-  mutateRow(row: any[], dataTypes: string[] = [], preserveComplex: boolean = false): JsonFriendly[] {
+  mutateRow(row: any[], dataTypes: string[] = [], preserveComplex: boolean = false, connection: DBConnection = null): JsonFriendly[] {
     return row.map((item, index) => {
       const typ = dataTypes[index]
-      const mutator = this.resolveDataMutator(typ)
+      const mutator = this.resolveDataMutator(typ, connection)
       return mutator(item, preserveComplex)
     })
   },
@@ -62,16 +62,16 @@ export const Mutators = {
 
   /**
    * Stringify bit data for use in json / UIs
+   * @param {DBConnection|null} connection: The connection object used within Vue
    * @param  {any} value
    * @returns JsonFriendly
    */
-  bitMutator(value: any): JsonFriendly {
-    // value coming in is true/false not 1/0, so for that export needs to be 0/1 for SQL export, maybe look in the sql export section and see what to do there instead 
+  bitMutator(connection: DBConnection|null, value: any): JsonFriendly {
+    // value coming in is true/false (for sql) not 1/0, so for that export needs to be 0/1 for SQL export, maybe look in the sql export section and see what to do there instead 
     // of futzing around in here too much? The goal is to keep the true/false as showing 
   
-    if (typeof(value) === 'boolean' || this.connection?.connectionType === "sqlserver") return value;
+    if (connection?.connectionType === "sqlserver") return value
     
-    console.log(`value ${value} ${typeof(value)}`)
     const result = []
     for (let index = 0; index < value.length; index++) {
       result.push(value[index])

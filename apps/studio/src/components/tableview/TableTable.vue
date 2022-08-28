@@ -373,6 +373,7 @@ export default Vue.extend({
         {
           label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
           action: async (_e, cell) => {
+            console.log(this.tableColumns)
             const fixed = this.$bks.cleanData(this.modifyRowData(cell.getRow().getData()), this.tableColumns)
 
             const tableInsert = {
@@ -492,7 +493,7 @@ export default Vue.extend({
           title: column.columnName,
           field: column.columnName,
           titleFormatter: formatter,
-          mutatorData: this.resolveTabulatorMutator(column.dataType),
+          mutatorData: this.resolveTabulatorMutator(column.dataType, this.connection),
           dataType: column.dataType,
           cellClick: this.cellClick,
           width: columnWidth,
