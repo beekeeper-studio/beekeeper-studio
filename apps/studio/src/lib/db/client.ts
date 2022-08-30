@@ -30,6 +30,11 @@ export interface DatabaseClient {
   getTableKeys: (db: string, table: string, schema?: string) => void,
   query: (queryText: string) => CancelableQuery,
   executeQuery: (queryText: string) => void,
+  // create database
+  listCharsets: () => any[],
+  getDefaultCharSet: () => string[],
+  listCollations: (charset: string) => string[],
+  createDatabase: (databaseName: string, charset: string, collation: string) => void,
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
   // alter table
@@ -145,6 +150,12 @@ export class DBConnection {
   query = query.bind(null, this.server, this.database)
   executeQuery = executeQuery.bind(null, this.server, this.database)
   listDatabases = listDatabases.bind(null, this.server, this.database)
+  
+  // db creation
+  listCharsets = bindAsync.bind(null, 'listCharsets', this.server, this.database)
+  getDefaultCharSet = bindAsync.bind(null, 'getDefaultCharSet', this.server, this.database)
+  listCollations = bindAsync.bind(null, 'listCollations', this.server, this.database)
+  createDatabase = bindAsync.bind(null, 'createDatabase', this.server, this.database)
 
   // tabletable
   getTableLength = bindAsync.bind(null, 'getTableLength', this.server, this.database)
@@ -396,7 +407,6 @@ function listDatabases(server: IDbConnectionServer, database: IDbConnectionDatab
   checkIsConnected(server , database);
   return database.connection?.listDatabases(filter);
 }
-
 
 async function getInsertQuery(server: IDbConnectionServer, database: IDbConnectionDatabase, tableInsert: TableInsert) {
   checkIsConnected(server , database);
