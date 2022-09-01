@@ -11,7 +11,7 @@
     </div>
     <modal class="vue-dialog beekeeper-modal save-add-database" name="config-add-database" height="auto" :scrollable="true">
       <div class="dialog-content">
-        <AddDatabaseForm :connection="connection" @databaseCreated="databaseCreated" @cancel="$modal.hide('config-add-database')"></AddDatabaseForm>
+        <add-database-form :connection="connection" @databaseCreated="databaseCreated" @cancel="$modal.hide('config-add-database')"></add-database-form>
       </div>
     </modal>
   </div>
@@ -45,8 +45,6 @@
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
         await this.refreshDatabases()
-        this.selectedDatabase = db
-        this.$emit('databaseSelected', db)
       }
     },
     async mounted() {

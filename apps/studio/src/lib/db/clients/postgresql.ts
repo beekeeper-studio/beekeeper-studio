@@ -186,6 +186,12 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
     getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
 
+    // db creation
+    listCharsets: async() => PD.charsets,
+    getDefaultCharSet: async() => 'UTF8',
+    listCollations: async() => [],
+    createDatabase: (databaseName, charset) => createDatabase(conn, databaseName, charset),
+
     // alter tables
     alterTableSql: (change: AlterTableSpec) => alterTableSql(conn, change),
     alterTable: (change: AlterTableSpec) => alterTable(conn, change),
@@ -1355,6 +1361,11 @@ export async function dropElement (conn: Conn, elementName: string, typeOfElemen
 
     await driverExecuteSingle(connClient, { query: sql })
   });
+}
+
+export async function createDatabase(conn, databaseName, charset) {
+  const sql = `create database ${wrapIdentifier(databaseName)} encoding ${wrapIdentifier(charset)}`;
+  await driverExecuteQuery(conn, { query: sql })
 }
 
 

@@ -17,11 +17,7 @@
         :class="tabClasses('tables')"
         v-show="activeItem === 'tables'"
       >
-        <database-dropdown
-          @databaseSelected="databaseSelected"
-          @databaseCreated="databaseSelected"
-          :connection="connection">
-        </database-dropdown>
+        <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
         <table-list></table-list>
       </div>
 
@@ -103,7 +99,6 @@
         }
       },
       async databaseSelected(db) {
-        console.log('database selected')
         this.$store.dispatch('changeDatabase', db)
         this.allExpanded = false
       },

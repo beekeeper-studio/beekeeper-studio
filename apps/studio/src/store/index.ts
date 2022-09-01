@@ -376,10 +376,11 @@ const store = new Vuex.Store<State>({
       context.dispatch('updateWindowTitle', null)
     },
     async changeDatabase(context, newDatabase: string) {
+      console.log('~~~ change database ~~~')
       if (context.state.server) {
         const server = context.state.server
         let connection = server.db(newDatabase)
-        if (! connection) {
+        if (!connection) {
           connection = server.createConnection(newDatabase)
           await connection.connect()
         }

@@ -31,10 +31,11 @@ export interface DatabaseClient {
   query: (queryText: string) => CancelableQuery,
   executeQuery: (queryText: string) => void,
   // create database
-  listCharsets: () => any[],
-  getDefaultCharSet: () => string[],
-  listCollations: (charset: string) => string[],
+  listCharsets: () => Promise<string[]>,
+  getDefaultCharSet: () => Promise<string>,
+  listCollations: (charset?: string) => Promise<string[]>,
   createDatabase: (databaseName: string, charset: string, collation: string) => void,
+
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
   // alter table

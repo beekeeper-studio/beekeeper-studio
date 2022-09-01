@@ -1,5 +1,5 @@
 <template>
-  <div class="save-connection expand">
+  <form class="save-connection expand">
     <h3 class="dialog-c-title">Add database</h3>
 
     <div v-if="error" class="alert alert-danger">
@@ -16,7 +16,7 @@
       </select>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" v-if="collationsLength">
       <select v-model="selectedCollation">
         <option v-for="collation in collations" v-bind:key="collation" :value="collation">{{collation}}</option>
       </select>
@@ -24,9 +24,9 @@
 
     <div class="save-actions">
       <button class="btn btn-flat" @click.prevent="$emit('cancel')">Cancel</button>
-      <button class="btn btn-primary save" @click.prevent="save">Add</button>
+      <button class="btn btn-primary save" type="submit" @click.prevent="save">Add</button>
     </div>
-  </div>
+  </form>
 </template>
 
 <script>
@@ -68,6 +68,12 @@
     watch: {
       selectedCharset() {
         this.updateCollations()
+      }
+    },
+    computed: {
+      collationsLength() {
+        console.log(this.collations.length > 0)
+        return this.collations.length > 0
       }
     }
   }
