@@ -67,6 +67,12 @@ export default async function (server, database) {
     alterTableSql: (change) => alterTableSql(conn, change),
     alterTable: (change) => alterTable(conn, change),
 
+    // db creation
+    listCharsets: () => [],
+    getDefaultCharSet: () => null,
+    listCollations: (charset) => [],
+    createDatabase: (databaseName) => createDatabase(conn, databaseName),
+
     // indexes
     alterIndexSql: (adds, drops) => alterIndexSql(adds, drops),
     alterIndex: (adds, drops) => alterIndex(conn, adds, drops),
@@ -644,6 +650,18 @@ export async function executeWithTransaction(conn, queryArgs) {
 
 function getVersionString(version) {
   return version.data[0]["sqlite_version()"];
+}
+
+export async function createDatabase(conn, databaseName) {
+  const dbNameRegex = /^[a-zA-Z0-9_-]*$/
+  if (!databaseName.match(dbNameRegex)) {
+    throw new Error('Database name invalid, must be alphanumeric / have only _ or - special characters')
+  }
+  const fileLocation = conn.dbConfig.database.split('/')
+  fileLocation.pop()
+
+  const db = new Database(`${fileLocation.join('/')}/${databaseName}.db`)
+  db.close()
 }
 
 

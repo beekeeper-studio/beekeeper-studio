@@ -47,7 +47,6 @@
       this.charSets = await this.connection.listCharsets()
       this.defaultCharSet = await this.connection.getDefaultCharSet()
       this.selectedCharset = this.defaultCharSet
-      console.log(this.selectedCharset)
       await this.updateCollations()
     },
     methods: {
@@ -56,7 +55,11 @@
         this.selectedCollation = this.collations[0]
       },
       async save() {
+        const dbNameRegex = /^[a-zA-Z0-9_-]*$/
         try {
+          if (!this.databaseName.match(dbNameRegex)) {
+            throw new Error('Database name invalid, must be alphanumeric / have only _ or - special characters')
+          }
           await this.connection.createDatabase(this.databaseName, this.selectedCharset, this.selectedCollation)
           this.$noty.success('The database was created')
           this.$emit('databaseCreated', this.databaseName)

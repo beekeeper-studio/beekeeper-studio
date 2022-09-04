@@ -87,7 +87,7 @@ export default async function (server, database) {
       Having this, going to keep collations at the default because there are literally thousands of options
     */
     listCollations: (charset) => [],
-    createDatabase: ( databaseName, charset, collation) => createDatabase(conn, databaseName),
+    createDatabase: (databaseName) => createDatabase(conn, databaseName),
 
     // indexes
     alterIndexSql: (adds, drops) => alterIndexSql(adds, drops),
@@ -1113,13 +1113,10 @@ async function executeWithTransaction(conn, queryArgs) {
   }
 }
 
-
-
 export async function createDatabase(conn, databaseName) {
   const sql = `create database ${wrapIdentifier(databaseName)}`;
   await driverExecuteQuery(conn, { query: sql })
 }
-
 
 export const sqlServerTestOnly = {
   alterTableSql
