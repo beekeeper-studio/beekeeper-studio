@@ -10,13 +10,13 @@
       <input class="form-control" v-model="databaseName" @keydown.enter.prevent.stop="save" type="text" placeholder="Database Name">
     </div>
 
-    <div class="form-group">
+    <div class="form-group" v-if="charSets.length > 0">
       <select v-model="selectedCharset">
         <option v-for="charset in charSets" v-bind:key="charset" :selected="charset === defaultCharSet" :value="charset">{{charset}}</option>
       </select>
     </div>
 
-    <div class="form-group" v-if="collationsLength">
+    <div class="form-group" v-if="collations.length > 0">
       <select v-model="selectedCollation">
         <option v-for="collation in collations" v-bind:key="collation" :value="collation">{{collation}}</option>
       </select>
@@ -68,12 +68,6 @@
     watch: {
       selectedCharset() {
         this.updateCollations()
-      }
-    },
-    computed: {
-      collationsLength() {
-        console.log(this.collations.length > 0)
-        return this.collations.length > 0
       }
     }
   }

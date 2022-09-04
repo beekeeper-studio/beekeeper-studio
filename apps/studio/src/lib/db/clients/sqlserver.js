@@ -73,6 +73,21 @@ export default async function (server, database) {
     alterTableSql: (change) => alterTableSql(conn, change),
     alterTable: (change) => alterTable(conn, change),
 
+    // db creation
+    /*
+      SQL Server doesn't use character sets as these are part of the collation used (set at server or as you please)
+      https://stackoverflow.com/questions/7781103/sql-server-set-character-set-not-collation
+    */
+    listCharsets: () => [],
+    getDefaultCharSet: () => null,
+    /*
+      From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-database-transact-sql?view=sql-server-ver16&tabs=sqlpool: 
+      Collation name can be either a Windows collation name or a SQL collation name. If not specified, the database is assigned the default collation of the instance of SQL Server
+
+      Having this, going to keep collations at the default because there are literally thousands of options
+    */
+    listCollations: (charset) => [],
+    createDatabase: ( databaseName, charset, collation) => createDatabase(conn, databaseName),
 
     // indexes
     alterIndexSql: (adds, drops) => alterIndexSql(adds, drops),
@@ -1096,6 +1111,15 @@ async function executeWithTransaction(conn, queryArgs) {
     log.error(ex)
     throw ex
   }
+}
+
+
+
+export async function createDatabase(conn, databaseName) {
+  const sql = `create database ${wrapIdentifier(databaseName)}`;
+  console.log('hi')
+  console.log(sql)
+  await driverExecuteQuery(conn, { query: sql })
 }
 
 

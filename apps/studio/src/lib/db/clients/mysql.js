@@ -1051,7 +1051,7 @@ export async function listCollations(conn, charset) {
   const sql = 'show collation where charset = ?'
 
   const params = [
-    charset,
+    charset
   ]
 
   const { data } = await driverExecuteQuery(conn, { query: sql, params });
