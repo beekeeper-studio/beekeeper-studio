@@ -1117,8 +1117,6 @@ async function executeWithTransaction(conn, queryArgs) {
 
 export async function createDatabase(conn, databaseName) {
   const sql = `create database ${wrapIdentifier(databaseName)}`;
-  console.log('hi')
-  console.log(sql)
   await driverExecuteQuery(conn, { query: sql })
 }
 
