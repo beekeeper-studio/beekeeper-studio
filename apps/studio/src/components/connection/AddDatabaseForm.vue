@@ -1,5 +1,5 @@
 <template>
-  <form class="save-connection expand">
+  <form class="save-connection expand" @submit.prevent="save">
     <h3 class="dialog-c-title">Add database</h3>
 
     <div v-if="error" class="alert alert-danger">
@@ -24,7 +24,7 @@
 
     <div class="save-actions">
       <button class="btn btn-flat" @click.prevent="$emit('cancel')">Cancel</button>
-      <button class="btn btn-primary save" type="submit" @click.prevent="save">Add</button>
+      <button class="btn btn-primary save" type="submit">Add</button>
     </div>
   </form>
 </template>
