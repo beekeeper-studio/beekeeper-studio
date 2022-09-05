@@ -148,7 +148,13 @@ export class DBTestUtil {
       charset = 'UTF8'
     }
     await this.connection.createDatabase('new-db_2', charset, collation)
+
+    if (this.dbType === 'sqlite') {
+      // sqlite doesn't list the databases out because they're different files anyway so if it doesn't explode, we're happy as a clam
+      return expect.anything()
+    }
     const newDBsCount = await this.connection.listDatabases()
+
     expect(dbs.length).toBeLessThan(newDBsCount.length)
   }
 
