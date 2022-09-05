@@ -1392,13 +1392,6 @@ export async function dropElement (conn: Conn, elementName: string, typeOfElemen
 }
 
 export async function createDatabase(conn, databaseName, charset) {
-  // return {
-  //   version: '',
-  //   isPostgres: false,
-  //   isCockroach: false,
-  //   isRedshift: false,
-  //   number: 0
-  // }
   const {isPostgres, number: versionAsInteger } = await getVersion(conn)
   if (!checkValidityOfDatabaseName(databaseName)) {
     throw new Error('Database name invalid, must be alphanumeric / have only _ or - special characters')
