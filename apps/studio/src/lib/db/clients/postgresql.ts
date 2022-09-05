@@ -9,8 +9,36 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig, DatabaseElement } from '../client'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
+import { FilterOptions,
+  OrderBy,
+  TableFilter,
+  TableUpdateResult,
+  TableResult,
+  Routine,
+  TableChanges,
+  TableInsert,
+  TableUpdate,
+  TableDelete,
+  DatabaseFilterOptions,
+  SchemaFilterOptions,
+  NgQueryResult,
+  StreamResults,
+  ExtendedTableColumn,
+  PrimaryKeyColumn,
+  TableIndex,
+  IndexedColumn,
+} from "../models";
+import { buildDatabseFilter,
+  buildDeleteQueries,
+  buildInsertQuery,
+  buildInsertQueries,
+  buildSchemaFilter,
+  buildSelectQueriesFromUpdates,
+  buildUpdateQueries,
+  escapeString,
+  joinQueries,
+  checkValidityOfDatabaseName
+} from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
@@ -1364,6 +1392,9 @@ export async function dropElement (conn: Conn, elementName: string, typeOfElemen
 }
 
 export async function createDatabase(conn, databaseName, charset) {
+  if (!checkValidityOfDatabaseName(databaseName)) {
+    throw new Error('Database name invalid, must be alphanumeric / have only _ or - special characters')
+  }
   const sql = `create database ${wrapIdentifier(databaseName)} encoding ${wrapIdentifier(charset)}`;
   await driverExecuteQuery(conn, { query: sql })
 }

@@ -6,7 +6,7 @@ import Database from 'better-sqlite3'
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import rawLog from 'electron-log'
-import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery, escapeLiteral } from './utils';
+import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery, escapeLiteral, checkValidityOfDatabaseName } from './utils';
 import { SqliteCursor } from './sqlite/SqliteCursor';
 import { SqliteChangeBuilder } from '@shared/lib/sql/change_builder/SqliteChangeBuilder';
 import { SqliteData } from '@shared/lib/dialects/sqlite';
@@ -653,10 +653,11 @@ function getVersionString(version) {
 }
 
 export async function createDatabase(conn, databaseName) {
-  const dbNameRegex = /^[a-zA-Z0-9_-]*$/
-  if (!databaseName.match(dbNameRegex)) {
+  if (!checkValidityOfDatabaseName(databaseName)) {
     throw new Error('Database name invalid, must be alphanumeric / have only _ or - special characters')
   }
+  // because this is a convenience for an otherwise ez-pz action, the location of the db file will be in the same location as the other .db files.
+  // If the desire for a "but I want this in another directory" is ever wanted, it can be included but for now this feels like it suits the current needs. 
   const fileLocation = conn.dbConfig.database.split('/')
   fileLocation.pop()
 

@@ -7,7 +7,18 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _, { defaults } from 'lodash';
 
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries, escapeLiteral } from './utils';
+import { buildDatabseFilter,
+  buildDeleteQueries,
+  buildInsertQuery,
+  buildInsertQueries,
+  buildSchemaFilter,
+  buildSelectQueriesFromUpdates,
+  buildUpdateQueries,
+  escapeString,
+  joinQueries,
+  escapeLiteral,
+  checkValidityOfDatabaseName
+} from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
 import { SqlServerData } from '@shared/lib/dialects/sqlserver';
@@ -1114,6 +1125,9 @@ async function executeWithTransaction(conn, queryArgs) {
 }
 
 export async function createDatabase(conn, databaseName) {
+  if (!checkValidityOfDatabaseName(databaseName)) {
+    throw new Error('Database name invalid, must be alphanumeric / have only _ or - special characters')
+  }
   const sql = `create database ${wrapIdentifier(databaseName)}`;
   await driverExecuteQuery(conn, { query: sql })
 }

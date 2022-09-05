@@ -10,7 +10,7 @@ import globals from '../../../common/globals';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import { MysqlCursor } from './mysql/MySqlCursor';
-import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral } from './utils';
+import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, checkValidityOfDatabaseName } from './utils';
 import { MysqlData } from '@shared/lib/dialects/mysql'
 
 const log = rawLog.scope('mysql')
@@ -1059,6 +1059,9 @@ export async function listCollations(conn, charset) {
 }
 
 export async function createDatabase(conn, databaseName, charset, collation) {
+  if (!checkValidityOfDatabaseName(databaseName)) {
+    throw new Error('Database name invalid, must be alphanumeric / have only _ or - special characters')
+  }
   const sql = `create database ${wrapIdentifier(databaseName)} character set ${wrapIdentifier(charset)} collate ${wrapIdentifier(collation)}`;
   await driverExecuteQuery(conn, { query: sql })
 }
