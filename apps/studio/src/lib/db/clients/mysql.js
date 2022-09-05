@@ -1066,7 +1066,6 @@ export async function createDatabase(conn, databaseName, charset, collation) {
   await driverExecuteQuery(conn, { query: sql })
 }
 
-
 export const testOnly = {
   parseFields
 }

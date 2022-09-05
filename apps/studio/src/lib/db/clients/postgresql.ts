@@ -1392,10 +1392,29 @@ export async function dropElement (conn: Conn, elementName: string, typeOfElemen
 }
 
 export async function createDatabase(conn, databaseName, charset) {
+  // return {
+  //   version: '',
+  //   isPostgres: false,
+  //   isCockroach: false,
+  //   isRedshift: false,
+  //   number: 0
+  // }
+  const {isPostgres, number: versionAsInteger } = await getVersion(conn)
   if (!checkValidityOfDatabaseName(databaseName)) {
     throw new Error('Database name invalid, must be alphanumeric / have only _ or - special characters')
   }
-  const sql = `create database ${wrapIdentifier(databaseName)} encoding ${wrapIdentifier(charset)}`;
+
+  let sql = `create database ${wrapIdentifier(databaseName)} encoding ${wrapIdentifier(charset)}`;
+
+  // postgres 9 seems to freak out if the charset isn't wrapped in single quotes and also requires the template https://www.postgresql.org/docs/9.3/sql-createdatabase.html
+  // later version don't seem to care
+  if (isPostgres && versionAsInteger < 100000) {
+    if (!checkValidityOfDatabaseName(charset)) {
+      throw new Error('Encoding format invalid')
+    }
+    sql = `create database ${wrapIdentifier(databaseName)} encoding '${charset}' template template0`;
+  }
+
   await driverExecuteQuery(conn, { query: sql })
 }
 

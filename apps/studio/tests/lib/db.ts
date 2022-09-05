@@ -140,6 +140,30 @@ export class DBTestUtil {
     }
   }
 
+  async createDatabaseTests() {
+    const dbs = await this.connection.listDatabases()
+    const collation = 'utf8_general_ci'
+    let charset = 'utf8'
+    if (this.dbType === 'postgresql') {
+      charset = 'UTF8'
+    }
+    await this.connection.createDatabase('new-db_2', charset, collation)
+    const newDBsCount = await this.connection.listDatabases()
+    expect(dbs.length).toBeLessThan(newDBsCount.length)
+  }
+
+  async badCreateDatabaseTests() {
+    const dbs = await this.connection.listDatabases()
+    try {
+      await this.connection.createDatabase('db-*', 'UTF-8', 'notimportant')
+      const newDBsCount = await this.connection.listDatabases()
+      expect(dbs.length).toEqual(newDBsCount.length)
+    } catch (err) {
+      const newDBsCount = await this.connection.listDatabases()
+      expect(dbs.length).toEqual(newDBsCount.length)
+    }
+  }
+
   async listTableTests() {
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
     expect(tables.length).toBeGreaterThanOrEqual(this.expectedTables)
