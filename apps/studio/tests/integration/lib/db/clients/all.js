@@ -76,11 +76,11 @@ export function runCommonTests(getUtil) {
   })
 
   describe("Create Database Tests", () => {
-    test.only("Invalid database name", async () => {
+    test("Invalid database name", async () => {
       await getUtil().badCreateDatabaseTests()
     })
     
-    test.only("Should create database", async () => {
+    test("Should create database", async () => {
       await getUtil().createDatabaseTests()
     })
   })
