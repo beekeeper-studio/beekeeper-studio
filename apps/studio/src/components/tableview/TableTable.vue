@@ -281,7 +281,7 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(['tables', 'tablesInitialLoaded']),
+    ...mapState(['tables', 'tablesInitialLoaded', 'connection', 'database']),
     ...mapGetters(['dialectData']),
     loadingLength() {
       return this.totalRecords === null
@@ -571,6 +571,12 @@ export default Vue.extend({
 
       return results
     },
+
+    tableId() {
+      // the id for a tabulator table
+      if (!this.connection.id) return null;
+      return `${this.connection.id}.${this.database || 'none'}.${this.table.schema || 'none'}.${this.table.name}`
+    },
     filterValue() {
       return this.filter.value;
     },
@@ -734,6 +740,21 @@ export default Vue.extend({
         filter: true,
         order: 0,
       }))
+
+      let persistenceOptions = {}
+
+      if (this.tableId) {
+        persistenceOptions = {
+          persistence: {
+            sort: false,
+            filter: false,
+            group: false,
+            columns: ['width', 'visible'],
+          },
+          persistenceMode: 'local',
+          persistenceID: this.tableId,
+        }
+      }
       // @ts-ignore-error
       this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,
@@ -752,6 +773,7 @@ export default Vue.extend({
         paginationButtonCount: 0,
         initialSort: this.initialSort,
         initialFilter: [this.initialFilter || {}],
+        ...persistenceOptions,
 
         // callbacks
         ajaxRequestFunc: this.dataFetch,
