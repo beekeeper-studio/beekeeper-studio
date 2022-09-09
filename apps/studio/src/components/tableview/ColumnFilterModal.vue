@@ -6,7 +6,7 @@
       :name="modalName"
     >
       <form @submit.prevent="onSubmit">
-        <div class="dialog-content">
+        <div class="dialog-content filter-modal">
           <div class="dialog-c-title flex flex-middle">
             Choose Columns To Display
           </div>
