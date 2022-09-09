@@ -10,8 +10,8 @@ import path from 'path'
 const TEST_VERSIONS = [
   { version: '9.3', socket: false}, 
   { version: '9.4', socket: false}, 
-  { version: 'latest', socket: false },
-  { version: 'latest', socket: true },
+  // { version: 'latest', socket: false },
+  // { version: 'latest', socket: true },
 ]
 
 function testWith(dockerTag, socket = false) {

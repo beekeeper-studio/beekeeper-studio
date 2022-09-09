@@ -61,7 +61,8 @@ export interface DatabaseClient {
   setTableDescription: (table: string, description: string, schema?: string) => Promise<string>
 
   // delete stuff
-  dropElement: (elementName: string, typeOfElement: DatabaseElement, schema: string) => Promise<void>
+  dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => Promise<void>
+  truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => Promise<void>
 }
 
 export type IDbClients = keyof typeof clients
@@ -177,6 +178,7 @@ export class DBConnection {
 
   // delete stuff
   dropElement = bindAsync.bind(null, 'dropElement', this.server, this.database)
+  truncateElement = bindAsync.bind(null, 'truncateElement', this.server, this.database)
 
   async currentDatabase() {
     return this.database.database
