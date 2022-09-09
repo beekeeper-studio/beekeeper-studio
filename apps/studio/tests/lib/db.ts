@@ -113,13 +113,71 @@ export class DBTestUtil {
 
   }
 
+  async dropTableTests() {
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
+    await this.connection.dropElement('test_inserts', 'TABLE', this.defaultSchema)
+    const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+    expect(newTablesCount.length).toBeLessThan(tables.length)
+  }
+
+  async badDropTableTests() {
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
+    const expectedQueries = {
+      postgresql: 'test_inserts"drop table test_inserts"',
+      mysql: "test_inserts'drop table test_inserts'",
+      mariadb: "test_inserts'drop table test_inserts'",
+      sqlite: 'test_inserts"drop table test_inserts"',
+      sqlserver: 'test_inserts[drop table test_inserts]',
+      cockroachdb: 'test_inserts"drop table test_inserts"'
+    }
+    try {
+      await this.connection.dropElement(expectedQueries[this.dbType], 'TABLE', this.defaultSchema)
+      const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+      expect(newTablesCount.length).toEqual(tables.length)
+    } catch (err) {
+      const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+      expect(newTablesCount.length).toEqual(tables.length)
+    }
+  }
+
+  async truncateTableTests() {
+    await this.knex('group').insert([{select: 'something'}, {select: 'something'}])
+    const initialRowCount = await this.knex.select().from('group')
+
+    await this.connection.truncateElement('group', 'TABLE', this.defaultSchema)
+    const newRowCount = await this.knex.select().from('group')
+
+    expect(newRowCount.length).toBe(0)
+    expect(initialRowCount.length).toBeGreaterThan(newRowCount.length)
+  }
+
+  async badTruncateTableTests() {
+    await this.knex('group').insert([{select: 'something'}, {select: 'something'}])
+    const initialRowCount = await this.knex.select().from('group')
+    const expectedQueries = {
+      postgresql: 'group"drop table test_inserts"',
+      mysql: "group'drop table test_inserts'",
+      mariadb: "group'drop table test_inserts'",
+      sqlite: 'group"Delete from test_inserts; vacuum;"',
+      sqlserver: 'group[drop table test_inserts]',
+      cockroachdb: 'group"drop table test_inserts"'
+    }
+    try {
+      await this.connection.dropElement(expectedQueries[this.dbType], 'TABLE', this.defaultSchema)
+      const newRowCount = await this.knex.select().from('group')
+      expect(newRowCount.length).toEqual(initialRowCount.length)
+    } catch (err) {
+      const newRowCount = await this.knex.select().from('group')
+      expect(newRowCount.length).toEqual(initialRowCount.length)
+    }
+  }
+
   async listTableTests() {
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
     expect(tables.length).toBeGreaterThanOrEqual(this.expectedTables)
     const columns = await this.connection.listTableColumns("people", this.defaultSchema)
     expect(columns.length).toBe(7)
   }
-
 
   async tableColumnsTests() {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)

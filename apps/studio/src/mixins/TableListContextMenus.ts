@@ -62,8 +62,23 @@ export default {
             this.$root.$emit('loadTableCreate', item)
           }
         },
-
-
+        {
+          type: 'divider'
+        },
+        {
+          name: "Delete",
+          slug: 'sql-delete',
+          handler: ({ item }) => {
+            this.$root.$emit('deleteDatabaseElement', {item, action: 'delete'})
+          }
+        },
+        {
+          name: "Truncate",
+          slug: 'sql-truncate',
+          handler: ({ item }) => {
+            this.$root.$emit('deleteDatabaseElement', {item, action: 'truncate'})
+          }
+        },
       ]
     }
   },
