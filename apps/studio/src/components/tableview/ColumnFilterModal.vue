@@ -76,7 +76,7 @@
   </modal>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
   .modal-form {
     margin-top: 0.25rem;
   }
