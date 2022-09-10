@@ -23,6 +23,7 @@ export enum AppEvent {
   promptConnectionImport = 'cloud_c_import',
   hideEntity = 'hideEntity',
   hideSchema = 'hideSchema',
+  deleteDatabaseElement = 'deleteDatabaseElement',
 }
 
 export interface RootBinding {

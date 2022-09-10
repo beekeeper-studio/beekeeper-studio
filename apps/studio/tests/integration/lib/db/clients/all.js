@@ -61,6 +61,33 @@ export function runCommonTests(getUtil) {
     })
   })
 
+  describe("Drop Table Tests", () => {
+    beforeEach(async() => {
+      await prepareTestTable(getUtil())
+    })
+
+    test("Should delete table", async () => {
+      await getUtil().dropTableTests()
+    })
+
+    test("Bad input shouldn't delete table", async () => {
+      await getUtil().badDropTableTests()
+    })
+  })
+
+  describe("Truncate Table Tests", () => {
+    beforeEach(async() => {
+      await prepareTestTable(getUtil())
+    })
+
+    test("Should truncate table", async () => {
+      await getUtil().truncateTableTests()
+    })
+
+    test("Bad input shouldn't allow table truncate", async () => {
+      await getUtil().badTruncateTableTests()
+    })
+  })
 
   describe("Table Structure", () => {
     test("should fetch table properties", async() => {

@@ -74,6 +74,7 @@
         @download="download"
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
+        @clipboardMarkdown="clipboardMarkdown"
         :executeTime="executeTime"
       ></query-editor-status-bar>
     </div>
@@ -493,7 +494,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             lineNumbers: true,
             mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
             theme: 'monokai',
-            extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete"},
+            extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete", "Shift-Tab": "indentLess"},
             hint: CodeMirror.hint.sql,
             hintOptions: this.hintOptions
           })
@@ -583,7 +584,10 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         this.$refs.table.clipboard()
       },
       clipboardJson() {
-        const data = this.$refs.table.clipboard(true)
+        const data = this.$refs.table.clipboard('json')
+      },
+      clipboardMarkdown() {
+        const data = this.$refs.table.clipboard('md')
       },
       selectEditor() {
         this.editor.focus()

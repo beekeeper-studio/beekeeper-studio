@@ -42,12 +42,18 @@
           <x-menuitem @click.prevent="download('json')">
             <x-label>JSON</x-label>
           </x-menuitem>
+          <x-menuitem @click.prevent="download('md')">
+            <x-label>Markdown</x-label>
+          </x-menuitem>
           <hr>
           <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboard">
             <x-label>Copy to Clipboard (TSV / Excel)</x-label>
           </x-menuitem>
           <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboardJson">
             <x-label>Copy to Clipboard (JSON)</x-label>
+          </x-menuitem>
+          <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboardMarkdown">
+            <x-label>Copy to Clipboard (Markdown)</x-label>
           </x-menuitem>
         </x-menu>
       </x-button>
@@ -165,8 +171,10 @@ export default {
       },
       copyToClipboardJson() {
         this.$emit('clipboardJson')
-      }
-
+      },
+      copyToClipboardMarkdown() {
+        this.$emit('clipboardMarkdown')
+      },
     }
 }
 </script>

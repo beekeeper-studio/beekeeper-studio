@@ -6,7 +6,7 @@ import Database from 'better-sqlite3'
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import rawLog from 'electron-log'
-import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery } from './utils';
+import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery, escapeLiteral } from './utils';
 import { SqliteCursor } from './sqlite/SqliteCursor';
 import { SqliteChangeBuilder } from '@shared/lib/sql/change_builder/SqliteChangeBuilder';
 import { SqliteData } from '@shared/lib/dialects/sqlite';
@@ -74,6 +74,10 @@ export default async function (server, database) {
     // relations
     alterRelationSql: (payload) => alterRelationSql(payload),
     alterRelation: (payload) => alterRelation(conn, payload),
+
+    // delete stuff
+    dropElement: (elementName, typeOfElement) => dropElement(conn, elementName, typeOfElement),
+    truncateElement: (elementName) => truncateElement(conn, elementName)
   };
 }
 
@@ -472,6 +476,24 @@ export async function truncateAllTables(conn) {
     // DELETE FROM sqlite_sequence WHERE name='${table}';
 
     await driverExecuteQuery(connClient, { query: truncateAll });
+  });
+}
+
+export async function dropElement (conn, elementName, typeOfElement) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `DROP ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
+  });
+}
+
+export async function truncateElement (conn, elementName) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `Delete from ${PD.wrapIdentifier(elementName)}; vacuum;`
+
+    await driverExecuteQuery(connClient, { query: sql })
   });
 }
 

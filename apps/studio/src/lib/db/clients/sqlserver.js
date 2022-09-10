@@ -7,7 +7,7 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _, { defaults } from 'lodash';
 
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries, escapeLiteral } from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
 import { SqlServerData } from '@shared/lib/dialects/sqlserver';
@@ -82,7 +82,9 @@ export default async function (server, database) {
     alterRelationSql: (payload) => alterRelationSql(payload),
     alterRelation: (payload) => alterRelation(conn, payload),
 
-
+    // remove things
+    dropElement: (elementName, typeOfElement, schema) => dropElement(conn, elementName, typeOfElement, schema),
+    truncateElement: (elementName, typeOfElement, schema) => truncateElement(conn, elementName, typeOfElement, schema)
   };
 }
 
@@ -830,6 +832,24 @@ export async function truncateAllTables(conn) {
     `).join('');
 
     await driverExecuteQuery(connClient, { query: truncateAll, multiple: true });
+  });
+}
+
+export async function dropElement (conn, elementName, typeOfElement, schema = 'dbo') {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
+  });
+}
+
+export async function truncateElement (conn, elementName, typeOfElement, schema = 'dbo') {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
   });
 }
 

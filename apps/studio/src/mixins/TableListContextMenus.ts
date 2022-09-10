@@ -92,7 +92,20 @@ export default {
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.hideSchema, item.schema)
           },
-        }
+        },
+          name: "Delete",
+          slug: 'sql-delete',
+          handler: ({ item }) => {
+            this.$root.$emit('deleteDatabaseElement', {item, action: 'delete'})
+          }
+        },
+        {
+          name: "Truncate",
+          slug: 'sql-truncate',
+          handler: ({ item }) => {
+            this.$root.$emit('deleteDatabaseElement', {item, action: 'truncate'})
+          }
+        },
       ]
     }
   },
