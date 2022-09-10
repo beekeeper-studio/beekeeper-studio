@@ -93,6 +93,7 @@ export default {
             this.$root.$emit(AppEvent.hideSchema, item.schema)
           },
         },
+        {
           name: "Delete",
           slug: 'sql-delete',
           handler: ({ item }) => {
