@@ -1193,8 +1193,6 @@ export async function listDatabases(conn: Conn, filter?: DatabaseFilterOptions) 
 export async function getInsertQuery(conn: HasPool, database: string, tableInsert: TableInsert): Promise<string> {
   const columns = await listTableColumns(conn, database, tableInsert.table, tableInsert.schema)
 
-  // debugger // eslint-disable-line
-  
   return buildInsertQuery(knex, tableInsert, columns, _.toString)
 }
 
