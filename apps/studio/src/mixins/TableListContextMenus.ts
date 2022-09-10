@@ -66,17 +66,17 @@ export default {
           type: 'divider'
         },
         {
-          name: "Delete",
+          name: "Drop",
           slug: 'sql-delete',
           handler: ({ item }) => {
-            this.$root.$emit('deleteDatabaseElement', {item, action: 'delete'})
+            this.$root.$emit('dropDatabaseElement', {item, action: 'drop'})
           }
         },
         {
           name: "Truncate",
           slug: 'sql-truncate',
           handler: ({ item }) => {
-            this.$root.$emit('deleteDatabaseElement', {item, action: 'truncate'})
+            this.$root.$emit('dropDatabaseElement', {item, action: 'truncate'})
           }
         },
       ]

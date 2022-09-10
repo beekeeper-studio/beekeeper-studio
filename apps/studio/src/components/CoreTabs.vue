@@ -170,7 +170,7 @@
           { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
           { event: 'favoriteClick', handler: this.favoriteClick },
           { event: 'exportTable', handler: this.openExportModal },
-          { event: AppEvent.deleteDatabaseElement, handler: this.deleteDatabaseElement }
+          { event: AppEvent.dropDatabaseElement, handler: this.dropDatabaseElement }
         ]
       },
       contextOptions() {
@@ -204,7 +204,7 @@
         const { schema, name: dbName, entityType } = this.dbDeleteElementParams
         this.$modal.hide(this.modalName)
         this.$nextTick(async() => {
-          if (this.dbAction.toLowerCase() === 'delete') {
+          if (this.dbAction.toLowerCase() === 'drop') {
             await this.connection.dropElement(dbName, entityType?.toUpperCase(), schema)
             // timeout is more about aesthetics so it doesn't refresh the table right away.
 
@@ -303,7 +303,7 @@
         const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
         this.createQuery(stringResult)
       },
-      deleteDatabaseElement({ item: dbActionParams, action: dbAction }) { 
+      dropDatabaseElement({ item: dbActionParams, action: dbAction }) { 
         this.dbElement = dbActionParams.name
         this.dbAction = dbAction
         this.dbEntityType = dbActionParams.entityType
