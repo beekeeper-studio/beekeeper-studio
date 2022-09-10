@@ -20,9 +20,10 @@ export enum AppEvent {
   quickSearch = 'quickSearch',
   promptLogin = 'cloud_signin',
   promptQueryImport = 'cloud_q_import',
-  promptConnectionImport = 'cloud_c_import'
+  promptConnectionImport = 'cloud_c_import',
+  hideEntity = 'hideEntity',
+  hideSchema = 'hideSchema',
 }
-
 
 export interface RootBinding {
   event: string

@@ -81,6 +81,7 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
 import Vue from 'vue';
 import { OpenTab } from '@/common/appdb/models/OpenTab';
 import TabWithTable from './common/TabWithTable.vue';
+import { DatabaseEntity } from "@/lib/db/models"
 
   export default Vue.extend({
     props: [ 'connection' ],
@@ -131,6 +132,8 @@ import TabWithTable from './common/TabWithTable.vue';
           { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
           { event: 'favoriteClick', handler: this.favoriteClick },
           { event: 'exportTable', handler: this.openExportModal },
+          { event: AppEvent.hideEntity, handler: this.hideEntity },
+          { event: AppEvent.hideSchema, handler: this.hideSchema },
         ]
       },
       contextOptions() {
@@ -268,6 +271,12 @@ import TabWithTable from './common/TabWithTable.vue';
       openExportModal(options) {
         this.tableExportOptions = options
         this.showExportModal = true
+      },
+      hideEntity(entity: DatabaseEntity) {
+        this.$store.dispatch('hideEntities/addEntity', entity)
+      },
+      hideSchema(schema: string) {
+        this.$store.dispatch('hideEntities/addSchema', schema)
       },
       openSettings() {
         const tab = new OpenTab('settings')

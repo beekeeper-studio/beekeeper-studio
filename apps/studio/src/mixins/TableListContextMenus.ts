@@ -13,7 +13,17 @@ export default {
           name: "SQL: Create",
           slug: 'sql-create',
           handler: this.routineMenuClick
-        }
+        },
+        {
+          type: 'divider'
+        },
+        {
+          name: "Hide",
+          slug: 'hide-entity',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.hideEntity, item)
+          }
+        },
       ],
  
     }
@@ -62,8 +72,27 @@ export default {
             this.$root.$emit('loadTableCreate', item)
           }
         },
-
-
+        {
+          type: 'divider'
+        },
+        {
+          name: "Hide",
+          slug: 'hide-entity',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.hideEntity, item)
+          }
+        },
+      ]
+    },
+    schemaMenuOptions() {
+      return [
+        {
+          name: "Hide",
+          slug: 'hide-schema',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.hideSchema, item.schema)
+          },
+        }
       ]
     }
   },
