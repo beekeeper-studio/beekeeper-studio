@@ -67,7 +67,7 @@ export default {
         },
         {
           name: "Drop",
-          slug: 'sql-delete',
+          slug: 'sql-drop',
           handler: ({ item }) => {
             this.$root.$emit('dropDatabaseElement', {item, action: 'drop'})
           }
