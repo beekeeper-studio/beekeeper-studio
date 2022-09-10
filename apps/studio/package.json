@@ -23,6 +23,7 @@
   },
   "main": "background.js",
   "dependencies": {
+    "@aws-sdk/client-redshift": "^3.145.0",
     "axios": "^0.21.4",
     "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
@@ -89,6 +90,7 @@
     "yargs-parser": "^20.2.7"
   },
   "devDependencies": {
+    "@aws-sdk/types": "^3.127.0",
     "@types/better-sqlite3": "^5.4.1",
     "@types/bytes": "^3.1.0",
     "@types/codemirror": "^0.0.97",

@@ -24,6 +24,16 @@ export const ConnectionTypes = [
   { name: 'Oracle (ultimate)', value: 'other'}
 ]
 
+export interface RedshiftOptions {
+  iamAuthenticationEnabled?: boolean
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  awsRegion?: string;
+  clusterIdentifier?: string;
+  databaseGroup?: string;
+  tokenDurationSeconds?: number;
+}
+
 export interface ConnectionOptions {
   cluster?: string
 }
@@ -165,6 +175,9 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({type: 'simple-json', nullable: false})
   options: ConnectionOptions = {}
+
+  @Column({type: 'simple-json', nullable: false})
+  redshiftOptions: RedshiftOptions = {}
 
   // this is only for SQL Server.
   @Column({type: 'boolean', nullable: false})

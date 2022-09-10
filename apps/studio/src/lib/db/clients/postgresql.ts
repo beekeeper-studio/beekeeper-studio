@@ -9,36 +9,9 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig, DatabaseElement } from '../client'
-import { FilterOptions,
-  OrderBy,
-  TableFilter,
-  TableUpdateResult,
-  TableResult,
-  Routine,
-  TableChanges,
-  TableInsert,
-  TableUpdate,
-  TableDelete,
-  DatabaseFilterOptions,
-  SchemaFilterOptions,
-  NgQueryResult,
-  StreamResults,
-  ExtendedTableColumn,
-  PrimaryKeyColumn,
-  TableIndex,
-  IndexedColumn,
-} from "../models";
-import { buildDatabseFilter,
-  buildDeleteQueries,
-  buildInsertQuery,
-  buildInsertQueries,
-  buildSchemaFilter,
-  buildSelectQueriesFromUpdates,
-  buildUpdateQueries,
-  escapeString,
-  joinQueries,
-  checkValidityOfDatabaseName
-} from './utils';
+import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from '../authentication/amazon-redshift';
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries, checkValidityOfDatabaseName } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
@@ -162,7 +135,7 @@ async function getTypes(conn: HasPool): Promise<any> {
 
 
 export default async function (server: any, database: any): Promise<DatabaseClient> {
-  const dbConfig = configDatabase(server, database);
+  const dbConfig = await configDatabase(server, database);
   logger().debug('create driver client for postgres with config %j', dbConfig);
 
   const conn: HasPool = {
@@ -233,7 +206,8 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     alterRelation: (payload) => alterRelation(conn, payload),
 
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
-    dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string|null) => dropElement(conn, elementName, typeOfElement, schema)
+    dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string|null) => dropElement(conn, elementName, typeOfElement, schema),
+    truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema)
   };
 }
 
@@ -1411,8 +1385,16 @@ export async function createDatabase(conn, databaseName, charset) {
   await driverExecuteQuery(conn, { query: sql })
 }
 
+export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
 
-function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
+    await driverExecuteSingle(connClient, { query: sql })
+  });
+}
+
+async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
 
   let optionsString = undefined
   if (server.config.client === 'cockroachdb') {
@@ -1422,10 +1404,47 @@ function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServe
     }
   }
 
+  // If a temporary user is used to connect to the database, we populate it below.
+  let tempUser: string;
+
+  // If the password for the database can expire, we populate passwordResolver with a callback
+  // that can be used to resolve the latest password.
+  let passwordResolver: () => Promise<string>;
+
+  // For Redshift Only -- IAM authentication and credential exchange
+  const redshiftOptions = server.config.redshiftOptions;
+  if (server.config.client === 'redshift' && redshiftOptions?.iamAuthenticationEnabled) {
+    const awsCreds: AWSCredentials = {
+      accessKeyId: redshiftOptions.accessKeyId,
+      secretAccessKey: redshiftOptions.secretAccessKey
+    };
+
+    const clusterConfig: ClusterCredentialConfiguration = {
+      awsRegion: redshiftOptions.awsRegion,
+      clusterIdentifier: redshiftOptions.clusterIdentifier,
+      dbName: database.database,
+      dbUser: server.config.user,
+      dbGroup: redshiftOptions.databaseGroup,
+      durationSeconds: server.config.options.tokenDurationSeconds
+    };
+
+    const credentialResolver = RedshiftCredentialResolver.getInstance();
+
+    // We need resolve credentials once to get the temporary database user, which does not change
+    // on each call to get credentials.
+    // This is usually something like "IAMA:<user>" or "IAMA:<user>:<group>".
+    tempUser = (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbUser;
+
+    // Set the password resolver to resolve the Redshift credentials and return the password.
+    passwordResolver = async() => {
+      return (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbPassword;
+    }
+  }
+
   const config: PoolConfig = {
     host: server.config.host,
     port: server.config.port || undefined,
-    password: server.config.password || undefined,
+    password: passwordResolver || server.config.password || undefined,
     database: database.database,
     max: 5, // max idle connections per time (30 secs)
     connectionTimeoutMillis: globals.psqlTimeout,
@@ -1435,7 +1454,9 @@ function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServe
     options: optionsString
   };
 
-  if (server.config.user) {
+  if (tempUser) {
+    config.user = tempUser
+  } else if (server.config.user) {
     config.user = server.config.user
   } else if (server.config.osUser) {
     config.user = server.config.osUser
