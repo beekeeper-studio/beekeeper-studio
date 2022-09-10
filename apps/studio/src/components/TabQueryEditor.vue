@@ -494,7 +494,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             lineNumbers: true,
             mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
             theme: 'monokai',
-            extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete"},
+            extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete", "Shift-Tab": "indentLess"},
             hint: CodeMirror.hint.sql,
             hintOptions: this.hintOptions
           })

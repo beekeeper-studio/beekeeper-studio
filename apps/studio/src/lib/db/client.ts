@@ -5,6 +5,7 @@ import createLogger from '../logger';
 import { SSHConnection } from '@/vendor/node-ssh-forward/index';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert } from './models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
+import { RedshiftOptions } from '@/common/appdb/models/saved_connection';
 
 const logger = createLogger('db');
 
@@ -61,7 +62,8 @@ export interface DatabaseClient {
   setTableDescription: (table: string, description: string, schema?: string) => Promise<string>
 
   // delete stuff
-  dropElement: (elementName: string, typeOfElement: DatabaseElement, schema: string) => Promise<void>
+  dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => Promise<void>
+  truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => Promise<void>
 }
 
 export type IDbClients = keyof typeof clients
@@ -98,6 +100,7 @@ export interface IDbConnectionServerConfig {
   localPort?: number,
   trustServerCertificate?: boolean
   options?: any
+  redshiftOptions?: RedshiftOptions
 }
 
 export interface IDbSshTunnel {
@@ -177,6 +180,7 @@ export class DBConnection {
 
   // delete stuff
   dropElement = bindAsync.bind(null, 'dropElement', this.server, this.database)
+  truncateElement = bindAsync.bind(null, 'truncateElement', this.server, this.database)
 
   async currentDatabase() {
     return this.database.database

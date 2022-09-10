@@ -72,6 +72,13 @@ export default {
             this.$root.$emit('deleteDatabaseElement', {item, action: 'delete'})
           }
         },
+        {
+          name: "Truncate",
+          slug: 'sql-truncate',
+          handler: ({ item }) => {
+            this.$root.$emit('deleteDatabaseElement', {item, action: 'truncate'})
+          }
+        },
       ]
     }
   },
