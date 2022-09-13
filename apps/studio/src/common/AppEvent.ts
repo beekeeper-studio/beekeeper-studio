@@ -24,6 +24,7 @@ export enum AppEvent {
   hideEntity = 'hideEntity',
   hideSchema = 'hideSchema',
   deleteDatabaseElement = 'deleteDatabaseElement',
+  dropDatabaseElement = 'dropDatabaseElement',
 }
 
 export interface RootBinding {

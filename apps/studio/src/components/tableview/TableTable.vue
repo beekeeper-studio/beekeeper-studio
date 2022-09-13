@@ -9,15 +9,15 @@
       <div class="table-filter">
         <form @submit.prevent="triggerFilter" class="flex flex-middle">
           <div class="filter-group" style="margin-left: 0.2rem">
-            <span
+            <button
               type="button"
               class="btn btn-flat btn-fab"
               :class="{'btn-primary': !allColumnsSelected}"
-              title="Filter Columns"
+              :title="`Set column visibility (${hiddenColumnCount} hidden)`"
               @click="showColumnFilterModal()"
             >
-              <i class="material-icons">filter_alt</i>
-            </span>
+              <i class="material-icons-outlined">visibility</i>
+            </button>
           </div>
           <div v-if="filterMode === 'raw'" class="filter-group row gutter expand">
             <div class="btn-wrap">
@@ -246,7 +246,6 @@ export default Vue.extend({
       filterRaw: null,
       filterMode: FILTER_MODE_BUILDER,
       headerFilter: true,
-      columnsWithFilterAndOrder: [],
       columnsSet: false,
       tabulator: null,
       actualTableHeight: "100%",
@@ -255,6 +254,7 @@ export default Vue.extend({
       // table data
       data: null, // array of data
       totalRecords: null,
+      preLoadScrollPosition: null,
       //
       response: null,
       limit: 100,
@@ -282,11 +282,26 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(['tables', 'tablesInitialLoaded']),
+    ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database']),
     ...mapGetters(['dialectData']),
     loadingLength() {
       return this.totalRecords === null
     },
+    columnsWithFilterAndOrder() {
+      if (!this.tabulator || !this.table) return []
+      const cols = this.tabulator.getColumns()
+      const columnNames = this.table.columns.map((c) => c.columnName)
+      const typeOf = (f) => this.table.columns.find((c) => c.columnName === f)?.dataType
+      return cols
+        .filter((c) => columnNames.includes(c.getField()))
+        .map((c, idx) => ({
+        name: c.getField(),
+        dataType: typeOf(c.getField()),
+        filter: c.isVisible(),
+        order: idx
+      }))
+    },
+
     page: {
       set(nu) {
         const newPage = Number(nu)
@@ -401,8 +416,14 @@ export default Vue.extend({
     filterPlaceholder() {
       return `Enter condition, eg: name like 'Matthew%'`
     },
+    tableHolder() {
+      return this.$el.querySelector('.tabulator-tableholder')
+    },
     allColumnsSelected() {
       return this.columnsWithFilterAndOrder.every((column) => column.filter)
+    },
+    hiddenColumnCount() {
+      return this.columnsWithFilterAndOrder.filter((c) => !c.filter).length
     },
     builderPlaceholder() {
       return this.filter.type === 'in' ? `Enter values separated by comma, eg: foo,bar` : 'Enter Value'
@@ -581,6 +602,26 @@ export default Vue.extend({
 
       return results
     },
+
+    tableId() {
+      // the id for a tabulator table
+      if (!this.usedConfig.id) return null;
+      return `${this.usedConfig.id}.${this.database || 'none'}.${this.table.schema || 'none'}.${this.table.name}`
+    },
+    persistenceOptions() {
+      if (!this.tableId) return {}
+
+      return {
+        persistence: {
+          sort: false,
+          filter: false,
+          group: false,
+          columns: ['width', 'visible'],
+        },
+        persistenceMode: 'local',
+        persistenceID: this.tableId,
+      }
+    },
     filterValue() {
       return this.filter.value;
     },
@@ -709,6 +750,12 @@ export default Vue.extend({
     }
   },
   methods: {
+    maybeScroll() {
+      if (this.preLoadScrollPosition) {
+        this.tableHolder.scrollLeft = this.preLoadScrollPosition
+        this.preLoadScrollPosition = null
+      }
+    },
     maybeUnselectCell(event) {
       if (!this.selectedCell) return
       if (!this.active) return
@@ -738,12 +785,15 @@ export default Vue.extend({
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-      this.columnsWithFilterAndOrder = this.table.columns.map(({columnName, dataType}) => ({
-        name: columnName,
-        dataType,
-        filter: true,
-        order: 0,
-      }))
+      // this.columnsWithFilterAndOrder = this.table.columns.map(({columnName, dataType}) => ({
+      //   name: columnName,
+      //   dataType,
+      //   filter: true,
+      //   order: 0,
+      // }))
+
+
+
       // @ts-ignore-error
       this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,
@@ -762,6 +812,7 @@ export default Vue.extend({
         paginationButtonCount: 0,
         initialSort: this.initialSort,
         initialFilter: [this.initialFilter || {}],
+        ...this.persistenceOptions,
 
         // callbacks
         ajaxRequestFunc: this.dataFetch,
@@ -777,6 +828,7 @@ export default Vue.extend({
         ]
       });
       this.tabulator.on('cellEdited', this.cellEdited)
+      this.tabulator.on('dataProcessed', this.maybeScroll)
 
       this.$nextTick(() => {
         if (this.$refs.valueInput) {
@@ -917,12 +969,18 @@ export default Vue.extend({
         return true
       }
 
-      const primaryKeys = cell.getRow().getCells().filter(c => this.isPrimaryKey(c.getField())).map(pkCell => ({ value: pkCell.getValue(), column: pkCell.getField()}))
+      const rowData = cell.getRow().getData()
+      const primaryKeys = Object.keys(rowData).filter((k) => this.isPrimaryKey(k))
+        .map((key) => ({
+          column: key,
+          value: rowData[key]
+        }))
       const pendingDelete = _.find(this.pendingChanges.deletes, (item) => _.isEqual(item.primaryKeys, primaryKeys))
 
-      return this.editable && !this.isPrimaryKey(cell.getColumn().getField()) && !pendingDelete
+      return this.editable && !this.isPrimaryKey(cell.getField()) && !pendingDelete
     },
     cellEdited(cell) {
+
       const pkCells = cell.getRow().getCells().filter(c => this.isPrimaryKey(c.getField()))
 
       if (!pkCells) {
@@ -1206,10 +1264,9 @@ export default Vue.extend({
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
-            const selects = this.allColumnsSelected
-              ? ['*']
-              : this.columnsWithFilterAndOrder.filter(({filter}) => filter).map(({name}) => name)
 
+            // lets just make column selection a front-end only thing
+            const selects = ['*']
             const response = await this.connection.selectTop(
               this.table.name,
               offset,
@@ -1238,6 +1295,7 @@ export default Vue.extend({
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
+            this.preLoadScrollPosition = this.tableHolder.scrollLeft
             resolve({
               last_page: 1,
               data
@@ -1313,9 +1371,7 @@ export default Vue.extend({
 
       this.tabulator.restoreRedraw();
 
-      this.columnsWithFilterAndOrder = columns
-
-      this.tabulator.setData()
+      this.tabulator.redraw(true)
     }
   }
 });
