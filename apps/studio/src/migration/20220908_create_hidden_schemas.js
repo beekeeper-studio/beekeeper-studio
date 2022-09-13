@@ -6,13 +6,12 @@ export default {
         "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
         "name" varchar(255) NOT NULL,
         "databaseName" varchar(255) NOT NULL,
-        "savedConnectionId" integer REFERENCES saved_connection(id) ON DELETE SET NULL,
         "createdAt" datetime NOT NULL DEFAULT (datetime('now')),
         "updatedAt" datetime NOT NULL DEFAULT (datetime('now')),
         "version" integer NOT NULL DEFAULT 0,
         "connectionId" integer,
         "workspaceId" integer NOT NULL DEFAULT -1,
-        UNIQUE(savedConnectionId, databaseName, name)
+        UNIQUE(workspaceId, connectionId, databaseName, name)
       )
     `)
   }

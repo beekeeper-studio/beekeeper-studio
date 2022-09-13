@@ -8,13 +8,12 @@ export default {
         "schemaName" varchar(255) NULL,
         "entityName" varchar(255) NOT NULL,
         "entityType" varchar(50) NOT NULL,
-        "savedConnectionId" integer REFERENCES saved_connection(id) ON DELETE SET NULL,
         "createdAt" datetime NOT NULL DEFAULT (datetime('now')),
         "updatedAt" datetime NOT NULL DEFAULT (datetime('now')),
         "version" integer NOT NULL DEFAULT 0,
         "connectionId" integer,
         "workspaceId" integer NOT NULL DEFAULT -1,
-        UNIQUE(savedConnectionId, databaseName, entityType, schemaName, entityName)
+        UNIQUE(workspaceId, connectionId, schemaName, entityType, entityName)
       )
     `)
   }
