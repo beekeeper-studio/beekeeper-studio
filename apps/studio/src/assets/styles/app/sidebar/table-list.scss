@@ -59,9 +59,15 @@
     visibility: visible;
   }
 
-  > span {
-    color: $text-lighter;
-    border-bottom: 1px dotted $text-lighter;
+  > .badge {
+    display: flex;
+    align-items: center;
+    margin: 0 !important;
+
+    .material-icons {
+      font-size: 1rem;
+      margin-right: 0.2rem;
+    }
   }
 
   .hi-tooltip {

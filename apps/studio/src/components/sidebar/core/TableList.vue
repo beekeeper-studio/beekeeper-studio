@@ -51,7 +51,10 @@
               <span :title="`${totalFilteredEntities} hidden by filters`" class="badge" v-else :class="{active: entitiesHidden}">{{shownEntities}} / {{totalEntities}}</span>
             </div>
             <span v-show="totalHiddenEntities > 0 && !filterQuery" class="hidden-indicator">
-              <span>{{totalHiddenEntities > 99 ? '99+' : totalHiddenEntities}} hidden</span>
+              <span class="badge">
+                <i class="material-icons">visibility_off</i>
+                <span>{{totalHiddenEntities > 99 ? '99+' : totalHiddenEntities}}</span>
+              </span>
               <div class="hi-tooltip">
                 <span>You can unhide entities to add it here. </span>
                 <a @click="$modal.show('hidden-entities')">View hidden</a><span>.</span>
@@ -125,8 +128,12 @@
           There are no entities in<br> <span>{{database}}</span>
         </div>
 
-        <!-- TODO we dont need to pass this to modal, just get the store from the modal -->
-        <HiddenEntitiesModal :hiddenEntities="hiddenEntities" :hiddenSchemas="hiddenSchemas" @unhide="unhideEntities" />
+        <portal to="modals">
+          <HiddenEntitiesModal
+            :hiddenEntities="hiddenEntities"
+            :hiddenSchemas="hiddenSchemas"
+          />
+        </portal>
       </nav>
       <div class="empty" v-else>
         {{tablesLoading}}
@@ -281,10 +288,6 @@
           this.$store.commit('selectSidebarItem', null)
         }
       },
-      unhideEntities({ entities, schemas }) {
-        schemas.forEach((schema) => this.$store.dispatch('hideEntities/removeSchema', schema))
-        entities.forEach((entity) => this.$store.dispatch('hideEntities/removeEntity', entity))
-      }
     },
     mounted() {
       document.addEventListener('mousedown', this.maybeUnselect)

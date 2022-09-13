@@ -14,53 +14,33 @@
         </span>
         <div class="modal-form">
           <div class="list-container">
-            <template v-for="(schema, index) in schemas">
-              <div
-                v-if="!schema.unhide"
-                :key="schema.name"
-                class="hidden-list-item"
-              >
-                <div>
-                  <i title="Schema" class="schema-icon item-icon material-icons">folder</i>
-                  <span>{{schema.name}}</span>
-                </div>
-                <button type="button" @click="unhideSchema(index)" class="btn btn-flat btn-small">Unhide</button>
+            <div
+              v-for="(schema, index) in schemas"
+              :key="schema"
+              class="hidden-list-item"
+            >
+              <div>
+                <i title="Schema" class="schema-icon item-icon material-icons">folder</i>
+                <span>{{schema}}</span>
               </div>
-            </template>
-            <template v-for="(entity, index) in entities">
-              <div
-                v-if="!entity.unhide"
-                :key="entity.name"
-                class="hidden-list-item"
-              >
-                <div>
-                  <table-icon :table="entity.value" />
-                  <span>{{entity.name}}</span>
-                </div>
-                <button type="button" @click="unhideEntity(index)" class="btn btn-flat btn-small">Unhide</button>
+              <button type="button" @click="unhideSchema(index)" class="btn btn-flat btn-small">Unhide</button>
+            </div>
+            <div
+              v-for="(entity, index) in entities"
+              :key="entity.name"
+              class="hidden-list-item"
+            >
+              <div>
+                <table-icon :table="entity" />
+                <span>{{entity.name}}</span>
               </div>
-            </template>
+              <button type="button" @click="unhideEntity(index)" class="btn btn-flat btn-small">Unhide</button>
+            </div>
             <span class="no-entities" v-show="noHidden">
               No hidden entities
             </span>
           </div>
         </div>
-      </div>
-      <div class="vue-dialog-buttons">
-        <button
-          class="btn btn-flat"
-          type="button"
-          @click.prevent="closeModal"
-        >
-          Cancel
-        </button>
-        <button
-          class="btn btn-primary"
-          type="submit"
-          :disabled="noChanges"
-        >
-          Apply
-        </button>
       </div>
     </form>
   </modal>
@@ -95,6 +75,11 @@
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
 
+    > div {
+      display: flex;
+      gap: 0.5rem;
+    }
+
     button {
       visibility: hidden;
     }
@@ -114,8 +99,6 @@
 </style>
 
 <script lang="ts">
-  import _ from 'lodash'
-  import { DatabaseEntity } from "@/lib/db/models"
   import TableIcon from '@/components/common/TableIcon.vue'
 
   export default {
@@ -139,29 +122,16 @@
     },
     methods: {
       onBeforeOpened() {
-        this.entities = this.hiddenEntities.map((e: DatabaseEntity) => ({
-          name: e.name,
-          unhide: false,
-          value: e,
-        }))
-
-        this.schemas = this.hiddenSchemas.map((name: string) => ({
-          name,
-          unhide: false,
-          value: name,
-        }))
+        this.entities = [...this.hiddenEntities]
+        this.schemas = [...this.hiddenSchemas]
       },
-      onSubmit() {
-        const entities = this.entities.filter((e) => e.unhide).map((e) => e.value)
-        const schemas = this.schemas.filter((s) => s.unhide).map((s) => s.value)
-        this.$emit('unhide', { entities, schemas })
-        this.closeModal()
+      unhideSchema(index: number) { 
+        const [schema] = this.schemas.splice(index, 1)
+        this.$store.dispatch('hideEntities/removeSchema', schema)
       },
       unhideEntity(index: number) {
-        this.entities[index].unhide = true
-      },
-      unhideSchema(index: number) {
-        this.schemas[index].unhide = true
+        const [entity] = this.entities.splice(index, 1)
+        this.$store.dispatch('hideEntities/removeEntity', entity)
       },
       closeModal() {
         this.$modal.hide(this.modalName)
