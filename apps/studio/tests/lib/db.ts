@@ -159,9 +159,14 @@ export class DBTestUtil {
   }
 
   async badCreateDatabaseTests() {
+    // sqlserver seems impervious to bad database names or bad charsets or anything. 
+    if (this.dbType === 'sqlserver') {
+      return expect.anything()
+    }
+
     const dbs = await this.connection.listDatabases()
     try {
-      await this.connection.createDatabase('db-*', 'UTF-8', 'notimportant')
+      await this.connection.createDatabase('not a database name()probably', 'idfk', 'notimportant')
       const newDBsCount = await this.connection.listDatabases()
       expect(dbs.length).toEqual(newDBsCount.length)
     } catch (err) {

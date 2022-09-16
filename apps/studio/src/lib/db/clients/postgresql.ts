@@ -11,7 +11,7 @@ import logRaw from 'electron-log'
 import { DatabaseClient, IDbConnectionServerConfig, DatabaseElement } from '../client'
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from '../authentication/amazon-redshift';
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries, checkValidityOfDatabaseName } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
@@ -189,7 +189,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
     // db creation
     listCharsets: async() => PD.charsets,
-    getDefaultCharSet: async() => 'UTF8',
+    getDefaultCharset: async() => 'UTF8',
     listCollations: async() => [],
     createDatabase: (databaseName, charset) => createDatabase(conn, databaseName, charset),
 
@@ -1367,18 +1367,12 @@ export async function dropElement (conn: Conn, elementName: string, typeOfElemen
 
 export async function createDatabase(conn, databaseName, charset) {
   const {isPostgres, number: versionAsInteger } = await getVersion(conn)
-  if (!checkValidityOfDatabaseName(databaseName)) {
-    throw new Error('Database name invalid, must be alphanumeric / have only _ or - special characters')
-  }
 
   let sql = `create database ${wrapIdentifier(databaseName)} encoding ${wrapIdentifier(charset)}`;
 
   // postgres 9 seems to freak out if the charset isn't wrapped in single quotes and also requires the template https://www.postgresql.org/docs/9.3/sql-createdatabase.html
   // later version don't seem to care
   if (isPostgres && versionAsInteger < 100000) {
-    if (!checkValidityOfDatabaseName(charset)) {
-      throw new Error('Encoding format invalid')
-    }
     sql = `create database ${wrapIdentifier(databaseName)} encoding '${charset}' template template0`;
   }
 

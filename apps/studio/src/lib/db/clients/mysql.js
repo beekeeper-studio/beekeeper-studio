@@ -10,7 +10,7 @@ import globals from '../../../common/globals';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import { MysqlCursor } from './mysql/MySqlCursor';
-import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, checkValidityOfDatabaseName } from './utils';
+import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral } from './utils';
 import { MysqlData } from '@shared/lib/dialects/mysql'
 
 const log = rawLog.scope('mysql')
@@ -57,7 +57,7 @@ export default async function (server, database) {
 
     // db creation
     listCharsets: () => listCharsets(conn),
-    getDefaultCharSet: () => getDefaultCharSet(conn),
+    getDefaultCharset: () => getDefaultCharset(conn),
     listCollations: (charset) => listCollations(conn, charset),
     createDatabase: ( databaseName, charset, collation) => createDatabase(conn, databaseName, charset, collation),
     
@@ -1049,7 +1049,7 @@ export async function listCharsets(conn) {
   return data.map((row) => row.Charset).sort()
 }
 
-export async function getDefaultCharSet(conn) {
+export async function getDefaultCharset(conn) {
   const sql = "SHOW VARIABLES LIKE 'character_set_server'"
   const { data } = await driverExecuteQuery(conn, { query: sql })
 
@@ -1068,9 +1068,6 @@ export async function listCollations(conn, charset) {
 }
 
 export async function createDatabase(conn, databaseName, charset, collation) {
-  if (!checkValidityOfDatabaseName(databaseName)) {
-    throw new Error('Database name invalid, must be alphanumeric / have only _ or - special characters')
-  }
   const sql = `create database ${wrapIdentifier(databaseName)} character set ${wrapIdentifier(charset)} collate ${wrapIdentifier(collation)}`;
   await driverExecuteQuery(conn, { query: sql })
 }

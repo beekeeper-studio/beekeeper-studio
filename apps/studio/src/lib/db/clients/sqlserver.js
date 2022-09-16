@@ -16,8 +16,7 @@ import { buildDatabseFilter,
   buildUpdateQueries,
   escapeString,
   joinQueries,
-  escapeLiteral,
-  checkValidityOfDatabaseName
+  escapeLiteral
 } from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
@@ -90,7 +89,7 @@ export default async function (server, database) {
       https://stackoverflow.com/questions/7781103/sql-server-set-character-set-not-collation
     */
     listCharsets: () => [],
-    getDefaultCharSet: () => null,
+    getDefaultCharset: () => null,
     /*
       From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-database-transact-sql?view=sql-server-ver16&tabs=sqlpool: 
       Collation name can be either a Windows collation name or a SQL collation name. If not specified, the database is assigned the default collation of the instance of SQL Server
@@ -1135,9 +1134,6 @@ async function executeWithTransaction(conn, queryArgs) {
 }
 
 export async function createDatabase(conn, databaseName) {
-  if (!checkValidityOfDatabaseName(databaseName)) {
-    throw new Error('Database name invalid, must be alphanumeric / have only _ or - special characters')
-  }
   const sql = `create database ${wrapIdentifier(databaseName)}`;
   await driverExecuteQuery(conn, { query: sql })
 }

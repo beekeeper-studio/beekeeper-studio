@@ -233,11 +233,6 @@ export async function withClosable<T>(item, func): Promise<T> {
 
 }
 
-export function checkValidityOfDatabaseName(databaseName: string): boolean {
-  const dbNameRegex = /^[a-zA-Z0-9_-]*$/
-  return Boolean(databaseName.match(dbNameRegex))
-}
-
 export function buildDeleteQueries(knex, deletes: TableDelete[]) {
   return deletes.map(deleteRow => {
     const where = {}

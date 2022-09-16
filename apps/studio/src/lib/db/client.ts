@@ -33,7 +33,7 @@ export interface DatabaseClient {
   executeQuery: (queryText: string) => void,
   // create database
   listCharsets: () => Promise<string[]>,
-  getDefaultCharSet: () => Promise<string>,
+  getDefaultCharset: () => Promise<string>,
   listCollations: (charset?: string) => Promise<string[]>,
   createDatabase: (databaseName: string, charset: string, collation: string) => void,
 
@@ -157,7 +157,7 @@ export class DBConnection {
   
   // db creation
   listCharsets = bindAsync.bind(null, 'listCharsets', this.server, this.database)
-  getDefaultCharSet = bindAsync.bind(null, 'getDefaultCharSet', this.server, this.database)
+  getDefaultCharset = bindAsync.bind(null, 'getDefaultCharset', this.server, this.database)
   listCollations = bindAsync.bind(null, 'listCollations', this.server, this.database)
   createDatabase = bindAsync.bind(null, 'createDatabase', this.server, this.database)
 
