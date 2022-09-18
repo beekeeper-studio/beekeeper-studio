@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { DBConnection } from '../db/client';
+import { Dialect } from '@shared/lib/dialects/models'
 type JsonFriendly = string | boolean | number | null | JsonFriendly[] | object
 
 function dec28bits(num: any): string {
@@ -9,26 +9,26 @@ function dec28bits(num: any): string {
 
 export const Mutators = {
 
-  resolveTabulatorMutator(dataType?: string, conn: DBConnection = null): (v: any) => JsonFriendly {
-    const mutator = this.resolveDataMutator(dataType, conn)
+  resolveTabulatorMutator(dataType?: string, dialect?: Dialect): (v: any) => JsonFriendly {
+    const mutator = this.resolveDataMutator(dataType, dialect)
     return (v: any) => mutator(v) // this cleans off the additional params
   },
 
-  resolveDataMutator(dataType?: string, conn: DBConnection = null): (v: any, p?: boolean) => JsonFriendly {
+  resolveDataMutator(dataType?: string, dialect?: Dialect): (v: any, p?: boolean) => JsonFriendly {
     if (dataType && dataType === 'bit(1)') {
       return this.bit1Mutator.bind(this)
     }
     if (dataType && dataType.startsWith('bit')) {
-      return this.bitMutator.bind(this, conn)
+      return this.bitMutator.bind(this, dialect)
     }
     return this.genericMutator.bind(this)
   },
 
 
-  mutateRow(row: any[], dataTypes: string[] = [], preserveComplex: boolean = false, connection: DBConnection = null): JsonFriendly[] {
+  mutateRow(row: any[], dataTypes: string[] = [], preserveComplex: boolean = false, dialect?: Dialect): JsonFriendly[] {
     return row.map((item, index) => {
       const typ = dataTypes[index]
-      const mutator = this.resolveDataMutator(typ, connection)
+      const mutator = this.resolveDataMutator(typ, dialect)
       return mutator(item, preserveComplex)
     })
   },
@@ -62,15 +62,15 @@ export const Mutators = {
 
   /**
    * Stringify bit data for use in json / UIs
-   * @param {DBConnection|null} connection: The connection object used within Vue
+   * @param {Dialect} dialect: The database dialect being used (must be first because the function is called via bind)
    * @param  {any} value
    * @returns JsonFriendly
    */
-  bitMutator(connection: DBConnection|null, value: any): JsonFriendly {
+  bitMutator(dialect: Dialect, value: any): JsonFriendly {
     // value coming in is true/false (for sql) not 1/0, so for that export needs to be 0/1 for SQL export, maybe look in the sql export section and see what to do there instead 
     // of futzing around in here too much? The goal is to keep the true/false as showing 
   
-    if (connection?.connectionType === "sqlserver") return value
+    if (dialect && dialect === 'sqlserver') return value
     
     const result = []
     for (let index = 0; index < value.length; index++) {

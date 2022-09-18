@@ -218,6 +218,7 @@ import { mapGetters, mapState } from 'vuex';
 import { Tabulator } from 'tabulator-tables'
 import { TableUpdate } from '@/lib/db/models';
 import { markdownTable } from 'markdown-table'
+import { dialectFor } from '@shared/lib/dialects/models'
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
@@ -491,7 +492,7 @@ export default Vue.extend({
           title: column.columnName,
           field: column.columnName,
           titleFormatter: formatter,
-          mutatorData: this.resolveTabulatorMutator(column.dataType, this.connection),
+          mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
           dataType: column.dataType,
           cellClick: this.cellClick,
           width: columnWidth,
