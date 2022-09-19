@@ -21,6 +21,13 @@ import workspace2 from './20211015_workspace_used_query'
 import addTabs from './20211220-create_opentabs'
 import scWorkspace from './20211227_add_workspaceId_to_saved_connections'
 import createLogger from '../lib/logger'
+import systemTheme from './20220307-default-theme-system'
+import serverCerts from './20220401_add_trust_server_certificate_to_connections'
+import socketPath from './20220408_add_socket_path'
+import connectionOptions from './20220426_connection_options'
+import keepaliveInterval from './20220709_add_keepalive_interval'
+import redshiftOptions from './20220817_add_redshift_options'
+
 
 const logger = createLogger('migrations')()
 
@@ -32,8 +39,9 @@ const setupSQL = `
 `
 const realMigrations = [
   a, b, c, d, domains, createSettings, addZoom,
-  addSc, sslFiles, sslReject, pinned, addSort, 
-  createCreds, workspaceScoping, workspace2, addTabs, scWorkspace
+  addSc, sslFiles, sslReject, pinned, addSort,
+  createCreds, workspaceScoping, workspace2, addTabs, scWorkspace, systemTheme,
+  serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions
 ]
 
 // fixtures require the models

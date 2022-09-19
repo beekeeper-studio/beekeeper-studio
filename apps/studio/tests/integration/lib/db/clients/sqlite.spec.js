@@ -8,7 +8,7 @@ describe("Sqlite Tests", () => {
 
   beforeAll(async () => {
     dbfile = tmp.fileSync()
-    
+
     const config = {
       client: 'sqlite',
     }
@@ -39,7 +39,7 @@ describe("Sqlite Tests", () => {
           UPDATE addresses
             SET state = 'NY'
           WHERE rowid = NEW.rowid;
-      END; 
+      END;
     `
     expect(async () => {
       const q = await util.connection.query(trigger)

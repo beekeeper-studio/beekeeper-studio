@@ -9,7 +9,6 @@
     padding: $gutter-w;
   }
   .table-builder-wrap {
-    height: 100%;
     padding: 1.5rem 1.5rem 3rem;
     overflow: hidden;
     overflow-y: auto;
@@ -47,6 +46,7 @@
   }
   .schema-builder {
     margin-top: $gutter-w;
+    height: 100%;
   }
 }
 
@@ -73,7 +73,7 @@
         margin: 0;
       }
     }
-    
+
     // Tabulator Header Row
     .tabulator {
       .tabulator-header {
@@ -87,7 +87,7 @@
     // Field Rows
     .tabulator-row {
       margin: $row-gutter 0;
-      &.tabulator-row-even, 
+      &.tabulator-row-even,
       &:nth-child(odd){
         background: rgba($theme-base, 0.05)!important;
       }

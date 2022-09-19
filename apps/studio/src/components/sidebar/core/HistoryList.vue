@@ -27,7 +27,7 @@
               <!-- <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedHistoryQueries" v-bind:class="{ shown: checkedHistoryQueries.length > 0 }"> -->
               <div class="list-title flex-col">
                 <span class="item-text expand truncate">{{nicelySized(item.text)}}</span>
-                <span class="subtitle"><span>{{item.numberOfRecords || 0}} Results</span>, {{timeAgo.format(new Date(item.createdAt * 1000))}}</span>
+                <span class="subtitle"><span>{{item.numberOfRecords || 0}} Results</span>, {{formatTimeAgo(item)}}</span>
               </div>
             </a>
           </div>
@@ -42,6 +42,7 @@
 </template>
 
 <script>
+import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago';
   import { mapState } from 'vuex'
 import ErrorAlert from '@/components/common/ErrorAlert.vue';
@@ -69,6 +70,10 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
       document.removeEventListener('mousedown', this.maybeUnselect)
     },
     methods: {
+      formatTimeAgo(item) {
+        const dt = _.isDate(item.createdAt) ? item.createdAt : new Date(item.createdAt * 1000)
+        return this.timeAgo.format(dt)
+      },
       maybeUnselect(e) {
         if (!this.selected) return
         if (this.$refs.wrapper.contains(e.target)) {

@@ -1,5 +1,5 @@
 
-import { IGroupedUserSettings, UserSetting } from '../../../common/appdb/models/user_setting'
+import { IGroupedUserSettings, UserSetting, UserSettingValueType } from '../../../common/appdb/models/user_setting'
 import _ from 'lodash'
 import Vue from 'vue'
 import { Module } from 'vuex'
@@ -24,7 +24,7 @@ const SettingStoreModule: Module<State, any> = {
       const grouped = _.groupBy(newSettings, 'key')
       state.settings = _.mapValues(grouped, v => v[0]) as IGroupedUserSettings
     },
-    addsetting(state, newSetting: UserSetting) {
+    addSetting(state, newSetting: UserSetting) {
       if (!state.settings[newSetting.key]) {
         Vue.set(state.settings, newSetting.key, newSetting)
       }
@@ -39,6 +39,15 @@ const SettingStoreModule: Module<State, any> = {
       await setting.save()
       context.commit(M.ADD, setting)
     },
+    async save(context, { key, value }) {
+      if (!key || !value) return;
+      const setting = context.state.settings[key] || new UserSetting()
+      if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean
+      setting.value = value
+      setting.key = key
+      await setting.save()
+      context.commit(M.ADD, setting)
+    }
   },
   getters: {
     settings(state) {
@@ -46,10 +55,10 @@ const SettingStoreModule: Module<State, any> = {
     },
     themeValue(state) {
       if (!state.settings.theme.value) return null
-      if (['dark', 'light'].includes(state.settings.theme.value as string)) {
+      if (['system', 'dark', 'light'].includes(state.settings.theme.value as string)) {
         return state.settings.theme.value
       }
-      return 'dark'
+      return 'system'
     },
     menuStyle(state) {
       if (!state.settings.menuStyle) return 'native'

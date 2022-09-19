@@ -1,18 +1,19 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
 import logRaw from 'electron-log'
+import { TableDelete, TableInsert, TableUpdate } from '../models'
 
 const log = logRaw.scope('db/util')
 
 
 export function escapeString(value) {
   if (_.isNil(value)) return null
-  return value.replaceAll("'", "''")
+  return value.toString().replaceAll("'", "''")
 }
 
 export function escapeLiteral(value) {
-  
-  return value.replaceAll(';', '')
+  if (_.isNil(value)) return null
+  return value.toString().replaceAll(';', '')
 }
 
 export function joinQueries(queries) {
@@ -72,16 +73,28 @@ function wrapIdentifier(value) {
 }
 
 
-export function buildFilterString(filters) {
+export function buildFilterString(filters, columns = []) {
   let filterString = ""
   let filterParams = []
   if (filters && _.isArray(filters) && filters.length > 0) {
     filterString = "WHERE " + filters.map((item) => {
-      return `${wrapIdentifier(item.field)} ${item.type} ?`
+      const column = columns.find((c) => c.columnName === item.field)
+      const field = column?.dataType.toUpperCase().includes('BINARY') ?
+        `HEX(${wrapIdentifier(item.field)})` :
+        wrapIdentifier(item.field);
+
+      if (item.type === 'in') {
+        const questionMarks = _.isArray(item.value) ?
+          item.value.map(() => '?').join(',')
+          : '?'
+
+        return `${field} ${item.type} (${questionMarks})`
+      }
+      return `${field} ${item.type} ?`
     }).join(" AND ")
 
-    filterParams = filters.map((item) => {
-      return item.value
+    filterParams = filters.flatMap((item) => {
+      return _.isArray(item.value) ? item.value : [item.value]
     })
   }
   return {
@@ -89,14 +102,14 @@ export function buildFilterString(filters) {
   }
 }
 
-export function buildSelectTopQuery(table, offset, limit, orderBy, filters, countTitle = 'total') {
-  log.debug('building selectTop for', table, offset, limit, orderBy)
+export function buildSelectTopQuery(table, offset, limit, orderBy, filters, countTitle = 'total', columns = [], selects = ['*']) {
+  log.debug('building selectTop for', table, offset, limit, orderBy, selects)
   let orderByString = ""
 
   if (orderBy && orderBy.length > 0) {
-    orderByString = "order by " + (orderBy.map((item) => {
+    orderByString = "order by " + (orderBy.map((item: any) => {
       if (_.isObject(item)) {
-        return `\`${item.field}\` ${item.dir}`
+        return `\`${item['field']}\` ${item['dir']}`
       } else {
         return `\`${item}\``
       }
@@ -107,20 +120,21 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
   if (_.isString(filters)) {
     filterString = `WHERE ${filters}`
   } else {
-    const filterBlob = buildFilterString(filters)
+    const filterBlob = buildFilterString(filters, columns)
     filterString = filterBlob.filterString
     filterParams = filterBlob.filterParams
   }
 
-  let baseSQL = `
+  const selectSQL = `SELECT ${selects.map((s) => wrapIdentifier(s)).join(", ")}`
+  const baseSQL = `
     FROM \`${table}\`
     ${filterString}
   `
-  let countSQL = `
+  const countSQL = `
     select count(*) as ${countTitle} ${baseSQL}
   `
-  let sql = `
-    SELECT * ${baseSQL}
+  const sql = `
+    ${selectSQL} ${baseSQL}
     ${orderByString}
     ${_.isNumber(limit) ? `LIMIT ${limit}` : ''}
     ${_.isNumber(offset) ? `OFFSET ${offset}` : ""}
@@ -129,35 +143,58 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
 }
 
 export async function executeSelectTop(queries, conn, executor) {
-  const { query, countQuery, params } = queries
-  const countResults = await executor(conn, { query: countQuery, params })
+  const { query, params } = queries
   const result = await executor(conn, { query, params })
   return {
     result: result.data,
     fields: Object.keys(result.data[0] || {})
-  }  
+  }
 }
 
-export async function genericSelectTop(conn, table, offset, limit, orderBy, filters, executor){
-  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters)
+export async function genericSelectTop(conn, table, offset, limit, orderBy, filters, executor, selects){
+  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters, undefined, undefined, selects)
   return await executeSelectTop(queries, conn, executor)
 }
 
-export function buildInsertQueries(knex, inserts) {
-  return inserts.map(insert => {
-    const query = knex(insert.table)
-      .withSchema(insert.schema)
-      .insert(insert.data)
-      .toQuery()
-    return query
+export function buildInsertQuery(knex, insert: TableInsert, columns = []) {
+
+  const data = _.cloneDeep(insert.data)
+  data.forEach((item) => {
+    const insertColumns = Object.keys(item)
+    insertColumns.forEach((ic) => {
+      const matching = _.find(columns, (c) => c.columnName === ic)
+      if (matching && matching.dataType && matching.dataType.startsWith('bit(')) {
+        if (matching.dataType === 'bit(1)') {
+          item[ic] = _.toNumber(item[ic])
+        } else {
+          item[ic] = parseInt(item[ic].split("'")[1], 2)
+        }
+      }
+    })
+
   })
+  const builder = knex(insert.table)
+  if (insert.schema) {
+    builder.withSchema(insert.schema)
+  }
+  const query = builder
+    .insert(data)
+    .toQuery()
+  return query
 }
 
-export function buildUpdateQueries(knex, updates) {
+export function buildInsertQueries(knex, inserts) {
+  return inserts.map(insert => buildInsertQuery(knex, insert))
+}
+
+export function buildUpdateQueries(knex, updates: TableUpdate[]) {
   return updates.map(update => {
     const where = {}
     const updateblob = {}
-    where[update.pkColumn] = update.primaryKey
+    update.primaryKeys.forEach(({column, value}) => {
+      where[column] = value
+    })
+
     updateblob[update.column] = update.value
 
     const query = knex(update.table)
@@ -169,10 +206,12 @@ export function buildUpdateQueries(knex, updates) {
   })
 }
 
-export function buildSelectQueriesFromUpdates(knex, updates) {
+export function buildSelectQueriesFromUpdates(knex, updates: TableUpdate[]) {
   return updates.map(update => {
     const where = {}
-    where[update.pkColumn] = update.primaryKey
+    update.primaryKeys.forEach(({ column, value }) => {
+      where[column] = value
+    })
 
     const query = knex(update.table)
       .withSchema(update.schema)
@@ -183,11 +222,25 @@ export function buildSelectQueriesFromUpdates(knex, updates) {
   })
 }
 
-export function buildDeleteQueries(knex, deletes) {
+export async function withClosable<T>(item, func): Promise<T> {
+  try {
+    return await func(item)
+  } finally {
+    if (item) {
+      await item.close();
+    }
+  }
+
+}
+
+export function buildDeleteQueries(knex, deletes: TableDelete[]) {
   return deletes.map(deleteRow => {
-    let where = {}
-    where[deleteRow.pkColumn] = deleteRow.primaryKey
-    
+    const where = {}
+
+    deleteRow.primaryKeys.forEach(({ column, value }) => {
+      where[column] = value
+    })
+
     return knex(deleteRow.table)
       .withSchema(deleteRow.schema)
       .where(where)

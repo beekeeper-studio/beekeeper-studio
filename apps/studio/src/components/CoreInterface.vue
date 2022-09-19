@@ -31,9 +31,8 @@
   import QuickSearch from './quicksearch/QuickSearch.vue'
   import { LocalQueryModule } from '@/store/modules/data/query/LocalQueryModule'
   import ProgressBar from './editor/ProgressBar.vue'
-  import { CloudQueryModule } from '@/store/modules/data/query/CloudQueryModule'
   export default {
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar},
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar },
     props: [ 'connection' ],
     data() {
       return {
@@ -77,14 +76,11 @@
       }
     },
     mounted() {
-
-      this.$store.dispatch('updateHistory')
       this.$store.dispatch('pins/loadPins')
       this.registerHandlers(this.rootBindings)
       this.$nextTick(() => {
         this.initializing = false
       })
-
     },
     beforeDestroy() {
       this.$store.dispatch('pins/unloadPins')

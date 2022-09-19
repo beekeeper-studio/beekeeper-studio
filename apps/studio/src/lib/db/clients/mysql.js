@@ -10,7 +10,8 @@ import globals from '../../../common/globals';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import { MysqlCursor } from './mysql/MySqlCursor';
-import { buildDeleteQueries, buildInsertQueries, buildSelectTopQuery, escapeString, joinQueries } from './utils';
+import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral } from './utils';
+import { MysqlData } from '@shared/lib/dialects/mysql'
 
 const log = rawLog.scope('mysql')
 const logger = () => log
@@ -34,6 +35,7 @@ export default async function (server, database) {
 
   return {
     supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true }),
+    versionString: () => getVersionString(versionInfo),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
@@ -54,8 +56,9 @@ export default async function (server, database) {
     listDatabases: (filter) => listDatabases(conn, filter),
     // tabletable
     getTableLength: (table) => getTableLength(conn, table),
-    selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
+    selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
+    getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -74,8 +77,11 @@ export default async function (server, database) {
 
     // relations
     alterRelationSql: (payload) => alterRelationSql(payload),
-    alterRelation: (payload) => alterRelation(conn, payload)
+    alterRelation: (payload) => alterRelation(conn, payload),
 
+    // remove things
+    dropElement: (elementName, typeOfElement) => dropElement(conn, elementName, typeOfElement),
+    truncateElement: (elementName, typeOfElement) => truncateElement(conn, elementName, typeOfElement)
   };
 }
 
@@ -105,6 +111,10 @@ async function getVersion(conn) {
     version: Number(stuff[0] || 0)
   }
 
+}
+
+function getVersionString(versionInfo) {
+  return versionInfo.versionString
 }
 
 
@@ -138,7 +148,7 @@ export async function listViews(conn) {
 export async function listRoutines(conn) {
 
   const routinesSQL = `
-    select 
+    select
       r.specific_name as specific_name,
       r.routine_name as routine_name,
       r.routine_type as routine_type,
@@ -152,7 +162,7 @@ export async function listRoutines(conn) {
   `
 
   const paramsSQL = `
-select 
+select
        r.routine_schema as routine_schema,
        r.specific_name as specific_name,
        p.parameter_name as parameter_name,
@@ -176,7 +186,7 @@ order by r.routine_schema,
   const routinesResult = await driverExecuteQuery(conn, { query: routinesSQL })
   const paramsResult = await driverExecuteQuery(conn, { query: paramsSQL })
 
-    
+
   const grouped = _.groupBy(paramsResult.data, 'specific_name')
 
   return routinesResult.data.map((r) => {
@@ -276,9 +286,9 @@ async function getTableLength(conn, table) {
 
 
 
-export async function selectTop(conn, table, offset, limit, orderBy, filters) {
-
-  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters)
+export async function selectTop(conn, table, offset, limit, orderBy, filters, selects) {
+  const columns = await listTableColumns(conn, null, table)
+  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters, 'total', columns, selects)
 
   const { query, params } = queries
 
@@ -286,7 +296,7 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters) {
   return {
     result: result.data,
     fields: Object.keys(result.data[0] || {})
-  }  
+  }
 
 }
 
@@ -407,7 +417,7 @@ export async function getPrimaryKey(conn, database, table) {
 
 export async function getTableKeys(conn, database, table) {
   const sql = `
-    SELECT 
+    SELECT
       cu.constraint_name as 'constraint_name',
       cu.column_name as 'column_name',
       cu.referenced_table_name as 'referenced_table_name',
@@ -511,11 +521,11 @@ export function query(conn, queryText) {
 
 export async function applyChanges(conn, changes) {
   let results = []
-  
+
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
     await driverExecuteQuery(cli, { query: 'START TRANSACTION'})
-    
+
     try {
       if (changes.inserts) {
         await insertRows(cli, changes.inserts)
@@ -524,11 +534,11 @@ export async function applyChanges(conn, changes) {
       if (changes.updates) {
         results = await updateValues(cli, changes.updates)
       }
-  
+
       if (changes.deletes) {
         await deleteRows(cli, changes.deletes)
       }
-  
+
       await driverExecuteQuery(cli, { query: 'COMMIT'})
     } catch (ex) {
       logger().error("query exception: ", ex)
@@ -541,11 +551,12 @@ export async function applyChanges(conn, changes) {
 }
 
 export async function insertRows(cli, inserts) {
+  for (const insert of inserts) {
 
-  for (const command of buildInsertQueries(knex, inserts)) {
+    const columns = await listTableColumns(cli, null, insert.table)
+    const command = buildInsertQuery(knex, insert, columns)
     await driverExecuteQuery(cli, { query: command })
   }
-
   return true
 }
 
@@ -558,9 +569,21 @@ export async function updateValues(cli, updates) {
       // value looks like this: b'00000001'
       value = parseInt(update.value.split("'")[1], 2)
     }
+
+    const params = [value];
+    const whereList = []
+    update.primaryKeys.forEach(({ column, value }) => {
+      console.log('updateValues, column, value', column, value)
+      whereList.push(`${wrapIdentifier(column)} = ?`);
+      params.push(value);
+    })
+
+    const where = whereList.join(" AND ");
+
+
     return {
-      query: `UPDATE ${wrapIdentifier(update.table)} SET ${wrapIdentifier(update.column)} = ? WHERE ${wrapIdentifier(update.pkColumn)} = ?`,
-      params: [value, update.primaryKey]
+      query: `UPDATE ${wrapIdentifier(update.table)} SET ${wrapIdentifier(update.column)} = ? WHERE ${where}`,
+      params: params
     }
   })
 
@@ -572,11 +595,20 @@ export async function updateValues(cli, updates) {
   }
 
   const returnQueries = updates.map(update => {
+
+    const params = [];
+    const whereList = []
+    update.primaryKeys.forEach(({ column, value }) => {
+      console.log('updateValues, column, value', column, value)
+      whereList.push(`${wrapIdentifier(column)} = ?`);
+      params.push(value);
+    })
+
+    const where = whereList.join(" AND ");
+
     return {
-      query: `select * from ${wrapIdentifier(update.table)} where ${wrapIdentifier(update.pkColumn)} = ?`,
-      params: [
-        update.primaryKey
-      ]
+      query: `select * from ${wrapIdentifier(update.table)} where ${where}`,
+      params: params
     }
   })
 
@@ -624,6 +656,10 @@ export async function listDatabases(conn, filter) {
     .map((row) => row.Database);
 }
 
+async function getInsertQuery(conn, database, tableInsert) {
+  const columns = await listTableColumns(conn, database, tableInsert.table, tableInsert.schema)
+  return buildInsertQuery(knex, tableInsert, columns)
+}
 
 export function getQuerySelectTop(conn, table, limit) {
   return `SELECT * FROM ${wrapIdentifier(table)} LIMIT ${limit}`;
@@ -687,6 +723,23 @@ export async function truncateAllTables(conn) {
     `).join('');
 
     await driverExecuteQuery(connClient, { query: truncateAll });
+  });
+}
+
+export async function dropElement (conn, elementName, typeOfElement) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection }
+    const sql = `DROP ${MysqlData.wrapLiteral(typeOfElement)} ${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
+  });
+}
+export async function truncateElement (conn, elementName, typeOfElement) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection }
+    const sql = `TRUNCATE ${MysqlData.wrapLiteral(typeOfElement)} ${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
   });
 }
 
@@ -787,6 +840,13 @@ function configDatabase(server, database) {
     connectTimeout  : 60 * 60 * 1000,
   };
 
+  if(server.config.socketPathEnabled) {
+    config.socketPath = server.config.socketPath;
+    config.host = null;
+    config.port = null;
+    return config;
+  }
+
   if (server.sshTunnel) {
     config.host = server.config.localHost;
     config.port = server.config.localPort;
@@ -844,7 +904,7 @@ function parseFields(fields, rowsAsArray) {
 
 function parseRowQueryResult(data, rawFields, command, rowsAsArray = false) {
   // Fallback in case the identifier could not reconize the command
-  const fields = parseFields(rawFields, rowsAsArray) 
+  const fields = parseFields(rawFields, rowsAsArray)
   const fieldIds = fields.map(f => f.id)
   const isSelect = Array.isArray(data);
   return {
@@ -889,9 +949,10 @@ async function executeWithTransaction(conn, queryArgs) {
 }
 
 function driverExecuteQuery(conn, queryArgs) {
-  logger().info(`Running Query ${queryArgs.query}`)
   const runQuery = (connection) => new Promise((resolve, reject) => {
-    connection.query({ sql: queryArgs.query, values: queryArgs.params, rowsAsArray: queryArgs.rowsAsArray }, (err, data, fields) => {
+    const params = !queryArgs.params || _.isEmpty(queryArgs.params) ? undefined : queryArgs.params
+    logger().info(`Running Query`, queryArgs.query, params)
+    connection.query({ sql: queryArgs.query, values: params, rowsAsArray: queryArgs.rowsAsArray }, (err, data, fields) => {
       if (err && err.code === mysqlErrors.EMPTY_QUERY) return resolve({});
       if (err) return reject(getRealError(connection, err));
 

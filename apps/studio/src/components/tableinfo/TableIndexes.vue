@@ -1,11 +1,11 @@
 <template>
-  <div class="table-info-table view-only">
+  <div class="table-info-table view-only" v-hotkey="hotkeys">
     <div class="table-info-table-wrap">
       <div class="center-wrap">
         <error-alert :error="error" v-if="error" />
         <div class="notices" v-if="notice">
           <div class="alert alert-info">
-            <i class="material-icons-outlined">info</i> 
+            <i class="material-icons-outlined">info</i>
             <div>{{notice}}</div>
           </div>
         </div>
@@ -21,8 +21,8 @@
             </div>
             <span class="expand"></span>
             <div class="actions">
-              <a @click.prevent="$emit('refresh')" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
-              <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
+              <a @click.prevent="$emit('refresh')" v-tooltip="`${ctrlOrCmd('r')} or F5`" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
+              <a v-if="enabled" @click.prevent="addRow" v-tooltip="ctrlOrCmd('n')" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
             </div>
 
           </div>
@@ -31,7 +31,7 @@
         </div>
       </div>
     </div>
-  
+
     <div class="expand" />
 
     <status-bar class="tabulator-footer">
@@ -47,8 +47,13 @@
           <x-button class="btn btn-primary" menu>
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
+              <x-menuitem @click.prevent="submitApply">
+                <x-label>Apply</x-label>
+                <x-shortcut value="Control+S"></x-shortcut>
+              </x-menuitem>
               <x-menuitem @click.prevent="submitSql">
-                Copy to SQL
+                <x-label>Copy to SQL</x-label>
+                <x-shortcut value="Control+Shift+S"></x-shortcut>
               </x-menuitem>
             </x-menu>
           </x-button>
@@ -60,7 +65,7 @@
 </div>
 </template>
 <script lang="ts">
-import Tabulator, { CellComponent, RowComponent } from 'tabulator-tables'
+import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
 import { TabulatorStateWatchers, trashButton, vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
@@ -80,8 +85,8 @@ const log = rawLog.scope('TableIndexVue')
 
 interface State {
   tabulator: Tabulator
-  newRows: RowComponent[]
-  removedRows: RowComponent[],
+  newRows: Tabulator.RowComponent[]
+  removedRows: Tabulator.RowComponent[],
   loading: boolean,
   error: any | null
 }
@@ -109,7 +114,20 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapGetters(['dialect']),
+    ...mapGetters(['dialect', 'dialectData']),
+    enabled() {
+      return !this.dialectData.disabledFeatures?.alter?.everything
+    },
+    hotkeys() {
+      if (!this.active) return {}
+      const result = {}
+      result['f5'] = () => this.$emit('refresh')
+      result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
+      result[this.ctrlOrCmd('r')] = () => this.$emit('refresh')
+      result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
+      result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
+      return result
+    },
     notice() {
       return this.dialect === 'mysql' ? 'Only ascending indexes are supported in MySQL before version 8.0.' : null
     },
@@ -142,7 +160,7 @@ export default Vue.extend({
           field: 'name',
           editable,
           editor: vueEditor(NullableInputEditorVue),
-          formatter: this.cellFormatter
+          formatter: this.cellFormatter,
         },
         {
           title: 'Unique',
@@ -153,7 +171,7 @@ export default Vue.extend({
           },
           width: 80,
           editable,
-          editor: vueEditor(CheckboxEditorVue)
+          editor: vueEditor(CheckboxEditorVue),
         },
         {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue), width: 85},
         {
@@ -185,7 +203,7 @@ export default Vue.extend({
       // ideally we could drop users into the first cell to make editing easier
       // but right now if it fails it breaks the whole table.
     },
-    async removeRow(_e: any, cell: CellComponent) {
+    async removeRow(_e: any, cell: Tabulator.CellComponent) {
       if (this.loading) return
       const row = cell.getRow()
       if (this.newRows.includes(row)) {
@@ -193,8 +211,8 @@ export default Vue.extend({
         row.delete()
         return
       }
-      
-      this.removedRows = this.removedRows.includes(row) ? 
+
+      this.removedRows = this.removedRows.includes(row) ?
         _.without(this.removedRows, row) :
         [...this.removedRows, row]
     },
@@ -207,7 +225,7 @@ export default Vue.extend({
       this.clearChanges()
     },
     getPayload(): IndexAlterations {
-        const additions = this.newRows.map((row: RowComponent) => {
+        const additions = this.newRows.map((row: Tabulator.RowComponent) => {
           const data = row.getData()
           const columns = data.columns.map((c: string)=> {
             const order = c.endsWith('DESC') ? 'DESC' : 'ASC'
@@ -221,12 +239,12 @@ export default Vue.extend({
           }
           return payload
         })
-      const drops = this.removedRows.map((row: RowComponent) => ({ name: row.getData()['name']}))
+      const drops = this.removedRows.map((row: Tabulator.RowComponent) => ({ name: row.getData()['name']}))
       return { additions, drops, table: this.table.name, schema: this.table.schema }
     },
     async submitApply() {
       try {
-    
+
         this.loading = true
         this.error = null
         const payload = this.getPayload()
@@ -268,13 +286,18 @@ export default Vue.extend({
   mounted() {
     // this.initializeTabulator()
     this.tabState.dirty = false
-      this.tabulator = new Tabulator(this.$refs.tabulator, {
+      // @ts-ignore
+      this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         data: this.tableData,
         columns: this.tableColumns,
         layout: 'fitColumns',
         placeholder: "No Indexes",
-        resizableColumns: false,
-        headerSort: false,
+        height: 'auto',
+        columnDefaults: {
+          title: '',
+          resizable: false,
+          headerSort: false,
+        },
       })
   }
 })

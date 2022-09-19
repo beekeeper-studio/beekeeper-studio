@@ -8,13 +8,13 @@
       <span class="expand"></span>
       <button class="btn btn-primary btn-fab" @click.prevent="addRow" title="Add Field"><i class="material-icons">add</i></button>
     </div>
-    <div ref="tabulator"></div>
+    <div id="tabulator-goes-here" ref="tabulator"></div>
   </div>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from 'vue'
-import Tabulator, { RowComponent } from 'tabulator-tables'
+import { TabulatorFull, Tabulator } from 'tabulator-tables'
 import { getDialectData } from '../lib/dialects'
 import tab from '../lib/tabulator'
 import {vueEditor, vueFormatter} from '../lib/tabulator/helpers'
@@ -47,9 +47,9 @@ export default Vue.extend({
     }
   },
   watch: {
-    initialColumns() {
+    async initialColumns() {
       if (this.resetOnUpdate && this.initialColumns && this.tabulator) {
-        this.tabulator.replaceData([...this.initialColumns])
+        await this.tabulator.replaceData([...this.initialColumns])
         this.getData(!!this.initialEmit)
       }
     },
@@ -91,7 +91,7 @@ export default Vue.extend({
       const editable = this.editable
       const dataColumns = [
         {
-          title: 'Name', 
+          title: 'Name',
           field: 'columnName',
           editor: vueEditor(NullableInputEditor),
           formatter: this.cellFormatter,
@@ -107,7 +107,7 @@ export default Vue.extend({
           cssClass: "no-padding no-edit-highlight",
           headerTooltip: "Allow this column to contain a null value",
           editor: vueEditor(CheckboxEditor),
-          formatter: vueFormatter(CheckboxFormatter), 
+          formatter: vueFormatter(CheckboxFormatter),
           formatterParams: {
             editable
           },
@@ -150,9 +150,9 @@ export default Vue.extend({
           headerTooltip: "Leave a friendly comment for other database users about this column"
         },
         {
-          title: 'Primary', field: 'primaryKey', 
+          title: 'Primary', field: 'primaryKey',
           editor: vueEditor(CheckboxEditor),
-          formatter: vueFormatter(CheckboxFormatter), 
+          formatter: vueFormatter(CheckboxFormatter),
           formatterParams: {
             editable
           },
@@ -173,7 +173,8 @@ export default Vue.extend({
 
   methods: {
     getData(markModified: boolean = true) {
-      this.builtColumns = this.tabulator.getData()
+      const data = this.tabulator.getData()
+      this.builtColumns = data
       this.columnsModified = markModified
     },
     removeRow(_e, cell: Tabulator.CellComponent) {
@@ -184,7 +185,7 @@ export default Vue.extend({
       const num = this.tabulator.getData().length + 1
       const columnName = `column_${num}`
 
-      const row: RowComponent = await this.tabulator.addRow({ columnName, dataType: 'varchar(255)', nullable: true})
+      const row: Tabulator.RowComponent = await this.tabulator.addRow({ columnName, dataType: 'varchar(255)', nullable: true})
       const nameCell = row.getCell('columnName')
       if (nameCell){
         // don't know why we need this, but we do.
@@ -202,18 +203,26 @@ export default Vue.extend({
     }
   },
   mounted() {
-    this.tabulator = new Tabulator(this.$refs.tabulator, {
-      data: [...this.initialColumns],
+    const initial = [...this.initialColumns]
+    // @ts-ignore-error
+    this.tabulator = new TabulatorFull(this.$refs.tabulator, {
+      data: initial,
       columns: this.tableColumns,
       movableRows: this.editable,
-      headerSort: false,
-      rowMoved: () => this.getData(),
-      resizableColumns: false,
-      columnMinWidth: 56,
+      columnDefaults: {
+        title: '',
+        resizable: false,
+        minWidth: 56,
+        headerSort: false
+      },
       layout: 'fitColumns',
-      dataChanged: () => this.getData()
+      height: 'auto'
     })
-    this.getData(!!this.initialEmit)
+    // this.getData(!!this.initialEmit)
+    this.tabulator.on('tableBuilt', () => this.getData(!!this.initialEmit))
+    this.tabulator.on('dataChanged', () => this.getData())
+    this.tabulator.on('rowMoved', () => this.getData())
+
   }
 })
 </script>
@@ -229,7 +238,7 @@ export default Vue.extend({
   $btn-fab-size:           32px;
 
   .schema-builder {
-    
+
     // Schema Header
     .schema-header {
       margin-bottom: $gutter-h;
@@ -270,6 +279,10 @@ export default Vue.extend({
           }
         }
       }
+    }
+
+    .tabulator .tabulator-tableholder .tabulator-table {
+      background-color: transparent;
     }
 
     // Field Rows
@@ -322,8 +335,8 @@ export default Vue.extend({
             box-shadow: none!important;
             input[type="checkbox"] {
               box-shadow: inset 0 0 0 2px $theme-base;
-              &:active, 
-              &:checked, 
+              &:active,
+              &:checked,
               &:checked:active {
                 background: rgba($theme-base, 0.5)!important;
                 color: $theme-bg!important;
@@ -360,7 +373,7 @@ export default Vue.extend({
             }
           }
         }
-        
+
         .material-icons.clear {
           color: $text-lighter;
           &:hover {
@@ -389,7 +402,7 @@ export default Vue.extend({
       }
     }
 
-    
+
     // Resize Handle
     .tabulator-header,
     .tabulator-row {
@@ -456,8 +469,8 @@ export default Vue.extend({
           box-shadow: none!important;
           input[type="checkbox"] {
             box-shadow: inset 0 0 0 2px $theme-base;
-            &:active, 
-            &:checked, 
+            &:active,
+            &:checked,
             &:checked:active {
               background: rgba($theme-base, 0.5)!important;
               box-shadow: none!important;

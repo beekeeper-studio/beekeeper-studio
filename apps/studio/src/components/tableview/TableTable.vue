@@ -1,5 +1,5 @@
 <template>
-  <div class="tabletable flex-col" :class="{'view-only': !editable}">
+  <div v-hotkey="keymap" class="tabletable flex-col" :class="{'view-only': !editable}">
     <template v-if="!table && initialized">
       <div class="no-content">
 
@@ -7,8 +7,19 @@
     </template>
     <template v-else >
       <div class="table-filter">
-        <form @submit.prevent="triggerFilter">
-          <div v-if="filterMode === 'raw'" class="filter-group row gutter">
+        <form @submit.prevent="triggerFilter" class="flex flex-middle">
+          <div class="filter-group" style="margin-left: 0.2rem">
+            <button
+              type="button"
+              class="btn btn-flat btn-fab"
+              :class="{'btn-primary': !allColumnsSelected}"
+              :title="`Set column visibility (${hiddenColumnCount} hidden)`"
+              @click="showColumnFilterModal()"
+            >
+              <i class="material-icons-outlined">visibility</i>
+            </button>
+          </div>
+          <div v-if="filterMode === 'raw'" class="filter-group row gutter expand">
             <div class="btn-wrap">
               <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('builder')" title="Toggle Filter Type">
                 <i class="material-icons-outlined">filter_alt</i>
@@ -20,6 +31,7 @@
                   class="form-control"
                   type="text"
                   v-model="filterRaw"
+                  ref="valueInput"
                   :placeholder=filterPlaceholder
                 />
                 <button
@@ -37,7 +49,7 @@
               </button>
             </div>
           </div>
-          <div v-else-if="filterMode === 'builder'" class="filter-group row gutter">
+          <div v-else-if="filterMode === 'builder'" class="filter-group row gutter expand">
             <div class="btn-wrap">
               <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('raw')" title="Toggle Filter Type">
                 <i class="material-icons">code</i>
@@ -67,7 +79,7 @@
                   class="form-control"
                   type="text"
                   v-model="filter.value"
-                  placeholder="Enter Value"
+                  :placeholder=builderPlaceholder
                   ref="valueInput"
                 />
                 <button
@@ -88,11 +100,16 @@
         </form>
       </div>
       <div ref="table"></div>
+      <ColumnFilterModal
+        :modalName="columnFilterModalName"
+        :columnsWithFilterAndOrder="columnsWithFilterAndOrder"
+        @changed="applyColumnChanges"
+      />
     </template>
 
     <statusbar :mode="statusbarMode">
 
-      
+
       <div class="truncate statusbar-info">
         <x-button @click.prevent="openProperties" class="btn btn-flat btn-icon end" title="View Structure">
           Structure <i class="material-icons">north_east</i>
@@ -108,7 +125,7 @@
           <span>{{lastUpdatedText}}</span>
         </a>
         <span v-if="error" class="statusbar-item error" :title="error.message">
-          <i class="material-icons">error</i>
+          <i class="material-icons">error_outline</i>
           <span class="">{{ error.title }}</span>
         </span>
       </div>
@@ -116,9 +133,9 @@
       <!-- Pagination -->
       <div class="tabulator-paginator">
         <div class="flex-center flex-middle flex">
-          <a @click="page = page  - 1"><i class="material-icons">navigate_before</i></a>
+          <a @click="page = page  - 1" v-tooltip="ctrlOrCmd('left')"><i class="material-icons">navigate_before</i></a>
           <input type="number" v-model="page" />
-          <a @click="page = page + 1"><i class="material-icons">navigate_next</i></a>
+          <a @click="page = page + 1" v-tooltip="ctrlOrCmd('right')"><i class="material-icons">navigate_next</i></a>
         </div>
       </div>
 
@@ -135,21 +152,21 @@
 
         <template v-if="pendingChangesCount > 0">
           <x-button class="btn btn-flat" @click.prevent="discardChanges">Reset</x-button>
-          <x-button class="btn btn-primary btn-badge" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
-            <i v-if="error" class="material-icons">error</i>
+          <x-button class="btn btn-primary btn-badge btn-icon" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
+            <i v-if="error" class="material-icons ">error_outline</i>
             <span class="badge" v-if="!error">{{pendingChangesCount}}</span>
             <span>Apply</span>
           </x-button>
         </template>
         <template v-if="!editable">
-          <span class="statusbar-item" title="Only tables with a single primary key column are editable."><i class="material-icons-outlined">info</i> Read Only</span>
+          <span class="statusbar-item" :title="readOnlyNotice"><i class="material-icons-outlined">info</i> Read Only</span>
         </template>
 
         <!-- Actions -->
-        <x-button class="btn btn-flat" title="Refresh table" @click="refreshTable">
+        <x-button v-tooltip="`${ctrlOrCmd('r')} or F5`" class="btn btn-flat" title="Refresh table" @click="refreshTable">
           <i class="material-icons">refresh</i>
         </x-button>
-        <x-button class="btn btn-flat" title="Add row" @click.prevent="cellAddRow">
+        <x-button class="btn btn-flat" v-tooltip="ctrlOrCmd('n')" title="Add row" @click.prevent="cellAddRow">
           <i class="material-icons">add</i>
         </x-button>
         <x-button class="actions-btn btn btn-flat" title="actions">
@@ -167,7 +184,7 @@
         </x-button>
 
       </div>
-      
+
     </statusbar>
   </div>
 </template>
@@ -182,12 +199,14 @@
 
 <script lang="ts">
 import Vue from 'vue'
+import Papa from 'papaparse'
 import pluralize from 'pluralize'
-import Tabulator from "tabulator-tables";
+import { TabulatorFull } from 'tabulator-tables'
 // import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
-import DataMutators from '../../mixins/data_mutators'
+import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
 import Statusbar from '../common/StatusBar.vue'
+import ColumnFilterModal from './ColumnFilterModal.vue'
 import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
@@ -195,14 +214,16 @@ import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
-import { mapState } from 'vuex';
-
+import { mapGetters, mapState } from 'vuex';
+import { Tabulator } from 'tabulator-tables'
+import { TableUpdate } from '@/lib/db/models';
+import { markdownTable } from 'markdown-table'
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
 
 export default Vue.extend({
-  components: { Statusbar },
+  components: { Statusbar, ColumnFilterModal },
   mixins: [data_converter, DataMutators],
   props: ["connection", "initialFilter", "active", 'tab', 'table'],
   data() {
@@ -214,7 +235,8 @@ export default Vue.extend({
         "less than": "<",
         "less than or equal": "<=",
         "greater than": ">",
-        "greater than or equal": ">="
+        "greater than or equal": ">=",
+        in: "in"
       },
       filter: {
         value: null,
@@ -232,11 +254,12 @@ export default Vue.extend({
       // table data
       data: null, // array of data
       totalRecords: null,
-      // 
+      preLoadScrollPosition: null,
+      //
       response: null,
       limit: 100,
       rawTableKeys: [],
-      primaryKey: null,
+      primaryKeys: null,
       pendingChanges: {
         inserts: [],
         updates: [],
@@ -252,14 +275,33 @@ export default Vue.extend({
 
       forceRedraw: false,
       rawPage: 1,
-      initialized: false
+      initialized: false,
+      internalColumnPrefix: "__beekeeper_internal_",
+      internalIndexColumn: "__beekeeper_internal_index",
+      selectedCell: null,
     };
   },
   computed: {
-    ...mapState(['tables', 'tablesInitialLoaded']),
+    ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database']),
+    ...mapGetters(['dialectData']),
     loadingLength() {
       return this.totalRecords === null
     },
+    columnsWithFilterAndOrder() {
+      if (!this.tabulator || !this.table) return []
+      const cols = this.tabulator.getColumns()
+      const columnNames = this.table.columns.map((c) => c.columnName)
+      const typeOf = (f) => this.table.columns.find((c) => c.columnName === f)?.dataType
+      return cols
+        .filter((c) => columnNames.includes(c.getField()))
+        .map((c, idx) => ({
+        name: c.getField(),
+        dataType: typeOf(c.getField()),
+        filter: c.isVisible(),
+        order: idx
+      }))
+    },
+
     page: {
       set(nu) {
         const newPage = Number(nu)
@@ -281,41 +323,91 @@ export default Vue.extend({
       result.push(`${this.pendingChangesCount} pending changes`)
       return result.join(" ")
     },
+    keymap() {
+      if (!this.active) return {}
+      const result = {}
+      result['f5'] = this.refreshTable.bind(this)
+      result[this.ctrlOrCmd('right')] = () => this.page = this.page + 1
+      result[this.ctrlOrCmd('left')] = () => this.page = this.page - 1
+      result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
+      result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
+      result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
+      result[this.ctrlOrCmd('f')] = () => this.$refs.valueInput.focus()
+      result[this.ctrlOrCmd('c')] = this.copyCell
+      return result
+    },
     cellContextMenu() {
       return [{
           label: '<x-menuitem><x-label>Set Null</x-label></x-menuitem>',
-          action: (_e, cell) => {
-            cell.setValue(null);
+          action: (_e, cell: Tabulator.CellComponent) => {
+            if (this.isPrimaryKey(cell.getField())) {
+              // do nothing
+            } else {
+              cell.setValue(null);
+            }
           },
           disabled: !this.editable
         },
         { separator: true },
         {
-          label: '<x-menuitem><x-label>Copy</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Copy Cell</x-label></x-menuitem>',
           action: (_e, cell) => {
             this.$native.clipboard.writeText(cell.getValue());
           },
         },
         {
-          label: '<x-menuitem><x-label>Paste</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Copy Row (JSON)</x-label></x-menuitem>',
           action: (_e, cell) => {
-            cell.setValue(this.$native.clipboard.readText())
-          },
-          disabled: !this.editable
+            const data = this.modifyRowData(cell.getRow().getData())
+            const fixed = this.$bks.cleanData(data, this.tableColumns)
+            Object.keys(data).forEach((key) => {
+              const v = data[key]
+              const column = this.tableColumns.find((c) => c.field === key)
+              const nuKey = column ? column.title : key
+              fixed[nuKey] = v
+            })
+            this.$native.clipboard.writeText(JSON.stringify(fixed))
+          }
+        },
+        {
+          label: '<x-menuitem><x-label>Copy Row (TSV / Excel)</x-label></x-menuitem>',
+          action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([this.$bks.cleanData(this.modifyRowData(cell.getRow().getData()))], { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
+        },
+        {
+          label: '<x-menuitem><x-label>Copy Row (Markdown)</x-label></x-menuitem>',
+          action: (_e, cell) => {
+            const data = this.modifyRowData(cell.getRow().getData())
+            const fixed = this.$bks.cleanData(data, this.tableColumns)
+
+            return this.$native.clipboard.writeText(markdownTable([
+              Object.keys(fixed),
+              Object.values(fixed),
+            ]))
+          }
+        },
+        {
+          label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
+          action: async (_e, cell) => {
+
+            const fixed = this.$bks.cleanData(this.modifyRowData(cell.getRow().getData()), this.tableColumns)
+
+            const tableInsert = {
+              table: this.table.name,
+              schema: this.table.schema,
+              data: [fixed],
+            }
+            const query = await this.connection.getInsertQuery(tableInsert)
+            this.$native.clipboard.writeText(query)
+          }
         },
         { separator: true },
         {
-          label: '<x-menuitem><x-label>Add row</x-label></x-menuitem>',
-          action: this.cellAddRow.bind(this),
-          disabled: !this.editable
-        },
-        {
-          label: '<x-menuitem><x-label>Clone row</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Clone Row</x-label></x-menuitem>',
           action: this.cellCloneRow.bind(this),
           disabled: !this.editable
         },
         {
-          label: '<x-menuitem><x-label>Delete row</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Delete Row</x-label></x-menuitem>',
           action: (_e, cell) => this.addRowToPendingDeletes(cell.getRow()),
           disabled: !this.editable
         },
@@ -324,12 +416,24 @@ export default Vue.extend({
     filterPlaceholder() {
       return `Enter condition, eg: name like 'Matthew%'`
     },
+    tableHolder() {
+      return this.$el.querySelector('.tabulator-tableholder')
+    },
+    allColumnsSelected() {
+      return this.columnsWithFilterAndOrder.every((column) => column.filter)
+    },
+    hiddenColumnCount() {
+      return this.columnsWithFilterAndOrder.filter((c) => !c.filter).length
+    },
+    builderPlaceholder() {
+      return this.filter.type === 'in' ? `Enter values separated by comma, eg: foo,bar` : 'Enter Value'
+    },
     totalRecordsText() {
       return `~${this.totalRecords.toLocaleString()}`
     },
     pendingChangesCount() {
-      return this.pendingChanges.inserts.length 
-             + this.pendingChanges.updates.length 
+      return this.pendingChanges.inserts.length
+             + this.pendingChanges.updates.length
              + this.pendingChanges.deletes.length
     },
     hasPendingChanges() {
@@ -345,11 +449,17 @@ export default Vue.extend({
       return this.pendingChanges.deletes.length > 0
     },
     editable() {
-      return this.primaryKey && this.table.entityType === 'table'
+      return this.primaryKeys?.length &&
+        this.table.entityType === 'table' &&
+        !this.dialectData.disabledFeatures?.tableTable
+    },
+    readOnlyNotice() {
+      return this.dialectData.notices?.tableTable ||
+        "Only tables with a single primary key column are editable."
     },
     // it's a table, but there's no primary key
     missingPrimaryKey() {
-      return this.table.entityType === 'table' && !this.primaryKey
+      return this.table.entityType === 'table' && !this.primaryKeys?.length
     },
     statusbarMode() {
       if (this.queryError) return 'failure'
@@ -359,7 +469,8 @@ export default Vue.extend({
     tableKeys() {
       const result = {}
       this.rawTableKeys.forEach((item) => {
-        result[item.fromColumn] = item
+        if (!result[item.fromColumn]) result[item.fromColumn] = [];
+        result[item.fromColumn].push(item);
       })
       return result
     },
@@ -372,7 +483,7 @@ export default Vue.extend({
       // to the FK table.
       this.table.columns.forEach(column => {
 
-        const keyData = this.tableKeys[column.columnName]
+        const keyDatas: any[] = this.tableKeys[column.columnName]
 
         // this needs fixing
         // currently it doesn't fetch the right result if you update the PK
@@ -380,18 +491,21 @@ export default Vue.extend({
         const slimDataType = this.slimDataType(column.dataType)
         const editorType = this.editorType(column.dataType)
         const useVerticalNavigation = editorType === 'textarea'
-        const isPK = this.primaryKey && this.primaryKey === column.columnName
+        const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
         const columnWidth = this.table.columns.length > 30 ?
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
           undefined
 
         const formatter = () => {
-          return `<span class="tabletable-title">${column.columnName} <span class="badge">${slimDataType}</span></span>`
+          return `<span class="tabletable-title">${escapeHtml(column.columnName)} <span class="badge">${escapeHtml(slimDataType)}</span></span>`
         }
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
-        if (keyData) {
-          headerTooltip += ` -> ${keyData.toTable}(${keyData.toColumn})`
+        if (keyDatas && keyDatas.length > 0) {
+          if (keyDatas.length === 1)
+            headerTooltip += ` -> ${keyDatas[0].toTable}(${keyDatas[0].toColumn})`
+          else
+            headerTooltip += ` -> ${keyDatas.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`
         } else if (isPK) {
           headerTooltip += ' [Primary Key]'
         }
@@ -411,7 +525,7 @@ export default Vue.extend({
           headerSort: this.allowHeaderSort(column),
           editor: editorType,
           tooltip: true,
-          contextMenu: this.editable ? this.cellContextMenu : null,
+          contextMenu: this.cellContextMenu,
           variableHeight: true,
           headerTooltip: headerTooltip,
           cellEditCancelled: cell => cell.getRow().normalizeHeight(),
@@ -425,26 +539,41 @@ export default Vue.extend({
             //   maxLength: column.columnLength // TODO
             // }
           },
-          cellEdited: this.cellEdited
         }
         results.push(result)
 
-
-        if (keyData) {
+        if (keyDatas && keyDatas.length > 0) {
           const icon = () => "<i class='material-icons fk-link'>launch</i>"
           const tooltip = () => {
-            return `View record in ${keyData.toTable}`
+            if (keyDatas.length == 1)
+              return `View record in ${keyDatas[0].toTable}`
+            else
+              return `View records in ${(keyDatas.map(item => item.toTable).join(', ') as string).replace(/, (?![\s\S]*, )/, ', or ')}`
           }
+          let clickMenu = null;
+          if (keyDatas.length > 1) {
+            clickMenu = [];
+            keyDatas.forEach(x => {
+              clickMenu.push({
+                label: `<x-menuitem><x-label>${x.toTable}(${x.toColumn})</x-label></x-menuitem>`,
+                action: (_e, cell) => {
+                  this.fkClick(_e, cell, x.toTable, x.toColumn);
+                }
+              })
+            })
+          }
+
           const keyResult = {
             headerSort: false,
             download: false,
             width: keyWidth,
             resizable: false,
-            field: column.columnName + '-link',
+            field: column.columnName + '-link--bks',
             title: "",
             cssClass: "foreign-key-button",
-            cellClick: this.fkClick,
+            cellClick: clickMenu == null ? this.fkClick : null,
             formatter: icon,
+            clickMenu,
             tooltip
           }
           result.cssClass = 'foreign-key'
@@ -452,7 +581,46 @@ export default Vue.extend({
         }
 
       });
+
+      // add internal index column
+      const result = {
+        title: this.internalIndexColumn,
+        field: this.internalIndexColumn,
+        cellClick: this.cellClick,
+        maxWidth: globals.maxColumnWidth,
+        maxInitialWidth: globals.maxInitialWidth,
+        editable: false,
+        variableHeight: true,
+        cellEditCancelled: cell => cell.getRow().normalizeHeight(),
+        formatter: this.cellFormatter,
+        visible: false,
+        clipboard: false,
+        print: false,
+        download: false
+      }
+      results.push(result)
+
       return results
+    },
+
+    tableId() {
+      // the id for a tabulator table
+      if (!this.usedConfig.id) return null;
+      return `${this.usedConfig.id}.${this.database || 'none'}.${this.table.schema || 'none'}.${this.table.name}`
+    },
+    persistenceOptions() {
+      if (!this.tableId) return {}
+
+      return {
+        persistence: {
+          sort: false,
+          filter: false,
+          group: false,
+          columns: ['width', 'visible'],
+        },
+        persistenceMode: 'local',
+        persistenceID: this.tableId,
+      }
     },
     filterValue() {
       return this.filter.value;
@@ -464,7 +632,15 @@ export default Vue.extend({
         this.filterMode === FILTER_MODE_BUILDER &&
         this.filter.type && this.filter.field && this.filter.value
       ) {
-        return [this.filter]
+        if (this.filter.type === 'in') {
+          const vals = this.filter.value.split(/\s*,\s*/)
+          return [{
+            ...this.filter,
+            value: vals
+          }]
+        } else {
+          return [this.filter]
+        }
       } else {
         return null
       }
@@ -478,8 +654,10 @@ export default Vue.extend({
     },
     shouldInitialize() {
       return this.tablesInitialLoaded && this.active && !this.initialized
-    }
-
+    },
+    columnFilterModalName() {
+      return `column-filter-modal-${this.tab.id}`
+    },
   },
 
   watch: {
@@ -499,7 +677,6 @@ export default Vue.extend({
         if (this.forceRedraw) {
           this.forceRedraw = false
           this.$nextTick(() => {
-            log.debug('forceredraw')
             this.tabulator.redraw(true)
           })
         }
@@ -541,7 +718,7 @@ export default Vue.extend({
     async lastUpdated() {
       this.setlastUpdatedText()
       let result = 'all'
-      if (this.primaryKey && this.filter.value && this.filter.type === '=' && this.filter.field === this.primaryKey) {
+      if (this.primaryKeys?.length && this.filter.value && this.filter.type === '=' && this.isPrimaryKey(this.filter.field)) {
         log.info("setting scope", this.filter.value)
         result = this.filter.value
       } else {
@@ -558,17 +735,42 @@ export default Vue.extend({
     }
   },
   beforeDestroy() {
+    document.removeEventListener('click', this.maybeUnselectCell)
     if(this.interval) clearInterval(this.interval)
     if (this.tabulator) {
       this.tabulator.destroy()
     }
   },
   async mounted() {
-    if (this.shouldInitialize) this.initialize()
+    document.addEventListener('click', this.maybeUnselectCell)
+    if (this.shouldInitialize) {
+      this.$nextTick(async() => {
+        await this.initialize()
+      })
+    }
   },
   methods: {
+    maybeScroll() {
+      if (this.preLoadScrollPosition) {
+        this.tableHolder.scrollLeft = this.preLoadScrollPosition
+        this.preLoadScrollPosition = null
+      }
+    },
+    maybeUnselectCell(event) {
+      if (!this.selectedCell) return
+      if (!this.active) return
+      const target = event.target
+      const targets = Array.from(this.selectedCell.getElement().getElementsByTagName("*"))
+      if (!targets.includes(target)) {
+        this.selectedCell.getElement().classList.remove('selected')
+        this.selectedCell = null
+      }
+    },
     async close() {
       this.$root.$emit(AppEvent.closeTab)
+    },
+    isPrimaryKey(column) {
+      return this.primaryKeys.includes(column);
     },
     async initialize() {
       log.info("initializing tab ", this.tab.title, this.tab.tabType)
@@ -581,28 +783,40 @@ export default Vue.extend({
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
-      this.primaryKey = await this.connection.getPrimaryKey(this.table.name, this.table.schema)
-      this.tabulator = new Tabulator(this.$refs.table, {
+      const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
+      this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
+      // this.columnsWithFilterAndOrder = this.table.columns.map(({columnName, dataType}) => ({
+      //   name: columnName,
+      //   dataType,
+      //   filter: true,
+      //   order: 0,
+      // }))
+
+
+
+      // @ts-ignore-error
+      this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,
         columns: this.tableColumns,
         nestedFieldSeparator: false,
         placeholder: "No Data",
-        virtualDomHoz: false,
+        renderHorizontal: 'virtual',
         ajaxURL: "http://fake",
-        ajaxSorting: true,
-        ajaxFiltering: true,
-        ajaxLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
-        pagination: "remote",
+        sortMode: 'remote',
+        filterMode: 'remote',
+        dataLoaderError: `<span style="display:inline-block">Error loading data, see error below</span>`,
+        pagination: true,
+        paginationMode: 'remote',
         paginationSize: this.limit,
         paginationElement: this.$refs.paginationArea,
         paginationButtonCount: 0,
         initialSort: this.initialSort,
         initialFilter: [this.initialFilter || {}],
-        // @ts-ignore
-        lastUpdated: null,
+        ...this.persistenceOptions,
+
         // callbacks
         ajaxRequestFunc: this.dataFetch,
-        index: this.primaryKey,
+        index: this.internalIndexColumn,
         keybindings: {
           scrollToEnd: false,
           scrollToStart: false,
@@ -613,6 +827,8 @@ export default Vue.extend({
 
         ]
       });
+      this.tabulator.on('cellEdited', this.cellEdited)
+      this.tabulator.on('dataProcessed', this.maybeScroll)
 
       this.$nextTick(() => {
         if (this.$refs.valueInput) {
@@ -641,7 +857,7 @@ export default Vue.extend({
         const result = {}
         columnNames.forEach((c) => {
           const d = rowData[c]
-          if (c === this.primaryKey && !d) {
+          if (this.isPrimaryKey(c) && !d) {
             // do nothing
           } else {
             result[c] = d
@@ -661,7 +877,7 @@ export default Vue.extend({
       return defaultValue
     },
     valueCellFor(cell) {
-      const fromColumn = cell.getField().replace(/-link$/g, "")
+      const fromColumn = cell.getField().replace(/-link--bks$/g, "")
       const valueCell = cell.getRow().getCell(fromColumn)
       return valueCell
     },
@@ -689,15 +905,20 @@ export default Vue.extend({
         default: return ne
       }
     },
-    fkClick(_e, cell) {
-      log.info('fk-click', cell)
-      const fromColumn = cell.getField().replace(/-link$/g, "")
+    fkClick(_e, cell, toTable = null, toColumn = null) {
+      const fromColumn = cell.getField().replace(/-link--bks$/g, "")
       const valueCell = this.valueCellFor(cell)
       const value = valueCell.getValue()
 
-      const keyData = this.tableKeys[fromColumn]
-      const tableName = keyData.toTable
-      const schemaName = keyData.toSchema
+      const keyDatas = this.tableKeys[fromColumn]
+      if (!keyDatas || keyDatas.length === 0) {
+        log.error("fk-click, couldn't find key data. Please open an issue. fromColumn:", fromColumn)
+        this.$noty.error("Unable to open foreign key. See dev console")
+      }
+      const keyData = toColumn == null || toTable == null ? keyDatas[0] : keyDatas.find(x => x.toTable === toTable && x.toColumn === toColumn);
+
+      const tableName = keyData.toTable;
+      const schemaName = keyData.toSchema;
       const table = this.$store.state.tables.find(t => {
         return (!schemaName || schemaName === t.schema) && t.name === tableName
       })
@@ -716,10 +937,21 @@ export default Vue.extend({
       log.debug('fk-click: clicked ', value, keyData)
       this.$root.$emit('loadTable', payload)
     },
+    copyCell() {
+        if (!this.active) return;
+        if (!this.selectedCell) return;
+        this.selectedCell.getElement().classList.add('copied')
+        const cell = this.selectedCell
+        setTimeout(() => cell.getElement().classList.remove('copied'), 500)
+        this.$native.clipboard.writeText(this.selectedCell.getValue(), false)
+    },
     cellClick(_e, cell) {
+      if (this.selectedCell) this.selectedCell.getElement().classList.remove("selected")
+      this.selectedCell = null
       // this makes it easier to select text if not editing
-      if (!this.editable) {
-        this.selectChildren(cell.getElement())
+      if (!this.cellEditCheck(cell)) {
+        this.selectedCell = cell
+        cell.getElement().classList.add("selected")
       } else {
         setTimeout(() => {
           cell.getRow().normalizeHeight();
@@ -737,16 +969,21 @@ export default Vue.extend({
         return true
       }
 
-      const primaryKey = cell.getRow().getCells().find(c => c.getField() === this.primaryKey).getValue()
-      const pendingDelete = _.find(this.pendingChanges.deletes, { primaryKey: primaryKey })
+      const rowData = cell.getRow().getData()
+      const primaryKeys = Object.keys(rowData).filter((k) => this.isPrimaryKey(k))
+        .map((key) => ({
+          column: key,
+          value: rowData[key]
+        }))
+      const pendingDelete = _.find(this.pendingChanges.deletes, (item) => _.isEqual(item.primaryKeys, primaryKeys))
 
-      return this.editable && cell.getColumn().getField() !== this.primaryKey && !pendingDelete
+      return this.editable && !this.isPrimaryKey(cell.getField()) && !pendingDelete
     },
     cellEdited(cell) {
-      log.info('edit', cell)
-      const pkCell = cell.getRow().getCells().find(c => c.getField() === this.primaryKey)
 
-      if (!pkCell) {
+      const pkCells = cell.getRow().getCells().filter(c => this.isPrimaryKey(c.getField()))
+
+      if (!pkCells) {
         this.$noty.error("Can't edit column -- couldn't figure out primary key")
         // cell.setValue(cell.getOldValue())
         cell.restoreOldValue()
@@ -760,46 +997,64 @@ export default Vue.extend({
       }
 
       const column = this.table.columns.find(c => c.columnName === cell.getField())
-
+      const pkValues = pkCells.map((cell) => cell.getValue()).join('-')
+      const key = `${pkValues}-${cell.getField()}`
 
       cell.getElement().classList.add('edited')
-      const key = `${pkCell.getValue()}-${cell.getField()}`
       const currentEdit = _.find(this.pendingChanges.updates, { key: key })
-      
-      if (currentEdit && currentEdit.cell.getInitialValue() === cell.getValue()) {
+
+      if (currentEdit?.oldValue === cell.getValue()) {
         this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit))
         cell.getElement().classList.remove('edited')
         return
       }
 
-      const payload = {
-        key: key,
-        table: this.table.name,
-        schema: this.table.schema,
-        column: cell.getField(),
-        pkColumn: this.primaryKey,
-        columnType: column ? column.dataType : undefined,
-        primaryKey: pkCell.getValue(),
-        oldValue: cell.getInitialValue(),
-        cell: cell,
-        value: cell.getValue(0)
+      const primaryKeys = pkCells.map((cell) => {
+        return {
+          column: cell.getField(),
+          value: cell.getValue()
+        }
+      })
+      if (currentEdit) {
+        currentEdit.value = cell.getValue()
+      } else {
+        const payload: TableUpdate & { key: string, oldValue: any, cell: any } = {
+          key: key,
+          table: this.table.name,
+          schema: this.table.schema,
+          column: cell.getField(),
+          columnType: column ? column.dataType : undefined,
+          primaryKeys,
+          oldValue: cell.getOldValue(),
+          cell: cell,
+          value: cell.getValue(0)
+        }
+        // remove existing pending updates with identical pKey-column combo
+        let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
+        pendingUpdates.push(payload)
+        this.$set(this.pendingChanges, 'updates', pendingUpdates)
       }
-      // remove existing pending updates with identical pKey-column combo
-      let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
-      pendingUpdates.push(payload)
-      this.$set(this.pendingChanges, 'updates', pendingUpdates)
     },
     cellCloneRow(_e, cell) {
       const row = cell.getRow()
       const data = { ...row.getData() }
+      const dataParsed = Object.keys(data).reduce((acc, d) => {
+        if (!this.primaryKeys?.includes(d)) {
+          acc[d] = data[d]
+        }
+        return acc
+      }, {})
 
-      this.tabulator.addRow(data, true).then(row => {
+      this.tabulator.addRow(dataParsed, true).then(row => {
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
       })
     },
     cellAddRow() {
-      this.tabulator.addRow({}, true).then(row => { 
+      if (this.dialectData.disabledFeatures?.tableTable) {
+        return;
+      }
+      this.tabulator.addRow({}, true).then(row => {
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
       })
@@ -811,16 +1066,16 @@ export default Vue.extend({
         table: this.table.name,
         row: row,
         schema: this.table.schema,
-        pkColumn: this.primaryKey
+        pkColumn: this.primaryKeys
       }
 
       this.pendingChanges.inserts.push(payload)
     },
     addRowToPendingDeletes(row) {
-      const pkCell = row.getCells().find(c => c.getField() === this.primaryKey)
+      const pkCells = row.getCells().filter(c => this.isPrimaryKey(c.getField()))
 
-      if (!pkCell) {
-        this.$noty.error("Can't delete row -- couldn't figure out primary key")       
+      if (!pkCells) {
+        this.$noty.error("Can't delete row -- couldn't figure out primary key")
         return
       }
 
@@ -832,26 +1087,34 @@ export default Vue.extend({
 
       row.getElement().classList.add('deleted')
 
+      const primaryKeys = pkCells.map((cell) => {
+        const column = this.table.columns.find(c => c.columnName === cell.getField())
+        const isBinary = column.dataType.toUpperCase().includes('BINARY')
+        return {
+          column: cell.getField(),
+          value: isBinary ? Buffer.from(cell.getValue(), 'hex') : cell.getValue()
+        }
+      })
+
       const payload = {
         table: this.table.name,
         row: row,
         schema: this.table.schema,
-        pkColumn: this.primaryKey,
-        primaryKey: pkCell.getValue()
+        primaryKeys,
       }
 
-        // remove pending updates for the row marked for deletion
-        const filter = { 'primaryKey': payload.primaryKey }
-        const discardedUpdates = _.filter(this.pendingChanges.updates, filter)
-        const pendingUpdates = _.reject(this.pendingChanges.updates, filter)
+      const matchesFn =  (update) => _.isEqual(update.primaryKeys, payload.primaryKeys)
+      // remove pending updates for the row marked for deletion
+      const discardedUpdates = _.filter(this.pendingChanges.updates, matchesFn)
+      const pendingUpdates = _.without(this.pendingChanges.updates, discardedUpdates)
 
-        discardedUpdates.forEach(update => this.discardColumnUpdate(update))
+      discardedUpdates.forEach(update => this.discardColumnUpdate(update))
 
-        this.$set(this.pendingChanges, 'updates', pendingUpdates)
+      this.$set(this.pendingChanges, 'updates', pendingUpdates)
 
-        if (!_.find(this.pendingChanges.deletes, { 'primaryKey': payload.primaryKey })) {
-          this.pendingChanges.deletes.push(payload)
-        }
+      if (!_.find(this.pendingChanges.deletes, matchesFn)) {
+        this.pendingChanges.deletes.push(payload)
+      }
     },
     resetPendingChanges() {
       this.pendingChanges = {
@@ -902,7 +1165,6 @@ export default Vue.extend({
 
 
         } catch (ex) {
-          
           this.pendingChanges.updates.forEach(edit => {
               edit.cell.getElement().classList.add('edit-error')
           })
@@ -918,7 +1180,7 @@ export default Vue.extend({
             ex
           }
           this.$noty.error(ex.message)
-          
+
           return
         } finally {
           if (!this.active) {
@@ -940,13 +1202,12 @@ export default Vue.extend({
       this.resetPendingChanges()
     },
     discardColumnUpdate(pendingUpdate) {
-      const update = {}
-      update[pendingUpdate.pkColumn] = pendingUpdate.primaryKey
-      update[pendingUpdate.column] = pendingUpdate.oldValue
+      pendingUpdate.cell.setValue(pendingUpdate.oldValue)
       pendingUpdate.cell.getElement().classList.remove('edited')
       pendingUpdate.cell.getElement().classList.remove('edit-error')
-
-      this.tabulator.updateData([update])
+    },
+    showColumnFilterModal() {
+      this.$modal.show(this.columnFilterModalName)
     },
     triggerFilter() {
       if (this.tabulator) this.tabulator.setData()
@@ -959,6 +1220,7 @@ export default Vue.extend({
       if (
         filterMode === FILTER_MODE_RAW &&
         !_.isNil(this.filter.value) &&
+        !_.isEmpty(this.filter.value) &&
         _.isEmpty(this.filterRaw)
       ) {
         const rawFilter = _.join([this.filter.field, this.filter.type, this.filter.value], ' ')
@@ -966,19 +1228,22 @@ export default Vue.extend({
       }
 
       this.filterMode = filterMode
+      this.$nextTick(() => {
+        this.$refs.valueInput.focus()
+      })
     },
     dataFetch(_url, _config, params) {
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
+      log.info("fetch params", params)
       let offset = 0;
       let limit = this.limit;
       let orderBy = null;
-      // eslint-disable-next-line no-debugger
       let filters = this.filterForTabulator;
 
-      if (params.sorters) {
-        orderBy = params.sorters
+      if (params.sort) {
+        orderBy = params.sort
       }
 
       if (params.size) {
@@ -988,20 +1253,30 @@ export default Vue.extend({
       if (params.page) {
         offset = (params.page - 1) * limit;
       }
+
+      // like if you change a filter
+      if (params.page && params.page !== this.page) {
+        this.page = params.page
+      }
+
       log.info("filters", filters)
 
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
+
+            // lets just make column selection a front-end only thing
+            const selects = ['*']
             const response = await this.connection.selectTop(
               this.table.name,
               offset,
               limit,
               orderBy,
               filters,
-              this.table.schema
+              this.table.schema,
+              selects,
             );
-            if (_.difference(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
+            if (_.xor(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
               await this.$store.dispatch('updateTableColumns', this.table)
             }
@@ -1010,9 +1285,17 @@ export default Vue.extend({
             this.response = response
             this.resetPendingChanges()
             this.clearQueryError()
+
+            // fill internal index column with primary keys
+            r.forEach(row => {
+              const primaryValues = this.primaryKeys.map(key => row[key]);
+              row[this.internalIndexColumn] = primaryValues.join(",");
+            });
+
             const data = this.dataToTableData({ rows: r }, this.tableColumns);
             this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
+            this.preLoadScrollPosition = this.tableHolder.scrollLeft
             resolve({
               last_page: 1,
               data
@@ -1061,6 +1344,34 @@ export default Vue.extend({
     },
     exportFiltered() {
       this.trigger(AppEvent.beginExport, {table: this.table, filters: this.filterForTabulator} )
+    },
+    modifyRowData(data) {
+      const output = {};
+      const keys = Object.keys(data);
+
+      for(const key of keys) {
+        // skip internal columns
+        if(key.startsWith(this.internalColumnPrefix)) continue;
+        if(key.endsWith('--bks')) continue
+
+        output[key] = data[key];
+      }
+
+      return output;
+    },
+    applyColumnChanges(columns) {
+      if (!this.tabulator) return;
+
+      this.tabulator.blockRedraw();
+
+      columns.forEach(({name, filter}) => {
+        if(filter) this.tabulator.showColumn(name)
+        else this.tabulator.hideColumn(name)
+      })
+
+      this.tabulator.restoreRedraw();
+
+      this.tabulator.redraw(true)
     }
   }
 });

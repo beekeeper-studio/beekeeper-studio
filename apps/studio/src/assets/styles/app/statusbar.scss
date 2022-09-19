@@ -67,7 +67,7 @@ $button-height:     $statusbar-height * 0.72;
   }
 
 
-  .connection-button { 
+  .connection-button {
     > .btn{
       box-shadow: none!important;
       background: transparent;
@@ -148,7 +148,7 @@ $button-height:     $statusbar-height * 0.72;
       color: $statusbar-text-default;
     }
   }
-  
+
   .download-results,
   .pending-changes {
     background: rgba($statusbar-text, 0.82);
@@ -340,11 +340,11 @@ $button-height:     $statusbar-height * 0.72;
     }
     .btn-primary.save {
       background: $theme-base;
-      color: rgba(black, 0.87);
+      color: rgba($theme-bg, 0.87);
       transition: background 0.15s ease-in-out;
       &:hover, &:focus {
         background: rgba($theme-base, 0.87);
-        color: rgba(black, 0.87);
+        color: $theme-bg;
       }
     }
   }

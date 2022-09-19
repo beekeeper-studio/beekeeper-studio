@@ -1,5 +1,5 @@
 <template>
-  <div class="table-builder">
+  <div class="table-builder" v-hotkey="hotkeys">
     <error-alert v-if="error" :error="error" />
     <div v-show="running">
       <x-progressbar></x-progressbar>
@@ -17,6 +17,7 @@
           </div>
         </div>
         <schema-builder
+          ref="sb"
           :dialect="dialect"
           :resetOnUpdate="true"
           :initialColumns="initialColumns"
@@ -25,7 +26,7 @@
         ></schema-builder>
       </div>
     </div>
-    <span class="expand"></span>
+    <div class="expand"></div>
     <status-bar class="tabulator-footer">
       <span class="expand"></span>
       <div class="col flex-right statusbar-actions">
@@ -37,7 +38,14 @@
           <x-button class="btn btn-primary" menu>
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
-              <x-menuitem @click.prevent="sql">Copy to SQL</x-menuitem>
+              <x-menuitem @click.prevent="create">
+                <x-label>Create Table</x-label>
+                <x-shortcut value="Control+S"></x-shortcut>
+              </x-menuitem>
+              <x-menuitem @click.prevent="sql">
+                <x-label>Copy to SQL</x-label>
+                <x-shortcut value="Control+Shift+S"></x-shortcut>
+              </x-menuitem>
             </x-menu>
           </x-button>
         </x-buttons>
@@ -73,7 +81,7 @@ export default Vue.extend({
     StatusBar,
     ErrorAlert,
   },
-  props: ['connection', 'tabId'],
+  props: ['connection', 'tabId', 'active'],
   data(): Data {
     return {
       running: false,
@@ -90,6 +98,17 @@ export default Vue.extend({
   computed: {
     ...mapGetters(['dialect']),
     ...mapState(['tables']),
+    hotkeys() {
+      if (!this.active) {
+        return {}
+      }
+      const results = {}
+
+      results[this.ctrlOrCmd('s')] = this.create.bind(this)
+      results[this.ctrlOrCmd('shift+s')] = this.sql.bind(this)
+      results[this.ctrlOrCmd('n')] = () => this.$refs.sb.addRow()
+      return results
+    },
     defaultSchema() {
       if (this.dialect === 'postgresql') return 'public'
       if (this.dialect === 'redshift') return 'public'
@@ -161,10 +180,13 @@ export default Vue.extend({
 
     }
   },
-  mounted() {
+  beforeMount() {
     const schema = BasicTable.toSchema(this.dialect)
     this.initialColumns = schema.columns
     this.generator = new SqlGenerator(this.dialect)
+  },
+  mounted() {
+
   }
 })
 </script>

@@ -20,8 +20,23 @@ export const ConnectionTypes = [
   { name: 'SQLite', value: 'sqlite' },
   { name: 'SQL Server', value: 'sqlserver' },
   { name: 'Amazon Redshift', value: 'redshift' },
-  { name: 'CockroachDB', value: 'cockroachdb' }
+  { name: 'CockroachDB', value: 'cockroachdb' },
+  { name: 'Oracle (ultimate)', value: 'other'}
 ]
+
+export interface RedshiftOptions {
+  iamAuthenticationEnabled?: boolean
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  awsRegion?: string;
+  clusterIdentifier?: string;
+  databaseGroup?: string;
+  tokenDurationSeconds?: number;
+}
+
+export interface ConnectionOptions {
+  cluster?: string
+}
 
 function parseConnectionType(t: Nullable<IDbClients>) {
   if (!t) return null
@@ -43,7 +58,11 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({ type: 'varchar', name: 'connectionType'})
   public set connectionType(value: Nullable<IDbClients>) {
-    this._connectionType = parseConnectionType(value)
+    if (this._connectionType !== value) {
+      const changePort = this._port === this.defaultPort
+      this._connectionType = parseConnectionType(value)
+      this._port = changePort ? this.defaultPort : this._port
+    }
   }
 
   public get connectionType() {
@@ -59,12 +78,12 @@ export class DbConnectionBase extends ApplicationEntity {
   public set port(v : Nullable<number>) {
     this._port = v
   }
- 
+
   public get port() : Nullable<number> {
-    return this._port || this.defaultPort
+    return this._port
   }
-  
-  
+
+
   public get defaultPort() : Nullable<number> {
     if (['mysql', 'mariadb'].includes(this.connectionType || '')) {
       return 3306
@@ -77,7 +96,30 @@ export class DbConnectionBase extends ApplicationEntity {
     }
     return null
   }
-  
+
+  _socketPath: Nullable<string> = null
+
+  @Column({type: 'varchar', nullable: true})
+  public set socketPath(v : Nullable<string>) {
+    this._socketPath = v
+  }
+
+  public get socketPath() : Nullable<string> {
+    return this._socketPath || this.defaultSocketPath
+  }
+
+  public get defaultSocketPath() : Nullable<string> {
+    if(['mysql', 'mariadb'].includes(this.connectionType || '')) {
+      return '/var/run/mysqld/mysqld.sock'
+    } else if (this.connectionType === 'postgresql') {
+      return '/var/run/postgresql'
+    }
+    return null
+  }
+
+  @Column({type: 'boolean', nullable: false, default: false})
+  socketPathEnabled = false
+
   @Column({type: "varchar", nullable: true})
   username: Nullable<string> = null
 
@@ -111,6 +153,9 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'varchar', nullable: true})
   sshBastionHost: Nullable<string> = null
 
+  @Column({type: 'int', nullable: true})
+  sshKeepaliveInterval: Nullable<number> = null
+
   @Column({type: 'boolean', nullable: false, default: false})
   ssl: boolean = false
 
@@ -127,6 +172,16 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'boolean', nullable: false})
   sslRejectUnauthorized: boolean = true
 
+
+  @Column({type: 'simple-json', nullable: false})
+  options: ConnectionOptions = {}
+
+  @Column({type: 'simple-json', nullable: false})
+  redshiftOptions: RedshiftOptions = {}
+
+  // this is only for SQL Server.
+  @Column({type: 'boolean', nullable: false})
+  trustServerCertificate = false
 }
 
 @Entity({ name: 'saved_connection'} )
@@ -157,6 +212,9 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshPassword: Nullable<string> = null
 
+  @Column({ type: 'integer', default: 0})
+  sshKeepaliveInterval: Nullable<number> = null
+
   _sshMode: SshMode = "agent"
 
   @Column({name: "sshMode", type: "varchar", length: "8", nullable: false, default: "agent"})
@@ -173,6 +231,11 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
     if (this._sshMode === 'keyfile' && !this.sshKeyfile) {
       this.sshKeyfile = resolveHomePathToAbsolute("~/.ssh/id_rsa")
+    }
+
+    if (!this.sshKeepaliveInterval || this.sshKeepaliveInterval < 0) {
+      // store null if zero, empty or negative
+      this.sshKeepaliveInterval = null
     }
   }
 
@@ -199,11 +262,22 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
         }
       }
 
-      const parsed = new ConnectionString(url)
+      const parsed = new ConnectionString(url.replaceAll(/\s/g, "%20"))
       this.connectionType = parsed.protocol as IDbClients || this.connectionType || 'postgresql'
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
       }
+
+      if (parsed.hostname && parsed.hostname.includes('cockroachlabs.cloud')) {
+        this.connectionType = 'cockroachdb'
+        if (parsed.params?.options) {
+          // TODO: fix this
+          const regex = /--cluster=([A-Za-z0-9\-_]+)/
+          const clusters = parsed.params.options.match(regex)
+          this.options['cluster'] = clusters ? clusters[1] : undefined
+        }
+      }
+
       if (parsed.params?.sslmode && parsed.params.sslmode !== 'disable') {
         this.ssl = true
       }

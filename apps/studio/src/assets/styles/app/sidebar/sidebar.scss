@@ -115,24 +115,6 @@
       }
     }
   }
-  .database-select {
-    display: block;
-    font-size: 100%;
-    margin: 0;
-    width: 100%;
-    border: 0;
-    .selectise-trigger {
-      color: $db-select-text;
-      border-radius: $input-radius;
-      height: $input-height * 1.1;
-      &::after {
-        border-color: $db-select-text transparent transparent transparent;
-      }
-    }
-    &:focus {
-      outline: 0;
-    }
-  }
 
   // Search
   // ---------------------------------
@@ -420,8 +402,20 @@
         }
         &.pinned {
           display: inline-flex;
-          i {
+          i.bk-pin {
             color: $theme-primary;
+          }
+          i.material-icons {
+            display:none;
+          }
+
+          &:hover {
+            i.material-icons {
+              display: inline;
+            }
+            i.bk-pin {
+              display: none;
+            }
           }
         }
       }

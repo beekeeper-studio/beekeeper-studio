@@ -22,35 +22,39 @@
                 </select>
               </div>
               <div v-if="config.connectionType">
-                
+
                 <!-- INDIVIDUAL DB CONFIGS -->
                 <postgres-form v-if="config.connectionType === 'cockroachdb'" :config="config" :testing="testing"></postgres-form>
                 <mysql-form v-if="['mysql', 'mariadb'].includes(config.connectionType)" :config="config" :testing="testing" @save="save" @test="testConnection" @connect="submit"></mysql-form>
                 <postgres-form v-if="config.connectionType === 'postgresql'" :config="config" :testing="testing"></postgres-form>
-                <postgres-form v-if="config.connectionType === 'redshift'" :config="config" :testing="testing"></postgres-form>
+                <redshift-form v-if="config.connectionType === 'redshift'" :config="config" :testing="testing"></redshift-form>
                 <sqlite-form v-if="config.connectionType === 'sqlite'" :config="config" :testing="testing"></sqlite-form>
                 <sql-server-form v-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"></sql-server-form>
+                <other-database-notice v-if="config.connectionType === 'other'" />
 
                 <!-- TEST AND CONNECT -->
-                <div class="test-connect row flex-middle">
+                <div v-if="config.connectionType !== 'other'" class="test-connect row flex-middle">
                   <span class="expand"></span>
                   <div class="btn-group">
                     <button :disabled="testing" class="btn btn-flat" type="button" @click.prevent="testConnection">Test</button>
                     <button :disabled="testing" class="btn btn-primary" type="submit" @click.prevent="submit">Connect</button>
                   </div>
                 </div>
-                <SaveConnectionForm :config="config" @save="save"></SaveConnectionForm>
+                <div class="row" v-if="connectionError">
+                  <div class="col">
+                    <error-alert :error="connectionError" :helpText="errorHelp" @close="connectionError = null" :closable="true" />
+
+                  </div>
+                </div>
+                <SaveConnectionForm v-if="config.connectionType !== 'other'" :config="config" @save="save"></SaveConnectionForm>
               </div>
 
             </form>
 
           </div>
-          <div class="pitch"><span class="badge">NEW</span> Share data across devices (or with your team) using <a href="https://www.beekeeperstudio.io/blog/release-3.0">workspaces</a>.</div>
-          <div v-if="connectionError" class="alert alert-danger">
-            {{connectionError}}
-          </div>
+          <div class="pitch" v-if="!config.connectionType"><span class="badge badge-primary">NEW</span> Check out <a href="https://beekeeperstudio.io/get#ultimate-features" class="">Beekeeper Studio Ultimate Edition</a></div>
         </div>
-        
+
         <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{version}}</a></small>
       </div>
     </div>
@@ -63,6 +67,7 @@
   import ConnectionSidebar from './sidebar/ConnectionSidebar'
   import MysqlForm from './connection/MysqlForm'
   import PostgresForm from './connection/PostgresForm'
+  import RedshiftForm from './connection/RedshiftForm'
   import Sidebar from './common/Sidebar'
   import SqliteForm from './connection/SqliteForm'
   import SqlServerForm from './connection/SqlServerForm'
@@ -73,19 +78,23 @@
   import platformInfo from '@/common/platform_info'
   import ErrorAlert from './common/ErrorAlert.vue'
   import rawLog from 'electron-log'
-import { mapState } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
+import { dialectFor } from '@shared/lib/dialects/models'
+import { findClient } from '@/lib/db/clients'
+import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
 
   const log = rawLog.scope('ConnectionInterface')
   // import ImportUrlForm from './connection/ImportUrlForm';
 
   export default {
-    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OtherDatabaseNotice, },
 
     data() {
       return {
-        config: null,
+        config: new SavedConnection(),
         errors: null,
         connectionError: null,
+        errorHelp: null,
         testing: false,
         split: null,
         url: null,
@@ -106,6 +115,9 @@ import { mapState } from 'vuex'
         } else {
           return this.config.name
         }
+      },
+      dialect() {
+        return dialectFor(this.config.connectionType)
       }
     },
     watch: {
@@ -117,15 +129,30 @@ import { mapState } from 'vuex'
         handler() {
           this.connectionError = null
         }
+      },
+      'config.connectionType'(newConnectionType) {
+        if(!findClient(newConnectionType)?.supportsSocketPath) {
+          this.config.socketPathEnabled = false
+        }
+      },
+      connectionError() {
+        console.log("error watch", this.connectionError, this.dialect)
+        if (this.connectionError &&
+          this.dialect == 'sqlserver' &&
+          this.connectionError.message &&
+          this.connectionError.message.includes('self signed certificate')
+        ) {
+          this.errorHelp = `You might need to check 'Trust Server Certificate'`
+        } else {
+        this.errorHelp = null
+        }
       }
     },
     async mounted() {
       if (!this.$store.getters.workspace) {
         await this.$store.commit('workspace', this.$store.state.localWorkspace)
       }
-      await this.$store.dispatch('credentials/load')
       await this.$store.dispatch('loadUsedConfigs')
-      this.config = new SavedConnection()
       this.config.sshUsername = os.userInfo().username
       this.$nextTick(() => {
         const components = [
@@ -199,7 +226,7 @@ import { mapState } from 'vuex'
         try {
           await this.$store.dispatch('connect', this.config)
         } catch(ex) {
-          this.connectionError = ex.message
+          this.connectionError = ex
           this.$noty.error("Error establishing a connection")
           log.error(ex)
         }
@@ -217,7 +244,7 @@ import { mapState } from 'vuex'
           this.$noty.success("Connection looks good!")
           return true
         } catch(ex) {
-          this.connectionError = ex.message
+          this.connectionError = ex
           this.$noty.error("Error establishing a connection")
         } finally {
           this.testing = false

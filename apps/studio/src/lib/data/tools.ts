@@ -42,10 +42,10 @@ export const Mutators = {
    */
   genericMutator(value: any, preserveComplex: boolean = false): JsonFriendly {
     const mutate = Mutators.genericMutator
-    if (_.isBuffer(value)) return value.toString()
+    if (_.isBuffer(value)) return value.toString('hex')
     if (_.isDate(value)) return value.toISOString()
-    if (_.isObject(value)) return preserveComplex? _.mapValues(value, (v) => mutate(v, preserveComplex)) : JSON.stringify(value)
     if (_.isArray(value)) return preserveComplex? value.map((v) => mutate(v, preserveComplex)) : JSON.stringify(value)
+    if (_.isObject(value)) return preserveComplex? _.mapValues(value, (v) => mutate(v, preserveComplex)) : JSON.stringify(value)
     if (_.isBoolean(value)) return value
     return value
   },
@@ -56,7 +56,8 @@ export const Mutators = {
    * @returns JsonFriendly
    */
   bit1Mutator(value: any): JsonFriendly {
-    return value[0]
+    if (!value) return 0
+    return Number(value[0])
   },
 
   /**

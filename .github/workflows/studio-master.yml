@@ -1,6 +1,6 @@
 name: Studio - Master build
 
-on: 
+on:
   push:
     branches:
       - "master"
@@ -24,8 +24,11 @@ jobs:
         with:
           node-version: 14
 
+      - name: Clean cache
+        run: yarn cache clean
+
       - name: Check dependencies
-        run: "yarn install --frozen-lockfile"
+        run: "yarn install --frozen-lockfile --network-timeout 100000"
 
       - name: Build Electron app
         run: "yarn run electron:build --publish never"

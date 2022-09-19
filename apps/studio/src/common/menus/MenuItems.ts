@@ -77,7 +77,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     fullscreen: {
       id: 'fullscreen',
       label: "Toggle Full Screen",
-      accelerator: platformInfo.isMac ? 'CommandOrControl+F' : 'F11',
+      accelerator: platformInfo.isMac ? 'Shift+CommandOrControl+F' : 'F11',
       click: actionHandler.fullscreen
     },
     // help
@@ -143,6 +143,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     sidebarToggle: {
       id: 'menu-toggle-sidebar',
       label: 'Toggle Sidebar',
+      accelerator: "Alt+S",
       click: actionHandler.toggleSidebar,
     },
     menuStyleToggle: {
@@ -169,6 +170,12 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: "theme-toggle-menu",
       label: "Theme",
       submenu: [
+        {
+          type: 'radio',
+          label: "System",
+          click: actionHandler.switchTheme,
+          checked: settings.theme.value === 'system'
+        },
         {
           type: "radio",
           label: "Light",

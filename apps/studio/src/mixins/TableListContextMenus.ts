@@ -62,8 +62,23 @@ export default {
             this.$root.$emit('loadTableCreate', item)
           }
         },
-
-
+        {
+          type: 'divider'
+        },
+        {
+          name: "Drop",
+          slug: 'sql-drop',
+          handler: ({ item }) => {
+            this.$root.$emit('dropDatabaseElement', {item, action: 'drop'})
+          }
+        },
+        {
+          name: "Truncate",
+          slug: 'sql-truncate',
+          handler: ({ item }) => {
+            this.$root.$emit('dropDatabaseElement', {item, action: 'truncate'})
+          }
+        },
       ]
     }
   },

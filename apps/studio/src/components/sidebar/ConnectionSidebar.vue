@@ -1,6 +1,5 @@
 <template>
   <div class="sidebar-wrap row">
-    <workspace-sidebar></workspace-sidebar>
 
     <!-- QUICK CONNECT -->
     <div class="tab-content flex-col expand">
@@ -14,9 +13,9 @@
         <span>New Connection</span>
         </a>
       </div>
-  
+
       <div class="connection-wrap expand flex-col">
-  
+
         <!-- Saved Connections -->
         <div class="list saved-connection-list expand" ref="savedConnectionList">
           <div class="list-group">
@@ -91,9 +90,9 @@
             </nav>
           </div>
         </div>
-  
+
         <hr> <!-- Fake gutter for split.js -->
-  
+
         <!-- Recent Connections -->
         <div class="list recent-connection-list expand" ref="recentConnectionList">
           <div class="list-group">
@@ -125,7 +124,6 @@
 
 <script>
   import _ from 'lodash'
-  import WorkspaceSidebar from './WorkspaceSidebar'
   import { mapState, mapGetters } from 'vuex'
   import ConnectionListItem from './connection/ConnectionListItem'
   import SidebarLoading from '@/components/common/SidebarLoading.vue'
@@ -138,7 +136,7 @@ import rawLog from 'electron-log'
 const log = rawLog.scope('connection-sidebar');
 
   export default {
-    components: { ConnectionListItem, WorkspaceSidebar, SidebarLoading, ErrorAlert, SidebarFolder },
+    components: { ConnectionListItem, SidebarLoading, ErrorAlert, SidebarFolder },
     props: ['selectedConfig'],
     data: () => ({
       split: null,
@@ -159,7 +157,8 @@ const log = rawLog.scope('connection-sidebar');
         'usedConfigs': 'orderedUsedConfigs',
         'settings': 'settings/settings',
         'sortOrder': 'settings/sortOrder',
-        'isCloud': 'isCloud'
+        'isCloud': 'isCloud',
+        'activeWorkspaces': 'credentials/activeWorkspaces'
       }),
       empty() {
         return !this.connectionConfigs?.length
@@ -169,7 +168,7 @@ const log = rawLog.scope('connection-sidebar');
       },
       lonelyConnections() {
         const folderIds = this.folders.map((c) => c.id)
-        return this.connectionConfigs.filter((config) => {
+        return this.sortedConnections.filter((config) => {
           return !config.connectionFolderId || !folderIds.includes(config.connectionFolderId)
         })
       },
@@ -179,7 +178,7 @@ const log = rawLog.scope('connection-sidebar');
         const result = this.folders.map((folder) => {
           return {
             folder,
-            connections: this.connectionConfigs.filter((c) => c.connectionFolderId === folder.id)
+            connections: this.sortedConnections.filter((c) => c.connectionFolderId === folder.id)
           }
         })
 
@@ -201,7 +200,19 @@ const log = rawLog.scope('connection-sidebar');
           }
         }
       },
-      orderedConnectionConfigs() {
+      sortedConnections() {
+        if (this.sortOrder === 'labelColor') {
+          const mappings = {
+            red: 0,
+            orange: 1,
+            yellow: 2,
+            green: 3,
+            blue: 4,
+            purple: 5,
+            pink: 6
+          }
+          return _.orderBy(this.connectionConfigs, (c) => mappings[c.color]).reverse()
+        }
         return _.orderBy(this.connectionConfigs, this.sortOrder)
       },
       components() {
@@ -222,7 +233,7 @@ const log = rawLog.scope('connection-sidebar');
     },
     methods: {
       importFromLocal() {
-        console.log("triggering import")  
+        console.log("triggering import")
         this.$root.$emit(AppEvent.promptConnectionImport)
       },
       refresh() {
@@ -248,7 +259,8 @@ const log = rawLog.scope('connection-sidebar');
         return `label-${color}`
       },
       sortConnections(by) {
-        this.settings.sortOrder.userValue = by
+        // this.connectionConfigs.sort((a, b) => a[by].toString().localeCompare(b[by].toString()))
+        this.settings.sortOrder.value = by
         this.settings.sortOrder.save()
       }
     }

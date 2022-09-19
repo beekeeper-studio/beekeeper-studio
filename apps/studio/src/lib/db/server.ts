@@ -1,21 +1,28 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { createConnection, DBConnection, IDbConnectionServer, IDbConnectionServerConfig } from './client';
-import { CLIENTS } from './clients';
+import { findClient } from './clients';
 
 export interface IDbConnectionPublicServer {
   db: (dbName: string) => DBConnection
   disconnect: () => void
   end: () => void
   createConnection: (dbName?: string, cryptoSecret?: string) => DBConnection
+  versionString: () => string
 }
 
-export function createServer(serverConfig: IDbConnectionServerConfig): IDbConnectionPublicServer {
-  if (!serverConfig) {
+export function createServer(config: IDbConnectionServerConfig): IDbConnectionPublicServer {
+  if (!config) {
     throw new Error('Missing server configuration');
   }
 
-  if (!CLIENTS.some((cli) => cli.key === serverConfig.client)) {
+  const client = findClient(config.client)
+
+  if (!client) {
     throw new Error('Invalid SQL client');
+  }
+
+  if(config.socketPathEnabled && !client.supportsSocketPath) {
+    throw new Error(`${client.name} does not support socket path`);
   }
 
   const server: IDbConnectionServer = {
@@ -23,10 +30,7 @@ export function createServer(serverConfig: IDbConnectionServerConfig): IDbConnec
      * All connected dbs
      */
     db: {},
-    config: {
-      ...serverConfig,
-      host: serverConfig.host || serverConfig.socketPath || undefined,
-    },
+    config,
   };
 
   /**
@@ -59,7 +63,7 @@ export function createServer(serverConfig: IDbConnectionServerConfig): IDbConnec
         return server.db[dbName];
       }
 
-      if(dbName === null && serverConfig.client === 'postgresql') {
+      if(dbName === null && config.client === 'postgresql') {
         dbName = 'postgres'
       }
 
@@ -75,5 +79,10 @@ export function createServer(serverConfig: IDbConnectionServerConfig): IDbConnec
       // @ts-ignore
       return server.db[dbName];
     },
+
+    versionString() {
+      // get version string from the first db, since all db's on the server have the same version
+      return server.db[Object.keys(server.db)[0]].versionString();
+    }
   } as IDbConnectionPublicServer;
 }

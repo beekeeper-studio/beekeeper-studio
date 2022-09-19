@@ -1,10 +1,16 @@
 <template>
-  <div class="advanced-connection-settings">
+  <div class="advanced-connection-settings" v-show="!config.socketPathEnabled">
     <h4 class="advanced-heading flex" :class="{enabled: config.sshEnabled}">
       <span class="expand">SSH Tunnel</span>
       <x-switch @click.prevent="config.sshEnabled = !config.sshEnabled" :toggled="config.sshEnabled"></x-switch>
     </h4>
     <div class="advanced-body" v-show="config.sshEnabled">
+      <div class="row gutter">
+        <div class="alert alert-info">
+          <i class="material-icons-outlined">info</i>
+          <div>For the SSH tunnel to work, AllowTcpForwarding must be set to "yes" in your ssh server config.</div>
+        </div>
+      </div>
       <div class="row gutter">
         <div class="col s9 form-group">
           <label for="sshHost">SSH Hostname</label>
@@ -15,9 +21,19 @@
           <input type="number" v-model.number="config.sshPort">
         </div>
       </div>
-      <div class="form-group">
-        <label for="bastionHost">Bastion Host (Jump Host)</label>
-        <input class="form-control" v-model="config.sshBastionHost" type="text" name="bastionHost">
+      <div class="row gutter">
+        <div class="col s8 form-group">
+          <label for="bastionHost">Bastion Host (Jump Host)</label>
+          <input class="form-control" v-model="config.sshBastionHost" type="text" name="bastionHost">
+        </div>
+        <div class="col s4 form-group">
+          <label for="sshKeepaliveInterval">
+            Keepalive Interval <i class="material-icons" style="padding-left: 0.25rem"
+            v-tooltip="'Ping the server after this many seconds when idle <br /> to prevent getting disconnected due to inactiviy <br/> (like<code> ServerAliveInterval 60 </code>in ssh/config)'"
+            >help_outlined</i>
+          </label>
+          <input type="number" v-model.number="config.sshKeepaliveInterval" name="sshKeepaliveInterval" placeholder="(in seconds)">
+        </div>
       </div>
       <div class="form-group">
         <label>SSH Authentication</label>

@@ -6,18 +6,18 @@ import Database from 'better-sqlite3'
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import rawLog from 'electron-log'
-import { buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery } from './utils';
+import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery, escapeLiteral } from './utils';
 import { SqliteCursor } from './sqlite/SqliteCursor';
 import { SqliteChangeBuilder } from '@shared/lib/sql/change_builder/SqliteChangeBuilder';
 import { SqliteData } from '@shared/lib/dialects/sqlite';
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
-const knex = knexlib({ client: 'sqlite3'})
+const knex = knexlib({ client: 'better-sqlite3'})
 
 const sqliteErrors = {
   CANCELED: 'SQLITE_INTERRUPT',
-}; 
+};
 
 const PD = SqliteData
 
@@ -29,10 +29,11 @@ export default async function (server, database) {
   const conn = { dbConfig };
 
   // light solution to test connection with with the server
-  await driverExecuteQuery(conn, { query: 'SELECT sqlite_version()' });
+  const version = await driverExecuteQuery(conn, { query: 'SELECT sqlite_version()' });
 
   return {
     supportedFeatures: () => ({ customRoutines: false, comments: false, properties: true }),
+    versionString: () => getVersionString(version),
     wrapIdentifier,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
@@ -52,8 +53,9 @@ export default async function (server, database) {
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: () => listDatabases(conn),
     getTableLength: (table) => getTableLength(conn, table),
-    selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
+    selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize) => selectTopStream(conn, db, table, orderBy, filters, chunkSize),
+    getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
@@ -72,6 +74,10 @@ export default async function (server, database) {
     // relations
     alterRelationSql: (payload) => alterRelationSql(payload),
     alterRelation: (payload) => alterRelation(conn, payload),
+
+    // delete stuff
+    dropElement: (elementName, typeOfElement) => dropElement(conn, elementName, typeOfElement),
+    truncateElement: (elementName) => truncateElement(conn, elementName)
   };
 }
 
@@ -96,6 +102,10 @@ function escapeString(value) {
   return value.replace("'", "''")
 }
 
+async function getInsertQuery(conn, database, tableInsert) {
+  const columns = await listTableColumns(conn, database, tableInsert.table, tableInsert.schema)
+  return buildInsertQuery(knex, tableInsert, columns)
+}
 
 export function getQuerySelectTop(client, table, limit) {
   return `SELECT * FROM ${wrapIdentifier(table)} LIMIT ${limit}`;
@@ -109,8 +119,8 @@ export async function getTableLength(conn, table) {
   return Number(totalRecords)
 }
 
-export async function selectTop(conn, table, offset, limit, orderBy, filters) {
-  return genericSelectTop(conn, table, offset, limit, orderBy, filters, driverExecuteQuery)
+export async function selectTop(conn, table, offset, limit, orderBy, filters, selects) {
+  return genericSelectTop(conn, table, offset, limit, orderBy, filters, driverExecuteQuery, selects)
 
 }
 
@@ -181,11 +191,11 @@ export async function applyChanges(conn, changes) {
       if (changes.updates) {
         results = await updateValues(cli, changes.updates)
       }
-  
+
       if (changes.deletes) {
         await deleteRows(cli, changes.deletes)
       }
-  
+
       await driverExecuteQuery(cli, { query: 'COMMIT'})
     } catch (ex) {
       log.error("query exception: ", ex)
@@ -199,9 +209,18 @@ export async function applyChanges(conn, changes) {
 
 export async function updateValues(cli, updates) {
   const commands = updates.map(update => {
+    const params = [update.value];
+    const whereList = []
+    update.primaryKeys.forEach(({ column, value }) => {
+      whereList.push(`${wrapIdentifier(column)} = ?`);
+      params.push(value);
+    })
+
+    const where = whereList.join(" AND ");
+
     return {
-      query: `UPDATE ${update.table} SET ${update.column} = ? WHERE ${update.pkColumn} = ?`,
-      params: [update.value, update.primaryKey]
+      query: `UPDATE ${update.table} SET ${update.column} = ? WHERE ${where}`,
+      params: params
     }
   })
 
@@ -213,11 +232,20 @@ export async function updateValues(cli, updates) {
   }
 
   const returnQueries = updates.map(update => {
+
+    const params = [];
+    const whereList = []
+    update.primaryKeys.forEach(({ column, value }) => {
+      console.log('updateValues, column, value', column, value)
+      whereList.push(`${wrapIdentifier(column)} = ?`);
+      params.push(value);
+    })
+
+    const where = whereList.join(" AND ");
+
     return {
-      query: `select * from "${update.table}" where "${update.pkColumn}" = ?`,
-      params: [
-        update.primaryKey
-      ]
+      query: `select * from "${update.table}" where ${where}`,
+      params: params
     }
   })
 
@@ -300,7 +328,7 @@ export async function listTableColumns(conn, database, table) {
   const allTables = (await listTables(conn)) || []
   const allViews = (await listViews(conn)) || []
   const tables = allTables.concat(allViews)
-  
+
   const everything = tables.map((table) => {
     return {
       tableName: table.name,
@@ -448,6 +476,24 @@ export async function truncateAllTables(conn) {
     // DELETE FROM sqlite_sequence WHERE name='${table}';
 
     await driverExecuteQuery(connClient, { query: truncateAll });
+  });
+}
+
+export async function dropElement (conn, elementName, typeOfElement) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `DROP ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
+  });
+}
+
+export async function truncateElement (conn, elementName) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `Delete from ${PD.wrapIdentifier(elementName)}; vacuum;`
+
+    await driverExecuteQuery(connClient, { query: sql })
   });
 }
 
@@ -604,6 +650,10 @@ export async function executeWithTransaction(conn, queryArgs) {
       throw ex
     }
   })
+}
+
+function getVersionString(version) {
+  return version.data[0]["sqlite_version()"];
 }
 
 

@@ -1,9 +1,10 @@
-import Knex from 'knex'
+import {Knex} from 'knex'
+import knex from 'knex'
 import { DBConnection, IDbConnectionServerConfig } from '../../src/lib/db/client'
 import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
-import { IDbConnectionPublicServer } from '@/lib/db/server'
+import { IDbConnectionPublicServer } from '../../src/lib/db/server'
 import { AlterTableSpec, Dialect, DialectData } from '../../../../shared/src/lib/dialects/models'
 import { getDialectData } from '../../../../shared/src/lib/dialects/'
 import _ from 'lodash'
@@ -37,16 +38,19 @@ export class DBTestUtil {
 
   private dialect: Dialect
   public data: DialectData
-  
+
   public preInitCmd: string | undefined
   public defaultSchema: string = undefined
-  
+
+  private personId: number
+  private jobId: number
+
   get expectedTables() {
     return this.extraTables + 8
   }
 
   constructor(config: IDbConnectionServerConfig, database: string, options: Options) {
-    log.transports.console.level = 'error'  
+    log.transports.console.level = 'error'
     if (platformInfo.debugEnabled) {
       log.transports.console.level = 'silly'
     }
@@ -56,18 +60,19 @@ export class DBTestUtil {
     this.dbType = config.client || 'generic'
     this.options = options
     if (config.client === 'sqlite') {
-      this.knex = Knex({
-        client: "sqlite3",
+      this.knex = knex({
+        client: "better-sqlite3",
         connection: {
           filename: database
         }
       })
     } else {
-      this.knex = Knex({
+      this.knex = knex({
         client: KnexTypes[config.client || ""] || config.client,
         version: options?.version,
         connection: {
-          host: config.host,
+          host: config.socketPathEnabled ? undefined : config.host,
+          socketPath: config.socketPathEnabled ? config.socketPath : undefined,
           port: config.port || undefined,
           user: config.user || undefined,
           password: config.password || undefined,
@@ -76,24 +81,95 @@ export class DBTestUtil {
         pool: { min: 0, max: 50 }
       })
     }
-    
+
     this.defaultSchema = options?.defaultSchema || this.defaultSchema
     this.server = createServer(config)
     this.connection = this.server.createConnection(database)
   }
 
+  maybeArrayToObject(items, key) {
+    return items.map((item) => {
+      if(_.isObject(item)) return item
+      const result = {}
+      result[key] = item
+      return result
+    })
+  }
+
   async setupdb() {
     await this.connection.connect()
     await this.createTables()
-    const address = await this.knex("addresses").insert({country: "US"}).returning("id")
+    const address = this.maybeArrayToObject(await this.knex("addresses").insert({country: "US"}).returning("id"), 'id')
     await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
-    const people = await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0]}).returning("id")
-    const jobs = await this.knex("jobs").insert({job_name: "Programmer"}).returning("id")
-    await this.knex("people_jobs").insert({job_id: jobs[0], person_id: people[0] })
+    const people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0].id}).returning("id"), 'id')
+    const jobs = this.maybeArrayToObject(await this.knex("jobs").insert({job_name: "Programmer"}).returning("id"), 'id')
+
+    this.jobId = jobs[0].id
+    this.personId = people[0].id
+    await this.knex("people_jobs").insert({job_id: this.jobId, person_id: this.personId })
   }
 
   testdb() {
 
+  }
+
+  async dropTableTests() {
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
+    await this.connection.dropElement('test_inserts', 'TABLE', this.defaultSchema)
+    const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+    expect(newTablesCount.length).toBeLessThan(tables.length)
+  }
+
+  async badDropTableTests() {
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
+    const expectedQueries = {
+      postgresql: 'test_inserts"drop table test_inserts"',
+      mysql: "test_inserts'drop table test_inserts'",
+      mariadb: "test_inserts'drop table test_inserts'",
+      sqlite: 'test_inserts"drop table test_inserts"',
+      sqlserver: 'test_inserts[drop table test_inserts]',
+      cockroachdb: 'test_inserts"drop table test_inserts"'
+    }
+    try {
+      await this.connection.dropElement(expectedQueries[this.dbType], 'TABLE', this.defaultSchema)
+      const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+      expect(newTablesCount.length).toEqual(tables.length)
+    } catch (err) {
+      const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+      expect(newTablesCount.length).toEqual(tables.length)
+    }
+  }
+
+  async truncateTableTests() {
+    await this.knex('group').insert([{select: 'something'}, {select: 'something'}])
+    const initialRowCount = await this.knex.select().from('group')
+
+    await this.connection.truncateElement('group', 'TABLE', this.defaultSchema)
+    const newRowCount = await this.knex.select().from('group')
+
+    expect(newRowCount.length).toBe(0)
+    expect(initialRowCount.length).toBeGreaterThan(newRowCount.length)
+  }
+
+  async badTruncateTableTests() {
+    await this.knex('group').insert([{select: 'something'}, {select: 'something'}])
+    const initialRowCount = await this.knex.select().from('group')
+    const expectedQueries = {
+      postgresql: 'group"drop table test_inserts"',
+      mysql: "group'drop table test_inserts'",
+      mariadb: "group'drop table test_inserts'",
+      sqlite: 'group"Delete from test_inserts; vacuum;"',
+      sqlserver: 'group[drop table test_inserts]',
+      cockroachdb: 'group"drop table test_inserts"'
+    }
+    try {
+      await this.connection.dropElement(expectedQueries[this.dbType], 'TABLE', this.defaultSchema)
+      const newRowCount = await this.knex.select().from('group')
+      expect(newRowCount.length).toEqual(initialRowCount.length)
+    } catch (err) {
+      const newRowCount = await this.knex.select().from('group')
+      expect(newRowCount.length).toEqual(initialRowCount.length)
+    }
   }
 
   async listTableTests() {
@@ -102,7 +178,6 @@ export class DBTestUtil {
     const columns = await this.connection.listTableColumns("people", this.defaultSchema)
     expect(columns.length).toBe(7)
   }
-
 
   async tableColumnsTests() {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)
@@ -113,21 +188,20 @@ export class DBTestUtil {
   /**
    * Tests related to the table view
    * fetching PK, selecting data, etc.
-   */ 
+   */
   async tableViewTests() {
 
-    console.log("table tests")
     // reserved word as table name
     expect(await this.connection.getPrimaryKey("group", this.defaultSchema))
       .toBe("id");
-    
+
     expect(await this.connection.getPrimaryKey("MixedCase", this.defaultSchema))
       .toBe("id");
-    
+
     const stR = await this.connection.selectTop("group", 0, 10, [{ field: "select", dir: 'ASC'} ], [], this.defaultSchema)
     expect(stR)
       .toMatchObject({ result: [] })
-    
+
     await this.knex("group").insert([{select: "bar"}, {select: "abc"}])
 
     let r = await this.connection.selectTop("group", 0, 10, [{field: "select", dir: 'ASC'}], [], this.defaultSchema)
@@ -176,7 +250,6 @@ export class DBTestUtil {
     await this.connection.alterTable(simpleChange)
     const simpleResult = await this.connection.listTableColumns('alter_test')
 
-    console.log(simpleResult)
     expect(simpleResult.find((c) => c.columnName === 'family_name')).toBeTruthy()
 
 
@@ -237,10 +310,10 @@ export class DBTestUtil {
       nullable: boolean,
       defaultValue: string,
     }
-    const rawResult: MiniColumn[] = schema.map((c) => 
+    const rawResult: MiniColumn[] = schema.map((c) =>
       _.pick(c, 'nullable', 'defaultValue', 'columnName', 'dataType')
     )
-    
+
 
     // cockroach adds a rowid column if there's no primary key.
     const result = rawResult.filter((r) => r.columnName !== 'rowid')
@@ -281,7 +354,7 @@ export class DBTestUtil {
       }
     ]
     expect(result).toMatchObject(expected)
-    
+
   }
 
   async filterTests() {
@@ -290,10 +363,48 @@ export class DBTestUtil {
     let result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(['pears'])
 
+    // filter test - builder in clause
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: 'in', value: ["pears"] }], this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas)
+    expect(result).toMatchObject(['pears'])
+
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: 'in', value: ["apples"] }], this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas)
+    expect(result).toMatchObject([])
+
+    await this.knex("MixedCase").insert({bananas: "cheese"}).returning("id")
+
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: 'in', value: ["pears", 'cheese'] }], this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas)
+    expect(result).toMatchObject(['pears', 'cheese'])
+
+    await this.knex('MixedCase').where({bananas: 'cheese'}).delete()
+
     // filter test - raw
     r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], "bananas = 'pears'", this.defaultSchema)
     result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(['pears'])
+  }
+
+  async columnFilterTests() {
+    let r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema)
+    expect(r.result).toEqual([{
+      person_id: this.personId,
+      job_id: this.jobId,
+      created_at: null,
+      updated_at: null,
+    }])
+
+    r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id'])
+    expect(r.result).toEqual([{
+      person_id: this.personId,
+    }])
+
+    r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id', 'job_id'])
+    expect(r.result).toEqual([{
+      person_id: this.personId,
+      job_id: this.jobId,
+    }])
   }
 
   async triggerTests() {
@@ -311,14 +422,13 @@ export class DBTestUtil {
       expect(pk).toBe("one")
     }
 
-    // composite primary key tests. Just disable them for now
-    const pkres = await this.connection.getPrimaryKey('with_composite_pk', this.defaultSchema)
-    expect(pkres).toBeNull()
+    const rawPkres = await this.connection.getPrimaryKeys('with_composite_pk', this.defaultSchema)
+    const pkres = rawPkres.map((key) => key.columnName);
+    expect(pkres).toEqual(expect.arrayContaining(["id1", "id2"]))
   }
 
   async queryTests() {
     if (this.dbType === 'sqlite') return
-    console.log('query tests')
     const q = await this.connection.query("select 'a' as total, 'b' as total")
     if(!q) throw new Error("no query result")
     const result = await q.execute()
@@ -335,6 +445,22 @@ export class DBTestUtil {
     expect(r2[0].fields.map((f: any) => [f.id, f.name])).toMatchObject([['c0', 'a']])
     expect(r2[1].fields.map((f: any) => [f.id, f.name])).toMatchObject([['c0', 'b']])
 
+  }
+
+  async getInsertQueryTests() {
+    const row = { job_name: "Programmer", hourly_rate: 41 }
+    const tableInsert = { table: 'jobs', schema: this.defaultSchema, data: [row] }
+    const insertQuery = await this.connection.getInsertQuery(tableInsert)
+    const expectedQueries = {
+      postgresql: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`,
+      mysql: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
+      mariadb: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
+      sqlite: "insert into `jobs` (`hourly_rate`, `job_name`) values (41, 'Programmer')",
+      sqlserver: "insert into [dbo].[jobs] ([hourly_rate], [job_name]) values (41, 'Programmer')",
+      cockroachdb: `insert into "public"."jobs" ("hourly_rate", "job_name") values (41, 'Programmer')`
+    }
+
+    expect(insertQuery).toBe(expectedQueries[this.dbType])
   }
 
   // lets start simple, it should resolve for all connection types
@@ -354,7 +480,7 @@ export class DBTestUtil {
       table.increments('id').primary()
       table.integer('index_me')
       table.integer('me_too')
-    } )
+    })
     await this.connection.alterIndex({
       table: 'index_test',
       schema: this.defaultSchema,
@@ -370,27 +496,27 @@ export class DBTestUtil {
       drops: [{ name: 'it_idx' }],
       additions: [{ name: 'it_idx2', columns: [{ name: 'me_too', order: 'ASC'}] }],
       table: 'index_test',
-      schema: this.defaultSchema 
+      schema: this.defaultSchema
     })
     const updatedIndexesRaw: TableIndex[] = await this.connection.listTableIndexes('index_test', this.defaultSchema)
 
     const updatedIndexes = updatedIndexesRaw.filter((i) => !i.primary)
 
     const picked = updatedIndexes.map((i) => _.pick(i, ['name', 'columns', 'table', 'schema']))
-    expect(picked).toEqual(
+    const schemaDefault = this.defaultSchema ? { schema: this.defaultSchema } : {}
+    expect(picked).toMatchObject(
       [
         {
+        ...schemaDefault,
         name: 'it_idx2',
         columns: [{name: 'me_too', order: 'ASC'}],
         table: 'index_test',
-        schema: this.defaultSchema,
       }]
     )
 
   }
 
   async streamTests() {
-    console.log('selectTopStream tests')
     const names = [
       { name: "Matthew" },
       { name: "Nicoll" },
@@ -412,30 +538,19 @@ export class DBTestUtil {
       5,
       undefined,
     )
-    console.log("checking columns and total row count")
     expect(result.columns.map(c => c.columnName)).toMatchObject(['id', 'name'])
     expect(result.totalRows).toBe(6)
     const cursor = result.cursor
-    console.log("starting cursor")
     await cursor.start()
-    console.log("length?")
     const b1 = await cursor.read()
     expect(b1.length).toBe(5)
-    console.log("reading first five names and checking those")
-    console.log(b1)
     expect(b1.map(r => r[1])).toMatchObject(names.map(r => r.name).slice(0, 5))
-    console.log("read2")
     const b2 = await cursor.read()
     expect(b2.length).toBe(1)
     expect(b2[0][1]).toBe(names[names.length - 1].name)
-    console.log("read 3")
     const b3 = await cursor.read()
     expect(b3).toMatchObject([])
-    console.log("closing")
     await cursor.close()
-
-
-    
   }
 
   private async createTables() {
@@ -501,5 +616,10 @@ export class DBTestUtil {
     await this.knex.schema.createTable("tablewith'char", (table) => {
       table.integer("one").unsigned().notNullable().primary()
     })
+  }
+
+  async databaseVersionTest() {
+    const version = this.connection.versionString();
+    expect(version).toBeDefined()
   }
 }

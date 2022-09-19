@@ -1,6 +1,6 @@
 name: Studio - Build & Publish
 
-on: 
+on:
   push:
     tags:
       - "v*"
@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-18.04, windows-latest, ubuntu-arm64]
+        os: [ubuntu-18.04, windows-latest, ubuntu-arm64]
 
     steps:
       - name: Import GPG key
@@ -43,6 +43,12 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 14
+
+      - name: Clean cache
+        run: yarn cache clean
+
+      - name: Check dependencies
+        run: "yarn install --frozen-lockfile --network-timeout 100000"
 
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v1
@@ -107,6 +113,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: "${{secrets.aws_access_key_id}}"
           AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
+          AWS_DEFAULT_REGION: "us-east-1"
       - name: Invalidate cloudfront cache
         if: startsWith(matrix.os, 'ubuntu')
         run: |
@@ -117,6 +124,7 @@ jobs:
           AWS_ACCESS_KEY_ID: "${{secrets.aws_access_key_id}}"
           AWS_SECRET_ACCESS_KEY: "${{secrets.aws_secret_access_key}}"
           DISTRIBUTION: ${{secrets.cloudfront_distribution}}
+          AWS_DEFAULT_REGION: "us-east-1"
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
         run: |

@@ -2,11 +2,10 @@ import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import username from 'username'
+import { ipcRenderer } from 'electron'
 
 import { UsedConnection } from '../common/appdb/models/used_connection'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
-import { FavoriteQuery } from '../common/appdb/models/favorite_query'
-import { UsedQuery } from '../common/appdb/models/used_query'
 import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
@@ -15,6 +14,7 @@ import { ExtendedTableColumn, Routine, TableColumn, TableOrView } from "../lib/d
 import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
+import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'
 
 import RawLog from 'electron-log'
 import { Dialect, dialectFor } from '@shared/lib/dialects/models'
@@ -22,8 +22,6 @@ import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
 import { SearchModule } from './modules/SearchModule'
 import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
-import { CloudClient } from '@/lib/cloud/CloudClient'
-import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
 import { IConnection } from '@/common/interfaces/IConnection'
 import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
@@ -49,14 +47,13 @@ export interface State {
   tablesLoading: string,
   tablesInitialLoaded: boolean,
   connectionConfigs: UsedConnection[],
-  history: UsedQuery[],
-  favorites: FavoriteQuery[],
   username: Nullable<string>,
   menuActive: boolean,
   activeTab: Nullable<CoreTab>,
   selectedSidebarItem: Nullable<string>,
   workspaceId: number,
-  storeInitialized: boolean
+  storeInitialized: boolean,
+  windowTitle: string,
 }
 
 Vue.use(Vuex)
@@ -69,7 +66,6 @@ const store = new Vuex.Store<State>({
     pins: PinModule,
     tabs: TabModule,
     search: SearchModule,
-    credentials: CredentialsModule
   },
   state: {
     usedConfig: null,
@@ -88,26 +84,18 @@ const store = new Vuex.Store<State>({
     tablesLoading: "loading tables...",
     tablesInitialLoaded: false,
     connectionConfigs: [],
-    history: [],
-    favorites: [],
     username: null,
     menuActive: false,
     activeTab: null,
     selectedSidebarItem: null,
     workspaceId: LocalWorkspace.id,
     storeInitialized: false,
+    windowTitle: 'Beekeeper Studio',
   },
 
   getters: {
-    workspace(state: State, getters): IWorkspace {
-      if (state.workspaceId === LocalWorkspace.id) return LocalWorkspace
-      
-      const workspaces: WSWithClient[] = getters['credentials/workspaces']
-      const result = workspaces.find(({workspace }) => workspace.id === state.workspaceId)
-
-
-      if (!result) return LocalWorkspace
-      return result.workspace
+    workspace(): IWorkspace {
+      return LocalWorkspace
     },
     isCloud(state: State) {
       return state.workspaceId !== LocalWorkspace.id
@@ -120,15 +108,6 @@ const store = new Vuex.Store<State>({
         const pollError = state[module.path]['pollError']
         return pollError || null
       }).find((e) => !!e)
-    },
-    cloudClient(state: State, getters): CloudClient | null {
-      if (state.workspaceId === LocalWorkspace.id) return null
-
-      const workspaces: WSWithClient[] = getters['credentials/workspaces']
-      const result = workspaces.find(({workspace}) => workspace.id === state.workspaceId)
-      if (!result) return null
-      return result.client.cloneWithWorkspace(result.workspace.id)
-
     },
     dialect(state: State): Dialect | null {
       if (!state.usedConfig) return null
@@ -185,7 +164,9 @@ const store = new Vuex.Store<State>({
       }
       return []
     },
-
+    versionString(state) {
+      return state.server.versionString();
+    }
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -251,7 +232,6 @@ const store = new Vuex.Store<State>({
       state.tablesInitialLoaded = false
     },
     tables(state, tables: TableOrView[]) {
-
       if(state.tables.length === 0) {
         state.tables = tables
       } else {
@@ -270,7 +250,7 @@ const store = new Vuex.Store<State>({
       }
 
       if (!state.tablesInitialLoaded) state.tablesInitialLoaded = true
-      
+
     },
 
     table(state, table: TableOrView) {
@@ -307,25 +287,9 @@ const store = new Vuex.Store<State>({
     usedConfigs(state, configs: UsedConnection[]) {
       Vue.set(state, 'usedConfigs', configs)
     },
-    history(state: State, history) {
-      state.history = history
-    },
-    historyAdd(state: State, run: UsedQuery) {
-      state.history.unshift(run)
-    },
-    historyRemove(state, historyQuery) {
-      state.history = _.without(state.history, historyQuery)
-    },
-    favorites(state: State, list: FavoriteQuery[]) {
-      state.favorites = list
-    },
-    favoritesAdd(state: State, query) {
-      state.favorites.unshift(query)
-    },
-    removeUsedFavorite(state: State, favorite) {
-      state.favorites = _.without(state.favorites, favorite)
-    },
-
+    updateWindowTitle(state, title: string) {
+      state.windowTitle = title
+    }
   },
   actions: {
 
@@ -354,6 +318,21 @@ const store = new Vuex.Store<State>({
       }
     },
 
+    updateWindowTitle(context, config: Nullable<IConnection>) {
+      const title = config 
+        ? `${BeekeeperPlugin.buildConnectionName(config)} - Beekeeper Studio`
+        : 'Beekeeper Studio'
+
+      context.commit('updateWindowTitle', title)
+      ipcRenderer.send('setWindowTitle', title)
+    },
+
+    async saveConnection(context, config: IConnection) {
+      await context.dispatch('data/connections/save', config)
+      const isConnected = !!context.state.server
+      if(isConnected) context.dispatch('updateWindowTitle', config)
+    },
+
     async connect(context, config: IConnection) {
       if (context.state.username) {
         const server = ConnectionProvider.for(config, context.state.username)
@@ -364,6 +343,7 @@ const store = new Vuex.Store<State>({
 
         context.commit('newConnection', {config: config, server, connection})
         context.dispatch('recordUsedConfig', config)
+        context.dispatch('updateWindowTitle', config)
       } else {
         throw "No username provided"
       }
@@ -372,9 +352,12 @@ const store = new Vuex.Store<State>({
 
       log.info("finding last used connection", config)
       const lastUsedConnection = context.state.usedConfigs.find(c => {
-        console.log("looking at config", config.id)
-        return c.connectionId === config.id && c.workspaceId === config.workspaceId
+        return config.id &&
+          config.workspaceId &&
+          c.connectionId === config.id &&
+          c.workspaceId === config.workspaceId
       })
+      console.log("Found used config", lastUsedConnection)
       if (!lastUsedConnection) {
         const usedConfig = new UsedConnection(config)
         log.info("logging used connection", usedConfig, config)
@@ -390,6 +373,7 @@ const store = new Vuex.Store<State>({
       const server = context.state.server
       server?.disconnect()
       context.commit('clearConnection')
+      context.dispatch('updateWindowTitle', null)
     },
     async changeDatabase(context, newDatabase: string) {
       if (context.state.server) {
@@ -401,7 +385,7 @@ const store = new Vuex.Store<State>({
         }
         context.commit('updateConnection', {connection, database: newDatabase})
         await context.dispatch('updateTables')
-        await context.dispatch('updateRoutines') 
+        await context.dispatch('updateRoutines')
       }
     },
 
@@ -413,13 +397,9 @@ const store = new Vuex.Store<State>({
         await connection?.listTableColumns(table.name, table.schema)) || []
 
       // TODO (don't update columns if nothing has changed (use duck typing))
-      const updated = columns.find((c, idx) => {
-        const other = table.columns[idx]
-        
-        return !other || !_.isEqual(c, other)
-      })
-
-      if (updated) {
+      const updated = _.xorWith(table.columns, columns, _.isEqual)
+      console.log('Should I update table columns?', updated)
+      if (updated?.length) {
         table.columns = columns
         context.commit('table', table)
       }
@@ -513,32 +493,12 @@ const store = new Vuex.Store<State>({
       )
       context.commit('usedConfigs', configs)
     },
-    async updateHistory(context) {
-      const historyItems = await UsedQuery.find({ take: 100, order: { createdAt: 'DESC' }, where: { workspaceId: context.state.workspaceId} });
-      context.commit('history', historyItems)
-    },
-    async logQuery(context, details) {
-      if (context.state.database) {
-        const run = new UsedQuery()
-        run.text = details.text
-        run.database = context.state.database
-        run.status = 'completed'
-        run.numberOfRecords = details.rowCount
-        run.workspaceId = context.state.workspaceId
-        await run.save()
-        context.commit('historyAdd', run)
-      }
-    },
-    async removeHistoryQuery(context, historyQuery) {
-      await historyQuery.remove()
-      context.commit('historyRemove', historyQuery)
-    },
     async menuActive(context, value) {
       context.commit('menuActive', value)
     },
     async tabActive(context, value: CoreTab) {
       context.commit('tabActive', value)
-    } 
+    }
   },
   plugins: []
 })
