@@ -1,5 +1,5 @@
 import _ from 'lodash'
-
+import { Dialect } from '@shared/lib/dialects/models'
 type JsonFriendly = string | boolean | number | null | JsonFriendly[] | object
 
 function dec28bits(num: any): string {
@@ -9,26 +9,26 @@ function dec28bits(num: any): string {
 
 export const Mutators = {
 
-  resolveTabulatorMutator(dataType?: string): (v: any) => JsonFriendly {
-    const mutator = this.resolveDataMutator(dataType)
+  resolveTabulatorMutator(dataType?: string, dialect?: Dialect): (v: any) => JsonFriendly {
+    const mutator = this.resolveDataMutator(dataType, dialect)
     return (v: any) => mutator(v) // this cleans off the additional params
   },
 
-  resolveDataMutator(dataType?: string): (v: any, p?: boolean) => JsonFriendly {
+  resolveDataMutator(dataType?: string, dialect?: Dialect): (v: any, p?: boolean) => JsonFriendly {
     if (dataType && dataType === 'bit(1)') {
       return this.bit1Mutator.bind(this)
     }
     if (dataType && dataType.startsWith('bit')) {
-      return this.bitMutator.bind(this)
+      return this.bitMutator.bind(this, dialect)
     }
     return this.genericMutator.bind(this)
   },
 
 
-  mutateRow(row: any[], dataTypes: string[] = [], preserveComplex: boolean = false): JsonFriendly[] {
+  mutateRow(row: any[], dataTypes: string[] = [], preserveComplex: boolean = false, dialect?: Dialect): JsonFriendly[] {
     return row.map((item, index) => {
       const typ = dataTypes[index]
-      const mutator = this.resolveDataMutator(typ)
+      const mutator = this.resolveDataMutator(typ, dialect)
       return mutator(item, preserveComplex)
     })
   },
@@ -62,13 +62,16 @@ export const Mutators = {
 
   /**
    * Stringify bit data for use in json / UIs
+   * @param {Dialect} dialect: The database dialect being used (must be first because the function is called via bind)
    * @param  {any} value
    * @returns JsonFriendly
    */
-  bitMutator(value: any): JsonFriendly {
-    // SQL Server bit data type is an integer data type
-    if (this.connection?.connectionType === "sqlserver") return value;
-
+  bitMutator(dialect: Dialect, value: any): JsonFriendly {
+    // value coming in is true/false (for sql) not 1/0, so for that export needs to be 0/1 for SQL export, maybe look in the sql export section and see what to do there instead 
+    // of futzing around in here too much? The goal is to keep the true/false as showing 
+  
+    if (dialect && dialect === 'sqlserver') return value
+    
     const result = []
     for (let index = 0; index < value.length; index++) {
       result.push(value[index])

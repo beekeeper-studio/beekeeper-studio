@@ -258,7 +258,7 @@ export function wrapValue(value) {
 
 async function getInsertQuery(conn, database, tableInsert) {
   const columns = await listTableColumns(conn, database, tableInsert.table, tableInsert.schema)
-  return buildInsertQuery(knex, tableInsert, columns)
+  return buildInsertQuery(knex, tableInsert, columns, _.toString)
 }
 
 export function getQuerySelectTop(client, table, limit) {

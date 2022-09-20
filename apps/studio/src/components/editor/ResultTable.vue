@@ -10,6 +10,7 @@
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
   import Mutators, { escapeHtml } from '../../mixins/data_mutators'
+  import { dialectFor } from '@shared/lib/dialects/models'
   import globals from '@/common/globals'
   import Papa from 'papaparse'
   import { mapState } from 'vuex'
@@ -119,7 +120,7 @@
             titleDownload: escapeHtml(column.name),
             dataType: column.dataType,
             width: columnWidth,
-            mutator: this.resolveTabulatorMutator(column.dataType),
+            mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
             formatter: this.cellFormatter,
             maxInitialWidth: globals.maxColumnWidth,
             tooltip: true,

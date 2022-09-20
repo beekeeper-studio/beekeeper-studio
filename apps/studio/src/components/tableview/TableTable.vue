@@ -218,6 +218,7 @@ import { mapGetters, mapState } from 'vuex';
 import { Tabulator } from 'tabulator-tables'
 import { TableUpdate } from '@/lib/db/models';
 import { markdownTable } from 'markdown-table'
+import { dialectFor } from '@shared/lib/dialects/models'
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
@@ -388,9 +389,7 @@ export default Vue.extend({
         {
           label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
           action: async (_e, cell) => {
-
             const fixed = this.$bks.cleanData(this.modifyRowData(cell.getRow().getData()), this.tableColumns)
-
             const tableInsert = {
               table: this.table.name,
               schema: this.table.schema,
@@ -514,7 +513,7 @@ export default Vue.extend({
           title: column.columnName,
           field: column.columnName,
           titleFormatter: formatter,
-          mutatorData: this.resolveTabulatorMutator(column.dataType),
+          mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
           dataType: column.dataType,
           cellClick: this.cellClick,
           width: columnWidth,

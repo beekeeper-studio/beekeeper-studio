@@ -156,8 +156,7 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
   return await executeSelectTop(queries, conn, executor)
 }
 
-export function buildInsertQuery(knex, insert: TableInsert, columns = []) {
-
+export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitConversionFunc: any = _.toNumber) {
   const data = _.cloneDeep(insert.data)
   data.forEach((item) => {
     const insertColumns = Object.keys(item)
@@ -165,7 +164,7 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = []) {
       const matching = _.find(columns, (c) => c.columnName === ic)
       if (matching && matching.dataType && matching.dataType.startsWith('bit(')) {
         if (matching.dataType === 'bit(1)') {
-          item[ic] = _.toNumber(item[ic])
+          item[ic] = bitConversionFunc(item[ic])
         } else {
           item[ic] = parseInt(item[ic].split("'")[1], 2)
         }
