@@ -9,11 +9,13 @@
         <i class="material-icons">add</i>
       </a>
     </div>
-    <modal class="vue-dialog beekeeper-modal save-add-database" name="config-add-database" height="auto" :scrollable="true">
-      <div class="dialog-content">
-        <add-database-form :connection="connection" @databaseCreated="databaseCreated" @cancel="$modal.hide('config-add-database')"></add-database-form>
-      </div>
-    </modal>
+    <portal to="modals">
+      <modal class="vue-dialog beekeeper-modal save-add-database" name="config-add-database" height="auto" :scrollable="true">
+        <div class="dialog-content">
+          <add-database-form :connection="connection" @databaseCreated="databaseCreated" @cancel="$modal.hide('config-add-database')"></add-database-form>
+        </div>
+      </modal>
+    </portal>
   </div>
 </template>
 
@@ -46,7 +48,7 @@
         this.$modal.hide('config-add-database')
         await this.refreshDatabases()
         if (this.connection.connectionType === 'sqlite') {
-          return console.log('sqlite stuff ah yeah')
+          return console.log('sqlite stuff ah yeah', db)
         }
         this.selectedDatabase = db
       }
