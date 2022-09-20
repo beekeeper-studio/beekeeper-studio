@@ -45,6 +45,10 @@
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
         await this.refreshDatabases()
+        if (this.connection.connectionType === 'sqlite') {
+          return console.log('sqlite stuff ah yeah')
+        }
+        this.selectedDatabase = db
       }
     },
     async mounted() {
