@@ -34,8 +34,10 @@
 
 <script type="text/javascript">
   import _ from 'lodash'
-  import AddDatabaseForm from "@/components/connection/AddDatabaseForm"
+  import { ipcRenderer } from 'electron'
   import vSelect from 'vue-select'
+  import {AppEvent} from '@/common/AppEvent'
+  import AddDatabaseForm from "@/components/connection/AddDatabaseForm"
 
   export default {
     props: [ 'connection' ],
@@ -59,10 +61,13 @@
       },
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
-        await this.refreshDatabases()
+        console.log(this.selectedDatabase)
         if (this.connection.connectionType === 'sqlite') {
-          return console.log('sqlite stuff ah yeah', db)
+          const fileLocation = this.selectedDatabase.split('/')
+          fileLocation.pop()
+          return ipcRenderer.send(AppEvent.menuClick, 'newWindow', { url: `${fileLocation.join('/')}/${db}.db` })
         }
+        await this.refreshDatabases()
         this.selectedDatabase = db
       }
     },
