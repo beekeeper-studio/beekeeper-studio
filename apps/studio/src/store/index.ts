@@ -319,7 +319,7 @@ const store = new Vuex.Store<State>({
     },
 
     updateWindowTitle(context, config: Nullable<IConnection>) {
-      const title = config 
+      const title = config
         ? `${BeekeeperPlugin.buildConnectionName(config)} - Beekeeper Studio`
         : 'Beekeeper Studio'
 
@@ -364,8 +364,7 @@ const store = new Vuex.Store<State>({
         await usedConfig.save()
         context.commit('usedConfigs', [...context.state.usedConfigs, usedConfig])
       } else {
-        lastUsedConnection.connectionId = config.id
-        lastUsedConnection.workspaceId = config.workspaceId
+        lastUsedConnection.updatedAt = new Date()
         await lastUsedConnection.save()
       }
     },
