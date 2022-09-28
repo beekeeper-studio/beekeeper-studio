@@ -219,7 +219,6 @@ import { Tabulator } from 'tabulator-tables'
 import { TableUpdate } from '@/lib/db/models';
 import { markdownTable } from 'markdown-table'
 import { dialectFor } from '@shared/lib/dialects/models'
-import { SmartLocalStorage } from '@/common/LocalStorage';
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
