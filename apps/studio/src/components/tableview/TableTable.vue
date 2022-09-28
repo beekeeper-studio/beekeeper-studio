@@ -219,6 +219,7 @@ import { Tabulator } from 'tabulator-tables'
 import { TableUpdate } from '@/lib/db/models';
 import { markdownTable } from 'markdown-table'
 import { dialectFor } from '@shared/lib/dialects/models'
+import { SmartLocalStorage } from '@/common/LocalStorage';
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
@@ -283,7 +284,7 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database']),
+    ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
     ...mapGetters(['dialectData']),
     loadingLength() {
       return this.totalRecords === null
@@ -336,6 +337,36 @@ export default Vue.extend({
       result[this.ctrlOrCmd('f')] = () => this.$refs.valueInput.focus()
       result[this.ctrlOrCmd('c')] = this.copyCell
       return result
+    },
+    headerContextMenu() {
+      return [{
+        label: '<x-menuitem><x-label>Reset column widths</x-label></x-menuitem>',
+        action: (_e, _column: Tabulator.ColumnComponent) => {
+          if (!this.tabulator) return;
+          const layout = this.tabulator.getColumnLayout()
+          const result = layout.map((l) => {
+            return {
+              field: l.field,
+              visible: l.visible
+            }
+          })
+          this.tabulator.setColumnLayout(result)
+        }
+      },
+      {
+        label: '<x-menuitem><x-label>Reset column visibility</x-label></x-menuitem>',
+        action: (_e, _column: Tabulator.ColumnComponent) => {
+          if (!this.tabulator) return;
+          const layout = this.tabulator.getColumnLayout()
+          const result = layout.map((l) => {
+            return {
+              field: l.field,
+              width: l.width
+            }
+          })
+          this.tabulator.setColumnLayout(result)
+        }
+      }]
     },
     cellContextMenu() {
       return [{
@@ -473,6 +504,11 @@ export default Vue.extend({
       })
       return result
     },
+    // we can use this to track if column names have been updated and we need
+    // to refresh
+    tableColumnNames() {
+      return this.table?.columns.map((c) => c.columnName).join("-")
+    },
     tableColumns() {
       const keyWidth = 40
       const results = []
@@ -525,6 +561,7 @@ export default Vue.extend({
           editor: editorType,
           tooltip: true,
           contextMenu: this.cellContextMenu,
+          headerContextMenu: this.headerContextMenu,
           variableHeight: true,
           headerTooltip: headerTooltip,
           cellEditCancelled: cell => cell.getRow().normalizeHeight(),
@@ -605,7 +642,7 @@ export default Vue.extend({
     tableId() {
       // the id for a tabulator table
       if (!this.usedConfig.id) return null;
-      return `${this.usedConfig.id}.${this.database || 'none'}.${this.table.schema || 'none'}.${this.table.name}`
+      return `workspace-${this.workspaceId}.connection-${this.usedConfig.id}.db-${this.database || 'none'}.schema-${this.table.schema || 'none'}.table-${this.table.name}`
     },
     persistenceOptions() {
       if (!this.tableId) return {}
@@ -683,19 +720,13 @@ export default Vue.extend({
         this.tabulator.blockRedraw()
       }
     },
-    table: {
-      deep: true,
-      async handler() {
-        log.debug('table changed', this.tableColumns)
-        if(!this.tabulator) {
-          return
-        }
-        if (!this.active) {
-          this.forceRedraw = true
-        }
-        await this.tabulator.setColumns(this.tableColumns)
-        await this.refreshTable()
-      }
+    async tableColumnNames() {
+      if (!this.tabulator) return;
+
+      if (!this.active) this.forceRedraw = true;
+      console.log("setting columns")
+      await this.tabulator.setColumns(this.tableColumns)
+      await this.refreshTable();
     },
     filterValue() {
       if (this.filter.value === "") {

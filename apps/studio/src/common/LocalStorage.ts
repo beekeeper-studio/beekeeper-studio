@@ -1,7 +1,9 @@
 
 
 export const SmartLocalStorage = {
-  ...localStorage,
+  removeItem(key: string) {
+    localStorage.removeItem(key)
+  },
   getDate(key: string): Date | null {
     const item = localStorage.getItem(key)
     if (!item) return null
