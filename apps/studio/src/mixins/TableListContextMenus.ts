@@ -15,7 +15,7 @@ export default {
           handler: this.routineMenuClick
         }
       ],
- 
+
     }
   },
   computed: {
@@ -69,14 +69,14 @@ export default {
           name: "Drop",
           slug: 'sql-drop',
           handler: ({ item }) => {
-            this.$root.$emit('dropDatabaseElement', {item, action: 'drop'})
+            this.$root.$emit(AppEvent.dropDatabaseElement, {item, action: 'drop'})
           }
         },
         {
           name: "Truncate",
           slug: 'sql-truncate',
           handler: ({ item }) => {
-            this.$root.$emit('dropDatabaseElement', {item, action: 'truncate'})
+            this.$root.$emit(AppEvent.dropDatabaseElement, {item, action: 'truncate'})
           }
         },
       ]

@@ -202,22 +202,32 @@
     methods: {
       completeDeleteAction() {
         const { schema, name: dbName, entityType } = this.dbDeleteElementParams
+        if (entityType !== 'table' && this.dbAction == 'truncate') {
+          this.$noty.warning("Sorry, you can only truncate tables.")
+          return;
+        }
         this.$modal.hide(this.modalName)
         this.$nextTick(async() => {
-          if (this.dbAction.toLowerCase() === 'drop') {
-            await this.connection.dropElement(dbName, entityType?.toUpperCase(), schema)
-            // timeout is more about aesthetics so it doesn't refresh the table right away.
+          try {
+            if (this.dbAction.toLowerCase() === 'drop') {
+              await this.connection.dropElement(dbName, entityType?.toUpperCase(), schema)
+              // timeout is more about aesthetics so it doesn't refresh the table right away.
 
-            return setTimeout(() => {
-              this.$store.dispatch('updateTables')
-              this.$store.dispatch('updateRoutines')
-            }, 500)
-          }
+              setTimeout(() => {
+                this.$store.dispatch('updateTables')
+                this.$store.dispatch('updateRoutines')
+              }, 500)
+            }
 
-          if (this.dbAction.toLowerCase() === 'truncate') {
-            await this.connection.truncateElement(dbName, entityType?.toUpperCase(), schema)
+            if (this.dbAction.toLowerCase() === 'truncate') {
+              await this.connection.truncateElement(dbName, entityType?.toUpperCase(), schema)
+            }
+
+            this.$noty.success(`${this.dbAction} completed successfully`)
+
+          } catch (ex) {
+            this.$noty.error(`Error performing ${this.dbAction}: ${ex.message}`)
           }
-          
         })
       },
       beforeOpened() {
@@ -303,7 +313,7 @@
         const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
         this.createQuery(stringResult)
       },
-      dropDatabaseElement({ item: dbActionParams, action: dbAction }) { 
+      dropDatabaseElement({ item: dbActionParams, action: dbAction }) {
         this.dbElement = dbActionParams.name
         this.dbAction = dbAction
         this.dbEntityType = dbActionParams.entityType
