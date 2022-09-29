@@ -18,6 +18,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.sshHost = other.sshHost
       this.sshPort = other.sshPort
       this.sshBastionHost = other.sshBastionHost
+      this.sshKeepaliveInterval = other.sshKeepaliveInterval
       this.ssl = other.ssl
       this.sslCaFile = other.sslCaFile
       this.sslCertFile = other.sslCertFile
@@ -28,6 +29,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       }
       this.options = other.options
       this.trustServerCertificate = other.trustServerCertificate
+      this.redshiftOptions = other.redshiftOptions
     }
 
   }
