@@ -10,7 +10,8 @@ import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { DBConnection } from '../lib/db/client'
-import { ExtendedTableColumn, Routine, TableColumn, TableOrView } from "../lib/db/models"
+import { Routine, TableOrView } from "../lib/db/models"
+// import { ExtendedTableColumn, Routine, TableColumn, TableOrView } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
@@ -208,7 +209,6 @@ const store = new Vuex.Store<State>({
       state.connection = payload.connection
       state.database = payload.config.defaultDatabase
     },
-
     clearConnection(state) {
       state.usedConfig = null
       state.connection = null
@@ -417,10 +417,12 @@ const store = new Vuex.Store<State>({
           const onlyTables = await context.state.connection.listTables({ schema })
           onlyTables.forEach((t) => {
             t.entityType = 'table'
+            t.columns = []
           })
           const views = await context.state.connection.listViews({ schema })
           views.forEach((v) => {
             v.entityType = 'view'
+            v.columns = []
           })
 
           const materialized = await context.state.connection.listMaterializedViews({ schema })
@@ -428,25 +430,7 @@ const store = new Vuex.Store<State>({
           const tables = onlyTables.concat(views).concat(materialized)
           context.commit("tablesLoading", `Loading ${tables.length} tables`)
 
-          const tableColumns = await context.state.connection.listTableColumns()
-          let viewColumns: TableColumn[] = []
-          for (let index = 0; index < materialized.length; index++) {
-            const view = materialized[index]
-            const columns = await context.state.connection.listMaterializedViewColumns(view.name, view.schema)
-            viewColumns = viewColumns.concat(columns)
-          }
-
-          type MaybeColumn = ExtendedTableColumn | TableColumn
-          const allColumns: MaybeColumn[]  = [...tableColumns, ...viewColumns]
-          log.info("ALL COLUMNS", allColumns)
-          tables.forEach((table) => {
-            table.columns = allColumns.filter(row => {
-              return row.tableName === table.name && (!table.schema || table.schema === row.schemaName)
-            })
-          })
-
           context.commit('tables', tables)
-
         } finally {
           context.commit("tablesLoading", null)
         }
