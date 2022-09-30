@@ -280,6 +280,7 @@ export default Vue.extend({
       internalColumnPrefix: "__beekeeper_internal_",
       internalIndexColumn: "__beekeeper_internal_index",
       selectedCell: null,
+      tableSort: {},
     };
   },
   computed: {
@@ -338,18 +339,40 @@ export default Vue.extend({
       return result
     },
     headerContextMenu() {
-      return [{
+      return [
+        {
+          label: "Sort (asc)",
+          action: (_e, column) => {
+            this.tableSort = {
+              column: column.getField(),
+              dir: 'asc'
+            }
+          }
+        },
+        {
+          label: 'Sort (desc)',
+          action: (_e, column) => {
+            this.tableSort = {
+              column: column.getField(),
+              dir: 'desc'
+            }
+          }
+        },
+        {
         label: '<x-menuitem><x-label>Reset column widths</x-label></x-menuitem>',
         action: (_e, _column: Tabulator.ColumnComponent) => {
-          if (!this.tabulator) return;
-          const layout = this.tabulator.getColumnLayout()
-          const result = layout.map((l) => {
-            return {
-              field: l.field,
-              visible: l.visible
-            }
-          })
-          this.tabulator.setColumnLayout(result)
+          try {
+            this.tabulator.blockRedraw()
+            const columns = this.tabulator.getColumns()
+            columns.forEach((col) => {
+              col.setWidth(true)
+            })
+            // this.tabulator.redraw(true)
+          } catch (error) {
+            console.error(error)
+          } finally {
+            this.tabulator.restoreRedraw()
+          }
         }
       },
       {
@@ -551,12 +574,14 @@ export default Vue.extend({
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
           dataType: column.dataType,
           cellClick: this.cellClick,
+          minWidth: globals.minColumnWidth,
           width: columnWidth,
           maxWidth: globals.maxColumnWidth,
           maxInitialWidth: globals.maxInitialWidth,
           cssClass: isPK ? 'primary-key' : '',
           editable: this.cellEditCheck,
-          headerSort: this.allowHeaderSort(column),
+          headerSort: false,
+          headerClick: this.headerClick,
           editor: editorType,
           tooltip: true,
           contextMenu: this.cellContextMenu,
@@ -644,6 +669,7 @@ export default Vue.extend({
       return `workspace-${this.workspaceId}.connection-${this.usedConfig.id}.db-${this.database || 'none'}.schema-${this.table.schema || 'none'}.table-${this.table.name}`
     },
     persistenceOptions() {
+      // return {}
       if (!this.tableId) return {}
 
       return {
@@ -651,7 +677,8 @@ export default Vue.extend({
           sort: false,
           filter: false,
           group: false,
-          columns: ['width', 'visible'],
+          columns: ['visible', 'width'],
+
         },
         persistenceMode: 'local',
         persistenceID: this.tableId,
@@ -696,6 +723,11 @@ export default Vue.extend({
   },
 
   watch: {
+    tableSort() {
+      if (this.tableSort) {
+        this.tabulator.setSort([this.tableSort])
+      }
+    },
     shouldInitialize() {
       if (this.shouldInitialize) {
         this.initialize()
@@ -779,6 +811,24 @@ export default Vue.extend({
     }
   },
   methods: {
+    headerFormatter() {
+
+    },
+    headerClick(e: Event, column: Tabulator.ColumnComponent) {
+      e.stopPropagation()
+      e.preventDefault()
+      console.log("header click!")
+      const existingSorts = this.tabulator.getSorters()
+      const field = column.getField()
+      const existing = existingSorts.find((s)=> s.field === field)
+      const result = {
+        column: field, dir: 'asc'
+      }
+      if (existing) {
+        result.dir = existing.dir === 'asc' ? 'desc' : 'asc'
+      }
+      this.tabulator.setSort([result])
+    },
     maybeScroll() {
       if (this.preLoadScrollPosition) {
         this.tableHolder.scrollLeft = this.preLoadScrollPosition
