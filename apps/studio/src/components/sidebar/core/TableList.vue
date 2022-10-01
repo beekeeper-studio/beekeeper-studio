@@ -225,8 +225,11 @@
         const key = [entity.schema, entity.name, entity.entityType].filter((v) => !!v)
         return key.join(".")
       },
-      tableSelected() {
-        // this.selectedTable = table
+      async tableSelected(table) {
+        if(table.columns?.length === 0) {
+          await this.$store.dispatch('updateTableColumns', table)
+        }
+        // this.selectedTable = table (Why was this commented out? We may never know...)
       },
       clearFilter() {
         this.filterQuery = null

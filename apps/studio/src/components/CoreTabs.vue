@@ -339,7 +339,10 @@
         t.title = table.name
         
         try {
-          await this.$store.dispatch('updateTableColumns', table)
+          if (table.columns.length === 0) {
+            // Also, add a loader here like the tables loading one
+            await this.$store.dispatch('updateTableColumns', table)
+          }
           const existing = this.tabItems.find((tab) => tab.matches(t))
           if (existing) return this.$store.dispatch('tabs/setActive', existing)
   

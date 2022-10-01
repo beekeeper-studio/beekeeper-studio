@@ -493,6 +493,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
           this.editor = CodeMirror.fromTextArea(this.$refs.editor, {
             lineNumbers: true,
             mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
+            tabSize: 2,
             theme: 'monokai',
             extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete", "Shift-Tab": "indentLess"},
             hint: CodeMirror.hint.sql,
