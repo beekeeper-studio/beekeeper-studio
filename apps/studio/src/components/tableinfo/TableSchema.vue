@@ -22,7 +22,11 @@
           </div>
         </div>
         <div ref="tableSchema"></div>
-
+        <!-- Tabulator can be slow to open especially for some really large column counts. Let the user know. -->
+        <div v-if="this.table.columns.length" class="columns-loading-disclaimer">
+          <p>Columns loading.</p>
+          <p>This may take a few minutes depending on column count.</p>
+        </div>
       </div>
     </div>
 
@@ -57,6 +61,19 @@
     </status-bar>
   </div>
 </template>
+
+<style scoped>
+  .columns-loading-disclaimer {
+    width: 100%;
+    text-align: center;
+    font-weight: 700;
+    font-size: 20px;
+
+  }
+  .tabulator + .columns-loading-disclaimer {
+    display: none;
+  }
+</style>
 
 <script lang="ts">
 import { TabulatorFull, Tabulator } from 'tabulator-tables'
