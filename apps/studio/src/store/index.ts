@@ -11,7 +11,6 @@ import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { DBConnection } from '../lib/db/client'
 import { Routine, TableOrView } from "../lib/db/models"
-// import { ExtendedTableColumn, Routine, TableColumn, TableOrView } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
@@ -45,6 +44,7 @@ export interface State {
   tables: TableOrView[],
   routines: Routine[],
   entityFilter: EntityFilter,
+  columnsLoading: string,
   tablesLoading: string,
   tablesInitialLoaded: boolean,
   connectionConfigs: UsedConnection[],
@@ -82,7 +82,8 @@ const store = new Vuex.Store<State>({
       showRoutines: true,
       showViews: true
     },
-    tablesLoading: "loading tables...",
+    tablesLoading: "Loading tables...",
+    columnsLoading: 'Loading columns...',
     tablesInitialLoaded: false,
     connectionConfigs: [],
     username: null,
@@ -252,7 +253,6 @@ const store = new Vuex.Store<State>({
       if (!state.tablesInitialLoaded) state.tablesInitialLoaded = true
 
     },
-
     table(state, table: TableOrView) {
       const existingIdx = state.tables.findIndex((st) => tablesMatch(st, table))
       if (existingIdx >= 0) {
@@ -263,9 +263,11 @@ const store = new Vuex.Store<State>({
         state.tables = [...state.tables, table]
       }
     },
-
     routines(state, routines) {
       state.routines = Object.freeze(routines)
+    },
+    columnsLoading(state, value: string) {
+      state.columnsLoading = value
     },
     tablesLoading(state, value: string) {
       state.tablesLoading = value
@@ -390,17 +392,22 @@ const store = new Vuex.Store<State>({
 
     async updateTableColumns(context, table: TableOrView) {
       log.debug('actions/updateTableColumns', table.name)
-      const connection = context.state.connection
-      const columns = (table.entityType === 'materialized-view' ?
+      try {
+        context.commit("columnsLoading", "Loading columns...")
+        const connection = context.state.connection
+        const columns = (table.entityType === 'materialized-view' ?
         await connection?.listMaterializedViewColumns(table.name, table.schema) :
         await connection?.listTableColumns(table.name, table.schema)) || []
-
-      // TODO (don't update columns if nothing has changed (use duck typing))
-      const updated = _.xorWith(table.columns, columns, _.isEqual)
-      console.log('Should I update table columns?', updated)
-      if (updated?.length) {
-        table.columns = columns
-        context.commit('table', table)
+        
+        // TODO (don't update columns if nothing has changed (use duck typing))
+        const updated = _.xorWith(table.columns, columns, _.isEqual)
+        console.log('Should I update table columns?', updated)
+        if (updated?.length) {
+          table.columns = columns
+          context.commit('table', table)
+        }
+      } finally {
+        context.commit("columnsLoading", null)
       }
     },
 

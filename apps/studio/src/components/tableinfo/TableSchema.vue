@@ -57,6 +57,7 @@
     </status-bar>
   </div>
 </template>
+
 <script lang="ts">
 import { TabulatorFull, Tabulator } from 'tabulator-tables'
 type CellComponent = Tabulator.CellComponent
@@ -149,7 +150,6 @@ export default Vue.extend({
         defaultValue: 'varchar(255)',
         showListOnEmpty: true
       }
-
 
       const result = [
         {
@@ -378,6 +378,7 @@ export default Vue.extend({
     },
     initializeTabulator() {
       if (this.tabulator) this.tabulator.destroy()
+      // TODO: a loader would be so cool for tabulator for those gnarly column count tables that people might create...
       // @ts-ignore
       this.tabulator = new TabulatorFull(this.$refs.tableSchema, {
         columns: this.tableColumns,
@@ -394,8 +395,13 @@ export default Vue.extend({
 
     }
   },
-  mounted() {
+  async mounted() {
     this.tabState.dirty = false
+    if (this.table.columns.length === 0) {
+      // If this tab was already opened when someone connected to the DB, there wouldn't be columns and you'd be sitting on an empty tab with no structure.
+      // well no more.
+      await this.$store.dispatch('updateTableColumns', this.table)
+    }
     // const columnWidth = this.table.columns.length > 20 ? 125 : undefined
     if (!this.active) this.forceRedraw = true
     this.initializeTabulator()

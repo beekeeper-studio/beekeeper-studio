@@ -18,7 +18,9 @@
       </span>
     </a>
     <div v-if="showColumns" class="sub-items">
-      <span v-bind:key="c.columnName" v-for="(c, i) in table.columns" class="sub-item">
+      <p class="sub-item" v-if="columnsLoading">{{columnsLoading}}</p>
+      <p class="sub-item" v-else-if="!columnsLoading && table.columns.length === 0">No Columns</p>
+      <span v-else v-bind:key="c.columnName" v-for="(c, i) in table.columns" class="sub-item">
         <span class="title truncate" ref="title" @click="selectColumn(i)">{{c.columnName}}</span>
         <span class="badge" v-bind:class="c.dataType"><span>{{c.dataType}}</span></span>
       </span>
@@ -111,7 +113,7 @@ import TableIcon from '@/components/common/TableIcon.vue'
         return tableSelected
       },
       ...mapGetters(['selectedSidebarItem']),
-      ...mapState(['activeTab', 'database', 'config'])
+      ...mapState(['activeTab', 'database', 'config', 'columnsLoading'])
     },
     methods: {
       doNothing() {
