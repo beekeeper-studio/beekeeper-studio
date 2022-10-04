@@ -14174,10 +14174,10 @@ table@^5.2.3:
     slice-ansi "^2.1.0"
     string-width "^3.0.0"
 
-tabulator-tables@~5.3.0:
-  version "5.3.4"
-  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-5.3.4.tgz#ccaab66d2a8a29c674031d05abb6b3c9f0144ec9"
-  integrity sha512-cUeAd8eqrr7FokEQRal0j+2KmBXL2f0BlvTf9myetHE4bmQ9dNDrMF9YlpGwTbdXZ65W2EPyDA1eYoknZO3umg==
+tabulator-tables@~5.4.0:
+  version "5.4.0"
+  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-5.4.0.tgz#b24f793ff9eb8561fed8c1bc8ae406256ce6acbc"
+  integrity sha512-LPiA895CbKHvh1oIWJl42tukXYYH04t2xn2pkUYleGnGf5tDGFnwKszag9GVWGOe+jyDHKNdJ4tFkM9edL/fXw==
 
 tapable@^1.0.0, tapable@^1.1.3:
   version "1.1.3"

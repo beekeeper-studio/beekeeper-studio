@@ -405,17 +405,22 @@ $cell-padding:           $gutter-w;
           padding-right: 16px;
         }
       }
-      &.tabulator-sortable[aria-sort="asc"] {
+      &.tabulator-sortable[aria-sort="ascending"] {
         .tabulator-col-content {
-          .tabulator-arrow {
-            border-bottom-color: $theme-base;
+          .tabulator-col-sorter {
+            .tabulator-arrow {
+              border-bottom-color: $theme-base;
+            }
           }
         }
       }
-      &.tabulator-sortable[aria-sort="desc"] {
+
+      &.tabulator-sortable[aria-sort="descending"] {
         .tabulator-col-content {
-          .tabulator-arrow {
-            border-top-color: $theme-base;
+          .tabulator-col-sorter {
+            .tabulator-arrow {
+              border-top-color: $theme-base;
+            }
           }
         }
       }

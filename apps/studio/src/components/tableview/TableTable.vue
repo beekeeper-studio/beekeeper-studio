@@ -223,6 +223,8 @@ const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
 
+type CC = Tabulator.ColumnComponent
+
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal },
   mixins: [data_converter, DataMutators],
@@ -341,25 +343,23 @@ export default Vue.extend({
     headerContextMenu() {
       return [
         {
-          label: "Sort (asc)",
-          action: (_e, column) => {
-            this.tableSort = {
-              column: column.getField(),
-              dir: 'asc'
+          label: '<x-menuitem><x-label>Resize all columns match</x-label></x-menuitem>',
+          action: (_e, column: Tabulator.ColumnComponent) => {
+            try {
+              this.tabulator.blockRedraw()
+              const columns = this.tabulator.getColumns()
+              columns.forEach((col) => {
+                col.setWidth(column.getWidth())
+              })
+            } catch (error) {
+              console.error(error)
+            } finally {
+              this.tabulator.restoreRedraw()
             }
           }
         },
         {
-          label: 'Sort (desc)',
-          action: (_e, column) => {
-            this.tableSort = {
-              column: column.getField(),
-              dir: 'desc'
-            }
-          }
-        },
-        {
-        label: '<x-menuitem><x-label>Reset column widths</x-label></x-menuitem>',
+        label: '<x-menuitem><x-label>Resize all columns to fit content</x-label></x-menuitem>',
         action: (_e, _column: Tabulator.ColumnComponent) => {
           try {
             this.tabulator.blockRedraw()
@@ -367,7 +367,6 @@ export default Vue.extend({
             columns.forEach((col) => {
               col.setWidth(true)
             })
-            // this.tabulator.redraw(true)
           } catch (error) {
             console.error(error)
           } finally {
@@ -375,20 +374,30 @@ export default Vue.extend({
           }
         }
       },
-      {
-        label: '<x-menuitem><x-label>Reset column visibility</x-label></x-menuitem>',
+        {
+        label: '<x-menuitem><x-label>Resize all columns to fixed width</x-label></x-menuitem>',
         action: (_e, _column: Tabulator.ColumnComponent) => {
-          if (!this.tabulator) return;
-          const layout = this.tabulator.getColumnLayout()
-          const result = layout.map((l) => {
-            return {
-              field: l.field,
-              width: l.width
-            }
-          })
-          this.tabulator.setColumnLayout(result)
+          try {
+            this.tabulator.blockRedraw()
+            const columns = this.tabulator.getColumns()
+            columns.forEach((col) => {
+              col.setWidth(200)
+            })
+            // const layout = this.tabulator.getColumns().map((c: CC) => ({
+            //   field: c.getField(),
+            //   width: c.getWidth(),
+            // }))
+            // this.tabulator.setColumnLayout(layout)
+            // this.tabulator.redraw(true)
+          } catch (error) {
+            console.error(error)
+          } finally {
+            this.tabulator.restoreRedraw()
+          }
         }
-      }]
+      }
+
+      ]
     },
     cellContextMenu() {
       return [{
@@ -551,11 +560,11 @@ export default Vue.extend({
         const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
         const columnWidth = this.table.columns.length > 30 ?
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
-          undefined
+          undefined;
 
-        const formatter = () => {
-          return `<span class="tabletable-title">${escapeHtml(column.columnName)} <span class="badge">${escapeHtml(slimDataType)}</span></span>`
-        }
+        // const formatter = () => {
+        //   return `<span class="tabletable-title">${escapeHtml(column.columnName)} <span class="badge">${escapeHtml(slimDataType)}</span></span>`
+        // }
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
         if (keyDatas && keyDatas.length > 0) {
@@ -570,7 +579,12 @@ export default Vue.extend({
         const result = {
           title: column.columnName,
           field: column.columnName,
-          titleFormatter: formatter,
+          titleFormatter: this.headerFormatter,
+          titleFormatterParams: {
+            columnName: column.columnName,
+            dataType: column.dataType,
+            sort: this.tableSort?.column === column.columnName ? this.tableSort.dir : undefined
+          },
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
           dataType: column.dataType,
           cellClick: this.cellClick,
@@ -580,8 +594,7 @@ export default Vue.extend({
           maxInitialWidth: globals.maxInitialWidth,
           cssClass: isPK ? 'primary-key' : '',
           editable: this.cellEditCheck,
-          headerSort: false,
-          headerClick: this.headerClick,
+          headerSort: true,
           editor: editorType,
           tooltip: true,
           contextMenu: this.cellContextMenu,
@@ -811,8 +824,16 @@ export default Vue.extend({
     }
   },
   methods: {
-    headerFormatter() {
-
+    headerFormatter(_cell, formatterParams) {
+      const { columnName, dataType, sort } = formatterParams
+      const icon = sort ?
+        `<i class="material-icons">${sort === 'asc' ? 'arrow_drop_up' : 'arrow_drop_down'}</i>` : ''
+      return `
+        <span class="tabletable-title">
+          ${escapeHtml(columnName)}
+          <span class="badge">${dataType}</span>
+          ${icon}
+        </span>`
     },
     headerClick(e: Event, column: Tabulator.ColumnComponent) {
       e.stopPropagation()
@@ -951,7 +972,7 @@ export default Vue.extend({
       return inserts
     },
     defaultColumnWidth(slimType, defaultValue) {
-      const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text']
+      const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector']
       if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
       return defaultValue
     },
