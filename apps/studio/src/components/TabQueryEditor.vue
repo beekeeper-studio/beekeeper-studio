@@ -326,12 +326,15 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         return { tables: result }
       },
       queryParameterPlaceholders() {
-        const params = this.individualQueries.flatMap((qs) => qs.parameters)
-        if (params.length && params[0] === '?') {
-          return []
-        } else {
-          return _.uniq(params)
+        let params = this.individualQueries.flatMap((qs) => qs.parameters)
+
+        if (this.hasSelectedText) {
+          params = this.currentlySelectedQuery.parameters
         }
+
+        if (params.length && params[0] === '?') return []
+
+        return _.uniq(params)
       },
       deparameterizedQuery() {
         let query = this.queryForExecution
