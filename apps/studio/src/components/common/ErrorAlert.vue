@@ -20,8 +20,8 @@
           {{helpText ? ` - ${helpText}` : ''}}
         </li>
       </ul>
-      <div class="help-links" v-if="error.helpLink">
-        <a :href="error.helpLink">Learn more about this error</a>
+      <div class="help-links" v-if="helpLink">
+        <a :href="helpLink" title="Read about this error on the Beekeeper Studio docs">Learn more about this error</a>
       </div>
 
     </div>
@@ -42,6 +42,9 @@ export default Vue.extend({
       return result.map((e) => {
         return e.message ? e : { message: e.toString()}
       })
+    },
+    helpLink() {
+      return this.errors.map((e) => e.helpLink).find((e) => e)
     }
   },
   methods: {
@@ -90,6 +93,12 @@ export default Vue.extend({
       }
       i {
         line-height: 28px;
+      }
+      .help-links {
+        margin-top: 1rem;
+        a {
+          padding-left: 0;
+        }
       }
     }
 
