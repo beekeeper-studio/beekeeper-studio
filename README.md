@@ -2,8 +2,6 @@
 
 Beekeeper Studio is a cross-platform SQL editor and database manager available for Linux, Mac, and Windows. Beekeeper Studio Community Edition is GPL licensed so it is free (libre) and free (gratis).
 
-👉 [Download Beekeeper Studio](https://beekeeperstudio.io/get)
-
 👉 [Join the community Slack](https://launchpass.com/beekeeperstud-lvg5276)
 
 👉 Love Beekeeper Studio? [Leave us a testimonial!](https://testimonial.to/beekeeper-studio)
@@ -12,9 +10,11 @@ Beekeeper Studio is a cross-platform SQL editor and database manager available f
 
 ## Editions of Beekeeper Studio
 
-1. **Beekeeper Studio Community Edition** - This repository. This is the open source version of Beekeeper Studio. It is a full featured database management client that is totally free and open source.
+1. **Beekeeper Studio** - The full version of Beekeeper Studio with all the features. Buying Beekeeper Studio is also the best way to support the community edition. [Download from our website](https://beekeeperstudio.io/get) 
 
-2. **Beekeeper Studio Ultimate Edition** - A commercial version of Beekeeper Studio with extra features and provided with a business-friendly commercial license. Buying the Ultimate Edition is the best way to support Beekeeper Studio.
+
+2. **Beekeeper Studio Community Edition** - This repository. This is the open source version of Beekeeper Studio. It is a full featured database management client that is totally free and open source. Download from the [releases page](https://github.com/beekeeper-studio/beekeeper-studio/releases/latest)
+
 
 👉 [Compare Beekeeper Studio Editions](https://beekeeperstudio.io/get)
 
