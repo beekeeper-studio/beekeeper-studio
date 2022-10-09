@@ -223,8 +223,6 @@ const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
 
-type CC = Tabulator.ColumnComponent
-
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal },
   mixins: [data_converter, DataMutators],
@@ -560,10 +558,6 @@ export default Vue.extend({
         const columnWidth = this.table.columns.length > 30 ?
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
           undefined;
-
-        // const formatter = () => {
-        //   return `<span class="tabletable-title">${escapeHtml(column.columnName)} <span class="badge">${escapeHtml(slimDataType)}</span></span>`
-        // }
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
         if (keyDatas && keyDatas.length > 0) {
