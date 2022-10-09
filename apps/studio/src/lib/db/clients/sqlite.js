@@ -152,6 +152,12 @@ export function query(conn, queryText) {
             err.sqlectronError = 'CANCELED_BY_USER';
           }
 
+          if (err.message?.startsWith('no such column')) {
+            const nuError = Error(`${err.message} - Check that you only use double quotes (") for identifiers, not strings`)
+            nuError.helpLink = "https://docs.beekeeperstudio.io/pages/troubleshooting#no-such-column-x"
+            throw nuError
+          }
+
           throw err;
         }
       });
