@@ -282,7 +282,6 @@ export default Vue.extend({
       internalColumnPrefix: "__beekeeper_internal_",
       internalIndexColumn: "__beekeeper_internal_index",
       selectedCell: null,
-      tableSort: {},
     };
   },
   computed: {
@@ -582,8 +581,7 @@ export default Vue.extend({
           titleFormatter: this.headerFormatter,
           titleFormatterParams: {
             columnName: column.columnName,
-            dataType: column.dataType,
-            sort: this.tableSort?.column === column.columnName ? this.tableSort.dir : undefined
+            dataType: column.dataType
           },
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
           dataType: column.dataType,
@@ -736,11 +734,6 @@ export default Vue.extend({
   },
 
   watch: {
-    tableSort() {
-      if (this.tableSort) {
-        this.tabulator.setSort([this.tableSort])
-      }
-    },
     shouldInitialize() {
       if (this.shouldInitialize) {
         this.initialize()
@@ -825,30 +818,12 @@ export default Vue.extend({
   },
   methods: {
     headerFormatter(_cell, formatterParams) {
-      const { columnName, dataType, sort } = formatterParams
-      const icon = sort ?
-        `<i class="material-icons">${sort === 'asc' ? 'arrow_drop_up' : 'arrow_drop_down'}</i>` : ''
+      const { columnName, dataType } = formatterParams
       return `
         <span class="tabletable-title">
           ${escapeHtml(columnName)}
           <span class="badge">${dataType}</span>
-          ${icon}
         </span>`
-    },
-    headerClick(e: Event, column: Tabulator.ColumnComponent) {
-      e.stopPropagation()
-      e.preventDefault()
-      console.log("header click!")
-      const existingSorts = this.tabulator.getSorters()
-      const field = column.getField()
-      const existing = existingSorts.find((s)=> s.field === field)
-      const result = {
-        column: field, dir: 'asc'
-      }
-      if (existing) {
-        result.dir = existing.dir === 'asc' ? 'desc' : 'asc'
-      }
-      this.tabulator.setSort([result])
     },
     maybeScroll() {
       if (this.preLoadScrollPosition) {
