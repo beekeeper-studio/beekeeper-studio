@@ -343,7 +343,7 @@ export default Vue.extend({
     headerContextMenu() {
       return [
         {
-          label: '<x-menuitem><x-label>Resize all columns match</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Resize all columns to match</x-label></x-menuitem>',
           action: (_e, column: Tabulator.ColumnComponent) => {
             try {
               this.tabulator.blockRedraw()
