@@ -15,6 +15,14 @@ export enum DatabaseElement {
   DATABASE = 'DATABASE'
 }
 
+export class ClientError extends Error {
+  helpLink = null
+  constructor(message: string, helpLink: string) {
+    super(message)
+    this.helpLink = helpLink
+  }
+}
+
 export interface DatabaseClient {
   supportedFeatures: () => SupportedFeatures,
   versionString: () => string,

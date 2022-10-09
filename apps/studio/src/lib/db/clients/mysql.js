@@ -12,6 +12,7 @@ import { errors } from '../../errors';
 import { MysqlCursor } from './mysql/MySqlCursor';
 import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral } from './utils';
 import { MysqlData } from '@shared/lib/dialects/mysql'
+import { ClientError } from '../client';
 
 const log = rawLog.scope('mysql')
 const logger = () => log
@@ -488,7 +489,7 @@ export function query(conn, queryText) {
             err.sqlectronError = 'CANCELED_BY_USER';
             throw err
           } else if (queryText && _.trim(queryText).toUpperCase().startsWith("DELIMITER")) {
-            const nuError = Error(`DELIMITER is only supported in the command line client, ${err.message}`)
+            const nuError = new ClientError(`DELIMITER is only supported in the command line client, ${err.message}`)
             nuError.helpLink = "https://docs.beekeeperstudio.io/pages/troubleshooting#mysql"
             throw nuError
           } else {
