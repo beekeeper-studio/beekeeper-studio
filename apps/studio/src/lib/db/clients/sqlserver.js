@@ -765,7 +765,7 @@ export async function getTableCreateScript(conn, table) {
                  ELSE ''
           END ) + 'NULL' +
           CASE WHEN INFORMATION_SCHEMA.COLUMNS.column_default IS NOT NULL
-               THEN 'DEFAULT '+ INFORMATION_SCHEMA.COLUMNS.column_default
+               THEN ' DEFAULT '+ INFORMATION_SCHEMA.COLUMNS.column_default
                ELSE ''
           END + ',' + CHAR(13)+CHAR(10)
        FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = so.name
