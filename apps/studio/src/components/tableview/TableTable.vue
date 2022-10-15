@@ -256,6 +256,7 @@ export default Vue.extend({
       data: null, // array of data
       totalRecords: null,
       preLoadScrollPosition: null,
+      columnWidths: null,
       //
       response: null,
       limit: 100,
@@ -819,10 +820,28 @@ export default Vue.extend({
           <span class="badge">${dataType}</span>
         </span>`
     },
+    tableBuilt() {
+      const t: Tabulator = this.tabulator
+      try {
+        t.blockRedraw()
+        // this forces the table to not resize columns when sorting
+        t.getColumns().forEach((col) => {
+          console.log("setting width", col.getField(), col.getWidth())
+          col.setWidth(col.getWidth())
+        })
+      } catch (error) {
+        console.error("table Built error", error)
+      } finally {
+        t.restoreRedraw()
+      }
+    },
     maybeScroll() {
       if (this.preLoadScrollPosition) {
         this.tableHolder.scrollLeft = this.preLoadScrollPosition
         this.preLoadScrollPosition = null
+      }
+      if (this.columnWidths) {
+
       }
     },
     maybeUnselectCell(event) {
@@ -898,6 +917,7 @@ export default Vue.extend({
       });
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on('dataProcessed', this.maybeScroll)
+      this.tabulator.on('tableBuilt', this.tableBuilt)
 
       this.$nextTick(() => {
         if (this.$refs.valueInput) {
@@ -1365,6 +1385,9 @@ export default Vue.extend({
             this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
             this.preLoadScrollPosition = this.tableHolder.scrollLeft
+            this.columnWidths = this.tabulator.getColumns().map((c) => {
+              return { field: c.getField(), width: c.getWidth()}
+            })
             resolve({
               last_page: 1,
               data
