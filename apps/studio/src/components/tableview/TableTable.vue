@@ -828,6 +828,7 @@ export default Vue.extend({
             const col = this.tabulator.getColumn(field)
             if (col) col.setWidth(width)
           })
+          this.columnWidths = null
         } catch (ex) {
           console.error("error setting widths", ex)
         } finally {
