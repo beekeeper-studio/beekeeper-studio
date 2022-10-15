@@ -820,28 +820,23 @@ export default Vue.extend({
           <span class="badge">${dataType}</span>
         </span>`
     },
-    tableBuilt() {
-      const t: Tabulator = this.tabulator
-      try {
-        t.blockRedraw()
-        // this forces the table to not resize columns when sorting
-        t.getColumns().forEach((col) => {
-          console.log("setting width", col.getField(), col.getWidth())
-          col.setWidth(col.getWidth())
-        })
-      } catch (error) {
-        console.error("table Built error", error)
-      } finally {
-        t.restoreRedraw()
+    maybeScrollAndSetWidths() {
+      if (this.columnWidths) {
+        try {
+          this.tabulator.blockRedraw()
+          this.columnWidths.forEach(({ field, width}) => {
+            const col = this.tabulator.getColumn(field)
+            if (col) col.setWidth(width)
+          })
+        } catch (ex) {
+          console.error("error setting widths", ex)
+        } finally {
+          this.tabulator.restoreRedraw()
+        }
       }
-    },
-    maybeScroll() {
       if (this.preLoadScrollPosition) {
         this.tableHolder.scrollLeft = this.preLoadScrollPosition
         this.preLoadScrollPosition = null
-      }
-      if (this.columnWidths) {
-
       }
     },
     maybeUnselectCell(event) {
@@ -916,8 +911,7 @@ export default Vue.extend({
         ]
       });
       this.tabulator.on('cellEdited', this.cellEdited)
-      this.tabulator.on('dataProcessed', this.maybeScroll)
-      this.tabulator.on('tableBuilt', this.tableBuilt)
+      this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
 
       this.$nextTick(() => {
         if (this.$refs.valueInput) {
