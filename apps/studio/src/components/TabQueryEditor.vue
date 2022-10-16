@@ -414,6 +414,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       },
       hintOptions() {
         this.editor?.setOption('hintOptions',this.hintOptions)
+        this.editor?.setOption('getColumns',this.getColumnsForAutocomplete)
       },
     },
     methods: {
@@ -497,7 +498,8 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             theme: 'monokai',
             extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete", "Shift-Tab": "indentLess"},
             hint: CodeMirror.hint.sql,
-            hintOptions: this.hintOptions
+            hintOptions: this.hintOptions,
+            getColumns: this.getColumnsForAutocomplete
           })
           this.editor.setValue(startingValue)
           this.editor.addKeyMap(runQueryKeyMap)
@@ -743,7 +745,6 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         if (editor.state.completionActive) return;
         if (triggers[e.keyCode] && !this.inQuote(editor, e)) {
           CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
-          // return
         }
         if (e.keyCode === space) {
           try {
@@ -779,6 +780,29 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       },
       fakeRemoteChange() {
         this.query.text = "select * from foo"
+      },
+      async getColumnsForAutocomplete() {
+        const cm = this.editor.getValue() 
+        if (cm.toLowerCase().search(/[from(\s)?|join(\s)?]/g) === -1) return
+        const triggerWords = ['join', 'from']
+        const cmValue = cm.replace(/\r?\n|\r/g, ' ').split(' ').filter(word => word !== '')
+        
+        const tablesToFind = cmValue
+          .reduce((acc, word, index, arr) => {
+            if (index === arr.length) return acc
+
+            if (triggerWords.includes(word.toLowerCase())) {
+              // will need to clean up the word if it's wrapped up in stuff
+              if (this.hintOptions.tables[arr[index + 1]]?.length === 0){
+                acc.push(arr[index + 1])
+              }
+            }
+            return acc
+          }, [])
+          .forEach(async(table) => {
+            const tableToFind = this.tables.find(t => t.name === table)
+            await this.$store.dispatch('updateTableColumns', tableToFind)
+          })
       }
     },
     mounted() {

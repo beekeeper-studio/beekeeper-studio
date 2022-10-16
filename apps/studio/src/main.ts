@@ -18,8 +18,8 @@ import $ from 'jquery'
 
 import 'codemirror/mode/sql/sql'
 import 'codemirror/mode/diff/diff'
-import 'codemirror/addon/hint/show-hint.js'
-import 'codemirror/addon/hint/sql-hint.js'
+import './vendor/sql-hint'
+import './vendor/show-hint'
 
 import store from './store/index'
 import 'reflect-metadata'
