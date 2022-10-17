@@ -29,8 +29,6 @@
 
   CodeMirror.defineExtension("showHint", function(options) {
     options = parseOptions(this, this.getCursor("start"), options);
-    console.log('^^^^^^^^^')
-    console.log(options)
     var selections = this.listSelections()
     if (selections.length > 1) return;
     // By default, don't allow completion when something is selected.
@@ -160,8 +158,6 @@
   };
 
   function parseOptions(cm, pos, options) {
-    console.log('$$$$$$$')
-    console.log(cm.options)
     var editor = cm.options.hintOptions;
     var out = {};
     for (var prop in defaultOptions) out[prop] = defaultOptions[prop];

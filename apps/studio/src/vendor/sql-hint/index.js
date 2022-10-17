@@ -47,10 +47,7 @@
   }
 
   async function parseTables(input) {
-    console.log('()()()()')
-    console.log(input)
     if (globalEditorOptions?.getColumns) {
-      console.log('we did it everyone')
       await globalEditorOptions.getColumns()
     }
     var result = {}
@@ -63,7 +60,6 @@
       for (var name in input)
         result[name.toUpperCase()] = wrapTable(name, input[name])
     }
-    console.log(result)
     return result
   }
 
@@ -171,7 +167,6 @@
       if (table !== oldTable) alias = true;
     }
 
-    console.log('just before column line 175', table)
     var columns = await getTable(table);
     if (columns && columns.columns)
       columns = columns.columns;
@@ -250,13 +245,10 @@
   }
 
   CodeMirror.registerHelper("hint", "sql", async function(editor, options) {
-    console.log('~~~~~~')
-    console.log(editor.options)
-    console.log(options)
     globalEditorOptions = {...editor.options}
-    tables = await parseTables(options && options.tables)
-    var defaultTableName = options && options.defaultTable;
-    var disableKeywords = options && options.disableKeywords;
+    tables = await parseTables(options?.tables)
+    var defaultTableName = options?.defaultTable;
+    var disableKeywords = options?.disableKeywords;
     defaultTable = defaultTableName && getTable(defaultTableName);
     keywords = getKeywords(editor);
     identifierQuote = getIdentifierQuote(editor);

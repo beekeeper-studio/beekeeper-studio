@@ -412,10 +412,9 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         const [markStart, markEnd] = this.locationFromPosition(editorText, from, to)
         this.marker = this.editor.getDoc().markText(markStart, markEnd, {className: 'highlight'})
       },
-      hintOptions() {
+      tables() {
         this.editor?.setOption('hintOptions',this.hintOptions)
-        this.editor?.setOption('getColumns',this.getColumnsForAutocomplete)
-      },
+      }
     },
     methods: {
       locationFromPosition(queryText, ...rawPositions) {
@@ -496,7 +495,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
             tabSize: 2,
             theme: 'monokai',
-            extraKeys: {"Ctrl-Space": "autocomplete", "Cmd-Space": "autocomplete", "Shift-Tab": "indentLess"},
+            extraKeys: {"Ctrl-Space": "autocomplete", "Shift-Tab": "indentLess"},
             hint: CodeMirror.hint.sql,
             hintOptions: this.hintOptions,
             getColumns: this.getColumnsForAutocomplete
@@ -737,6 +736,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         // 1. only on periods if not in a quote
         // 2. post-space trigger after a few SQL keywords
         //    - from, join
+        // 3. selecting tablealias.column erases to start of line
         const triggerWords = ['from', 'join']
         const triggers = {
           '190': 'period'
@@ -785,6 +785,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         const cm = this.editor.getValue() 
         if (cm.toLowerCase().search(/[from(\s)?|join(\s)?]/g) === -1) return
         const triggerWords = ['join', 'from']
+        const allTables = this.hintOptions
         const cmValue = cm.replace(/\r?\n|\r/g, ' ').split(' ').filter(word => word !== '')
         
         const tablesToFind = cmValue
@@ -793,7 +794,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 
             if (triggerWords.includes(word.toLowerCase())) {
               // will need to clean up the word if it's wrapped up in stuff
-              if (this.hintOptions.tables[arr[index + 1]]?.length === 0){
+              if (allTables.tables[arr[index + 1]]?.length === 0){
                 acc.push(arr[index + 1])
               }
             }
@@ -802,6 +803,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
           .forEach(async(table) => {
             const tableToFind = this.tables.find(t => t.name === table)
             await this.$store.dispatch('updateTableColumns', tableToFind)
+            this.editor?.setOption('hintOptions', this.hintOptions)
           })
       }
     },
