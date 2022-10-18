@@ -167,7 +167,10 @@
       if (table !== oldTable) alias = true;
     }
 
-    var columns = await getTable(table);
+    if (globalEditorOptions?.getColumns) {
+      await globalEditorOptions.getColumns()
+    }
+    var columns = getTable(table);
     if (columns && columns.columns)
       columns = columns.columns;
 
@@ -252,7 +255,6 @@
     defaultTable = defaultTableName && getTable(defaultTableName);
     keywords = getKeywords(editor);
     identifierQuote = getIdentifierQuote(editor);
-
 
     if (defaultTableName && !defaultTable)
       defaultTable = findTableByAlias(defaultTableName, editor);

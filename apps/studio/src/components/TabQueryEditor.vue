@@ -737,7 +737,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         // 2. post-space trigger after a few SQL keywords
         //    - from, join
         // 3. selecting tablealias.column erases to start of line
-        const triggerWords = ['from', 'join']
+        const triggerWords = ['from', 'join', 'select']
         const triggers = {
           '190': 'period'
         }
@@ -781,13 +781,12 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       fakeRemoteChange() {
         this.query.text = "select * from foo"
       },
-      async getColumnsForAutocomplete() {
+      getColumnsForAutocomplete() {
         const cm = this.editor.getValue() 
         if (cm.toLowerCase().search(/[from(\s)?|join(\s)?]/g) === -1) return
         const triggerWords = ['join', 'from']
         const allTables = this.hintOptions
-        const cmValue = cm.replace(/\r?\n|\r/g, ' ').split(' ').filter(word => word !== '')
-        
+        const cmValue = cm.replace(';', '').replace(/\r?\n|\r/g, ' ').split(' ').filter(word => word !== '')
         const tablesToFind = cmValue
           .reduce((acc, word, index, arr) => {
             if (index === arr.length) return acc
@@ -803,7 +802,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
           .forEach(async(table) => {
             const tableToFind = this.tables.find(t => t.name === table)
             await this.$store.dispatch('updateTableColumns', tableToFind)
-            this.editor?.setOption('hintOptions', this.hintOptions)
+            setTimeout(() => this.editor?.setOption('hintOptions', this.hintOptions), 1)
           })
       }
     },
