@@ -256,6 +256,7 @@ export default Vue.extend({
       data: null, // array of data
       totalRecords: null,
       preLoadScrollPosition: null,
+      columnWidths: null,
       //
       response: null,
       limit: 100,
@@ -338,34 +339,63 @@ export default Vue.extend({
       return result
     },
     headerContextMenu() {
-      return [{
-        label: '<x-menuitem><x-label>Reset column widths</x-label></x-menuitem>',
-        action: (_e, _column: Tabulator.ColumnComponent) => {
-          if (!this.tabulator) return;
-          const layout = this.tabulator.getColumnLayout()
-          const result = layout.map((l) => {
-            return {
-              field: l.field,
-              visible: l.visible
+      return [
+        {
+          label: '<x-menuitem><x-label>Resize all columns to match</x-label></x-menuitem>',
+          action: (_e, column: Tabulator.ColumnComponent) => {
+            try {
+              this.tabulator.blockRedraw()
+              const columns = this.tabulator.getColumns()
+              columns.forEach((col) => {
+                col.setWidth(column.getWidth())
+              })
+            } catch (error) {
+              console.error(error)
+            } finally {
+              this.tabulator.restoreRedraw()
             }
-          })
-          this.tabulator.setColumnLayout(result)
+          }
+        },
+        {
+        label: '<x-menuitem><x-label>Resize all columns to fit content</x-label></x-menuitem>',
+        action: (_e, _column: Tabulator.ColumnComponent) => {
+          try {
+            this.tabulator.blockRedraw()
+            const columns = this.tabulator.getColumns()
+            columns.forEach((col) => {
+              col.setWidth(true)
+            })
+          } catch (error) {
+            console.error(error)
+          } finally {
+            this.tabulator.restoreRedraw()
+          }
         }
       },
-      {
-        label: '<x-menuitem><x-label>Reset column visibility</x-label></x-menuitem>',
+        {
+        label: '<x-menuitem><x-label>Resize all columns to fixed width</x-label></x-menuitem>',
         action: (_e, _column: Tabulator.ColumnComponent) => {
-          if (!this.tabulator) return;
-          const layout = this.tabulator.getColumnLayout()
-          const result = layout.map((l) => {
-            return {
-              field: l.field,
-              width: l.width
-            }
-          })
-          this.tabulator.setColumnLayout(result)
+          try {
+            this.tabulator.blockRedraw()
+            const columns = this.tabulator.getColumns()
+            columns.forEach((col) => {
+              col.setWidth(200)
+            })
+            // const layout = this.tabulator.getColumns().map((c: CC) => ({
+            //   field: c.getField(),
+            //   width: c.getWidth(),
+            // }))
+            // this.tabulator.setColumnLayout(layout)
+            // this.tabulator.redraw(true)
+          } catch (error) {
+            console.error(error)
+          } finally {
+            this.tabulator.restoreRedraw()
+          }
         }
-      }]
+      }
+
+      ]
     },
     cellContextMenu() {
       return [{
@@ -528,11 +558,7 @@ export default Vue.extend({
         const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
         const columnWidth = this.table.columns.length > 30 ?
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
-          undefined
-
-        const formatter = () => {
-          return `<span class="tabletable-title">${escapeHtml(column.columnName)} <span class="badge">${escapeHtml(slimDataType)}</span></span>`
-        }
+          undefined;
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
         if (keyDatas && keyDatas.length > 0) {
@@ -547,16 +573,21 @@ export default Vue.extend({
         const result = {
           title: column.columnName,
           field: column.columnName,
-          titleFormatter: formatter,
+          titleFormatter: this.headerFormatter,
+          titleFormatterParams: {
+            columnName: column.columnName,
+            dataType: column.dataType
+          },
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
           dataType: column.dataType,
           cellClick: this.cellClick,
+          minWidth: globals.minColumnWidth,
           width: columnWidth,
           maxWidth: globals.maxColumnWidth,
           maxInitialWidth: globals.maxInitialWidth,
           cssClass: isPK ? 'primary-key' : '',
           editable: this.cellEditCheck,
-          headerSort: this.allowHeaderSort(column),
+          headerSort: true,
           editor: editorType,
           tooltip: true,
           contextMenu: this.cellContextMenu,
@@ -644,6 +675,7 @@ export default Vue.extend({
       return `workspace-${this.workspaceId}.connection-${this.usedConfig.id}.db-${this.database || 'none'}.schema-${this.table.schema || 'none'}.table-${this.table.name}`
     },
     persistenceOptions() {
+      // return {}
       if (!this.tableId) return {}
 
       return {
@@ -651,7 +683,8 @@ export default Vue.extend({
           sort: false,
           filter: false,
           group: false,
-          columns: ['width', 'visible'],
+          columns: ['visible', 'width'],
+
         },
         persistenceMode: 'local',
         persistenceID: this.tableId,
@@ -779,7 +812,29 @@ export default Vue.extend({
     }
   },
   methods: {
-    maybeScroll() {
+    headerFormatter(_cell, formatterParams) {
+      const { columnName, dataType } = formatterParams
+      return `
+        <span class="tabletable-title">
+          ${escapeHtml(columnName)}
+          <span class="badge">${dataType}</span>
+        </span>`
+    },
+    maybeScrollAndSetWidths() {
+      if (this.columnWidths) {
+        try {
+          this.tabulator.blockRedraw()
+          this.columnWidths.forEach(({ field, width}) => {
+            const col = this.tabulator.getColumn(field)
+            if (col) col.setWidth(width)
+          })
+          this.columnWidths = null
+        } catch (ex) {
+          console.error("error setting widths", ex)
+        } finally {
+          this.tabulator.restoreRedraw()
+        }
+      }
       if (this.preLoadScrollPosition) {
         this.tableHolder.scrollLeft = this.preLoadScrollPosition
         this.preLoadScrollPosition = null
@@ -857,7 +912,7 @@ export default Vue.extend({
         ]
       });
       this.tabulator.on('cellEdited', this.cellEdited)
-      this.tabulator.on('dataProcessed', this.maybeScroll)
+      this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
 
       this.$nextTick(() => {
         if (this.$refs.valueInput) {
@@ -901,7 +956,7 @@ export default Vue.extend({
       return inserts
     },
     defaultColumnWidth(slimType, defaultValue) {
-      const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text']
+      const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector']
       if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
       return defaultValue
     },
@@ -1325,6 +1380,9 @@ export default Vue.extend({
             this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
             this.preLoadScrollPosition = this.tableHolder.scrollLeft
+            this.columnWidths = this.tabulator.getColumns().map((c) => {
+              return { field: c.getField(), width: c.getWidth()}
+            })
             resolve({
               last_page: 1,
               data

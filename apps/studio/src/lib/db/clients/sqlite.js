@@ -10,6 +10,7 @@ import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelect
 import { SqliteCursor } from './sqlite/SqliteCursor';
 import { SqliteChangeBuilder } from '@shared/lib/sql/change_builder/SqliteChangeBuilder';
 import { SqliteData } from '@shared/lib/dialects/sqlite';
+import { ClientError } from '../client';
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
@@ -150,6 +151,12 @@ export function query(conn, queryText) {
         } catch (err) {
           if (err.code === sqliteErrors.CANCELED) {
             err.sqlectronError = 'CANCELED_BY_USER';
+          }
+
+          if (err.message?.startsWith('no such column')) {
+            const nuError = new ClientError(`${err.message} - Check that you only use double quotes (") for identifiers, not strings`)
+            nuError.helpLink = "https://docs.beekeeperstudio.io/pages/troubleshooting#no-such-column-x"
+            throw nuError
           }
 
           throw err;
