@@ -736,8 +736,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         // 1. only on periods if not in a quote
         // 2. post-space trigger after a few SQL keywords
         //    - from, join
-        // 3. selecting tablealias.column erases to start of line
-        const triggerWords = ['from', 'join', 'select']
+        const triggerWords = ['from', 'join']
         const triggers = {
           '190': 'period'
         }
