@@ -785,7 +785,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         if (cm.toLowerCase().search(/[from(\s)?|join(\s)?]/g) === -1) return
         const triggerWords = ['join', 'from']
         const allTables = this.hintOptions
-        const cmValue = cm.replace(';', '').replace(/\r?\n|\r/g, ' ').split(' ').filter(word => word !== '')
+        const cmValue = cm.replace(/[;[\]'"]/g, '').replace(/\r?\n|\r/g, ' ').split(' ').filter(word => word !== '')
         const tablesToFind = cmValue
           .reduce((acc, word, index, arr) => {
             if (index === arr.length) return acc
