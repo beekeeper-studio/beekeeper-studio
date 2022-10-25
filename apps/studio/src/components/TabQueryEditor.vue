@@ -328,7 +328,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       queryParameterPlaceholders() {
         let params = this.individualQueries.flatMap((qs) => qs.parameters)
 
-        if (this.hasSelectedText) {
+        if (this.currentlySelectedQuery && (this.hasSelectedText || this.runningType === 'current')) {
           params = this.currentlySelectedQuery.parameters
         }
 
