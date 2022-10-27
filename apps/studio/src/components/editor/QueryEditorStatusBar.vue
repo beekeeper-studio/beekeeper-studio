@@ -30,7 +30,7 @@
       <span class="empty">No Data</span>
     </template>
     <div class="flex-right">
-      <x-button class="btn btn-flat btn-icon end" menu>
+      <x-button class="btn btn-flat btn-icon end" :disabled="results.length === 0" menu>
         Download <i class="material-icons">arrow_drop_down</i>
         <x-menu>
           <x-menuitem @click.prevent="download('csv')">
