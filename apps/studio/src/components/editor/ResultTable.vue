@@ -265,7 +265,10 @@
         };
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
-        this.tabulator.download(formatter, `${title}-${dateString}.${format}`, 'all')
+
+        // xlsx seems to be the only one that doesn't know what 'all' is it would seem https://tabulator.info/docs/5.4/download#xlsx
+        const options = typeof formatter !== 'function' && formatter.toLowerCase() === 'xlsx' ? {} : 'all'
+        this.tabulator.download(formatter, `${title}-${dateString}.${format}`, options)
       },
       clipboard(format = null) {
         // this.tabulator.copyToClipboard("all")
