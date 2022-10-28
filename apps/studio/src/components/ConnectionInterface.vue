@@ -196,7 +196,7 @@ import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
         this.config = new SavedConnection()
       },
       edit(config) {
-        this.config = config
+        this.config = _.clone(config)
         this.errors = null
         this.connectionError = null
       },
