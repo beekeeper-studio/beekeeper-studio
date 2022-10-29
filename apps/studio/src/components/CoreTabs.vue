@@ -332,22 +332,14 @@
         tab.unsavedChanges = true
         this.addTab(tab)
       },
-      async openTableProperties({ table }) {
+      openTableProperties({ table }) {
         const t = new OpenTab('table-properties')
         t.tableName = table.name
         t.schemaName = table.schema
         t.title = table.name
-        
-        try {
-          if (table.columns.length === 0) {
-            await this.$store.dispatch('updateTableColumns', table)
-          }
-          const existing = this.tabItems.find((tab) => tab.matches(t))
-          if (existing) return this.$store.dispatch('tabs/setActive', existing)
-          this.addTab(t)
-        } catch(err) {
-          this.$noty.error('There was an error loading the table columns, please try again.')
-        }
+        const existing = this.tabItems.find((tab) => tab.matches(t))
+        if (existing) return this.$store.dispatch('tabs/setActive', existing)
+        this.addTab(t)
       },
       openTable({ table, filter}) {
         const tab = new OpenTab('table')
