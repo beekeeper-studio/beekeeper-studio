@@ -46,10 +46,7 @@
     return value
   }
 
-  async function parseTables(input) {
-    if (globalEditorOptions?.getColumns) {
-      await globalEditorOptions.getColumns()
-    }
+  function parseTables(input) {
     var result = {}
     if (isArray(input)) {
       for (var i = input.length - 1; i >= 0; i--) {
@@ -167,13 +164,11 @@
       if (table !== oldTable) alias = true;
     }
 
-    if (globalEditorOptions?.getColumns) {
-      await globalEditorOptions.getColumns()
-    }
-    var columns = getTable(table);
+    var columns = globalEditorOptions.getColumns ? await globalEditorOptions.getColumns(table): getTable(table)
+
     if (columns && columns.columns)
       columns = columns.columns;
-
+    
     if (columns) {
       addMatches(result, string, columns, function(w) {
         var tableInsert = table;
@@ -249,7 +244,7 @@
 
   CodeMirror.registerHelper("hint", "sql", async function(editor, options) {
     globalEditorOptions = {...editor.options}
-    tables = await parseTables(options?.tables)
+    tables = parseTables(options?.tables)
     var defaultTableName = options?.defaultTable;
     var disableKeywords = options?.disableKeywords;
     defaultTable = defaultTableName && getTable(defaultTableName);
@@ -305,9 +300,16 @@
       addMatches(result, search, keywords, function(w) {
           return objectOrClass(w.toUpperCase(), "CodeMirror-hint-keyword");
       });
-  }
-
-    return {list: result, from: Pos(cur.line, start), to: Pos(cur.line, end)};
+    }
+    
+    const dataFrom = Pos(cur.line, start)
+    // Because there are some promises around for getting the columns, the ch position in the "from" object was returning as an unresolved promise
+    // so in order to get the position, we need to make sure the data coming back is a resolved value, so time to have some fun.
+    if (Object.prototype.toString.call(dataFrom.ch) === '[object Promise]') {
+      dataFrom.ch = await dataFrom.ch
+    }
+    
+    return {list: result, from: dataFrom, to: Pos(cur.line, end)};
   });
   CodeMirror.defineOption("getColumns", null);
 });

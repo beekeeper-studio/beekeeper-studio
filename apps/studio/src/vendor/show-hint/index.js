@@ -91,13 +91,8 @@
       return this.cm.state.completionActive == this;
     },
 
-    pick: async function(data, i) {
+    pick: function(data, i) {
       var completion = data.list[i], self = this;
-      // when using the space (column finisher thing which relies on a promise to get values from), the ch position in "data.from" was returning as an unresolved promise
-      // so in order to get the position, we need to make sure the data coming back is a resolved value, so time to have some fun.
-      if (Object.prototype.toString.call(data.from?.ch) === '[object Promise]') {
-        data.from.ch = await data.from.ch
-      }
       this.cm.operation(function() {
         if (completion.hint)
           completion.hint(self.cm, data, completion);

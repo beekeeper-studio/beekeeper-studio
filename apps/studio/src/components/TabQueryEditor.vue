@@ -780,29 +780,11 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       fakeRemoteChange() {
         this.query.text = "select * from foo"
       },
-      getColumnsForAutocomplete() {
-        const cm = this.editor.getValue() 
-        if (cm.toLowerCase().search(/[from(\s)?|join(\s)?]/g) === -1) return
-        const triggerWords = ['join', 'from']
-        const allTables = this.hintOptions
-        const cmValue = cm.replace(/[;[\]'"]/g, '').replace(/\r?\n|\r/g, ' ').split(' ').filter(word => word !== '')
-        const tablesToFind = cmValue
-          .reduce((acc, word, index, arr) => {
-            if (index === arr.length) return acc
-
-            if (triggerWords.includes(word.toLowerCase())) {
-              // will need to clean up the word if it's wrapped up in stuff
-              if (allTables.tables[arr[index + 1]]?.length === 0){
-                acc.push(arr[index + 1])
-              }
-            }
-            return acc
-          }, [])
-          .forEach(async(table) => {
-            const tableToFind = this.tables.find(t => t.name === table)
-            await this.$store.dispatch('updateTableColumns', tableToFind)
-            setTimeout(() => this.editor?.setOption('hintOptions', this.hintOptions), 1)
-          })
+      async getColumnsForAutocomplete(tableName) {
+        const tableToFind = this.tables.find(t => t.name === tableName)
+        await this.$store.dispatch('updateTableColumns', tableToFind)
+        this.editor?.setOption('hintOptions', this.hintOptions)
+        return this.hintOptions.tables[tableName]
       }
     },
     mounted() {
