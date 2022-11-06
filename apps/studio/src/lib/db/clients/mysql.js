@@ -684,10 +684,12 @@ export async function getViewCreateScript(conn, view) {
 
 export async function getRoutineCreateScript(conn, routine, type) {
   const sql = `SHOW CREATE ${type.toUpperCase()} ${routine}`;
-
   const { data } = await driverExecuteQuery(conn, { query: sql });
-
-  return data.map((row) => row[`Create ${type}`]);
+  const result =  data.map((row) => {
+    const upperCaseIndexedRow = Object.keys(row).reduce((prev, current) => ({...prev, [current.toUpperCase()]: row[current]}), {});
+    return upperCaseIndexedRow[`CREATE ${type.toUpperCase()}`];
+  });
+  return result;
 }
 
 export function wrapIdentifier(value) {
