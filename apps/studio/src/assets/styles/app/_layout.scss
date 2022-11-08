@@ -808,6 +808,11 @@ input[type=file] {
   .vs__selected {
     position: absolute;
     top: 2px;
+    display: block;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    overflow: hidden;
   }
   .vs__actions {
     padding: 0
