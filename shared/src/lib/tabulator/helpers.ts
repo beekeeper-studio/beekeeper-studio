@@ -113,7 +113,7 @@ export const TabulatorStateWatchers = {
   tableColumns: {
     deep: true,
     handler() {
-      log.debug("updating tabulator with columns")
+      log.debug("updating tabulator with columns", this.tableColumns)
       if (!this.tabulator) return
       const t: Tabulator = this.tabulator
       t.setColumns(this.tableColumns)
@@ -126,8 +126,8 @@ export const TabulatorStateWatchers = {
       const different = _.xorWith(nu, old, _.isEqual)
       // deep equality sometimes makes this fire when data hasn't really changed...
       if (!different?.length) return
-      log.debug("replacing data in tabulator")
-      this.tabulator.replaceData(this.tableData)
+      log.debug("replacing data in tabulator", old, nu)
+      this.tabulator.replaceData(nu)
       this.newRows = []
       this.removedRows = []
       if (!_.isUndefined(this.editedCells)) this.editedCells = []

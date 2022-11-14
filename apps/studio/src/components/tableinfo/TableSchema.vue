@@ -255,7 +255,7 @@ export default Vue.extend({
       }
       this.submitUndo()
       this.error = null;
-      await this.$store.dispatch('updateTableColumns', this.table)
+      await this.$emit('refresh')
     },
     collectChanges(): AlterTableSpec {
 
@@ -391,7 +391,7 @@ export default Vue.extend({
         data: this.tableData,
         placeholder: "No Columns",
       })
-
+      this.tabulator.on('dataLoaded', () => console.log("tabulator - data loaded"))
     }
   },
   mounted() {
