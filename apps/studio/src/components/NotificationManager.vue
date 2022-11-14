@@ -12,14 +12,14 @@ export default Vue.extend({
   data: () => {
     return {
       upsellNotification: new Noty({
-        text: 'Oh hey there! You should upgrade to the Ultimate Edition - more features, and feel good vibes.',
+        text: "👋 Beekeeper Studio is run by a small team. Buy the full version of Beekeeper Studio to support development and get more features. Thank you ♥",
         timeout: false,
         queue: "upsell",
         layout: 'bottomRight',
         closeWith: ['button'],
         buttons: [
           Noty.button('Close', 'btn btn-flat', () => Noty.closeAll('upsell')),
-          Noty.button('Check it out', 'btn btn-primary', () => ipcRenderer.send(AppEvent.openExternally, ['https://beekeeperstudio.io/get#ultimate-features']))
+          Noty.button('Get Started', 'btn btn-primary', () => ipcRenderer.send(AppEvent.openExternally, ['https://beekeeperstudio.io/']))
         ]
       })
     }
