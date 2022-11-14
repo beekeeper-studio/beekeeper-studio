@@ -339,6 +339,9 @@ export default Vue.extend({
   mounted() {
     this.tabState.dirty = false
     this.initializeTabulator()
+  },
+  beforeDestroy() {
+    if (this.tabulator) this.tabulator.destroy()
   }
 })
 </script>
