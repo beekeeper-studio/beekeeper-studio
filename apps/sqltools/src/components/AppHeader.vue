@@ -8,8 +8,8 @@
     </router-link>
     <span class="expand"></span>
     <nav>
-      <router-link :to="{path: '/format'}" class="btn btn-link">SQL Formatter</router-link>      
-      <router-link :to="{path: '/build'}" class="btn btn-link">Table Builder</router-link>
+      <router-link :to="{path: '/format'}" class="btn btn-link">SQL Formatter</router-link>
+      <router-link :to="{path: '/build'}" class="btn btn-link">SQL Table Creator</router-link>
       <router-link to="/templates" class="btn btn-link">Table Templates</router-link>
       <router-link to="/dialects" class="btn btn-link">Code Examples</router-link>
       <!-- <dialect-picker /> -->
@@ -40,8 +40,8 @@ export default Vue.extend({
     transition: height 0.2s ease-in-out;
     background: lighten($theme-bg, 4%);
     height: 4em;
-    box-shadow: 0 3px 1px -2px rgba(black,.2), 
-                0 2px 2px 0 rgba(black,.14), 
+    box-shadow: 0 3px 1px -2px rgba(black,.2),
+                0 2px 2px 0 rgba(black,.14),
                 0 1px 5px 0 rgba(black,.12);
     a {
       color:white;
