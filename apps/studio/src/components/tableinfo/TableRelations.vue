@@ -227,7 +227,6 @@ export default Vue.extend({
       return this.newRows.includes(cell.getRow())
     },
     getTables(cell: CellComponent): string[] {
-      console.log("getTables called")
       const schema = cell.getRow().getData()['toSchema']
       return schema ?
         this.schemaTables.find((st) => st.schema === schema)?.tables.map((t) => t.name) :
