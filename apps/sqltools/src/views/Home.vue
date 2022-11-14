@@ -19,15 +19,15 @@
       </router-link>
 
       <router-link to="/build" class="card-flat card-link padding">
-        <h2>Table Builder</h2>
-        <p>Visually create database tables with an intuitive interface. We always forget CREATE TABLE syntax, so we built this to help.</p>
+        <h2>SQl Table Creator</h2>
+        <p>Visually create database tables visually without having to remember CREATE TABLE syntax.</p>
         <div>
           <span class="badge" v-for="s in syntaxes" :key="s">{{s}}</span>
         </div>
       </router-link>
 
       <router-link to="/templates" class="card-flat card-link padding">
-        <h2>Table Templates</h2>
+        <h2>SQL Table Templates</h2>
         <p>SQL table templates and examples. These are super useful if you're building a database schema and don't know where to start. Once you find a template you like, modify it in our Table Builder, or just copy the CREATE TABLE syntax as needed.</p>
         <div>
           <span class="badge" v-for="s in syntaxes" :key="s">{{s}}</span>
