@@ -1396,7 +1396,6 @@ export default Vue.extend({
     async refreshTable() {
       log.debug('refreshing table')
       const page = this.tabulator.getPage()
-      this.fetchTableLength()
       await this.tabulator.replaceData()
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true
