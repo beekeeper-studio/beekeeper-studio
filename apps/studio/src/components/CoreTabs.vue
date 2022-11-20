@@ -328,7 +328,7 @@
         this.$nextTick(() => this.$modal.show(this.modalName))
       },
       async loadRoutineCreate(routine) {
-        const result = await this.connection.getRoutineCreateScript(routine.name, routine.schema)
+        const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema)
         const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
         this.createQuery(stringResult)
       },
