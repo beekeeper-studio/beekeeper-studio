@@ -80,6 +80,7 @@ export default {
         this.errors = null
         await this.$store.dispatch('saveConnection', this.config)
         await this.$store.dispatch('pins/maybeSavePins')
+        await this.$store.dispatch('hideEntities/maybeSave')
         this.$modal.hide('config-save-modal')
         this.$noty.success("Connection Saved")
       } catch (error) {

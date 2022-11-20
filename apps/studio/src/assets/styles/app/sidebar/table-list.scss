@@ -50,3 +50,62 @@
     padding-bottom: $gutter-w;
   }
 }
+
+.hidden-indicator {
+  position: relative;
+  z-index: 1;
+
+  &:hover .hi-tooltip {
+    visibility: visible;
+  }
+
+  > .badge {
+    display: flex;
+    align-items: center;
+    margin: 0 !important;
+
+    .material-icons {
+      font-size: 1rem;
+      margin-right: 0.2rem;
+    }
+  }
+
+  .hi-tooltip {
+    $gap: 0.5rem;
+
+    visibility: hidden;
+    position: absolute;
+    display: block !important;
+    top: calc(100% + #{$gap});
+    left: -5rem;
+    width: 14rem;
+    padding: $gutter-h $gutter-w !important;
+    border-radius: 0.5rem;
+    background-color: #4f4f4f;
+
+    text-transform: none;
+    font-weight: normal;
+    font-size: 0.9rem;
+
+    // acting as a "bridge" so the tooltip stays visible when the cursor is
+    // in between the text and the tooltip
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: -$gap;
+      width: 100%;
+      height: $gap;
+    }
+
+    span, a {
+      display: inline;
+      color: #eee;
+      line-height: 1.35rem;
+    }
+
+    a {
+      border-bottom: 1px solid #dadada;
+    }
+  }
+}

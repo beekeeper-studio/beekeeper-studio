@@ -95,6 +95,7 @@
   import { OpenTab } from '@/common/appdb/models/OpenTab';
   import TabWithTable from './common/TabWithTable.vue';
   import TabIcon from './tab/TabIcon.vue'
+  import { DatabaseEntity } from "@/lib/db/models"
 
   export default Vue.extend({
     props: [ 'connection' ],
@@ -172,7 +173,10 @@
           { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
           { event: 'favoriteClick', handler: this.favoriteClick },
           { event: 'exportTable', handler: this.openExportModal },
-          { event: AppEvent.dropDatabaseElement, handler: this.dropDatabaseElement }
+          { event: AppEvent.hideEntity, handler: this.hideEntity },
+          { event: AppEvent.hideSchema, handler: this.hideSchema },
+          { event: AppEvent.deleteDatabaseElement, handler: this.deleteDatabaseElement },
+          { event: AppEvent.dropDatabaseElement, handler: this.dropDatabaseElement },
         ]
       },
       contextOptions() {
@@ -360,6 +364,12 @@
       openExportModal(options) {
         this.tableExportOptions = options
         this.showExportModal = true
+      },
+      hideEntity(entity: DatabaseEntity) {
+        this.$store.dispatch('hideEntities/addEntity', entity)
+      },
+      hideSchema(schema: string) {
+        this.$store.dispatch('hideEntities/addSchema', schema)
       },
       openSettings() {
         const tab = new OpenTab('settings')

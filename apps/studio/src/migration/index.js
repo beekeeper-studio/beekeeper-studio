@@ -26,8 +26,9 @@ import serverCerts from './20220401_add_trust_server_certificate_to_connections'
 import socketPath from './20220408_add_socket_path'
 import connectionOptions from './20220426_connection_options'
 import keepaliveInterval from './20220709_add_keepalive_interval'
+import createHiddenEntities from './20220907_create_hidden_entities'
+import createHiddenSchemas from './20220908_create_hidden_schemas'
 import redshiftOptions from './20220817_add_redshift_options'
-
 
 const logger = createLogger('migrations')()
 
@@ -41,7 +42,8 @@ const realMigrations = [
   a, b, c, d, domains, createSettings, addZoom,
   addSc, sslFiles, sslReject, pinned, addSort,
   createCreds, workspaceScoping, workspace2, addTabs, scWorkspace, systemTheme,
-  serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions
+  serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
+  createHiddenEntities, createHiddenSchemas,
 ]
 
 // fixtures require the models

@@ -230,6 +230,7 @@
 
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: $gutter-w $gutter-w ($gutter-h * 0.5);
   padding-right: $gutter-h;
   background: transparent;
@@ -542,12 +543,13 @@
       align-items: center;
       padding-left: 0;
       margin-bottom: $gutter-h * 0.5;
+      border-radius: 4px;
       .btn-fab {
         display: inline-flex!important;
         margin-right: 0;
       }
       &:hover {
-        background: transparent;
+        background: rgba($theme-base, 0.035);
         .material-icons:first-child {
           color: $text-dark;
         }
