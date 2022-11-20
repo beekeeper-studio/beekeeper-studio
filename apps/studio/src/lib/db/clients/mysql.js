@@ -55,6 +55,13 @@ export default async function (server, database) {
     applyChanges: (changes) => applyChanges(conn, changes),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
+
+    // db creation
+    listCharsets: () => listCharsets(conn),
+    getDefaultCharset: () => getDefaultCharset(conn),
+    listCollations: (charset) => listCollations(conn, charset),
+    createDatabase: ( databaseName, charset, collation) => createDatabase(conn, databaseName, charset, collation),
+    
     // tabletable
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
@@ -1036,6 +1043,35 @@ export function filterDatabase(item, { database } = {}, databaseField) {
   return true;
 }
 
+export async function listCharsets(conn) {
+  const sql = 'show character set'
+  const { data } = await driverExecuteQuery(conn, { query: sql })
+  
+  return data.map((row) => row.Charset).sort()
+}
+
+export async function getDefaultCharset(conn) {
+  const sql = "SHOW VARIABLES LIKE 'character_set_server'"
+  const { data } = await driverExecuteQuery(conn, { query: sql })
+
+  return data[0].Value;
+}
+
+export async function listCollations(conn, charset) {
+  const sql = 'show collation where charset = ?'
+
+  const params = [
+    charset
+  ]
+
+  const { data } = await driverExecuteQuery(conn, { query: sql, params });
+  return data.map((row) => row.Collation).sort()
+}
+
+export async function createDatabase(conn, databaseName, charset, collation) {
+  const sql = `create database ${wrapIdentifier(databaseName)} character set ${wrapIdentifier(charset)} collate ${wrapIdentifier(collation)}`;
+  await driverExecuteQuery(conn, { query: sql })
+}
 
 export const testOnly = {
   parseFields

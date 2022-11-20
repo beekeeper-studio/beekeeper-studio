@@ -187,6 +187,12 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
     getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
 
+    // db creation
+    listCharsets: async() => PD.charsets,
+    getDefaultCharset: async() => 'UTF8',
+    listCollations: async() => [],
+    createDatabase: (databaseName, charset) => createDatabase(conn, databaseName, charset),
+
     // alter tables
     alterTableSql: (change: AlterTableSpec) => alterTableSql(conn, change),
     alterTable: (change: AlterTableSpec) => alterTable(conn, change),
@@ -1358,6 +1364,20 @@ export async function dropElement (conn: Conn, elementName: string, typeOfElemen
 
     await driverExecuteSingle(connClient, { query: sql })
   });
+}
+
+export async function createDatabase(conn, databaseName, charset) {
+  const {isPostgres, number: versionAsInteger } = await getVersion(conn)
+
+  let sql = `create database ${wrapIdentifier(databaseName)} encoding ${wrapIdentifier(charset)}`;
+
+  // postgres 9 seems to freak out if the charset isn't wrapped in single quotes and also requires the template https://www.postgresql.org/docs/9.3/sql-createdatabase.html
+  // later version don't seem to care
+  if (isPostgres && versionAsInteger < 100000) {
+    sql = `create database ${wrapIdentifier(databaseName)} encoding '${charset}' template template0`;
+  }
+
+  await driverExecuteQuery(conn, { query: sql })
 }
 
 export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {

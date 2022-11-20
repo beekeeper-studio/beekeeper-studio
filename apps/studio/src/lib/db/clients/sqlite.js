@@ -68,6 +68,12 @@ export default async function (server, database) {
     alterTableSql: (change) => alterTableSql(conn, change),
     alterTable: (change) => alterTable(conn, change),
 
+    // db creation
+    listCharsets: () => [],
+    getDefaultCharset: () => null,
+    listCollations: (charset) => [],
+    createDatabase: (databaseName) => createDatabase(conn, databaseName),
+
     // indexes
     alterIndexSql: (adds, drops) => alterIndexSql(adds, drops),
     alterIndex: (adds, drops) => alterIndex(conn, adds, drops),
@@ -661,6 +667,16 @@ export async function executeWithTransaction(conn, queryArgs) {
 
 function getVersionString(version) {
   return version.data[0]["sqlite_version()"];
+}
+
+export async function createDatabase(conn, databaseName) {
+  // because this is a convenience for an otherwise ez-pz action, the location of the db file will be in the same location as the other .db files.
+  // If the desire for a "but I want this in another directory" is ever wanted, it can be included but for now this feels like it suits the current needs. 
+  const fileLocation = conn.dbConfig.database.split('/')
+  fileLocation.pop()
+
+  const db = new Database(`${fileLocation.join('/')}/${databaseName}.db`)
+  db.close()
 }
 
 

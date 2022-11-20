@@ -30,15 +30,17 @@
       </span>
     </div>
 
-    <modal name="diff-modal" class="beekeeper-modal vue-dialog diff-modal" >
-      <div class="dialog-content">
-        <div class="dialog-c-title">Merge Preview</div>
-        <diff-viewer v-if="diff" :diff="diff"/>
-      </div>
-      <div class="vue-dialog-buttons">
-        <button class="btn btn-flat" @click.prevent="$modal.hide('diff-modal')">Close</button>
-      </div>
-    </modal>
+    <portal to="modals">
+      <modal name="diff-modal" class="beekeeper-modal vue-dialog diff-modal" >
+        <div class="dialog-content">
+          <div class="dialog-c-title">Merge Preview</div>
+          <diff-viewer v-if="diff" :diff="diff"/>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button class="btn btn-flat" @click.prevent="$modal.hide('diff-modal')">Close</button>
+        </div>
+      </modal>
+    </portal>
   </div>
 </template>
 

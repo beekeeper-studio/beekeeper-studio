@@ -75,6 +75,16 @@ export function runCommonTests(getUtil) {
     })
   })
 
+  describe("Create Database Tests", () => {
+    test("Invalid database name", async () => {
+      await getUtil().badCreateDatabaseTests()
+    })
+    
+    test("Should create database", async () => {
+      await getUtil().createDatabaseTests()
+    })
+  })
+
   describe("Truncate Table Tests", () => {
     beforeEach(async() => {
       await prepareTestTable(getUtil())
