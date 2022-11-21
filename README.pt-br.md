@@ -80,7 +80,7 @@ Beekeeper Studio tem dois pontos de entrada:
 - `background.js`: essa é a parte electron, código que controla as partes nativas como mostrar as janelas.
 - `main.js`: esse é o ponto de dentrada para a aplicação Vue.js. Você pode seguir os _breadcrumbs_ dos componentes a partir de `App.vue` para encontrar a tela que você precisa.
 
-**No greral nós temos duas telas:**
+**No geral nós temos duas telas:**
 
 - ConnectionInterface: Conectando com um Banco de dados
 - CoreInterface - Interação com o Banco de Dados
