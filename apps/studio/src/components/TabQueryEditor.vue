@@ -187,7 +187,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       }
     },
     computed: {
-      ...mapGetters(['dialect']),
+      ...mapGetters(['dialect', 'defaultSchema']),
       ...mapState(['usedConfig', 'connection', 'database', 'tables', 'storeInitialized']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       shouldInitialize() {
@@ -309,19 +309,23 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         return this.connection.connectionType;
       },
       hintOptions() {
+        // Previously we had to provide a table: column[] mapping.
+        // we don't need to provide the columns anymore because we fetch them dynamically.
         const result = {}
         this.tables.forEach(table => {
-          const cleanColumns = table.columns.map(col => {
-            return /\./.test(col.columnName) ? `"${col.columnName}"` : col.columnName
-          })
+          if (table.schema && table.schema != this.defaultSchema) {
+            // do nothing - don't add this table
+          } else {
+            // add quoted option for everyone that needs to be quoted
+            if (this.connectionType === 'postgresql' && (/[^a-z0-9_]/.test(table.name) || /^\d/.test(table.name))) {
+              result[`"${table.name}"`] = []
+            }
 
-          // add quoted option for everyone that needs to be quoted
-          if (this.connectionType === 'postgresql' && (/[^a-z0-9_]/.test(table.name) || /^\d/.test(table.name)))
-            result[`"${table.name}"`] = cleanColumns
-
-          // don't add table names that can get in conflict with database schema
-          if (!/\./.test(table.name))
-            result[table.name] = cleanColumns
+            // don't add table names that can get in conflict with database schema
+            if (!/\./.test(table.name)) {
+              result[table.name] = []
+            }
+          }
         })
         return { tables: result }
       },
@@ -782,9 +786,13 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       },
       async getColumnsForAutocomplete(tableName) {
         const tableToFind = this.tables.find(t => t.name === tableName)
-        await this.$store.dispatch('updateTableColumns', tableToFind)
-        this.editor?.setOption('hintOptions', this.hintOptions)
-        return this.hintOptions.tables[tableName]
+        if (!tableToFind) return null
+        // Only refresh columns if we don't have them cached.
+        if (!tableToFind.columns?.length) {
+          await this.$store.dispatch('updateTableColumns', tableToFind)
+        }
+
+        return tableToFind?.columns.map((c) => c.columnName)
       }
     },
     mounted() {

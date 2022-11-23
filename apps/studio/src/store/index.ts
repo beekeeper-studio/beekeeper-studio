@@ -96,6 +96,11 @@ const store = new Vuex.Store<State>({
   },
 
   getters: {
+    defaultSchema(state: State) {
+      return state.connection.defaultSchema ?
+        state.connection.defaultSchema() :
+        undefined;
+    },
     workspace(): IWorkspace {
       return LocalWorkspace
     },
@@ -393,12 +398,15 @@ const store = new Vuex.Store<State>({
     async updateTableColumns(context, table: TableOrView) {
       log.debug('actions/updateTableColumns', table.name)
       try {
+        // FIXME: We should record which table we are loading columns for
+        //        so that we know where to show this loading message. Not just
+        //        show it for all tables.
         context.commit("columnsLoading", "Loading columns...")
         const connection = context.state.connection
         const columns = (table.entityType === 'materialized-view' ?
-        await connection?.listMaterializedViewColumns(table.name, table.schema) :
-        await connection?.listTableColumns(table.name, table.schema)) || []
-        
+          await connection?.listMaterializedViewColumns(table.name, table.schema) :
+          await connection?.listTableColumns(table.name, table.schema)) || []
+
         // TODO (don't update columns if nothing has changed (use duck typing))
         const updated = _.xorWith(table.columns, columns, _.isEqual)
         console.log('Should I update table columns?', updated)
@@ -412,14 +420,13 @@ const store = new Vuex.Store<State>({
     },
 
     async updateTables(context) {
-      // Ideally here we would run all queries in parallel
-      // however running through an SSH tunnel doesn't work
-      // it only supports one query at a time.
-
-      const schema = null
-
+      // FIXME: We should only load tables for the active/default schema
+      //        then we should load new tables when a schema is expanded in the sidebar
+      //        or for auto-complete in the editor.
+      //        Currently: Loads all tables, regardless of schema
       if (context.state.connection) {
         try {
+          const schema = null
           context.commit("tablesLoading", "Finding tables")
           const onlyTables = await context.state.connection.listTables({ schema })
           onlyTables.forEach((t) => {

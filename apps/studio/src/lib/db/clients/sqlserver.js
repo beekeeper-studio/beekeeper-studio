@@ -41,6 +41,7 @@ export default async function (server, database) {
     supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true}),
     versionString: () => getVersionString(version),
     wrapIdentifier,
+    defaultSchema: () => 'dbo',
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),
     listViews: (filter) => listViews(conn, filter),

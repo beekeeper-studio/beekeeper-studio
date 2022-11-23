@@ -18,12 +18,12 @@
       </span>
     </a>
     <div v-if="showColumns" class="sub-items">
-      <p class="sub-item" v-if="columnsLoading">{{columnsLoading}}</p>
-      <p class="sub-item" v-else-if="!columnsLoading && table.columns.length === 0">No Columns</p>
-      <span v-else v-bind:key="c.columnName" v-for="(c, i) in table.columns" class="sub-item">
+      <p class="sub-item" v-if="!columnsLoading && table.columns.length === 0">No Columns</p>
+      <span v-else-if="table.columns.length > 0" v-bind:key="c.columnName" v-for="(c, i) in table.columns" class="sub-item">
         <span class="title truncate" ref="title" @click="selectColumn(i)">{{c.columnName}}</span>
         <span class="badge" v-bind:class="c.dataType"><span>{{c.dataType}}</span></span>
       </span>
+      <p class="sub-item" v-else>{{columnsLoading}}</p>
     </div>
 
   </div>
@@ -109,7 +109,7 @@ import TableIcon from '@/components/common/TableIcon.vue'
         const tableSelected = this.activeTab && this.activeTab.table &&
           this.activeTab.table.name === this.table.name &&
           this.activeTab.table.schema === this.table.schema
-        
+
         return tableSelected
       },
       ...mapGetters(['selectedSidebarItem']),
@@ -131,15 +131,15 @@ import TableIcon from '@/components/common/TableIcon.vue'
       copyTable() {
         this.$copyText(this.table.name)
       },
-      selectTable() {
-        this.$emit('selected', this.table)
-      },
       selectColumn(i) {
         this.selectChildren(this.$refs.title[i])
       },
       async toggleColumns() {
-        this.$emit('selected', this.table)
         this.showColumns = !this.showColumns
+        // FIXME: Make this event more consistent with what is happening
+        //        We don't handle 'selection' in TableList anymore
+        if (this.showColumns)
+          this.$emit('selected', this.table)
       },
       openTable() {
         if (this.clickState.openClicks > 0) {

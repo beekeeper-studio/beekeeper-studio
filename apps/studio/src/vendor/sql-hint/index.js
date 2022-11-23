@@ -168,7 +168,7 @@
 
     if (columns && columns.columns)
       columns = columns.columns;
-    
+
     if (columns) {
       addMatches(result, string, columns, function(w) {
         var tableInsert = table;
@@ -242,6 +242,8 @@
     return table;
   }
 
+  // FIXME: Add support for schemas.
+  //        Currently this only auto-completes tables and columns in the current schema
   CodeMirror.registerHelper("hint", "sql", async function(editor, options) {
     globalEditorOptions = {...editor.options}
     tables = parseTables(options?.tables)
@@ -301,14 +303,14 @@
           return objectOrClass(w.toUpperCase(), "CodeMirror-hint-keyword");
       });
     }
-    
+
     const dataFrom = Pos(cur.line, start)
     // Because there are some promises around for getting the columns, the ch position in the "from" object was returning as an unresolved promise
     // so in order to get the position, we need to make sure the data coming back is a resolved value, so time to have some fun.
     if (Object.prototype.toString.call(dataFrom.ch) === '[object Promise]') {
       dataFrom.ch = await dataFrom.ch
     }
-    
+
     return {list: result, from: dataFrom, to: Pos(cur.line, end)};
   });
   CodeMirror.defineOption("getColumns", null);

@@ -55,7 +55,7 @@
             <a @click.prevent="toggleExpandCollapse" :title="isExpanded ? 'Collapse All' : 'Expand All'">
               <i class="material-icons">{{isExpanded ? 'unfold_less' : 'unfold_more'}}</i>
             </a>
-          
+
             <a @click.prevent="refreshTables" :title="'Refresh'">
               <i class="material-icons">refresh</i>
             </a>
@@ -226,10 +226,9 @@
         return key.join(".")
       },
       async tableSelected(table) {
-        if(table.columns?.length === 0) {
-          await this.$store.dispatch('updateTableColumns', table)
-        }
-        // this.selectedTable = table (Why was this commented out? We may never know...)
+        // FIXME: Make this 'tableExpanded' or similar
+        //        This isn't anything to do with table selection
+        await this.$store.dispatch('updateTableColumns', table)
       },
       clearFilter() {
         this.filterQuery = null

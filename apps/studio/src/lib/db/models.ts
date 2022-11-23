@@ -24,8 +24,6 @@ export interface DatabaseEntity {
   entityType: 'table' | 'view' | 'materialized-view' | 'routine'
 }
 
-
-
 export interface TableOrView extends DatabaseEntity {
   columns?: TableColumn[];
 }
