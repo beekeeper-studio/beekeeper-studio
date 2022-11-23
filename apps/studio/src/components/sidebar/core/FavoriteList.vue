@@ -57,13 +57,14 @@
       </div>
       </div>
     </div>
-    <modal class="vue-dialog beekeeper-modal" name="rename-modal" @closed="renameMe=null" height="auto" :scrollable="true">
-      <div class="dialog-content" v-if="renameMe">
-        <div class="dialog-c-title">Rename {{renameMe.title}}</div>
-        <query-rename-form :query="renameMe" @done="$modal.hide('rename-modal')" />
-      </div>
-    </modal>
-
+    <portal to="modals">
+      <modal class="vue-dialog beekeeper-modal" name="rename-modal" @closed="renameMe=null" height="auto" :scrollable="true">
+        <div class="dialog-content" v-if="renameMe">
+          <div class="dialog-c-title">Rename {{renameMe.title}}</div>
+          <query-rename-form :query="renameMe" @done="$modal.hide('rename-modal')" />
+        </div>
+      </modal>
+    </portal>
   </div>
 </template>
 

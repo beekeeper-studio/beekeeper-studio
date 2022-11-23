@@ -10,6 +10,7 @@ import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelect
 import { SqliteCursor } from './sqlite/SqliteCursor';
 import { SqliteChangeBuilder } from '@shared/lib/sql/change_builder/SqliteChangeBuilder';
 import { SqliteData } from '@shared/lib/dialects/sqlite';
+import { ClientError } from '../client';
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
@@ -66,6 +67,12 @@ export default async function (server, database) {
     // alter table
     alterTableSql: (change) => alterTableSql(conn, change),
     alterTable: (change) => alterTable(conn, change),
+
+    // db creation
+    listCharsets: () => [],
+    getDefaultCharset: () => null,
+    listCollations: (charset) => [],
+    createDatabase: (databaseName) => createDatabase(conn, databaseName),
 
     // indexes
     alterIndexSql: (adds, drops) => alterIndexSql(adds, drops),
@@ -150,6 +157,12 @@ export function query(conn, queryText) {
         } catch (err) {
           if (err.code === sqliteErrors.CANCELED) {
             err.sqlectronError = 'CANCELED_BY_USER';
+          }
+
+          if (err.message?.startsWith('no such column')) {
+            const nuError = new ClientError(`${err.message} - Check that you only use double quotes (") for identifiers, not strings`)
+            nuError.helpLink = "https://docs.beekeeperstudio.io/pages/troubleshooting#no-such-column-x"
+            throw nuError
           }
 
           throw err;
@@ -654,6 +667,16 @@ export async function executeWithTransaction(conn, queryArgs) {
 
 function getVersionString(version) {
   return version.data[0]["sqlite_version()"];
+}
+
+export async function createDatabase(conn, databaseName) {
+  // because this is a convenience for an otherwise ez-pz action, the location of the db file will be in the same location as the other .db files.
+  // If the desire for a "but I want this in another directory" is ever wanted, it can be included but for now this feels like it suits the current needs. 
+  const fileLocation = conn.dbConfig.database.split('/')
+  fileLocation.pop()
+
+  const db = new Database(`${fileLocation.join('/')}/${databaseName}.db`)
+  db.close()
 }
 
 

@@ -11101,10 +11101,9 @@ normalize-url@^4.1.0:
   resolved "https://registry.yarnpkg.com/normalize-url/-/normalize-url-4.5.1.tgz#0dd90cf1288ee1d1313b87081c9a5932ee48518a"
   integrity sha512-9UZCFRHQdNrfTpGg8+1INIg93B6zE0aXMVFkw1WFwvO4SlZywU6aLg5Of0Ap/PgcbSw4LNxvMWXMeugwMCX0AA==
 
-noty@^3.1.0:
-  version "3.1.4"
-  resolved "https://registry.yarnpkg.com/noty/-/noty-3.1.4.tgz#f9eaac9df7883921b270ec6f2869e9aeedd8071b"
-  integrity sha512-HKOH392eBygTojC6fXVBOFxTqebjnn/e7/AS69zlWSH3Tn6+0RzfT3aDCGx2PY6Ed3xKBPhtz+xeHAHQGEh68Q==
+noty@beekeeper-studio/noty#dc27550d340dd53480cf861d5ad4e7e292107ad6:
+  version "3.2.0-beta"
+  resolved "https://codeload.github.com/beekeeper-studio/noty/tar.gz/dc27550d340dd53480cf861d5ad4e7e292107ad6"
 
 npm-conf@^1.1.3:
   version "1.1.3"
@@ -14174,10 +14173,10 @@ table@^5.2.3:
     slice-ansi "^2.1.0"
     string-width "^3.0.0"
 
-tabulator-tables@~5.1.8:
-  version "5.1.8"
-  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-5.1.8.tgz#0d2b576ed75099c426d756153e369fb476d678d3"
-  integrity sha512-5ah2ftxNEKiSF5QaAETA4gX49OHiv+kFZLaD+s++LOx2oSvH0J0CujxH570Ou4Bo4Zq6MmI4T7idRS0jhq/VfA==
+tabulator-tables@~5.4.1:
+  version "5.4.1"
+  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-5.4.1.tgz#42803417785ddbe051fc9622c609b2d0cf5aa2c7"
+  integrity sha512-OvnOQj8QRXkouraR6zrBAxoZSnQ32+WvFLOSwRd+rI8Dn749FRiR5vUF3AT7OvnYxXt0AZRGALcJNkSrdE6fWg==
 
 tapable@^1.0.0, tapable@^1.1.3:
   version "1.1.3"
@@ -15372,13 +15371,6 @@ vuedraggable@^2.24.2:
   integrity sha512-6/HDXi92GzB+Hcs9fC6PAAozK1RLt1ewPTLjK0anTYguXLAeySDmcnqE8IC0xa7shvSzRjQXq3/+dsZ7ETGF3g==
   dependencies:
     sortablejs "1.10.2"
-
-vuejs-noty@^0.1.3:
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/vuejs-noty/-/vuejs-noty-0.1.4.tgz#3136d61cb9610c3c8ef3d62d253206a2cfba979e"
-  integrity sha512-WWh06HNtVozQrBKCr5dlZH/x6ii3Ca4zYamzPVEuW3DT5BHN1r7IGRPTHt2I+p4NfRrweOq/Nh4lTlT96qRcGA==
-  dependencies:
-    noty "^3.1.0"
 
 vuepress-html-webpack-plugin@^3.2.0:
   version "3.2.0"

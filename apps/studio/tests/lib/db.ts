@@ -140,6 +140,41 @@ export class DBTestUtil {
     }
   }
 
+  async createDatabaseTests() {
+    const dbs = await this.connection.listDatabases()
+    const collation = 'utf8_general_ci'
+    let charset = 'utf8'
+    if (this.dbType === 'postgresql') {
+      charset = 'UTF8'
+    }
+    await this.connection.createDatabase('new-db_2', charset, collation)
+
+    if (this.dbType === 'sqlite') {
+      // sqlite doesn't list the databases out because they're different files anyway so if it doesn't explode, we're happy as a clam
+      return expect.anything()
+    }
+    const newDBsCount = await this.connection.listDatabases()
+
+    expect(dbs.length).toBeLessThan(newDBsCount.length)
+  }
+
+  async badCreateDatabaseTests() {
+    // sqlserver seems impervious to bad database names or bad charsets or anything. 
+    if (this.dbType === 'sqlserver') {
+      return expect.anything()
+    }
+
+    const dbs = await this.connection.listDatabases()
+    try {
+      await this.connection.createDatabase('not a database name()probably', 'idfk', 'notimportant')
+      const newDBsCount = await this.connection.listDatabases()
+      expect(dbs.length).toEqual(newDBsCount.length)
+    } catch (err) {
+      const newDBsCount = await this.connection.listDatabases()
+      expect(dbs.length).toEqual(newDBsCount.length)
+    }
+  }
+
   async truncateTableTests() {
     await this.knex('group').insert([{select: 'something'}, {select: 'something'}])
     const initialRowCount = await this.knex.select().from('group')

@@ -115,11 +115,7 @@
           Structure <i class="material-icons">north_east</i>
         </x-button>
         <!-- Info -->
-        <span class="statusbar-item" :title="loadingLength ? 'Loading Total Records' : `Approximately ${totalRecordsText} Records`">
-          <i class="material-icons">list_alt</i>
-          <span v-if="loadingLength">Loading...</span>
-          <span v-else>{{ totalRecordsText }}</span>
-        </span>
+        <table-length :table="table" :connection="connection" />
         <a @click="refreshTable" tabindex="0" role="button" class="statusbar-item hoverable" v-if="lastUpdatedText && !error" :title="'Updated' + ' ' + lastUpdatedText">
           <i class="material-icons">update</i>
           <span>{{lastUpdatedText}}</span>
@@ -214,6 +210,7 @@ import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
+import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
 import { Tabulator } from 'tabulator-tables'
 import { TableUpdate } from '@/lib/db/models';
@@ -224,7 +221,7 @@ const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal },
+  components: { Statusbar, ColumnFilterModal, TableLength },
   mixins: [data_converter, DataMutators],
   props: ["connection", "initialFilter", "active", 'tab', 'table'],
   data() {
@@ -254,8 +251,8 @@ export default Vue.extend({
 
       // table data
       data: null, // array of data
-      totalRecords: null,
       preLoadScrollPosition: null,
+      columnWidths: null,
       //
       response: null,
       limit: 100,
@@ -285,9 +282,6 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
     ...mapGetters(['dialectData']),
-    loadingLength() {
-      return this.totalRecords === null
-    },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
       const cols = this.tabulator.getColumns()
@@ -338,34 +332,63 @@ export default Vue.extend({
       return result
     },
     headerContextMenu() {
-      return [{
-        label: '<x-menuitem><x-label>Reset column widths</x-label></x-menuitem>',
-        action: (_e, _column: Tabulator.ColumnComponent) => {
-          if (!this.tabulator) return;
-          const layout = this.tabulator.getColumnLayout()
-          const result = layout.map((l) => {
-            return {
-              field: l.field,
-              visible: l.visible
+      return [
+        {
+          label: '<x-menuitem><x-label>Resize all columns to match</x-label></x-menuitem>',
+          action: (_e, column: Tabulator.ColumnComponent) => {
+            try {
+              this.tabulator.blockRedraw()
+              const columns = this.tabulator.getColumns()
+              columns.forEach((col) => {
+                col.setWidth(column.getWidth())
+              })
+            } catch (error) {
+              console.error(error)
+            } finally {
+              this.tabulator.restoreRedraw()
             }
-          })
-          this.tabulator.setColumnLayout(result)
+          }
+        },
+        {
+        label: '<x-menuitem><x-label>Resize all columns to fit content</x-label></x-menuitem>',
+        action: (_e, _column: Tabulator.ColumnComponent) => {
+          try {
+            this.tabulator.blockRedraw()
+            const columns = this.tabulator.getColumns()
+            columns.forEach((col) => {
+              col.setWidth(true)
+            })
+          } catch (error) {
+            console.error(error)
+          } finally {
+            this.tabulator.restoreRedraw()
+          }
         }
       },
-      {
-        label: '<x-menuitem><x-label>Reset column visibility</x-label></x-menuitem>',
+        {
+        label: '<x-menuitem><x-label>Resize all columns to fixed width</x-label></x-menuitem>',
         action: (_e, _column: Tabulator.ColumnComponent) => {
-          if (!this.tabulator) return;
-          const layout = this.tabulator.getColumnLayout()
-          const result = layout.map((l) => {
-            return {
-              field: l.field,
-              width: l.width
-            }
-          })
-          this.tabulator.setColumnLayout(result)
+          try {
+            this.tabulator.blockRedraw()
+            const columns = this.tabulator.getColumns()
+            columns.forEach((col) => {
+              col.setWidth(200)
+            })
+            // const layout = this.tabulator.getColumns().map((c: CC) => ({
+            //   field: c.getField(),
+            //   width: c.getWidth(),
+            // }))
+            // this.tabulator.setColumnLayout(layout)
+            // this.tabulator.redraw(true)
+          } catch (error) {
+            console.error(error)
+          } finally {
+            this.tabulator.restoreRedraw()
+          }
         }
-      }]
+      }
+
+      ]
     },
     cellContextMenu() {
       return [{
@@ -457,9 +480,6 @@ export default Vue.extend({
     builderPlaceholder() {
       return this.filter.type === 'in' ? `Enter values separated by comma, eg: foo,bar` : 'Enter Value'
     },
-    totalRecordsText() {
-      return `~${this.totalRecords.toLocaleString()}`
-    },
     pendingChangesCount() {
       return this.pendingChanges.inserts.length
              + this.pendingChanges.updates.length
@@ -528,11 +548,7 @@ export default Vue.extend({
         const isPK = this.primaryKeys?.length && this.isPrimaryKey(column.columnName)
         const columnWidth = this.table.columns.length > 30 ?
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
-          undefined
-
-        const formatter = () => {
-          return `<span class="tabletable-title">${escapeHtml(column.columnName)} <span class="badge">${escapeHtml(slimDataType)}</span></span>`
-        }
+          undefined;
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
         if (keyDatas && keyDatas.length > 0) {
@@ -547,16 +563,21 @@ export default Vue.extend({
         const result = {
           title: column.columnName,
           field: column.columnName,
-          titleFormatter: formatter,
+          titleFormatter: this.headerFormatter,
+          titleFormatterParams: {
+            columnName: column.columnName,
+            dataType: column.dataType
+          },
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
           dataType: column.dataType,
           cellClick: this.cellClick,
+          minWidth: globals.minColumnWidth,
           width: columnWidth,
           maxWidth: globals.maxColumnWidth,
           maxInitialWidth: globals.maxInitialWidth,
           cssClass: isPK ? 'primary-key' : '',
           editable: this.cellEditCheck,
-          headerSort: this.allowHeaderSort(column),
+          headerSort: true,
           editor: editorType,
           tooltip: true,
           contextMenu: this.cellContextMenu,
@@ -644,6 +665,7 @@ export default Vue.extend({
       return `workspace-${this.workspaceId}.connection-${this.usedConfig.id}.db-${this.database || 'none'}.schema-${this.table.schema || 'none'}.table-${this.table.name}`
     },
     persistenceOptions() {
+      // return {}
       if (!this.tableId) return {}
 
       return {
@@ -651,7 +673,8 @@ export default Vue.extend({
           sort: false,
           filter: false,
           group: false,
-          columns: ['width', 'visible'],
+          columns: ['visible', 'width'],
+
         },
         persistenceMode: 'local',
         persistenceID: this.tableId,
@@ -681,6 +704,10 @@ export default Vue.extend({
       }
     },
     initialSort() {
+      // FIXME: Don't specify an initial sort order
+      // because it can slow down some databases.
+      // However - some databases require an 'order by' for limit, so needs some
+      // integration tests first.
       if (!this.table?.columns?.length) {
         return [];
       }
@@ -779,7 +806,29 @@ export default Vue.extend({
     }
   },
   methods: {
-    maybeScroll() {
+    headerFormatter(_cell, formatterParams) {
+      const { columnName, dataType } = formatterParams
+      return `
+        <span class="tabletable-title">
+          ${escapeHtml(columnName)}
+          <span class="badge">${dataType}</span>
+        </span>`
+    },
+    maybeScrollAndSetWidths() {
+      if (this.columnWidths) {
+        try {
+          this.tabulator.blockRedraw()
+          this.columnWidths.forEach(({ field, width}) => {
+            const col = this.tabulator.getColumn(field)
+            if (col) col.setWidth(width)
+          })
+          this.columnWidths = null
+        } catch (ex) {
+          console.error("error setting widths", ex)
+        } finally {
+          this.tabulator.restoreRedraw()
+        }
+      }
       if (this.preLoadScrollPosition) {
         this.tableHolder.scrollLeft = this.preLoadScrollPosition
         this.preLoadScrollPosition = null
@@ -802,25 +851,16 @@ export default Vue.extend({
       return this.primaryKeys.includes(column);
     },
     async initialize() {
-      log.info("initializing tab ", this.tab.title, this.tab.tabType)
       this.initialized = true
       this.filter.field = this.table?.columns[0]?.columnName
       if (this.initialFilter) {
         this.filter = _.clone(this.initialFilter)
       }
-      this.fetchTableLength()
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-      // this.columnsWithFilterAndOrder = this.table.columns.map(({columnName, dataType}) => ({
-      //   name: columnName,
-      //   dataType,
-      //   filter: true,
-      //   order: 0,
-      // }))
-
 
 
       // @ts-ignore-error
@@ -857,23 +897,13 @@ export default Vue.extend({
         ]
       });
       this.tabulator.on('cellEdited', this.cellEdited)
-      this.tabulator.on('dataProcessed', this.maybeScroll)
+      this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
 
       this.$nextTick(() => {
         if (this.$refs.valueInput) {
           this.$refs.valueInput.focus()
         }
       })
-    },
-    async fetchTableLength() {
-      try {
-        if (!this.table) return;
-        const length = await this.connection.getTableLength(this.table.name, this.table.schema)
-        this.totalRecords = length
-      } catch(ex) {
-        console.error("unable to get table length", ex)
-        this.totalRecords = 0
-      }
     },
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
@@ -901,7 +931,7 @@ export default Vue.extend({
       return inserts
     },
     defaultColumnWidth(slimType, defaultValue) {
-      const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text']
+      const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector']
       if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
       return defaultValue
     },
@@ -1325,6 +1355,9 @@ export default Vue.extend({
             this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
             this.preLoadScrollPosition = this.tableHolder.scrollLeft
+            this.columnWidths = this.tabulator.getColumns().map((c) => {
+              return { field: c.getField(), width: c.getWidth()}
+            })
             resolve({
               last_page: 1,
               data
@@ -1363,7 +1396,6 @@ export default Vue.extend({
     async refreshTable() {
       log.debug('refreshing table')
       const page = this.tabulator.getPage()
-      this.fetchTableLength()
       await this.tabulator.replaceData()
       this.tabulator.setPage(page)
       if (!this.active) this.forceRedraw = true

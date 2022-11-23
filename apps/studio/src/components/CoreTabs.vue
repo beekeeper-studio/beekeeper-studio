@@ -60,17 +60,19 @@
 
       </div>
     </div>
-  <modal :name="modalName" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened" @closed="sureClosed" @before-open="beforeOpened">
-    <div class="dialog-content">
-      <div class="dialog-c-title">Really {{this.dbAction | titleCase}} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{this.dbElement}}</span>?</div>
-      <p>This change cannot be undone</p>
-    </div>
-    <div class="vue-dialog-buttons">
-      <span class="expand"></span>
-      <button ref="no" @click.prevent="$modal.hide(modalName)" class="btn btn-sm btn-flat">Cancel</button>
-      <button @focusout="sureOpen && $refs.no && $refs.no.focus()" @click.prevent="completeDeleteAction" class="btn btn-sm btn-primary">{{this.titleCaseAction}} {{this.dbElement}}</button>
-    </div>
-  </modal>
+    <portal to="modals">
+      <modal :name="modalName" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened" @closed="sureClosed" @before-open="beforeOpened">
+        <div class="dialog-content">
+          <div class="dialog-c-title">Really {{this.dbAction | titleCase}} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{this.dbElement}}</span>?</div>
+          <p>This change cannot be undone</p>
+        </div>
+        <div class="vue-dialog-buttons">
+          <span class="expand"></span>
+          <button ref="no" @click.prevent="$modal.hide(modalName)" class="btn btn-sm btn-flat">Cancel</button>
+          <button @focusout="sureOpen && $refs.no && $refs.no.focus()" @click.prevent="completeDeleteAction" class="btn btn-sm btn-primary">{{this.titleCaseAction}} {{this.dbElement}}</button>
+        </div>
+      </modal>
+    </portal>
   </div>
 </template>
 
@@ -93,6 +95,7 @@
   import { OpenTab } from '@/common/appdb/models/OpenTab';
   import TabWithTable from './common/TabWithTable.vue';
   import TabIcon from './tab/TabIcon.vue'
+  import { DatabaseEntity } from "@/lib/db/models"
 
   export default Vue.extend({
     props: [ 'connection' ],
@@ -170,7 +173,10 @@
           { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
           { event: 'favoriteClick', handler: this.favoriteClick },
           { event: 'exportTable', handler: this.openExportModal },
-          { event: AppEvent.dropDatabaseElement, handler: this.dropDatabaseElement }
+          { event: AppEvent.hideEntity, handler: this.hideEntity },
+          { event: AppEvent.hideSchema, handler: this.hideSchema },
+          { event: AppEvent.deleteDatabaseElement, handler: this.deleteDatabaseElement },
+          { event: AppEvent.dropDatabaseElement, handler: this.dropDatabaseElement },
         ]
       },
       contextOptions() {
@@ -322,7 +328,7 @@
         this.$nextTick(() => this.$modal.show(this.modalName))
       },
       async loadRoutineCreate(routine) {
-        const result = await this.connection.getRoutineCreateScript(routine.name, routine.schema)
+        const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema)
         const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
         this.createQuery(stringResult)
       },
@@ -356,6 +362,12 @@
       openExportModal(options) {
         this.tableExportOptions = options
         this.showExportModal = true
+      },
+      hideEntity(entity: DatabaseEntity) {
+        this.$store.dispatch('hideEntities/addEntity', entity)
+      },
+      hideSchema(schema: string) {
+        this.$store.dispatch('hideEntities/addSchema', schema)
       },
       openSettings() {
         const tab = new OpenTab('settings')

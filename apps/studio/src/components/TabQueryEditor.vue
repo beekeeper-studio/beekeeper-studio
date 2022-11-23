@@ -80,48 +80,51 @@
     </div>
 
     <!-- Save Modal -->
-    <modal class="vue-dialog beekeeper-modal" name="save-modal" @closed="selectEditor" @opened="selectTitleInput" height="auto" :scrollable="true">
-      <form v-if="query" @submit.prevent="saveQuery">
-        <div class="dialog-content">
-          <div class="dialog-c-title">Saved Query Name</div>
-          <div class="modal-form">
-            <div class="alert alert-danger save-errors" v-if="saveError">{{saveError}}</div>
-            <div class="form-group">
-                <input type="text" ref="titleInput" name="title" class="form-control"  v-model="query.title" autofocus>
+    <portal to="modals">
+      <modal class="vue-dialog beekeeper-modal" name="save-modal" @closed="selectEditor" @opened="selectTitleInput" height="auto" :scrollable="true">
+        <form v-if="query" @submit.prevent="saveQuery">
+          <div class="dialog-content">
+            <div class="dialog-c-title">Saved Query Name</div>
+            <div class="modal-form">
+              <div class="alert alert-danger save-errors" v-if="saveError">{{saveError}}</div>
+              <div class="form-group">
+                  <input type="text" ref="titleInput" name="title" class="form-control"  v-model="query.title" autofocus>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="vue-dialog-buttons">
-          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('save-modal')">Cancel</button>
-          <button class="btn btn-primary" type="submit">Save</button>
-        </div>
-      </form>
-    </modal>
+          <div class="vue-dialog-buttons">
+            <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('save-modal')">Cancel</button>
+            <button class="btn btn-primary" type="submit">Save</button>
+          </div>
+        </form>
+      </modal>
+    </portal>
 
     <!-- Parameter modal -->
-    <modal class="vue-dialog beekeeper-modal" name="parameters-modal" @opened="selectFirstParameter" @closed="selectEditor" height="auto" :scrollable="true">
-      <form @submit.prevent="submitQuery(queryForExecution, true)">
-        <div class="dialog-content">
-          <div class="dialog-c-title">Provide parameter values</div>
-          <div class="dialog-c-subtitle">You need to use single quotes around string values. Blank values are invalid</div>
-          <div class="modal-form">
-            <div class="form-group">
-                <div v-for="(param, index) in queryParameterPlaceholders" v-bind:key="index">
-                  <div class="form-group row">
-                    <label>{{param}}</label>
-                    <input type="text" class="form-control" required v-model="queryParameterValues[param]" autofocus ref="paramInput">
+    <portal to="modals">
+      <modal class="vue-dialog beekeeper-modal" name="parameters-modal" @opened="selectFirstParameter" @closed="selectEditor" height="auto" :scrollable="true">
+        <form @submit.prevent="submitQuery(queryForExecution, true)">
+          <div class="dialog-content">
+            <div class="dialog-c-title">Provide parameter values</div>
+            <div class="dialog-c-subtitle">You need to use single quotes around string values. Blank values are invalid</div>
+            <div class="modal-form">
+              <div class="form-group">
+                  <div v-for="(param, index) in queryParameterPlaceholders" v-bind:key="index">
+                    <div class="form-group row">
+                      <label>{{param}}</label>
+                      <input type="text" class="form-control" required v-model="queryParameterValues[param]" autofocus ref="paramInput">
+                    </div>
                   </div>
-                </div>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="vue-dialog-buttons">
-          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('parameters-modal')">Cancel</button>
-          <button class="btn btn-primary" type="submit">Run</button>
-        </div>
-      </form>
-    </modal>
-
+          <div class="vue-dialog-buttons">
+            <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('parameters-modal')">Cancel</button>
+            <button class="btn btn-primary" type="submit">Run</button>
+          </div>
+        </form>
+      </modal>
+    </portal>
   </div>
 </template>
 
@@ -330,12 +333,15 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         return { tables: result }
       },
       queryParameterPlaceholders() {
-        const params = this.individualQueries.flatMap((qs) => qs.parameters)
-        if (params.length && params[0] === '?') {
-          return []
-        } else {
-          return _.uniq(params)
+        let params = this.individualQueries.flatMap((qs) => qs.parameters)
+
+        if (this.currentlySelectedQuery && (this.hasSelectedText || this.runningType === 'current')) {
+          params = this.currentlySelectedQuery.parameters
         }
+
+        if (params.length && params[0] === '?') return []
+
+        return _.uniq(params)
       },
       deparameterizedQuery() {
         let query = this.queryForExecution

@@ -65,6 +65,66 @@
       tableTruncated() {
           return this.result.truncated
       },
+
+      headerContextMenu() {
+        return [
+          {
+            label: '<x-menuitem><x-label>Resize all columns to match</x-label></x-menuitem>',
+            action: (_e, column) => {
+              try {
+                this.tabulator.blockRedraw()
+                const columns = this.tabulator.getColumns()
+                columns.forEach((col) => {
+                  col.setWidth(column.getWidth())
+                })
+              } catch (error) {
+                console.error(error)
+              } finally {
+                this.tabulator.restoreRedraw()
+              }
+            }
+          },
+          {
+          label: '<x-menuitem><x-label>Resize all columns to fit content</x-label></x-menuitem>',
+          action: (_e, _column) => {
+            try {
+              this.tabulator.blockRedraw()
+              const columns = this.tabulator.getColumns()
+              columns.forEach((col) => {
+                col.setWidth(true)
+              })
+            } catch (error) {
+              console.error(error)
+            } finally {
+              this.tabulator.restoreRedraw()
+            }
+          }
+        },
+          {
+          label: '<x-menuitem><x-label>Resize all columns to fixed width</x-label></x-menuitem>',
+          action: (_e, _column) => {
+            try {
+              this.tabulator.blockRedraw()
+              const columns = this.tabulator.getColumns()
+              columns.forEach((col) => {
+                col.setWidth(200)
+              })
+              // const layout = this.tabulator.getColumns().map((c: CC) => ({
+              //   field: c.getField(),
+              //   width: c.getWidth(),
+              // }))
+              // this.tabulator.setColumnLayout(layout)
+              // this.tabulator.redraw(true)
+            } catch (error) {
+              console.error(error)
+            } finally {
+              this.tabulator.restoreRedraw()
+            }
+          }
+        }
+
+        ]
+      },
       cellContextMenu() {
         return [
           {
@@ -125,6 +185,7 @@
             maxInitialWidth: globals.maxColumnWidth,
             tooltip: true,
             contextMenu: this.cellContextMenu,
+            headerContextMenu: this.headerContextMenu,
             cellClick: this.cellClick.bind(this)
           }
           return result;
@@ -204,7 +265,10 @@
         };
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
-        this.tabulator.download(formatter, `${title}-${dateString}.${format}`, 'all')
+
+        // xlsx seems to be the only one that doesn't know what 'all' is it would seem https://tabulator.info/docs/5.4/download#xlsx
+        const options = typeof formatter !== 'function' && formatter.toLowerCase() === 'xlsx' ? {} : 'all'
+        this.tabulator.download(formatter, `${title}-${dateString}.${format}`, options)
       },
       clipboard(format = null) {
         // this.tabulator.copyToClipboard("all")

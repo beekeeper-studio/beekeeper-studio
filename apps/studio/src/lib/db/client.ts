@@ -15,6 +15,14 @@ export enum DatabaseElement {
   DATABASE = 'DATABASE'
 }
 
+export class ClientError extends Error {
+  helpLink = null
+  constructor(message: string, helpLink: string) {
+    super(message)
+    this.helpLink = helpLink
+  }
+}
+
 export interface DatabaseClient {
   supportedFeatures: () => SupportedFeatures,
   versionString: () => string,
@@ -32,6 +40,12 @@ export interface DatabaseClient {
   getTableKeys: (db: string, table: string, schema?: string) => void,
   query: (queryText: string) => CancelableQuery,
   executeQuery: (queryText: string) => void,
+  // create database
+  listCharsets: () => Promise<string[]>,
+  getDefaultCharset: () => Promise<string>,
+  listCollations: (charset?: string) => Promise<string[]>,
+  createDatabase: (databaseName: string, charset: string, collation: string) => void,
+
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
   // alter table
@@ -150,6 +164,12 @@ export class DBConnection {
   query = query.bind(null, this.server, this.database)
   executeQuery = executeQuery.bind(null, this.server, this.database)
   listDatabases = listDatabases.bind(null, this.server, this.database)
+  
+  // db creation
+  listCharsets = bindAsync.bind(null, 'listCharsets', this.server, this.database)
+  getDefaultCharset = bindAsync.bind(null, 'getDefaultCharset', this.server, this.database)
+  listCollations = bindAsync.bind(null, 'listCollations', this.server, this.database)
+  createDatabase = bindAsync.bind(null, 'createDatabase', this.server, this.database)
 
   // tabletable
   getTableLength = bindAsync.bind(null, 'getTableLength', this.server, this.database)
@@ -402,7 +422,6 @@ function listDatabases(server: IDbConnectionServer, database: IDbConnectionDatab
   checkIsConnected(server , database);
   return database.connection?.listDatabases(filter);
 }
-
 
 async function getInsertQuery(server: IDbConnectionServer, database: IDbConnectionDatabase, tableInsert: TableInsert) {
   checkIsConnected(server , database);

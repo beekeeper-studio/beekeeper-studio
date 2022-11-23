@@ -12,6 +12,7 @@ import { errors } from '../../errors';
 import { MysqlCursor } from './mysql/MySqlCursor';
 import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral } from './utils';
 import { MysqlData } from '@shared/lib/dialects/mysql'
+import { ClientError } from '../client';
 
 const log = rawLog.scope('mysql')
 const logger = () => log
@@ -54,6 +55,13 @@ export default async function (server, database) {
     applyChanges: (changes) => applyChanges(conn, changes),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
+
+    // db creation
+    listCharsets: () => listCharsets(conn),
+    getDefaultCharset: () => getDefaultCharset(conn),
+    listCollations: (charset) => listCollations(conn, charset),
+    createDatabase: ( databaseName, charset, collation) => createDatabase(conn, databaseName, charset, collation),
+    
     // tabletable
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
@@ -488,8 +496,8 @@ export function query(conn, queryText) {
             err.sqlectronError = 'CANCELED_BY_USER';
             throw err
           } else if (queryText && _.trim(queryText).toUpperCase().startsWith("DELIMITER")) {
-            const nuError = Error(`DELIMITER is only supported in the command line client, ${err.message}`)
-            nuError.helpLink = "https://docs.beekeeperstudio.io/troubleshooting/#mysql"
+            const nuError = new ClientError(`DELIMITER is only supported in the command line client, ${err.message}`)
+            nuError.helpLink = "https://docs.beekeeperstudio.io/pages/troubleshooting#mysql"
             throw nuError
           } else {
             throw err;
@@ -683,10 +691,12 @@ export async function getViewCreateScript(conn, view) {
 
 export async function getRoutineCreateScript(conn, routine, type) {
   const sql = `SHOW CREATE ${type.toUpperCase()} ${routine}`;
-
   const { data } = await driverExecuteQuery(conn, { query: sql });
-
-  return data.map((row) => row[`Create ${type}`]);
+  const result =  data.map((row) => {
+    const upperCaseIndexedRow = Object.keys(row).reduce((prev, current) => ({...prev, [current.toUpperCase()]: row[current]}), {});
+    return upperCaseIndexedRow[`CREATE ${type.toUpperCase()}`];
+  });
+  return result;
 }
 
 export function wrapIdentifier(value) {
@@ -1035,6 +1045,35 @@ export function filterDatabase(item, { database } = {}, databaseField) {
   return true;
 }
 
+export async function listCharsets(conn) {
+  const sql = 'show character set'
+  const { data } = await driverExecuteQuery(conn, { query: sql })
+  
+  return data.map((row) => row.Charset).sort()
+}
+
+export async function getDefaultCharset(conn) {
+  const sql = "SHOW VARIABLES LIKE 'character_set_server'"
+  const { data } = await driverExecuteQuery(conn, { query: sql })
+
+  return data[0].Value;
+}
+
+export async function listCollations(conn, charset) {
+  const sql = 'show collation where charset = ?'
+
+  const params = [
+    charset
+  ]
+
+  const { data } = await driverExecuteQuery(conn, { query: sql, params });
+  return data.map((row) => row.Collation).sort()
+}
+
+export async function createDatabase(conn, databaseName, charset, collation) {
+  const sql = `create database ${wrapIdentifier(databaseName)} character set ${wrapIdentifier(charset)} collate ${wrapIdentifier(collation)}`;
+  await driverExecuteQuery(conn, { query: sql })
+}
 
 export const testOnly = {
   parseFields

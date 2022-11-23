@@ -114,7 +114,8 @@ export interface DialectData {
     infoTriggers?: string
     tableTable?: string
     query?: string
-  }
+  },
+  charsets?: string[]|null
 }
 
 export const defaultConstraintActions = [

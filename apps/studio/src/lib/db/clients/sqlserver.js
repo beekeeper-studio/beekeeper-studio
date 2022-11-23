@@ -7,7 +7,17 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _, { defaults } from 'lodash';
 
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries, escapeLiteral } from './utils';
+import { buildDatabseFilter,
+  buildDeleteQueries,
+  buildInsertQuery,
+  buildInsertQueries,
+  buildSchemaFilter,
+  buildSelectQueriesFromUpdates,
+  buildUpdateQueries,
+  escapeString,
+  joinQueries,
+  escapeLiteral
+} from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
 import { SqlServerData } from '@shared/lib/dialects/sqlserver';
@@ -74,6 +84,21 @@ export default async function (server, database) {
     alterTableSql: (change) => alterTableSql(conn, change),
     alterTable: (change) => alterTable(conn, change),
 
+    // db creation
+    /*
+      SQL Server doesn't use character sets as these are part of the collation used (set at server or as you please)
+      https://stackoverflow.com/questions/7781103/sql-server-set-character-set-not-collation
+    */
+    listCharsets: () => [],
+    getDefaultCharset: () => null,
+    /*
+      From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-database-transact-sql?view=sql-server-ver16&tabs=sqlpool: 
+      Collation name can be either a Windows collation name or a SQL collation name. If not specified, the database is assigned the default collation of the instance of SQL Server
+
+      Having this, going to keep collations at the default because there are literally thousands of options
+    */
+    listCollations: (charset) => [],
+    createDatabase: (databaseName) => createDatabase(conn, databaseName),
 
     // indexes
     alterIndexSql: (adds, drops) => alterIndexSql(adds, drops),
@@ -766,7 +791,7 @@ export async function getTableCreateScript(conn, table) {
                  ELSE ''
           END ) + 'NULL' +
           CASE WHEN INFORMATION_SCHEMA.COLUMNS.column_default IS NOT NULL
-               THEN 'DEFAULT '+ INFORMATION_SCHEMA.COLUMNS.column_default
+               THEN ' DEFAULT '+ INFORMATION_SCHEMA.COLUMNS.column_default
                ELSE ''
           END + ',' + CHAR(13)+CHAR(10)
        FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = so.name
@@ -1109,6 +1134,10 @@ async function executeWithTransaction(conn, queryArgs) {
   }
 }
 
+export async function createDatabase(conn, databaseName) {
+  const sql = `create database ${wrapIdentifier(databaseName)}`;
+  await driverExecuteQuery(conn, { query: sql })
+}
 
 export const sqlServerTestOnly = {
   alterTableSql

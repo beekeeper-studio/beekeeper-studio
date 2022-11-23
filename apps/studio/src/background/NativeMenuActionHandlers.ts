@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import {AppEvent} from '../common/AppEvent'
-import { buildWindow, getActiveWindows } from './WindowBuilder'
+import { buildWindow, getActiveWindows, OpenOptions } from './WindowBuilder'
 import { app , shell } from 'electron'
 import platformInfo from '../common/platform_info'
 import path from 'path'
@@ -90,7 +90,17 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.toggleDevTools()
   }
 
-  newWindow = () => buildWindow(this.settings)
+  // first argument when coming from the ipcRenderer when opening a new window via new database doesn't return the same arguments as going through menu natively
+  // Having said that, it can accept openoptions too and do it's thing
+  newWindow = (options: Electron.MenuItem|OpenOptions = {}) => {
+    // typescript isn't happy that url doesn't exist on MenuItem, which shouldn't matter because we're checking to see if it exists, but TS gonna TS.
+    // @ts-ignore
+    if (options?.url) {
+      return buildWindow(this.settings, <OpenOptions>options)
+    }
+
+    return buildWindow(this.settings)
+  }
 
   newQuery = (_1: Electron.MenuItem, win: ElectronWindow) => {
     if (win) win.webContents.send(AppEvent.newTab)
