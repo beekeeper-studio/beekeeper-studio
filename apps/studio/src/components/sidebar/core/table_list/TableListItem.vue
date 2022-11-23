@@ -63,6 +63,13 @@ import TableIcon from '@/components/common/TableIcon.vue'
       }
     },
     watch: {
+      table() {
+        // the table was refreshed
+        if (this.showColumns) {
+          console.log('table changed!', this.table)
+          this.$emit('selected', this.table)
+        }
+      },
       forceExpand() {
         if (this.forceExpand) {
           this.showColumns = true
@@ -139,7 +146,11 @@ import TableIcon from '@/components/common/TableIcon.vue'
         // FIXME: Make this event more consistent with what is happening
         //        We don't handle 'selection' in TableList anymore
         if (this.showColumns)
+        {
           this.$emit('selected', this.table)
+        } else {
+          this.$emit('unselected', this.table)
+        }
       },
       openTable() {
         if (this.clickState.openClicks > 0) {
@@ -156,6 +167,7 @@ import TableIcon from '@/components/common/TableIcon.vue'
       },
       pin() {
         this.$store.dispatch('pins/add', this.table)
+        this.$store.dispatch('updateTableColumns', this.table)
       },
       unpin() {
         this.$store.dispatch('pins/remove', this.table)

@@ -409,17 +409,11 @@ export default Vue.extend({
         data: this.tableData,
         placeholder: "No Columns",
       })
-      this.tabulator.on('dataLoaded', () => console.log("tabulator - data loaded"))
     }
   },
   async mounted() {
     this.tabState.dirty = false
-    if (this.table.columns.length === 0) {
-      // If this tab was already opened when someone connected to the DB, there wouldn't be columns and you'd be sitting on an empty tab with no structure.
-      // well no more.
-      await this.$store.dispatch('updateTableColumns', this.table)
-    }
-    // const columnWidth = this.table.columns.length > 20 ? 125 : undefined
+    // table columns are updated by TabTableProperties on load. So no need to do it here.
     if (!this.active) this.forceRedraw = true
     this.initializeTabulator()
   },
