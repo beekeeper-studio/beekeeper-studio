@@ -37,6 +37,8 @@
         :allExpanded="allExpanded"
         :allCollapsed="allCollapsed"
         :connection="connection"
+        @selected="tableSelected"
+        @unselected="tableUnselected"
       />
     </div>
 
@@ -66,7 +68,7 @@
               <a @click.prevent="toggleExpandCollapse" :title="isExpanded ? 'Collapse All' : 'Expand All'">
                 <i class="material-icons">{{isExpanded ? 'unfold_less' : 'unfold_more'}}</i>
               </a>
-            
+
               <a @click.prevent="refreshTables" :title="'Refresh'">
                 <i class="material-icons">refresh</i>
               </a>
@@ -98,6 +100,7 @@
                     :pinned="pinnedEntities.includes(table)"
                     :container="$refs.entityContainer"
                     @selected="tableSelected"
+                    @unselected="tableUnselected"
                     :table="table"
                     :connection="connection"
                     :forceExpand="allExpanded"
@@ -144,6 +147,7 @@
 </template>
 
 <script>
+  import _ from 'lodash'
   import HiddenEntitiesModal from './HiddenEntitiesModal'
   import TableListItem from './table_list/TableListItem'
   import RoutineListItem from './table_list/RoutineListItem'
@@ -167,7 +171,7 @@
         activeItem: 'tables',
         split: null,
         sizes: [25,75],
-
+        expandedTables: []
       }
     },
     computed: {
@@ -253,8 +257,20 @@
         const key = [entity.schema, entity.name, entity.entityType].filter((v) => !!v)
         return key.join(".")
       },
-      tableSelected() {
-        // this.selectedTable = table
+      tableFromKey(key){
+        return this.tables.find((t) => this.entityKey(t) === key)
+      },
+      async tableSelected(table) {
+        // FIXME: Make this 'tableExpanded' or similar
+        //        This isn't anything to do with table selection
+        await this.$store.dispatch('updateTableColumns', table)
+        const k = this.entityKey(table)
+        if (this.expandedTables.includes(k))
+          return;
+        this.expandedTables = [...this.expandedTables, k]
+      },
+      async tableUnselected(table) {
+        this.expandedTables = _.without(this.expandedTables, this.entityKey(table))
       },
       clearFilter() {
         this.filterQuery = null
@@ -274,8 +290,26 @@
         }
       },
       refreshTables() {
-        this.$store.dispatch('updateTables')
         this.$store.dispatch('updateRoutines')
+        this.$store.dispatch('updateTables').then(() => {
+          // When we refresh sidebar tables we need to also refresh:
+          // 1. Any open tables
+          // 2. Any pinned tables
+
+          this.expandedTables.forEach((k) => {
+            const t = this.tableFromKey(k)
+            if (t) {
+              this.$store.dispatch('updateTableColumns', t)
+            }
+          })
+
+          this.orderedPins.forEach((p) => {
+            const t = this.tables.find((table) => p.matches(table))
+            if (t) {
+              this.$store.dispatch('updateTableColumns', t)
+            }
+          })
+        })
       },
       newTable() {
         this.$root.$emit(AppEvent.createTable)

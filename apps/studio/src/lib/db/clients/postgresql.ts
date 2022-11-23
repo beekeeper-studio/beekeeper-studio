@@ -143,7 +143,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
   };
 
   logger().debug('connected');
-  const defaultSchema = await getSchema(conn);
+  const defaultSchema: string = await getSchema(conn);
   logger().debug(`loaded schema ${defaultSchema}`)
   dataTypes = await getTypes(conn)
 
@@ -158,6 +158,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     supportedFeatures: () => features,
     versionString: () => getVersionString(version),
     wrapIdentifier,
+    defaultSchema: () => defaultSchema,
     disconnect: () => disconnect(conn),
     listTables: (_db: string, filter: FilterOptions | undefined) => listTables(conn, filter),
     listViews: (filter?: FilterOptions) => listViews(conn, filter),

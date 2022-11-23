@@ -26,6 +26,7 @@ export class ClientError extends Error {
 export interface DatabaseClient {
   supportedFeatures: () => SupportedFeatures,
   versionString: () => string,
+  defaultSchema?: () => string,
   disconnect: () => void,
   listTables: (db: string, filter?: FilterOptions) => Promise<TableOrView[]>,
   listViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
@@ -142,6 +143,7 @@ export class DBConnection {
   connectionType = this.server.config.client
   constructor (private server: IDbConnectionServer, private database: IDbConnectionDatabase) {}
   supportedFeatures = supportedFeatures.bind(null, this.server, this.database)
+  defaultSchema = bind.bind(null, 'defaultSchema', this.server, this.database)
   connect = connect.bind(null, this.server, this.database)
   disconnect = disconnect.bind(null, this.server, this.database)
   end = disconnect.bind(null, this.server, this.database)

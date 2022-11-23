@@ -10,7 +10,7 @@ import ConnectionProvider from '../lib/connection-provider'
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
 import { DBConnection } from '../lib/db/client'
-import { ExtendedTableColumn, Routine, TableColumn, TableOrView } from "../lib/db/models"
+import { Routine, TableOrView } from "../lib/db/models"
 import { IDbConnectionPublicServer } from '../lib/db/server'
 import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
@@ -45,6 +45,7 @@ export interface State {
   tables: TableOrView[],
   routines: Routine[],
   entityFilter: EntityFilter,
+  columnsLoading: string,
   tablesLoading: string,
   tablesInitialLoaded: boolean,
   connectionConfigs: UsedConnection[],
@@ -83,7 +84,8 @@ const store = new Vuex.Store<State>({
       showRoutines: true,
       showViews: true
     },
-    tablesLoading: "loading tables...",
+    tablesLoading: "Loading tables...",
+    columnsLoading: 'Loading columns...',
     tablesInitialLoaded: false,
     connectionConfigs: [],
     username: null,
@@ -96,6 +98,11 @@ const store = new Vuex.Store<State>({
   },
 
   getters: {
+    defaultSchema(state: State) {
+      return state.connection.defaultSchema ?
+        state.connection.defaultSchema() :
+        undefined;
+    },
     workspace(): IWorkspace {
       return LocalWorkspace
     },
@@ -210,7 +217,6 @@ const store = new Vuex.Store<State>({
       state.connection = payload.connection
       state.database = payload.config.defaultDatabase
     },
-
     clearConnection(state) {
       state.usedConfig = null
       state.connection = null
@@ -254,7 +260,6 @@ const store = new Vuex.Store<State>({
       if (!state.tablesInitialLoaded) state.tablesInitialLoaded = true
 
     },
-
     table(state, table: TableOrView) {
       const existingIdx = state.tables.findIndex((st) => tablesMatch(st, table))
       if (existingIdx >= 0) {
@@ -265,9 +270,11 @@ const store = new Vuex.Store<State>({
         state.tables = [...state.tables, table]
       }
     },
-
     routines(state, routines) {
       state.routines = Object.freeze(routines)
+    },
+    columnsLoading(state, value: string) {
+      state.columnsLoading = value
     },
     tablesLoading(state, value: string) {
       state.tablesLoading = value
@@ -359,7 +366,7 @@ const store = new Vuex.Store<State>({
           c.connectionId === config.id &&
           c.workspaceId === config.workspaceId
       })
-      console.log("Found used config", lastUsedConnection)
+      log.debug("Found used config", lastUsedConnection)
       if (!lastUsedConnection) {
         const usedConfig = new UsedConnection(config)
         log.info("logging used connection", usedConfig, config)
@@ -392,37 +399,46 @@ const store = new Vuex.Store<State>({
 
     async updateTableColumns(context, table: TableOrView) {
       log.debug('actions/updateTableColumns', table.name)
-      const connection = context.state.connection
-      const columns = (table.entityType === 'materialized-view' ?
-        await connection?.listMaterializedViewColumns(table.name, table.schema) :
-        await connection?.listTableColumns(table.name, table.schema)) || []
+      try {
+        // FIXME: We should record which table we are loading columns for
+        //        so that we know where to show this loading message. Not just
+        //        show it for all tables.
+        context.commit("columnsLoading", "Loading columns...")
+        const connection = context.state.connection
+        const columns = (table.entityType === 'materialized-view' ?
+          await connection?.listMaterializedViewColumns(table.name, table.schema) :
+          await connection?.listTableColumns(table.name, table.schema)) || []
 
-      // TODO (don't update columns if nothing has changed (use duck typing))
-      const updated = _.xorWith(table.columns, columns, _.isEqual)
-      console.log('Should I update table columns?', updated)
-      if (updated?.length) {
-        table.columns = columns
-        context.commit('table', table)
+        // TODO (don't update columns if nothing has changed (use duck typing))
+        const updated = _.xorWith(table.columns, columns, _.isEqual)
+        log.debug('Should I update table columns?', updated)
+        if (updated?.length) {
+          table.columns = columns
+          context.commit('table', table)
+        }
+      } finally {
+        context.commit("columnsLoading", null)
       }
     },
 
     async updateTables(context) {
-      // Ideally here we would run all queries in parallel
-      // however running through an SSH tunnel doesn't work
-      // it only supports one query at a time.
-
-      const schema = null
-
+      // FIXME: We should only load tables for the active/default schema
+      //        then we should load new tables when a schema is expanded in the sidebar
+      //        or for auto-complete in the editor.
+      //        Currently: Loads all tables, regardless of schema
       if (context.state.connection) {
         try {
+          const schema = null
           context.commit("tablesLoading", "Finding tables")
           const onlyTables = await context.state.connection.listTables({ schema })
           onlyTables.forEach((t) => {
             t.entityType = 'table'
+            t.columns = []
           })
           const views = await context.state.connection.listViews({ schema })
           views.forEach((v) => {
             v.entityType = 'view'
+            v.columns = []
           })
 
           const materialized = await context.state.connection.listMaterializedViews({ schema })
@@ -430,25 +446,7 @@ const store = new Vuex.Store<State>({
           const tables = onlyTables.concat(views).concat(materialized)
           context.commit("tablesLoading", `Loading ${tables.length} tables`)
 
-          const tableColumns = await context.state.connection.listTableColumns()
-          let viewColumns: TableColumn[] = []
-          for (let index = 0; index < materialized.length; index++) {
-            const view = materialized[index]
-            const columns = await context.state.connection.listMaterializedViewColumns(view.name, view.schema)
-            viewColumns = viewColumns.concat(columns)
-          }
-
-          type MaybeColumn = ExtendedTableColumn | TableColumn
-          const allColumns: MaybeColumn[]  = [...tableColumns, ...viewColumns]
-          log.info("ALL COLUMNS", allColumns)
-          tables.forEach((table) => {
-            table.columns = allColumns.filter(row => {
-              return row.tableName === table.name && (!table.schema || table.schema === row.schemaName)
-            })
-          })
-
           context.commit('tables', tables)
-
         } finally {
           context.commit("tablesLoading", null)
         }

@@ -22,7 +22,11 @@
           </div>
         </div>
         <div ref="tableSchema"></div>
-
+        <!-- Tabulator can be slow to open especially for some really large column counts. Let the user know. -->
+        <div v-if="this.table.columns.length" class="columns-loading-disclaimer">
+          <p>Columns loading.</p>
+          <p>This may take a few minutes depending on column count.</p>
+        </div>
       </div>
     </div>
 
@@ -57,6 +61,20 @@
     </status-bar>
   </div>
 </template>
+
+<style scoped>
+  .columns-loading-disclaimer {
+    width: 100%;
+    text-align: center;
+    font-weight: 700;
+    font-size: 20px;
+
+  }
+  .tabulator + .columns-loading-disclaimer {
+    display: none;
+  }
+</style>
+
 <script lang="ts">
 import { TabulatorFull, Tabulator } from 'tabulator-tables'
 type CellComponent = Tabulator.CellComponent
@@ -149,7 +167,6 @@ export default Vue.extend({
         defaultValue: 'varchar(255)',
         showListOnEmpty: true
       }
-
 
       const result = [
         {
@@ -378,6 +395,7 @@ export default Vue.extend({
     },
     initializeTabulator() {
       if (this.tabulator) this.tabulator.destroy()
+      // TODO: a loader would be so cool for tabulator for those gnarly column count tables that people might create...
       // @ts-ignore
       this.tabulator = new TabulatorFull(this.$refs.tableSchema, {
         columns: this.tableColumns,
@@ -391,12 +409,11 @@ export default Vue.extend({
         data: this.tableData,
         placeholder: "No Columns",
       })
-      this.tabulator.on('dataLoaded', () => console.log("tabulator - data loaded"))
     }
   },
-  mounted() {
+  async mounted() {
     this.tabState.dirty = false
-    // const columnWidth = this.table.columns.length > 20 ? 125 : undefined
+    // table columns are updated by TabTableProperties on load. So no need to do it here.
     if (!this.active) this.forceRedraw = true
     this.initializeTabulator()
   },

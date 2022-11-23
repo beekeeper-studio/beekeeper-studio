@@ -343,10 +343,8 @@
         t.tableName = table.name
         t.schemaName = table.schema
         t.title = table.name
-
         const existing = this.tabItems.find((tab) => tab.matches(t))
         if (existing) return this.$store.dispatch('tabs/setActive', existing)
-
         this.addTab(t)
       },
       openTable({ table, filter}) {
