@@ -366,7 +366,7 @@ const store = new Vuex.Store<State>({
           c.connectionId === config.id &&
           c.workspaceId === config.workspaceId
       })
-      console.log("Found used config", lastUsedConnection)
+      log.debug("Found used config", lastUsedConnection)
       if (!lastUsedConnection) {
         const usedConfig = new UsedConnection(config)
         log.info("logging used connection", usedConfig, config)
@@ -411,7 +411,7 @@ const store = new Vuex.Store<State>({
 
         // TODO (don't update columns if nothing has changed (use duck typing))
         const updated = _.xorWith(table.columns, columns, _.isEqual)
-        console.log('Should I update table columns?', updated)
+        log.debug('Should I update table columns?', updated)
         if (updated?.length) {
           table.columns = columns
           context.commit('table', table)
