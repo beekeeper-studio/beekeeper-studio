@@ -63,13 +63,6 @@ import TableIcon from '@/components/common/TableIcon.vue'
       }
     },
     watch: {
-      table() {
-        // the table was refreshed
-        if (this.showColumns) {
-          console.log('table changed!', this.table)
-          this.$emit('selected', this.table)
-        }
-      },
       forceExpand() {
         if (this.forceExpand) {
           this.showColumns = true
