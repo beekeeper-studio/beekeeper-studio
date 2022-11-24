@@ -150,7 +150,7 @@
         return _.capitalize(this.dbAction)
       },
       modalName() {
-        return `${this.menuAction}-${this.dbElement}`
+        return "dropTruncateModal"
       },
       tabItems: {
         get() {
@@ -325,7 +325,7 @@
         this.dbEntityType = dbActionParams.entityType
         this.dbDeleteElementParams = dbActionParams
 
-        this.$nextTick(() => this.$modal.show(this.modalName))
+        this.$modal.show(this.modalName)
       },
       async loadRoutineCreate(routine) {
         const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema)
