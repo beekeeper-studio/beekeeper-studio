@@ -6,8 +6,8 @@
       </div>
     </template>
     <template v-else >
-      <div class="table-filter">
-        <form @submit.prevent="triggerFilter" class="flex flex-middle">
+      <div class="table-filter" style="height: 200px; overflow: scroll">
+        <form @submit.prevent="triggerFilter" class="flex">
           <div class="filter-group" style="margin-left: 0.2rem">
             <button
               type="button"
@@ -55,41 +55,53 @@
                 <i class="material-icons">code</i>
               </button>
             </div>
-            <div>
-              <div class="select-wrap" >
-                <select name="Filter Field" class="form-control" v-model="filter.field">
-                  <option
-                    v-for="column in table.columns"
-                    v-bind:key="column.columnName"
-                    :value="column.columnName"
-                  >{{column.columnName}}</option>
-                </select>
+            <div style="display: flex; flex-flow: column; flex-grow: 1; gap: 8px">
+              <div v-for="(filterModel, index) in multipleFilters" :key="index" class="btn-wrap flex flex-middle expand" style="gap: 7px">
+                <div>
+                  <input type="checkbox" class="form-control" v-model="filterModel.shouldApply" style="margin: auto" />
+                </div>
+                <div>
+                  <div class="select-wrap" >
+                    <select name="Filter Field" class="form-control" v-model="filterModel.field">
+                      <option
+                        v-for="column in table.columns"
+                        v-bind:key="column.columnName"
+                        :value="column.columnName"
+                      >{{column.columnName}}</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <div class="select-wrap">
+                    <select name="Filter Type" class="form-control" v-model="filterModel.type">
+                      <option v-for="(v, k) in filterTypes" v-bind:key="k" :value="v">{{k}}</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="expand filter">
+                  <div class="filter-wrap">
+                    <input
+                      class="form-control"
+                      type="text"
+                      v-model="filterModel.value"
+                      :placeholder=builderPlaceholder
+                      ref="valueInput"
+                    />
+                    <button
+                      type="button"
+                      class="clear btn-link"
+                      @click.prevent="filterModel.value = ''"
+                    >
+                      <i class="material-icons">cancel</i>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-            <div>
-              <div class="select-wrap">
-                <select name="Filter Type" class="form-control" v-model="filter.type">
-                  <option v-for="(v, k) in filterTypes" v-bind:key="k" :value="v">{{k}}</option>
-                </select>
-              </div>
-            </div>
-            <div class="expand filter">
-              <div class="filter-wrap">
-                <input
-                  class="form-control"
-                  type="text"
-                  v-model="filter.value"
-                  :placeholder=builderPlaceholder
-                  ref="valueInput"
-                />
-                <button
-                  type="button"
-                  class="clear btn-link"
-                  @click.prevent="filter.value = ''"
-                >
-                  <i class="material-icons">cancel</i>
-                </button>
-              </div>
+            <div class="btn-wrap">
+              <button class="btn btn-primary btn-fab" type="button" title="Add new filter" @click="addFilter">
+                <i class="material-icons">add</i>
+              </button>
             </div>
             <div class="btn-wrap">
               <button class="btn btn-primary btn-fab" type="submit" title="Filter">
@@ -241,6 +253,14 @@ export default Vue.extend({
         type: "=",
         field: null
       },
+      multipleFilters:[
+        {
+          shouldApply: false,
+          value: null,
+          type: "=",
+          field: null
+        }
+      ],
       filterRaw: null,
       filterMode: FILTER_MODE_BUILDER,
       headerFilter: true,
@@ -686,20 +706,43 @@ export default Vue.extend({
     filterForTabulator() {
       if (this.filterMode === FILTER_MODE_RAW && this.filterRaw) {
         return this.filterRaw
-      } else if (
-        this.filterMode === FILTER_MODE_BUILDER &&
-        this.filter.type && this.filter.field && this.filter.value
-      ) {
-        if (this.filter.type === 'in') {
-          const vals = this.filter.value.split(/\s*,\s*/)
-          return [{
-            ...this.filter,
-            value: vals
-          }]
-        } else {
-          return [this.filter]
+      }
+      else if (this.filterMode === FILTER_MODE_BUILDER) {
+        if (this.multipleFilters.length) {
+          const shouldApplyFilters = this.multipleFilters.filter(filter => filter.shouldApply);
+
+          if(shouldApplyFilters?.length) {
+            let filtersArray = [];
+
+            for (let i = 0; i < shouldApplyFilters.length; i++) {
+              const { value, type, field } = shouldApplyFilters[i];
+
+              if(value && type && field) {
+                if(type === 'in') {
+                  const vals = value.split(/\s*,\s*/);
+
+                  filtersArray.push({
+                    field,
+                    type,
+                    vals
+                  });
+                }
+                else {
+                  filtersArray.push({
+                    field,
+                    type,
+                    value
+                  });
+                }
+              }
+            }
+
+            return filtersArray;
+          }
         }
-      } else {
+        return null;
+      }
+      else {
         return null
       }
     },
@@ -1282,8 +1325,8 @@ export default Vue.extend({
         !_.isEmpty(this.filter.value) &&
         _.isEmpty(this.filterRaw)
       ) {
-        const rawFilter = _.join([this.filter.field, this.filter.type, this.filter.value], ' ')
-        this.filterRaw = rawFilter
+        // const rawFilter = _.join([this.filter.field, this.filter.type, this.filter.value], ' ')
+        // this.filterRaw = rawFilter
       }
 
       this.filterMode = filterMode
@@ -1433,7 +1476,15 @@ export default Vue.extend({
       this.tabulator.restoreRedraw();
 
       this.tabulator.redraw(true)
-    }
+    },
+    addFilter () {
+      this.multipleFilters.push({
+        shouldApply: false,
+        value: null,
+        type: "=",
+        field: null
+      })
+    },
   }
 });
 </script>
