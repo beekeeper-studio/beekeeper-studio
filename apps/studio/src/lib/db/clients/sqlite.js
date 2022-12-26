@@ -14,7 +14,10 @@ import { ClientError } from '../client';
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
-const knex = knexlib({ client: 'better-sqlite3'})
+const knex = knexlib({ client: 'better-sqlite3',
+  // silence the "sqlite does not support inserting default values" warnings on every insert
+  useNullAsDefault: true,
+})
 
 const sqliteErrors = {
   CANCELED: 'SQLITE_INTERRUPT',
@@ -22,6 +25,9 @@ const sqliteErrors = {
 
 const PD = SqliteData
 
+// Fix (part 1 of 3) Issue #1399 - int64s not displaying properly
+// Fixes "TypeError: Do not know how to serialize a BigInt"
+BigInt.prototype.toJSON = function() { return this.toString() }
 
 export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
@@ -640,6 +646,13 @@ async function runWithConnection(conn, run) {
   let db
   try {
     db = new Database(conn.dbConfig.database)
+
+    // Fix (part 2 of 3) Issue #1399 - int64s not displaying properly
+    // Binds ALL better-sqlite3 integer columns as BigInts by default
+    // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/integer.md#getting-bigints-from-the-database
+    // (Part 3 of 3 is in shared/src/lib/dialects/index.ts)
+    db.defaultSafeIntegers(true);
+
     const results = await run(db)
     return results
   } finally {
