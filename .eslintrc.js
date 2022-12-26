@@ -1,7 +1,10 @@
 module.exports = {
   "root": true,
   "env": {
-    "node": true
+    "node": true,
+    // activate “es2020” globals to fix 'BigInt' is not defined
+    // https://futurestud.io/tutorials/eslint-how-to-fix-bigint-is-not-defined
+    "es2020": true,
   },
   "ignorePatterns": ["node_modules", "dist", "apps/**/tsconfig.json"],
   "extends": [
