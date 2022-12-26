@@ -424,21 +424,22 @@ export class DBTestUtil {
   async columnFilterTests() {
     let r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema)
     expect(r.result).toEqual([{
-      person_id: this.personId,
-      job_id: this.jobId,
+      // integer equality tests need additional logic for sqlite's BigInts (Issue #1399)
+      person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
+      job_id: this.dbType === 'sqlite' ? BigInt(this.jobId) : this.jobId,
       created_at: null,
       updated_at: null,
     }])
 
     r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id'])
     expect(r.result).toEqual([{
-      person_id: this.personId,
+      person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
     }])
 
     r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id', 'job_id'])
     expect(r.result).toEqual([{
-      person_id: this.personId,
-      job_id: this.jobId,
+      person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
+      job_id: this.dbType === 'sqlite' ? BigInt(this.jobId) : this.jobId,
     }])
   }
 
