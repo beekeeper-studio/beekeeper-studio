@@ -1,0 +1,34 @@
+/* taken from https://codemirror.net/5/addon/dialog/dialog.css */
+
+.CodeMirror-dialog {
+  position: absolute;
+  left: 0; right: 0;
+  background: inherit;
+  z-index: 15;
+  padding: .1em .8em;
+  overflow: hidden;
+  color: inherit;
+}
+
+.CodeMirror-dialog-top {
+  border-bottom: 1px solid #eee;
+  top: 0;
+}
+
+.CodeMirror-dialog-bottom {
+  border-top: 1px solid #eee;
+  bottom: 0;
+}
+
+.CodeMirror-dialog input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 20em !important; /* search.js puts an inline 10em on the search input for whatever reason */
+  color: inherit;
+}
+
+.CodeMirror-dialog button {
+  font-size: 70%;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+}
