@@ -643,10 +643,10 @@ async function runWithConnection(conn, run) {
   try {
     db = new Database(conn.dbConfig.database)
 
-    // Fix (part 2 of 3) Issue #1399 - int64s not displaying properly
+    // Fix (part 1 of 2) Issue #1399 - int64s not displaying properly
     // Binds ALL better-sqlite3 integer columns as BigInts by default
     // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/integer.md#getting-bigints-from-the-database
-    // (Part 3 of 3 is in shared/src/lib/dialects/index.ts)
+    // (Part 2 of 2 is in apps/studio/src/common/initializers/big_int_initializer.ts)
     db.defaultSafeIntegers(true);
 
     const results = await run(db)
