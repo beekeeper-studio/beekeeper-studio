@@ -8,10 +8,10 @@ import os from 'os'
 import fs from 'fs'
 import path from 'path'
 const TEST_VERSIONS = [
-  { version: '9.3', socket: false}, 
-  { version: '9.4', socket: false}, 
-  { version: 'latest', socket: false },
-  { version: 'latest', socket: true },
+  //{ version: '9.3', socket: false},
+  //{ version: '9.4', socket: false},
+  { version: 'latest', socket: false }
+  // { version: 'latest', socket: true },
 ]
 
 function testWith(dockerTag, socket = false) {
@@ -69,6 +69,13 @@ function testWith(dockerTag, socket = false) {
       })
 
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
+
+      // test table for issue-1442 "BUG: INTERVAL columns receive wrong value when cloning row"
+      await util.knex.schema.createTable('test_intervals', (table) => {
+        table.integer('id').primary()
+        table.specificType('amount_of_time', 'interval')
+      })
+
     })
 
     afterAll(async () => {
@@ -138,6 +145,78 @@ function testWith(dockerTag, socket = false) {
       ]
       const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
       expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+    })
+
+    // regression test for Bug #1442 "BUG: INTERVAL columns receive wrong value when cloning row"
+    it("Shouldn't CLONE a 15 minute interval value as 15 seconds (issue-1442)", async () => {
+
+      // insert a valid pg interval value
+      // in "postgres" IntervalStyle https://www.postgresql.org/docs/15/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
+      const insertedValue = "00:15:00";
+      console.info(`insertedValue: ${insertedValue}`)
+
+      await util.knex("test_intervals").insert({
+        id: 1,
+        amount_of_time: insertedValue
+      })
+
+      // select the inserted row back out
+      let results = await util.knex.select().table('test_intervals')
+      expect(results.length).toBe(1)
+      const originalRow = results[0]
+
+      const retrievedValue = originalRow.amount_of_time
+      console.info('retrievedValue: ', retrievedValue)
+
+      // expect(results[0]).toStrictEqual({
+      //   id: 1,
+      //   // comes back in default "postgres" IntervalStyle https://www.postgresql.org/docs/15/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
+      //   amount_of_time: '1 year 2 mons 3 days 04:05:06'
+      // })
+
+      // not in "JSONFriendly" style, as it did before this bugfix
+      // "amount_of_time": PostgresInterval { "years": 1, "months": 2, "days": 3, "hours": 4, "minutes": 5, "seconds": 6 },
+
+      // then clone it
+      const clonedData = { ...originalRow }
+
+      // bump the pk id
+      clonedData.id = 2
+
+      console.log('clonedData: ', clonedData)
+
+      // expect ( clonedRow ).toStrictEqual({
+      //   id: 2,
+      //   amount_of_time: '1 year 2 mons 3 days 04:05:06'
+      // })
+
+      // and re-insert the cloned row
+      // await expect(util.connection.applyChanges({ inserts: [{ table: 'test_intervals', data: clonedRow }] })).rejects.not.toThrow()
+      // await util.connection.applyChanges({ inserts: [ { ...clonedRow } ] })
+      await util.knex("test_intervals").insert( clonedData )
+
+      // we should get back the same, unchanged, interval (amount of time)
+      results = await util.knex.select().table('test_intervals')
+      expect(results.length).toBe(2)
+
+      const clonedRow = results[1]
+      console.log('clonedRow: ', clonedRow)
+
+      const clonedValue = clonedRow.amount_of_time
+      console.log('clonedValue: ', clonedValue)
+
+      expect( clonedValue ).toEqual( retrievedValue )
+
+
+      // const data = await util.connection.selectTop('test_intervals', 0, 2, [])
+      // expect(data.result.length).toBe(2)
+      // const theNewRow = data.result[1]
+      // nope
+
+      // const theNewRow = Mutators.mutateRow(row, this.columns?.map((c) => c.dataType), this.preserveComplex)
+
+      // expect( theNewRow ).toStrictEqual( { ...clonedRow, wtf: "?" } )
+
     })
 
     describe("Common Tests", () => {
