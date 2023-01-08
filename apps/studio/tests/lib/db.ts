@@ -10,6 +10,7 @@ import { getDialectData } from '../../../../shared/src/lib/dialects/'
 import _ from 'lodash'
 import { TableIndex } from '../../src/lib/db/models'
 export const dbtimeout = 120000
+import '../../src/common/initializers/big_int_initializer.ts'
 
 
 const KnexTypes: any = {

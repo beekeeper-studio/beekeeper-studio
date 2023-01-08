@@ -40,6 +40,7 @@ import BeekeeperPlugin from './plugins/BeekeeperPlugin'
 import 'codemirror/addon/merge/merge'
 import _ from 'lodash'
 import NotyPlugin from '@/plugins/NotyPlugin'
+import './common/initializers/big_int_initializer.ts'
 
 (async () => {
   try {

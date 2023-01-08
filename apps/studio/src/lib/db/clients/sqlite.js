@@ -25,10 +25,6 @@ const sqliteErrors = {
 
 const PD = SqliteData
 
-// Fix (part 1 of 3) Issue #1399 - int64s not displaying properly
-// Fixes "TypeError: Do not know how to serialize a BigInt"
-BigInt.prototype.toJSON = function() { return this.toString() }
-
 export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
   logger().debug('create driver client for sqlite3 with config %j', dbConfig);
