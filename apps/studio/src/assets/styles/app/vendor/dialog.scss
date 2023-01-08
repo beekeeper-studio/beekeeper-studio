@@ -1,5 +1,6 @@
 /* taken from https://codemirror.net/5/addon/dialog/dialog.css */
 @import "../variables";
+@import "../layout";
 
 .CodeMirror-dialog {
   position: absolute;
@@ -32,30 +33,7 @@
 }
 
 .CodeMirror-dialog button {
-  display: inline-flex;
-  align-items: center;
-  font-weight: 700;
-  outline: 0;
-  border: 0;
-  transition: background 0.15s ease-in-out,
-              color 0.15s ease-in-out;
-  justify-content: center;
-  text-align: center;
-  cursor: pointer;
-  &:hover, &:focus {
-    outline: 0;
-    border: 0;
-    box-shadow: none;
-  }
-  &:hover {
-    background: rgba($theme-base, 0.12);
-  }
-  color: $theme-base;
-  background: rgba($theme-base, 0.06);
-  font-size: 0.85rem;
-  padding: 0 .65rem;
-  min-width: 0;
-  height: 24px;
-  line-height: 24px;
-  border-radius: $btn-border-radius-small;
+  @extend .btn;
+  @extend .btn-flat;
+  @extend .btn-small
 }
