@@ -1,4 +1,5 @@
 /* taken from https://codemirror.net/5/addon/dialog/dialog.css */
+@import "../variables";
 
 .CodeMirror-dialog {
   position: absolute;
@@ -11,13 +12,15 @@
 }
 
 .CodeMirror-dialog-top {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid $theme-bg;
+  padding-bottom: 5px;
   top: 0;
 }
 
 .CodeMirror-dialog-bottom {
-  border-top: 1px solid #eee;
+  border-top: 1px solid $theme-bg;
   bottom: 0;
+  padding-top: 5px;
 }
 
 .CodeMirror-dialog input {
@@ -29,6 +32,30 @@
 }
 
 .CodeMirror-dialog button {
-  font-size: 70%;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  outline: 0;
+  border: 0;
+  transition: background 0.15s ease-in-out,
+              color 0.15s ease-in-out;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  &:hover, &:focus {
+    outline: 0;
+    border: 0;
+    box-shadow: none;
+  }
+  &:hover {
+    background: rgba($theme-base, 0.12);
+  }
+  color: $theme-base;
+  background: rgba($theme-base, 0.06);
+  font-size: 0.85rem;
+  padding: 0 .65rem;
+  min-width: 0;
+  height: 24px;
+  line-height: 24px;
+  border-radius: $btn-border-radius-small;
 }
