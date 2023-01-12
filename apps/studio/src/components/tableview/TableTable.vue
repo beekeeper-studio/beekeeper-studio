@@ -579,7 +579,7 @@ export default Vue.extend({
           editable: this.cellEditCheck,
           headerSort: true,
           editor: editorType,
-          tooltip: true,
+          tooltip: this.cellTooltip,
           contextMenu: this.cellContextMenu,
           headerContextMenu: this.headerContextMenu,
           variableHeight: true,

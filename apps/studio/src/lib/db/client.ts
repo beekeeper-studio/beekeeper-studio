@@ -40,6 +40,7 @@ export interface DatabaseClient {
   getTableKeys: (db: string, table: string, schema?: string) => void,
   query: (queryText: string) => CancelableQuery,
   executeQuery: (queryText: string) => void,
+
   // create database
   listCharsets: () => Promise<string[]>,
   getDefaultCharset: () => Promise<string>,
@@ -164,7 +165,8 @@ export class DBConnection {
   query = query.bind(null, this.server, this.database)
   executeQuery = executeQuery.bind(null, this.server, this.database)
   listDatabases = listDatabases.bind(null, this.server, this.database)
-  
+
+
   // db creation
   listCharsets = bindAsync.bind(null, 'listCharsets', this.server, this.database)
   getDefaultCharset = bindAsync.bind(null, 'getDefaultCharset', this.server, this.database)
