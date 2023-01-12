@@ -67,11 +67,11 @@ export const Mutators = {
    * @returns JsonFriendly
    */
   bitMutator(dialect: Dialect, value: any): JsonFriendly {
-    // value coming in is true/false (for sql) not 1/0, so for that export needs to be 0/1 for SQL export, maybe look in the sql export section and see what to do there instead 
-    // of futzing around in here too much? The goal is to keep the true/false as showing 
-  
+    // value coming in is true/false (for sql) not 1/0, so for that export needs to be 0/1 for SQL export, maybe look in the sql export section and see what to do there instead
+    // of futzing around in here too much? The goal is to keep the true/false as showing
+
     if (dialect && dialect === 'sqlserver') return value
-    
+
     const result = []
     for (let index = 0; index < value.length; index++) {
       result.push(value[index])

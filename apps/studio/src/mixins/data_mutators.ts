@@ -17,28 +17,46 @@ export function escapeHtml(text: string): string | null {
   return text.replace(/[&<>"']/g, function (m) { return htmlMap[m]; });
 }
 
+function emptyResult(value: any) {
+  const nullValue = '<span class="null-value">(NULL)</span>'
+  if (_.isNil(value)) {
+    return nullValue
+  }
+  if (_.isString(value) && _.isEmpty(value)) {
+    return '<span class="null-value">(EMPTY)</span>'
+  }
+
+  if (_.isArray(value) && value.length === 0) {
+    return nullValue
+  }
+
+  return null
+}
+
 export default {
 
   methods: {
+
+
+    niceString(value: any) {
+
+      let cellValue = value.toString();
+      if (_.isArray(value)) {
+        cellValue = value.map((v) => v.toString()).join(", ")
+      }
+      return cellValue
+    },
+
+    cellTooltip(_event, cell: Tabulator.CellComponent) {
+      const nullValue = emptyResult(cell.getValue())
+      return nullValue ? nullValue : escapeHtml(this.niceString(cell.getValue()))
+    },
     cellFormatter(cell: Tabulator.CellComponent) {
-
-      const nullValue = '<span class="null-value">(NULL)</span>'
-
-      if (_.isNil(cell.getValue())) {
+      const nullValue = emptyResult(cell.getValue())
+      if (nullValue) {
         return nullValue
       }
-      if (_.isString(cell.getValue()) && _.isEmpty(cell.getValue())) {
-        return '<span class="null-value">(EMPTY)</span>'
-      }
-
-      if (_.isArray(cell.getValue()) && cell.getValue().length === 0) {
-        return nullValue
-      }
-
-      let cellValue = cell.getValue().toString();
-      if (_.isArray(cell.getValue())) {
-        cellValue = cell.getValue().map((v) => v.toString()).join(", ")
-      }
+      let cellValue = this.niceString(cell.getValue())
       cellValue = cellValue.replace(/\n/g, ' ↩ ');
       cellValue = escapeHtml(cellValue);
       // removing the <pre> will break selection / copy paste, see ResultTable

@@ -11,6 +11,7 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "test:unit": "TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js",
+    "test:integration": "TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "lint": "vue-cli-service lint",
     "docs:build": "vuepress build docs",
     "docs:serve": "vuepress dev docs",
@@ -18,8 +19,7 @@
     "electron:serve": "vue-cli-service electron:serve --host localhost",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
-    "release:prs": "./build/get-prs.sh",
-    "test:integration": "TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js"
+    "release:prs": "./build/get-prs.sh"
   },
   "main": "background.js",
   "dependencies": {
@@ -66,7 +66,7 @@
     "split.js": "^1.5.11",
     "sql-formatter": "^6.1.1",
     "sql-query-identifier": "^2.2.0",
-    "ssh2": "beekeeper-studio/ssh2#d4da40f9da1985063ea9462a609f6b6c3b999375",
+    "ssh2": "beekeeper-studio/ssh2#12988d63f6c5022ac4eba3eca5218451f13cba15",
     "tabulator-tables": "~5.4.1",
     "typeface-roboto": "^0.0.75",
     "typeface-source-code-pro": "^1.1.3",
@@ -149,6 +149,7 @@
   "resolutions": {
     "watchpack": "1.6.1",
     "node-pre-gyp": "0.12.0",
-    "electron-builder": "22.10.5"
+    "electron-builder": "22.10.5",
+    "ssh2": "beekeeper-studio/ssh2#12988d63f6c5022ac4eba3eca5218451f13cba15"
   }
 }

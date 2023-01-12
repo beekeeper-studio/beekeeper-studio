@@ -5392,14 +5392,6 @@ cosmiconfig@^6.0.0:
     path-type "^4.0.0"
     yaml "^1.7.2"
 
-cpu-features@0.0.3:
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/cpu-features/-/cpu-features-0.0.3.tgz#2acee87f762d11d5197babb34629293007a09edd"
-  integrity sha512-p6C/uud4F4bDyCz9+BNU22KdV1AGxPK6L9rQG9x3x4SSzdMPyBPErP7Rxn8avT2ex1M2g5Rpjz5Us/ri/766Qg==
-  dependencies:
-    buildcheck "0.0.3"
-    nan "^2.15.0"
-
 cpu-features@~0.0.4:
   version "0.0.4"
   resolved "https://registry.yarnpkg.com/cpu-features/-/cpu-features-0.0.4.tgz#0023475bb4f4c525869c162e4108099e35bf19d8"
@@ -13750,14 +13742,13 @@ ssh2@^1.11.0:
     cpu-features "~0.0.4"
     nan "^2.16.0"
 
-ssh2@beekeeper-studio/ssh2#d4da40f9da1985063ea9462a609f6b6c3b999375:
+ssh2@beekeeper-studio/ssh2#12988d63f6c5022ac4eba3eca5218451f13cba15:
   version "1.8.0"
-  resolved "https://codeload.github.com/beekeeper-studio/ssh2/tar.gz/d4da40f9da1985063ea9462a609f6b6c3b999375"
+  resolved "https://codeload.github.com/beekeeper-studio/ssh2/tar.gz/12988d63f6c5022ac4eba3eca5218451f13cba15"
   dependencies:
     asn1 "^0.2.4"
     bcrypt-pbkdf "^1.0.2"
   optionalDependencies:
-    cpu-features "0.0.3"
     nan "^2.15.0"
 
 sshpk@^1.7.0:
