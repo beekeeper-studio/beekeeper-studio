@@ -58,7 +58,7 @@ function tableName(table: string, schema?: string): string{
 pg.types.setTypeParser(1082, 'text', (val) => val); // date
 pg.types.setTypeParser(1114, 'text', (val) => val); // timestamp without timezone
 pg.types.setTypeParser(1184, 'text', (val) => val); // timestamp
-// pg.types.setTypeParser(1186, 'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
+pg.types.setTypeParser(1186, 'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
 
 /**
  * Convert BYTEA type encoded to hex with '\x' prefix to BASE64 URL (without '+' and '=').
