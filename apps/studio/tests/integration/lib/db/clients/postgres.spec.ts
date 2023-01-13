@@ -8,10 +8,10 @@ import os from 'os'
 import fs from 'fs'
 import path from 'path'
 const TEST_VERSIONS = [
-  { version: '9.3', socket: false}, 
-  { version: '9.4', socket: false}, 
-  // { version: 'latest', socket: false },
-  // { version: 'latest', socket: true },
+  { version: '9.3', socket: false},
+  { version: '9.4', socket: false},
+  { version: 'latest', socket: false },
+  { version: 'latest', socket: true },
 ]
 
 function testWith(dockerTag, socket = false) {
@@ -69,6 +69,13 @@ function testWith(dockerTag, socket = false) {
       })
 
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
+
+      // test table for issue-1442 "BUG: INTERVAL columns receive wrong value when cloning row"
+      await util.knex.schema.createTable('test_intervals', (table) => {
+        table.integer('id').primary()
+        table.specificType('amount_of_time', 'interval')
+      })
+
     })
 
     afterAll(async () => {
@@ -138,6 +145,33 @@ function testWith(dockerTag, socket = false) {
       ]
       const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
       expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+    })
+
+    // regression test for Bug #1442 "BUG: INTERVAL columns receive wrong value when cloning row"
+    it("Should clone interval values in pg-intervalStyle format not json (issue-1442)", async () => {
+
+      // insert a valid pg interval value as a "postgres IntervalStyle" string
+      // https://www.postgresql.org/docs/15/datatype-datetime.html#DATATYPE-INTERVAL-INPUT
+      const insertedValue = "00:15:00";
+
+      const insertedData = {
+        id: 1,
+        amount_of_time: insertedValue
+      };
+      console.info('inserted data: ', insertedData)
+      await util.knex("test_intervals").insert(insertedData)
+
+      // select the inserted row back out
+      const results = await util.knex.select().table('test_intervals')
+      expect(results.length).toBe(1)
+      const retrievedData = results[0]
+      console.log('retrieved data: ', retrievedData)
+
+      // retrieved interval value should be the same interval (string) "00:15:00"
+      expect ( retrievedData ).toStrictEqual({
+        id: 1,
+        amount_of_time: insertedValue // should still be the string not an object
+      })
     })
 
     describe("Common Tests", () => {
