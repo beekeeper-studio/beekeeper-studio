@@ -26,6 +26,7 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded']),
     table() {
+      console.log("table changed")
       return this.tab.findTable(this.tables)
     },
   }

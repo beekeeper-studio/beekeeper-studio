@@ -10,7 +10,9 @@ import globals from '../../../common/globals';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import { MysqlCursor } from './mysql/MySqlCursor';
-import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries } from './utils';
+import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral } from './utils';
+import { MysqlData } from '@shared/lib/dialects/mysql'
+import { ClientError } from '../client';
 
 const log = rawLog.scope('mysql')
 const logger = () => log
@@ -53,9 +55,16 @@ export default async function (server, database) {
     applyChanges: (changes) => applyChanges(conn, changes),
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
+
+    // db creation
+    listCharsets: () => listCharsets(conn),
+    getDefaultCharset: () => getDefaultCharset(conn),
+    listCollations: (charset) => listCollations(conn, charset),
+    createDatabase: ( databaseName, charset, collation) => createDatabase(conn, databaseName, charset, collation),
+    
     // tabletable
     getTableLength: (table) => getTableLength(conn, table),
-    selectTop: (table, offset, limit, orderBy, filters) => selectTop(conn, table, offset, limit, orderBy, filters),
+    selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -76,8 +85,11 @@ export default async function (server, database) {
 
     // relations
     alterRelationSql: (payload) => alterRelationSql(payload),
-    alterRelation: (payload) => alterRelation(conn, payload)
+    alterRelation: (payload) => alterRelation(conn, payload),
 
+    // remove things
+    dropElement: (elementName, typeOfElement) => dropElement(conn, elementName, typeOfElement),
+    truncateElement: (elementName, typeOfElement) => truncateElement(conn, elementName, typeOfElement)
   };
 }
 
@@ -282,9 +294,9 @@ async function getTableLength(conn, table) {
 
 
 
-export async function selectTop(conn, table, offset, limit, orderBy, filters) {
+export async function selectTop(conn, table, offset, limit, orderBy, filters, selects) {
   const columns = await listTableColumns(conn, null, table)
-  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters, 'total', columns)
+  const queries = buildSelectTopQuery(table, offset, limit, orderBy, filters, 'total', columns, selects)
 
   const { query, params } = queries
 
@@ -484,8 +496,8 @@ export function query(conn, queryText) {
             err.sqlectronError = 'CANCELED_BY_USER';
             throw err
           } else if (queryText && _.trim(queryText).toUpperCase().startsWith("DELIMITER")) {
-            const nuError = Error(`DELIMITER is only supported in the command line client, ${err.message}`)
-            nuError.helpLink = "https://docs.beekeeperstudio.io/troubleshooting/#mysql"
+            const nuError = new ClientError(`DELIMITER is only supported in the command line client, ${err.message}`)
+            nuError.helpLink = "https://docs.beekeeperstudio.io/pages/troubleshooting#mysql"
             throw nuError
           } else {
             throw err;
@@ -679,10 +691,12 @@ export async function getViewCreateScript(conn, view) {
 
 export async function getRoutineCreateScript(conn, routine, type) {
   const sql = `SHOW CREATE ${type.toUpperCase()} ${routine}`;
-
   const { data } = await driverExecuteQuery(conn, { query: sql });
-
-  return data.map((row) => row[`Create ${type}`]);
+  const result =  data.map((row) => {
+    const upperCaseIndexedRow = Object.keys(row).reduce((prev, current) => ({...prev, [current.toUpperCase()]: row[current]}), {});
+    return upperCaseIndexedRow[`CREATE ${type.toUpperCase()}`];
+  });
+  return result;
 }
 
 export function wrapIdentifier(value) {
@@ -719,6 +733,23 @@ export async function truncateAllTables(conn) {
     `).join('');
 
     await driverExecuteQuery(connClient, { query: truncateAll });
+  });
+}
+
+export async function dropElement (conn, elementName, typeOfElement) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection }
+    const sql = `DROP ${MysqlData.wrapLiteral(typeOfElement)} ${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
+  });
+}
+export async function truncateElement (conn, elementName, typeOfElement) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection }
+    const sql = `TRUNCATE ${MysqlData.wrapLiteral(typeOfElement)} ${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
   });
 }
 
@@ -1014,6 +1045,35 @@ export function filterDatabase(item, { database } = {}, databaseField) {
   return true;
 }
 
+export async function listCharsets(conn) {
+  const sql = 'show character set'
+  const { data } = await driverExecuteQuery(conn, { query: sql })
+  
+  return data.map((row) => row.Charset).sort()
+}
+
+export async function getDefaultCharset(conn) {
+  const sql = "SHOW VARIABLES LIKE 'character_set_server'"
+  const { data } = await driverExecuteQuery(conn, { query: sql })
+
+  return data[0].Value;
+}
+
+export async function listCollations(conn, charset) {
+  const sql = 'show collation where charset = ?'
+
+  const params = [
+    charset
+  ]
+
+  const { data } = await driverExecuteQuery(conn, { query: sql, params });
+  return data.map((row) => row.Collation).sort()
+}
+
+export async function createDatabase(conn, databaseName, charset, collation) {
+  const sql = `create database ${wrapIdentifier(databaseName)} character set ${wrapIdentifier(charset)} collate ${wrapIdentifier(collation)}`;
+  await driverExecuteQuery(conn, { query: sql })
+}
 
 export const testOnly = {
   parseFields

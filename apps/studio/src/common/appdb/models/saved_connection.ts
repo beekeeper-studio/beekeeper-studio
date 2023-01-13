@@ -24,6 +24,16 @@ export const ConnectionTypes = [
   { name: 'Oracle (ultimate)', value: 'other'}
 ]
 
+export interface RedshiftOptions {
+  iamAuthenticationEnabled?: boolean
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  awsRegion?: string;
+  clusterIdentifier?: string;
+  databaseGroup?: string;
+  tokenDurationSeconds?: number;
+}
+
 export interface ConnectionOptions {
   cluster?: string
 }
@@ -143,6 +153,9 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'varchar', nullable: true})
   sshBastionHost: Nullable<string> = null
 
+  @Column({type: 'int', nullable: true})
+  sshKeepaliveInterval: Nullable<number> = 60
+
   @Column({type: 'boolean', nullable: false, default: false})
   ssl: boolean = false
 
@@ -162,6 +175,9 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({type: 'simple-json', nullable: false})
   options: ConnectionOptions = {}
+
+  @Column({type: 'simple-json', nullable: false})
+  redshiftOptions: RedshiftOptions = {}
 
   // this is only for SQL Server.
   @Column({type: 'boolean', nullable: false})
@@ -212,6 +228,11 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
     if (this._sshMode === 'keyfile' && !this.sshKeyfile) {
       this.sshKeyfile = resolveHomePathToAbsolute("~/.ssh/id_rsa")
+    }
+
+    if (!this.sshKeepaliveInterval || this.sshKeepaliveInterval < 0) {
+      // store null if zero, empty or negative
+      this.sshKeepaliveInterval = null
     }
   }
 

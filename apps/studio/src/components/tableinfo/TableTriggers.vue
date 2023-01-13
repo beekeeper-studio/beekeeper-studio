@@ -84,6 +84,9 @@ export default {
 
 
     })
+  },
+  beforeDestroy() {
+    if (this.tabulator) this.tabulator.destroy()
   }
 }
 </script>

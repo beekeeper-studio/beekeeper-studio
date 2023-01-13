@@ -1,6 +1,5 @@
 import tls from 'tls'
 import Vue from 'vue'
-import VueNoty from 'vuejs-noty'
 import VueHotkey from 'v-hotkey'
 import VTooltip from 'v-tooltip'
 import VModal from 'vue-js-modal'
@@ -18,8 +17,8 @@ import $ from 'jquery'
 
 import 'codemirror/mode/sql/sql'
 import 'codemirror/mode/diff/diff'
-import 'codemirror/addon/hint/show-hint.js'
-import 'codemirror/addon/hint/sql-hint.js'
+import './vendor/sql-hint'
+import './vendor/show-hint'
 
 import store from './store/index'
 import 'reflect-metadata'
@@ -40,6 +39,8 @@ import { AppEventMixin } from './common/AppEvent'
 import BeekeeperPlugin from './plugins/BeekeeperPlugin'
 import 'codemirror/addon/merge/merge'
 import _ from 'lodash'
+import NotyPlugin from '@/plugins/NotyPlugin'
+import './common/initializers/big_int_initializer.ts'
 
 (async () => {
   try {
@@ -122,7 +123,7 @@ import _ from 'lodash'
     Vue.use(BeekeeperPlugin)
     Vue.use(VueElectronPlugin)
     Vue.use(PortalVue)
-    Vue.use(VueNoty, {
+    Vue.use(NotyPlugin, {
       timeout: 2300,
       progressBar: true,
       layout: 'bottomRight',

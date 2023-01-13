@@ -21,9 +21,19 @@
           <input type="number" v-model.number="config.sshPort">
         </div>
       </div>
-      <div class="form-group">
-        <label for="bastionHost">Bastion Host (Jump Host)</label>
-        <input class="form-control" v-model="config.sshBastionHost" type="text" name="bastionHost">
+      <div class="row gutter">
+        <div class="col s8 form-group">
+          <label for="bastionHost">Bastion Host (Jump Host)</label>
+          <input class="form-control" v-model="config.sshBastionHost" type="text" name="bastionHost">
+        </div>
+        <div class="col s4 form-group">
+          <label for="sshKeepaliveInterval">
+            Keepalive Interval <i class="material-icons" style="padding-left: 0.25rem"
+            v-tooltip="'Ping the server after this many seconds when idle <br /> to prevent getting disconnected due to inactiviy <br/> (like<code> ServerAliveInterval 60 </code>in ssh/config)'"
+            >help_outlined</i>
+          </label>
+          <input type="number" v-model.number="config.sshKeepaliveInterval" name="sshKeepaliveInterval" placeholder="(in seconds)">
+        </div>
       </div>
       <div class="form-group">
         <label>SSH Authentication</label>
@@ -124,7 +134,7 @@
     },
     data() {
       return {
-        enableSshLink: "https://docs.beekeeperstudio.io/installation/#ssh-key-access-for-the-snap",
+        enableSshLink: "https://docs.beekeeperstudio.io/pages/linux#ssh-key-access-for-the-snap",
         sshModeOptions: [
           { label: "Key File", mode: 'keyfile' },
           { label: "Username & Password", mode: "userpass" },

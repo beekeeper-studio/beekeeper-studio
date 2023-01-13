@@ -15,6 +15,7 @@ export default {
       passphrase: config.sshKeyfilePassword,
       bastionHost: config.sshBastionHost,
       useAgent: config.sshMode == 'agent',
+      keepaliveInterval: config.sshKeepaliveInterval,
     } : null
 
     return {
@@ -34,7 +35,8 @@ export default {
       sslKeyFile: config.sslKeyFile,
       sslRejectUnauthorized: config.sslRejectUnauthorized,
       trustServerCertificate: config.trustServerCertificate,
-      options: config.options
+      options: config.options,
+      redshiftOptions: config.redshiftOptions
     }
   },
 

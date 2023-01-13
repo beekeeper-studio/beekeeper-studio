@@ -773,3 +773,51 @@ input[type=file] {
 .alert-success {
   color: lighten($brand-success, 5%);
 }
+
+// Dropdown
+// --------------------------
+.dropdown-search {
+  display: block;
+  font-size: 100%;
+  margin: 0;
+  width: 100%;
+  border: 0;
+  --vs-controls-color: #{$input-highlight};
+  --vs-border-color: #{$border-color};
+
+  --vs-dropdown-bg: #{$theme-bg};
+  --vs-dropdown-color: #{$text};
+  --vs-dropdown-option-color: #{$text};
+
+  --vs-selected-bg: #{$input-highlight};
+  --vs-selected-color: #{$text};
+
+  --vs-search-input-color: #{$text};
+
+  --vs-dropdown-option--active-bg: #{$input-highlight};
+  --vs-dropdown-option--active-color: #{$theme-base};
+
+  .vs__clear{
+    display: none;
+  }
+  .vs__dropdown-toggle{
+    border: unset;
+    padding: 0;
+    background: unset;
+  }
+  .vs__selected {
+    position: absolute;
+    top: 2px;
+    display: block;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .vs__actions {
+    padding: 0
+  }
+  input {
+    border: unset;
+  }
+}

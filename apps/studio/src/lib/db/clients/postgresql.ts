@@ -9,7 +9,8 @@ import _  from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { DatabaseClient, IDbConnectionServerConfig } from '../client'
+import { DatabaseClient, IDbConnectionServerConfig, DatabaseElement } from '../client'
+import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from '../authentication/amazon-redshift';
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
@@ -141,7 +142,7 @@ async function getTypes(conn: HasPool): Promise<any> {
 
 
 export default async function (server: any, database: any): Promise<DatabaseClient> {
-  const dbConfig = configDatabase(server, database);
+  const dbConfig = await configDatabase(server, database);
   logger().debug('create driver client for postgres with config %j', dbConfig);
 
   const conn: HasPool = {
@@ -149,7 +150,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
   };
 
   logger().debug('connected');
-  const defaultSchema = await getSchema(conn);
+  const defaultSchema: string = await getSchema(conn);
   logger().debug(`loaded schema ${defaultSchema}`)
   dataTypes = await getTypes(conn)
 
@@ -164,6 +165,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     supportedFeatures: () => features,
     versionString: () => getVersionString(version),
     wrapIdentifier,
+    defaultSchema: () => defaultSchema,
     disconnect: () => disconnect(conn),
     listTables: (_db: string, filter: FilterOptions | undefined) => listTables(conn, filter),
     listViews: (filter?: FilterOptions) => listViews(conn, filter),
@@ -183,7 +185,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     executeQuery: (queryText, _schema = defaultSchema) => executeQuery(conn, queryText),
     listDatabases: (filter?: DatabaseFilterOptions) => listDatabases(conn, filter),
     getTableLength: (table: string, schema: string) => getTableLength(conn, table, schema),
-    selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
+    selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema, selects: string[] = ['*']) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (database: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema: string = defaultSchema) => selectTopStream(conn, database, table, orderBy, filters, chunkSize, schema),
     getInsertQuery: (tableInsert: TableInsert): Promise<string> => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
@@ -192,6 +194,12 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getRoutineCreateScript: (routine, type, schema = defaultSchema) => getRoutineCreateScript(conn, routine, type, schema),
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
     getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
+
+    // db creation
+    listCharsets: async() => PD.charsets,
+    getDefaultCharset: async() => 'UTF8',
+    listCollations: async() => [],
+    createDatabase: (databaseName, charset) => createDatabase(conn, databaseName, charset),
 
     // alter tables
     alterTableSql: (change: AlterTableSpec) => alterTableSql(conn, change),
@@ -206,6 +214,8 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     alterRelation: (payload) => alterRelation(conn, payload),
 
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
+    dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string|null) => dropElement(conn, elementName, typeOfElement, schema),
+    truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema)
   };
 }
 
@@ -282,22 +292,24 @@ interface STQOptions {
   limit?: number,
   schema: string,
   version: VersionInfo
-  forceSlow?: boolean
+  forceSlow?: boolean,
+  selects?: string[],
 }
 
 interface STQResults {
   query: string,
   countQuery: string,
-  params: string[],
+  params: (string | string[])[],
 
 }
 
 function buildSelectTopQueries(options: STQOptions): STQResults {
   const filters = options.filters
   const orderBy = options.orderBy
+  const selects = options.selects ?? ['*']
   let orderByString = ""
   let filterString = ""
-  let params: string[] = []
+  let params: (string | string[])[] = []
 
   if (orderBy && orderBy.length > 0) {
     orderByString = "order by " + (orderBy.map((item) => {
@@ -312,15 +324,26 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   if (_.isString(filters)) {
     filterString = `WHERE ${filters}`
   } else if (filters && filters.length > 0) {
-    filterString = "WHERE " + filters.map((item, index) => {
-      return `${wrapIdentifier(item.field)} ${item.type} $${index + 1}`
+    let paramIdx = 1
+    filterString = "WHERE " + filters.map((item) => {
+      if (item.type === 'in' && _.isArray(item.value)) {
+        const values = item.value.map((_v, idx) => {
+          return `$${paramIdx + idx}`
+        })
+        paramIdx += values.length
+        return `${wrapIdentifier(item.field)} ${item.type} (${values.join(',')})`
+      }
+      const value = `$${paramIdx}`
+      paramIdx += 1
+      return `${wrapIdentifier(item.field)} ${item.type} ${value}`
     }).join(" AND ")
 
-    params = filters.map((item) => {
-      return item.value
+    params = filters.flatMap((item) => {
+      return _.isArray(item.value) ? item.value : [item.value]
     })
   }
 
+  const selectSQL = `SELECT ${selects.join(', ')}`
   const baseSQL = `
     FROM ${wrapIdentifier(options.schema)}.${wrapIdentifier(options.table)}
     ${filterString}
@@ -348,7 +371,7 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   }
 
   const query = `
-    SELECT * ${baseSQL}
+    ${selectSQL} ${baseSQL}
     ${orderByString}
     ${_.isNumber(options.limit) ? `LIMIT ${options.limit}` : ''}
     ${_.isNumber(options.offset) ? `OFFSET ${options.offset}` : ''}
@@ -390,13 +413,14 @@ async function selectTop(
   limit: number,
   orderBy: OrderBy[],
   filters: TableFilter[] | string,
-  schema = 'public'
+  schema = 'public',
+  selects = ['*'],
 ): Promise<TableResult> {
 
   const version = await getVersion(conn)
   version.isPostgres
   const qs = buildSelectTopQueries({
-    table, offset, limit, orderBy, filters, schema, version
+    table, offset, limit, orderBy, filters, schema, version, selects
   })
   const result = await driverExecuteSingle(conn, { query: qs.query, params: qs.params })
 
@@ -1183,7 +1207,8 @@ export async function listDatabases(conn: Conn, filter?: DatabaseFilterOptions) 
 
 export async function getInsertQuery(conn: HasPool, database: string, tableInsert: TableInsert): Promise<string> {
   const columns = await listTableColumns(conn, database, tableInsert.table, tableInsert.schema)
-  return buildInsertQuery(knex, tableInsert, columns)
+
+  return buildInsertQuery(knex, tableInsert, columns, _.toString)
 }
 
 export function getQuerySelectTop(_conn: Conn, table: string, limit: number, schema: string) {
@@ -1341,8 +1366,39 @@ export async function truncateAllTables(conn: Conn, schema: string) {
   });
 }
 
+export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `DROP ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
 
-function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
+    await driverExecuteSingle(connClient, { query: sql })
+  });
+}
+
+export async function createDatabase(conn, databaseName, charset) {
+  const {isPostgres, number: versionAsInteger } = await getVersion(conn)
+
+  let sql = `create database ${wrapIdentifier(databaseName)} encoding ${wrapIdentifier(charset)}`;
+
+  // postgres 9 seems to freak out if the charset isn't wrapped in single quotes and also requires the template https://www.postgresql.org/docs/9.3/sql-createdatabase.html
+  // later version don't seem to care
+  if (isPostgres && versionAsInteger < 100000) {
+    sql = `create database ${wrapIdentifier(databaseName)} encoding '${charset}' template template0`;
+  }
+
+  await driverExecuteQuery(conn, { query: sql })
+}
+
+export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
+
+    await driverExecuteSingle(connClient, { query: sql })
+  });
+}
+
+async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
 
   let optionsString = undefined
   if (server.config.client === 'cockroachdb') {
@@ -1352,10 +1408,47 @@ function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServe
     }
   }
 
+  // If a temporary user is used to connect to the database, we populate it below.
+  let tempUser: string;
+
+  // If the password for the database can expire, we populate passwordResolver with a callback
+  // that can be used to resolve the latest password.
+  let passwordResolver: () => Promise<string>;
+
+  // For Redshift Only -- IAM authentication and credential exchange
+  const redshiftOptions = server.config.redshiftOptions;
+  if (server.config.client === 'redshift' && redshiftOptions?.iamAuthenticationEnabled) {
+    const awsCreds: AWSCredentials = {
+      accessKeyId: redshiftOptions.accessKeyId,
+      secretAccessKey: redshiftOptions.secretAccessKey
+    };
+
+    const clusterConfig: ClusterCredentialConfiguration = {
+      awsRegion: redshiftOptions.awsRegion,
+      clusterIdentifier: redshiftOptions.clusterIdentifier,
+      dbName: database.database,
+      dbUser: server.config.user,
+      dbGroup: redshiftOptions.databaseGroup,
+      durationSeconds: server.config.options.tokenDurationSeconds
+    };
+
+    const credentialResolver = RedshiftCredentialResolver.getInstance();
+
+    // We need resolve credentials once to get the temporary database user, which does not change
+    // on each call to get credentials.
+    // This is usually something like "IAMA:<user>" or "IAMA:<user>:<group>".
+    tempUser = (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbUser;
+
+    // Set the password resolver to resolve the Redshift credentials and return the password.
+    passwordResolver = async() => {
+      return (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbPassword;
+    }
+  }
+
   const config: PoolConfig = {
     host: server.config.host,
     port: server.config.port || undefined,
-    password: server.config.password || undefined,
+    password: passwordResolver || server.config.password || undefined,
     database: database.database,
     max: 5, // max idle connections per time (30 secs)
     connectionTimeoutMillis: globals.psqlTimeout,
@@ -1365,7 +1458,9 @@ function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServe
     options: optionsString
   };
 
-  if (server.config.user) {
+  if (tempUser) {
+    config.user = tempUser
+  } else if (server.config.user) {
     config.user = server.config.user
   } else if (server.config.osUser) {
     config.user = server.config.osUser

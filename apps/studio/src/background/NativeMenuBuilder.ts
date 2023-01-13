@@ -27,8 +27,8 @@ export default class NativeMenuBuilder {
       this.electron.Menu.setApplicationMenu(this.menu)
     } else {
       this.electron.Menu.setApplicationMenu(null)
-      this.listenForClicks()
     }
+    this.listenForClicks()
   }
 
   listenForClicks() {

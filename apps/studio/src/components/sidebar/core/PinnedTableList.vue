@@ -30,9 +30,9 @@
           @contextmenu.prevent.stop="$bks.openMenu({item: p.entity, event: $event, options: routineMenuOptions})"
 
         />
-        
+
       </div>
-  
+
 
     </Draggable>
   </nav>
@@ -60,6 +60,6 @@ export default Vue.extend({
       }
     }
   }
-  
+
 })
 </script>

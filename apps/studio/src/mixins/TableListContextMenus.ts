@@ -10,12 +10,24 @@ export default {
           handler: this.routineMenuClick
         },
         {
+          name: "Hide",
+          slug: 'hide-entity',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.hideEntity, item)
+          }
+        },
+        {
+          type: 'divider',
+        },
+        {
           name: "SQL: Create",
           slug: 'sql-create',
           handler: this.routineMenuClick
-        }
+        },
+
+
       ],
- 
+
     }
   },
   computed: {
@@ -36,16 +48,6 @@ export default {
           }
         },
         {
-          type: 'divider'
-        },
-        {
-          name: "Copy Name",
-          slug: 'copy-name',
-          handler: ({ item }) => {
-            this.$copyText(item.name)
-          }
-        },
-        {
           name: "Export",
           slug: 'export',
           handler: ({ item }) => {
@@ -56,14 +58,71 @@ export default {
           type: 'divider'
         },
         {
+          name: "Copy Name",
+          slug: 'copy-name',
+          handler: ({ item }) => {
+            this.$copyText(item.name)
+          }
+        },
+        {
+          name: "Hide",
+          slug: 'hide-entity',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.hideEntity, item)
+          }
+        },
+
+        {
+          type: 'divider'
+        },
+        {
           name: "SQL: Create",
           slug: 'sql-create',
           handler: ({ item }) => {
             this.$root.$emit('loadTableCreate', item)
           }
         },
-
-
+        {
+          name: "Drop",
+          slug: 'sql-drop',
+          handler: ({ item }) => {
+            console.log("Drop?")
+            this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'drop' })
+          }
+        },
+        {
+          name: "Truncate",
+          slug: 'sql-truncate',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'truncate' })
+          }
+        },
+      ]
+    },
+    schemaMenuOptions() {
+      return [
+        {
+          name: "Hide",
+          slug: 'hide-schema',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.hideSchema, item.schema)
+          },
+        },
+        {
+          name: "Drop",
+          slug: 'sql-drop',
+          handler: ({ item }) => {
+            console.log("Drop?")
+            this.$root.$emit(AppEvent.dropDatabaseElement, {item, action: 'drop'})
+          }
+        },
+        {
+          name: "Truncate",
+          slug: 'sql-truncate',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.dropDatabaseElement, {item, action: 'truncate'})
+          }
+        },
       ]
     }
   },

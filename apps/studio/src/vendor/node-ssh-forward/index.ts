@@ -34,6 +34,7 @@ interface Options {
   agentSocket?: string,
   skipAutoPrivateKey?: boolean
   noReadline?: boolean
+  keepaliveInterval?: number
 }
 
 interface ForwardingOptions {
@@ -157,8 +158,19 @@ class SSHConnection {
         port: this.options.endPort,
         username: this.options.username,
         password: this.options.password,
-        privateKey: this.options.privateKey
+        privateKey: this.options.privateKey,
+        keepaliveInterval: this.options.keepaliveInterval
       }
+
+      if (this.options.keepaliveInterval) {
+        // this.options.keepaliveInterval (like ssh.config.keepaliveInterval) contains *seconds* because users
+        // enter the value, and we store and display it, in seconds, like users do in their ~/ssh/config files
+        this.debug('this.options.keepaliveInterval: ' + this.options.keepaliveInterval + ' seconds');
+        // but the ssh2 cient connect() expects it in MILLIseconds, so we convert it to milliseconds internally
+        options['keepaliveInterval'] = this.options.keepaliveInterval * 1000
+        this.debug('(localized) options.keepaliveInterval: ' + options.keepaliveInterval + 'milliseconds')
+      }
+
       if (this.options.agentForward) {
         options['agentForward'] = true
 

@@ -7,7 +7,17 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _, { defaults } from 'lodash';
 
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
+import { buildDatabseFilter,
+  buildDeleteQueries,
+  buildInsertQuery,
+  buildInsertQueries,
+  buildSchemaFilter,
+  buildSelectQueriesFromUpdates,
+  buildUpdateQueries,
+  escapeString,
+  joinQueries,
+  escapeLiteral
+} from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
 import { SqlServerData } from '@shared/lib/dialects/sqlserver';
@@ -41,6 +51,7 @@ export default async function (server, database) {
     supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true}),
     versionString: () => getVersionString(version),
     wrapIdentifier,
+    defaultSchema: () => 'dbo',
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),
     listViews: (filter) => listViews(conn, filter),
@@ -59,7 +70,7 @@ export default async function (server, database) {
     executeQuery: (queryText) => executeQuery(conn, queryText),
     listDatabases: (filter) => listDatabases(conn, filter),
     getTableLength: (table, schema) => getTableLength(conn, table, schema),
-    selectTop: (table, offset, limit, orderBy, filters, schema) => selectTop(conn, table, offset, limit, orderBy, filters, schema),
+    selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -73,6 +84,21 @@ export default async function (server, database) {
     alterTableSql: (change) => alterTableSql(conn, change),
     alterTable: (change) => alterTable(conn, change),
 
+    // db creation
+    /*
+      SQL Server doesn't use character sets as these are part of the collation used (set at server or as you please)
+      https://stackoverflow.com/questions/7781103/sql-server-set-character-set-not-collation
+    */
+    listCharsets: () => [],
+    getDefaultCharset: () => null,
+    /*
+      From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-database-transact-sql?view=sql-server-ver16&tabs=sqlpool: 
+      Collation name can be either a Windows collation name or a SQL collation name. If not specified, the database is assigned the default collation of the instance of SQL Server
+
+      Having this, going to keep collations at the default because there are literally thousands of options
+    */
+    listCollations: (charset) => [],
+    createDatabase: (databaseName) => createDatabase(conn, databaseName),
 
     // indexes
     alterIndexSql: (adds, drops) => alterIndexSql(adds, drops),
@@ -82,7 +108,9 @@ export default async function (server, database) {
     alterRelationSql: (payload) => alterRelationSql(payload),
     alterRelation: (payload) => alterRelation(conn, payload),
 
-
+    // remove things
+    dropElement: (elementName, typeOfElement, schema) => dropElement(conn, elementName, typeOfElement, schema),
+    truncateElement: (elementName, typeOfElement, schema) => truncateElement(conn, elementName, typeOfElement, schema)
   };
 }
 
@@ -112,13 +140,19 @@ function buildFilterString(filters) {
   let filterString = ""
   if (filters && filters.length > 0) {
     filterString = "WHERE " + filters.map((item) => {
-      return `${wrapIdentifier(item.field)} ${item.type} ${D.escapeString(item.value, true)}`
+
+      let wrappedValue = _.isArray(item.value) ?
+        `(${item.value.map((v) => D.escapeString(v, true)).join(',')})` :
+        D.escapeString(item.value, true)
+
+      return `${wrapIdentifier(item.field)} ${item.type} ${wrappedValue}`
     }).join(" AND ")
   }
   return filterString
 }
 
-function genSelectOld(table, offset, limit, orderBy, filters, schema) {
+function genSelectOld(table, offset, limit, orderBy, filters, schema, selects) {
+  const selectString = selects.map((s) => wrapIdentifier(s)).join(", ")
   const orderByString = genOrderByString(orderBy)
   const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
   const lastRow = offset + limit
@@ -127,7 +161,7 @@ function genSelectOld(table, offset, limit, orderBy, filters, schema) {
   const query = `
     WITH CTE AS
     (
-        SELECT *
+        SELECT ${selectString}
               , ROW_NUMBER() OVER (${orderByString}) as RowNumber
         FROM ${schemaString}${wrapIdentifier(table)}
         ${filterString}
@@ -174,12 +208,13 @@ function genCountQuery(table, filters, schema) {
   return countQuery
 }
 
-function genSelectNew(table, offset, limit, orderBy, filters, schema) {
+function genSelectNew(table, offset, limit, orderBy, filters, schema, selects) {
   const filterString = _.isString(filters) ? `WHERE ${filters}` : buildFilterString(filters)
 
   const orderByString = genOrderByString(orderBy)
   const schemaString = schema ? `${wrapIdentifier(schema)}.` : ''
 
+  const selectSQL = `SELECT ${selects.map((s) => wrapIdentifier(s)).join(", ")}`
   let baseSQL = `
     FROM ${schemaString}${wrapIdentifier(table)}
     ${filterString}
@@ -190,7 +225,7 @@ function genSelectNew(table, offset, limit, orderBy, filters, schema) {
 
 
   let query = `
-    SELECT * ${baseSQL}
+    ${selectSQL} ${baseSQL}
     ${orderByString}
     ${offsetString}
     `
@@ -205,12 +240,12 @@ async function getTableLength(conn, table, schema) {
   return totalRecords
 }
 
-export async function selectTop(conn, table, offset, limit, orderBy, filters, schema) {
+export async function selectTop(conn, table, offset, limit, orderBy, filters, schema, selects = ['*']) {
   log.debug("filters", filters)
   const version = await getVersion(conn);
   const query = version.supportOffsetFetch ?
-    genSelectNew(table, offset, limit, orderBy, filters, schema) :
-    genSelectOld(table, offset, limit, orderBy, filters, schema)
+    genSelectNew(table, offset, limit, orderBy, filters, schema, selects) :
+    genSelectOld(table, offset, limit, orderBy, filters, schema, selects)
   logger().debug(query)
 
   const result = await driverExecuteQuery(conn, { query })
@@ -221,10 +256,10 @@ export async function selectTop(conn, table, offset, limit, orderBy, filters, sc
   }
 }
 
-export async function selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema) {
+export async function selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema, selects = ['*']) {
   const version = await getVersion(conn);
   // no limit or offset, so don't need the old version of paging
-  const query = genSelectNew(table, null, null, orderBy, filters, schema);
+  const query = genSelectNew(table, null, null, orderBy, filters, schema, selects);
   const columns = await listTableColumns(conn, db, table);
   const rowCount = await getTableLength(conn, table, filters);
 
@@ -249,7 +284,7 @@ export function wrapValue(value) {
 
 async function getInsertQuery(conn, database, tableInsert) {
   const columns = await listTableColumns(conn, database, tableInsert.table, tableInsert.schema)
-  return buildInsertQuery(knex, tableInsert, columns)
+  return buildInsertQuery(knex, tableInsert, columns, _.toString)
 }
 
 export function getQuerySelectTop(client, table, limit) {
@@ -756,7 +791,7 @@ export async function getTableCreateScript(conn, table) {
                  ELSE ''
           END ) + 'NULL' +
           CASE WHEN INFORMATION_SCHEMA.COLUMNS.column_default IS NOT NULL
-               THEN 'DEFAULT '+ INFORMATION_SCHEMA.COLUMNS.column_default
+               THEN ' DEFAULT '+ INFORMATION_SCHEMA.COLUMNS.column_default
                ELSE ''
           END + ',' + CHAR(13)+CHAR(10)
        FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = so.name
@@ -823,6 +858,24 @@ export async function truncateAllTables(conn) {
     `).join('');
 
     await driverExecuteQuery(connClient, { query: truncateAll, multiple: true });
+  });
+}
+
+export async function dropElement (conn, elementName, typeOfElement, schema = 'dbo') {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
+  });
+}
+
+export async function truncateElement (conn, elementName, typeOfElement, schema = 'dbo') {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
   });
 }
 
@@ -906,8 +959,6 @@ WHERE
 
   `
   const { data } = await driverExecuteQuery(conn, { query: sql})
-  // eslint-disable-next-line no-debugger
-  // debugger
   return data.recordset.map((d) => {
     return {
       column: d.columnName,
@@ -1083,6 +1134,10 @@ async function executeWithTransaction(conn, queryArgs) {
   }
 }
 
+export async function createDatabase(conn, databaseName) {
+  const sql = `create database ${wrapIdentifier(databaseName)}`;
+  await driverExecuteQuery(conn, { query: sql })
+}
 
 export const sqlServerTestOnly = {
   alterTableSql

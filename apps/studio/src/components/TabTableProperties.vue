@@ -23,7 +23,7 @@
       <div v-if="loading" class="table-properties-loading">
         <x-progressbar></x-progressbar>
       </div>
-      <div class="table-properties-wrap" v-if="table">
+      <div class="table-properties-wrap" v-if="table && !loading">
         <component
           class="schema-builder"
           :is="pill.component"
@@ -45,12 +45,7 @@
                 Data <i class="material-icons">north_east</i>
               </x-button>
               <template v-if="properties">
-                <a class="statusbar-item hoverable" @click.prevent="fetchTotalRecords" :title="totalRecords === null ? 'Click to fetch total record count' : `Approximately ${totalRecords} Records`">
-                  <i class="material-icons">list_alt</i>
-                  <span v-if="fetchingTotalRecords">loading...</span>
-                  <span v-else-if="totalRecords === null">Unknown</span>
-                  <span v-else>~{{totalRecords.toLocaleString()}}</span>
-                </a>
+                <table-length :table="table" :connection="connection" />
                 <span class="statusbar-item" v-if="humanSize !== null" :title="`Table Size ${humanSize}`">
                   <i class="material-icons">aspect_ratio</i>
                   <span>{{humanSize}}</span>
@@ -100,6 +95,7 @@ import TableSchemaVue from './tableinfo/TableSchema.vue'
 import TableIndexesVue from './tableinfo/TableIndexes.vue'
 import TableRelationsVue from './tableinfo/TableRelations.vue'
 import TableTriggersVue from './tableinfo/TableTriggers.vue'
+import TableLength from '@/components/common/TableLength.vue'
 import { format as humanBytes } from 'bytes'
 import platformInfo from '../common/platform_info'
 import { AppEvent } from '@/common/AppEvent'
@@ -109,7 +105,7 @@ import rawLog from 'electron-log'
 const log = rawLog.scope('TabTableProperties')
 export default {
   props: ["connection", "tabId", "active", "tab", "table"],
-  components: { Statusbar },
+  components: { Statusbar, TableLength },
   data() {
     return {
       initialized: false,
@@ -118,8 +114,6 @@ export default {
       error: null,
       primaryKeys: [],
       properties: {},
-      totalRecords: null,
-      fetchingTotalRecords: false,
       dirtyPills: {},
       rawPills: [
         {
@@ -243,6 +237,7 @@ export default {
       this.error = null
       // this.properties = null
       try {
+        await this.$store.dispatch('updateTableColumns', this.table)
         this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
         if (this.table.entityType === 'table') {
           this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema)

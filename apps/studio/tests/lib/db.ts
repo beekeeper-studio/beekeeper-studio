@@ -10,6 +10,7 @@ import { getDialectData } from '../../../../shared/src/lib/dialects/'
 import _ from 'lodash'
 import { TableIndex } from '../../src/lib/db/models'
 export const dbtimeout = 120000
+import '../../src/common/initializers/big_int_initializer.ts'
 
 
 const KnexTypes: any = {
@@ -41,6 +42,9 @@ export class DBTestUtil {
 
   public preInitCmd: string | undefined
   public defaultSchema: string = undefined
+
+  private personId: number
+  private jobId: number
 
   get expectedTables() {
     return this.extraTables + 8
@@ -100,11 +104,108 @@ export class DBTestUtil {
     await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
     const people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0].id}).returning("id"), 'id')
     const jobs = this.maybeArrayToObject(await this.knex("jobs").insert({job_name: "Programmer"}).returning("id"), 'id')
-    await this.knex("people_jobs").insert({job_id: jobs[0].id, person_id: people[0].id })
+
+    this.jobId = jobs[0].id
+    this.personId = people[0].id
+    await this.knex("people_jobs").insert({job_id: this.jobId, person_id: this.personId })
   }
 
   testdb() {
 
+  }
+
+  async dropTableTests() {
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
+    await this.connection.dropElement('test_inserts', 'TABLE', this.defaultSchema)
+    const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+    expect(newTablesCount.length).toBeLessThan(tables.length)
+  }
+
+  async badDropTableTests() {
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
+    const expectedQueries = {
+      postgresql: 'test_inserts"drop table test_inserts"',
+      mysql: "test_inserts'drop table test_inserts'",
+      mariadb: "test_inserts'drop table test_inserts'",
+      sqlite: 'test_inserts"drop table test_inserts"',
+      sqlserver: 'test_inserts[drop table test_inserts]',
+      cockroachdb: 'test_inserts"drop table test_inserts"'
+    }
+    try {
+      await this.connection.dropElement(expectedQueries[this.dbType], 'TABLE', this.defaultSchema)
+      const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+      expect(newTablesCount.length).toEqual(tables.length)
+    } catch (err) {
+      const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+      expect(newTablesCount.length).toEqual(tables.length)
+    }
+  }
+
+  async createDatabaseTests() {
+    const dbs = await this.connection.listDatabases()
+    const collation = 'utf8_general_ci'
+    let charset = 'utf8'
+    if (this.dbType === 'postgresql') {
+      charset = 'UTF8'
+    }
+    await this.connection.createDatabase('new-db_2', charset, collation)
+
+    if (this.dbType === 'sqlite') {
+      // sqlite doesn't list the databases out because they're different files anyway so if it doesn't explode, we're happy as a clam
+      return expect.anything()
+    }
+    const newDBsCount = await this.connection.listDatabases()
+
+    expect(dbs.length).toBeLessThan(newDBsCount.length)
+  }
+
+  async badCreateDatabaseTests() {
+    // sqlserver seems impervious to bad database names or bad charsets or anything. 
+    if (this.dbType === 'sqlserver') {
+      return expect.anything()
+    }
+
+    const dbs = await this.connection.listDatabases()
+    try {
+      await this.connection.createDatabase('not a database name()probably', 'idfk', 'notimportant')
+      const newDBsCount = await this.connection.listDatabases()
+      expect(dbs.length).toEqual(newDBsCount.length)
+    } catch (err) {
+      const newDBsCount = await this.connection.listDatabases()
+      expect(dbs.length).toEqual(newDBsCount.length)
+    }
+  }
+
+  async truncateTableTests() {
+    await this.knex('group').insert([{select: 'something'}, {select: 'something'}])
+    const initialRowCount = await this.knex.select().from('group')
+
+    await this.connection.truncateElement('group', 'TABLE', this.defaultSchema)
+    const newRowCount = await this.knex.select().from('group')
+
+    expect(newRowCount.length).toBe(0)
+    expect(initialRowCount.length).toBeGreaterThan(newRowCount.length)
+  }
+
+  async badTruncateTableTests() {
+    await this.knex('group').insert([{select: 'something'}, {select: 'something'}])
+    const initialRowCount = await this.knex.select().from('group')
+    const expectedQueries = {
+      postgresql: 'group"drop table test_inserts"',
+      mysql: "group'drop table test_inserts'",
+      mariadb: "group'drop table test_inserts'",
+      sqlite: 'group"Delete from test_inserts; vacuum;"',
+      sqlserver: 'group[drop table test_inserts]',
+      cockroachdb: 'group"drop table test_inserts"'
+    }
+    try {
+      await this.connection.dropElement(expectedQueries[this.dbType], 'TABLE', this.defaultSchema)
+      const newRowCount = await this.knex.select().from('group')
+      expect(newRowCount.length).toEqual(initialRowCount.length)
+    } catch (err) {
+      const newRowCount = await this.knex.select().from('group')
+      expect(newRowCount.length).toEqual(initialRowCount.length)
+    }
   }
 
   async listTableTests() {
@@ -113,7 +214,6 @@ export class DBTestUtil {
     const columns = await this.connection.listTableColumns("people", this.defaultSchema)
     expect(columns.length).toBe(7)
   }
-
 
   async tableColumnsTests() {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)
@@ -299,10 +399,49 @@ export class DBTestUtil {
     let result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(['pears'])
 
+    // filter test - builder in clause
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: 'in', value: ["pears"] }], this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas)
+    expect(result).toMatchObject(['pears'])
+
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: 'in', value: ["apples"] }], this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas)
+    expect(result).toMatchObject([])
+
+    await this.knex("MixedCase").insert({bananas: "cheese"}).returning("id")
+
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: 'in', value: ["pears", 'cheese'] }], this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas)
+    expect(result).toMatchObject(['pears', 'cheese'])
+
+    await this.knex('MixedCase').where({bananas: 'cheese'}).delete()
+
     // filter test - raw
     r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], "bananas = 'pears'", this.defaultSchema)
     result = r.result.map((r: any) => r.bananas)
     expect(result).toMatchObject(['pears'])
+  }
+
+  async columnFilterTests() {
+    let r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema)
+    expect(r.result).toEqual([{
+      // integer equality tests need additional logic for sqlite's BigInts (Issue #1399)
+      person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
+      job_id: this.dbType === 'sqlite' ? BigInt(this.jobId) : this.jobId,
+      created_at: null,
+      updated_at: null,
+    }])
+
+    r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id'])
+    expect(r.result).toEqual([{
+      person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
+    }])
+
+    r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id', 'job_id'])
+    expect(r.result).toEqual([{
+      person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
+      job_id: this.dbType === 'sqlite' ? BigInt(this.jobId) : this.jobId,
+    }])
   }
 
   async triggerTests() {

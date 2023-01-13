@@ -6,7 +6,7 @@
     <div class="schema-header flex flex-middle">
       <h3 class="title">Columns</h3>
       <span class="expand"></span>
-      <button class="btn btn-primary btn-fab" @click.prevent="addRow" title="Add Field"><i class="material-icons">add</i></button>
+      <a class="btn btn-primary btn-fab" @click.prevent="addRow" title="Add Field"><i class="material-icons">add</i></a>
     </div>
     <div id="tabulator-goes-here" ref="tabulator"></div>
   </div>
@@ -36,7 +36,11 @@ export default Vue.extend({
     dialect: String as PropType<Dialect>,
     resetOnUpdate: Boolean as PropType<boolean>,
     disabled: Boolean as PropType<boolean>,
-    initialEmit: Boolean as PropType<boolean>
+    initialEmit: Boolean as PropType<boolean>,
+    tableHeight: {
+      type: String,
+      default: 'auto'
+    }
   },
   data(): SchemaBuilderData {
     return {
@@ -216,7 +220,7 @@ export default Vue.extend({
         headerSort: false
       },
       layout: 'fitColumns',
-      height: 'auto'
+      height: this.tableHeight
     })
     // this.getData(!!this.initialEmit)
     this.tabulator.on('tableBuilt', () => this.getData(!!this.initialEmit))

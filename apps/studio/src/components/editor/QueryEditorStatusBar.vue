@@ -30,7 +30,7 @@
       <span class="empty">No Data</span>
     </template>
     <div class="flex-right">
-      <x-button class="btn btn-flat btn-icon end" menu>
+      <x-button class="btn btn-flat btn-icon end" :disabled="results.length === 0" menu>
         Download <i class="material-icons">arrow_drop_down</i>
         <x-menu>
           <x-menuitem @click.prevent="download('csv')">
@@ -42,12 +42,18 @@
           <x-menuitem @click.prevent="download('json')">
             <x-label>JSON</x-label>
           </x-menuitem>
+          <x-menuitem @click.prevent="download('md')">
+            <x-label>Markdown</x-label>
+          </x-menuitem>
           <hr>
           <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboard">
             <x-label>Copy to Clipboard (TSV / Excel)</x-label>
           </x-menuitem>
           <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboardJson">
             <x-label>Copy to Clipboard (JSON)</x-label>
+          </x-menuitem>
+          <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboardMarkdown">
+            <x-label>Copy to Clipboard (Markdown)</x-label>
           </x-menuitem>
         </x-menu>
       </x-button>
@@ -143,7 +149,9 @@ export default {
       },
       // Attribution: https://stackoverflow.com/questions/10599933/convert-long-number-into-abbreviated-string-in-javascript-with-a-special-shortn/10601315
       shortNum(num, fixed) {
-        if (num === null) { return null; } // terminate early
+        // fix "TypeError: Cannot read property 'toPrecision' of undefined" (after INSERT and CREATE TABLE commands)
+        if (num === null || typeof num === 'undefined') { return null; } // terminate early
+
         if (num === 0) { return '0'; } // terminate early
         fixed = (!fixed || fixed < 0) ? 0 : fixed; // number of decimal places to show
         const b = (num).toPrecision(2).split("e"), // get power
@@ -165,8 +173,10 @@ export default {
       },
       copyToClipboardJson() {
         this.$emit('clipboardJson')
-      }
-
+      },
+      copyToClipboardMarkdown() {
+        this.$emit('clipboardMarkdown')
+      },
     }
 }
 </script>

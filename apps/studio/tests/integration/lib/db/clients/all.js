@@ -32,6 +32,9 @@ export function runCommonTests(getUtil) {
     await getUtil().getInsertQueryTests()
   })
 
+  test("column filter tests", async () => {
+    await getUtil().columnFilterTests()
+  })
 
   test("table filter tests", async () => {
     await getUtil().filterTests()
@@ -58,6 +61,43 @@ export function runCommonTests(getUtil) {
     })
   })
 
+  describe("Drop Table Tests", () => {
+    beforeEach(async() => {
+      await prepareTestTable(getUtil())
+    })
+
+    test("Should delete table", async () => {
+      await getUtil().dropTableTests()
+    })
+
+    test("Bad input shouldn't delete table", async () => {
+      await getUtil().badDropTableTests()
+    })
+  })
+
+  describe("Create Database Tests", () => {
+    test("Invalid database name", async () => {
+      await getUtil().badCreateDatabaseTests()
+    })
+    
+    test("Should create database", async () => {
+      await getUtil().createDatabaseTests()
+    })
+  })
+
+  describe("Truncate Table Tests", () => {
+    beforeEach(async() => {
+      await prepareTestTable(getUtil())
+    })
+
+    test("Should truncate table", async () => {
+      await getUtil().truncateTableTests()
+    })
+
+    test("Bad input shouldn't allow table truncate", async () => {
+      await getUtil().badTruncateTableTests()
+    })
+  })
 
   describe("Table Structure", () => {
     test("should fetch table properties", async() => {

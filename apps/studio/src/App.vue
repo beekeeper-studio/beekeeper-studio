@@ -11,6 +11,7 @@
       </template>
     </div>
     <portal-target name="menus" multiple />
+    <portal-target name="modals" multiple />
     <data-manager />
 </div>
 

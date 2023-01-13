@@ -4,7 +4,7 @@
       <img src="@/assets/logo.svg" />
       <AppMenu></AppMenu>
     </div>
-    <div class="titlebar-title noselect">Beekeeper Studio</div>
+    <div class="titlebar-title noselect">{{windowTitle}}</div>
     <div class="titlebar-actions" v-if="!$config.isMac">
       <template>
         <button class="btn btn-link" id="minimize" @click.prevent="minimizeWindow"><i class="material-icons">remove</i></button>
@@ -20,6 +20,7 @@
 
 <script>
 import {remote} from 'electron'
+import { mapState } from 'vuex'
 import AppMenu from './menu/NewAppMenu'
 export default {
   components: { AppMenu },
@@ -28,6 +29,9 @@ export default {
       window: remote.getCurrentWindow(),
       maximized: remote.getCurrentWindow().isMaximized()
     }
+  },
+  computed: {
+    ...mapState(['windowTitle']),
   },
   mounted() {
     this.window.on('maximize', () => {

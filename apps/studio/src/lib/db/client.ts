@@ -5,12 +5,28 @@ import createLogger from '../logger';
 import { SSHConnection } from '@/vendor/node-ssh-forward/index';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert } from './models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
+import { RedshiftOptions } from '@/common/appdb/models/saved_connection';
 
 const logger = createLogger('db');
+
+export enum DatabaseElement {
+  TABLE = 'TABLE',
+  VIEW = 'VIEW',
+  DATABASE = 'DATABASE'
+}
+
+export class ClientError extends Error {
+  helpLink = null
+  constructor(message: string, helpLink: string) {
+    super(message)
+    this.helpLink = helpLink
+  }
+}
 
 export interface DatabaseClient {
   supportedFeatures: () => SupportedFeatures,
   versionString: () => string,
+  defaultSchema?: () => string,
   disconnect: () => void,
   listTables: (db: string, filter?: FilterOptions) => Promise<TableOrView[]>,
   listViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
@@ -24,6 +40,13 @@ export interface DatabaseClient {
   getTableKeys: (db: string, table: string, schema?: string) => void,
   query: (queryText: string) => CancelableQuery,
   executeQuery: (queryText: string) => void,
+
+  // create database
+  listCharsets: () => Promise<string[]>,
+  getDefaultCharset: () => Promise<string>,
+  listCollations: (charset?: string) => Promise<string[]>,
+  createDatabase: (databaseName: string, charset: string, collation: string) => void,
+
   listDatabases: (filter?: DatabaseFilterOptions) => Promise<string[]>,
   applyChanges: (changes: TableChanges) => Promise<TableUpdateResult[]>,
   // alter table
@@ -48,11 +71,15 @@ export interface DatabaseClient {
   getPrimaryKeys: (db: string, table: string, schema?: string) => Promise<PrimaryKeyColumn[]>,
   // for tabletable
   getTableLength(table: string, schema?: string): Promise<number>
-  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string): Promise<TableResult>,
+  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string, selects?: string[]): Promise<TableResult>,
   selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema?: string ): Promise<StreamResults>,
 
   wrapIdentifier: (value: string) => string
   setTableDescription: (table: string, description: string, schema?: string) => Promise<string>
+
+  // delete stuff
+  dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => Promise<void>
+  truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => Promise<void>
 }
 
 export type IDbClients = keyof typeof clients
@@ -65,6 +92,7 @@ export interface IDbConnectionServerSSHConfig {
   privateKey: Nullable<string>
   passphrase: Nullable<string>
   bastionHost: Nullable<string>
+  keepaliveInterval: number
   useAgent: boolean
 }
 
@@ -88,6 +116,7 @@ export interface IDbConnectionServerConfig {
   localPort?: number,
   trustServerCertificate?: boolean
   options?: any
+  redshiftOptions?: RedshiftOptions
 }
 
 export interface IDbSshTunnel {
@@ -115,6 +144,7 @@ export class DBConnection {
   connectionType = this.server.config.client
   constructor (private server: IDbConnectionServer, private database: IDbConnectionDatabase) {}
   supportedFeatures = supportedFeatures.bind(null, this.server, this.database)
+  defaultSchema = bind.bind(null, 'defaultSchema', this.server, this.database)
   connect = connect.bind(null, this.server, this.database)
   disconnect = disconnect.bind(null, this.server, this.database)
   end = disconnect.bind(null, this.server, this.database)
@@ -135,6 +165,13 @@ export class DBConnection {
   query = query.bind(null, this.server, this.database)
   executeQuery = executeQuery.bind(null, this.server, this.database)
   listDatabases = listDatabases.bind(null, this.server, this.database)
+
+
+  // db creation
+  listCharsets = bindAsync.bind(null, 'listCharsets', this.server, this.database)
+  getDefaultCharset = bindAsync.bind(null, 'getDefaultCharset', this.server, this.database)
+  listCollations = bindAsync.bind(null, 'listCollations', this.server, this.database)
+  createDatabase = bindAsync.bind(null, 'createDatabase', this.server, this.database)
 
   // tabletable
   getTableLength = bindAsync.bind(null, 'getTableLength', this.server, this.database)
@@ -164,6 +201,11 @@ export class DBConnection {
   getRoutineCreateScript = getRoutineCreateScript.bind(null, this.server, this.database)
   truncateAllTables = truncateAllTables.bind(null, this.server, this.database)
   setTableDescription = setTableDescription.bind(null, this.server, this.database)
+
+  // delete stuff
+  dropElement = bindAsync.bind(null, 'dropElement', this.server, this.database)
+  truncateElement = bindAsync.bind(null, 'truncateElement', this.server, this.database)
+
   async currentDatabase() {
     return this.database.database
   }
@@ -247,11 +289,12 @@ function selectTop(
   limit: number,
   orderBy: OrderBy[],
   filters: TableFilter[] | string,
-  schema: string
+  schema: string,
+  selects: string[],
 ): Promise<TableResult> {
   checkIsConnected(server, database)
   if (!database.connection) throw "No database connection available, please reconnect"
-  return database.connection?.selectTop(table, offset, limit, orderBy, filters, schema);
+  return database.connection?.selectTop(table, offset, limit, orderBy, filters, schema, selects);
 }
 
 function selectTopStream(
@@ -381,7 +424,6 @@ function listDatabases(server: IDbConnectionServer, database: IDbConnectionDatab
   checkIsConnected(server , database);
   return database.connection?.listDatabases(filter);
 }
-
 
 async function getInsertQuery(server: IDbConnectionServer, database: IDbConnectionDatabase, tableInsert: TableInsert) {
   checkIsConnected(server , database);

@@ -32,7 +32,7 @@
   import { LocalQueryModule } from '@/store/modules/data/query/LocalQueryModule'
   import ProgressBar from './editor/ProgressBar.vue'
   export default {
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar},
+    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar },
     props: [ 'connection' ],
     data() {
       return {
@@ -77,6 +77,7 @@
     },
     mounted() {
       this.$store.dispatch('pins/loadPins')
+      this.$store.dispatch('hideEntities/load')
       this.registerHandlers(this.rootBindings)
       this.$nextTick(() => {
         this.initializing = false
@@ -84,6 +85,7 @@
     },
     beforeDestroy() {
       this.$store.dispatch('pins/unloadPins')
+      this.$store.dispatch('hideEntities/unload')
       this.$store.commit('unloadTables')
       this.$store.commit('tabs/set', [])
       this.unregisterHandlers(this.rootBindings)
