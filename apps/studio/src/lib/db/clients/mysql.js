@@ -38,6 +38,7 @@ export default async function (server, database) {
     supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true }),
     versionString: () => getVersionString(versionInfo),
     wrapIdentifier,
+    defaultSchema: () => '',
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
     listViews: () => listViews(conn),

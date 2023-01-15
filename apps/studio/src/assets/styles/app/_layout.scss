@@ -609,6 +609,9 @@ input[type=file] {
   &.table-builder {
     color: $brand-info;
   }
+  &.table-builder-icon {
+    color: $brand-info;
+  }
 }
 
 // Split.js Resizer
