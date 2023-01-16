@@ -407,16 +407,16 @@
         }
       },
       closeToRight(tab) {
-        const tabIndex = _.indexOf(this.tabItems, tab);
-        const activeTabIndex = _.indexOf(this.tabItems, this.activeTab);
+        const tabIndex = _.indexOf(this.tabItems, tab)
+        const activeTabIndex = _.indexOf(this.tabItems, this.activeTab)
 
-        const tabsToRight = this.tabItems.slice(tabIndex + 1);
-
-        this.$store.dispatch('tabs/remove', tabsToRight)
+        const tabsToRight = this.tabItems.slice(tabIndex + 1)
 
         if (this.activeTab && activeTabIndex > tabIndex) {
          this.setActiveTab(tab)
         }
+
+        this.$store.dispatch('tabs/remove', tabsToRight)
       },
       duplicate(other: OpenTab) {
         const tab = other.duplicate()
