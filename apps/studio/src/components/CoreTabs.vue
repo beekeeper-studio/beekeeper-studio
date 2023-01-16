@@ -410,9 +410,9 @@
         const tabIndex = _.indexOf(this.tabItems, tab);
         const activeTabIndex = _.indexOf(this.tabItems, this.activeTab);
 
-        const others = this.tabItems.slice(tabIndex + 1);
+        const tabsToRight = this.tabItems.slice(tabIndex + 1);
 
-        this.$store.dispatch('tabs/remove', others)
+        this.$store.dispatch('tabs/remove', tabsToRight)
 
         if (this.activeTab && activeTabIndex > tabIndex) {
          this.setActiveTab(tab)
