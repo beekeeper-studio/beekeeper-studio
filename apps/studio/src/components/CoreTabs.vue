@@ -407,14 +407,14 @@
         }
       },
       closeToRight(tab) {
-        const sliceIndex = _.indexOf(this.tabItems, tab);
+        const tabIndex = _.indexOf(this.tabItems, tab);
         const activeTabIndex = _.indexOf(this.tabItems, this.activeTab);
 
-        const others = this.tabItems.slice(sliceIndex + 1);
+        const others = this.tabItems.slice(tabIndex + 1);
 
         this.$store.dispatch('tabs/remove', others)
 
-        if (this.activeTab && activeTabIndex > sliceIndex) {
+        if (this.activeTab && activeTabIndex > tabIndex) {
          this.setActiveTab(tab)
         }
       },
