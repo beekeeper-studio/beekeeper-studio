@@ -413,7 +413,7 @@
         const tabsToRight = this.tabItems.slice(tabIndex + 1)
 
         if (this.activeTab && activeTabIndex > tabIndex) {
-         this.setActiveTab(tab)
+          this.setActiveTab(tab)
         }
 
         this.$store.dispatch('tabs/remove', tabsToRight)
