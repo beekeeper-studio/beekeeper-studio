@@ -409,7 +409,6 @@ const store = new Vuex.Store<State>({
           await connection?.listMaterializedViewColumns(table.name, table.schema) :
           await connection?.listTableColumns(table.name, table.schema)) || []
 
-        // TODO (don't update columns if nothing has changed (use duck typing))
         const updated = _.xorWith(table.columns, columns, _.isEqual)
         log.debug('Should I update table columns?', updated)
         if (updated?.length) {

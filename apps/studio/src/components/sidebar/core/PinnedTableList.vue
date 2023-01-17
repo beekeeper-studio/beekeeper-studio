@@ -5,16 +5,18 @@
         <div>Pinned <span class="badge">{{orderedPins.length}}</span></div>
       </div>
     </div>
-    <Draggable :options="{handle: '.pin-wrapper'}" v-model="orderedPins" tag="div" ref="pinContainer" class="list-body">
+    <Draggable :options="{handle: '.drag-handle'}" v-model="orderedPins" tag="div" ref="pinContainer" class="list-body">
       <div class="pin-wrapper" v-for="p in orderedPins" :key="p.id || p.entity.name">
         <table-list-item
           v-if="p.entityType !== 'routine'"
           :table="p.entity"
           :pinned="true"
           :connection="connection"
+          :draggable="true"
           :container="$refs.pinContainer"
           :forceExpand="allExpanded"
           :forceCollapse="allCollapsed"
+          @selected="refreshColumns"
           :noSelect="true"
           @contextmenu.prevent.stop="$bks.openMenu({item: p.entity, event: $event, options: tableMenuOptions})"
 
@@ -22,11 +24,12 @@
         <routine-list-item
           v-else
           :container="$refs.pinContainer"
+          :draggable="true"
           :routine="p.entity"
           :connection="connection"
           :pinned="true"
-          :forceExpand="forceExpand"
-          :forceCollapse="forceCollapse"
+          :forceExpand="allExpanded"
+          :forceCollapse="allCollapsed"
           @contextmenu.prevent.stop="$bks.openMenu({item: p.entity, event: $event, options: routineMenuOptions})"
 
         />
@@ -59,6 +62,11 @@ export default Vue.extend({
         this.$store.dispatch('pins/reorder', pins)
       }
     }
+  },
+  methods: {
+    refreshColumns(table) {
+      this.$store.dispatch('updateTableColumns', table)
+    },
   }
 
 })

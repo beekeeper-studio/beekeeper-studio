@@ -37,7 +37,6 @@
         :allExpanded="allExpanded"
         :allCollapsed="allCollapsed"
         :connection="connection"
-        @selected="tableSelected"
         @unselected="tableUnselected"
       />
     </div>
@@ -58,7 +57,7 @@
                 <span>{{totalHiddenEntities > 99 ? '99+' : totalHiddenEntities}}</span>
               </span>
               <div class="hi-tooltip">
-                <span>You can unhide entities to add it here. </span>
+                <span>Right click an entity to hide it. </span>
                 <a @click="$modal.show('hidden-entities')">View hidden</a><span>.</span>
               </div>
             </span>
@@ -289,26 +288,30 @@
         }
         }
       },
+      refreshExpandedColumns() {
+        this.expandedTables.forEach((k) => {
+          const t = this.tableFromKey(k)
+          if (t) {
+            this.$store.dispatch('updateTableColumns', t)
+          }
+        })
+      },
+      refreshPinnedColumns() {
+        this.orderedPins.forEach((p) => {
+          const t = this.tables.find((table) => p.matches(table))
+          if (t) {
+            this.$store.dispatch('updateTableColumns', t)
+          }
+        })
+      },
       refreshTables() {
         this.$store.dispatch('updateRoutines')
         this.$store.dispatch('updateTables').then(() => {
           // When we refresh sidebar tables we need to also refresh:
           // 1. Any open tables
           // 2. Any pinned tables
-
-          this.expandedTables.forEach((k) => {
-            const t = this.tableFromKey(k)
-            if (t) {
-              this.$store.dispatch('updateTableColumns', t)
-            }
-          })
-
-          this.orderedPins.forEach((p) => {
-            const t = this.tables.find((table) => p.matches(table))
-            if (t) {
-              this.$store.dispatch('updateTableColumns', t)
-            }
-          })
+          this.refreshExpandedColumns()
+          this.refreshPinnedColumns()
         })
       },
       newTable() {

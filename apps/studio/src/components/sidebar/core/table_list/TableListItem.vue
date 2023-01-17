@@ -1,11 +1,14 @@
 <template>
   <div class="list-item" @contextmenu="$emit('contextmenu', $event)">
     <a class="list-item-btn" role="button" v-bind:class="{'active': active, 'selected': selected,'open': showColumns }">
-      <span @contextmenu.prevent.stop="" class="btn-fab open-close" @mousedown.prevent="toggleColumns" >
+      <span @contextmenu.prevent.stop="" class="btn-fab open-close" @mousedown.prevent="toggleColumns">
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
       <span class="item-wrapper flex flex-middle expand" @dblclick.prevent="openTable" @mousedown="selectItem">
-        <table-icon :table="table" />
+        <div :title="draggable ? 'drag me!' : ''" class="table-item-wrapper drag-handle" :class="{ 'draggable': draggable }">
+          <table-icon :table="table" class="table-icon" />
+          <i class="material-icons item-icon dh" v-if="draggable">menu</i>
+        </div>
         <span class="table-name truncate" :title="table.name">{{table.name}}</span>
       </span>
       <span class="actions" v-bind:class="{'pinned': pinned}">
@@ -29,13 +32,27 @@
   </div>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped="true">
   .sub-item {
     .title {
       user-select: text;
       cursor: pointer;
     }
   }
+  .drag-handle.draggable {
+    .dh {
+      display: none;
+    }
+    &:hover {
+      .dh {
+        display: inline-block;
+      }
+      .table-icon {
+        display: none;
+      }
+    }
+  }
+
 </style>
 
 <script type="text/javascript">
@@ -46,7 +63,7 @@ import { AppEvent } from '../../../../common/AppEvent'
 import { uuidv4 } from '../../../../lib/uuid'
 import TableIcon from '@/components/common/TableIcon.vue'
 	export default {
-		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container", "pinned"],
+		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container", "pinned", "draggable"],
     components: { TableIcon },
     mounted() {
       this.showColumns = !!this.table.showColumns
