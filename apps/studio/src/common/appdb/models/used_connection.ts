@@ -2,6 +2,7 @@ import { IConnection, ISimpleConnection } from '@/common/interfaces/IConnection'
 import _ from 'lodash'
 import { Entity, Column} from "typeorm"
 import { DbConnectionBase } from './saved_connection'
+import type { IamAuthOptions } from './base'
 
 @Entity({ name: 'used_connection' })
 export class UsedConnection extends DbConnectionBase implements ISimpleConnection {
@@ -39,5 +40,8 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
 
   @Column({ type: 'int', nullable: false})
   workspaceId: number = -1
+
+  @Column({type: 'simple-json', nullable: false})
+  iamAuthOptions: IamAuthOptions = {}
 
 }

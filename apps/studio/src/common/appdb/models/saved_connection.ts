@@ -1,6 +1,7 @@
 
 import { Entity, Column, BeforeInsert, BeforeUpdate } from "typeorm"
 
+import type { IamAuthOptions } from './base'
 import {ApplicationEntity} from './application_entity'
 import { resolveHomePathToAbsolute } from '../../utils'
 import { loadEncryptionKey } from '../../encryption_key'
@@ -23,16 +24,6 @@ export const ConnectionTypes = [
   { name: 'CockroachDB', value: 'cockroachdb' },
   { name: 'Oracle (ultimate)', value: 'other'}
 ]
-
-export interface IamAuthOptions {
-  iamAuthenticationEnabled?: boolean
-  accessKeyId?: string;
-  secretAccessKey?: string;
-  awsRegion?: string;
-  clusterIdentifier?: string;
-  databaseGroup?: string;
-  tokenDurationSeconds?: number;
-}
 
 export interface ConnectionOptions {
   cluster?: string
