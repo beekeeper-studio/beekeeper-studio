@@ -9,8 +9,9 @@ import _  from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
+import AWS from 'aws-sdk';
 import { DatabaseClient, IDbConnectionServerConfig, DatabaseElement } from '../client'
-import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from '../authentication/amazon-redshift';
+import { AWSCredentials } from '../authentication/amazon-redshift';
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
@@ -1415,34 +1416,43 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
   // that can be used to resolve the latest password.
   let passwordResolver: () => Promise<string>;
 
-  // For Redshift Only -- IAM authentication and credential exchange
+  // For RDS Postgres Only -- IAM authentication and credential exchange
   const iamAuthOptions = server.config.iamAuthOptions;
-  if (server.config.client === 'redshift' && iamAuthOptions?.iamAuthenticationEnabled) {
+  if (server.config.client === 'postgresql' && iamAuthOptions?.iamAuthenticationEnabled) {
     const awsCreds: AWSCredentials = {
-      accessKeyId: iamAuthOptions.accessKeyId,
-      secretAccessKey: iamAuthOptions.secretAccessKey
+      accessKeyId: iamAuthOptions.accessKeyId ?? process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: iamAuthOptions.secretAccessKey ?? process.env.AWS_SECRET_ACCESS_KEY
     };
 
-    const clusterConfig: ClusterCredentialConfiguration = {
-      awsRegion: iamAuthOptions.awsRegion,
-      clusterIdentifier: iamAuthOptions.clusterIdentifier,
-      dbName: database.database,
-      dbUser: server.config.user,
-      dbGroup: iamAuthOptions.databaseGroup,
-      durationSeconds: server.config.options.tokenDurationSeconds
-    };
+    // const clusterConfig: ClusterCredentialConfiguration = {
+    //   awsRegion: iamAuthOptions.awsRegion,
+    //   clusterIdentifier: iamAuthOptions.clusterIdentifier,
+    //   dbName: database.database,
+    //   dbUser: server.config.user,
+    //   dbGroup: iamAuthOptions.databaseGroup,
+    //   durationSeconds: server.config.options.tokenDurationSeconds
+    // };
 
-    const credentialResolver = RedshiftCredentialResolver.getInstance();
+    // const credentialResolver = RedshiftCredentialResolver.getInstance();
+    const signer = new AWS.RDS.Signer({
+      credentials: awsCreds,
+      region: iamAuthOptions.awsRegion,
+      hostname: server.config.host,
+      port: server.config.port,
+      username: server.config.user
+    });
+    const token = signer.getAuthToken({})
+    console.log('TOKEN', token)
 
     // We need resolve credentials once to get the temporary database user, which does not change
     // on each call to get credentials.
     // This is usually something like "IAMA:<user>" or "IAMA:<user>:<group>".
-    tempUser = (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbUser;
+    // tempUser = (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbUser;
 
     // Set the password resolver to resolve the Redshift credentials and return the password.
-    passwordResolver = async() => {
-      return (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbPassword;
-    }
+    // passwordResolver = async() => {
+    //   return (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbPassword;
+    // }
   }
 
   const config: PoolConfig = {
