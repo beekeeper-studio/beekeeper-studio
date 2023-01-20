@@ -19,31 +19,31 @@
           <label for="AWS Region">
             AWS Region
           </label>
-          <input type="text" class="form-control" v-model="config.redshiftOptions.awsRegion"/>
+          <input type="text" class="form-control" v-model="config.iamAuthOptions.awsRegion"/>
         </div>
         <div class="form-group">
           <label for="Access Key ID">
             Access Key ID
           </label>
-          <input type="text" class="form-control" v-model="config.redshiftOptions.accessKeyId"/>
+          <input type="text" class="form-control" v-model="config.iamAuthOptions.accessKeyId"/>
         </div>
         <div class="form-group">
           <label for="Secret Access Key">
             Secret Access Key
           </label>
-          <input type="password" class="form-control" v-model="config.redshiftOptions.secretAccessKey"/>
+          <input type="password" class="form-control" v-model="config.iamAuthOptions.secretAccessKey"/>
         </div>
         <div class="form-group">
           <label for="Cluster Identifier">Cluster Identifier</label>
-          <input type="text" class="form-control" v-model="config.redshiftOptions.clusterIdentifier"/>
+          <input type="text" class="form-control" v-model="config.iamAuthOptions.clusterIdentifier"/>
         </div>
         <div class="form-group">
           <label for="Database Group">Database Group <span class="hint">(optional)</span></label>
-          <input type="text" class="form-control" v-model="config.redshiftOptions.databaseGroup"/>
+          <input type="text" class="form-control" v-model="config.iamAuthOptions.databaseGroup"/>
         </div>
         <div class="form-group">
           <label for="Token Duration">Token Duration <span class="hint">(optional, in seconds)</span></label>
-          <input type="text" class="form-control" v-model="config.redshiftOptions.tokenDurationSeconds"/>
+          <input type="text" class="form-control" v-model="config.iamAuthOptions.tokenDurationSeconds"/>
         </div>
       </div>
     </div>
@@ -60,12 +60,12 @@
     components: { CommonServerInputs, CommonAdvanced },
     data() {
       return {
-        iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled || false
+        iamAuthenticationEnabled: this.config.iamAuthOptions?.iamAuthenticationEnabled || false
       }
     },
     methods: {
       toggleIAMAuthentication() {
-        this.config.redshiftOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled = !this.iamAuthenticationEnabled
+        this.config.iamAuthOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled = !this.iamAuthenticationEnabled
       }
     },
     props: ['config'],

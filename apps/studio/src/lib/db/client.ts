@@ -5,7 +5,7 @@ import createLogger from '../logger';
 import { SSHConnection } from '@/vendor/node-ssh-forward/index';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert } from './models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
-import { RedshiftOptions } from '@/common/appdb/models/saved_connection';
+import { IamAuthOptions } from '@/common/appdb/models/saved_connection';
 
 const logger = createLogger('db');
 
@@ -116,7 +116,7 @@ export interface IDbConnectionServerConfig {
   localPort?: number,
   trustServerCertificate?: boolean
   options?: any
-  redshiftOptions?: RedshiftOptions
+  iamAuthOptions?: IamAuthOptions
 }
 
 export interface IDbSshTunnel {

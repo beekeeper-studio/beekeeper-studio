@@ -1416,19 +1416,19 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
   let passwordResolver: () => Promise<string>;
 
   // For Redshift Only -- IAM authentication and credential exchange
-  const redshiftOptions = server.config.redshiftOptions;
-  if (server.config.client === 'redshift' && redshiftOptions?.iamAuthenticationEnabled) {
+  const iamAuthOptions = server.config.iamAuthOptions;
+  if (server.config.client === 'redshift' && iamAuthOptions?.iamAuthenticationEnabled) {
     const awsCreds: AWSCredentials = {
-      accessKeyId: redshiftOptions.accessKeyId,
-      secretAccessKey: redshiftOptions.secretAccessKey
+      accessKeyId: iamAuthOptions.accessKeyId,
+      secretAccessKey: iamAuthOptions.secretAccessKey
     };
 
     const clusterConfig: ClusterCredentialConfiguration = {
-      awsRegion: redshiftOptions.awsRegion,
-      clusterIdentifier: redshiftOptions.clusterIdentifier,
+      awsRegion: iamAuthOptions.awsRegion,
+      clusterIdentifier: iamAuthOptions.clusterIdentifier,
       dbName: database.database,
       dbUser: server.config.user,
-      dbGroup: redshiftOptions.databaseGroup,
+      dbGroup: iamAuthOptions.databaseGroup,
       durationSeconds: server.config.options.tokenDurationSeconds
     };
 

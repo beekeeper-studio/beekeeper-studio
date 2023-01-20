@@ -24,7 +24,7 @@ export const ConnectionTypes = [
   { name: 'Oracle (ultimate)', value: 'other'}
 ]
 
-export interface RedshiftOptions {
+export interface IamAuthOptions {
   iamAuthenticationEnabled?: boolean
   accessKeyId?: string;
   secretAccessKey?: string;
@@ -177,7 +177,7 @@ export class DbConnectionBase extends ApplicationEntity {
   options: ConnectionOptions = {}
 
   @Column({type: 'simple-json', nullable: false})
-  redshiftOptions: RedshiftOptions = {}
+  iamAuthOptions: IamAuthOptions = {}
 
   // this is only for SQL Server.
   @Column({type: 'boolean', nullable: false})

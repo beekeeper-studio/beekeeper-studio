@@ -29,6 +29,7 @@ import keepaliveInterval from './20220709_add_keepalive_interval'
 import createHiddenEntities from './20220907_create_hidden_entities'
 import createHiddenSchemas from './20220908_create_hidden_schemas'
 import redshiftOptions from './20220817_add_redshift_options'
+import iamAuthOptions from './20230119_rename_redshift_options'
 
 const logger = createLogger('migrations')()
 
@@ -43,7 +44,7 @@ const realMigrations = [
   addSc, sslFiles, sslReject, pinned, addSort,
   createCreds, workspaceScoping, workspace2, addTabs, scWorkspace, systemTheme,
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
-  createHiddenEntities, createHiddenSchemas,
+  createHiddenEntities, createHiddenSchemas, iamAuthOptions
 ]
 
 // fixtures require the models
