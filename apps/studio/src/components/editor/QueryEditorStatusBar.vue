@@ -149,7 +149,9 @@ export default {
       },
       // Attribution: https://stackoverflow.com/questions/10599933/convert-long-number-into-abbreviated-string-in-javascript-with-a-special-shortn/10601315
       shortNum(num, fixed) {
-        if (num === null) { return null; } // terminate early
+        // fix "TypeError: Cannot read property 'toPrecision' of undefined" (after INSERT and CREATE TABLE commands)
+        if (num === null || typeof num === 'undefined') { return null; } // terminate early
+
         if (num === 0) { return '0'; } // terminate early
         fixed = (!fixed || fixed < 0) ? 0 : fixed; // number of decimal places to show
         const b = (num).toPrecision(2).split("e"), // get power

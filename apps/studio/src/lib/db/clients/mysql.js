@@ -38,6 +38,7 @@ export default async function (server, database) {
     supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true }),
     versionString: () => getVersionString(versionInfo),
     wrapIdentifier,
+    defaultSchema: () => null,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
     listViews: () => listViews(conn),
@@ -61,7 +62,7 @@ export default async function (server, database) {
     getDefaultCharset: () => getDefaultCharset(conn),
     listCollations: (charset) => listCollations(conn, charset),
     createDatabase: ( databaseName, charset, collation) => createDatabase(conn, databaseName, charset, collation),
-    
+
     // tabletable
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
@@ -1048,7 +1049,7 @@ export function filterDatabase(item, { database } = {}, databaseField) {
 export async function listCharsets(conn) {
   const sql = 'show character set'
   const { data } = await driverExecuteQuery(conn, { query: sql })
-  
+
   return data.map((row) => row.Charset).sort()
 }
 

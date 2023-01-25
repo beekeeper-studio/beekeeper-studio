@@ -93,5 +93,5 @@ export const PinModule: Module<State, RootState> = {
       }
     }
   }
-  
+
 }

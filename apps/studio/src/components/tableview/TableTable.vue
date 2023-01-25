@@ -56,7 +56,7 @@
               </button>
             </div>
             <div>
-              <div class="select-wrap" >
+              <div class="select-wrap">
                 <select name="Filter Field" class="form-control" v-model="filter.field">
                   <option
                     v-for="column in table.columns"
@@ -579,7 +579,7 @@ export default Vue.extend({
           editable: this.cellEditCheck,
           headerSort: true,
           editor: editorType,
-          tooltip: true,
+          tooltip: this.cellTooltip,
           contextMenu: this.cellContextMenu,
           headerContextMenu: this.headerContextMenu,
           variableHeight: true,
@@ -852,12 +852,12 @@ export default Vue.extend({
     },
     async initialize() {
       this.initialized = true
+      this.resetPendingChanges()
+      await this.$store.dispatch('updateTableColumns', this.table)
       this.filter.field = this.table?.columns[0]?.columnName
       if (this.initialFilter) {
         this.filter = _.clone(this.initialFilter)
       }
-      this.resetPendingChanges()
-      await this.$store.dispatch('updateTableColumns', this.table)
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
@@ -1335,6 +1335,7 @@ export default Vue.extend({
               this.table.schema,
               selects,
             );
+
             if (_.xor(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
               await this.$store.dispatch('updateTableColumns', this.table)

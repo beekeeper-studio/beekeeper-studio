@@ -1,3 +1,4 @@
+
 // Copyright (c) 2015 The SQLECTRON Team
 
 import { readFileSync } from 'fs';
@@ -48,11 +49,17 @@ function tableName(table: string, schema?: string): string{
 /**
  * Do not convert DATE types to JS date.
  * It ignores of applying a wrong timezone to the date.
+ *
+ * See also: https://github.com/brianc/node-postgres/issues/285
+ * (and note that the code refrenced in /lib/textParsers.js has been broken out into it own module
+ * so it now lives in https://github.com/brianc/node-pg-types/blob/master/lib/textParsers.js#L175)
+ *
  * TODO: do not convert as well these same types with array (types 1115, 1182, 1185)
  */
-pg.types.setTypeParser(1082, 'text', (val) => val); // date
-pg.types.setTypeParser(1114, 'text', (val) => val); // timestamp without timezone
-pg.types.setTypeParser(1184, 'text', (val) => val); // timestamp
+pg.types.setTypeParser(pg.types.builtins.DATE,        'text', (val) => val); // date
+pg.types.setTypeParser(pg.types.builtins.TIMESTAMP,   'text', (val) => val); // timestamp without timezone
+pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, 'text', (val) => val); // timestamp
+pg.types.setTypeParser(pg.types.builtins.INTERVAL,    'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
 
 /**
  * Convert BYTEA type encoded to hex with '\x' prefix to BASE64 URL (without '+' and '=').
@@ -1053,6 +1060,7 @@ async function insertRows(cli: any, rawInserts: TableInsert[]) {
     return listTableColumns(cli, null, insert.table, insert.schema)
   }))
 
+  // expect({ insertRows: "rawInserts"}).toEqual(rawInserts)
   const fixedInserts = rawInserts.map((insert, idx) => {
     const result = { ...insert}
     const columns = columnsList[idx]

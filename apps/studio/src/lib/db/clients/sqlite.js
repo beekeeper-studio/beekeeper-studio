@@ -14,14 +14,16 @@ import { ClientError } from '../client';
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
-const knex = knexlib({ client: 'better-sqlite3'})
+const knex = knexlib({ client: 'better-sqlite3',
+  // silence the "sqlite does not support inserting default values" warnings on every insert
+  useNullAsDefault: true,
+})
 
 const sqliteErrors = {
   CANCELED: 'SQLITE_INTERRUPT',
 };
 
 const PD = SqliteData
-
 
 export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
@@ -36,6 +38,7 @@ export default async function (server, database) {
     supportedFeatures: () => ({ customRoutines: false, comments: false, properties: true }),
     versionString: () => getVersionString(version),
     wrapIdentifier,
+    defaultSchema: () => null,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
     listViews: () => listViews(conn),
@@ -640,6 +643,13 @@ async function runWithConnection(conn, run) {
   let db
   try {
     db = new Database(conn.dbConfig.database)
+
+    // Fix (part 1 of 2) Issue #1399 - int64s not displaying properly
+    // Binds ALL better-sqlite3 integer columns as BigInts by default
+    // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/integer.md#getting-bigints-from-the-database
+    // (Part 2 of 2 is in apps/studio/src/common/initializers/big_int_initializer.ts)
+    db.defaultSafeIntegers(true);
+
     const results = await run(db)
     return results
   } finally {
@@ -671,7 +681,7 @@ function getVersionString(version) {
 
 export async function createDatabase(conn, databaseName) {
   // because this is a convenience for an otherwise ez-pz action, the location of the db file will be in the same location as the other .db files.
-  // If the desire for a "but I want this in another directory" is ever wanted, it can be included but for now this feels like it suits the current needs. 
+  // If the desire for a "but I want this in another directory" is ever wanted, it can be included but for now this feels like it suits the current needs.
   const fileLocation = conn.dbConfig.database.split('/')
   fileLocation.pop()
 

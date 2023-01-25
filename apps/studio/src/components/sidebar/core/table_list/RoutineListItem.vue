@@ -3,9 +3,13 @@
     <a class="list-item-btn" role="button" v-bind:class="{'active': selected,'open': showArgs }">
       <span class="btn-fab open-close" @mousedown.prevent="toggleArgs" @contextmenu.stop.prevent="" >
         <i v-if="displayParams.length > 0" class="dropdown-icon material-icons">keyboard_arrow_right</i>
-      </span>      
+      </span>
       <span class="item-wrapper flex flex-middle expand">
-        <i :title="title" :class="iconClass" class="item-icon material-icons">functions</i>
+        <div :title="draggable ? 'drag me!' : ''" class="table-item-wrapper drag-handle" :class="{ 'draggable': draggable }">
+          <i :title="title" :class="iconClass" class="item-icon entity-icon material-icons">functions</i>
+          <i class="material-icons item-icon dh" v-if="draggable">menu</i>
+        </div>
+
         <span class="table-name truncate" :title="routine.name">{{routine.name}}</span>
       </span>
       <span class="actions" v-bind:class="{'pinned': pinned}">
@@ -33,6 +37,19 @@
       cursor: pointer;
     }
   }
+  .drag-handle.draggable {
+    .dh {
+      display: none;
+    }
+    &:hover {
+      .dh {
+        display: inline-block;
+      }
+      .entity-icon {
+        display: none;
+      }
+    }
+  }
 </style>
 
 <script type="text/javascript">
@@ -40,7 +57,7 @@ import { RoutineTypeNames } from '@/lib/db/models'
 
   import { mapGetters } from 'vuex'
 	export default {
-		props: ["connection", "routine", "noSelect", "forceExpand", "forceCollapse", "pinned"],
+		props: ["connection", "routine", "noSelect", "forceExpand", "forceCollapse", "pinned", 'draggable'],
     mounted() {
     },
     data() {

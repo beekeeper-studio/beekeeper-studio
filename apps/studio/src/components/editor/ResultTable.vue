@@ -183,7 +183,7 @@
             mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
             formatter: this.cellFormatter,
             maxInitialWidth: globals.maxColumnWidth,
-            tooltip: true,
+            tooltip: this.cellTooltip,
             contextMenu: this.cellContextMenu,
             headerContextMenu: this.headerContextMenu,
             cellClick: this.cellClick.bind(this)
