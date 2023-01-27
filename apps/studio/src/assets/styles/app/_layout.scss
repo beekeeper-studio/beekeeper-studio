@@ -332,7 +332,7 @@ label {
   }
 }
 
-input, select, textarea {
+input, select, textarea, .bk-form-input {
   @extend .form-control;
   &:focus {
     border-color: $input-highlight;

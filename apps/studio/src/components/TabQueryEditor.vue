@@ -134,7 +134,6 @@
   import CodeMirror from 'codemirror'
   import 'codemirror/addon/comment/comment'
   import 'codemirror/addon/dialog/dialog'
-  import '../assets/styles/app/vendor/dialog.scss'
   import 'codemirror/addon/search/search'
   import 'codemirror/addon/search/jump-to-line'
   import 'codemirror/addon/scroll/annotatescrollbar'
@@ -519,6 +518,9 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
               "Ctrl-G": "findNext",
               "Ctrl-Shift-G": "findPrev",
               "Ctrl-H": "replace"
+            },
+            options: {
+              closeOnBlur: false
             },
             hint: CodeMirror.hint.sql,
             hintOptions: this.hintOptions,

@@ -1,6 +1,4 @@
 /* taken from https://codemirror.net/5/addon/dialog/dialog.css */
-@import "../variables";
-@import "../layout";
 
 .CodeMirror-dialog {
   position: absolute;
@@ -13,23 +11,20 @@
 }
 
 .CodeMirror-dialog-top {
-  border-bottom: 1px solid $theme-bg;
+  border-bottom: 1px solid rgba($theme-base, .33);
   padding-bottom: 5px;
   top: 0;
 }
 
 .CodeMirror-dialog-bottom {
-  border-top: 1px solid $theme-bg;
+  border-top: 1px solid rgba($theme-base, .33);
   bottom: 0;
   padding-top: 5px;
 }
 
 .CodeMirror-dialog input {
-  border: none;
-  outline: none;
-  background: transparent;
+  @extend .bk-form-input;
   width: 20em !important; /* search.js puts an inline 10em on the search input for whatever reason */
-  color: inherit;
 }
 
 .CodeMirror-dialog button {
