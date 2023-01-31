@@ -543,6 +543,7 @@ export async function listTableColumns(
   if (table && !schema) {
     throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`)
   }
+  const column_comment_clause = table ? "col_description(($1 || '.' || $2)::regclass, ordinal_position) as column_comment," : ""
 
   const sql = `
     SELECT
@@ -552,6 +553,7 @@ export async function listTableColumns(
       is_nullable,
       ordinal_position,
       column_default,
+      ${column_comment_clause}
       CASE
         WHEN character_maximum_length is not null  and udt_name != 'text'
           THEN CONCAT(udt_name, concat('(', concat(character_maximum_length::varchar(255), ')')))
@@ -574,6 +576,7 @@ export async function listTableColumns(
     nullable: row.is_nullable === 'YES',
     defaultValue: row.column_default,
     ordinalPosition: Number(row.ordinal_position),
+    comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
   }));
 }
 
