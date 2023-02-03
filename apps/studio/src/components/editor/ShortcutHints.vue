@@ -16,6 +16,11 @@
       <div class="shortcut" v-else><span>Ctrl</span><span>Shift</span><span>Enter</span></div>
     </div>
     <div class="shortcut-item">
+      <div>Run to File...</div>
+      <div class="shortcut" v-if="$config.isMac"><span>⌘</span><span>F</span></div>
+      <div class="shortcut" v-else><span>Ctrl</span><span>F</span></div>
+    </div>
+    <div class="shortcut-item">
       <div>New Window</div>
       <div class="shortcut" v-if="$config.isMac"><span>⌘</span><span>⇧</span><span>N</span></div>
       <div class="shortcut" v-else><span>Ctrl</span><span>Shift</span><span>N</span></div>

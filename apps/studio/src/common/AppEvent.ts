@@ -14,6 +14,7 @@ export enum AppEvent {
   openExternally = 'oe',
   toggleSidebar = 'ts',
   beginExport = 'be',
+  beginRunToFile = 'brtf',
   createTable = 'new_table',
   openTableProperties = 'loadTableProperties',
   loadTable = 'loadTable',

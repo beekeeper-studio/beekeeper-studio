@@ -28,6 +28,11 @@ interface ExportTriggerOptions {
   filters?: TableFilter[]
 }
 
+interface RunToFileTriggerOptions {
+  query?: string,
+  filters?: TableFilter[]
+}
+
 
 const ExportClassPicker = {
   'csv': CsvExporter,
@@ -37,6 +42,19 @@ const ExportClassPicker = {
 }
 
 interface StartExportOptions {
+  table: TableOrView,
+  filters: TableFilter[],
+  exporter: 'csv' | 'json' | 'sql' | 'jsonl'
+  filePath: string
+  options: {
+    chunkSize: number
+    deleteOnAbort: boolean
+    includeFilter: boolean
+  }
+  outputOptions: any
+}
+
+interface StartRunToFileOptions {
   table: TableOrView,
   filters: TableFilter[],
   exporter: 'csv' | 'json' | 'sql' | 'jsonl'
@@ -66,7 +84,8 @@ export default Vue.extend({
     ...mapGetters({ 'exports': 'exports/runningExports' }),
     rootBindings(): RootBinding[] {
       return [
-        { event: AppEvent.beginExport, handler: this.handleExportRequest }
+      { event: AppEvent.beginExport, handler: this.handleExportRequest },
+      { event: AppEvent.beginRunToFile, handler: this.handleRunToFileRequest }
       ]
     }
   },
@@ -94,7 +113,33 @@ export default Vue.extend({
           ]
         })
     },
+    async startRunToFile(options: StartRunToFileOptions) {
+        const exporter = new ExportClassPicker[options.exporter](
+          options.filePath,
+          this.connection,
+          options.table,
+          options.filters || [],
+          options.options,
+          options.outputOptions
+        )
+        this.addExport(exporter)
+        exporter.onProgress(this.notifyProgress.bind(this))
+        await exporter.runQueryToFile()
+        if (exporter.status !== ExportStatus.Completed) return;
+        const n = this.$noty.success(`Export of Query Results complete`, {
+          buttons: [
+            Noty.button('Show', "btn btn-primary", () => {
+              this.$native.files.showItemInFolder(options.filePath)
+              n.close()
+            })
+          ]
+        })
+    },
     handleExportRequest(options?: ExportTriggerOptions): void {
+      this.table = options?.table
+      this.filters = options?.filters
+    },
+    handleRunToFileRequest(options?: ExportTriggerOptions): void {
       this.table = options?.table
       this.filters = options?.filters
     },

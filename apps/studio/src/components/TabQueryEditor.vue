@@ -36,6 +36,10 @@
                   <x-label>Run Current</x-label>
                   <x-shortcut value="Control+Shift+Enter"></x-shortcut>
                 </x-menuitem>
+                <x-menuitem @click.prevent="submitCurrentQueryToFile">
+                  <x-label>Run to File...</x-label>
+                  <x-shortcut value="Control+F"></x-shortcut>
+                </x-menuitem>
               </x-menu>
             </x-button>
           </x-buttons>
@@ -698,6 +702,16 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       },
       escapeRegExp(string) {
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
+      },
+      async submitCurrentQueryToFile() {
+        if (this.currentlySelectedQuery) {
+          this.runningType = 'current'
+          // this.submitQuery(this.currentlySelectedQuery.text)
+          this.trigger(AppEvent.beginRunToFile, { query: this.currentlySelectedQuery.text })
+        } else {
+          this.results = []
+          this.error = 'No query to run to file'
+        }
       },
       async submitCurrentQuery() {
         if (this.currentlySelectedQuery) {
