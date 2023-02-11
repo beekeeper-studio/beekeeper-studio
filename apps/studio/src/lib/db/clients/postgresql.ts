@@ -10,8 +10,9 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 import AWS from 'aws-sdk';
+// import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
+import { fromIni } from '@aws-sdk/credential-providers';
 import { DatabaseClient, IDbConnectionServerConfig, DatabaseElement } from '../client'
-import { AWSCredentials } from '../authentication/amazon-redshift';
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
@@ -1417,32 +1418,23 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
   let passwordResolver: () => Promise<string>;
 
   // For RDS Postgres Only -- IAM authentication and credential exchange
-  const iamAuthOptions = server.config.iamAuthOptions;
-  if (server.config.client === 'postgresql' && iamAuthOptions?.iamAuthenticationEnabled) {
-    const awsCreds: AWSCredentials = {
-      accessKeyId: iamAuthOptions.accessKeyId ?? process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: iamAuthOptions.secretAccessKey ?? process.env.AWS_SECRET_ACCESS_KEY
-    };
+  // @ts-ignore
+  if (server.config.client === 'postgresql' && server.config?.redshiftOptions?.iamAuthenticationEnabled) {
 
-    // const clusterConfig: ClusterCredentialConfiguration = {
-    //   awsRegion: iamAuthOptions.awsRegion,
-    //   clusterIdentifier: iamAuthOptions.clusterIdentifier,
-    //   dbName: database.database,
-    //   dbUser: server.config.user,
-    //   dbGroup: iamAuthOptions.databaseGroup,
-    //   durationSeconds: server.config.options.tokenDurationSeconds
-    // };
+    // @ts-ignore
+    const credentialProvider = fromIni()
+    console.log('** CREDENTIALPROVIDER', credentialProvider)
 
-    // const credentialResolver = RedshiftCredentialResolver.getInstance();
     const signer = new AWS.RDS.Signer({
-      credentials: awsCreds,
-      region: iamAuthOptions.awsRegion,
+      // credentials,
+      region: 'eu-west-1',
       hostname: server.config.host,
       port: server.config.port,
       username: server.config.user
     });
+    console.log('** SIGNER', signer)
     const token = signer.getAuthToken({})
-    console.log('TOKEN', token)
+    console.log('** TOKEN', token)
 
     // We need resolve credentials once to get the temporary database user, which does not change
     // on each call to get credentials.
