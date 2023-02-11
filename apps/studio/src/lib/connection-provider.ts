@@ -36,7 +36,7 @@ export default {
       sslRejectUnauthorized: config.sslRejectUnauthorized,
       trustServerCertificate: config.trustServerCertificate,
       options: config.options,
-      iamAuthOptions: config.iamAuthOptions
+      redshiftOptions: config.redshiftOptions
     }
   },
 

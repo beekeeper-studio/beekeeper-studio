@@ -5,12 +5,3 @@ export interface QueryLike {
   status?: string
 }
 
-export interface IamAuthOptions {
-  iamAuthenticationEnabled?: boolean
-  accessKeyId?: string;
-  secretAccessKey?: string;
-  awsRegion?: string;
-  clusterIdentifier?: string;
-  databaseGroup?: string;
-  tokenDurationSeconds?: number;
-}
