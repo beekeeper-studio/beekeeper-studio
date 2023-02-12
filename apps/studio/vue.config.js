@@ -11,6 +11,7 @@ if (  process.env.PI_BUILD ) {
 
 const externals = ['better-sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2', 'ssh2']
 module.exports = {
+  transpileDependencies: ['@aws-sdk/*'],
   pluginOptions: {
     electronBuilder: {
       nodeModulesPath: ['./node_modules', '../../node_modules'],

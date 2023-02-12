@@ -25,6 +25,7 @@
   "dependencies": {
     "@aws-sdk/client-redshift": "^3.145.0",
     "@aws-sdk/credential-providers": "^3.267.0",
+    "@aws-sdk/rds-signer": "^3.267.0",
     "axios": "^0.21.4",
     "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
