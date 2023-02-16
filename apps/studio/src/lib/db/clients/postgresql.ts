@@ -26,7 +26,6 @@ import { AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from 
 import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 
-
 const base64 = require('base64-url');
 const PD = PostgresData
 function isConnection(x: any): x is HasConnection {
@@ -1449,11 +1448,16 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
     }
   }
 
+  // For RDS Postgres Only - IAM authentication
   if (server.config.client === 'postgresql' && server.config?.redshiftOptions?.iamAuthenticationEnabled) {
-    console.log('** CREDENTIALPROVIDER NODE CHAIN')
+    console.log('** CREDENTIALPROVIDER')
+
+    const nodeProviderChainCredentials = fromNodeProviderChain()
+
+    console.log('** CREDENTIALPROVIDER NODE CHAIN', nodeProviderChainCredentials)
 
     const signer = new Signer({
-      credentials: fromNodeProviderChain(),
+      credentials: nodeProviderChainCredentials,
       region: 'eu-west-1',
       hostname: server.config.host,
       port: server.config.port,
@@ -1463,15 +1467,16 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
     console.log('** SIGNER', signer)
     const token = await signer.getAuthToken()
     console.log('** TOKEN', token)
-    passwordResolver = async() => {
+    passwordResolver = async () => {
       return token
     }
   }
 
+  console.log('** PASSWORD RESOLVER', passwordResolver)
   const config: PoolConfig = {
     host: server.config.host,
-    port: server.config.port || undefined,
-    password: passwordResolver || server.config.password || undefined,
+    port: server.config?.port ?? 5432,
+    password: passwordResolver || server.config?.password,
     database: database.database,
     max: 5, // max idle connections per time (30 secs)
     connectionTimeoutMillis: globals.psqlTimeout,
