@@ -43,7 +43,10 @@ const copyNotification = new Noty({
 })
 
 export const ElectronPlugin: NativePlugin = {
-  dialog: remote.dialog,
+  dialog: {
+    showOpenDialogSync: (any) => remote.dialog.showOpenDialogSync(any),
+    showSaveDialogSync: (any) => remote.dialog.showSaveDialogSync(any)
+  },
   openLink(link: string) {
     remote.shell.openExternal(link);
   },
