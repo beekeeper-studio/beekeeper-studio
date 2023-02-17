@@ -12,6 +12,7 @@ const logger = createLogger('db');
 export enum DatabaseElement {
   TABLE = 'TABLE',
   VIEW = 'VIEW',
+  "MATERIALIZED-VIEW" = 'MATERIALIZED VIEW',
   DATABASE = 'DATABASE'
 }
 
