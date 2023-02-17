@@ -10,10 +10,11 @@ export default {
   mixins: [ExportInfo],
   props: ['exporter'],
   data() {
+    const exportName = this.exporter.table ? this.exporter.table.name : 'query';
     return {
       percentComplete: 0,
       notification: new Noty({
-        text: `Exporting '${this.exporter.table.name}'`,
+        text: `Exporting '${exportName}'`,
         layout: "bottomRight",
         timeout: false,
         closeWith: 'button',
@@ -27,7 +28,8 @@ export default {
   },
   computed: {
     notificationText() {
-      return `(${this.percentComplete}%) Exporting '${this.exporter.table.name}'`
+      const exportName = this.exporter.table ? this.exporter.table.name : 'query';
+      return `(${this.percentComplete}%) Exporting '${exportName}'`
     },
   },
   methods: {
@@ -37,7 +39,8 @@ export default {
       }
       this.exporter.abort();
       this.notification.close();
-      this.$noty.error(`${this.exporter.table.name} export aborted`);
+      const exportName = this.exporter.table ? this.exporter.table.name : 'query';
+      this.$noty.error(`${exportName} export aborted`);
     },
     updateProgress(progress) {
       this.percentComplete = progress.percentComplete

@@ -38,6 +38,7 @@ export abstract class Export {
     public filePath: string,
     public connection: DBConnection,
     public table: TableOrView,
+    public query: string,
     public filters: TableFilter[] | any[],
     public options: ExportOptions,
   ) {
@@ -109,7 +110,7 @@ export abstract class Export {
     const md5sum = crypto.createHash('md5')
 
     md5sum.update(Date.now().toString(), 'utf8')
-    md5sum.update(this.table.name)
+    md5sum.update(this.table ? this.table.name : 'query')
     md5sum.update(this.filePath)
 
     return md5sum.digest('hex')
@@ -121,22 +122,47 @@ export abstract class Export {
 
 
     this.fileHandle = await fs.promises.open(this.filePath, 'w+')
-    const results = await this.connection.selectTopStream(
-      this.table.name,
-      [],
-      this.filters,
-      this.options.chunkSize,
-      this.table.schema,
-    )
-    this.columns = results.columns
-    this.cursor = results.cursor
 
-    this.countTotal = results.totalRows
-    await this.cursor?.start()
-    const header = await this.getHeader(results.columns)
+    let results;
+    if (this.table) {
+      log.warn('about to export with selectTopStream()...')
+      results = await this.connection.selectTopStream(
+        this.table.name,
+        [],
+        this.filters,
+        this.options.chunkSize,
+        this.table.schema,
+      )
+      this.columns = results.columns
+      this.cursor = results.cursor
 
-    if (header) {
-      await this.fileHandle.write(header)
+      this.countTotal = results.totalRows
+      await this.cursor?.start()
+      const header = await this.getHeader(results.columns)
+
+      if (header) {
+        await this.fileHandle.write(header)
+      }
+    }
+    else {
+      // string sql query, not table
+      log.warn('about to export with queryStream()...')
+      results = await this.connection.queryStream(
+        this.query,
+        this.options.chunkSize,
+        // this.table.schema,
+      )
+      this.columns = results.columns
+      this.cursor = results.cursor
+
+      this.countTotal = results.totalRows
+      await this.cursor?.start()
+      const header = await this.getHeader(results.columns)
+
+      if (header) {
+        await this.fileHandle.write(header)
+      }
+
     }
   }
 

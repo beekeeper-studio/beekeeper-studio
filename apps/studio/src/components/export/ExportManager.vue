@@ -1,9 +1,10 @@
 <template>
   <div class="export-manager">
     <ExportModal
-      v-if="table"
+      v-if="table || query"
       :connection="connection"
       :table="table"
+      :query="query"
       :filters="filters"
       @export="startExport"
       @closed="handleDeadModal"
@@ -25,14 +26,9 @@ import { ExportProgress, ExportStatus } from '../../lib/export/models'
 
 interface ExportTriggerOptions {
   table?: TableOrView,
-  filters?: TableFilter[]
-}
-
-interface RunToFileTriggerOptions {
   query?: string,
   filters?: TableFilter[]
 }
-
 
 const ExportClassPicker = {
   'csv': CsvExporter,
@@ -43,6 +39,7 @@ const ExportClassPicker = {
 
 interface StartExportOptions {
   table: TableOrView,
+  query?: string,
   filters: TableFilter[],
   exporter: 'csv' | 'json' | 'sql' | 'jsonl'
   filePath: string
@@ -53,20 +50,6 @@ interface StartExportOptions {
   }
   outputOptions: any
 }
-
-interface StartRunToFileOptions {
-  table: TableOrView,
-  filters: TableFilter[],
-  exporter: 'csv' | 'json' | 'sql' | 'jsonl'
-  filePath: string
-  options: {
-    chunkSize: number
-    deleteOnAbort: boolean
-    includeFilter: boolean
-  }
-  outputOptions: any
-}
-
 
 export default Vue.extend({
   components: { ExportModal, ExportNotification },
@@ -77,6 +60,7 @@ export default Vue.extend({
     return {
       // these are like 'pending Export'
       table: (undefined as TableOrView | undefined),
+      query: '',
       filters: (undefined as TableFilter[] | undefined),
     }
   },
@@ -84,8 +68,7 @@ export default Vue.extend({
     ...mapGetters({ 'exports': 'exports/runningExports' }),
     rootBindings(): RootBinding[] {
       return [
-      { event: AppEvent.beginExport, handler: this.handleExportRequest },
-      { event: AppEvent.beginRunToFile, handler: this.handleRunToFileRequest }
+        { event: AppEvent.beginExport, handler: this.handleExportRequest },
       ]
     }
   },
@@ -96,6 +79,7 @@ export default Vue.extend({
           options.filePath,
           this.connection,
           options.table,
+          options.query,
           options.filters || [],
           options.options,
           options.outputOptions
@@ -104,29 +88,8 @@ export default Vue.extend({
         exporter.onProgress(this.notifyProgress.bind(this))
         await exporter.exportToFile()
         if (exporter.status !== ExportStatus.Completed) return;
-        const n = this.$noty.success(`Export of ${options.table.name} complete`, {
-          buttons: [
-            Noty.button('Show', "btn btn-primary", () => {
-              this.$native.files.showItemInFolder(options.filePath)
-              n.close()
-            })
-          ]
-        })
-    },
-    async startRunToFile(options: StartRunToFileOptions) {
-        const exporter = new ExportClassPicker[options.exporter](
-          options.filePath,
-          this.connection,
-          options.table,
-          options.filters || [],
-          options.options,
-          options.outputOptions
-        )
-        this.addExport(exporter)
-        exporter.onProgress(this.notifyProgress.bind(this))
-        await exporter.runQueryToFile()
-        if (exporter.status !== ExportStatus.Completed) return;
-        const n = this.$noty.success(`Export of Query Results complete`, {
+        const exportName = options.table? options.table.name : 'query';
+        const n = this.$noty.success(`Export of ${exportName} complete`, {
           buttons: [
             Noty.button('Show', "btn btn-primary", () => {
               this.$native.files.showItemInFolder(options.filePath)
@@ -137,10 +100,7 @@ export default Vue.extend({
     },
     handleExportRequest(options?: ExportTriggerOptions): void {
       this.table = options?.table
-      this.filters = options?.filters
-    },
-    handleRunToFileRequest(options?: ExportTriggerOptions): void {
-      this.table = options?.table
+      this.query = options?.query
       this.filters = options?.filters
     },
     handleDeadModal() {

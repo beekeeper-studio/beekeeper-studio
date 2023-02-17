@@ -74,6 +74,7 @@ export default async function (server, database) {
     getTableLength: (table, schema) => getTableLength(conn, table, schema),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
+    queryStream: (db, query, chunkSize) => selectTopStream(conn, db, query, chunkSize),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
@@ -95,7 +96,7 @@ export default async function (server, database) {
     listCharsets: () => [],
     getDefaultCharset: () => null,
     /*
-      From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-database-transact-sql?view=sql-server-ver16&tabs=sqlpool: 
+      From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-database-transact-sql?view=sql-server-ver16&tabs=sqlpool:
       Collation name can be either a Windows collation name or a SQL collation name. If not specified, the database is assigned the default collation of the instance of SQL Server
 
       Having this, going to keep collations at the default because there are literally thousands of options
@@ -273,6 +274,19 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
   }
 }
 
+export async function queryStream(conn, db, query, orderBy, filters, chunkSize, schema, selects = ['*']) {
+  const version = await getVersion(conn);
+  // // no limit or offset, so don't need the old version of paging
+  // const query = genSelectNew(table, null, null, orderBy, filters, schema, selects);
+  // const columns = await listTableColumns(conn, db, table);
+  // const rowCount = await getTableLength(conn, table, filters);
+
+  return {
+    // totalRows: Number(rowCount),
+    // columns,
+    cursor: new SqlServerCursor(conn, query, chunkSize)
+  }
+}
 
 export function wrapIdentifier(value) {
   if (_.isString(value)) {

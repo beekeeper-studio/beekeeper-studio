@@ -18,11 +18,12 @@ export class JsonExporter extends Export {
     filePath: string,
     connection: DBConnection,
     table: TableOrView,
+    query: string,
     filters: TableFilter[] | any[],
     options: ExportOptions,
     outputOptions: OutputOptionsJson
   ) {
-    super(filePath, connection, table, filters, options)
+    super(filePath, connection, table, query, filters, options)
     this.outputOptions = outputOptions
   }
 

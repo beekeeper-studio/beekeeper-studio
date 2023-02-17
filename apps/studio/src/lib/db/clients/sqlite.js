@@ -70,6 +70,7 @@ export default async function (server, database) {
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize) => selectTopStream(conn, db, table, orderBy, filters, chunkSize),
+    queryStream: (db, query, chunkSize) => queryStream(conn, db, query, chunkSize),
     applyChangesSql: (changes) => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -156,6 +157,18 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
     totalRows: rowCount,
     columns,
     cursor: new SqliteCursor(conn, query, params, chunkSize)
+  }
+}
+
+export async function queryStream(conn, db, query, chunkSize) {
+  // const qs = buildSelectTopQuery(table, null, null, orderBy, filters)
+  // const columns = await listTableColumns(conn, db, table)
+  // const rowCount = await getTableLength(conn, table, filters)
+  // const { query, params } = qs
+  return {
+    // totalRows: rowCount,
+    // columns,
+    cursor: new SqliteCursor(conn, query, [], chunkSize)
   }
 }
 

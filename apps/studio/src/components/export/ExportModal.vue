@@ -12,7 +12,7 @@
           <div class="dialog-c-title flex flex-middle">
             <div>
               Export
-              <span class="text-primary truncate">{{ table.name }}</span>
+              <span class="text-primary truncate">{{ table ? table.name : "query" }}</span>
               <span v-if="filters" class="text-light" v-tooltip="filterTooltip">(Filtered)</span>
               <span class="badge badge-info">Beta</span>
             </div>
@@ -164,7 +164,7 @@ const exportFormats = [
 
 export default {
   components: { FilePicker },
-  props: ['table', 'filters', 'connection'],
+  props: ['table', 'query', 'filters', 'connection'],
   data() {
     return {
       selectedExportFormat: exportFormats[0],
@@ -180,6 +180,11 @@ export default {
   watch: {
     table() {
       if (this.table) {
+        this.$modal.show("export-modal");
+      }
+    },
+    query() {
+      if (this.query) {
         this.$modal.show("export-modal");
       }
     },
@@ -200,9 +205,16 @@ export default {
     defaultFileName () {
       const now = new Date();
       const formatted = dateFormat(now, 'yyyy-mm-dd_HHMMss')
-      const schema = this.table.schema ? `${this.table.schema}_` : ''
       const extension = this.selectedExportFormat.key
-      return `${schema}${this.table.name}_export_${formatted}.${extension}`
+      let fileName;
+      if (this.table) {
+        const schema = this.table.schema ? `${this.table.schema}_` : ''
+        const extension = this.selectedExportFormat.key
+        fileName = `${schema}${this.table.name}_export_${formatted}.${extension}`
+      } else {
+        fileName = `query_export_${formatted}.${extension}`
+      }
+      return fileName
     },
     filePath() {
       if (!this.fileDirectory || !this.fileName) return null
@@ -251,6 +263,7 @@ export default {
 
       const payload = {
         table: this.table,
+        query: this.query,
         filters: this.filters,
         filePath: this.filePath,
         options: this.options,

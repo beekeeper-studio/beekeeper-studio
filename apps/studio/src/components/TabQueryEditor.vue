@@ -704,14 +704,8 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
       async submitCurrentQueryToFile() {
-        if (this.currentlySelectedQuery) {
-          this.runningType = 'current'
-          // this.submitQuery(this.currentlySelectedQuery.text)
-          this.trigger(AppEvent.beginRunToFile, { query: this.currentlySelectedQuery.text })
-        } else {
-          this.results = []
-          this.error = 'No query to run to file'
-        }
+        const text = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
+        this.trigger( AppEvent.beginExport, { query: text });
       },
       async submitCurrentQuery() {
         if (this.currentlySelectedQuery) {

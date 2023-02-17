@@ -81,6 +81,9 @@ export interface DatabaseClient {
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string, selects?: string[]): Promise<TableResult>,
   selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema?: string ): Promise<StreamResults>,
 
+  // for export
+  queryStream(db: string, query: string, chunkSize: number ): Promise<StreamResults>,
+
   wrapIdentifier: (value: string) => string
   setTableDescription: (table: string, description: string, schema?: string) => Promise<string>
 
@@ -187,6 +190,9 @@ export class DBConnection {
   selectTopStream = selectTopStream.bind(null, this.server, this.database)
   applyChanges = applyChanges.bind(null, this.server, this.database)
   applyChangesSql = applyChangesSql.bind(null, this.server, this.database)
+
+  // query export
+  queryStream = queryStream.bind(null, this.server, this.database)
 
   // alter table
   alterTableSql = bind.bind(null, 'alterTableSql', this.server, this.database)
@@ -322,6 +328,17 @@ function selectTopStream(
   checkIsConnected(server, database)
   if (!database.connection) throw "No database connection available"
   return database.connection?.selectTopStream(database.database, table, orderBy, filters, chunkSize, schema)
+}
+
+function queryStream(
+  server: IDbConnectionServer,
+  database: IDbConnectionDatabase,
+  query: string,
+  chunkSize: number,
+): Promise<StreamResults> {
+  checkIsConnected(server, database)
+  if (!database.connection) throw "No database connection available"
+  return database.connection?.queryStream(database.database, query, chunkSize)
 }
 
 function listSchemas(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: SchemaFilterOptions) {
