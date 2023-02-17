@@ -43,7 +43,7 @@
     "indent-string": "^4.0.0",
     "javascript-time-ago": "^2.0.8",
     "jquery": "^3.5.0",
-    "knex": "^2.4.0",
+    "knex": "^2.4.1",
     "lodash": "^4.17.21",
     "markdown-table": "^3.0.2",
     "marked": "^4.0.10",
