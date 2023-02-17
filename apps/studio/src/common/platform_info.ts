@@ -36,6 +36,7 @@ const platformInfo = {
     production: !isDevEnv && !testMode && !p.env.WEBPACK_DEV_SERVER_URL
   },
   debugEnabled: !!process.env.DEBUG,
+  DEBUG: process.env.DEBUG,
   platform: easyPlatform,
   darkMode: testMode? true : e.nativeTheme.shouldUseDarkColors || windowPrefersDarkMode,
   userDirectory,
@@ -45,7 +46,7 @@ const platformInfo = {
   appDbPath: path.join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
   updatesDisabled,
   appVersion: testMode ? 'test-mode' : e.app.getVersion(),
-  cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io'
+  cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
   // cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
 }
 

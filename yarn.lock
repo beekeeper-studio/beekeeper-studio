@@ -1783,6 +1783,11 @@
     global-agent "^3.0.0"
     global-tunnel-ng "^2.7.1"
 
+"@electron/remote@^2.0.9":
+  version "2.0.9"
+  resolved "https://registry.yarnpkg.com/@electron/remote/-/remote-2.0.9.tgz#092ff085407bc907f45b89a72c36faa773ccf2d9"
+  integrity sha512-LR0W0ID6WAKHaSs0x5LX9aiG+5pFBNAJL6eQAJfGkCuZPUa6nZz+czZLdlTDETG45CgF/0raSvCtYOYUpr6c+A==
+
 "@electron/universal@1.0.5":
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/@electron/universal/-/universal-1.0.5.tgz#b812340e4ef21da2b3ee77b2b4d35c9b86defe37"
@@ -13724,6 +13729,7 @@ ssh2@beekeeper-studio/ssh2#12988d63f6c5022ac4eba3eca5218451f13cba15:
     asn1 "^0.2.4"
     bcrypt-pbkdf "^1.0.2"
   optionalDependencies:
+    cpu-features "0.0.3"
     nan "^2.15.0"
 
 sshpk@^1.7.0:

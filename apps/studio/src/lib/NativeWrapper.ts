@@ -14,6 +14,11 @@ import _ from 'lodash'
   - anything else that uses regular node
 */
 
+interface IWindowDialog {
+  showSaveDialogSync(any): void
+  showOpenDialogSync(any): void
+}
+
 export interface NativePlugin {
   clipboard: {
     writeText(text: string): void
@@ -22,7 +27,12 @@ export interface NativePlugin {
   files: {
     open(path: string): Promise<string>
     showItemInFolder(path: string): void
-  }
+  },
+
+  getCurrentWindow(): Electron.BrowserWindow | null
+  openLink(link: string): void
+  dialog: IWindowDialog
+
 }
 
 const copyNotification = new Noty({
@@ -33,6 +43,13 @@ const copyNotification = new Noty({
 })
 
 export const ElectronPlugin: NativePlugin = {
+  dialog: remote.dialog,
+  openLink(link: string) {
+    remote.shell.openExternal(link);
+  },
+  getCurrentWindow() {
+    return remote.getCurrentWindow()
+  },
   clipboard: {
     writeText(rawText: any, notify: boolean = true) {
       const text = _.toString(rawText)
