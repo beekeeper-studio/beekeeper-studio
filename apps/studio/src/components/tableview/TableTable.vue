@@ -1,14 +1,22 @@
 <template>
-  <div v-hotkey="keymap" class="tabletable flex-col" :class="{'view-only': !editable}">
+  <div
+    v-hotkey="keymap"
+    class="tabletable flex-col"
+    :class="{'view-only': !editable}"
+  >
     <template v-if="!table && initialized">
-      <div class="no-content">
-
-      </div>
+      <div class="no-content" />
     </template>
-    <template v-else >
+    <template v-else>
       <div class="table-filter">
-        <form @submit.prevent="triggerFilter" class="flex flex-middle">
-          <div class="filter-group" style="margin-left: 0.2rem">
+        <form
+          @submit.prevent="triggerFilter"
+          class="flex flex-middle"
+        >
+          <div
+            class="filter-group"
+            style="margin-left: 0.2rem"
+          >
             <button
               type="button"
               class="btn btn-flat btn-fab"
@@ -19,9 +27,17 @@
               <i class="material-icons-outlined">visibility</i>
             </button>
           </div>
-          <div v-if="filterMode === 'raw'" class="filter-group row gutter expand">
+          <div
+            v-if="filterMode === 'raw'"
+            class="filter-group row gutter expand"
+          >
             <div class="btn-wrap">
-              <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('builder')" title="Toggle Filter Type">
+              <button
+                class="btn btn-flat btn-fab"
+                type="button"
+                @click.stop="changeFilterMode('builder')"
+                title="Toggle Filter Type"
+              >
                 <i class="material-icons-outlined">filter_alt</i>
               </button>
             </div>
@@ -32,8 +48,8 @@
                   type="text"
                   v-model="filterRaw"
                   ref="valueInput"
-                  :placeholder=filterPlaceholder
-                />
+                  :placeholder="filterPlaceholder"
+                >
                 <button
                   type="button"
                   class="clear btn-link"
@@ -44,32 +60,60 @@
               </div>
             </div>
             <div class="btn-wrap">
-              <button class="btn btn-primary btn-fab" type="submit" title="Filter">
+              <button
+                class="btn btn-primary btn-fab"
+                type="submit"
+                title="Filter"
+              >
                 <i class="material-icons">search</i>
               </button>
             </div>
           </div>
-          <div v-else-if="filterMode === 'builder'" class="filter-group row gutter expand">
+          <div
+            v-else-if="filterMode === 'builder'"
+            class="filter-group row gutter expand"
+          >
             <div class="btn-wrap">
-              <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('raw')" title="Toggle Filter Type">
+              <button
+                class="btn btn-flat btn-fab"
+                type="button"
+                @click.stop="changeFilterMode('raw')"
+                title="Toggle Filter Type"
+              >
                 <i class="material-icons">code</i>
               </button>
             </div>
             <div>
-              <div class="select-wrap" >
-                <select name="Filter Field" class="form-control" v-model="filter.field">
+              <div class="select-wrap">
+                <select
+                  name="Filter Field"
+                  class="form-control"
+                  v-model="filter.field"
+                >
                   <option
                     v-for="column in table.columns"
-                    v-bind:key="column.columnName"
+                    :key="column.columnName"
                     :value="column.columnName"
-                  >{{column.columnName}}</option>
+                  >
+                    {{ column.columnName }}
+                  </option>
                 </select>
               </div>
             </div>
             <div>
               <div class="select-wrap">
-                <select name="Filter Type" class="form-control" v-model="filter.type">
-                  <option v-for="(v, k) in filterTypes" v-bind:key="k" :value="v">{{k}}</option>
+                <select
+                  name="Filter Type"
+                  class="form-control"
+                  v-model="filter.type"
+                >
+                  <option
+                    v-for="(v, k) in filterTypes"
+                    :key="k"
+                    :value="v"
+                  >
+                    {{ k }}
+                  </option>
                 </select>
               </div>
             </div>
@@ -79,9 +123,9 @@
                   class="form-control"
                   type="text"
                   v-model="filter.value"
-                  :placeholder=builderPlaceholder
+                  :placeholder="builderPlaceholder"
                   ref="valueInput"
-                />
+                >
                 <button
                   type="button"
                   class="clear btn-link"
@@ -92,35 +136,55 @@
               </div>
             </div>
             <div class="btn-wrap">
-              <button class="btn btn-primary btn-fab" type="submit" title="Filter">
+              <button
+                class="btn btn-primary btn-fab"
+                type="submit"
+                title="Filter"
+              >
                 <i class="material-icons">search</i>
               </button>
             </div>
           </div>
         </form>
       </div>
-      <div ref="table"></div>
+      <div ref="table" />
       <ColumnFilterModal
-        :modalName="columnFilterModalName"
-        :columnsWithFilterAndOrder="columnsWithFilterAndOrder"
+        :modal-name="columnFilterModalName"
+        :columns-with-filter-and-order="columnsWithFilterAndOrder"
         @changed="applyColumnChanges"
       />
     </template>
 
     <statusbar :mode="statusbarMode">
-
-
       <div class="truncate statusbar-info">
-        <x-button @click.prevent="openProperties" class="btn btn-flat btn-icon end" title="View Structure">
+        <x-button
+          @click.prevent="openProperties"
+          class="btn btn-flat btn-icon end"
+          title="View Structure"
+        >
           Structure <i class="material-icons">north_east</i>
         </x-button>
         <!-- Info -->
-        <table-length :table="table" :connection="connection" />
-        <a @click="refreshTable" tabindex="0" role="button" class="statusbar-item hoverable" v-if="lastUpdatedText && !error" :title="'Updated' + ' ' + lastUpdatedText">
+        <table-length
+          :table="table"
+          :connection="connection"
+        />
+        <a
+          @click="refreshTable"
+          tabindex="0"
+          role="button"
+          class="statusbar-item hoverable"
+          v-if="lastUpdatedText && !error"
+          :title="'Updated' + ' ' + lastUpdatedText"
+        >
           <i class="material-icons">update</i>
-          <span>{{lastUpdatedText}}</span>
+          <span>{{ lastUpdatedText }}</span>
         </a>
-        <span v-if="error" class="statusbar-item error" :title="error.message">
+        <span
+          v-if="error"
+          class="statusbar-item error"
+          :title="error.message"
+        >
           <i class="material-icons">error_outline</i>
           <span class="">{{ error.title }}</span>
         </span>
@@ -129,9 +193,18 @@
       <!-- Pagination -->
       <div class="tabulator-paginator">
         <div class="flex-center flex-middle flex">
-          <a @click="page = page  - 1" v-tooltip="ctrlOrCmd('left')"><i class="material-icons">navigate_before</i></a>
-          <input type="number" v-model="page" />
-          <a @click="page = page + 1" v-tooltip="ctrlOrCmd('right')"><i class="material-icons">navigate_next</i></a>
+          <a
+            @click="page = page - 1"
+            v-tooltip="ctrlOrCmd('left')"
+          ><i class="material-icons">navigate_before</i></a>
+          <input
+            type="number"
+            v-model="page"
+          >
+          <a
+            @click="page = page + 1"
+            v-tooltip="ctrlOrCmd('right')"
+          ><i class="material-icons">navigate_next</i></a>
         </div>
       </div>
 
@@ -147,25 +220,57 @@
         </div> -->
 
         <template v-if="pendingChangesCount > 0">
-          <x-button class="btn btn-flat" @click.prevent="discardChanges">Reset</x-button>
-          <x-button class="btn btn-primary btn-badge btn-icon" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
-            <i v-if="error" class="material-icons ">error_outline</i>
-            <span class="badge" v-if="!error">{{pendingChangesCount}}</span>
+          <x-button
+            class="btn btn-flat"
+            @click.prevent="discardChanges"
+          >
+            Reset
+          </x-button>
+          <x-button
+            class="btn btn-primary btn-badge btn-icon"
+            @click.prevent="saveChanges"
+            :title="saveButtonText"
+            :class="{'error': !!saveError}"
+          >
+            <i
+              v-if="error"
+              class="material-icons "
+            >error_outline</i>
+            <span
+              class="badge"
+              v-if="!error"
+            >{{ pendingChangesCount }}</span>
             <span>Apply</span>
           </x-button>
         </template>
         <template v-if="!editable">
-          <span class="statusbar-item" :title="readOnlyNotice"><i class="material-icons-outlined">info</i> Read Only</span>
+          <span
+            class="statusbar-item"
+            :title="readOnlyNotice"
+          ><i class="material-icons-outlined">info</i> Read Only</span>
         </template>
 
         <!-- Actions -->
-        <x-button v-tooltip="`${ctrlOrCmd('r')} or F5`" class="btn btn-flat" title="Refresh table" @click="refreshTable">
+        <x-button
+          v-tooltip="`${ctrlOrCmd('r')} or F5`"
+          class="btn btn-flat"
+          title="Refresh table"
+          @click="refreshTable"
+        >
           <i class="material-icons">refresh</i>
         </x-button>
-        <x-button class="btn btn-flat" v-tooltip="ctrlOrCmd('n')" title="Add row" @click.prevent="cellAddRow">
+        <x-button
+          class="btn btn-flat"
+          v-tooltip="ctrlOrCmd('n')"
+          title="Add row"
+          @click.prevent="cellAddRow"
+        >
           <i class="material-icons">add</i>
         </x-button>
-        <x-button class="actions-btn btn btn-flat" title="actions">
+        <x-button
+          class="actions-btn btn btn-flat"
+          title="actions"
+        >
           <i class="material-icons">settings</i>
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
@@ -178,9 +283,7 @@
             </x-menuitem>
           </x-menu>
         </x-button>
-
       </div>
-
     </statusbar>
   </div>
 </template>
@@ -268,7 +371,7 @@ export default Vue.extend({
       timeAgo: new TimeAgo('en-US'),
       lastUpdated: null,
       lastUpdatedText: null,
-      // @ts-ignore
+      // @ts-expect-error Typing for Interval not correct
       interval: setInterval(this.setlastUpdatedText, 10000),
 
       forceRedraw: false,
@@ -863,7 +966,6 @@ export default Vue.extend({
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
 
 
-      // @ts-ignore-error
       this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,
         columns: this.tableColumns,

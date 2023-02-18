@@ -1,13 +1,19 @@
 <template>
   <div class="table-properties">
-    <div v-if="error" class="alert-wrapper">
+    <div
+      v-if="error"
+      class="alert-wrapper"
+    >
       <div class="alert alert-danger">
-        {{error.message}}
+        {{ error.message }}
       </div>
     </div>
-    <template  v-else>
+    <template v-else>
       <div class="table-properties-header">
-        <div class="nav-pills" v-if="pills.length > 1">
+        <div
+          class="nav-pills"
+          v-if="pills.length > 1"
+        >
           <a
             v-for="(pill) in pills"
             :key="pill.id"
@@ -16,20 +22,26 @@
             :title="pill.dirty ? 'Unsaved Changes' : ''"
             @click.prevent="activePill = pill.id"
           >
-            {{pill.name}} {{pill.dirty ? '*' : ''}}
+            {{ pill.name }} {{ pill.dirty ? '*' : '' }}
           </a>
         </div>
       </div>
-      <div v-if="loading" class="table-properties-loading">
-        <x-progressbar></x-progressbar>
+      <div
+        v-if="loading"
+        class="table-properties-loading"
+      >
+        <x-progressbar />
       </div>
-      <div class="table-properties-wrap" v-if="table && !loading">
+      <div
+        class="table-properties-wrap"
+        v-if="table && !loading"
+      >
         <component
           class="schema-builder"
           :is="pill.component"
           :table="table"
-          :primaryKeys="primaryKeys"
-          :tabState="pill"
+          :primary-keys="primaryKeys"
+          :tab-state="pill"
           :properties="properties"
           :connection="connection"
           :active="pill.id === activePill && active"
@@ -41,28 +53,50 @@
         >
           <template v-slot:footer>
             <div class="statusbar-info col flex expand">
-              <x-button @click.prevent="openData" class="btn btn-flat btn-icon end" title="View Data">
+              <x-button
+                @click.prevent="openData"
+                class="btn btn-flat btn-icon end"
+                title="View Data"
+              >
                 Data <i class="material-icons">north_east</i>
               </x-button>
               <template v-if="properties">
-                <table-length :table="table" :connection="connection" />
-                <span class="statusbar-item" v-if="humanSize !== null" :title="`Table Size ${humanSize}`">
+                <table-length
+                  :table="table"
+                  :connection="connection"
+                />
+                <span
+                  class="statusbar-item"
+                  v-if="humanSize !== null"
+                  :title="`Table Size ${humanSize}`"
+                >
                   <i class="material-icons">aspect_ratio</i>
-                  <span>{{humanSize}}</span>
+                  <span>{{ humanSize }}</span>
                 </span>
-                <span class="statusbar-item" v-if="humanIndexSize !== null" :title="`Index Size ${humanIndexSize}`">
+                <span
+                  class="statusbar-item"
+                  v-if="humanIndexSize !== null"
+                  :title="`Index Size ${humanIndexSize}`"
+                >
                   <i class="material-icons">location_searching</i>
-                  <span>{{humanIndexSize}}</span>
+                  <span>{{ humanIndexSize }}</span>
                 </span>
-                <span class="statusbar-item" v-if="!editable" title="Only tables can be edited.">
+                <span
+                  class="statusbar-item"
+                  v-if="!editable"
+                  title="Only tables can be edited."
+                >
                   <i class="material-icons-outlined">report_problem</i> Read Only
                 </span>
               </template>
             </div>
           </template>
 
-          <template v-slot:actions >
-            <x-button class="actions-btn btn btn-flat" title="Actions">
+          <template v-slot:actions>
+            <x-button
+              class="actions-btn btn btn-flat"
+              title="Actions"
+            >
               <i class="material-icons">settings</i>
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
@@ -73,10 +107,16 @@
                   <x-label>View Data</x-label>
                 </x-menuitem>
                 <hr v-if="dev">
-                <x-menuitem v-if="dev" @click.prevent="triggerError">
+                <x-menuitem
+                  v-if="dev"
+                  @click.prevent="triggerError"
+                >
                   <x-label>[DEV] Toggle Error</x-label>
                 </x-menuitem>
-                <x-menuitem v-if="dev" @click.prevent="loading = !loading">
+                <x-menuitem
+                  v-if="dev"
+                  @click.prevent="loading = !loading"
+                >
                   <x-label>[DEV] Toggle Loading</x-label>
                 </x-menuitem>
               </x-menu>

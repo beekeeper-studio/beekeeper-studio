@@ -33,7 +33,7 @@ export class DBTestUtil {
   public knex: Knex
   public server: IDbConnectionPublicServer
   public connection: DBConnection
-  public extraTables: number = 0
+  public extraTables = 0
   private options: Options
   private dbType: string
 

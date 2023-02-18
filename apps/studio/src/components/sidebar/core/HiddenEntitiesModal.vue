@@ -10,7 +10,10 @@
           Hidden Entities
         </div>
         <span class="close-btn btn btn-fab">
-          <i class="material-icons" @click.prevent="closeModal">clear</i>
+          <i
+            class="material-icons"
+            @click.prevent="closeModal"
+          >clear</i>
         </span>
         <div class="modal-form">
           <div class="list-container">
@@ -20,10 +23,19 @@
               class="hidden-list-item"
             >
               <div>
-                <i title="Schema" class="schema-icon item-icon material-icons">folder</i>
-                <span>{{schema}}</span>
+                <i
+                  title="Schema"
+                  class="schema-icon item-icon material-icons"
+                >folder</i>
+                <span>{{ schema }}</span>
               </div>
-              <button type="button" @click="unhideSchema(index)" class="btn btn-flat btn-small">Unhide</button>
+              <button
+                type="button"
+                @click="unhideSchema(index)"
+                class="btn btn-flat btn-small"
+              >
+                Unhide
+              </button>
             </div>
             <div
               v-for="(entity, index) in entities"
@@ -32,11 +44,20 @@
             >
               <div>
                 <table-icon :table="entity" />
-                <span>{{entity.name}}</span>
+                <span>{{ entity.name }}</span>
               </div>
-              <button type="button" @click="unhideEntity(index)" class="btn btn-flat btn-small">Unhide</button>
+              <button
+                type="button"
+                @click="unhideEntity(index)"
+                class="btn btn-flat btn-small"
+              >
+                Unhide
+              </button>
             </div>
-            <span class="no-entities" v-show="noHidden">
+            <span
+              class="no-entities"
+              v-show="noHidden"
+            >
               No hidden entities
             </span>
           </div>

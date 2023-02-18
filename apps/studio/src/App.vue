@@ -1,20 +1,29 @@
 <template>
-<div class="style-wrapper">
+  <div class="style-wrapper">
     <div class="beekeeper-studio-wrapper">
-      <titlebar v-if="$config.isMac || menuStyle === 'client'"></titlebar>
+      <titlebar v-if="$config.isMac || menuStyle === 'client'" />
       <template v-if="storeInitialized">
-        <connection-interface v-if="!connection"></connection-interface>
-        <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
-        <auto-updater></auto-updater>
+        <connection-interface v-if="!connection" />
+        <core-interface
+          @databaseSelected="databaseSelected"
+          v-else
+          :connection="connection"
+        />
+        <auto-updater />
         <state-manager />
         <notification-manager />
       </template>
     </div>
-    <portal-target name="menus" multiple />
-    <portal-target name="modals" multiple />
+    <portal-target
+      name="menus"
+      multiple
+    />
+    <portal-target
+      name="modals"
+      multiple
+    />
     <data-manager />
-</div>
-
+  </div>
 </template>
 
 <script>
@@ -30,7 +39,7 @@ import querystring from 'query-string'
 import NotificationManager from './components/NotificationManager.vue'
 
 export default {
-  name: 'app',
+  name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     StateManager, DataManager

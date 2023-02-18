@@ -16,7 +16,7 @@ export enum UserSettingValueType {
   boolean = 5,
 }
 
-type UserSettingValue = string | number | boolean | Array<any> | object | null
+type UserSettingValue = string | number | boolean | Array<any> | Record<string, any> | null
 
 const TypeDefaults = {
   0: "",
@@ -107,7 +107,7 @@ export class UserSetting extends ApplicationEntity {
   }
 
   @Column({type: 'varchar'})
-  defaultValue: string = ''
+  defaultValue = ''
 
   @Column({type: 'varchar'})
   linuxDefault?: string

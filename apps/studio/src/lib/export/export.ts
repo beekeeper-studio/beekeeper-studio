@@ -17,17 +17,17 @@ export abstract class Export {
   // don't make stuff public you don't want observed in vue
   id: string
 
-  countExported: number = 0
-  countTotal: number = 0
+  countExported = 0
+  countTotal = 0
   error: Error | null = null
-  fileSize: number = 0
-  lastChunkTime: number = 0
+  fileSize = 0
+  lastChunkTime = 0
 
   preserveComplex = true
   // see set status()
   private _status: ExportStatus = ExportStatus.Idle
-  timeElapsed: number = 0
-  timeLeft: number = 0
+  timeElapsed = 0
+  timeLeft = 0
   private cursor?: BeeCursor
   private columns?: TableColumn[]
   private fileHandle?: promises.FileHandle
@@ -52,7 +52,7 @@ export abstract class Export {
   // do not add newlines / row separators
   abstract formatRow(data: any[]): string
 
-  protected rowToObject(row: any[]): Object {
+  protected rowToObject(row: any[]): Record<string, any> {
     const columns = this.dedupedColumns?.length ?  this.dedupedColumns : row.map((_r, i) => {
       return {dataType: 'unknown', columnName: `col_${i+1}`}
     })

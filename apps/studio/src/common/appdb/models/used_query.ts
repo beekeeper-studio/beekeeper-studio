@@ -20,7 +20,7 @@ export class UsedQuery extends ApplicationEntity {
   numberOfRecords?: BigInt
 
   @Column({ type: 'integer', nullable: false, default: -1 })
-  workspaceId: number = -1
+  workspaceId = -1
 
 
   @BeforeInsert()

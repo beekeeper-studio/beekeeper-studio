@@ -1,12 +1,15 @@
 <template>
-  <div :style="extraStyles" :class="className" />
+  <div
+    :style="extraStyles"
+    :class="className"
+  />
 </template>
 
 <script>
 // Original - copyright https://github.com/michalsnik/vue-content-placeholders
 
 export default {
-  name: 'content-placeholders-img',
+  name: 'ContentPlaceholdersImg',
   props: {
     circle: {
       type: Boolean,

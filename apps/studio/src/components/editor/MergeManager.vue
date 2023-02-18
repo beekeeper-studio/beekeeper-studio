@@ -1,27 +1,58 @@
 <template>
   <div class="merge-manager">
-    <div v-if="pendingMerge" class="alert alert-notice">
+    <div
+      v-if="pendingMerge"
+      class="alert alert-notice"
+    >
       <i class="material-icons">info_outlined</i> 
-      <div class="alert-body">Merge Completed</div>
+      <div class="alert-body">
+        Merge Completed
+      </div>
       <span class="alert-footer btn-group">
-        <span class="expand"></span>
-        <a class="btn btn-sm btn-link" @click.prevent="undoMerge" title="What have you done to my query!?">Undo</a>
-        <a class="btn btn-sm btn-primary" @click.prevent="acceptMerge" title="Like magic">Looks Good</a>
+        <span class="expand" />
+        <a
+          class="btn btn-sm btn-link"
+          @click.prevent="undoMerge"
+          title="What have you done to my query!?"
+        >Undo</a>
+        <a
+          class="btn btn-sm btn-primary"
+          @click.prevent="acceptMerge"
+          title="Like magic"
+        >Looks Good</a>
       </span>
     </div>
     
-    <div v-else-if="pendingRemoteChanges" class="alert alert-info">
+    <div
+      v-else-if="pendingRemoteChanges"
+      class="alert alert-info"
+    >
       <i class="material-icons">error_outline</i> 
-      <div class="alert-body">This query has been updated by someone else.</div>
+      <div class="alert-body">
+        This query has been updated by someone else.
+      </div>
       <span class="alert-footer btn-group">
-        <span class="expand"></span>
-        <x-button @click.prevent="viewDiff" class="btn btn-link">Preview Merge</x-button>
+        <span class="expand" />
+        <x-button
+          @click.prevent="viewDiff"
+          class="btn btn-link"
+        >Preview Merge</x-button>
         <x-buttons>
-          <x-button title="Merge local and remote changes together" class="btn btn-primary btn-small" @click.prevent="merge">Merge</x-button>
-          <x-button class="btn btn-primary btn-small" menu>
+          <x-button
+            title="Merge local and remote changes together"
+            class="btn btn-primary btn-small"
+            @click.prevent="merge"
+          >Merge</x-button>
+          <x-button
+            class="btn btn-primary btn-small"
+            menu
+          >
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
-              <x-menuitem title="Discard local changes and reload with only the remote changes" @click.prevent="discardLocal">
+              <x-menuitem
+                title="Discard local changes and reload with only the remote changes"
+                @click.prevent="discardLocal"
+              >
                 <x-label>Discard Local Changes</x-label>
               </x-menuitem>
             </x-menu>
@@ -31,13 +62,26 @@
     </div>
 
     <portal to="modals">
-      <modal name="diff-modal" class="beekeeper-modal vue-dialog diff-modal" >
+      <modal
+        name="diff-modal"
+        class="beekeeper-modal vue-dialog diff-modal"
+      >
         <div class="dialog-content">
-          <div class="dialog-c-title">Merge Preview</div>
-          <diff-viewer v-if="diff" :diff="diff"/>
+          <div class="dialog-c-title">
+            Merge Preview
+          </div>
+          <diff-viewer
+            v-if="diff"
+            :diff="diff"
+          />
         </div>
         <div class="vue-dialog-buttons">
-          <button class="btn btn-flat" @click.prevent="$modal.hide('diff-modal')">Close</button>
+          <button
+            class="btn btn-flat"
+            @click.prevent="$modal.hide('diff-modal')"
+          >
+            Close
+          </button>
         </div>
       </modal>
     </portal>
@@ -128,9 +172,6 @@ export default Vue.extend({
     }
 
   },
-  mounted() {
-
-  }
 })
 </script>
 

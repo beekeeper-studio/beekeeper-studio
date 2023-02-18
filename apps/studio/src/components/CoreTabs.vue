@@ -1,30 +1,44 @@
 <template>
-  <div  class="core-tabs" v-hotkey="keymap">
+  <div
+    class="core-tabs"
+    v-hotkey="keymap"
+  >
     <div class="tabs-header">
       <!-- <div class="nav-tabs nav"> -->
-      <Draggable :options="dragOptions" v-model="tabItems" tag="ul" class="nav-tabs nav" chosen-class="nav-item-wrap-chosen">
+      <Draggable
+        :options="dragOptions"
+        v-model="tabItems"
+        tag="ul"
+        class="nav-tabs nav"
+        chosen-class="nav-item-wrap-chosen"
+      >
         <core-tab-header
           v-for="tab in tabItems"
           :key="tab.id"
           :tab="tab"
-          :tabsCount="tabItems.length"
+          :tabs-count="tabItems.length"
           :selected="activeTab === tab"
           @click="click"
           @close="close"
           @closeAll="closeAll"
           @closeOther="closeOther"
           @duplicate="duplicate"
-          ></core-tab-header>
+        />
       </Draggable>
       <!-- </div> -->
       <span class="actions">
-        <a @click.prevent="createQuery(null)" class="btn-fab add-query"><i class=" material-icons">add_circle</i></a>
+        <a
+          @click.prevent="createQuery(null)"
+          class="btn-fab add-query"
+        ><i class=" material-icons">add_circle</i></a>
       </span>
     </div>
     <div class="tab-content">
       <div class="empty flex-col  expand">
-        <div class="expand layout-center"><shortcut-hints></shortcut-hints></div>
-        <statusbar class="tabulator-footer"></statusbar>
+        <div class="expand layout-center">
+          <shortcut-hints />
+        </div>
+        <statusbar class="tabulator-footer" />
       </div>
       <div
         v-for="(tab, idx) in tabItems"
@@ -34,42 +48,82 @@
         :class="{active: (activeTab === tab)}"
         v-show="activeTab === tab"
       >
-        <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></QueryEditor>
-        <tab-with-table v-if="tab.type === 'table'" :tab="tab" @close="close">
+        <QueryEditor
+          v-if="tab.type === 'query'"
+          :active="activeTab === tab"
+          :tab="tab"
+          :tab-id="tab.id"
+          :connection="connection"
+        />
+        <tab-with-table
+          v-if="tab.type === 'table'"
+          :tab="tab"
+          @close="close"
+        >
           <template v-slot:default="slotProps">
             <TableTable
               :tab="tab"
               :active="activeTab === tab"
               :connection="connection"
-              :initialFilter="tab.filter"
+              :initial-filter="tab.filter"
               :table="slotProps.table"
-            ></TableTable>
+            />
           </template>
         </tab-with-table>
-        <tab-with-table v-if="tab.type === 'table-properties'" :tab="tab" @close="close">
+        <tab-with-table
+          v-if="tab.type === 'table-properties'"
+          :tab="tab"
+          @close="close"
+        >
           <template v-slot:default="slotProps">
             <TableProperties
               :active="activeTab === tab"
-              :tab="tab" :tabId="tab.id"
+              :tab="tab"
+              :tab-id="tab.id"
               :connection="connection"
               :table="slotProps.table"
-            ></TableProperties>
+            />
           </template>
         </tab-with-table>
-        <TableBuilder v-if="tab.type === 'table-builder'" :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"></TableBuilder>
-
+        <TableBuilder
+          v-if="tab.type === 'table-builder'"
+          :active="activeTab === tab"
+          :tab="tab"
+          :tab-id="tab.id"
+          :connection="connection"
+        />
       </div>
     </div>
     <portal to="modals">
-      <modal :name="modalName" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened" @closed="sureClosed" @before-open="beforeOpened">
+      <modal
+        :name="modalName"
+        class="beekeeper-modal vue-dialog sure header-sure"
+        @opened="sureOpened"
+        @closed="sureClosed"
+        @before-open="beforeOpened"
+      >
         <div class="dialog-content">
-          <div class="dialog-c-title">Really {{this.dbAction | titleCase}} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{this.dbElement}}</span>?</div>
+          <div class="dialog-c-title">
+            Really {{ this.dbAction | titleCase }} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{ this.dbElement }}</span>?
+          </div>
           <p>This change cannot be undone</p>
         </div>
         <div class="vue-dialog-buttons">
-          <span class="expand"></span>
-          <button ref="no" @click.prevent="$modal.hide(modalName)" class="btn btn-sm btn-flat">Cancel</button>
-          <button @focusout="sureOpen && $refs.no && $refs.no.focus()" @click.prevent="completeDeleteAction" class="btn btn-sm btn-primary">{{this.titleCaseAction}} {{this.dbElement}}</button>
+          <span class="expand" />
+          <button
+            ref="no"
+            @click.prevent="$modal.hide(modalName)"
+            class="btn btn-sm btn-flat"
+          >
+            Cancel
+          </button>
+          <button
+            @focusout="sureOpen && $refs.no && $refs.no.focus()"
+            @click.prevent="completeDeleteAction"
+            class="btn btn-sm btn-primary"
+          >
+            {{ this.titleCaseAction }} {{ this.dbElement }}
+          </button>
         </div>
       </modal>
     </portal>
