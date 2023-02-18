@@ -116,7 +116,7 @@
     "@vue/cli-plugin-typescript": "~4.5.15",
     "@vue/cli-plugin-unit-jest": "~4.5.15",
     "@vue/cli-service": "~4.5.15",
-    "@vue/eslint-config-typescript": "^7.0.0",
+    "@vue/eslint-config-typescript": "^11.0.2",
     "@vue/test-utils": "^1.0.3",
     "aws-sdk": "^2.645.0",
     "babel-eslint": "^10.0.1",
@@ -152,7 +152,6 @@
     "watchpack": "1.6.1",
     "node-pre-gyp": "0.12.0",
     "electron-builder": "22.10.5",
-    "ssh2": "beekeeper-studio/ssh2#12988d63f6c5022ac4eba3eca5218451f13cba15",
-    "ts-loader": "8.2.0"
+    "ssh2": "beekeeper-studio/ssh2#12988d63f6c5022ac4eba3eca5218451f13cba15"
   }
 }

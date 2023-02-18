@@ -24,11 +24,10 @@ module.exports = {
     "@typescript-eslint/no-unused-vars": "off",
     "no-unused-vars": "off"
   },
+  parser: "vue-eslint-parser",
   parserOptions: {
     parser: "@typescript-eslint/parser",
-    ecmaFeatures: {
-      legacyDecorators: true
-    }
+    sourceType: "module",
   },
   overrides: [
     {
