@@ -10,7 +10,8 @@ import knexlib from 'knex'
 import logRaw from 'electron-log'
 
 // import AWS from 'aws-sdk';
-import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
+// import { defaultProvider } from "@aws-sdk/credential-provider-node";
+import { fromIni } from "@aws-sdk/credential-provider-ini"
 import { Signer } from "@aws-sdk/rds-signer";
 import { DatabaseClient, IDbConnectionServerConfig, DatabaseElement } from '../client'
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from '../authentication/amazon-redshift';
@@ -1181,7 +1182,7 @@ export function query(conn: Conn, queryText: string, _schema: string) {
   };
 }
 
-export async function executeQuery(conn: Conn, queryText: string, arrayMode: boolean = false) {
+export async function executeQuery(conn: Conn, queryText: string, arrayMode = false) {
   const data = await driverExecuteQuery(conn, { query: queryText, multiple: true, arrayMode });
 
   const commands = identifyCommands(queryText).map((item) => item.type);
@@ -1368,7 +1369,7 @@ export async function truncateAllTables(conn: Conn, schema: string) {
   });
 }
 
-export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `DROP ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
@@ -1391,7 +1392,7 @@ export async function createDatabase(conn, databaseName, charset) {
   await driverExecuteQuery(conn, { query: sql })
 }
 
-export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
@@ -1449,34 +1450,30 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
   }
 
   // For RDS Postgres Only - IAM authentication
-  if (server.config.client === 'postgresql' && server.config?.redshiftOptions?.iamAuthenticationEnabled) {
-    console.log('** CREDENTIALPROVIDER')
-
-    const nodeProviderChainCredentials = fromNodeProviderChain()
-
-    console.log('** CREDENTIALPROVIDER NODE CHAIN', nodeProviderChainCredentials)
-
+  if (server.config.client === 'postgresql' && redshiftOptions?.iamAuthenticationEnabled) {
+    const nodeProviderChainCredentials = fromIni({ profile: redshiftOptions.awsProfile ?? 'default' })
     const signer = new Signer({
       credentials: nodeProviderChainCredentials,
-      region: 'eu-west-1',
+      region: redshiftOptions?.awsRegion,
       hostname: server.config.host,
       port: server.config.port,
       username: server.config.user
     });
 
-    console.log('** SIGNER', signer)
-    const token = await signer.getAuthToken()
-    console.log('** TOKEN', token)
     passwordResolver = async () => {
+      const token = await signer.getAuthToken()
       return token
     }
   }
 
-  console.log('** PASSWORD RESOLVER', passwordResolver)
+
+
+  const resolvedPw = await passwordResolver()
+
   const config: PoolConfig = {
     host: server.config.host,
     port: server.config?.port ?? 5432,
-    password: passwordResolver || server.config?.password,
+    password: passwordResolver ? resolvedPw : server.config?.password,
     database: database.database,
     max: 5, // max idle connections per time (30 secs)
     connectionTimeoutMillis: globals.psqlTimeout,

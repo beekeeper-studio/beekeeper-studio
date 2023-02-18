@@ -62,22 +62,22 @@
 </template>
 
 <script>
-  import os from 'os'
-  import {SavedConnection} from '../common/appdb/models/saved_connection'
-  import ConnectionSidebar from './sidebar/ConnectionSidebar'
-  import MysqlForm from './connection/MysqlForm'
-  import PostgresForm from './connection/PostgresForm'
-  import RedshiftForm from './connection/RedshiftForm'
-  import Sidebar from './common/Sidebar'
-  import SqliteForm from './connection/SqliteForm'
-  import SqlServerForm from './connection/SqlServerForm'
-  import SaveConnectionForm from './connection/SaveConnectionForm'
-  import Split from 'split.js'
-  import ImportButton from './connection/ImportButton'
-  import _ from 'lodash'
-  import platformInfo from '@/common/platform_info'
-  import ErrorAlert from './common/ErrorAlert.vue'
-  import rawLog from 'electron-log'
+import os from 'os'
+import {SavedConnection} from '../common/appdb/models/saved_connection'
+import ConnectionSidebar from './sidebar/ConnectionSidebar'
+import MysqlForm from './connection/MysqlForm'
+import PostgresForm from './connection/PostgresForm'
+import RedshiftForm from './connection/RedshiftForm'
+import Sidebar from './common/Sidebar'
+import SqliteForm from './connection/SqliteForm'
+import SqlServerForm from './connection/SqlServerForm'
+import SaveConnectionForm from './connection/SaveConnectionForm'
+import Split from 'split.js'
+import ImportButton from './connection/ImportButton'
+import _ from 'lodash'
+import platformInfo from '@/common/platform_info'
+import ErrorAlert from './common/ErrorAlert.vue'
+import rawLog from 'electron-log'
 import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
@@ -243,8 +243,8 @@ import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
           await this.$store.dispatch('test', this.config)
           this.$noty.success("Connection looks good!")
           return true
-        } catch(ex) {
-          this.connectionError = ex
+        } catch(e) {
+          this.connectionError = e
           this.$noty.error("Error establishing a connection")
         } finally {
           this.testing = false
