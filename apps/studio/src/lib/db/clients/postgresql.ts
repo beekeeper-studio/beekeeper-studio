@@ -9,8 +9,6 @@ import _  from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-// import AWS from 'aws-sdk';
-// import { defaultProvider } from "@aws-sdk/credential-provider-node";
 import { fromIni } from "@aws-sdk/credential-provider-ini"
 import { Signer } from "@aws-sdk/rds-signer";
 import { DatabaseClient, IDbConnectionServerConfig, DatabaseElement } from '../client'
