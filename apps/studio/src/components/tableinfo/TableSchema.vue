@@ -175,8 +175,10 @@ export default Vue.extend({
           editor: vueEditor(NullableInputEditorVue),
           cellEdited: this.cellEdited,
           headerFilter: true,
+          tooltip: this.cellTooltip.bind(this), 
           formatter: this.cellFormatter,
-          editable: this.isCellEditable.bind(this, 'renameColumn')
+          editable: this.isCellEditable.bind(this, 'renameColumn'),
+          cellClick: this.cellClick.bind(this)
         },
         {
           title: 'Type',
@@ -417,6 +419,14 @@ export default Vue.extend({
         data: this.tableData,
         placeholder: "No Columns",
       })
+    },
+    cellClick(_e: any, cell: CellComponent) {
+      if (!this.editable && this.disabledFeatures?.alter?.renameColumn)
+        this.$native.clipboard.writeText(cell.getValue());
+    },
+    cellTooltip(_e: any, cell: CellComponent, _onRendered: any) {
+      let canCopy: boolean = !this.editable && this.disabledFeatures?.alter?.renameColumn;
+      return canCopy ? `${cell.getValue()} - Click to Copy` : cell.getValue();
     }
   },
   async mounted() {
@@ -427,6 +437,6 @@ export default Vue.extend({
   },
   beforeDestroy() {
     if (this.tabulator) this.tabulator.destroy()
-  }
+  },
 })
 </script>
