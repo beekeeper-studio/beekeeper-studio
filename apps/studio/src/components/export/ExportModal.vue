@@ -12,7 +12,7 @@
           <div class="dialog-c-title flex flex-middle">
             <div>
               Export
-              <span class="text-primary truncate">{{ table.name }}</span> 
+              <span class="text-primary truncate">{{ table.name }}</span>
               <span v-if="filters" class="text-light" v-tooltip="filterTooltip">(Filtered)</span>
               <span class="badge badge-info">Beta</span>
             </div>
@@ -25,7 +25,7 @@
             <div>Error: {{ error.message }}</div>
           </div>
           <div class="modal-form export-form">
-            
+
             <div class="flex">
 
               <!-- File Name -->
@@ -33,7 +33,7 @@
                 <label for="fileName">File Name</label>
                 <input type="text" spellcheck="false" v-model="fileName">
               </div>
-              
+
               <!-- Format -->
               <div class="format form-group">
                 <label for="connectionType">Format</label>
@@ -60,7 +60,7 @@
             <!-- Location -->
             <div class="form-group">
               <label for="fileDirectory">Output Directory</label>
-              <file-picker 
+              <file-picker
                 v-model="fileDirectory"
                 :defaultPath="defaultPath"
                 :save="false"
@@ -72,7 +72,7 @@
 
             <!-- Advanced Options -->
             <div class="advanced-options-toggle flex flex-middle" @click.prevent="toggleAdvanced">
-              <i class="material-icons">{{toggleIcon}}</i> 
+              <i class="material-icons">{{toggleIcon}}</i>
               <span>Advanced Options</span>
             </div>
             <div class="advanced-options" :class="{open: advancedToggled}">
@@ -132,7 +132,6 @@
 <script>
 import * as path from 'path'
 import dateFormat from 'dateformat'
-import { remote } from "electron"
 import { mapMutations } from "vuex"
 import rawlog from 'electron-log'
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "./forms"
@@ -250,7 +249,7 @@ export default {
       }
       const component = this;
 
-      const payload = { 
+      const payload = {
         table: this.table,
         filters: this.filters,
         filePath: this.filePath,
