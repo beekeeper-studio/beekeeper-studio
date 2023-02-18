@@ -19,42 +19,42 @@
 </template>
 
 <script>
-import {remote} from 'electron'
 import { mapState } from 'vuex'
 import AppMenu from './menu/NewAppMenu'
+import platformInfo from '@/common/platform_info'
 export default {
   components: { AppMenu },
   data() {
     return {
-      window: remote.getCurrentWindow(),
-      maximized: remote.getCurrentWindow().isMaximized()
+      window: this.$native.getCurrentWindow(),
+      maximized: this.$native.getCurrentWindow()?.isMaximized()
     }
   },
   computed: {
     ...mapState(['windowTitle']),
   },
   mounted() {
-    this.window.on('maximize', () => {
+    this.window?.on('maximize', () => {
       this.maximized = true
     })
 
-    this.window.on('unmaximize', () => {
+    this.window?.on('unmaximize', () => {
       this.maximized = false
     })
   },
   methods: {
     minimizeWindow() {
-      this.window.minimize();
+      this.window?.minimize();
     },
     maximizeWindow() {
-      if (this.window.isMaximized()) {
+      if (this.window?.isMaximized()) {
         this.window.unmaximize();
       } else {
         this.window.maximize();
       }
     },
     closeWindow() {
-      window.close()
+      window?.close()
     }
   }
 }
