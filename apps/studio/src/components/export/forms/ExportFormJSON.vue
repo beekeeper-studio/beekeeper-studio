@@ -1,14 +1,17 @@
 <template>
   <div>
     <div class="form-group">
-      <label for="prettyprint" class="checkbox-group">
+      <label
+        for="prettyprint"
+        class="checkbox-group"
+      >
         <input
           v-model="options.prettyprint"
           id="prettyprint"
           type="checkbox"
           name="prettyprint"
           class="form-control"
-        />
+        >
         <span>Pretty-print</span>
       </label>
     </div>

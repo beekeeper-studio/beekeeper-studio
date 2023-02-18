@@ -1,5 +1,5 @@
 // somewhere in your project
-declare module _ {
+declare namespace _ {
   interface LoDashStatic {
     deepMapKeys(value: object, fn: (any, string) => string): object;
   }

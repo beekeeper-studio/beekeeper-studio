@@ -2,11 +2,21 @@
   <nav class="list-group flex-col">
     <div class="list-heading row">
       <div class="sub row flex-middle expand">
-        <div>Pinned <span class="badge">{{orderedPins.length}}</span></div>
+        <div>Pinned <span class="badge">{{ orderedPins.length }}</span></div>
       </div>
     </div>
-    <Draggable :options="{handle: '.drag-handle'}" v-model="orderedPins" tag="div" ref="pinContainer" class="list-body">
-      <div class="pin-wrapper" v-for="p in orderedPins" :key="p.id || p.entity.name">
+    <Draggable
+      :options="{handle: '.drag-handle'}"
+      v-model="orderedPins"
+      tag="div"
+      ref="pinContainer"
+      class="list-body"
+    >
+      <div
+        class="pin-wrapper"
+        v-for="p in orderedPins"
+        :key="p.id || p.entity.name"
+      >
         <table-list-item
           v-if="p.entityType !== 'routine'"
           :table="p.entity"
@@ -14,12 +24,11 @@
           :connection="connection"
           :draggable="true"
           :container="$refs.pinContainer"
-          :forceExpand="allExpanded"
-          :forceCollapse="allCollapsed"
+          :force-expand="allExpanded"
+          :force-collapse="allCollapsed"
           @selected="refreshColumns"
-          :noSelect="true"
+          :no-select="true"
           @contextmenu.prevent.stop="$bks.openMenu({item: p.entity, event: $event, options: tableMenuOptions})"
-
         />
         <routine-list-item
           v-else
@@ -28,15 +37,11 @@
           :routine="p.entity"
           :connection="connection"
           :pinned="true"
-          :forceExpand="allExpanded"
-          :forceCollapse="allCollapsed"
+          :force-expand="allExpanded"
+          :force-collapse="allCollapsed"
           @contextmenu.prevent.stop="$bks.openMenu({item: p.entity, event: $event, options: routineMenuOptions})"
-
         />
-
       </div>
-
-
     </Draggable>
   </nav>
 </template>

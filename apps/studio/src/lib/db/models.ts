@@ -139,7 +139,7 @@ export interface TableChanges {
 export interface TableInsert {
   table: string
   schema?: string
-  data: object[]
+  data: Record<string, any>[]
 }
 
 export interface PKSelector {

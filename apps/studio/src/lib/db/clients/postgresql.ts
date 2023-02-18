@@ -24,8 +24,8 @@ import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/Postgres
 import { AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
+import  base64 from 'base64-url'
 
-const base64 = require('base64-url');
 const PD = PostgresData
 function isConnection(x: any): x is HasConnection {
   return x.connection !== undefined
@@ -1069,7 +1069,7 @@ async function insertRows(cli: any, rawInserts: TableInsert[]) {
     const result = { ...insert}
     const columns = columnsList[idx]
     result.data = result.data.map((obj) => {
-      return _.mapValues(obj, (value, key) => {
+      return _.mapValues(obj, (value: string, key) => {
         const column = columns.find((c) => c.columnName === key)
         if (column && column.dataType.startsWith('_')) {
           return JSON.parse(value)
@@ -1452,9 +1452,9 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
 
   // For RDS Postgres Only - IAM authentication
   if (server.config.client === 'postgresql' && redshiftOptions?.iamAuthenticationEnabled) {
-    const nodeProviderChainCredentials = fromIni({ profile: redshiftOptions.awsProfile ?? 'default' })
+    const awsCredential = fromIni({ profile: redshiftOptions.awsProfile ?? 'default' })
     const signer = new Signer({
-      credentials: nodeProviderChainCredentials,
+      credentials: awsCredential,
       region: redshiftOptions?.awsRegion,
       hostname: server.config.host,
       port: server.config.port,
@@ -1480,7 +1480,7 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
     connectionTimeoutMillis: globals.psqlTimeout,
     idleTimeoutMillis: globals.psqlIdleTimeout,
     // not in the typings, but works.
-    // @ts-ignore
+    // @ts-expect-error PoolConfig not correctly typed
     options: optionsString
   };
 

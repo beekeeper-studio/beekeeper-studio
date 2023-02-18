@@ -39,7 +39,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
   connectionId?: Nullable<number> = null
 
   @Column({ type: 'int', nullable: false})
-  workspaceId: number = -1
+  workspaceId = -1
 
   @Column({type: 'simple-json', nullable: false})
   redshiftOptions: RedshiftOptions = {}

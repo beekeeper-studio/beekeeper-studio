@@ -54,7 +54,7 @@ export const ElectronPlugin: NativePlugin = {
     return remote.getCurrentWindow()
   },
   clipboard: {
-    writeText(rawText: any, notify: boolean = true) {
+    writeText(rawText: any, notify = true) {
       const text = _.toString(rawText)
       Noty.closeAll('clipboard')
       remote.clipboard.writeText(text)

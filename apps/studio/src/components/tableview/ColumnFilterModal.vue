@@ -11,11 +11,18 @@
             Choose Columns To Display
           </div>
           <span class="close-btn btn btn-fab">
-            <i class="material-icons" @click.prevent="closeModal">clear</i>
+            <i
+              class="material-icons"
+              @click.prevent="closeModal"
+            >clear</i>
           </span>
           <div class="modal-form">
             <div class="search-wrapper">
-              <input type="text" placeholder="Filter" v-model="searchQuery"/>
+              <input
+                type="text"
+                placeholder="Filter"
+                v-model="searchQuery"
+              >
               <span
                 class="clear"
                 @click="searchQuery = ''"
@@ -28,18 +35,18 @@
                 v-show="searchQuery.length === 0"
                 class="list-item"
               >
-              <label class="checkbox-group flex-between expand">
-                <span class="input-wrapper">
-                  <input
-                    type="checkbox"
-                    ref="mainCheckbox"
-                    @click.stop="toggleSelectAllColumn"
-                    :checked="allSelected"
-                  />
-                  All
+                <label class="checkbox-group flex-between expand">
+                  <span class="input-wrapper">
+                    <input
+                      type="checkbox"
+                      ref="mainCheckbox"
+                      @click.stop="toggleSelectAllColumn"
+                      :checked="allSelected"
+                    >
+                    All
 
-                </span>
-              </label>
+                  </span>
+                </label>
                 <!-- <span @click.prevent="toggleSelectAllColumn"
                   class="inline-flex flex-between expand all-label"
                 >
@@ -54,16 +61,25 @@
                 >
                   <label class="checkbox-group flex-between expand">
                     <span class="input-wrapper">
-                      <input type="checkbox" @click.stop="toggleSelectColumn(column)" :checked="column.filter" />
-                      {{column.name}}
+                      <input
+                        type="checkbox"
+                        @click.stop="toggleSelectColumn(column)"
+                        :checked="column.filter"
+                      >
+                      {{ column.name }}
 
                     </span>
-                    <span class="datatype ">{{column.dataType}}</span>
+                    <span class="datatype ">{{ column.dataType }}</span>
 
                   </label>
                 </div>
               </div>
-              <div class="no-matching-results" v-show="searchedColumns.length === 0">No matching results</div>
+              <div
+                class="no-matching-results"
+                v-show="searchedColumns.length === 0"
+              >
+                No matching results
+              </div>
             </div>
           </div>
         </div>

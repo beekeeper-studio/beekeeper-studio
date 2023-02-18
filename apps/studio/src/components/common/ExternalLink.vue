@@ -1,5 +1,5 @@
 <template>
-  <a @click.prevent.stop="click"><slot></slot></a>
+  <a @click.prevent.stop="click"><slot /></a>
 </template>
 <script>
 export default {

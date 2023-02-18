@@ -8,9 +8,6 @@ export interface IFolder {
   updatedAt?: Date
 }
 
-export interface IQueryFolder extends IFolder {
-}
+export type IQueryFolder = IFolder
 
-export interface IConnectionFolder extends IFolder {
-  
-}
+export type IConnectionFolder = IFolder

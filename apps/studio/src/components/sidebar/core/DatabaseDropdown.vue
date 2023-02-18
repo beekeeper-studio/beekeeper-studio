@@ -5,7 +5,7 @@
         v-if="this.connection.connectionType === 'sqlite'"
         class="sqlite-db-name"
       >
-        {{selectedDatabase}}
+        {{ selectedDatabase }}
       </p>
       <v-select
         v-else
@@ -14,18 +14,36 @@
         :options="availableDatabases"
         :components="{OpenIndicator}"
         class="dropdown-search"
-      ></v-select>
-      <a v-if="this.connection.connectionType !== 'sqlite'" class="refresh" @click.prevent="refreshDatabases" :title="'Refresh Databases'">
+      />
+      <a
+        v-if="this.connection.connectionType !== 'sqlite'"
+        class="refresh"
+        @click.prevent="refreshDatabases"
+        :title="'Refresh Databases'"
+      >
         <i class="material-icons">refresh</i>
       </a>
-      <a class="refresh" @click.prevent="$modal.show('config-add-database')" :title="'Add Database'">
+      <a
+        class="refresh"
+        @click.prevent="$modal.show('config-add-database')"
+        :title="'Add Database'"
+      >
         <i class="material-icons">add</i>
       </a>
     </div>
     <portal to="modals">
-      <modal class="vue-dialog beekeeper-modal save-add-database" name="config-add-database" height="auto" :scrollable="true">
+      <modal
+        class="vue-dialog beekeeper-modal save-add-database"
+        name="config-add-database"
+        height="auto"
+        :scrollable="true"
+      >
         <div class="dialog-content">
-          <add-database-form :connection="connection" @databaseCreated="databaseCreated" @cancel="$modal.hide('config-add-database')"></add-database-form>
+          <add-database-form
+            :connection="connection"
+            @databaseCreated="databaseCreated"
+            @cancel="$modal.hide('config-add-database')"
+          />
         </div>
       </modal>
     </portal>

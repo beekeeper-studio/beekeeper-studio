@@ -8,11 +8,17 @@
     <br>
     <div class="flex-middle row">
       <span class="expand">
-        <span class="text-muted"></span>
+        <span class="text-muted" />
       </span>
       <div class="btn-group">
-        <a class="btn btn-flat" href="https://beekeeperstudio.io/db/oracle-client">Learn More</a>
-        <a class="btn btn-primary" href="https://beekeeperstudio.io/get">Download Ultimate Edition</a>
+        <a
+          class="btn btn-flat"
+          href="https://beekeeperstudio.io/db/oracle-client"
+        >Learn More</a>
+        <a
+          class="btn btn-primary"
+          href="https://beekeeperstudio.io/get"
+        >Download Ultimate Edition</a>
       </div>
     </div>
   </div>

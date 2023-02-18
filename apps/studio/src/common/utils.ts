@@ -108,7 +108,6 @@ export function createCancelablePromise(error: CustomError, timeIdle = 100) {
         const err = new Error(error.message || 'Promise canceled.');
 
         Object.getOwnPropertyNames(error)
-          // @ts-ignore
           .forEach((key: string) => err[key] = error[key]); // eslint-disable-line no-return-assign
 
         throw err;

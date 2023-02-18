@@ -1,61 +1,174 @@
 <template>
   <div class="interface connection-interface">
-    <div class="interface-wrap row" @dragover.prevent="" @drop.prevent="maybeLoadSqlite">
-      <sidebar class="connection-sidebar" ref="sidebar" v-show="sidebarShown">
-        <connection-sidebar :selectedConfig="config" @remove="remove" @duplicate="duplicate" @edit="edit" @connect="handleConnect" @create="create"></connection-sidebar>
+    <div
+      class="interface-wrap row"
+      @dragover.prevent=""
+      @drop.prevent="maybeLoadSqlite"
+    >
+      <sidebar
+        class="connection-sidebar"
+        ref="sidebar"
+        v-show="sidebarShown"
+      >
+        <connection-sidebar
+          :selected-config="config"
+          @remove="remove"
+          @duplicate="duplicate"
+          @edit="edit"
+          @connect="handleConnect"
+          @create="create"
+        />
       </sidebar>
-      <div ref="content" class="connection-main page-content flex-col" id="page-content">
+      <div
+        ref="content"
+        class="connection-main page-content flex-col"
+        id="page-content"
+      >
         <div class="small-wrap expand">
           <div class="card-flat padding">
             <div class="flex flex-between">
-              <h3 class="card-title" v-if="!pageTitle">New Connection</h3>
-              <h3 class="card-title" v-if="pageTitle">{{pageTitle}}</h3>
-              <ImportButton :config="config">Import from URL</ImportButton>
+              <h3
+                class="card-title"
+                v-if="!pageTitle"
+              >
+                New Connection
+              </h3>
+              <h3
+                class="card-title"
+                v-if="pageTitle"
+              >
+                {{ pageTitle }}
+              </h3>
+              <ImportButton :config="config">
+                Import from URL
+              </ImportButton>
             </div>
-            <error-alert :error="errors" title="Please fix the following errors" />
-            <form @action="submit" v-if="config">
+            <error-alert
+              :error="errors"
+              title="Please fix the following errors"
+            />
+            <form
+              @action="submit"
+              v-if="config"
+            >
               <div class="form-group">
                 <label for="connectionType">Connection Type</label>
-                <select name="connectionType" class="form-control custom-select" v-model="config.connectionType" id="connection-select">
-                  <option disabled value="null">Select a connection type...</option>
-                  <option :key="t.value" v-for="t in connectionTypes" :value="t.value">{{t.name}}</option>
+                <select
+                  name="connectionType"
+                  class="form-control custom-select"
+                  v-model="config.connectionType"
+                  id="connection-select"
+                >
+                  <option
+                    disabled
+                    value="null"
+                  >
+                    Select a connection type...
+                  </option>
+                  <option
+                    :key="t.value"
+                    v-for="t in connectionTypes"
+                    :value="t.value"
+                  >
+                    {{ t.name }}
+                  </option>
                 </select>
               </div>
               <div v-if="config.connectionType">
-
                 <!-- INDIVIDUAL DB CONFIGS -->
-                <postgres-form v-if="config.connectionType === 'cockroachdb'" :config="config" :testing="testing"></postgres-form>
-                <mysql-form v-if="['mysql', 'mariadb'].includes(config.connectionType)" :config="config" :testing="testing" @save="save" @test="testConnection" @connect="submit"></mysql-form>
-                <postgres-form v-if="config.connectionType === 'postgresql'" :config="config" :testing="testing"></postgres-form>
-                <redshift-form v-if="config.connectionType === 'redshift'" :config="config" :testing="testing"></redshift-form>
-                <sqlite-form v-if="config.connectionType === 'sqlite'" :config="config" :testing="testing"></sqlite-form>
-                <sql-server-form v-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"></sql-server-form>
+                <postgres-form
+                  v-if="config.connectionType === 'cockroachdb'"
+                  :config="config"
+                  :testing="testing"
+                />
+                <mysql-form
+                  v-if="['mysql', 'mariadb'].includes(config.connectionType)"
+                  :config="config"
+                  :testing="testing"
+                  @save="save"
+                  @test="testConnection"
+                  @connect="submit"
+                />
+                <postgres-form
+                  v-if="config.connectionType === 'postgresql'"
+                  :config="config"
+                  :testing="testing"
+                />
+                <redshift-form
+                  v-if="config.connectionType === 'redshift'"
+                  :config="config"
+                  :testing="testing"
+                />
+                <sqlite-form
+                  v-if="config.connectionType === 'sqlite'"
+                  :config="config"
+                  :testing="testing"
+                />
+                <sql-server-form
+                  v-if="config.connectionType === 'sqlserver'"
+                  :config="config"
+                  :testing="testing"
+                />
                 <other-database-notice v-if="config.connectionType === 'other'" />
 
                 <!-- TEST AND CONNECT -->
-                <div v-if="config.connectionType !== 'other'" class="test-connect row flex-middle">
-                  <span class="expand"></span>
+                <div
+                  v-if="config.connectionType !== 'other'"
+                  class="test-connect row flex-middle"
+                >
+                  <span class="expand" />
                   <div class="btn-group">
-                    <button :disabled="testing" class="btn btn-flat" type="button" @click.prevent="testConnection">Test</button>
-                    <button :disabled="testing" class="btn btn-primary" type="submit" @click.prevent="submit">Connect</button>
+                    <button
+                      :disabled="testing"
+                      class="btn btn-flat"
+                      type="button"
+                      @click.prevent="testConnection"
+                    >
+                      Test
+                    </button>
+                    <button
+                      :disabled="testing"
+                      class="btn btn-primary"
+                      type="submit"
+                      @click.prevent="submit"
+                    >
+                      Connect
+                    </button>
                   </div>
                 </div>
-                <div class="row" v-if="connectionError">
+                <div
+                  class="row"
+                  v-if="connectionError"
+                >
                   <div class="col">
-                    <error-alert :error="connectionError" :helpText="errorHelp" @close="connectionError = null" :closable="true" />
-
+                    <error-alert
+                      :error="connectionError"
+                      :help-text="errorHelp"
+                      @close="connectionError = null"
+                      :closable="true"
+                    />
                   </div>
                 </div>
-                <SaveConnectionForm v-if="config.connectionType !== 'other'" :config="config" @save="save"></SaveConnectionForm>
+                <SaveConnectionForm
+                  v-if="config.connectionType !== 'other'"
+                  :config="config"
+                  @save="save"
+                />
               </div>
-
             </form>
-
           </div>
-          <div class="pitch" v-if="!config.connectionType"><span class="badge badge-primary">New</span> Upgrade to the full version of Beekeeper Studio for even more great features. <a href="https://www.beekeeperstudio.io/" class="">Get Started Free</a></div>
+          <div
+            class="pitch"
+            v-if="!config.connectionType"
+          >
+            <span class="badge badge-primary">New</span> Upgrade to the full version of Beekeeper Studio for even more great features. <a
+              href="https://www.beekeeperstudio.io/"
+              class=""
+            >Get Started Free</a>
+          </div>
         </div>
 
-        <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{version}}</a></small>
+        <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{ version }}</a></small>
       </div>
     </div>
   </div>
@@ -251,7 +364,7 @@ import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
         }
       },
       clearForm(){
-
+        // TODO: Implement
       },
       async save() {
         try {
