@@ -175,10 +175,10 @@ export default Vue.extend({
           editor: vueEditor(NullableInputEditorVue),
           cellEdited: this.cellEdited,
           headerFilter: true,
-          tooltip: this.cellTooltip.bind(this), 
+          tooltip: this.columnNameCellTooltip.bind(this), 
           formatter: this.cellFormatter,
           editable: this.isCellEditable.bind(this, 'renameColumn'),
-          cellClick: this.cellClick.bind(this)
+          cellClick: this.columnNameCellClick.bind(this)
         },
         {
           title: 'Type',
@@ -420,12 +420,12 @@ export default Vue.extend({
         placeholder: "No Columns",
       })
     },
-    cellClick(_e: any, cell: CellComponent) {
-      if (!this.editable && this.disabledFeatures?.alter?.renameColumn)
+    columnNameCellClick(_e: any, cell: CellComponent) {
+      if (!this.editable || this.disabledFeatures?.alter?.renameColumn)
         this.$native.clipboard.writeText(cell.getValue());
     },
-    cellTooltip(_e: any, cell: CellComponent, _onRendered: any) {
-      let canCopy: boolean = !this.editable && this.disabledFeatures?.alter?.renameColumn;
+    columnNameCellTooltip(_e: any, cell: CellComponent, _onRendered: any) {
+      let canCopy: boolean = !this.editable || this.disabledFeatures?.alter?.renameColumn;
       return canCopy ? `${cell.getValue()} - Click to Copy` : cell.getValue();
     }
   },
