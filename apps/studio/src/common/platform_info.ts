@@ -1,8 +1,26 @@
 import * as path from 'path'
-import * as electron from 'electron'
+function isRenderer() {
+  // running in a web browser
+  if (typeof process === 'undefined') return true
 
-const e = electron.remote ? electron.remote : electron
-const p = electron.remote ? electron.remote.process : process
+  // node-integration is disabled
+  if (!process) return true
+
+  // We're in node.js somehow
+  if (!process.type) return false
+
+  return process.type === 'renderer'
+}
+
+let e = null
+let p = process
+if (isRenderer()) {
+  e = require('@electron/remote')
+  p = e.process
+} else {
+  e = require('electron')
+}
+
 const platform = p.env.OS_OVERRIDE ? p.env.OS_OVERRIDE : p.platform
 const testMode = p.env.TEST_MODE ? true : false
 const isDevEnv = !(e.app && e.app.isPackaged);
@@ -10,7 +28,7 @@ const isWindows = platform === 'win32'
 const isMac = platform === 'darwin'
 const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
 let windowPrefersDarkMode = false
-if (electron.remote) {
+if (isRenderer()) {
   windowPrefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 const updatesDisabled = !!p.env.BEEKEEPER_DISABLE_UPDATES
