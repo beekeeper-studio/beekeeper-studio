@@ -150,7 +150,6 @@
   "resolutions": {
     "watchpack": "1.6.1",
     "node-pre-gyp": "0.12.0",
-    "electron-builder": "22.10.5",
-    "ssh2": "beekeeper-studio/ssh2#12988d63f6c5022ac4eba3eca5218451f13cba15"
+    "electron-builder": "22.10.5"
   }
 }
