@@ -1,3 +1,4 @@
+// This file is copyright Brian White [MIT License], except where modified.
 const { spawn } = require("child_process");
 const path = require("path");
 const { OpenSSHAgent } = require("ssh2");
