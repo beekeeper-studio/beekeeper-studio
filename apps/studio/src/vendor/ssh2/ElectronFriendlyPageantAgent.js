@@ -1,3 +1,5 @@
+import platformInfo from "@/common/platform_info";
+
 // This file is copyright Brian White [MIT License], except where modified.
 const { spawn } = require("child_process");
 const path = require("path");
@@ -11,6 +13,16 @@ function readUInt32BE(buf, offset) {
     + buf[offset];
 }
 
+export function resolvePagentExePath() {
+  // in production we bundle this in to the app bundle properly.
+  if (platformInfo.env.development) {
+    return path.resolve('.', 'vendor/pagent.exe')
+  }
+  const RAWPATH = path.resolve(platformInfo.resourcesPath, 'vendor/pagent.exe');
+  const EXEPATH = RAWPATH.includes('app.asar') ? RAWPATH.replace('app.asar', 'app.asar.unpacked') : RAWPATH;
+  return EXEPATH
+}
+
 
 const ElectronFriendlyPageantAgent = (() => {
   const RET_ERR_BADARGS = 10;
@@ -21,9 +33,7 @@ const ElectronFriendlyPageantAgent = (() => {
   const RET_ERR_BADLEN = 15;
 
 
-
-  const RAWPATH = path.resolve(__dirname, '..', 'util/pagent.exe');
-  const EXEPATH = RAWPATH.includes('app.asar') ? RAWPATH.replace('app.asar', 'app.asar.unpacked') : RAWPATH;
+  const EXEPATH = resolvePagentExePath()
 
   const ERROR = {
     [RET_ERR_BADARGS]: new Error('Invalid pagent.exe arguments'),
