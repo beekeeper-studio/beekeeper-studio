@@ -47,7 +47,8 @@ const platformInfo = {
   isDevelopment: isDevEnv,
   isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
   sshAuthSock: p.env.SSH_AUTH_SOCK,
-  environment: process.env.NODE_ENV,
+  environment: p.env.NODE_ENV,
+  resourcesPath: p.resourcesPath,
   env: {
     development: isDevEnv,
     test: testMode,

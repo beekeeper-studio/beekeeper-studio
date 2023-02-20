@@ -68,7 +68,7 @@
     "split.js": "^1.5.11",
     "sql-formatter": "^6.1.1",
     "sql-query-identifier": "^2.2.0",
-    "ssh2": "beekeeper-studio/ssh2#12988d63f6c5022ac4eba3eca5218451f13cba15",
+    "ssh2": "^1.11.0",
     "tabulator-tables": "~5.4.1",
     "typeface-roboto": "^0.0.75",
     "typeface-source-code-pro": "^1.1.3",
@@ -150,7 +150,6 @@
   "resolutions": {
     "watchpack": "1.6.1",
     "node-pre-gyp": "0.12.0",
-    "electron-builder": "22.10.5",
-    "ssh2": "beekeeper-studio/ssh2#12988d63f6c5022ac4eba3eca5218451f13cba15"
+    "electron-builder": "22.10.5"
   }
 }
