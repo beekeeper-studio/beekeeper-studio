@@ -13867,16 +13867,6 @@ ssh2@^1.11.0:
     cpu-features "~0.0.4"
     nan "^2.16.0"
 
-ssh2@beekeeper-studio/ssh2#12988d63f6c5022ac4eba3eca5218451f13cba15:
-  version "1.8.0"
-  resolved "https://codeload.github.com/beekeeper-studio/ssh2/tar.gz/12988d63f6c5022ac4eba3eca5218451f13cba15"
-  dependencies:
-    asn1 "^0.2.4"
-    bcrypt-pbkdf "^1.0.2"
-  optionalDependencies:
-    cpu-features "0.0.3"
-    nan "^2.15.0"
-
 sshpk@^1.7.0:
   version "1.17.0"
   resolved "https://registry.yarnpkg.com/sshpk/-/sshpk-1.17.0.tgz#578082d92d4fe612b13007496e543fa0fbcbe4c5"

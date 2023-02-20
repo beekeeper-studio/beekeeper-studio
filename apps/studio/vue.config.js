@@ -55,6 +55,10 @@ module.exports = {
             to: 'launcher-script.sh'
           },
           {
+            from: './vendor',
+            to: 'vendor'
+          },
+          {
             from: './public',
             to: 'public'
           }
