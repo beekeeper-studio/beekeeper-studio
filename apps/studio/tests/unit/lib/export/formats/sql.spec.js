@@ -1,5 +1,4 @@
-import { SqlExporter } from '../../../../../src/lib/export/formats/sql'
-
+import { SqlExporter } from '@/lib/export/formats/sql'
 
 
 describe('sql exporter', () => {
