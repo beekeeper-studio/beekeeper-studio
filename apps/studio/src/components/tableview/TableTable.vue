@@ -504,7 +504,7 @@ export default Vue.extend({
     },
     readOnlyNotice() {
       return this.dialectData.notices?.tableTable ||
-        "Tables without a primary key column only support insert and delete. Editing of existing records is disabled."
+        "Tables without a primary key column only support inserts. Editing of existing records is disabled."
     },
     // it's a table, but there's no primary key
     missingPrimaryKey() {
