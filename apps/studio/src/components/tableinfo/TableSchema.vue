@@ -118,7 +118,8 @@ export default Vue.extend({
       editedCells: [],
       newRows: [],
       removedRows: [],
-      error: null
+      error: null,
+      selectedCell: null
     }
   },
   watch: {
@@ -421,8 +422,12 @@ export default Vue.extend({
       })
     },
     columnNameCellClick(_e: any, cell: CellComponent) {
-      if (!this.editable || this.disabledFeatures?.alter?.renameColumn)
+      if (!this.editable || this.disabledFeatures?.alter?.renameColumn) {
+        if (this.selectedCell) this.selectedCell.getElement().classList.remove('selected');
+        this.selectedCell = cell;
+        cell.getElement().classList.add('selected');
         this.$native.clipboard.writeText(cell.getValue());
+      }
     },
     columnNameCellTooltip(_e: any, cell: CellComponent, _onRendered: any) {
       let canCopy: boolean = !this.editable || this.disabledFeatures?.alter?.renameColumn;
@@ -440,3 +445,4 @@ export default Vue.extend({
   },
 })
 </script>
+
