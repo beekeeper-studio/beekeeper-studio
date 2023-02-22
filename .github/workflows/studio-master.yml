@@ -40,6 +40,7 @@ jobs:
 
       - name: Cleanup artifacts Win
         if: matrix.os == 'windows-latest'
+        continue-on-error: true
         run: |
           npx rimraf "apps/studio/dist_electron/!(*.exe)"
 
