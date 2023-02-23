@@ -24,17 +24,17 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: 14
+          node-version: 16
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
       - name: Lint
         run: yarn workspace beekeeper-studio run lint
-      
+
       - name: Check for bad files
         run: bin/check-for-only-tests.sh
-      
+
       - name: Unit Tests
         run: yarn workspace beekeeper-studio run test:unit --ci --silent
 

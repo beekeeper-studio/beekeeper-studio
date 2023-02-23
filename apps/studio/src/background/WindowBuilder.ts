@@ -8,6 +8,9 @@ import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from 'electron-log'
 import querystring from 'query-string'
 
+
+const remoteMain = require('@electron/remote/main')
+
 const log = rawLog.scope('WindowBuilder')
 
 const windows: BeekeeperWindow[] = []
@@ -39,7 +42,6 @@ class BeekeeperWindow {
       titleBarStyle,
       frame: showFrame,
       webPreferences: {
-        enableRemoteModule: true,
         nodeIntegration: Boolean(process.env.ELECTRON_NODE_INTEGRATION),
         contextIsolation: false,
         spellcheck: false
@@ -52,7 +54,7 @@ class BeekeeperWindow {
     const query = openOptions ? querystring.stringify(openOptions) : null
 
     appUrl = query ? `${appUrl}?${query}` : appUrl
-
+    remoteMain.enable(this.win.webContents)
     this.win.webContents.zoomLevel = Number(settings.zoomLevel?.value) || 0
     if (!runningInWebpack) {
       createProtocol('app')
