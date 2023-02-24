@@ -65,7 +65,7 @@ export interface DatabaseClient {
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties | null>,
   getTableCreateScript: (table: string, schema?: string) => Promise<string>,
   getViewCreateScript: (view: string) => void,
-  getMaterializedViewCreateScript: (view: string) => void,
+  getMaterializedViewCreateScript?: (view: string) => Promise<string[]>,
   getRoutineCreateScript: (routine: string, type: string, schema?: string) => void,
   truncateAllTables: (db: string, schema?: string) => void,
   listMaterializedViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
@@ -489,7 +489,12 @@ function getViewCreateScript(server: IDbConnectionServer, database: IDbConnectio
 
 function getMaterializedViewCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, view: string /* , schema */) {
   checkIsConnected(server , database);
-  return database.connection?.getMaterializedViewCreateScript(view);
+  
+  if(typeof database.connection?.getMaterializedViewCreateScript !== 'function') {
+    return null;
+  } else {
+    return database.connection?.getMaterializedViewCreateScript(view);
+  }
 }
 
 function getRoutineCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, routine: string, type: string, schema: string) {
