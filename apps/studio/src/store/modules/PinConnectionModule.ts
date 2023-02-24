@@ -1,6 +1,5 @@
 import { PinnedConnection } from "@/common/appdb/models/PinnedConnection";
-import { UsedConnection } from "@/common/appdb/models/used_connection";
-import { IConnection } from "@/common/interfaces/IConnection";
+import { SavedConnection } from "@/common/appdb/models/saved_connection";
 import { Module } from "vuex";
 import { State as RootState } from '../index';
 
@@ -20,14 +19,14 @@ export const PinConnectionModule: Module<State, RootState> = {
       return state.pins;
     },
     orderedPins(_state, getters, rootState): PinnedConnection[] {
-      const connections = rootState['data/connections/items'];
+      const connections = rootState['data/connections'].items;
       return getters.pinned.sort((a, b) => a.position - b.position).map((pin: PinnedConnection) => {
-        const c = connections.find((c) => c.id === pin.id);
+        const c = connections.find((c) => c.id === pin.connectionId);
         if (c) pin.connection = c;
         return c ? pin : null
       }).filter((p) => !!p);
     },
-    pinnedConnections(_state: State, getters): IConnection[] {
+    pinnedConnections(_state: State, getters): SavedConnection[] {
       return getters.orderedPins.map((pin) => pin.connection);
     }
   },
@@ -54,9 +53,13 @@ export const PinConnectionModule: Module<State, RootState> = {
     async unloadPins(context) {
       context.commit('set', []);
     },
-    async add (context, item: IConnection) {
+    async add (context, item: SavedConnection) {
+      console.log('ITEM:', item);
       const existing = context.state.pins.find((p) => p.connectionId === item.id)
-      if (existing) return;
+      if (existing) {
+        console.log('EXISTSSSSSS');
+        return;
+      }
 
       const newPin = new PinnedConnection(item);
       newPin.position = (context.getters.orderedPins.reverse()[0]?.position || 0) + 1;
@@ -67,7 +70,7 @@ export const PinConnectionModule: Module<State, RootState> = {
       pins.forEach((p, idx) => p.position = idx);
       await PinnedConnection.save(pins);
     },
-    async remove(context, item: IConnection) {
+    async remove(context, item: SavedConnection) {
       const existing = context.state.pins.find((p) => p.connectionId === item.id);
       if (existing) {
         if (existing.id) await existing.remove();

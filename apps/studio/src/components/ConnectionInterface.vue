@@ -153,6 +153,7 @@ import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
         await this.$store.commit('workspace', this.$store.state.localWorkspace)
       }
       await this.$store.dispatch('loadUsedConfigs')
+      await this.$store.dispatch('pinnedConnections/loadPins')
       this.config.sshUsername = os.userInfo().username
       this.$nextTick(() => {
         const components = [

@@ -15,6 +15,43 @@
       </div>
 
       <div class="connection-wrap expand flex-col">
+        <!-- Pinned Connections -->
+        <!-- TODO (day): should probably make a class for pinned connections-->
+        <div class="list saved-connection-list expand" ref="pinnedConnectionList">
+          <div class="list-group">
+            <div class="list-heading">
+              <div class="flex">
+                <div class="sub row flex-middle noselect">
+                  Pinned <span class="badge">{{(pinnedConnections || []).length}}</span>
+                </div>
+              </div>
+              <span class="expand"></span>
+              <div class="actions">
+                <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
+              </div>
+            </div>
+            <error-alert :error="error" v-if="error" title="Problem loading connections" @close="error = null" :closable="true"/>
+            <sidebar-loading v-else-if="loading" />
+            <div v-else-if="noPins" class="empty">
+              <div class="empty-title">No Pinned Connections</div>
+            </div>
+            <nav v-else class="list-body">
+              <connection-list-item v-for="c in pinnedConnections"
+                :key="c.id"
+                :config="c"
+                :selectedConfig="selectedConfig"
+                :showDuplicate="true"
+                :pinned="true"
+                @edit="edit"
+                @remove="remove"
+                @duplicate="duplicate"
+                @doubleClick="connect"
+              />
+            </nav>
+          </div>
+        </div>
+
+        <hr> <!-- fake gutter for split.js -->
 
         <!-- Saved Connections -->
         <div class="list saved-connection-list expand" ref="savedConnectionList">
@@ -69,6 +106,7 @@
                   :config="c"
                   :selectedConfig="selectedConfig"
                   :showDuplicate="true"
+                  :pinned="pinnedConnections.includes(c)"
                   @edit="edit"
                   @remove="remove"
                   @duplicate="duplicate"
@@ -81,6 +119,7 @@
                 :config="c"
                 :selectedConfig="selectedConfig"
                 :showDuplicate="true"
+                :pinned="pinnedConnections.includes(c)"
                 @edit="edit"
                 @remove="remove"
                 @duplicate="duplicate"
@@ -140,7 +179,7 @@ const log = rawLog.scope('connection-sidebar');
     props: ['selectedConfig'],
     data: () => ({
       split: null,
-      sizes: [50,50],
+      sizes: [33,33,33],
       sortables: {
         labelColor: "Color",
         id: "Created",
@@ -158,10 +197,14 @@ const log = rawLog.scope('connection-sidebar');
         'settings': 'settings/settings',
         'sortOrder': 'settings/sortOrder',
         'isCloud': 'isCloud',
-        'activeWorkspaces': 'credentials/activeWorkspaces'
+        'activeWorkspaces': 'credentials/activeWorkspaces',
+        'pinnedConnections': 'pinnedConnections/pinnedConnections'
       }),
       empty() {
         return !this.connectionConfigs?.length
+      },
+      noPins() {
+        return !this.pinnedConnections?.length;
       },
       foldersSupported() {
         return !this.foldersUnsupported
@@ -218,6 +261,7 @@ const log = rawLog.scope('connection-sidebar');
       },
       components() {
         return [
+          this.$refs.pinnedConnectionList,
           this.$refs.savedConnectionList,
           this.$refs.recentConnectionList
         ]
@@ -240,6 +284,7 @@ const log = rawLog.scope('connection-sidebar');
       refresh() {
         this.$store.dispatch('data/connectionFolders/load')
         this.$store.dispatch('data/connections/load')
+        this.$store.dispatch('pinnedConnections/loadPins')
       },
       edit(config) {
         this.$emit('edit', config)

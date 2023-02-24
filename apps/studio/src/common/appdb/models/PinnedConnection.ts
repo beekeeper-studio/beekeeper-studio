@@ -1,12 +1,14 @@
-import { IConnection } from "@/common/interfaces/IConnection";
 import { Column, Entity } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
+import { SavedConnection } from "./saved_connection";
 
 @Entity({ name: 'connection_pins'})
 export class PinnedConnection extends ApplicationEntity {
 
-  constructor(connection: IConnection) {
+  constructor(connection: SavedConnection) {
     super();
+    console.log('Connection: ', connection);
+    if (!connection) return;
     this.connectionId = connection.id;
     this.workspaceId = connection.workspaceId;
   }
@@ -21,5 +23,5 @@ export class PinnedConnection extends ApplicationEntity {
   workspaceId: number = -1;
 
 
-  connection: IConnection;
+  connection: SavedConnection;
 }
