@@ -3,11 +3,9 @@ import { SavedConnection } from "@/common/appdb/models/saved_connection";
 import { Module } from "vuex";
 import { State as RootState } from '../index';
 
-
 interface State {
   pins: PinnedConnection[]
 }
-
 
 export const PinConnectionModule: Module<State, RootState> = {
   namespaced: true,
@@ -54,10 +52,8 @@ export const PinConnectionModule: Module<State, RootState> = {
       context.commit('set', []);
     },
     async add (context, item: SavedConnection) {
-      console.log('ITEM:', item);
       const existing = context.state.pins.find((p) => p.connectionId === item.id)
       if (existing) {
-        console.log('EXISTSSSSSS');
         return;
       }
 

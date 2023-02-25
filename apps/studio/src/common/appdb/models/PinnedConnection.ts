@@ -7,7 +7,6 @@ export class PinnedConnection extends ApplicationEntity {
 
   constructor(connection: SavedConnection) {
     super();
-    console.log('Connection: ', connection);
     if (!connection) return;
     this.connectionId = connection.id;
     this.workspaceId = connection.workspaceId;

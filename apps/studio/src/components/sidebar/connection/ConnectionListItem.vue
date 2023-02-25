@@ -205,11 +205,9 @@ export default {
       }
     },
     pin() {
-      console.log(this.config);
       this.$store.dispatch('pinnedConnections/add', this.config);
     },
     unpin() {
-      console.log(this.config)
       this.$store.dispatch('pinnedConnections/remove', this.config);
     }
   }
