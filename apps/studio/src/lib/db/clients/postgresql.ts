@@ -1,4 +1,3 @@
-
 // Copyright (c) 2015 The SQLECTRON Team
 
 import { readFileSync } from 'fs';
@@ -22,9 +21,10 @@ import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/Postgres
 import { AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
-import base64 from 'base64-url'
+
 
 const base64 = require('base64-url');
+
 const PD = PostgresData
 function isConnection(x: any): x is HasConnection {
   return x.connection !== undefined
@@ -1065,7 +1065,7 @@ async function insertRows(cli: any, rawInserts: TableInsert[]) {
     const result = { ...insert }
     const columns = columnsList[idx]
     result.data = result.data.map((obj) => {
-      return _.mapValues(obj, (value: string, key) => {
+      return _.mapValues(obj, (value, key) => {
         const column = columns.find((c) => c.columnName === key)
         if (column && column.dataType.startsWith('_')) {
           return JSON.parse(value)
@@ -1445,23 +1445,6 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
     }
   }
 
-  // For RDS Postgres Only - IAM authentication
-  if (server.config.client === 'postgresql' && redshiftOptions?.iamAuthenticationEnabled) {
-    const awsCredential = fromIni({ profile: redshiftOptions.awsProfile ?? 'default' })
-    const signer = new Signer({
-      credentials: awsCredential,
-      region: redshiftOptions?.awsRegion,
-      hostname: server.config.host,
-      port: server.config.port,
-      username: server.config.user
-    });
-
-    passwordResolver = async () => {
-      const token = await signer.getAuthToken()
-      return token
-    }
-  }
-
   const config: PoolConfig = {
     host: server.config.host,
     port: server.config.port || undefined,
@@ -1471,7 +1454,7 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
     connectionTimeoutMillis: globals.psqlTimeout,
     idleTimeoutMillis: globals.psqlIdleTimeout,
     // not in the typings, but works.
-    // @ts-expect-error PoolConfig not correctly typed
+    // @ts-ignore
     options: optionsString
   };
 
