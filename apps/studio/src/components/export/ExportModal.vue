@@ -91,7 +91,6 @@
 <script>
 import * as path from 'path'
 import dateFormat from 'dateformat'
-import { remote } from "electron"
 import { mapMutations } from "vuex"
 import rawlog from 'electron-log'
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "./forms"

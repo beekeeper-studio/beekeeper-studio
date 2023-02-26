@@ -260,9 +260,15 @@
 <script>
 
   import _ from 'lodash'
-  import 'codemirror/addon/search/searchcursor'
   import CodeMirror from 'codemirror'
   import 'codemirror/addon/comment/comment'
+  import 'codemirror/addon/dialog/dialog'
+  import 'codemirror/addon/search/search'
+  import 'codemirror/addon/search/jump-to-line'
+  import 'codemirror/addon/scroll/annotatescrollbar'
+  import 'codemirror/addon/search/matchesonscrollbar'
+  import 'codemirror/addon/search/matchesonscrollbar.css'
+  import 'codemirror/addon/search/searchcursor'
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
@@ -634,7 +640,17 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
             tabSize: 2,
             theme: 'monokai',
-            extraKeys: {"Ctrl-Space": "autocomplete", "Shift-Tab": "indentLess"},
+            extraKeys: {
+              "Ctrl-Space": "autocomplete",
+              "Shift-Tab": "indentLess",
+              "Ctrl-F": "findPersistent",
+              "Ctrl-G": "findNext",
+              "Ctrl-Shift-G": "findPrev",
+              "Ctrl-H": "replace"
+            },
+            options: {
+              closeOnBlur: false
+            },
             hint: CodeMirror.hint.sql,
             hintOptions: this.hintOptions,
             getColumns: this.getColumnsForAutocomplete

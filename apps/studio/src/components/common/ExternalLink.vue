@@ -2,13 +2,12 @@
   <a @click.prevent.stop="click"><slot /></a>
 </template>
 <script>
-import { remote } from 'electron'
 export default {
 
   props: ['href'],
   methods: {
     click() {
-      remote.shell.openExternal(this.href)
+      this.$native.openLink(this.href)
     }
   }
 }

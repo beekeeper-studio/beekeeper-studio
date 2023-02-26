@@ -208,8 +208,8 @@
   import FilePicker from '@/components/common/form/FilePicker'
   import ExternalLink from '@/components/common/ExternalLink'
 
-  import { remote } from 'electron'
   import { join as pathJoin } from 'path'
+import platformInfo from '@/common/platform_info'
 
   export default {
     props: ['config'],
@@ -224,7 +224,7 @@
           { label: "Username & Password", mode: "userpass" },
           { label: "SSH Agent", mode: "agent" }
         ],
-        filePickerDefaultPath: pathJoin(remote.app.getPath('home'), '.ssh')
+        filePickerDefaultPath: pathJoin(platformInfo.homeDirectory, '.ssh')
       }
     },
     methods: {

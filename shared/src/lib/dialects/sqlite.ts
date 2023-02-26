@@ -28,7 +28,8 @@ export const SqliteData: DialectData = {
       dropConstraint: true,
     },
     informationSchema: {
-      extra: true
+      extra: true,
+      comment: true
     },
   },
   notices: {

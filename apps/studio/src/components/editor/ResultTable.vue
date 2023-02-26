@@ -266,6 +266,13 @@
           const values = rows.map(row => row.columns.map(col => col.value))
           setFileContents(markdownTable(values), 'text/markdown')
         };
+        // Fix Issue #1493 Lost column names in json query download
+        // by overriding the tabulator-generated json with ...what cipboard() does, below:
+        formatter = format !== 'json' ? format : (rows, options, setFileContents) => {
+          setFileContents(
+            JSON.stringify(this.dataToJson(this.tabulator.getData(), false), null, "  "), 'text/json'
+           )
+        };
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
 

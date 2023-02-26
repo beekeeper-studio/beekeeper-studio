@@ -2,7 +2,6 @@ import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 import { promises } from 'fs'
-import { ElectronPlugin } from '../NativeWrapper'
 import { dialectFor } from '@shared/lib/dialects/models'
 import rawlog from 'electron-log'
 import { BeeCursor, TableColumn, TableFilter, TableOrView } from '../db/models'
@@ -117,7 +116,7 @@ export abstract class Export {
   async initExport(): Promise<void> {
     this.status = ExportStatus.Exporting
     this.countExported = 0
-    
+
 
     this.fileHandle = await fs.promises.open(this.filePath, 'w+')
     const results = await this.connection.selectTopStream(
@@ -229,11 +228,6 @@ export abstract class Export {
 
   pause(): void {
     this.status = ExportStatus.Paused
-  }
-
-
-  openFile(): void {
-    ElectronPlugin.files.open(this.filePath)
   }
 
   getFileName(): string {

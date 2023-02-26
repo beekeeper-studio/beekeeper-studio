@@ -1,4 +1,3 @@
-import { remote } from 'electron'
 import { execSync } from 'child_process'
 import platformInfo from './common/platform_info'
 import { loadEncryptionKey } from './common/encryption_key'
@@ -6,8 +5,8 @@ import { ConnectionTypes } from './common/appdb/models/saved_connection'
 
 const userDirectory = platformInfo.userDirectory
 
-if (remote?.process?.env?.DEBUG) {
-  localStorage.debug = remote.process.env.DEBUG
+if (platformInfo.debugEnabled) {
+  localStorage.debug = platformInfo.DEBUG
 }
 
 function hasSshKeysPlug() {

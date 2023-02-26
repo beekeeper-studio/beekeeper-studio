@@ -22,6 +22,7 @@
           @close="close"
           @closeAll="closeAll"
           @closeOther="closeOther"
+          @closeToRight="closeToRight"
           @duplicate="duplicate"
         />
       </Draggable>
@@ -238,6 +239,7 @@
           { name: "Close", slug: 'close', handler: ({item}) => this.close(item)},
           { name: "Close Others", slug: 'close-others', handler: ({item}) => this.closeOther(item)},
           { name: 'Close All', slug: 'close-all', handler: this.closeAll},
+          { name: "Close Tabs to Right", slug: 'close-to-right', handler: ({item}) => this.closeToRight(item)},
           { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.duplicate(item)}
         ]
       },
@@ -314,6 +316,8 @@
             return this.closeOther(item)
           case 'close-all':
             return this.closeAll();
+          case 'close-to-right':
+            return this.closeToRight(item);
           case 'duplicate':
             return this.duplicate(item);
         }
@@ -455,6 +459,18 @@
         if (tab.queryId) {
           this.$store.dispatch('data/queries/reload', tab.queryId)
         }
+      },
+      closeToRight(tab) {
+        const tabIndex = _.indexOf(this.tabItems, tab)
+        const activeTabIndex = _.indexOf(this.tabItems, this.activeTab)
+
+        const tabsToRight = this.tabItems.slice(tabIndex + 1)
+
+        if (this.activeTab && activeTabIndex > tabIndex) {
+          this.setActiveTab(tab)
+        }
+
+        this.$store.dispatch('tabs/remove', tabsToRight)
       },
       duplicate(other: OpenTab) {
         const tab = other.duplicate()

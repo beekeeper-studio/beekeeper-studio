@@ -233,6 +233,7 @@ const log = rawLog.scope('connection-sidebar');
       sortedConnections() {
         if (this.sortOrder === 'labelColor') {
           const mappings = {
+            default: -1,
             red: 0,
             orange: 1,
             yellow: 2,
@@ -241,7 +242,7 @@ const log = rawLog.scope('connection-sidebar');
             purple: 5,
             pink: 6
           }
-          return _.orderBy(this.connectionConfigs, (c) => mappings[c.color]).reverse()
+          return _.orderBy(this.connectionConfigs, (c) => mappings[c.labelColor]).reverse()
         }
         return _.orderBy(this.connectionConfigs, this.sortOrder)
       },

@@ -111,6 +111,15 @@
         <span>Ctrl</span><span>H</span>
       </div>
     </div>
+    <div class="shortcut-item">
+      <div>Find</div>
+      <div class="shortcut" v-if="$config.isMac"><span>⌘</span><span>F</span></div>
+      <div class="shortcut" v-else><span>Ctrl</span><span>F</span></div>
+    </div>
+    <div class="shortcut-item">
+      <div>Find and Replace</div>
+      <div class="shortcut"><span>Ctrl</span><span>H</span></div>
+    </div>
     <!-- <div class="shortcut-item">
       <div>Shortcut</div>
       <div v-if="$config.isMac"><span class="badge">⌘ + P</span></div>

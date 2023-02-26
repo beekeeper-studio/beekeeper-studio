@@ -23,9 +23,6 @@
 </template>
 
 <script>
-import { remote } from 'electron'
-
-
 export default {
   props: {
     value: {
@@ -63,7 +60,7 @@ export default {
   methods: {
     async openFilePickerDialog() {
       if(this.disabled) {
-        return 
+        return
       }
 
       const dialogConfig = {
@@ -80,12 +77,12 @@ export default {
 
       let files
       if (this.save) {
-        files = [ remote.dialog.showSaveDialogSync({
+        files = [ this.$native.dialog.showSaveDialogSync({
           ...dialogConfig,
           ...this.options
         })]
       } else {
-        files = remote.dialog.showOpenDialogSync({
+        files = this.$native.dialog.showOpenDialogSync({
           ...dialogConfig,
           ...this.options
         })

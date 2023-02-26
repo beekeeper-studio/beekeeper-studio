@@ -1,7 +1,8 @@
 
-import { remote } from 'electron'
 import Noty from 'noty'
 import _ from 'lodash'
+
+const remote = require('@electron/remote')
 /*
   Ok this is a little late in the game, but starting to move electron
   remote calls to this object. The hope is that when we support other platforms
@@ -14,6 +15,11 @@ import _ from 'lodash'
   - anything else that uses regular node
 */
 
+interface IWindowDialog {
+  showSaveDialogSync(any): void
+  showOpenDialogSync(any): void
+}
+
 export interface NativePlugin {
   clipboard: {
     writeText(text: string): void
@@ -22,7 +28,12 @@ export interface NativePlugin {
   files: {
     open(path: string): Promise<string>
     showItemInFolder(path: string): void
-  }
+  },
+
+  getCurrentWindow(): Electron.BrowserWindow | null
+  openLink(link: string): void
+  dialog: IWindowDialog
+
 }
 
 const copyNotification = new Noty({
@@ -33,6 +44,16 @@ const copyNotification = new Noty({
 })
 
 export const ElectronPlugin: NativePlugin = {
+  dialog: {
+    showOpenDialogSync: (any) => remote.dialog.showOpenDialogSync(any),
+    showSaveDialogSync: (any) => remote.dialog.showSaveDialogSync(any)
+  },
+  openLink(link: string) {
+    remote.shell.openExternal(link);
+  },
+  getCurrentWindow() {
+    return remote.getCurrentWindow()
+  },
   clipboard: {
     writeText(rawText: any, notify = true) {
       const text = _.toString(rawText)

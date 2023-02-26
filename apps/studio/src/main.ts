@@ -62,7 +62,6 @@ import './common/initializers/big_int_initializer.ts'
         return x;
       }
     });
-
     const transports = [log.transports.console, log.transports.file]
     if (platformInfo.isDevelopment || platformInfo.debugEnabled) {
       transports.forEach(t => t.level = 'silly')
