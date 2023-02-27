@@ -292,7 +292,7 @@ const log = rawLog.scope('connection-sidebar');
       refresh() {
         this.$store.dispatch('data/connectionFolders/load')
         this.$store.dispatch('data/connections/load')
-        this.$store.dispatch('pinnedConnections/loadPins')
+        this.$store.dispatch('pinnedConnections/loadPins').then(() => this.$store.dispatch('pinnedConnections/reorder', this.pinnedConnections))
         this.split = this.getSplit()
       },
       edit(config) {
