@@ -17,7 +17,7 @@
       <div class="connection-wrap expand flex-col">
         <!-- Pinned Connections -->
         <!-- TODO (day): should probably make a class for pinned connections-->
-        <div class="list saved-connection-list expand" ref="pinnedConnectionList">
+        <div v-if="!noPins" class="list saved-connection-list expand" ref="pinnedConnectionList">
           <div class="list-group">
             <div class="list-heading">
               <div class="flex">
@@ -32,9 +32,6 @@
             </div>
             <error-alert :error="error" v-if="error" title="Problem loading connections" @close="error = null" :closable="true"/>
             <sidebar-loading v-else-if="loading" />
-            <div v-else-if="noPins" class="empty">
-              <div class="empty-title">No Pinned Connections</div>
-            </div>
             <nav v-else class="list-body">
               <connection-list-item v-for="c in pinnedConnections"
                 :key="c.id"
@@ -51,7 +48,7 @@
           </div>
         </div>
 
-        <hr> <!-- fake gutter for split.js -->
+        <hr v-if="!noPins"> <!-- fake gutter for split.js -->
 
         <!-- Saved Connections -->
         <div class="list saved-connection-list expand" ref="savedConnectionList">
@@ -107,6 +104,7 @@
                   :selectedConfig="selectedConfig"
                   :showDuplicate="true"
                   :pinned="pinnedConnections.includes(c)"
+                  @pinChange="pinOnChange"
                   @edit="edit"
                   @remove="remove"
                   @duplicate="duplicate"
@@ -120,6 +118,7 @@
                 :selectedConfig="selectedConfig"
                 :showDuplicate="true"
                 :pinned="pinnedConnections.includes(c)"
+                @pinChange="pinOnChange"
                 @edit="edit"
                 @remove="remove"
                 @duplicate="duplicate"
@@ -179,7 +178,6 @@ const log = rawLog.scope('connection-sidebar');
     props: ['selectedConfig'],
     data: () => ({
       split: null,
-      sizes: [33,33,33],
       sortables: {
         labelColor: "Color",
         id: "Created",
@@ -260,23 +258,33 @@ const log = rawLog.scope('connection-sidebar');
         return _.orderBy(this.connectionConfigs, this.sortOrder)
       },
       components() {
-        return [
-          this.$refs.pinnedConnectionList,
-          this.$refs.savedConnectionList,
-          this.$refs.recentConnectionList
-        ]
+        if (!this.noPins) {
+          return [
+            this.$refs.pinnedConnectionList,
+            this.$refs.savedConnectionList,
+            this.$refs.recentConnectionList
+          ]
+        } else {
+          return [
+            this.$refs.savedConnectionList,
+            this.$refs.recentConnectionList
+          ]
+        }
       }
     },
     mounted() {
-      this.split = Split(this.components, {
-        elementStyle: (dim, size) => ({
-          'flex-basis': `calc(${size}%)`
-        }),
-        direction: 'vertical',
-        sizes: this.sizes
-      })
+      this.split = this.getSplit()
     },
     methods: {
+      getSplit() {
+        return Split(this.components, {
+          elementStyle: (dim, size) => ({
+            'flex-basis': `calc(${size}%)`
+          }),
+          direction: 'vertical',
+          sizes: this.noPins ? [50, 50] : [33, 33, 33]
+        })
+      },
       importFromLocal() {
         console.log("triggering import")
         this.$root.$emit(AppEvent.promptConnectionImport)
@@ -285,6 +293,7 @@ const log = rawLog.scope('connection-sidebar');
         this.$store.dispatch('data/connectionFolders/load')
         this.$store.dispatch('data/connections/load')
         this.$store.dispatch('pinnedConnections/loadPins')
+        this.split = this.getSplit()
       },
       edit(config) {
         this.$emit('edit', config)
@@ -308,6 +317,10 @@ const log = rawLog.scope('connection-sidebar');
         // this.connectionConfigs.sort((a, b) => a[by].toString().localeCompare(b[by].toString()))
         this.settings.sortOrder.value = by
         this.settings.sortOrder.save()
+      },
+      pinOnChange() {
+        if (this.pinnedConnections.length < 2)
+          this.split = this.getSplit()
       }
     }
   }

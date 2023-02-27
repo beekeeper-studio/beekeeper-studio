@@ -205,10 +205,10 @@ export default {
       }
     },
     pin() {
-      this.$store.dispatch('pinnedConnections/add', this.config);
+      this.$store.dispatch('pinnedConnections/add', this.config).then(() => this.$emit('pinChange'));
     },
     unpin() {
-      this.$store.dispatch('pinnedConnections/remove', this.config);
+      this.$store.dispatch('pinnedConnections/remove', this.config).then(() => this.$emit('pinChange'));
     }
   }
 
