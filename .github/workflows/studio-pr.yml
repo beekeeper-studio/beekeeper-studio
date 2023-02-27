@@ -28,6 +28,9 @@ jobs:
       - name: Check dependencies
         run: "yarn install --frozen-lockfile --network-timeout 100000"
 
+      - name: Install node-abi
+        run: "yarn global add node-abi"
+
       - name: Build Electron app
         run: "yarn run electron:build --publish never"
 
