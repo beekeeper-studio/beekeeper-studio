@@ -29,7 +29,10 @@ export default {
   computed: {
     notificationText() {
       const exportName = this.exporter.table ? this.exporter.table.name : 'query';
-      return `(${this.percentComplete}%) Exporting '${exportName}'`
+      // this is a hack to get the countExported to update <-- CoPilot suggested this comment, and it was right af lol
+      const countExported = this.countExported;
+      const percentComplete = this.percentComplete;
+      return this.exporter.table ? `(${percentComplete}%) Exporting TABLE '${exportName}'` : `(${countExported} rows) Exporting QUERY '${exportName}'`
     },
   },
   methods: {
@@ -43,7 +46,9 @@ export default {
       this.$noty.error(`${exportName} export aborted`);
     },
     updateProgress(progress) {
-      this.percentComplete = progress.percentComplete
+      // not quite sure why this hackiness (and only this hackiness) finally made it work but i'll take it
+      this.countExported = progress.countExported
+      this.percentComplete = this.exporter.table ? progress.percentComplete : progress.countExported
     }
   },
   watch: {

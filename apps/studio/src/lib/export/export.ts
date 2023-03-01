@@ -78,11 +78,13 @@ export abstract class Export {
 
 
   set status(status: ExportStatus) {
+    // i thought you weren't supposed to mess with vue's private _properties
     this._status = status
     this.notify()
   }
 
   get status() {
+    // more accessing vue's private _properties
     return this._status
   }
 
@@ -102,6 +104,7 @@ export abstract class Export {
       status: this.status,
       percentComplete: this.percentComplete,
     }
+    // console.log('notify() calling callbacks', payload, 'callbacks: ', this.callbacks.progress)
     this.callbacks.progress.forEach(c => c(payload))
   }
 
@@ -197,6 +200,7 @@ export abstract class Export {
         }
         this.countExported += rows.length
 
+        // console.log('calculating time left')
         this.calculateTimeLeft()
         this.notify()
 
@@ -256,6 +260,7 @@ export abstract class Export {
   }
 
   onProgress(func: (progress: ExportProgress) => void): void {
+    // console.log('adding progress callback')
     this.callbacks.progress.push(func)
   }
 
