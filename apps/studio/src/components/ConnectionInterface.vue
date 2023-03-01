@@ -22,7 +22,13 @@
                 </select>
               </div>
               <div v-if="config.connectionType">
-
+                <div class="form-group">
+                  <label for="keyMapSelection">Keymap</label>
+                  <select name="keyMapSelection" class="form-control custom-select" v-model="config.keymap" id="keymap-select">
+                    <option disabled value="null">Select a keymap type...</option>
+                    <option :key="t.value" v-for="t in keymapTypes" :value="t.value">{{t.name}}</option>
+                  </select>
+                </div>
                 <!-- INDIVIDUAL DB CONFIGS -->
                 <postgres-form v-if="config.connectionType === 'cockroachdb'" :config="config" :testing="testing"></postgres-form>
                 <mysql-form v-if="['mysql', 'mariadb'].includes(config.connectionType)" :config="config" :testing="testing" @save="save" @test="testConnection" @connect="submit"></mysql-form>
@@ -106,6 +112,9 @@ import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
     computed: {
       ...mapState(['workspaceId']),
       ...mapState('data/connections', {'connections': 'items'}),
+      keymapTypes() {
+        return this.$config.defaults.keymapTypes
+      },
       connectionTypes() {
         return this.$config.defaults.connectionTypes
       },

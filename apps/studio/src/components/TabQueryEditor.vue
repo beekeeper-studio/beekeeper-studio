@@ -133,6 +133,7 @@
   import _ from 'lodash'
   import CodeMirror from 'codemirror'
   import 'codemirror/addon/comment/comment'
+  import 'codemirror/keymap/vim.js'
   import 'codemirror/addon/dialog/dialog'
   import 'codemirror/addon/search/search'
   import 'codemirror/addon/search/jump-to-line'
@@ -462,6 +463,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       },
       initialize() {
         this.initialized = true
+        const editormapping = this.$store.state.usedConfig.keymap ? this.$store.state.usedConfig.keymap : "default";
         // TODO (matthew): Add hint options for all tables and columns\
         this.initializeQueries()
         const startingValue = this.unsavedText || this.query?.text || editorDefault
@@ -495,9 +497,12 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             "Shift-Cmd-F": this.formatSql,
             "Ctrl-/": this.toggleComment,
             "Cmd-/": this.toggleComment,
-            "Esc": this.cancelQuery,
             "F5": this.submitTabQuery,
             "Shift-F5": this.submitCurrentQuery
+          }
+
+          if(editormapping !== "vim") {
+            runQueryKeyMap.Esc = this.cancelQuery
           }
 
           const modes = {
@@ -524,6 +529,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             },
             hint: CodeMirror.hint.sql,
             hintOptions: this.hintOptions,
+            keyMap: editormapping,
             getColumns: this.getColumnsForAutocomplete
           })
           this.editor.setValue(startingValue)
