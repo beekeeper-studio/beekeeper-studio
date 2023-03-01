@@ -500,8 +500,9 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             "F5": this.submitTabQuery,
             "Shift-F5": this.submitCurrentQuery
           }
-
-          if(editormapping !== "vim") {
+          if(editormapping === "vim") {
+            runQueryKeyMap["Ctrl-Esc"] = this.cancelQuery
+          } else {
             runQueryKeyMap.Esc = this.cancelQuery
           }
 
