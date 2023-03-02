@@ -46,6 +46,9 @@
             <x-label>Markdown</x-label>
           </x-menuitem>
           <hr>
+          <!-- TODO: add an option to download the full result set -->
+          <!-- This should be gray if the full result set < 50k, with a tooltip to explain -->
+          <!-- This should be clickable if the full result set > 50k with a tooltip to explain what it does -->
           <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboard">
             <x-label>Copy to Clipboard (TSV / Excel)</x-label>
           </x-menuitem>
