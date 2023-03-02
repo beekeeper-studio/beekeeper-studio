@@ -17,6 +17,7 @@
               <span class="badge badge-info">Beta</span>
             </div>
           </div>
+          <!-- TODO: Add some copy here to explain what is about to be exported. -->
           <span class="close-btn btn btn-fab">
             <i class="material-icons" @click.prevent="closeModal">clear</i>
           </span>
@@ -270,7 +271,7 @@ export default {
         outputOptions: this.outputOptions,
         exporter: this.selectedExportFormat.key
       }
-      this.$emit('export', payload)
+      this.$emit('export', payload) // handled by ExportManager
       this.$modal.hide('export-modal')
     },
     closeModal () {

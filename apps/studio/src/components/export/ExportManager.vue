@@ -75,28 +75,31 @@ export default Vue.extend({
   methods: {
     ...mapMutations({ addExport: "exports/addExport" }),
     async startExport(options: StartExportOptions) {
-        const exporter = new ExportClassPicker[options.exporter](
-          options.filePath,
-          this.connection,
-          options.table,
-          options.query,
-          options.filters || [],
-          options.options,
-          options.outputOptions
-        )
-        this.addExport(exporter)
-        exporter.onProgress(this.notifyProgress.bind(this))
-        await exporter.exportToFile()
-        if (exporter.status !== ExportStatus.Completed) return;
-        const exportName = options.table? options.table.name : 'query';
-        const n = this.$noty.success(`Export of ${exportName} complete`, {
-          buttons: [
-            Noty.button('Show', "btn btn-primary", () => {
-              this.$native.files.showItemInFolder(options.filePath)
-              n.close()
-            })
-          ]
-        })
+      // FIXME: try/catch and notify users if an error occurs.
+      // FIXME: Make sure we only send a single query to the exporter
+      const exporter = new ExportClassPicker[options.exporter](
+        options.filePath,
+        this.connection,
+        options.table,
+        options.query,
+        options.filters || [],
+        options.options,
+        options.outputOptions
+      )
+      this.addExport(exporter)
+      exporter.onProgress(this.notifyProgress.bind(this))
+      // FIXME: We need an exporter.onError event probably to handle errors during export
+      await exporter.exportToFile()
+      if (exporter.status !== ExportStatus.Completed) return;
+      const exportName = options.table? options.table.name : 'query';
+      const n = this.$noty.success(`Export of ${exportName} complete`, {
+        buttons: [
+          Noty.button('Show', "btn btn-primary", () => {
+            this.$native.files.showItemInFolder(options.filePath)
+            n.close()
+          })
+        ]
+      })
     },
     handleExportRequest(options?: ExportTriggerOptions): void {
       this.table = options?.table
@@ -106,6 +109,7 @@ export default Vue.extend({
     handleDeadModal() {
       this.table = undefined
       this.filters = undefined
+      this.query = undefined
     },
     notifyProgress(_progress: ExportProgress) {
     }
