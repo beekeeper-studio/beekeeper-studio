@@ -206,6 +206,7 @@
         if (this.config === config) {
           this.config = new SavedConnection()
         }
+        await this.$store.dispatch('pinnedConnections/remove', config)
         await this.$store.dispatch('data/connections/remove', config)
         this.$noty.success(`${config.name} deleted`)
       },
