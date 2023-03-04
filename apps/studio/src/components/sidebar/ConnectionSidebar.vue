@@ -17,7 +17,7 @@
       <div class="connection-wrap expand flex-col">
         <!-- Pinned Connections -->
         <!-- TODO (day): should probably make a class for pinned connections-->
-        <div v-if="!noPins" class="list saved-connection-list expand" ref="pinnedConnectionList">
+        <div class="list saved-connection-list expand" ref="pinnedConnectionList">
           <div class="list-group">
             <div class="list-heading">
               <div class="flex">
@@ -104,7 +104,6 @@
                   :selectedConfig="selectedConfig"
                   :showDuplicate="true"
                   :pinned="pinnedConnections.includes(c)"
-                  @pinChange="pinOnChange"
                   @edit="edit"
                   @remove="remove"
                   @duplicate="duplicate"
@@ -118,7 +117,6 @@
                 :selectedConfig="selectedConfig"
                 :showDuplicate="true"
                 :pinned="pinnedConnections.includes(c)"
-                @pinChange="pinOnChange"
                 @edit="edit"
                 @remove="remove"
                 @duplicate="duplicate"
@@ -186,6 +184,18 @@ const log = rawLog.scope('connection-sidebar');
       }
     }),
     watch: {
+      // If we load with some pins, this will reinitialize split to reflect that
+      noPins(value) {
+        if (!value)
+          this.split = this.getSplit()
+      },
+      // Check if we need to reinitialize split based on pinnedConnections length
+      pinnedConnections(value) {
+        if (value.length < 2) {
+          this.split?.destroy()
+          this.split = this.getSplit()
+        }
+      }
     },
     computed: {
       ...mapState('data/connections', {'connectionConfigs': 'items', 'connectionsLoading': 'loading', 'connectionsError': 'error'}),
@@ -293,6 +303,7 @@ const log = rawLog.scope('connection-sidebar');
         this.$store.dispatch('data/connectionFolders/load')
         this.$store.dispatch('data/connections/load')
         this.$store.dispatch('pinnedConnections/loadPins').then(() => this.$store.dispatch('pinnedConnections/reorder', this.pinnedConnections))
+        this.split.destroy()
         this.split = this.getSplit()
       },
       edit(config) {
@@ -319,8 +330,6 @@ const log = rawLog.scope('connection-sidebar');
         this.settings.sortOrder.save()
       },
       pinOnChange() {
-        if (this.pinnedConnections.length < 2)
-          this.split = this.getSplit()
       }
     }
   }

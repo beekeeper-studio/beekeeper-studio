@@ -51,7 +51,7 @@ export const PinConnectionModule: Module<State, RootState> = {
     async unloadPins(context) {
       context.commit('set', []);
     },
-    async add (context, item: SavedConnection) {
+    async add(context, item: SavedConnection) {
       const existing = context.state.pins.find((p) => p.connectionId === item.id)
       if (existing) {
         return;
