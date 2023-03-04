@@ -432,15 +432,27 @@ export default Vue.extend({
     columnNameCellTooltip(_e: any, cell: CellComponent, _onRendered: any) {
       let canCopy: boolean = !this.editable || this.disabledFeatures?.alter?.renameColumn;
       return canCopy ? `${cell.getValue()} - Click to Copy` : cell.getValue();
-    }
+    },
+    maybeUnselectCell(event: any) {
+      if (!this.selectedCell) return
+      if (!this.active) return
+      const target = event.target
+      const targets = Array.from(this.selectedCell.getElement().getElementsByTagName("*"))
+      if (!targets.includes(target)) {
+        this.selectedCell.getElement().classList.remove('selected')
+        this.selectedCell = null
+      }
+    },
   },
   async mounted() {
+    document.addEventListener('click', this.maybeUnselectCell)
     this.tabState.dirty = false
     // table columns are updated by TabTableProperties on load. So no need to do it here.
     if (!this.active) this.forceRedraw = true
     this.initializeTabulator()
   },
   beforeDestroy() {
+    document.removeEventListener('click', this.maybeUnselectCell)
     if (this.tabulator) this.tabulator.destroy()
   },
 })
