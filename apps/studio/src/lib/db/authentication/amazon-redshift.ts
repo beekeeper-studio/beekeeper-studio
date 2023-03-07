@@ -33,9 +33,7 @@ export interface TemporaryClusterCredentials {
 export class RedshiftCredentialResolver {
     // This class uses a singleton pattern to maintain internal state.
     private static instance: RedshiftCredentialResolver;
-    private constructor() {
-      // TODO: implement
-    }
+    private constructor() {}
     public static getInstance(): RedshiftCredentialResolver {
         if (!RedshiftCredentialResolver.instance) {
             RedshiftCredentialResolver.instance = new RedshiftCredentialResolver();
@@ -54,7 +52,7 @@ export class RedshiftCredentialResolver {
      * 
      * @returns true if the credentials should be refreshed
      */
-    private shouldRefreshCredentials(credentials: TemporaryClusterCredentials): boolean {
+    private shouldRefreshCredentials(credentials: TemporaryClusterCredentials): Boolean {
         // If no credentials have been set, refresh.
         if (!credentials) {
             return true;

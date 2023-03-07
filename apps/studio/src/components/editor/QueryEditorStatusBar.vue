@@ -2,70 +2,35 @@
   <statusbar :class="{'empty': results.length === 0, 'query-meta': true}">
     <template v-if="results.length > 0">
       <div class="truncate statusbar-info">
-        <span
-          v-show="results.length > 1"
-          class="statusbar-item result-selector"
-          :title="'Results'"
-        >
-          <div
-            class="select-wrap"
-            v-tooltip="{content: 'More query results in here', placement: 'top', show: showHint, trigger: 'manual', classes: ['tooltip-info']}"
-          >
-            <select
-              name="resultSelector"
-              id="resultSelector"
-              @change="updateValue"
-              class="form-control"
-            >
-              <option
-                v-for="(result, index) in results"
-                :selected="value == index"
-                :key="index"
-                :value="index"
-              >Result {{ index + 1 }}: {{ shortNum(result.rows.length, 0) }} {{ pluralize('row', result.rows.length, false) }}</option>
-            </select>
-          </div>
-        </span>
-        <div
-          class="statusbar-item row-counts"
-          v-if="rowCount > 0"
-          :title="`${rowCount} Records${result.truncated ? ' (Truncated)' : ''}`"
-        >
-          <i class="material-icons">list_alt</i>
-          <span class="num-rows">{{ rowCount }}</span>
-          <span
-            class="truncated-rows"
-            v-if="result && result.truncated"
-          >/&nbsp;{{ result.totalRowCount }}</span>
+        <span v-show="results.length > 1" class="statusbar-item result-selector" :title="'Results'">
+        <div class="select-wrap" v-tooltip="{content: 'More query results in here', placement: 'top', show: showHint, trigger: 'manual', classes: ['tooltip-info']}">
+          <select name="resultSelector" id="resultSelector" @change="updateValue" class="form-control">
+            <option v-for="(result, index) in results" :selected="value == index" :key="index" :value="index">Result {{index + 1}}: {{shortNum(result.rows.length, 0)}} {{pluralize('row', result.rows.length, false)}}</option>
+          </select>
         </div>
-        <div
-          class="statusbar-item affected-rows"
-          v-if="affectedRowsText "
-          :title="affectedRowsText + ' ' + 'Rows Affected'"
-        >
+        </span>
+        <div class="statusbar-item row-counts" v-if="rowCount > 0" :title="`${rowCount} Records${result.truncated ? ' (Truncated)' : ''}`">
+          <i class="material-icons">list_alt</i>
+          <span class="num-rows">{{rowCount}}</span>
+          <span class="truncated-rows" v-if="result && result.truncated">/&nbsp;{{result.totalRowCount}}</span>
+        </div>
+        <div class="statusbar-item affected-rows" v-if="affectedRowsText " :title="affectedRowsText + ' ' + 'Rows Affected'">
           <i class="material-icons">clear_all</i>
           <span>{{ affectedRowsText }} affected</span>
         </div>
-        <span
-          class="statusbar-item execute-time "
-          v-if="executeTimeText"
-          :title="executionTimeTitle"
-        >
+        <span class="statusbar-item execute-time " v-if="executeTimeText" :title="executionTimeTitle">
           <i class="material-icons">update</i>
-          <span>{{ executeTimeText }}</span>
+          <span>{{executeTimeText}}</span>
         </span>
+
       </div>
     </template>
     <template v-else>
-      <span class="expand" />
+      <span class="expand"></span>
       <span class="empty">No Data</span>
     </template>
     <div class="flex-right">
-      <x-button
-        class="btn btn-flat btn-icon end"
-        :disabled="results.length === 0"
-        menu
-      >
+      <x-button class="btn btn-flat btn-icon end" :disabled="results.length === 0" menu>
         Download <i class="material-icons">arrow_drop_down</i>
         <x-menu>
           <x-menuitem @click.prevent="download('csv')">
@@ -81,26 +46,18 @@
             <x-label>Markdown</x-label>
           </x-menuitem>
           <hr>
-          <x-menuitem
-            title="Probably don't do this with large results (500+)"
-            @click.prevent="copyToClipboard"
-          >
+          <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboard">
             <x-label>Copy to Clipboard (TSV / Excel)</x-label>
           </x-menuitem>
-          <x-menuitem
-            title="Probably don't do this with large results (500+)"
-            @click.prevent="copyToClipboardJson"
-          >
+          <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboardJson">
             <x-label>Copy to Clipboard (JSON)</x-label>
           </x-menuitem>
-          <x-menuitem
-            title="Probably don't do this with large results (500+)"
-            @click.prevent="copyToClipboardMarkdown"
-          >
+          <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboardMarkdown">
             <x-label>Copy to Clipboard (Markdown)</x-label>
           </x-menuitem>
         </x-menu>
       </x-button>
+
     </div>
   </statusbar>
 </template>
@@ -183,6 +140,8 @@ export default {
         }
         return `Execution time: ${humanizeDuration(this.executeTime)}`
       }
+    },
+    mounted() {
     },
     methods: {
       pluralize(word, amount, flag) {

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="false" />
+  <div v-if="false"></div>
 </template>
 <script lang="ts">
 import { ipcRenderer } from 'electron'

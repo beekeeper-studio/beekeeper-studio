@@ -1,35 +1,15 @@
 <template>
-  <div
-    class="quicksearch"
-    v-hotkey="keymap"
-  >
-    <div class="quicksearch-bg" />
-    <div
-      class="quicksearch-wrap"
-      ref="menu"
-    >
+  <div class="quicksearch" v-hotkey="keymap">
+    <div class="quicksearch-bg"></div>
+    <div class="quicksearch-wrap" ref="menu">
       <div class="form-group">
-        <input
-          type="text"
-          ref="searchBox"
-          placeholder="Quick Search"
-          v-model="searchTerm"
-        >
-        <span
-          class="clear"
-          @click.prevent="searchTerm = null"
-        ><i class="material-icons">cancel</i></span>
+        <input type="text" ref="searchBox" placeholder="Quick Search" v-model="searchTerm">
+        <span class="clear" @click.prevent="searchTerm = null"><i class="material-icons">cancel</i></span>
       </div>
-      <ul
-        class="results no-results"
-        v-if="!results.length && searchTerm"
-      >
+      <ul class="results no-results" v-if="!results.length && searchTerm">
         <li>No Results</li>
       </ul>
-      <div
-        class="results empty"
-        v-if="!results.length && !searchTerm"
-      >
+      <div class="results empty" v-if="!results.length && !searchTerm">
         <p>Type a table name or query name</p>
         <div class="shortcut-item">
           <div>Open </div>
@@ -47,10 +27,7 @@
           <span class="hint">(tables only)</span>
         </div>
       </div>
-      <ul
-        class="results"
-        v-if="results && results.length"
-      >
+      <ul class="results" v-if="results && results.length">
         <li 
           class="result-item" 
           v-for="(blob, idx) in results" 
@@ -58,15 +35,9 @@
           :class="{selected: idx === selectedItem}"
           @click.prevent="handleClick($event, blob)"
         >
-          <table-icon
-            v-if="blob.type === 'table'"
-            :table="blob.item"
-          />
-          <i
-            class="material-icons item-icon query"
-            v-if="blob.type === 'query'"
-          >code</i> 
-          <span v-html="highlight(blob)" />
+          <table-icon v-if="blob.type === 'table'" :table="blob.item" />
+          <i class="material-icons item-icon query" v-if="blob.type === 'query'">code</i> 
+          <span v-html="highlight(blob)"></span>
         </li>
       </ul>
     </div>
@@ -96,6 +67,7 @@ export default Vue.extend({
       active: false,
       searchTerm: null,
       results: [],
+      // @ts-ignore-error
       selectedItem: 0
     }
   },

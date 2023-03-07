@@ -1,131 +1,69 @@
 <template>
-  <div
-    class="query-editor"
-    v-hotkey="keymap"
-  >
+  <div class="query-editor" v-hotkey="keymap">
     <div
       class="top-panel"
       ref="topPanel"
       @contextmenu.prevent.stop="showContextMenu"
     >
-      <merge-manager
-        v-if="query && query.id"
-        :original-text="originalText"
-        :query="query"
-        :unsaved-text="unsavedText"
-        @change="onChange"
-        @mergeAccepted="originalText = query.text"
-      />
-      <div
-        class="no-content"
-        v-if="remoteDeleted"
-      >
+      <merge-manager v-if="query && query.id" :originalText="originalText" :query="query" :unsavedText="unsavedText" @change="onChange" @mergeAccepted="originalText = query.text" />
+      <div class="no-content" v-if="remoteDeleted">
         <div class="alert alert-danger">
           <i class="material-icons">error_outline</i>
           <div class="alert-body">
             This query was deleted by someone else. It is no longer editable.
           </div>
-          <a
-            @click.prevent="close"
-            class="btn btn-flat"
-          >Close Tab</a>
+          <a @click.prevent="close" class="btn btn-flat">Close Tab</a>
         </div>
       </div>
-      <textarea
-        name="editor"
-        class="editor"
-        ref="editor"
-        id=""
-        cols="30"
-        rows="10"
-      />
-      <span class="expand" />
+      <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
+      <span class="expand"></span>
       <div class="toolbar text-right">
-        <div
-          class="actions btn-group"
-          ref="actions"
-        >
-          <x-button
-            @click.prevent="triggerSave"
-            class="btn btn-flat btn-small"
-          >
-            Save
-          </x-button>
+        <div class="actions btn-group" ref="actions">
+          <x-button @click.prevent="triggerSave" class="btn btn-flat btn-small">Save</x-button>
 
           <x-buttons class="">
-            <x-button
-              class="btn btn-primary btn-small"
-              v-tooltip="'Ctrl+Enter'"
-              @click.prevent="submitTabQuery"
-            >
-              <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
+            <x-button class="btn btn-primary btn-small" v-tooltip="'Ctrl+Enter'" @click.prevent="submitTabQuery">
+              <x-label>{{hasSelectedText ? 'Run Selection' : 'Run'}}</x-label>
             </x-button>
-            <x-button
-              class="btn btn-primary btn-small"
-              menu
-            >
+            <x-button class="btn btn-primary btn-small" menu>
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
                 <x-menuitem @click.prevent="submitTabQuery">
-                  <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
-                  <x-shortcut value="Control+Enter" />
+                  <x-label>{{hasSelectedText ? 'Run Selection' : 'Run'}}</x-label>
+                  <x-shortcut value="Control+Enter"></x-shortcut>
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQuery">
                   <x-label>Run Current</x-label>
-                  <x-shortcut value="Control+Shift+Enter" />
+                  <x-shortcut value="Control+Shift+Enter"></x-shortcut>
                 </x-menuitem>
               </x-menu>
             </x-button>
           </x-buttons>
         </div>
       </div>
+
+
     </div>
-    <div
-      class="bottom-panel"
-      ref="bottomPanel"
-    >
-      <progress-bar
-        @cancel="cancelQuery"
-        :message="runningText"
-        v-if="running"
-      />
-      <result-table
-        ref="table"
-        v-else-if="rowCount > 0"
-        :active="active"
-        :table-height="tableHeight"
-        :result="result"
-        :query="query"
-      />
-      <div
-        class="message"
-        v-else-if="result"
-      >
+    <div class="bottom-panel" ref="bottomPanel">
+      <progress-bar @cancel="cancelQuery" :message="runningText" v-if="running"></progress-bar>
+      <result-table ref="table" v-else-if="rowCount > 0" :active="active" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
+      <div class="message" v-else-if="result">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
-          <span>Query {{ selectedResult + 1 }}/{{ results.length }}: No Results. {{ result.affectedRows || 0 }} rows affected. See the select box in the bottom left ↙ for more query results.</span>
+          <span>Query {{selectedResult + 1}}/{{results.length}}: No Results. {{result.affectedRows || 0}} rows affected. See the select box in the bottom left ↙ for more query results.</span>
         </div>
       </div>
-      <div
-        class="message"
-        v-else-if="errors"
-      >
+      <div class="message" v-else-if="errors">
         <error-alert :error="errors" />
       </div>
-      <div
-        class="message"
-        v-else-if="info"
-      >
+      <div class="message" v-else-if="info">
         <div class="alert alert-info">
           <i class="material-icon-outlined">info</i>
-          <span>{{ info }}</span>
+          <span>{{info}}</span>
         </div>
       </div>
-      <div
-        class="layout-center expand"
-        v-else
-      >
-        <shortcut-hints />
+      <div class="layout-center expand" v-else>
+        <shortcut-hints></shortcut-hints>
       </div>
       <!-- <span class="expand" v-if="!result"></span> -->
       <!-- STATUS BAR -->
@@ -137,61 +75,26 @@
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
-        :execute-time="executeTime"
-      />
+        :executeTime="executeTime"
+      ></query-editor-status-bar>
     </div>
 
     <!-- Save Modal -->
     <portal to="modals">
-      <modal
-        class="vue-dialog beekeeper-modal"
-        name="save-modal"
-        @closed="selectEditor"
-        @opened="selectTitleInput"
-        height="auto"
-        :scrollable="true"
-      >
-        <form
-          v-if="query"
-          @submit.prevent="saveQuery"
-        >
+      <modal class="vue-dialog beekeeper-modal" name="save-modal" @closed="selectEditor" @opened="selectTitleInput" height="auto" :scrollable="true">
+        <form v-if="query" @submit.prevent="saveQuery">
           <div class="dialog-content">
-            <div class="dialog-c-title">
-              Saved Query Name
-            </div>
+            <div class="dialog-c-title">Saved Query Name</div>
             <div class="modal-form">
-              <div
-                class="alert alert-danger save-errors"
-                v-if="saveError"
-              >
-                {{ saveError }}
-              </div>
+              <div class="alert alert-danger save-errors" v-if="saveError">{{saveError}}</div>
               <div class="form-group">
-                <input
-                  type="text"
-                  ref="titleInput"
-                  name="title"
-                  class="form-control"
-                  v-model="query.title"
-                  autofocus
-                >
+                  <input type="text" ref="titleInput" name="title" class="form-control"  v-model="query.title" autofocus>
               </div>
             </div>
           </div>
           <div class="vue-dialog-buttons">
-            <button
-              class="btn btn-flat"
-              type="button"
-              @click.prevent="$modal.hide('save-modal')"
-            >
-              Cancel
-            </button>
-            <button
-              class="btn btn-primary"
-              type="submit"
-            >
-              Save
-            </button>
+            <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('save-modal')">Cancel</button>
+            <button class="btn btn-primary" type="submit">Save</button>
           </div>
         </form>
       </modal>
@@ -199,57 +102,25 @@
 
     <!-- Parameter modal -->
     <portal to="modals">
-      <modal
-        class="vue-dialog beekeeper-modal"
-        name="parameters-modal"
-        @opened="selectFirstParameter"
-        @closed="selectEditor"
-        height="auto"
-        :scrollable="true"
-      >
+      <modal class="vue-dialog beekeeper-modal" name="parameters-modal" @opened="selectFirstParameter" @closed="selectEditor" height="auto" :scrollable="true">
         <form @submit.prevent="submitQuery(queryForExecution, true)">
           <div class="dialog-content">
-            <div class="dialog-c-title">
-              Provide parameter values
-            </div>
-            <div class="dialog-c-subtitle">
-              You need to use single quotes around string values. Blank values are invalid
-            </div>
+            <div class="dialog-c-title">Provide parameter values</div>
+            <div class="dialog-c-subtitle">You need to use single quotes around string values. Blank values are invalid</div>
             <div class="modal-form">
               <div class="form-group">
-                <div
-                  v-for="(param, index) in queryParameterPlaceholders"
-                  :key="index"
-                >
-                  <div class="form-group row">
-                    <label>{{ param }}</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      required
-                      v-model="queryParameterValues[param]"
-                      autofocus
-                      ref="paramInput"
-                    >
+                  <div v-for="(param, index) in queryParameterPlaceholders" v-bind:key="index">
+                    <div class="form-group row">
+                      <label>{{param}}</label>
+                      <input type="text" class="form-control" required v-model="queryParameterValues[param]" autofocus ref="paramInput">
+                    </div>
                   </div>
-                </div>
               </div>
             </div>
           </div>
           <div class="vue-dialog-buttons">
-            <button
-              class="btn btn-flat"
-              type="button"
-              @click.prevent="$modal.hide('parameters-modal')"
-            >
-              Cancel
-            </button>
-            <button
-              class="btn btn-primary"
-              type="submit"
-            >
-              Run
-            </button>
+            <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('parameters-modal')">Cancel</button>
+            <button class="btn btn-primary" type="submit">Run</button>
           </div>
         </form>
       </modal>

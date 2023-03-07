@@ -2,7 +2,11 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 import _ from 'lodash'
 import { mutationsFor, DataState, DataStore, localActionsFor } from '../DataModuleBase'
 
-export const LocalQueryModule: DataStore<FavoriteQuery, DataState<FavoriteQuery>> = {
+interface State extends DataState<FavoriteQuery> {
+
+}
+
+export const LocalQueryModule: DataStore<FavoriteQuery, State> = {
   namespaced: true,
   state: {
     items: [],

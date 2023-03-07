@@ -1,13 +1,8 @@
 <template>
   <div class="header-button btn btn-flat">
-    <button
-      @mousedown.prevent="click"
-      class="header-button-button"
-    >
-      {{ item.label }}
-    </button>
+    <button @mousedown.prevent="click" class="header-button-button">{{item.label}}</button>
     <div v-show="active">
-      <slot />
+      <slot></slot>
     </div>
   </div>
 </template>

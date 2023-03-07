@@ -7,8 +7,7 @@
       :key="color"
       :value="color"
       :checked="color == (value || 'default')"
-      :class="['connection-label', getColorClass(color)]"
-    >
+      :class="['connection-label', getColorClass(color)]">
   </div>
 </template>
 

@@ -1,43 +1,21 @@
 <template>
-  <div
-    id="interface"
-    class="interface"
-    v-hotkey="keymap"
-  >
+  <div id="interface" class="interface" v-hotkey="keymap">
     <div v-if="initializing">
       <progress-bar />
     </div>
-    <div
-      v-else
-      class="interface-wrap row"
-    >
-      <sidebar
-        ref="sidebar"
-        :class="{hide: !sidebarShown}"
-      >
-        <core-sidebar
-          @databaseSelected="databaseSelected"
-          @toggleSidebar="toggleSidebar"
-          :connection="connection"
-          :sidebar-shown="sidebarShown"
-        />
+    <div v-else class="interface-wrap row">
+      <sidebar ref="sidebar" :class="{hide: !sidebarShown}">
+        <core-sidebar @databaseSelected="databaseSelected" @toggleSidebar="toggleSidebar" :connection="connection" :sidebarShown="sidebarShown"></core-sidebar>
         <statusbar>
-          <ConnectionButton />
+          <ConnectionButton></ConnectionButton>
         </statusbar>
       </sidebar>
-      <div
-        ref="content"
-        class="page-content flex-col"
-        id="page-content"
-      >
-        <core-tabs :connection="connection" />
+      <div ref="content" class="page-content flex-col" id="page-content">
+        <core-tabs :connection="connection"></core-tabs>
       </div>
     </div>
-    <quick-search
-      v-if="quickSearchShown"
-      @close="quickSearchShown=false"
-    />
-    <ExportManager :connection="connection" />
+    <quick-search v-if="quickSearchShown" @close="quickSearchShown=false" />
+    <ExportManager :connection="connection"></ExportManager>
   </div>
 </template>
 

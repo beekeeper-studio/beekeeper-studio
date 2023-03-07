@@ -1,106 +1,34 @@
 <template>
-  <div
-    class="list-item"
-    @contextmenu="$emit('contextmenu', $event)"
-  >
-    <a
-      class="list-item-btn"
-      role="button"
-      :class="{'active': active, 'selected': selected,'open': showColumns }"
-    >
-      <span
-        @contextmenu.prevent.stop=""
-        class="btn-fab open-close"
-        @mousedown.prevent="toggleColumns"
-      >
+  <div class="list-item" @contextmenu="$emit('contextmenu', $event)">
+    <a class="list-item-btn" role="button" v-bind:class="{'active': active, 'selected': selected,'open': showColumns }">
+      <span @contextmenu.prevent.stop="" class="btn-fab open-close" @mousedown.prevent="toggleColumns">
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
-      <span
-        class="item-wrapper flex flex-middle expand"
-        @dblclick.prevent="openTable"
-        @mousedown="selectItem"
-      >
-        <div
-          :title="draggable ? 'drag me!' : ''"
-          class="table-item-wrapper drag-handle"
-          :class="{ 'draggable': draggable }"
-        >
-          <table-icon
-            :table="table"
-            class="table-icon"
-          />
-          <i
-            class="material-icons item-icon dh"
-            v-if="draggable"
-          >menu</i>
+      <span class="item-wrapper flex flex-middle expand" @dblclick.prevent="openTable" @mousedown="selectItem">
+        <div :title="draggable ? 'drag me!' : ''" class="table-item-wrapper drag-handle" :class="{ 'draggable': draggable }">
+          <table-icon :table="table" class="table-icon" />
+          <i class="material-icons item-icon dh" v-if="draggable">menu</i>
         </div>
-        <span
-          class="table-name truncate"
-          :title="table.name"
-        >{{ table.name }}</span>
+        <span class="table-name truncate" :title="table.name">{{table.name}}</span>
       </span>
-      <span
-        class="actions"
-        :class="{'pinned': pinned}"
-      >
-        <span
-          v-if="!pinned"
-          @mousedown.prevent.stop="pin"
-          class="btn-fab pin"
-          :title="'Pin'"
-        ><i class="bk-pin" /></span>
-        <span
-          v-if="pinned"
-          @mousedown.prevent.stop="unpin"
-          class="btn-fab unpin"
-          :title="'Unpin'"
-        ><i class="material-icons">clear</i></span>
-        <span
-          v-if="pinned"
-          @mousedown.prevent.stop="unpin"
-          class="btn-fab pinned"
-        >
-          <i
-            class="bk-pin"
-            :title="'Unpin'"
-          />
+      <span class="actions" v-bind:class="{'pinned': pinned}">
+        <span v-if="!pinned" @mousedown.prevent.stop="pin" class="btn-fab pin" :title="'Pin'"><i class="bk-pin"></i></span>
+        <span v-if="pinned" @mousedown.prevent.stop="unpin" class="btn-fab unpin" :title="'Unpin'"><i class="material-icons">clear</i></span>
+        <span v-if="pinned" @mousedown.prevent.stop="unpin" class="btn-fab pinned">
+          <i class="bk-pin" :title="'Unpin'"></i>
           <i class="material-icons">clear</i>
         </span>
       </span>
     </a>
-    <div
-      v-if="showColumns"
-      class="sub-items"
-    >
-      <p
-        class="sub-item"
-        v-if="!columnsLoading && table.columns.length === 0"
-      >
-        No Columns
-      </p>
-      <span
-        v-else-if="table.columns.length > 0"
-        :key="c.columnName"
-        v-for="(c, i) in table.columns"
-        class="sub-item"
-      >
-        <span
-          class="title truncate"
-          ref="title"
-          @click="selectColumn(i)"
-        >{{ c.columnName }}</span>
-        <span
-          class="badge"
-          :class="c.dataType"
-        ><span>{{ c.dataType }}</span></span>
+    <div v-if="showColumns" class="sub-items">
+      <p class="sub-item" v-if="!columnsLoading && table.columns.length === 0">No Columns</p>
+      <span v-else-if="table.columns.length > 0" v-bind:key="c.columnName" v-for="(c, i) in table.columns" class="sub-item">
+        <span class="title truncate" ref="title" @click="selectColumn(i)">{{c.columnName}}</span>
+        <span class="badge" v-bind:class="c.dataType"><span>{{c.dataType}}</span></span>
       </span>
-      <p
-        class="sub-item"
-        v-else
-      >
-        {{ columnsLoading }}
-      </p>
+      <p class="sub-item" v-else>{{columnsLoading}}</p>
     </div>
+
   </div>
 </template>
 

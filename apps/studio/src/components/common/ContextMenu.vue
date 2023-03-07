@@ -1,5 +1,5 @@
 <template>
-  <!-- Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu -->
+<!-- Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu -->
   <div>
     <portal to="menus">
       <ul
@@ -13,7 +13,7 @@
           class="vue-simple-context-menu__item"
           :class="[option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : '')]"
         >
-          <span v-html="option.name" />
+          <span v-html="option.name"></span>
         </li>
       </ul>
     </portal>

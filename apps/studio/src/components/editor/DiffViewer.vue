@@ -1,10 +1,6 @@
 <template>
   <div class="diff-viewer">
-    <div
-      class="diff-preview"
-      ref="cm"
-      v-html="diff"
-    />
+      <div class="diff-preview" ref="cm" v-html="diff"></div>
   </div>
 </template>
 <script lang="ts">
@@ -14,5 +10,7 @@ export default Vue.extend({
   data: () => ({
     editor: null
   }),
+  mounted() {
+  },
 })
 </script>

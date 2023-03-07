@@ -123,7 +123,7 @@ export interface IDbSshTunnel {
   connection: SSHConnection,
   localHost: string,
   localPort: number,
-  tunnel: Record<string, any>
+  tunnel: {}
 }
 
 export interface IDbConnectionServer {

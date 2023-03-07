@@ -8,7 +8,7 @@
 // Original - copyright https://github.com/michalsnik/vue-content-placeholders
 
 export default {
-  name: 'ContentPlaceholders',
+  name: 'content-placeholders',
   computed: {
     classObject () {
       return {

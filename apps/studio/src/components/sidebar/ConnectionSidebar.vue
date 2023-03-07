@@ -1,5 +1,6 @@
 <template>
   <div class="sidebar-wrap row">
+
     <!-- QUICK CONNECT -->
     <div class="tab-content flex-col expand">
       <div class="btn-wrap quick-connect">
@@ -8,36 +9,27 @@
           class="btn btn-flat btn-icon btn-block"
           @click.prevent="$emit('create')"
         >
-          <i class="material-icons">add</i>
-          <span>New Connection</span>
+        <i class="material-icons">add</i>
+        <span>New Connection</span>
         </a>
       </div>
 
       <div class="connection-wrap expand flex-col">
+
         <!-- Saved Connections -->
-        <div
-          class="list saved-connection-list expand"
-          ref="savedConnectionList"
-        >
+        <div class="list saved-connection-list expand" ref="savedConnectionList">
           <div class="list-group">
             <div class="list-heading">
               <div class="flex">
                 <div class="sub row flex-middle noselect">
-                  Saved <span class="badge">{{ (connectionConfigs || []).length }}</span>
+                  Saved <span class="badge">{{(connectionConfigs || []).length}}</span>
                 </div>
-                <span class="expand" />
+                <span class="expand"></span>
                 <div class="actions">
-                  <a
-                    v-if="isCloud"
-                    @click.prevent="importFromLocal"
-                    title="Import connections from local workspace"
-                  ><i class="material-icons">save_alt</i></a>
+                  <a v-if="isCloud" @click.prevent="importFromLocal" title="Import connections from local workspace"><i class="material-icons">save_alt</i></a>
                   <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
                 </div>
-                <x-button
-                  class="actions-btn btn btn-link btn-small"
-                  title="Sort By"
-                >
+                <x-button class="actions-btn btn btn-link btn-small" title="Sort By">
                   <!-- <span>{{sortables[this.sortOrder]}}</span> -->
                   <i class="material-icons-outlined">sort</i>
                   <!-- <i class="material-icons">arrow_drop_down</i> -->
@@ -55,65 +47,45 @@
                 </x-button>
               </div>
             </div>
-            <error-alert
-              :error="error"
-              v-if="error"
-              title="Problem loading connections"
-              @close="error = null"
-              :closable="true"
-            />
+            <error-alert :error="error" v-if="error" title="Problem loading connections" @close="error = null" :closable="true" />
             <sidebar-loading v-else-if="loading" />
-            <div
-              v-else-if="empty"
-              class="empty"
-            >
-              <div class="empty-title">
-                No Saved Connections
-              </div>
-              <div
-                class="empty-actions"
-                v-if="isCloud"
-              >
-                <a
-                  class="btn btn-flat btn-block btn-icon"
-                  @click.prevent="importFromLocal"
-                  title="Import connections from local workspace"
-                ><i class="material-icons">save_alt</i> Import</a>
+            <div v-else-if="empty" class="empty">
+              <div class="empty-title">No Saved Connections</div>
+              <div class="empty-actions" v-if="isCloud">
+                <a class="btn btn-flat btn-block btn-icon" @click.prevent="importFromLocal" title="Import connections from local workspace"><i class="material-icons">save_alt</i> Import</a>
               </div>
             </div>
-            <nav
-              v-else
-              class="list-body"
-            >
+            <nav v-else class="list-body">
               <sidebar-folder
                 v-for="{ folder, connections } in foldersWithConnections"
                 :key="`${folder.id}-${connections.length}`"
                 :title="`${folder.name} (${connections.length})`"
                 placeholder="No Items"
-                :expanded-initially="true"
+                :expandedInitially="true"
               >
                 <connection-list-item
                   v-for="c in connections"
                   :key="c.id"
                   :config="c"
-                  :selected-config="selectedConfig"
-                  :show-duplicate="true"
+                  :selectedConfig="selectedConfig"
+                  :showDuplicate="true"
                   @edit="edit"
                   @remove="remove"
                   @duplicate="duplicate"
                   @doubleClick="connect"
-                />
+                >
+                </connection-list-item>
               </sidebar-folder>
-              <connection-list-item
-                v-for="c in lonelyConnections"
+              <connection-list-item v-for="c in lonelyConnections"
                 :key="c.id"
                 :config="c"
-                :selected-config="selectedConfig"
-                :show-duplicate="true"
+                :selectedConfig="selectedConfig"
+                :showDuplicate="true"
                 @edit="edit"
                 @remove="remove"
                 @duplicate="duplicate"
                 @doubleClick="connect"
+
               />
             </nav>
           </div>
@@ -122,28 +94,26 @@
         <hr> <!-- Fake gutter for split.js -->
 
         <!-- Recent Connections -->
-        <div
-          class="list recent-connection-list expand"
-          ref="recentConnectionList"
-        >
+        <div class="list recent-connection-list expand" ref="recentConnectionList">
           <div class="list-group">
             <div class="list-heading">
               <div class="sub row flex-middle noselect">
-                Recent <span class="badge">{{ usedConfigs.length }}</span>
+                Recent <span class="badge">{{usedConfigs.length}}</span>
               </div>
             </div>
             <nav class="list-body">
-              <connection-list-item
-                v-for="c in usedConfigs"
-                :key="c.id"
-                :config="c"
-                :selected-config="selectedConfig"
-                :is-recent-list="true"
-                :show-duplicate="false"
-                @edit="edit"
-                @remove="removeUsedConfig"
-                @doubleClick="connect"
-              />
+                <connection-list-item
+                  v-for="c in usedConfigs"
+                  :key="c.id"
+                  :config="c"
+                  :selectedConfig="selectedConfig"
+                  :isRecentList="true"
+                  :showDuplicate="false"
+                  @edit="edit"
+                  @remove="removeUsedConfig"
+                  @doubleClick="connect"
+                >
+                </connection-list-item>
             </nav>
           </div>
         </div>

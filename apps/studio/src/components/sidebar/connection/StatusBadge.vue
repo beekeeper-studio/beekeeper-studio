@@ -1,11 +1,6 @@
 <template>
-  <span
-    v-if="error"
-    :title="error ? error.message : ''"
-    class="badge"
-    :class="classes"
-  >
-    <i class="material-icons">{{ status }}</i>
+  <span v-if="error" :title="error ? error.message : ''" class="badge" :class="classes">
+    <i class="material-icons">{{status}}</i>
   </span>
 </template>
 <script lang="ts">

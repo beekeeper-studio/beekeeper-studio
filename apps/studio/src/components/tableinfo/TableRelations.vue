@@ -1,21 +1,12 @@
 <template>
-  <div
-    class="table-info-table view-only"
-    v-hotkey="hotkeys"
-  >
+  <div class="table-info-table view-only" v-hotkey="hotkeys">
     <div class="table-info-table-wrap">
       <div class="center-wrap">
-        <error-alert
-          :error="error"
-          v-if="error"
-        />
-        <div
-          class="notices"
-          v-if="notice"
-        >
+        <error-alert :error="error" v-if="error" />
+        <div class="notices" v-if="notice">
           <div class="alert alert-info">
             <i class="material-icons-outlined">info</i>
-            <div>{{ notice }}</div>
+            <div>{{notice}}</div>
           </div>
         </div>
 
@@ -23,25 +14,13 @@
           <div class="table-title">
             <h2>Relations</h2>
           </div>
-          <div class="expand" />
+          <div class="expand"></div>
           <div class="actions">
-            <a
-              @click.prevent="$emit('refresh')"
-              v-tooltip="`${ctrlOrCmd('r')} or F5`"
-              class="btn btn-link btn-fab"
-            ><i class="material-icons">refresh</i></a>
-            <a
-              v-if="enabled && canAdd"
-              @click.prevent="addRow"
-              v-tooltip="ctrlOrCmd('n')"
-              class="btn btn-primary btn-fab"
-            ><i class="material-icons">add</i></a>
+              <a @click.prevent="$emit('refresh')" v-tooltip="`${ctrlOrCmd('r')} or F5`" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
+              <a v-if="enabled && canAdd" @click.prevent="addRow" v-tooltip="ctrlOrCmd('n')" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
           </div>
         </div>
-        <div
-          class="table-relations"
-          ref="tabulator"
-        />
+        <div class="table-relations" ref="tabulator"></div>
       </div>
     </div>
 
@@ -50,44 +29,23 @@
     <status-bar class="tabulator-footer">
       <div class="flex flex-middle flex-right statusbar-actions">
         <slot name="footer" />
-        <x-button
-          v-if="hasEdits && !loading"
-          class="btn btn-flat reset"
-          @click.prevent="submitUndo"
-        >
-          Reset
-        </x-button>
-        <x-buttons
-          v-if="hasEdits && !loading"
-          class="pending-changes"
-        >
-          <x-button
-            class="btn btn-primary"
-            @click.prevent="submitApply"
-          >
-            <i
-              v-if="error"
-              class="material-icons"
-            >error</i>
-            <span
-              class="badge"
-              v-if="!error"
-            ><small>{{ editCount }}</small></span>
+        <x-button v-if="hasEdits && !loading" class="btn btn-flat reset" @click.prevent="submitUndo">Reset</x-button>
+        <x-buttons v-if="hasEdits && !loading" class="pending-changes">
+          <x-button class="btn btn-primary" @click.prevent="submitApply">
+            <i v-if="error" class="material-icons">error</i>
+            <span class="badge" v-if="!error"><small>{{editCount}}</small></span>
             <span>Apply</span>
           </x-button>
-          <x-button
-            class="btn btn-primary"
-            menu
-          >
+          <x-button class="btn btn-primary" menu>
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
               <x-menuitem @click.prevent="submitApply">
                 <x-label>Apply</x-label>
-                <x-shortcut value="Control+S" />
+                <x-shortcut value="Control+S"></x-shortcut>
               </x-menuitem>
               <x-menuitem @click.prevent="submitSql">
                 <x-label>Copy to SQL</x-label>
-                <x-shortcut value="Control+Shift+S" />
+                <x-shortcut value="Control+Shift+S"></x-shortcut>
               </x-menuitem>
             </x-menu>
           </x-button>
@@ -212,7 +170,7 @@ export default Vue.extend({
           editable,
           editor: 'list',
           editorParams: {
-            // @ts-expect-error Incorrectly typed
+            // @ts-ignore
             valuesLookup: this.getTables
           },
           cellEdited: (cell) => cell.getRow().getCell('toColumn')?.setValue(null)
@@ -224,7 +182,7 @@ export default Vue.extend({
           editable,
           editor: 'select',
           editorParams: {
-            // @ts-expect-error Incorrectly typed
+            // @ts-ignore
             valuesLookup: this.getColumns
           },
         },
@@ -363,6 +321,7 @@ export default Vue.extend({
     initializeTabulator() {
 
       this.tabulator?.destroy()
+      // @ts-ignore
       this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         columns: this.tableColumns,
         data: this.tableData,

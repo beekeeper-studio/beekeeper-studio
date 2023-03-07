@@ -11,20 +11,14 @@
       @click.prevent="click(config)"
       @dblclick.prevent="doubleClick(config)"
     >
-      <span :class="`connection-label connection-label-color-${labelColor}`" />
+      <span :class="`connection-label connection-label-color-${labelColor}`"></span>
       <div class="connection-title flex-col expand">
-        <div class="title">{{ label }}</div>
+        <div class="title">{{label}}</div>
         <div class="subtitle"> 
-          <span
-            class="bastion"
-            v-if="this.config.sshBastionHost"
-          >
+          <span class="bastion" v-if="this.config.sshBastionHost">
             <span class="truncate">{{ this.config.sshBastionHost }}</span>&nbsp;>&nbsp;
           </span>
-          <span
-            class="ssh"
-            v-if="this.config.sshHost"
-          >
+          <span class="ssh" v-if="this.config.sshHost">
             <span class="truncate">{{ this.config.sshHost }}</span>&nbsp;>&nbsp;
           </span>
           <span class="connection">
@@ -32,7 +26,7 @@
           </span>
         </div>
       </div>
-      <span class="badge"><span>{{ config.connectionType }}</span></span>
+      <span class="badge"><span>{{config.connectionType}}</span></span>
     </a>
   </div>
 </template>
@@ -112,6 +106,9 @@ export default {
         return this.config
       }
     },
+  },
+  mounted() {
+
   },
   methods: {
     showContextMenu(event) {

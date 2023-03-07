@@ -89,7 +89,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     devtools: {
       id: 'dev-tools',
       label: "Show Developer Tools",
-      // @ts-expect-error Fix typings
+      // @ts-ignore
       nonNativeMacOSRole: true,
       click: actionHandler.devtools
     },

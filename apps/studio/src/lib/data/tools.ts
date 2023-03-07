@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { Dialect } from '@shared/lib/dialects/models'
-type JsonFriendly = string | boolean | number | null | JsonFriendly[] | Record<string, any>
+type JsonFriendly = string | boolean | number | null | JsonFriendly[] | object
 
 function dec28bits(num: any): string {
   return ("00000000" + num.toString(2)).slice(-8);
@@ -25,7 +25,7 @@ export const Mutators = {
   },
 
 
-  mutateRow(row: any[], dataTypes: string[] = [], preserveComplex = false, dialect?: Dialect): JsonFriendly[] {
+  mutateRow(row: any[], dataTypes: string[] = [], preserveComplex: boolean = false, dialect?: Dialect): JsonFriendly[] {
     return row.map((item, index) => {
       const typ = dataTypes[index]
       const mutator = this.resolveDataMutator(typ, dialect)
@@ -40,7 +40,7 @@ export const Mutators = {
    * @param  {any} value
    * @returns JsonFriendly
    */
-  genericMutator(value: any, preserveComplex = false): JsonFriendly {
+  genericMutator(value: any, preserveComplex: boolean = false): JsonFriendly {
     const mutate = Mutators.genericMutator
     if (_.isBuffer(value)) return value.toString('hex')
     if (_.isDate(value)) return value.toISOString()

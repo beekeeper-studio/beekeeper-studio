@@ -1,42 +1,29 @@
 <template>
-  <div
-    v-if="error"
-    class="error-alert alert text-danger"
-  >
-    <a
-      @click.prevent="$emit('close')"
-      v-if="closable"
-      class="close-button"
-    >
+  <div v-if="error" class="error-alert alert text-danger">
+    <a @click.prevent="$emit('close')" v-if="closable" class="close-button">
       <i class="material-icons">close</i>
     </a>
     <div class="alert-title">
       <i class="material-icons">error_outline</i>
-      <b class="error-title">{{ title || "There was a problem" }}</b>
+      <b class="error-title">{{title || "There was a problem"}}</b>
     </div>
     <div class="alert-body">
       <ul class="error-list">
         <li
           class="error-item"
-          @click="click(e)"
-          v-for="(e, idx) in errors"
-          :key="idx"
+          v-on:click="click(e)"
+          v-for="(e, idx) in errors" :key="idx"
           title="Click to copy"
         >
-          {{ e.message || e.toString() }}
-          {{ e.marker ? ` - line ${e.marker.line}, ch ${e.marker.ch}` : '' }}
-          {{ helpText ? ` - ${helpText}` : '' }}
+          {{e.message || e.toString()}}
+          {{e.marker ? ` - line ${e.marker.line}, ch ${e.marker.ch}` : ''}}
+          {{helpText ? ` - ${helpText}` : ''}}
         </li>
       </ul>
-      <div
-        class="help-links"
-        v-if="helpLink"
-      >
-        <a
-          :href="helpLink"
-          title="Read about this error on the Beekeeper Studio docs"
-        >Learn more about this error</a>
+      <div class="help-links" v-if="helpLink">
+        <a :href="helpLink" title="Read about this error on the Beekeeper Studio docs">Learn more about this error</a>
       </div>
+
     </div>
   </div>
 </template>

@@ -62,7 +62,7 @@ export class ColumnType {
   public name: string
   public supportsLength: boolean
   public defaultLength: number
-  constructor(name: string, supportsLength?: boolean, defaultLength = 255) {
+  constructor(name: string, supportsLength?: boolean, defaultLength: number = 255) {
     this.name = name
     this.supportsLength = supportsLength
     this.defaultLength = defaultLength

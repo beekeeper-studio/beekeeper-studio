@@ -4,59 +4,29 @@
       <div class="list-group">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
-            <div class="expand">
-              Saved Queries
-            </div>
+            <div class="expand">Saved Queries</div>
             <div class="actions">
-              <a
-                v-if="isCloud"
-                title="Import queries from local workspace"
-                @click.prevent="importFromLocal"
-              ><i class="material-icons">save_alt</i></a>
-              <a
-                class=""
-                @click.prevent="refresh"
-              >
-                <i
-                  title="Refresh Saved Queries"
-                  class="material-icons"
-                >refresh</i>
+              <a v-if="isCloud" title="Import queries from local workspace" @click.prevent="importFromLocal"><i class="material-icons">save_alt</i></a>
+              <a class="" @click.prevent="refresh">
+                <i title="Refresh Saved Queries" class="material-icons">refresh</i>
               </a>
             </div>
-          </div>
-        </div>
-        <error-alert
-          v-if="error"
-          :error="error"
-          title="Problem loading queries"
-        />
-        <sidebar-loading v-if="loading" />
-        <nav
-          v-else-if="savedQueries.length > 0"
-          class="list-body"
-          ref="wrapper"
-        >
-          <sidebar-folder
-            v-for="({ folder, queries }) in foldersWithQueries"
-            :key="`${folder.id}-${queries.length}`"
-            :title="`${folder.name} (${queries.length})`"
 
-            :expanded-initially="true"
-          >
-            <favorite-list-item
-              v-for="item in queries"
-              :key="item.id"
-              :item="item"
-              :active="isActive(item)"
-              :selected="selected === item"
-              @remove="remove"
-              @select="select"
-              @open="open"
-              @rename="rename"
-            />
-          </sidebar-folder>
+          </div>
+
+        </div>
+      <error-alert v-if="error" :error="error" title="Problem loading queries" />
+      <sidebar-loading v-if="loading" />
+      <nav v-else-if="savedQueries.length > 0" class="list-body" ref="wrapper">
+        <sidebar-folder
+          v-for="({ folder, queries }) in foldersWithQueries"
+          :key="`${folder.id}-${queries.length}`"
+          :title="`${folder.name} (${queries.length})`"
+
+          :expandedInitially="true"
+        >
           <favorite-list-item
-            v-for="item in lonelyQueries"
+            v-for="item in queries"
             :key="item.id"
             :item="item"
             :active="isActive(item)"
@@ -66,44 +36,32 @@
             @open="open"
             @rename="rename"
           />
-        </nav>
-        <div
-          class="empty"
-          v-else
-        >
-          <span class="empty-title">No Saved Queries</span>
-          <span
-            class="empty-actions"
-            v-if="isCloud"
-          >
-            <a
-              class="btn btn-flat btn-block btn-icon"
-              @click.prevent="importFromLocal"
-              title="Import queries from local workspace"
-            ><i class="material-icons">save_alt</i> Import</a>
-          </span>
-        </div>
+        </sidebar-folder>
+        <favorite-list-item
+          v-for="item in lonelyQueries"
+          :key="item.id"
+          :item="item"
+          :active="isActive(item)"
+          :selected="selected === item"
+          @remove="remove"
+          @select="select"
+          @open="open"
+          @rename="rename"
+         />
+      </nav>
+      <div class="empty" v-else>
+        <span class="empty-title">No Saved Queries</span>
+        <span class="empty-actions" v-if="isCloud">
+          <a class="btn btn-flat btn-block btn-icon" @click.prevent="importFromLocal" title="Import queries from local workspace"><i class="material-icons">save_alt</i> Import</a>
+        </span>
+      </div>
       </div>
     </div>
     <portal to="modals">
-      <modal
-        class="vue-dialog beekeeper-modal"
-        name="rename-modal"
-        @closed="renameMe=null"
-        height="auto"
-        :scrollable="true"
-      >
-        <div
-          class="dialog-content"
-          v-if="renameMe"
-        >
-          <div class="dialog-c-title">
-            Rename {{ renameMe.title }}
-          </div>
-          <query-rename-form
-            :query="renameMe"
-            @done="$modal.hide('rename-modal')"
-          />
+      <modal class="vue-dialog beekeeper-modal" name="rename-modal" @closed="renameMe=null" height="auto" :scrollable="true">
+        <div class="dialog-content" v-if="renameMe">
+          <div class="dialog-c-title">Rename {{renameMe.title}}</div>
+          <query-rename-form :query="renameMe" @done="$modal.hide('rename-modal')" />
         </div>
       </modal>
     </portal>

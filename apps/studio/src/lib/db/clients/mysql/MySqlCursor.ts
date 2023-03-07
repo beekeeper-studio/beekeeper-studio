@@ -39,6 +39,7 @@ export class MysqlCursor extends BeeCursor {
       this.conn.pool.getConnection((err, connection) => {
         if (err) reject(err)
         connection.release
+        // @ts-ignore rowsAsArray not in typings yet
         const q = connection.query({ sql: this.query, values: this.params, rowsAsArray: true })
         q.on('result', this.handleRow.bind(this) )
         q.on('end', this.handleEnd.bind(this) )

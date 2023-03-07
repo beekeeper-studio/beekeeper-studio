@@ -1,7 +1,7 @@
 <template>
   <div class="with-connection-type">
-    <common-server-inputs :config="config" />
-    <common-advanced :config="config" />
+    <common-server-inputs :config="config"></common-server-inputs>
+    <common-advanced :config="config"></common-advanced>
   </div>
 </template>
 

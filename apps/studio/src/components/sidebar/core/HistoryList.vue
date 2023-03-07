@@ -1,62 +1,33 @@
 <template>
   <div class="sidebar-history flex-col expand">
     <div class="sidebar-list">
-      <nav
-        class="list-group"
-        ref="wrapper"
-      >
+
+      <nav class="list-group" ref="wrapper">
         <div class="list-heading row">
           <div class="sub row flex-middle expand">
-            <div
-              class="expand"
-              title="Query execution history for this workspace"
-            >
+            <div class="expand" title="Query execution history for this workspace">
               History
             </div>
             <div class="actions">
               <a @click.prevent="refresh">
-                <i
-                  title="Refresh Query History"
-                  class="material-icons"
-                >refresh</i>
+                <i title="Refresh Query History" class="material-icons">refresh</i>
               </a>
             </div>
           </div>
         </div>
-        <error-alert
-          v-if="error"
-          :error="error"
-          title="Problem loading history"
-        />
+        <error-alert v-if="error" :error="error" title="Problem loading history" />
         <sidebar-loading v-else-if="loading" />
-        <div
-          v-else-if="!history.length"
-          class="empty"
-        >
+        <div v-else-if="!history.length" class="empty">
           No recent queries
         </div>
-        <div
-          v-else
-          class="list-body"
-        >
-          <div
-            class="list-item"
-            @contextmenu.prevent.stop="openContextMenu($event, item)"
-            v-for="item in history"
-            :key="item.id"
-          >
-            <a
-              class="list-item-btn"
-              @click.prevent="select(item)"
-              @dblclick.prevent="click(item)"
-              :title="item.text"
-              :class="{selected: item === selected}"
-            >
+        <div v-else class="list-body">
+          <div class="list-item" @contextmenu.prevent.stop="openContextMenu($event, item)" v-for="item in history" :key="item.id">
+            <a class="list-item-btn" @click.prevent="select(item)" @dblclick.prevent="click(item)" :title="item.text" :class="{selected: item === selected}">
               <i class="item-icon query material-icons">code</i>
               <!-- <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedHistoryQueries" v-bind:class="{ shown: checkedHistoryQueries.length > 0 }"> -->
               <div class="list-title flex-col">
-                <span class="item-text expand truncate">{{ nicelySized(item.text) }}</span>
-                <span class="subtitle"><span>{{ item.numberOfRecords || 0 }} Results</span>, {{ formatTimeAgo(item) }}</span>
+                <span class="item-text expand truncate">{{nicelySized(item.text)}}</span>
+                <span class="subtitle"><span>{{item.numberOfRecords || 0}} Results</span>, {{formatTimeAgo(item)}}</span>
               </div>
             </a>
           </div>

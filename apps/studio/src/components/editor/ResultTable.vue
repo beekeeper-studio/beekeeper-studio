@@ -1,9 +1,6 @@
 <template>
-  <div
-    class="result-table"
-    v-hotkey="keymap"
-  >
-    <div ref="tabulator" />
+  <div class="result-table" v-hotkey="keymap">
+    <div ref="tabulator"></div>
   </div>
 </template>
 

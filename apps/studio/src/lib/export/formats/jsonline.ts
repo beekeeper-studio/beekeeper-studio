@@ -4,9 +4,9 @@ import { TableFilter, TableOrView } from "../../db/models";
 import { ExportOptions } from "../models";
 
 export class JsonLineExporter extends Export {
-  public static extension = "jsonl"
+  public static extension: string = "jsonl"
   readonly format: string = 'jsonl'
-  rowSeparator = '\n'
+  rowSeparator: string = '\n'
 
   constructor(
     filePath: string,

@@ -9,8 +9,8 @@ interface Conn {
 export class SqlServerCursor extends BeeCursor {
   private connection: ConnectionPool | undefined
   private request: Request | undefined;
-  private end = false;
-  private bufferRedy = false;
+  private end: boolean = false;
+  private bufferRedy: boolean = false;
   private error: Error | undefined;
   private rowBuffer: any[] = [];
 
@@ -30,7 +30,7 @@ export class SqlServerCursor extends BeeCursor {
     const request = this.connection.request()
     this.request = request
 
-    // @ts-expect-error Doesn't have this in the typings
+    // @ts-ignore - doesn't have this in the typings
     request.arrayRowMode = true
     request.stream = true
 
@@ -42,7 +42,6 @@ export class SqlServerCursor extends BeeCursor {
   }
 
   private handleRecordset() {
-    // TODO: implement
   }
 
   private handleEnd() {

@@ -1,55 +1,29 @@
 <template>
-  <div
-    class="flex-col expand"
-    ref="wrapper"
-  >
+  <div class="flex-col expand" ref="wrapper">
+
     <!-- Filter -->
     <div class="fixed">
       <div class="filter">
         <div class="filter-wrap">
-          <input
-            class="filter-input"
-            type="text"
-            placeholder="Filter"
-            v-model="filterQuery"
-          >
+          <input class="filter-input" type="text" placeholder="Filter" v-model="filterQuery">
           <x-buttons class="filter-actions">
-            <x-button
-              @click="clearFilter"
-              v-if="filterQuery"
-            >
-              <i class="clear material-icons">cancel</i>
-            </x-button>
-            <x-button
-              :title="entitiesHidden ? 'Filter active' : 'No filters'"
-              class="btn btn-fab btn-link action-item"
-              :class="{active: entitiesHidden}"
-              menu
-            >
+            <x-button @click="clearFilter" v-if="filterQuery"><i class="clear material-icons">cancel</i></x-button>
+            <x-button :title="entitiesHidden ? 'Filter active' : 'No filters'" class="btn btn-fab btn-link action-item" :class="{active: entitiesHidden}" menu>
               <i class="material-icons-outlined">filter_alt</i>
               <x-menu style="--target-align: right;">
                 <label>
-                  <input
-                    type="checkbox"
-                    v-model="showTables"
-                  >
+                  <input type="checkbox" v-model="showTables">
                   <span>Tables</span>
                 </label>
                 <label>
-                  <input
-                    type="checkbox"
-                    v-model="showViews"
-                  >
+                  <input type="checkbox" v-model="showViews">
                   <span>Views</span>
                 </label>
                 <label v-if="supportsRoutines">
-                  <input
-                    type="checkbox"
-                    v-model="showRoutines"
-                  >
+                  <input type="checkbox" v-model="showRoutines">
                   <span>Routines</span>
                 </label>
-                <x-menuitem />
+                <x-menuitem></x-menuitem>
               </x-menu>
             </x-button>
           </x-buttons>
@@ -58,14 +32,10 @@
     </div>
 
     <!-- Pinned Tables -->
-    <div
-      class="table-list pinned flex-col"
-      ref="pinned"
-      v-show="orderedPins.length > 0"
-    >
+    <div class="table-list pinned flex-col" ref="pinned" v-show="orderedPins.length > 0">
       <pinned-table-list
-        :all-expanded="allExpanded"
-        :all-collapsed="allCollapsed"
+        :allExpanded="allExpanded"
+        :allCollapsed="allCollapsed"
         :connection="connection"
         @unselected="tableUnselected"
       />
@@ -73,40 +43,18 @@
 
     <!-- Tables -->
     <hr v-show="pinnedEntities.length > 0"> <!-- Fake splitjs Gutter styling -->
-    <div
-      class="table-list flex-col"
-      ref="tables"
-    >
-      <nav
-        class="list-group flex-col"
-        v-if="!tablesLoading"
-      >
+    <div class="table-list flex-col" ref="tables">
+      <nav class="list-group flex-col" v-if="!tablesLoading">
         <div class="list-heading row">
-          <div
-            class="sub row flex-middle"
-            style="padding-right: 0;"
-          >
-            <div>
-              Entities
-              <span
-                :title="`Total Entities`"
-                class="badge"
-                v-if="!filterQuery"
-              >{{ totalEntities }}</span>
-              <span
-                :title="`${totalFilteredEntities} hidden by filters`"
-                class="badge"
-                v-else
-                :class="{active: entitiesHidden}"
-              >{{ shownEntities }} / {{ totalEntities }}</span>
+          <div class="sub row flex-middle" style="padding-right: 0;">
+            <div>Entities
+              <span :title="`Total Entities`" class="badge" v-if="!filterQuery">{{totalEntities}}</span>
+              <span :title="`${totalFilteredEntities} hidden by filters`" class="badge" v-else :class="{active: entitiesHidden}">{{shownEntities}} / {{totalEntities}}</span>
             </div>
-            <span
-              v-show="totalHiddenEntities > 0 && !filterQuery"
-              class="hidden-indicator"
-            >
+            <span v-show="totalHiddenEntities > 0 && !filterQuery" class="hidden-indicator">
               <span class="badge">
                 <i class="material-icons">visibility_off</i>
-                <span>{{ totalHiddenEntities > 99 ? '99+' : totalHiddenEntities }}</span>
+                <span>{{totalHiddenEntities > 99 ? '99+' : totalHiddenEntities}}</span>
               </span>
               <div class="hi-tooltip">
                 <span>Right click an entity to hide it. </span>
@@ -116,46 +64,32 @@
           </div>
           <div class="row">
             <div class="actions">
-              <a
-                @click.prevent="toggleExpandCollapse"
-                :title="isExpanded ? 'Collapse All' : 'Expand All'"
-              >
-                <i class="material-icons">{{ isExpanded ? 'unfold_less' : 'unfold_more' }}</i>
+              <a @click.prevent="toggleExpandCollapse" :title="isExpanded ? 'Collapse All' : 'Expand All'">
+                <i class="material-icons">{{isExpanded ? 'unfold_less' : 'unfold_more'}}</i>
               </a>
 
-              <a
-                @click.prevent="refreshTables"
-                :title="'Refresh'"
-              >
+              <a @click.prevent="refreshTables" :title="'Refresh'">
                 <i class="material-icons">refresh</i>
               </a>
             </div>
             <div>
-              <a
-                @click.prevent="newTable"
-                title="New Table"
-                class="create-table"
-              >
+              <a @click.prevent="newTable" title="New Table" class="create-table">
                 <i class="material-icons">add</i>
               </a>
             </div>
           </div>
         </div>
-        <div
-          class="list-body"
-          ref="entityContainer"
-          v-show="tables.length > 0"
-        >
+        <div class="list-body" ref="entityContainer" v-show="tables.length > 0">
           <div class="with-schemas">
             <template v-for="(blob, index) in schemaTables">
               <sidebar-folder
                 v-if="!hiddenSchemas.includes(blob.schema)"
                 :title="blob.schema"
                 :key="blob.schema"
-                :skip-display="blob.skipSchemaDisplay || schemaTables.length - hiddenSchemas.length < 2"
-                :expanded-initially="index === 0"
-                :force-expand="allExpanded || filterQuery"
-                :force-collapse="allCollapsed"
+                :skipDisplay="blob.skipSchemaDisplay || schemaTables.length - hiddenSchemas.length < 2"
+                :expandedInitially="index === 0"
+                :forceExpand="allExpanded || filterQuery"
+                :forceCollapse="allCollapsed"
                 @contextmenu.prevent.stop="$bks.openMenu({ item: blob, event: $event, options: schemaMenuOptions})"
               >
                 <template v-for="table in blob.tables">
@@ -168,8 +102,8 @@
                     @unselected="tableUnselected"
                     :table="table"
                     :connection="connection"
-                    :force-expand="allExpanded"
-                    :force-collapse="listItemsCollapsed"
+                    :forceExpand="allExpanded"
+                    :forceCollapse="listItemsCollapsed"
                     @contextmenu.prevent.stop="$bks.openMenu({ item: table, event: $event, options: tableMenuOptions})"
                   />
                 </template>
@@ -181,8 +115,8 @@
                     :container="$refs.entityContainer"
                     :routine="routine"
                     :connection="connection"
-                    :force-expand="allExpanded"
-                    :force-collapse="listItemsCollapsed"
+                    :forceExpand="allExpanded"
+                    :forceCollapse="listItemsCollapsed"
                     @contextmenu.prevent.stop="$bks.openMenu({item: routine, event: $event, options: routineMenuOptions})"
                   />
                 </template>
@@ -192,26 +126,21 @@
         </div>
 
         <!-- TODO (gregory): Make the 'no tables div nicer' -->
-        <div
-          class="empty truncate"
-          v-if="!tables || tables.length === 0"
-        >
-          There are no entities in<br> <span>{{ database }}</span>
+        <div class="empty truncate" v-if="!tables || tables.length === 0">
+          There are no entities in<br> <span>{{database}}</span>
         </div>
 
         <portal to="modals">
           <HiddenEntitiesModal
-            :hidden-entities="hiddenEntities"
-            :hidden-schemas="hiddenSchemas"
+            :hiddenEntities="hiddenEntities"
+            :hiddenSchemas="hiddenSchemas"
           />
         </portal>
       </nav>
-      <div
-        class="empty"
-        v-else
-      >
-        {{ tablesLoading }}
+      <div class="empty" v-else>
+        {{tablesLoading}}
       </div>
+
     </div>
   </div>
 </template>

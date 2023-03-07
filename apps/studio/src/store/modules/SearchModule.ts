@@ -23,6 +23,7 @@ interface State {
 export const SearchModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
+    // @ts-ignore
     searchIndex: new FlexSearch.Worker({ tokenize: 'forward' })
   }),
   getters: {

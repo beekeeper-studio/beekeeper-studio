@@ -5,7 +5,8 @@ import VTooltip from 'v-tooltip'
 import VModal from 'vue-js-modal'
 import 'xel/xel'
 import 'codemirror/addon/search/searchcursor'
-import { TabulatorFull as Tabulator } from 'tabulator-tables'
+// @ts-ignore
+import { TabulatorFull as Tabulator, EditModule } from 'tabulator-tables'
 import './filters/pretty-bytes-filter'
 import PortalVue from 'portal-vue'
 import App from './App.vue'
@@ -73,8 +74,9 @@ import './common/initializers/big_int_initializer.ts'
     log.info("starting logging")
     tls.DEFAULT_MIN_VERSION = "TLSv1"
     TimeAgo.addLocale(en)
+    // @ts-ignore
     Tabulator.defaultOptions.layout = "fitDataFill";
-    // @ts-expect-error default options not fully typed
+    // @ts-ignore
     Tabulator.defaultOptions.menuContainer = ".beekeeper-studio-wrapper";
     // Tabulator.prototype.bindModules([EditModule]);
     const appDb = platformInfo.appDbPath
@@ -143,3 +145,5 @@ import './common/initializers/big_int_initializer.ts'
     throw err
   }
 })();
+
+

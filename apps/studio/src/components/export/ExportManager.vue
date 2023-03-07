@@ -7,12 +7,8 @@
       :filters="filters"
       @export="startExport"
       @closed="handleDeadModal"
-    />
-    <ExportNotification
-      v-for="exporter in exports"
-      :key="exporter.id"
-      :exporter="exporter"
-    />
+    ></ExportModal>
+    <ExportNotification v-for="exporter in exports" :key="exporter.id" :exporter="exporter"></ExportNotification>
   </div>
 </template>
 <script lang="ts">
@@ -107,7 +103,6 @@ export default Vue.extend({
       this.filters = undefined
     },
     notifyProgress(_progress: ExportProgress) {
-      // TODO: Implement
     }
   },
   mounted() {

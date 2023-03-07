@@ -1,71 +1,34 @@
 
 <template>
-  <nav
-    class="flyout-nav"
-    v-hotkey="allHotkeys"
-    :class="{active: menuActive}"
-    ref="nav"
-  >
-    <!-- TOP MENU, eg File, Edit -->
-    <ul class="menu-bar">
-      <li
-        @mouseover.prevent="setSelected(menu)"
-        @dblclick.stop="noop()"
-        @mouseleave.prevent="unselect(menu)"
-        class="top-menu-item"
-        :class="{selected: menu === selected}"
-        v-for="menu in menus"
-        :key="menu.label"
-      >
-        <a
-          :class="{selected: menu === selected}"
-          @mousedown.prevent="setActive(menu)"
-        ><span class="label">{{ menu.label }}</span></a>
-        <!-- FIRST LEVEL MENU, eg New Window, New Tab -->
-        <ul>
-          <li
-            class="menu-item"
-            :class="{'has-children': !!item.submenu, ...hoverClass(item)}"
-            v-for="(item, idx) in menu.submenu"
-            :key="item.id || idx"
-          >
-            <a
-              @mousedown.prevent="noop()"
-              @mouseup.prevent="handle(item)"
-              @mouseover.prevent="setHover(item)"
-              :class="hoverClass(item)"
-            >
-              <span class="label">{{ item.label }}</span>
-              <span class="shortcut">{{ shortcutText(item) }}</span>
-            </a>
-            <!-- Second Level Menu, eg Dark Theme, Light Theme -->
-            <ul v-if="item.submenu">
-              <li
-                class="menu-item"
-                v-for="subitem in item.submenu"
-                :key="subitem.label"
-              >
-                <a
-                  @mouseover.prevent="setHover(subitem, item)"
-                  :class="hoverClass(subitem)"
-                  @mousedown.prevent="noop()"
-                  @mouseup.prevent="handle(subitem)"
-                >
-                  <span class="label">
-                    <span
-                      class="material-icons"
-                      v-if="subitem.checked"
-                    >done</span>
-                    <span>{{ subitem.label }}</span>
-                  </span>
-                </a>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </li>
-    </ul>
-  </nav>
+<nav class="flyout-nav" v-hotkey="allHotkeys"  :class="{active: menuActive}" ref="nav">
+  <!-- TOP MENU, eg File, Edit -->
+  <ul class="menu-bar">
+    <li @mouseover.prevent="setSelected(menu)" @dblclick.stop="noop()" @mouseleave.prevent="unselect(menu)" class="top-menu-item" :class="{selected: menu === selected}" v-for="menu in menus" :key="menu.label">
+      <a :class="{selected: menu === selected}" @mousedown.prevent="setActive(menu)"><span class="label">{{menu.label}}</span></a>
+      <!-- FIRST LEVEL MENU, eg New Window, New Tab -->
+      <ul>
+        <li class="menu-item" :class="{'has-children': !!item.submenu, ...hoverClass(item)}" v-for="(item, idx) in menu.submenu" :key="item.id || idx">
+          <a  @mousedown.prevent="noop()" @mouseup.prevent="handle(item)" @mouseover.prevent="setHover(item)" :class="hoverClass(item)">
+            <span class="label">{{item.label}}</span>
+            <span class="shortcut">{{shortcutText(item)}}</span>
+          </a>
+          <!-- Second Level Menu, eg Dark Theme, Light Theme -->
+          <ul v-if="item.submenu">
+            <li class="menu-item" v-for="subitem in item.submenu" :key="subitem.label">
+              <a  @mouseover.prevent="setHover(subitem, item)" :class="hoverClass(subitem)" @mousedown.prevent="noop()"  @mouseup.prevent="handle(subitem)">
+                <span class="label">
+                  <span class="material-icons" v-if="subitem.checked">done</span>
+                  <span>{{subitem.label}}</span>
+                </span>
+              </a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+
+</nav>
 </template>
 
 <script>
@@ -253,7 +216,7 @@ export default {
       }
     },
     noop() {
-      // Empty on purpose
+
     }
   },
   mounted() {

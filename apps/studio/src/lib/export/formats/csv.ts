@@ -12,7 +12,7 @@ interface OutputOptionsCsv {
 export class CsvExporter extends Export {
   static extension = "csv"
   readonly format: string = 'csv'
-  rowSeparator = '\n'
+  rowSeparator: string = '\n'
 
   preserveComplex = false
 
