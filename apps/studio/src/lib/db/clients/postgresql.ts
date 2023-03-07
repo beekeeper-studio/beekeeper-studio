@@ -1419,7 +1419,6 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
   // that can be used to resolve the latest password.
   let passwordResolver: () => Promise<string>;
 
-  
   // For Redshift Only -- IAM authentication and credential exchange
   const redshiftOptions = server.config.redshiftOptions;
   if (server.config.client === 'redshift' && redshiftOptions?.iamAuthenticationEnabled) {
@@ -1466,8 +1465,6 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
       return token
     }
   }
-
-
 
   const resolvedPw = await passwordResolver()
 
