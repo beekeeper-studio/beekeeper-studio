@@ -1182,7 +1182,7 @@ export function query(conn: Conn, queryText: string, _schema: string) {
   };
 }
 
-export async function executeQuery(conn: Conn, queryText: string, arrayMode: boolean = false) {
+export async function executeQuery(conn: Conn, queryText: string, arrayMode = false) {
   const data = await driverExecuteQuery(conn, { query: queryText, multiple: true, arrayMode });
 
   const commands = identifyCommands(queryText).map((item) => item.type);
@@ -1369,7 +1369,7 @@ export async function truncateAllTables(conn: Conn, schema: string) {
   });
 }
 
-export async function dropElement(conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+export async function dropElement(conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `DROP ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
@@ -1392,7 +1392,7 @@ export async function createDatabase(conn, databaseName, charset) {
   await driverExecuteQuery(conn, { query: sql })
 }
 
-export async function truncateElement(conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+export async function truncateElement(conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
