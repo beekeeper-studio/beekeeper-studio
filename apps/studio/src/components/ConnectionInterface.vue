@@ -161,237 +161,236 @@
             class="pitch"
             v-if="!config.connectionType"
           >
-            <span class="badge badge-primary">New</span> Upgrade to the full version of Beekeeper Studio for even more great features. <a
+            <span class="badge badge-primary">New</span> Upgrade to the full version of Beekeeper Studio for even more
+            great features. <a
               href="https://www.beekeeperstudio.io/"
               class=""
             >Get Started Free</a>
           </div>
         </div>
 
-        <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{ version }}</a></small>
+        <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{ version
+        }}</a></small>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-  import os from 'os'
-  import {SavedConnection} from '../common/appdb/models/saved_connection'
-  import ConnectionSidebar from './sidebar/ConnectionSidebar'
-  import MysqlForm from './connection/MysqlForm'
-  import PostgresForm from './connection/PostgresForm'
-  import RedshiftForm from './connection/RedshiftForm'
-  import Sidebar from './common/Sidebar'
-  import SqliteForm from './connection/SqliteForm'
-  import SqlServerForm from './connection/SqlServerForm'
-  import SaveConnectionForm from './connection/SaveConnectionForm'
-  import Split from 'split.js'
-  import ImportButton from './connection/ImportButton'
-  import _ from 'lodash'
-  import platformInfo from '@/common/platform_info'
-  import ErrorAlert from './common/ErrorAlert.vue'
-  import rawLog from 'electron-log'
+import os from 'os'
+import { SavedConnection } from '../common/appdb/models/saved_connection'
+import ConnectionSidebar from './sidebar/ConnectionSidebar'
+import MysqlForm from './connection/MysqlForm'
+import PostgresForm from './connection/PostgresForm'
+import RedshiftForm from './connection/RedshiftForm'
+import Sidebar from './common/Sidebar'
+import SqliteForm from './connection/SqliteForm'
+import SqlServerForm from './connection/SqlServerForm'
+import SaveConnectionForm from './connection/SaveConnectionForm'
+import Split from 'split.js'
+import ImportButton from './connection/ImportButton'
+import _ from 'lodash'
+import platformInfo from '@/common/platform_info'
+import ErrorAlert from './common/ErrorAlert.vue'
+import rawLog from 'electron-log'
 import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
 import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
 
-  const log = rawLog.scope('ConnectionInterface')
-  // import ImportUrlForm from './connection/ImportUrlForm';
+const log = rawLog.scope('ConnectionInterface')
+// import ImportUrlForm from './connection/ImportUrlForm';
 
-  export default {
-    components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OtherDatabaseNotice, },
+export default {
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OtherDatabaseNotice, },
 
-    data() {
-      return {
-        config: new SavedConnection(),
-        errors: null,
-        connectionError: null,
-        errorHelp: null,
-        testing: false,
-        split: null,
-        url: null,
-        importError: null,
-        sidebarShown: true,
-        version: platformInfo.appVersion
+  data() {
+    return {
+      config: new SavedConnection(),
+      errors: null,
+      connectionError: null,
+      errorHelp: null,
+      testing: false,
+      split: null,
+      url: null,
+      importError: null,
+      sidebarShown: true,
+      version: platformInfo.appVersion
+    }
+  },
+  computed: {
+    ...mapState(['workspaceId']),
+    ...mapState('data/connections', { 'connections': 'items' }),
+    connectionTypes() {
+      return this.$config.defaults.connectionTypes
+    },
+    pageTitle() {
+      if (_.isNull(this.config) || _.isUndefined(this.config.id)) {
+        return "New Connection"
+      } else {
+        return this.config.name
       }
     },
-    computed: {
-      ...mapState(['workspaceId']),
-      ...mapState('data/connections', {'connections': 'items'}),
-      connectionTypes() {
-        return this.$config.defaults.connectionTypes
-      },
-      pageTitle() {
-        if(_.isNull(this.config) || _.isUndefined(this.config.id)) {
-          return "New Connection"
-        } else {
-          return this.config.name
-        }
-      },
-      dialect() {
-        return dialectFor(this.config.connectionType)
+    dialect() {
+      return dialectFor(this.config.connectionType)
+    }
+  },
+  watch: {
+    workspaceId() {
+      this.config = new SavedConnection()
+    },
+    config: {
+      deep: true,
+      handler() {
+        this.connectionError = null
       }
     },
-    watch: {
-      workspaceId() {
-        this.config = new SavedConnection()
-      },
-      config: {
-        deep: true,
-        handler() {
-          this.connectionError = null
-        }
-      },
-      'config.connectionType'(newConnectionType) {
-        if(!findClient(newConnectionType)?.supportsSocketPath) {
-          this.config.socketPathEnabled = false
-        }
-      },
-      connectionError() {
-        console.log("error watch", this.connectionError, this.dialect)
-        if (this.connectionError &&
-          this.dialect == 'sqlserver' &&
-          this.connectionError.message &&
-          this.connectionError.message.includes('self signed certificate')
-        ) {
-          this.errorHelp = `You might need to check 'Trust Server Certificate'`
-        } else {
+    'config.connectionType'(newConnectionType) {
+      if (!findClient(newConnectionType)?.supportsSocketPath) {
+        this.config.socketPathEnabled = false
+      }
+    },
+    connectionError() {
+      console.log("error watch", this.connectionError, this.dialect)
+      if (this.connectionError &&
+        this.dialect == 'sqlserver' &&
+        this.connectionError.message &&
+        this.connectionError.message.includes('self signed certificate')
+      ) {
+        this.errorHelp = `You might need to check 'Trust Server Certificate'`
+      } else {
         this.errorHelp = null
-        }
       }
-    },
-    async mounted() {
-      if (!this.$store.getters.workspace) {
-        await this.$store.commit('workspace', this.$store.state.localWorkspace)
-      }
-      await this.$store.dispatch('loadUsedConfigs')
-      this.config.sshUsername = os.userInfo().username
-      this.$nextTick(() => {
-        const components = [
-          this.$refs.sidebar.$refs.sidebar,
-          this.$refs.content
-        ]
-        this.split = Split(components, {
-          elementStyle: (dimension, size) => ({
-              'flex-basis': `calc(${size}%)`,
-          }),
-          sizes: [300,500],
-          gutterize: 8,
-          minSize: [300, 300],
-          expandToMin: true,
-        })
+    }
+  },
+  async mounted() {
+    if (!this.$store.getters.workspace) {
+      await this.$store.commit('workspace', this.$store.state.localWorkspace)
+    }
+    await this.$store.dispatch('loadUsedConfigs')
+    this.config.sshUsername = os.userInfo().username
+    this.$nextTick(() => {
+      const components = [
+        this.$refs.sidebar.$refs.sidebar,
+        this.$refs.content
+      ]
+      this.split = Split(components, {
+        elementStyle: (dimension, size) => ({
+          'flex-basis': `calc(${size}%)`,
+        }),
+        sizes: [300, 500],
+        gutterize: 8,
+        minSize: [300, 300],
+        expandToMin: true,
       })
+    })
+  },
+  beforeDestroy() {
+    if (this.split) {
+      this.split.destroy()
+    }
+  },
+  methods: {
+    maybeLoadSqlite(e) {
+      // cast to an array
+      const files = [...e.dataTransfer.files || []]
+      if (!files || !files.length) return
+      if (!this.config) return;
+      // we only load the first
+      const file = files[0]
+      const allGood = this.config.parse(file.path)
+      if (!allGood) {
+        this.$noty.error(`Unable to open '${file.name}'. It is not a valid SQLite file.`);
+        return
+      } else {
+        this.submit()
+      }
+
     },
-    beforeDestroy() {
-      if(this.split) {
-        this.split.destroy()
+    create() {
+      this.config = new SavedConnection()
+    },
+    edit(config) {
+      this.config = config
+      this.errors = null
+      this.connectionError = null
+    },
+    async remove(config) {
+      if (this.config === config) {
+        this.config = new SavedConnection()
+      }
+      await this.$store.dispatch('data/connections/remove', config)
+      this.$noty.success(`${config.name} deleted`)
+    },
+    async duplicate(config) {
+      // Duplicates ES 6 class of the connection, without any reference to the old one.
+      const duplicateConfig = await this.$store.dispatch('data/connections/clone', config)
+      duplicateConfig.name = 'Copy of ' + duplicateConfig.name
+
+      try {
+        const id = await this.$store.dispatch('data/connections/save', duplicateConfig)
+        this.$noty.success(`The connection was successfully duplicated!`)
+        this.config = this.connections.find((c) => c.id === id) || this.config
+      } catch (ex) {
+        this.$noty.error(`Could not duplicate Connection: ${ex.message}`)
+      }
+
+    },
+    async submit() {
+      this.connectionError = null
+      try {
+        await this.$store.dispatch('connect', this.config)
+      } catch (e) {
+        this.connectionError = e
+        this.$noty.error("Error establishing a connection")
+        log.error(e)
       }
     },
-    methods: {
-      maybeLoadSqlite(e) {
-        // cast to an array
-        const files = [...e.dataTransfer.files || []]
-        if (!files || !files.length) return
-        if (!this.config) return;
-        // we only load the first
-        const file = files[0]
-        const allGood = this.config.parse(file.path)
-        if (!allGood) {
-          this.$noty.error(`Unable to open '${file.name}'. It is not a valid SQLite file.`);
-          return
-        } else {
-          this.submit()
-        }
+    async handleConnect(config) {
+      this.config = config
+      await this.submit()
+    },
+    async testConnection() {
 
-      },
-      create() {
-        this.config = new SavedConnection()
-      },
-      edit(config) {
-        this.config = config
+      try {
+        this.testing = true
+        this.connectionError = null
+        await this.$store.dispatch('test', this.config)
+        this.$noty.success("Connection looks good!")
+        return true
+      } catch (ex) {
+        this.connectionError = ex
+        this.$noty.error("Error establishing a connection")
+      } finally {
+        this.testing = false
+      }
+    },
+    clearForm() {
+      // TODO: Implement
+    },
+    async save() {
+      try {
         this.errors = null
         this.connectionError = null
-      },
-      async remove(config) {
-        if (this.config === config) {
-          this.config = new SavedConnection()
+        if (!this.config.name) {
+          throw new Error("Name is required")
         }
-        await this.$store.dispatch('data/connections/remove', config)
-        this.$noty.success(`${config.name} deleted`)
-      },
-      async duplicate(config) {
-        // Duplicates ES 6 class of the connection, without any reference to the old one.
-        const duplicateConfig = await this.$store.dispatch('data/connections/clone', config)
-        duplicateConfig.name = 'Copy of ' + duplicateConfig.name
-
-        try {
-          const id = await this.$store.dispatch('data/connections/save', duplicateConfig)
-          this.$noty.success(`The connection was successfully duplicated!`)
-          this.config = this.connections.find((c) => c.id === id) || this.config
-        } catch (ex) {
-          this.$noty.error(`Could not duplicate Connection: ${ex.message}`)
-        }
-
-      },
-      async submit() {
-        this.connectionError = null
-        try {
-          await this.$store.dispatch('connect', this.config)
-        } catch(ex) {
-          this.connectionError = ex
-          this.$noty.error("Error establishing a connection")
-          log.error(ex)
-        }
-      },
-      async handleConnect(config) {
-        this.config = config
-        await this.submit()
-      },
-      async testConnection(){
-
-        try {
-          this.testing = true
-          this.connectionError = null
-          await this.$store.dispatch('test', this.config)
-          this.$noty.success("Connection looks good!")
-          return true
-        } catch(ex) {
-          this.connectionError = ex
-          this.$noty.error("Error establishing a connection")
-        } finally {
-          this.testing = false
-        }
-      },
-      clearForm(){
-        // TODO: Implement
-      },
-      async save() {
-        try {
-          this.errors = null
-          this.connectionError = null
-          if (!this.config.name) {
-            throw new Error("Name is required")
-          }
-          await this.$store.dispatch('data/connections/save', this.config)
-          this.$noty.success("Connection Saved")
-        } catch (ex) {
-          console.error(ex)
-          this.errors = [ex.message]
-          this.$noty.error("Could not save connection information")
-        }
-      },
-      handleErrorMessage(message){
-        if (message){
-          this.errors = [message]
-          this.$noty.error("Could not parse connection URL.")
-        }else{
-          this.errors = null
-        }
+        await this.$store.dispatch('data/connections/save', this.config)
+        this.$noty.success("Connection Saved")
+      } catch (ex) {
+        console.error(ex)
+        this.errors = [ex.message]
+        this.$noty.error("Could not save connection information")
       }
     },
-  }
+    handleErrorMessage(message) {
+      if (message) {
+        this.errors = [message]
+        this.$noty.error("Could not parse connection URL.")
+      } else {
+        this.errors = null
+      }
+    }
+  },
+}
 </script>
-
-<style>
-</style>
