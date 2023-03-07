@@ -56,6 +56,10 @@ module.exports = {
             to: 'launcher-script.sh'
           },
           {
+            from: './vendor',
+            to: 'vendor'
+          },
+          {
             from: './public',
             to: 'public'
           }
@@ -207,5 +211,12 @@ module.exports = {
       ]
     }
 
+  },
+  css: {
+    loaderOptions: {
+      sass: {
+        implementation: require('node-sass')
+      }
+    }
   }
 }

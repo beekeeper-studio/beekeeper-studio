@@ -1,7 +1,8 @@
 
-import { remote } from 'electron'
 import Noty from 'noty'
 import _ from 'lodash'
+
+const remote = require('@electron/remote')
 /*
   Ok this is a little late in the game, but starting to move electron
   remote calls to this object. The hope is that when we support other platforms

@@ -22,7 +22,7 @@ jobs:
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v1
         with:
-          node-version: 14
+          node-version: 16
 
       - name: Clean cache
         run: yarn cache clean
@@ -40,8 +40,9 @@ jobs:
 
       - name: Cleanup artifacts Win
         if: matrix.os == 'windows-latest'
+        continue-on-error: true
         run: |
-          npx rimraf "apps/studio/dist_electron/!(*.exe)"
+          npx rimraf "apps\studio\dist_electron\!(*.exe)"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v1

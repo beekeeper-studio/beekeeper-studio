@@ -22,6 +22,8 @@ import * as fs from 'fs'
 import * as os from 'os'
 import rawLog from 'electron-log'
 
+import ElectronFriendlyPageantAgent from '@/vendor/ssh2/ElectronFriendlyPageantAgent'
+
 interface Options {
   username?: string
   password?: string
@@ -176,11 +178,11 @@ class SSHConnection {
 
         // see https://github.com/mscdex/ssh2#client for agents on Windows
         // guaranteed to give the ssh agent sock if the agent is running (posix)
-        let agentDefault = process.env['SSH_AUTH_SOCK']
+        let agentDefault: any = process.env['SSH_AUTH_SOCK']
         if (this.isWindows) {
           // null or undefined
           if (agentDefault == null) {
-            agentDefault = 'pageant'
+            agentDefault = ElectronFriendlyPageantAgent
           }
         }
 

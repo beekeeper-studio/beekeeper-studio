@@ -155,7 +155,7 @@
           </x-button>
         </template>
         <template v-if="!editable">
-          <span class="statusbar-item" :title="readOnlyNotice"><i class="material-icons-outlined">info</i> Read Only</span>
+          <span class="statusbar-item" :title="readOnlyNotice"><i class="material-icons-outlined">info</i> Editing Disabled</span>
         </template>
 
         <!-- Actions -->
@@ -504,7 +504,7 @@ export default Vue.extend({
     },
     readOnlyNotice() {
       return this.dialectData.notices?.tableTable ||
-        "Only tables with a single primary key column are editable."
+        "Tables without a primary key column only support inserts. Editing of existing records is disabled."
     },
     // it's a table, but there's no primary key
     missingPrimaryKey() {
