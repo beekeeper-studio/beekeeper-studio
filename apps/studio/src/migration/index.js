@@ -43,7 +43,7 @@ const realMigrations = [
   addSc, sslFiles, sslReject, pinned, addSort,
   createCreds, workspaceScoping, workspace2, addTabs, scWorkspace, systemTheme,
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
-  createHiddenEntities, createHiddenSchemas
+  createHiddenEntities, createHiddenSchemas,
 ]
 
 // fixtures require the models
