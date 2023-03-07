@@ -22,7 +22,7 @@ export default class NativeMenuBuilder {
   initialize() {
     if (this.builder) {
       const template = this.builder.buildTemplate()
-      log.debug("MENUTEMPLATE", template)
+      log.info("MENUTEMPLATE", template)
       this.menu = this.electron.Menu.buildFromTemplate(template)
       this.electron.Menu.setApplicationMenu(this.menu)
     } else {
