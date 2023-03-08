@@ -146,13 +146,29 @@
           </span>
         </div> -->
 
+        <!-- TODO (day): Copy to SQL button here?-->
         <template v-if="pendingChangesCount > 0">
           <x-button class="btn btn-flat" @click.prevent="discardChanges">Reset</x-button>
-          <x-button class="btn btn-primary btn-badge btn-icon" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
-            <i v-if="error" class="material-icons ">error_outline</i>
-            <span class="badge" v-if="!error">{{pendingChangesCount}}</span>
-            <span>Apply</span>
-          </x-button>
+          <x-buttons class="pending-changes">
+            <x-button class="btn btn-primary btn-badge btn-icon" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
+              <i v-if="error" class="material-icons ">error_outline</i>
+              <span class="badge" v-if="!error">{{pendingChangesCount}}</span>
+              <span>Apply</span>
+            </x-button>
+            <x-button class="btn btn-primary" menu>
+              <i class="material-icons">arrow_drop_down</i>
+              <x-menu>
+                <x-menuitem @click.prevent="saveChanges">
+                  <x-label>Apply</x-label>
+                  <x-shortcut value="Control+S"></x-shortcut>
+                </x-menuitem>
+                <x-menuitem @click.prevent="copyToSql">
+                  <x-label>Copy to SQL</x-label>
+                  <x-shortcut value="Control+Shift+S"></x-shortcut>
+                </x-menuitem>
+              </x-menu>
+            </x-button>
+          </x-buttons>
         </template>
         <template v-if="!editable">
           <span class="statusbar-item" :title="readOnlyNotice"><i class="material-icons-outlined">info</i> Editing Disabled</span>
@@ -215,7 +231,8 @@ import { mapGetters, mapState } from 'vuex';
 import { Tabulator } from 'tabulator-tables'
 import { TableUpdate } from '@/lib/db/models';
 import { markdownTable } from 'markdown-table'
-import { dialectFor } from '@shared/lib/dialects/models'
+import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
+import { format } from 'sql-formatter';
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
@@ -281,7 +298,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
-    ...mapGetters(['dialectData']),
+    ...mapGetters(['dialectData', 'dialect']),
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
       const cols = this.tabulator.getColumns()
@@ -1180,6 +1197,43 @@ export default Vue.extend({
         inserts: [],
         updates: [],
         deletes: []
+      }
+    },
+    async copyToSql() {
+      this.saveError = null
+
+      try {
+        const changes = {
+          inserts: this.buildPendingInserts(),
+          updates: this.pendingChanges.updates,
+          deletes: this.pendingChanges.deletes
+        }
+        const sql = await this.connection.getChangesSql(changes)
+        const formatted = format(sql, { language: FormatterDialect(this.dialect) })
+        this.$root.$emit(AppEvent.newTab, formatted)
+          
+        this.resetPendingChanges()
+      } catch(ex) {
+        console.error(ex);
+        this.pendingChanges.updates.forEach(edit => {
+            edit.cell.getElement().classList.add('edit-error')
+        })
+
+        this.pendingChanges.inserts.forEach(insert => {
+          insert.row.getElement().classList.add('edit-error')
+        })
+
+        this.saveError = {
+          title: ex.message,
+          message: ex.message,
+          ex
+        }
+        this.$noty.error(ex.message)
+
+        return
+      } finally {
+        if (!this.active)
+          this.forceRedraw = true
       }
     },
     async saveChanges() {

@@ -187,6 +187,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getTableLength: (table: string, schema: string) => getTableLength(conn, table, schema),
     selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema, selects: string[] = ['*']) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (database: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema: string = defaultSchema) => selectTopStream(conn, database, table, orderBy, filters, chunkSize, schema),
+    getChangesSql: (changes: TableChanges): Promise<string> => getChangesSql(changes),
     getInsertQuery: (tableInsert: TableInsert): Promise<string> => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
     getTableCreateScript: (table, schema = defaultSchema) => getTableCreateScript(conn, table, schema),
@@ -218,8 +219,6 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema)
   };
 }
-
-
 
 
 export function disconnect(conn: HasPool) {
@@ -1206,6 +1205,17 @@ export async function listDatabases(conn: Conn, filter?: DatabaseFilterOptions) 
   const data = await driverExecuteSingle(conn, { query: sql, params });
 
   return data.rows.map((row) => row.datname);
+}
+
+async function getChangesSql(changes: TableChanges): Promise<string> {
+  const queries = [
+    ...buildInsertQueries(knex, changes.inserts || []),
+    ...buildUpdateQueries(knex, changes.updates || []),
+    ...buildDeleteQueries(knex, changes.deletes || [])
+  ].filter((i) => !!i && _.isString(i)).join(';')
+
+  if (queries.length) 
+    return queries.endsWith(';') ? queries : `${queries};`
 }
 
 export async function getInsertQuery(conn: HasPool, database: string, tableInsert: TableInsert): Promise<string> {
