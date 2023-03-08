@@ -146,7 +146,6 @@
           </span>
         </div> -->
 
-        <!-- TODO (day): Copy to SQL button here?-->
         <template v-if="pendingChangesCount > 0">
           <x-button class="btn btn-flat" @click.prevent="discardChanges">Reset</x-button>
           <x-buttons class="pending-changes">
@@ -344,6 +343,7 @@ export default Vue.extend({
       result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
+      result[this.ctrlOrCmd('shift+s')] = this.copyToSql.bind(this)
       result[this.ctrlOrCmd('f')] = () => this.$refs.valueInput.focus()
       result[this.ctrlOrCmd('c')] = this.copyCell
       return result
@@ -1211,8 +1211,6 @@ export default Vue.extend({
         const sql = await this.connection.getChangesSql(changes)
         const formatted = format(sql, { language: FormatterDialect(this.dialect) })
         this.$root.$emit(AppEvent.newTab, formatted)
-          
-        this.resetPendingChanges()
       } catch(ex) {
         console.error(ex);
         this.pendingChanges.updates.forEach(edit => {
