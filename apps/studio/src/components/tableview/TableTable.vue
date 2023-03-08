@@ -1291,7 +1291,6 @@ export default Vue.extend({
         this.$refs.valueInput.focus()
       })
     },
-    // @DAY This is where sorting is done, seems to be done on the database end?
     dataFetch(_url, _config, params) {
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.

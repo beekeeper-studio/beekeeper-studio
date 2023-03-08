@@ -321,7 +321,6 @@
           const dateB = new Date(durationB.years, durationB.months, durationB.days, durationB.hours, durationB.minutes, durationB.seconds);
           return dateA - dateB;
         } catch {
-          console.error('ERROR SORTING INTERVALS');
           return 0;
         }
       }
