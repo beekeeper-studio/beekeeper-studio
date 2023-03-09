@@ -88,7 +88,10 @@ export default async function (server, database) {
 
     // delete stuff
     dropElement: (elementName, typeOfElement) => dropElement(conn, elementName, typeOfElement),
-    truncateElement: (elementName) => truncateElement(conn, elementName)
+    truncateElement: (elementName) => truncateElement(conn, elementName),
+
+    // duplicate table
+    duplicateTable: (tableName, newTableName) => duplicateTable(conn, tableName, newTableName)
   };
 }
 
@@ -509,6 +512,15 @@ export async function truncateElement (conn, elementName) {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `Delete from ${PD.wrapIdentifier(elementName)}; vacuum;`
+
+    await driverExecuteQuery(connClient, { query: sql })
+  });
+}
+
+export async function duplicateTable (conn, tableName, newTable) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `CREATE TABLE ${PD.wrapIdentifier(newTable)} AS SELECT * FROM ${PD.wrapIdentifier(tableName)};`
 
     await driverExecuteQuery(connClient, { query: sql })
   });
