@@ -73,6 +73,23 @@
           <button @focusout="sureOpen && $refs.no && $refs.no.focus()" @click.prevent="completeDeleteAction" class="btn btn-sm btn-primary">{{this.titleCaseAction}} {{this.dbElement}}</button>
         </div>
       </modal>
+
+      <!-- Duplicate Modal -->
+
+      <modal :name="duplicateModal" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened" @closed="sureClosed" @before-open="beforeOpened">
+        <div class="dialog-content">
+          <div class="dialog-c-title">{{this.dbAction | titleCase}} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{this.dbElement}}</span>?</div>
+          <div class="form-group">
+            <label for="duplicatedTableName">New name</label>
+            <input type="text" name="duplicatedTableName" class="form-control" required v-model="duplicatedTableName" autofocus>
+          </div>
+        </div>
+        <div class="vue-dialog-buttons">
+          <span class="expand"></span>
+          <button ref="no" @click.prevent="$modal.hide(duplicateModal)" class="btn btn-sm btn-flat">Cancel</button>
+          <button @focusout="sureOpen && $refs.no && $refs.no.focus()" @click.prevent="completeDuplicateAction" class="btn btn-sm btn-primary">{{this.titleCaseAction}} {{this.dbElement}}</button>
+        </div>
+      </modal>
     </portal>
   </div>
 </template>
@@ -125,7 +142,10 @@
         dbAction: null,
         dbElement: null,
         dbEntityType: null,
-        dbDeleteElementParams: null
+        dbDeleteElementParams: null,
+        // below are connected to the modal for duplicate
+        dbDuplicateTableParams: null,
+        duplicatedTableName: null,
       }
     },
     watch: {
@@ -153,6 +173,9 @@
       modalName() {
         return "dropTruncateModal"
       },
+      duplicateModal() {
+        return "duplicateModal"
+      },
       tabItems: {
         get() {
           return this.$store.getters['tabs/sortedTabs']
@@ -178,6 +201,7 @@
           { event: AppEvent.hideSchema, handler: this.hideSchema },
           { event: AppEvent.deleteDatabaseElement, handler: this.deleteDatabaseElement },
           { event: AppEvent.dropDatabaseElement, handler: this.dropDatabaseElement },
+          { event: AppEvent.duplicateDatabaseTable, handler: this.duplicateDatabaseTable },
         ]
       },
       contextOptions() {
@@ -230,6 +254,43 @@
             if (this.dbAction.toLowerCase() === 'truncate') {
               await this.connection.truncateElement(dbName, entityType?.toUpperCase(), schema)
             }
+
+            this.$noty.success(`${this.dbAction} completed successfully`)
+
+          } catch (ex) {
+            this.$noty.error(`Error performing ${this.dbAction}: ${ex.message}`)
+          }
+        })
+      },
+      completeDuplicateAction(){
+
+        if(this.dbElement === this.dublicatedTableName){
+          this.$noty.warning("Sorry, you can't duplicate to the same name.")
+          return;
+        }
+
+        if (this.duplicatedTableName === null || this.duplicatedTableName === '' || this.duplicatedTableName === undefined) {
+          this.$noty.warning("Please enter a name for the new table.")
+          return;
+        }
+
+        const { tableName, newTableName, schema } = this.dbDuplicateTableParams
+        this.$modal.hide(this.duplicateModal)
+
+        this.$nextTick(async() => {
+          try {
+            if (this.dbAction.toLowerCase() !== 'duplicate') {
+              return
+            }
+
+            await this.connection.duplicateTable(tableName, newTableName, schema)
+
+            // timeout is more about aesthetics so it doesn't refresh the table right away.
+            setTimeout(() => {
+              this.$store.dispatch('updateTables')
+              this.$store.dispatch('updateRoutines')
+              }, 500)
+
 
             this.$noty.success(`${this.dbAction} completed successfully`)
 
@@ -331,6 +392,24 @@
         this.dbDeleteElementParams = dbActionParams
 
         this.$modal.show(this.modalName)
+      },
+      duplicateDatabaseTable({item: dbActionParams, action: dbAction}){
+        console.log('*******', {dbActionParams, dbAction})
+
+        this.dbElement = dbActionParams.name
+        this.dbAction = dbAction
+        this.dbEntityType = dbActionParams.entityType
+
+
+        this.duplicatedTableName = `${dbActionParams.name}_copy`
+
+        this.dbDuplicateTableParams = {
+          tableName: dbActionParams.name,
+          newTableName: this.duplicatedTableName,
+          schema: dbActionParams.schema
+        }
+
+        this.$modal.show(this.duplicateModal)
       },
       async loadRoutineCreate(routine) {
         const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema)
