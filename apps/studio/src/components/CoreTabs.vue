@@ -76,7 +76,7 @@
 
       <!-- Duplicate Modal -->
 
-      <modal :name="duplicateModal" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened" @closed="sureClosed" @before-open="beforeOpened">
+      <modal :name="duplicateTableModal" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened" @closed="sureClosed" @before-open="beforeOpened">
         <div class="dialog-content">
           <div class="dialog-c-title">{{this.dbAction | titleCase}} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{this.dbElement}}</span>?</div>
           <div class="form-group">
@@ -86,7 +86,7 @@
         </div>
         <div class="vue-dialog-buttons">
           <span class="expand"></span>
-          <button ref="no" @click.prevent="$modal.hide(duplicateModal)" class="btn btn-sm btn-flat">Cancel</button>
+          <button ref="no" @click.prevent="$modal.hide(duplicateTableModal)" class="btn btn-sm btn-flat">Cancel</button>
           <button @focusout="sureOpen && $refs.no && $refs.no.focus()" @click.prevent="completeDuplicateAction" class="btn btn-sm btn-primary">{{this.titleCaseAction}} {{this.dbElement}}</button>
         </div>
       </modal>
@@ -173,8 +173,8 @@
       modalName() {
         return "dropTruncateModal"
       },
-      duplicateModal() {
-        return "duplicateModal"
+      duplicateTableModal() {
+        return "duplicateTableModal"
       },
       tabItems: {
         get() {
@@ -275,7 +275,7 @@
         }
 
         const { tableName, newTableName, schema } = this.dbDuplicateTableParams
-        this.$modal.hide(this.duplicateModal)
+        this.$modal.hide(this.duplicateTableModal)
 
         this.$nextTick(async() => {
           try {
@@ -409,7 +409,7 @@
           schema: dbActionParams.schema
         }
 
-        this.$modal.show(this.duplicateModal)
+        this.$modal.show(this.duplicateTableModal)
       },
       async loadRoutineCreate(routine) {
         const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema)
