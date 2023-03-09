@@ -212,6 +212,9 @@ export class DBConnection {
   dropElement = bindAsync.bind(null, 'dropElement', this.server, this.database)
   truncateElement = bindAsync.bind(null, 'truncateElement', this.server, this.database)
 
+  // duplicateTAble
+  duplicateTable = bindAsync.bind(null, 'duplicateTable', this.server, this.database)
+
   async currentDatabase() {
     return this.database.database
   }
