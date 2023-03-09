@@ -13,7 +13,7 @@ import { MysqlCursor } from './mysql/MySqlCursor';
 import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral } from './utils';
 import { MysqlData } from '@shared/lib/dialects/mysql'
 import { ClientError } from '../client';
-import { duplicateTable } from './postgresql';
+
 
 const log = rawLog.scope('mysql')
 const logger = () => log
