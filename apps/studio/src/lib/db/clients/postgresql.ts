@@ -191,6 +191,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
     getTableCreateScript: (table, schema = defaultSchema) => getTableCreateScript(conn, table, schema),
     getViewCreateScript: (view, schema = defaultSchema) => getViewCreateScript(conn, view, schema),
+    getMaterializedViewCreateScript: (view, schema = defaultSchema) => getMaterializedViewCreateScript(conn, view, schema),
     getRoutineCreateScript: (routine, type, schema = defaultSchema) => getRoutineCreateScript(conn, routine, type, schema),
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
     getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
@@ -1309,6 +1310,18 @@ export async function getViewCreateScript(conn: Conn, view: string, schema: stri
   return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
 }
 
+export async function getMaterializedViewCreateScript(conn: Conn, view: string, schema: string) {
+  const createViewSql = `CREATE OR REPLACE MATERIALIZED VIEW ${wrapIdentifier(schema)}.${view} AS`;
+
+  const sql = 'SELECT pg_get_viewdef($1::regclass, true)';
+
+  const params = [view];
+
+  const data = await driverExecuteSingle(conn, { query: sql, params });
+
+  return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
+}
+
 export async function getRoutineCreateScript(conn: Conn, routine: string, _: string, schema: string) {
   const sql = `
     SELECT pg_get_functiondef(p.oid)
@@ -1372,7 +1385,7 @@ export async function truncateAllTables(conn: Conn, schema: string) {
 export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
-    const sql = `DROP ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
+    const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
 
     await driverExecuteSingle(connClient, { query: sql })
   });
