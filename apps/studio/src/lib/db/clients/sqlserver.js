@@ -76,6 +76,7 @@ export default async function (server, database) {
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
+    getMaterializedViewCreateScripts: () => Promise.resolve([]),
     getRoutineCreateScript: (routine) => getRoutineCreateScript(conn, routine),
     truncateAllTables: () => truncateAllTables(conn),
     getTableProperties: (table, schema) => getTableProperties(conn, table, schema),
