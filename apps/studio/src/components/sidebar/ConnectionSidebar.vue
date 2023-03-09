@@ -187,14 +187,12 @@ const log = rawLog.scope('connection-sidebar');
       // If we load with some pins, this will reinitialize split to reflect that
       noPins(value) {
         if (!value)
-          this.split = this.getSplit()
+          this.buildSplit()
       },
       // Check if we need to reinitialize split based on pinnedConnections length
       pinnedConnections(value) {
-        if (value.length < 2) {
-          this.split?.destroy()
-          this.split = this.getSplit()
-        }
+        if (value.length < 2)
+          this.buildSplit()
       }
     },
     computed: {
@@ -283,11 +281,12 @@ const log = rawLog.scope('connection-sidebar');
       }
     },
     mounted() {
-      this.split = this.getSplit()
+      this.buildSplit()
     },
     methods: {
-      getSplit() {
-        return Split(this.components, {
+      buildSplit() {
+        if (this.split) this.split.destroy()
+        this.split = Split(this.components, {
           elementStyle: (dim, size) => ({
             'flex-basis': `calc(${size}%)`
           }),
@@ -303,8 +302,6 @@ const log = rawLog.scope('connection-sidebar');
         this.$store.dispatch('data/connectionFolders/load')
         this.$store.dispatch('data/connections/load')
         this.$store.dispatch('pinnedConnections/loadPins').then(() => this.$store.dispatch('pinnedConnections/reorder', this.pinnedConnections))
-        this.split.destroy()
-        this.split = this.getSplit()
       },
       edit(config) {
         this.$emit('edit', config)
