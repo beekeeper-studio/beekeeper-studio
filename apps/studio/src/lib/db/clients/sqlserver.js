@@ -93,7 +93,7 @@ export default async function (server, database) {
     listCharsets: () => [],
     getDefaultCharset: () => null,
     /*
-      From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-database-transact-sql?view=sql-server-ver16&tabs=sqlpool: 
+      From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-database-transact-sql?view=sql-server-ver16&tabs=sqlpool:
       Collation name can be either a Windows collation name or a SQL collation name. If not specified, the database is assigned the default collation of the instance of SQL Server
 
       Having this, going to keep collations at the default because there are literally thousands of options
@@ -111,7 +111,10 @@ export default async function (server, database) {
 
     // remove things
     dropElement: (elementName, typeOfElement, schema) => dropElement(conn, elementName, typeOfElement, schema),
-    truncateElement: (elementName, typeOfElement, schema) => truncateElement(conn, elementName, typeOfElement, schema)
+    truncateElement: (elementName, typeOfElement, schema) => truncateElement(conn, elementName, typeOfElement, schema),
+
+    // duplicate
+    duplicateTable: (table, newTableName, schema) => duplicateTable(conn, table, newTableName, schema),
   };
 }
 
@@ -875,6 +878,15 @@ export async function truncateElement (conn, elementName, typeOfElement, schema 
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
+  });
+}
+
+export async function duplicateTable(conn, tableName, newTableName, schema = 'dbo') {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `SELECT * INTO ${wrapIdentifier(schema)}.${wrapIdentifier(newTableName)} FROM ${wrapIdentifier(schema)}.${wrapIdentifier(tableName)}`
 
     await driverExecuteQuery(connClient, { query: sql })
   });
