@@ -78,11 +78,12 @@
 
       <modal :name="duplicateTableModal" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened" @closed="sureClosed" @before-open="beforeOpened">
         <div class="dialog-content">
-          <div class="dialog-c-title">{{this.dbAction | titleCase}} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{this.dbElement}}</span>?</div>
+          <div class="dialog-c-title">{{this.dbAction | titleCase }} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{this.dbElement}}</span>?</div>
           <div class="form-group">
-            <label for="duplicatedTableName">New name</label>
+            <label for="duplicatedTableName">New table name</label>
             <input type="text" name="duplicatedTableName" class="form-control" required v-model="duplicatedTableName" autofocus>
           </div>
+          <small>* Indexes, relations or triggers will not be duplicated</small>
         </div>
         <div class="vue-dialog-buttons">
           <span class="expand"></span>
@@ -263,6 +264,12 @@
         })
       },
       completeDuplicateAction(){
+        const { tableName, newTableName, schema, entityType } = this.dbDuplicateTableParams
+
+        if (entityType !== 'table' && this.dbAction == 'duplicate') {
+          this.$noty.warning("Sorry, you can only duplicate tables.")
+          return;
+        }
 
         if(this.dbElement === this.dublicatedTableName){
           this.$noty.warning("Sorry, you can't duplicate to the same name.")
@@ -274,7 +281,7 @@
           return;
         }
 
-        const { tableName, newTableName, schema } = this.dbDuplicateTableParams
+
         this.$modal.hide(this.duplicateTableModal)
 
         this.$nextTick(async() => {
@@ -298,6 +305,8 @@
             this.$noty.error(`Error performing ${this.dbAction}: ${ex.message}`)
           }
         })
+
+
       },
       beforeOpened() {
         this.lastFocused = document.activeElement
