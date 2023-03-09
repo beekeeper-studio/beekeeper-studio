@@ -13,6 +13,7 @@ import { MysqlCursor } from './mysql/MySqlCursor';
 import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral } from './utils';
 import { MysqlData } from '@shared/lib/dialects/mysql'
 import { ClientError } from '../client';
+import { duplicateTable } from './postgresql';
 
 const log = rawLog.scope('mysql')
 const logger = () => log
@@ -91,7 +92,10 @@ export default async function (server, database) {
 
     // remove things
     dropElement: (elementName, typeOfElement) => dropElement(conn, elementName, typeOfElement),
-    truncateElement: (elementName, typeOfElement) => truncateElement(conn, elementName, typeOfElement)
+    truncateElement: (elementName, typeOfElement) => truncateElement(conn, elementName, typeOfElement),
+
+    // duplicate table
+    duplicateTable: (tableName, newTableName) => duplicateTable(conn, tableName, newTableName)
   };
 }
 
@@ -754,6 +758,13 @@ export async function truncateElement (conn, elementName, typeOfElement) {
     await driverExecuteQuery(connClient, { query: sql })
   });
 }
+
+export async function duplicateTable(conn, tableName, newTable) {
+  const sql = `CREATE TABLE ${wrapIdentifier(newTable)} LIKE ${wrapIdentifier(tableName)}`;
+
+  await driverExecuteQuery(conn, { query: sql });
+}
+
 
 export async function getTableProperties(conn, table) {
   const propsSql = `

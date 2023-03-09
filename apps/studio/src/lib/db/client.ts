@@ -82,6 +82,9 @@ export interface DatabaseClient {
   // delete stuff
   dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => Promise<void>
   truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => Promise<void>
+
+  // duplicate table
+  duplicateTable: (tableName: string, newTableName: string, schema?: string) => Promise<void>
 }
 
 export type IDbClients = keyof typeof clients
@@ -489,7 +492,7 @@ function getViewCreateScript(server: IDbConnectionServer, database: IDbConnectio
 
 function getMaterializedViewCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, view: string /* , schema */) {
   checkIsConnected(server , database);
-  
+
   if(typeof database.connection?.getMaterializedViewCreateScript !== 'function') {
     return null;
   } else {
