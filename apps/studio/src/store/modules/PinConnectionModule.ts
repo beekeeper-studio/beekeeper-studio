@@ -19,7 +19,7 @@ export const PinConnectionModule: Module<State, RootState> = {
     orderedPins(_state, getters, rootState): PinnedConnection[] {
       const connections = rootState['data/connections'].items;
       return getters.pinned.sort((a, b) => a.position - b.position).map((pin: PinnedConnection) => {
-        const c = connections.find((c) => c.id === pin.connectionId);
+        const c = connections.find((c) => c.id === pin.connectionId && c.workspaceId === rootState.workspaceId);
         if (c) pin.connection = c;
         return c ? pin : null
       }).filter((p) => !!p);
@@ -52,7 +52,7 @@ export const PinConnectionModule: Module<State, RootState> = {
       context.commit('set', []);
     },
     async add(context, item: SavedConnection) {
-      const existing = context.state.pins.find((p) => p.connectionId === item.id)
+      const existing = context.state.pins.find((p) => p.connectionId === item.id && p.workspaceId === context.rootState.workspaceId)
       if (existing) {
         return;
       }
@@ -68,7 +68,7 @@ export const PinConnectionModule: Module<State, RootState> = {
       await PinnedConnection.save(pins);
     },
     async remove(context, item: SavedConnection) {
-      const existing = context.state.pins.find((p) => p.connectionId === item.id);
+      const existing = context.state.pins.find((p) => p.connectionId === item.id && p.workspaceId === context.rootState.workspaceId);
       if (existing) {
         if (existing.id) await existing.remove();
         context.commit('remove', existing);
