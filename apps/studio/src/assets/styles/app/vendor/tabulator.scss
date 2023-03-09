@@ -172,7 +172,7 @@ $cell-padding:           $gutter-w;
     }
 
     &.selected {
-      background: rgba($theme-base, 0.10);
+      background: rgba($theme-base, 0.10) !important;
       opacity: 1!important;
       &:hover {
         background: rgba($theme-base, 0.10) !important;
