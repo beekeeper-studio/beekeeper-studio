@@ -760,7 +760,8 @@ export async function truncateElement (conn, elementName, typeOfElement) {
 }
 
 export async function duplicateTable(conn, tableName, newTable) {
-  const sql = `CREATE TABLE ${wrapIdentifier(newTable)} LIKE ${wrapIdentifier(tableName)}`;
+  let sql = `CREATE TABLE ${wrapIdentifier(newTable)} LIKE ${wrapIdentifier(tableName)};`;
+  sql += `INSERT INTO ${wrapIdentifier(newTable)} SELECT * FROM ${wrapIdentifier(tableName)};`;
 
   await driverExecuteQuery(conn, { query: sql });
 }
