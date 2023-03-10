@@ -16,7 +16,8 @@ import { buildDatabseFilter,
   buildUpdateQueries,
   escapeString,
   joinQueries,
-  escapeLiteral
+  escapeLiteral,
+  getChangesSql
 } from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
@@ -72,7 +73,7 @@ export default async function (server, database) {
     getTableLength: (table, schema) => getTableLength(conn, table, schema),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
-    getChangesSql: (changes) => getChangesSql(changes),
+    getChangesSql: (changes) => getChangesSql(changes, knex),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
@@ -281,17 +282,6 @@ export function wrapIdentifier(value) {
 
 export function wrapValue(value) {
   return `'${value.replaceAll(/'/g, "''")}'`
-}
-
-async function getChangesSql(changes) {
-  const queries = [
-    ...buildInsertQueries(knex, changes.inserts || []),
-    ...buildUpdateQueries(knex, changes.updates || []),
-    ...buildDeleteQueries(knex, changes.deletes || [])
-  ].filter((i) => !!i && _.isString(i)).join(';')
-
-  if (queries.length) 
-    return queries.endsWith(';') ? queries : `${queries};`
 }
 
 async function getInsertQuery(conn, database, tableInsert) {

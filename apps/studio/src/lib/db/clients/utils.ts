@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
 import logRaw from 'electron-log'
-import { TableDelete, TableInsert, TableUpdate } from '../models'
+import { TableChanges, TableDelete, TableInsert, TableUpdate } from '../models'
 
 const log = logRaw.scope('db/util')
 
@@ -100,6 +100,17 @@ export function buildFilterString(filters, columns = []) {
   return {
     filterString, filterParams
   }
+}
+
+export async function getChangesSql(changes: TableChanges, knex: any): Promise<string> {
+  const queries = [
+    ...buildInsertQueries(knex, changes.inserts || []),
+    ...buildUpdateQueries(knex, changes.updates || []),
+    ...buildDeleteQueries(knex, changes.deletes || [])
+  ].filter((i) => !!i && _.isString(i)).join(';')
+
+  if (queries.length) 
+    return queries.endsWith(';') ? queries : `${queries};`
 }
 
 export function buildSelectTopQuery(table, offset, limit, orderBy, filters, countTitle = 'total', columns = [], selects = ['*']) {
