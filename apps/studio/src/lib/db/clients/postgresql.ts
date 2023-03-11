@@ -617,9 +617,12 @@ export async function listTableTriggers(conn: HasPool, table: string, schema: st
 
   if (version.isCockroach) return []
   // action_timing has taken over from condition_timing
-  // this way we try both, and take the one that works.
-  const timing_columns = ['action_timing', 'condition_timing']
-  // const timing_column = 'action_timing'
+  // action_timing was last used in PostgreSQL version 9.0
+  // which is not supported anymore since 08 Oct 2015.
+  // From version 9.1 onwards, released 08 Sep 2011, 
+  // action_timing was used instead
+  // const timing_columns = ['action_timing', 'condition_timing']
+  const timing_columns = ['action_timing']
   const sequels = timing_columns.map((c) => `
     SELECT
       trigger_name,
