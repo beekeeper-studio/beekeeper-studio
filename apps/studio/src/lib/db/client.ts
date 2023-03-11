@@ -3,7 +3,7 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from '@/vendor/node-ssh-forward/index';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert } from './models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, TablePartition } from './models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { RedshiftOptions } from '@/common/appdb/models/saved_connection';
 
@@ -37,6 +37,7 @@ export interface DatabaseClient {
   listTableTriggers: (table: string, schema?: string) => Promise<TableTrigger[]>,
   listTableIndexes: (db: string, table: string, schema?: string) => Promise<TableIndex[]>,
   listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>,
+  listTablePartitions: (table: string) => Promise<TablePartition[]>
   getTableReferences: (table: string, schema?: string) => void,
   getTableKeys: (db: string, table: string, schema?: string) => void,
   query: (queryText: string) => CancelableQuery,
@@ -104,8 +105,7 @@ export interface IDbConnectionServerConfig {
   port: Nullable<number>,
   domain: Nullable<string>,
   socketPath: Nullable<string>,
-  socketPathEnabled: boolean,
-  user: Nullable<string>,
+  socketPathEnabled: boolean, user: Nullable<string>,
   osUser: string,
   password: Nullable<string>,
   ssh: Nullable<IDbConnectionServerSSHConfig>,
@@ -159,6 +159,7 @@ export class DBConnection {
   listTableTriggers = listTableTriggers.bind(null, this.server, this.database)
   listTableIndexes = listTableIndexes.bind(null, this.server, this.database)
   listSchemas = listSchemas.bind(null, this.server, this.database)
+  listTablePartitions = listTablePartitions.bind(null, this.server, this.database)
   getTableReferences = getTableReferences.bind(null, this.server, this.database)
   getPrimaryKey = getPrimaryKey.bind(null, this.server, this.database)
   getPrimaryKeys = getPrimaryKeys.bind(null, this.server, this.database)
@@ -312,6 +313,11 @@ function selectTopStream(
   checkIsConnected(server, database)
   if (!database.connection) throw "No database connection available"
   return database.connection?.selectTopStream(database.database, table, orderBy, filters, chunkSize, schema)
+}
+
+function listTablePartitions(server: IDbConnectionServer, database: IDbConnectionDatabase, table?: string) {
+  checkIsConnected(server, database);
+  return database.connection?.listTablePartitions(table);
 }
 
 function listSchemas(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: SchemaFilterOptions) {

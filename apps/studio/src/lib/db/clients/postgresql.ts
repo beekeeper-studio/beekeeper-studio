@@ -156,7 +156,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
   const version = await getVersion(conn)
 
-  const features = version.isRedshift ? { customRoutines: true, comments: false, properties: false } : { customRoutines: true, comments: true, properties: true}
+  const features = version.isRedshift ? { customRoutines: true, comments: false, properties: false, partitions: false } : { customRoutines: true, comments: true, properties: true, partitions: true}
 
 
 
@@ -176,6 +176,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     listTableTriggers: (table, schema = defaultSchema) => listTableTriggers(conn, table, schema),
     listTableIndexes: (_db, table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
     listSchemas: (_db, filter?: SchemaFilterOptions) => listSchemas(conn, filter),
+    listTablePartitions: (table) => listTablePartitions(conn, table),
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
@@ -229,19 +230,43 @@ export function disconnect(conn: HasPool) {
 
 export async function listTables(conn: HasPool, filter: FilterOptions = { schema: 'public' }) {
   const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+  // @Day: selecting all tables that are not partitions
   const sql = `
     SELECT
-      table_schema as schema,
-      table_name as name
-    FROM information_schema.tables
-    WHERE table_type NOT LIKE '%VIEW%'
+      t.table_schema as schema,
+      t.table_name as name
+    FROM information_schema.tables AS t LEFT OUTER JOIN pg_inherits AS i
+    ON t.table_name::text = i.inhrelid::regclass::text
+    WHERE t.table_type NOT LIKE '%VIEW%'
+    AND i.inhrelid::regclass IS NULL
     ${schemaFilter ? `AND ${schemaFilter}` : ''}
-    ORDER BY table_schema, table_name
+    ORDER BY t.table_schema, t.table_name
   `;
 
   const data = await driverExecuteSingle(conn, { query: sql });
 
   return data.rows;
+}
+
+// TODO (Day): not sure if we should be taking in the table like this
+export async function listTablePartitions(conn: HasPool, tableName: string) {
+  const sql = `
+    SELECT 
+      ps.schemaname AS schema,
+      ps.relname AS name,
+      pg_get_expr(pt.relpartbound, pt.oid, true) AS expression,
+      ps.n_tup_ins AS num
+    FROM pg_class base_tb
+      JOIN pg_inherits i ON i.inhparent = base_tb.oid
+      JOIN pg_class pt ON pt.oid = i.inhrelid
+      JOIN pg_stat_all_tables ps ON ps.relid = i.inhrelid
+    WHERE base_tb.oid = '${tableName}'::regclass
+  `;
+
+  const data = await driverExecuteSingle(conn, { query: sql });
+
+  return data.rows;
+  
 }
 
 export async function listViews(conn: HasPool, filter: FilterOptions = { schema: 'public' }) {
@@ -787,10 +812,6 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     return getTablePropertiesRedshift()
   }
   const identifier = wrapTable(table, schema)
-
-
-
-
 
   const statements = [
     `pg_indexes_size('${identifier}') as index_size`,

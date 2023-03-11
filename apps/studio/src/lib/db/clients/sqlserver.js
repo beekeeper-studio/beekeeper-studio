@@ -48,7 +48,7 @@ export default async function (server, database) {
   const version = await getVersion(conn);
 
   return {
-    supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true}),
+    supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true, partitions: false}),
     versionString: () => getVersionString(version),
     wrapIdentifier,
     defaultSchema: () => 'dbo',

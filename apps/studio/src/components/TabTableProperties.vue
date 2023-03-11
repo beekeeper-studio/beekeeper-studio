@@ -95,6 +95,7 @@ import TableSchemaVue from './tableinfo/TableSchema.vue'
 import TableIndexesVue from './tableinfo/TableIndexes.vue'
 import TableRelationsVue from './tableinfo/TableRelations.vue'
 import TableTriggersVue from './tableinfo/TableTriggers.vue'
+import TablePartitionsVue from './tableinfo/TablePartitions.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { format as humanBytes } from 'bytes'
 import platformInfo from '../common/platform_info'
@@ -120,6 +121,7 @@ export default {
           id: 'schema',
           name: "Columns",
           needsProperties: false,
+          needsPartitions: false,
           component: TableSchemaVue,
           dirty: false,
         },
@@ -128,6 +130,7 @@ export default {
           name: "Indexes",
           tableOnly: true,
           needsProperties: true,
+          needsPartitions: false,
           component: TableIndexesVue,
           dirty: false,
         },
@@ -136,6 +139,7 @@ export default {
           name: "Relations",
           tableOnly: true,
           needsProperties: true,
+          needsPartitions: false,
           component: TableRelationsVue,
           dirty: false,
         },
@@ -144,7 +148,17 @@ export default {
           name: "Triggers",
           tableOnly: true,
           needsProperties: true,
+          needsPartitions: false,
           component: TableTriggersVue,
+          dirty: false
+        },
+        {
+          id: 'partitions',
+          name: 'Partitions',
+          tableOnly: true,
+          needsProperties: true,
+          needsPartitions: true,
+          component: TablePartitionsVue,
           dirty: false
         }
       ],
@@ -188,6 +202,9 @@ export default {
         }
 
         if (p.needsProperties && !this.connection.supportedFeatures().properties) {
+          return false
+        }
+        if (p.needsPartitions && !this.connection.supportedFeatures().partitions) {
           return false
         }
         if(p.tableOnly) {
@@ -238,9 +255,11 @@ export default {
       // this.properties = null
       try {
         await this.$store.dispatch('updateTableColumns', this.table)
+        await this.$store.dispatch('updateTablePartitions', this.table)
         this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
         if (this.table.entityType === 'table') {
           this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema)
+          console.log('Table Properties: ', this.properties)
         }
         this.loading = false
       } catch (ex) {

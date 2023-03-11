@@ -35,7 +35,7 @@ export default async function (server, database) {
   const version = await driverExecuteQuery(conn, { query: 'SELECT sqlite_version()' });
 
   return {
-    supportedFeatures: () => ({ customRoutines: false, comments: false, properties: true }),
+    supportedFeatures: () => ({ customRoutines: false, comments: false, properties: true, partitions: false }),
     versionString: () => getVersionString(version),
     wrapIdentifier,
     defaultSchema: () => null,
