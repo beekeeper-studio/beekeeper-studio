@@ -617,7 +617,7 @@ export async function listTableTriggers(conn: HasPool, table: string, schema: st
 
   if (version.isCockroach) return []
   // action_timing has taken over from condition_timing
-  // action_timing was last used in PostgreSQL version 9.0
+  // condition_timing was last used in PostgreSQL version 9.0
   // which is not supported anymore since 08 Oct 2015.
   // From version 9.1 onwards, released 08 Sep 2011, 
   // action_timing was used instead
