@@ -78,10 +78,10 @@
   import platformInfo from '@/common/platform_info'
   import ErrorAlert from './common/ErrorAlert.vue'
   import rawLog from 'electron-log'
-import { mapGetters, mapState } from 'vuex'
-import { dialectFor } from '@shared/lib/dialects/models'
-import { findClient } from '@/lib/db/clients'
-import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
+  import { mapGetters, mapState } from 'vuex'
+  import { dialectFor } from '@shared/lib/dialects/models'
+  import { findClient } from '@/lib/db/clients'
+  import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
 
   const log = rawLog.scope('ConnectionInterface')
   // import ImportUrlForm from './connection/ImportUrlForm';
@@ -153,6 +153,8 @@ import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
         await this.$store.commit('workspace', this.$store.state.localWorkspace)
       }
       await this.$store.dispatch('loadUsedConfigs')
+      await this.$store.dispatch('pinnedConnections/loadPins')
+      await this.$store.dispatch('pinnedConnections/reorder', this.$store.state.pinnedConnections.pins)
       this.config.sshUsername = os.userInfo().username
       this.$nextTick(() => {
         const components = [
@@ -204,6 +206,7 @@ import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
         if (this.config === config) {
           this.config = new SavedConnection()
         }
+        await this.$store.dispatch('pinnedConnections/remove', config)
         await this.$store.dispatch('data/connections/remove', config)
         this.$noty.success(`${config.name} deleted`)
       },
