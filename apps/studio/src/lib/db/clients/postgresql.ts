@@ -19,7 +19,7 @@ import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
-import { AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 
@@ -214,6 +214,9 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     // relations
     alterRelationSql: (payload) => alterRelationSql(payload),
     alterRelation: (payload) => alterRelation(conn, payload),
+
+    alterPartitionSql: (payload) => alterPartitionSql(payload),
+    alterPartition: (payload) => alterPartition(conn, payload),
 
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
     dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string|null) => dropElement(conn, elementName, typeOfElement, schema),
@@ -1070,6 +1073,19 @@ export async function alterRelation(conn, payload: RelationAlterations): Promise
   await executeWithTransaction(conn, { query });
 }
 
+
+export function alterPartitionSql(payload: AlterPartitionsSpec): string {
+  const { table } = payload
+  const builder = new PostgresqlChangeBuilder(table)
+  const creates = builder.createPartitions(payload.adds)
+  const drops = null;
+  return [creates, drops].filter((f) => !!f).join(";")
+}
+
+export async function alterPartition(conn, payload: AlterPartitionsSpec): Promise<void> {
+  const query = alterPartitionSql(payload)
+  await executeWithTransaction(conn, { query });
+}
 
 export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {
   const identifier = wrapTable(table, schema)

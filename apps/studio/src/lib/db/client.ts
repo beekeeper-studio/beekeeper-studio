@@ -4,7 +4,7 @@ import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from '@/vendor/node-ssh-forward/index';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, TablePartition } from './models';
-import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
+import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { RedshiftOptions } from '@/common/appdb/models/saved_connection';
 
 const logger = createLogger('db');
@@ -60,6 +60,9 @@ export interface DatabaseClient {
 
   alterRelationSql: (changes: RelationAlterations) => string | null
   alterRelation: (changes: RelationAlterations) => Promise<void>
+
+  alterPartitionSql: (changes: AlterPartitionsSpec) => string | null,
+  alterPartition: (changes: AlterPartitionsSpec) => Promise<void>,
 
   getInsertQuery: (tableInsert: TableInsert) => Promise<string>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
@@ -192,6 +195,9 @@ export class DBConnection {
 
   alterRelationSql = bind.bind(null, 'alterRelationSql', this.server, this.database)
   alterRelation = bindAsync.bind(null, 'alterRelation', this.server, this.database)
+
+  alterPartitionSql = bind.bind(null, 'alterPartitionSql', this.server, this.database)
+  alterPartition = bindAsync.bind(null, 'alterPartition', this.server, this.database)
 
   getInsertQuery = getInsertQuery.bind(null, this.server, this.database)
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)

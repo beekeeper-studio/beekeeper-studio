@@ -38,8 +38,7 @@
           :key="pill.id"
           @actionCompleted="refresh"
           @refresh="refresh"
-        >
-          <template v-slot:footer>
+        > <template v-slot:footer>
             <div class="statusbar-info col flex expand">
               <x-button @click.prevent="openData" class="btn btn-flat btn-icon end" title="View Data">
                 Data <i class="material-icons">north_east</i>
@@ -204,7 +203,8 @@ export default {
         if (p.needsProperties && !this.connection.supportedFeatures().properties) {
           return false
         }
-        if (p.needsPartitions && !this.connection.supportedFeatures().partitions) {
+
+        if (p.needsPartitions && (!this.connection.supportedFeatures().partitions || !this.table.partitions?.length)) {
           return false
         }
         if(p.tableOnly) {

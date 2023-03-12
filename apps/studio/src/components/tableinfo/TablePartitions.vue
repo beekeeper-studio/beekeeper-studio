@@ -2,7 +2,7 @@
   <div class="table-info-table table-schema" v-hotkey="hotkeys">
     <div class="table-info-table-wrap">
       <div class="center-wrap">
-        <!-- Errors here -->
+        <error-alert :error="error" v-if="error"></error-alert>
         <!-- Notices here -->
 
         <div class="table-subheader">
@@ -12,8 +12,8 @@
           <slot />
           <span class="expand"> </span>
           <div class="actions">
-            <a class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
-            <a class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
+            <a @click.prevent="refreshPartitions" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
+            <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
           </div>
         </div>
         <div ref="tablePartitions"></div>
@@ -25,6 +25,28 @@
     <status-bar class="tablulator-footer">
       <div class="flex flex-middle statusbar-actions">
         <slot name="footer" />
+        <x-button v-if="hasEdits" class="btn btn-flat reset" @click.prevent="submitUndo">Reset</x-button>
+        <x-buttons v-if="hasEdits" class="pending-changes">
+          <x-button class="btn btn-primary" @click.prevent="submitApply">
+            <i v-if="error" class="material-icons">error</i>
+            <span class="badge" v-if="!error"><small>{{editCount}}</small></span>
+            <span>Apply</span>
+          </x-button>
+          <x-button class="btn btn-primary" menu>
+            <i class="material-icons">arrow_drop_down</i>
+            <x-menu>
+              <x-menuitem @click.prevent="submitApply">
+                <x-label>Apply</x-label>
+                <x-shortcut value="Control+S"></x-shortcut>
+              </x-menuitem>
+              <x-menuitem @click.prevent="submitSql">
+                <x-label>Copy to SQL</x-label>
+                <x-shortcut value="Control+Shift+S"></x-shortcut>
+              </x-menuitem>
+            </x-menu>
+          </x-button>
+        </x-buttons>
+        <slot name="actions" />
       </div>
     </status-bar>
   </div>
@@ -33,13 +55,19 @@
 <script lang="ts">
 import Vue from 'vue';
 import { mapGetters } from 'vuex';
-import { TabulatorFull } from 'tabulator-tables'
-import { TabulatorStateWatchers } from '@shared/lib/tabulator/helpers'
+import { TabulatorFull, Tabulator } from 'tabulator-tables'
+type RowComponent = Tabulator.RowComponent; 
+type CellComponent = Tabulator.CellComponent;
+import _ from 'lodash';
+import { TabulatorStateWatchers, vueEditor, trashButton } from '@shared/lib/tabulator/helpers'
 import StatusBar from '../common/StatusBar.vue'
+import ErrorAlert from '../common/ErrorAlert.vue'
+import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 
 export default Vue.extend({
 	components: {
-    StatusBar
+    StatusBar,
+    ErrorAlert
   },
   mixins: [],
   props: ['table', 'connection', 'tabID', 'active', 'tabState'],
@@ -47,9 +75,15 @@ export default Vue.extend({
     return {
       tabulator: null,
       forceRedraw: false,
+      newRows: [],
+      expressionTemplate: null,
+      error: null
     }
   },
   watch: {
+    hasEdits() {
+      this.tabState.dirty = this.hasEdits;
+    },
     ...TabulatorStateWatchers
   },
   computed: {
@@ -61,20 +95,31 @@ export default Vue.extend({
 
       return result;
     },
+    hasEdits() {
+      return this.editCount > 0;
+    },
+    editCount() {
+      return this.newRows.length;
+    },
     tableColumns() {
       const result = [
         {
           title: 'Name',
-          field: 'name'
+          field: 'name',
+          editor: vueEditor(NullableInputEditorVue),
+          editable: this.isCellEditable.bind(this)
         },
         {
           title: 'Partition Expression',
-          field: 'expression'
+          field: 'expression',
+          editor: vueEditor(NullableInputEditorVue),
+          editable: this.isCellEditable.bind(this)
         },
         {
           title: 'Number of Records',
           field: 'num'
-        }
+        },
+        trashButton(this.removeRow)
       ]
 
       return result;
@@ -84,10 +129,11 @@ export default Vue.extend({
     }
   },
   methods: {
+    isCellEditable(cell: CellComponent) {
+      return this.newRows.includes(cell.getRow());
+    },
     initializeTabulator() {
       if (this.tabulator) this.tabulator.destroy()
-      // TODO: a loader would be so cool for tabulator for those gnarly column count tables that people might create...
-      // @ts-ignore
       this.tabulator = new TabulatorFull(this.$refs.tablePartitions, {
         columns: this.tableColumns,
         layout: 'fitColumns',
@@ -101,9 +147,68 @@ export default Vue.extend({
         placeholder: "No Columns",
       })
     },
+    async refreshPartitions() {
+      await this.$emit('refresh');
+    },
+    collectChanges() {
+      const adds = this.newRows.map((row) => {
+        return row.getData();
+      });
+
+      return {
+        table: this.table.name,
+        adds
+      };
+    },
+    async addRow(): Promise<void> {
+      const data = this.tabulator.getData();
+      const name = `${this.table.name}_partition_${data.length + 1}`;
+      const row: RowComponent = await this.tabulator.addRow({name, expression: this.expressionTemplate, num: 0});
+      this.newRows.push(row);
+    },
+    async removeRow(_e: any, cell: CellComponent) {
+      const row = cell.getRow()
+      if (this.newRows.includes(row)) {
+        this.newrows = _.without(this.newRows, row);
+        row.delete();
+        return;
+      }
+      this.$noty.info(`This action is not supported!!`);
+    },
+    async submitApply(): Promise<void> {
+      try {
+        this.error = null;
+        const changes = this.collectChanges();
+        console.log(changes);
+        await this.connection.alterPartition(changes);
+
+        this.clearChanges();
+        await this.$store.dispatch('updateTablePartitions', this.table);
+        this.$nextTick(() => this.initializeTabulator());
+        this.$noty.success(`${this.table.name} Partitions Updated`);
+      } catch(ex) {
+        this.error = ex;
+        console.error(ex);
+      }
+    },
+    submitUndo(): void {
+      this.newRows.forEach((r) => r.delete());
+      this.clearChanges();
+    },
+    clearChanges() {
+      this.newRows = [];
+    },
+    loadExpressionTemplate() {
+      let template = this.table.partitions[0].expression.replace(/\(.*\)/g, '()')
+      if (template.includes('FROM'))
+        template += ' TO ()';
+      this.expressionTemplate = template;
+    }
   },
   async mounted() {
     if (!this.active) this.forceRedraw = true;
+
+    this.loadExpressionTemplate();
     this.initializeTabulator();
   }
 })
