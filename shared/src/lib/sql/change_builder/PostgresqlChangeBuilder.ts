@@ -12,7 +12,7 @@ export class PostgresqlChangeBuilder extends ChangeBuilderBase {
   wrapLiteral = wL
   escapeString = wrapString
 
-  singlePartition(spec: PartitionItem) {
+  createPartition(spec: PartitionItem) {
     const baseTable = this.tableName;
     const childTable = spec.name;
     const expression = spec.expression;
@@ -28,6 +28,22 @@ export class PostgresqlChangeBuilder extends ChangeBuilderBase {
 
   createPartitions(specs: PartitionItem[]) {
     if (!specs?.length) return null;
-    return specs.map((spec) => this.singlePartition(spec)).join(';');
+    return specs.map((spec) => this.createPartition(spec)).join(';');
+  }
+
+  detachPartition(part: string) {
+    const baseTable = this.tableName;
+
+    const result = `
+      ALTER TABLE ${baseTable}
+      DETACH PARTITION ${part}
+    `;
+
+    return result;
+  }
+
+  detachPartitions(partitions: string[]) {
+    if (!partitions?.length) return null;
+    return partitions.map((part) => this.detachPartition(part)).join(';');
   }
 }

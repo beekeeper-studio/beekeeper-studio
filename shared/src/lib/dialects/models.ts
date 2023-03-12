@@ -190,7 +190,7 @@ export interface AlterPartitionsSpec {
   table: string
   alterations?: PartitionExpressionChange[]
   adds?: PartitionItem[]
-  detaches?: []
+  detaches?: string[]
 }
 
 export interface IndexColumn {

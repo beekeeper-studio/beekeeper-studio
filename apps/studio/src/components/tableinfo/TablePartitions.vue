@@ -63,6 +63,9 @@ import { TabulatorStateWatchers, vueEditor, trashButton } from '@shared/lib/tabu
 import StatusBar from '../common/StatusBar.vue'
 import ErrorAlert from '../common/ErrorAlert.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
+import { AppEvent } from '@/common/AppEvent';
+import { FormatterDialect } from '@shared/lib/dialects/models';
+import { format } from 'sql-formatter';
 
 export default Vue.extend({
 	components: {
@@ -76,6 +79,7 @@ export default Vue.extend({
       tabulator: null,
       forceRedraw: false,
       newRows: [],
+      removedRows: [],
       expressionTemplate: null,
       error: null
     }
@@ -99,7 +103,7 @@ export default Vue.extend({
       return this.editCount > 0;
     },
     editCount() {
-      return this.newRows.length;
+      return this.newRows.length + this.removedRows.length;
     },
     tableColumns() {
       const result = [
@@ -155,9 +159,14 @@ export default Vue.extend({
         return row.getData();
       });
 
+      const detaches = this.removedRows.map((row) => {
+        return row.getData().name;
+      })
+
       return {
         table: this.table.name,
-        adds
+        adds,
+        detaches
       };
     },
     async addRow(): Promise<void> {
@@ -173,22 +182,37 @@ export default Vue.extend({
         row.delete();
         return;
       }
-      this.$noty.info(`This action is not supported!!`);
+      if (this.removedRows.includes(row)) {
+        this.removedRows = _.without(this.removedRows, row);
+      } else {
+        this.removedRows.push(row);
+        // TODO (day): Undo edits
+      }
     },
     async submitApply(): Promise<void> {
       try {
         this.error = null;
         const changes = this.collectChanges();
-        console.log(changes);
         await this.connection.alterPartition(changes);
 
-        this.clearChanges();
         await this.$store.dispatch('updateTablePartitions', this.table);
+        // TODO (day): update tables when needed
+        this.clearChanges();
         this.$nextTick(() => this.initializeTabulator());
         this.$noty.success(`${this.table.name} Partitions Updated`);
       } catch(ex) {
         this.error = ex;
-        console.error(ex);
+      }
+    },
+    async submitSql(): Promise<void> {
+      try {
+        this.error = null;
+        const changes = this.collectChanges();
+        const sql = await this.connection.alterPartitionSql(changes);
+        const formatted = format(sql, { language: FormatterDialect(this.dialect)});
+        this.$root.$emit(AppEvent.newTab, formatted);
+      } catch(ex) {
+        this.error = ex;
       }
     },
     submitUndo(): void {
@@ -197,6 +221,7 @@ export default Vue.extend({
     },
     clearChanges() {
       this.newRows = [];
+      this.removedRows = [];
     },
     loadExpressionTemplate() {
       let template = this.table.partitions[0].expression.replace(/\(.*\)/g, '()')

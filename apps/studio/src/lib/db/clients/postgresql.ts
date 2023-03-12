@@ -1078,8 +1078,8 @@ export function alterPartitionSql(payload: AlterPartitionsSpec): string {
   const { table } = payload
   const builder = new PostgresqlChangeBuilder(table)
   const creates = builder.createPartitions(payload.adds)
-  const drops = null;
-  return [creates, drops].filter((f) => !!f).join(";")
+  const detaches = builder.detachPartitions(payload.detaches);
+  return [creates, detaches].filter((f) => !!f).join(";")
 }
 
 export async function alterPartition(conn, payload: AlterPartitionsSpec): Promise<void> {
