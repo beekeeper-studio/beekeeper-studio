@@ -1,4 +1,4 @@
-import { Dialect, PartitionItem } from "@shared/lib/dialects/models";
+import { Dialect, PartitionExpressionChange, PartitionItem } from "@shared/lib/dialects/models";
 import { PostgresData } from "@shared/lib/dialects/postgresql";
 import { ChangeBuilderBase } from "./ChangeBuilderBase";
 
@@ -13,14 +13,10 @@ export class PostgresqlChangeBuilder extends ChangeBuilderBase {
   escapeString = wrapString
 
   createPartition(spec: PartitionItem) {
-    const baseTable = this.tableName;
-    const childTable = spec.name;
-    const expression = spec.expression;
-
     const result = `
-      CREATE TABLE ${childTable}
-      PARTITION OF ${baseTable}
-      ${expression}
+      CREATE TABLE ${spec.name}
+      PARTITION OF ${this.tableName}
+      ${spec.expression}
     `;
 
     return result;
@@ -32,10 +28,8 @@ export class PostgresqlChangeBuilder extends ChangeBuilderBase {
   }
 
   detachPartition(part: string) {
-    const baseTable = this.tableName;
-
     const result = `
-      ALTER TABLE ${baseTable}
+      ALTER TABLE ${this.tableName}
       DETACH PARTITION ${part}
     `;
 
@@ -45,5 +39,22 @@ export class PostgresqlChangeBuilder extends ChangeBuilderBase {
   detachPartitions(partitions: string[]) {
     if (!partitions?.length) return null;
     return partitions.map((part) => this.detachPartition(part)).join(';');
+  }
+
+  alterPartition(alter: PartitionExpressionChange) {
+    const detachPartition = this.detachPartition(alter.partitionName);
+    
+    const result = `
+      ${detachPartition};
+      ALTER TABLE ${this.tableName}
+      ATTACH PARTITION ${alter.partitionName}
+      ${alter.newValue}
+    `;
+    return result;
+  }
+
+  alterPartitions(alterations: PartitionExpressionChange[]) {
+    if (!alterations?.length) return null;
+    return alterations.map((alter) => this.alterPartition(alter)).join(';');
   }
 }

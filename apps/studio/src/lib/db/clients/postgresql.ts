@@ -1075,11 +1075,12 @@ export async function alterRelation(conn, payload: RelationAlterations): Promise
 
 
 export function alterPartitionSql(payload: AlterPartitionsSpec): string {
-  const { table } = payload
-  const builder = new PostgresqlChangeBuilder(table)
-  const creates = builder.createPartitions(payload.adds)
+  const { table } = payload;
+  const builder = new PostgresqlChangeBuilder(table);
+  const creates = builder.createPartitions(payload.adds);
+  const alters = builder.alterPartitions(payload.alterations);
   const detaches = builder.detachPartitions(payload.detaches);
-  return [creates, detaches].filter((f) => !!f).join(";")
+  return [creates, alters, detaches].filter((f) => !!f).join(";")
 }
 
 export async function alterPartition(conn, payload: AlterPartitionsSpec): Promise<void> {

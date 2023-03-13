@@ -55,6 +55,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import { mapGetters } from 'vuex';
+import DataMutators from '../../mixins/data_mutators'
 import { TabulatorFull, Tabulator } from 'tabulator-tables'
 type RowComponent = Tabulator.RowComponent; 
 type CellComponent = Tabulator.CellComponent;
@@ -72,7 +73,7 @@ export default Vue.extend({
     StatusBar,
     ErrorAlert
   },
-  mixins: [],
+  mixins: [DataMutators],
   props: ['table', 'connection', 'tabID', 'active', 'tabState'],
   data() {
     return {
@@ -80,6 +81,7 @@ export default Vue.extend({
       forceRedraw: false,
       newRows: [],
       removedRows: [],
+      editedCells: [],
       expressionTemplate: null,
       error: null
     }
@@ -103,7 +105,7 @@ export default Vue.extend({
       return this.editCount > 0;
     },
     editCount() {
-      return this.newRows.length + this.removedRows.length;
+      return this.newRows.length + this.removedRows.length + this.editedCells.length;
     },
     tableColumns() {
       const result = [
@@ -111,13 +113,16 @@ export default Vue.extend({
           title: 'Name',
           field: 'name',
           editor: vueEditor(NullableInputEditorVue),
-          editable: this.isCellEditable.bind(this)
+          editable: this.isCellEditable.bind(this),
+          formatter: this.cellFormatter
         },
         {
           title: 'Partition Expression',
           field: 'expression',
+          cellEdited: this.cellEdited,
           editor: vueEditor(NullableInputEditorVue),
-          editable: this.isCellEditable.bind(this)
+          editable: true,
+          formatter: this.cellFormatter
         },
         {
           title: 'Number of Records',
@@ -136,6 +141,18 @@ export default Vue.extend({
     isCellEditable(cell: CellComponent) {
       return this.newRows.includes(cell.getRow());
     },
+    cellEdited(cell: CellComponent) {
+      const rowIncluded = [...this.newRows, ...this.removedRows].includes(cell.getRow());
+      const existingCell: CellComponent = this.editedCells.find((c) => c === cell);
+      if (!rowIncluded && !existingCell) {
+        this.editedCells.push(cell);
+        return;
+      }
+
+      if (existingCell && existingCell.getInitialValue() === existingCell.getValue()) {
+        this.editedCells = _.without(this.editedCells, existingCell);
+      }
+    },
     initializeTabulator() {
       if (this.tabulator) this.tabulator.destroy()
       this.tabulator = new TabulatorFull(this.$refs.tablePartitions, {
@@ -148,7 +165,7 @@ export default Vue.extend({
           headerSort: false,
         },
         data: this.tableData,
-        placeholder: "No Columns",
+        placeholder: "No Partitions",
       })
     },
     async refreshPartitions() {
@@ -159,6 +176,16 @@ export default Vue.extend({
         return row.getData();
       });
 
+      const alterations = this.editedCells.map((cell: CellComponent) => {
+        console.log(cell)
+        const partitionName = cell.getRow().getCell('name').getValue();
+
+        return {
+          partitionName,
+          newValue: cell.getValue()
+        }
+      });
+
       const detaches = this.removedRows.map((row) => {
         return row.getData().name;
       })
@@ -166,7 +193,8 @@ export default Vue.extend({
       return {
         table: this.table.name,
         adds,
-        detaches
+        detaches,
+        alterations
       };
     },
     async addRow(): Promise<void> {
@@ -186,7 +214,11 @@ export default Vue.extend({
         this.removedRows = _.without(this.removedRows, row);
       } else {
         this.removedRows.push(row);
-        // TODO (day): Undo edits
+        const undoEdits = this.editedCells.filter((c) => row.getCells().includes(c));
+        undoEdits.forEach((c) => {
+          c.restoreInitialValue();
+        });
+        this.editedCells = _.without(this.editedCells, ...undoEdits);
       }
     },
     async submitApply(): Promise<void> {
@@ -195,9 +227,9 @@ export default Vue.extend({
         const changes = this.collectChanges();
         await this.connection.alterPartition(changes);
 
-        await this.$store.dispatch('updateTablePartitions', this.table);
-        // TODO (day): update tables when needed
         this.clearChanges();
+        // TODO (day): update tables when needed
+        await this.$store.dispatch('updateTablePartitions', this.table);
         this.$nextTick(() => this.initializeTabulator());
         this.$noty.success(`${this.table.name} Partitions Updated`);
       } catch(ex) {
@@ -216,12 +248,16 @@ export default Vue.extend({
       }
     },
     submitUndo(): void {
+      this.editedCells.forEach((c) => {
+        c.restoreInitialValue()
+      });
       this.newRows.forEach((r) => r.delete());
       this.clearChanges();
     },
     clearChanges() {
       this.newRows = [];
       this.removedRows = [];
+      this.editedCells = [];
     },
     loadExpressionTemplate() {
       let template = this.table.partitions[0].expression.replace(/\(.*\)/g, '()')
@@ -232,6 +268,7 @@ export default Vue.extend({
   },
   async mounted() {
     if (!this.active) this.forceRedraw = true;
+    this.tabState.dirty = false;
 
     this.loadExpressionTemplate();
     this.initializeTabulator();
