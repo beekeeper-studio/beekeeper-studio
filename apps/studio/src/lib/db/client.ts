@@ -12,6 +12,7 @@ const logger = createLogger('db');
 export enum DatabaseElement {
   TABLE = 'TABLE',
   VIEW = 'VIEW',
+  "MATERIALIZED-VIEW" = 'MATERIALIZED VIEW',
   DATABASE = 'DATABASE'
 }
 
@@ -64,6 +65,7 @@ export interface DatabaseClient {
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties | null>,
   getTableCreateScript: (table: string, schema?: string) => Promise<string>,
   getViewCreateScript: (view: string) => void,
+  getMaterializedViewCreateScript?: (view: string) => Promise<string[]>,
   getRoutineCreateScript: (routine: string, type: string, schema?: string) => void,
   truncateAllTables: (db: string, schema?: string) => void,
   listMaterializedViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
@@ -198,6 +200,7 @@ export class DBConnection {
   getTableUpdateScript = getTableUpdateScript.bind(null, this.server, this.database)
   getTableDeleteScript = getTableDeleteScript.bind(null, this.server, this.database)
   getViewCreateScript = getViewCreateScript.bind(null, this.server, this.database)
+  getMaterializedViewCreateScript = getMaterializedViewCreateScript.bind(null, this.server, this.database)
   getRoutineCreateScript = getRoutineCreateScript.bind(null, this.server, this.database)
   truncateAllTables = truncateAllTables.bind(null, this.server, this.database)
   setTableDescription = setTableDescription.bind(null, this.server, this.database)
@@ -482,6 +485,16 @@ function getTableDeleteScript(_server: IDbConnectionServer, database: IDbConnect
 function getViewCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, view: string /* , schema */) {
   checkIsConnected(server , database);
   return database.connection?.getViewCreateScript(view);
+}
+
+function getMaterializedViewCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, view: string /* , schema */) {
+  checkIsConnected(server , database);
+  
+  if(typeof database.connection?.getMaterializedViewCreateScript !== 'function') {
+    return null;
+  } else {
+    return database.connection?.getMaterializedViewCreateScript(view);
+  }
 }
 
 function getRoutineCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, routine: string, type: string, schema: string) {

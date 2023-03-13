@@ -368,7 +368,8 @@
       async loadTableCreate(table) {
         let method = null
         if (table.entityType === 'table') method = this.connection.getTableCreateScript
-        if (table.entityType === 'view') method = this.connection.getViewCreateScript
+        else if (table.entityType === 'view') method = this.connection.getViewCreateScript
+        else if (table.entityType === 'materialized-view') method = this.connection.getMaterializedViewCreateScript
         if (!method) {
           this.$noty.error(`Can't find script for ${table.name} (${table.entityType})`)
           return

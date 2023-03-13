@@ -261,27 +261,24 @@ export default {
       } else {
         this.errorHelp = null
       }
-    }
-  },
-  async mounted() {
-    if (!this.$store.getters.workspace) {
-      await this.$store.commit('workspace', this.$store.state.localWorkspace)
-    }
-    await this.$store.dispatch('loadUsedConfigs')
-    this.config.sshUsername = os.userInfo().username
-    this.$nextTick(() => {
-      const components = [
-        this.$refs.sidebar.$refs.sidebar,
-        this.$refs.content
-      ]
-      this.split = Split(components, {
-        elementStyle: (dimension, size) => ({
-          'flex-basis': `calc(${size}%)`,
-        }),
-        sizes: [300, 500],
-        gutterize: 8,
-        minSize: [300, 300],
-        expandToMin: true,
+      await this.$store.dispatch('loadUsedConfigs')
+      await this.$store.dispatch('pinnedConnections/loadPins')
+      await this.$store.dispatch('pinnedConnections/reorder', this.$store.state.pinnedConnections.pins)
+      this.config.sshUsername = os.userInfo().username
+      this.$nextTick(() => {
+        const components = [
+          this.$refs.sidebar.$refs.sidebar,
+          this.$refs.content
+        ]
+        this.split = Split(components, {
+          elementStyle: (dimension, size) => ({
+              'flex-basis': `calc(${size}%)`,
+          }),
+          sizes: [300,500],
+          gutterize: 8,
+          minSize: [300, 300],
+          expandToMin: true,
+        })
       })
     })
   },
@@ -322,19 +319,26 @@ export default {
       await this.$store.dispatch('data/connections/remove', config)
       this.$noty.success(`${config.name} deleted`)
     },
+    create() {
+      this.config = new SavedConnection()
+    },
+    edit(config) {
+      this.config = config
+      this.errors = null
+      this.connectionError = null
+    },
+    async remove(config) {
+      if (this.config === config) {
+        this.config = new SavedConnection()
+      }
+      await this.$store.dispatch('pinnedConnections/remove', config)
+      await this.$store.dispatch('data/connections/remove', config)
+      this.$noty.success(`${config.name} deleted`)
+    },
     async duplicate(config) {
       // Duplicates ES 6 class of the connection, without any reference to the old one.
       const duplicateConfig = await this.$store.dispatch('data/connections/clone', config)
       duplicateConfig.name = 'Copy of ' + duplicateConfig.name
-
-      try {
-        const id = await this.$store.dispatch('data/connections/save', duplicateConfig)
-        this.$noty.success(`The connection was successfully duplicated!`)
-        this.config = this.connections.find((c) => c.id === id) || this.config
-      } catch (ex) {
-        this.$noty.error(`Could not duplicate Connection: ${ex.message}`)
-      }
-
     },
     async submit() {
       this.connectionError = null

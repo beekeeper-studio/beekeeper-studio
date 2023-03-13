@@ -18,6 +18,8 @@
   import Papa from 'papaparse'
   import { mapState } from 'vuex'
   import { markdownTable } from 'markdown-table'
+  import * as intervalParse from 'postgres-interval'
+  import * as td from 'tinyduration'
 
   export default {
     mixins: [Converter, Mutators],
@@ -176,6 +178,7 @@
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
         return this.result.fields.map((column) => {
+          console.log('COLUMN: ', column);
           const result = {
             title: column.name,
             titleFormatter: 'plaintext',
@@ -190,6 +193,10 @@
             contextMenu: this.cellContextMenu,
             headerContextMenu: this.headerContextMenu,
             cellClick: this.cellClick.bind(this)
+          }
+          if (column.dataType === 'INTERVAL') {
+            // add interval sorter
+            result['sorter'] = this.intervalSorter;
           }
           return result;
         })
@@ -306,6 +313,18 @@
               { header: true, delimiter: "\t", quotes: true, escapeFormulae: true }
             )
           )
+        }
+      },
+      // HACK (day): this is probably not the best way of doing things, but postgres intervals are dumb
+      intervalSorter(a, b, aRow, bRow, column, dir, sorterParams) {
+        try {
+          const durationA = td.parse(intervalParse(a).toISOString());
+          const durationB = td.parse(intervalParse(b).toISOString());
+          const dateA = new Date(durationA.years, durationA.months, durationA.days, durationA.hours, durationA.minutes, durationA.seconds);
+          const dateB = new Date(durationB.years, durationB.months, durationB.days, durationB.hours, durationB.minutes, durationB.seconds);
+          return dateA - dateB;
+        } catch {
+          return 0;
         }
       }
     }
