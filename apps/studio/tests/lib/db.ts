@@ -160,7 +160,7 @@ export class DBTestUtil {
   }
 
   async badCreateDatabaseTests() {
-    // sqlserver seems impervious to bad database names or bad charsets or anything. 
+    // sqlserver seems impervious to bad database names or bad charsets or anything.
     if (this.dbType === 'sqlserver') {
       return expect.anything()
     }
@@ -199,6 +199,7 @@ export class DBTestUtil {
       cockroachdb: 'group"drop table test_inserts"'
     }
     try {
+      // TODO: this is not the right method to call here
       await this.connection.dropElement(expectedQueries[this.dbType], 'TABLE', this.defaultSchema)
       const newRowCount = await this.knex.select().from('group')
       expect(newRowCount.length).toEqual(initialRowCount.length)
@@ -207,6 +208,37 @@ export class DBTestUtil {
       expect(newRowCount.length).toEqual(initialRowCount.length)
     }
   }
+
+  async duplicateTableTests() {
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
+
+    await this.connection.duplicateTable('group', 'group_copy', this.defaultSchema)
+
+    const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+
+    const originalTableRowCount = await this.knex.select().from('group')
+    const duplicateTableRowCount = await this.knex.select().from('group_copy')
+
+    expect(newTablesCount.length).toBe(tables.length + 1)
+    expect(originalTableRowCount.length).toBe(duplicateTableRowCount.length)
+
+  }
+
+  async badDuplicateTableTests() {
+    const tables = await this.connection.listTables({ schema: this.defaultSchema })
+
+    try {
+      await this.connection.duplicateTable('tableDoesntExists', 'tableDoesntExists_copy', this.defaultSchema)
+      const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+      expect(newTablesCount.length).toEqual(tables.length)
+    } catch (error) {
+      const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
+      expect(newTablesCount.length).toEqual(tables.length)
+    }
+  }
+
+
+
 
   async listTableTests() {
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
