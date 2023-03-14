@@ -237,9 +237,6 @@ export class DBTestUtil {
     }
   }
 
-
-
-
   async listTableTests() {
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
     expect(tables.length).toBeGreaterThanOrEqual(this.expectedTables)
