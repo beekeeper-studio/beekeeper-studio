@@ -79,7 +79,7 @@ export function runCommonTests(getUtil) {
     test("Invalid database name", async () => {
       await getUtil().badCreateDatabaseTests()
     })
-    
+
     test("Should create database", async () => {
       await getUtil().createDatabaseTests()
     })
@@ -96,6 +96,20 @@ export function runCommonTests(getUtil) {
 
     test("Bad input shouldn't allow table truncate", async () => {
       await getUtil().badTruncateTableTests()
+    })
+  })
+
+  describe("Duplicate Table Tests", () => {
+    beforeEach(async() => {
+      await prepareTestTable(getUtil())
+    })
+
+    test("Should duplicate table", async () => {
+      await getUtil().duplicateTableTests()
+    })
+
+    test("Bad input shouldn't allow table duplication", async () => {
+      await getUtil().badDuplicateTableTests()
     })
   })
 
