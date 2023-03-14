@@ -199,7 +199,7 @@ export class DBTestUtil {
       cockroachdb: 'group"drop table test_inserts"'
     }
     try {
-      // TODO: this is not the right method to call here
+      // TODO: this should not the right method to call here
       await this.connection.dropElement(expectedQueries[this.dbType], 'TABLE', this.defaultSchema)
       const newRowCount = await this.knex.select().from('group')
       expect(newRowCount.length).toEqual(initialRowCount.length)
