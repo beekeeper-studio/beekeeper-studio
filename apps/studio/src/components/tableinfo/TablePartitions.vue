@@ -1,5 +1,5 @@
 <template>
-  <div class="table-info-table table-schema" v-hotkey="hotkeys">
+  <div class="table-info-table" v-hotkey="hotkeys">
     <div class="table-info-table-wrap">
       <div class="center-wrap">
         <error-alert :error="error" v-if="error"></error-alert>
@@ -20,8 +20,7 @@
       </div>
     </div>
 
-    <div class="expand" />
-
+    <div class="expand" /> 
     <status-bar class="tablulator-footer">
       <div class="flex flex-middle statusbar-actions">
         <slot name="footer" />
@@ -97,7 +96,11 @@ export default Vue.extend({
     hotkeys() {
       if (!this.active) return {};
       const result = {};
-      // TODO (day): hotkeys here
+      result['f5'] = this.refreshPartitions.bind(this)
+      result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
+      result[this.ctrlOrCmd('r')] = this.refreshPartitions.bind(this)
+      result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
+      result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
 
       return result;
     },
@@ -122,8 +125,9 @@ export default Vue.extend({
           cellEdited: this.cellEdited,
           editor: vueEditor(NullableInputEditorVue),
           editable: true,
-          formatter: this.cellFormatter,
-          cssClass: 'editable'
+          // formatter: this.cellFormatter,
+          cssClass: 'editable',
+          cellEditing: (cell) => console.log('Cell clicked: ', cell.getRow().getCells())
         },
         {
           title: 'Number of Records',
@@ -136,7 +140,12 @@ export default Vue.extend({
       return result;
     },
     tableData() {
-      return this.table.partitions;
+      // If this doesn't get done, tabulator gets very very angry
+      return this.table.partitions.map((p) => {
+        return {
+          ...p
+        };
+      });
     }
   },
   methods: {
@@ -144,7 +153,6 @@ export default Vue.extend({
       return this.newRows.includes(cell.getRow());
     },
     cellEdited(cell: CellComponent) {
-      console.log(cell.getRow());
       const rowIncluded = [...this.newRows, ...this.removedRows].includes(cell.getRow());
       const existingCell: CellComponent = this.editedCells.find((c) => c === cell);
       if (!rowIncluded && !existingCell) {
@@ -180,7 +188,6 @@ export default Vue.extend({
       });
 
       const alterations = this.editedCells.map((cell: CellComponent) => {
-        console.log(cell)
         const partitionName = cell.getRow().getCell('name').getValue();
 
         return {
