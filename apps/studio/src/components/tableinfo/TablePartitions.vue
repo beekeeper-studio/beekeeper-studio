@@ -122,11 +122,13 @@ export default Vue.extend({
           cellEdited: this.cellEdited,
           editor: vueEditor(NullableInputEditorVue),
           editable: true,
-          formatter: this.cellFormatter
+          formatter: this.cellFormatter,
+          cssClass: 'editable'
         },
         {
           title: 'Number of Records',
-          field: 'num'
+          field: 'num',
+          cssClass: 'read-only never-editable'
         },
         trashButton(this.removeRow)
       ]
@@ -142,6 +144,7 @@ export default Vue.extend({
       return this.newRows.includes(cell.getRow());
     },
     cellEdited(cell: CellComponent) {
+      console.log(cell.getRow());
       const rowIncluded = [...this.newRows, ...this.removedRows].includes(cell.getRow());
       const existingCell: CellComponent = this.editedCells.find((c) => c === cell);
       if (!rowIncluded && !existingCell) {
