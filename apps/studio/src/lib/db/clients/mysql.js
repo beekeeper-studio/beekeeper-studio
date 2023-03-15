@@ -10,7 +10,7 @@ import globals from '../../../common/globals';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import { MysqlCursor } from './mysql/MySqlCursor';
-import { buildDeleteQueries, buildInsertQueries, buildUpdateQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, getChangesSql } from './utils';
+import { buildDeleteQueries, buildInsertQueries, buildUpdateQueries, buildInsertQuery, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, applyChangesSql } from './utils';
 import { MysqlData } from '@shared/lib/dialects/mysql'
 import { ClientError } from '../client';
 
@@ -67,7 +67,7 @@ export default async function (server, database) {
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
-    getChangesSql: (changes) => getChangesSql(changes, knex),
+    applyChangesSql: (changes) => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),

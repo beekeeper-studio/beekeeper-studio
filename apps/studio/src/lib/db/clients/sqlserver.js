@@ -17,7 +17,7 @@ import { buildDatabseFilter,
   escapeString,
   joinQueries,
   escapeLiteral,
-  getChangesSql
+  applyChangesSql
 } from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
@@ -66,6 +66,7 @@ export default async function (server, database) {
     getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema) => getPrimaryKey(conn, db, table, schema),
     getPrimaryKeys: (db, table, schema) => getPrimaryKeys(conn, db, table, schema),
+    applyChangesSql: (changes) => applyChangesSql(changes, knex),
     applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
@@ -73,7 +74,6 @@ export default async function (server, database) {
     getTableLength: (table, schema) => getTableLength(conn, table, schema),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
-    getChangesSql: (changes) => getChangesSql(changes, knex),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),

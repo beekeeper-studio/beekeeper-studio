@@ -59,7 +59,7 @@ export interface DatabaseClient {
   alterRelationSql: (changes: RelationAlterations) => string | null
   alterRelation: (changes: RelationAlterations) => Promise<void>
 
-  getChangesSql: (changes: TableChanges) => Promise<string>,
+  applyChangesSql: (changes: TableChanges) => Promise<string>,
   getInsertQuery: (tableInsert: TableInsert) => Promise<string>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties | null>,
@@ -179,7 +179,7 @@ export class DBConnection {
   selectTop = selectTop.bind(null, this.server, this.database)
   selectTopStream = selectTopStream.bind(null, this.server, this.database)
   applyChanges = applyChanges.bind(null, this.server, this.database)
-  getChangesSql = getChangesSql.bind(null, this.server, this.database)
+  applyChangesSql = applyChangesSql.bind(null, this.server, this.database)
 
   // alter table
   alterTableSql = bind.bind(null, 'alterTableSql', this.server, this.database)
@@ -405,9 +405,9 @@ function applyChanges(server: IDbConnectionServer, database: IDbConnectionDataba
   return database.connection?.applyChanges(changes)
 }
 
-function getChangesSql(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: TableChanges) {
+function applyChangesSql(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: TableChanges) {
   checkIsConnected(server, database)
-  return database.connection?.getChangesSql(changes);
+  return database.connection?.applyChangesSql(changes);
 }
 
 function bind(functionName: string, server: IDbConnectionServer, database: IDbConnectionDatabase, ...args) {

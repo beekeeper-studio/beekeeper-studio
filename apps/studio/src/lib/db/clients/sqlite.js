@@ -7,7 +7,7 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import { makeEscape } from 'knex/lib/util/string'
 import rawLog from 'electron-log'
-import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery, escapeLiteral, buildUpdateQueries, getChangesSql } from './utils';
+import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery, escapeLiteral, buildUpdateQueries, applyChangesSql } from './utils';
 import { SqliteCursor } from './sqlite/SqliteCursor';
 import { SqliteChangeBuilder } from '@shared/lib/sql/change_builder/SqliteChangeBuilder';
 import { SqliteData } from '@shared/lib/dialects/sqlite';
@@ -70,7 +70,7 @@ export default async function (server, database) {
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize) => selectTopStream(conn, db, table, orderBy, filters, chunkSize),
-    getChangesSql: (changes) => getChangesSql(changes, knex),
+    applyChangesSql: (changes) => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
