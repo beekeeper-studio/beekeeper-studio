@@ -83,7 +83,7 @@
             <label for="duplicatedTableName">New table name</label>
             <input type="text" name="duplicatedTableName" class="form-control" required v-model="duplicatedTableName" autofocus>
           </div>
-          <small>* Indexes, relations or triggers will not be duplicated</small>
+          <small>This will create a new table and copy all existing data into it. Keep in mind that any indexes, relations, or triggers associated with the original table will not be duplicated in the new table</small>
         </div>
         <div class="vue-dialog-buttons">
           <span class="expand"></span>
