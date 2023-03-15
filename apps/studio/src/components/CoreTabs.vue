@@ -88,7 +88,8 @@
         <div class="vue-dialog-buttons">
           <span class="expand"></span>
           <button ref="no" @click.prevent="$modal.hide(duplicateTableModal)" class="btn btn-sm btn-flat">Cancel</button>
-          <button @focusout="sureOpen && $refs.no && $refs.no.focus()" @click.prevent="completeDuplicateTableAction" class="btn btn-sm btn-primary">{{this.titleCaseAction}} {{this.dbElement}}</button>
+          <!-- <button @focusout="sureOpen && $refs.no && $refs.no.focus()" @click.prevent="completeDuplicateTableAction" class="btn btn-sm btn-primary">{{this.titleCaseAction}} {{this.dbElement}}</button> -->
+          <pending-changes :submit-apply="duplicateTable" :submit-sql="duplicateTableSql" />
         </div>
       </modal>
     </portal>
@@ -115,6 +116,7 @@
   import TabWithTable from './common/TabWithTable.vue';
   import TabIcon from './tab/TabIcon.vue'
   import { DatabaseEntity } from "@/lib/db/models"
+  import PendingChanges from '../components/common/PendingChanges.vue'
 
   export default Vue.extend({
     props: [ 'connection' ],
@@ -129,6 +131,7 @@
       TableBuilder,
       TabWithTable,
       TabIcon,
+      PendingChanges
     },
     data() {
       return {
@@ -262,6 +265,12 @@
             this.$noty.error(`Error performing ${this.dbAction}: ${ex.message}`)
           }
         })
+      },
+      duplicateTable(){
+        console.log("duplicateTable")
+      },
+      duplicateTableSql(){
+        console.log("duplicateTableSql")
       },
       completeDuplicateTableAction(){
         const { tableName, schema,  entityType } = this.dbDuplicateTableParams
