@@ -1,5 +1,5 @@
 <template>
-    <x-buttons class="pending-changes-button">
+    <x-buttons class="pending-changes-button" v-hotkey="hotkeys">
         <x-button class="btn btn-primary" @click.prevent="submitApply" style="margin:0">
             <span>{{ labelApply || 'Apply' }}</span>
         </x-button>
@@ -32,12 +32,14 @@ export default {
         labelApply: String,
         labelSql: String,
     },
-    hotkeys() {
-        const result = {}
-        result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
-        result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
-        return result
-    },
+    computed: {
+        hotkeys() {
+            const result = {}
+            result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
+            result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
+            return result
+        }
+    }
 }
 </script>
 
