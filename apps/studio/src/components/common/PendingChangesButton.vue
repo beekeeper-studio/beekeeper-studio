@@ -1,9 +1,9 @@
 <template>
-    <x-buttons class="pending-changes">
-        <x-button class="btn btn-primary" @click.prevent="submitApply">
+    <x-buttons class="pending-changes-button">
+        <x-button class="btn btn-primary" @click.prevent="submitApply" style="margin:0">
             <span>{{ labelApply || 'Apply' }}</span>
         </x-button>
-        <x-button class="btn btn-primary" menu>
+        <x-button class="btn btn-primary" menu style="margin:0">
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
                 <x-menuitem @click.prevent="submitApply">
@@ -25,7 +25,7 @@
 
 <script>
 export default {
-    name: 'PendingChanges',
+    name: 'PendingChangesButton',
     props: {
         submitApply: Function,
         submitSql: Function,
@@ -41,8 +41,3 @@ export default {
 }
 </script>
 
-<style module>
-x-buttons.pending-changes .btn {
-    margin: 0;
-}
-</style>
