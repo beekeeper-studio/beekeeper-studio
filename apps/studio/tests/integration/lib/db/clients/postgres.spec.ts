@@ -68,6 +68,19 @@ function testWith(dockerTag, socket = false) {
         table.text("normal")
       })
 
+      await util.connection.executeQuery(`
+          CREATE TABLE partitionedtable (
+            recordId SERIAL,
+            number INT
+          ) PARTITION BY RANGE(number);
+          CREATE TABLE partition_1 PARTITION OF partitionedtable
+          FOR VALUES FROM (0) TO (10);
+          CREATE TABLE another_partition PARTITION OF partitionedtable
+          FOR VALUES FROM (11) TO (20);
+          CREATE TABLE party PARTITION OF partitionedtable
+          FOR VALUES FROM (21) TO (30);
+        `);
+
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
       // test table for issue-1442 "BUG: INTERVAL columns receive wrong value when cloning row"
@@ -172,6 +185,12 @@ function testWith(dockerTag, socket = false) {
         id: 1,
         amount_of_time: insertedValue // should still be the string not an object
       })
+    })
+
+    it("Should be able to list partitions for a table", async () => {
+      const partitions = await util.connection.listTablePartitions('partitionedtable');
+
+      expect(partitions.length).toBe(3);
     })
 
     describe("Common Tests", () => {

@@ -3,7 +3,6 @@
     <div class="table-info-table-wrap">
       <div class="center-wrap">
         <error-alert :error="error" v-if="error"></error-alert>
-        <!-- Notices here -->
 
         <div class="table-subheader">
           <div class="table-title">
@@ -12,8 +11,8 @@
           <slot />
           <span class="expand"> </span>
           <div class="actions">
-            <a @click.prevent="refreshPartitions" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
-            <a @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
+            <a @click.prevent="refreshPartitions" class="btn btn-link btn-fab" v-tooltip="`${ctrlOrCmd('r')} or F5`"><i class="material-icons">refresh</i></a>
+            <a @click.prevent="addRow" class="btn btn-primary btn-fab" v-tooltip="ctrlOrCmd('n')"><i class="material-icons">add</i></a>
           </div>
         </div>
         <div ref="tablePartitions"></div>
@@ -53,7 +52,6 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import { mapGetters } from 'vuex';
 import DataMutators from '../../mixins/data_mutators'
 import { TabulatorFull, Tabulator } from 'tabulator-tables'
 type RowComponent = Tabulator.RowComponent; 
@@ -82,7 +80,7 @@ export default Vue.extend({
       removedRows: [],
       editedCells: [],
       expressionTemplate: null,
-      error: null
+      error: null,
     }
   },
   watch: {
@@ -92,7 +90,6 @@ export default Vue.extend({
     ...TabulatorStateWatchers
   },
   computed: {
-    ...mapGetters([]),
     hotkeys() {
       if (!this.active) return {};
       const result = {};
@@ -125,14 +122,8 @@ export default Vue.extend({
           cellEdited: this.cellEdited,
           editor: vueEditor(NullableInputEditorVue),
           editable: true,
-          // formatter: this.cellFormatter,
+          formatter: this.cellFormatter,
           cssClass: 'editable',
-          cellEditing: (cell) => console.log('Cell clicked: ', cell.getRow().getCells())
-        },
-        {
-          title: 'Number of Records',
-          field: 'num',
-          cssClass: 'read-only never-editable'
         },
         trashButton(this.removeRow)
       ]
@@ -149,21 +140,7 @@ export default Vue.extend({
     }
   },
   methods: {
-    isCellEditable(cell: CellComponent) {
-      return this.newRows.includes(cell.getRow());
-    },
-    cellEdited(cell: CellComponent) {
-      const rowIncluded = [...this.newRows, ...this.removedRows].includes(cell.getRow());
-      const existingCell: CellComponent = this.editedCells.find((c) => c === cell);
-      if (!rowIncluded && !existingCell) {
-        this.editedCells.push(cell);
-        return;
-      }
-
-      if (existingCell && existingCell.getInitialValue() === existingCell.getValue()) {
-        this.editedCells = _.without(this.editedCells, existingCell);
-      }
-    },
+    // Tabulator functions
     initializeTabulator() {
       if (this.tabulator) this.tabulator.destroy()
       this.tabulator = new TabulatorFull(this.$refs.tablePartitions, {
@@ -179,33 +156,24 @@ export default Vue.extend({
         placeholder: "No Partitions",
       })
     },
+    isCellEditable(cell: CellComponent) {
+      return this.newRows.includes(cell.getRow());
+    },
+    cellEdited(cell: CellComponent) {
+      if (this.expressionTemplate === '') this.loadExpressionTemplate(cell.getRow().getData())
+      const rowIncluded = [...this.newRows, ...this.removedRows].includes(cell.getRow());
+      const existingCell: CellComponent = this.editedCells.find((c) => c === cell);
+      if (!rowIncluded && !existingCell) {
+        this.editedCells.push(cell);
+        return;
+      }
+
+      if (existingCell && existingCell.getInitialValue() === existingCell.getValue()) {
+        this.editedCells = _.without(this.editedCells, existingCell);
+      }
+    },
     async refreshPartitions() {
       await this.$emit('refresh');
-    },
-    collectChanges() {
-      const adds = this.newRows.map((row) => {
-        return row.getData();
-      });
-
-      const alterations = this.editedCells.map((cell: CellComponent) => {
-        const partitionName = cell.getRow().getCell('name').getValue();
-
-        return {
-          partitionName,
-          newValue: cell.getValue()
-        }
-      });
-
-      const detaches = this.removedRows.map((row) => {
-        return row.getData().name;
-      })
-
-      return {
-        table: this.table.name,
-        adds,
-        detaches,
-        alterations
-      };
     },
     async addRow(): Promise<void> {
       const data = this.tabulator.getData();
@@ -230,6 +198,32 @@ export default Vue.extend({
         });
         this.editedCells = _.without(this.editedCells, ...undoEdits);
       }
+    },
+    // Changes functions
+    collectChanges() {
+      const adds = this.newRows.map((row) => {
+        return row.getData();
+      });
+
+      const alterations = this.editedCells.map((cell: CellComponent) => {
+        const partitionName = cell.getRow().getCell('name').getValue();
+
+        return {
+          partitionName,
+          newValue: cell.getValue()
+        }
+      });
+
+      const detaches = this.removedRows.map((row) => {
+        return row.getData().name;
+      })
+
+      return {
+        table: this.table.name,
+        adds,
+        detaches,
+        alterations
+      };
     },
     async submitApply(): Promise<void> {
       try {
@@ -269,8 +263,13 @@ export default Vue.extend({
       this.removedRows = [];
       this.editedCells = [];
     },
-    loadExpressionTemplate() {
-      let template = this.table.partitions[0].expression.replace(/\(.*\)/g, '()')
+    // Load a template for partition expressions based on previous partitions.
+    loadExpressionTemplate(partition: any | null) {
+      if (partition == null) {
+        this.expressionTemplate = '';
+        return
+      }
+      let template = partition.expression.replace(/\(.*\)/g, '()')
       if (template.includes('FROM'))
         template += ' TO ()';
       this.expressionTemplate = template;
@@ -280,7 +279,7 @@ export default Vue.extend({
     if (!this.active) this.forceRedraw = true;
     this.tabState.dirty = false;
 
-    this.loadExpressionTemplate();
+    this.loadExpressionTemplate(this.table.partitions[0] ?? null);
     this.initializeTabulator();
   }
 })

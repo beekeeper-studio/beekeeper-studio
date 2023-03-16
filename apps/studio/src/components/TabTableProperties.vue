@@ -204,7 +204,7 @@ export default {
           return false
         }
 
-        if (p.needsPartitions && (!this.connection.supportedFeatures().partitions || !this.table.partitions?.length)) {
+        if (p.needsPartitions && (!this.connection.supportedFeatures().partitions || this.table.tabletype !== 'p')) {
           return false
         }
         if(p.tableOnly) {

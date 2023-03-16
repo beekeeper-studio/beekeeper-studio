@@ -237,9 +237,13 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
   const sql = `
     SELECT
       t.table_schema as schema,
-      t.table_name as name
-    FROM information_schema.tables AS t LEFT OUTER JOIN pg_inherits AS i
+      t.table_name as name,
+      pc.relkind as tabletype
+    FROM information_schema.tables AS t 
+    LEFT OUTER JOIN pg_inherits AS i
     ON t.table_name::text = i.inhrelid::regclass::text
+    LEFT OUTER JOIN pg_class AS pc
+    ON t.table_name = pc.relname
     WHERE t.table_type NOT LIKE '%VIEW%'
     AND i.inhrelid::regclass IS NULL
     ${schemaFilter ? `AND ${schemaFilter}` : ''}
@@ -251,14 +255,12 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
   return data.rows;
 }
 
-// TODO (Day): not sure if we should be taking in the table like this
 export async function listTablePartitions(conn: HasPool, tableName: string) {
   const sql = `
     SELECT 
       ps.schemaname AS schema,
       ps.relname AS name,
-      pg_get_expr(pt.relpartbound, pt.oid, true) AS expression,
-      ps.n_tup_ins AS num
+      pg_get_expr(pt.relpartbound, pt.oid, true) AS expression
     FROM pg_class base_tb
       JOIN pg_inherits i ON i.inhparent = base_tb.oid
       JOIN pg_class pt ON pt.oid = i.inhrelid
