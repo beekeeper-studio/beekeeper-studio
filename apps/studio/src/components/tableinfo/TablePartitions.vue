@@ -231,9 +231,13 @@ export default Vue.extend({
         const changes = this.collectChanges();
         await this.connection.alterPartition(changes);
 
+        if (changes.detaches.length > 0) {
+          await this.$store.dispatch('updateTables');
+          await this.refreshPartitions();
+        } else {
+          await this.$store.dispatch('updateTablePartitions', this.table);
+        }
         this.clearChanges();
-        // TODO (day): update tables when needed
-        await this.$store.dispatch('updateTablePartitions', this.table);
         this.$nextTick(() => this.initializeTabulator());
         this.$noty.success(`${this.table.name} Partitions Updated`);
       } catch(ex) {
