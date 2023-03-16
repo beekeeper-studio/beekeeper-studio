@@ -59,7 +59,7 @@ export interface DatabaseClient {
   alterRelationSql: (changes: RelationAlterations) => string | null
   alterRelation: (changes: RelationAlterations) => Promise<void>
 
-  applyChangesSql: (changes: TableChanges) => Promise<string>,
+  applyChangesSql: (changes: TableChanges) => string,
   getInsertQuery: (tableInsert: TableInsert) => Promise<string>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties | null>,

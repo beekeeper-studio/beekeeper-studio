@@ -1208,7 +1208,7 @@ export default Vue.extend({
           updates: this.pendingChanges.updates,
           deletes: this.pendingChanges.deletes
         }
-        const sql = await this.connection.applyChangesSql(changes)
+        const sql = this.connection.applyChangesSql(changes)
         const formatted = format(sql, { language: FormatterDialect(this.dialect) })
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch(ex) {

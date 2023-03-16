@@ -102,7 +102,7 @@ export function buildFilterString(filters, columns = []) {
   }
 }
 
-export async function applyChangesSql(changes: TableChanges, knex: any): Promise<string> {
+export function applyChangesSql(changes: TableChanges, knex: any): string {
   const queries = [
     ...buildInsertQueries(knex, changes.inserts || []),
     ...buildUpdateQueries(knex, changes.updates || []),
