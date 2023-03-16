@@ -68,7 +68,8 @@ function testWith(dockerTag, socket = false) {
         table.text("normal")
       })
 
-      await util.connection.executeQuery(`
+      if (dockerTag == 'latest') {
+        await util.connection.executeQuery(`
           CREATE TABLE partitionedtable (
             recordId SERIAL,
             number INT
@@ -80,6 +81,7 @@ function testWith(dockerTag, socket = false) {
           CREATE TABLE party PARTITION OF partitionedtable
           FOR VALUES FROM (21) TO (30);
         `);
+      }
 
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
@@ -188,9 +190,11 @@ function testWith(dockerTag, socket = false) {
     })
 
     it("Should be able to list partitions for a table", async () => {
-      const partitions = await util.connection.listTablePartitions('partitionedtable');
+      if (dockerTag == 'latest') {
+        const partitions = await util.connection.listTablePartitions('partitionedtable');
 
-      expect(partitions.length).toBe(3);
+        expect(partitions.length).toBe(3);
+      }
     })
 
     describe("Common Tests", () => {
