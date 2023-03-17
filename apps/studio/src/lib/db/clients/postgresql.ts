@@ -219,7 +219,8 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema),
 
     // duplicate table
-    duplicateTable: (tableName: string, newTableName: string, schema?: string) => duplicateTable(conn, tableName, newTableName, schema),
+    duplicateTable: (tableName: string, duplicateTableName: string, schema?: string) => duplicateTable(conn, tableName, duplicateTableName, schema),
+    duplicateTableSql: (tableName: string, duplicateTableName: string, schema?: string) => duplicateTableSql(tableName, duplicateTableName, schema),
   };
 }
 
@@ -1417,13 +1418,20 @@ export async function truncateElement (conn: Conn, elementName: string, typeOfEl
   });
 }
 
-export async function duplicateTable(conn: Conn, tableName: string,  newTableName: string, schema: string) {
+export async function duplicateTable(conn: Conn, tableName: string,  duplicateTableName: string, schema: string) {
+  const sql = duplicateTableSql(tableName, duplicateTableName, schema);
+
+  await driverExecuteQuery(conn, { query: sql });
+}
+
+export function duplicateTableSql(tableName: string,  duplicateTableName: string, schema: string) {
   const sql = `
-    CREATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(newTableName)} AS
+    CREATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(duplicateTableName)} AS
     SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(tableName)}
   `;
 
-  await driverExecuteQuery(conn, { query: sql });
+  return sql;
+
 }
 
 async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {

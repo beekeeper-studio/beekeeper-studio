@@ -7,7 +7,8 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _, { defaults } from 'lodash';
 
-import { buildDatabseFilter,
+import {
+  buildDatabseFilter,
   buildDeleteQueries,
   buildInsertQuery,
   buildInsertQueries,
@@ -48,7 +49,7 @@ export default async function (server, database) {
   const version = await getVersion(conn);
 
   return {
-    supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true}),
+    supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true }),
     versionString: () => getVersionString(version),
     wrapIdentifier,
     defaultSchema: () => 'dbo',
@@ -114,12 +115,14 @@ export default async function (server, database) {
     truncateElement: (elementName, typeOfElement, schema) => truncateElement(conn, elementName, typeOfElement, schema),
 
     // duplicate
-    duplicateTable: (table, newTableName, schema) => duplicateTable(conn, table, newTableName, schema),
+    duplicateTableSql: (table, duplicateTableName, schema) => duplicateTableSql(conn, table, duplicateTableName, schema),
+    duplicateTable: (table, duplicateTableName, schema) => duplicateTable(conn, table, duplicateTableName, schema),
+
   };
 }
 
 async function getVersion(conn) {
-  const result = await driverExecuteQuery(conn, { query: "SELECT @@VERSION as version"})
+  const result = await driverExecuteQuery(conn, { query: "SELECT @@VERSION as version" })
   const versionString = result.data.recordset[0].version
   const yearRegex = /SQL Server (\d+)/g
   const yearResults = yearRegex.exec(versionString)
@@ -233,12 +236,12 @@ function genSelectNew(table, offset, limit, orderBy, filters, schema, selects) {
     ${orderByString}
     ${offsetString}
     `
-    return query
+  return query
 }
 
 async function getTableLength(conn, table, schema) {
   const countQuery = genCountQuery(table, [], schema)
-  const countResults = await driverExecuteQuery(conn, { query: countQuery})
+  const countResults = await driverExecuteQuery(conn, { query: countQuery })
   const rowWithTotal = countResults.data.recordset.find((row) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
   return totalRecords
@@ -516,7 +519,7 @@ export async function listTableTriggers(conn, table, schema) {
 
   return data.recordset.map((row) => {
     const update = row.isupdate === 1 ? 'UPDATE' : null
-    const del = row.isdelete === 1 ? 'DELETE': null
+    const del = row.isdelete === 1 ? 'DELETE' : null
     const insert = row.isinsert === 1 ? 'INSERT' : null
     const instead = row.isinsteadof === 1 ? 'INSEAD_OF' : null
 
@@ -696,7 +699,7 @@ export async function getPrimaryKeys(conn, database, table, schema) {
   WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + QUOTENAME(CONSTRAINT_NAME)), 'IsPrimaryKey') = 1
   AND TABLE_NAME = ${wrapValue(table)} AND TABLE_SCHEMA = ${wrapValue(schema)}
   `
-  const { data } = await driverExecuteQuery(conn, { query: sql})
+  const { data } = await driverExecuteQuery(conn, { query: sql })
   if (!data.recordset || data.recordset.length === 0) return []
 
   return data.recordset.map((r) => ({
@@ -732,7 +735,7 @@ export async function applyChanges(conn, changes) {
 
       sql.push('COMMIT')
 
-      await driverExecuteQuery(cli, { query: sql.join(';')})
+      await driverExecuteQuery(cli, { query: sql.join(';') })
 
       if (changes.updates) {
         const selectQueries = buildSelectQueriesFromUpdates(knex, changes.updates)
@@ -865,7 +868,7 @@ export async function truncateAllTables(conn) {
   });
 }
 
-export async function dropElement (conn, elementName, typeOfElement, schema = 'dbo') {
+export async function dropElement(conn, elementName, typeOfElement, schema = 'dbo') {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
@@ -874,7 +877,7 @@ export async function dropElement (conn, elementName, typeOfElement, schema = 'd
   });
 }
 
-export async function truncateElement (conn, elementName, typeOfElement, schema = 'dbo') {
+export async function truncateElement(conn, elementName, typeOfElement, schema = 'dbo') {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
@@ -883,14 +886,19 @@ export async function truncateElement (conn, elementName, typeOfElement, schema 
   });
 }
 
-export async function duplicateTable(conn, tableName, newTableName, schema = 'dbo') {
+export async function duplicateTable(conn, tableName, duplicateTableName, schema = 'dbo') {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
-    const sql = `SELECT * INTO ${wrapIdentifier(schema)}.${wrapIdentifier(newTableName)} FROM ${wrapIdentifier(schema)}.${wrapIdentifier(tableName)}`
+    const sql = duplicateTableSql(tableName, duplicateTableName, schema)
 
     await driverExecuteQuery(connClient, { query: sql })
   });
 }
+
+export function duplicateTableSql(tableName, duplicateTableName, schema) {
+  return `SELECT * INTO ${wrapIdentifier(schema)}.${wrapIdentifier(duplicateTableName)} FROM ${wrapIdentifier(schema)}.${wrapIdentifier(tableName)}`
+}
+
 
 async function getTableDescription(conn, table, schema = defaultSchema) {
   const query = `SELECT *
@@ -917,7 +925,7 @@ export async function getTableProperties(conn, table, schema = defaultSchema) {
 
   const description = await getTableDescription(conn, table, schema)
   const sizeQuery = `EXEC sp_spaceused N'${escapeString(schema)}.${escapeString(table)}'; `
-  const { data }  = await driverExecuteQuery(conn, { query: sizeQuery })
+  const { data } = await driverExecuteQuery(conn, { query: sizeQuery })
   const row = data.recordset ? data.recordset[0] || {} : {}
   const relations = await getTableKeys(conn, null, table, schema)
   return {
@@ -971,7 +979,7 @@ WHERE
     AND tables.name = ${D.escapeString(table, true)}
 
   `
-  const { data } = await driverExecuteQuery(conn, { query: sql})
+  const { data } = await driverExecuteQuery(conn, { query: sql })
   return data.recordset.map((d) => {
     return {
       column: d.columnName,
