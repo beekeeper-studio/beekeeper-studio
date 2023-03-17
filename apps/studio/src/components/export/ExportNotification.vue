@@ -29,10 +29,13 @@ export default {
   computed: {
     notificationText() {
       const exportName = this.exporter.table ? this.exporter.table.name : 'query';
-      // this is a hack to get the countExported to update <-- CoPilot suggested this comment, and it was right af lol
+      // CoPilot suggested the comment below, and it was right af lol
+      // this is a hack to get the countExported to update
       const countExported = this.countExported;
       const percentComplete = this.percentComplete;
-      return this.exporter.table ? `(${percentComplete}%) Exporting TABLE '${exportName}'` : `(${countExported} rows) Exporting QUERY '${exportName}'`
+      return this.exporter.table
+        ? `(${percentComplete}%) Exporting TABLE '${exportName}'`
+        : `(${countExported} rows) Exporting QUERY '${exportName}'`
     },
   },
   methods: {
