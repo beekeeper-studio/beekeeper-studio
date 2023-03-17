@@ -84,7 +84,8 @@ export interface DatabaseClient {
   truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => Promise<void>
 
   // duplicate table
-  duplicateTable: (tableName: string, newTableName: string, schema?: string) => Promise<void>
+  duplicateTable: (tableName: string, duplicateTableName: string, schema?: string) => Promise<void>
+  duplicateTableSql: (tableName: string, duplicateTableName: string, schema?: string) => string
 }
 
 export type IDbClients = keyof typeof clients
