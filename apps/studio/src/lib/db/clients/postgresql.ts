@@ -244,7 +244,7 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
   `;
 
   if (version.hasPartitions) {
-    // We currently only support partitioning for postgres tables.
+    // TODO (day): when we support more dbs for partitioning, we will need to construct a different query for cockroach.
     sql += `
         pc.relkind as tabletype
       FROM information_schema.tables AS t 

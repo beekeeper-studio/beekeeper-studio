@@ -192,6 +192,9 @@ export default {
     pills() {
       if (!this.table) return []
       const isTable = this.table.entityType === 'table'
+      // TODO (day): when we support more dbs, this will need to be an array of all the possible types.
+      // Postgres table type for a partitioned table.
+      const partitionTableType = 'p';
       return this.rawPills.filter((p) => {
 
         if (!this.properties) {
@@ -204,7 +207,7 @@ export default {
           return false
         }
 
-        if (p.needsPartitions && (!this.connection.supportedFeatures().partitions || this.table.tabletype !== 'p')) {
+        if (p.needsPartitions && (!this.connection.supportedFeatures().partitions || this.table.tabletype !== partitionTableType)) {
           return false
         }
         if(p.tableOnly) {
