@@ -259,7 +259,6 @@ export default {
         this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
         if (this.table.entityType === 'table') {
           this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema)
-          console.log('Table Properties: ', this.properties)
         }
         this.loading = false
       } catch (ex) {

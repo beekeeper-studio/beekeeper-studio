@@ -87,22 +87,25 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
       isPostgres: false,
       isCockroach: false,
       isRedshift: false,
-      number: 0
+      number: 0,
+      hasPartitions: false
     }
   }
 
   const isCockroach = version.toLowerCase().includes('cockroachdb')
   const isRedshift = version.toLowerCase().includes('redshift')
   const isPostgres = !isCockroach && !isRedshift
+  const number = parseInt(
+      version.split(" ")[isPostgres ? 1 : 2].replace(/^v/i, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
+      10
+    );
   return {
     version,
     isPostgres,
     isCockroach,
     isRedshift,
-    number: parseInt(
-      version.split(" ")[isPostgres ? 1 : 2].replace(/^v/i, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
-      10
-    )
+    number, 
+    hasPartitions: (isPostgres && number >= 100000) //for future cochroach support?: || (isCockroach && number >= 200070)
   }
 }
 
@@ -156,8 +159,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
   const version = await getVersion(conn)
 
-  const features = version.isRedshift ? { customRoutines: true, comments: false, properties: false, partitions: false } : { customRoutines: true, comments: true, properties: true, partitions: true}
-
+  const features = version.isRedshift ? { customRoutines: true, comments: false, properties: false, partitions: false } : { customRoutines: true, comments: true, properties: true, partitions: version.hasPartitions}
 
 
   return {
@@ -234,18 +236,33 @@ export function disconnect(conn: HasPool) {
 export async function listTables(conn: HasPool, filter: FilterOptions = { schema: 'public' }) {
   const schemaFilter = buildSchemaFilter(filter, 'table_schema');
   // @Day: selecting all tables that are not partitions
-  const sql = `
+  const version = await getVersion(conn);
+  let sql = `
     SELECT
       t.table_schema as schema,
       t.table_name as name,
-      pc.relkind as tabletype
-    FROM information_schema.tables AS t 
-    LEFT OUTER JOIN pg_inherits AS i
-    ON t.table_name::text = i.inhrelid::regclass::text
-    LEFT OUTER JOIN pg_class AS pc
-    ON t.table_name = pc.relname
-    WHERE t.table_type NOT LIKE '%VIEW%'
-    AND i.inhrelid::regclass IS NULL
+  `;
+
+  if (version.hasPartitions) {
+    // We currently only support partitioning for postgres tables.
+    sql += `
+        pc.relkind as tabletype
+      FROM information_schema.tables AS t 
+      LEFT OUTER JOIN pg_inherits AS i
+      ON t.table_name::text = i.inhrelid::regclass::text
+      LEFT OUTER JOIN pg_class AS pc
+      ON t.table_name = pc.relname
+      WHERE t.table_type NOT LIKE '%VIEW%'
+      AND i.inhrelid::regclass IS NULL
+    `;
+  } else {
+    sql += `
+        'r' as tabletype
+      FROM information_schema.tables AS t 
+      WHERE t.table_type NOT LIKE '%VIEW%'
+    `;
+  }
+  sql += `
     ${schemaFilter ? `AND ${schemaFilter}` : ''}
     ORDER BY t.table_schema, t.table_name
   `;
@@ -256,6 +273,10 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
 }
 
 export async function listTablePartitions(conn: HasPool, tableName: string) {
+  const version = await getVersion(conn);
+  // only postgres will pass this canary for now.
+  if (!version.hasPartitions) return null;
+  
   const sql = `
     SELECT 
       ps.schemaname AS schema,
