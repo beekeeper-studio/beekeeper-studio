@@ -27,6 +27,14 @@
         </div>
       </div>
       <span class="badge"><span>{{config.connectionType}}</span></span>
+      <span v-if="!isRecentList" class="actions" v-bind:class="{'pinned': pinned}">
+        <span v-if="!pinned" @mousedown.prevent.stop="pin" :title="'Pin'" class="btn-fab pin"><i class="bk-pin"></i></span>
+        <span v-if="pinned" @mousedown.prevent.stop="unpin" :title="'Unpin'" class="btn-fab unpin"><i class="material-icons">clear</i></span>
+        <span v-if="pinned" @mousedown.prevent.stop="unpin" class="btn-fab pinned">
+          <i class="bk-pin" :title="'Unpin'"> </i>
+          <i class="material-icons">clear</i>
+        </span>
+      </span>
     </a>
   </div>
 </template>
@@ -38,7 +46,7 @@ import { mapGetters, mapState } from 'vuex'
 export default {
   // recent list is 'recent connections'
   // if that is true, we need to find the companion saved connection
-  props: ['config', 'isRecentList', 'selectedConfig', 'showDuplicate'],
+  props: ['config', 'isRecentList', 'selectedConfig', 'showDuplicate', 'pinned'],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
     split: null
@@ -195,6 +203,12 @@ export default {
       } catch (err) {
         this.$noty.success(`The ${this.connectionType} could not be copied!`)
       }
+    },
+    pin() {
+      this.$store.dispatch('pinnedConnections/add', this.config);
+    },
+    unpin() {
+      this.$store.dispatch('pinnedConnections/remove', this.config);
     }
   }
 

@@ -26,6 +26,7 @@ import { IConnection } from '@/common/interfaces/IConnection'
 import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
+import { PinConnectionModule } from './modules/PinConnectionModule'
 
 const log = RawLog.scope('store/index')
 
@@ -69,6 +70,7 @@ const store = new Vuex.Store<State>({
     tabs: TabModule,
     search: SearchModule,
     hideEntities: HideEntityModule,
+    pinnedConnections: PinConnectionModule
   },
   state: {
     usedConfig: null,
