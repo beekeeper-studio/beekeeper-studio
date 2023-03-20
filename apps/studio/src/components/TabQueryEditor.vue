@@ -345,7 +345,9 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
           params = this.currentlySelectedQuery.parameters
         }
 
-        if (params.length && params[0] === '?') return []
+        // for databases like mysql which just use a question mark. Issue will arise if there are more than 1 param
+        // as the modal is built to handle postgres $1, $2, etc. 
+        if (params.length && params[0] === '?') return ['?']
 
         return _.uniq(params)
       },
