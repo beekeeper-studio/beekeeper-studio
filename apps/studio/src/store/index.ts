@@ -422,19 +422,6 @@ const store = new Vuex.Store<State>({
       }
     },
 
-    async updateTablePartitions(context, table: TableOrView) {
-      log.debug('actions/updateTablePartitions', table.name);
-      const connection = context.state.connection;
-      if (connection.connectionType != 'postgresql') return; 
-
-      const partitions = await connection?.listTablePartitions(table.name) || [];
-      const updated = _.xorWith(table.partitions, partitions, _.isEqual);
-      if (updated?.length) {
-        table.partitions = partitions;
-        context.commit('table', table);
-      }
-    },
-
     async updateTables(context) {
       // FIXME: We should only load tables for the active/default schema
       //        then we should load new tables when a schema is expanded in the sidebar
@@ -448,8 +435,7 @@ const store = new Vuex.Store<State>({
           onlyTables.forEach((t) => {
             t.entityType = 'table'
             t.columns = []
-            t.partitions = []
-            if (context.state.connection.connectionType != 'postgresql') 
+            if (!context.state.connection.supportedFeatures().partitions) 
               t.tabletype = null;
           })
           const views = await context.state.connection.listViews({ schema })

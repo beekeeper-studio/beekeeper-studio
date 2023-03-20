@@ -276,7 +276,7 @@ export async function listTablePartitions(conn: HasPool, tableName: string) {
   // only postgres will pass this canary for now.
   if (!version.hasPartitions) return null;
   
-  const sql = `
+  const sql = knex.raw(`
     SELECT 
       ps.schemaname AS schema,
       ps.relname AS name,
@@ -285,8 +285,8 @@ export async function listTablePartitions(conn: HasPool, tableName: string) {
       JOIN pg_inherits i ON i.inhparent = base_tb.oid
       JOIN pg_class pt ON pt.oid = i.inhrelid
       JOIN pg_stat_all_tables ps ON ps.relid = i.inhrelid
-    WHERE base_tb.oid = '${tableName}'::regclass
-  `;
+    WHERE base_tb.oid = ?::regclass
+  `, [tableName]).toQuery();
 
   const data = await driverExecuteSingle(conn, { query: sql });
 
@@ -854,20 +854,25 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     Promise.resolve({ rows:[]})
 
   const triggersPromise = version.isPostgres ? listTableTriggers(conn, table, schema) : Promise.resolve([])
+  const partitionsPromise = version.isPostgres ? listTablePartitions(conn, table) : Promise.resolve([]);
 
   const [
     result,
     indexes,
     relations,
     triggers,
+    partitions,
     owner
   ] = await Promise.all([
     detailsPromise,
     listTableIndexes(conn, table, schema),
     getTableKeys(conn, "", table, schema),
     triggersPromise,
+    partitionsPromise,
     getTableOwner(conn, table, schema)
   ])
+
+  console.log('Partitions: ', partitions)
 
   const props = result.rows.length > 0 ? result.rows[0] : {}
   return {
@@ -877,6 +882,7 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     indexes,
     relations,
     triggers,
+    partitions,
     owner
   }
 

@@ -14,7 +14,7 @@ export class PostgresqlChangeBuilder extends ChangeBuilderBase {
 
   createPartition(spec: PartitionItem) {
     const result = `
-      CREATE TABLE ${spec.name}
+      CREATE TABLE ${this.wrapIdentifier(spec.name)}
       PARTITION OF ${this.tableName}
       ${spec.expression}
     `;
@@ -30,7 +30,7 @@ export class PostgresqlChangeBuilder extends ChangeBuilderBase {
   detachPartition(part: string) {
     const result = `
       ALTER TABLE ${this.tableName}
-      DETACH PARTITION ${part}
+      DETACH PARTITION ${this.wrapIdentifier(part)}
     `;
 
     return result;
@@ -47,7 +47,7 @@ export class PostgresqlChangeBuilder extends ChangeBuilderBase {
     const result = `
       ${detachPartition};
       ALTER TABLE ${this.tableName}
-      ATTACH PARTITION ${alter.partitionName}
+      ATTACH PARTITION ${this.wrapIdentifier(alter.partitionName)}
       ${alter.newValue}
     `;
     return result;

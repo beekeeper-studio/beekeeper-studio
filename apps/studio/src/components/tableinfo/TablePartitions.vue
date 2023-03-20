@@ -71,7 +71,7 @@ export default Vue.extend({
     ErrorAlert
   },
   mixins: [DataMutators],
-  props: ['table', 'connection', 'tabID', 'active', 'tabState'],
+  props: ['table', 'connection', 'tabID', 'active', 'tabState', 'properties'],
   data() {
     return {
       tabulator: null,
@@ -132,7 +132,7 @@ export default Vue.extend({
     },
     tableData() {
       // If this doesn't get done, tabulator gets very very angry
-      return this.table.partitions.map((p) => {
+      return this.properties.partitions.map((p) => {
         return {
           ...p
         };
@@ -231,12 +231,8 @@ export default Vue.extend({
         const changes = this.collectChanges();
         await this.connection.alterPartition(changes);
 
-        if (changes.detaches.length > 0) {
-          await this.$store.dispatch('updateTables');
-          await this.refreshPartitions();
-        } else {
-          await this.$store.dispatch('updateTablePartitions', this.table);
-        }
+        await this.$store.dispatch('updateTables');
+        await this.refreshPartitions();
         this.clearChanges();
         this.$nextTick(() => this.initializeTabulator());
         this.$noty.success(`${this.table.name} Partitions Updated`);
@@ -283,7 +279,7 @@ export default Vue.extend({
     if (!this.active) this.forceRedraw = true;
     this.tabState.dirty = false;
 
-    this.loadExpressionTemplate(this.table.partitions[0] ?? null);
+    this.loadExpressionTemplate(this.properties.partitions[0] ?? null);
     this.initializeTabulator();
   }
 })

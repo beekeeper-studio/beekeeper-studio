@@ -164,7 +164,7 @@ export class DBConnection {
   listTableTriggers = listTableTriggers.bind(null, this.server, this.database)
   listTableIndexes = listTableIndexes.bind(null, this.server, this.database)
   listSchemas = listSchemas.bind(null, this.server, this.database)
-  listTablePartitions = listTablePartitions.bind(null, this.server, this.database)
+  listTablePartitions = bindAsync.bind(null, 'listTablePartitions', this.server, this.database)
   getTableReferences = getTableReferences.bind(null, this.server, this.database)
   getPrimaryKey = getPrimaryKey.bind(null, this.server, this.database)
   getPrimaryKeys = getPrimaryKeys.bind(null, this.server, this.database)
@@ -322,11 +322,6 @@ function selectTopStream(
   checkIsConnected(server, database)
   if (!database.connection) throw "No database connection available"
   return database.connection?.selectTopStream(database.database, table, orderBy, filters, chunkSize, schema)
-}
-
-function listTablePartitions(server: IDbConnectionServer, database: IDbConnectionDatabase, table?: string) {
-  checkIsConnected(server, database);
-  return database.connection?.listTablePartitions(table);
 }
 
 function listSchemas(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: SchemaFilterOptions) {

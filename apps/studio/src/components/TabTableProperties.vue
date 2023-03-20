@@ -258,7 +258,6 @@ export default {
       // this.properties = null
       try {
         await this.$store.dispatch('updateTableColumns', this.table)
-        await this.$store.dispatch('updateTablePartitions', this.table)
         this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
         if (this.table.entityType === 'table') {
           this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema)
