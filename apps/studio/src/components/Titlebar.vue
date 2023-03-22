@@ -26,12 +26,17 @@ export default {
   components: { AppMenu },
   data() {
     return {
-      window: this.$native.getCurrentWindow(),
-      maximized: this.$native.getCurrentWindow()?.isMaximized()
+
     }
   },
   computed: {
     ...mapState(['windowTitle']),
+    window() {
+      return this.$native.getCurrentWindow()
+    },
+    maximized() {
+      return this.window?.isMaximized()
+    },
   },
   mounted() {
     this.window?.on('maximize', () => {
@@ -48,13 +53,13 @@ export default {
     },
     maximizeWindow() {
       if (this.window?.isMaximized()) {
-        this.window.unmaximize();
+        this.window?.unmaximize();
       } else {
-        this.window.maximize();
+        this.window?.maximize();
       }
     },
     closeWindow() {
-      window?.close()
+      this.window?.close()
     }
   }
 }
