@@ -354,6 +354,9 @@ export default Vue.extend({
 
         } catch (ex) {
           this.$noty.error(`Error performing ${this.dbAction}: ${ex.message}`)
+        } finally {
+          this.duplicateTableName = null
+          this.dbDuplicateTableParams = null
         }
       })
     },
