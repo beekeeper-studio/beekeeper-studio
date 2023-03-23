@@ -872,8 +872,6 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     getTableOwner(conn, table, schema)
   ])
 
-  console.log('Partitions: ', partitions)
-
   const props = result.rows.length > 0 ? result.rows[0] : {}
   return {
     description: props.description,
