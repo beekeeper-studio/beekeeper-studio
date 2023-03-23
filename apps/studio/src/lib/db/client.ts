@@ -215,6 +215,7 @@ export class DBConnection {
 
   // duplicateTAble
   duplicateTable = bindAsync.bind(null, 'duplicateTable', this.server, this.database)
+  duplicateTableSql = bind.bind(null, 'duplicateTableSql', this.server, this.database)
 
   async currentDatabase() {
     return this.database.database
