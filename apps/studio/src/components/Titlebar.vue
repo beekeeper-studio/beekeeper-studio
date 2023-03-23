@@ -26,40 +26,40 @@ export default {
   components: { AppMenu },
   data() {
     return {
-
+      maximized: this.$native.getCurrentWindow()?.isMaximized(),
     }
   },
   computed: {
     ...mapState(['windowTitle']),
-    window() {
-      return this.$native.getCurrentWindow()
-    },
-    maximized() {
-      return this.window?.isMaximized()
-    },
   },
   mounted() {
-    this.window?.on('maximize', () => {
+    this.getWindow()?.on('maximize', () => {
       this.maximized = true
     })
 
-    this.window?.on('unmaximize', () => {
+    this.getWindow()?.on('unmaximize', () => {
       this.maximized = false
     })
   },
   methods: {
+    getWindow() {
+      return this.$native.getCurrentWindow()
+    },
+    isMaximized() {
+      return this.getWindow()?.isMaximized()
+    },
     minimizeWindow() {
-      this.window?.minimize();
+      this.getWindow()?.minimize();
     },
     maximizeWindow() {
-      if (this.window?.isMaximized()) {
-        this.window?.unmaximize();
+      if (this.isMaximized()) {
+        this.getWindow()?.unmaximize();
       } else {
-        this.window?.maximize();
+        this.getWindow()?.maximize();
       }
     },
     closeWindow() {
-      this.window?.close()
+      this.getWindow()?.close()
     }
   }
 }
