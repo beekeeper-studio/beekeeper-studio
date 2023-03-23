@@ -19,7 +19,7 @@ import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
-import { AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 
@@ -87,22 +87,25 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
       isPostgres: false,
       isCockroach: false,
       isRedshift: false,
-      number: 0
+      number: 0,
+      hasPartitions: false
     }
   }
 
   const isCockroach = version.toLowerCase().includes('cockroachdb')
   const isRedshift = version.toLowerCase().includes('redshift')
   const isPostgres = !isCockroach && !isRedshift
+  const number = parseInt(
+      version.split(" ")[isPostgres ? 1 : 2].replace(/(^v)|(,$)/ig, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
+      10
+    );
   return {
     version,
     isPostgres,
     isCockroach,
     isRedshift,
-    number: parseInt(
-      version.split(" ")[isPostgres ? 1 : 2].replace(/(^v)|(,$)/ig, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
-      10
-    )
+    number, 
+    hasPartitions: (isPostgres && number >= 100000) //for future cochroach support?: || (isCockroach && number >= 200070)
   }
 }
 
@@ -156,8 +159,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
   const version = await getVersion(conn)
 
-  const features = version.isRedshift ? { customRoutines: true, comments: false, properties: false } : { customRoutines: true, comments: true, properties: true}
-
+  const features = version.isRedshift ? { customRoutines: true, comments: false, properties: false, partitions: false } : { customRoutines: true, comments: true, properties: true, partitions: version.hasPartitions}
 
 
   return {
@@ -176,6 +178,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     listTableTriggers: (table, schema = defaultSchema) => listTableTriggers(conn, table, schema),
     listTableIndexes: (_db, table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
     listSchemas: (_db, filter?: SchemaFilterOptions) => listSchemas(conn, filter),
+    listTablePartitions: (table) => listTablePartitions(conn, table),
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
@@ -215,6 +218,9 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     alterRelationSql: (payload) => alterRelationSql(payload),
     alterRelation: (payload) => alterRelation(conn, payload),
 
+    alterPartitionSql: (payload) => alterPartitionSql(payload),
+    alterPartition: (payload) => alterPartition(conn, payload),
+
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
     dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string|null) => dropElement(conn, elementName, typeOfElement, schema),
     truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema)
@@ -228,19 +234,64 @@ export function disconnect(conn: HasPool) {
 
 export async function listTables(conn: HasPool, filter: FilterOptions = { schema: 'public' }) {
   const schemaFilter = buildSchemaFilter(filter, 'table_schema');
-  const sql = `
+  // @Day: selecting all tables that are not partitions
+  const version = await getVersion(conn);
+  let sql = `
     SELECT
-      table_schema as schema,
-      table_name as name
-    FROM information_schema.tables
-    WHERE table_type NOT LIKE '%VIEW%'
+      t.table_schema as schema,
+      t.table_name as name,
+  `;
+
+  if (version.hasPartitions) {
+    // TODO (day): when we support more dbs for partitioning, we will need to construct a different query for cockroach.
+    sql += `
+        pc.relkind as tabletype
+      FROM information_schema.tables AS t 
+      LEFT OUTER JOIN pg_inherits AS i
+      ON t.table_name::text = i.inhrelid::regclass::text
+      LEFT OUTER JOIN pg_class AS pc
+      ON t.table_name = pc.relname
+      WHERE t.table_type NOT LIKE '%VIEW%'
+      AND i.inhrelid::regclass IS NULL
+    `;
+  } else {
+    sql += `
+        'r' as tabletype
+      FROM information_schema.tables AS t 
+      WHERE t.table_type NOT LIKE '%VIEW%'
+    `;
+  }
+  sql += `
     ${schemaFilter ? `AND ${schemaFilter}` : ''}
-    ORDER BY table_schema, table_name
+    ORDER BY t.table_schema, t.table_name
   `;
 
   const data = await driverExecuteSingle(conn, { query: sql });
 
   return data.rows;
+}
+
+export async function listTablePartitions(conn: HasPool, tableName: string) {
+  const version = await getVersion(conn);
+  // only postgres will pass this canary for now.
+  if (!version.hasPartitions) return null;
+  
+  const sql = knex.raw(`
+    SELECT 
+      ps.schemaname AS schema,
+      ps.relname AS name,
+      pg_get_expr(pt.relpartbound, pt.oid, true) AS expression
+    FROM pg_class base_tb
+      JOIN pg_inherits i ON i.inhparent = base_tb.oid
+      JOIN pg_class pt ON pt.oid = i.inhrelid
+      JOIN pg_stat_all_tables ps ON ps.relid = i.inhrelid
+    WHERE base_tb.oid = ?::regclass
+  `, [tableName]).toQuery();
+
+  const data = await driverExecuteSingle(conn, { query: sql });
+
+  return data.rows;
+  
 }
 
 export async function listViews(conn: HasPool, filter: FilterOptions = { schema: 'public' }) {
@@ -787,10 +838,6 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
   }
   const identifier = wrapTable(table, schema)
 
-
-
-
-
   const statements = [
     `pg_indexes_size('${identifier}') as index_size`,
       `pg_relation_size('${identifier}') as table_size`,
@@ -807,18 +854,21 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     Promise.resolve({ rows:[]})
 
   const triggersPromise = version.isPostgres ? listTableTriggers(conn, table, schema) : Promise.resolve([])
+  const partitionsPromise = version.isPostgres ? listTablePartitions(conn, table) : Promise.resolve([]);
 
   const [
     result,
     indexes,
     relations,
     triggers,
+    partitions,
     owner
   ] = await Promise.all([
     detailsPromise,
     listTableIndexes(conn, table, schema),
     getTableKeys(conn, "", table, schema),
     triggersPromise,
+    partitionsPromise,
     getTableOwner(conn, table, schema)
   ])
 
@@ -830,6 +880,7 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     indexes,
     relations,
     triggers,
+    partitions,
     owner
   }
 
@@ -1048,6 +1099,20 @@ export async function alterRelation(conn, payload: RelationAlterations): Promise
   await executeWithTransaction(conn, { query });
 }
 
+
+export function alterPartitionSql(payload: AlterPartitionsSpec): string {
+  const { table } = payload;
+  const builder = new PostgresqlChangeBuilder(table);
+  const creates = builder.createPartitions(payload.adds);
+  const alters = builder.alterPartitions(payload.alterations);
+  const detaches = builder.detachPartitions(payload.detaches);
+  return [creates, alters, detaches].filter((f) => !!f).join(";")
+}
+
+export async function alterPartition(conn, payload: AlterPartitionsSpec): Promise<void> {
+  const query = alterPartitionSql(payload)
+  await executeWithTransaction(conn, { query });
+}
 
 export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {
   const identifier = wrapTable(table, schema)

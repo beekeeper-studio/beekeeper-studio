@@ -435,6 +435,8 @@ const store = new Vuex.Store<State>({
           onlyTables.forEach((t) => {
             t.entityType = 'table'
             t.columns = []
+            if (!context.state.connection.supportedFeatures().partitions) 
+              t.tabletype = null;
           })
           const views = await context.state.connection.listViews({ schema })
           views.forEach((v) => {

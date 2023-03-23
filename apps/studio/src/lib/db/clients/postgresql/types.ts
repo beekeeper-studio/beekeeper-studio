@@ -11,6 +11,7 @@ export interface VersionInfo {
   isRedshift: boolean
   number: number
   version: string
+  hasPartitions: boolean
 }
 
 export interface HasConnection {
