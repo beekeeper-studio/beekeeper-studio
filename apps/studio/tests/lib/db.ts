@@ -209,6 +209,16 @@ export class DBTestUtil {
     }
   }
 
+  async duplicateTableSqlTests() {
+    const sql = await this.connection.duplicateTableSql('group', 'group_copy', this.defaultSchema)
+
+    expect(sql).not.toBeUndefined()
+    expect(sql).not.toBeNull()
+    expect(sql).not.toEqual('')
+
+  }
+
+
   async duplicateTableTests() {
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
 

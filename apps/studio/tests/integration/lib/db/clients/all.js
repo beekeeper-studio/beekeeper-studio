@@ -111,6 +111,10 @@ export function runCommonTests(getUtil) {
     test("Bad input shouldn't allow table duplication", async () => {
       await getUtil().badDuplicateTableTests()
     })
+
+    test("Should print the duplicate table query", async () => {
+      await getUtil().duplicateTableSqlTests()
+    })
   })
 
   describe("Table Structure", () => {
