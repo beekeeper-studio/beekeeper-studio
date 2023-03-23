@@ -269,50 +269,23 @@ export default Vue.extend({
       }
 
       try {
-        this.error = null
         const sql = await this.connection.duplicateTableSql(tableName, this.duplicateTableName, schema)
         const formatted = format(sql, { language: FormatterDialect(this.dialect) })
 
-        this.$modal.hide(this.duplicateTableModal)
+        const tab = new OpenTab('query')
+        tab.unsavedQueryText = formatted
+        tab.title = `Duplicating table: ${tableName}`
+        tab.active = true
+        tab.unsavedChanges = false
+        tab.alert = false
+        tab.position = 99
 
-        /** im here */
+        await this.addTab(tab)
 
-        this.$nextTick(() => {
-          this.$store.dispatch('tabs/add', {
-            title: `Duplicate Table`,
-            type: 'query',
-            content: formatted,
-            icon: 'mdi-table',
-            active: true,
-            closable: true,
-            dirty: true,
-            schema: this.dbDuplicateTableParams.schema,
-            database: this.dbDuplicateTableParams.database,
-            entityType: this.dbDuplicateTableParams.entityType,
-            name: this.dbDuplicateTableParams.tableName,
-            query: formatted,
-            queryType: 'alter',
-            queryName: 'duplicateTable',
-            queryAction: 'duplicate',
-            queryTarget: this.dbDuplicateTableParams.tableName,
-            queryTargetSchema: this.dbDuplicateTableParams.schema,
-            queryTargetDatabase: this.dbDuplicateTableParams.database,
-            queryTargetEntityType: this.dbDuplicateTableParams.entityType,
-            queryTargetType: 'table',
-            queryTargetAction: 'duplicate',
-            queryTargetActionType: 'alter',
-            queryTargetActionName: 'duplicateTable',
-            queryTargetActionParams: {
-              tableName: this.dbDuplicateTableParams.tableName,
-              schema: this.dbDuplicateTableParams.schema,
-              database: this.dbDuplicateTableParams.database,
-              entityType: this.dbDuplicateTableParams.entityType,
-              duplicateTableName: this.duplicateTableName,
-            },
-          })
-        })
       } catch (ex) {
-        this.error = ex
+        this.$noty.error(`Error printing ${this.dbAction} query: ${ex.message}`)
+      } finally {
+        this.$modal.hide(this.duplicateTableModal)
       }
     },
     async duplicateTable() {
@@ -394,6 +367,7 @@ export default Vue.extend({
       await this.$store.dispatch('tabs/setActive', tab)
     },
     async addTab(item: OpenTab) {
+
       await this.$store.dispatch('tabs/add', item)
       await this.setActiveTab(item)
     },
