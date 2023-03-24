@@ -110,6 +110,10 @@ import SettingsPlugin from './plugins/SettingsPlugin'
           if (this.$config.isMac) return `Cmd-${key}`
           return `Ctrl-${key}`
         },
+        ctrlOrCmdShift(key) {
+          if (this.$config.isMac) return `meta+shift+${key}`
+          return `ctrl+shift+${key}`
+        },
         selectChildren(element) {
           const selection = window.getSelection()
           if (selection) {

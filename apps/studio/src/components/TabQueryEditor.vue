@@ -313,6 +313,8 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         if (!this.active) return {}
         const result = {}
         result[this.ctrlOrCmd('l')] = this.selectEditor
+        result[this.ctrlOrCmd('i')] = this.submitQueryToFile
+        result[this.ctrlOrCmdShift('i')] = this.submitCurrentQueryToFile
         return result
       },
       connectionType() {
@@ -512,8 +514,10 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             "Esc": this.cancelQuery,
             "F5": this.submitTabQuery,
             "Shift-F5": this.submitCurrentQuery,
-            "Ctrl+R": this.submitQueryToFile,
-            "Shift+Ctrl+R": this.submitCurrentQueryToFile
+            "Ctrl+I": this.submitQueryToFile,
+            "Cmd+I": this.submitQueryToFile,
+            "Shift+Ctrl+I": this.submitCurrentQueryToFile,
+            "Shift+Cmd+I": this.submitCurrentQueryToFile
           }
 
           const modes = {
