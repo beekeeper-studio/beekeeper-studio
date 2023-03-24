@@ -12341,6 +12341,11 @@ postgres-interval@^1.1.0:
   dependencies:
     xtend "^4.0.0"
 
+postgres-interval@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/postgres-interval/-/postgres-interval-4.0.0.tgz#baa8966418f75b7309eeb25bcdd56a8590853a95"
+  integrity sha512-OWeL7kyEKJiY7mCmVY+c7/6uhAlt/colA/Nl/Mgls/M3jssrQzFra04iNWnD/qAmG7TsCSgWAASCyiaoBOP/sg==
+
 prebuild-install@^7.1.0:
   version "7.1.1"
   resolved "https://registry.yarnpkg.com/prebuild-install/-/prebuild-install-7.1.1.tgz#de97d5b34a70a0c81334fd24641f2a1702352e45"
@@ -14516,6 +14521,11 @@ tiny-emitter@^2.0.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/tiny-emitter/-/tiny-emitter-2.1.0.tgz#1d1a56edfc51c43e863cbb5382a72330e3555423"
   integrity sha512-NB6Dk1A9xgQPMoGqC5CVXn123gWyte215ONT5Pp5a0yt4nlEoO1ZWeCwpncaekPHXO60i47ihFnZPiRPjRMq4Q==
+
+tinyduration@^3.2.4:
+  version "3.2.4"
+  resolved "https://registry.yarnpkg.com/tinyduration/-/tinyduration-3.2.4.tgz#c0b7e1a2dbe026a19f52df4385fb0c5f0bae5095"
+  integrity sha512-LkcGUKYZiFG+J8ydqEaxLenVacAKgdUajDAv9FhZpAx6xiVQOUSk48/Y1BHxybkRh2X1LOw9/vyvwU6WmOQ92g==
 
 tmp-promise@^3.0.2:
   version "3.0.3"
