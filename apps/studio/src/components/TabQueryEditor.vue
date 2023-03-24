@@ -36,9 +36,13 @@
                   <x-label>Run Current</x-label>
                   <x-shortcut value="Control+Shift+Enter"></x-shortcut>
                 </x-menuitem>
+                <x-menuitem @click.prevent="submitQueryToFile">
+                  <x-label>{{hasSelectedText ? 'Run Selection to File...' : 'Run to File...'}}</x-label>
+                  <x-shortcut value="Control+R"></x-shortcut>
+                </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQueryToFile">
-                  <x-label>Run to File...</x-label>
-                  <x-shortcut value="Control+F"></x-shortcut>
+                  <x-label>Run Current Query to File...</x-label>
+                  <x-shortcut value="Control+Shift+R"></x-shortcut>
                 </x-menuitem>
               </x-menu>
             </x-button>
@@ -507,7 +511,9 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             "Cmd-/": this.toggleComment,
             "Esc": this.cancelQuery,
             "F5": this.submitTabQuery,
-            "Shift-F5": this.submitCurrentQuery
+            "Shift-F5": this.submitCurrentQuery,
+            "Ctrl+R": this.submitQueryToFile,
+            "Shift+Ctrl+R": this.submitCurrentQueryToFile
           }
 
           const modes = {
@@ -703,9 +709,21 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       escapeRegExp(string) {
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
+      async submitQueryToFile() {
+        // run the currently hilighted text (if any) to a file, else all sql
+        const query_sql = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
+        const saved_name = this.hasTitle ? this.query.title : null
+        const tab_title = this.tab.title // e.g. "Query #1"
+        const query_name = saved_name || tab_title
+        this.trigger( AppEvent.beginExport, { query: query_sql, query_name: query_name });
+      },
       async submitCurrentQueryToFile() {
-        const text = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
-        this.trigger( AppEvent.beginExport, { query: text });
+        // run the currently selected query (if there are multiple) to a file, else all sql
+        const query_sql = this.currentlySelectedQuery ? this.currentlySelectedQuery.text : this.editor.getValue()
+        const saved_name = this.hasTitle ? this.query.title : null
+        const tab_title = this.tab.title // e.g. "Query #1"
+        const query_name = saved_name || tab_title
+        this.trigger( AppEvent.beginExport, { query: query_sql, query_name: query_name });
       },
       async submitCurrentQuery() {
         if (this.currentlySelectedQuery) {
