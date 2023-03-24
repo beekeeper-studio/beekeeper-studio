@@ -38,11 +38,11 @@
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitQueryToFile">
                   <x-label>{{hasSelectedText ? 'Run Selection to File...' : 'Run to File...'}}</x-label>
-                  <x-shortcut value="Control+R"></x-shortcut>
+                  <x-shortcut value="Control+I"></x-shortcut>
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQueryToFile">
                   <x-label>Run Current Query to File...</x-label>
-                  <x-shortcut value="Control+Shift+R"></x-shortcut>
+                  <x-shortcut value="Control+Shift+I"></x-shortcut>
                 </x-menuitem>
               </x-menu>
             </x-button>
