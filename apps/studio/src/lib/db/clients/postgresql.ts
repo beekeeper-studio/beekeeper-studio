@@ -539,15 +539,6 @@ async function queryStream(
   query: string,
   chunkSize: number
 ): Promise<StreamResults> {
-  // const version = await getVersion(conn)
-  // const qs = buildSelectTopQueries({
-  //   table, orderBy, filters, version, schema
-  // })
-  // const cursor = new Cursor(qs.query, qs.params)
-  // const countResults = await driverExecuteSingle(conn, {query: qs.countQuery, params: qs.params})
-  // const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
-  // const totalRecords = rowWithTotal ? Number(rowWithTotal.total) : 0
-  // const columns = await listTableColumns(conn, database, table, schema)
   const db = database // why
   log.debug('db', db)
 

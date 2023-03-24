@@ -5,6 +5,7 @@
       :connection="connection"
       :table="table"
       :query="query"
+      :query_name="query_name"
       :filters="filters"
       @export="startExport"
       @closed="handleDeadModal"
@@ -27,6 +28,7 @@ import { ExportProgress, ExportStatus } from '../../lib/export/models'
 interface ExportTriggerOptions {
   table?: TableOrView,
   query?: string,
+  query_name?: string,
   filters?: TableFilter[]
 }
 
@@ -40,6 +42,7 @@ const ExportClassPicker = {
 interface StartExportOptions {
   table: TableOrView,
   query?: string,
+  query_name?: string,
   filters: TableFilter[],
   exporter: 'csv' | 'json' | 'sql' | 'jsonl'
   filePath: string
@@ -61,6 +64,7 @@ export default Vue.extend({
       // these are like 'pending Export'
       table: (undefined as TableOrView | undefined),
       query: '',
+      query_name: '',
       filters: (undefined as TableFilter[] | undefined),
     }
   },
@@ -82,6 +86,7 @@ export default Vue.extend({
         this.connection,
         options.table,
         options.query,
+        options.query_name,
         options.filters || [],
         options.options,
         options.outputOptions
@@ -104,12 +109,14 @@ export default Vue.extend({
     handleExportRequest(options?: ExportTriggerOptions): void {
       this.table = options?.table
       this.query = options?.query
+      this.query_name = options?.query_name
       this.filters = options?.filters
     },
     handleDeadModal() {
       this.table = undefined
       this.filters = undefined
       this.query = undefined
+      this.query_name = undefined
     },
     notifyProgress(_progress: ExportProgress) {
     }

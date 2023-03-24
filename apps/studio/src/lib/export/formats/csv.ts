@@ -27,11 +27,12 @@ export class CsvExporter extends Export {
     connection: DBConnection,
     table: TableOrView,
     query: string,
+    query_name: string,
     filters: TableFilter[] | any[],
     options: ExportOptions,
     outputOptions: OutputOptionsCsv,
   ) {
-    super(filePath, connection, table, query, filters, options)
+    super(filePath, connection, table, query, query_name, filters, options)
     this.headerConfig = {
       header: table ? true : false, // dont know columns for query
       delimiter: outputOptions.delimiter,

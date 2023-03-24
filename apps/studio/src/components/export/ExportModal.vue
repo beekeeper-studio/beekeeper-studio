@@ -12,12 +12,17 @@
           <div class="dialog-c-title flex flex-middle">
             <div>
               Export
-              <span class="text-primary truncate">{{ table ? table.name : "query" }}</span>
+              <span class="text-primary truncate">{{ table ? table.name : query_name }}</span>
               <span v-if="filters" class="text-light" v-tooltip="filterTooltip">(Filtered)</span>
               <span class="badge badge-info">Beta</span>
             </div>
           </div>
-          <!-- TODO: Add some copy here to explain what is about to be exported. -->
+
+          <p>This will {{ table ? 'export table rows' : 'run your query and save the results' }}  directly to a file.</p>
+          <p>You can choose the format and file name.</p>
+          <p>For {{ table ? 'tables with many' : 'queries with many results' }} rows, this will run in the background,
+             allowing you to continue to do other work.</p>
+
           <span class="close-btn btn btn-fab">
             <i class="material-icons" @click.prevent="closeModal">clear</i>
           </span>
@@ -165,7 +170,7 @@ const exportFormats = [
 
 export default {
   components: { FilePicker },
-  props: ['table', 'query', 'filters', 'connection'],
+  props: ['table', 'query', 'query_name', 'filters', 'connection'],
   data() {
     return {
       selectedExportFormat: exportFormats[0],
@@ -213,7 +218,13 @@ export default {
         const extension = this.selectedExportFormat.key
         fileName = `${schema}${this.table.name}_export_${formatted}.${extension}`
       } else {
-        fileName = `query_export_${formatted}.${extension}`
+        // sanitize query name for use as filename
+        console.log('this.query_name: ', this.query_name)
+        let queryFileName = this.query_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()
+        queryFileName = queryFileName.replace(/_+/gi, '_') // avoid double-underscores
+        queryFileName = queryFileName.replace(/^_/gi, '')   // remove any leading underscore
+        queryFileName = queryFileName.replace(/_$/gi, '')   // remove any trailing underscore
+        fileName = `${queryFileName}_${formatted}.${extension}`
       }
       return fileName
     },
@@ -265,6 +276,7 @@ export default {
       const payload = {
         table: this.table,
         query: this.query,
+        query_name: this.query_name,
         filters: this.filters,
         filePath: this.filePath,
         options: this.options,

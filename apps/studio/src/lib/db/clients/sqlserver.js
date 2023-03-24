@@ -276,14 +276,7 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
 
 export async function queryStream(conn, db, query, orderBy, filters, chunkSize, schema, selects = ['*']) {
   const version = await getVersion(conn);
-  // // no limit or offset, so don't need the old version of paging
-  // const query = genSelectNew(table, null, null, orderBy, filters, schema, selects);
-  // const columns = await listTableColumns(conn, db, table);
-  // const rowCount = await getTableLength(conn, table, filters);
-
   return {
-    // totalRows: Number(rowCount),
-    // columns,
     cursor: new SqlServerCursor(conn, query, chunkSize)
   }
 }
