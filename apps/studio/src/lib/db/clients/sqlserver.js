@@ -16,7 +16,8 @@ import { buildDatabseFilter,
   buildUpdateQueries,
   escapeString,
   joinQueries,
-  escapeLiteral
+  escapeLiteral,
+  applyChangesSql
 } from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
@@ -48,7 +49,7 @@ export default async function (server, database) {
   const version = await getVersion(conn);
 
   return {
-    supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true}),
+    supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true, partitions: false}),
     versionString: () => getVersionString(version),
     wrapIdentifier,
     defaultSchema: () => 'dbo',
@@ -65,6 +66,7 @@ export default async function (server, database) {
     getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema) => getPrimaryKey(conn, db, table, schema),
     getPrimaryKeys: (db, table, schema) => getPrimaryKeys(conn, db, table, schema),
+    applyChangesSql: (changes) => applyChangesSql(changes, knex),
     applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),

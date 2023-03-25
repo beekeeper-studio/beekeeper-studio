@@ -26,6 +26,8 @@ export interface DatabaseEntity {
 
 export interface TableOrView extends DatabaseEntity {
   columns?: TableColumn[];
+  partitions?: TablePartition[];
+  tabletype?: string | null
 }
 
 export interface IndexedColumn {
@@ -51,6 +53,13 @@ export interface TableTrigger {
   condition: string | null
   table: string
   schema?: string
+}
+
+export interface TablePartition {
+  name: string;
+  schema: string;
+  expression: string;
+  num: number;
 }
 
 export interface TableProperties {
@@ -193,6 +202,7 @@ export interface SupportedFeatures {
   customRoutines: boolean;
   comments: boolean;
   properties: boolean;
+  partitions: boolean;
 }
 
 export interface FieldDescriptor {

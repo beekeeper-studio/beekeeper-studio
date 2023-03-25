@@ -19,7 +19,7 @@ export default Vue.extend({
         closeWith: ['button'],
         buttons: [
           Noty.button('Close', 'btn btn-flat', () => Noty.closeAll('upsell')),
-          Noty.button('Get Started', 'btn btn-primary', () => ipcRenderer.send(AppEvent.openExternally, ['https://beekeeperstudio.io/']))
+          Noty.button('Get Started', 'btn btn-primary', () => ipcRenderer.send(AppEvent.openExternally, ['https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition']))
         ]
       })
     }

@@ -230,7 +230,7 @@ export default Vue.extend({
           editorParams: autocompleteOptions,
           cellEdited: this.cellEdited,
           editable: this.isCellEditable.bind(this, 'alterColumn')
-          },
+        },
         {
           title: 'Nullable',
           field: 'nullable',

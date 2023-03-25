@@ -161,11 +161,8 @@
             class="pitch"
             v-if="!config.connectionType"
           >
-            <span class="badge badge-primary">New</span> Upgrade to the full version of Beekeeper Studio for even more
-            great features. <a
-              href="https://www.beekeeperstudio.io/"
-              class=""
-            >Get Started Free</a>
+            <span class="badge badge-primary">New</span> Upgrade to the full version of Beekeeper Studio for even more great features. 
+            <a href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition" class="">Get Started Free</a>
           </div>
         </div>
 

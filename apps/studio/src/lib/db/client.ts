@@ -3,8 +3,8 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from '@/vendor/node-ssh-forward/index';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert } from './models';
-import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, TablePartition } from './models';
+import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import type { RedshiftOptions } from '@/common/appdb/models/saved_connection';
 
 const logger = createLogger('db');
@@ -37,6 +37,7 @@ export interface DatabaseClient {
   listTableTriggers: (table: string, schema?: string) => Promise<TableTrigger[]>,
   listTableIndexes: (db: string, table: string, schema?: string) => Promise<TableIndex[]>,
   listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>,
+  listTablePartitions: (table: string) => Promise<TablePartition[]>
   getTableReferences: (table: string, schema?: string) => void,
   getTableKeys: (db: string, table: string, schema?: string) => void,
   query: (queryText: string) => CancelableQuery,
@@ -60,6 +61,10 @@ export interface DatabaseClient {
   alterRelationSql: (changes: RelationAlterations) => string | null
   alterRelation: (changes: RelationAlterations) => Promise<void>
 
+  alterPartitionSql: (changes: AlterPartitionsSpec) => string | null,
+  alterPartition: (changes: AlterPartitionsSpec) => Promise<void>,
+
+  applyChangesSql: (changes: TableChanges) => string,
   getInsertQuery: (tableInsert: TableInsert) => Promise<string>,
   getQuerySelectTop: (table: string, limit: number, schema?: string) => void,
   getTableProperties: (table: string, schema?: string) => Promise<TableProperties | null>,
@@ -159,6 +164,7 @@ export class DBConnection {
   listTableTriggers = listTableTriggers.bind(null, this.server, this.database)
   listTableIndexes = listTableIndexes.bind(null, this.server, this.database)
   listSchemas = listSchemas.bind(null, this.server, this.database)
+  listTablePartitions = bindAsync.bind(null, 'listTablePartitions', this.server, this.database)
   getTableReferences = getTableReferences.bind(null, this.server, this.database)
   getPrimaryKey = getPrimaryKey.bind(null, this.server, this.database)
   getPrimaryKeys = getPrimaryKeys.bind(null, this.server, this.database)
@@ -180,6 +186,7 @@ export class DBConnection {
   selectTop = selectTop.bind(null, this.server, this.database)
   selectTopStream = selectTopStream.bind(null, this.server, this.database)
   applyChanges = applyChanges.bind(null, this.server, this.database)
+  applyChangesSql = applyChangesSql.bind(null, this.server, this.database)
 
   // alter table
   alterTableSql = bind.bind(null, 'alterTableSql', this.server, this.database)
@@ -191,6 +198,9 @@ export class DBConnection {
 
   alterRelationSql = bind.bind(null, 'alterRelationSql', this.server, this.database)
   alterRelation = bindAsync.bind(null, 'alterRelation', this.server, this.database)
+
+  alterPartitionSql = bind.bind(null, 'alterPartitionSql', this.server, this.database)
+  alterPartition = bindAsync.bind(null, 'alterPartition', this.server, this.database)
 
   getInsertQuery = getInsertQuery.bind(null, this.server, this.database)
   getQuerySelectTop = getQuerySelectTop.bind(null, this.server, this.database)
@@ -404,6 +414,11 @@ function query(server: IDbConnectionServer, database: IDbConnectionDatabase, que
 function applyChanges(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: TableChanges) {
   checkIsConnected(server, database)
   return database.connection?.applyChanges(changes)
+}
+
+function applyChangesSql(server: IDbConnectionServer, database: IDbConnectionDatabase, changes: TableChanges) {
+  checkIsConnected(server, database)
+  return database.connection?.applyChangesSql(changes);
 }
 
 function bind(functionName: string, server: IDbConnectionServer, database: IDbConnectionDatabase, ...args) {

@@ -4,6 +4,24 @@
       <div class="sub row flex-middle expand">
         <div>Pinned <span class="badge">{{ orderedPins.length }}</span></div>
       </div>
+        <div class="row">
+          <div class="actions">
+            <a  @click.prevent="sortOrder(pinnSortOrder === 'asc' ? 'desc' : 'asc')"  :title="pinnSortOrder === 'asc' ? 'Ascending' : 'Descending'">
+              <i class="material-icons">
+               {{ pinnSortOrder === 'asc' ? "expand_less" : "expand_more" }}
+              </i>
+               </a>
+          </div>
+          <div>
+            <a  
+              @click.prevent="sortBy(pinnSortBy === 'entityName' ? 'position' : 'entityName')" 
+              :title="pinnSortBy === 'entityName' ? 'Alphabetically' : 'By position'" class="create-table">
+              <i class="material-icons">
+                {{ pinnSortBy === 'entityName' ? "sort_by_alpha" : 'sort' }}
+              </i>
+            </a>
+          </div>
+        </div>
     </div>
     <Draggable
       :options="{handle: '.drag-handle'}"
@@ -59,6 +77,12 @@ export default Vue.extend({
     'allExpanded', 'allCollapsed', 'connection'
   ],
   computed: {
+    pinnSortBy() {
+      return this.$store.getters['pins/pinnSortBy']
+    },
+    pinnSortOrder() {
+      return this.$store.getters['pins/pinnSortOrder']
+    },
     orderedPins: {
       get(): PinnedEntity[] {
         return this.$store.getters['pins/orderedPins']
@@ -72,6 +96,12 @@ export default Vue.extend({
     refreshColumns(table) {
       this.$store.dispatch('updateTableColumns', table)
     },
+    sortBy(sortBy: 'position' | 'entityName')  {
+      this.$store.commit('pins/setSortBy',sortBy)
+    },
+    sortOrder(sortOrder: 'asc' | 'desc')  {
+      this.$store.commit('pins/setSortOrder',sortOrder)
+    }
   }
 
 })

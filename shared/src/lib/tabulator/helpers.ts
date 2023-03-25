@@ -121,7 +121,7 @@ export const TabulatorStateWatchers = {
   },
   tableData: {
     deep: true,
-      handler(nu, old) {
+    handler(nu, old) {
       if (!this.tabulator) return
       const different = _.xorWith(nu, old, _.isEqual)
       // deep equality sometimes makes this fire when data hasn't really changed...

@@ -50,8 +50,7 @@
           :key="pill.id"
           @actionCompleted="refresh"
           @refresh="refresh"
-        >
-          <template v-slot:footer>
+        > <template v-slot:footer>
             <div class="statusbar-info col flex expand">
               <x-button
                 @click.prevent="openData"
@@ -135,6 +134,7 @@ import TableSchemaVue from './tableinfo/TableSchema.vue'
 import TableIndexesVue from './tableinfo/TableIndexes.vue'
 import TableRelationsVue from './tableinfo/TableRelations.vue'
 import TableTriggersVue from './tableinfo/TableTriggers.vue'
+import TablePartitionsVue from './tableinfo/TablePartitions.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { format as humanBytes } from 'bytes'
 import platformInfo from '../common/platform_info'
@@ -160,6 +160,7 @@ export default {
           id: 'schema',
           name: "Columns",
           needsProperties: false,
+          needsPartitions: false,
           component: TableSchemaVue,
           dirty: false,
         },
@@ -168,6 +169,7 @@ export default {
           name: "Indexes",
           tableOnly: true,
           needsProperties: true,
+          needsPartitions: false,
           component: TableIndexesVue,
           dirty: false,
         },
@@ -176,6 +178,7 @@ export default {
           name: "Relations",
           tableOnly: true,
           needsProperties: true,
+          needsPartitions: false,
           component: TableRelationsVue,
           dirty: false,
         },
@@ -184,7 +187,17 @@ export default {
           name: "Triggers",
           tableOnly: true,
           needsProperties: true,
+          needsPartitions: false,
           component: TableTriggersVue,
+          dirty: false
+        },
+        {
+          id: 'partitions',
+          name: 'Partitions',
+          tableOnly: true,
+          needsProperties: true,
+          needsPartitions: true,
+          component: TablePartitionsVue,
           dirty: false
         }
       ],
@@ -219,6 +232,9 @@ export default {
     pills() {
       if (!this.table) return []
       const isTable = this.table.entityType === 'table'
+      // TODO (day): when we support more dbs, this will need to be an array of all the possible types.
+      // Postgres table type for a partitioned table.
+      const partitionTableType = 'p';
       return this.rawPills.filter((p) => {
 
         if (!this.properties) {
@@ -228,6 +244,10 @@ export default {
         }
 
         if (p.needsProperties && !this.connection.supportedFeatures().properties) {
+          return false
+        }
+
+        if (p.needsPartitions && (!this.connection.supportedFeatures().partitions || this.table.tabletype !== partitionTableType)) {
           return false
         }
         if(p.tableOnly) {

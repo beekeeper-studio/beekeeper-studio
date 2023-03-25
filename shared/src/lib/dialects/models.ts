@@ -176,6 +176,23 @@ export interface AlterTableSpec {
   drops?: string[]
 }
 
+export interface PartitionExpressionChange {
+  partitionName: string
+  newValue: string
+}
+
+export interface PartitionItem {
+  name: string
+  expression: string
+}
+
+export interface AlterPartitionsSpec {
+  table: string
+  alterations?: PartitionExpressionChange[]
+  adds?: PartitionItem[]
+  detaches?: string[]
+}
+
 export interface IndexColumn {
   name: string
   order: 'ASC' | 'DESC'

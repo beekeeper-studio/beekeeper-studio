@@ -243,6 +243,7 @@ export default Vue.extend({
           title: 'On Delete',
           editable,
           editor: 'select',
+          // @ts-ignore
           editorParams: {
             values: this.dialectData.constraintActions,
             defaultValue: 'NO ACTION',
