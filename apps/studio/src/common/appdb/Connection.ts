@@ -10,6 +10,7 @@ import { CloudCredential } from "./models/CloudCredential"
 import { OpenTab } from "./models/OpenTab"
 import { HiddenEntity } from "./models/HiddenEntity"
 import { HiddenSchema } from "./models/HiddenSchema"
+import { PinnedConnection } from "./models/PinnedConnection"
 
 const models = [
   SavedConnection,
@@ -22,6 +23,7 @@ const models = [
   OpenTab,
   HiddenEntity,
   HiddenSchema,
+  PinnedConnection
 ]
 
 

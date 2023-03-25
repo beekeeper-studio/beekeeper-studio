@@ -132,14 +132,7 @@
 
   import _ from 'lodash'
   import CodeMirror from 'codemirror'
-  import 'codemirror/addon/comment/comment'
-  import 'codemirror/addon/dialog/dialog'
-  import 'codemirror/addon/search/search'
-  import 'codemirror/addon/search/jump-to-line'
-  import 'codemirror/addon/scroll/annotatescrollbar'
-  import 'codemirror/addon/search/matchesonscrollbar'
-  import 'codemirror/addon/search/matchesonscrollbar.css'
-  import 'codemirror/addon/search/searchcursor'
+
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
@@ -433,6 +426,19 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       }
     },
     methods: {
+
+      find() {
+        // trigger's codemirror's search functionality
+        this.editor.execCommand('find')
+      },
+      replace() {
+        // trigger's codemirror's search functionality
+        this.editor.execCommand('replace')
+      },
+      replaceAll() {
+        // trigger's codemirror's search functionality
+        this.editor.execCommand('replaceAll')
+      },
       locationFromPosition(queryText, ...rawPositions) {
         // 1. find the query text inside the editor
         // 2.
@@ -517,7 +523,8 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
               "Ctrl-F": "findPersistent",
               "Ctrl-G": "findNext",
               "Ctrl-Shift-G": "findPrev",
-              "Ctrl-H": "replace"
+              "Ctrl-R": "replace",
+              "Ctrl-Shift-R": "replaceAll",
             },
             options: {
               closeOnBlur: false
@@ -592,6 +599,24 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
               name: "Format Query",
               slug: 'format',
               handler: this.formatSql
+            },
+            {
+              type: 'divider'
+            },
+            {
+              name: "Find",
+              slug: 'find',
+              handler: this.find
+            },
+            {
+              name: "Replace",
+              slug: "replace",
+              handler: this.replace
+            },
+            {
+              name: "ReplaceAll",
+              slug: "replace_all",
+              handler: this.replaceAll
             }
           ],
           event,

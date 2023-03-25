@@ -5,8 +5,9 @@ import _ from 'lodash'
 import Database from 'better-sqlite3'
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
+import { makeEscape } from 'knex/lib/util/string'
 import rawLog from 'electron-log'
-import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery, escapeLiteral } from './utils';
+import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery, escapeLiteral, buildUpdateQueries, applyChangesSql } from './utils';
 import { SqliteCursor } from './sqlite/SqliteCursor';
 import { SqliteChangeBuilder } from '@shared/lib/sql/change_builder/SqliteChangeBuilder';
 import { SqliteData } from '@shared/lib/dialects/sqlite';
@@ -17,6 +18,16 @@ const logger = () => log
 const knex = knexlib({ client: 'better-sqlite3',
   // silence the "sqlite does not support inserting default values" warnings on every insert
   useNullAsDefault: true,
+})
+
+// HACK (day): this is to prevent the 'str.replace is not a function' error that seems to happen with all changes.
+knex.client = Object.assign(knex.client, {
+  _escapeBinding: makeEscape({
+    escapeString(str) {
+      str = _.toString(str)
+      return str ? `'${str.replace(/'/g, "''")}'` : ''
+    }
+  })
 })
 
 const sqliteErrors = {
@@ -35,7 +46,7 @@ export default async function (server, database) {
   const version = await driverExecuteQuery(conn, { query: 'SELECT sqlite_version()' });
 
   return {
-    supportedFeatures: () => ({ customRoutines: false, comments: false, properties: true }),
+    supportedFeatures: () => ({ customRoutines: false, comments: false, properties: true, partitions: false }),
     versionString: () => getVersionString(version),
     wrapIdentifier,
     defaultSchema: () => null,
@@ -59,10 +70,12 @@ export default async function (server, database) {
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize) => selectTopStream(conn, db, table, orderBy, filters, chunkSize),
+    applyChangesSql: (changes) => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
+    getMaterializedViewCreateScript:  () => Promise.resolve([]),
     getRoutineCreateScript: (routine) => getRoutineCreateScript(conn, routine),
     truncateAllTables: () => truncateAllTables(conn),
     getTableProperties: (table) => getTableProperties(conn, table),
@@ -87,7 +100,7 @@ export default async function (server, database) {
 
     // delete stuff
     dropElement: (elementName, typeOfElement) => dropElement(conn, elementName, typeOfElement),
-    truncateElement: (elementName) => truncateElement(conn, elementName)
+    truncateElement: (elementName) => truncateElement(conn, elementName),
   };
 }
 
@@ -222,6 +235,7 @@ export async function applyChanges(conn, changes) {
 
   return results
 }
+
 
 export async function updateValues(cli, updates) {
   const commands = updates.map(update => {
