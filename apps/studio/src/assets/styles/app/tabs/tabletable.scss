@@ -43,7 +43,7 @@
               line-height: inherit;
             }
             &:hover {
-              background: adjust-color($query-editor-bg, $lightness: 10%);
+              background: adjust-color($query-editor-bg, $lightness: 5%);
               .row-handle {
                 display: inline-block;
               }
@@ -52,7 +52,7 @@
 
           .tabulator-row.tabulator-selectable.tabulator-selected {
             .select-row-col {
-              background: $theme-bg;
+              background: adjust-color($query-editor-bg, $lightness: 10%);
             }
           }
 

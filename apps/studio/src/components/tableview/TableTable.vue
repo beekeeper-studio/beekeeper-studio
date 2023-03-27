@@ -335,7 +335,7 @@ export default Vue.extend({
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
       result[this.ctrlOrCmd('shift+s')] = this.copyToSql.bind(this)
       result[this.ctrlOrCmd('f')] = () => this.$refs.valueInput.focus()
-      result[this.ctrlOrCmd('c')] = this.copyCell
+      result[this.ctrlOrCmd('c')] = this.maybeCopyCellOrRow
       result["Escape"] = this.unselectStuff
       return result
     },
@@ -843,6 +843,19 @@ export default Vue.extend({
       this.tabulator.deselectRow()
       this.unselectCell()
     },
+    // TODO: Fix these, they don't really work.
+    // handleRowHandleMouseDown(_event: MouseEvent, cell: Tabulator.CellComponent) {
+    //   this.mouseDownHandle = cell
+    // },
+    // handleRowHandleMouseUp(_event: MouseEvent, cell: Tabulator.CellComponent) {
+    //   if (!this.mouseDownHandle) return;
+    //   const startPosition = this.mouseDownHandle.getRow().getIndex()
+    //   const endPosition = cell.getRow().getIndex()
+    //   for(let i = startPosition; i <= endPosition; i++) {
+    //     this.tabulator.selectRow(i)
+    //   }
+    //   this.mouseDownHandle = null
+    // },
     handleRowHandleClick(event: MouseEvent, cell: Tabulator.CellComponent) {
       const row = cell.getRow()
       const selectedRows: Tabulator.RowComponent[] = this.tabulator.getSelectedRows();
@@ -1092,13 +1105,38 @@ export default Vue.extend({
       log.debug('fk-click: clicked ', value, keyData)
       this.$root.$emit('loadTable', payload)
     },
-    copyCell() {
+    maybeCopyCellOrRow() {
         if (!this.active) return;
-        if (!this.selectedCell) return;
-        this.selectedCell.getElement().classList.add('copied')
-        const cell = this.selectedCell
-        setTimeout(() => cell.getElement().classList.remove('copied'), 500)
-        this.$native.clipboard.writeText(this.selectedCell.getValue(), false)
+        if (!this.tabulator) return;
+        const selectedRows = this.tabulator.getSelectedRows()
+        if (!this.selectedCell && !selectedRows?.length) return;
+
+        if (this.selectedCell) {
+          this.selectedCell.getElement().classList.add('copied')
+          const cell = this.selectedCell
+          setTimeout(() => cell.getElement().classList.remove('copied'), 500)
+          this.$native.clipboard.writeText(this.selectedCell.getValue(), false)
+        }
+
+        if (selectedRows?.length) {
+          const rows = selectedRows.map(r => r.getData())
+          const result = rows.map((r) => {
+            return this.$bks.cleanData(r, this.tableColumns)
+          })
+
+          selectedRows.forEach((row) => {
+            row.getElement().classList.add('copied')
+            setTimeout(() => row.getElement().classList.remove('copied'), 500)
+          })
+
+          this.$native.clipboard.writeText(
+            Papa.unparse(
+              result,
+              { header: true, delimiter: "\t", quotes: true, escapeFormulae: true,}
+            ),
+            true
+          )
+        }
     },
     cellClick(_e, cell) {
       this.tabulator.deselectRow()
