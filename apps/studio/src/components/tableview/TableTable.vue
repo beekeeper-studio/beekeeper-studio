@@ -8,17 +8,7 @@
     <template v-else >
       <div class="table-filter">
         <form @submit.prevent="triggerFilter" class="flex flex-middle">
-          <div class="filter-group" style="margin-left: 0.2rem">
-            <button
-              type="button"
-              class="btn btn-flat btn-fab"
-              :class="{'btn-primary': !allColumnsSelected}"
-              :title="`Set column visibility (${hiddenColumnCount} hidden)`"
-              @click="showColumnFilterModal()"
-            >
-              <i class="material-icons-outlined">visibility</i>
-            </button>
-          </div>
+
           <div v-if="filterMode === 'raw'" class="filter-group row gutter expand">
             <div class="btn-wrap">
               <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('builder')" title="Toggle Filter Type">
@@ -346,6 +336,7 @@ export default Vue.extend({
       result[this.ctrlOrCmd('shift+s')] = this.copyToSql.bind(this)
       result[this.ctrlOrCmd('f')] = () => this.$refs.valueInput.focus()
       result[this.ctrlOrCmd('c')] = this.copyCell
+      result["Escape"] = this.unselectStuff
       return result
     },
     headerContextMenu() {
@@ -565,9 +556,11 @@ export default Vue.extend({
         headerSort: false,
         resizable: false,
         cssClass: 'select-row-col',
-        formatter: () => '<span class="row-handle material-icons">chevron_right</span>',
+        formatter: 'text',
+        // formatter: () => '<span class="row-handle material-icons">chevron_right</span>',
         frozen: true,
-        maxWidth: '30',
+        maxWidth: 40,
+        width: 40,
         cellClick: this.handleRowHandleClick,
         headerClick: () => this.showColumnFilterModal()
       })
@@ -846,6 +839,10 @@ export default Vue.extend({
     }
   },
   methods: {
+    unselectStuff() {
+      this.tabulator.deselectRow()
+      this.unselectCell()
+    },
     handleRowHandleClick(event: MouseEvent, cell: Tabulator.CellComponent) {
       const row = cell.getRow()
       const selectedRows: Tabulator.RowComponent[] = this.tabulator.getSelectedRows();
@@ -908,14 +905,39 @@ export default Vue.extend({
         this.preLoadScrollPosition = null
       }
     },
+    cellIncludesTarget(cell, target) {
+      const targets = [cell.getElement(), ...Array.from(cell.getElement().getElementsByTagName("*"))]
+      return targets.includes(target)
+    },
+    unselectCell() {
+      if (!this.selectedCell) return
+      this.selectedCell.getElement().classList.remove('selected')
+      this.selectedCell = null
+    },
+    maybeUnselectRows(event) {
+      // also unselect rows in tabulator
+      if (!this.tabulator) return;
+      if (!this.active) return;
+
+      const selectedRows = this.tabulator.getSelectedRows()
+      if (!selectedRows?.length) return;
+      const handleCells = selectedRows.map((r) => r.getCell('row-selector--bks'))
+      const clickedCell = handleCells.find((c) =>
+        this.cellIncludesTarget(c, event.target)
+      )
+      if (clickedCell) return;
+
+      this.tabulator.deselectRow()
+
+    },
     maybeUnselectCell(event) {
+      this.maybeUnselectRows(event)
+
       if (!this.selectedCell) return
       if (!this.active) return
       const target = event.target
-      const targets = Array.from(this.selectedCell.getElement().getElementsByTagName("*"))
-      if (!targets.includes(target)) {
-        this.selectedCell.getElement().classList.remove('selected')
-        this.selectedCell = null
+      if (!this.cellIncludesTarget(this.selectedCell, target)) {
+        this.unselectCell()
       }
     },
     async close() {
@@ -1462,7 +1484,7 @@ export default Vue.extend({
               row[this.internalIndexColumn] = primaryValues.join(",");
             });
 
-            const data = this.dataToTableData({ rows: r }, this.tableColumns);
+            const data = this.dataToTableData({ rows: r }, this.tableColumns, offset);
             this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
             this.preLoadScrollPosition = this.tableHolder.scrollLeft
@@ -1543,11 +1565,6 @@ export default Vue.extend({
 
       this.tabulator.restoreRedraw();
 
-<<<<<<< HEAD
-      this.columnsWithFilterAndOrder = columns
-
-=======
->>>>>>> master
       this.tabulator.redraw(true)
     }
   }
