@@ -8,6 +8,9 @@ import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from 'electron-log'
 import querystring from 'query-string'
 
+
+const remoteMain = require('@electron/remote/main')
+
 const log = rawLog.scope('WindowBuilder')
 
 const windows: BeekeeperWindow[] = []
@@ -39,7 +42,6 @@ class BeekeeperWindow {
       titleBarStyle,
       frame: showFrame,
       webPreferences: {
-        enableRemoteModule: true,
         nodeIntegration: Boolean(process.env.ELECTRON_NODE_INTEGRATION),
         contextIsolation: false,
         spellcheck: false
@@ -52,7 +54,7 @@ class BeekeeperWindow {
     const query = openOptions ? querystring.stringify(openOptions) : null
 
     appUrl = query ? `${appUrl}?${query}` : appUrl
-
+    remoteMain.enable(this.win.webContents)
     this.win.webContents.zoomLevel = Number(settings.zoomLevel?.value) || 0
     if (!runningInWebpack) {
       createProtocol('app')
@@ -70,6 +72,13 @@ class BeekeeperWindow {
       const u = new URL(url)
       u.searchParams.append('ref', 'bks-app')
       electron.shell.openExternal(u.toString());
+    })
+
+    this.win.webContents.on('ipc-message', (e, channel, ...args) => {
+      if(channel === 'setWindowTitle') {
+        this.win.setTitle(args[0])
+        e.preventDefault()
+      }
     })
   }
 

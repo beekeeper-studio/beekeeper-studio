@@ -1,5 +1,5 @@
 <template>
-  <div class="schema-wrapper">
+  <div class="schema-wrapper" @contextmenu="$emit('contextmenu', $event)">
     <div class="folder-group schema" v-if="!skipDisplay">
       <a class="folder-btn" :class="{'open': expanded}" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
         <span class="btn-fab open-close" >

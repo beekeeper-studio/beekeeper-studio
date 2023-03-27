@@ -4,21 +4,37 @@ import { Module } from "vuex";
 import { PinnedEntity } from "../../common/appdb/models/PinnedEntity";
 import { State as RootState } from '../index'
 interface State {
-  pins: PinnedEntity[]
+  pins: PinnedEntity[],
+  sortBy: 'position' | 'entityName',
+  sortOrder: 'asc'  | 'desc',
 }
 
 export const PinModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
-    pins: []
+    pins: [],
+    sortBy: 'entityName',
+    sortOrder: 'desc'
   }),
   getters: {
+    pinnSortBy(state: State): 'position' | 'entityName' {
+      return state.sortBy;
+    },
+    pinnSortOrder(state: State): 'asc' | 'desc' {
+      return state.sortOrder;
+    },
     pinned(state: State, _g, root): PinnedEntity[] {
       return state.pins.filter((p) => p.databaseName === root.database)
     },
     orderedPins(_state, getters, rootState): PinnedEntity[] {
       const { tables, routines } = rootState
-      return getters.pinned.sort((a, b) => a.position - b.position).map((pin) => {
+      const { sortBy,sortOrder } =_state;
+
+      const sort = sortOrder === 'desc' 
+        ? (a,b) => a[sortBy].toString().localeCompare(b[sortBy].toString())
+        : (a,b) => b[sortBy].toString().localeCompare(a[sortBy].toString())
+
+      return getters.pinned.sort(sort).map((pin) => {
         const items = [...tables, ...routines]
         const t = items.find((t) => pin.matches(t))
         if (t) pin.entity = t
@@ -38,7 +54,13 @@ export const PinModule: Module<State, RootState> = {
     },
     remove(state, pin: PinnedEntity) {
       state.pins = _.without(state.pins, pin)
-    }
+    },
+    setSortBy(state, sortBy: 'position' | 'entityName') {
+      state.sortBy = sortBy;
+    },
+    setSortOrder(state, sortOrder: 'asc' | 'desc') {
+      state.sortOrder = sortOrder
+    },
   },
   actions: {
     async loadPins(context) {
@@ -93,5 +115,5 @@ export const PinModule: Module<State, RootState> = {
       }
     }
   }
-  
+
 }

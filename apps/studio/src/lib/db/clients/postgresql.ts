@@ -1,3 +1,4 @@
+
 // Copyright (c) 2015 The SQLECTRON Team
 
 import { readFileSync } from 'fs';
@@ -8,16 +9,17 @@ import _  from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
-import { DatabaseClient, IDbConnectionServerConfig } from '../client'
+import { DatabaseClient, IDbConnectionServerConfig, DatabaseElement } from '../client'
+import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from '../authentication/amazon-redshift';
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
+import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries, applyChangesSql } from './utils';
 import { createCancelablePromise } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
-import { AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 
@@ -47,11 +49,17 @@ function tableName(table: string, schema?: string): string{
 /**
  * Do not convert DATE types to JS date.
  * It ignores of applying a wrong timezone to the date.
+ *
+ * See also: https://github.com/brianc/node-postgres/issues/285
+ * (and note that the code refrenced in /lib/textParsers.js has been broken out into it own module
+ * so it now lives in https://github.com/brianc/node-pg-types/blob/master/lib/textParsers.js#L175)
+ *
  * TODO: do not convert as well these same types with array (types 1115, 1182, 1185)
  */
-pg.types.setTypeParser(1082, 'text', (val) => val); // date
-pg.types.setTypeParser(1114, 'text', (val) => val); // timestamp without timezone
-pg.types.setTypeParser(1184, 'text', (val) => val); // timestamp
+pg.types.setTypeParser(pg.types.builtins.DATE,        'text', (val) => val); // date
+pg.types.setTypeParser(pg.types.builtins.TIMESTAMP,   'text', (val) => val); // timestamp without timezone
+pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, 'text', (val) => val); // timestamp
+pg.types.setTypeParser(pg.types.builtins.INTERVAL,    'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
 
 /**
  * Convert BYTEA type encoded to hex with '\x' prefix to BASE64 URL (without '+' and '=').
@@ -79,22 +87,25 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
       isPostgres: false,
       isCockroach: false,
       isRedshift: false,
-      number: 0
+      number: 0,
+      hasPartitions: false
     }
   }
 
   const isCockroach = version.toLowerCase().includes('cockroachdb')
   const isRedshift = version.toLowerCase().includes('redshift')
   const isPostgres = !isCockroach && !isRedshift
+  const number = parseInt(
+      version.split(" ")[isPostgres ? 1 : 2].replace(/(^v)|(,$)/ig, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
+      10
+    );
   return {
     version,
     isPostgres,
     isCockroach,
     isRedshift,
-    number: parseInt(
-      version.split(" ")[isPostgres ? 1 : 2].replace(/^v/i, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
-      10
-    )
+    number, 
+    hasPartitions: (isPostgres && number >= 100000) //for future cochroach support?: || (isCockroach && number >= 200070)
   }
 }
 
@@ -134,7 +145,7 @@ async function getTypes(conn: HasPool): Promise<any> {
 
 
 export default async function (server: any, database: any): Promise<DatabaseClient> {
-  const dbConfig = configDatabase(server, database);
+  const dbConfig = await configDatabase(server, database);
   logger().debug('create driver client for postgres with config %j', dbConfig);
 
   const conn: HasPool = {
@@ -142,14 +153,13 @@ export default async function (server: any, database: any): Promise<DatabaseClie
   };
 
   logger().debug('connected');
-  const defaultSchema = await getSchema(conn);
+  const defaultSchema: string = await getSchema(conn);
   logger().debug(`loaded schema ${defaultSchema}`)
   dataTypes = await getTypes(conn)
 
   const version = await getVersion(conn)
 
-  const features = version.isRedshift ? { customRoutines: true, comments: false, properties: false } : { customRoutines: true, comments: true, properties: true}
-
+  const features = version.isRedshift ? { customRoutines: true, comments: false, properties: false, partitions: false } : { customRoutines: true, comments: true, properties: true, partitions: version.hasPartitions}
 
 
   return {
@@ -157,6 +167,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     supportedFeatures: () => features,
     versionString: () => getVersionString(version),
     wrapIdentifier,
+    defaultSchema: () => defaultSchema,
     disconnect: () => disconnect(conn),
     listTables: (_db: string, filter: FilterOptions | undefined) => listTables(conn, filter),
     listViews: (filter?: FilterOptions) => listViews(conn, filter),
@@ -167,6 +178,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     listTableTriggers: (table, schema = defaultSchema) => listTableTriggers(conn, table, schema),
     listTableIndexes: (_db, table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
     listSchemas: (_db, filter?: SchemaFilterOptions) => listSchemas(conn, filter),
+    listTablePartitions: (table) => listTablePartitions(conn, table),
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
@@ -178,13 +190,21 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getTableLength: (table: string, schema: string) => getTableLength(conn, table, schema),
     selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema, selects: string[] = ['*']) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (database: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema: string = defaultSchema) => selectTopStream(conn, database, table, orderBy, filters, chunkSize, schema),
+    applyChangesSql: (changes: TableChanges): string => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert: TableInsert): Promise<string> => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
     getTableCreateScript: (table, schema = defaultSchema) => getTableCreateScript(conn, table, schema),
     getViewCreateScript: (view, schema = defaultSchema) => getViewCreateScript(conn, view, schema),
+    getMaterializedViewCreateScript: (view, schema = defaultSchema) => getMaterializedViewCreateScript(conn, view, schema),
     getRoutineCreateScript: (routine, type, schema = defaultSchema) => getRoutineCreateScript(conn, routine, type, schema),
     truncateAllTables: (_, schema = defaultSchema) => truncateAllTables(conn, schema),
     getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
+
+    // db creation
+    listCharsets: async() => PD.charsets,
+    getDefaultCharset: async() => 'UTF8',
+    listCollations: async() => [],
+    createDatabase: (databaseName, charset) => createDatabase(conn, databaseName, charset),
 
     // alter tables
     alterTableSql: (change: AlterTableSpec) => alterTableSql(conn, change),
@@ -198,11 +218,14 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     alterRelationSql: (payload) => alterRelationSql(payload),
     alterRelation: (payload) => alterRelation(conn, payload),
 
+    alterPartitionSql: (payload) => alterPartitionSql(payload),
+    alterPartition: (payload) => alterPartition(conn, payload),
+
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
+    dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string|null) => dropElement(conn, elementName, typeOfElement, schema),
+    truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema)
   };
 }
-
-
 
 
 export function disconnect(conn: HasPool) {
@@ -211,19 +234,64 @@ export function disconnect(conn: HasPool) {
 
 export async function listTables(conn: HasPool, filter: FilterOptions = { schema: 'public' }) {
   const schemaFilter = buildSchemaFilter(filter, 'table_schema');
-  const sql = `
+  // @Day: selecting all tables that are not partitions
+  const version = await getVersion(conn);
+  let sql = `
     SELECT
-      table_schema as schema,
-      table_name as name
-    FROM information_schema.tables
-    WHERE table_type NOT LIKE '%VIEW%'
+      t.table_schema as schema,
+      t.table_name as name,
+  `;
+
+  if (version.hasPartitions) {
+    // TODO (day): when we support more dbs for partitioning, we will need to construct a different query for cockroach.
+    sql += `
+        pc.relkind as tabletype
+      FROM information_schema.tables AS t 
+      LEFT OUTER JOIN pg_inherits AS i
+      ON t.table_name::text = i.inhrelid::regclass::text
+      LEFT OUTER JOIN pg_class AS pc
+      ON t.table_name = pc.relname
+      WHERE t.table_type NOT LIKE '%VIEW%'
+      AND i.inhrelid::regclass IS NULL
+    `;
+  } else {
+    sql += `
+        'r' as tabletype
+      FROM information_schema.tables AS t 
+      WHERE t.table_type NOT LIKE '%VIEW%'
+    `;
+  }
+  sql += `
     ${schemaFilter ? `AND ${schemaFilter}` : ''}
-    ORDER BY table_schema, table_name
+    ORDER BY t.table_schema, t.table_name
   `;
 
   const data = await driverExecuteSingle(conn, { query: sql });
 
   return data.rows;
+}
+
+export async function listTablePartitions(conn: HasPool, tableName: string) {
+  const version = await getVersion(conn);
+  // only postgres will pass this canary for now.
+  if (!version.hasPartitions) return null;
+  
+  const sql = knex.raw(`
+    SELECT 
+      ps.schemaname AS schema,
+      ps.relname AS name,
+      pg_get_expr(pt.relpartbound, pt.oid, true) AS expression
+    FROM pg_class base_tb
+      JOIN pg_inherits i ON i.inhparent = base_tb.oid
+      JOIN pg_class pt ON pt.oid = i.inhrelid
+      JOIN pg_stat_all_tables ps ON ps.relid = i.inhrelid
+    WHERE base_tb.oid = ?::regclass
+  `, [tableName]).toQuery();
+
+  const data = await driverExecuteSingle(conn, { query: sql });
+
+  return data.rows;
+  
 }
 
 export async function listViews(conn: HasPool, filter: FilterOptions = { schema: 'public' }) {
@@ -526,6 +594,7 @@ export async function listTableColumns(
   if (table && !schema) {
     throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`)
   }
+  const column_comment_clause = table ? "col_description(($1 || '.' || $2)::regclass, ordinal_position) as column_comment," : ""
 
   const sql = `
     SELECT
@@ -535,6 +604,7 @@ export async function listTableColumns(
       is_nullable,
       ordinal_position,
       column_default,
+      ${column_comment_clause}
       CASE
         WHEN character_maximum_length is not null  and udt_name != 'text'
           THEN CONCAT(udt_name, concat('(', concat(character_maximum_length::varchar(255), ')')))
@@ -557,6 +627,7 @@ export async function listTableColumns(
     nullable: row.is_nullable === 'YES',
     defaultValue: row.column_default,
     ordinalPosition: Number(row.ordinal_position),
+    comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
   }));
 }
 
@@ -767,10 +838,6 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
   }
   const identifier = wrapTable(table, schema)
 
-
-
-
-
   const statements = [
     `pg_indexes_size('${identifier}') as index_size`,
       `pg_relation_size('${identifier}') as table_size`,
@@ -787,18 +854,21 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     Promise.resolve({ rows:[]})
 
   const triggersPromise = version.isPostgres ? listTableTriggers(conn, table, schema) : Promise.resolve([])
+  const partitionsPromise = version.isPostgres ? listTablePartitions(conn, table) : Promise.resolve([]);
 
   const [
     result,
     indexes,
     relations,
     triggers,
+    partitions,
     owner
   ] = await Promise.all([
     detailsPromise,
     listTableIndexes(conn, table, schema),
     getTableKeys(conn, "", table, schema),
     triggersPromise,
+    partitionsPromise,
     getTableOwner(conn, table, schema)
   ])
 
@@ -810,6 +880,7 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     indexes,
     relations,
     triggers,
+    partitions,
     owner
   }
 
@@ -1029,6 +1100,20 @@ export async function alterRelation(conn, payload: RelationAlterations): Promise
 }
 
 
+export function alterPartitionSql(payload: AlterPartitionsSpec): string {
+  const { table } = payload;
+  const builder = new PostgresqlChangeBuilder(table);
+  const creates = builder.createPartitions(payload.adds);
+  const alters = builder.alterPartitions(payload.alterations);
+  const detaches = builder.detachPartitions(payload.detaches);
+  return [creates, alters, detaches].filter((f) => !!f).join(";")
+}
+
+export async function alterPartition(conn, payload: AlterPartitionsSpec): Promise<void> {
+  const query = alterPartitionSql(payload)
+  await executeWithTransaction(conn, { query });
+}
+
 export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {
   const identifier = wrapTable(table, schema)
   const comment  = escapeString(description)
@@ -1043,6 +1128,7 @@ async function insertRows(cli: any, rawInserts: TableInsert[]) {
     return listTableColumns(cli, null, insert.table, insert.schema)
   }))
 
+  // expect({ insertRows: "rawInserts"}).toEqual(rawInserts)
   const fixedInserts = rawInserts.map((insert, idx) => {
     const result = { ...insert}
     const columns = columnsList[idx]
@@ -1189,7 +1275,8 @@ export async function listDatabases(conn: Conn, filter?: DatabaseFilterOptions) 
 
 export async function getInsertQuery(conn: HasPool, database: string, tableInsert: TableInsert): Promise<string> {
   const columns = await listTableColumns(conn, database, tableInsert.table, tableInsert.schema)
-  return buildInsertQuery(knex, tableInsert, columns)
+
+  return buildInsertQuery(knex, tableInsert, columns, _.toString)
 }
 
 export function getQuerySelectTop(_conn: Conn, table: string, limit: number, schema: string) {
@@ -1287,6 +1374,18 @@ export async function getViewCreateScript(conn: Conn, view: string, schema: stri
   return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
 }
 
+export async function getMaterializedViewCreateScript(conn: Conn, view: string, schema: string) {
+  const createViewSql = `CREATE OR REPLACE MATERIALIZED VIEW ${wrapIdentifier(schema)}.${view} AS`;
+
+  const sql = 'SELECT pg_get_viewdef($1::regclass, true)';
+
+  const params = [view];
+
+  const data = await driverExecuteSingle(conn, { query: sql, params });
+
+  return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
+}
+
 export async function getRoutineCreateScript(conn: Conn, routine: string, _: string, schema: string) {
   const sql = `
     SELECT pg_get_functiondef(p.oid)
@@ -1347,8 +1446,39 @@ export async function truncateAllTables(conn: Conn, schema: string) {
   });
 }
 
+export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
 
-function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
+    await driverExecuteSingle(connClient, { query: sql })
+  });
+}
+
+export async function createDatabase(conn, databaseName, charset) {
+  const {isPostgres, number: versionAsInteger } = await getVersion(conn)
+
+  let sql = `create database ${wrapIdentifier(databaseName)} encoding ${wrapIdentifier(charset)}`;
+
+  // postgres 9 seems to freak out if the charset isn't wrapped in single quotes and also requires the template https://www.postgresql.org/docs/9.3/sql-createdatabase.html
+  // later version don't seem to care
+  if (isPostgres && versionAsInteger < 100000) {
+    sql = `create database ${wrapIdentifier(databaseName)} encoding '${charset}' template template0`;
+  }
+
+  await driverExecuteQuery(conn, { query: sql })
+}
+
+export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
+
+    await driverExecuteSingle(connClient, { query: sql })
+  });
+}
+
+async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
 
   let optionsString = undefined
   if (server.config.client === 'cockroachdb') {
@@ -1358,10 +1488,47 @@ function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServe
     }
   }
 
+  // If a temporary user is used to connect to the database, we populate it below.
+  let tempUser: string;
+
+  // If the password for the database can expire, we populate passwordResolver with a callback
+  // that can be used to resolve the latest password.
+  let passwordResolver: () => Promise<string>;
+
+  // For Redshift Only -- IAM authentication and credential exchange
+  const redshiftOptions = server.config.redshiftOptions;
+  if (server.config.client === 'redshift' && redshiftOptions?.iamAuthenticationEnabled) {
+    const awsCreds: AWSCredentials = {
+      accessKeyId: redshiftOptions.accessKeyId,
+      secretAccessKey: redshiftOptions.secretAccessKey
+    };
+
+    const clusterConfig: ClusterCredentialConfiguration = {
+      awsRegion: redshiftOptions.awsRegion,
+      clusterIdentifier: redshiftOptions.clusterIdentifier,
+      dbName: database.database,
+      dbUser: server.config.user,
+      dbGroup: redshiftOptions.databaseGroup,
+      durationSeconds: server.config.options.tokenDurationSeconds
+    };
+
+    const credentialResolver = RedshiftCredentialResolver.getInstance();
+
+    // We need resolve credentials once to get the temporary database user, which does not change
+    // on each call to get credentials.
+    // This is usually something like "IAMA:<user>" or "IAMA:<user>:<group>".
+    tempUser = (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbUser;
+
+    // Set the password resolver to resolve the Redshift credentials and return the password.
+    passwordResolver = async() => {
+      return (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbPassword;
+    }
+  }
+
   const config: PoolConfig = {
     host: server.config.host,
     port: server.config.port || undefined,
-    password: server.config.password || undefined,
+    password: passwordResolver || server.config.password || undefined,
     database: database.database,
     max: 5, // max idle connections per time (30 secs)
     connectionTimeoutMillis: globals.psqlTimeout,
@@ -1371,7 +1538,9 @@ function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServe
     options: optionsString
   };
 
-  if (server.config.user) {
+  if (tempUser) {
+    config.user = tempUser
+  } else if (server.config.user) {
     config.user = server.config.user
   } else if (server.config.osUser) {
     config.user = server.config.osUser

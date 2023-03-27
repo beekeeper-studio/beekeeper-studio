@@ -27,7 +27,7 @@
     },
     data() {
       return {
-        snap: "http://docs.beekeeperstudio.io/troubleshooting/#i-get-permission-denied-when-trying-to-access-a-database-on-an-external-drive"
+        snap: "https://docs.beekeeperstudio.io/pages/troubleshooting#i-get-permission-denied-when-trying-to-access-a-database-on-an-external-drive"
       }
     }
   }

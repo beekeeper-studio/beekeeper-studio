@@ -110,10 +110,8 @@ export default Vue.extend({
       return results
     },
     defaultSchema() {
-      if (this.dialect === 'postgresql') return 'public'
-      if (this.dialect === 'redshift') return 'public'
-      if (this.dialect === 'sqlserver') return 'dbo'
-      return undefined
+      return this.connection.defaultSchema ?
+        this.connection.defaultSchema() : undefined
     },
     fixedSchema(): string | undefined {
       if (_.isNil(this.tableSchema) || _.isEmpty(this.tableSchema)) {

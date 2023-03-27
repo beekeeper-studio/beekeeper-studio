@@ -27,7 +27,7 @@
                 <postgres-form v-if="config.connectionType === 'cockroachdb'" :config="config" :testing="testing"></postgres-form>
                 <mysql-form v-if="['mysql', 'mariadb'].includes(config.connectionType)" :config="config" :testing="testing" @save="save" @test="testConnection" @connect="submit"></mysql-form>
                 <postgres-form v-if="config.connectionType === 'postgresql'" :config="config" :testing="testing"></postgres-form>
-                <postgres-form v-if="config.connectionType === 'redshift'" :config="config" :testing="testing"></postgres-form>
+                <redshift-form v-if="config.connectionType === 'redshift'" :config="config" :testing="testing"></redshift-form>
                 <sqlite-form v-if="config.connectionType === 'sqlite'" :config="config" :testing="testing"></sqlite-form>
                 <sql-server-form v-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"></sql-server-form>
                 <other-database-notice v-if="config.connectionType === 'other'" />
@@ -52,7 +52,7 @@
             </form>
 
           </div>
-          <div class="pitch" v-if="!config.connectionType"><span class="badge badge-primary">NEW</span> Check out <a href="https://beekeeperstudio.io/get#ultimate-features" class="">Beekeeper Studio Ultimate Edition</a></div>
+          <div class="pitch" v-if="!config.connectionType"><span class="badge badge-primary">New</span> Upgrade to the full version of Beekeeper Studio for even more great features. <a href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition" class="">Get Started Free</a></div>
         </div>
 
         <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{version}}</a></small>
@@ -67,6 +67,7 @@
   import ConnectionSidebar from './sidebar/ConnectionSidebar'
   import MysqlForm from './connection/MysqlForm'
   import PostgresForm from './connection/PostgresForm'
+  import RedshiftForm from './connection/RedshiftForm'
   import Sidebar from './common/Sidebar'
   import SqliteForm from './connection/SqliteForm'
   import SqlServerForm from './connection/SqlServerForm'
@@ -77,16 +78,16 @@
   import platformInfo from '@/common/platform_info'
   import ErrorAlert from './common/ErrorAlert.vue'
   import rawLog from 'electron-log'
-import { mapGetters, mapState } from 'vuex'
-import { dialectFor } from '@shared/lib/dialects/models'
-import { findClient } from '@/lib/db/clients'
-import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
+  import { mapGetters, mapState } from 'vuex'
+  import { dialectFor } from '@shared/lib/dialects/models'
+  import { findClient } from '@/lib/db/clients'
+  import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
 
   const log = rawLog.scope('ConnectionInterface')
   // import ImportUrlForm from './connection/ImportUrlForm';
 
   export default {
-    components: { ConnectionSidebar, MysqlForm, PostgresForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OtherDatabaseNotice, },
+    components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OtherDatabaseNotice, },
 
     data() {
       return {
@@ -152,6 +153,8 @@ import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
         await this.$store.commit('workspace', this.$store.state.localWorkspace)
       }
       await this.$store.dispatch('loadUsedConfigs')
+      await this.$store.dispatch('pinnedConnections/loadPins')
+      await this.$store.dispatch('pinnedConnections/reorder', this.$store.state.pinnedConnections.pins)
       this.config.sshUsername = os.userInfo().username
       this.$nextTick(() => {
         const components = [
@@ -203,6 +206,7 @@ import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
         if (this.config === config) {
           this.config = new SavedConnection()
         }
+        await this.$store.dispatch('pinnedConnections/remove', config)
         await this.$store.dispatch('data/connections/remove', config)
         this.$noty.success(`${config.name} deleted`)
       },

@@ -1,11 +1,14 @@
 <template>
   <div class="list-item" @contextmenu="$emit('contextmenu', $event)">
     <a class="list-item-btn" role="button" v-bind:class="{'active': active, 'selected': selected,'open': showColumns }">
-      <span @contextmenu.prevent.stop="" class="btn-fab open-close" @mousedown.prevent="toggleColumns" >
+      <span @contextmenu.prevent.stop="" class="btn-fab open-close" @mousedown.prevent="toggleColumns">
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
       <span class="item-wrapper flex flex-middle expand" @dblclick.prevent="openTable" @mousedown="selectItem">
-        <table-icon :table="table" />
+        <div :title="draggable ? 'drag me!' : ''" class="table-item-wrapper drag-handle" :class="{ 'draggable': draggable }">
+          <table-icon :table="table" class="table-icon" />
+          <i class="material-icons item-icon dh" v-if="draggable">menu</i>
+        </div>
         <span class="table-name truncate" :title="table.name">{{table.name}}</span>
       </span>
       <span class="actions" v-bind:class="{'pinned': pinned}">
@@ -18,22 +21,38 @@
       </span>
     </a>
     <div v-if="showColumns" class="sub-items">
-      <span v-bind:key="c.columnName" v-for="(c, i) in table.columns" class="sub-item">
+      <p class="sub-item" v-if="!columnsLoading && table.columns.length === 0">No Columns</p>
+      <span v-else-if="table.columns.length > 0" v-bind:key="c.columnName" v-for="(c, i) in table.columns" class="sub-item">
         <span class="title truncate" ref="title" @click="selectColumn(i)">{{c.columnName}}</span>
         <span class="badge" v-bind:class="c.dataType"><span>{{c.dataType}}</span></span>
       </span>
+      <p class="sub-item" v-else>{{columnsLoading}}</p>
     </div>
 
   </div>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped="true">
   .sub-item {
     .title {
       user-select: text;
       cursor: pointer;
     }
   }
+  .drag-handle.draggable {
+    .dh {
+      display: none;
+    }
+    &:hover {
+      .dh {
+        display: inline-block;
+      }
+      .table-icon {
+        display: none;
+      }
+    }
+  }
+
 </style>
 
 <script type="text/javascript">
@@ -44,7 +63,7 @@ import { AppEvent } from '../../../../common/AppEvent'
 import { uuidv4 } from '../../../../lib/uuid'
 import TableIcon from '@/components/common/TableIcon.vue'
 	export default {
-		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container", "pinned"],
+		props: ["connection", "table", "noSelect", "forceExpand", "forceCollapse", "container", "pinned", "draggable"],
     components: { TableIcon },
     mounted() {
       this.showColumns = !!this.table.showColumns
@@ -107,11 +126,11 @@ import TableIcon from '@/components/common/TableIcon.vue'
         const tableSelected = this.activeTab && this.activeTab.table &&
           this.activeTab.table.name === this.table.name &&
           this.activeTab.table.schema === this.table.schema
-        
+
         return tableSelected
       },
       ...mapGetters(['selectedSidebarItem']),
-      ...mapState(['activeTab', 'database', 'config'])
+      ...mapState(['activeTab', 'database', 'config', 'columnsLoading'])
     },
     methods: {
       doNothing() {
@@ -129,15 +148,19 @@ import TableIcon from '@/components/common/TableIcon.vue'
       copyTable() {
         this.$copyText(this.table.name)
       },
-      selectTable() {
-        this.$emit('selected', this.table)
-      },
       selectColumn(i) {
         this.selectChildren(this.$refs.title[i])
       },
       async toggleColumns() {
-        this.$emit('selected', this.table)
         this.showColumns = !this.showColumns
+        // FIXME: Make this event more consistent with what is happening
+        //        We don't handle 'selection' in TableList anymore
+        if (this.showColumns)
+        {
+          this.$emit('selected', this.table)
+        } else {
+          this.$emit('unselected', this.table)
+        }
       },
       openTable() {
         if (this.clickState.openClicks > 0) {
@@ -154,6 +177,7 @@ import TableIcon from '@/components/common/TableIcon.vue'
       },
       pin() {
         this.$store.dispatch('pins/add', this.table)
+        this.$store.dispatch('updateTableColumns', this.table)
       },
       unpin() {
         this.$store.dispatch('pins/remove', this.table)

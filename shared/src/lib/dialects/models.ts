@@ -84,7 +84,8 @@ export interface DialectData {
   wrapLiteral: (s: string) => string
   disabledFeatures?: {
     informationSchema?: {
-      extra?: boolean
+      extra?: boolean,
+      comment?: boolean
     }
     tableTable?: boolean,
     alter?: {
@@ -114,7 +115,8 @@ export interface DialectData {
     infoTriggers?: string
     tableTable?: string
     query?: string
-  }
+  },
+  charsets?: string[]|null
 }
 
 export const defaultConstraintActions = [
@@ -172,6 +174,23 @@ export interface AlterTableSpec {
   alterations?: SchemaItemChange[]
   adds?: SchemaItem[]
   drops?: string[]
+}
+
+export interface PartitionExpressionChange {
+  partitionName: string
+  newValue: string
+}
+
+export interface PartitionItem {
+  name: string
+  expression: string
+}
+
+export interface AlterPartitionsSpec {
+  table: string
+  alterations?: PartitionExpressionChange[]
+  adds?: PartitionItem[]
+  detaches?: string[]
 }
 
 export interface IndexColumn {

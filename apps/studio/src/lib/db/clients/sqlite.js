@@ -5,22 +5,36 @@ import _ from 'lodash'
 import Database from 'better-sqlite3'
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
+import { makeEscape } from 'knex/lib/util/string'
 import rawLog from 'electron-log'
-import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery } from './utils';
+import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery, escapeLiteral, buildUpdateQueries, applyChangesSql } from './utils';
 import { SqliteCursor } from './sqlite/SqliteCursor';
 import { SqliteChangeBuilder } from '@shared/lib/sql/change_builder/SqliteChangeBuilder';
 import { SqliteData } from '@shared/lib/dialects/sqlite';
+import { ClientError } from '../client';
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
-const knex = knexlib({ client: 'better-sqlite3'})
+const knex = knexlib({ client: 'better-sqlite3',
+  // silence the "sqlite does not support inserting default values" warnings on every insert
+  useNullAsDefault: true,
+})
+
+// HACK (day): this is to prevent the 'str.replace is not a function' error that seems to happen with all changes.
+knex.client = Object.assign(knex.client, {
+  _escapeBinding: makeEscape({
+    escapeString(str) {
+      str = _.toString(str)
+      return str ? `'${str.replace(/'/g, "''")}'` : ''
+    }
+  })
+})
 
 const sqliteErrors = {
   CANCELED: 'SQLITE_INTERRUPT',
 };
 
 const PD = SqliteData
-
 
 export default async function (server, database) {
   const dbConfig = configDatabase(server, database);
@@ -32,9 +46,10 @@ export default async function (server, database) {
   const version = await driverExecuteQuery(conn, { query: 'SELECT sqlite_version()' });
 
   return {
-    supportedFeatures: () => ({ customRoutines: false, comments: false, properties: true }),
+    supportedFeatures: () => ({ customRoutines: false, comments: false, properties: true, partitions: false }),
     versionString: () => getVersionString(version),
     wrapIdentifier,
+    defaultSchema: () => null,
     disconnect: () => disconnect(conn),
     listTables: () => listTables(conn),
     listViews: () => listViews(conn),
@@ -55,10 +70,12 @@ export default async function (server, database) {
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize) => selectTopStream(conn, db, table, orderBy, filters, chunkSize),
+    applyChangesSql: (changes) => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
+    getMaterializedViewCreateScript:  () => Promise.resolve([]),
     getRoutineCreateScript: (routine) => getRoutineCreateScript(conn, routine),
     truncateAllTables: () => truncateAllTables(conn),
     getTableProperties: (table) => getTableProperties(conn, table),
@@ -67,6 +84,12 @@ export default async function (server, database) {
     alterTableSql: (change) => alterTableSql(conn, change),
     alterTable: (change) => alterTable(conn, change),
 
+    // db creation
+    listCharsets: () => [],
+    getDefaultCharset: () => null,
+    listCollations: (charset) => [],
+    createDatabase: (databaseName) => createDatabase(conn, databaseName),
+
     // indexes
     alterIndexSql: (adds, drops) => alterIndexSql(adds, drops),
     alterIndex: (adds, drops) => alterIndex(conn, adds, drops),
@@ -74,6 +97,10 @@ export default async function (server, database) {
     // relations
     alterRelationSql: (payload) => alterRelationSql(payload),
     alterRelation: (payload) => alterRelation(conn, payload),
+
+    // delete stuff
+    dropElement: (elementName, typeOfElement) => dropElement(conn, elementName, typeOfElement),
+    truncateElement: (elementName) => truncateElement(conn, elementName),
   };
 }
 
@@ -148,6 +175,12 @@ export function query(conn, queryText) {
             err.sqlectronError = 'CANCELED_BY_USER';
           }
 
+          if (err.message?.startsWith('no such column')) {
+            const nuError = new ClientError(`${err.message} - Check that you only use double quotes (") for identifiers, not strings`)
+            nuError.helpLink = "https://docs.beekeeperstudio.io/pages/troubleshooting#no-such-column-x"
+            throw nuError
+          }
+
           throw err;
         }
       });
@@ -202,6 +235,7 @@ export async function applyChanges(conn, changes) {
 
   return results
 }
+
 
 export async function updateValues(cli, updates) {
   const commands = updates.map(update => {
@@ -475,6 +509,24 @@ export async function truncateAllTables(conn) {
   });
 }
 
+export async function dropElement (conn, elementName, typeOfElement) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `DROP ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
+  });
+}
+
+export async function truncateElement (conn, elementName) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `Delete from ${PD.wrapIdentifier(elementName)}; vacuum;`
+
+    await driverExecuteQuery(connClient, { query: sql })
+  });
+}
+
 export async function getTableProperties(conn, table) {
 
   const [
@@ -605,6 +657,13 @@ async function runWithConnection(conn, run) {
   let db
   try {
     db = new Database(conn.dbConfig.database)
+
+    // Fix (part 1 of 2) Issue #1399 - int64s not displaying properly
+    // Binds ALL better-sqlite3 integer columns as BigInts by default
+    // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/integer.md#getting-bigints-from-the-database
+    // (Part 2 of 2 is in apps/studio/src/common/initializers/big_int_initializer.ts)
+    db.defaultSafeIntegers(true);
+
     const results = await run(db)
     return results
   } finally {
@@ -632,6 +691,16 @@ export async function executeWithTransaction(conn, queryArgs) {
 
 function getVersionString(version) {
   return version.data[0]["sqlite_version()"];
+}
+
+export async function createDatabase(conn, databaseName) {
+  // because this is a convenience for an otherwise ez-pz action, the location of the db file will be in the same location as the other .db files.
+  // If the desire for a "but I want this in another directory" is ever wanted, it can be included but for now this feels like it suits the current needs.
+  const fileLocation = conn.dbConfig.database.split('/')
+  fileLocation.pop()
+
+  const db = new Database(`${fileLocation.join('/')}/${databaseName}.db`)
+  db.close()
 }
 
 

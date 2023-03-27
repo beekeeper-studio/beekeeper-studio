@@ -7,7 +7,18 @@ import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
 import _, { defaults } from 'lodash';
 
-import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries } from './utils';
+import { buildDatabseFilter,
+  buildDeleteQueries,
+  buildInsertQuery,
+  buildInsertQueries,
+  buildSchemaFilter,
+  buildSelectQueriesFromUpdates,
+  buildUpdateQueries,
+  escapeString,
+  joinQueries,
+  escapeLiteral,
+  applyChangesSql
+} from './utils';
 import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
 import { SqlServerData } from '@shared/lib/dialects/sqlserver';
@@ -38,9 +49,10 @@ export default async function (server, database) {
   const version = await getVersion(conn);
 
   return {
-    supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true}),
+    supportedFeatures: () => ({ customRoutines: true, comments: true, properties: true, partitions: false}),
     versionString: () => getVersionString(version),
     wrapIdentifier,
+    defaultSchema: () => 'dbo',
     disconnect: () => disconnect(conn),
     listTables: (db, filter) => listTables(conn, filter),
     listViews: (filter) => listViews(conn, filter),
@@ -54,6 +66,7 @@ export default async function (server, database) {
     getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema) => getPrimaryKey(conn, db, table, schema),
     getPrimaryKeys: (db, table, schema) => getPrimaryKeys(conn, db, table, schema),
+    applyChangesSql: (changes) => applyChangesSql(changes, knex),
     applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText) => query(conn, queryText),
     executeQuery: (queryText) => executeQuery(conn, queryText),
@@ -65,6 +78,7 @@ export default async function (server, database) {
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
+    getMaterializedViewCreateScripts: () => Promise.resolve([]),
     getRoutineCreateScript: (routine) => getRoutineCreateScript(conn, routine),
     truncateAllTables: () => truncateAllTables(conn),
     getTableProperties: (table, schema) => getTableProperties(conn, table, schema),
@@ -73,6 +87,21 @@ export default async function (server, database) {
     alterTableSql: (change) => alterTableSql(conn, change),
     alterTable: (change) => alterTable(conn, change),
 
+    // db creation
+    /*
+      SQL Server doesn't use character sets as these are part of the collation used (set at server or as you please)
+      https://stackoverflow.com/questions/7781103/sql-server-set-character-set-not-collation
+    */
+    listCharsets: () => [],
+    getDefaultCharset: () => null,
+    /*
+      From https://docs.microsoft.com/en-us/sql/t-sql/statements/create-database-transact-sql?view=sql-server-ver16&tabs=sqlpool: 
+      Collation name can be either a Windows collation name or a SQL collation name. If not specified, the database is assigned the default collation of the instance of SQL Server
+
+      Having this, going to keep collations at the default because there are literally thousands of options
+    */
+    listCollations: (charset) => [],
+    createDatabase: (databaseName) => createDatabase(conn, databaseName),
 
     // indexes
     alterIndexSql: (adds, drops) => alterIndexSql(adds, drops),
@@ -82,7 +111,9 @@ export default async function (server, database) {
     alterRelationSql: (payload) => alterRelationSql(payload),
     alterRelation: (payload) => alterRelation(conn, payload),
 
-
+    // remove things
+    dropElement: (elementName, typeOfElement, schema) => dropElement(conn, elementName, typeOfElement, schema),
+    truncateElement: (elementName, typeOfElement, schema) => truncateElement(conn, elementName, typeOfElement, schema)
   };
 }
 
@@ -256,7 +287,7 @@ export function wrapValue(value) {
 
 async function getInsertQuery(conn, database, tableInsert) {
   const columns = await listTableColumns(conn, database, tableInsert.table, tableInsert.schema)
-  return buildInsertQuery(knex, tableInsert, columns)
+  return buildInsertQuery(knex, tableInsert, columns, _.toString)
 }
 
 export function getQuerySelectTop(client, table, limit) {
@@ -763,7 +794,7 @@ export async function getTableCreateScript(conn, table) {
                  ELSE ''
           END ) + 'NULL' +
           CASE WHEN INFORMATION_SCHEMA.COLUMNS.column_default IS NOT NULL
-               THEN 'DEFAULT '+ INFORMATION_SCHEMA.COLUMNS.column_default
+               THEN ' DEFAULT '+ INFORMATION_SCHEMA.COLUMNS.column_default
                ELSE ''
           END + ',' + CHAR(13)+CHAR(10)
        FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = so.name
@@ -830,6 +861,24 @@ export async function truncateAllTables(conn) {
     `).join('');
 
     await driverExecuteQuery(connClient, { query: truncateAll, multiple: true });
+  });
+}
+
+export async function dropElement (conn, elementName, typeOfElement, schema = 'dbo') {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
+  });
+}
+
+export async function truncateElement (conn, elementName, typeOfElement, schema = 'dbo') {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = `TRUNCATE ${D.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
+
+    await driverExecuteQuery(connClient, { query: sql })
   });
 }
 
@@ -1088,6 +1137,10 @@ async function executeWithTransaction(conn, queryArgs) {
   }
 }
 
+export async function createDatabase(conn, databaseName) {
+  const sql = `create database ${wrapIdentifier(databaseName)}`;
+  await driverExecuteQuery(conn, { query: sql })
+}
 
 export const sqlServerTestOnly = {
   alterTableSql

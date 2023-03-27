@@ -25,7 +25,8 @@ export const RedshiftData: DialectData = {
       multiStatement: true
     },
     informationSchema: {
-      extra: true
+      extra: true,
+      comment: true
     },
     constraints: {
       onUpdate: true,
@@ -33,5 +34,4 @@ export const RedshiftData: DialectData = {
     },
     createIndex: true,
   }
-
 }

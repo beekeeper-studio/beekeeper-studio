@@ -61,6 +61,43 @@ export function runCommonTests(getUtil) {
     })
   })
 
+  describe("Drop Table Tests", () => {
+    beforeEach(async() => {
+      await prepareTestTable(getUtil())
+    })
+
+    test("Should delete table", async () => {
+      await getUtil().dropTableTests()
+    })
+
+    test("Bad input shouldn't delete table", async () => {
+      await getUtil().badDropTableTests()
+    })
+  })
+
+  describe("Create Database Tests", () => {
+    test("Invalid database name", async () => {
+      await getUtil().badCreateDatabaseTests()
+    })
+    
+    test("Should create database", async () => {
+      await getUtil().createDatabaseTests()
+    })
+  })
+
+  describe("Truncate Table Tests", () => {
+    beforeEach(async() => {
+      await prepareTestTable(getUtil())
+    })
+
+    test("Should truncate table", async () => {
+      await getUtil().truncateTableTests()
+    })
+
+    test("Bad input shouldn't allow table truncate", async () => {
+      await getUtil().badTruncateTableTests()
+    })
+  })
 
   describe("Table Structure", () => {
     test("should fetch table properties", async() => {
@@ -109,6 +146,16 @@ export function runCommonTests(getUtil) {
 
     test("should not commit on change error", async () => {
       await itShouldNotCommitOnChangeErrorCompositePK(getUtil())
+    })
+  })
+
+  describe("Get data modification SQL", () => {
+    beforeEach(async () => {
+      await prepareTestTable(getUtil())
+    })
+
+    test("Should generate scripts for all types of changes", () => {
+      itShouldGenerateSQLForAllChanges(getUtil())
     })
   })
 
@@ -582,4 +629,61 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
     lastName: 'Tester'
   })
 
+}
+
+export const itShouldGenerateSQLForAllChanges = function(util) {
+  const changes = {
+    inserts: [
+      {
+        table: 'test_inserts',
+        schema: util.options.defaultSchema,
+        data: [{
+          id: 1,
+          firstName: 'Tom',
+          lastName: 'Tester'
+        }]
+      },
+      {
+        table: 'test_inserts',
+        schema: util.options.defaultSchema,
+        data: [{
+          id: 2,
+          firstName: 'Jane',
+          lastName: 'Doe'
+        }]
+      }
+    ],
+    updates: [
+      {
+        table: 'test_inserts',
+        schema: util.options.defaultSchema,
+        primaryKeys: [
+          {
+            column: 'id',
+            value: 1
+          }
+        ],
+        column: 'firstName',
+        value: 'Testy'
+      }
+    ],
+    deletes: [
+      {
+        table: 'test_inserts',
+        schema: util.options.defaultSchema,
+        primaryKeys: [{
+          column: 'id', value: 2
+        }],
+      }
+    ]
+  };
+
+  const sql = util.connection.applyChangesSql(changes).toLowerCase();
+
+  expect(sql.includes('insert'));
+  expect(sql.includes('update'));
+  expect(sql.includes('delete'));
+  expect(sql.includes('test_inserts'));
+  expect(sql.includes('jane'));
+  expect(sql.includes('testy'));
 }

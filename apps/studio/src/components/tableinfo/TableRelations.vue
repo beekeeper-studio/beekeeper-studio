@@ -149,7 +149,7 @@ export default Vue.extend({
           field: 'fromColumn',
           title: "Column",
           editable,
-          editor: 'select',
+          editor: 'list',
           editorParams: {
             values: this.table.columns.map((c) => c.columnName)
           }
@@ -158,7 +158,7 @@ export default Vue.extend({
           field: 'toSchema',
           title: "FK Schema",
           editable,
-          editor: 'select' as any,
+          editor: 'list' as any,
           editorParams: {
             values: [...this.schemas]
           },
@@ -168,9 +168,10 @@ export default Vue.extend({
           field: 'toTable',
           title: "FK Table",
           editable,
-          editor: 'select',
+          editor: 'list',
           editorParams: {
-            values: this.getTables
+            // @ts-ignore
+            valuesLookup: this.getTables
           },
           cellEdited: (cell) => cell.getRow().getCell('toColumn')?.setValue(null)
 
@@ -181,7 +182,8 @@ export default Vue.extend({
           editable,
           editor: 'select',
           editorParams: {
-            values: this.getColumns
+            // @ts-ignore
+            valuesLookup: this.getColumns
           },
         },
         {
@@ -199,6 +201,7 @@ export default Vue.extend({
           title: 'On Delete',
           editable,
           editor: 'select',
+          // @ts-ignore
           editorParams: {
             values: this.dialectData.constraintActions,
             defaultValue: 'NO ACTION',
@@ -225,10 +228,10 @@ export default Vue.extend({
       return this.newRows.includes(cell.getRow())
     },
     getTables(cell: CellComponent): string[] {
-        const schema = cell.getRow().getData()['toSchema']
-        return schema ?
-          this.schemaTables.find((st) => st.schema === schema)?.tables.map((t) => t.name) :
-          this.tables.map((t) => t.name)
+      const schema = cell.getRow().getData()['toSchema']
+      return schema ?
+        this.schemaTables.find((st) => st.schema === schema)?.tables.map((t) => t.name) :
+        this.tables.map((t) => t.name)
     },
     getColumns(cell: CellComponent): string[] {
       const data = cell.getRow().getData()
@@ -339,6 +342,9 @@ export default Vue.extend({
   mounted() {
     this.tabState.dirty = false
     this.initializeTabulator()
+  },
+  beforeDestroy() {
+    this.tabulator?.destroy()
   }
 })
 </script>

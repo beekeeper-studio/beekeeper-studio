@@ -1,151 +1,94 @@
 <template>
-  <modal
-    class="vue-dialog beekeeper-modal"
-    @before-open="onBeforeOpened"
-    :name="modalName"
-    height="auto"
-    :scrollable="true"
-  >
-      <div class="dialog-content column-filter-modal">
-        <div class="dialog-c-title flex flex-middle">
-          Column Configuration
-        </div>
-        <span class="close-btn btn btn-fab">
-          <i class="material-icons" @click.prevent="closeModal">clear</i>
-        </span>
-        <div class="modal-form">
-          <div class="search-wrapper">
-            <input type="text" placeholder="Search column" v-model="searchQuery"/>
-            <span
-              class="clear"
-              @click="searchQuery = ''"
-            >
-              <i class="material-icons">cancel</i>
-            </span>
+  <portal to="modals">
+    <modal
+      class="vue-dialog beekeeper-modal"
+      @before-open="onBeforeOpened"
+      :name="modalName"
+    >
+      <form @submit.prevent="onSubmit">
+        <div class="dialog-content filter-modal">
+          <div class="dialog-c-title flex flex-middle">
+            Choose Columns To Display
           </div>
-          <div class="list-wrapper">
-            <div
-              v-show="searchQuery.length === 0"
-              class="list-item"
-            >
-              <input
-                type="checkbox"
-                ref="mainCheckbox"
-                @click="toggleSelectAllColumn()"
-                :checked="allSelected"
-              />
+          <span class="close-btn btn btn-fab">
+            <i class="material-icons" @click.prevent="closeModal">clear</i>
+          </span>
+          <div class="modal-form">
+            <div class="search-wrapper">
+              <input type="text" placeholder="Filter" v-model="searchQuery"/>
               <span
-                class="inline-flex flex-between expand all-label"
+                class="clear"
+                @click="searchQuery = ''"
               >
-                All
+                <i class="material-icons">cancel</i>
               </span>
             </div>
-            <div class="list-container">
+            <div class="list-wrapper">
               <div
-                v-for="column in searchedColumns"
-                :key="column.name"
+                v-show="searchQuery.length === 0"
                 class="list-item"
               >
-                <input type="checkbox" @click.stop="toggleSelectColumn(column)" :checked="column.filter" />
-                <span class="inline-flex flex-between expand">
-                  <span>{{column.name}}</span>
-                  <span style="opacity: 0.5">{{column.dataType}}</span>
+              <label class="checkbox-group flex-between expand">
+                <span class="input-wrapper">
+                  <input
+                    type="checkbox"
+                    ref="mainCheckbox"
+                    @click.stop="toggleSelectAllColumn"
+                    :checked="allSelected"
+                  />
+                  All
+
                 </span>
+              </label>
+                <!-- <span @click.prevent="toggleSelectAllColumn"
+                  class="inline-flex flex-between expand all-label"
+                >
+                  All
+                </span> -->
               </div>
+              <div class="list-container">
+                <div
+                  v-for="column in searchedColumns"
+                  :key="column.name"
+                  class="list-item"
+                >
+                  <label class="checkbox-group flex-between expand">
+                    <span class="input-wrapper">
+                      <input type="checkbox" @click.stop="toggleSelectColumn(column)" :checked="column.filter" />
+                      {{column.name}}
+
+                    </span>
+                    <span class="datatype ">{{column.dataType}}</span>
+
+                  </label>
+                </div>
+              </div>
+              <div class="no-matching-results" v-show="searchedColumns.length === 0">No matching results</div>
             </div>
-            <span class="no-matching-results" v-show="searchedColumns.length === 0">No matching results</span>
           </div>
         </div>
-      </div>
-      <div class="vue-dialog-buttons">
-        <button
-          class="btn btn-flat"
-          type="button"
-          @click.prevent="closeModal"
-        >
-          Cancel
-        </button>
-        <button
-          class="btn btn-primary"
-          type="submit"
-          :disabled="noneSelected"
-          @click.prevent="onSubmit"
-        >
-          Apply
-        </button>
-      </div>
-  </modal>
+        <div class="vue-dialog-buttons">
+          <button
+            class="btn btn-flat"
+            type="button"
+            @click.prevent="closeModal"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="submit"
+            :disabled="noneSelected"
+          >
+            Apply
+          </button>
+        </div>
+      </form>
+    </modal>
+  </portal>
 </template>
 
 <style lang="scss">
-
-.column-filter-modal {
-  .modal-form {
-    margin-top: 0.25rem;
-  }
-
-  .search-wrapper {
-    position: relative;
-
-    input {
-      padding-right: 26px !important;
-    }
-
-    .clear {
-      position: absolute;
-      right: 0;
-      top: 56%;
-      transform: translate(0, -50%);
-      opacity: 0.5;
-      outline: none;
-      border: 0;
-      padding: 0;
-      cursor: pointer;
-
-      i {
-        font-size: 16px;
-        width: 26px;
-      }
-    }
-  }
-
-  .list-wrapper {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    max-height: 50vh;
-    margin-top: 0.5rem;
-    font-size: 13px;
-  }
-
-  .list-container {
-    flex-grow: 0;
-    overflow-y: scroll;
-    padding-right: 0.5rem;
-  }
-
-  .no-matching-results {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 1rem;
-    text-align: center;
-  }
-
-  .list-item {
-    display: flex;
-    align-items: center;
-    padding: 0.5rem 0;
-  }
-
-  .all-label {
-    font-style: italic
-  }
-
-  .no-matching-results, .all-label {
-    opacity: 0.5;
-  }
-}
 
 </style>
 
@@ -188,7 +131,6 @@
         setTimeout(() => {
           if(changed) this.$emit('changed', this.columns)
         }, 200)
-
       },
       closeModal() {
         this.$modal.hide(this.modalName)

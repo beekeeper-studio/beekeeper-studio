@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
 import logRaw from 'electron-log'
-import { TableDelete, TableInsert, TableUpdate } from '../models'
+import { TableChanges, TableDelete, TableInsert, TableUpdate } from '../models'
 
 const log = logRaw.scope('db/util')
 
@@ -102,6 +102,17 @@ export function buildFilterString(filters, columns = []) {
   }
 }
 
+export function applyChangesSql(changes: TableChanges, knex: any): string {
+  const queries = [
+    ...buildInsertQueries(knex, changes.inserts || []),
+    ...buildUpdateQueries(knex, changes.updates || []),
+    ...buildDeleteQueries(knex, changes.deletes || [])
+  ].filter((i) => !!i && _.isString(i)).join(';')
+
+  if (queries.length) 
+    return queries.endsWith(';') ? queries : `${queries};`
+}
+
 export function buildSelectTopQuery(table, offset, limit, orderBy, filters, countTitle = 'total', columns = [], selects = ['*']) {
   log.debug('building selectTop for', table, offset, limit, orderBy, selects)
   let orderByString = ""
@@ -156,8 +167,7 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
   return await executeSelectTop(queries, conn, executor)
 }
 
-export function buildInsertQuery(knex, insert: TableInsert, columns = []) {
-
+export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitConversionFunc: any = _.toNumber) {
   const data = _.cloneDeep(insert.data)
   data.forEach((item) => {
     const insertColumns = Object.keys(item)
@@ -165,7 +175,7 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = []) {
       const matching = _.find(columns, (c) => c.columnName === ic)
       if (matching && matching.dataType && matching.dataType.startsWith('bit(')) {
         if (matching.dataType === 'bit(1)') {
-          item[ic] = _.toNumber(item[ic])
+          item[ic] = bitConversionFunc(item[ic])
         } else {
           item[ic] = parseInt(item[ic].split("'")[1], 2)
         }

@@ -18,17 +18,19 @@
         </div>
       </a>
     </li>
-    <modal :name="modalName" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened" @closed="sureClosed" @before-open="beforeOpened">
-      <div class="dialog-content">
-        <div class="dialog-c-title">Really close <span class="tab-like"><tab-icon :tab="tab" /> {{this.tab.title}}</span>?</div>
-        <p>You will lose unsaved changes</p>
-      </div>
-      <div class="vue-dialog-buttons">
-        <span class="expand"></span>
-        <button ref="no" @click.prevent="$modal.hide(modalName)" class="btn btn-sm btn-flat">Cancel</button>
-        <button @focusout="sureOpen && $refs.no && $refs.no.focus()" @click.prevent="closeForReal" class="btn btn-sm btn-primary">Close Tab</button>
-      </div>
-    </modal>
+    <portal to="modals">
+      <modal :name="modalName" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened" @closed="sureClosed" @before-open="beforeOpened">
+        <div class="dialog-content">
+          <div class="dialog-c-title">Really close <span class="tab-like"><tab-icon :tab="tab" /> {{this.tab.title}}</span>?</div>
+          <p>You will lose unsaved changes</p>
+        </div>
+        <div class="vue-dialog-buttons">
+          <span class="expand"></span>
+          <button ref="no" @click.prevent="$modal.hide(modalName)" class="btn btn-sm btn-flat">Cancel</button>
+          <button @focusout="sureOpen && $refs.no && $refs.no.focus()" @click.prevent="closeForReal" class="btn btn-sm btn-primary">Close Tab</button>
+        </div>
+      </modal>
+    </portal>
   </div>
 </template>
 <script>
@@ -91,6 +93,7 @@ import TabIcon from './tab/TabIcon.vue'
           { name: "Close", slug: 'close', handler: ({event}) => this.maybeClose(event)},
           { name: "Close Others", slug: 'close-others', handler: ({item}) => this.$emit('closeOther', item)},
           { name: 'Close All', slug: 'close-all', handler: ({item}) => this.$emit('closeAll', item)},
+          { name: "Close Tabs to Right", slug: 'close-to-right', handler: ({item}) => this.$emit('closeToRight', item)},
           { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) }
         ]
       },

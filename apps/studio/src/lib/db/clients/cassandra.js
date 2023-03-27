@@ -46,6 +46,7 @@ export default function (server, database) {
         getQuerySelectTop: (table, limit) => getQuerySelectTop(client, table, limit),
         getTableCreateScript: (table) => getTableCreateScript(client, table),
         getViewCreateScript: (view) => getViewCreateScript(client, view),
+        getMaterializedViewCreateScript: (view) => getMaterializedViewCreateScript(client, view),
         getRoutineCreateScript: (routine) => getRoutineCreateScript(client, routine),
         truncateAllTables: (db) => truncateAllTables(client, db),
       });
@@ -188,6 +189,10 @@ export function getTableCreateScript() {
 }
 
 export function getViewCreateScript() {
+  return Promise.resolve([]);
+}
+
+export function getMaterializedViewCreateScript() {
   return Promise.resolve([]);
 }
 

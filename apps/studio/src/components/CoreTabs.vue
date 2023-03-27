@@ -13,6 +13,7 @@
           @close="close"
           @closeAll="closeAll"
           @closeOther="closeOther"
+          @closeToRight="closeToRight"
           @duplicate="duplicate"
           ></core-tab-header>
       </Draggable>
@@ -60,6 +61,19 @@
 
       </div>
     </div>
+    <portal to="modals">
+      <modal :name="modalName" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened" @closed="sureClosed" @before-open="beforeOpened">
+        <div class="dialog-content">
+          <div class="dialog-c-title">Really {{this.dbAction | titleCase}} <span class="tab-like"><tab-icon :tab="tabIcon" /> {{this.dbElement}}</span>?</div>
+          <p>This change cannot be undone</p>
+        </div>
+        <div class="vue-dialog-buttons">
+          <span class="expand"></span>
+          <button ref="no" @click.prevent="$modal.hide(modalName)" class="btn btn-sm btn-flat">Cancel</button>
+          <button @focusout="sureOpen && $refs.no && $refs.no.focus()" @click.prevent="completeDeleteAction" class="btn btn-sm btn-primary">{{this.titleCaseAction}} {{this.dbElement}}</button>
+        </div>
+      </modal>
+    </portal>
   </div>
 </template>
 
@@ -77,10 +91,12 @@
   import { mapGetters, mapState } from 'vuex'
   import Draggable from 'vuedraggable'
   import ShortcutHints from './editor/ShortcutHints.vue'
-import { FormatterDialect } from '@shared/lib/dialects/models';
-import Vue from 'vue';
-import { OpenTab } from '@/common/appdb/models/OpenTab';
-import TabWithTable from './common/TabWithTable.vue';
+  import { FormatterDialect } from '@shared/lib/dialects/models';
+  import Vue from 'vue';
+  import { OpenTab } from '@/common/appdb/models/OpenTab';
+  import TabWithTable from './common/TabWithTable.vue';
+  import TabIcon from './tab/TabIcon.vue'
+  import { DatabaseEntity } from "@/lib/db/models"
 
   export default Vue.extend({
     props: [ 'connection' ],
@@ -93,7 +109,8 @@ import TabWithTable from './common/TabWithTable.vue';
       Draggable,
       ShortcutHints,
       TableBuilder,
-        TabWithTable,
+      TabWithTable,
+      TabIcon,
     },
     data() {
       return {
@@ -102,14 +119,40 @@ import TabWithTable from './common/TabWithTable.vue';
         dragOptions: {
           handle: '.nav-item'
         },
+        // below are connected to the modal for delete/truncate
+        sureOpen: false,
+        lastFocused: null,
+        dbAction: null,
+        dbElement: null,
+        dbEntityType: null,
+        dbDeleteElementParams: null
       }
     },
     watch: {
 
     },
+    filters: {
+      titleCase: function (value) {
+        if (!value) return ''
+        value = value.toString()
+        return value.charAt(0).toUpperCase() + value.slice(1)
+      }
+    },
     computed: {
       ...mapState('tabs', { 'activeTab': 'active'}),
       ...mapGetters({ 'menuStyle': 'settings/menuStyle', 'dialect': 'dialect'}),
+      tabIcon() {
+        return {
+          type: this.dbEntityType,
+          entityType: this.dbEntityType
+        }
+      },
+      titleCaseAction() {
+        return _.capitalize(this.dbAction)
+      },
+      modalName() {
+        return "dropTruncateModal"
+      },
       tabItems: {
         get() {
           return this.$store.getters['tabs/sortedTabs']
@@ -131,6 +174,10 @@ import TabWithTable from './common/TabWithTable.vue';
           { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
           { event: 'favoriteClick', handler: this.favoriteClick },
           { event: 'exportTable', handler: this.openExportModal },
+          { event: AppEvent.hideEntity, handler: this.hideEntity },
+          { event: AppEvent.hideSchema, handler: this.hideSchema },
+          { event: AppEvent.deleteDatabaseElement, handler: this.deleteDatabaseElement },
+          { event: AppEvent.dropDatabaseElement, handler: this.dropDatabaseElement },
         ]
       },
       contextOptions() {
@@ -138,6 +185,7 @@ import TabWithTable from './common/TabWithTable.vue';
           { name: "Close", slug: 'close', handler: ({item}) => this.close(item)},
           { name: "Close Others", slug: 'close-others', handler: ({item}) => this.closeOther(item)},
           { name: 'Close All', slug: 'close-all', handler: this.closeAll},
+          { name: "Close Tabs to Right", slug: 'close-to-right', handler: ({item}) => this.closeToRight(item)},
           { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.duplicate(item)}
         ]
       },
@@ -157,9 +205,52 @@ import TabWithTable from './common/TabWithTable.vue';
         }
 
         return result
-      }
+      },
     },
     methods: {
+      completeDeleteAction() {
+        const { schema, name: dbName, entityType } = this.dbDeleteElementParams
+        if (entityType !== 'table' && this.dbAction == 'truncate') {
+          this.$noty.warning("Sorry, you can only truncate tables.")
+          return;
+        }
+        this.$modal.hide(this.modalName)
+        this.$nextTick(async() => {
+          try {
+            if (this.dbAction.toLowerCase() === 'drop') {
+              await this.connection.dropElement(dbName, entityType?.toUpperCase(), schema)
+              // timeout is more about aesthetics so it doesn't refresh the table right away.
+
+              setTimeout(() => {
+                this.$store.dispatch('updateTables')
+                this.$store.dispatch('updateRoutines')
+              }, 500)
+            }
+
+            if (this.dbAction.toLowerCase() === 'truncate') {
+              await this.connection.truncateElement(dbName, entityType?.toUpperCase(), schema)
+            }
+
+            this.$noty.success(`${this.dbAction} completed successfully`)
+
+          } catch (ex) {
+            this.$noty.error(`Error performing ${this.dbAction}: ${ex.message}`)
+          }
+        })
+      },
+      beforeOpened() {
+        this.lastFocused = document.activeElement
+      },
+      sureOpened() {
+        this.sureOpen = true
+        this.$refs.no.focus()
+      },
+      sureClosed() {
+        this.sureOpen = false
+        if (this.lastFocused) {
+          this.lastFocused.focus()
+        }
+      },
       openContextMenu(event, item) {
         this.contextEvent = { event, item }
       },
@@ -171,12 +262,13 @@ import TabWithTable from './common/TabWithTable.vue';
             return this.closeOther(item)
           case 'close-all':
             return this.closeAll();
+          case 'close-to-right':
+            return this.closeToRight(item);
           case 'duplicate':
             return this.duplicate(item);
         }
       },
       async setActiveTab(tab) {
-        console.log("setting active tab", tab)
         await this.$store.dispatch('tabs/setActive', tab)
       },
       async addTab(item: OpenTab) {
@@ -222,7 +314,8 @@ import TabWithTable from './common/TabWithTable.vue';
       async loadTableCreate(table) {
         let method = null
         if (table.entityType === 'table') method = this.connection.getTableCreateScript
-        if (table.entityType === 'view') method = this.connection.getViewCreateScript
+        else if (table.entityType === 'view') method = this.connection.getViewCreateScript
+        else if (table.entityType === 'materialized-view') method = this.connection.getMaterializedViewCreateScript
         if (!method) {
           this.$noty.error(`Can't find script for ${table.name} (${table.entityType})`)
           return
@@ -231,8 +324,16 @@ import TabWithTable from './common/TabWithTable.vue';
         const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
         this.createQuery(stringResult)
       },
+      dropDatabaseElement({ item: dbActionParams, action: dbAction }) {
+        this.dbElement = dbActionParams.name
+        this.dbAction = dbAction
+        this.dbEntityType = dbActionParams.entityType
+        this.dbDeleteElementParams = dbActionParams
+
+        this.$modal.show(this.modalName)
+      },
       async loadRoutineCreate(routine) {
-        const result = await this.connection.getRoutineCreateScript(routine.name, routine.schema)
+        const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema)
         const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
         this.createQuery(stringResult)
       },
@@ -247,10 +348,8 @@ import TabWithTable from './common/TabWithTable.vue';
         t.tableName = table.name
         t.schemaName = table.schema
         t.title = table.name
-
         const existing = this.tabItems.find((tab) => tab.matches(t))
         if (existing) return this.$store.dispatch('tabs/setActive', existing)
-
         this.addTab(t)
       },
       openTable({ table, filter}) {
@@ -268,6 +367,12 @@ import TabWithTable from './common/TabWithTable.vue';
       openExportModal(options) {
         this.tableExportOptions = options
         this.showExportModal = true
+      },
+      hideEntity(entity: DatabaseEntity) {
+        this.$store.dispatch('hideEntities/addEntity', entity)
+      },
+      hideSchema(schema: string) {
+        this.$store.dispatch('hideEntities/addSchema', schema)
       },
       openSettings() {
         const tab = new OpenTab('settings')
@@ -301,6 +406,18 @@ import TabWithTable from './common/TabWithTable.vue';
         if (tab.queryId) {
           this.$store.dispatch('data/queries/reload', tab.queryId)
         }
+      },
+      closeToRight(tab) {
+        const tabIndex = _.indexOf(this.tabItems, tab)
+        const activeTabIndex = _.indexOf(this.tabItems, this.activeTab)
+
+        const tabsToRight = this.tabItems.slice(tabIndex + 1)
+
+        if (this.activeTab && activeTabIndex > tabIndex) {
+          this.setActiveTab(tab)
+        }
+
+        this.$store.dispatch('tabs/remove', tabsToRight)
       },
       duplicate(other: OpenTab) {
         const tab = other.duplicate()

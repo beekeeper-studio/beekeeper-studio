@@ -10,9 +10,13 @@
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
   import Mutators, { escapeHtml } from '../../mixins/data_mutators'
-import globals from '@/common/globals'
-import Papa from 'papaparse'
-import { mapState } from 'vuex'
+  import { dialectFor } from '@shared/lib/dialects/models'
+  import globals from '@/common/globals'
+  import Papa from 'papaparse'
+  import { mapState } from 'vuex'
+  import { markdownTable } from 'markdown-table'
+  import * as intervalParse from 'postgres-interval'
+  import * as td from 'tinyduration'
 
   export default {
     mixins: [Converter, Mutators],
@@ -63,6 +67,66 @@ import { mapState } from 'vuex'
       tableTruncated() {
           return this.result.truncated
       },
+
+      headerContextMenu() {
+        return [
+          {
+            label: '<x-menuitem><x-label>Resize all columns to match</x-label></x-menuitem>',
+            action: (_e, column) => {
+              try {
+                this.tabulator.blockRedraw()
+                const columns = this.tabulator.getColumns()
+                columns.forEach((col) => {
+                  col.setWidth(column.getWidth())
+                })
+              } catch (error) {
+                console.error(error)
+              } finally {
+                this.tabulator.restoreRedraw()
+              }
+            }
+          },
+          {
+          label: '<x-menuitem><x-label>Resize all columns to fit content</x-label></x-menuitem>',
+          action: (_e, _column) => {
+            try {
+              this.tabulator.blockRedraw()
+              const columns = this.tabulator.getColumns()
+              columns.forEach((col) => {
+                col.setWidth(true)
+              })
+            } catch (error) {
+              console.error(error)
+            } finally {
+              this.tabulator.restoreRedraw()
+            }
+          }
+        },
+          {
+          label: '<x-menuitem><x-label>Resize all columns to fixed width</x-label></x-menuitem>',
+          action: (_e, _column) => {
+            try {
+              this.tabulator.blockRedraw()
+              const columns = this.tabulator.getColumns()
+              columns.forEach((col) => {
+                col.setWidth(200)
+              })
+              // const layout = this.tabulator.getColumns().map((c: CC) => ({
+              //   field: c.getField(),
+              //   width: c.getWidth(),
+              // }))
+              // this.tabulator.setColumnLayout(layout)
+              // this.tabulator.redraw(true)
+            } catch (error) {
+              console.error(error)
+            } finally {
+              this.tabulator.restoreRedraw()
+            }
+          }
+        }
+
+        ]
+      },
       cellContextMenu() {
         return [
           {
@@ -80,6 +144,17 @@ import { mapState } from 'vuex'
           {
             label: '<x-menuitem><x-label>Copy Row (TSV / Excel)</x-label></x-menuitem>',
             action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([this.$bks.cleanData(cell.getRow().getData())], { header: false, quotes: true, delimiter: "\t", escapeFormulae: true }))
+          },
+          {
+            label: '<x-menuitem><x-label>Copy Row (Markdown)</x-label></x-menuitem>',
+            action: (_e, cell) => {
+              const data = cell.getRow().getData()
+              const fixed = this.dataToJson(data, true)
+              return this.$native.clipboard.writeText(markdownTable([
+                Object.keys(fixed),
+                Object.values(fixed),
+              ]))
+            }
           },
           {
             label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
@@ -100,6 +175,7 @@ import { mapState } from 'vuex'
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
         return this.result.fields.map((column) => {
+          console.log('COLUMN: ', column);
           const result = {
             title: column.name,
             titleFormatter: 'plaintext',
@@ -107,12 +183,17 @@ import { mapState } from 'vuex'
             titleDownload: escapeHtml(column.name),
             dataType: column.dataType,
             width: columnWidth,
-            mutator: this.resolveTabulatorMutator(column.dataType),
+            mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
             formatter: this.cellFormatter,
             maxInitialWidth: globals.maxColumnWidth,
-            tooltip: true,
+            tooltip: this.cellTooltip,
             contextMenu: this.cellContextMenu,
+            headerContextMenu: this.headerContextMenu,
             cellClick: this.cellClick.bind(this)
+          }
+          if (column.dataType === 'INTERVAL') {
+            // add interval sorter
+            result['sorter'] = this.intervalSorter;
           }
           return result;
         })
@@ -185,11 +266,25 @@ import { mapState } from 'vuex'
         return firstObjectOnly ? result[0] : result
       },
       download(format) {
+        let formatter = format !== 'md' ? format : (rows, options, setFileContents) => {
+          const values = rows.map(row => row.columns.map(col => col.value))
+          setFileContents(markdownTable(values), 'text/markdown')
+        };
+        // Fix Issue #1493 Lost column names in json query download
+        // by overriding the tabulator-generated json with ...what cipboard() does, below:
+        formatter = format !== 'json' ? format : (rows, options, setFileContents) => {
+          setFileContents(
+            JSON.stringify(this.dataToJson(this.tabulator.getData(), false), null, "  "), 'text/json'
+           )
+        };
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss')
         const title = this.query.title ? _.snakeCase(this.query.title) : "query_results"
-        this.tabulator.download(format, `${title}-${dateString}.${format}`, 'all')
+
+        // xlsx seems to be the only one that doesn't know what 'all' is it would seem https://tabulator.info/docs/5.4/download#xlsx
+        const options = typeof formatter !== 'function' && formatter.toLowerCase() === 'xlsx' ? {} : 'all'
+        this.tabulator.download(formatter, `${title}-${dateString}.${format}`, options)
       },
-      clipboard(json) {
+      clipboard(format = null) {
         // this.tabulator.copyToClipboard("all")
 
         const allRows = this.tabulator.getData()
@@ -200,7 +295,13 @@ import { mapState } from 'vuex'
 
         const result = this.dataToJson(allRows, false)
 
-        if (json) {
+        if (format === 'md') {
+          const mdContent = [
+            Object.keys(result[0]),
+            ...result.map((row) => Object.values(row)),
+          ];
+          this.$native.clipboard.writeText(markdownTable(mdContent))
+        } else if (format === 'json') {
           this.$native.clipboard.writeText(JSON.stringify(result))
         } else {
           this.$native.clipboard.writeText(
@@ -209,6 +310,18 @@ import { mapState } from 'vuex'
               { header: true, delimiter: "\t", quotes: true, escapeFormulae: true }
             )
           )
+        }
+      },
+      // HACK (day): this is probably not the best way of doing things, but postgres intervals are dumb
+      intervalSorter(a, b, aRow, bRow, column, dir, sorterParams) {
+        try {
+          const durationA = td.parse(intervalParse(a).toISOString());
+          const durationB = td.parse(intervalParse(b).toISOString());
+          const dateA = new Date(durationA.years, durationA.months, durationA.days, durationA.hours, durationA.minutes, durationA.seconds);
+          const dateB = new Date(durationB.years, durationB.months, durationB.days, durationB.hours, durationB.minutes, durationB.seconds);
+          return dateA - dateB;
+        } catch {
+          return 0;
         }
       }
     }

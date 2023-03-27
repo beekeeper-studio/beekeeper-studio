@@ -11,7 +11,7 @@
 
 
       <!-- Tables -->
-      <div
+    <div
         class="tab-pane"
         id="tab-tables"
         :class="tabClasses('tables')"
@@ -99,7 +99,6 @@
         }
       },
       async databaseSelected(db) {
-        console.log('database selected')
         this.$store.dispatch('changeDatabase', db)
         this.allExpanded = false
       },

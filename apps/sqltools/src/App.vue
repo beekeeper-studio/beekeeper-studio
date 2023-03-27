@@ -13,7 +13,7 @@
       </div>
     </footer>
     <div class="scripts" v-if="production">
-      <component :is="'script'" src="https://eel.beekeeperstudio.io/script.js" data-spa="auto" data-site="IXJBRDTH" defer></component>
+      <component :is="'script'" src="https://eel.beekeeperstudio.io/script.js" data-spa="auto" data-site="AKZVMGGS" defer></component>
     </div>
     <div v-else class="no-analytics">
       <!-- No analytics scripts -->

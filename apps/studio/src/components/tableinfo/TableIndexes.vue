@@ -299,6 +299,9 @@ export default Vue.extend({
           headerSort: false,
         },
       })
+  },
+  beforeDestroy() {
+    if (this.tabulator) this.tabulator.destroy()
   }
 })
 </script>

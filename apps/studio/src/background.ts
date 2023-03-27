@@ -22,6 +22,8 @@ import { buildWindow, getActiveWindows } from './background/WindowBuilder'
 import yargs from 'yargs-parser'
 
 import { AppEvent } from './common/AppEvent'
+
+require('@electron/remote/main').initialize()
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
     fs.mkdirSync(d, { recursive: true })
@@ -112,7 +114,7 @@ app.on('ready', async () => {
   log.debug("Parsing app args", parsedArgs)
   const options = parsedArgs._.map((url: string) => ({ url }))
   const settings = await initBasics()
-  
+
   if (options.length > 0) {
 
     await Promise.all(options.map((option) => buildWindow(settings, option)))
@@ -128,7 +130,7 @@ app.on('ready', async () => {
 app.on('open-file', async (event, file) => {
   event.preventDefault();
   const settings = await initBasics()
-  
+
   await buildWindow(settings, { url: file })
 });
 

@@ -22,7 +22,11 @@
           </div>
         </div>
         <div ref="tableSchema"></div>
-
+        <!-- Tabulator can be slow to open especially for some really large column counts. Let the user know. -->
+        <div v-if="this.table.columns.length" class="columns-loading-disclaimer">
+          <p>Columns loading.</p>
+          <p>This may take a few minutes depending on column count.</p>
+        </div>
       </div>
     </div>
 
@@ -57,6 +61,20 @@
     </status-bar>
   </div>
 </template>
+
+<style scoped>
+  .columns-loading-disclaimer {
+    width: 100%;
+    text-align: center;
+    font-weight: 700;
+    font-size: 20px;
+
+  }
+  .tabulator + .columns-loading-disclaimer {
+    display: none;
+  }
+</style>
+
 <script lang="ts">
 import { TabulatorFull, Tabulator } from 'tabulator-tables'
 type CellComponent = Tabulator.CellComponent
@@ -100,7 +118,8 @@ export default Vue.extend({
       editedCells: [],
       newRows: [],
       removedRows: [],
-      error: null
+      error: null,
+      selectedCell: null
     }
   },
   watch: {
@@ -150,7 +169,6 @@ export default Vue.extend({
         showListOnEmpty: true
       }
 
-
       const result = [
         {
           title: 'Name',
@@ -158,8 +176,10 @@ export default Vue.extend({
           editor: vueEditor(NullableInputEditorVue),
           cellEdited: this.cellEdited,
           headerFilter: true,
+          tooltip: this.columnNameCellTooltip.bind(this), 
           formatter: this.cellFormatter,
-          editable: this.isCellEditable.bind(this, 'renameColumn')
+          editable: this.isCellEditable.bind(this, 'renameColumn'),
+          cellClick: this.columnNameCellClick.bind(this)
         },
         {
           title: 'Type',
@@ -168,7 +188,7 @@ export default Vue.extend({
           editorParams: autocompleteOptions,
           cellEdited: this.cellEdited,
           editable: this.isCellEditable.bind(this, 'alterColumn')
-          },
+        },
         {
           title: 'Nullable',
           field: 'nullable',
@@ -214,6 +234,14 @@ export default Vue.extend({
           width: 70,
           cssClass: "read-only never-editable",
         },
+        (this.disabledFeatures?.informationSchema?.comment ? null : {
+          title: 'Comment',
+          field: 'comment',
+          editor: vueEditor(NullableInputEditorVue),
+          cellEdited: this.cellEdited,
+          formatter: this.cellFormatter,
+          editable: this.isCellEditable.bind(this, 'alterColumn'),
+        }),
         this.editable ? trashButton(this.removeRow) : null
       ].filter((c) => !!c)
       return result.map((col) => {
@@ -255,7 +283,7 @@ export default Vue.extend({
       }
       this.submitUndo()
       this.error = null;
-      await this.$store.dispatch('updateTableColumns', this.table)
+      await this.$emit('refresh')
     },
     collectChanges(): AlterTableSpec {
 
@@ -378,6 +406,7 @@ export default Vue.extend({
     },
     initializeTabulator() {
       if (this.tabulator) this.tabulator.destroy()
+      // TODO: a loader would be so cool for tabulator for those gnarly column count tables that people might create...
       // @ts-ignore
       this.tabulator = new TabulatorFull(this.$refs.tableSchema, {
         columns: this.tableColumns,
@@ -391,17 +420,41 @@ export default Vue.extend({
         data: this.tableData,
         placeholder: "No Columns",
       })
-
-    }
+    },
+    columnNameCellClick(_e: any, cell: CellComponent) {
+      if (!this.editable || this.disabledFeatures?.alter?.renameColumn) {
+        if (this.selectedCell) this.selectedCell.getElement().classList.remove('selected');
+        this.selectedCell = cell;
+        cell.getElement().classList.add('selected');
+        this.$native.clipboard.writeText(cell.getValue());
+      }
+    },
+    columnNameCellTooltip(_e: any, cell: CellComponent, _onRendered: any) {
+      let canCopy: boolean = !this.editable || this.disabledFeatures?.alter?.renameColumn;
+      return canCopy ? `${cell.getValue()} - Click to Copy` : cell.getValue();
+    },
+    maybeUnselectCell(event: any) {
+      if (!this.selectedCell) return
+      if (!this.active) return
+      const target = event.target
+      const targets = Array.from(this.selectedCell.getElement().getElementsByTagName("*"))
+      if (!targets.includes(target)) {
+        this.selectedCell.getElement().classList.remove('selected')
+        this.selectedCell = null
+      }
+    },
   },
-  mounted() {
+  async mounted() {
+    document.addEventListener('click', this.maybeUnselectCell)
     this.tabState.dirty = false
-    // const columnWidth = this.table.columns.length > 20 ? 125 : undefined
+    // table columns are updated by TabTableProperties on load. So no need to do it here.
     if (!this.active) this.forceRedraw = true
     this.initializeTabulator()
   },
   beforeDestroy() {
+    document.removeEventListener('click', this.maybeUnselectCell)
     if (this.tabulator) this.tabulator.destroy()
-  }
+  },
 })
 </script>
+

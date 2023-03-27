@@ -9,7 +9,7 @@ if (  process.env.PI_BUILD ) {
   fpmOptions.push("armhf")
 }
 
-const externals = ['better-sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2', 'ssh2']
+const externals = ['better-sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2', 'ssh2', '@electron/remote']
 module.exports = {
   pluginOptions: {
     electronBuilder: {
@@ -53,6 +53,10 @@ module.exports = {
           {
             from: 'build/launcher-script.sh',
             to: 'launcher-script.sh'
+          },
+          {
+            from: './vendor',
+            to: 'vendor'
           },
           {
             from: './public',
@@ -206,5 +210,12 @@ module.exports = {
       ]
     }
 
+  },
+  css: {
+    loaderOptions: {
+      sass: {
+        implementation: require('node-sass')
+      }
+    }
   }
 }
