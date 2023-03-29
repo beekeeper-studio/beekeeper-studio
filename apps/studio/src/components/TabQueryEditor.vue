@@ -512,6 +512,13 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             'sqlserver': 'text/x-mssql',
           };
 
+          const extraKeys = {}
+
+          extraKeys[this.cmCtrlOrCmd('F')] = 'findPersistent'
+          extraKeys[this.cmCtrlOrCmd('R')] = 'replace'
+          extraKeys[this.cmCtrlOrCmd('Shift-R')] = 'replaceAll'
+
+
           this.editor = CodeMirror.fromTextArea(this.$refs.editor, {
             lineNumbers: true,
             mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
@@ -520,11 +527,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             extraKeys: {
               "Ctrl-Space": "autocomplete",
               "Shift-Tab": "indentLess",
-              "Ctrl-F": "findPersistent",
-              "Ctrl-G": "findNext",
-              "Ctrl-Shift-G": "findPrev",
-              "Ctrl-R": "replace",
-              "Ctrl-Shift-R": "replaceAll",
+              ...extraKeys
             },
             options: {
               closeOnBlur: false
