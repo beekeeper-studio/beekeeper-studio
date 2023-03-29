@@ -19,7 +19,7 @@
       </div>
     </div>
 
-    <div class="expand" /> 
+    <div class="expand" />
     <status-bar class="tablulator-footer">
       <div class="flex flex-middle statusbar-actions">
         <slot name="footer" />
@@ -54,7 +54,7 @@
 import Vue from 'vue';
 import DataMutators from '../../mixins/data_mutators'
 import { TabulatorFull, Tabulator } from 'tabulator-tables'
-type RowComponent = Tabulator.RowComponent; 
+type RowComponent = Tabulator.RowComponent;
 type CellComponent = Tabulator.CellComponent;
 import _ from 'lodash';
 import { TabulatorStateWatchers, vueEditor, trashButton } from '@shared/lib/tabulator/helpers'
@@ -265,7 +265,7 @@ export default Vue.extend({
     },
     // Load a template for partition expressions based on previous partitions.
     loadExpressionTemplate(partition: any | null) {
-      if (partition == null) {
+      if (!partition || !partition.expression) {
         this.expressionTemplate = '';
         return
       }

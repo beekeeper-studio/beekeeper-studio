@@ -37,7 +37,7 @@ export interface DatabaseClient {
   listTableTriggers: (table: string, schema?: string) => Promise<TableTrigger[]>,
   listTableIndexes: (db: string, table: string, schema?: string) => Promise<TableIndex[]>,
   listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>,
-  listTablePartitions: (table: string) => Promise<TablePartition[]>
+  listTablePartitions: (table: string, schema?: string) => Promise<TablePartition[]>
   getTableReferences: (table: string, schema?: string) => void,
   getTableKeys: (db: string, table: string, schema?: string) => void,
   query: (queryText: string) => CancelableQuery,
@@ -504,7 +504,7 @@ function getViewCreateScript(server: IDbConnectionServer, database: IDbConnectio
 
 function getMaterializedViewCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, view: string /* , schema */) {
   checkIsConnected(server , database);
-  
+
   if(typeof database.connection?.getMaterializedViewCreateScript !== 'function') {
     return null;
   } else {
