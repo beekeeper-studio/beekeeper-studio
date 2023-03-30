@@ -104,8 +104,8 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
     isPostgres,
     isCockroach,
     isRedshift,
-    number, 
-    hasPartitions: (isPostgres && number >= 100000) //for future cochroach support?: || (isCockroach && number >= 200070)
+    number,
+    hasPartitions: (isPostgres && number >= 90000) //for future cochroach support?: || (isCockroach && number >= 200070)
   }
 }
 
@@ -159,7 +159,9 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
   const version = await getVersion(conn)
 
-  const features = version.isRedshift ? { customRoutines: true, comments: false, properties: false, partitions: false } : { customRoutines: true, comments: true, properties: true, partitions: version.hasPartitions}
+  const features = version.isRedshift ? 
+    { customRoutines: true, comments: false, properties: false, partitions: false, editPartitions: false } :
+    { customRoutines: true, comments: true, properties: true, partitions: version.hasPartitions, editPartitions: version.number >= 100000}
 
 
   return {
@@ -178,7 +180,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     listTableTriggers: (table, schema = defaultSchema) => listTableTriggers(conn, table, schema),
     listTableIndexes: (_db, table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
     listSchemas: (_db, filter?: SchemaFilterOptions) => listSchemas(conn, filter),
-    listTablePartitions: (table) => listTablePartitions(conn, table),
+    listTablePartitions: (table, schema = defaultSchema) => listTablePartitions(conn, table, schema),
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
@@ -246,7 +248,7 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
     // TODO (day): when we support more dbs for partitioning, we will need to construct a different query for cockroach.
     sql += `
         pc.relkind as tabletype
-      FROM information_schema.tables AS t 
+      FROM information_schema.tables AS t
       LEFT OUTER JOIN pg_inherits AS i
       ON t.table_name::text = i.inhrelid::regclass::text
       LEFT OUTER JOIN pg_class AS pc
@@ -257,7 +259,7 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
   } else {
     sql += `
         'r' as tabletype
-      FROM information_schema.tables AS t 
+      FROM information_schema.tables AS t
       WHERE t.table_type NOT LIKE '%VIEW%'
     `;
   }
@@ -271,27 +273,43 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
   return data.rows;
 }
 
-export async function listTablePartitions(conn: HasPool, tableName: string) {
+export async function listTablePartitions(conn: HasPool, tableName: string, schemaName: string) {
   const version = await getVersion(conn);
   // only postgres will pass this canary for now.
   if (!version.hasPartitions) return null;
-  
-  const sql = knex.raw(`
-    SELECT 
+
+  let sql = knex.raw(`
+    SELECT
       ps.schemaname AS schema,
       ps.relname AS name,
       pg_get_expr(pt.relpartbound, pt.oid, true) AS expression
     FROM pg_class base_tb
-      JOIN pg_inherits i ON i.inhparent = base_tb.oid
-      JOIN pg_class pt ON pt.oid = i.inhrelid
-      JOIN pg_stat_all_tables ps ON ps.relid = i.inhrelid
-    WHERE base_tb.oid = ?::regclass
-  `, [tableName]).toQuery();
+      JOIN pg_inherits i              ON i.inhparent = base_tb.oid
+      JOIN pg_class pt                ON pt.oid = i.inhrelid
+      JOIN pg_stat_all_tables ps      ON ps.relid = i.inhrelid
+      JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid = base_tb.relnamespace 
+    WHERE nmsp_parent.nspname = ? AND base_tb.oid = ?::regclass;
+  `, [schemaName, tableName]).toQuery();
+
+
+  if (version.number < 100000) {
+    sql = knex.raw(`
+      SELECT
+        nmsp_child.nspname  AS schema,
+        child.relname       AS name
+      FROM pg_inherits
+        JOIN pg_class parent            ON pg_inherits.inhparent = parent.oid
+        JOIN pg_class child             ON pg_inherits.inhrelid   = child.oid
+        JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid  = parent.relnamespace
+        JOIN pg_namespace nmsp_child    ON nmsp_child.oid   = child.relnamespace
+      WHERE nmsp_parent.nspname = ? and parent.relname=?;
+    `, [schemaName, tableName]).toQuery()
+  }
 
   const data = await driverExecuteSingle(conn, { query: sql });
 
   return data.rows;
-  
+
 }
 
 export async function listViews(conn: HasPool, filter: FilterOptions = { schema: 'public' }) {
@@ -854,7 +872,7 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
     Promise.resolve({ rows:[]})
 
   const triggersPromise = version.isPostgres ? listTableTriggers(conn, table, schema) : Promise.resolve([])
-  const partitionsPromise = version.isPostgres ? listTablePartitions(conn, table) : Promise.resolve([]);
+  const partitionsPromise = version.isPostgres ? listTablePartitions(conn, table, schema) : Promise.resolve([]);
 
   const [
     result,
