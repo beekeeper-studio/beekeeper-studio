@@ -327,12 +327,6 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
 }
 
 export async function queryStream(conn, db, query, chunkSize) {
-  // const qs = buildSelectTopQuery(table, null, null, orderBy, filters)
-  // const columns = await listTableColumns(conn, db, table)
-  // const rowCount = await getTableLength(conn, table, filters)
-  // // TODO: DEBUG HERE
-  // const { query, params } = qs
-
   const theCursor = new MysqlCursor(conn, query, [], chunkSize)
   log.debug('results', theCursor)
 

@@ -79,8 +79,6 @@ export default Vue.extend({
   methods: {
     ...mapMutations({ addExport: "exports/addExport" }),
     async startExport(options: StartExportOptions) {
-      // FIXME: try/catch and notify users if an error occurs.
-      // FIXME: Make sure we only send a single query to the exporter
       const exporter = new ExportClassPicker[options.exporter](
         options.filePath,
         this.connection,

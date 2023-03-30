@@ -129,7 +129,6 @@ export abstract class Export {
 
     let results;
     if (this.table) {
-      log.warn('about to export with selectTopStream()...')
       results = await this.connection.selectTopStream(
         this.table.name,
         [],
@@ -150,11 +149,9 @@ export abstract class Export {
     }
     else {
       // string sql query, not table
-      log.warn('about to export with queryStream()...')
       results = await this.connection.queryStream(
         this.query,
         this.options.chunkSize,
-        // this.table.schema,
       )
       this.columns = results.columns
       this.cursor = results.cursor
@@ -243,7 +240,6 @@ export abstract class Export {
       if (this.options.deleteOnAbort) {
         await promises.unlink(this.filePath)
       }
-      // throw error
     } finally {
       this.fileHandle = undefined
     }
