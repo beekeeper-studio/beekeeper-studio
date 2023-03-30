@@ -284,25 +284,26 @@ export async function listTablePartitions(conn: HasPool, tableName: string, sche
       ps.relname AS name,
       pg_get_expr(pt.relpartbound, pt.oid, true) AS expression
     FROM pg_class base_tb
-      JOIN pg_inherits i ON i.inhparent = base_tb.oid
-      JOIN pg_class pt ON pt.oid = i.inhrelid
-      JOIN pg_stat_all_tables ps ON ps.relid = i.inhrelid
-    WHERE base_tb.oid = ?::regclass
-  `, [tableName]).toQuery();
+      JOIN pg_inherits i              ON i.inhparent = base_tb.oid
+      JOIN pg_class pt                ON pt.oid = i.inhrelid
+      JOIN pg_stat_all_tables ps      ON ps.relid = i.inhrelid
+      JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid = base_tb.relnamespace 
+    WHERE nmsp_parent.nspname = ? AND base_tb.oid = ?::regclass;
+  `, [schemaName, tableName]).toQuery();
 
 
   if (version.number < 100000) {
     sql = knex.raw(`
-SELECT
-    nmsp_child.nspname  AS schema,
-    child.relname       AS name
-FROM pg_inherits
-    JOIN pg_class parent            ON pg_inherits.inhparent = parent.oid
-    JOIN pg_class child             ON pg_inherits.inhrelid   = child.oid
-    JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid  = parent.relnamespace
-    JOIN pg_namespace nmsp_child    ON nmsp_child.oid   = child.relnamespace
-WHERE nmsp_parent.nspname = ? and parent.relname=?;
-`, [schemaName, tableName]).toQuery()
+      SELECT
+        nmsp_child.nspname  AS schema,
+        child.relname       AS name
+      FROM pg_inherits
+        JOIN pg_class parent            ON pg_inherits.inhparent = parent.oid
+        JOIN pg_class child             ON pg_inherits.inhrelid   = child.oid
+        JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid  = parent.relnamespace
+        JOIN pg_namespace nmsp_child    ON nmsp_child.oid   = child.relnamespace
+      WHERE nmsp_parent.nspname = ? and parent.relname=?;
+    `, [schemaName, tableName]).toQuery()
   }
 
   const data = await driverExecuteSingle(conn, { query: sql });
