@@ -158,8 +158,8 @@
   import ErrorAlert from './common/ErrorAlert.vue'
   import {FormatterDialect} from "@shared/lib/dialects/models";
   import MergeManager from '@/components/editor/MergeManager.vue'
-import { AppEvent } from '@/common/AppEvent'
-import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
+  import { AppEvent } from '@/common/AppEvent'
+  import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))

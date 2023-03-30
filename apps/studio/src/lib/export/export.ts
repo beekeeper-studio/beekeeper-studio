@@ -243,7 +243,7 @@ export abstract class Export {
       if (this.options.deleteOnAbort) {
         await promises.unlink(this.filePath)
       }
-      throw error
+      // throw error
     } finally {
       this.fileHandle = undefined
     }

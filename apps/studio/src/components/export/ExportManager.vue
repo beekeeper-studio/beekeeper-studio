@@ -93,10 +93,23 @@ export default Vue.extend({
       )
       this.addExport(exporter)
       exporter.onProgress(this.notifyProgress.bind(this))
-      // FIXME: We need an exporter.onError event probably to handle errors during export
+
+      const exportName = options.table? options.table.name : options.query_name;
+
       await exporter.exportToFile()
+
+      if (exporter.status == ExportStatus.Error) {
+        const exportName = options.table? options.table.name : options.query_name;
+        const error_notice = this.$noty.error(`Export of ${exportName} failed: ${exporter.error}`, {
+          buttons: [
+            Noty.button('Close', "btn btn-primary", () => {
+              error_notice.close()
+            })
+          ]
+        }).setTimeout(60000) // 1 minute timeout
+        return
+      }
       if (exporter.status !== ExportStatus.Completed) return;
-      const exportName = options.table? options.table.name : 'query';
       const n = this.$noty.success(`Export of ${exportName} complete`, {
         buttons: [
           Noty.button('Show', "btn btn-primary", () => {
