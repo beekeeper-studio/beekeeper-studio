@@ -159,7 +159,9 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
   const version = await getVersion(conn)
 
-  const features = version.isRedshift ? { customRoutines: true, comments: false, properties: false, partitions: false } : { customRoutines: true, comments: true, properties: true, partitions: version.hasPartitions}
+  const features = version.isRedshift ? 
+    { customRoutines: true, comments: false, properties: false, partitions: false, editPartitions: false } :
+    { customRoutines: true, comments: true, properties: true, partitions: version.hasPartitions, editPartitions: version.number >= 100000}
 
 
   return {

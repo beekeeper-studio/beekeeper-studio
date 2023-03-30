@@ -12,7 +12,7 @@
           <span class="expand"> </span>
           <div class="actions">
             <a @click.prevent="refreshPartitions" class="btn btn-link btn-fab" v-tooltip="`${ctrlOrCmd('r')} or F5`"><i class="material-icons">refresh</i></a>
-            <a @click.prevent="addRow" class="btn btn-primary btn-fab" v-tooltip="ctrlOrCmd('n')"><i class="material-icons">add</i></a>
+            <a v-if="editable" @click.prevent="addRow" class="btn btn-primary btn-fab" v-tooltip="ctrlOrCmd('n')"><i class="material-icons">add</i></a>
           </div>
         </div>
         <div ref="tablePartitions"></div>
@@ -94,10 +94,12 @@ export default Vue.extend({
       if (!this.active) return {};
       const result = {};
       result['f5'] = this.refreshPartitions.bind(this)
-      result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
       result[this.ctrlOrCmd('r')] = this.refreshPartitions.bind(this)
-      result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
-      result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
+      if (this.editable) {
+        result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
+        result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
+        result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
+      }
 
       return result;
     },
@@ -121,12 +123,12 @@ export default Vue.extend({
           field: 'expression',
           cellEdited: this.cellEdited,
           editor: vueEditor(NullableInputEditorVue),
-          editable: true,
+          editable: this.editable,
           formatter: this.cellFormatter,
-          cssClass: 'editable',
+          cssClass: this.editable ? 'editable' : '',
         },
-        trashButton(this.removeRow)
-      ]
+        this.editable ? trashButton(this.removeRow) : null
+      ].filter((x) => !!x);
 
       return result;
     },
@@ -137,6 +139,9 @@ export default Vue.extend({
           ...p
         };
       });
+    },
+    editable() {
+      return this.connection.supportedFeatures().editPartitions;
     }
   },
   methods: {
@@ -157,7 +162,7 @@ export default Vue.extend({
       })
     },
     isCellEditable(cell: CellComponent) {
-      return this.newRows.includes(cell.getRow());
+      return this.editable ? this.newRows.includes(cell.getRow()) : false;
     },
     cellEdited(cell: CellComponent) {
       if (this.expressionTemplate === '') this.loadExpressionTemplate(cell.getRow().getData())
