@@ -20,6 +20,15 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v1
 
+      - name: Install node 16
+        run: arch -arm64 nvm install 16
+
+      - name: Use node 16
+        run: arch -arm64 nvm use 16
+      
+      - name: Make sure we have yarn
+        run: arch -arm64 npm install -g yarn
+
       - name: Clean cache
         run: arch -arm64 yarn cache clean
 
