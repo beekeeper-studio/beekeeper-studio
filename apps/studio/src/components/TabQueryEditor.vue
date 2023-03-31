@@ -83,6 +83,7 @@
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
+        @submitCurrentQueryToFile="submitCurrentQueryToFile"
         :executeTime="executeTime"
       ></query-editor-status-bar>
     </div>

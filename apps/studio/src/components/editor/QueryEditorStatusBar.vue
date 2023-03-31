@@ -46,9 +46,13 @@
             <x-label>Markdown</x-label>
           </x-menuitem>
           <hr>
-          <!-- TODO: add an option to download the full result set -->
-          <!-- This should be gray if the full result set < 50k, with a tooltip to explain -->
-          <!-- This should be clickable if the full result set > 50k with a tooltip to explain what it does -->
+          <span v-tooltip="{content: `${ result.truncated ? 'The ' : 'If the' } query\'s result set was truncated (because it had too many rows to display)<br />
+              use this to export the query\'s full result set ${ result.truncated ? '(' + result.totalRowCount + ' rows)': ''} to a CSV or JSON file`}">
+            <x-menuitem @click.prevent="$event => submitCurrentQueryToFile()" :disabled="!result.truncated">
+              <x-label>Download Full Result Set (if truncated) ...</x-label>
+            </x-menuitem>
+          </span>
+
           <x-menuitem title="Probably don't do this with large results (500+)" @click.prevent="copyToClipboard">
             <x-label>Copy to Clipboard (TSV / Excel)</x-label>
           </x-menuitem>
@@ -179,6 +183,9 @@ export default {
       },
       copyToClipboardMarkdown() {
         this.$emit('clipboardMarkdown')
+      },
+      submitCurrentQueryToFile() {
+        this.$emit('submitCurrentQueryToFile')
       },
     }
 }
