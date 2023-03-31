@@ -55,6 +55,7 @@
                     v-for="f in exportFormats"
                     :value="f"
                     :selected="selectedExportFormat === f.value"
+                    :disabled="(f.name === 'SQL' && query_name) ? true : false"
                   >
                     {{ f.name }}
                   </option>
