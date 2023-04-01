@@ -1,9 +1,33 @@
 
 # Release 3.9 - Slow burn, but
 
-## New features
+My wife had heart surgery in Feb (she's doing great!) and I've been helping her recover, so it's been a while since the last Beekeeper Studio release (It's not a coincidence that I put out a super stable release at the end of Jan).
 
-- [x] Add support for PostgreSQL partitions in the table structure view (@not-night-but)
+If you are a customer of the commercial edition - 🙏 Thank you, your financial support makes all of this possible.
+
+If you use the community edition, please consider upgrading to the [commercial edition](https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition). Every purchase supports me, and the continued development of the app.
+
+## Highlights ✨
+
+- [x] Added support for PostgreSQL partitions in the table structure view (@not-night-but)
+- [x] Added support for Query Magic enum substitution (@not-night-but)
+- [x] Added support for alphanumeric sorting of pinned tables (@tomaskudlicka)
+- [x] Added the ability to pin saved connections (just like pinned tables) (@not-night-but)
+
+
+## More awesome features 🍭 and 🐞 fixes
+
+- [x] Added support to copy table data modifications to SQL instead of applying them automatically
+- [x] Added the ability to select field names in the table structure view when they're not editable
+- [x] Huuuuuge upgrade from Electron 13 to Electron 22
+- [x] Colo(u)r sorting of connections fixed
+- [x] SSH2 library upgraded
+- [x] Fixing column names in the JSON download
+- [x] ...more stuff below, man this took a while to write
+
+
+## Merged PRs
+
 
 85e68d52 Merge pull request #1558 from beekeeper-studio/partitions-fix-96
 a44371d2 Merge pull request #1548 from beekeeper-studio/partitions
