@@ -10972,10 +10972,10 @@ no-case@^2.2.0:
   dependencies:
     lower-case "^1.1.1"
 
-node-abi@^3.3.0:
-  version "3.24.0"
-  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.24.0.tgz#b9d03393a49f2c7e147d0c99f180e680c27c1599"
-  integrity sha512-YPG3Co0luSu6GwOBsmIdGW6Wx0NyNDLg/hriIyDllVsNwnI6UeqaWShxC3lbH4LtEQUgoLP3XR1ndXiDAWvmRw==
+node-abi@^3.3.0, node-abi@^3.34.0:
+  version "3.34.0"
+  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.34.0.tgz#3bac9f69fda94ece1752515ed996ed409da4fa26"
+  integrity sha512-O5sNsdgxptez/bSXk2CfpTcVu4yTiFW1YcMHIVn2uAY8MksXWQeReMx63krFrj/QSyjRJ5/jIBkWvJ3/ZimdcA==
   dependencies:
     semver "^7.3.5"
 

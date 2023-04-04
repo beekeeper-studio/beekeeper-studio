@@ -9,7 +9,7 @@ Beekeeper Studio is a cross-platform SQL editor and database manager available f
 
 ## Editions of Beekeeper Studio
 
-1. **Beekeeper Studio** - The full version of Beekeeper Studio with all features. Buying Beekeeper Studio is also the best way to support the community edition. [Download from our website](https://beekeeperstudio.io/get) 
+1. **Beekeeper Studio** - The full version of Beekeeper Studio with all features. Buying Beekeeper Studio is also the best way to support the community edition. [Download from our website](https://beekeeperstudio.io/get)
 
 
 2. **Beekeeper Studio Community Edition** - This repository. This is the open source version of Beekeeper Studio. It is a full featured database management client that is totally free and open source. Download from the [releases page](https://github.com/beekeeper-studio/beekeeper-studio/releases/latest)
@@ -128,6 +128,16 @@ Beekeeper Studio has two entry points:
 - Make sure to write some notes about what your change does! A gif is always welcome for visual changes.
 
 ## Maintainer notes (casual readers can ignore this stuff)
+
+### Upgrading Electron Gotchas
+
+This is always a total pain and will break the build 9/10.
+
+Some things you need to consider when upgrading Electron:
+
+1. Does it use a different node version. Eg Electron-18 uses node 14, 22 uses node 16. So everyone needs to upgrade
+2. Does node-abi need to be upgraded to be able to understand the electron version? This is used in the build to fetch prebuilt packages. You need to upgrade this in root/package.json#resolutions
+3. Were any APIs deprecated or removed? Make sure all features that interact with the Electron APIs still work, stuff like - selecting a file, maximizing a window, running a query, etc.
 
 
 ### Release Process
