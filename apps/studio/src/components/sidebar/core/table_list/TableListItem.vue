@@ -5,10 +5,10 @@
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
       <span class="item-wrapper flex flex-middle expand" @dblclick.prevent="openTable" @mousedown="selectItem">
-        <div :title="draggable ? 'drag me!' : ''" class="table-item-wrapper" :class="{ 'draggable': draggable, 'drag-handle': draggable }">
+        <span :title="draggable ? 'drag me!' : ''" class="table-item-wrapper" :class="{ 'draggable': draggable, 'drag-handle': draggable }">
           <table-icon :table="table" class="table-icon" />
           <i class="material-icons item-icon dh" v-if="draggable">menu</i>
-        </div>
+        </span>
         <span class="table-name truncate" :title="table.name">{{table.name}}</span>
       </span>
       <span class="actions" v-bind:class="{'pinned': pinned}">
