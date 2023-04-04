@@ -1,11 +1,18 @@
 
-# Release 3.9 - Slow burn, but
+# Release 3.9 - Slow burn, but less slow now
 
 My wife had heart surgery in Feb (she's doing great!) and I've been helping her recover, so it's been a while since the last Beekeeper Studio release (It's not a coincidence that I put out a super stable release at the end of Jan).
 
 If you are a customer of the commercial edition - 🙏 Thank you, your financial support makes all of this possible.
 
-If you use the community edition, please consider upgrading to the [commercial edition](https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition). Every purchase supports me, and the continued development of the app.
+If you use the community edition, please consider upgrading to the [commercial edition](https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition). Every purchase supports me, and the continued development of the community edition.
+
+I also have a few part time folks helping me keep Beekeeper Studio features rolling:
+- @wmontgomery
+- @not-night-but
+- @davidkaufman
+
+Big thanks to them for their help.
 
 ## Highlights ✨
 
