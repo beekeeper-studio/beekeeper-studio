@@ -29,15 +29,13 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 2.7
-        env:
-          ImageOS: ubuntu18
-        if: "startsWith(matrix.os, 'ubuntu-18.04')"
+        if: "startsWith(matrix.os, 'ubuntu-20.04')"
 
       - run: "curl -sLO https://github.com/deb-s3/deb-s3/releases/download/0.11.2/deb-s3-0.11.2.gem"
-        if: "startsWith(matrix.os, 'ubuntu-18.04')"
+        if: "startsWith(matrix.os, 'ubuntu-20.04')"
 
       - run: "gem install -N ./deb-s3-0.11.2.gem"
-        if: "startsWith(matrix.os, 'ubuntu-18.04')"
+        if: "startsWith(matrix.os, 'ubuntu-20.04')"
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v1
