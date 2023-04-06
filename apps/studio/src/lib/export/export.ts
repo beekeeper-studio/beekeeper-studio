@@ -228,7 +228,7 @@ export abstract class Export {
 
       await this.fileHandle?.close()
       if (this.status === ExportStatus.Aborted) {
-        if (this.options.deleteOnAbort) {
+        if (this.options && this.options.deleteOnAbort) {
           await promises.unlink(this.filePath)
         }
       }
@@ -237,7 +237,7 @@ export abstract class Export {
       this.error = error
       log.error(error)
       await this.fileHandle?.close()
-      if (this.options.deleteOnAbort) {
+      if (this.options && this.options.deleteOnAbort) {
         await promises.unlink(this.filePath)
       }
     } finally {
