@@ -35,10 +35,10 @@ export class CsvExporter extends Export {
     super(filePath, connection, table, query, query_name, filters, options)
     this.headerConfig = {
       header: table ? true : false, // dont know columns for query
-      delimiter: outputOptions.delimiter,
+      delimiter: (outputOptions ? outputOptions.delimiter : ','),
     }
     this.outputOptions = outputOptions
-    this.rowConfig.delimiter = outputOptions.delimiter
+    this.rowConfig.delimiter = outputOptions ? outputOptions.delimiter : `\n`
   }
 
   async getHeader(columns: TableColumn[]): Promise<string> {
