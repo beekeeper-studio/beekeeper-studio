@@ -11,6 +11,7 @@ export class JsonExporter extends Export {
   public static extension: string = "json"
   readonly format: string = 'json'
   rowSeparator: string = ',\n'
+  needsFinalSeparator = false
   outputOptions: OutputOptionsJson;
 
   constructor(

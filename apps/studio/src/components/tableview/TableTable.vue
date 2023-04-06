@@ -103,6 +103,7 @@
       <ColumnFilterModal
         :modalName="columnFilterModalName"
         :columnsWithFilterAndOrder="columnsWithFilterAndOrder"
+        :hasPendingChanges="pendingChangesCount > 0"
         @changed="applyColumnChanges"
       />
     </template>
@@ -185,11 +186,14 @@
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
             <x-menuitem @click="exportTable">
-              <x-label>Export Whole Table</x-label>
+              <x-label>Export whole table</x-label>
             </x-menuitem>
 
             <x-menuitem @click="exportFiltered">
-              <x-label>Export Filtered View</x-label>
+              <x-label>Export filtered view</x-label>
+            </x-menuitem>
+            <x-menuitem @click="showColumnFilterModal">
+              <x-label>Show or hide columns</x-label>
             </x-menuitem>
           </x-menu>
         </x-button>
@@ -740,6 +744,9 @@ export default Vue.extend({
   },
 
   watch: {
+    allColumnsSelected() {
+      this.resetPendingChanges()
+    },
     shouldInitialize() {
       if (this.shouldInitialize) {
         this.initialize()
