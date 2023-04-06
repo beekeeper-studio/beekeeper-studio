@@ -1,4 +1,6 @@
 import * as path from 'path'
+let p, e
+
 function isRenderer() {
   // running in a web browser
   if (typeof process === 'undefined') return true
@@ -12,13 +14,12 @@ function isRenderer() {
   return process.type === 'renderer'
 }
 
-let e = null
-let p = process
 if (isRenderer()) {
   e = require('@electron/remote')
   p = e.process
 } else {
   e = require('electron')
+  p = process
 }
 
 const platform = p.env.OS_OVERRIDE ? p.env.OS_OVERRIDE : p.platform
@@ -54,8 +55,8 @@ const platformInfo = {
     test: testMode,
     production: !isDevEnv && !testMode && !p.env.WEBPACK_DEV_SERVER_URL
   },
-  debugEnabled: !!process.env.DEBUG,
-  DEBUG: process.env.DEBUG,
+  debugEnabled: !!p.env.DEBUG,
+  DEBUG: p.env.DEBUG,
   platform: easyPlatform,
   darkMode: testMode? true : e.nativeTheme.shouldUseDarkColors || windowPrefersDarkMode,
   userDirectory,
