@@ -42,6 +42,8 @@ describe("CSV Exporter", () => {
     const result = fs.readFileSync(filename, { encoding: 'utf-8' })
     const parsed = JSON.parse(result)
 
+    // it parses as valid JSON, and each row contains the correct column names
     expect(parsed.length).toBe(3)
+    expect(Object.keys(parsed[0])).toStrictEqual(['name'])
   })
 })
