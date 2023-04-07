@@ -211,10 +211,9 @@ function testWith(dockerTag, socket = false) {
     // regression test for Bug #1564 "BUG: Tables appear twice in UI"
     it("Should not have duplicate tables for tables with the same name in different schemas", async () => {
       const tables = await util.connection.listTables();
-      const schema1 = tables.filter((t) => t.schema === "schema1");
-      const schema2 = tables.filter((t) => t.schema === "schema2");
+      const schema1 = tables.filter((t) => t.schema == "schema1");
+      const schema2 = tables.filter((t) => t.schema == "schema2");
 
-      console.log("tables")
       expect(schema1.length).toBe(1);
       expect(schema2.length).toBe(1);
     });
