@@ -5,7 +5,7 @@
         <i v-if="displayParams.length > 0" class="dropdown-icon material-icons">keyboard_arrow_right</i>
       </span>
       <span class="item-wrapper flex flex-middle expand">
-        <div :title="draggable ? 'drag me!' : ''" class="table-item-wrapper drag-handle" :class="{ 'draggable': draggable }">
+        <div :title="draggable ? 'drag me!' : ''" class="table-item-wrapper" :class="{ 'draggable': draggable, 'drag-handle': draggable }">
           <i :title="title" :class="iconClass" class="item-icon entity-icon material-icons">functions</i>
           <i class="material-icons item-icon dh" v-if="draggable">menu</i>
         </div>

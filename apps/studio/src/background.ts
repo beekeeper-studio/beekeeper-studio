@@ -7,23 +7,23 @@ import * as electron from 'electron'
 import { ipcMain } from 'electron'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 
+require('@electron/remote/main').initialize()
 log.transports.file.level = "info"
 log.catchErrors({ showDialog: false})
 log.info("initializing background")
 
 import { manageUpdates } from './background/update_manager'
 
-import platformInfo from './common/platform_info'
 import MenuHandler from './background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from './common/appdb/models/user_setting'
 import Connection from './common/appdb/Connection'
 import Migration from './migration/index'
 import { buildWindow, getActiveWindows } from './background/WindowBuilder'
 import yargs from 'yargs-parser'
+import platformInfo from './common/platform_info'
 
 import { AppEvent } from './common/AppEvent'
 
-require('@electron/remote/main').initialize()
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
     fs.mkdirSync(d, { recursive: true })

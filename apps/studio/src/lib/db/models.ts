@@ -26,6 +26,8 @@ export interface DatabaseEntity {
 
 export interface TableOrView extends DatabaseEntity {
   columns?: TableColumn[];
+  partitions?: TablePartition[];
+  tabletype?: string | null
 }
 
 export interface IndexedColumn {
@@ -51,6 +53,13 @@ export interface TableTrigger {
   condition: string | null
   table: string
   schema?: string
+}
+
+export interface TablePartition {
+  name: string;
+  schema: string;
+  expression: string;
+  num: number;
 }
 
 export interface TableProperties {
@@ -189,10 +198,13 @@ export interface Routine extends DatabaseEntity {
   type: RoutineType;
 }
 
+// NOTE (day): note sure if this is really where we want to put edit partitions?
 export interface SupportedFeatures {
   customRoutines: boolean;
   comments: boolean;
   properties: boolean;
+  partitions: boolean;
+  editPartitions: boolean;
 }
 
 export interface FieldDescriptor {

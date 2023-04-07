@@ -7,6 +7,7 @@
       span.item-wrapper {
         display: flex;
         align-items: center;
+
       }
     }
     .list-item-btn {
@@ -107,5 +108,15 @@
     a {
       border-bottom: 1px solid #dadada;
     }
+  }
+}
+
+.list-item {
+  .item-wrapper {
+    .table-item-wrapper {
+        display: flex;
+        align-items: center;
+        height: auto;
+      }
   }
 }
