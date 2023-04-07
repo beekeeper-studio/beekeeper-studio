@@ -83,6 +83,17 @@ function testWith(dockerTag, socket = false) {
         `);
       }
 
+      await util.connection.executeQuery(`
+          CREATE SCHEMA schema1;
+          CREATE TABLE schema1.duptable (
+            "id" INTEGER PRIMARY KEY
+          );
+          CREATE SCHEMA schema2;
+          CREATE TABLE schema2.duptable (
+            "id" INTEGER PRIMARY KEY
+          );
+        `);
+
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
       // test table for issue-1442 "BUG: INTERVAL columns receive wrong value when cloning row"
@@ -196,6 +207,16 @@ function testWith(dockerTag, socket = false) {
         expect(partitions.length).toBe(3);
       }
     })
+
+    // regression test for Bug #1564 "BUG: Tables appear twice in UI"
+    it("Should not have duplicate tables for tables with the same name in different schemas", async () => {
+      const tables = await util.connection.listTables();
+      const schema1 = tables.filter((t) => t.schema === "schema1");
+      const schema2 = tables.filter((t) => t.schema === "schema2");
+
+      expect(schema1.length).toBe(1);
+      expect(schema2.length).toBe(1);
+    });
 
     describe("Common Tests", () => {
       runCommonTests(() => util)
