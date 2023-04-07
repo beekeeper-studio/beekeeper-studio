@@ -249,10 +249,10 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
     sql += `
         pc.relkind as tabletype
       FROM information_schema.tables AS t
+      JOIN pg_class AS pc
+      ON t.table_name = pc.relname AND t.table_schema = pc.relnamespace::regnamespace::text
       LEFT OUTER JOIN pg_inherits AS i
-      ON t.table_name::text = i.inhrelid::regclass::text
-      LEFT OUTER JOIN pg_class AS pc
-      ON t.table_name = pc.relname
+      ON pc.oid = i.inhrelid
       WHERE t.table_type NOT LIKE '%VIEW%'
       AND i.inhrelid::regclass IS NULL
     `;
