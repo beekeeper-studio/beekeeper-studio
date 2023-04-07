@@ -37,7 +37,7 @@
     line-height: 28px;
     .sidebar-title {
       flex: 0 1 100%;
-      color: $text-dark;    
+      color: $text-dark;
       font-weight: 500;
       letter-spacing: 0.05rem;
       padding: 0 $gutter-h;
@@ -211,7 +211,7 @@
     }
   }
 }
-.table-list, 
+.table-list,
 .sidebar-list {
   flex-grow: 1;
 }
@@ -263,7 +263,7 @@
     a, .btn-link {
       margin: 0 ($gutter-h * 0.5);
       margin-right: 0;
-      padding: 0;
+      padding: 0!important;
     }
     .material-icons, .material-icons-outlined {
       font-size: 16px;
@@ -287,7 +287,7 @@
 .list-group {
   display: flex;
   flex-direction: column;
-  padding: 0;    
+  padding: 0;
   flex: 1 1 auto;
   height: 100%;
   &:hover{

@@ -48,6 +48,7 @@ import 'codemirror/addon/merge/merge'
 import _ from 'lodash'
 import NotyPlugin from '@/plugins/NotyPlugin'
 import './common/initializers/big_int_initializer.ts'
+import SettingsPlugin from './plugins/SettingsPlugin'
 
 (async () => {
   try {
@@ -104,6 +105,11 @@ import './common/initializers/big_int_initializer.ts'
           if (this.$config.isMac) return `meta+${key}`
           return `ctrl+${key}`
         },
+        // codemirror sytax
+        cmCtrlOrCmd(key: string) {
+          if (this.$config.isMac) return `Cmd-${key}`
+          return `Ctrl-${key}`
+        },
         selectChildren(element) {
           const selection = window.getSelection()
           if (selection) {
@@ -127,6 +133,7 @@ import './common/initializers/big_int_initializer.ts'
     Vue.use(VueClipboard)
     Vue.use(ConfigPlugin)
     Vue.use(BeekeeperPlugin)
+    Vue.use(SettingsPlugin)
     Vue.use(VueElectronPlugin)
     Vue.use(PortalVue)
     Vue.use(NotyPlugin, {

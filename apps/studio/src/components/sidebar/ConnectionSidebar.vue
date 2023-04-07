@@ -62,11 +62,10 @@
                 <div class="actions">
                   <a v-if="isCloud" @click.prevent="importFromLocal" title="Import connections from local workspace"><i class="material-icons">save_alt</i></a>
                   <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
+                  <sidebar-sort-buttons v-model="sort" :sortOptions="sortables" />
                 </div>
-                <x-button class="actions-btn btn btn-link btn-small" title="Sort By">
-                  <!-- <span>{{sortables[this.sortOrder]}}</span> -->
+                <!-- <x-button class="actions-btn btn btn-link btn-small" v-tooltip="`Sorted by ${sortables[sortOrder]}`">
                   <i class="material-icons-outlined">sort</i>
-                  <!-- <i class="material-icons">arrow_drop_down</i> -->
                   <x-menu style="--target-align: right;">
                     <x-menuitem
                       v-for="i in Object.keys(sortables)"
@@ -78,7 +77,7 @@
                       <x-label>{{ sortables[i] }}</x-label>
                     </x-menuitem>
                   </x-menu>
-                </x-button>
+                </x-button> -->
               </div>
             </div>
             <error-alert :error="error" v-if="error" title="Problem loading connections" @close="error = null" :closable="true" />
@@ -168,11 +167,12 @@
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import rawLog from 'electron-log'
+import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 
 const log = rawLog.scope('connection-sidebar');
 
   export default {
-    components: { ConnectionListItem, SidebarLoading, ErrorAlert, SidebarFolder },
+    components: { ConnectionListItem, SidebarLoading, ErrorAlert, SidebarFolder, SidebarSortButtons },
     props: ['selectedConfig'],
     data: () => ({
       split: null,
@@ -180,10 +180,17 @@ const log = rawLog.scope('connection-sidebar');
         labelColor: "Color",
         id: "Created",
         name: "Name",
-        connectionType: "Type"
-      }
+        connectionType: "Type",
+      },
+      sort: { field: 'name', order: 'asc' },
     }),
     watch: {
+      async sort() {
+        await this.$settings.set('connectionsSortOrder', this.sort.order)
+        await this.$settings.set('connectionsSortBy', this.sort.field)
+      },
+      async sortBy() {
+      },
       // If we load with some pins, this will reinitialize split to reflect that
       noPins(value) {
         if (!value)
@@ -201,7 +208,6 @@ const log = rawLog.scope('connection-sidebar');
       ...mapGetters({
         'usedConfigs': 'orderedUsedConfigs',
         'settings': 'settings/settings',
-        'sortOrder': 'settings/sortOrder',
         'isCloud': 'isCloud',
         'activeWorkspaces': 'credentials/activeWorkspaces',
         'pinnedConnections': 'pinnedConnections/pinnedConnections'
@@ -250,7 +256,8 @@ const log = rawLog.scope('connection-sidebar');
         }
       },
       sortedConnections() {
-        if (this.sortOrder === 'labelColor') {
+        let result = []
+        if (this.sort.field === 'labelColor') {
           const mappings = {
             default: -1,
             red: 0,
@@ -261,9 +268,12 @@ const log = rawLog.scope('connection-sidebar');
             purple: 5,
             pink: 6
           }
-          return _.orderBy(this.connectionConfigs, (c) => mappings[c.labelColor]).reverse()
+          result = _.orderBy(this.connectionConfigs, (c) => mappings[c.labelColor]).reverse()
         }
-        return _.orderBy(this.connectionConfigs, this.sortOrder)
+        result = _.orderBy(this.connectionConfigs, this.sort.field)
+
+        if (this.sort.order == 'desc') result = result.reverse()
+        return result;
       },
       components() {
         if (!this.noPins) {
@@ -280,8 +290,14 @@ const log = rawLog.scope('connection-sidebar');
         }
       }
     },
-    mounted() {
+    async mounted() {
       this.buildSplit()
+      const [field, order] = await Promise.all([
+        this.$settings.get('connectionsSortBy', 'name'),
+        this.$settings.get('connectionsSortOrder', 'asc')
+      ])
+      this.sort.field = field
+      this.sort.order = order
     },
     methods: {
       buildSplit() {
@@ -320,11 +336,6 @@ const log = rawLog.scope('connection-sidebar');
       },
       getLabelClass(color) {
         return `label-${color}`
-      },
-      sortConnections(by) {
-        // this.connectionConfigs.sort((a, b) => a[by].toString().localeCompare(b[by].toString()))
-        this.settings.sortOrder.value = by
-        this.settings.sortOrder.save()
       },
       pinOnChange() {
       }

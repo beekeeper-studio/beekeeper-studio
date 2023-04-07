@@ -36,12 +36,7 @@ export interface NativePlugin {
 
 }
 
-const copyNotification = new Noty({
-  text: "Text copied to clipboard",
-  layout: "bottomRight",
-  queue: "clipboard",
-  timeout: 2000,
-})
+
 
 export const ElectronPlugin: NativePlugin = {
   dialog: {
@@ -56,6 +51,12 @@ export const ElectronPlugin: NativePlugin = {
   },
   clipboard: {
     writeText(rawText: any, notify: boolean = true) {
+      const copyNotification = new Noty({
+        text: "Text copied to clipboard",
+        layout: "bottomRight",
+        queue: "clipboard",
+        timeout: 2000,
+      })
       const text = _.toString(rawText)
       Noty.closeAll('clipboard')
       remote.clipboard.writeText(text)

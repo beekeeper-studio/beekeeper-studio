@@ -47,7 +47,7 @@ module.exports = {
         releaseInfo: {
           releaseNotesFile: "build/release-notes.md"
         },
-        files: ['**/*', 'public/icons/**/*'],
+        files: ['**/*', 'public/icons/**/*', '!**/node_gyp_bins/*'],
         afterSign: "electron-builder-notarize",
         afterPack: "./build/afterPack.js",
         extraResources: [

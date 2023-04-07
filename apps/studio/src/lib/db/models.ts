@@ -198,11 +198,13 @@ export interface Routine extends DatabaseEntity {
   type: RoutineType;
 }
 
+// NOTE (day): note sure if this is really where we want to put edit partitions?
 export interface SupportedFeatures {
   customRoutines: boolean;
   comments: boolean;
   properties: boolean;
   partitions: boolean;
+  editPartitions: boolean;
 }
 
 export interface FieldDescriptor {
