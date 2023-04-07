@@ -451,6 +451,9 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
     },
     methods: {
       selectKeymap(name) {
+        if(name.toLowerCase() === this.selectedKeymap) {
+          return;
+        }
         this.selectedKeymap = name.toLowerCase();
         this.initialize();
       },
