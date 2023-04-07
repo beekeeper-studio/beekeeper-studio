@@ -1,5 +1,5 @@
 <template>
-  <div class="query-editor" v-hotkey="keymap">
+  <div :key="selectedKeymap" class="query-editor" v-hotkey="keymap">
     <div
       class="top-panel"
       ref="topPanel"
@@ -19,6 +19,17 @@
       <span class="expand"></span>
       <div class="toolbar text-right">
         <div class="actions btn-group" ref="actions">
+          <x-buttons class="">
+            <x-button class="btn btn-flat btn-small" menu>
+              <x-label style="text-transform: capitalize;">{{selectedKeymap}}</x-label>
+              <i class="material-icons">arrow_drop_down</i>
+              <x-menu>
+                <x-menuitem :key="t.value" v-for="t in keymapTypes" @click.prevent="selectKeymap(t.name)">
+                    <x-label>{{t.name}}</x-label>
+                </x-menuitem>
+              </x-menu>
+            </x-button>
+          </x-buttons>
           <x-button @click.prevent="triggerSave" class="btn btn-flat btn-small">Save</x-button>
 
           <x-buttons class="">
@@ -171,6 +182,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
     props: ['tab', 'active'],
     data() {
       return {
+        selectedKeymap: this.$store.state.usedConfig.keymap ? this.$store.state.usedConfig.keymap : "default",
         results: [],
         running: false,
         runningCount: 1,
@@ -200,6 +212,9 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       ...mapGetters(['dialect', 'defaultSchema']),
       ...mapState(['usedConfig', 'connection', 'database', 'tables', 'storeInitialized']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
+      keymapTypes() {
+        return this.$config.defaults.keymapTypes
+      },
       shouldInitialize() {
         return this.storeInitialized && this.active && !this.initialized
       },
@@ -434,6 +449,10 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       }
     },
     methods: {
+      selectKeymap(name) {
+        this.selectedKeymap = name.toLowerCase();
+        this.initialize();
+      },
       locationFromPosition(queryText, ...rawPositions) {
         // 1. find the query text inside the editor
         // 2.
@@ -463,7 +482,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       },
       initialize() {
         this.initialized = true
-        const editormapping = this.$store.state.usedConfig.keymap ? this.$store.state.usedConfig.keymap : "default";
+        const editormapping = this.selectedKeymap
         // TODO (matthew): Add hint options for all tables and columns\
         this.initializeQueries()
         const startingValue = this.unsavedText || this.query?.text || editorDefault
