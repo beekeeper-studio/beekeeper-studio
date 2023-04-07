@@ -214,6 +214,7 @@ function testWith(dockerTag, socket = false) {
       const schema1 = tables.filter((t) => t.schema === "schema1");
       const schema2 = tables.filter((t) => t.schema === "schema2");
 
+      console.log("tables")
       expect(schema1.length).toBe(1);
       expect(schema2.length).toBe(1);
     });
