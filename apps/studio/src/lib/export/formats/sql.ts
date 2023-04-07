@@ -67,7 +67,7 @@ export class SqlExporter extends Export {
   formatRow(rowArray: any): string {
     const row = this.rowToObject(rowArray)
     let knex = this.knex(this.table.name)
-    if (this.outputOptions && this.outputOptions.schema && this.table.schema) {
+    if (this.outputOptions.schema && this.table.schema) {
       knex = knex.withSchema(this.table.schema)
     }
 

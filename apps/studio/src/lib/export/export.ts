@@ -41,7 +41,7 @@ export abstract class Export {
     public query: string,
     public query_name: string,
     public filters: TableFilter[] | any[],
-    public options: ExportOptions,
+    public options: ExportOptions
   ) {
     this.id = this.generateId()
   }
@@ -228,7 +228,7 @@ export abstract class Export {
 
       await this.fileHandle?.close()
       if (this.status === ExportStatus.Aborted) {
-        if (this.options && this.options.deleteOnAbort) {
+        if (this.options.deleteOnAbort) {
           await promises.unlink(this.filePath)
         }
       }
@@ -237,7 +237,7 @@ export abstract class Export {
       this.error = error
       log.error(error)
       await this.fileHandle?.close()
-      if (this.options && this.options.deleteOnAbort) {
+      if (this.options.deleteOnAbort) {
         await promises.unlink(this.filePath)
       }
     } finally {
