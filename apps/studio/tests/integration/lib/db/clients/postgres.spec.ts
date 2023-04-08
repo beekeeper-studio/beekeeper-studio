@@ -82,10 +82,12 @@ function testWith(dockerTag, socket = false) {
           FOR VALUES FROM (21) TO (30);
         `);
       }
-      await util.connection.executeQuery(`
+      const result = await util.connection.executeQuery(`
           CREATE SCHEMA schema1;
           CREATE SCHEMA schema2;
         `);
+
+      console.info('RESULT: ', result);
 
       await util.connection.executeQuery(`
           CREATE TABLE schema1.duptable (
