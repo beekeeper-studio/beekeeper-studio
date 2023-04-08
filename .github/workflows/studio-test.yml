@@ -36,9 +36,9 @@ jobs:
         run: bin/check-for-only-tests.sh
 
       - name: Unit Tests
-        run: yarn workspace beekeeper-studio run test:unit --ci --silent=false
+        run: yarn workspace beekeeper-studio run test:unit --ci --silent
 
       - name: Integration Tests
-        run: yarn workspace beekeeper-studio run test:integration --runInBand --ci --silent
+        run: yarn workspace beekeeper-studio run test:integration --runInBand --ci --silent=false
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
