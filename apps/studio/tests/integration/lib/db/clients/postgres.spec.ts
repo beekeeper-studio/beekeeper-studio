@@ -82,17 +82,13 @@ function testWith(dockerTag, socket = false) {
           FOR VALUES FROM (21) TO (30);
         `);
       }
-      const result = await util.connection.executeQuery(`
-          CREATE SCHEMA schema1;
-          CREATE SCHEMA schema2;
-        `);
-
-      console.info('RESULT: ', result);
 
       await util.connection.executeQuery(`
+          CREATE SCHEMA schema1;
           CREATE TABLE schema1.duptable (
             "id" INTEGER PRIMARY KEY
           );
+          CREATE SCHEMA schema2;
           CREATE TABLE schema2.duptable (
             "id" INTEGER PRIMARY KEY
           );
@@ -214,12 +210,10 @@ function testWith(dockerTag, socket = false) {
 
     // regression test for Bug #1564 "BUG: Tables appear twice in UI"
     it("Should not have duplicate tables for tables with the same name in different schemas", async () => {
-      const tables = await util.connection.listTables();
+      const tables = await util.connection.listTables({});
       const schema1 = tables.filter((t) => t.schema == "schema1");
       const schema2 = tables.filter((t) => t.schema == "schema2");
 
-      // This is gonna fail, but at least I'll see the value
-      expect(tables).toBe(null);
       expect(schema1.length).toBe(1);
       expect(schema2.length).toBe(1);
     });
