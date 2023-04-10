@@ -246,13 +246,16 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
 
   if (version.hasPartitions) {
     // TODO (day): when we support more dbs for partitioning, we will need to construct a different query for cockroach.
+    const schemaStatement = version.number >= 100000 ?
+      't.table_schema = pc.relnamespace::regnamespace::text' :
+      't.table_schema = (SELECT nspname FROM pg_namespace as pn WHERE pn.oid = pc.relnamespace)';
     sql += `
         pc.relkind as tabletype
       FROM information_schema.tables AS t
+      JOIN pg_class AS pc
+        ON t.table_name = pc.relname AND ${schemaStatement}
       LEFT OUTER JOIN pg_inherits AS i
-      ON t.table_name::text = i.inhrelid::regclass::text
-      LEFT OUTER JOIN pg_class AS pc
-      ON t.table_name = pc.relname
+        ON pc.oid = i.inhrelid
       WHERE t.table_type NOT LIKE '%VIEW%'
       AND i.inhrelid::regclass IS NULL
     `;
