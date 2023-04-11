@@ -69,7 +69,7 @@ function testWith(dockerTag, socket = false) {
       })
 
       if (dockerTag == 'latest') {
-        await util.connection.executeQuery(`
+        await util.knex.raw(`
           CREATE TABLE partitionedtable (
             recordId SERIAL,
             number INT
@@ -83,7 +83,7 @@ function testWith(dockerTag, socket = false) {
         `);
       }
 
-      await util.connection.executeQuery(`
+      await util.knex.raw(`
           CREATE SCHEMA schema1;
           CREATE TABLE schema1.duptable (
             "id" INTEGER PRIMARY KEY
@@ -91,6 +91,14 @@ function testWith(dockerTag, socket = false) {
           CREATE SCHEMA schema2;
           CREATE TABLE schema2.duptable (
             "id" INTEGER PRIMARY KEY
+          );
+        `);
+
+      await util.knex.raw(`
+          CREATE SCHEMA "1234";
+          CREATE TABLE "1234"."5678" (
+            "id" SERIAL PRIMARY KEY,
+            "9101" INTEGER
           );
         `);
 
@@ -216,6 +224,16 @@ function testWith(dockerTag, socket = false) {
 
       expect(schema1.length).toBe(1);
       expect(schema2.length).toBe(1);
+    });
+
+    // regression test for Bug #1572 "Only schemas that show are now information_schema and pg_catalog"
+    it("Numeric names should still be pulled back in queries", async () => {
+      const tables = await util.connection.listTables({ schema: '1234' });
+      const columns = await util.connection.listTableColumns('banana', '5678', '1234');
+
+      expect(tables.length).toBe(1);
+      expect(tables[0].name).toBe('5678');
+      expect(columns.map((c) => c.columnName).includes('9101'));
     });
 
     describe("Common Tests", () => {
