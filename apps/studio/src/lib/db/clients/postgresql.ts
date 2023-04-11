@@ -247,7 +247,7 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
   if (version.hasPartitions) {
     // TODO (day): when we support more dbs for partitioning, we will need to construct a different query for cockroach.
     const schemaStatement = version.number >= 100000 ?
-      't.table_schema = pc.relnamespace::regnamespace::text' :
+      `quote_ident(t.table_schema) = pc.relnamespace::regnamespace::text` :
       't.table_schema = (SELECT nspname FROM pg_namespace as pn WHERE pn.oid = pc.relnamespace)';
     sql += `
         pc.relkind as tabletype
