@@ -84,8 +84,7 @@ export interface DialectData {
   wrapLiteral: (s: string) => string
   disabledFeatures?: {
     informationSchema?: {
-      extra?: boolean,
-      comment?: boolean
+      extra?: boolean
     }
     tableTable?: boolean,
     alter?: {
