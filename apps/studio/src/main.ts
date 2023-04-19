@@ -128,7 +128,7 @@ import SettingsPlugin from './plugins/SettingsPlugin'
     Vue.config.productionTip = false
     Vue.use(TypeOrmPlugin, {connection})
     Vue.use(VueHotkey)
-    Vue.use(VTooltip)
+    Vue.use(VTooltip, { defaultHtml: false, })
     Vue.use(VModal)
     Vue.use(VueClipboard)
     Vue.use(ConfigPlugin)
