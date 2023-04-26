@@ -81,7 +81,7 @@
 
     <!-- Save Modal -->
     <portal to="modals">
-      <modal class="vue-dialog beekeeper-modal" name="save-modal" @closed="selectEditor" @opened="selectTitleInput" height="auto" :scrollable="true">
+      <modal class="vue-dialog beekeeper-modal" :name="`save-modal-${tab.id}`" @closed="selectEditor" @opened="selectTitleInput" height="auto" :scrollable="true">
         <form v-if="query" @submit.prevent="saveQuery">
           <div class="dialog-content">
             <div class="dialog-c-title">Saved Query Name</div>
@@ -93,7 +93,7 @@
             </div>
           </div>
           <div class="vue-dialog-buttons">
-            <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('save-modal')">Cancel</button>
+            <button class="btn btn-flat" type="button" @click.prevent="$modal.hide(`save-modal-${tab.id}`)">Cancel</button>
             <button class="btn btn-primary" type="submit">Save</button>
           </div>
         </form>
@@ -102,7 +102,7 @@
 
     <!-- Parameter modal -->
     <portal to="modals">
-      <modal class="vue-dialog beekeeper-modal" name="parameters-modal" @opened="selectFirstParameter" @closed="selectEditor" height="auto" :scrollable="true">
+      <modal class="vue-dialog beekeeper-modal" :name="`parameters-modal-${tab.id}`" @opened="selectFirstParameter" @closed="selectEditor" height="auto" :scrollable="true">
         <form @submit.prevent="submitQuery(queryForExecution, true)">
           <div class="dialog-content">
             <div class="dialog-c-title">Provide parameter values</div>
@@ -119,7 +119,7 @@
             </div>
           </div>
           <div class="vue-dialog-buttons">
-            <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('parameters-modal')">Cancel</button>
+            <button class="btn btn-flat" type="button" @click.prevent="$modal.hide(`parameters-modal-${tab.id}`)">Cancel</button>
             <button class="btn btn-primary" type="submit">Run</button>
           </div>
         </form>
@@ -150,8 +150,8 @@
   import ErrorAlert from './common/ErrorAlert.vue'
   import {FormatterDialect} from "@shared/lib/dialects/models";
   import MergeManager from '@/components/editor/MergeManager.vue'
-import { AppEvent } from '@/common/AppEvent'
-import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
+  import { AppEvent } from '@/common/AppEvent'
+  import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -398,7 +398,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             this.editor.focus()
           })
         } else {
-          this.$modal.hide('save-modal')
+          this.$modal.hide(`save-modal-${this.tab.id}`)
         }
       },
       currentQueryPosition() {
@@ -664,7 +664,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         if (this.query?.id) {
           this.saveQuery()
         } else {
-          this.$modal.show('save-modal')
+          this.$modal.show(`save-modal-${this.tab.id}`)
         }
       },
       async saveQuery() {
@@ -676,7 +676,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
           try {
             const payload = _.clone(this.query)
             payload.text = this.unsavedText
-            this.$modal.hide('save-modal')
+            this.$modal.hide(`save-modal-${this.tab.id}`)
             const id = await this.$store.dispatch('data/queries/save', payload)
             this.tab.queryId = id
 
@@ -733,12 +733,12 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 
         try {
           if (this.hasParams && (!fromModal || this.paramsModalRequired)) {
-            this.$modal.show('parameters-modal')
+            this.$modal.show(`parameters-modal-${this.tab.id}`)
             return
           }
 
           const query = this.deparameterizedQuery
-          this.$modal.hide('parameters-modal')
+          this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           this.runningQuery = this.connection.query(query)
           const queryStartTime = new Date()
