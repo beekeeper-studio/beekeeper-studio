@@ -250,18 +250,21 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
       `quote_ident(t.table_schema) = pc.relnamespace::regnamespace::text` :
       't.table_schema = (SELECT nspname FROM pg_namespace as pn WHERE pn.oid = pc.relnamespace)';
     sql += `
-        pc.relkind as tabletype
+        pc.relkind as tabletype,
+        parent_pc.relkind as parenttype
       FROM information_schema.tables AS t
       JOIN pg_class AS pc
         ON t.table_name = pc.relname AND ${schemaStatement}
       LEFT OUTER JOIN pg_inherits AS i
         ON pc.oid = i.inhrelid
+      LEFT OUTER JOIN pg_class AS parent_pc
+        ON parent_pc.oid = i.inhparent
       WHERE t.table_type NOT LIKE '%VIEW%'
-      AND i.inhrelid::regclass IS NULL
     `;
   } else {
     sql += `
-        'r' as tabletype
+        'r' as tabletype,
+        'r' as parenttype
       FROM information_schema.tables AS t
       WHERE t.table_type NOT LIKE '%VIEW%'
     `;
