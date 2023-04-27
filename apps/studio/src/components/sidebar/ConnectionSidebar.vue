@@ -268,9 +268,10 @@ const log = rawLog.scope('connection-sidebar');
             purple: 5,
             pink: 6
           }
-          result = _.orderBy(this.connectionConfigs, (c) => mappings[c.labelColor]).reverse()
+          result = _.orderBy(this.connectionConfigs, (c) => mappings[c.labelColor])
+        } else {
+          result = _.orderBy(this.connectionConfigs, this.sort.field)
         }
-        result = _.orderBy(this.connectionConfigs, this.sort.field)
 
         if (this.sort.order == 'desc') result = result.reverse()
         return result;
