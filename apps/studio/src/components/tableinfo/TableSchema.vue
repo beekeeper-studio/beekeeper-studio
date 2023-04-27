@@ -119,7 +119,6 @@ export default Vue.extend({
       newRows: [],
       removedRows: [],
       error: null,
-      selectedCell: null
     }
   },
   watch: {
@@ -176,7 +175,7 @@ export default Vue.extend({
           editor: vueEditor(NullableInputEditorVue),
           cellEdited: this.cellEdited,
           headerFilter: true,
-          tooltip: this.columnNameCellTooltip.bind(this), 
+          tooltip: this.columnNameCellTooltip.bind(this),
           formatter: this.cellFormatter,
           editable: this.isCellEditable.bind(this, 'renameColumn'),
           cellClick: this.columnNameCellClick.bind(this)
@@ -188,7 +187,7 @@ export default Vue.extend({
           editorParams: autocompleteOptions,
           cellEdited: this.cellEdited,
           editable: this.isCellEditable.bind(this, 'alterColumn')
-          },
+        },
         {
           title: 'Nullable',
           field: 'nullable',
@@ -234,14 +233,6 @@ export default Vue.extend({
           width: 70,
           cssClass: "read-only never-editable",
         },
-        (this.disabledFeatures?.informationSchema?.comment ? null : {
-          title: 'Comment',
-          field: 'comment',
-          editor: vueEditor(NullableInputEditorVue),
-          cellEdited: this.cellEdited,
-          formatter: this.cellFormatter,
-          editable: this.isCellEditable.bind(this, 'alterColumn'),
-        }),
         this.editable ? trashButton(this.removeRow) : null
       ].filter((c) => !!c)
       return result.map((col) => {
@@ -423,36 +414,24 @@ export default Vue.extend({
     },
     columnNameCellClick(_e: any, cell: CellComponent) {
       if (!this.editable || this.disabledFeatures?.alter?.renameColumn) {
-        if (this.selectedCell) this.selectedCell.getElement().classList.remove('selected');
-        this.selectedCell = cell;
-        cell.getElement().classList.add('selected');
-        this.$native.clipboard.writeText(cell.getValue());
+        const element = cell.getElement()
+        element.classList.add('copied');
+        setTimeout(() => element.classList.remove('copied'), 500)
+        this.$native.clipboard.writeText(cell.getValue(), true);
       }
     },
     columnNameCellTooltip(_e: any, cell: CellComponent, _onRendered: any) {
       let canCopy: boolean = !this.editable || this.disabledFeatures?.alter?.renameColumn;
       return canCopy ? `${cell.getValue()} - Click to Copy` : cell.getValue();
     },
-    maybeUnselectCell(event: any) {
-      if (!this.selectedCell) return
-      if (!this.active) return
-      const target = event.target
-      const targets = Array.from(this.selectedCell.getElement().getElementsByTagName("*"))
-      if (!targets.includes(target)) {
-        this.selectedCell.getElement().classList.remove('selected')
-        this.selectedCell = null
-      }
-    },
   },
   async mounted() {
-    document.addEventListener('click', this.maybeUnselectCell)
     this.tabState.dirty = false
     // table columns are updated by TabTableProperties on load. So no need to do it here.
     if (!this.active) this.forceRedraw = true
     this.initializeTabulator()
   },
   beforeDestroy() {
-    document.removeEventListener('click', this.maybeUnselectCell)
     if (this.tabulator) this.tabulator.destroy()
   },
 })

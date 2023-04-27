@@ -167,6 +167,16 @@ export function runCommonTests(getUtil) {
     })
   })
 
+  describe("Get data modification SQL", () => {
+    beforeEach(async () => {
+      await prepareTestTable(getUtil())
+    })
+
+    test("Should generate scripts for all types of changes", () => {
+      itShouldGenerateSQLForAllChanges(getUtil())
+    })
+  })
+
 }
 
 // test functions below
@@ -637,4 +647,61 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
     lastName: 'Tester'
   })
 
+}
+
+export const itShouldGenerateSQLForAllChanges = function(util) {
+  const changes = {
+    inserts: [
+      {
+        table: 'test_inserts',
+        schema: util.options.defaultSchema,
+        data: [{
+          id: 1,
+          firstName: 'Tom',
+          lastName: 'Tester'
+        }]
+      },
+      {
+        table: 'test_inserts',
+        schema: util.options.defaultSchema,
+        data: [{
+          id: 2,
+          firstName: 'Jane',
+          lastName: 'Doe'
+        }]
+      }
+    ],
+    updates: [
+      {
+        table: 'test_inserts',
+        schema: util.options.defaultSchema,
+        primaryKeys: [
+          {
+            column: 'id',
+            value: 1
+          }
+        ],
+        column: 'firstName',
+        value: 'Testy'
+      }
+    ],
+    deletes: [
+      {
+        table: 'test_inserts',
+        schema: util.options.defaultSchema,
+        primaryKeys: [{
+          column: 'id', value: 2
+        }],
+      }
+    ]
+  };
+
+  const sql = util.connection.applyChangesSql(changes).toLowerCase();
+
+  expect(sql.includes('insert'));
+  expect(sql.includes('update'));
+  expect(sql.includes('delete'));
+  expect(sql.includes('test_inserts'));
+  expect(sql.includes('jane'));
+  expect(sql.includes('testy'));
 }

@@ -68,6 +68,40 @@ function testWith(dockerTag, socket = false) {
         table.text("normal")
       })
 
+      if (dockerTag == 'latest') {
+        await util.knex.raw(`
+          CREATE TABLE partitionedtable (
+            recordId SERIAL,
+            number INT
+          ) PARTITION BY RANGE(number);
+          CREATE TABLE partition_1 PARTITION OF partitionedtable
+          FOR VALUES FROM (0) TO (10);
+          CREATE TABLE another_partition PARTITION OF partitionedtable
+          FOR VALUES FROM (11) TO (20);
+          CREATE TABLE party PARTITION OF partitionedtable
+          FOR VALUES FROM (21) TO (30);
+        `);
+      }
+
+      await util.knex.raw(`
+          CREATE SCHEMA schema1;
+          CREATE TABLE schema1.duptable (
+            "id" INTEGER PRIMARY KEY
+          );
+          CREATE SCHEMA schema2;
+          CREATE TABLE schema2.duptable (
+            "id" INTEGER PRIMARY KEY
+          );
+        `);
+
+      await util.knex.raw(`
+          CREATE SCHEMA "1234";
+          CREATE TABLE "1234"."5678" (
+            "id" SERIAL PRIMARY KEY,
+            "9101" INTEGER
+          );
+        `);
+
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
       // test table for issue-1442 "BUG: INTERVAL columns receive wrong value when cloning row"
@@ -173,6 +207,34 @@ function testWith(dockerTag, socket = false) {
         amount_of_time: insertedValue // should still be the string not an object
       })
     })
+
+    it("Should be able to list partitions for a table", async () => {
+      if (dockerTag == 'latest') {
+        const partitions = await util.connection.listTablePartitions('partitionedtable');
+
+        expect(partitions.length).toBe(3);
+      }
+    })
+
+    // regression test for Bug #1564 "BUG: Tables appear twice in UI"
+    it("Should not have duplicate tables for tables with the same name in different schemas", async () => {
+      const tables = await util.connection.listTables({});
+      const schema1 = tables.filter((t) => t.schema == "schema1");
+      const schema2 = tables.filter((t) => t.schema == "schema2");
+
+      expect(schema1.length).toBe(1);
+      expect(schema2.length).toBe(1);
+    });
+
+    // regression test for Bug #1572 "Only schemas that show are now information_schema and pg_catalog"
+    it("Numeric names should still be pulled back in queries", async () => {
+      const tables = await util.connection.listTables({ schema: '1234' });
+      const columns = await util.connection.listTableColumns('banana', '5678', '1234');
+
+      expect(tables.length).toBe(1);
+      expect(tables[0].name).toBe('5678');
+      expect(columns.map((c) => c.columnName).includes('9101'));
+    });
 
     describe("Common Tests", () => {
       runCommonTests(() => util)

@@ -4,6 +4,13 @@ import VueHotkey from 'v-hotkey'
 import VTooltip from 'v-tooltip'
 import VModal from 'vue-js-modal'
 import 'xel/xel'
+import 'codemirror/addon/comment/comment'
+import 'codemirror/addon/dialog/dialog'
+import 'codemirror/addon/search/search'
+import 'codemirror/addon/search/jump-to-line'
+import 'codemirror/addon/scroll/annotatescrollbar'
+import 'codemirror/addon/search/matchesonscrollbar'
+import 'codemirror/addon/search/matchesonscrollbar.css'
 import 'codemirror/addon/search/searchcursor'
 // @ts-ignore
 import { TabulatorFull as Tabulator, EditModule } from 'tabulator-tables'
@@ -41,6 +48,7 @@ import 'codemirror/addon/merge/merge'
 import _ from 'lodash'
 import NotyPlugin from '@/plugins/NotyPlugin'
 import './common/initializers/big_int_initializer.ts'
+import SettingsPlugin from './plugins/SettingsPlugin'
 
 (async () => {
   try {
@@ -97,6 +105,11 @@ import './common/initializers/big_int_initializer.ts'
           if (this.$config.isMac) return `meta+${key}`
           return `ctrl+${key}`
         },
+        // codemirror sytax
+        cmCtrlOrCmd(key: string) {
+          if (this.$config.isMac) return `Cmd-${key}`
+          return `Ctrl-${key}`
+        },
         selectChildren(element) {
           const selection = window.getSelection()
           if (selection) {
@@ -115,11 +128,12 @@ import './common/initializers/big_int_initializer.ts'
     Vue.config.productionTip = false
     Vue.use(TypeOrmPlugin, {connection})
     Vue.use(VueHotkey)
-    Vue.use(VTooltip)
+    Vue.use(VTooltip, { defaultHtml: false, })
     Vue.use(VModal)
     Vue.use(VueClipboard)
     Vue.use(ConfigPlugin)
     Vue.use(BeekeeperPlugin)
+    Vue.use(SettingsPlugin)
     Vue.use(VueElectronPlugin)
     Vue.use(PortalVue)
     Vue.use(NotyPlugin, {
