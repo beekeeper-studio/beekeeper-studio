@@ -225,7 +225,11 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
     dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string|null) => dropElement(conn, elementName, typeOfElement, schema),
-    truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema)
+    truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema),
+
+    // duplicate table
+    duplicateTable: (tableName: string, duplicateTableName: string, schema?: string) => duplicateTable(conn, tableName, duplicateTableName, schema),
+    duplicateTableSql: (tableName: string, duplicateTableName: string, schema?: string) => duplicateTableSql(tableName, duplicateTableName, schema),
   };
 }
 
@@ -1496,6 +1500,22 @@ export async function truncateElement (conn: Conn, elementName: string, typeOfEl
 
     await driverExecuteSingle(connClient, { query: sql })
   });
+}
+
+export async function duplicateTable(conn: Conn, tableName: string,  duplicateTableName: string, schema: string) {
+  const sql = duplicateTableSql(tableName, duplicateTableName, schema);
+
+  await driverExecuteQuery(conn, { query: sql });
+}
+
+export function duplicateTableSql(tableName: string,  duplicateTableName: string, schema: string) {
+  const sql = `
+    CREATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(duplicateTableName)} AS
+    SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(tableName)}
+  `;
+
+  return sql;
+
 }
 
 async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
