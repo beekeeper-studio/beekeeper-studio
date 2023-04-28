@@ -105,7 +105,7 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
     isCockroach,
     isRedshift,
     number,
-    hasPartitions: (isPostgres && number >= 90000) //for future cochroach support?: || (isCockroach && number >= 200070)
+    hasPartitions: (isPostgres && number >= 100000) //for future cochroach support?: || (isCockroach && number >= 200070)
   }
 }
 
@@ -246,15 +246,12 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
 
   if (version.hasPartitions) {
     // TODO (day): when we support more dbs for partitioning, we will need to construct a different query for cockroach.
-    const schemaStatement = version.number >= 100000 ?
-      `quote_ident(t.table_schema) = pc.relnamespace::regnamespace::text` :
-      't.table_schema = (SELECT nspname FROM pg_namespace as pn WHERE pn.oid = pc.relnamespace)';
     sql += `
         pc.relkind as tabletype,
         parent_pc.relkind as parenttype
       FROM information_schema.tables AS t
       JOIN pg_class AS pc
-        ON t.table_name = pc.relname AND ${schemaStatement}
+        ON t.table_name = pc.relname AND quote_ident(t.table_schema) = pc.relnamespace::regnamespace::text
       LEFT OUTER JOIN pg_inherits AS i
         ON pc.oid = i.inhrelid
       LEFT OUTER JOIN pg_class AS parent_pc
@@ -284,7 +281,7 @@ export async function listTablePartitions(conn: HasPool, tableName: string, sche
   // only postgres will pass this canary for now.
   if (!version.hasPartitions) return null;
 
-  let sql = knex.raw(`
+  const sql = knex.raw(`
     SELECT
       ps.schemaname AS schema,
       ps.relname AS name,
@@ -296,21 +293,6 @@ export async function listTablePartitions(conn: HasPool, tableName: string, sche
       JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid = base_tb.relnamespace 
     WHERE nmsp_parent.nspname = ? AND base_tb.relname = ?;
   `, [schemaName, tableName]).toQuery();
-
-
-  if (version.number < 100000) {
-    sql = knex.raw(`
-      SELECT
-        nmsp_child.nspname  AS schema,
-        child.relname       AS name
-      FROM pg_inherits
-        JOIN pg_class parent            ON pg_inherits.inhparent = parent.oid
-        JOIN pg_class child             ON pg_inherits.inhrelid   = child.oid
-        JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid  = parent.relnamespace
-        JOIN pg_namespace nmsp_child    ON nmsp_child.oid   = child.relnamespace
-      WHERE nmsp_parent.nspname = ? and parent.relname=?;
-    `, [schemaName, tableName]).toQuery()
-  }
 
   const data = await driverExecuteSingle(conn, { query: sql });
 
