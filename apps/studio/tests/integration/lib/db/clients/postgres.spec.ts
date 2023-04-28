@@ -81,7 +81,7 @@ function testWith(dockerTag, socket = false) {
           CREATE TABLE party PARTITION OF partitionedtable
           FOR VALUES FROM (21) TO (30);
 
-          CREATE TABLE parenttable (
+          CREATE TABLE parent (
             id INTEGER PRIMARY KEY
           );
           CREATE TABLE child (
