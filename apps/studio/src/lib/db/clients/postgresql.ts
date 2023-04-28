@@ -291,7 +291,7 @@ export async function listTablePartitions(conn: HasPool, tableName: string, sche
       JOIN pg_class pt                ON pt.oid = i.inhrelid
       JOIN pg_stat_all_tables ps      ON ps.relid = i.inhrelid
       JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid = base_tb.relnamespace 
-    WHERE nmsp_parent.nspname = ? AND base_tb.relname = ?;
+    WHERE nmsp_parent.nspname = ? AND base_tb.relname = ? AND base_tb.relkind = 'p';
   `, [schemaName, tableName]).toQuery();
 
   const data = await driverExecuteSingle(conn, { query: sql });
