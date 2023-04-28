@@ -80,6 +80,13 @@ function testWith(dockerTag, socket = false) {
           FOR VALUES FROM (11) TO (20);
           CREATE TABLE party PARTITION OF partitionedtable
           FOR VALUES FROM (21) TO (30);
+
+          CREATE TABLE parenttable (
+            id INTEGER PRIMARY KEY
+          );
+          CREATE TABLE child (
+            name VARCHAR(100)
+          ) INHERITS (parent);
         `);
       }
 
@@ -216,6 +223,7 @@ function testWith(dockerTag, socket = false) {
       }
     })
 
+
     // regression test for Bug #1564 "BUG: Tables appear twice in UI"
     it("Should not have duplicate tables for tables with the same name in different schemas", async () => {
       const tables = await util.connection.listTables({});
@@ -235,6 +243,31 @@ function testWith(dockerTag, socket = false) {
       expect(tables[0].name).toBe('5678');
       expect(columns.map((c) => c.columnName).includes('9101'));
     });
+
+    // regression tests for Bug #1583 "Only parent table shows in UI when using INHERITS"
+    it("Inherited tables should NOT behave like partitioned tables", async () => {
+      if (dockerTag == 'latest') {
+        const tables = await util.connection.listTables({ schema: 'public', tables: ['parent', 'child']});
+        const partitions = await util.connection.listTablePartitions('parent');
+        const parent = tables.find((value) => value.name == 'parent');
+        const child = tables.find((value) => value.name == 'child');
+
+        expect(partitions.length).toBe(0);
+        expect(parent.parenttype).toBe(null);
+        expect(child.parenttype).toBe('r');
+      }
+    })
+
+    it("Partitions should have parenttype 'p'", async () => {
+      if (dockerTag == 'latest') {
+        const tables = await util.connection.listTables({ schema: 'public', tables: ['partition_1', 'another_partition', 'party']});
+
+        expect(tables[0].parenttype).toBe('p');
+        expect(tables[1].parenttype).toBe('p');
+        expect(tables[2].parenttype).toBe('p');
+      }
+    })
+    // END regression tests for Bug #1583
 
     describe("Common Tests", () => {
       runCommonTests(() => util)
