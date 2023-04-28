@@ -261,10 +261,13 @@ function testWith(dockerTag, socket = false) {
     it("Partitions should have parenttype 'p'", async () => {
       if (dockerTag == 'latest') {
         const tables = await util.connection.listTables({ schema: 'public', tables: ['partition_1', 'another_partition', 'party']});
+        const partition1 = tables.find((value) => value.name == 'partition_1');
+        const another = tables.find((value) => value.name == 'another_partition');
+        const party = tables.find((value) => value.name == 'party');
 
-        expect(tables[0].parenttype).toBe('p');
-        expect(tables[1].parenttype).toBe('p');
-        expect(tables[2].parenttype).toBe('p');
+        expect(partition1.parenttype).toBe('p');
+        expect(another.parenttype).toBe('p');
+        expect(party.parenttype).toBe('p');
       }
     })
     // END regression tests for Bug #1583
