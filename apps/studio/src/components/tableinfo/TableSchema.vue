@@ -94,6 +94,7 @@ import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
 import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import { escapeHtml } from '@/mixins/data_mutators';
 
 
 const FakeCell = {
@@ -422,7 +423,8 @@ export default Vue.extend({
     },
     columnNameCellTooltip(_e: any, cell: CellComponent, _onRendered: any) {
       let canCopy: boolean = !this.editable || this.disabledFeatures?.alter?.renameColumn;
-      return canCopy ? `${cell.getValue()} - Click to Copy` : cell.getValue();
+      const cellName = escapeHtml(cell.getValue());
+      return canCopy ? `${cellName} - Click to Copy` : cellName;
     },
   },
   async mounted() {
