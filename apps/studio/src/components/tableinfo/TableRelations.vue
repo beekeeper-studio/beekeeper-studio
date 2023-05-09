@@ -75,6 +75,7 @@ import { AppEvent } from '@/common/AppEvent'
 import rawLog from 'electron-log'
 import ErrorAlert from '../common/ErrorAlert.vue'
 const log = rawLog.scope('TableRelations');
+import { escapeHtml } from '@/mixins/data_mutators';
 
 export default Vue.extend({
   props: ["table", "connection", "tabId", "active", "properties", 'tabState'],
@@ -151,7 +152,7 @@ export default Vue.extend({
           editable,
           editor: 'list',
           editorParams: {
-            values: this.table.columns.map((c) => c.columnName)
+            values: this.table.columns.map((c) => escapeHtml(c.columnName))
           }
         },
         ...( showSchema ? [{
@@ -160,7 +161,7 @@ export default Vue.extend({
           editable,
           editor: 'list' as any,
           editorParams: {
-            values: [...this.schemas]
+            values: this.schemas.map((s) => escapeHtml(s))
           },
           cellEdited: (cell) => cell.getRow().getCell('toTable')?.setValue(null)
         }] : []),
@@ -230,19 +231,19 @@ export default Vue.extend({
     getTables(cell: CellComponent): string[] {
       const schema = cell.getRow().getData()['toSchema']
       return schema ?
-        this.schemaTables.find((st) => st.schema === schema)?.tables.map((t) => t.name) :
-        this.tables.map((t) => t.name)
+        this.schemaTables.find((st) => escapeHtml(st.schema) === schema)?.tables.map((t) => escapeHtml(t.name)) :
+        this.tables.map((t) => escapeHtml(t.name))
     },
     getColumns(cell: CellComponent): string[] {
       const data = cell.getRow().getData()
       const schema = data['toSchema']
       const table = data['toTable']
       if (!schema) {
-        return this.tables.find((t: TableOrView) => t.name === table)?.columns.map((c: TableColumn) => c.columnName) || []
+        return this.tables.find((t: TableOrView) => escapeHtml(t.name) === table)?.columns.map((c: TableColumn) => escapeHtml(c.columnName)) || []
       } else {
         return this.tables.find((t: TableOrView) =>
-          t.name === table && t.schema === schema
-        )?.columns.map((c: TableColumn) => c.columnName) || []
+          escapeHtml(t.name) === table && escapeHtml(t.schema) === schema
+        )?.columns.map((c: TableColumn) => escapeHtml(c.columnName)) || []
       }
     },
     getPayload(): RelationAlterations {
