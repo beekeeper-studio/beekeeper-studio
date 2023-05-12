@@ -28,6 +28,7 @@ export interface TableOrView extends DatabaseEntity {
   columns?: TableColumn[];
   partitions?: TablePartition[];
   tabletype?: string | null
+  parenttype?: string | null
 }
 
 export interface IndexedColumn {

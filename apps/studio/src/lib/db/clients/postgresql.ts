@@ -105,7 +105,7 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
     isCockroach,
     isRedshift,
     number,
-    hasPartitions: (isPostgres && number >= 90000) //for future cochroach support?: || (isCockroach && number >= 200070)
+    hasPartitions: (isPostgres && number >= 100000) //for future cochroach support?: || (isCockroach && number >= 200070)
   }
 }
 
@@ -225,7 +225,11 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
     dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string|null) => dropElement(conn, elementName, typeOfElement, schema),
-    truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema)
+    truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema),
+
+    // duplicate table
+    duplicateTable: (tableName: string, duplicateTableName: string, schema?: string) => duplicateTable(conn, tableName, duplicateTableName, schema),
+    duplicateTableSql: (tableName: string, duplicateTableName: string, schema?: string) => duplicateTableSql(tableName, duplicateTableName, schema),
   };
 }
 
@@ -247,18 +251,21 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
   if (version.hasPartitions) {
     // TODO (day): when we support more dbs for partitioning, we will need to construct a different query for cockroach.
     sql += `
-        pc.relkind as tabletype
+        pc.relkind as tabletype,
+        parent_pc.relkind as parenttype
       FROM information_schema.tables AS t
+      JOIN pg_class AS pc
+        ON t.table_name = pc.relname AND quote_ident(t.table_schema) = pc.relnamespace::regnamespace::text
       LEFT OUTER JOIN pg_inherits AS i
-      ON t.table_name::text = i.inhrelid::regclass::text
-      LEFT OUTER JOIN pg_class AS pc
-      ON t.table_name = pc.relname
+        ON pc.oid = i.inhrelid
+      LEFT OUTER JOIN pg_class AS parent_pc
+        ON parent_pc.oid = i.inhparent
       WHERE t.table_type NOT LIKE '%VIEW%'
-      AND i.inhrelid::regclass IS NULL
     `;
   } else {
     sql += `
-        'r' as tabletype
+        'r' as tabletype,
+        'r' as parenttype
       FROM information_schema.tables AS t
       WHERE t.table_type NOT LIKE '%VIEW%'
     `;
@@ -278,7 +285,7 @@ export async function listTablePartitions(conn: HasPool, tableName: string, sche
   // only postgres will pass this canary for now.
   if (!version.hasPartitions) return null;
 
-  let sql = knex.raw(`
+  const sql = knex.raw(`
     SELECT
       ps.schemaname AS schema,
       ps.relname AS name,
@@ -288,23 +295,8 @@ export async function listTablePartitions(conn: HasPool, tableName: string, sche
       JOIN pg_class pt                ON pt.oid = i.inhrelid
       JOIN pg_stat_all_tables ps      ON ps.relid = i.inhrelid
       JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid = base_tb.relnamespace 
-    WHERE nmsp_parent.nspname = ? AND base_tb.oid = ?::regclass;
+    WHERE nmsp_parent.nspname = ? AND base_tb.relname = ? AND base_tb.relkind = 'p';
   `, [schemaName, tableName]).toQuery();
-
-
-  if (version.number < 100000) {
-    sql = knex.raw(`
-      SELECT
-        nmsp_child.nspname  AS schema,
-        child.relname       AS name
-      FROM pg_inherits
-        JOIN pg_class parent            ON pg_inherits.inhparent = parent.oid
-        JOIN pg_class child             ON pg_inherits.inhrelid   = child.oid
-        JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid  = parent.relnamespace
-        JOIN pg_namespace nmsp_child    ON nmsp_child.oid   = child.relnamespace
-      WHERE nmsp_parent.nspname = ? and parent.relname=?;
-    `, [schemaName, tableName]).toQuery()
-  }
 
   const data = await driverExecuteSingle(conn, { query: sql });
 
@@ -612,7 +604,6 @@ export async function listTableColumns(
   if (table && !schema) {
     throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`)
   }
-  const column_comment_clause = table ? "col_description(($1 || '.' || $2)::regclass, ordinal_position) as column_comment," : ""
 
   const sql = `
     SELECT
@@ -622,11 +613,12 @@ export async function listTableColumns(
       is_nullable,
       ordinal_position,
       column_default,
-      ${column_comment_clause}
       CASE
-        WHEN character_maximum_length is not null  and udt_name != 'text'
+        WHEN character_maximum_length is not null  and udt_name != 'text' 
           THEN CONCAT(udt_name, concat('(', concat(character_maximum_length::varchar(255), ')')))
-        WHEN datetime_precision is not null THEN
+        WHEN numeric_precision is not null 
+        	THEN CONCAT(udt_name, concat('(', concat(numeric_precision::varchar(255),',',numeric_scale::varchar(255), ')')))
+        WHEN datetime_precision is not null AND udt_name != 'date' THEN
           CONCAT(udt_name, concat('(', concat(datetime_precision::varchar(255), ')')))
         ELSE udt_name
       END as data_type
@@ -645,7 +637,6 @@ export async function listTableColumns(
     nullable: row.is_nullable === 'YES',
     defaultValue: row.column_default,
     ordinalPosition: Number(row.ordinal_position),
-    comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
   }));
 }
 
@@ -1494,6 +1485,22 @@ export async function truncateElement (conn: Conn, elementName: string, typeOfEl
 
     await driverExecuteSingle(connClient, { query: sql })
   });
+}
+
+export async function duplicateTable(conn: Conn, tableName: string,  duplicateTableName: string, schema: string) {
+  const sql = duplicateTableSql(tableName, duplicateTableName, schema);
+
+  await driverExecuteQuery(conn, { query: sql });
+}
+
+export function duplicateTableSql(tableName: string,  duplicateTableName: string, schema: string) {
+  const sql = `
+    CREATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(duplicateTableName)} AS
+    SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(tableName)}
+  `;
+
+  return sql;
+
 }
 
 async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
