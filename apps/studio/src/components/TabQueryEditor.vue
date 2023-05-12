@@ -1,5 +1,5 @@
 <template>
-  <div :key="selectedKeymap" class="query-editor" v-hotkey="keymap">
+  <div class="query-editor" v-hotkey="keymap">
     <div
       class="top-panel"
       ref="topPanel"
@@ -18,18 +18,16 @@
       <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
       <span class="expand"></span>
       <div class="toolbar text-right">
+        <div class="actions btn-group">
+          <x-button class="btn btn-flat btn-small" menu>
+            <i class="material-icons">settings</i>
+            <x-menu>
+              <x-menuitem :key="t.value" v-for="t in keymapTypes" @click.prevent="userKeymap = t.name"> <x-label>{{t.name}}</x-label> </x-menuitem>
+            </x-menu>
+          </x-button>
+        </div>
+        <div class="expand"></div>
         <div class="actions btn-group" ref="actions">
-          <x-buttons class="">
-            <x-button class="btn btn-flat btn-small" menu>
-              <x-label style="text-transform: capitalize;">{{selectedKeymap}}</x-label>
-              <i class="material-icons">arrow_drop_down</i>
-              <x-menu>
-                <x-menuitem :key="t.value" v-for="t in keymapTypes" @click.prevent="selectKeymap(t.name)">
-                    <x-label>{{t.name}}</x-label>
-                </x-menuitem>
-              </x-menu>
-            </x-button>
-          </x-buttons>
           <x-button @click.prevent="triggerSave" class="btn btn-flat btn-small">Save</x-button>
 
           <x-buttons class="">
@@ -183,7 +181,6 @@
     props: ['tab', 'active'],
     data() {
       return {
-        selectedKeymap: this.$store.state.usedConfig.keymap ? this.$store.state.usedConfig.keymap : "default",
         results: [],
         running: false,
         runningCount: 1,
@@ -213,6 +210,17 @@
       ...mapGetters(['dialect', 'defaultSchema']),
       ...mapState(['usedConfig', 'connection', 'database', 'tables', 'storeInitialized']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
+      ...mapState('settings', ['settings']),
+      userKeymap: {
+        get() {
+          return this.settings.keymap.value ?? 'default';
+        },
+        set(value) {
+          if (value.toLowerCase === this.keymap) return;
+          this.$store.dispatch('settings/save', { key: 'keymap', value: value.toLowerCase() });
+          this.initialize();
+        }
+      },
       keymapTypes() {
         return this.$config.defaults.keymapTypes
       },
@@ -450,13 +458,6 @@
       }
     },
     methods: {
-      selectKeymap(name) {
-        if(name.toLowerCase() === this.selectedKeymap) {
-          return;
-        }
-        this.selectedKeymap = name.toLowerCase();
-        this.initialize();
-      },
       find() {
         // trigger's codemirror's search functionality
         this.editor.execCommand('find')
@@ -498,12 +499,21 @@
       },
       initialize() {
         this.initialized = true
-        const editormapping = this.selectedKeymap
         // TODO (matthew): Add hint options for all tables and columns\
         this.initializeQueries()
         const startingValue = this.unsavedText || this.query?.text || editorDefault
         console.log("starting value", startingValue)
         this.tab.unsavedChanges = this.unsavedChanges
+
+        if (this.editor) {
+          this.editor.toTextArea();
+          this.editor = null;
+        }
+
+        if (this.split) {
+          this.split.destroy();
+          this.split = null;
+        }
 
         this.$nextTick(() => {
           this.split = Split(this.splitElements, {
@@ -535,7 +545,7 @@
             "F5": this.submitTabQuery,
             "Shift-F5": this.submitCurrentQuery
           }
-          if(editormapping === "vim") {
+          if(this.userKeymap === "vim") {
             runQueryKeyMap["Ctrl-Esc"] = this.cancelQuery
           } else {
             runQueryKeyMap.Esc = this.cancelQuery
@@ -553,7 +563,6 @@
           extraKeys[this.cmCtrlOrCmd('R')] = 'replace'
           extraKeys[this.cmCtrlOrCmd('Shift-R')] = 'replaceAll'
 
-
           this.editor = CodeMirror.fromTextArea(this.$refs.editor, {
             lineNumbers: true,
             mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
@@ -569,7 +578,7 @@
             },
             hint: CodeMirror.hint.sql,
             hintOptions: this.hintOptions,
-            keyMap: editormapping,
+            keyMap: this.userKeymap,
             getColumns: this.getColumnsForAutocomplete
           })
           this.editor.setValue(startingValue)
@@ -883,7 +892,6 @@
     },
     mounted() {
       if (this.shouldInitialize) this.initialize()
-
     },
     beforeDestroy() {
       if(this.split) {
