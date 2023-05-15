@@ -9,6 +9,7 @@ export interface ContextOption {
   slug: string
   type?: 'divider'
   handler: (...any) => void
+  class?: string
 }
 
 interface MenuProps {

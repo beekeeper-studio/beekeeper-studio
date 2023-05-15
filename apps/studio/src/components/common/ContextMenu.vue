@@ -1,18 +1,11 @@
 <template>
-<!-- Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu -->
+  <!-- Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu -->
   <div>
     <portal to="menus">
-      <ul
-        class="vue-simple-context-menu"
-        ref="menu"
-      >
-        <li
-          v-for="(option, index) in options"
-          :key="index"
-          @click.stop="optionClicked(option, $event)"
+      <ul class="vue-simple-context-menu" ref="menu">
+        <li v-for="(option, index) in options" :key="index" @click.stop="optionClicked(option, $event)"
           class="vue-simple-context-menu__item"
-          :class="[option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : '')]"
-        >
+          :class="[option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : '')]">
           <span v-html="option.name"></span>
         </li>
       </ul>
@@ -28,7 +21,7 @@ import Vue from 'vue'
 export default Vue.extend({
   name: 'ContextMenu',
   props: ['options', 'event', 'item'],
-  data () {
+  data() {
     return {
       menuWidth: null,
       menuHeight: null,
@@ -46,7 +39,7 @@ export default Vue.extend({
     }
   },
   methods: {
-    showMenu (event) {
+    showMenu(event) {
 
       const menu = this.$refs.menu
       if (!menu) {
@@ -76,21 +69,21 @@ export default Vue.extend({
       menu.classList.add('vue-simple-context-menu--active')
       this.menuOpen = true
     },
-    hideContextMenu () {
+    hideContextMenu() {
       this.$emit('close')
       let element = this.$refs.ul
       if (element) {
         element.classList.remove('vue-simple-context-menu--active');
       }
     },
-    onClickOutside () {
+    onClickOutside() {
       this.hideContextMenu()
     },
-    optionClicked (option: ContextOption, event: any) {
+    optionClicked(option: ContextOption, event: any) {
       option.handler({ item: this.item, option, event })
       this.hideContextMenu()
     },
-    onEscKeyRelease (event) {
+    onEscKeyRelease(event) {
       if (event.keyCode === 27) {
         this.hideContextMenu();
       }
@@ -102,7 +95,7 @@ export default Vue.extend({
       }
     }
   },
-  mounted () {
+  mounted() {
     this.$nextTick(() => {
       this.showMenu(this.event, this.item)
     })
@@ -110,7 +103,7 @@ export default Vue.extend({
     document.addEventListener('keyup', this.onEscKeyRelease);
     document.addEventListener('mousedown', this.maybeHideMenu)
   },
-  beforeDestroy () {
+  beforeDestroy() {
     document.removeEventListener('mousedown', this.maybeHideMenu)
     document.removeEventListener('keyup', this.onEscKeyRelease);
   }
