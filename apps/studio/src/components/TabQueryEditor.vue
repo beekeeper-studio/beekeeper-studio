@@ -648,7 +648,8 @@ export default {
           {
             name: "Format Query",
             slug: 'format',
-            handler: this.formatSql
+            handler: this.formatSql,
+            shortcut: this.ctrlOrCmd('shift+f')
           },
           {
             type: 'divider'
@@ -656,17 +657,20 @@ export default {
           {
             name: "Find",
             slug: 'find',
-            handler: this.find
+            handler: this.find,
+            shortcut: this.ctrlOrCmd('f')
           },
           {
             name: "Replace",
             slug: "replace",
-            handler: this.replace
+            handler: this.replace,
+            shortcut: this.ctrlOrCmd('r')
           },
           {
             name: "ReplaceAll",
             slug: "replace_all",
-            handler: this.replaceAll
+            handler: this.replaceAll,
+            shortcut: this.ctrlOrCmd('shift+r')
           }
         ],
         event,
