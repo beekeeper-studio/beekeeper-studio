@@ -601,29 +601,34 @@ export default {
           {
             name: 'Undo',
             slug: '',
-            handler: this.editorUndo
+            handler: this.editorUndo,
+            shortcut: this.ctrlOrCmd('z')
           },
           {
             name: 'Redo',
             slug: '',
-            handler: this.editorRedo
+            handler: this.editorRedo,
+            shortcut: this.ctrlOrCmd('shift+z')
           },
           {
             name: 'Cut',
             slug: '',
             handler: this.editorCut,
-            class: selectionDepClass
+            class: selectionDepClass,
+            shortcut: this.ctrlOrCmd('x')
           },
           {
             name: 'Copy',
             slug: '',
             handler: this.editorCopy,
-            class: selectionDepClass
+            class: selectionDepClass,
+            shortcut: this.ctrlOrCmd('c')
           },
           {
             name: 'Paste',
             slug: '',
-            handler: this.editorPaste
+            handler: this.editorPaste,
+            shortcut: this.ctrlOrCmd('v')
           },
           {
             name: 'Delete',
@@ -634,7 +639,8 @@ export default {
           {
             name: 'Select All',
             slug: '',
-            handler: this.editorSelectAll
+            handler: this.editorSelectAll,
+            shortcut: this.ctrlOrCmd('a')
           },
           {
             type: 'divider'

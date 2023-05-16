@@ -47,6 +47,9 @@
     opacity: 0.6;
     margin-right: $gutter-h!important;
   }
+  .shortcut {
+    color: darken($text-dark, 30%);
+  }
 }
 .vue-simple-context-menu__divider, hr {
   min-height: 0;

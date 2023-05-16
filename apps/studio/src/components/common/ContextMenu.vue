@@ -6,7 +6,10 @@
         <li v-for="(option, index) in options" :key="index" @click.stop="optionClicked(option, $event)"
           class="vue-simple-context-menu__item"
           :class="[option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : '')]">
-          <span v-html="option.name"></span>
+          <span v-html="option.name">
+          </span>
+          <div class="expand"></div>
+          <span class="shortcut" v-if="option.shortcut" v-html="option.shortcut"></span>
         </li>
       </ul>
     </portal>
