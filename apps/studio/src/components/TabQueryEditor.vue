@@ -544,6 +544,22 @@
             }
           })
 
+          this.editor.on("paste", (cm, e) => {
+            e.preventDefault(); 
+            const quotes = ["'", '"', '`'];
+            let clipboard = this.$native.clipboard.readText();
+            const isQuoted = quotes.includes(clipboard[0]) && quotes.includes(clipboard[clipboard.length - 1]) && clipboard[0] === clipboard[clipboard.length - 1];
+            if (isQuoted && identify(clipboard.slice(1, clipboard.length - 1), { strict: false, dialect: this.identifyDialect })) {
+              clipboard = clipboard.slice(1, clipboard.length - 1);
+            }
+            if (this.hasSelectedText) {
+              this.editor.replaceSelection(clipboard, 'around');
+            } else {
+              const cursor = this.editor.getCursor();
+              this.editor.replaceRange(clipboard, cursor);
+            }
+          });
+
           this.editor.on("change", (cm) => {
             // this also updates `this.queryText`
             // this.tab.query.text = cm.getValue()
@@ -847,7 +863,6 @@
     },
     mounted() {
       if (this.shouldInitialize) this.initialize()
-
     },
     beforeDestroy() {
       if(this.split) {
