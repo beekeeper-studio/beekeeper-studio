@@ -402,70 +402,47 @@ export default Vue.extend({
 
       ]
     },
-    cellContextMenu() {
-      return [{
-          label: '<x-menuitem><x-label>Set Null</x-label></x-menuitem>',
-          action: (_e, cell: Tabulator.CellComponent) => {
-            if (this.isPrimaryKey(cell.getField())) {
-              // do nothing
-            } else {
-              cell.setValue(null);
-            }
-          },
-          disabled: !this.editable
-        },
-        { separator: true },
-        {
-          label: '<x-menuitem><x-label>Copy Cell</x-label></x-menuitem>',
-          action: (_e, cell) => {
-            this.$native.clipboard.writeText(cell.getValue());
-          },
-        },
+    // row only actions
+    rowHandleContextMenu() {
+      return [
         {
           label: '<x-menuitem><x-label>Copy Row(s) as JSON</x-label></x-menuitem>',
           action: (_e, cell) => {
-            const selectedRows = this.tabulator.getSelectedRows()
-            const rowData = selectedRows?.length ? selectedRows : [cell.getRow()]
-
-            const results = rowData.map((row) => {
-              const data = this.modifyRowData(row.getData())
-              const fixed = this.$bks.cleanData(data, this.tableColumns)
-              Object.keys(data).forEach((key) => {
-                const v = data[key]
-                const column = this.tableColumns.find((c) => c.field === key)
-                const nuKey = column ? column.title : key
-                fixed[nuKey] = v
-              })
-              return fixed
-
-            });
-            this.$native.clipboard.writeText(JSON.stringify(results))
+            const clean = this.getCleanSelectedRowData(cell)
+            this.$native.clipboard.writeText(JSON.stringify(clean))
           }
         },
         {
           label: '<x-menuitem><x-label>Copy Row(s) as TSV for Excel</x-label></x-menuitem>',
-          action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([this.$bks.cleanData(this.modifyRowData(cell.getRow().getData()))], { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
-        },
-        {
-          label: '<x-menuitem><x-label>Copy Row (Markdown)</x-label></x-menuitem>',
           action: (_e, cell) => {
-            const data = this.modifyRowData(cell.getRow().getData())
-            const fixed = this.$bks.cleanData(data, this.tableColumns)
-
-            return this.$native.clipboard.writeText(markdownTable([
-              Object.keys(fixed),
-              Object.values(fixed),
-            ]))
+            const clean = this.getCleanSelectedRowData(cell)
+            this.$native.clipboard.writeText(Papa.unparse(clean, { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
           }
         },
         {
-          label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Copy Row(s) as Markdown</x-label></x-menuitem>',
+          action: (_e, cell) => {
+            const fixed = this.getCleanSelectedRowData(cell)
+
+            if (fixed.length) {
+              const headers = Object.keys(fixed[0])
+              return this.$native.clipboard.writeText(markdownTable([
+                headers,
+                ...fixed.map((item) => Object.values(item)),
+              ]))
+            }
+          }
+        },
+        {
+          label: '<x-menuitem><x-label>Copy Row(s) as Insert</x-label></x-menuitem>',
           action: async (_e, cell) => {
-            const fixed = this.$bks.cleanData(this.modifyRowData(cell.getRow().getData()), this.tableColumns)
+
+            const fixed = this.getCleanSelectedRowData(cell)
+
             const tableInsert = {
               table: this.table.name,
               schema: this.table.schema,
-              data: [fixed],
+              data: fixed,
             }
             const query = await this.connection.getInsertQuery(tableInsert)
             this.$native.clipboard.writeText(query)
@@ -479,9 +456,30 @@ export default Vue.extend({
         },
         {
           label: '<x-menuitem><x-label>Delete Row(s)</x-label></x-menuitem>',
-          action: (_e, cell) => this.addRowToPendingDeletes(cell.getRow()),
+          action: (_e, cell) => {
+            let selectedRows = this.tabulator.getSelectedRows()
+            if (!selectedRows.length) selectedRows = [cell.getRow()]
+            selectedRows.forEach((row) => this.addRowToPendingDeletes(row))
+          },
           disabled: !this.editable
         },
+      ]
+    },
+    cellContextMenu() {
+
+      return [{
+          label: '<x-menuitem><x-label>Set Null</x-label></x-menuitem>',
+          action: (_e, cell: Tabulator.CellComponent) => {
+            if (this.isPrimaryKey(cell.getField())) {
+              // do nothing
+            } else {
+              cell.setValue(null);
+            }
+          },
+          disabled: !this.editable
+        },
+        { separator: true },
+        ...this.rowHandleContextMenu
       ]
     },
     filterPlaceholder() {
@@ -566,6 +564,7 @@ export default Vue.extend({
         maxWidth: 40,
         width: 40,
         cellClick: this.handleRowHandleClick,
+        contextMenu: this.rowHandleContextMenu,
         headerClick: () => this.showColumnFilterModal()
       })
 
@@ -846,11 +845,20 @@ export default Vue.extend({
     }
   },
   methods: {
+    getCleanSelectedRowData(cell) {
+      const selectedRows = this.tabulator.getSelectedRows()
+      const rowData = selectedRows?.length ? selectedRows : [cell.getRow()]
+      const clean = rowData.map((row) => {
+        const m = this.modifyRowData(row.getData())
+        return this.$bks.cleanData(m, this.tableColumns)
+      })
+      return clean;
+    },
     unselectStuff() {
       this.tabulator.deselectRow()
       this.unselectCell()
     },
-    // TODO: Fix these, they don't really work.
+    // TODO (matthew): Fix click and drag
     // handleRowHandleMouseDown(_event: MouseEvent, cell: Tabulator.CellComponent) {
     //   this.mouseDownHandle = cell
     // },
@@ -1237,18 +1245,23 @@ export default Vue.extend({
       }
     },
     cellCloneRow(_e, cell) {
-      const row = cell.getRow()
-      const data = { ...row.getData() }
-      const dataParsed = Object.keys(data).reduce((acc, d) => {
-        if (!this.primaryKeys?.includes(d)) {
-          acc[d] = data[d]
-        }
-        return acc
-      }, {})
+      let selectedRows = this.tabulator.getSelectedRows()
+      if (!selectedRows.length) selectedRows = [cell.getRow()]
 
-      this.tabulator.addRow(dataParsed, true).then(row => {
-        this.addRowToPendingInserts(row)
-        this.tabulator.scrollToRow(row, 'center', true)
+      selectedRows.forEach((row) => {
+        const data = { ...row.getData() }
+        const dataParsed = Object.keys(data).reduce((acc, d) => {
+          if (!this.primaryKeys?.includes(d)) {
+            acc[d] = data[d]
+          }
+          return acc
+        }, {})
+
+        this.tabulator.addRow(dataParsed, true).then(row => {
+          this.addRowToPendingInserts(row)
+          this.tabulator.scrollToRow(row, 'center', true)
+        })
+
       })
     },
     cellAddRow() {
@@ -1585,6 +1598,9 @@ export default Vue.extend({
       this.trigger(AppEvent.beginExport, {table: this.table, filters: this.filterForTabulator} )
     },
     modifyRowData(data) {
+      if (_.isArray(data)) {
+        return data.map((item) => this.modifyRowData(item))
+      }
       const output = {};
       const keys = Object.keys(data);
 
