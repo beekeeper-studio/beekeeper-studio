@@ -69,7 +69,7 @@ function testWith(dockerTag, socket = false) {
       })
 
       if (dockerTag == 'latest') {
-        await util.connection.executeQuery(`
+        await util.knex.raw(`
           CREATE TABLE partitionedtable (
             recordId SERIAL,
             number INT
@@ -80,8 +80,34 @@ function testWith(dockerTag, socket = false) {
           FOR VALUES FROM (11) TO (20);
           CREATE TABLE party PARTITION OF partitionedtable
           FOR VALUES FROM (21) TO (30);
+
+          CREATE TABLE parent (
+            id INTEGER PRIMARY KEY
+          );
+          CREATE TABLE child (
+            name VARCHAR(100)
+          ) INHERITS (parent);
         `);
       }
+
+      await util.knex.raw(`
+          CREATE SCHEMA schema1;
+          CREATE TABLE schema1.duptable (
+            "id" INTEGER PRIMARY KEY
+          );
+          CREATE SCHEMA schema2;
+          CREATE TABLE schema2.duptable (
+            "id" INTEGER PRIMARY KEY
+          );
+        `);
+
+      await util.knex.raw(`
+          CREATE SCHEMA "1234";
+          CREATE TABLE "1234"."5678" (
+            "id" SERIAL PRIMARY KEY,
+            "9101" INTEGER
+          );
+        `);
 
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
@@ -196,6 +222,55 @@ function testWith(dockerTag, socket = false) {
         expect(partitions.length).toBe(3);
       }
     })
+
+
+    // regression test for Bug #1564 "BUG: Tables appear twice in UI"
+    it("Should not have duplicate tables for tables with the same name in different schemas", async () => {
+      const tables = await util.connection.listTables({});
+      const schema1 = tables.filter((t) => t.schema == "schema1");
+      const schema2 = tables.filter((t) => t.schema == "schema2");
+
+      expect(schema1.length).toBe(1);
+      expect(schema2.length).toBe(1);
+    });
+
+    // regression test for Bug #1572 "Only schemas that show are now information_schema and pg_catalog"
+    it("Numeric names should still be pulled back in queries", async () => {
+      const tables = await util.connection.listTables({ schema: '1234' });
+      const columns = await util.connection.listTableColumns('banana', '5678', '1234');
+
+      expect(tables.length).toBe(1);
+      expect(tables[0].name).toBe('5678');
+      expect(columns.map((c) => c.columnName).includes('9101'));
+    });
+
+    // regression tests for Bug #1583 "Only parent table shows in UI when using INHERITS"
+    it("Inherited tables should NOT behave like partitioned tables", async () => {
+      if (dockerTag == 'latest') {
+        const tables = await util.connection.listTables({ schema: 'public', tables: ['parent', 'child']});
+        const partitions = await util.connection.listTablePartitions('parent');
+        const parent = tables.find((value) => value.name == 'parent');
+        const child = tables.find((value) => value.name == 'child');
+
+        expect(partitions.length).toBe(0);
+        expect(parent.parenttype).toBe(null);
+        expect(child.parenttype).toBe('r');
+      }
+    })
+
+    it("Partitions should have parenttype 'p'", async () => {
+      if (dockerTag == 'latest') {
+        const tables = await util.connection.listTables({ schema: 'public', tables: ['partition_1', 'another_partition', 'party']});
+        const partition1 = tables.find((value) => value.name == 'partition_1');
+        const another = tables.find((value) => value.name == 'another_partition');
+        const party = tables.find((value) => value.name == 'party');
+
+        expect(partition1.parenttype).toBe('p');
+        expect(another.parenttype).toBe('p');
+        expect(party.parenttype).toBe('p');
+      }
+    })
+    // END regression tests for Bug #1583
 
     describe("Common Tests", () => {
       runCommonTests(() => util)

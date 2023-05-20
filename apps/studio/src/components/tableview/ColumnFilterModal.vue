@@ -75,13 +75,15 @@
           >
             Cancel
           </button>
-          <button
-            class="btn btn-primary"
-            type="submit"
+          <x-button
+            class="btn btn-primary btn-icon"
+            @click.prevent="onSubmit"
+            v-tooltip="hasPendingChanges && anyChanges ? 'Heads up: This will discard pending data changes' : null"
             :disabled="noneSelected"
           >
-            Apply
-          </button>
+            <i v-if="hasPendingChanges && anyChanges" class="material-icons">error_outline</i>
+            <span> Apply</span>
+          </x-button>
         </div>
       </form>
     </modal>
@@ -96,7 +98,7 @@
   import _ from 'lodash'
 
   export default {
-    props: ['modalName', 'columnsWithFilterAndOrder'],
+    props: ['modalName', 'columnsWithFilterAndOrder', 'hasPendingChanges'],
     data() {
       return {
         searchQuery: '',
@@ -104,6 +106,9 @@
       }
     },
     computed: {
+      anyChanges() {
+        return !_.isEqual(this.columns, this.columnsWithFilterAndOrder)
+      },
       allSelected() {
         return this.columns.every((column) => column.filter)
       },

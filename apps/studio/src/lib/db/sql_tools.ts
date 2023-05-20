@@ -13,7 +13,8 @@ export function splitQueries(queryText: string, dialect) {
 
 export function entityFilter(rawTables: any[], allFilters: EntityFilter) {
   const tables = rawTables.filter((table) => {
-    return (table.entityType === 'table' && allFilters.showTables) ||
+    return (table.entityType === 'table' && allFilters.showTables && 
+      ((table.parenttype != 'p' && !allFilters.showPartitions) || allFilters.showPartitions)) ||
       (table.entityType === 'view' && allFilters.showViews) ||
       (table.entityType === 'materialized-view' && allFilters.showViews) ||
       (Object.keys(RoutineTypeNames).includes(table.type) && allFilters.showRoutines)

@@ -32,8 +32,8 @@ export const SqlServerData: DialectData = {
       multiStatement: true
     },
     informationSchema: {
-      extra: true,
-      comment: true
+      extra: true
     }
   }
+
 }

@@ -97,6 +97,13 @@ export default {
             this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'truncate' })
           }
         },
+        {
+          name: "Duplicate",
+          slug: 'sql-duplicate',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.duplicateDatabaseTable, { item, action: 'duplicate' })
+          }
+        },
       ]
     },
     schemaMenuOptions() {

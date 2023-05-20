@@ -45,6 +45,8 @@ export abstract class Export {
   }
 
   abstract rowSeparator: string
+
+  needsFinalSeparator: boolean = true
   // do not add newlines / row separators
   abstract getHeader(columns: TableColumn[]): Promise<string>
   abstract getFooter(): string
@@ -142,6 +144,7 @@ export abstract class Export {
       // keep going until we don't get any more results.
       log.debug("running export")
       let rows: any[][]
+      let needsSeparator = false
       do {
         if (!this.cursor) {
           throw new Error("Something went wrong")
@@ -151,8 +154,20 @@ export abstract class Export {
           const row = rows[rI];
           const mutated = Mutators.mutateRow(row, this.columns?.map((c) => c.dataType), this.preserveComplex, dialectFor(this.connection.connectionType))
           const formatted = this.formatRow(mutated)
+
+          // needsSeparator allows us to skip adding the rowSeparator
+          // on the FINAL row of the file
+          if (needsSeparator === true) {
+            await this.fileHandle?.write(this.rowSeparator)
+          }
           await this.fileHandle?.write(formatted)
-          await this.fileHandle?.write(this.rowSeparator)
+          if (rI === rows.length - 1 && !this.needsFinalSeparator) {
+            // do nothing
+            needsSeparator = true
+          } else {
+            await this.fileHandle?.write(this.rowSeparator)
+            needsSeparator = false
+          }
         }
         this.countExported += rows.length
 

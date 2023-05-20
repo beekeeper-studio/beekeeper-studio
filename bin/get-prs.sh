@@ -2,7 +2,7 @@
 
 set -euxo pipefail
 
-TAG="$1"
+TAG=`git for-each-ref --sort=creatordate --format '%(refname)' refs/tags | tail -n 1`
 
 
 git log --merges --first-parent master "$TAG..HEAD" --oneline
