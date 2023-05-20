@@ -1134,10 +1134,7 @@ export default Vue.extend({
         }
 
         if (selectedRows?.length) {
-          const rows = selectedRows.map(r => r.getData())
-          const result = rows.map((r) => {
-            return this.$bks.cleanData(r, this.tableColumns)
-          })
+          const result = this.getCleanSelectedRowData(this.selectedCell)
 
           selectedRows.forEach((row) => {
             row.getElement().classList.add('copied')
