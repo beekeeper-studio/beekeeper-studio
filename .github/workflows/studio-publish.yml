@@ -11,6 +11,8 @@ jobs:
 
   release:
     runs-on: ${{ matrix.os }}
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
 
     strategy:
       matrix:
@@ -51,8 +53,6 @@ jobs:
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v2
         if: startsWith(matrix.os, 'ubuntu')
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
         with:
           skip_install: ${{ matrix.os == 'ubuntu-arm64' }}
       - name: Remove dist directory
