@@ -49,10 +49,11 @@ jobs:
         run: "yarn install --frozen-lockfile --network-timeout 100000"
 
       - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v1
+        uses: samuelmeuli/action-snapcraft@v2
         if: startsWith(matrix.os, 'ubuntu')
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
         with:
-          snapcraft_token: ${{ secrets.snapcraft_token }}
           skip_install: ${{ matrix.os == 'ubuntu-arm64' }}
       - name: Remove dist directory
         if: "!startsWith(matrix.os, 'windows')"
