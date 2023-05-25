@@ -24,6 +24,7 @@ import ExportNotification from './ExportNotification.vue'
 import ExportModal from './ExportModal.vue'
 import { CsvExporter, JsonExporter, JsonLineExporter, SqlExporter } from '../../lib/export'
 import { ExportProgress, ExportStatus } from '../../lib/export/models'
+import globals from '@/common/globals'
 
 interface ExportTriggerOptions {
   table?: TableOrView,
@@ -104,7 +105,7 @@ export default Vue.extend({
               error_notice.close()
             })
           ]
-        }).setTimeout(60000) // 1 minute timeout
+        }).setTimeout(globals.errorNoticeTimeout)
         return
       }
       if (exporter.status !== ExportStatus.Completed) return;
