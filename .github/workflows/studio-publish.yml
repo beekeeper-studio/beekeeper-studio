@@ -55,6 +55,15 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         with:
           skip_install: ${{ matrix.os == 'ubuntu-arm64' }}
+
+      # We manage snapcraft ourselves on the arm box
+      # and it could have old credentials
+      # this will force it to log in with the environment
+      # key defined at the top of this file.
+      - name: Snapcraft - login
+        run: "snapcraft login"
+        if: startsWith(matrix.os, 'ubuntu-arm64')
+
       - name: Remove dist directory
         if: "!startsWith(matrix.os, 'windows')"
         run: rm -rf ./apps/studio/dist_electron
