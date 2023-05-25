@@ -45,7 +45,7 @@ export default {
       }
       this.exporter.abort();
       this.notification.close();
-      const exportName = this.exporter.table ? this.exporter.table.name : this.queryName;
+      const exportName = this.exporter.table ? this.exporter.table.name : this.exporter.queryName;
       this.$noty.error(`${exportName} export aborted`);
     },
     updateProgress(progress) {
