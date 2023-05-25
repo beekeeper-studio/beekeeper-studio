@@ -52,14 +52,10 @@ jobs:
 
       # We manage snapcraft ourselves on the arm box
       # and it could have old credentials
-      # this will force it to log in with the environment
+      # this will force it to use the env
       # key defined at the top of this file.
       - name: Snapcraft - logout
         run: "snapcraft logout"
-        if: startsWith(matrix.os, 'ubuntu-arm64')
-
-      - name: Snapcraft - login
-        run: "snapcraft login"
         if: startsWith(matrix.os, 'ubuntu-arm64')
 
       - name: Clean cache
