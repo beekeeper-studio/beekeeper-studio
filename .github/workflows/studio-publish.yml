@@ -44,12 +44,6 @@ jobs:
         with:
           node-version: 16
 
-      - name: Clean cache
-        run: yarn cache clean
-
-      - name: Check dependencies
-        run: "yarn install --frozen-lockfile --network-timeout 100000"
-
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v2
         if: startsWith(matrix.os, 'ubuntu')
@@ -60,9 +54,19 @@ jobs:
       # and it could have old credentials
       # this will force it to log in with the environment
       # key defined at the top of this file.
+      - name: Snapcraft - logout
+        run: "snapcraft logout"
+        if: startsWith(matrix.os, 'ubuntu-arm64')
+
       - name: Snapcraft - login
         run: "snapcraft login"
         if: startsWith(matrix.os, 'ubuntu-arm64')
+
+      - name: Clean cache
+        run: yarn cache clean
+
+      - name: Check dependencies
+        run: "yarn install --frozen-lockfile --network-timeout 100000"
 
       - name: Remove dist directory
         if: "!startsWith(matrix.os, 'windows')"
