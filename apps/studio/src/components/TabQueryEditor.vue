@@ -719,16 +719,16 @@
         const query_sql = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
         const saved_name = this.hasTitle ? this.query.title : null
         const tab_title = this.tab.title // e.g. "Query #1"
-        const query_name = saved_name || tab_title
-        this.trigger( AppEvent.beginExport, { query: query_sql, query_name: query_name });
+        const queryName = saved_name || tab_title
+        this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQueryToFile() {
         // run the currently selected query (if there are multiple) to a file, else all sql
         const query_sql = this.currentlySelectedQuery ? this.currentlySelectedQuery.text : this.editor.getValue()
         const saved_name = this.hasTitle ? this.query.title : null
         const tab_title = this.tab.title // e.g. "Query #1"
-        const query_name = saved_name || tab_title
-        this.trigger( AppEvent.beginExport, { query: query_sql, query_name: query_name });
+        const queryName = saved_name || tab_title
+        this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQuery() {
         if (this.currentlySelectedQuery) {

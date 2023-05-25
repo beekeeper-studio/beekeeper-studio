@@ -39,7 +39,7 @@ export abstract class Export {
     public connection: DBConnection,
     public table: TableOrView,
     public query: string,
-    public query_name: string,
+    public queryName: string,
     public filters: TableFilter[] | any[],
     public options: ExportOptions
   ) {
@@ -114,7 +114,7 @@ export abstract class Export {
     const md5sum = crypto.createHash('md5')
 
     md5sum.update(Date.now().toString(), 'utf8')
-    md5sum.update(this.table ? this.table.name : this.query_name)
+    md5sum.update(this.table ? this.table.name : this.queryName)
     md5sum.update(this.filePath)
 
     return md5sum.digest('hex')

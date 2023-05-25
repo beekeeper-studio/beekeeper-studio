@@ -5,7 +5,7 @@
       :connection="connection"
       :table="table"
       :query="query"
-      :query_name="query_name"
+      :queryName="queryName"
       :filters="filters"
       @export="startExport"
       @closed="handleDeadModal"
@@ -29,7 +29,7 @@ import globals from '@/common/globals'
 interface ExportTriggerOptions {
   table?: TableOrView,
   query?: string,
-  query_name?: string,
+  queryName?: string,
   filters?: TableFilter[]
 }
 
@@ -43,7 +43,7 @@ const ExportClassPicker = {
 interface StartExportOptions {
   table: TableOrView,
   query?: string,
-  query_name?: string,
+  queryName?: string,
   filters: TableFilter[],
   exporter: 'csv' | 'json' | 'sql' | 'jsonl'
   filePath: string
@@ -65,7 +65,7 @@ export default Vue.extend({
       // these are like 'pending Export'
       table: (undefined as TableOrView | undefined),
       query: '',
-      query_name: '',
+      queryName: '',
       filters: (undefined as TableFilter[] | undefined),
     }
   },
@@ -85,7 +85,7 @@ export default Vue.extend({
         this.connection,
         options.table,
         options.query,
-        options.query_name,
+        options.queryName,
         options.filters || [],
         options.options,
         options.outputOptions
@@ -93,12 +93,12 @@ export default Vue.extend({
       this.addExport(exporter)
       exporter.onProgress(this.notifyProgress.bind(this))
 
-      const exportName = options.table? options.table.name : options.query_name;
+      const exportName = options.table? options.table.name : options.queryName;
 
       await exporter.exportToFile()
 
       if (exporter.status == ExportStatus.Error) {
-        const exportName = options.table? options.table.name : options.query_name;
+        const exportName = options.table? options.table.name : options.queryName;
         const error_notice = this.$noty.error(`Export of ${exportName} failed: ${exporter.error}`, {
           buttons: [
             Noty.button('Close', "btn btn-primary", () => {
@@ -121,14 +121,14 @@ export default Vue.extend({
     handleExportRequest(options?: ExportTriggerOptions): void {
       this.table = options?.table
       this.query = options?.query
-      this.query_name = options?.query_name
+      this.queryName = options?.queryName
       this.filters = options?.filters
     },
     handleDeadModal() {
       this.table = undefined
       this.filters = undefined
       this.query = undefined
-      this.query_name = undefined
+      this.queryName = undefined
     },
     notifyProgress(_progress: ExportProgress) {
     }

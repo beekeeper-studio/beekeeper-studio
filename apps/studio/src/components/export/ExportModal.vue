@@ -12,7 +12,7 @@
           <div class="dialog-c-title flex flex-middle">
             <div>
               Export
-              <span class="text-primary truncate">{{ table ? table.name : query_name }}</span>
+              <span class="text-primary truncate">{{ table ? table.name : queryName }}</span>
               <span v-if="filters" class="text-light" v-tooltip="filterTooltip">(Filtered)</span>
               <span class="badge badge-info">Beta</span>
             </div>
@@ -55,7 +55,7 @@
                     v-for="f in exportFormats"
                     :value="f"
                     :selected="selectedExportFormat === f.value"
-                    :disabled="(f.name === 'SQL' && query_name) ? true : false"
+                    :disabled="(f.name === 'SQL' && queryName) ? true : false"
                   >
                     {{ f.name }}
                   </option>
@@ -171,7 +171,7 @@ const exportFormats = [
 
 export default {
   components: { FilePicker },
-  props: ['table', 'query', 'query_name', 'filters', 'connection'],
+  props: ['table', 'query', 'queryName', 'filters', 'connection'],
   data() {
     return {
       selectedExportFormat: exportFormats[0],
@@ -220,8 +220,7 @@ export default {
         fileName = `${schema}${this.table.name}_export_${formatted}.${extension}`
       } else {
         // sanitize query name for use as filename
-        console.log('this.query_name: ', this.query_name)
-        let queryFileName = this.query_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()
+        let queryFileName = this.queryName.replace(/[^a-z0-9]/gi, '_').toLowerCase()
         queryFileName = queryFileName.replace(/_+/gi, '_') // avoid double-underscores
         queryFileName = queryFileName.replace(/^_/gi, '')   // remove any leading underscore
         queryFileName = queryFileName.replace(/_$/gi, '')   // remove any trailing underscore
@@ -277,7 +276,7 @@ export default {
       const payload = {
         table: this.table,
         query: this.query,
-        query_name: this.query_name,
+        queryName: this.queryName,
         filters: this.filters,
         filePath: this.filePath,
         options: this.options,

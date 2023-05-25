@@ -10,7 +10,7 @@ export default {
   mixins: [ExportInfo],
   props: ['exporter'],
   data() {
-    const exportName = this.exporter.table ? this.exporter.table.name : this.query_name;
+    const exportName = this.exporter.table ? this.exporter.table.name : this.queryName;
     return {
       percentComplete: 0,
       notification: new Noty({
@@ -28,7 +28,7 @@ export default {
   },
   computed: {
     notificationText() {
-      const exportName = this.exporter.table ? this.exporter.table.name : this.exporter.query_name;
+      const exportName = this.exporter.table ? this.exporter.table.name : this.exporter.queryName;
       // CoPilot suggested the comment below, and it was right af lol
       // this is a hack to get the countExported to update
       const countExported = this.countExported;
@@ -45,7 +45,7 @@ export default {
       }
       this.exporter.abort();
       this.notification.close();
-      const exportName = this.exporter.table ? this.exporter.table.name : this.query_name;
+      const exportName = this.exporter.table ? this.exporter.table.name : this.queryName;
       this.$noty.error(`${exportName} export aborted`);
     },
     updateProgress(progress) {

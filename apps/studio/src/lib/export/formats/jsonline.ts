@@ -13,11 +13,11 @@ export class JsonLineExporter extends Export {
     connection: DBConnection,
     table: TableOrView,
     query: string,
-    query_name: string,
+    queryName: string,
     filters: TableFilter[] | any[],
     options: ExportOptions
   ) {
-    super(filePath, connection, table, query, query_name, filters, options)
+    super(filePath, connection, table, query, queryName, filters, options)
   }
 
   async getHeader(): Promise<string> {
