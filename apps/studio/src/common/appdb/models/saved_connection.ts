@@ -24,6 +24,11 @@ export const ConnectionTypes = [
   { name: 'Oracle (ultimate)', value: 'other'}
 ]
 
+export const keymapTypes = [
+  { name: "Default", value: "default" },
+  { name: "Vim", value: "vim" }
+]
+
 export interface RedshiftOptions {
   iamAuthenticationEnabled?: boolean
   accessKeyId?: string;
