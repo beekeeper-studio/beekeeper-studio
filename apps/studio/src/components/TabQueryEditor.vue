@@ -211,7 +211,7 @@
       ...mapState('settings', ['settings']),
       userKeymap: {
         get() {
-          return this.settings.keymap.value ?? 'default';
+          return this.settings?.keymap?.value ?? 'default';
         },
         set(value) {
           if (value.toLowerCase === this.keymap) return;
@@ -640,6 +640,7 @@
         this.$root.$emit(AppEvent.closeTab)
       },
       showContextMenu(event) {
+        const selectionDepClass = this.hasSelectedText ? '' : 'disabled';
         this.$bks.openMenu({
           item: this.tab,
           options: [
