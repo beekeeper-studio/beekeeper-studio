@@ -11,6 +11,8 @@ jobs:
 
   release:
     runs-on: ${{ matrix.os }}
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
 
     strategy:
       matrix:
@@ -42,18 +44,26 @@ jobs:
         with:
           node-version: 16
 
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v2
+        if: startsWith(matrix.os, 'ubuntu')
+        with:
+          skip_install: ${{ matrix.os == 'ubuntu-arm64' }}
+
+      # We manage snapcraft ourselves on the arm box
+      # and it could have old credentials
+      # this will force it to use the env
+      # key defined at the top of this file.
+      - name: Snapcraft - logout
+        run: "snapcraft logout"
+        if: startsWith(matrix.os, 'ubuntu-arm64')
+
       - name: Clean cache
         run: yarn cache clean
 
       - name: Check dependencies
         run: "yarn install --frozen-lockfile --network-timeout 100000"
 
-      - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v1
-        if: startsWith(matrix.os, 'ubuntu')
-        with:
-          snapcraft_token: ${{ secrets.snapcraft_token }}
-          skip_install: ${{ matrix.os == 'ubuntu-arm64' }}
       - name: Remove dist directory
         if: "!startsWith(matrix.os, 'windows')"
         run: rm -rf ./apps/studio/dist_electron

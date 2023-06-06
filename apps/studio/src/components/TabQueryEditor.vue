@@ -1,11 +1,8 @@
 <template>
   <div class="query-editor" v-hotkey="keymap">
-    <div
-      class="top-panel"
-      ref="topPanel"
-      @contextmenu.prevent.stop="showContextMenu"
-    >
-      <merge-manager v-if="query && query.id" :originalText="originalText" :query="query" :unsavedText="unsavedText" @change="onChange" @mergeAccepted="originalText = query.text" />
+    <div class="top-panel" ref="topPanel" @contextmenu.prevent.stop="showContextMenu">
+      <merge-manager v-if="query && query.id" :originalText="originalText" :query="query" :unsavedText="unsavedText"
+        @change="onChange" @mergeAccepted="originalText = query.text" />
       <div class="no-content" v-if="remoteDeleted">
         <div class="alert alert-danger">
           <i class="material-icons">error_outline</i>
@@ -32,13 +29,13 @@
 
           <x-buttons class="">
             <x-button class="btn btn-primary btn-small" v-tooltip="'Ctrl+Enter'" @click.prevent="submitTabQuery">
-              <x-label>{{hasSelectedText ? 'Run Selection' : 'Run'}}</x-label>
+              <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
             </x-button>
             <x-button class="btn btn-primary btn-small" menu>
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
                 <x-menuitem @click.prevent="submitTabQuery">
-                  <x-label>{{hasSelectedText ? 'Run Selection' : 'Run'}}</x-label>
+                  <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
                   <x-shortcut value="Control+Enter"></x-shortcut>
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQuery">
@@ -55,7 +52,8 @@
     </div>
     <div class="bottom-panel" ref="bottomPanel">
       <progress-bar @cancel="cancelQuery" :message="runningText" v-if="running"></progress-bar>
-      <result-table ref="table" v-else-if="rowCount > 0" :active="active" :tableHeight="tableHeight" :result="result" :query='query'></result-table>
+      <result-table ref="table" v-else-if="rowCount > 0" :active="active" :tableHeight="tableHeight" :result="result"
+        :query='query'></result-table>
       <div class="message" v-else-if="result">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
@@ -458,6 +456,7 @@
       }
     },
     methods: {
+
       find() {
         // trigger's codemirror's search functionality
         this.editor.execCommand('find')
@@ -563,6 +562,7 @@
           extraKeys[this.cmCtrlOrCmd('R')] = 'replace'
           extraKeys[this.cmCtrlOrCmd('Shift-R')] = 'replaceAll'
 
+
           this.editor = CodeMirror.fromTextArea(this.$refs.editor, {
             lineNumbers: true,
             mode: this.connection.connectionType in modes ? modes[this.connection.connectionType] : "text/x-sql",
@@ -643,30 +643,81 @@
         this.$bks.openMenu({
           item: this.tab,
           options: [
-            {
-              name: "Format Query",
-              slug: 'format',
-              handler: this.formatSql
-            },
-            {
-              type: 'divider'
-            },
-            {
-              name: "Find",
-              slug: 'find',
-              handler: this.find
-            },
-            {
-              name: "Replace",
-              slug: "replace",
-              handler: this.replace
-            },
-            {
-              name: "ReplaceAll",
-              slug: "replace_all",
-              handler: this.replaceAll
-            }
-          ],
+          {
+            name: 'Undo',
+            slug: '',
+            handler: this.editorUndo,
+            shortcut: this.ctrlOrCmd('z')
+          },
+          {
+            name: 'Redo',
+            slug: '',
+            handler: this.editorRedo,
+            shortcut: this.ctrlOrCmd('shift+z')
+          },
+          {
+            name: 'Cut',
+            slug: '',
+            handler: this.editorCut,
+            class: selectionDepClass,
+            shortcut: this.ctrlOrCmd('x')
+          },
+          {
+            name: 'Copy',
+            slug: '',
+            handler: this.editorCopy,
+            class: selectionDepClass,
+            shortcut: this.ctrlOrCmd('c')
+          },
+          {
+            name: 'Paste',
+            slug: '',
+            handler: this.editorPaste,
+            shortcut: this.ctrlOrCmd('v')
+          },
+          {
+            name: 'Delete',
+            slug: '',
+            handler: this.editorDelete,
+            class: selectionDepClass
+          },
+          {
+            name: 'Select All',
+            slug: '',
+            handler: this.editorSelectAll,
+            shortcut: this.ctrlOrCmd('a')
+          },
+          {
+            type: 'divider'
+          },
+          {
+            name: "Format Query",
+            slug: 'format',
+            handler: this.formatSql,
+            shortcut: this.ctrlOrCmd('shift+f')
+          },
+          {
+            type: 'divider'
+          },
+          {
+            name: "Find",
+            slug: 'find',
+            handler: this.find,
+            shortcut: this.ctrlOrCmd('f')
+          },
+          {
+            name: "Replace",
+            slug: "replace",
+            handler: this.replace,
+            shortcut: this.ctrlOrCmd('r')
+          },
+          {
+            name: "ReplaceAll",
+            slug: "replace_all",
+            handler: this.replaceAll,
+            shortcut: this.ctrlOrCmd('shift+r')
+          }
+        ],
           event,
         })
       },
@@ -888,6 +939,37 @@
         }
 
         return tableToFind?.columns.map((c) => c.columnName)
+      },
+      // Right click menu handlers
+      editorCut() {
+        const selection = this.editor.getSelection();
+        this.editor.replaceSelection('');
+        this.$native.clipboard.writeText(selection);
+      },
+      editorCopy() {
+        const selection = this.editor.getSelection();
+        this.$native.clipboard.writeText(selection);
+      },
+      editorPaste() {
+        const clipboard = this.$native.clipboard.readText();
+        if (this.hasSelectedText) {
+          this.editor.replaceSelection(clipboard, 'around');
+        } else {
+          const cursor = this.editor.getCursor();
+          this.editor.replaceRange(clipboard, cursor);
+        }
+      },
+      editorDelete() {
+        this.editor.replaceSelection('')
+      },
+      editorUndo() {
+        this.editor.execCommand('undo')
+      },
+      editorRedo() {
+        this.editor.execCommand('redo')
+      },
+      editorSelectAll() {
+        this.editor.execCommand('selectAll')
       }
     },
     mounted() {

@@ -13695,17 +13695,18 @@ sql-formatter@*:
     argparse "^2.0.1"
     nearley "^2.20.1"
 
+sql-formatter@^10.0.0:
+  version "10.7.2"
+  resolved "https://registry.yarnpkg.com/sql-formatter/-/sql-formatter-10.7.2.tgz#e482d73c44fa1243a6730f27dfab2ad734b95f30"
+  integrity sha512-YspJXMr2rKMGZY50zYRBs2nCtEO/AKDrmQOxmV2CrGEOFSXUhY3YbsOUe6lX0T/7xbBs4pAYv4UObmwf78vtKg==
+  dependencies:
+    argparse "^2.0.1"
+    nearley "^2.20.1"
+
 sql-formatter@^4.0.0:
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/sql-formatter/-/sql-formatter-4.0.2.tgz#2b359e5a4c611498d327b9659da7329d71724607"
   integrity sha512-R6u9GJRiXZLr/lDo8p56L+OyyN2QFJPCDnsyEOsbdIpsnDKL8gubYFo7lNR7Zx7hfdWT80SfkoVS0CMaF/DE2w==
-  dependencies:
-    argparse "^2.0.1"
-
-sql-formatter@^6.1.1:
-  version "6.1.5"
-  resolved "https://registry.yarnpkg.com/sql-formatter/-/sql-formatter-6.1.5.tgz#b93ee61d8fed665fe8974db15a89fecaeedd878c"
-  integrity sha512-aqhxDRIhllzCuwzDX18Y7TmcvD3Epb2qvkUDSoyX1+oDyMaWk7xja6mnuAZ4kaw2f0mVjzSZCJfCALtKx0WdoA==
   dependencies:
     argparse "^2.0.1"
 

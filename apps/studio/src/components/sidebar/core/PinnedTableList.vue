@@ -2,7 +2,7 @@
   <nav class="list-group flex-col">
     <div class="list-heading row">
       <div class="sub row flex-middle noselect">
-        <div>Pinned <span class="badge">{{orderedPins.length}}</span></div>
+        <div>Pinned <span class="badge">{{ orderedPins.length }}</span></div>
       </div>
       <div class="row">
         <div class="actions">
@@ -11,34 +11,16 @@
 
       </div>
     </div>
-    <Draggable :options="{handle: '.drag-handle'}" v-model="orderedPins" tag="div" ref="pinContainer" class="list-body">
+    <Draggable :options="{ handle: '.drag-handle' }" v-model="orderedPins" tag="div" ref="pinContainer" class="list-body">
       <div class="pin-wrapper" v-for="p in orderedPins" :key="p.id || p.entity.name">
-        <table-list-item
-          v-if="p.entityType !== 'routine'"
-          :table="p.entity"
-          :pinned="true"
-          :connection="connection"
-          :draggable="sort.field === 'position'"
-          :container="$refs.pinContainer"
-          :forceExpand="allExpanded"
+        <table-list-item v-if="p.entityType !== 'routine'" :table="p.entity" :pinned="true" :connection="connection"
+          :draggable="sort.field === 'position'" :container="$refs.pinContainer" :forceExpand="allExpanded"
+          :forceCollapse="allCollapsed" @selected="refreshColumns" :noSelect="true"
+          @contextmenu.prevent.stop="$bks.openMenu({ item: p.entity, event: $event, options: tableMenuOptions })" />
+        <routine-list-item v-else :container="$refs.pinContainer" :draggable="sort.field === 'position'"
+          :routine="p.entity" :connection="connection" :pinned="true" :forceExpand="allExpanded"
           :forceCollapse="allCollapsed"
-          @selected="refreshColumns"
-          :noSelect="true"
-          @contextmenu.prevent.stop="$bks.openMenu({item: p.entity, event: $event, options: tableMenuOptions})"
-
-        />
-        <routine-list-item
-          v-else
-          :container="$refs.pinContainer"
-          :draggable="sort.field === 'position'"
-          :routine="p.entity"
-          :connection="connection"
-          :pinned="true"
-          :forceExpand="allExpanded"
-          :forceCollapse="allCollapsed"
-          @contextmenu.prevent.stop="$bks.openMenu({item: p.entity, event: $event, options: routineMenuOptions})"
-
-        />
+          @contextmenu.prevent.stop="$bks.openMenu({ item: p.entity, event: $event, options: routineMenuOptions })" />
 
       </div>
 
@@ -57,12 +39,12 @@ import TableListContextMenus from '@/mixins/TableListContextMenus'
 import SidebarSortButtons from '@/components/common/SidebarSortButtons.vue'
 export default Vue.extend({
   components: { RoutineListItem, Draggable, TableListItem, SidebarSortButtons },
-  mixins: [ TableListContextMenus],
+  mixins: [TableListContextMenus],
   props: [
     'allExpanded', 'allCollapsed', 'connection'
   ],
   data: () => ({
-    sort: { field: 'position', order: 'asc'},
+    sort: { field: 'position', order: 'asc' },
     sortOptions: {
       position: 'Drag & Drop',
       entityName: 'Alphanumeric'
@@ -88,7 +70,7 @@ export default Vue.extend({
     }
   },
   async mounted() {
-    const [ field, order ] = await Promise.all([
+    const [field, order] = await Promise.all([
       this.$settings.get('pinSortField', 'position'),
       this.$settings.get('pinSortOrder', 'asc')
     ])
