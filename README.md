@@ -31,6 +31,16 @@ Top feature: It's smooth 🍫, fast 🏎, and you'll actually enjoy using it �
 - Query run-history, so you can find that one query you got working 3 days ago
 - Default dark theme
 
+Features exclusive to the full commercial edition ([available on our website](https://beekeeperstudio.io/get)):
+- More themes
+- Online storage for queries and connections with [Workspaces](https://www.beekeeperstudio.io/features/workspace)
+- Easy data formatting with [Query magics](https://docs.beekeeperstudio.io/docs/query-magics)
+- Multi-table export (v4+)
+- Easy database backup using native tools (v4+)
+- Easy database restore using native tools (coming soon)
+- Oracle Database support
+- Cassandra database support
+
 One of our frustrations with other open-source SQL editors and database managers is that they take a 'kitchen sink' approach to features, adding so many features that the UI becomes cluttered and hard to navigate. We wanted a good looking, open source SQL workbench that's powerful, but also easy to use. We couldn't find one, so we created Beekeeper Studio!
 
 Beekeeper Studio supports connecting to the following databases:
@@ -42,6 +52,10 @@ Beekeeper Studio supports connecting to the following databases:
 - CockroachDB
 - SQL Server
 - Amazon Redshift
+
+The commercial version of Beekeeper Studio ([avaliable here](https://beekeeperstudio.io/get)) also supports:
+- Oracle Database
+- Cassandra Database
 
 ## Supporting Beekeeper Studio
 
