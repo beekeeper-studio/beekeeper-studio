@@ -32,6 +32,7 @@ Top feature: It's smooth 🍫, fast 🏎, and you'll actually enjoy using it �
 - Default dark theme
 
 Features exclusive to the full commercial edition ([available on our website](https://beekeeperstudio.io/get)):
+
 - More themes
 - Online storage for queries and connections with [Workspaces](https://www.beekeeperstudio.io/features/workspace)
 - Easy data formatting with [Query magics](https://docs.beekeeperstudio.io/docs/query-magics)
@@ -54,6 +55,7 @@ Beekeeper Studio supports connecting to the following databases:
 - Amazon Redshift
 
 The commercial version of Beekeeper Studio ([avaliable here](https://beekeeperstudio.io/get)) also supports:
+
 - Oracle Database
 - Cassandra Database
 
