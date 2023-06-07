@@ -1,4 +1,6 @@
 /* eslint-disable */
+const { parseDBHintTables, findTablesBySchema, pushTablesToResult, queryTable, parseDBHintTable } = require("@/lib/editor");
+
 // "forked" from CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: https://codemirror.net/5/LICENSE
 (function(mod) {
@@ -11,7 +13,17 @@
 })(function(CodeMirror) {
   "use strict";
 
+  /**
+    * Does not contain all tables; it's an object with table names as keys.
+    * Tables with the same name will be overwritten.
+    */
   var tables;
+  /**
+    * Contains all tables as an array without overwriting any of them.
+    * Additionally, it includes information about the schema of each table.
+    */
+  let hintTables = [];
+  let schemaList = [];
   var defaultTable;
   var keywords;
   var identifierQuote;
@@ -47,21 +59,15 @@
   }
 
   function parseTables(input) {
-    var result = {}
-    if (isArray(input)) {
-      for (var i = input.length - 1; i >= 0; i--) {
-        var item = input[i]
-        result[getText(item).toUpperCase()] = wrapTable(getText(item), item)
-      }
-    } else if (input) {
-      for (var name in input)
-        result[name.toUpperCase()] = wrapTable(name, input[name])
-    }
-    return result
+    return parseDBHintTables(input)
   }
 
   function getTable(name) {
-    return tables[name.toUpperCase()]
+    const table = tables[name.toUpperCase()]
+    if (table) return table
+
+    const queriedTable = queryTable(name, hintTables)
+    if (queriedTable) return parseDBHintTable(queriedTable)
   }
 
   function shallowClone(object) {
@@ -138,6 +144,14 @@
         cont = true;
         token = editor.getTokenAt(Pos(cur.line, token.start));
       }
+    }
+
+    const maybeSchema = nameParts[0];
+    if (schemaList.includes(maybeSchema)) {
+      const tables = findTablesBySchema(maybeSchema, hintTables);
+      pushTablesToResult(tables, result, (tableName) =>
+        useIdentifierQuotes ? insertIdentifierQuotes(tableName) : tableName
+      );
     }
 
     // Try to complete table names
@@ -242,11 +256,12 @@
     return table;
   }
 
-  // FIXME: Add support for schemas.
-  //        Currently this only auto-completes tables and columns in the current schema
   CodeMirror.registerHelper("hint", "sql", async function(editor, options) {
     globalEditorOptions = {...editor.options}
     tables = parseTables(options?.tables)
+    hintTables = options?.tables
+    schemaList = options?.schemas
+
     var defaultTableName = options?.defaultTable;
     var disableKeywords = options?.disableKeywords;
     defaultTable = defaultTableName && getTable(defaultTableName);
@@ -298,6 +313,9 @@
           return objectOrClass(w, "CodeMirror-hint-table");
         }
     );
+    addMatches(result, search, schemaList, function (w) {
+      return objectOrClass(w, "CodeMirror-hint-schema");
+    });
     if (!disableKeywords)
       addMatches(result, search, keywords, function(w) {
           return objectOrClass(w.toUpperCase(), "CodeMirror-hint-keyword");

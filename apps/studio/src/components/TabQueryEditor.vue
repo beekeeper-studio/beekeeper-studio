@@ -148,7 +148,7 @@
   import 'codemirror/addon/search/matchesonscrollbar'
   import 'codemirror/addon/search/matchesonscrollbar.css'
   import 'codemirror/addon/search/searchcursor'
-  
+
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
@@ -341,25 +341,8 @@
         return this.connection.connectionType;
       },
       hintOptions() {
-        // Previously we had to provide a table: column[] mapping.
-        // we don't need to provide the columns anymore because we fetch them dynamically.
-        const result = {}
-        this.tables.forEach(table => {
-          if (table.schema && table.schema != this.defaultSchema) {
-            // do nothing - don't add this table
-          } else {
-            // add quoted option for everyone that needs to be quoted
-            if (this.connectionType === 'postgresql' && (/[^a-z0-9_]/.test(table.name) || /^\d/.test(table.name))) {
-              result[`"${table.name}"`] = []
-            }
-
-            // don't add table names that can get in conflict with database schema
-            if (!/\./.test(table.name)) {
-              result[table.name] = []
-            }
-          }
-        })
-        return { tables: result }
+        const dbHint = makeDBHint(this.tables, this.connectionType)
+        return { tables: dbHint.tables, schemas: dbHint.schemas }
       },
       queryParameterPlaceholders() {
         let params = this.individualQueries.flatMap((qs) => qs.parameters)
@@ -932,7 +915,7 @@
         this.query.text = "select * from foo"
       },
       async getColumnsForAutocomplete(tableName) {
-        const tableToFind = this.tables.find(t => t.name === tableName)
+        const tableToFind = queryTable(tableName, this.tables)
         if (!tableToFind) return null
         // Only refresh columns if we don't have them cached.
         if (!tableToFind.columns?.length) {
