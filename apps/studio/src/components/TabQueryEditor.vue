@@ -168,6 +168,7 @@
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
   import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
+  import { makeDBHint, queryTable } from '@/lib/editor'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))

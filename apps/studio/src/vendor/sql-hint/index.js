@@ -147,7 +147,7 @@ const { parseDBHintTables, findTablesBySchema, pushTablesToResult, queryTable, p
     }
 
     const maybeSchema = nameParts[0];
-    if (schemaList.includes(maybeSchema)) {
+    if (nameParts.length <= 2 && schemaList.includes(maybeSchema)) {
       const tables = findTablesBySchema(maybeSchema, hintTables);
       pushTablesToResult(tables, result, (tableName) =>
         useIdentifierQuotes ? insertIdentifierQuotes(tableName) : tableName
