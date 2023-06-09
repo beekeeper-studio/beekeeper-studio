@@ -1,96 +1,98 @@
 import type { TableOrView } from "@/lib/db/models";
 import { DialectData } from "@shared/lib/dialects/models";
 
-interface DBHintTable {
-  name: string;
-  schema?: string;
-}
-
-type DBHintSchema = string;
-
 interface Word {
   text: string;
-  type: "table" | "schema";
+  name: string;
+  type: "schema" | "table" | "column";
   schema?: string;
 }
 
+/**
+ * A list of all words in key-value form, where the key is the word in uppercase.
+ * It's best to use the `findWord` function to find a word, as it will handle
+ * uppercase and lowercase words.
+ */
 type WordList = Record<string, Word>;
 
-interface DBHint {
-  tables: DBHintTable[];
-  schemas: DBHintSchema[];
+export interface DBHint {
+  /**
+   * A list of all tables in key-value form, where the key is the table name.
+   **/
+  tableWordList: WordList;
+  /**
+   * A list of all tables in array form.
+   */
+  tableWords: Word[];
+  schemaWordList: WordList;
+}
+
+/**
+ * Use this instead of accessing the wordList directly
+ */
+export function findWord(wordList: WordList, word: string) {
+  return wordList[word.toUpperCase()];
 }
 
 export function makeDBHint(
   tables: TableOrView[],
   dialectData: DialectData,
+  defaultSchema?: string
 ): DBHint {
-  const schemaSet: Set<string> = new Set();
-  const hintTables: DBHintTable[] = [];
-  tables.forEach((table) => {
-    hintTables.push({
-      name: dialectData.maybeWrapIdentifier(table.name),
-      schema: table.schema,
-    });
-    if (table.schema) schemaSet.add(table.schema);
-  });
-  return {
-    tables: hintTables,
-    schemas: Array.from(schemaSet),
-  };
-}
+  const schemaSet = new Set<string>();
+  if (defaultSchema) schemaSet.add(defaultSchema);
 
-export function parseDBHintTables(tables: DBHintTable[]): WordList {
-  return tables.reduce(
-    (acc, table) => ({
+  const tableWords: Word[] = [];
+
+  const tableWordList = tables.reduce((acc, table) => {
+    if (table.schema) schemaSet.add(table.schema);
+
+    const word = {
+      name: table.name,
+      text: dialectData.maybeWrapIdentifier(table.name),
+      type: "table" as const,
+      schema: table.schema || defaultSchema,
+    };
+
+    tableWords.push(word);
+
+    return {
       ...acc,
-      [table.name.toUpperCase()]: {
-        text: table.name,
-        type: "table" as const,
-        schema: table.schema,
+      [table.name.toUpperCase()]: word,
+    };
+  }, {});
+
+  const schemaWordList = Array.from(schemaSet).reduce(
+    (acc, name) => ({
+      ...acc,
+      [name.toUpperCase()]: {
+        name,
+        text: name,
+        type: "schema",
       },
     }),
     {}
   );
-}
 
-export function parseDBHintTable(table: DBHintTable): Word {
   return {
-    text: table.name,
-    type: "table" as const,
-    schema: table.schema,
+    tableWords,
+    schemaWordList,
+    tableWordList,
   };
 }
 
 const captureTableNameRegex = /"(.*)"/;
 
-export function queryTable(
-  query: string,
-  tables: DBHintTable[] | TableOrView[]
-) {
+export function queryTable(dbHint: DBHint, query: string) {
   const tableNameQuery = captureTableNameRegex.exec(query)?.[1] || query;
-  return tables.find(
+  const table = findWord(dbHint.tableWordList, tableNameQuery);
+  if (table) return table;
+  return dbHint.tableWords.find(
     (table) =>
       `${table.schema}.${table.name}` === query || table.name === tableNameQuery
   );
 }
 
-export function findTablesBySchema(schema: string, tables: DBHintTable[]) {
-  return tables.filter((table) => table.schema === schema);
-}
-
-export function pushTablesToResult(
-  tables: DBHintTable[],
-  result: any[],
-  textModifier?: (text: string) => string
-) {
-  result.push(
-    ...tables.map((table) => {
-      const tableName = textModifier ? textModifier(table.name) : table.name;
-      return {
-        text: table.schema ? `${table.schema}.${tableName}` : tableName,
-        displayText: table.name,
-      };
-    })
-  );
+export function findTablesBySchema(dbHint: DBHint, schema: string) {
+  return dbHint.tableWords.filter((table) => table.schema === schema);
 }

@@ -1,99 +1,107 @@
 import {
   makeDBHint,
-  parseDBHintTable,
-  parseDBHintTables,
   queryTable,
   findTablesBySchema,
-  pushTablesToResult,
+  findWord,
 } from "../../../src/lib/editor";
-import { tableOrViews } from "../../fixtures/tables";
+import { dbHint, tableOrViews } from "../../fixtures/tables";
 import { PostgresData } from "../../../../../shared/src/lib/dialects/postgresql";
-
-const dialectData = PostgresData;
+import { SqliteData } from "../../../../../shared/src/lib/dialects/sqlite";
 
 describe("lib/editor", () => {
-  let dbHint;
+  describe("makeDBHint (DB with schemas))", () => {
+    const dialectData = PostgresData;
+    const defaultSchema = "public";
 
-  beforeAll(() => {
-    dbHint = makeDBHint(tableOrViews, dialectData);
-  });
-
-  describe("makeDBHint", () => {
     it("should make arrays of tables and schemas", () => {
-      expect(makeDBHint(tableOrViews, dialectData)).toEqual({
-        tables: [
-          { name: "my_table", schema: "public" },
-          { name: '"special+table"', schema: "public" },
-          { name: "cache_inval_bgw_job", schema: "_timescaledb_cache" },
+      expect(makeDBHint(tableOrViews, dialectData, defaultSchema)).toEqual(
+        dbHint
+      );
+    });
+
+    it("should return empty array of tables or schemas", () => {
+      expect(makeDBHint([], dialectData, defaultSchema)).toEqual({
+        tableWordList: {},
+        tableWords: [],
+        schemaWordList: {
+          PUBLIC: {
+            name: "public",
+            text: "public",
+            type: "schema",
+          },
+        },
+      });
+      expect(
+        makeDBHint([{ name: "my_table" }], dialectData, defaultSchema)
+      ).toEqual({
+        tableWordList: {
+          MY_TABLE: {
+            name: "my_table",
+            text: "my_table",
+            type: "table",
+            schema: "public",
+          },
+        },
+        tableWords: [
+          {
+            name: "my_table",
+            text: "my_table",
+            type: "table",
+            schema: "public",
+          },
         ],
-        schemas: ["public", "_timescaledb_cache"],
-      });
-    });
-
-    it("should return empty array when there is no table or schema", () => {
-      expect(makeDBHint([], dialectData)).toEqual({ tables: [], schemas: [] });
-      expect(makeDBHint([{ name: "my_table" }], dialectData)).toEqual({
-        tables: [{ name: "my_table" }],
-        schemas: [],
-      });
-    });
-  });
-
-  describe("parseDBHintTables", () => {
-    it("should parse tables for addMatches() wordList", () => {
-      const wordList = parseDBHintTables(dbHint.tables);
-      expect(wordList).toEqual({
-        MY_TABLE: { text: "my_table", type: "table", schema: "public" },
-        '"SPECIAL+TABLE"': {
-          text: '"special+table"',
-          type: "table",
-          schema: "public",
-        },
-        CACHE_INVAL_BGW_JOB: {
-          text: "cache_inval_bgw_job",
-          type: "table",
-          schema: "_timescaledb_cache",
+        schemaWordList: {
+          PUBLIC: {
+            name: "public",
+            text: "public",
+            type: "schema",
+          },
         },
       });
     });
   });
 
-  describe("parseDBHintTable", () => {
-    it("should parse one table", () => {
-      expect(parseDBHintTable(dbHint.tables[0])).toEqual({
-        text: "my_table",
-        type: "table",
-        schema: "public",
+  describe("makeDBHint (DB without schemas))", () => {
+    const dialectData = SqliteData;
+    const defaultSchema = undefined;
+
+    it("should return empty array of tables and schemas", () => {
+      expect(makeDBHint([], dialectData, defaultSchema)).toEqual({
+        tableWordList: {},
+        tableWords: [],
+        schemaWordList: {},
+      });
+      expect(
+        makeDBHint([{ name: "my_table" }], dialectData, defaultSchema)
+      ).toEqual({
+        tableWordList: {
+          MY_TABLE: {
+            name: "my_table",
+            text: "my_table",
+            type: "table",
+          },
+        },
+        tableWords: [
+          {
+            name: "my_table",
+            text: "my_table",
+            type: "table",
+          },
+        ],
+        schemaWordList: {},
       });
     });
   });
 
   describe("findTablesBySchema", () => {
     it("should find tables by schema", () => {
-      const tables = findTablesBySchema("_timescaledb_cache", dbHint.tables);
+      const tables = findTablesBySchema(dbHint, "_timescaledb_cache");
       expect(tables).toEqual([
         {
           name: "cache_inval_bgw_job",
+          text: "cache_inval_bgw_job",
+          type: "table",
           schema: "_timescaledb_cache",
-        },
-      ]);
-    });
-  });
-
-  describe("pushTablesToResult", () => {
-    it("should mutably push tables to result (like addMatches)", () => {
-      const tables = [
-        {
-          name: "my_table",
-          schema: "public",
-        },
-      ];
-      const result = [];
-      pushTablesToResult(tables, result);
-      expect(result).toEqual([
-        {
-          text: "public.my_table",
-          displayText: "my_table",
         },
       ]);
     });
@@ -101,25 +109,39 @@ describe("lib/editor", () => {
 
   describe("queryTable", () => {
     it("should query a table", () => {
-      expect(queryTable("my_table", dbHint.tables)).toEqual({
+      expect(queryTable(dbHint, "my_table")).toEqual({
         name: "my_table",
+        text: "my_table",
+        type: "table",
         schema: "public",
       });
-      expect(queryTable("public.my_table", dbHint.tables)).toEqual({
+      expect(queryTable(dbHint, "public.my_table")).toEqual({
         name: "my_table",
+        text: "my_table",
+        type: "table",
         schema: "public",
       });
     });
 
     it("should query a table inside quotes", () => {
-      expect(queryTable('"special+table"', tableOrViews)).toMatchObject({
-        name: 'special+table',
+      expect(queryTable(dbHint, '"special+table"')).toMatchObject({
+        name: "special+table",
+        text: '"special+table"',
+        type: "table",
         schema: "public",
       });
-      expect(queryTable('public."special+table"', tableOrViews)).toMatchObject({
-        name: 'special+table',
+      expect(queryTable(dbHint, 'public."special+table"')).toMatchObject({
+        name: "special+table",
+        text: '"special+table"',
+        type: "table",
         schema: "public",
       });
+    });
+  });
+
+  describe("findWord", () => {
+    it("should find a word object in a wordList by the key", () => {
+      expect(findWord(dbHint.tableWordList, "my_table").name).toBe("my_table");
     });
   });
 });

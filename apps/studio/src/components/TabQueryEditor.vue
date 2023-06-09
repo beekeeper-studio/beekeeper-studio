@@ -342,8 +342,8 @@
         return this.connection.connectionType;
       },
       hintOptions() {
-        const dbHint = makeDBHint(this.tables, this.dialectData)
-        return { tables: dbHint.tables, schemas: dbHint.schemas }
+        const dbHint = makeDBHint(this.tables, this.dialectData, this.defaultSchema)
+        return { dbHint }
       },
       queryParameterPlaceholders() {
         let params = this.individualQueries.flatMap((qs) => qs.parameters)
@@ -916,7 +916,7 @@
         this.query.text = "select * from foo"
       },
       async getColumnsForAutocomplete(tableName) {
-        const tableToFind = queryTable(tableName, this.tables)
+        const tableToFind = queryTable(this.hintOptions.dbHint, tableName)
         if (!tableToFind) return null
         // Only refresh columns if we don't have them cached.
         if (!tableToFind.columns?.length) {

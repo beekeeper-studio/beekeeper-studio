@@ -1,5 +1,11 @@
 /* eslint-disable */
-const { parseDBHintTables, findTablesBySchema, pushTablesToResult, queryTable, parseDBHintTable } = require("@/lib/editor");
+const {
+  findTablesBySchema,
+  pushTablesToResult,
+  queryTable,
+  parseDBHintTable,
+  findWord,
+} = require("@/lib/editor");
 
 // "forked" from CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: https://codemirror.net/5/LICENSE
@@ -14,16 +20,9 @@ const { parseDBHintTables, findTablesBySchema, pushTablesToResult, queryTable, p
   "use strict";
 
   /**
-    * Does not contain all tables; it's an object with table names as keys.
-    * Tables with the same name will be overwritten.
-    */
-  var tables;
-  /**
-    * Contains all tables as an array without overwriting any of them.
-    * Additionally, it includes information about the schema of each table.
-    */
-  let hintTables = [];
-  let schemaList = [];
+    * @type {import('@/lib/editor').DBHint}
+    **/
+  let dbHint;
   var defaultTable;
   var keywords;
   var identifierQuote;
@@ -58,16 +57,12 @@ const { parseDBHintTables, findTablesBySchema, pushTablesToResult, queryTable, p
     return value
   }
 
-  function parseTables(input) {
-    return parseDBHintTables(input)
-  }
+  // function parseTables(input) {
+  //   return parseDBHintTables(input)
+  // }
 
   function getTable(name) {
-    const table = tables[name.toUpperCase()]
-    if (table) return table
-
-    const queriedTable = queryTable(name, hintTables)
-    if (queriedTable) return parseDBHintTable(queriedTable)
+    return queryTable(dbHint, name)
   }
 
   function shallowClone(object) {
@@ -147,16 +142,21 @@ const { parseDBHintTables, findTablesBySchema, pushTablesToResult, queryTable, p
     }
 
     const maybeSchema = nameParts[0];
-    if (nameParts.length <= 2 && schemaList.includes(maybeSchema)) {
-      const tables = findTablesBySchema(maybeSchema, hintTables);
-      pushTablesToResult(tables, result, (tableName) =>
-        useIdentifierQuotes ? insertIdentifierQuotes(tableName) : tableName
+    if (nameParts.length <= 2 && findWord(dbHint.schemaWordList, maybeSchema)) {
+      const tables = findTablesBySchema(dbHint, maybeSchema).map(
+        (table) =>
+          `${maybeSchema}.${
+            useIdentifierQuotes
+              ? insertIdentifierQuotes(table.name)
+              : table.name
+          }`
       );
+      result.push(...tables);
     }
 
     // Try to complete table names
     var string = nameParts.join(".");
-    addMatches(result, string, tables, function(w) {
+    addMatches(result, string, dbHint.tableWordList, function(w) {
       return useIdentifierQuotes ? insertIdentifierQuotes(w) : w;
     });
 
@@ -258,9 +258,7 @@ const { parseDBHintTables, findTablesBySchema, pushTablesToResult, queryTable, p
 
   CodeMirror.registerHelper("hint", "sql", async function(editor, options) {
     globalEditorOptions = {...editor.options}
-    tables = parseTables(options?.tables)
-    hintTables = options?.tables
-    schemaList = options?.schemas
+    dbHint = options?.dbHint
 
     var defaultTableName = options?.defaultTable;
     var disableKeywords = options?.disableKeywords;
@@ -309,11 +307,11 @@ const { parseDBHintTables, findTablesBySchema, pushTablesToResult, queryTable, p
     addMatches(
         result,
         search,
-        tables, function(w) {
+        dbHint.tableWordList, function(w) {
           return objectOrClass(w, "CodeMirror-hint-table");
         }
     );
-    addMatches(result, search, schemaList, function (w) {
+    addMatches(result, search, dbHint.schemaWordList, function (w) {
       return objectOrClass(w, "CodeMirror-hint-schema");
     });
     if (!disableKeywords)
