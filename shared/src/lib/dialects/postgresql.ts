@@ -1,6 +1,12 @@
-import { ColumnType, defaultConstraintActions, defaultEscapeString, defaultWrapLiteral, DialectData, SpecialTypes } from "./models";
-
-
+import {
+  ColumnType,
+  defaultConstraintActions,
+  defaultEscapeString,
+  defaultMaybeWrapIdentifier,
+  defaultWrapLiteral,
+  DialectData,
+  SpecialTypes,
+} from "./models";
 
 const types = [
   ...SpecialTypes,
@@ -25,6 +31,7 @@ export const PostgresData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions, 'RESTRICT'],
   wrapIdentifier: (id: string) => id ? `"${id.replaceAll(/"/g, '""')}"` : null,
+  maybeWrapIdentifier: defaultMaybeWrapIdentifier,
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
   disabledFeatures: {

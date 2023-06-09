@@ -1,5 +1,13 @@
-import { ColumnType, defaultConstraintActions, defaultEscapeString, defaultWrapIdentifier, defaultWrapLiteral, DialectData, SpecialTypes } from "./models"
-
+import {
+  ColumnType,
+  defaultConstraintActions,
+  defaultEscapeString,
+  defaultMaybeWrapIdentifier,
+  defaultWrapIdentifier,
+  defaultWrapLiteral,
+  DialectData,
+  SpecialTypes,
+} from "./models";
 
 const types = [
   ...SpecialTypes,
@@ -19,6 +27,7 @@ export const SqliteData: DialectData = {
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
   wrapIdentifier: defaultWrapIdentifier,
+  maybeWrapIdentifier: defaultMaybeWrapIdentifier,
   disabledFeatures: {
     comments: true,
     alter: {

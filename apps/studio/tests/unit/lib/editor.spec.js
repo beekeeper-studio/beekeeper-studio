@@ -5,20 +5,22 @@ import {
   queryTable,
   findTablesBySchema,
   pushTablesToResult,
-  sanitizeTableName,
 } from "../../../src/lib/editor";
 import { tableOrViews } from "../../fixtures/tables";
+import { PostgresData } from "../../../../../shared/src/lib/dialects/postgresql";
+
+const dialectData = PostgresData;
 
 describe("lib/editor", () => {
   let dbHint;
 
   beforeAll(() => {
-    dbHint = makeDBHint(tableOrViews, "postgresql");
+    dbHint = makeDBHint(tableOrViews, dialectData);
   });
 
   describe("makeDBHint", () => {
     it("should make arrays of tables and schemas", () => {
-      expect(makeDBHint(tableOrViews, "postgresql")).toEqual({
+      expect(makeDBHint(tableOrViews, dialectData)).toEqual({
         tables: [
           { name: "my_table", schema: "public" },
           { name: '"special+table"', schema: "public" },
@@ -29,8 +31,8 @@ describe("lib/editor", () => {
     });
 
     it("should return empty array when there is no table or schema", () => {
-      expect(makeDBHint([])).toEqual({ tables: [], schemas: [] });
-      expect(makeDBHint([{ name: "my_table" }])).toEqual({
+      expect(makeDBHint([], dialectData)).toEqual({ tables: [], schemas: [] });
+      expect(makeDBHint([{ name: "my_table" }], dialectData)).toEqual({
         tables: [{ name: "my_table" }],
         schemas: [],
       });
@@ -118,13 +120,6 @@ describe("lib/editor", () => {
         name: 'special+table',
         schema: "public",
       });
-    });
-  });
-
-  describe("sanitizeTableName", () => {
-    it("should sanitize table names", () => {
-      expect(sanitizeTableName("my+table")).toEqual('"my+table"');
-      expect(sanitizeTableName("1my_table")).toEqual('"1my_table"');
     });
   });
 });

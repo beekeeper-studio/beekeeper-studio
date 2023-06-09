@@ -1,5 +1,13 @@
-import _ from "lodash"
-import { ColumnType, defaultConstraintActions, defaultEscapeString, DialectData, SpecialTypes } from "./models"
+import _ from "lodash";
+import {
+  ColumnType,
+  defaultConstraintActions,
+  defaultEscapeString,
+  defaultMaybeWrapIdentifier,
+  DialectData,
+  SpecialTypes,
+} from "./models";
+
 
 
 const types = [
@@ -19,6 +27,7 @@ export const MysqlData: DialectData = {
   wrapIdentifier(value: string) {
     return (value !== '*' ? `\`${value.replaceAll(/`/g, '``')}\`` : '*');
   },
+  maybeWrapIdentifier: defaultMaybeWrapIdentifier,
   escapeString: defaultEscapeString,
   wrapLiteral(value: string) {
     return value.replaceAll(';', '')

@@ -1,4 +1,5 @@
 import type { TableOrView } from "@/lib/db/models";
+import { DialectData } from "@shared/lib/dialects/models";
 
 interface DBHintTable {
   name: string;
@@ -22,16 +23,13 @@ interface DBHint {
 
 export function makeDBHint(
   tables: TableOrView[],
-  connectionType: string
+  dialectData: DialectData,
 ): DBHint {
   const schemaSet: Set<string> = new Set();
   const hintTables: DBHintTable[] = [];
   tables.forEach((table) => {
     hintTables.push({
-      name:
-        connectionType === "postgresql"
-          ? sanitizeTableName(table.name)
-          : table.name,
+      name: dialectData.maybeWrapIdentifier(table.name),
       schema: table.schema,
     });
     if (table.schema) schemaSet.add(table.schema);
@@ -95,10 +93,4 @@ export function pushTablesToResult(
       };
     })
   );
-}
-
-const tableNameValidationRegex = /(?:[^a-z0-9_]|^\d)/;
-
-export function sanitizeTableName(name: string): string {
-  return tableNameValidationRegex.test(name) ? `"${name}"` : name;
 }

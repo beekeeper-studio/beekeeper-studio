@@ -206,7 +206,7 @@
       }
     },
     computed: {
-      ...mapGetters(['dialect', 'defaultSchema']),
+      ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
       ...mapState(['usedConfig', 'connection', 'database', 'tables', 'storeInitialized']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
@@ -342,7 +342,7 @@
         return this.connection.connectionType;
       },
       hintOptions() {
-        const dbHint = makeDBHint(this.tables, this.connectionType)
+        const dbHint = makeDBHint(this.tables, this.dialectData)
         return { tables: dbHint.tables, schemas: dbHint.schemas }
       },
       queryParameterPlaceholders() {
