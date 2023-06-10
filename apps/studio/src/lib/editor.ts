@@ -9,9 +9,7 @@ interface Word {
 }
 
 /**
- * A list of all words in key-value form, where the key is the word in uppercase.
- * It's best to use the `findWord` function to find a word, as it will handle
- * uppercase and lowercase words.
+ * A list of all words in key-value form, where the key is the word that's case sensitive.
  */
 type WordList = Record<string, Word>;
 
@@ -27,11 +25,8 @@ export interface DBHint {
   schemaWordList: WordList;
 }
 
-/**
- * Use this instead of accessing the wordList directly
- */
 export function findWord(wordList: WordList, word: string) {
-  return wordList[word.toUpperCase()];
+  return wordList[word];
 }
 
 export function makeDBHint(
@@ -56,16 +51,17 @@ export function makeDBHint(
 
     tableWords.push(word);
 
-    return {
-      ...acc,
-      [table.name.toUpperCase()]: word,
-    };
+    const key = table.name;
+    const registeredWord = acc[key];
+    if (registeredWord && registeredWord.schema === defaultSchema) return acc;
+
+    return { ...acc, [key]: word };
   }, {});
 
   const schemaWordList = Array.from(schemaSet).reduce(
     (acc, name) => ({
       ...acc,
-      [name.toUpperCase()]: {
+      [name]: {
         name,
         text: name,
         type: "schema",
@@ -95,4 +91,9 @@ export function queryTable(dbHint: DBHint, query: string) {
 
 export function findTablesBySchema(dbHint: DBHint, schema: string) {
   return dbHint.tableWords.filter((table) => table.schema === schema);
+}
+
+export function splitSchemaTable(str: string) {
+  const [schema, ...table] = str.split(".");
+  return [schema, table.join(".")];
 }

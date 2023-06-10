@@ -5,6 +5,7 @@ const {
   queryTable,
   parseDBHintTable,
   findWord,
+  splitSchemaTable,
 } = require("@/lib/editor");
 
 // "forked" from CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -122,6 +123,8 @@ const {
   }
 
   async function nameCompletion(cur, token, result, editor) {
+    const [maybeTable, maybeTableStart] = findLastWord(editor, cur)
+
     // Try to complete table, column names and return start position of completion
     var useIdentifierQuotes = false;
     var nameParts = [];
@@ -141,18 +144,8 @@ const {
       }
     }
 
-    const maybeSchema = nameParts[0];
-    if (nameParts.length <= 2 && findWord(dbHint.schemaWordList, maybeSchema)) {
-      const tables = findTablesBySchema(dbHint, maybeSchema).map(
-        (table) =>
-          `${maybeSchema}.${
-            useIdentifierQuotes
-              ? insertIdentifierQuotes(table.name)
-              : table.name
-          }`
-      );
-      result.push(...tables);
-    }
+    const search = nameParts.join('.');
+    addSchemaHints(result, search);
 
     // Try to complete table names
     var string = nameParts.join(".");
@@ -168,17 +161,25 @@ const {
     // Try to complete columns
     string = nameParts.pop();
     var table = nameParts.join(".");
+    let tableWord;
+
+    // hacky way to correct table name that use quotes
+    if (!(tableWord = getTable(table)) && maybeTable.includes('"')) {
+      table = maybeTable;
+      start = maybeTableStart;
+    }
 
     var alias = false;
     var aliasTable = table;
     // Check if table is available. If not, find table by Alias
-    if (!getTable(table)) {
+    if (!(tableWord = getTable(table))) {
       var oldTable = table;
-      table = findTableByAlias(table, editor);
+      tableWord = findTableByAlias(table, editor);
+      table = tableWord?.name;
       if (table !== oldTable) alias = true;
     }
 
-    var columns = globalEditorOptions.getColumns ? await globalEditorOptions.getColumns(table): getTable(table)
+    var columns = globalEditorOptions.getColumns && tableWord ? await globalEditorOptions.getColumns(tableWord): getTable(table)
 
     if (columns && columns.columns)
       columns = columns.columns;
@@ -212,6 +213,7 @@ const {
     var aliasUpperCase = alias.toUpperCase();
     var previousWord = "";
     var table = "";
+    let tableWord;
     var separator = [];
     var validRange = {
       start: Pos(0, 0),
@@ -245,7 +247,7 @@ const {
         var lineText = query[i];
         eachWord(lineText, function(word) {
           var wordUpperCase = word.toUpperCase();
-          if (wordUpperCase === aliasUpperCase && getTable(previousWord))
+          if (wordUpperCase === aliasUpperCase && (tableWord = getTable(previousWord)))
             table = previousWord;
           if (wordUpperCase !== CONS.ALIAS_KEYWORD)
             previousWord = word;
@@ -253,7 +255,27 @@ const {
         if (table) break;
       }
     }
-    return table;
+    return tableWord;
+  }
+
+  // hacky way to get the last word before the dot
+  function findLastWord(editor, cur){
+    const lineText = editor.display.view[cur.line].line.text;
+    const lineTextBeforeDot = lineText.substring(0, cur.ch - 1)
+    const wordStart = lineTextBeforeDot.lastIndexOf(" ") + 1
+    const word = lineTextBeforeDot.split(" ").pop()
+    return [word, wordStart]
+  }
+
+  function addSchemaHints(result, search) {
+    const [schema] = splitSchemaTable(search);
+    if (findWord(dbHint.schemaWordList, schema)) {
+      const tables = findTablesBySchema(dbHint, schema).map((table) => ({
+        ...table,
+        text: `${schema}.${table.text}`,
+      }));
+      addMatches(result, search, tables, (w) => w);
+    }
   }
 
   CodeMirror.registerHelper("hint", "sql", async function(editor, options) {
@@ -282,10 +304,14 @@ const {
       token.string = token.string.slice(0, cur.ch - token.start);
     }
 
-    if (token.string.match(/^[.`"'\w@][\w$#]*$/g)) {
+    if (token.string.match(/^[.`"'\w@][\w$#]*$/g) && token.string !== '"') {
       search = token.string;
       start = token.start;
       end = token.end;
+    } else if (token.string === '"') {
+      [search, start] = findLastWord(editor, cur)
+      end = cur.ch;
+      addSchemaHints(result, search)
     } else {
       start = end = cur.ch;
       search = "";

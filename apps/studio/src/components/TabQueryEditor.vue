@@ -915,8 +915,8 @@
       fakeRemoteChange() {
         this.query.text = "select * from foo"
       },
-      async getColumnsForAutocomplete(tableName) {
-        const tableToFind = queryTable(this.hintOptions.dbHint, tableName)
+      async getColumnsForAutocomplete(table) {
+        const tableToFind = this.tables.find(({name, schema}) => table.name === name && table.schema === schema)
         if (!tableToFind) return null
         // Only refresh columns if we don't have them cached.
         if (!tableToFind.columns?.length) {

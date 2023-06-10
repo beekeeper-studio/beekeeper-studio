@@ -19,6 +19,30 @@ export const tableOrViews: TableOrView[] = [
     columns: [],
   },
   {
+    schema: "public",
+    name: "CASE_SENSITIVE_table",
+    tabletype: "r",
+    parenttype: null,
+    entityType: "table",
+    columns: [],
+  },
+  {
+    schema: "public",
+    name: "CASE_sensitive_table",
+    tabletype: "r",
+    parenttype: null,
+    entityType: "table",
+    columns: [],
+  },
+  {
+    schema: "_timescaledb_cache",
+    name: "my_table",
+    tabletype: "r",
+    parenttype: null,
+    entityType: "table",
+    columns: [],
+  },
+  {
     schema: "_timescaledb_cache",
     name: "cache_inval_bgw_job",
     tabletype: "r",
@@ -30,23 +54,35 @@ export const tableOrViews: TableOrView[] = [
 
 export const dbHint: DBHint = {
   tableWordList: {
-    MY_TABLE: {
+    my_table: {
       name: "my_table",
       text: "my_table",
       type: "table",
       schema: "public",
     },
-    "SPECIAL+TABLE": {
+    "special+table": {
       name: "special+table",
       text: '"special+table"',
       type: "table",
       schema: "public",
     },
-    CACHE_INVAL_BGW_JOB: {
+    cache_inval_bgw_job: {
       name: "cache_inval_bgw_job",
       text: "cache_inval_bgw_job",
       type: "table",
       schema: "_timescaledb_cache",
+    },
+    CASE_SENSITIVE_table: {
+      name: "CASE_SENSITIVE_table",
+      text: '"CASE_SENSITIVE_table"',
+      type: "table",
+      schema: "public",
+    },
+    CASE_sensitive_table: {
+      name: "CASE_sensitive_table",
+      text: '"CASE_sensitive_table"',
+      type: "table",
+      schema: "public",
     },
   },
   tableWords: [
@@ -63,6 +99,24 @@ export const dbHint: DBHint = {
       schema: "public",
     },
     {
+      name: "CASE_SENSITIVE_table",
+      text: '"CASE_SENSITIVE_table"',
+      type: "table",
+      schema: "public",
+    },
+    {
+      name: "CASE_sensitive_table",
+      text: '"CASE_sensitive_table"',
+      type: "table",
+      schema: "public",
+    },
+    {
+      name: "my_table",
+      text: "my_table",
+      type: "table",
+      schema: "_timescaledb_cache",
+    },
+    {
       name: "cache_inval_bgw_job",
       text: "cache_inval_bgw_job",
       type: "table",
@@ -70,12 +124,11 @@ export const dbHint: DBHint = {
     },
   ],
   schemaWordList: {
-    PUBLIC: { name: "public", text: "public", type: "schema" },
-    _TIMESCALEDB_CACHE:
-    {
+    public: { name: "public", text: "public", type: "schema" },
+    _timescaledb_cache: {
       name: "_timescaledb_cache",
       text: "_timescaledb_cache",
       type: "schema",
     },
-  }
+  },
 };
