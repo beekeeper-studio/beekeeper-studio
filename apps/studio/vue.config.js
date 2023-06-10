@@ -159,7 +159,8 @@ module.exports = {
         },
         win: {
           icon: './public/icons/png/512x512.png',
-          target: ['nsis', 'portable']
+          target: ['nsis', 'portable'],
+          sign: "./build/win/sign.js"
         },
         portable: {
           "artifactName": "${productName}-${version}-portable.exe",

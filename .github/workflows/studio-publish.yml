@@ -26,6 +26,15 @@ jobs:
           gpg-private-key: ${{ secrets.gpg_key }}
         if: "startsWith(matrix.os, 'ubuntu')"
 
+      - name: Install dotnet
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
+        if: "startsWith(matrix.os, 'windows')"
+
+      - name: Install azuresigntool
+        run: 'dotnet tool install --global AzureSignTool'
+
       - name: Check out Git repository
         uses: actions/checkout@v1
       - uses: ruby/setup-ruby@v1
@@ -101,14 +110,14 @@ jobs:
           # If the commit is tagged with a version (e.g. "v1.0.0"),
           # release the app after building
           release: true
-          windows_certs: ${{ secrets.windows_cert }}
-          windows_certs_password: ${{ secrets.windows_cert_password }}
           mac_certs: ${{ secrets.mac_dev }}
           mac_certs_password: ${{ secrets.mac_dev_pw }}
         env:
           API_KEY_ID: ${{ secrets.apple_key_id }}
           API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
           BT_TOKEN: "${{secrets.bintray_apikey}}"
+          KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
+          KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
 
       - name: Publish DEB to S3
         if: startsWith(matrix.os, 'ubuntu')
