@@ -17,7 +17,7 @@ exports.default = async function (configuration) {
   ]
 
   cp.execSync(
-    `${command.join(" ")} ${configuration.path}`,
+    `${command.join(" ")} "${configuration.path}"`,
     {
       stdio: "inherit"
     }
