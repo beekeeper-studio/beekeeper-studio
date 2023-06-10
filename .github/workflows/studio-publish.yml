@@ -34,6 +34,7 @@ jobs:
 
       - name: Install azuresigntool
         run: 'dotnet tool install --global AzureSignTool'
+        if: "startsWith(matrix.os, 'windows')"
 
       - name: Check out Git repository
         uses: actions/checkout@v1
