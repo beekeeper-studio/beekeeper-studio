@@ -32,9 +32,6 @@ jobs:
 
       - name: Build Electron app
         run: "yarn run electron:build --publish never"
-        env:
-          KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
-          KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
 
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
