@@ -73,8 +73,16 @@ jobs:
       - name: Clean cache
         run: yarn cache clean
 
-      - name: Check dependencies
-        run: "yarn install --frozen-lockfile --network-timeout 100000"
+      # FIXME (matthew) Windows needs retries. It sometimes fails to build
+      # the native oracledb package.
+      # But only sometimes. I cannot figure out why.
+      # Someone should at some point.
+      - name: yarn install (with retry)
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: "yarn install --frozen-lockfile --network-timeout 100000"
 
       - name: Remove dist directory
         if: "!startsWith(matrix.os, 'windows')"
