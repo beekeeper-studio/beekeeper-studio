@@ -67,6 +67,8 @@ jobs:
       - name: Snapcraft - logout
         run: "snapcraft logout"
         if: startsWith(matrix.os, 'ubuntu-arm64')
+        continue-on-error: true
+
 
       - name: Clean cache
         run: yarn cache clean
