@@ -75,7 +75,7 @@ describe("lib/editor", () => {
 
   describe("makeDBHint (DB without schemas)", () => {
     const dialectData = SqliteData;
-    const defaultSchema = undefined;
+    const defaultSchema = null;
 
     it("should return empty array of tables and schemas", () => {
       expect(makeDBHint([], dialectData, defaultSchema)).toEqual({
@@ -87,9 +87,9 @@ describe("lib/editor", () => {
         makeDBHint([{ name: "my_table" }], dialectData, defaultSchema)
       ).toMatchObject({
         tableWordList: {
-          my_table: { name: "my_table" },
+          my_table: { name: "my_table", schema: undefined },
         },
-        tableWords: [{ name: "my_table" }],
+        tableWords: [{ name: "my_table", schema: undefined }],
         schemaWordList: {},
       });
     });

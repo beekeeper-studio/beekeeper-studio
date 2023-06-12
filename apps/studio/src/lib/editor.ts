@@ -32,10 +32,11 @@ export function findWord(wordList: WordList, word: string) {
 export function makeDBHint(
   tables: TableOrView[],
   dialectData: DialectData,
-  defaultSchema?: string
+  defaultSchema?: string | null
 ): DBHint {
   const schemaSet = new Set<string>();
   if (defaultSchema) schemaSet.add(defaultSchema);
+  if(defaultSchema === null) defaultSchema = undefined;
 
   const tableWords: Word[] = [];
 
