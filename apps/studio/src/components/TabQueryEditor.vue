@@ -168,7 +168,7 @@
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
   import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
-  import { makeDBHint, queryTable } from '@/lib/editor'
+  import { makeDBHint, findTableOrViewByWord } from '@/lib/editor'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -915,8 +915,8 @@
       fakeRemoteChange() {
         this.query.text = "select * from foo"
       },
-      async getColumnsForAutocomplete(table) {
-        const tableToFind = this.tables.find(({name, schema}) => table.name === name && table.schema === schema)
+      async getColumnsForAutocomplete(tableWord) {
+        const tableToFind = findTableOrViewByWord(this.tables, tableWord)
         if (!tableToFind) return null
         // Only refresh columns if we don't have them cached.
         if (!tableToFind.columns?.length) {

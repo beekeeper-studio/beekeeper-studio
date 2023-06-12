@@ -132,3 +132,32 @@ export const dbHint: DBHint = {
     },
   },
 };
+
+export const tableOrViewsWithoutSchema: TableOrView[] = [
+  {
+    name: "my_table",
+    tabletype: "r",
+    parenttype: null,
+    entityType: "table",
+    columns: [],
+  },
+];
+
+export const dbHintWithoutSchema: DBHint = {
+  tableWordList: {
+    my_table: {
+      name: "my_table",
+      text: "my_table",
+      type: "table",
+    },
+  },
+  tableWords: [
+    {
+      name: "my_table",
+      text: "my_table",
+      type: "table",
+    },
+  ],
+  schemaWordList: {},
+};
+

@@ -94,6 +94,13 @@ export function findTablesBySchema(dbHint: DBHint, schema: string) {
   return dbHint.tableWords.filter((table) => table.schema === schema);
 }
 
+export function findTableOrViewByWord(tableOrViews: TableOrView[], word: Word) {
+  return tableOrViews.find(
+    (tableOrView) =>
+      tableOrView.name === word.name && tableOrView.schema === word.schema
+  );
+}
+
 export function splitSchemaTable(str: string) {
   const [schema, ...table] = str.split(".");
   return [schema, table.join(".")];

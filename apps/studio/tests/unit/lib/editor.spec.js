@@ -4,8 +4,14 @@ import {
   findTablesBySchema,
   findWord,
   splitSchemaTable,
+  findTableOrViewByWord,
 } from "../../../src/lib/editor";
-import { dbHint, tableOrViews } from "../../fixtures/tables";
+import {
+  dbHint,
+  dbHintWithoutSchema,
+  tableOrViews,
+  tableOrViewsWithoutSchema,
+} from "../../fixtures/tables";
 import { PostgresData } from "../../../../../shared/src/lib/dialects/postgresql";
 import { SqliteData } from "../../../../../shared/src/lib/dialects/sqlite";
 import { SqlServerData } from "../../../../../shared/src/lib/dialects/sqlserver";
@@ -77,6 +83,12 @@ describe("lib/editor", () => {
     const dialectData = SqliteData;
     const defaultSchema = null;
 
+    it("should make arrays of tables and schemas", () => {
+      expect(
+        makeDBHint(tableOrViewsWithoutSchema, dialectData, defaultSchema)
+      ).toEqual(dbHintWithoutSchema);
+    });
+
     it("should return empty array of tables and schemas", () => {
       expect(makeDBHint([], dialectData, defaultSchema)).toEqual({
         tableWordList: {},
@@ -108,6 +120,24 @@ describe("lib/editor", () => {
           schema: "_timescaledb_cache",
         },
       ]);
+    });
+  });
+
+  describe("findTableOrViewByWord", () => {
+    it("should find a tableOrView by word (with schema)", () => {
+      const tableWord = queryTable(dbHint, "my_table");
+      expect(findTableOrViewByWord(tableOrViews, tableWord)).toMatchObject({
+        name: "my_table",
+      });
+    });
+
+    it("should find a tableOrView by word (without schema)", () => {
+      const tableWord = queryTable(dbHintWithoutSchema, "my_table");
+      expect(
+        findTableOrViewByWord(tableOrViewsWithoutSchema, tableWord)
+      ).toMatchObject({
+        name: "my_table",
+      });
     });
   });
 
