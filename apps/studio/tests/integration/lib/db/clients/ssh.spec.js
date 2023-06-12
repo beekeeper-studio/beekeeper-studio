@@ -19,9 +19,9 @@ describe("SSH Tunnel Tests", () => {
       .withWaitStrategy(Wait.forHealthCheck())
       .up()
 
-    container = environment.getContainer('ssh_1')
+    container = environment.getContainer('test_ssh')
 
-    const db = environment.getContainer('postgres_1')
+    const db = environment.getContainer('test_ssh_postgres')
 
 
 
