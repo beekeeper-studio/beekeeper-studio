@@ -9,6 +9,8 @@ import _  from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
+import { fromIni } from "@aws-sdk/credential-provider-ini"
+import { Signer } from "@aws-sdk/rds-signer";
 import { DatabaseClient, IDbConnectionServerConfig, DatabaseElement } from '../client'
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from '../authentication/amazon-redshift';
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
@@ -22,7 +24,6 @@ import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/Postgres
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftChangeBuilder';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
-
 
 const base64 = require('base64-url');
 const PD = PostgresData
@@ -1256,7 +1257,7 @@ export function query(conn: Conn, queryText: string, _schema: string) {
   };
 }
 
-export async function executeQuery(conn: Conn, queryText: string, arrayMode: boolean = false) {
+export async function executeQuery(conn: Conn, queryText: string, arrayMode = false) {
   const data = await driverExecuteQuery(conn, { query: queryText, multiple: true, arrayMode });
 
   const commands = identifyCommands(queryText).map((item) => item.type);
@@ -1455,7 +1456,7 @@ export async function truncateAllTables(conn: Conn, schema: string) {
   });
 }
 
-export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
@@ -1478,7 +1479,7 @@ export async function createDatabase(conn, databaseName, charset) {
   await driverExecuteQuery(conn, { query: sql })
 }
 
-export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
@@ -1523,6 +1524,8 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
   // For Redshift Only -- IAM authentication and credential exchange
   const redshiftOptions = server.config.redshiftOptions;
   if (server.config.client === 'redshift' && redshiftOptions?.iamAuthenticationEnabled) {
+    const credentialResolver = RedshiftCredentialResolver.getInstance();
+
     const awsCreds: AWSCredentials = {
       accessKeyId: redshiftOptions.accessKeyId,
       secretAccessKey: redshiftOptions.secretAccessKey
@@ -1537,8 +1540,6 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
       durationSeconds: server.config.options.tokenDurationSeconds
     };
 
-    const credentialResolver = RedshiftCredentialResolver.getInstance();
-
     // We need resolve credentials once to get the temporary database user, which does not change
     // on each call to get credentials.
     // This is usually something like "IAMA:<user>" or "IAMA:<user>:<group>".
@@ -1550,10 +1551,29 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
     }
   }
 
+  // For RDS Postgres Only - IAM authentication
+  if (server.config.client === 'postgresql' && redshiftOptions?.iamAuthenticationEnabled) {
+    const nodeProviderChainCredentials = fromIni({ profile: redshiftOptions.awsProfile ?? 'default' })
+    const signer = new Signer({
+      credentials: nodeProviderChainCredentials,
+      region: redshiftOptions?.awsRegion,
+      hostname: server.config.host,
+      port: server.config.port,
+      username: server.config.user
+    });
+
+    passwordResolver = async () => {
+      const token = await signer.getAuthToken()
+      return token
+    }
+  }
+
+  const resolvedPw = await passwordResolver()
+
   const config: PoolConfig = {
     host: server.config.host,
-    port: server.config.port || undefined,
-    password: passwordResolver || server.config.password || undefined,
+    port: server.config?.port ?? 5432,
+    password: passwordResolver ? resolvedPw : server.config?.password,
     database: database.database,
     max: 5, // max idle connections per time (30 secs)
     connectionTimeoutMillis: globals.psqlTimeout,

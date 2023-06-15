@@ -34,6 +34,7 @@ export interface RedshiftOptions {
   accessKeyId?: string;
   secretAccessKey?: string;
   awsRegion?: string;
+  awsProfile?: string;
   clusterIdentifier?: string;
   databaseGroup?: string;
   tokenDurationSeconds?: number;
@@ -75,7 +76,7 @@ export class DbConnectionBase extends ApplicationEntity {
   }
 
   @Column({type:"varchar", nullable: true})
-  host: string = 'localhost'
+  host = 'localhost'
 
   _port: Nullable<number> = null
 
@@ -147,7 +148,7 @@ export class DbConnectionBase extends ApplicationEntity {
   sshHost: Nullable<string> = null
 
   @Column({type: "int", nullable: true})
-  sshPort: number = 22
+  sshPort = 22
 
   @Column({type: "varchar", nullable: true})
   sshKeyfile: Nullable<string> = null
@@ -162,7 +163,7 @@ export class DbConnectionBase extends ApplicationEntity {
   sshKeepaliveInterval: Nullable<number> = 60
 
   @Column({type: 'boolean', nullable: false, default: false})
-  ssl: boolean = false
+  ssl = false
 
   @Column({type: 'varchar', nullable: true})
   sslCaFile: Nullable<string> = null
@@ -175,8 +176,7 @@ export class DbConnectionBase extends ApplicationEntity {
 
   // this only takes effect if SSL certs are provided
   @Column({type: 'boolean', nullable: false})
-  sslRejectUnauthorized: boolean = true
-
+  sslRejectUnauthorized = true
 
   @Column({type: 'simple-json', nullable: false})
   options: ConnectionOptions = {}
@@ -203,10 +203,10 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   labelColor?: string = 'default'
 
   @Column({update: false, default: -1, type: 'integer'})
-  workspaceId: number = -1
+  workspaceId = -1
 
   @Column({type: 'boolean', default: true})
-  rememberPassword: boolean = true
+  rememberPassword = true
 
   @Column({type: 'varchar', nullable: true, transformer: [encrypt]})
   password: Nullable<string> = null

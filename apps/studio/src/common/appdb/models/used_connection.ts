@@ -1,3 +1,4 @@
+import { RedshiftOptions } from "./saved_connection"
 import { IConnection, ISimpleConnection } from '@/common/interfaces/IConnection'
 import _ from 'lodash'
 import { Entity, Column} from "typeorm"
@@ -39,5 +40,8 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
 
   @Column({ type: 'int', nullable: false})
   workspaceId: number = -1
+
+  @Column({type: 'simple-json', nullable: false})
+  redshiftOptions: RedshiftOptions = {}
 
 }
