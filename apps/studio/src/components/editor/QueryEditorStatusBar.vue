@@ -111,7 +111,7 @@ export default {
           return s ? s.value : false
         },
         set(value) {
-          this.$store.dispatch('settings/save', { key: 'keymap', value })
+          this.$store.dispatch('settings/save', { key: 'hideResultsDropdown', value })
         }
       },
       rowCount() {
