@@ -216,7 +216,6 @@
       ...mapState('settings', ['settings']),
       userKeymap: {
         get() {
-          console.log('VALUE: ', this.settings?.keymap?.value)
           return this.settings?.keymap?.value ?? 'default';
         },
         set(value) {
