@@ -118,7 +118,7 @@
     </div>
     <div class="shortcut-item">
       <div>Find and Replace</div>
-      <div class="shortcut"><span>Ctrl</span><span>H</span></div>
+      <div class="shortcut"><span>Ctrl</span><span>R</span></div>
     </div>
     <!-- <div class="shortcut-item">
       <div>Shortcut</div>

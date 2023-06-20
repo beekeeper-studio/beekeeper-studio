@@ -1,131 +1,81 @@
 <template>
-  <div
-    class="query-editor"
-    v-hotkey="keymap"
-  >
-    <div
-      class="top-panel"
-      ref="topPanel"
-      @contextmenu.prevent.stop="showContextMenu"
-    >
-      <merge-manager
-        v-if="query && query.id"
-        :original-text="originalText"
-        :query="query"
-        :unsaved-text="unsavedText"
-        @change="onChange"
-        @mergeAccepted="originalText = query.text"
-      />
-      <div
-        class="no-content"
-        v-if="remoteDeleted"
-      >
+  <div class="query-editor" v-hotkey="keymap">
+    <div class="top-panel" ref="topPanel" @contextmenu.prevent.stop="showContextMenu">
+      <merge-manager v-if="query && query.id" :originalText="originalText" :query="query" :unsavedText="unsavedText"
+        @change="onChange" @mergeAccepted="originalText = query.text" />
+      <div class="no-content" v-if="remoteDeleted">
         <div class="alert alert-danger">
           <i class="material-icons">error_outline</i>
           <div class="alert-body">
             This query was deleted by someone else. It is no longer editable.
           </div>
-          <a
-            @click.prevent="close"
-            class="btn btn-flat"
-          >Close Tab</a>
+          <a @click.prevent="close" class="btn btn-flat">Close Tab</a>
         </div>
       </div>
-      <textarea
-        name="editor"
-        class="editor"
-        ref="editor"
-        id=""
-        cols="30"
-        rows="10"
-      />
-      <span class="expand" />
+      <textarea name="editor" class="editor" ref="editor" id="" cols="30" rows="10"></textarea>
+      <span class="expand"></span>
       <div class="toolbar text-right">
-        <div
-          class="actions btn-group"
-          ref="actions"
-        >
-          <x-button
-            @click.prevent="triggerSave"
-            class="btn btn-flat btn-small"
-          >
-            Save
+        <div class="actions btn-group">
+          <x-button class="btn btn-flat btn-small" menu>
+            <i class="material-icons">settings</i>
+            <x-menu>
+              <x-menuitem :key="t.value" v-for="t in keymapTypes" @click.prevent="userKeymap = t.value"> 
+                <x-label class="keymap-label">
+                  <span class="material-icons" v-if="t.value === userKeymap">done</span>
+                  {{t.name}}
+                </x-label> 
+              </x-menuitem>
+            </x-menu>
           </x-button>
+        </div>
+        <div class="expand"></div>
+        <div class="actions btn-group" ref="actions">
+          <x-button @click.prevent="triggerSave" class="btn btn-flat btn-small">Save</x-button>
 
           <x-buttons class="">
-            <x-button
-              class="btn btn-primary btn-small"
-              v-tooltip="'Ctrl+Enter'"
-              @click.prevent="submitTabQuery"
-            >
+            <x-button class="btn btn-primary btn-small" v-tooltip="'Ctrl+Enter'" @click.prevent="submitTabQuery">
               <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
             </x-button>
-            <x-button
-              class="btn btn-primary btn-small"
-              menu
-            >
+            <x-button class="btn btn-primary btn-small" menu>
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
                 <x-menuitem @click.prevent="submitTabQuery">
                   <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
-                  <x-shortcut value="Control+Enter" />
+                  <x-shortcut value="Control+Enter"></x-shortcut>
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQuery">
                   <x-label>Run Current</x-label>
-                  <x-shortcut value="Control+Shift+Enter" />
+                  <x-shortcut value="Control+Shift+Enter"></x-shortcut>
                 </x-menuitem>
               </x-menu>
             </x-button>
           </x-buttons>
         </div>
       </div>
+
+
     </div>
-    <div
-      class="bottom-panel"
-      ref="bottomPanel"
-    >
-      <progress-bar
-        @cancel="cancelQuery"
-        :message="runningText"
-        v-if="running"
-      />
-      <result-table
-        ref="table"
-        v-else-if="rowCount > 0"
-        :active="active"
-        :table-height="tableHeight"
-        :result="result"
-        :query="query"
-      />
-      <div
-        class="message"
-        v-else-if="result"
-      >
+    <div class="bottom-panel" ref="bottomPanel">
+      <progress-bar @cancel="cancelQuery" :message="runningText" v-if="running"></progress-bar>
+      <result-table ref="table" v-else-if="rowCount > 0" :active="active" :tableHeight="tableHeight" :result="result"
+        :query='query'></result-table>
+      <div class="message" v-else-if="result">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
-          <span>Query {{ selectedResult + 1 }}/{{ results.length }}: No Results. {{ result.affectedRows || 0 }} rows affected. See the select box in the bottom left ↙ for more query results.</span>
+          <span>Query {{selectedResult + 1}}/{{results.length}}: No Results. {{result.affectedRows || 0}} rows affected. See the select box in the bottom left ↙ for more query results.</span>
         </div>
       </div>
-      <div
-        class="message"
-        v-else-if="errors"
-      >
+      <div class="message" v-else-if="errors">
         <error-alert :error="errors" />
       </div>
-      <div
-        class="message"
-        v-else-if="info"
-      >
+      <div class="message" v-else-if="info">
         <div class="alert alert-info">
           <i class="material-icon-outlined">info</i>
-          <span>{{ info }}</span>
+          <span>{{info}}</span>
         </div>
       </div>
-      <div
-        class="layout-center expand"
-        v-else
-      >
-        <shortcut-hints />
+      <div class="layout-center expand" v-else>
+        <shortcut-hints></shortcut-hints>
       </div>
       <!-- <span class="expand" v-if="!result"></span> -->
       <!-- STATUS BAR -->
@@ -137,61 +87,26 @@
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
-        :execute-time="executeTime"
-      />
+        :executeTime="executeTime"
+      ></query-editor-status-bar>
     </div>
 
     <!-- Save Modal -->
     <portal to="modals">
-      <modal
-        class="vue-dialog beekeeper-modal"
-        name="save-modal"
-        @closed="selectEditor"
-        @opened="selectTitleInput"
-        height="auto"
-        :scrollable="true"
-      >
-        <form
-          v-if="query"
-          @submit.prevent="saveQuery"
-        >
+      <modal class="vue-dialog beekeeper-modal" :name="`save-modal-${tab.id}`" @closed="selectEditor" @opened="selectTitleInput" height="auto" :scrollable="true">
+        <form v-if="query" @submit.prevent="saveQuery">
           <div class="dialog-content">
-            <div class="dialog-c-title">
-              Saved Query Name
-            </div>
+            <div class="dialog-c-title">Saved Query Name</div>
             <div class="modal-form">
-              <div
-                class="alert alert-danger save-errors"
-                v-if="saveError"
-              >
-                {{ saveError }}
-              </div>
+              <div class="alert alert-danger save-errors" v-if="saveError">{{saveError}}</div>
               <div class="form-group">
-                <input
-                  type="text"
-                  ref="titleInput"
-                  name="title"
-                  class="form-control"
-                  v-model="query.title"
-                  autofocus
-                >
+                  <input type="text" ref="titleInput" name="title" class="form-control"  v-model="query.title" autofocus>
               </div>
             </div>
           </div>
           <div class="vue-dialog-buttons">
-            <button
-              class="btn btn-flat"
-              type="button"
-              @click.prevent="$modal.hide('save-modal')"
-            >
-              Cancel
-            </button>
-            <button
-              class="btn btn-primary"
-              type="submit"
-            >
-              Save
-            </button>
+            <button class="btn btn-flat" type="button" @click.prevent="$modal.hide(`save-modal-${tab.id}`)">Cancel</button>
+            <button class="btn btn-primary" type="submit">Save</button>
           </div>
         </form>
       </modal>
@@ -199,57 +114,25 @@
 
     <!-- Parameter modal -->
     <portal to="modals">
-      <modal
-        class="vue-dialog beekeeper-modal"
-        name="parameters-modal"
-        @opened="selectFirstParameter"
-        @closed="selectEditor"
-        height="auto"
-        :scrollable="true"
-      >
+      <modal class="vue-dialog beekeeper-modal" :name="`parameters-modal-${tab.id}`" @opened="selectFirstParameter" @closed="selectEditor" height="auto" :scrollable="true">
         <form @submit.prevent="submitQuery(queryForExecution, true)">
           <div class="dialog-content">
-            <div class="dialog-c-title">
-              Provide parameter values
-            </div>
-            <div class="dialog-c-subtitle">
-              You need to use single quotes around string values. Blank values are invalid
-            </div>
+            <div class="dialog-c-title">Provide parameter values</div>
+            <div class="dialog-c-subtitle">You need to use single quotes around string values. Blank values are invalid</div>
             <div class="modal-form">
               <div class="form-group">
-                <div
-                  v-for="(param, index) in queryParameterPlaceholders"
-                  :key="index"
-                >
-                  <div class="form-group row">
-                    <label>{{ param }}</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      required
-                      v-model="queryParameterValues[param]"
-                      autofocus
-                      ref="paramInput"
-                    >
+                  <div v-for="(param, index) in queryParameterPlaceholders" v-bind:key="index">
+                    <div class="form-group row">
+                      <label>{{param}}</label>
+                      <input type="text" class="form-control" required v-model="queryParameterValues[param]" autofocus ref="paramInput">
+                    </div>
                   </div>
-                </div>
               </div>
             </div>
           </div>
           <div class="vue-dialog-buttons">
-            <button
-              class="btn btn-flat"
-              type="button"
-              @click.prevent="$modal.hide('parameters-modal')"
-            >
-              Cancel
-            </button>
-            <button
-              class="btn btn-primary"
-              type="submit"
-            >
-              Run
-            </button>
+            <button class="btn btn-flat" type="button" @click.prevent="$modal.hide(`parameters-modal-${tab.id}`)">Cancel</button>
+            <button class="btn btn-primary" type="submit">Run</button>
           </div>
         </form>
       </modal>
@@ -261,7 +144,16 @@
 
   import _ from 'lodash'
   import CodeMirror from 'codemirror'
-
+  import 'codemirror/addon/comment/comment'
+  import 'codemirror/keymap/vim.js'
+  import 'codemirror/addon/dialog/dialog'
+  import 'codemirror/addon/search/search'
+  import 'codemirror/addon/search/jump-to-line'
+  import 'codemirror/addon/scroll/annotatescrollbar'
+  import 'codemirror/addon/search/matchesonscrollbar'
+  import 'codemirror/addon/search/matchesonscrollbar.css'
+  import 'codemirror/addon/search/searchcursor'
+  
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
@@ -279,8 +171,8 @@
   import ErrorAlert from './common/ErrorAlert.vue'
   import {FormatterDialect} from "@shared/lib/dialects/models";
   import MergeManager from '@/components/editor/MergeManager.vue'
-import { AppEvent } from '@/common/AppEvent'
-import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
+  import { AppEvent } from '@/common/AppEvent'
+  import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -321,6 +213,20 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
       ...mapGetters(['dialect', 'defaultSchema']),
       ...mapState(['usedConfig', 'connection', 'database', 'tables', 'storeInitialized']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
+      ...mapState('settings', ['settings']),
+      userKeymap: {
+        get() {
+          return this.settings?.keymap?.value ?? 'default';
+        },
+        set(value) {
+          if (value === this.keymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
+          this.$store.dispatch('settings/save', { key: 'keymap', value: value });
+          this.initialize();
+        }
+      },
+      keymapTypes() {
+        return this.$config.defaults.keymapTypes
+      },
       shouldInitialize() {
         return this.storeInitialized && this.active && !this.initialized
       },
@@ -527,7 +433,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             this.editor.focus()
           })
         } else {
-          this.$modal.hide('save-modal')
+          this.$modal.hide(`save-modal-${this.tab.id}`)
         }
       },
       currentQueryPosition() {
@@ -603,6 +509,16 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         console.log("starting value", startingValue)
         this.tab.unsavedChanges = this.unsavedChanges
 
+        if (this.editor) {
+          this.editor.toTextArea();
+          this.editor = null;
+        }
+
+        if (this.split) {
+          this.split.destroy();
+          this.split = null;
+        }
+
         this.$nextTick(() => {
           this.split = Split(this.splitElements, {
             elementStyle: (dimension, size) => ({
@@ -630,9 +546,13 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             "Shift-Cmd-F": this.formatSql,
             "Ctrl-/": this.toggleComment,
             "Cmd-/": this.toggleComment,
-            "Esc": this.cancelQuery,
             "F5": this.submitTabQuery,
             "Shift-F5": this.submitCurrentQuery
+          }
+          if(this.userKeymap === "vim") {
+            runQueryKeyMap["Ctrl-Esc"] = this.cancelQuery
+          } else {
+            runQueryKeyMap.Esc = this.cancelQuery
           }
 
           const modes = {
@@ -640,6 +560,13 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             'postgresql': 'text/x-pgsql',
             'sqlserver': 'text/x-mssql',
           };
+
+          const extraKeys = {}
+
+          extraKeys[this.cmCtrlOrCmd('F')] = 'findPersistent'
+          extraKeys[this.cmCtrlOrCmd('R')] = 'replace'
+          extraKeys[this.cmCtrlOrCmd('Shift-R')] = 'replaceAll'
+
 
           this.editor = CodeMirror.fromTextArea(this.$refs.editor, {
             lineNumbers: true,
@@ -649,17 +576,14 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
             extraKeys: {
               "Ctrl-Space": "autocomplete",
               "Shift-Tab": "indentLess",
-              "Ctrl-F": "findPersistent",
-              "Ctrl-G": "findNext",
-              "Ctrl-Shift-G": "findPrev",
-              "Ctrl-R": "replace",
-              "Ctrl-Shift-R": "replaceAll",
+              ...extraKeys
             },
             options: {
               closeOnBlur: false
             },
             hint: CodeMirror.hint.sql,
             hintOptions: this.hintOptions,
+            keyMap: this.userKeymap,
             getColumns: this.getColumnsForAutocomplete
           })
           this.editor.setValue(startingValue)
@@ -721,33 +645,85 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         this.$root.$emit(AppEvent.closeTab)
       },
       showContextMenu(event) {
+        const selectionDepClass = this.hasSelectedText ? '' : 'disabled';
         this.$bks.openMenu({
           item: this.tab,
           options: [
-            {
-              name: "Format Query",
-              slug: 'format',
-              handler: this.formatSql
-            },
-            {
-              type: 'divider'
-            },
-            {
-              name: "Find",
-              slug: 'find',
-              handler: this.find
-            },
-            {
-              name: "Replace",
-              slug: "replace",
-              handler: this.replace
-            },
-            {
-              name: "ReplaceAll",
-              slug: "replace_all",
-              handler: this.replaceAll
-            }
-          ],
+          {
+            name: 'Undo',
+            slug: '',
+            handler: this.editorUndo,
+            shortcut: this.ctrlOrCmd('z')
+          },
+          {
+            name: 'Redo',
+            slug: '',
+            handler: this.editorRedo,
+            shortcut: this.ctrlOrCmd('shift+z')
+          },
+          {
+            name: 'Cut',
+            slug: '',
+            handler: this.editorCut,
+            class: selectionDepClass,
+            shortcut: this.ctrlOrCmd('x')
+          },
+          {
+            name: 'Copy',
+            slug: '',
+            handler: this.editorCopy,
+            class: selectionDepClass,
+            shortcut: this.ctrlOrCmd('c')
+          },
+          {
+            name: 'Paste',
+            slug: '',
+            handler: this.editorPaste,
+            shortcut: this.ctrlOrCmd('v')
+          },
+          {
+            name: 'Delete',
+            slug: '',
+            handler: this.editorDelete,
+            class: selectionDepClass
+          },
+          {
+            name: 'Select All',
+            slug: '',
+            handler: this.editorSelectAll,
+            shortcut: this.ctrlOrCmd('a')
+          },
+          {
+            type: 'divider'
+          },
+          {
+            name: "Format Query",
+            slug: 'format',
+            handler: this.formatSql,
+            shortcut: this.ctrlOrCmd('shift+f')
+          },
+          {
+            type: 'divider'
+          },
+          {
+            name: "Find",
+            slug: 'find',
+            handler: this.find,
+            shortcut: this.ctrlOrCmd('f')
+          },
+          {
+            name: "Replace",
+            slug: "replace",
+            handler: this.replace,
+            shortcut: this.ctrlOrCmd('r')
+          },
+          {
+            name: "ReplaceAll",
+            slug: "replace_all",
+            handler: this.replaceAll,
+            shortcut: this.ctrlOrCmd('shift+r')
+          }
+        ],
           event,
         })
       },
@@ -790,7 +766,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         if (this.query?.id) {
           this.saveQuery()
         } else {
-          this.$modal.show('save-modal')
+          this.$modal.show(`save-modal-${this.tab.id}`)
         }
       },
       async saveQuery() {
@@ -802,7 +778,7 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
           try {
             const payload = _.clone(this.query)
             payload.text = this.unsavedText
-            this.$modal.hide('save-modal')
+            this.$modal.hide(`save-modal-${this.tab.id}`)
             const id = await this.$store.dispatch('data/queries/save', payload)
             this.tab.queryId = id
 
@@ -859,12 +835,12 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 
         try {
           if (this.hasParams && (!fromModal || this.paramsModalRequired)) {
-            this.$modal.show('parameters-modal')
+            this.$modal.show(`parameters-modal-${this.tab.id}`)
             return
           }
 
           const query = this.deparameterizedQuery
-          this.$modal.hide('parameters-modal')
+          this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           this.runningQuery = this.connection.query(query)
           const queryStartTime = new Date()
@@ -969,6 +945,37 @@ import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
         }
 
         return tableToFind?.columns.map((c) => c.columnName)
+      },
+      // Right click menu handlers
+      editorCut() {
+        const selection = this.editor.getSelection();
+        this.editor.replaceSelection('');
+        this.$native.clipboard.writeText(selection);
+      },
+      editorCopy() {
+        const selection = this.editor.getSelection();
+        this.$native.clipboard.writeText(selection);
+      },
+      editorPaste() {
+        const clipboard = this.$native.clipboard.readText();
+        if (this.hasSelectedText) {
+          this.editor.replaceSelection(clipboard, 'around');
+        } else {
+          const cursor = this.editor.getCursor();
+          this.editor.replaceRange(clipboard, cursor);
+        }
+      },
+      editorDelete() {
+        this.editor.replaceSelection('')
+      },
+      editorUndo() {
+        this.editor.execCommand('undo')
+      },
+      editorRedo() {
+        this.editor.execCommand('redo')
+      },
+      editorSelectAll() {
+        this.editor.execCommand('selectAll')
       }
     },
     mounted() {

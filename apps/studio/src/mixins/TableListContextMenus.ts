@@ -1,4 +1,5 @@
 import { AppEvent } from "@/common/AppEvent";
+import { ContextOption } from "@/plugins/BeekeeperPlugin";
 
 export default {
   data() {
@@ -26,7 +27,7 @@ export default {
         },
 
 
-      ],
+      ] as ContextOption[],
 
     }
   },
@@ -97,7 +98,14 @@ export default {
             this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'truncate' })
           }
         },
-      ]
+        {
+          name: "Duplicate",
+          slug: 'sql-duplicate',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.duplicateDatabaseTable, { item, action: 'duplicate' })
+          }
+        },
+      ] as ContextOption[]
     },
     schemaMenuOptions() {
       return [
@@ -123,7 +131,7 @@ export default {
             this.$root.$emit(AppEvent.dropDatabaseElement, {item, action: 'truncate'})
           }
         },
-      ]
+      ] as ContextOption[]
     }
   },
   methods: {

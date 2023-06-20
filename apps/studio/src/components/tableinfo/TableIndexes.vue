@@ -124,6 +124,7 @@ import ErrorAlert from '../common/ErrorAlert.vue'
 import { TableIndex } from '@/lib/db/models'
 import { mapGetters } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
+import { escapeHtml } from '@/mixins/data_mutators'
 
 interface State {
   tabulator: Tabulator
@@ -174,8 +175,8 @@ export default Vue.extend({
       return this.dialect === 'mysql' ? 'Only ascending indexes are supported in MySQL before version 8.0.' : null
     },
     indexColumnOptions() {
-      const normal = this.table.columns.map((c) => c.columnName)
-      const desc = this.table.columns.map((c) => `${c.columnName} DESC`)
+      const normal = this.table.columns.map((c) => escapeHtml(c.columnName))
+      const desc = this.table.columns.map((c) => `${escapeHtml(c.columnName)} DESC`)
       return [...normal, ...desc]
     },
     editCount() {

@@ -1,10 +1,11 @@
+
 // Copyright (c) 2015 The SQLECTRON Team
 
 import { readFileSync } from 'fs';
 
 import pg, { PoolClient, QueryResult, PoolConfig } from 'pg';
 import { identify } from 'sql-query-identifier';
-import _ from 'lodash'
+import _  from 'lodash'
 import knexlib from 'knex'
 import logRaw from 'electron-log'
 
@@ -24,7 +25,6 @@ import { PostgresData } from '@shared/lib/dialects/postgresql';
 
 
 const base64 = require('base64-url');
-
 const PD = PostgresData
 function isConnection(x: any): x is HasConnection {
   return x.connection !== undefined
@@ -33,7 +33,7 @@ function isConnection(x: any): x is HasConnection {
 const log = logRaw.scope('postgresql')
 const logger = () => log
 
-const knex = knexlib({ client: 'pg' })
+const knex = knexlib({ client: 'pg'})
 
 const pgErrors = {
   CANCELED: '57014',
@@ -41,7 +41,7 @@ const pgErrors = {
 
 let dataTypes: any = {}
 
-function tableName(table: string, schema?: string): string {
+function tableName(table: string, schema?: string): string{
   return schema ? `${PD.wrapIdentifier(schema)}.${PD.wrapIdentifier(table)}` : PD.wrapIdentifier(table);
 }
 
@@ -56,10 +56,10 @@ function tableName(table: string, schema?: string): string {
  *
  * TODO: do not convert as well these same types with array (types 1115, 1182, 1185)
  */
-pg.types.setTypeParser(pg.types.builtins.DATE, 'text', (val) => val); // date
-pg.types.setTypeParser(pg.types.builtins.TIMESTAMP, 'text', (val) => val); // timestamp without timezone
+pg.types.setTypeParser(pg.types.builtins.DATE,        'text', (val) => val); // date
+pg.types.setTypeParser(pg.types.builtins.TIMESTAMP,   'text', (val) => val); // timestamp without timezone
 pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, 'text', (val) => val); // timestamp
-pg.types.setTypeParser(pg.types.builtins.INTERVAL, 'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
+pg.types.setTypeParser(pg.types.builtins.INTERVAL,    'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
 
 /**
  * Convert BYTEA type encoded to hex with '\x' prefix to BASE64 URL (without '+' and '=').
@@ -79,7 +79,7 @@ pg.types.setTypeParser(17, 'text', (val) => val ? base64.encode(val.substring(2)
  * PostgreSQL 8.0.2 on i686-pc-linux-gnu, compiled by GCC gcc (GCC) 3.4.2 20041017 (Red Hat 3.4.2-6.fc3), Redshift 1.0.12103
  */
 async function getVersion(conn: HasPool): Promise<VersionInfo> {
-  const { version } = (await driverExecuteSingle(conn, { query: "select version()" })).rows[0]
+  const { version } = (await driverExecuteSingle(conn, {query: "select version()"})).rows[0]
 
   if (!version) {
     return {
@@ -104,7 +104,7 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
     isPostgres,
     isCockroach,
     isRedshift,
-    number, 
+    number,
     hasPartitions: (isPostgres && number >= 100000) //for future cochroach support?: || (isCockroach && number >= 200070)
   }
 }
@@ -144,7 +144,7 @@ async function getTypes(conn: HasPool): Promise<any> {
 
 
 
-export default async function(server: any, database: any): Promise<DatabaseClient> {
+export default async function (server: any, database: any): Promise<DatabaseClient> {
   const dbConfig = await configDatabase(server, database);
   logger().debug('create driver client for postgres with config %j', dbConfig);
 
@@ -159,7 +159,9 @@ export default async function(server: any, database: any): Promise<DatabaseClien
 
   const version = await getVersion(conn)
 
-  const features = version.isRedshift ? { customRoutines: true, comments: false, properties: false, partitions: false } : { customRoutines: true, comments: true, properties: true, partitions: version.hasPartitions}
+  const features = version.isRedshift ? 
+    { customRoutines: true, comments: false, properties: false, partitions: false, editPartitions: false } :
+    { customRoutines: true, comments: true, properties: true, partitions: version.hasPartitions, editPartitions: version.number >= 100000}
 
 
   return {
@@ -178,7 +180,7 @@ export default async function(server: any, database: any): Promise<DatabaseClien
     listTableTriggers: (table, schema = defaultSchema) => listTableTriggers(conn, table, schema),
     listTableIndexes: (_db, table, schema = defaultSchema) => listTableIndexes(conn, table, schema),
     listSchemas: (_db, filter?: SchemaFilterOptions) => listSchemas(conn, filter),
-    listTablePartitions: (table) => listTablePartitions(conn, table),
+    listTablePartitions: (table, schema = defaultSchema) => listTablePartitions(conn, table, schema),
     getTableReferences: (table, schema = defaultSchema) => getTableReferences(conn, table, schema),
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
@@ -201,9 +203,9 @@ export default async function(server: any, database: any): Promise<DatabaseClien
     getTableProperties: (table, schema = defaultSchema) => getTableProperties(conn, table, schema),
 
     // db creation
-    listCharsets: async () => PD.charsets,
-    getDefaultCharset: async () => 'UTF8',
-    listCollations: async () => [],
+    listCharsets: async() => PD.charsets,
+    getDefaultCharset: async() => 'UTF8',
+    listCollations: async() => [],
     createDatabase: (databaseName, charset) => createDatabase(conn, databaseName, charset),
 
     // alter tables
@@ -222,8 +224,12 @@ export default async function(server: any, database: any): Promise<DatabaseClien
     alterPartition: (payload) => alterPartition(conn, payload),
 
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
-    dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string | null) => dropElement(conn, elementName, typeOfElement, schema),
-    truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema)
+    dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string|null) => dropElement(conn, elementName, typeOfElement, schema),
+    truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema),
+
+    // duplicate table
+    duplicateTable: (tableName: string, duplicateTableName: string, schema?: string) => duplicateTable(conn, tableName, duplicateTableName, schema),
+    duplicateTableSql: (tableName: string, duplicateTableName: string, schema?: string) => duplicateTableSql(tableName, duplicateTableName, schema),
   };
 }
 
@@ -245,19 +251,22 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
   if (version.hasPartitions) {
     // TODO (day): when we support more dbs for partitioning, we will need to construct a different query for cockroach.
     sql += `
-        pc.relkind as tabletype
-      FROM information_schema.tables AS t 
+        pc.relkind as tabletype,
+        parent_pc.relkind as parenttype
+      FROM information_schema.tables AS t
+      JOIN pg_class AS pc
+        ON t.table_name = pc.relname AND quote_ident(t.table_schema) = pc.relnamespace::regnamespace::text
       LEFT OUTER JOIN pg_inherits AS i
-      ON t.table_name::text = i.inhrelid::regclass::text
-      LEFT OUTER JOIN pg_class AS pc
-      ON t.table_name = pc.relname
+        ON pc.oid = i.inhrelid
+      LEFT OUTER JOIN pg_class AS parent_pc
+        ON parent_pc.oid = i.inhparent
       WHERE t.table_type NOT LIKE '%VIEW%'
-      AND i.inhrelid::regclass IS NULL
     `;
   } else {
     sql += `
-        'r' as tabletype
-      FROM information_schema.tables AS t 
+        'r' as tabletype,
+        'r' as parenttype
+      FROM information_schema.tables AS t
       WHERE t.table_type NOT LIKE '%VIEW%'
     `;
   }
@@ -271,27 +280,28 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
   return data.rows;
 }
 
-export async function listTablePartitions(conn: HasPool, tableName: string) {
+export async function listTablePartitions(conn: HasPool, tableName: string, schemaName: string) {
   const version = await getVersion(conn);
   // only postgres will pass this canary for now.
   if (!version.hasPartitions) return null;
-  
+
   const sql = knex.raw(`
-    SELECT 
+    SELECT
       ps.schemaname AS schema,
       ps.relname AS name,
       pg_get_expr(pt.relpartbound, pt.oid, true) AS expression
     FROM pg_class base_tb
-      JOIN pg_inherits i ON i.inhparent = base_tb.oid
-      JOIN pg_class pt ON pt.oid = i.inhrelid
-      JOIN pg_stat_all_tables ps ON ps.relid = i.inhrelid
-    WHERE base_tb.oid = ?::regclass
-  `, [tableName]).toQuery();
+      JOIN pg_inherits i              ON i.inhparent = base_tb.oid
+      JOIN pg_class pt                ON pt.oid = i.inhrelid
+      JOIN pg_stat_all_tables ps      ON ps.relid = i.inhrelid
+      JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid = base_tb.relnamespace 
+    WHERE nmsp_parent.nspname = ? AND base_tb.relname = ? AND base_tb.relkind = 'p';
+  `, [schemaName, tableName]).toQuery();
 
   const data = await driverExecuteSingle(conn, { query: sql });
 
   return data.rows;
-  
+
 }
 
 export async function listViews(conn: HasPool, filter: FilterOptions = { schema: 'public' }) {
@@ -322,12 +332,12 @@ export async function listMaterializedViews(conn: HasPool, filter: FilterOptions
       schemaname as schema,
       matviewname as name
     FROM pg_matviews
-    ${schemaFilter ? `WHERE ${schemaFilter}` : ''}
+    ${schemaFilter ? `WHERE ${schemaFilter}`: ''}
     order by schemaname, matviewname;
   `
 
   try {
-    const data = await driverExecuteSingle(conn, { query: sql });
+    const data = await driverExecuteSingle(conn, {query: sql});
     return data.rows;
   } catch (error) {
     log.warn("Unable to fetch materialized views", error)
@@ -436,7 +446,7 @@ async function getTableLength(conn: HasPool, table: string, schema: string): Pro
   const version = await getVersion(conn)
   const tableType = await getEntityType(conn, table, schema)
   const forceSlow = !tableType || tableType !== 'BASE_TABLE'
-  const { countQuery, params } = buildSelectTopQueries({ table, schema, filters: undefined, version, forceSlow })
+  const { countQuery, params } = buildSelectTopQueries({ table, schema, filters: undefined, version, forceSlow})
   const countResults = await driverExecuteSingle(conn, { query: countQuery, params: params })
   const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
   const totalRecords = rowWithTotal ? rowWithTotal.total : 0
@@ -452,8 +462,8 @@ async function getEntityType(
     select table_type as tt from information_schema.tables
     where table_name = $1 and table_schema = $2
     `
-  const result = await driverExecuteSingle(conn, { query, params: [table, schema] })
-  return result.rows[0] ? result.rows[0]['tt'] : null
+  const result = await driverExecuteSingle(conn, { query, params: [table, schema]})
+  return result.rows[0]? result.rows[0]['tt'] : null
 }
 
 
@@ -495,7 +505,7 @@ async function selectTopStream(
     table, orderBy, filters, version, schema
   })
   // const cursor = new Cursor(qs.query, qs.params)
-  const countResults = await driverExecuteSingle(conn, { query: qs.countQuery, params: qs.params })
+  const countResults = await driverExecuteSingle(conn, {query: qs.countQuery, params: qs.params})
   const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
   const totalRecords = rowWithTotal ? Number(rowWithTotal.total) : 0
   const columns = await listTableColumns(conn, database, table, schema)
@@ -573,7 +583,7 @@ export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promi
       id: row.id,
       routineParams: params.map((p, i) => {
         return {
-          name: p.parameter_name || `arg${i + 1}`,
+          name: p.parameter_name || `arg${i+1}`,
           type: p.data_type,
           length: p.char_length || undefined
         }
@@ -594,7 +604,6 @@ export async function listTableColumns(
   if (table && !schema) {
     throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`)
   }
-  const column_comment_clause = table ? "col_description(($1 || '.' || $2)::regclass, ordinal_position) as column_comment," : ""
 
   const sql = `
     SELECT
@@ -604,11 +613,12 @@ export async function listTableColumns(
       is_nullable,
       ordinal_position,
       column_default,
-      ${column_comment_clause}
       CASE
-        WHEN character_maximum_length is not null  and udt_name != 'text'
+        WHEN character_maximum_length is not null  and udt_name != 'text' 
           THEN CONCAT(udt_name, concat('(', concat(character_maximum_length::varchar(255), ')')))
-        WHEN datetime_precision is not null THEN
+        WHEN numeric_precision is not null 
+        	THEN CONCAT(udt_name, concat('(', concat(numeric_precision::varchar(255),',',numeric_scale::varchar(255), ')')))
+        WHEN datetime_precision is not null AND udt_name != 'date' THEN
           CONCAT(udt_name, concat('(', concat(datetime_precision::varchar(255), ')')))
         ELSE udt_name
       END as data_type
@@ -627,7 +637,6 @@ export async function listTableColumns(
     nullable: row.is_nullable === 'YES',
     defaultValue: row.column_default,
     ordinalPosition: Number(row.ordinal_position),
-    comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
   }));
 }
 
@@ -649,7 +658,7 @@ export async function listMaterializedViewColumns(conn: Conn, _database: string,
     ORDER BY a.attnum;
   `
   const params = table ? [schema, table] : []
-  const data = await driverExecuteSingle(conn, { query: sql, params });
+  const data = await driverExecuteSingle(conn, {query: sql, params});
   return data.rows.map((row) => ({
     schemaName: row.nspname,
     tableName: row.relname,
@@ -734,7 +743,7 @@ async function listCockroachIndexes(conn: Conn, table: string, schema: string): 
 
 export async function listTableIndexes(
   conn: HasPool, table: string, schema: string
-): Promise<TableIndex[]> {
+  ): Promise<TableIndex[]> {
 
   const version = await getVersion(conn)
   if (version.isCockroach) return await listCockroachIndexes(conn, table, schema)
@@ -822,7 +831,7 @@ function wrapTable(table: string, schema?: string) {
 
 async function getTableOwner(conn: HasPool, table: string, schema: string) {
   const sql = `select tableowner from pg_catalog.pg_tables where tablename = $1 and schemaname = $2`
-  const result = await driverExecuteSingle(conn, { query: sql, params: [table, schema] })
+  const result = await driverExecuteSingle(conn, { query: sql, params: [table, schema]})
   return result.rows[0]?.tableowner
 }
 
@@ -840,8 +849,8 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
 
   const statements = [
     `pg_indexes_size('${identifier}') as index_size`,
-    `pg_relation_size('${identifier}') as table_size`,
-    `obj_description('${identifier}'::regclass) as description`
+      `pg_relation_size('${identifier}') as table_size`,
+      `obj_description('${identifier}'::regclass) as description`
   ]
 
   if (version.isPostgres && version.number < 90000) {
@@ -850,11 +859,11 @@ export async function getTableProperties(conn: HasPool, table: string, schema: s
 
   const sql = `SELECT ${statements.join(",")}`
 
-  const detailsPromise = version.isPostgres ? driverExecuteSingle(conn, { query: sql }) :
-    Promise.resolve({ rows: [] })
+  const detailsPromise =  version.isPostgres ? driverExecuteSingle(conn, { query: sql }) :
+    Promise.resolve({ rows:[]})
 
   const triggersPromise = version.isPostgres ? listTableTriggers(conn, table, schema) : Promise.resolve([])
-  const partitionsPromise = version.isPostgres ? listTablePartitions(conn, table) : Promise.resolve([]);
+  const partitionsPromise = version.isPostgres ? listTablePartitions(conn, table, schema) : Promise.resolve([]);
 
   const [
     result,
@@ -1027,7 +1036,7 @@ export async function applyChanges(conn: Conn, changes: TableChanges): Promise<T
         await deleteRows(cli, changes.deletes)
       }
 
-      await driverExecuteQuery(cli, { query: 'COMMIT' })
+      await driverExecuteQuery(cli, { query: 'COMMIT'})
     } catch (ex) {
       log.error("query exception: ", ex)
       await driverExecuteQuery(cli, { query: 'ROLLBACK' });
@@ -1066,7 +1075,7 @@ export async function alterTable(_conn: HasPool, change: AlterTableSpec) {
       if (transaction) await driverExecuteQuery(cli, { query: 'COMMIT' })
     } catch (ex) {
       log.error("ALTERTABLE", ex)
-      if (transaction) await driverExecuteQuery(cli, { query: 'ROLLBACK' })
+      if (transaction) await driverExecuteQuery(cli, { query: 'ROLLBACK'})
       throw ex
     }
   })
@@ -1116,9 +1125,9 @@ export async function alterPartition(conn, payload: AlterPartitionsSpec): Promis
 
 export async function setTableDescription(conn: HasPool, table: string, description: string, schema: string): Promise<string> {
   const identifier = wrapTable(table, schema)
-  const comment = escapeString(description)
+  const comment  = escapeString(description)
   const sql = `COMMENT ON TABLE ${identifier} IS '${comment}'`
-  await driverExecuteSingle(conn, { query: sql })
+  await driverExecuteSingle(conn, { query: sql})
   const result = await getTableProperties(conn, table, schema)
   return result?.description
 }
@@ -1130,7 +1139,7 @@ async function insertRows(cli: any, rawInserts: TableInsert[]) {
 
   // expect({ insertRows: "rawInserts"}).toEqual(rawInserts)
   const fixedInserts = rawInserts.map((insert, idx) => {
-    const result = { ...insert }
+    const result = { ...insert}
     const columns = columnsList[idx]
     result.data = result.data.map((obj) => {
       return _.mapValues(obj, (value, key) => {
@@ -1155,11 +1164,11 @@ async function updateValues(cli: any, rawUpdates: TableUpdate[]): Promise<TableU
   // so we need to turn the string representation back to an array
   // if a type is BYTEA, decodes BASE64 URL encoded to hex
   const updates = rawUpdates.map((update) => {
-    const result = { ...update }
+    const result = { ...update}
     if (update.columnType?.startsWith('_')) {
       result.value = JSON.parse(update.value)
     } else if (update.columnType === 'bytea' && update.value) {
-      result.value = '\\x' + base64.decode(update.value, 'hex')
+        result.value = '\\x' + base64.decode(update.value, 'hex')
     }
     return result
   })
@@ -1203,7 +1212,7 @@ export function query(conn: Conn, queryText: string, _schema: string) {
 
           pid = null;
 
-          if (!data) {
+          if(!data) {
             return []
           }
 
@@ -1247,7 +1256,7 @@ export function query(conn: Conn, queryText: string, _schema: string) {
   };
 }
 
-export async function executeQuery(conn: Conn, queryText: string, arrayMode = false) {
+export async function executeQuery(conn: Conn, queryText: string, arrayMode: boolean = false) {
   const data = await driverExecuteQuery(conn, { query: queryText, multiple: true, arrayMode });
 
   const commands = identifyCommands(queryText).map((item) => item.type);
@@ -1446,7 +1455,7 @@ export async function truncateAllTables(conn: Conn, schema: string) {
   });
 }
 
-export async function dropElement(conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
+export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
@@ -1456,7 +1465,7 @@ export async function dropElement(conn: Conn, elementName: string, typeOfElement
 }
 
 export async function createDatabase(conn, databaseName, charset) {
-  const { isPostgres, number: versionAsInteger } = await getVersion(conn)
+  const {isPostgres, number: versionAsInteger } = await getVersion(conn)
 
   let sql = `create database ${wrapIdentifier(databaseName)} encoding ${wrapIdentifier(charset)}`;
 
@@ -1469,7 +1478,7 @@ export async function createDatabase(conn, databaseName, charset) {
   await driverExecuteQuery(conn, { query: sql })
 }
 
-export async function truncateElement(conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
+export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
@@ -1478,7 +1487,23 @@ export async function truncateElement(conn: Conn, elementName: string, typeOfEle
   });
 }
 
-async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig }, database: { database: string }) {
+export async function duplicateTable(conn: Conn, tableName: string,  duplicateTableName: string, schema: string) {
+  const sql = duplicateTableSql(tableName, duplicateTableName, schema);
+
+  await driverExecuteQuery(conn, { query: sql });
+}
+
+export function duplicateTableSql(tableName: string,  duplicateTableName: string, schema: string) {
+  const sql = `
+    CREATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(duplicateTableName)} AS
+    SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(tableName)}
+  `;
+
+  return sql;
+
+}
+
+async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
 
   let optionsString = undefined
   if (server.config.client === 'cockroachdb') {
@@ -1520,7 +1545,7 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
     tempUser = (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbUser;
 
     // Set the password resolver to resolve the Redshift credentials and return the password.
-    passwordResolver = async () => {
+    passwordResolver = async() => {
       return (await credentialResolver.getClusterCredentials(awsCreds, clusterConfig)).dbPassword;
     }
   }
@@ -1546,7 +1571,7 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
     config.user = server.config.osUser
   }
 
-  if (server.config.socketPathEnabled) {
+  if(server.config.socketPathEnabled) {
     config.host = server.config.socketPath;
     config.port = null;
     return config;
@@ -1638,7 +1663,7 @@ async function executeWithTransaction(conn: Conn | HasConnection, queryArgs: Pos
   return await runWithConnection(conn, async (connection) => {
     const cli = { connection }
     try {
-      return await driverExecuteQuery(cli, { ...queryArgs, query: fullQuery })
+      return await driverExecuteQuery(cli, { ...queryArgs, query: fullQuery})
     } catch (ex) {
       log.error("executeWithTransaction", ex)
       await driverExecuteSingle(cli, { query: "ROLLBACK" })

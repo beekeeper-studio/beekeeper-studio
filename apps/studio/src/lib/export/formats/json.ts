@@ -8,9 +8,10 @@ interface OutputOptionsJson {
   prettyprint: boolean
 }
 export class JsonExporter extends Export {
-  public static extension = "json"
+  public static extension: string = "json"
   readonly format: string = 'json'
-  rowSeparator = ',\n'
+  rowSeparator: string = ',\n'
+  needsFinalSeparator = false
   outputOptions: OutputOptionsJson;
 
   constructor(

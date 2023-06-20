@@ -47,7 +47,7 @@ module.exports = {
         releaseInfo: {
           releaseNotesFile: "build/release-notes.md"
         },
-        files: ['**/*', 'public/icons/**/*'],
+        files: ['**/*', 'public/icons/**/*', '!**/node_gyp_bins/*'],
         afterSign: "electron-builder-notarize",
         afterPack: "./build/afterPack.js",
         extraResources: [
@@ -160,7 +160,8 @@ module.exports = {
         },
         win: {
           icon: './public/icons/png/512x512.png',
-          target: ['nsis', 'portable']
+          target: ['nsis', 'portable'],
+          sign: "./build/win/sign.js"
         },
         portable: {
           "artifactName": "${productName}-${version}-portable.exe",

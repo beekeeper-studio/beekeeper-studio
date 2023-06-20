@@ -12,7 +12,7 @@ describe("CockroachDB Tests", () => {
     const timeoutDefault = 5000
     jest.setTimeout(dbtimeout)
     environment = await new DockerComposeEnvironment("tests/docker", "cockroachdb.yml").up()
-    container = environment.getContainer('cockroachdb_1')
+    container = environment.getContainer('test_cockroachdb')
     jest.setTimeout(timeoutDefault)
     const config = {
       client: 'cockroachdb',

@@ -37,7 +37,7 @@ export interface DatabaseClient {
   listTableTriggers: (table: string, schema?: string) => Promise<TableTrigger[]>,
   listTableIndexes: (db: string, table: string, schema?: string) => Promise<TableIndex[]>,
   listSchemas: (db: string, filter?: SchemaFilterOptions) => Promise<string[]>,
-  listTablePartitions: (table: string) => Promise<TablePartition[]>
+  listTablePartitions: (table: string, schema?: string) => Promise<TablePartition[]>
   getTableReferences: (table: string, schema?: string) => void,
   getTableKeys: (db: string, table: string, schema?: string) => void,
   query: (queryText: string) => CancelableQuery,
@@ -87,6 +87,10 @@ export interface DatabaseClient {
   // delete stuff
   dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => Promise<void>
   truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => Promise<void>
+
+  // duplicate table
+  duplicateTable: (tableName: string, duplicateTableName: string, schema?: string) => Promise<void>
+  duplicateTableSql: (tableName: string, duplicateTableName: string, schema?: string) => string
 }
 
 export type IDbClients = keyof typeof clients
@@ -218,6 +222,10 @@ export class DBConnection {
   // delete stuff
   dropElement = bindAsync.bind(null, 'dropElement', this.server, this.database)
   truncateElement = bindAsync.bind(null, 'truncateElement', this.server, this.database)
+
+  // duplicateTAble
+  duplicateTable = bindAsync.bind(null, 'duplicateTable', this.server, this.database)
+  duplicateTableSql = bind.bind(null, 'duplicateTableSql', this.server, this.database)
 
   async currentDatabase() {
     return this.database.database
@@ -504,7 +512,7 @@ function getViewCreateScript(server: IDbConnectionServer, database: IDbConnectio
 
 function getMaterializedViewCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, view: string /* , schema */) {
   checkIsConnected(server , database);
-  
+
   if(typeof database.connection?.getMaterializedViewCreateScript !== 'function') {
     return null;
   } else {

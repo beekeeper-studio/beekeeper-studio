@@ -12,14 +12,14 @@
           <span class="expand"> </span>
           <div class="actions">
             <a @click.prevent="refreshPartitions" class="btn btn-link btn-fab" v-tooltip="`${ctrlOrCmd('r')} or F5`"><i class="material-icons">refresh</i></a>
-            <a @click.prevent="addRow" class="btn btn-primary btn-fab" v-tooltip="ctrlOrCmd('n')"><i class="material-icons">add</i></a>
+            <a v-if="editable" @click.prevent="addRow" class="btn btn-primary btn-fab" v-tooltip="ctrlOrCmd('n')"><i class="material-icons">add</i></a>
           </div>
         </div>
         <div ref="tablePartitions"></div>
       </div>
     </div>
 
-    <div class="expand" /> 
+    <div class="expand" />
     <status-bar class="tablulator-footer">
       <div class="flex flex-middle statusbar-actions">
         <slot name="footer" />
@@ -54,7 +54,7 @@
 import Vue from 'vue';
 import DataMutators from '../../mixins/data_mutators'
 import { TabulatorFull, Tabulator } from 'tabulator-tables'
-type RowComponent = Tabulator.RowComponent; 
+type RowComponent = Tabulator.RowComponent;
 type CellComponent = Tabulator.CellComponent;
 import _ from 'lodash';
 import { TabulatorStateWatchers, vueEditor, trashButton } from '@shared/lib/tabulator/helpers'
@@ -94,10 +94,12 @@ export default Vue.extend({
       if (!this.active) return {};
       const result = {};
       result['f5'] = this.refreshPartitions.bind(this)
-      result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
       result[this.ctrlOrCmd('r')] = this.refreshPartitions.bind(this)
-      result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
-      result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
+      if (this.editable) {
+        result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
+        result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
+        result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
+      }
 
       return result;
     },
@@ -121,12 +123,12 @@ export default Vue.extend({
           field: 'expression',
           cellEdited: this.cellEdited,
           editor: vueEditor(NullableInputEditorVue),
-          editable: true,
+          editable: this.editable,
           formatter: this.cellFormatter,
-          cssClass: 'editable',
+          cssClass: this.editable ? 'editable' : '',
         },
-        trashButton(this.removeRow)
-      ]
+        this.editable ? trashButton(this.removeRow) : null
+      ].filter((x) => !!x);
 
       return result;
     },
@@ -137,6 +139,9 @@ export default Vue.extend({
           ...p
         };
       });
+    },
+    editable() {
+      return this.connection.supportedFeatures().editPartitions;
     }
   },
   methods: {
@@ -157,7 +162,7 @@ export default Vue.extend({
       })
     },
     isCellEditable(cell: CellComponent) {
-      return this.newRows.includes(cell.getRow());
+      return this.editable ? this.newRows.includes(cell.getRow()) : false;
     },
     cellEdited(cell: CellComponent) {
       if (this.expressionTemplate === '') this.loadExpressionTemplate(cell.getRow().getData())
@@ -265,7 +270,7 @@ export default Vue.extend({
     },
     // Load a template for partition expressions based on previous partitions.
     loadExpressionTemplate(partition: any | null) {
-      if (partition == null) {
+      if (!partition || !partition.expression) {
         this.expressionTemplate = '';
         return
       }

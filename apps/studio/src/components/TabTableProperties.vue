@@ -235,6 +235,7 @@ export default {
       // TODO (day): when we support more dbs, this will need to be an array of all the possible types.
       // Postgres table type for a partitioned table.
       const partitionTableType = 'p';
+      const supportedFeatures = this.connection.supportedFeatures();
       return this.rawPills.filter((p) => {
 
         if (!this.properties) {
@@ -243,11 +244,13 @@ export default {
           }
         }
 
-        if (p.needsProperties && !this.connection.supportedFeatures().properties) {
+        if (p.needsProperties && !supportedFeatures.properties) {
           return false
         }
 
-        if (p.needsPartitions && (!this.connection.supportedFeatures().partitions || this.table.tabletype !== partitionTableType)) {
+        if (p.needsPartitions && (!supportedFeatures.partitions ||
+          ((!supportedFeatures.editPartitions && !this.properties.partitions?.length) ||
+          (supportedFeatures.editPartitions && this.table.tabletype != partitionTableType)))) {
           return false
         }
         if(p.tableOnly) {
