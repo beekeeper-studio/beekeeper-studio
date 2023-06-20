@@ -174,32 +174,34 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
   import os from 'os'
   import {SavedConnection} from '../common/appdb/models/saved_connection'
-  import ConnectionSidebar from './sidebar/ConnectionSidebar'
-  import MysqlForm from './connection/MysqlForm'
-  import PostgresForm from './connection/PostgresForm'
-  import RedshiftForm from './connection/RedshiftForm'
-  import Sidebar from './common/Sidebar'
-  import SqliteForm from './connection/SqliteForm'
-  import SqlServerForm from './connection/SqlServerForm'
-  import SaveConnectionForm from './connection/SaveConnectionForm'
+  import ConnectionSidebar from './sidebar/ConnectionSidebar.vue'
+  import MysqlForm from './connection/MysqlForm.vue'
+  import PostgresForm from './connection/PostgresForm.vue'
+  import RedshiftForm from './connection/RedshiftForm.vue'
+  import Sidebar from './common/Sidebar.vue'
+  import SqliteForm from './connection/SqliteForm.vue'
+  import SqlServerForm from './connection/SqlServerForm.vue'
+  import SaveConnectionForm from './connection/SaveConnectionForm.vue'
   import Split from 'split.js'
-  import ImportButton from './connection/ImportButton'
+  import ImportButton from './connection/ImportButton.vue'
   import _ from 'lodash'
   import platformInfo from '@/common/platform_info'
   import ErrorAlert from './common/ErrorAlert.vue'
   import rawLog from 'electron-log'
-  import { mapGetters, mapState } from 'vuex'
+  import { mapState } from 'vuex'
   import { dialectFor } from '@shared/lib/dialects/models'
   import { findClient } from '@/lib/db/clients'
   import OtherDatabaseNotice from './connection/OtherDatabaseNotice.vue'
+  import Vue from 'vue'
+
 
   const log = rawLog.scope('ConnectionInterface')
   // import ImportUrlForm from './connection/ImportUrlForm';
 
-  export default {
+  export default Vue.extend({
     components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OtherDatabaseNotice, },
 
     data() {
@@ -275,14 +277,14 @@
           this.$refs.content
         ]
         this.split = Split(components, {
-          elementStyle: (dimension, size) => ({
+          elementStyle: (_dimension, size) => ({
               'flex-basis': `calc(${size}%)`,
           }),
           sizes: [300,500],
           gutterize: 8,
           minSize: [300, 300],
           expandToMin: true,
-        })
+        } as Split.Options)
       })
     },
     beforeDestroy() {
@@ -390,7 +392,7 @@
         }
       }
     },
-  }
+  })
 </script>
 
 <style>

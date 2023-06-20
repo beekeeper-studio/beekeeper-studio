@@ -26,19 +26,21 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { ipcRenderer } from 'electron'
 import { mapGetters, mapState } from 'vuex'
-import Titlebar from './components/Titlebar'
-import CoreInterface from './components/CoreInterface'
-import ConnectionInterface from './components/ConnectionInterface'
-import AutoUpdater from './components/AutoUpdater'
+import Titlebar from './components/Titlebar.vue'
+import CoreInterface from './components/CoreInterface.vue'
+import ConnectionInterface from './components/ConnectionInterface.vue'
+import AutoUpdater from './components/AutoUpdater.vue'
 import StateManager from './components/quicksearch/StateManager.vue'
 import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
 import NotificationManager from './components/NotificationManager.vue'
+import Vue from 'vue'
 
-export default {
+
+export default Vue.extend({
   name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
@@ -94,11 +96,11 @@ export default {
 
   },
   methods: {
-    databaseSelected(db) {
+    databaseSelected(_db) {
       // TODO: do something here if needed
     },
   }
-}
+})
 </script>
 
 <style>

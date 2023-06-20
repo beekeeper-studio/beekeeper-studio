@@ -241,7 +241,7 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
     }
   }
 
-  get sshMode() {
+  get sshMode(): SshMode {
     return this._sshMode
   }
 
@@ -249,7 +249,7 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
     return url.includes("://")
   }
 
-  parse(url: string) {
+  parse(url: string): boolean {
     try {
       const goodEndings = ['.db', '.sqlite', '.sqlite3']
       if (!this.smellsLikeUrl(url)) {
@@ -297,7 +297,7 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
   @BeforeInsert()
   @BeforeUpdate()
-  checkSqlite() {
+  checkSqlite(): void {
     if (this.connectionType === 'sqlite' && !this.defaultDatabase) {
       throw new Error("database path must be set for SQLite databases")
     }
@@ -305,7 +305,7 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
   @BeforeInsert()
   @BeforeUpdate()
-  maybeClearPasswords() {
+  maybeClearPasswords(): void {
     if (!this.rememberPassword) {
       this.password = null
       this.sshPassword = null

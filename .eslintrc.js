@@ -19,7 +19,9 @@ module.exports = {
   "rules": {
     "no-console": "off",
     "@typescript-eslint/no-unused-vars": "off",
-    "no-unused-vars": "off"
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "no-explicit-any": "off"
   },
   "parser": "vue-eslint-parser",
   "parserOptions": {

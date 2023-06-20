@@ -65,7 +65,7 @@ export class UserSetting extends ApplicationEntity {
     return _(settings).groupBy('key').mapValues(vs => vs[0]).value() as IGroupedUserSettings
   }
 
-  static async set(key: string, value: string) {
+  static async set(key: string, value: string): Promise<void> {
     let existing = await UserSetting.findOne({ key });
     if (!existing) {
       existing = new UserSetting()
@@ -83,24 +83,24 @@ export class UserSetting extends ApplicationEntity {
   @Column({ type: 'varchar', nullable: false, name: 'userValue' })
   _userValue: Nullable<string> = null
 
-  set userValue(updated) {
+  set userValue(updated: UserSettingValue) {
     this._userValue = setValue(updated)
   }
 
-  get userValue() {
+  get userValue(): UserSettingValue {
     return getValue(this.valueType, this._userValue)
   }
 
-  get value() {
+  get value(): UserSettingValue {
     const raw = this._userValue || this.platformDefault || this.defaultValue
     return getValue(this.valueType, raw)
   }
 
-  set value(updated) {
+  set value(updated: UserSettingValue) {
     this.userValue = updated
   }
 
-  get platformDefault() {
+  get platformDefault(): string {
     if (platformInfo.isMac) return this.macDefault
     if (platformInfo.isWindows) return this.windowsDefault
     return this.linuxDefault

@@ -25,7 +25,7 @@ export class UsedQuery extends ApplicationEntity {
 
   @BeforeInsert()
   @BeforeUpdate()
-  setDefaultDatabase() {
+  setDefaultDatabase(): void {
     // shouldn't be not null, so need a default
     if (!this.database) {
       this.database = '[blank]'

@@ -20,7 +20,7 @@ export class OpenTab extends ApplicationEntity {
     this.tabType = tabType
   }
 
-  get type() {
+  get type(): TabType {
     return this.tabType
   }
 
