@@ -30,6 +30,7 @@ import createHiddenEntities from './20220907_create_hidden_entities'
 import createHiddenSchemas from './20220908_create_hidden_schemas'
 import redshiftOptions from './20220817_add_redshift_options'
 import connectionPins from './20230308_create_connection_pins'
+import fixKeymapType from './20230619_fix_keymap_type'
 
 const logger = createLogger('migrations')()
 
@@ -44,7 +45,7 @@ const realMigrations = [
   addSc, sslFiles, sslReject, pinned, addSort,
   createCreds, workspaceScoping, workspace2, addTabs, scWorkspace, systemTheme,
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
-  createHiddenEntities, createHiddenSchemas, connectionPins
+  createHiddenEntities, createHiddenSchemas, connectionPins, fixKeymapType
 ]
 
 // fixtures require the models
