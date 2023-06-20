@@ -1,21 +1,36 @@
 <template>
   <div>
-    <modal class="vue-dialog beekeeper-modal export-modal" name="export-modal" height="auto" :scrollable="true"
-      @closed="$emit('closed')">
+    <modal
+      class="vue-dialog beekeeper-modal export-modal"
+      name="export-modal"
+      height="auto"
+      :scrollable="true"
+      @closed="$emit('closed')"
+    >
       <form @submit.prevent="submit">
         <div class="dialog-content">
           <div class="dialog-c-title flex flex-middle">
             <div>
               Export
               <span class="text-primary truncate">{{ table.name }}</span>
-              <span v-if="filters" class="text-light" v-tooltip="filterTooltip">(Filtered)</span>
+              <span
+                v-if="filters"
+                class="text-light"
+                v-tooltip="filterTooltip"
+              >(Filtered)</span>
               <span class="badge badge-info">Beta</span>
             </div>
           </div>
           <span class="close-btn btn btn-fab">
-            <i class="material-icons" @click.prevent="closeModal">clear</i>
+            <i
+              class="material-icons"
+              @click.prevent="closeModal"
+            >clear</i>
           </span>
-          <div v-if="error" class="alert alert-danger">
+          <div
+            v-if="error"
+            class="alert alert-danger"
+          >
             <i class="material-icons">error_outline</i>
             <div>Error: {{ error.message }}</div>
           </div>
@@ -24,19 +39,34 @@
               <!-- File Name -->
               <div class="file-name form-group expand">
                 <label for="fileName">File Name</label>
-                <input type="text" spellcheck="false" v-model="fileName">
+                <input
+                  type="text"
+                  spellcheck="false"
+                  v-model="fileName"
+                >
               </div>
 
               <!-- Format -->
               <div class="format form-group">
                 <label for="connectionType">Format</label>
-                <select name="connectionType" class="form-control custom-select" v-model="selectedExportFormat"
-                  id="export-format-select">
-                  <option disabled value="null">
+                <select
+                  name="connectionType"
+                  class="form-control custom-select"
+                  v-model="selectedExportFormat"
+                  id="export-format-select"
+                >
+                  <option
+                    disabled
+                    value="null"
+                  >
                     Select a format...
                   </option>
-                  <option :key="f.value" v-for="f in exportFormats" :value="f"
-                    :selected="selectedExportFormat === f.value">
+                  <option
+                    :key="f.value"
+                    v-for="f in exportFormats"
+                    :value="f"
+                    :selected="selectedExportFormat === f.value"
+                  >
                     {{ f.name }}
                   </option>
                 </select>
@@ -46,29 +76,60 @@
             <!-- Location -->
             <div class="form-group">
               <label for="fileDirectory">Output Directory</label>
-              <file-picker v-model="fileDirectory" :default-path="defaultPath" :save="false" :options="dialogOptions"
-                button-text="Choose" />
+              <file-picker
+                v-model="fileDirectory"
+                :default-path="defaultPath"
+                :save="false"
+                :options="dialogOptions"
+                button-text="Choose"
+              />
             </div>
 
             <!-- Advanced Options -->
-            <div class="advanced-options-toggle flex flex-middle" @click.prevent="toggleAdvanced">
+            <div
+              class="advanced-options-toggle flex flex-middle"
+              @click.prevent="toggleAdvanced"
+            >
               <i class="material-icons">{{ toggleIcon }}</i>
-              <div class="advanced-options-toggle flex flex-middle" @click.prevent="toggleAdvanced">
+              <div
+                class="advanced-options-toggle flex flex-middle"
+                @click.prevent="toggleAdvanced"
+              >
                 <i class="material-icons">{{ toggleIcon }}</i>
                 <span>Advanced Options</span>
               </div>
-              <div class="advanced-options" :class="{ open: advancedToggled }">
-                <component :is="selectedExportFormat.component" v-model="outputOptions" />
+              <div
+                class="advanced-options"
+                :class="{ open: advancedToggled }"
+              >
+                <component
+                  :is="selectedExportFormat.component"
+                  v-model="outputOptions"
+                />
                 <div class="modal-form export-form export-advanced-options">
                   <div class="form-group row">
                     <label title="How many records to read at once from the cursor">Chunk size</label>
-                    <input v-model="options.chunkSize" type="number" class="form-control" ref="paramInput" min="10"
-                      step="10">
+                    <input
+                      v-model="options.chunkSize"
+                      type="number"
+                      class="form-control"
+                      ref="paramInput"
+                      min="10"
+                      step="10"
+                    >
                   </div>
                   <div class="form-group row">
-                    <label for="deleteOnAbort" class="checkbox-group">
-                      <input v-model="options.deleteOnAbort" id="deleteOnAbort" type="checkbox" name="deleteOnAbort"
-                        class="form-control">
+                    <label
+                      for="deleteOnAbort"
+                      class="checkbox-group"
+                    >
+                      <input
+                        v-model="options.deleteOnAbort"
+                        id="deleteOnAbort"
+                        type="checkbox"
+                        name="deleteOnAbort"
+                        class="form-control"
+                      >
                       <span>Delete file on abort/error</span>
                     </label>
                   </div>
@@ -77,13 +138,22 @@
             </div>
           </div>
           <div class="vue-dialog-buttons">
-            <button class="btn btn-flat" type="button" @click.prevent="closeModal">
+            <button
+              class="btn btn-flat"
+              type="button"
+              @click.prevent="closeModal"
+            >
               Cancel
             </button>
-            <button class="btn btn-primary" type="submit" :disabled="!filePath">
+            <button
+              class="btn btn-primary"
+              type="submit"
+              :disabled="!filePath"
+            >
               Run
             </button>
           </div>
+        </div>
       </form>
     </modal>
   </div>

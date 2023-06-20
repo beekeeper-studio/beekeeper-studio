@@ -32,12 +32,33 @@
           </span>
         </div>
       </div>
-      <span class="badge"><span>{{config.connectionType}}</span></span>
-      <span v-if="!isRecentList" class="actions" v-bind:class="{'pinned': pinned}">
-        <span v-if="!pinned" @mousedown.prevent.stop="pin" :title="'Pin'" class="btn-fab pin"><i class="bk-pin"></i></span>
-        <span v-if="pinned" @mousedown.prevent.stop="unpin" :title="'Unpin'" class="btn-fab unpin"><i class="material-icons">clear</i></span>
-        <span v-if="pinned" @mousedown.prevent.stop="unpin" class="btn-fab pinned">
-          <i class="bk-pin" :title="'Unpin'"> </i>
+      <span class="badge"><span>{{ config.connectionType }}</span></span>
+      <span
+        v-if="!isRecentList"
+        class="actions"
+        :class="{'pinned': pinned}"
+      >
+        <span
+          v-if="!pinned"
+          @mousedown.prevent.stop="pin"
+          :title="'Pin'"
+          class="btn-fab pin"
+        ><i class="bk-pin" /></span>
+        <span
+          v-if="pinned"
+          @mousedown.prevent.stop="unpin"
+          :title="'Unpin'"
+          class="btn-fab unpin"
+        ><i class="material-icons">clear</i></span>
+        <span
+          v-if="pinned"
+          @mousedown.prevent.stop="unpin"
+          class="btn-fab pinned"
+        >
+          <i
+            class="bk-pin"
+            :title="'Unpin'"
+          />
           <i class="material-icons">clear</i>
         </span>
       </span>

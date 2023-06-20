@@ -6,25 +6,51 @@
       </div>
       <div class="row">
         <div class="actions">
-          <sidebar-sort-buttons v-model="sort" :sortOptions="sortOptions" noOrder='position' />
+          <sidebar-sort-buttons
+            v-model="sort"
+            :sort-options="sortOptions"
+            no-order="position"
+          />
         </div>
-
       </div>
     </div>
-    <Draggable :options="{ handle: '.drag-handle' }" v-model="orderedPins" tag="div" ref="pinContainer" class="list-body">
-      <div class="pin-wrapper" v-for="p in orderedPins" :key="p.id || p.entity.name">
-        <table-list-item v-if="p.entityType !== 'routine'" :table="p.entity" :pinned="true" :connection="connection"
-          :draggable="sort.field === 'position'" :container="$refs.pinContainer" :forceExpand="allExpanded"
-          :forceCollapse="allCollapsed" @selected="refreshColumns" :noSelect="true"
-          @contextmenu.prevent.stop="$bks.openMenu({ item: p.entity, event: $event, options: tableMenuOptions })" />
-        <routine-list-item v-else :container="$refs.pinContainer" :draggable="sort.field === 'position'"
-          :routine="p.entity" :connection="connection" :pinned="true" :forceExpand="allExpanded"
-          :forceCollapse="allCollapsed"
-          @contextmenu.prevent.stop="$bks.openMenu({ item: p.entity, event: $event, options: routineMenuOptions })" />
-
+    <Draggable
+      :options="{ handle: '.drag-handle' }"
+      v-model="orderedPins"
+      tag="div"
+      ref="pinContainer"
+      class="list-body"
+    >
+      <div
+        class="pin-wrapper"
+        v-for="p in orderedPins"
+        :key="p.id || p.entity.name"
+      >
+        <table-list-item
+          v-if="p.entityType !== 'routine'"
+          :table="p.entity"
+          :pinned="true"
+          :connection="connection"
+          :draggable="sort.field === 'position'"
+          :container="$refs.pinContainer"
+          :force-expand="allExpanded"
+          :force-collapse="allCollapsed"
+          @selected="refreshColumns"
+          :no-select="true"
+          @contextmenu.prevent.stop="$bks.openMenu({ item: p.entity, event: $event, options: tableMenuOptions })"
+        />
+        <routine-list-item
+          v-else
+          :container="$refs.pinContainer"
+          :draggable="sort.field === 'position'"
+          :routine="p.entity"
+          :connection="connection"
+          :pinned="true"
+          :force-expand="allExpanded"
+          :force-collapse="allCollapsed"
+          @contextmenu.prevent.stop="$bks.openMenu({ item: p.entity, event: $event, options: routineMenuOptions })"
+        />
       </div>
-
-
     </Draggable>
   </nav>
 </template>

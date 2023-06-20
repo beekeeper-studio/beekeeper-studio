@@ -46,7 +46,7 @@ export abstract class Export {
 
   abstract rowSeparator: string
 
-  needsFinalSeparator: boolean = true
+  needsFinalSeparator = true
   // do not add newlines / row separators
   abstract getHeader(columns: TableColumn[]): Promise<string>
   abstract getFooter(): string

@@ -50,7 +50,8 @@
           :key="pill.id"
           @actionCompleted="refresh"
           @refresh="refresh"
-        > <template v-slot:footer>
+        >
+          <template v-slot:footer>
             <div class="statusbar-info col flex expand">
               <x-button
                 @click.prevent="openData"

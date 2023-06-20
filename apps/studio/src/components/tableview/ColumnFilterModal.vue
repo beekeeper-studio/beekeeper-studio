@@ -97,7 +97,10 @@
             v-tooltip="hasPendingChanges && anyChanges ? 'Heads up: This will discard pending data changes' : null"
             :disabled="noneSelected"
           >
-            <i v-if="hasPendingChanges && anyChanges" class="material-icons">error_outline</i>
+            <i
+              v-if="hasPendingChanges && anyChanges"
+              class="material-icons"
+            >error_outline</i>
             <span> Apply</span>
           </x-button>
         </div>
