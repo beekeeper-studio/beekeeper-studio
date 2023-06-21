@@ -281,7 +281,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
   import _ from 'lodash'
   import CodeMirror from 'codemirror'
@@ -300,7 +300,7 @@
   import { identify } from 'sql-query-identifier'
   import pluralize from 'pluralize'
 
-  import { splitQueries, extractParams } from '../lib/db/sql_tools'
+  import { splitQueries } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
@@ -314,6 +314,7 @@
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
   import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
+  import { OpenTab } from '@/common/appdb/models/OpenTab'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -322,7 +323,10 @@
   export default {
     // this.queryText holds the current editor value, always
     components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager},
-    props: ['tab', 'active'],
+    props: {
+      tab: OpenTab,
+      active: Boolean
+    },
     data() {
       return {
         results: [],
@@ -592,7 +596,7 @@
         const { from, to } = this.currentQueryPosition
 
         const editorText = this.editor.getValue()
-        const lines = editorText.split(/\n/)
+        // const lines = editorText.split(/\n/)
 
         const [markStart, markEnd] = this.locationFromPosition(editorText, from, to)
         this.marker = this.editor.getDoc().markText(markStart, markEnd, {className: 'highlight'})
@@ -625,8 +629,8 @@
         const lines = editorText.split(/\n/)
         const positions = rawPositions.map((p) => p + startCharacter)
 
-        const finished = positions.map((p) => false)
-        const results = positions.map((p) => ({ line: null, ch: null}))
+        const finished = positions.map((_p) => false)
+        const results = positions.map((_p) => ({ line: null, ch: null}))
 
         let startOfLine = 0
         lines.forEach((line, idx) => {
@@ -662,7 +666,7 @@
 
         this.$nextTick(() => {
           this.split = Split(this.splitElements, {
-            elementStyle: (dimension, size) => ({
+            elementStyle: (_dimension, size) => ({
                 'flex-basis': `calc(${size}%)`,
             }),
             sizes: [50,50],
@@ -676,7 +680,7 @@
             }
           })
 
-          const runQueryKeyMap = {
+          const runQueryKeyMap: any = {
             "Shift-Ctrl-Enter": this.submitCurrentQuery,
             "Shift-Cmd-Enter": this.submitCurrentQuery,
             "Ctrl-Enter": this.submitTabQuery,
@@ -690,6 +694,7 @@
             "F5": this.submitTabQuery,
             "Shift-F5": this.submitCurrentQuery
           }
+
           if(this.userKeymap === "vim") {
             runQueryKeyMap["Ctrl-Esc"] = this.cancelQuery
           } else {
@@ -722,14 +727,16 @@
             options: {
               closeOnBlur: false
             },
+            // eslint-disable-next-line
+            // @ts-ignore
             hint: CodeMirror.hint.sql,
             hintOptions: this.hintOptions,
             keyMap: this.userKeymap,
             getColumns: this.getColumnsForAutocomplete
-          })
+          } as CodeMirror.EditorConfiguration)
           this.editor.setValue(startingValue)
           this.editor.addKeyMap(runQueryKeyMap)
-          this.editor.on("keydown", (cm, e) => {
+          this.editor.on("keydown", (_cm, e) => {
             if (this.$store.state.menuActive) {
               e.preventDefault()
             }
@@ -742,9 +749,11 @@
           })
 
           if (this.connectionType === 'postgresql')  {
-            this.editor.on("beforeChange", (cm, co) => {
+            this.editor.on("beforeChange", (_cm, co) => {
               const { to, from, origin, text } = co;
 
+              // eslint-disable-next-line
+              // @ts-ignore
               const keywords = CodeMirror.resolveMode(this.editor.options.mode).keywords
 
               // quote names when needed
@@ -883,9 +892,13 @@
         this.$refs.table.clipboard()
       },
       clipboardJson() {
+        // eslint-disable-next-line
+        // @ts-ignore
         const data = this.$refs.table.clipboard('json')
       },
       clipboardMarkdown() {
+        // eslint-disable-next-line
+        // @ts-ignore
         const data = this.$refs.table.clipboard('md')
       },
       selectEditor() {
@@ -987,6 +1000,8 @@
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute()
           const queryEndTime = new Date()
+          // eslint-disable-next-line
+          // @ts-ignore
           this.executeTime = queryEndTime - queryStartTime
           let totalRows = 0
           results.forEach(result => {
@@ -1002,7 +1017,7 @@
           })
           this.results = Object.freeze(results);
 
-          const defaultResult = Math.max(results.length - 1, 0)
+          // const defaultResult = Math.max(results.length - 1, 0)
 
           const nonEmptyResult = _.chain(results).findLastIndex((r) => !!r.rows?.length).value()
           console.log("non empty result", nonEmptyResult)
@@ -1040,6 +1055,8 @@
         const space = 32
         if (editor.state.completionActive) return;
         if (triggers[e.keyCode] && !this.inQuote(editor, e)) {
+          // eslint-disable-next-line
+          // @ts-ignore
           CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
         }
         if (e.keyCode === space) {
@@ -1051,6 +1068,8 @@
             const word = editor.findWordAt(pos)
             const lastWord = editor.getRange(word.anchor, word.head)
             if (!triggerWords.includes(lastWord.toLowerCase())) return;
+            // eslint-disable-next-line
+            // @ts-ignore
             CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
 
           } catch (ex) {

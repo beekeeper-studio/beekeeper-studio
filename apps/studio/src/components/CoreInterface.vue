@@ -41,32 +41,40 @@
   </div>
 </template>
 
-<script>
-  import Sidebar from './common/Sidebar'
-  import CoreSidebar from './sidebar/CoreSidebar'
-  import CoreTabs from './CoreTabs'
+<script lang="ts">
+  import Sidebar from './common/Sidebar.vue'
+  import CoreSidebar from './sidebar/CoreSidebar.vue'
+  import CoreTabs from './CoreTabs.vue'
   import Split from 'split.js'
-  import Statusbar from './common/StatusBar'
-  import ConnectionButton from './sidebar/core/ConnectionButton'
-  import ExportManager from './export/ExportManager'
+  import Statusbar from './common/StatusBar.vue'
+  import ConnectionButton from './sidebar/core/ConnectionButton.vue'
+  import ExportManager from './export/ExportManager.vue'
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
-  import { LocalQueryModule } from '@/store/modules/data/query/LocalQueryModule'
   import ProgressBar from './editor/ProgressBar.vue'
-  export default {
+  import { DBConnection } from '@/lib/db/client'
+  import Vue from 'vue'
+
+  export default Vue.extend({
     components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar },
-    props: [ 'connection' ],
+    props: {
+      connection: DBConnection
+    },
     data() {
+      /* eslint-disable */
       return {
         split: null,
         sidebarShown: true,
         quickSearchShown: false,
         rootBindings: [
+          // @ts-ignore
           { event: AppEvent.quickSearch, handler: this.showQuickSearch},
+          // @ts-ignore
           { event: AppEvent.toggleSidebar, handler: this.toggleSidebar }
         ],
         initializing: true
       }
+      /* eslint-enable */
     },
     computed: {
       keymap() {
@@ -86,7 +94,7 @@
         if (this.initializing) return;
         this.$nextTick(() => {
           this.split = Split(this.splitElements, {
-            elementStyle: (dimension, size) => ({
+            elementStyle: (_dimension, size) => ({
                 'flex-basis': `calc(${size}%)`,
             }),
             sizes: [25,75],
@@ -126,6 +134,6 @@
         this.sidebarShown = !this.sidebarShown
       },
     }
-  }
+  })
 
 </script>

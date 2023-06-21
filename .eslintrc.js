@@ -22,7 +22,9 @@ module.exports = {
     "no-unused-vars": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "no-explicit-any": "off",
-    "@typescript-eslint/explicit-module-boundary-types": "off"
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "vue/require-prop-types": "off",
+    "vue/require-default-prop": "off"
   },
   "parser": "vue-eslint-parser",
   "parserOptions": {

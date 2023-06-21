@@ -34,8 +34,10 @@
   </x-buttons>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import Vue from 'vue'
+
+export default Vue.extend({
     name: 'PendingChangesButton',
     props: {
         submitApply: Function,
@@ -51,6 +53,6 @@ export default {
             return result
         }
     }
-}
+})
 </script>
 
