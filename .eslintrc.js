@@ -6,7 +6,7 @@ module.exports = {
     // https://futurestud.io/tutorials/eslint-how-to-fix-bigint-is-not-defined
     "es2020": true,
   },
-  "ignorePatterns": ["node_modules", "dist", "apps/**/tsconfig.json"],
+  "ignorePatterns": ["node_modules", "dist", "apps/**/tsconfig.json", "*.png", "*.scss"],
   "plugins": ["@typescript-eslint"],
   "extends": [
     "eslint:recommended",

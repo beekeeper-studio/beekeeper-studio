@@ -20,7 +20,8 @@
     "docs:serve": "yarn workspace beekeeper-studio docs:serve",
     "web:serve": "yarn sqltools:dev",
     "test:integration": "yarn workspace beekeeper-studio test:integration",
-    "test:unit": "yarn workspace beekeeper-studio test:unit"
+    "test:unit": "yarn workspace beekeeper-studio test:unit",
+    "all:lint": "yarn workspace beekeeper-studio lint && yarn workspace sqltools lint && npx eslint 'shared/**' --fix"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.18.0",
