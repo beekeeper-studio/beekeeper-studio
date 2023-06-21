@@ -110,10 +110,6 @@ export class DBTestUtil {
     await this.knex("people_jobs").insert({job_id: this.jobId, person_id: this.personId })
   }
 
-  testdb() {
-
-  }
-
   async dropTableTests() {
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
     await this.connection.dropElement('test_inserts', 'TABLE', this.defaultSchema)
