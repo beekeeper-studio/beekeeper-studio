@@ -24,7 +24,8 @@ module.exports = {
     "no-explicit-any": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "vue/require-prop-types": "off",
-    "vue/require-default-prop": "off"
+    "vue/require-default-prop": "off",
+    "@typescript-eslint/no-non-null-assertion": "off"
   },
   "parser": "vue-eslint-parser",
   "parserOptions": {

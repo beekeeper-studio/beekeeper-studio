@@ -18,11 +18,11 @@
               class="form-control"
             >
               <option
-                v-for="(result, index) in results"
+                v-for="(r, index) in results"
                 :selected="value == index"
                 :key="index"
                 :value="index"
-              >Result {{ index + 1 }}: {{ shortNum(result.rows.length, 0) }} {{ pluralize('row', result.rows.length, false) }}</option>
+              >Result {{ index + 1 }}: {{ shortNum(r.rows.length, 0) }} {{ pluralize('row', r.rows.length, false) }}</option>
             </select>
           </div>
         </span>

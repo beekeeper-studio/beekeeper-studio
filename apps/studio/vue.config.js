@@ -1,5 +1,8 @@
+/* eslint-disable */
 const webpack = require('webpack');
 const path = require('path');
+/* eslint-enable */
+
 const fpmOptions = [
   "--after-install=build/deb-postinstall"
 ]
