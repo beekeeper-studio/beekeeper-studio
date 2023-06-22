@@ -1,6 +1,7 @@
 // somewhere in your project
-declare module _ {
+declare namespace _ {
   interface LoDashStatic {
+    // eslint-disable-next-line
     deepMapKeys(value: object, fn: (any, string) => string): object;
   }
 }

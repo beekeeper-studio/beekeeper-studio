@@ -1,5 +1,9 @@
 <template>
-  <i :title="title" class="material-icons item-icon" :class="iconClass">grid_on</i>
+  <i
+    :title="title"
+    class="material-icons item-icon"
+    :class="iconClass"
+  >grid_on</i>
 </template>
 <script>
 import _ from 'lodash'

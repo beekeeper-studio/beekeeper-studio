@@ -1,5 +1,7 @@
+/* eslint-disable */
 const path = require('path')
 const webpack = require('webpack')
+/* eslint-enable */
 module.exports = {
   transpileDependencies: ['vuex-persist'],
   configureWebpack: {

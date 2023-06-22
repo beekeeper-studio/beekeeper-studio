@@ -1,14 +1,23 @@
 <template>
   <div class="schema-builder">
     <div class="slot-wrapper">
-      <slot></slot>
+      <slot />
     </div>
     <div class="schema-header flex flex-middle">
-      <h3 class="title">Columns</h3>
-      <span class="expand"></span>
-      <a class="btn btn-primary btn-fab" @click.prevent="addRow" title="Add Field"><i class="material-icons">add</i></a>
+      <h3 class="title">
+        Columns
+      </h3>
+      <span class="expand" />
+      <a
+        class="btn btn-primary btn-fab"
+        @click.prevent="addRow"
+        title="Add Field"
+      ><i class="material-icons">add</i></a>
     </div>
-    <div id="tabulator-goes-here" ref="tabulator"></div>
+    <div
+      id="tabulator-goes-here"
+      ref="tabulator"
+    />
   </div>
 </template>
 
@@ -176,7 +185,7 @@ export default Vue.extend({
   },
 
   methods: {
-    getData(markModified: boolean = true) {
+    getData(markModified = true) {
       const data = this.tabulator.getData()
       this.builtColumns = data
       this.columnsModified = markModified
@@ -196,8 +205,6 @@ export default Vue.extend({
         setTimeout(() => nameCell.edit(), 50)
       }
     },
-    cellEdited() {
-    },
     cellFormatter: tab.cellFormatter,
     yesNoFormatter: tab.yesNoFormatter
   },
@@ -208,7 +215,6 @@ export default Vue.extend({
   },
   mounted() {
     const initial = [...this.initialColumns]
-    // @ts-ignore-error
     this.tabulator = new TabulatorFull(this.$refs.tabulator, {
       data: initial,
       columns: this.tableColumns,

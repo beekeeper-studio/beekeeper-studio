@@ -1,33 +1,54 @@
 <template>
-  <div class="table-info-table view-only" v-hotkey="hotkeys">
+  <div
+    class="table-info-table view-only"
+    v-hotkey="hotkeys"
+  >
     <div class="table-info-table-wrap">
       <div class="center-wrap">
-        <error-alert :error="error" v-if="error" />
-        <div class="notices" v-if="notice">
+        <error-alert
+          :error="error"
+          v-if="error"
+        />
+        <div
+          class="notices"
+          v-if="notice"
+        >
           <div class="alert alert-info">
             <i class="material-icons-outlined">info</i>
-            <div>{{notice}}</div>
+            <div>{{ notice }}</div>
           </div>
         </div>
 
         <div v-if="loading">
-          <div class="alert alert-info">Applying changes...</div>
-          <x-progressbar></x-progressbar>
+          <div class="alert alert-info">
+            Applying changes...
+          </div>
+          <x-progressbar />
         </div>
         <div class="content-wrap">
           <div class="table-subheader">
             <div class="table-title">
               <h2>Indexes</h2>
             </div>
-            <span class="expand"></span>
+            <span class="expand" />
             <div class="actions">
-              <a @click.prevent="$emit('refresh')" v-tooltip="`${ctrlOrCmd('r')} or F5`" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
-              <a v-if="enabled" @click.prevent="addRow" v-tooltip="ctrlOrCmd('n')" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
+              <a
+                @click.prevent="$emit('refresh')"
+                v-tooltip="`${ctrlOrCmd('r')} or F5`"
+                class="btn btn-link btn-fab"
+              ><i class="material-icons">refresh</i></a>
+              <a
+                v-if="enabled"
+                @click.prevent="addRow"
+                v-tooltip="ctrlOrCmd('n')"
+                class="btn btn-primary btn-fab"
+              ><i class="material-icons">add</i></a>
             </div>
-
           </div>
-          <div class="table-indexes" ref="tabulator"></div>
-
+          <div
+            class="table-indexes"
+            ref="tabulator"
+          />
         </div>
       </div>
     </div>
@@ -37,23 +58,44 @@
     <status-bar class="tabulator-footer">
       <div class="flex flex-middle flex-right statusbar-actions">
         <slot name="footer" />
-        <x-button v-if="hasEdits && !loading" class="btn btn-flat reset" @click.prevent="submitUndo">Reset</x-button>
-        <x-buttons v-if="hasEdits && !loading" class="pending-changes">
-          <x-button class="btn btn-primary" @click.prevent="submitApply">
-            <i v-if="error" class="material-icons">error</i>
-            <span class="badge" v-if="!error"><small>{{editCount}}</small></span>
+        <x-button
+          v-if="hasEdits && !loading"
+          class="btn btn-flat reset"
+          @click.prevent="submitUndo"
+        >
+          Reset
+        </x-button>
+        <x-buttons
+          v-if="hasEdits && !loading"
+          class="pending-changes"
+        >
+          <x-button
+            class="btn btn-primary"
+            @click.prevent="submitApply"
+          >
+            <i
+              v-if="error"
+              class="material-icons"
+            >error</i>
+            <span
+              class="badge"
+              v-if="!error"
+            ><small>{{ editCount }}</small></span>
             <span>Apply</span>
           </x-button>
-          <x-button class="btn btn-primary" menu>
+          <x-button
+            class="btn btn-primary"
+            menu
+          >
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
               <x-menuitem @click.prevent="submitApply">
                 <x-label>Apply</x-label>
-                <x-shortcut value="Control+S"></x-shortcut>
+                <x-shortcut value="Control+S" />
               </x-menuitem>
               <x-menuitem @click.prevent="submitSql">
                 <x-label>Copy to SQL</x-label>
-                <x-shortcut value="Control+Shift+S"></x-shortcut>
+                <x-shortcut value="Control+Shift+S" />
               </x-menuitem>
             </x-menu>
           </x-button>
@@ -62,7 +104,7 @@
         <slot name="actions" />
       </div>
     </status-bar>
-</div>
+  </div>
 </template>
 <script lang="ts">
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
@@ -287,7 +329,6 @@ export default Vue.extend({
   mounted() {
     // this.initializeTabulator()
     this.tabState.dirty = false
-      // @ts-ignore
       this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         data: this.tableData,
         columns: this.tableColumns,

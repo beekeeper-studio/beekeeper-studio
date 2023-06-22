@@ -1,10 +1,24 @@
 <template>
   <div class="sort-buttons">
-    <x-button v-if="noOrder !== sortBy" class="actions-btn btn btn-link btn-sm" v-tooltip="sortOrderTooltip" @click.prevent="toggleSortOrder">
-      <i v-if="sortOrder == 'desc'" class="material-icons">expand_more</i>
-      <i v-else class="material-icons">expand_less</i>
+    <x-button
+      v-if="noOrder !== sortBy"
+      class="actions-btn btn btn-link btn-sm"
+      v-tooltip="sortOrderTooltip"
+      @click.prevent="toggleSortOrder"
+    >
+      <i
+        v-if="sortOrder == 'desc'"
+        class="material-icons"
+      >expand_more</i>
+      <i
+        v-else
+        class="material-icons"
+      >expand_less</i>
     </x-button>
-    <x-button class="actions-btn btn btn-link btn-sm" v-tooltip="`Sorted by ${sortOptions[sortBy]} (${sortOrderTooltip})`">
+    <x-button
+      class="actions-btn btn btn-link btn-sm"
+      v-tooltip="`Sorted by ${sortOptions[sortBy]} (${sortOrderTooltip})`"
+    >
       <i class="material-icons-outlined">sort</i>
       <x-menu style="--target-align:right;">
         <x-menuitem
@@ -14,7 +28,7 @@
           togglable
           @click.prevent="sortBy = key"
         >
-          <x-label>{{sortOptions[key]}}</x-label>
+          <x-label>{{ sortOptions[key] }}</x-label>
         </x-menuitem>
       </x-menu>
     </x-button>

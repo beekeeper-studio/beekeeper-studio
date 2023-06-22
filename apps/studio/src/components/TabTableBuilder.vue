@@ -1,50 +1,76 @@
 <template>
-  <div class="table-builder" v-hotkey="hotkeys">
-    <error-alert v-if="error" :error="error" />
+  <div
+    class="table-builder"
+    v-hotkey="hotkeys"
+  >
+    <error-alert
+      v-if="error"
+      :error="error"
+    />
     <div v-show="running">
-      <x-progressbar></x-progressbar>
+      <x-progressbar />
     </div>
     <div class="table-builder-wrap">
       <div class="center-wrap">
         <div class="table-builder-header">
-          <div class="form-group" v-if="defaultSchema">
+          <div
+            class="form-group"
+            v-if="defaultSchema"
+          >
             <label for="schema">Schema</label>
-            <input type="text" v-model="tableSchema" :placeholder="defaultSchema">
+            <input
+              type="text"
+              v-model="tableSchema"
+              :placeholder="defaultSchema"
+            >
           </div>
           <div class="form-group">
             <label for="table">Table Name</label>
-            <input type="text" v-model="tableName" placeholder="untitled_table">
+            <input
+              type="text"
+              v-model="tableName"
+              placeholder="untitled_table"
+            >
           </div>
         </div>
         <schema-builder
           ref="sb"
           :dialect="dialect"
-          :resetOnUpdate="true"
-          :initialColumns="initialColumns"
+          :reset-on-update="true"
+          :initial-columns="initialColumns"
           @columnsChanged="handleChange"
-          :initialEmit="true"
-        ></schema-builder>
+          :initial-emit="true"
+        />
       </div>
     </div>
-    <div class="expand"></div>
+    <div class="expand" />
     <status-bar class="tabulator-footer">
-      <span class="expand"></span>
+      <span class="expand" />
       <div class="col flex-right statusbar-actions">
         <x-buttons class="pending-changes">
-          <x-button class="btn btn-primary" @click.prevent="create">
-            <i v-if="error" class="material-icons">error</i>
+          <x-button
+            class="btn btn-primary"
+            @click.prevent="create"
+          >
+            <i
+              v-if="error"
+              class="material-icons"
+            >error</i>
             <span>Create Table</span>
           </x-button>
-          <x-button class="btn btn-primary" menu>
+          <x-button
+            class="btn btn-primary"
+            menu
+          >
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
               <x-menuitem @click.prevent="create">
                 <x-label>Create Table</x-label>
-                <x-shortcut value="Control+S"></x-shortcut>
+                <x-shortcut value="Control+S" />
               </x-menuitem>
               <x-menuitem @click.prevent="sql">
                 <x-label>Copy to SQL</x-label>
-                <x-shortcut value="Control+Shift+S"></x-shortcut>
+                <x-shortcut value="Control+Shift+S" />
               </x-menuitem>
             </x-menu>
           </x-button>
@@ -183,8 +209,5 @@ export default Vue.extend({
     this.initialColumns = schema.columns
     this.generator = new SqlGenerator(this.dialect)
   },
-  mounted() {
-
-  }
 })
 </script>

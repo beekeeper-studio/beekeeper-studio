@@ -1,27 +1,49 @@
 <template>
-  <div class="schema-wrapper" @contextmenu="$emit('contextmenu', $event)">
-    <div class="folder-group schema" v-if="!skipDisplay">
-      <a class="folder-btn" :class="{'open': expanded}" role="button" @click.prevent="manuallyExpanded = !manuallyExpanded">
-        <span class="btn-fab open-close" >
+  <div
+    class="schema-wrapper"
+    @contextmenu="$emit('contextmenu', $event)"
+  >
+    <div
+      class="folder-group schema"
+      v-if="!skipDisplay"
+    >
+      <a
+        class="folder-btn"
+        :class="{'open': expanded}"
+        role="button"
+        @click.prevent="manuallyExpanded = !manuallyExpanded"
+      >
+        <span class="btn-fab open-close">
           <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
         </span>
-        <i title="Schema" class="schema-icon item-icon material-icons">folder</i>
-        <span class="table-name truncate expand" :title="title">{{title}}</span>
+        <i
+          title="Schema"
+          class="schema-icon item-icon material-icons"
+        >folder</i>
+        <span
+          class="table-name truncate expand"
+          :title="title"
+        >{{ title }}</span>
       </a>
       <div v-if="expanded">
         <template v-if="hasSlot">
-          <slot></slot>
+          <slot />
         </template>
         <template v-else>
           <template v-if="$slots.placeholder">
-            <slot name="placeholder"></slot>
+            <slot name="placeholder" />
           </template>
-          <div v-else class="list-item empty">{{placeholder || "No items"}}</div>
+          <div
+            v-else
+            class="list-item empty"
+          >
+            {{ placeholder || "No items" }}
+          </div>
         </template>
       </div>
     </div>
     <div v-else>
-      <slot></slot>
+      <slot />
     </div>
   </div>
 </template>
