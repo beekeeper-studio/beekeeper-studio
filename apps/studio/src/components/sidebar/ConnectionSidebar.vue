@@ -315,10 +315,11 @@ const log = rawLog.scope('connection-sidebar');
         console.log("triggering import")
         this.$root.$emit(AppEvent.promptConnectionImport)
       },
-      refresh() {
+      async refresh() {
         this.$store.dispatch('data/connectionFolders/load')
         this.$store.dispatch('data/connections/load')
-        this.$store.dispatch('pinnedConnections/loadPins').then(() => this.$store.dispatch('pinnedConnections/reorder', this.pinnedConnections))
+        await this.$store.dispatch('pinnedConnections/loadPins');
+        await this.$store.dispatch('pinnedConnections/reorder');
       },
       edit(config) {
         this.$emit('edit', config)
