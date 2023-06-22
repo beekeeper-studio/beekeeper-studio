@@ -1,6 +1,12 @@
 <template>
   <div class="tabulator-bks-checkbox tabulator-checkbox-editor">
-    <input type="checkbox" ref="input" v-model="checked" @keydown="keydown" @blur="submit" /> 
+    <input
+      type="checkbox"
+      ref="input"
+      v-model="checked"
+      @keydown="keydown"
+      @blur="submit"
+    > 
   </div>
 </template>
 <script lang="ts">
@@ -24,8 +30,6 @@
       }
     },
     watch: {
-      checked() {
-      },
       rendered() {
         if (this.rendered) {
           this.checked = !!this.cell.getValue()

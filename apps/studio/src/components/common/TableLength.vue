@@ -1,5 +1,6 @@
 <template>
-  <a class="statusbar-item hoverable"
+  <a
+    class="statusbar-item hoverable"
     @click.prevent="fetchTotalRecords"
     v-tooltip="hoverTitle"
   >
@@ -7,7 +8,7 @@
     <span v-if="fetchingTotalRecords">loading...</span>
     <span v-else-if="error">error</span>
     <span v-else-if="totalRecords === null">Unknown</span>
-    <span v-else>~{{totalRecords.toLocaleString()}}</span>
+    <span v-else>~{{ totalRecords.toLocaleString() }}</span>
   </a>
 </template>
 <script lang="ts">

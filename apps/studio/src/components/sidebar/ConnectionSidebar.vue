@@ -1,6 +1,5 @@
 <template>
   <div class="sidebar-wrap row">
-
     <!-- QUICK CONNECT -->
     <div class="tab-content flex-col expand">
       <div class="btn-wrap quick-connect">
@@ -9,35 +8,48 @@
           class="btn btn-flat btn-icon btn-block"
           @click.prevent="$emit('create')"
         >
-        <i class="material-icons">add</i>
-        <span>New Connection</span>
+          <i class="material-icons">add</i>
+          <span>New Connection</span>
         </a>
       </div>
 
       <div class="connection-wrap expand flex-col">
         <!-- Pinned Connections -->
         <!-- TODO (day): should probably make a class for pinned connections-->
-        <div class="list saved-connection-list expand" ref="pinnedConnectionList">
+        <div
+          class="list saved-connection-list expand"
+          ref="pinnedConnectionList"
+        >
           <div class="list-group">
             <div class="list-heading">
               <div class="flex">
                 <div class="sub row flex-middle noselect">
-                  Pinned <span class="badge">{{(pinnedConnections || []).length}}</span>
+                  Pinned <span class="badge">{{ (pinnedConnections || []).length }}</span>
                 </div>
               </div>
-              <span class="expand"></span>
+              <span class="expand" />
               <div class="actions">
                 <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
               </div>
             </div>
-            <error-alert :error="error" v-if="error" title="Problem loading connections" @close="error = null" :closable="true"/>
+            <error-alert
+              :error="error"
+              v-if="error"
+              title="Problem loading connections"
+              @close="error = null"
+              :closable="true"
+            />
             <sidebar-loading v-else-if="loading" />
-            <nav v-else class="list-body">
-              <connection-list-item v-for="c in pinnedConnections"
+            <nav
+              v-else
+              class="list-body"
+            >
+              <connection-list-item
+                v-for="c in pinnedConnections"
                 :key="c.id"
                 :config="c"
-                :selectedConfig="selectedConfig"
-                :showDuplicate="true"
+                :selected-config="selectedConfig"
+                :show-duplicate="true"
                 :pinned="true"
                 @edit="edit"
                 @remove="remove"
@@ -51,18 +63,28 @@
         <hr v-if="!noPins"> <!-- fake gutter for split.js -->
 
         <!-- Saved Connections -->
-        <div class="list saved-connection-list expand" ref="savedConnectionList">
+        <div
+          class="list saved-connection-list expand"
+          ref="savedConnectionList"
+        >
           <div class="list-group">
             <div class="list-heading">
               <div class="flex">
                 <div class="sub row flex-middle noselect">
-                  Saved <span class="badge">{{(connectionConfigs || []).length}}</span>
+                  Saved <span class="badge">{{ (connectionConfigs || []).length }}</span>
                 </div>
-                <span class="expand"></span>
+                <span class="expand" />
                 <div class="actions">
-                  <a v-if="isCloud" @click.prevent="importFromLocal" title="Import connections from local workspace"><i class="material-icons">save_alt</i></a>
+                  <a
+                    v-if="isCloud"
+                    @click.prevent="importFromLocal"
+                    title="Import connections from local workspace"
+                  ><i class="material-icons">save_alt</i></a>
                   <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
-                  <sidebar-sort-buttons v-model="sort" :sortOptions="sortables" />
+                  <sidebar-sort-buttons
+                    v-model="sort"
+                    :sort-options="sortables"
+                  />
                 </div>
                 <!-- <x-button class="actions-btn btn btn-link btn-small" v-tooltip="`Sorted by ${sortables[sortOrder]}`">
                   <i class="material-icons-outlined">sort</i>
@@ -80,47 +102,67 @@
                 </x-button> -->
               </div>
             </div>
-            <error-alert :error="error" v-if="error" title="Problem loading connections" @close="error = null" :closable="true" />
+            <error-alert
+              :error="error"
+              v-if="error"
+              title="Problem loading connections"
+              @close="error = null"
+              :closable="true"
+            />
             <sidebar-loading v-else-if="loading" />
-            <div v-else-if="empty" class="empty">
-              <div class="empty-title">No Saved Connections</div>
-              <div class="empty-actions" v-if="isCloud">
-                <a class="btn btn-flat btn-block btn-icon" @click.prevent="importFromLocal" title="Import connections from local workspace"><i class="material-icons">save_alt</i> Import</a>
+            <div
+              v-else-if="empty"
+              class="empty"
+            >
+              <div class="empty-title">
+                No Saved Connections
+              </div>
+              <div
+                class="empty-actions"
+                v-if="isCloud"
+              >
+                <a
+                  class="btn btn-flat btn-block btn-icon"
+                  @click.prevent="importFromLocal"
+                  title="Import connections from local workspace"
+                ><i class="material-icons">save_alt</i> Import</a>
               </div>
             </div>
-            <nav v-else class="list-body">
+            <nav
+              v-else
+              class="list-body"
+            >
               <sidebar-folder
                 v-for="{ folder, connections } in foldersWithConnections"
                 :key="`${folder.id}-${connections.length}`"
                 :title="`${folder.name} (${connections.length})`"
                 placeholder="No Items"
-                :expandedInitially="true"
+                :expanded-initially="true"
               >
                 <connection-list-item
                   v-for="c in connections"
                   :key="c.id"
                   :config="c"
-                  :selectedConfig="selectedConfig"
-                  :showDuplicate="true"
+                  :selected-config="selectedConfig"
+                  :show-duplicate="true"
                   :pinned="pinnedConnections.includes(c)"
                   @edit="edit"
                   @remove="remove"
                   @duplicate="duplicate"
                   @doubleClick="connect"
-                >
-                </connection-list-item>
+                />
               </sidebar-folder>
-              <connection-list-item v-for="c in lonelyConnections"
+              <connection-list-item
+                v-for="c in lonelyConnections"
                 :key="c.id"
                 :config="c"
-                :selectedConfig="selectedConfig"
-                :showDuplicate="true"
+                :selected-config="selectedConfig"
+                :show-duplicate="true"
                 :pinned="pinnedConnections.includes(c)"
                 @edit="edit"
                 @remove="remove"
                 @duplicate="duplicate"
                 @doubleClick="connect"
-
               />
             </nav>
           </div>
@@ -129,26 +171,28 @@
         <hr> <!-- Fake gutter for split.js -->
 
         <!-- Recent Connections -->
-        <div class="list recent-connection-list expand" ref="recentConnectionList">
+        <div
+          class="list recent-connection-list expand"
+          ref="recentConnectionList"
+        >
           <div class="list-group">
             <div class="list-heading">
               <div class="sub row flex-middle noselect">
-                Recent <span class="badge">{{usedConfigs.length}}</span>
+                Recent <span class="badge">{{ usedConfigs.length }}</span>
               </div>
             </div>
             <nav class="list-body">
-                <connection-list-item
-                  v-for="c in usedConfigs"
-                  :key="c.id"
-                  :config="c"
-                  :selectedConfig="selectedConfig"
-                  :isRecentList="true"
-                  :showDuplicate="false"
-                  @edit="edit"
-                  @remove="removeUsedConfig"
-                  @doubleClick="connect"
-                >
-                </connection-list-item>
+              <connection-list-item
+                v-for="c in usedConfigs"
+                :key="c.id"
+                :config="c"
+                :selected-config="selectedConfig"
+                :is-recent-list="true"
+                :show-duplicate="false"
+                @edit="edit"
+                @remove="removeUsedConfig"
+                @doubleClick="connect"
+              />
             </nav>
           </div>
         </div>
@@ -188,8 +232,6 @@ const log = rawLog.scope('connection-sidebar');
       async sort() {
         await this.$settings.set('connectionsSortOrder', this.sort.order)
         await this.$settings.set('connectionsSortBy', this.sort.field)
-      },
-      async sortBy() {
       },
       // If we load with some pins, this will reinitialize split to reflect that
       noPins(value) {
@@ -339,8 +381,6 @@ const log = rawLog.scope('connection-sidebar');
       getLabelClass(color) {
         return `label-${color}`
       },
-      pinOnChange() {
-      }
     }
   }
 </script>

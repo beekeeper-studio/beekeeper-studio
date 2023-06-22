@@ -3,53 +3,87 @@
     <section class="subheader">
       <div class="small-wrap">
         <h1>SQL Table Creator</h1>
-        <div class="subtitle">This is a SQL table creator for Postgres, MySQL, SQL Server, SQLite, and Redshift databases from the makers of  <a class="text-primary" href="https://beekeeperstudio.io" target="_blank">Beekeeper Studio</a>. Create a SQL table below using the point and click UI, then copy the output SQL into your database.</div>
+        <div class="subtitle">
+          This is a SQL table creator for Postgres, MySQL, SQL Server, SQLite, and Redshift databases from the makers of  <a
+            class="text-primary"
+            href="https://beekeeperstudio.io"
+            target="_blank"
+          >Beekeeper Studio</a>. Create a SQL table below using the point and click UI, then copy the output SQL into your database.
+        </div>
       </div>
     </section>
     <section>
       <div class="small-wrap">
-
         <!-- Schema Builder -->
-        <schema-builder v-if="templateSchema.columns"
-          :initialColumns="templateSchema.columns"
-          tableHeight='400'
-          :resetOnUpdate="true"
+        <schema-builder
+          v-if="templateSchema.columns"
+          :initial-columns="templateSchema.columns"
+          table-height="400"
+          :reset-on-update="true"
           @columnsChanged="columnsChanged"
         >
           <div class="table-header flex flex-middle">
             <div class="form-group expand flex flex-middle">
-              <input type="text" v-model="schema.name" :placeholder="defaultName">
+              <input
+                type="text"
+                v-model="schema.name"
+                :placeholder="defaultName"
+              >
               <span class="input-icon"><i class="material-icons">edit</i></span>
             </div>
-            <dialect-picker :confirm="schemaChanges > 0" :confirmMessage="confirmMessage"/>
+            <dialect-picker
+              :confirm="schemaChanges > 0"
+              :confirm-message="confirmMessage"
+            />
           </div>
-          <template></template>
+          <template />
         </schema-builder>
 
         <!-- Generated code -->
-        <highlighted-code :code="formattedSql" :dialect="dialect">
+        <highlighted-code
+          :code="formattedSql"
+          :dialect="dialect"
+        >
           <template>
-            <h3 class="title">CREATE TABLE Generated SQL ({{dialectTitle}})</h3>
+            <h3 class="title">
+              CREATE TABLE Generated SQL ({{ dialectTitle }})
+            </h3>
           </template>
 
-          <template v-slot:alert v-if="dialectWarning">
+          <template
+            v-slot:alert
+            v-if="dialectWarning"
+          >
             <div class="alert alert-warning">
-            <i class="material-icons">warning</i>
-            <div>{{dialectWarning}}</div>
-          </div>
+              <i class="material-icons">warning</i>
+              <div>{{ dialectWarning }}</div>
+            </div>
           </template>
         </highlighted-code>
-
       </div>
     </section>
     <section>
       <div class="small-wrap text-center">
         <h2>Make SQL Fun Again With Beekeeper Studio</h2>
-        <p>This SQL table creator is just one of several useful features built into <a target="_blank" href="https://beekeeperstudio.io">Beekeeper Studio</a>, the SQL editor and database GUI that makes writing SQL fun again. Available for Linux, MacOS, and Windows.</p>
-        <p class="text-center">
-          <img src="../assets/img/bk-example.png" alt="Beekeeper Studio example">
+        <p>
+          This SQL table creator is just one of several useful features built into <a
+            target="_blank"
+            href="https://beekeeperstudio.io"
+          >Beekeeper Studio</a>, the SQL editor and database GUI that makes writing SQL fun again. Available for Linux, MacOS, and Windows.
         </p>
-        <p><a href="https://beekeeperstudio.io" target="_blank" class="btn btn-primary">Get Started Free</a> </p>
+        <p class="text-center">
+          <img
+            src="../assets/img/bk-example.png"
+            alt="Beekeeper Studio example"
+          >
+        </p>
+        <p>
+          <a
+            href="https://beekeeperstudio.io"
+            target="_blank"
+            class="btn btn-primary"
+          >Get Started Free</a>
+        </p>
       </div>
     </section>
   </div>

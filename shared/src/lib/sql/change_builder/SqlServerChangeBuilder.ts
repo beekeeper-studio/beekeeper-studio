@@ -14,7 +14,7 @@ export class SqlServerChangeBuilder extends ChangeBuilderBase {
   defaultConstraints: DefaultConstraint[]
   existingColumns: LiteSchemaItem[]
 
-  constructor(table: string, schema: string = 'dbo', existingColumns: LiteSchemaItem[],  defaultConstraints: DefaultConstraint[] ) {
+  constructor(table: string, schema = 'dbo', existingColumns: LiteSchemaItem[],  defaultConstraints: DefaultConstraint[] ) {
     super(table, schema)
     this.defaultConstraints = defaultConstraints
     this.existingColumns = existingColumns

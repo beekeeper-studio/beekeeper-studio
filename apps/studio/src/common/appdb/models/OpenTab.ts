@@ -20,7 +20,7 @@ export class OpenTab extends ApplicationEntity {
     this.tabType = tabType
   }
 
-  get type() {
+  get type(): TabType {
     return this.tabType
   }
 
@@ -28,7 +28,7 @@ export class OpenTab extends ApplicationEntity {
   tabType: TabType = 'query'
 
   @Column({type: 'boolean', nullable: false, default: false})
-  unsavedChanges: boolean = false
+  unsavedChanges = false
 
   @Column({type: 'varchar', nullable: false, length: 255})
   title: string
@@ -37,10 +37,10 @@ export class OpenTab extends ApplicationEntity {
   titleScope?: string
 
   @Column({type: 'boolean', default: false})
-  alert: boolean = false
+  alert = false
 
   @Column({type: 'float', nullable: false})
-  position: number = 99.0
+  position = 99.0
 
   @Column({type: 'boolean', nullable: false, default: false})
   active: boolean

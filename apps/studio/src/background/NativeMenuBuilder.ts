@@ -19,7 +19,7 @@ export default class NativeMenuBuilder {
     }
   }
 
-  initialize() {
+  initialize(): void {
     if (this.builder) {
       const template = this.builder.buildTemplate()
       log.info("MENUTEMPLATE", template)
@@ -31,7 +31,7 @@ export default class NativeMenuBuilder {
     this.listenForClicks()
   }
 
-  listenForClicks() {
+  listenForClicks(): void {
     ipcMain.on(AppEvent.menuClick, (event, actionName: keyof NativeMenuActionHandlers, arg) => {
       try {
         const window = BrowserWindow.fromWebContents(event.sender)

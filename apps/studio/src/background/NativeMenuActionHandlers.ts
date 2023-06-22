@@ -18,32 +18,32 @@ function getIcon() {
 export default class NativeMenuActionHandlers implements IMenuActionHandler {
   constructor(private settings: IGroupedUserSettings) {}
 
-  quit() {
+  quit(): void {
     app.quit()
   }
 
-  undo(_1: Electron.MenuItem, win: ElectronWindow) {
+  undo(_1: Electron.MenuItem, win: ElectronWindow): void {
     if (win) {
       win.webContents.undo()
     }
   }
-  redo(_1: Electron.MenuItem, win: ElectronWindow) {
+  redo(_1: Electron.MenuItem, win: ElectronWindow): void {
     if (win) win.webContents.redo()
   }
-  cut(_1: Electron.MenuItem, win: ElectronWindow) {
+  cut(_1: Electron.MenuItem, win: ElectronWindow): void {
     if (win) win.webContents.cut()
   }
-  copy(_1: Electron.MenuItem, win: ElectronWindow) {
+  copy(_1: Electron.MenuItem, win: ElectronWindow): void {
     if (win) win.webContents.copy()
   }
-  paste(_1: Electron.MenuItem, win: ElectronWindow) {
+  paste(_1: Electron.MenuItem, win: ElectronWindow): void {
     if (win) win.webContents.paste()
   }
-  selectAll(_1: Electron.MenuItem, win: ElectronWindow) {
+  selectAll(_1: Electron.MenuItem, win: ElectronWindow): void {
     if (win) win.webContents.selectAll()
   }
 
-  setZoom = async (level: number) => {
+  setZoom = async (level: number): Promise<void> => {
     getActiveWindows().forEach(window => {
       if (window.webContents) {
         window.webContents.zoomLevel = level
@@ -53,24 +53,24 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     await this.settings.zoomLevel.save()
   }
 
-  zoomreset = async () => {
+  zoomreset = async (): Promise<void> => {
     await this.setZoom(0)
   }
-  zoomin = async (_1: Electron.MenuItem, win: ElectronWindow) => {
+  zoomin = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
     if (win) await this.setZoom(win.webContents.zoomLevel + 0.5)
   }
-  zoomout = async (_1: Electron.MenuItem, win: ElectronWindow) => {
+  zoomout = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
     if (win) await this.setZoom(win.webContents.zoomLevel - 0.5)
   }
 
-  reload = async (_1: Electron.MenuItem, win: ElectronWindow) => {
-    if (win) await win.webContents.reloadIgnoringCache()
+  reload = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
+    if (win) win.webContents.reloadIgnoringCache()
   }
 
-  fullscreen(_1: Electron.MenuItem, win: ElectronWindow) {
+  fullscreen(_1: Electron.MenuItem, win: ElectronWindow): void {
     if (win) win.setFullScreen(!win.isFullScreen())
   }
-  about() {
+  about(): void {
     app.setAboutPanelOptions({
       applicationName: "Beekeeper Studio",
       applicationVersion: app.getVersion(),
@@ -82,40 +82,39 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     app.showAboutPanel()
   }
 
-  opendocs() {
+  opendocs(): void {
     shell.openExternal("https://docs.beekeeperstudio.io/")
   }
 
-  devtools(_1: Electron.MenuItem, win: ElectronWindow) {
+  devtools(_1: Electron.MenuItem, win: ElectronWindow): void {
     if (win) win.webContents.toggleDevTools()
   }
 
   // first argument when coming from the ipcRenderer when opening a new window via new database doesn't return the same arguments as going through menu natively
   // Having said that, it can accept openoptions too and do it's thing
-  newWindow = (options: Electron.MenuItem|OpenOptions = {}) => {
+  newWindow = (options: Electron.MenuItem|OpenOptions = {}): void => {
     // typescript isn't happy that url doesn't exist on MenuItem, which shouldn't matter because we're checking to see if it exists, but TS gonna TS.
-    // @ts-ignore
-    if (options?.url) {
+    if ((options as any)?.url) {
       return buildWindow(this.settings, <OpenOptions>options)
     }
 
     return buildWindow(this.settings)
   }
 
-  newQuery = (_1: Electron.MenuItem, win: ElectronWindow) => {
+  newQuery = (_1: Electron.MenuItem, win: ElectronWindow): void => {
     if (win) win.webContents.send(AppEvent.newTab)
   }
 
   newTab = this.newQuery
-  closeTab = (_1: Electron.MenuItem, win: ElectronWindow) => {
+  closeTab = (_1: Electron.MenuItem, win: ElectronWindow): void => {
     if (win) win.webContents.send(AppEvent.closeTab)
   }
 
-  quickSearch = (_1: Electron.MenuItem, win: ElectronWindow) => {
+  quickSearch = (_1: Electron.MenuItem, win: ElectronWindow): void => {
     if (win) win.webContents.send(AppEvent.quickSearch)
   }
 
-  switchTheme = async (menuItem: Electron.MenuItem) => {
+  switchTheme = async (menuItem: Electron.MenuItem): Promise<void> => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
     this.settings.theme.userValue = label.toLowerCase()
     await this.settings.theme.save()
@@ -124,7 +123,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     })
   }
 
-  addBeekeeper = async (_1: Electron.MenuItem, win: ElectronWindow) => {
+  addBeekeeper = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
     const existing = await SavedConnection.findOne({where: { defaultDatabase: platformInfo.appDbPath }})
     if (!existing) {
       const nu = new SavedConnection()
@@ -137,7 +136,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.beekeeperAdded)
   }
 
-  switchMenuStyle = async (menuItem: Electron.MenuItem) => {
+  switchMenuStyle = async (menuItem: Electron.MenuItem): Promise<void> => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
     this.settings.menuStyle.value = label.toLowerCase()
     await this.settings.menuStyle.save()
@@ -146,11 +145,11 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     })
   }
 
-  toggleSidebar = async(_menuItem: Electron.MenuItem, win: ElectronWindow) => {
+  toggleSidebar = async(_menuItem: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
     if (win) win.webContents.send(AppEvent.toggleSidebar)
   }
 
-  disconnect = (_1: Electron.MenuItem, win: ElectronWindow) => {
+  disconnect = (_1: Electron.MenuItem, win: ElectronWindow): void => {
     if (win) win.webContents.send(AppEvent.disconnect)
   }
 
