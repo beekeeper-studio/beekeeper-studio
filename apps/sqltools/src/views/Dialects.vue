@@ -9,10 +9,17 @@
       <div class="small-wrap">
         <div class="dialect-list">
           <div class="row gutter">
-            <div class="col s3" v-for="dialect in dialects" :key="dialect">
-              <router-link :to="{name: 'Dialect', params: {dialect_id: dialect}}" class="card-flat card-link padding flex-col">
+            <div
+              class="col s3"
+              v-for="dialect in dialects"
+              :key="dialect"
+            >
+              <router-link
+                :to="{name: 'Dialect', params: {dialect_id: dialect}}"
+                class="card-flat card-link padding flex-col"
+              >
                 <img :src="require(`@/assets/img/db-logos/${dialect}-client.svg`)">
-                <div>{{titleFor(dialect)}}</div>
+                <div>{{ titleFor(dialect) }}</div>
               </router-link>
             </div>
           </div>

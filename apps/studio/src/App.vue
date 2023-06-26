@@ -1,36 +1,47 @@
 <template>
-<div class="style-wrapper">
+  <div class="style-wrapper">
     <div class="beekeeper-studio-wrapper">
-      <titlebar v-if="$config.isMac || menuStyle === 'client'"></titlebar>
+      <titlebar v-if="$config.isMac || menuStyle === 'client'" />
       <template v-if="storeInitialized">
-        <connection-interface v-if="!connection"></connection-interface>
-        <core-interface @databaseSelected="databaseSelected" v-else :connection="connection"></core-interface>
-        <auto-updater></auto-updater>
+        <connection-interface v-if="!connection" />
+        <core-interface
+          @databaseSelected="databaseSelected"
+          v-else
+          :connection="connection"
+        />
+        <auto-updater />
         <state-manager />
         <notification-manager />
       </template>
     </div>
-    <portal-target name="menus" multiple />
-    <portal-target name="modals" multiple />
+    <portal-target
+      name="menus"
+      multiple
+    />
+    <portal-target
+      name="modals"
+      multiple
+    />
     <data-manager />
-</div>
-
+  </div>
 </template>
 
-<script>
+<script lang="ts">
 import { ipcRenderer } from 'electron'
 import { mapGetters, mapState } from 'vuex'
-import Titlebar from './components/Titlebar'
-import CoreInterface from './components/CoreInterface'
-import ConnectionInterface from './components/ConnectionInterface'
-import AutoUpdater from './components/AutoUpdater'
+import Titlebar from './components/Titlebar.vue'
+import CoreInterface from './components/CoreInterface.vue'
+import ConnectionInterface from './components/ConnectionInterface.vue'
+import AutoUpdater from './components/AutoUpdater.vue'
 import StateManager from './components/quicksearch/StateManager.vue'
 import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
 import NotificationManager from './components/NotificationManager.vue'
+import Vue from 'vue'
 
-export default {
-  name: 'app',
+
+export default Vue.extend({
+  name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     StateManager, DataManager
@@ -85,11 +96,11 @@ export default {
 
   },
   methods: {
-    databaseSelected(db) {
+    databaseSelected(_db) {
       // TODO: do something here if needed
     },
   }
-}
+})
 </script>
 
 <style>

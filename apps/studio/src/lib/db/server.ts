@@ -57,9 +57,7 @@ export function createServer(config: IDbConnectionServerConfig): IDbConnectionPu
     },
 
     createConnection(dbName?: string, cryptoSecret?: string) {
-      // @ts-ignore
       if (server.db[dbName]) {
-        // @ts-ignore
         return server.db[dbName];
       }
 
@@ -73,10 +71,9 @@ export function createServer(config: IDbConnectionServerConfig): IDbConnectionPu
         connecting: false,
       };
 
-      // @ts-ignore
+      // @ts-expect-error Function siginature incorrect
       server.db[dbName] = createConnection(server, database, cryptoSecret);
 
-      // @ts-ignore
       return server.db[dbName];
     },
 

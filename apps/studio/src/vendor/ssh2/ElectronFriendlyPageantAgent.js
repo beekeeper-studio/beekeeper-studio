@@ -1,10 +1,12 @@
 import platformInfo from "@/common/platform_info";
 
 // This file is copyright Brian White [MIT License], except where modified.
+/* eslint-disable */
 const { spawn } = require("child_process");
 const path = require("path");
 const { OpenSSHAgent } = require("ssh2");
 const { Duplex } = require("stream");
+/* eslint-enable */
 
 function readUInt32BE(buf, offset) {
   return (buf[offset++] * 16777216)
@@ -59,7 +61,9 @@ const ElectronFriendlyPageantAgent = (() => {
       this.proc = undefined;
       this.buffer = null;
     }
-    _read(n) { }
+    _read(n) {
+      // empty on purpose
+    }
     _write(data, encoding, cb) {
       if (this.buffer === null) {
         this.buffer = data;

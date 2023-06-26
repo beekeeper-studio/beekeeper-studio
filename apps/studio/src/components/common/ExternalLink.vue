@@ -1,14 +1,18 @@
 <template>
-  <a @click.prevent.stop="click"><slot></slot></a>
+  <a @click.prevent.stop="click"><slot /></a>
 </template>
-<script>
-export default {
+<script lang="ts">
+import Vue from 'vue'
 
-  props: ['href'],
+export default Vue.extend({
+
+  props: {
+    href: String
+  },
   methods: {
     click() {
       this.$native.openLink(this.href)
     }
   }
-}
+})
 </script>

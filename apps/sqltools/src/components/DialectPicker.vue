@@ -1,6 +1,17 @@
 <template>
-  <select name="dialect" v-model="selectedDialect" @change="setDialect" id="dialect-select">
-    <option v-for="d in dialects" :key="d" :value="d">{{d}}</option>
+  <select
+    name="dialect"
+    v-model="selectedDialect"
+    @change="setDialect"
+    id="dialect-select"
+  >
+    <option
+      v-for="d in dialects"
+      :key="d"
+      :value="d"
+    >
+      {{ d }}
+    </option>
   </select>
 </template>
 <script lang="ts">

@@ -21,7 +21,7 @@ export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISave
 
   @BeforeInsert()
   @BeforeUpdate()
-  setDefaultDatabase() {
+  setDefaultDatabase(): void {
     // shouldn't be not null, so need a default
     if (!this.database) {
       this.database = '[blank]'

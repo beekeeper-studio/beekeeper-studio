@@ -2,14 +2,24 @@
   <!-- Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu -->
   <div>
     <portal to="menus">
-      <ul class="vue-simple-context-menu" ref="menu">
-        <li v-for="(option, index) in options" :key="index" @click.stop="optionClicked(option, $event)"
+      <ul
+        class="vue-simple-context-menu"
+        ref="menu"
+      >
+        <li
+          v-for="(option, index) in options"
+          :key="index"
+          @click.stop="optionClicked(option, $event)"
           class="vue-simple-context-menu__item"
-          :class="[option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : '')]">
-          <span v-html="option.name">
-          </span>
-          <div class="expand"></div>
-          <span class="shortcut" v-if="option.shortcut" v-html="option.shortcut"></span>
+          :class="[option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : '')]"
+        >
+          <span v-html="option.name" />
+          <div class="expand" />
+          <span
+            class="shortcut"
+            v-if="option.shortcut"
+            v-html="option.shortcut"
+          />
         </li>
       </ul>
     </portal>
