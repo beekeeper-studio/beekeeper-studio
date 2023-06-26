@@ -4,8 +4,8 @@ const {
   pushTablesToResult,
   queryTable,
   parseDBHintTable,
-  findWord,
   splitSchemaTable,
+  isQuote,
 } = require("@/lib/editor");
 
 // "forked" from CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -58,9 +58,19 @@ const {
     return value
   }
 
-  // function parseTables(input) {
-  //   return parseDBHintTables(input)
-  // }
+  function parseTables(input) {
+    var result = {}
+    if (isArray(input)) {
+      for (var i = input.length - 1; i >= 0; i--) {
+        var item = input[i]
+        result[getText(item).toUpperCase()] = wrapTable(getText(item), item)
+      }
+    } else if (input) {
+      for (var name in input)
+        result[name.toUpperCase()] = wrapTable(name, input[name])
+    }
+    return result
+  }
 
   function getTable(name) {
     return queryTable(dbHint, name)
@@ -123,7 +133,7 @@ const {
   }
 
   async function nameCompletion(cur, token, result, editor) {
-    const [maybeTable, maybeTableStart] = findLastWord(editor, cur)
+    const [lastWord, lastWordStart] = findLastWord(editor, cur)
 
     // Try to complete table, column names and return start position of completion
     var useIdentifierQuotes = false;
@@ -144,12 +154,11 @@ const {
       }
     }
 
-    const search = nameParts.join('.');
-    addSchemaHints(result, search);
+    addTablesBySchema(result, lastWord);
 
     // Try to complete table names
     var string = nameParts.join(".");
-    addMatches(result, string, dbHint.tableWordList, function(w) {
+    addMatches(result, string, dbHint.defaultTableWordList, function(w) {
       return useIdentifierQuotes ? insertIdentifierQuotes(w) : w;
     });
 
@@ -163,10 +172,11 @@ const {
     var table = nameParts.join(".");
     let tableWord;
 
-    // hacky way to correct table name that use quotes
-    if (!(tableWord = getTable(table)) && maybeTable.includes('"')) {
-      table = maybeTable;
-      start = maybeTableStart;
+    // Prevent adding quotes if already have them
+    if (!(tableWord = getTable(table)) && isQuote(table)) {
+      table = lastWord;
+      start = lastWordStart;
+      useIdentifierQuotes = false;
     }
 
     var alias = false;
@@ -267,10 +277,11 @@ const {
     return [word, wordStart]
   }
 
-  function addSchemaHints(result, search) {
+  function addTablesBySchema(result, search) {
     const [schema] = splitSchemaTable(search);
-    if (findWord(dbHint.schemaWordList, schema)) {
-      const tables = findTablesBySchema(dbHint, schema).map((table) => ({
+      const unwrappedSchema = dbHint.dialect.unwrapIdentifier(schema);
+    if (dbHint.schemaWordList[unwrappedSchema]) {
+      const tables = findTablesBySchema(dbHint, unwrappedSchema).map((table) => ({
         ...table,
         text: `${schema}.${table.text}`,
       }));
@@ -304,14 +315,14 @@ const {
       token.string = token.string.slice(0, cur.ch - token.start);
     }
 
-    if (token.string.match(/^[.`"'\w@][\w$#]*$/g) && token.string !== '"') {
+    if (token.string.match(/^[.`"'\w@][\w$#]*$/g) && !isQuote(token.string)) {
       search = token.string;
       start = token.start;
       end = token.end;
-    } else if (token.string === '"') {
+    } else if (isQuote(token.string)) {
       [search, start] = findLastWord(editor, cur)
       end = cur.ch;
-      addSchemaHints(result, search)
+      addTablesBySchema(result, search)
     } else {
       start = end = cur.ch;
       search = "";
@@ -333,7 +344,7 @@ const {
     addMatches(
         result,
         search,
-        dbHint.tableWordList, function(w) {
+        dbHint.defaultTableWordList, function(w) {
           return objectOrClass(w, "CodeMirror-hint-table");
         }
     );

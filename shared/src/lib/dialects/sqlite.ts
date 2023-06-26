@@ -2,7 +2,7 @@ import {
   ColumnType,
   defaultConstraintActions,
   defaultEscapeString,
-  defaultMaybeWrapIdentifier,
+  friendlyNormalizedIdentifier,
   defaultWrapIdentifier,
   defaultWrapLiteral,
   DialectData,
@@ -20,6 +20,7 @@ const supportsLength = [
 
 const defaultLength = (t: string) => t.startsWith('var') ? 255 : 8
 
+const UNWRAPPER = /^(?:`(.*)`|'(.*)'|"(.*)")$/
 
 export const SqliteData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
@@ -27,7 +28,12 @@ export const SqliteData: DialectData = {
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
   wrapIdentifier: defaultWrapIdentifier,
-  maybeWrapIdentifier: defaultMaybeWrapIdentifier,
+  friendlyNormalizedIdentifier: friendlyNormalizedIdentifier,
+  unwrapIdentifier(value: string) {
+    const matched = value.match(UNWRAPPER);
+    if (matched) return matched[1] || matched[2] || matched[3];
+    return value;
+  },
   disabledFeatures: {
     comments: true,
     alter: {

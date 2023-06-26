@@ -2,7 +2,6 @@ import {
   makeDBHint,
   queryTable,
   findTablesBySchema,
-  findWord,
   splitSchemaTable,
   findTableOrViewByWord,
 } from "../../../src/lib/editor";
@@ -15,6 +14,7 @@ import {
 import { PostgresData } from "../../../../../shared/src/lib/dialects/postgresql";
 import { SqliteData } from "../../../../../shared/src/lib/dialects/sqlite";
 import { SqlServerData } from "../../../../../shared/src/lib/dialects/sqlserver";
+import { MysqlData } from "../../../../../shared/src/lib/dialects/mysql";
 
 describe("lib/editor", () => {
   describe("makeDBHint (DB with schemas)", () => {
@@ -29,7 +29,7 @@ describe("lib/editor", () => {
 
     it("should return empty array of tables or schemas", () => {
       expect(makeDBHint([], dialectData, defaultSchema)).toMatchObject({
-        tableWordList: {},
+        defaultTableWordList: {},
         tableWords: [],
         schemaWordList: {
           public: { name: "public" },
@@ -38,7 +38,7 @@ describe("lib/editor", () => {
       expect(
         makeDBHint([{ name: "my_table" }], dialectData, defaultSchema)
       ).toMatchObject({
-        tableWordList: {
+        defaultTableWordList: {
           my_table: {
             name: "my_table",
             schema: "public",
@@ -60,7 +60,7 @@ describe("lib/editor", () => {
       expect(
         makeDBHint([{ name: "my_table" }], SqlServerData, "dbo")
       ).toMatchObject({
-        tableWordList: {
+        defaultTableWordList: {
           my_table: {
             name: "my_table",
             schema: "dbo",
@@ -90,15 +90,15 @@ describe("lib/editor", () => {
     });
 
     it("should return empty array of tables and schemas", () => {
-      expect(makeDBHint([], dialectData, defaultSchema)).toEqual({
-        tableWordList: {},
+      expect(makeDBHint([], dialectData, defaultSchema)).toMatchObject({
+        defaultTableWordList: {},
         tableWords: [],
         schemaWordList: {},
       });
       expect(
         makeDBHint([{ name: "my_table" }], dialectData, defaultSchema)
       ).toMatchObject({
-        tableWordList: {
+        defaultTableWordList: {
           my_table: { name: "my_table", schema: undefined },
         },
         tableWords: [{ name: "my_table", schema: undefined }],
@@ -147,22 +147,16 @@ describe("lib/editor", () => {
         name: "my_table",
         schema: "public",
       });
-      expect(queryTable(dbHint, "public.my_table")).toMatchObject({
-        name: "my_table",
-        schema: "public",
-      });
-      expect(queryTable(dbHint, "_timescaledb_cache.my_table")).toMatchObject({
-        name: "my_table",
-        schema: "_timescaledb_cache",
-      });
-    });
-
-    it("should query a table with special characters", () => {
       expect(queryTable(dbHint, '"special+table"')).toMatchObject({
         name: "special+table",
-        text: '"special+table"',
         schema: "public",
       });
+      expect(queryTable(dbHint, '_timescaledb_cache.my_table')).toMatchObject(
+        {
+          name: "my_table",
+          schema: "_timescaledb_cache",
+        }
+      );
       expect(queryTable(dbHint, 'public."special+table"')).toMatchObject({
         name: "special+table",
         text: '"special+table"',
@@ -182,13 +176,35 @@ describe("lib/editor", () => {
         schema: "public",
       });
     });
-  });
 
-  describe("findWord", () => {
-    it("should find a word object in a wordList by the key", () => {
-      expect(findWord(dbHint.tableWordList, "my_table")).toMatchObject({
-        name: "my_table",
-      });
+    it("should query a table with quotations", () => {
+      const sqlite = dbHintWithoutSchema;
+      const postgres = dbHint;
+      const sqlserver = makeDBHint(
+        [{ name: "my_table" }],
+        SqlServerData,
+        "dbo"
+      );
+      const mysql = makeDBHint([{ name: "my_table" }], MysqlData);
+
+      expect(queryTable(sqlite, "`my_table`")).toBeTruthy();
+      expect(queryTable(sqlite, "'my_table'")).toBeTruthy();
+      expect(queryTable(sqlite, '"my_table"')).toBeTruthy();
+
+      expect(queryTable(postgres, "`my_table`")).toBeFalsy();
+      expect(queryTable(postgres, "'my_table'")).toBeFalsy();
+      expect(queryTable(postgres, '"my_table"')).toBeTruthy();
+      expect(queryTable(postgres, '"public"."my_table"')).toBeTruthy();
+      expect(queryTable(postgres, '"public".my_table')).toBeTruthy();
+      expect(queryTable(postgres, 'public."my_table"')).toBeTruthy();
+
+      expect(queryTable(sqlserver, "`my_table`")).toBeFalsy();
+      expect(queryTable(sqlserver, "'my_table'")).toBeFalsy();
+      expect(queryTable(sqlserver, '"my_table"')).toBeTruthy();
+
+      expect(queryTable(mysql, "`my_table`")).toBeTruthy();
+      expect(queryTable(mysql, "'my_table'")).toBeFalsy();
+      expect(queryTable(mysql, '"my_table"')).toBeFalsy();
     });
   });
 

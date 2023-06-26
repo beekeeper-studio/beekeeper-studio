@@ -80,9 +80,10 @@ export interface DialectData {
   columnTypes: ColumnType[],
   constraintActions: string[]
   wrapIdentifier: (s: string) => string
-  maybeWrapIdentifier: (s: string) => string
+  friendlyNormalizedIdentifier: (s: string) => string
   escapeString: (s: string, quote?: boolean) => string
   wrapLiteral: (s: string) => string
+  unwrapIdentifier: (s: string) => string
   disabledFeatures?: {
     informationSchema?: {
       extra?: boolean
@@ -143,8 +144,8 @@ export function defaultWrapIdentifier(value: string): string {
 
 const mayebWrapIdentifierRegex = /(?:[^a-z0-9_]|^\d)/;
 
-export function defaultMaybeWrapIdentifier(value: string): string {
-  return mayebWrapIdentifierRegex.test(value) ? `"${value}"` : value;
+export function friendlyNormalizedIdentifier(value: string, quote: '`' | "'" | '"' = '"'): string {
+  return mayebWrapIdentifierRegex.test(value) ? `${quote}${value}${quote}` : value;
 }
 
 export interface SchemaConfig {

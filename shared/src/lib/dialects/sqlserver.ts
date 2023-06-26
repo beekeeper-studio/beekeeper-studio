@@ -3,7 +3,7 @@ import {
   ColumnType,
   defaultConstraintActions,
   defaultEscapeString,
-  defaultMaybeWrapIdentifier,
+  friendlyNormalizedIdentifier,
   defaultWrapLiteral,
   DialectData,
   SpecialTypes,
@@ -27,13 +27,19 @@ export interface DefaultConstraint {
   table: string
 }
 
+const UNWRAPPER = /^"(.*)"$/
+
 export const SqlServerData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions],
   wrapIdentifier: (value) =>   _.isString(value) ?
     (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*') : value,
-  maybeWrapIdentifier: defaultMaybeWrapIdentifier,
+  friendlyNormalizedIdentifier: (s) => friendlyNormalizedIdentifier(s, '"'),
   wrapLiteral: defaultWrapLiteral,
+  unwrapIdentifier(value: string) {
+    const matched = value.match(UNWRAPPER);
+    return matched ? matched[1] : value;
+  },
   escapeString: defaultEscapeString,
   disabledFeatures: {
     alter: {

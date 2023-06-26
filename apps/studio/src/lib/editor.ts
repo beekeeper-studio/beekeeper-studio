@@ -14,38 +14,36 @@ interface Word {
 type WordList = Record<string, Word>;
 
 export interface DBHint {
+  defaultSchema?: string;
   /**
-   * A list of all tables in key-value form, where the key is the table name.
+   * A list of tables in key-value form for fast queries, where the key
+   * is the table name. If the database supports schemas, all tables are from
+   * the default schema.
    **/
-  tableWordList: WordList;
-  /**
-   * A list of all tables in array form.
-   */
+  defaultTableWordList: WordList;
+  /** list of all tables in array form. */
   tableWords: Word[];
   schemaWordList: WordList;
-}
-
-export function findWord(wordList: WordList, word: string) {
-  return wordList[word];
+  dialect: DialectData;
 }
 
 export function makeDBHint(
   tables: TableOrView[],
-  dialectData: DialectData,
+  dialect: DialectData,
   defaultSchema?: string | null
 ): DBHint {
   const schemaSet = new Set<string>();
   if (defaultSchema) schemaSet.add(defaultSchema);
-  if(defaultSchema === null) defaultSchema = undefined;
+  if (defaultSchema === null) defaultSchema = undefined;
 
   const tableWords: Word[] = [];
 
-  const tableWordList = tables.reduce((acc, table) => {
+  const defaultTableWordList = tables.reduce((acc, table) => {
     if (table.schema) schemaSet.add(table.schema);
 
     const word = {
       name: table.name,
-      text: dialectData.maybeWrapIdentifier(table.name),
+      text: dialect.friendlyNormalizedIdentifier(table.name),
       type: "table" as const,
       schema: table.schema || defaultSchema,
     };
@@ -53,8 +51,7 @@ export function makeDBHint(
     tableWords.push(word);
 
     const key = table.name;
-    const registeredWord = acc[key];
-    if (registeredWord && registeredWord.schema === defaultSchema) return acc;
+    if (table.schema && table.schema !== defaultSchema) return acc;
 
     return { ...acc, [key]: word };
   }, {});
@@ -74,19 +71,42 @@ export function makeDBHint(
   return {
     tableWords,
     schemaWordList,
-    tableWordList,
+    defaultTableWordList,
+    defaultSchema,
+    dialect,
   };
 }
 
-const captureTableNameRegex = /"(.*)"/;
+const quot = "'\"`";
+
+const SCHEMA_TABLE = new RegExp(
+  "(?:(?<schema>[quot]?.+?[quot]?)\\.(?<table1>[quot]?.+[quot]?)|(?<table2>[quot]?.+[quot]?))".replaceAll(
+    "quot",
+    quot
+  )
+);
 
 export function queryTable(dbHint: DBHint, query: string) {
-  const tableNameQuery = captureTableNameRegex.exec(query)?.[1] || query;
-  const table = findWord(dbHint.tableWordList, tableNameQuery);
-  if (table) return table;
+  const schemaTable = SCHEMA_TABLE.exec(query);
+  if (!schemaTable) return undefined;
+
+  const schema = schemaTable.groups?.schema || dbHint.defaultSchema;
+  const table = schemaTable.groups?.table1 || schemaTable.groups?.table2;
+
+  if (!table) return undefined;
+
+  const unwrappedTable = dbHint.dialect.unwrapIdentifier(table);
+  const unwrappedSchema = schema ? dbHint.dialect.unwrapIdentifier(schema) : undefined;
+
+  if (
+    dbHint.defaultTableWordList[unwrappedTable] &&
+    dbHint.defaultTableWordList[unwrappedTable].schema === unwrappedSchema
+  ) {
+    return dbHint.defaultTableWordList[unwrappedTable];
+  }
+
   return dbHint.tableWords.find(
-    (table) =>
-      `${table.schema}.${table.name}` === query || table.name === tableNameQuery
+    (table) => table.schema === schema && table.name === unwrappedTable
   );
 }
 
@@ -104,4 +124,8 @@ export function findTableOrViewByWord(tableOrViews: TableOrView[], word: Word) {
 export function splitSchemaTable(str: string) {
   const [schema, ...table] = str.split(".");
   return [schema, table.join(".")];
+}
+
+export function isQuote(str: string) {
+  return str === "'" || str === '"' || str === "`";
 }

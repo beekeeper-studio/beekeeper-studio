@@ -1,7 +1,7 @@
 import {
   ColumnType,
   defaultEscapeString,
-  defaultMaybeWrapIdentifier,
+  friendlyNormalizedIdentifier,
   defaultWrapLiteral,
   DialectData,
   SpecialTypes,
@@ -25,9 +25,10 @@ export const RedshiftData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [],
   wrapIdentifier: (id: string) => `"${id.replaceAll(/"/g, '""')}"`,
-  maybeWrapIdentifier: defaultMaybeWrapIdentifier,
+  friendlyNormalizedIdentifier: friendlyNormalizedIdentifier,
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
+  unwrapIdentifier: (s) => s,
   disabledFeatures: {
     alter: {
       multiStatement: true

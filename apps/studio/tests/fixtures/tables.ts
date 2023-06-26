@@ -1,3 +1,5 @@
+import { PostgresData } from "../../../../shared/src/lib/dialects/postgresql";
+import { SqliteData } from "../../../../shared/src/lib/dialects/sqlite";
 import { TableOrView } from "../../src/lib/db/models";
 import { DBHint } from "../../src/lib/editor";
 
@@ -53,7 +55,8 @@ export const tableOrViews: TableOrView[] = [
 ];
 
 export const dbHint: DBHint = {
-  tableWordList: {
+  defaultSchema: "public",
+  defaultTableWordList: {
     my_table: {
       name: "my_table",
       text: "my_table",
@@ -65,12 +68,6 @@ export const dbHint: DBHint = {
       text: '"special+table"',
       type: "table",
       schema: "public",
-    },
-    cache_inval_bgw_job: {
-      name: "cache_inval_bgw_job",
-      text: "cache_inval_bgw_job",
-      type: "table",
-      schema: "_timescaledb_cache",
     },
     CASE_SENSITIVE_table: {
       name: "CASE_SENSITIVE_table",
@@ -131,6 +128,7 @@ export const dbHint: DBHint = {
       type: "schema",
     },
   },
+  dialect: PostgresData,
 };
 
 export const tableOrViewsWithoutSchema: TableOrView[] = [
@@ -144,7 +142,7 @@ export const tableOrViewsWithoutSchema: TableOrView[] = [
 ];
 
 export const dbHintWithoutSchema: DBHint = {
-  tableWordList: {
+  defaultTableWordList: {
     my_table: {
       name: "my_table",
       text: "my_table",
@@ -159,5 +157,5 @@ export const dbHintWithoutSchema: DBHint = {
     },
   ],
   schemaWordList: {},
+  dialect: SqliteData,
 };
-
