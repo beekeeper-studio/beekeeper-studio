@@ -275,7 +275,7 @@
         };
         // Fix Issue #1493 Lost column names in json query download
         // by overriding the tabulator-generated json with ...what cipboard() does, below:
-        formatter = format !== 'json' ? format : (rows, options, setFileContents) => {
+        formatter = format !== 'json' ? formatter : (rows, options, setFileContents) => {
           setFileContents(
             JSON.stringify(this.dataToJson(this.tabulator.getData(), false), null, "  "), 'text/json'
            )
