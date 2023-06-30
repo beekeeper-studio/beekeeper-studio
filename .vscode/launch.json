@@ -1,0 +1,45 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Electron: Main",
+      "type": "node",
+      "request": "launch",
+      "cwd":"${workspaceFolder}/apps/studio",
+      "runtimeExecutable": "${workspaceFolder}/apps/studio/node_modules/.bin/electron",
+      "preLaunchTask": "electron-debug",
+      "args": [
+        "--remote-debugging-port=9223",
+        "./dist_electron",
+        "--enable-logging"
+      ],
+      "sourceMapPathOverrides": {
+        "webpack:///./src/*": "${webRoot}/apps/studio/src/*"
+      },
+      "sourceMaps": true,
+    },
+
+    {
+      "name": "Electron: Renderer",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9223,
+      "urlFilter": "http://localhost:*",
+      "timeout": 50000,
+      "webRoot": "${workspaceFolder}",
+      "sourceMapPathOverrides": {
+        "webpack:///./src/*": "${webRoot}/apps/studio/src/*"
+      },
+      "sourceMaps": true,
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Electron: All",
+      "configurations": [
+        "Electron: Main",
+        "Electron: Renderer"
+      ]
+    }
+  ]
+}

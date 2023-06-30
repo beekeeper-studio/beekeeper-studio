@@ -5,6 +5,7 @@ import postgresql from './postgresql';
 import sqlserver from './sqlserver';
 import sqlite from './sqlite';
 import cassandra from './cassandra';
+import bigquery from './bigquery.js';
 
 
 export function findClient(key: string): Client | undefined {
@@ -124,6 +125,21 @@ export const CLIENTS: ClientConfig[] = [
       'cancelQuery',
     ],
   },
+  {
+    key: 'bigquery',
+    name: 'BigQuery',
+    defaultPort: 443,
+    disabledFeatures: [
+      'server:ssl',
+      'server:socketPath',
+      'server:user',
+      'server:password',
+      'server:schema',
+      'server:domain',
+      'server:ssh',
+      'scriptCreateTable',
+    ],
+  },
 ];
 
 
@@ -135,5 +151,6 @@ export default {
   cassandra,
   redshift: postgresql,
   mariadb: mysql,
-  cockroachdb: postgresql
+  cockroachdb: postgresql,
+  bigquery,
 };

@@ -36,7 +36,8 @@ export default {
       sslRejectUnauthorized: config.sslRejectUnauthorized,
       trustServerCertificate: config.trustServerCertificate,
       options: config.options,
-      redshiftOptions: config.redshiftOptions
+      redshiftOptions: config.redshiftOptions,
+      bigQueryOptions: config.bigQueryOptions,
     }
   },
 
