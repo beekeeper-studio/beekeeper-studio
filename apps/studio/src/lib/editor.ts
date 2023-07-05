@@ -2,14 +2,26 @@ import type { TableOrView } from "@/lib/db/models";
 import { DialectData } from "@shared/lib/dialects/models";
 
 interface Word {
+  /**
+   * The completion text for codemirror. This is wrapped with quotations if
+   * needed, e.g. '"special+table"'.
+   **/
   text: string;
+  /**
+   * The name of the corresponding type. This is not wrapped with quotations.
+   **/
   name: string;
   type: "schema" | "table" | "column";
+  /**
+   * The name of the corresponding schema of the table without quotations (if
+   * the database supports schemas).
+   **/
   schema?: string;
 }
 
 /**
- * A list of all words in key-value form, where the key is the word that's case sensitive.
+ * A list of all words in key-value form, where the key is the word that's
+ * case sensitive.
  */
 type WordList = Record<string, Word>;
 
@@ -61,7 +73,7 @@ export function makeDBHint(
       ...acc,
       [name]: {
         name,
-        text: name,
+        text: dialect.friendlyNormalizedIdentifier(name),
         type: "schema",
       },
     }),
@@ -77,12 +89,10 @@ export function makeDBHint(
   };
 }
 
-const quot = "'\"`";
-
 const SCHEMA_TABLE = new RegExp(
-  "(?:(?<schema>[quot]?.+?[quot]?)\\.(?<table1>[quot]?.+[quot]?)|(?<table2>[quot]?.+[quot]?))".replaceAll(
-    "quot",
-    quot
+  "(?:(?<schema>[quote]?.+?[quote]?)\\.(?<table1>[quote]?.+[quote]?)|(?<table2>[quote]?.+[quote]?))".replaceAll(
+    "quote",
+    "'\"`"
   )
 );
 
@@ -96,7 +106,9 @@ export function queryTable(dbHint: DBHint, query: string) {
   if (!table) return undefined;
 
   const unwrappedTable = dbHint.dialect.unwrapIdentifier(table);
-  const unwrappedSchema = schema ? dbHint.dialect.unwrapIdentifier(schema) : undefined;
+  const unwrappedSchema = schema
+    ? dbHint.dialect.unwrapIdentifier(schema)
+    : undefined;
 
   if (
     dbHint.defaultTableWordList[unwrappedTable] &&
@@ -106,7 +118,7 @@ export function queryTable(dbHint: DBHint, query: string) {
   }
 
   return dbHint.tableWords.find(
-    (table) => table.schema === schema && table.name === unwrappedTable
+    (table) => table.schema === unwrappedSchema && table.name === unwrappedTable
   );
 }
 
@@ -121,6 +133,23 @@ export function findTableOrViewByWord(tableOrViews: TableOrView[], word: Word) {
   );
 }
 
+export interface Editor {
+  display: { view: { [line: number]: { line: { text: string } } } };
+}
+
+export interface Cursor {
+  line: number;
+  ch: number;
+}
+
+export function getTextNearCursor(editor: Editor, cursor: Cursor) {
+  const fullText = editor.display.view[cursor.line].line.text;
+  const textBeforeCursor = fullText.substring(0, cursor.ch);
+  const text = splitWords(textBeforeCursor).pop();
+  const startAt = textBeforeCursor.length - text.length;
+  return { text, startAt };
+}
+
 export function splitSchemaTable(str: string) {
   const [schema, ...table] = str.split(".");
   return [schema, table.join(".")];
@@ -128,4 +157,10 @@ export function splitSchemaTable(str: string) {
 
 export function isQuote(str: string) {
   return str === "'" || str === '"' || str === "`";
+}
+
+const WORD_SPLITTER = /`[^`]*`[^\s]*|'[^']*'[^\s]*|"[^"]*"[^\s]*|[^\s]+/g;
+
+export function splitWords(text: string) {
+  return text.match(WORD_SPLITTER);
 }

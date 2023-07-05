@@ -52,6 +52,14 @@ export const tableOrViews: TableOrView[] = [
     entityType: "table",
     columns: [],
   },
+  {
+    schema: "schema with spaces",
+    name: "testtable",
+    tabletype: "r",
+    parenttype: null,
+    entityType: "table",
+    columns: [],
+  },
 ];
 
 export const dbHint: DBHint = {
@@ -119,12 +127,23 @@ export const dbHint: DBHint = {
       type: "table",
       schema: "_timescaledb_cache",
     },
+    {
+      name: "testtable",
+      text: "testtable",
+      type: "table",
+      schema: "schema with spaces",
+    },
   ],
   schemaWordList: {
     public: { name: "public", text: "public", type: "schema" },
     _timescaledb_cache: {
       name: "_timescaledb_cache",
       text: "_timescaledb_cache",
+      type: "schema",
+    },
+    "schema with spaces": {
+      name: "schema with spaces",
+      text: '"schema with spaces"',
       type: "schema",
     },
   },

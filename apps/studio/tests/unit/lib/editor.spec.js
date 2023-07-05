@@ -4,6 +4,8 @@ import {
   findTablesBySchema,
   splitSchemaTable,
   findTableOrViewByWord,
+  getTextNearCursor,
+  splitWords,
 } from "../../../src/lib/editor";
 import {
   dbHint,
@@ -109,8 +111,7 @@ describe("lib/editor", () => {
 
   describe("findTablesBySchema", () => {
     it("should find tables by schema", () => {
-      const tables = findTablesBySchema(dbHint, "_timescaledb_cache");
-      expect(tables).toMatchObject([
+      expect(findTablesBySchema(dbHint, "_timescaledb_cache")).toMatchObject([
         {
           name: "my_table",
           schema: "_timescaledb_cache",
@@ -118,6 +119,12 @@ describe("lib/editor", () => {
         {
           name: "cache_inval_bgw_job",
           schema: "_timescaledb_cache",
+        },
+      ]);
+      expect(findTablesBySchema(dbHint, "schema with spaces")).toMatchObject([
+        {
+          name: "testtable",
+          schema: "schema with spaces",
         },
       ]);
     });
@@ -151,16 +158,20 @@ describe("lib/editor", () => {
         name: "special+table",
         schema: "public",
       });
-      expect(queryTable(dbHint, '_timescaledb_cache.my_table')).toMatchObject(
-        {
-          name: "my_table",
-          schema: "_timescaledb_cache",
-        }
-      );
+      expect(queryTable(dbHint, "_timescaledb_cache.my_table")).toMatchObject({
+        name: "my_table",
+        schema: "_timescaledb_cache",
+      });
       expect(queryTable(dbHint, 'public."special+table"')).toMatchObject({
         name: "special+table",
         text: '"special+table"',
         schema: "public",
+      });
+      expect(
+        queryTable(dbHint, '"schema with spaces".testtable')
+      ).toMatchObject({
+        name: "testtable",
+        schema: "schema with spaces",
       });
     });
 
@@ -216,12 +227,54 @@ describe("lib/editor", () => {
         "public.'my_table'": ["public", "'my_table'"],
         'public."my.table"': ["public", '"my.table"'],
         '"public"."my.table"': ['"public"', '"my.table"'],
+        '"my schema".my_table': ['"my schema"', "my_table"],
       };
       Object.keys(schemaTables).forEach((schemaTable) => {
         expect(splitSchemaTable(schemaTable)).toEqual(
           schemaTables[schemaTable]
         );
       });
+    });
+  });
+
+  describe("getTextNearCursor", () => {
+    /** Mock editor and cursor of codemirror. `|` is represented as the cursor position. */
+    function editorOf(text) {
+      return {
+        editor: {
+          display: { view: [{ line: { text: text.replace(/\|/g, "") } }] },
+        },
+        cursor: { line: 0, ch: text.indexOf("|") },
+      };
+    }
+
+    it("should capture a text near the cursor", () => {
+      const e1 = editorOf("SELECT * FROM public.|");
+      expect(getTextNearCursor(e1.editor, e1.cursor)).toEqual({
+        text: "public.",
+        startAt: 14,
+      });
+
+      const e2 = editorOf("SELECT `any alias`| FROM testtable as");
+      expect(getTextNearCursor(e2.editor, e2.cursor)).toEqual({
+        text: "`any alias`",
+        startAt: 7,
+      });
+    });
+  });
+
+  describe("separateWords", () => {
+    it("should separate a text into words", () => {
+      expect(splitWords("FROM public.table")).toEqual([
+        "FROM",
+        "public.table",
+      ]);
+      expect(splitWords("FROM `my table` AS t")).toEqual([
+        "FROM",
+        "`my table`",
+        "AS",
+        "t",
+      ]);
     });
   });
 });

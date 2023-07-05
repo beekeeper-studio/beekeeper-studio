@@ -6,6 +6,8 @@ const {
   parseDBHintTable,
   splitSchemaTable,
   isQuote,
+  getTextNearCursor,
+  splitWords,
 } = require("@/lib/editor");
 
 // "forked" from CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -132,8 +134,17 @@ const {
     return name;
   }
 
+  function findTablesForMatches(search) {
+    const [schema, table] = splitSchemaTable(search);
+    const unwrappedSchema = dbHint.dialect.unwrapIdentifier(schema);
+    return dbHint.schemaWordList[unwrappedSchema]
+      ? findTablesBySchema(dbHint, unwrappedSchema)
+          .map((table) => `${schema}.${table.text}`)
+      : [];
+  }
+
   async function nameCompletion(cur, token, result, editor) {
-    const [lastWord, lastWordStart] = findLastWord(editor, cur)
+    const textNearCursor = getTextNearCursor(editor, cur)
 
     // Try to complete table, column names and return start position of completion
     var useIdentifierQuotes = false;
@@ -154,7 +165,12 @@ const {
       }
     }
 
-    addTablesBySchema(result, lastWord);
+    addMatches(
+      result,
+      textNearCursor.text,
+      findTablesForMatches(textNearCursor.text),
+      (w) => w
+    );
 
     // Try to complete table names
     var string = nameParts.join(".");
@@ -170,19 +186,23 @@ const {
     // Try to complete columns
     string = nameParts.pop();
     var table = nameParts.join(".");
-    let tableWord;
 
-    // Prevent adding quotes if already have them
-    if (!(tableWord = getTable(table)) && isQuote(table)) {
-      table = lastWord;
-      start = lastWordStart;
-      useIdentifierQuotes = false;
+    let tableWord = getTable(table);
+    if (!tableWord) {
+      // If the table query fails, it could be that CodeMirror didn't get the
+      // token correctly. For example, if the query is `SELECT * FROM
+      // "schema".table` then this will produce `".table` instead of
+      // `"schema".table`. If that happens, we will try to use the return
+      // value from getTextNearCursor() to find the table.
+      table = textNearCursor.text.substring(0, textNearCursor.text.length - 1);
+      start = textNearCursor.startAt;
+      tableWord = getTable(table);
     }
 
     var alias = false;
     var aliasTable = table;
     // Check if table is available. If not, find table by Alias
-    if (!(tableWord = getTable(table))) {
+    if (!tableWord) {
       var oldTable = table;
       tableWord = findTableByAlias(table, editor);
       table = tableWord?.name;
@@ -212,7 +232,8 @@ const {
   }
 
   function eachWord(lineText, f) {
-    var words = lineText.split(/\s+/)
+    var words = splitWords(lineText);
+    // var words = lineText.split(/\s+/)
     for (var i = 0; i < words.length; i++)
       if (words[i]) f(words[i].replace(/[`,;]/g, ''))
   }
@@ -222,8 +243,7 @@ const {
     var fullQuery = doc.getValue();
     var aliasUpperCase = alias.toUpperCase();
     var previousWord = "";
-    var table = "";
-    let tableWord;
+    let table;
     var separator = [];
     var validRange = {
       start: Pos(0, 0),
@@ -252,41 +272,21 @@ const {
 
     if (validRange.start) {
       var query = doc.getRange(validRange.start, validRange.end, false);
-
       for (var i = 0; i < query.length; i++) {
         var lineText = query[i];
         eachWord(lineText, function(word) {
           var wordUpperCase = word.toUpperCase();
-          if (wordUpperCase === aliasUpperCase && (tableWord = getTable(previousWord)))
-            table = previousWord;
+          const tableWord = getTable(previousWord)
+          if (wordUpperCase === aliasUpperCase && tableWord)
+            table = tableWord;
           if (wordUpperCase !== CONS.ALIAS_KEYWORD)
+            // FIXME see this to fix alias spaces in the identifier.
             previousWord = word;
         });
         if (table) break;
       }
     }
-    return tableWord;
-  }
-
-  // hacky way to get the last word before the dot
-  function findLastWord(editor, cur){
-    const lineText = editor.display.view[cur.line].line.text;
-    const lineTextBeforeDot = lineText.substring(0, cur.ch - 1)
-    const wordStart = lineTextBeforeDot.lastIndexOf(" ") + 1
-    const word = lineTextBeforeDot.split(" ").pop()
-    return [word, wordStart]
-  }
-
-  function addTablesBySchema(result, search) {
-    const [schema] = splitSchemaTable(search);
-      const unwrappedSchema = dbHint.dialect.unwrapIdentifier(schema);
-    if (dbHint.schemaWordList[unwrappedSchema]) {
-      const tables = findTablesBySchema(dbHint, unwrappedSchema).map((table) => ({
-        ...table,
-        text: `${schema}.${table.text}`,
-      }));
-      addMatches(result, search, tables, (w) => w);
-    }
+    return table;
   }
 
   CodeMirror.registerHelper("hint", "sql", async function(editor, options) {
@@ -320,9 +320,10 @@ const {
       start = token.start;
       end = token.end;
     } else if (isQuote(token.string)) {
-      [search, start] = findLastWord(editor, cur)
+      const { text: search, startAt: start } = getTextNearCursor(editor, cur)
       end = cur.ch;
-      addTablesBySchema(result, search)
+      const tables = findTablesForMatches(search);
+      addMatches(result, search, tables, (w) => w);
     } else {
       start = end = cur.ch;
       search = "";
