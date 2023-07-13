@@ -89,12 +89,7 @@ export function makeDBHint(
   };
 }
 
-const SCHEMA_TABLE = new RegExp(
-  "(?:(?<schema>[quote]?.+?[quote]?)\\.(?<table1>[quote]?.+[quote]?)|(?<table2>[quote]?.+[quote]?))".replaceAll(
-    "quote",
-    "'\"`"
-  )
-);
+const SCHEMA_TABLE = /(?:(?<schema>(['"`]?).+?\2?)\.(?<table1>(['"`]?).+\4?)|(?<table2>(['"`]?).+\6?))/
 
 export function queryTable(dbHint: DBHint, query: string) {
   const schemaTable = SCHEMA_TABLE.exec(query);
@@ -162,5 +157,5 @@ export function isQuote(str: string) {
 const WORD_SPLITTER = /`[^`]*`[^\s]*|'[^']*'[^\s]*|"[^"]*"[^\s]*|[^\s]+/g;
 
 export function splitWords(text: string) {
-  return text.match(WORD_SPLITTER);
+  return text.match(WORD_SPLITTER) || [];
 }

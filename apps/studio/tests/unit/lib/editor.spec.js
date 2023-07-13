@@ -265,10 +265,7 @@ describe("lib/editor", () => {
 
   describe("separateWords", () => {
     it("should separate a text into words", () => {
-      expect(splitWords("FROM public.table")).toEqual([
-        "FROM",
-        "public.table",
-      ]);
+      expect(splitWords("FROM public.table")).toEqual(["FROM", "public.table"]);
       expect(splitWords("FROM `my table` AS t")).toEqual([
         "FROM",
         "`my table`",
