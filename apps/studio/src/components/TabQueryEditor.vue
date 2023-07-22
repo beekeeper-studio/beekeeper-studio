@@ -362,7 +362,8 @@
       ...mapState('settings', ['settings']),
       userKeymap: {
         get() {
-          return this.settings?.keymap?.value ?? 'default';
+          const value = this.settings?.keymap?.value;
+          return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
         },
         set(value) {
           if (value === this.keymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
