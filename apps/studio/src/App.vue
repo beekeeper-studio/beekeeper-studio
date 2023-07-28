@@ -12,6 +12,7 @@
         <auto-updater />
         <state-manager />
         <notification-manager />
+        <upgrade-required-modal />
       </template>
     </div>
     <portal-target
@@ -27,6 +28,7 @@
 </template>
 
 <script lang="ts">
+import Vue from 'vue'
 import { ipcRenderer } from 'electron'
 import { mapGetters, mapState } from 'vuex'
 import Titlebar from './components/Titlebar.vue'
@@ -37,14 +39,14 @@ import StateManager from './components/quicksearch/StateManager.vue'
 import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
 import NotificationManager from './components/NotificationManager.vue'
-import Vue from 'vue'
+import UpgradeRequiredModal from './components/common/UpgradeRequiredModal.vue'
 
 
 export default Vue.extend({
   name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
-    StateManager, DataManager
+    StateManager, DataManager, UpgradeRequiredModal
   },
   data() {
     return {

@@ -66,7 +66,7 @@
                     Select a connection type...
                   </option>
                   <option
-                    :key="t.value"
+                    :key="`${t.value}-${t.name}`"
                     v-for="t in connectionTypes"
                     :value="t.value"
                   >

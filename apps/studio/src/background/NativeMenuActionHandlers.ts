@@ -153,4 +153,8 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.disconnect)
   }
 
+  upgradeModal = (menuItem: Electron.MenuItem, win: Electron.BrowserWindow) => {
+    if (win) win.webContents.send(AppEvent.upgradeModal)
+  }
+
 }
