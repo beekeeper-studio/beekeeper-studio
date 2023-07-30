@@ -68,7 +68,7 @@
     "split.js": "^1.5.11",
     "sql-formatter": "^10.0.0",
     "sql-query-identifier": "^2.2.0",
-    "ssh2": "^1.11.0",
+    "ssh2": "^1.14.0",
     "tabulator-tables": "~5.4.1",
     "tinyduration": "^3.2.4",
     "typeface-roboto": "^0.0.75",
