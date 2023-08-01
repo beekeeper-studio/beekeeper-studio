@@ -91,48 +91,42 @@
               @click.prevent="toggleAdvanced"
             >
               <i class="material-icons">{{ toggleIcon }}</i>
-              <div
-                class="advanced-options-toggle flex flex-middle"
-                @click.prevent="toggleAdvanced"
-              >
-                <i class="material-icons">{{ toggleIcon }}</i>
-                <span>Advanced Options</span>
-              </div>
-              <div
-                class="advanced-options"
-                :class="{ open: advancedToggled }"
-              >
-                <component
-                  :is="selectedExportFormat.component"
-                  v-model="outputOptions"
-                />
-                <div class="modal-form export-form export-advanced-options">
-                  <div class="form-group row">
-                    <label title="How many records to read at once from the cursor">Chunk size</label>
+              <span>Advanced Options</span>
+            </div>
+            <div
+              class="advanced-options"
+              :class="{ open: advancedToggled }"
+            >
+              <component
+                :is="selectedExportFormat.component"
+                v-model="outputOptions"
+              />
+              <div class="modal-form export-form export-advanced-options">
+                <div class="form-group row">
+                  <label title="How many records to read at once from the cursor">Chunk size</label>
+                  <input
+                    v-model="options.chunkSize"
+                    type="number"
+                    class="form-control"
+                    ref="paramInput"
+                    min="10"
+                    step="10"
+                  >
+                </div>
+                <div class="form-group row">
+                  <label
+                    for="deleteOnAbort"
+                    class="checkbox-group"
+                  >
                     <input
-                      v-model="options.chunkSize"
-                      type="number"
+                      v-model="options.deleteOnAbort"
+                      id="deleteOnAbort"
+                      type="checkbox"
+                      name="deleteOnAbort"
                       class="form-control"
-                      ref="paramInput"
-                      min="10"
-                      step="10"
                     >
-                  </div>
-                  <div class="form-group row">
-                    <label
-                      for="deleteOnAbort"
-                      class="checkbox-group"
-                    >
-                      <input
-                        v-model="options.deleteOnAbort"
-                        id="deleteOnAbort"
-                        type="checkbox"
-                        name="deleteOnAbort"
-                        class="form-control"
-                      >
-                      <span>Delete file on abort/error</span>
-                    </label>
-                  </div>
+                    <span>Delete file on abort/error</span>
+                  </label>
                 </div>
               </div>
             </div>
