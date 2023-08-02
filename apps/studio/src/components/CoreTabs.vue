@@ -519,6 +519,7 @@ export default Vue.extend({
         this.createQuery(stringResult)  
       } catch (ex) {
         this.$noty.error(`An error occured while loading the SQL for '${table.name}' - ${ex.message}`)
+        throw ex
       }
 
     },

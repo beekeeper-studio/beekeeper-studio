@@ -105,7 +105,7 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
     isCockroach,
     isRedshift,
     number,
-    hasPartitions: (isPostgres && number >= 100000) //for future cochroach support?: || (isCockroach && number >= 200070)
+    hasPartitions: (isPostgres && number >= 100000), //for future cochroach support?: || (isCockroach && number >= 200070)
   }
 }
 
@@ -1401,7 +1401,7 @@ const defaultCreateScript = `
     ELSE 'NULL'
     END AS not_null,
     CASE WHEN a.atthasdef THEN pg_catalog.pg_get_expr(ad.adbin, ad.adrelid) ELSE null END AS def_val,
-    null as identity,
+    null::text as identity,
     n.nspname as schema_name
   FROM pg_class c
   JOIN pg_namespace n ON (n.oid = c.relnamespace)
