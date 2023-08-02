@@ -513,9 +513,14 @@ export default Vue.extend({
         this.$noty.error(`Can't find script for ${table.name} (${table.entityType})`)
         return
       }
-      const result = await method(table.name, table.schema)
-      const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
-      this.createQuery(stringResult)
+      try {
+        const result = await method(table.name, table.schema)
+        const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
+        this.createQuery(stringResult)  
+      } catch (ex) {
+        this.$noty.error(`An error occured while loading the SQL for '${table.name}' - ${ex.message}`)
+      }
+
     },
     dropDatabaseElement({ item: dbActionParams, action: dbAction }) {
       this.dbElement = dbActionParams.name
