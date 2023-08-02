@@ -148,6 +148,11 @@ function testWith(dockerTag, socket = false) {
       ])
     })
 
+    it("Should be able to get a table create script without erroring", async() => {
+      const result = await util.connection.getTableCreateScript("people")
+      expect(result).not.toBeNull()
+    })
+
     it("Should allow me to insert a row with an array", async () => {
       const newRow: TableInsert = {
         table:'witharrays',
