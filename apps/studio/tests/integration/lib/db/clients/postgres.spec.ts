@@ -1,6 +1,5 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { Duration, TemporalUnit } from "node-duration"
 import { runCommonTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/client'
 import { TableInsert } from '../../../../../src/lib/db/models'
@@ -19,7 +18,6 @@ function testWith(dockerTag, socket = false) {
     let container: StartedTestContainer;
     let util: DBTestUtil
 
-
     beforeAll(async () => {
       const timeoutDefault = 10000
       jest.setTimeout(dbtimeout)
@@ -27,24 +25,17 @@ function testWith(dockerTag, socket = false) {
       // container = environment.getContainer("psql_1")
 
       const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'psql-'));
-      container = await new GenericContainer("postgres", dockerTag)
+      container = await new GenericContainer(`postgres:${dockerTag}`)
         .withEnv("POSTGRES_PASSWORD", "example")
         .withEnv("POSTGRES_DB", "banana")
         .withExposedPorts(5432)
-        .withStartupTimeout(new Duration(dbtimeout, TemporalUnit.MILLISECONDS))
         .withBindMount(path.join(temp, "postgresql"), "/var/run/postgresql", "rw")
-        .withHealthCheck({
-          test: "pg_isready",
-          interval: new Duration(2, TemporalUnit.SECONDS),
-          timeout: new Duration(3, TemporalUnit.SECONDS),
-          retries: 10,
-          startPeriod: new Duration(5, TemporalUnit.SECONDS)
-        })
+        .withStartupTimeout(dbtimeout)
         .start()
       jest.setTimeout(timeoutDefault)
       const config: IDbConnectionServerConfig = {
         client: 'postgresql',
-        host: container.getContainerIpAddress(),
+        host: container.getHost(),
         port: container.getMappedPort(5432),
         user: 'postgres',
         password: 'example',
