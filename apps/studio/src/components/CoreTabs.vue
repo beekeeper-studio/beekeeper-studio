@@ -199,6 +199,14 @@ import TabIcon from './tab/TabIcon.vue'
 import { DatabaseEntity } from "@/lib/db/models"
 import PendingChangesButton from './common/PendingChangesButton.vue'
 
+function safeFormat(value, options) {
+  try {
+    return format(value, options)
+  } catch(ex) {
+    return value
+  }
+}
+
 export default Vue.extend({
   props: ['connection'],
   components: {
@@ -367,7 +375,7 @@ export default Vue.extend({
 
       try {
         const sql = await this.connection.duplicateTableSql(tableName, this.duplicateTableName, schema)
-        const formatted = format(sql, { language: FormatterDialect(this.dialect) })
+        const formatted = safeFormat(sql, { language: FormatterDialect(this.dialect) })
 
         const tab = new OpenTab('query')
         tab.unsavedQueryText = formatted
@@ -515,10 +523,11 @@ export default Vue.extend({
       }
       try {
         const result = await method(table.name, table.schema)
-        const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
-        this.createQuery(stringResult)  
+        const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
+        this.createQuery(stringResult)
       } catch (ex) {
         this.$noty.error(`An error occured while loading the SQL for '${table.name}' - ${ex.message}`)
+        throw ex
       }
 
     },
@@ -547,8 +556,8 @@ export default Vue.extend({
     },
     async loadRoutineCreate(routine) {
       const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema)
-      // const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
-      this.createQuery(_.isArray(result) ? result[0] : result);
+      const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
+      this.createQuery(stringResult);
     },
     openTableBuilder() {
       const tab = new OpenTab('table-builder')
