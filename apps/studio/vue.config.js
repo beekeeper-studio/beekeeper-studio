@@ -172,13 +172,6 @@ module.exports = {
       }
     }
   },
-  // chainWebpack: config => {
-  //   config.module.options = {
-  //     plugins: [
-  //       '@babel\\plugin-proposal-class-properties'
-  //     ]
-  //   }
-  // },
   configureWebpack: {
     plugins: [
       new webpack.IgnorePlugin(/pg-native/, /pg/),
