@@ -172,6 +172,13 @@ module.exports = {
       }
     }
   },
+  // chainWebpack: config => {
+  //   config.module.options = {
+  //     plugins: [
+  //       '@babel\\plugin-proposal-class-properties'
+  //     ]
+  //   }
+  // },
   configureWebpack: {
     plugins: [
       new webpack.IgnorePlugin(/pg-native/, /pg/),
@@ -194,7 +201,7 @@ module.exports = {
     //   'strong-oracle': 'strong-oracle',
     //   'oracledb': 'oracledb',
     //   // 'pg': 'pg',
-    //   // 'pg-query-stream': 'pg-query-stream'
+    //   // 'pg-query-stream': 'pg-query-stzream'
     // },
     node: {
       dns: 'mock'

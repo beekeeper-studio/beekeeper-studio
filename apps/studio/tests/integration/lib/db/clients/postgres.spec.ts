@@ -33,6 +33,13 @@ function testWith(dockerTag, socket = false) {
         .withExposedPorts(5432)
         .withStartupTimeout(new Duration(dbtimeout, TemporalUnit.MILLISECONDS))
         .withBindMount(path.join(temp, "postgresql"), "/var/run/postgresql", "rw")
+        .withHealthCheck({
+          test: "pg_isready",
+          interval: new Duration(2, TemporalUnit.SECONDS),
+          timeout: new Duration(3, TemporalUnit.SECONDS),
+          retries: 10,
+          startPeriod: new Duration(5, TemporalUnit.SECONDS)
+        })
         .start()
       jest.setTimeout(timeoutDefault)
       const config: IDbConnectionServerConfig = {
@@ -67,6 +74,18 @@ function testWith(dockerTag, socket = false) {
         table.specificType('names', 'TEXT []')
         table.text("normal")
       })
+
+      await util.knex.raw(
+        `CREATE TYPE this_is_a_mood AS ENUM ('sad', 'ok', 'happy');`
+      )
+
+      await util.knex.raw(`
+        CREATE TABLE
+          public.moody_people (
+            id serial NOT NULL,
+            current_mood this_is_a_mood NULL DEFAULT 'sad'::this_is_a_mood
+          );
+      `)
 
       if (dockerTag == 'latest') {
         await util.knex.raw(`
@@ -149,7 +168,8 @@ function testWith(dockerTag, socket = false) {
     })
 
     it("Should be able to get a table create script without erroring", async() => {
-      const result = await util.connection.getTableCreateScript("people")
+      // checking that create table script with a custom type can be retrieved.
+      const result = await util.connection.getTableCreateScript("moody_people")
       expect(result).not.toBeNull()
     })
 

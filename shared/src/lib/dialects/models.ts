@@ -47,13 +47,15 @@ export function KnexDialect(d: Dialect): KnexDialect {
   if (d === 'oracle') return 'oracledb'
   return d as KnexDialect
 }
-
-export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2'
+// REF: https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md#options
+export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite'
 export function FormatterDialect(d: Dialect): FormatterDialect {
   if (!d) return 'mysql'
   if (d === 'sqlserver') return 'tsql'
-  if (d === 'sqlite') return 'mysql'
+  if (d === 'sqlite') return 'sqlite'
   if (d === 'oracle') return 'plsql'
+  if (d === 'postgresql') return 'postgresql'
+  if (d === 'redshift') return 'redshift'
   return 'mysql' // we want this as the default
 }
 
