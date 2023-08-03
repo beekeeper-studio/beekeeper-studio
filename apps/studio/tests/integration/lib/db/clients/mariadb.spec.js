@@ -21,7 +21,7 @@ describe("MariaDB Tests", () => {
     jest.setTimeout(timeoutDefault)
     const config = {
       client: 'mariadb',
-      host: container.getContainerIpAddress(),
+      host: container.getHost(),
       port: container.getMappedPort(3306),
       user: 'root',
       password: 'test'

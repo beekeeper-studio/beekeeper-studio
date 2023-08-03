@@ -16,7 +16,7 @@ describe("CockroachDB Tests", () => {
     jest.setTimeout(timeoutDefault)
     const config = {
       client: 'cockroachdb',
-      host: container.getContainerIpAddress(),
+      host: container.getHost(),
       port: container.getMappedPort(26257),
       user: 'root',
     }
@@ -37,5 +37,5 @@ describe("CockroachDB Tests", () => {
   describe("Common Tests", () => {
     runCommonTests(() => util)
   })
-  
+
 })

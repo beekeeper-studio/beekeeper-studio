@@ -35,7 +35,7 @@ describe("SQL Server Tests", () => {
     jest.setTimeout(timeoutDefault)
     const config = {
       client: 'sqlserver',
-      host: container.getContainerIpAddress(),
+      host: container.getHost(),
       port: container.getMappedPort(1433),
       user: 'sa',
       password: 'Example*1',

@@ -8,7 +8,7 @@ import data_mutators from '../../../../../src/mixins/data_mutators';
 import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests } from './all'
 
 const TEST_VERSIONS = [
-  {version: '5.7'}, 
+  {version: '5.7'},
   { version: '8', socket: false},
   { version: '8', socket: true }
 ]
@@ -36,7 +36,7 @@ function testWith(tag, socket = false) {
       jest.setTimeout(timeoutDefault)
       const config = {
         client: 'mysql',
-        host: container.getContainerIpAddress(),
+        host: container.getHost(),
         port: container.getMappedPort(3306),
         user: 'root',
         password: 'test'
