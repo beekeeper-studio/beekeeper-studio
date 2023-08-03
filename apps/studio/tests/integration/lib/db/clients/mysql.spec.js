@@ -1,6 +1,5 @@
 import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { Duration, TemporalUnit } from "node-duration"
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
@@ -30,7 +29,7 @@ function testWith(tag, socket = false) {
         .withEnv("MYSQL_ROOT_PASSWORD", "test")
         .withEnv("MYSQL_DATABASE", "test")
         .withExposedPorts(3306)
-        .withStartupTimeout(new Duration(dbtimeout, TemporalUnit.MILLISECONDS))
+        .withStartupTimeout(dbtimeout)
         .withBindMount(temp, '/var/run/mysqld/', 'rw')
         .start()
       jest.setTimeout(timeoutDefault)

@@ -1,7 +1,6 @@
 import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { Duration, TemporalUnit } from "node-duration"
-import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests } from './all'
+import { runCommonTests } from './all'
 
 describe("MariaDB Tests", () => {
 
@@ -16,7 +15,7 @@ describe("MariaDB Tests", () => {
       .withEnv("MYSQL_ROOT_PASSWORD", "test")
       .withEnv("MYSQL_DATABASE", "test")
       .withExposedPorts(3306)
-      .withStartupTimeout(new Duration(dbtimeout, TemporalUnit.MILLISECONDS))
+      .withStartupTimeout(dbtimeout)
       .start()
     jest.setTimeout(timeoutDefault)
     const config = {
