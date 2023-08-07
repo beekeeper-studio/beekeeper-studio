@@ -128,6 +128,7 @@ export interface IDbConnectionServerConfig {
   trustServerCertificate?: boolean
   options?: any
   redshiftOptions?: RedshiftOptions
+  readOnlyMode?: boolean
 }
 
 export interface IDbSshTunnel {
