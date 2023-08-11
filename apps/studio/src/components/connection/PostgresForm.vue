@@ -1,17 +1,24 @@
 <template>
   <div class="with-connection-type">
-    <common-server-inputs :config="config"></common-server-inputs>
-    <div class="form-group" v-if="isCockroach">
+    <common-server-inputs :config="config" />
+    <div
+      class="form-group"
+      v-if="isCockroach"
+    >
       <label for="Cluster ID">
         CockroachDB Cloud Cluster ID
         <i
           class="material-icons"
           v-tooltip="`Go to CockroachDB online -> Connect -> parameters only -> copy from 'options'`"
-          >help_outlined</i>
+        >help_outlined</i>
       </label>
-      <input type="text" class="form-control" v-model="config.options.cluster">
+      <input
+        type="text"
+        class="form-control"
+        v-model="config.options.cluster"
+      >
     </div>
-    <common-advanced :config="config"></common-advanced>
+    <common-advanced :config="config" />
   </div>
 </template>
 

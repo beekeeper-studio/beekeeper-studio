@@ -1,25 +1,42 @@
 <template>
-  <div id="app" class="theme-dark">
-    <app-header/>
-    <router-view :key="$route.fullPath"/>
-    <span class="expand"></span>
+  <div
+    id="app"
+    class="theme-dark"
+  >
+    <app-header />
+    <router-view :key="$route.fullPath" />
+    <span class="expand" />
     <footer>
       <div class="small-wrap flex-col flex-middle">
         <small class="created-by">
           <span>Made by&nbsp;</span>
-          <a href="https://beekeeperstudio.io" target="_blank">Beekeeper Studio</a>
+          <a
+            href="https://beekeeperstudio.io"
+            target="_blank"
+          >Beekeeper Studio</a>
           <span>&nbsp; with ♥ in Dallas, TX</span>
         </small>
       </div>
     </footer>
-    <div class="scripts" v-if="production">
-      <component :is="'script'" src="https://eel.beekeeperstudio.io/script.js" data-spa="auto" data-site="AKZVMGGS" defer></component>
+    <div
+      class="scripts"
+      v-if="production"
+    >
+      <component
+        :is="'script'"
+        src="https://eel.beekeeperstudio.io/script.js"
+        data-spa="auto"
+        data-site="AKZVMGGS"
+        defer
+      />
     </div>
-    <div v-else class="no-analytics">
+    <div
+      v-else
+      class="no-analytics"
+    >
       <!-- No analytics scripts -->
     </div>
   </div>
-
 </template>
 
 <script>
@@ -35,7 +52,7 @@ export default {
       production: process.env.NODE_ENV === 'production'
     }
   },
-  name: 'app',
+  name: 'App',
   components: {
     AppHeader
   }

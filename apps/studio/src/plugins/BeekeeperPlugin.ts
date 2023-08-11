@@ -9,11 +9,13 @@ export interface ContextOption {
   slug: string
   type?: 'divider'
   handler: (...any) => void
+  class?: string
+  shortcut?: string
 }
 
 interface MenuProps {
   options: ContextOption[],
-  elementId: string
+  elementId?: string
   item: any,
   event: Event
 }

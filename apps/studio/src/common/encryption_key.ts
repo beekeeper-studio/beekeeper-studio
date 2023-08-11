@@ -16,7 +16,7 @@ const keyFile = path.join(userDirectory, '.key')
 
 let _encryptionKey: Nullable<string> = null
 
-export function loadEncryptionKey() {
+export function loadEncryptionKey(): string {
   if (_encryptionKey) {
     return _encryptionKey
   }

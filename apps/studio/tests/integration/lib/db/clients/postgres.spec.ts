@@ -1,6 +1,5 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { Duration, TemporalUnit } from "node-duration"
 import { runCommonTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/client'
 import { TableInsert } from '../../../../../src/lib/db/models'
@@ -19,7 +18,6 @@ function testWith(dockerTag, socket = false) {
     let container: StartedTestContainer;
     let util: DBTestUtil
 
-
     beforeAll(async () => {
       const timeoutDefault = 10000
       jest.setTimeout(dbtimeout)
@@ -27,17 +25,17 @@ function testWith(dockerTag, socket = false) {
       // container = environment.getContainer("psql_1")
 
       const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'psql-'));
-      container = await new GenericContainer("postgres", dockerTag)
+      container = await new GenericContainer(`postgres:${dockerTag}`)
         .withEnv("POSTGRES_PASSWORD", "example")
         .withEnv("POSTGRES_DB", "banana")
         .withExposedPorts(5432)
-        .withStartupTimeout(new Duration(dbtimeout, TemporalUnit.MILLISECONDS))
         .withBindMount(path.join(temp, "postgresql"), "/var/run/postgresql", "rw")
+        .withStartupTimeout(dbtimeout)
         .start()
       jest.setTimeout(timeoutDefault)
       const config: IDbConnectionServerConfig = {
         client: 'postgresql',
-        host: container.getContainerIpAddress(),
+        host: container.getHost(),
         port: container.getMappedPort(5432),
         user: 'postgres',
         password: 'example',
@@ -67,6 +65,18 @@ function testWith(dockerTag, socket = false) {
         table.specificType('names', 'TEXT []')
         table.text("normal")
       })
+
+      await util.knex.raw(
+        `CREATE TYPE this_is_a_mood AS ENUM ('sad', 'ok', 'happy');`
+      )
+
+      await util.knex.raw(`
+        CREATE TABLE
+          public.moody_people (
+            id serial NOT NULL,
+            current_mood this_is_a_mood NULL DEFAULT 'sad'::this_is_a_mood
+          );
+      `)
 
       if (dockerTag == 'latest') {
         await util.knex.raw(`
@@ -146,6 +156,12 @@ function testWith(dockerTag, socket = false) {
       expect(result).toMatchObject([
         { id: 1, names: [], normal: 'foo' }
       ])
+    })
+
+    it("Should be able to get a table create script without erroring", async() => {
+      // checking that create table script with a custom type can be retrieved.
+      const result = await util.connection.getTableCreateScript("moody_people")
+      expect(result).not.toBeNull()
     })
 
     it("Should allow me to insert a row with an array", async () => {

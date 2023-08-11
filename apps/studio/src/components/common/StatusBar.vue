@@ -1,6 +1,6 @@
 <template>
   <footer :class="classes">
-    <slot></slot>
+    <slot />
   </footer>
 </template>
 

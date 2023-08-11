@@ -9,6 +9,7 @@ import rawLog from 'electron-log'
 import querystring from 'query-string'
 
 
+// eslint-disable-next-line
 const remoteMain = require('@electron/remote/main')
 
 const log = rawLog.scope('WindowBuilder')
@@ -112,10 +113,10 @@ class BeekeeperWindow {
 
 }
 
-export function getActiveWindows() {
+export function getActiveWindows(): BeekeeperWindow[] {
   return _.filter(windows, 'active')
 }
 
-export function buildWindow(settings: IGroupedUserSettings, options?: OpenOptions) {
+export function buildWindow(settings: IGroupedUserSettings, options?: OpenOptions): void {
   windows.push(new BeekeeperWindow(settings, options))
 }

@@ -42,7 +42,7 @@ const SettingStoreModule: Module<State, any> = {
     async save(context, { key, value }) {
       if (!key || !value) return;
       const setting = context.state.settings[key] || new UserSetting()
-      if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean
+      if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
       setting.value = value
       setting.key = key
       await setting.save()

@@ -1,14 +1,22 @@
 <template>
-<div class="list-item" @contextmenu.prevent.stop="openContextMenu($event, item)">
-  <a class="list-item-btn" :title="truncatedText" @click.prevent="$emit('select', item)" @dblclick.prevent="$emit('open', item)" :class="{active, selected}">
-    <i class="item-icon query material-icons">code</i>
-    <div class="list-title flex-col">
-      <span class="item-text title truncate expand">{{item.title}}</span>
-      <span class="database subtitle"><span>{{subtitle}}</span></span>
-    </div>
-  </a>
-</div>
-
+  <div
+    class="list-item"
+    @contextmenu.prevent.stop="openContextMenu($event, item)"
+  >
+    <a
+      class="list-item-btn"
+      :title="truncatedText"
+      @click.prevent="$emit('select', item)"
+      @dblclick.prevent="$emit('open', item)"
+      :class="{active, selected}"
+    >
+      <i class="item-icon query material-icons">code</i>
+      <div class="list-title flex-col">
+        <span class="item-text title truncate expand">{{ item.title }}</span>
+        <span class="database subtitle"><span>{{ subtitle }}</span></span>
+      </div>
+    </a>
+  </div>
 </template>
 <script lang="ts">
 import _ from 'lodash'

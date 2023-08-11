@@ -11,6 +11,8 @@ jobs:
 
   release:
     runs-on: ${{ matrix.os }}
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
 
     strategy:
       matrix:
@@ -23,6 +25,16 @@ jobs:
         with:
           gpg-private-key: ${{ secrets.gpg_key }}
         if: "startsWith(matrix.os, 'ubuntu')"
+
+      - name: Install dotnet
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
+        if: "startsWith(matrix.os, 'windows')"
+
+      - name: Install azuresigntool
+        run: 'dotnet tool install --global AzureSignTool'
+        if: "startsWith(matrix.os, 'windows')"
 
       - name: Check out Git repository
         uses: actions/checkout@v1
@@ -38,22 +50,41 @@ jobs:
         if: "startsWith(matrix.os, 'ubuntu-20.04')"
 
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version-file: '.nvmrc'
+          cache: yarn
+
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v2
+        if: startsWith(matrix.os, 'ubuntu')
+        with:
+          skip_install: ${{ matrix.os == 'ubuntu-arm64' }}
+
+      # We manage snapcraft ourselves on the arm box
+      # and it could have old credentials
+      # this will force it to use the env
+      # key defined at the top of this file.
+      - name: Snapcraft - logout
+        run: "snapcraft logout"
+        if: startsWith(matrix.os, 'ubuntu-arm64')
+        continue-on-error: true
+
 
       - name: Clean cache
         run: yarn cache clean
 
-      - name: Check dependencies
-        run: "yarn install --frozen-lockfile --network-timeout 100000"
-
-      - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v1
-        if: startsWith(matrix.os, 'ubuntu')
+      # FIXME (matthew) Windows needs retries. It sometimes fails to build
+      # the native oracledb package.
+      # But only sometimes. I cannot figure out why.
+      # Someone should at some point.
+      - name: yarn install (with retry)
+        uses: nick-fields/retry@v2
         with:
-          snapcraft_token: ${{ secrets.snapcraft_token }}
-          skip_install: ${{ matrix.os == 'ubuntu-arm64' }}
+          timeout_minutes: 20
+          max_attempts: 3
+          command: "yarn install --frozen-lockfile --network-timeout 100000"
+
       - name: Remove dist directory
         if: "!startsWith(matrix.os, 'windows')"
         run: rm -rf ./apps/studio/dist_electron
@@ -91,14 +122,14 @@ jobs:
           # If the commit is tagged with a version (e.g. "v1.0.0"),
           # release the app after building
           release: true
-          windows_certs: ${{ secrets.windows_cert }}
-          windows_certs_password: ${{ secrets.windows_cert_password }}
           mac_certs: ${{ secrets.mac_dev }}
           mac_certs_password: ${{ secrets.mac_dev_pw }}
         env:
           API_KEY_ID: ${{ secrets.apple_key_id }}
           API_KEY_ISSUER_ID: ${{ secrets.apple_issuer_id }}
           BT_TOKEN: "${{secrets.bintray_apikey}}"
+          KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
+          KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
 
       - name: Publish DEB to S3
         if: startsWith(matrix.os, 'ubuntu')
