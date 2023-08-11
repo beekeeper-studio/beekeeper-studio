@@ -1,8 +1,23 @@
 <template>
-  <div class="input-group" @click.prevent.stop="openFilePickerDialog" >
-    <input type="text" class="form-control clickable" placeholder="No file selected" :title="value" :value="value" :disabled="disabled" readonly>
+  <div
+    class="input-group"
+    @click.prevent.stop="openFilePickerDialog"
+  >
+    <input
+      type="text"
+      class="form-control clickable"
+      placeholder="No file selected"
+      :title="value"
+      :value="value"
+      :disabled="disabled"
+      readonly
+    >
     <div class="input-group-append">
-      <a type="buttom" class="btn btn-flat" :class="{disabled}">{{buttonText}}</a>
+      <a
+        type="buttom"
+        class="btn btn-flat"
+        :class="{disabled}"
+      >{{ buttonText }}</a>
     </div>
   </div>
 </template>

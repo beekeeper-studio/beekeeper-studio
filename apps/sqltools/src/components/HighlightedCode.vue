@@ -2,19 +2,34 @@
   <div class="highlighted-code">
     <div class="code-wrap">
       <div class="schema-header">
-        <slot></slot>
-        <span class="expand"></span>
-        <div class="actions" v-if="code">
-          <a v-clipboard:copy="formattedCode"
-             v-clipboard:success="onCopySuccess"
-             v-clipboard:error="onCopyError"
-             class="btn btn-icon" :class="copyClass"
-          ><span class="material-icons" :title='copyTitle'>{{copyIcon}}</span>{{copyMessage}}</a>
+        <slot />
+        <span class="expand" />
+        <div
+          class="actions"
+          v-if="code"
+        >
+          <a
+            v-clipboard:copy="formattedCode"
+            v-clipboard:success="onCopySuccess"
+            v-clipboard:error="onCopyError"
+            class="btn btn-icon"
+            :class="copyClass"
+          ><span
+            class="material-icons"
+            :title="copyTitle"
+          >{{ copyIcon }}</span>{{ copyMessage }}</a>
         </div>
       </div>
-      <slot name="alert"></slot>
-      <highlightjs :lang="highlightDialect" :code="formattedCode"  v-if="formattedCode" />
-      <pre class="code-empty" v-else><div class="hljs">(Empty)</div></pre>
+      <slot name="alert" />
+      <highlightjs
+        :lang="highlightDialect"
+        :code="formattedCode"
+        v-if="formattedCode"
+      />
+      <pre
+        class="code-empty"
+        v-else
+      ><div class="hljs">(Empty)</div></pre>
     </div>
   </div>
 </template>

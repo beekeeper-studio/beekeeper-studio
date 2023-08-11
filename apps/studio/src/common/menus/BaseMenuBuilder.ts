@@ -11,11 +11,11 @@ export default class BaseMenuBuilder {
 
   constructor(private settings: IGroupedUserSettings, private actionHandlers: IMenuActionHandler) {}
 
-  buildTemplate() {
+  buildTemplate(): any {
     throw new Error("Must implement buildTemplate for your platform")
   }
 
-  get menuItems() {
+  get menuItems(): any {
     return {
       ...menuItems(this.actionHandlers, this.settings),
     }

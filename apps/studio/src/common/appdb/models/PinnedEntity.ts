@@ -46,16 +46,16 @@ export class PinnedEntity extends ApplicationEntity {
   entityType: 'table' | 'view' | 'routine' | 'materialized-view'
 
   @Column({type: 'boolean', default: false})
-  open: boolean = false
+  open = false
 
   @Column({type: 'float', nullable: false, default: 1})
-  position: number = 99.0
+  position = 99.0
 
   @Column({type: 'integer', nullable: false})
   connectionId
 
   @Column({type: 'integer', nullable: false, default: -1})
-  workspaceId: number = -1
+  workspaceId = -1
 
 
   entity?: DatabaseEntity

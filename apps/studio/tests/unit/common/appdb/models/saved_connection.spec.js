@@ -1,3 +1,4 @@
+// eslint-disable-next-line
 const { SavedConnection } = require("../../../../../src/common/appdb/models/saved_connection")
 
 

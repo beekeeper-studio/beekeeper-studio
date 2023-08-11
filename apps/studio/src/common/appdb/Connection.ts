@@ -32,7 +32,7 @@ export default class Connection {
 
   constructor(private path: string, private logging: LoggerOptions) {}
 
-  async connect() {
+  async connect(): Promise<TypeORMConnection> {
     this.connection = await createConnection({
       database: this.path,
       type: 'better-sqlite3',

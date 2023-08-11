@@ -7,8 +7,12 @@
       :filters="filters"
       @export="startExport"
       @closed="handleDeadModal"
-    ></ExportModal>
-    <ExportNotification v-for="exporter in exports" :key="exporter.id" :exporter="exporter"></ExportNotification>
+    />
+    <ExportNotification
+      v-for="exporter in exports"
+      :key="exporter.id"
+      :exporter="exporter"
+    />
   </div>
 </template>
 <script lang="ts">
@@ -83,7 +87,12 @@ export default Vue.extend({
         )
         this.addExport(exporter)
         exporter.onProgress(this.notifyProgress.bind(this))
-        await exporter.exportToFile()
+        try {
+          await exporter.exportToFile()          
+        } catch (ex) {
+          this.$noty.error(`Error during export of ${options.table.name} - ${ex.message}`)
+
+        }
         if (exporter.status !== ExportStatus.Completed) return;
         const n = this.$noty.success(`Export of ${options.table.name} complete`, {
           buttons: [
@@ -103,6 +112,7 @@ export default Vue.extend({
       this.filters = undefined
     },
     notifyProgress(_progress: ExportProgress) {
+      // TODO: Implement
     }
   },
   mounted() {

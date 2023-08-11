@@ -26,6 +26,7 @@ export enum AppEvent {
   deleteDatabaseElement = 'deleteDatabaseElement',
   dropDatabaseElement = 'dropDatabaseElement',
   duplicateDatabaseTable = 'duplicateDatabaseTable',
+  upgradeModal = 'showUpgradeModal'
 }
 
 export interface RootBinding {

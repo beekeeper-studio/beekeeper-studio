@@ -1,5 +1,5 @@
 <template>
-  <div v-if="false"></div>
+  <div v-if="false" />
 </template>
 <script lang="ts">
 import _ from 'lodash'

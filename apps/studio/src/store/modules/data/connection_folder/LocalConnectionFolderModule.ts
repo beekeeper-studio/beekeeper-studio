@@ -16,12 +16,20 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   },
   mutations: mutationsFor<IConnectionFolder>({}),
   actions: {
-    async load() { },
-    async poll() { },
+    async load() { 
+      // TODO: implement
+    },
+    async poll() { 
+      // TODO: implement
+    },
     async save(_context, item) { return item },
-    async remove() { },
+    async remove() { 
+      // TODO: implement
+    },
     async clone(_c, item) { return item },
     async reload(_c, id) { return { id, name: "Not implemented" } },
-    async clearError() { } 
+    async clearError() { 
+      // TODO: implement
+    } 
   }
 }

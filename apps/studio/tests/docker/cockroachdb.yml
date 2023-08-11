@@ -5,3 +5,4 @@ services:
     ports:
       - 26257
     command: start-single-node --insecure
+    container_name: test_cockroachdb
