@@ -4,6 +4,7 @@
       <p
         v-if="this.connection.connectionType === 'sqlite'"
         class="sqlite-db-name"
+        :title="selectedDatabase"
       >
         {{ selectedDatabase }}
       </p>
@@ -109,6 +110,9 @@
 <style lang="scss" scoped>
   .sqlite-db-name {
     width: 90%;
-    overflow:hidden;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-left: 0.75rem;
   }
 </style>

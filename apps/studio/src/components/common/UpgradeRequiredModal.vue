@@ -6,7 +6,9 @@
       height="auto"
     >
       <div class="dialog-content">
-        <h3 class="dialog-c-title">Upgrade to use this feature</h3>
+        <h3 class="dialog-c-title">
+          Upgrade to use this feature
+        </h3>
         <span class="close-btn btn btn-fab">
           <i
             class="material-icons"
@@ -18,8 +20,14 @@
           The full version of Beekeeper Studio has great features like multi-table exports, backup and restore, Oracle support, Query Magics, and more!
         </p>
         <div class="vue-dialog-buttons">
-          <a href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition" class="btn btn-flat">Learn more</a>
-          <a href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition" class="btn btn-primary">Upgrade</a>
+          <a
+            href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
+            class="btn btn-flat"
+          >Learn more</a>
+          <a
+            href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
+            class="btn btn-primary"
+          >Upgrade</a>
         </div>
       </div>
     </modal>
