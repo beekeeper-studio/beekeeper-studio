@@ -2,12 +2,17 @@ import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler';
 import { IGroupedUserSettings } from '../appdb/models/user_setting';
 import platformInfo from "../platform_info";
 
-interface IMenuItems {
-  [x: string]: Electron.MenuItemConstructorOptions
-}
 
-export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedUserSettings): IMenuItems {
+
+export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedUserSettings) {
   return {
+    upgradeModal: (label: string) => {
+      return {
+        id: `upgrade-${label}`,
+        label: label,
+        click: actionHandler.upgradeModal
+      }
+    },
     quit: {
       id: 'quit',
       label: platformInfo.isMac ? 'Quit' : 'Exit',
@@ -89,7 +94,6 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     devtools: {
       id: 'dev-tools',
       label: "Show Developer Tools",
-      // @ts-ignore
       nonNativeMacOSRole: true,
       click: actionHandler.devtools
     },

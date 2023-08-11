@@ -1,21 +1,36 @@
 <template>
-  <div class="table-info-table" v-hotkey="hotkeys">
+  <div
+    class="table-info-table"
+    v-hotkey="hotkeys"
+  >
     <div class="table-info-table-wrap">
       <div class="center-wrap">
-        <error-alert :error="error" v-if="error"></error-alert>
+        <error-alert
+          :error="error"
+          v-if="error"
+        />
 
         <div class="table-subheader">
           <div class="table-title">
             <h2>Partitions</h2>
           </div>
           <slot />
-          <span class="expand"> </span>
+          <span class="expand" />
           <div class="actions">
-            <a @click.prevent="refreshPartitions" class="btn btn-link btn-fab" v-tooltip="`${ctrlOrCmd('r')} or F5`"><i class="material-icons">refresh</i></a>
-            <a v-if="editable" @click.prevent="addRow" class="btn btn-primary btn-fab" v-tooltip="ctrlOrCmd('n')"><i class="material-icons">add</i></a>
+            <a
+              @click.prevent="refreshPartitions"
+              class="btn btn-link btn-fab"
+              v-tooltip="`${ctrlOrCmd('r')} or F5`"
+            ><i class="material-icons">refresh</i></a>
+            <a
+              v-if="editable"
+              @click.prevent="addRow"
+              class="btn btn-primary btn-fab"
+              v-tooltip="ctrlOrCmd('n')"
+            ><i class="material-icons">add</i></a>
           </div>
         </div>
-        <div ref="tablePartitions"></div>
+        <div ref="tablePartitions" />
       </div>
     </div>
 
@@ -23,23 +38,44 @@
     <status-bar class="tablulator-footer">
       <div class="flex flex-middle statusbar-actions">
         <slot name="footer" />
-        <x-button v-if="hasEdits" class="btn btn-flat reset" @click.prevent="submitUndo">Reset</x-button>
-        <x-buttons v-if="hasEdits" class="pending-changes">
-          <x-button class="btn btn-primary" @click.prevent="submitApply">
-            <i v-if="error" class="material-icons">error</i>
-            <span class="badge" v-if="!error"><small>{{editCount}}</small></span>
+        <x-button
+          v-if="hasEdits"
+          class="btn btn-flat reset"
+          @click.prevent="submitUndo"
+        >
+          Reset
+        </x-button>
+        <x-buttons
+          v-if="hasEdits"
+          class="pending-changes"
+        >
+          <x-button
+            class="btn btn-primary"
+            @click.prevent="submitApply"
+          >
+            <i
+              v-if="error"
+              class="material-icons"
+            >error</i>
+            <span
+              class="badge"
+              v-if="!error"
+            ><small>{{ editCount }}</small></span>
             <span>Apply</span>
           </x-button>
-          <x-button class="btn btn-primary" menu>
+          <x-button
+            class="btn btn-primary"
+            menu
+          >
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
               <x-menuitem @click.prevent="submitApply">
                 <x-label>Apply</x-label>
-                <x-shortcut value="Control+S"></x-shortcut>
+                <x-shortcut value="Control+S" />
               </x-menuitem>
               <x-menuitem @click.prevent="submitSql">
                 <x-label>Copy to SQL</x-label>
-                <x-shortcut value="Control+Shift+S"></x-shortcut>
+                <x-shortcut value="Control+Shift+S" />
               </x-menuitem>
             </x-menu>
           </x-button>

@@ -19,16 +19,16 @@ describe("SSH Tunnel Tests", () => {
       .withWaitStrategy(Wait.forHealthCheck())
       .up()
 
-    container = environment.getContainer('ssh_1')
+    container = environment.getContainer('test_ssh')
 
-    const db = environment.getContainer('postgres_1')
+    const db = environment.getContainer('test_ssh_postgres')
 
 
 
     jest.setTimeout(timeoutDefault)
 
     const quickConfig = {
-      host: db.getContainerIpAddress(),
+      host: db.getHost(),
       port: db.getMappedPort(5432),
       username: 'postgres',
       password: 'example',
@@ -41,7 +41,7 @@ describe("SSH Tunnel Tests", () => {
       username: 'postgres',
       password: 'example',
       sshEnabled: true,
-      sshHost: container.getContainerIpAddress(),
+      sshHost: container.getHost(),
       sshPort: container.getMappedPort(2222),
       sshUsername: 'beekeeper',
       sshPassword: 'password'

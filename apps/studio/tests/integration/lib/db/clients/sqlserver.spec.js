@@ -1,6 +1,5 @@
 import { GenericContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { Duration, TemporalUnit } from "node-duration"
 import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests } from './all'
 
 describe("SQL Server Tests", () => {
@@ -25,18 +24,18 @@ describe("SQL Server Tests", () => {
       .withWaitStrategy(Wait.forHealthCheck())
       .withHealthCheck({
         test: `/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "Example*1" -q "SELECT 1" || exit 1`,
-        interval: new Duration(2, TemporalUnit.SECONDS),
-        timeout: new Duration(3, TemporalUnit.SECONDS),
+        interval: 2000,
+        timeout: 3000,
         retries: 10,
-        startPeriod: new Duration(5, TemporalUnit.SECONDS)
+        startPeriod: 5000,
       })
-      .withStartupTimeout(new Duration(dbtimeout, TemporalUnit.MILLISECONDS))
+      .withStartupTimeout(dbtimeout)
       .start()
 
     jest.setTimeout(timeoutDefault)
     const config = {
       client: 'sqlserver',
-      host: container.getContainerIpAddress(),
+      host: container.getHost(),
       port: container.getMappedPort(1433),
       user: 'sa',
       password: 'Example*1',
