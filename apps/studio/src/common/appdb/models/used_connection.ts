@@ -30,6 +30,8 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.options = other.options
       this.trustServerCertificate = other.trustServerCertificate
       this.redshiftOptions = other.redshiftOptions
+      this.socketPath = other.socketPath
+      this.socketPathEnabled = other.socketPathEnabled
     }
 
   }
