@@ -871,6 +871,8 @@ export default Vue.extend({
           this.$nextTick(() => {
             this.tabulator.redraw(true)
           })
+        } else {
+          this.$nextTick(() => this.tabulator.redraw())
         }
       } else {
         this.tabulator.blockRedraw()
