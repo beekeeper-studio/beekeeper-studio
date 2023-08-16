@@ -66,6 +66,12 @@ export function readJSONFile(filename: string): Promise<any> {
   return readFile(filename).then((data) => JSON.parse(data));
 }
 
+export function readVimrc(): string[] {
+  const data = fs.readFileSync(resolveHomePathToAbsolute(".beekeeper.vimrc"), 'uft-8');
+  const dataSplit = data.split("\n");
+  return dataSplit;
+}
+
 export function readJSONFileSync(filename: string): any {
   const filePath = resolveHomePathToAbsolute(filename);
   const data = fs.readFileSync(path.resolve(filePath), 'utf-8');
