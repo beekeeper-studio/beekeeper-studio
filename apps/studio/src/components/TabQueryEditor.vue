@@ -52,14 +52,14 @@
                 :key="t.value"
                 v-for="t in keymapTypes"
                 @click.prevent="userKeymap = t.value"
-              > 
+              >
                 <x-label class="keymap-label">
                   <span
                     class="material-icons"
                     v-if="t.value === userKeymap"
                   >done</span>
                   {{ t.name }}
-                </x-label> 
+                </x-label>
               </x-menuitem>
             </x-menu>
           </x-button>
@@ -294,6 +294,8 @@
   import 'codemirror/addon/search/matchesonscrollbar'
   import 'codemirror/addon/search/matchesonscrollbar.css'
   import 'codemirror/addon/search/searchcursor'
+
+  import setKeybindingsFromVimrc from "../lib/readVimrc"
 
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
@@ -719,6 +721,12 @@
             keyMap: this.userKeymap,
             getColumns: this.getColumnsForAutocomplete
           } as CodeMirror.EditorConfiguration)
+
+          if (this.userKeymap === "vim") {
+              const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
+              setKeybindingsFromVimrc(codeMirrorVimInstance);
+          }
+
           this.editor.setValue(startingValue)
           this.editor.addKeyMap(runQueryKeyMap)
           this.editor.on("keydown", (_cm, e) => {
