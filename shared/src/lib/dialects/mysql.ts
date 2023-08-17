@@ -3,12 +3,9 @@ import {
   ColumnType,
   defaultConstraintActions,
   defaultEscapeString,
-  friendlyNormalizedIdentifier,
   DialectData,
   SpecialTypes,
 } from "./models";
-
-
 
 const types = [
   ...SpecialTypes,
@@ -29,7 +26,7 @@ export const MysqlData: DialectData = {
   wrapIdentifier(value: string) {
     return (value !== '*' ? `\`${value.replaceAll(/`/g, '``')}\`` : '*');
   },
-  friendlyNormalizedIdentifier: (s) => friendlyNormalizedIdentifier(s, '`', /(?:[^a-zA-Z0-9_$]|^\d)/),
+  friendlyNormalizedIdentifier: (s) => s,
   escapeString: defaultEscapeString,
   wrapLiteral(value: string) {
     return value.replaceAll(';', '')
