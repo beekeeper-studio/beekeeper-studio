@@ -33,7 +33,10 @@ export interface DBHint {
    * the default schema.
    **/
   defaultTableWordList: WordList;
-  /** list of all tables in array form. */
+  /**
+   * List of all tables in array form. This is helpful for querying tables by
+   * the schema.
+   **/
   tableWords: Word[];
   schemaWordList: WordList;
   dialect: DialectData;
@@ -50,22 +53,44 @@ export function makeDBHint(
 
   const tableWords: Word[] = [];
 
-  const defaultTableWordList = tables.reduce((acc, table) => {
+  const defaultTableWordList: WordList = tables.reduce((acc, table) => {
     if (table.schema) schemaSet.add(table.schema);
 
-    const word = {
-      name: table.name,
-      text: dialect.friendlyNormalizedIdentifier(table.name),
+    const name = table.name;
+    const normalizedName = dialect.friendlyNormalizedIdentifier(name);
+    const schema = table.schema || defaultSchema;
+
+    const normalizedWord: Word = {
+      name,
+      text: normalizedName,
       type: "table" as const,
-      schema: table.schema || defaultSchema,
+      schema,
     };
 
-    tableWords.push(word);
+    tableWords.push(normalizedWord);
 
-    const key = table.name;
+    let unnormalizedWord: Word | undefined;
+
+    if (normalizedName !== name) {
+      unnormalizedWord = {
+        name,
+        text: name,
+        type: "table" as const,
+        schema,
+      };
+      tableWords.push(unnormalizedWord);
+    }
+
+    // Make sure to not include the tables outside the default schema to appear
+    // in the autocomplete right away. But we still need it in tableWords so it
+    // can be queried.
     if (table.schema && table.schema !== defaultSchema) return acc;
 
-    return { ...acc, [key]: word };
+    return {
+      ...acc,
+      [normalizedName]: normalizedWord,
+      ...(normalizedName !== name && { [name]: unnormalizedWord }),
+    };
   }, {});
 
   const schemaWordList = Array.from(schemaSet).reduce(
@@ -89,7 +114,8 @@ export function makeDBHint(
   };
 }
 
-const SCHEMA_TABLE = /(?:(?<schema>(['"`]?).+?\2?)\.(?<table1>(['"`]?).+\4?)|(?<table2>(['"`]?).+\6?))/
+const SCHEMA_TABLE =
+  /(?:(?<schema>(['"`]?).+?\2?)\.(?<table1>(['"`]?).+\4?)|(?<table2>(['"`]?).+\6?))/;
 
 export function queryTable(dbHint: DBHint, query: string) {
   const schemaTable = SCHEMA_TABLE.exec(query);

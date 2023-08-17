@@ -146,8 +146,9 @@ export function defaultWrapIdentifier(value: string): string {
 
 const mayebWrapIdentifierRegex = /(?:[^a-z0-9_]|^\d)/;
 
-export function friendlyNormalizedIdentifier(value: string, quote: '`' | "'" | '"' = '"'): string {
-  return mayebWrapIdentifierRegex.test(value) ? `${quote}${value}${quote}` : value;
+export function friendlyNormalizedIdentifier(value: string, quote: '`' | "'" | '"' = '"', tester?: RegExp): string {
+  const regex = tester || mayebWrapIdentifierRegex
+  return regex.test(value) ? `${quote}${value}${quote}` : value;
 }
 
 export interface SchemaConfig {

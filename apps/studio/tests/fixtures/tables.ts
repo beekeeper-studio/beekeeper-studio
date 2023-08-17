@@ -29,14 +29,6 @@ export const tableOrViews: TableOrView[] = [
     columns: [],
   },
   {
-    schema: "public",
-    name: "CASE_sensitive_table",
-    tabletype: "r",
-    parenttype: null,
-    entityType: "table",
-    columns: [],
-  },
-  {
     schema: "_timescaledb_cache",
     name: "my_table",
     tabletype: "r",
@@ -71,21 +63,27 @@ export const dbHint: DBHint = {
       type: "table",
       schema: "public",
     },
-    "special+table": {
+    '"special+table"': {
       name: "special+table",
       text: '"special+table"',
       type: "table",
       schema: "public",
     },
-    CASE_SENSITIVE_table: {
+    "special+table": {
+      name: "special+table",
+      text: "special+table",
+      type: "table",
+      schema: "public",
+    },
+    '"CASE_SENSITIVE_table"': {
       name: "CASE_SENSITIVE_table",
       text: '"CASE_SENSITIVE_table"',
       type: "table",
       schema: "public",
     },
-    CASE_sensitive_table: {
-      name: "CASE_sensitive_table",
-      text: '"CASE_sensitive_table"',
+    CASE_SENSITIVE_table: {
+      name: "CASE_SENSITIVE_table",
+      text: "CASE_SENSITIVE_table",
       type: "table",
       schema: "public",
     },
@@ -104,14 +102,20 @@ export const dbHint: DBHint = {
       schema: "public",
     },
     {
+      name: "special+table",
+      text: "special+table",
+      type: "table",
+      schema: "public",
+    },
+    {
       name: "CASE_SENSITIVE_table",
       text: '"CASE_SENSITIVE_table"',
       type: "table",
       schema: "public",
     },
     {
-      name: "CASE_sensitive_table",
-      text: '"CASE_sensitive_table"',
+      name: "CASE_SENSITIVE_table",
+      text: "CASE_SENSITIVE_table",
       type: "table",
       schema: "public",
     },
@@ -158,6 +162,13 @@ export const tableOrViewsWithoutSchema: TableOrView[] = [
     entityType: "table",
     columns: [],
   },
+  {
+    name: "UppercasedTable",
+    tabletype: "r",
+    parenttype: null,
+    entityType: "table",
+    columns: [],
+  },
 ];
 
 export const dbHintWithoutSchema: DBHint = {
@@ -167,11 +178,21 @@ export const dbHintWithoutSchema: DBHint = {
       text: "my_table",
       type: "table",
     },
+    UppercasedTable: {
+      name: "UppercasedTable",
+      text: "UppercasedTable",
+      type: "table",
+    },
   },
   tableWords: [
     {
       name: "my_table",
       text: "my_table",
+      type: "table",
+    },
+    {
+      name: "UppercasedTable",
+      text: "UppercasedTable",
       type: "table",
     },
   ],

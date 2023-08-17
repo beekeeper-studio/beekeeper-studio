@@ -87,8 +87,14 @@ describe("lib/editor", () => {
 
     it("should make arrays of tables and schemas", () => {
       expect(
-        makeDBHint(tableOrViewsWithoutSchema, dialectData, defaultSchema)
+        makeDBHint(tableOrViewsWithoutSchema, SqliteData, defaultSchema)
       ).toEqual(dbHintWithoutSchema);
+      expect(
+        makeDBHint(tableOrViewsWithoutSchema, MysqlData, defaultSchema)
+      ).toEqual({
+        ...dbHintWithoutSchema,
+        dialect: MysqlData,
+      });
     });
 
     it("should return empty array of tables and schemas", () => {
@@ -164,7 +170,7 @@ describe("lib/editor", () => {
       });
       expect(queryTable(dbHint, 'public."special+table"')).toMatchObject({
         name: "special+table",
-        text: '"special+table"',
+        text: "special+table",
         schema: "public",
       });
       expect(
@@ -178,12 +184,7 @@ describe("lib/editor", () => {
     it("should query a case sensitive table", () => {
       expect(queryTable(dbHint, "CASE_SENSITIVE_table")).toMatchObject({
         name: "CASE_SENSITIVE_table",
-        text: '"CASE_SENSITIVE_table"',
-        schema: "public",
-      });
-      expect(queryTable(dbHint, "CASE_sensitive_table")).toMatchObject({
-        name: "CASE_sensitive_table",
-        text: '"CASE_sensitive_table"',
+        text: "CASE_SENSITIVE_table",
         schema: "public",
       });
     });

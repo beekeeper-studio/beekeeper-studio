@@ -2,7 +2,6 @@ import {
   ColumnType,
   defaultConstraintActions,
   defaultEscapeString,
-  friendlyNormalizedIdentifier,
   defaultWrapIdentifier,
   defaultWrapLiteral,
   DialectData,
@@ -28,7 +27,7 @@ export const SqliteData: DialectData = {
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
   wrapIdentifier: defaultWrapIdentifier,
-  friendlyNormalizedIdentifier: friendlyNormalizedIdentifier,
+  friendlyNormalizedIdentifier: (s) => s,
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
     if (matched) return matched[1] || matched[2] || matched[3];

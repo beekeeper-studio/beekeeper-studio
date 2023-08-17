@@ -320,7 +320,9 @@ const {
       start = token.start;
       end = token.end;
     } else if (isQuote(token.string)) {
-      const { text: search, startAt: start } = getTextNearCursor(editor, cur)
+      const { text, startAt } = getTextNearCursor(editor, cur)
+      search = text;
+      start = startAt;
       end = cur.ch;
       const tables = findTablesForMatches(search);
       addMatches(result, search, tables, (w) => w);
@@ -339,23 +341,24 @@ const {
         }
         return w;
       };
-    addMatches(result, search, defaultTable, function(w) {
-        return objectOrClass(w, "CodeMirror-hint-table CodeMirror-hint-default-table");
-    });
-    addMatches(
-        result,
-        search,
-        dbHint.defaultTableWordList, function(w) {
-          return objectOrClass(w, "CodeMirror-hint-table");
-        }
-    );
-    addMatches(result, search, dbHint.schemaWordList, function (w) {
-      return objectOrClass(w, "CodeMirror-hint-schema");
-    });
-    if (!disableKeywords)
-      addMatches(result, search, keywords, function(w) {
-          return objectOrClass(w.toUpperCase(), "CodeMirror-hint-keyword");
+      addMatches(result, search, defaultTable, function(w) {
+          return objectOrClass(w, "CodeMirror-hint-table CodeMirror-hint-default-table");
       });
+      addMatches(
+          result,
+          search,
+          dbHint.defaultTableWordList, function(w) {
+            return objectOrClass(w, "CodeMirror-hint-table");
+          }
+      );
+      addMatches(result, search, dbHint.schemaWordList, function (w) {
+        return objectOrClass(w, "CodeMirror-hint-schema");
+      });
+      if (!disableKeywords) {
+        addMatches(result, search, keywords, function(w) {
+            return objectOrClass(w.toUpperCase(), "CodeMirror-hint-keyword");
+        });
+      }
     }
 
     const dataFrom = Pos(cur.line, start)
