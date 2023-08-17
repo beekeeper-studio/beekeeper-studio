@@ -263,10 +263,10 @@
           </x-buttons>
         </template>
         <template v-if="!editable">
-          <span
-            class="statusbar-item"
-            :title="readOnlyNotice"
-          ><i class="material-icons-outlined">info</i> Editing Disabled</span>
+          <span class="statusbar-item item-notice" :title="readOnlyNotice"
+            ><i class="material-icons-outlined">info</i>
+            <span> Editing Disabled</span>
+          </span>
         </template>
 
         <!-- Actions -->
@@ -315,6 +315,11 @@
   position: absolute;
   right: 50%;
   top: 200px;
+}
+.item-notice > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>
 
@@ -991,7 +996,6 @@ export default Vue.extend({
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,

@@ -39,6 +39,22 @@ interface SchemaBuilderData {
   columnsModified: boolean
 }
 
+const UNSIGNED_COLUMN_TYPES = [
+  "TINYINT",
+  "SMALLINT",
+  "MEDIUMINT",
+  "INT",
+  "INTEGER",
+  "BIGINT",
+  "DEC",
+  "DECIMAL",
+  "FLOAT",
+];
+
+function canBeUnsigned(type: string): boolean {
+  return UNSIGNED_COLUMN_TYPES.includes(type.toUpperCase())
+}
+
 export default Vue.extend({
   props: {
     initialColumns: Array as PropType<SchemaItem[]>,
@@ -126,6 +142,23 @@ export default Vue.extend({
           },
           width: 76,
           widthShrink:1
+        },
+        this.disabledFeatures?.unsignedColumns ? null : {
+          title: 'Unsigned',
+          field: 'unsigned',
+          cssClass: "no-padding no-edit-highlight hide-on-read-only",
+          headerTooltip: "Set this column to be unsigned",
+          editor: vueEditor(CheckboxEditor),
+          formatter: vueFormatter(CheckboxFormatter),
+          formatterParams: {
+            editable: (cell: Tabulator.CellComponent) => {
+              const editable = canBeUnsigned(cell.getRow().getData().dataType)
+              cell.getElement()?.classList.toggle('invisible', !editable)
+              return editable
+            }
+          },
+          width: 76,
+          widthShrink:1,
         },
         {
           title: 'Default Value',

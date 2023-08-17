@@ -43,7 +43,8 @@ export const PostgresData: DialectData = {
   disabledFeatures: {
     informationSchema: {
       extra: true
-    }
+    },
+    unsignedColumns: true
   },
   charsets
 }
