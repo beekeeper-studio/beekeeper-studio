@@ -218,7 +218,7 @@ export default Vue.extend({
         const dataType: string = dataTypeCell.getValue()
         const nextUnsigned = !/unsigned/i.test(dataType)
         const nextDataType = nextUnsigned
-          ? dataType + " unsigned"
+          ? dataType.replaceAll(/\s+signed/ig, "") + " unsigned"
           : dataType.replaceAll(/\s*unsigned/ig, "")
         dataTypeCell.setValue(nextDataType)
       }
