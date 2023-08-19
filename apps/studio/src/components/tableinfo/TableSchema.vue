@@ -134,7 +134,7 @@ import { mapGetters } from 'vuex'
 import { getDialectData } from '@shared/lib/dialects'
 import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
-import { AlterTableSpec, FormatterDialect, SchemaItemChange } from '@shared/lib/dialects/models'
+import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
 import { escapeHtml } from '@/mixins/data_mutators';
 import { canBeUnsignedColumn } from '@shared/lib/utils'

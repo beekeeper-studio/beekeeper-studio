@@ -263,8 +263,11 @@
           </x-buttons>
         </template>
         <template v-if="!editable">
-          <span class="statusbar-item item-notice" :title="readOnlyNotice"
-            ><i class="material-icons-outlined">info</i>
+          <span
+            class="statusbar-item item-notice"
+            :title="readOnlyNotice"
+          >
+            <i class="material-icons-outlined">info</i>
             <span> Editing Disabled</span>
           </span>
         </template>
