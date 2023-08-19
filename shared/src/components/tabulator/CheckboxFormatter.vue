@@ -25,16 +25,24 @@
     },
     computed: {
       editable(): boolean {
-        return _.isFunction(this.params.editable) ? 
-          this.params.editable(this.cell) : 
+        return _.isFunction(this.params.editable) ?
+          this.params.editable(this.cell) :
           this.params.editable
       }
     },
     methods: {
       click() {
-        if (!this.editable) {
-          return
+        let preventDefault = false
+
+        if(_.isFunction(this.params.onClick)) {
+          this.params.onClick({
+            cell: this.cell,
+            preventDefault: () => preventDefault = true,
+          })
         }
+
+        if (!this.editable || preventDefault) return
+
         this.cell.setValue(!this.cell.getValue())
         this.checked = this.cell.getValue()
       }
