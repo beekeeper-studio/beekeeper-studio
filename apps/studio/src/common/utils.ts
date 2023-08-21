@@ -120,3 +120,8 @@ export function createCancelablePromise(error: CustomError, timeIdle = 100): any
     },
   };
 }
+
+export function makeString(value: any): string {
+  if(value === BigInt(0)) return '0';
+  return _.toString(value);
+}
