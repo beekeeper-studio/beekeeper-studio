@@ -9,6 +9,7 @@ import addZoom from './20200703_add_zoom_to_settings'
 import addSc from './20200707-add-sc-to-used-connections'
 import dev1 from './dev-1'
 import dev2 from './dev-2'
+import dev3 from './dev-3'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
@@ -55,7 +56,7 @@ const fixtures = [
 ]
 
 const devMigrations = [
-  dev1, dev2
+  dev1, dev2, dev3
 ]
 
 const migrations = [...realMigrations, ...fixtures, ...devMigrations]

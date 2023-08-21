@@ -276,7 +276,7 @@ export default Vue.extend({
     }
     await this.$store.dispatch('loadUsedConfigs')
     await this.$store.dispatch('pinnedConnections/loadPins')
-    await this.$store.dispatch('pinnedConnections/reorder', this.$store.state.pinnedConnections.pins)
+    await this.$store.dispatch('pinnedConnections/reorder')
     this.config.sshUsername = os.userInfo().username
     this.$nextTick(() => {
       const components = [

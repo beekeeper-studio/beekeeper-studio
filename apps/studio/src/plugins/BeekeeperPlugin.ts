@@ -74,6 +74,8 @@ export const BeekeeperPlugin = {
       return path.basename(config.defaultDatabase || "./unknown.db")
     } else if (config.connectionType === 'cockroachdb' && config.options?.cluster) {
       connectionString = `${config.options.cluster}/${config.defaultDatabase || 'cloud'}`
+    } else if (config.connectionType === 'bigquery') {
+      connectionString = `${config.bigQueryOptions.projectId}${config.defaultDatabase ? '.' + config.defaultDatabase : ''}`
     } else {
       if (config.defaultDatabase) {
         connectionString += `/${config.defaultDatabase}`

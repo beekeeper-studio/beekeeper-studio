@@ -62,7 +62,8 @@ export const PinConnectionModule: Module<State, RootState> = {
       await newPin.save();
       context.commit('add', newPin);
     },
-    async reorder(context, pins: PinnedConnection[]) {
+    async reorder(context) {
+      const pins = context.state.pins;
       pins.forEach((p, idx) => p.position = idx);
       context.commit('set', pins)
       await PinnedConnection.save(pins);

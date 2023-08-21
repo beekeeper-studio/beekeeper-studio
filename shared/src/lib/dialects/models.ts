@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift']
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery']
 const ultimateDialects = []
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const

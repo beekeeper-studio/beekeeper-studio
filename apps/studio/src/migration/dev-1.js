@@ -45,14 +45,6 @@ export default {
       defaultDatabase: 'sakila'
     },
     {
-      name: "[DEV] Docker Bigquery",
-      connectionType: 'bigquery',
-      port: 9050,
-      host: 'localhost',
-      projectId: 'bks',
-      defaultDatabase: 'world',
-    },
-    {
       name: "Beekeeper's Database",
       connectionType: "sqlite",
       defaultDatabase: platformInfo.appDbPath

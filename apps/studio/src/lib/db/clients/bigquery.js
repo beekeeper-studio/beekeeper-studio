@@ -29,6 +29,7 @@ export default async function (server, database) {
 
   return {
     supportedFeatures: () => ({ customRoutines: false, comments: false, properties: true, partitions: false, editPartitions: false }),
+    defaultSchema: () => null,
     disconnect: () => disconnect(client),
     listTables: (db) => listTables(client, db),
     listViews: (filter) => listViews(client, database.database, filter),

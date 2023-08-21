@@ -1,5 +1,5 @@
 export default {
-  name: "20230426-add-bigqqery_options",
+  name: "20230426-add-bigquery_options",
   async run(runner) {
     const queries = [
       `ALTER TABLE saved_connection ADD COLUMN bigQueryOptions text not null default '{}'`,
