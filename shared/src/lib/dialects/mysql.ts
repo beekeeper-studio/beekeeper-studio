@@ -26,7 +26,7 @@ export const MysqlData: DialectData = {
   wrapIdentifier(value: string) {
     return (value !== '*' ? `\`${value.replaceAll(/`/g, '``')}\`` : '*');
   },
-  friendlyNormalizedIdentifier: (s) => s,
+  editorFriendlyIdentifier: (s) => s,
   escapeString: defaultEscapeString,
   wrapLiteral(value: string) {
     return value.replaceAll(';', '')

@@ -25,7 +25,7 @@ export const RedshiftData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [],
   wrapIdentifier: (id: string) => `"${id.replaceAll(/"/g, '""')}"`,
-  friendlyNormalizedIdentifier: friendlyNormalizedIdentifier,
+  editorFriendlyIdentifier: friendlyNormalizedIdentifier,
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
   unwrapIdentifier: (s) => s,

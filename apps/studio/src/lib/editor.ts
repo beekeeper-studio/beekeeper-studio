@@ -45,7 +45,7 @@ export interface DBHint {
 export function makeDBHint(
   tables: TableOrView[],
   dialect: DialectData,
-  defaultSchema?: string | null
+  defaultSchema?: string | null | undefined
 ): DBHint {
   const schemaSet = new Set<string>();
   if (defaultSchema) schemaSet.add(defaultSchema);
@@ -57,7 +57,7 @@ export function makeDBHint(
     if (table.schema) schemaSet.add(table.schema);
 
     const name = table.name;
-    const normalizedName = dialect.friendlyNormalizedIdentifier(name);
+    const normalizedName = dialect.editorFriendlyIdentifier(name);
     const schema = table.schema || defaultSchema;
 
     const normalizedWord: Word = {
@@ -98,7 +98,7 @@ export function makeDBHint(
       ...acc,
       [name]: {
         name,
-        text: dialect.friendlyNormalizedIdentifier(name),
+        text: dialect.editorFriendlyIdentifier(name),
         type: "schema",
       },
     }),

@@ -8,10 +8,12 @@ import {
   splitWords,
 } from "../../../src/lib/editor";
 import {
-  dbHint,
-  dbHintWithoutSchema,
-  tableOrViews,
-  tableOrViewsWithoutSchema,
+  postgresDBHint,
+  mysqlDBHint,
+  sqliteDBHint,
+  tables,
+  tablesWithoutSchema,
+  sqlServerDBHint,
 } from "../../fixtures/tables";
 import { PostgresData } from "../../../../../shared/src/lib/dialects/postgresql";
 import { SqliteData } from "../../../../../shared/src/lib/dialects/sqlite";
@@ -20,38 +22,30 @@ import { MysqlData } from "../../../../../shared/src/lib/dialects/mysql";
 
 describe("lib/editor", () => {
   describe("makeDBHint (DB with schemas)", () => {
-    const dialectData = PostgresData;
-    const defaultSchema = "public";
-
     it("should make arrays of tables and schemas", () => {
-      expect(makeDBHint(tableOrViews, dialectData, defaultSchema)).toEqual(
-        dbHint
-      );
-    });
-
-    it("should return empty array of tables or schemas", () => {
-      expect(makeDBHint([], dialectData, defaultSchema)).toMatchObject({
-        defaultTableWordList: {},
-        tableWords: [],
+      expect(
+        makeDBHint([{ name: "my_table" }], PostgresData, "public")
+      ).toMatchObject({
+        defaultTableWordList: {
+          my_table: { name: "my_table", schema: "public" },
+        },
+        tableWords: [{ name: "my_table", schema: "public" }],
         schemaWordList: {
           public: { name: "public" },
         },
       });
-      expect(
-        makeDBHint([{ name: "my_table" }], dialectData, defaultSchema)
-      ).toMatchObject({
-        defaultTableWordList: {
-          my_table: {
-            name: "my_table",
-            schema: "public",
-          },
-        },
-        tableWords: [
-          {
-            name: "my_table",
-            schema: "public",
-          },
-        ],
+      expect(makeDBHint(tables, PostgresData, "public")).toEqual(
+        postgresDBHint
+      );
+      expect(makeDBHint(tables, SqlServerData, "public")).toEqual(
+        sqlServerDBHint
+      );
+    });
+
+    it("should return empty array of tables or schemas", () => {
+      expect(makeDBHint([], PostgresData, "public")).toMatchObject({
+        defaultTableWordList: {},
+        tableWords: [],
         schemaWordList: {
           public: { name: "public" },
         },
@@ -63,17 +57,9 @@ describe("lib/editor", () => {
         makeDBHint([{ name: "my_table" }], SqlServerData, "dbo")
       ).toMatchObject({
         defaultTableWordList: {
-          my_table: {
-            name: "my_table",
-            schema: "dbo",
-          },
+          my_table: { name: "my_table", schema: "dbo" },
         },
-        tableWords: [
-          {
-            name: "my_table",
-            schema: "dbo",
-          },
-        ],
+        tableWords: [{ name: "my_table", schema: "dbo" }],
         schemaWordList: {
           dbo: { name: "dbo" },
         },
@@ -82,30 +68,18 @@ describe("lib/editor", () => {
   });
 
   describe("makeDBHint (DB without schemas)", () => {
-    const dialectData = SqliteData;
-    const defaultSchema = null;
-
     it("should make arrays of tables and schemas", () => {
-      expect(
-        makeDBHint(tableOrViewsWithoutSchema, SqliteData, defaultSchema)
-      ).toEqual(dbHintWithoutSchema);
-      expect(
-        makeDBHint(tableOrViewsWithoutSchema, MysqlData, defaultSchema)
-      ).toEqual({
-        ...dbHintWithoutSchema,
-        dialect: MysqlData,
-      });
+      expect(makeDBHint(tablesWithoutSchema, SqliteData)).toEqual(sqliteDBHint);
+      expect(makeDBHint(tablesWithoutSchema, MysqlData)).toEqual(mysqlDBHint);
     });
 
     it("should return empty array of tables and schemas", () => {
-      expect(makeDBHint([], dialectData, defaultSchema)).toMatchObject({
+      expect(makeDBHint([], SqliteData)).toMatchObject({
         defaultTableWordList: {},
         tableWords: [],
         schemaWordList: {},
       });
-      expect(
-        makeDBHint([{ name: "my_table" }], dialectData, defaultSchema)
-      ).toMatchObject({
+      expect(makeDBHint([{ name: "my_table" }], SqliteData)).toMatchObject({
         defaultTableWordList: {
           my_table: { name: "my_table", schema: undefined },
         },
@@ -117,7 +91,9 @@ describe("lib/editor", () => {
 
   describe("findTablesBySchema", () => {
     it("should find tables by schema", () => {
-      expect(findTablesBySchema(dbHint, "_timescaledb_cache")).toMatchObject([
+      expect(
+        findTablesBySchema(postgresDBHint, "_timescaledb_cache")
+      ).toMatchObject([
         {
           name: "my_table",
           schema: "_timescaledb_cache",
@@ -127,7 +103,9 @@ describe("lib/editor", () => {
           schema: "_timescaledb_cache",
         },
       ]);
-      expect(findTablesBySchema(dbHint, "schema with spaces")).toMatchObject([
+      expect(
+        findTablesBySchema(postgresDBHint, "schema with spaces")
+      ).toMatchObject([
         {
           name: "testtable",
           schema: "schema with spaces",
@@ -138,16 +116,16 @@ describe("lib/editor", () => {
 
   describe("findTableOrViewByWord", () => {
     it("should find a tableOrView by word (with schema)", () => {
-      const tableWord = queryTable(dbHint, "my_table");
-      expect(findTableOrViewByWord(tableOrViews, tableWord)).toMatchObject({
+      const tableWord = queryTable(postgresDBHint, "my_table");
+      expect(findTableOrViewByWord(tables, tableWord)).toMatchObject({
         name: "my_table",
       });
     });
 
     it("should find a tableOrView by word (without schema)", () => {
-      const tableWord = queryTable(dbHintWithoutSchema, "my_table");
+      const tableWord = queryTable(sqliteDBHint, "my_table");
       expect(
-        findTableOrViewByWord(tableOrViewsWithoutSchema, tableWord)
+        findTableOrViewByWord(tablesWithoutSchema, tableWord)
       ).toMatchObject({
         name: "my_table",
       });
@@ -156,42 +134,46 @@ describe("lib/editor", () => {
 
   describe("queryTable", () => {
     it("should query a table", () => {
-      expect(queryTable(dbHint, "my_table")).toMatchObject({
+      expect(queryTable(postgresDBHint, "my_table")).toMatchObject({
         name: "my_table",
         schema: "public",
       });
-      expect(queryTable(dbHint, '"special+table"')).toMatchObject({
+      expect(queryTable(postgresDBHint, '"special+table"')).toMatchObject({
         name: "special+table",
         schema: "public",
       });
-      expect(queryTable(dbHint, "_timescaledb_cache.my_table")).toMatchObject({
+      expect(
+        queryTable(postgresDBHint, "_timescaledb_cache.my_table")
+      ).toMatchObject({
         name: "my_table",
         schema: "_timescaledb_cache",
       });
-      expect(queryTable(dbHint, 'public."special+table"')).toMatchObject({
+      expect(
+        queryTable(postgresDBHint, 'public."special+table"')
+      ).toMatchObject({
         name: "special+table",
         text: "special+table",
         schema: "public",
       });
       expect(
-        queryTable(dbHint, '"schema with spaces".testtable')
+        queryTable(postgresDBHint, '"schema with spaces".testtable')
       ).toMatchObject({
         name: "testtable",
         schema: "schema with spaces",
       });
     });
 
-    it("should query a case sensitive table", () => {
-      expect(queryTable(dbHint, "CASE_SENSITIVE_table")).toMatchObject({
-        name: "CASE_SENSITIVE_table",
-        text: "CASE_SENSITIVE_table",
+    it("should query a mixed case table", () => {
+      expect(queryTable(postgresDBHint, "MixedCase")).toMatchObject({
+        name: "MixedCase",
+        text: "MixedCase",
         schema: "public",
       });
     });
 
     it("should query a table with quotations", () => {
-      const sqlite = dbHintWithoutSchema;
-      const postgres = dbHint;
+      const sqlite = sqliteDBHint;
+      const postgres = postgresDBHint;
       const sqlserver = makeDBHint(
         [{ name: "my_table" }],
         SqlServerData,

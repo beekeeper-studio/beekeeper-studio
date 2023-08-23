@@ -82,7 +82,7 @@ export interface DialectData {
   columnTypes: ColumnType[],
   constraintActions: string[]
   wrapIdentifier: (s: string) => string
-  friendlyNormalizedIdentifier: (s: string) => string
+  editorFriendlyIdentifier: (s: string) => string
   escapeString: (s: string, quote?: boolean) => string
   wrapLiteral: (s: string) => string
   unwrapIdentifier: (s: string) => string
