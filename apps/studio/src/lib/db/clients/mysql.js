@@ -928,11 +928,7 @@ function getRealError(conn, err) {
 function parseFields(fields, rowsAsArray) {
   if (!fields) return []
   return fields.map((field, idx) => {
-    return {
-      id: rowsAsArray ? `c${idx}` : field.name,
-      table: field.table,
-      ...field,
-    };
+    return { id: rowsAsArray ? `c${idx}` : field.name, ...field }
   });
 }
 
