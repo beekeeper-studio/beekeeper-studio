@@ -47,13 +47,33 @@
     </div>
     <div class="shortcut-item">
       <div>Run Query to File...</div>
-      <div class="shortcut" v-if="$config.isMac"><span>⌘</span><span>I</span></div>
-      <div class="shortcut" v-else><span>Ctrl</span><span>I</span></div>
+      <div
+        class="shortcut"
+        v-if="$config.isMac"
+      >
+        <span>⌘</span><span>I</span>
+      </div>
+      <div
+        class="shortcut"
+        v-else
+      >
+        <span>Ctrl</span><span>I</span>
+      </div>
     </div>
     <div class="shortcut-item">
       <div>Run Current Query to File...</div>
-      <div class="shortcut" v-if="$config.isMac"><span>⌘</span><span>I</span></div>
-      <div class="shortcut" v-else><span>Ctrl</span><span>I</span></div>
+      <div
+        class="shortcut"
+        v-if="$config.isMac"
+      >
+        <span>⌘</span><span>I</span>
+      </div>
+      <div
+        class="shortcut"
+        v-else
+      >
+        <span>Ctrl</span><span>I</span>
+      </div>
     </div>
     <div class="shortcut-item">
       <div>New Window</div>

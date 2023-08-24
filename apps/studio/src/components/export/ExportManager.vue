@@ -5,12 +5,16 @@
       :connection="connection"
       :table="table"
       :query="query"
-      :queryName="queryName"
+      :query-name="queryName"
       :filters="filters"
       @export="startExport"
       @closed="handleDeadModal"
-    ></ExportModal>
-    <ExportNotification v-for="exporter in exports" :key="exporter.id" :exporter="exporter"></ExportNotification>
+    />
+    <ExportNotification
+      v-for="exporter in exports"
+      :key="exporter.id"
+      :exporter="exporter"
+    />
   </div>
 </template>
 <script lang="ts">
@@ -95,12 +99,12 @@ export default Vue.extend({
       this.addExport(exporter)
       exporter.onProgress(this.notifyProgress.bind(this))
 
-      const exportName = options.table? options.table.name : options.queryName;
+      const exportName = options.table ? options.table.name : options.queryName;
 
       await exporter.exportToFile()
 
       if (exporter.status == ExportStatus.Error) {
-        const exportName = options.table? options.table.name : options.queryName;
+        const exportName = options.table ? options.table.name : options.queryName;
         const error_notice = this.$noty.error(`Export of ${exportName} failed: ${exporter.error}`, {
           buttons: [
             Noty.button('Close', "btn btn-primary", () => {
@@ -133,6 +137,7 @@ export default Vue.extend({
       this.queryName = undefined
     },
     notifyProgress(_progress: ExportProgress) {
+      // Empty on purpose
     }
   },
   mounted() {

@@ -13,31 +13,45 @@
             <div>
               Export
               <span class="text-primary truncate">{{ table ? table.name : queryName }}</span>
-              <span v-if="filters" class="text-light" v-tooltip="filterTooltip">(Filtered)</span>
+              <span
+                v-if="filters"
+                class="text-light"
+                v-tooltip="filterTooltip"
+              >(Filtered)</span>
               <span class="badge badge-info">Beta</span>
             </div>
           </div>
 
           <p>This will {{ table ? 'export table rows' : 'run your query and save the results' }}  directly to a file.</p>
           <p>You can choose the format and file name.</p>
-          <p>For {{ table ? 'tables with many' : 'queries with many results' }} rows, this will run in the background,
-             allowing you to continue to do other work.</p>
+          <p>
+            For {{ table ? 'tables with many' : 'queries with many results' }} rows, this will run in the background,
+            allowing you to continue to do other work.
+          </p>
 
           <span class="close-btn btn btn-fab">
-            <i class="material-icons" @click.prevent="closeModal">clear</i>
+            <i
+              class="material-icons"
+              @click.prevent="closeModal"
+            >clear</i>
           </span>
-          <div v-if="error" class="alert alert-danger">
+          <div
+            v-if="error"
+            class="alert alert-danger"
+          >
             <i class="material-icons">error_outline</i>
             <div>Error: {{ error.message }}</div>
           </div>
           <div class="modal-form export-form">
-
             <div class="flex">
-
               <!-- File Name -->
               <div class="file-name form-group expand">
                 <label for="fileName">File Name</label>
-                <input type="text" spellcheck="false" v-model="fileName">
+                <input
+                  type="text"
+                  spellcheck="false"
+                  v-model="fileName"
+                >
               </div>
 
               <!-- Format -->
@@ -49,7 +63,12 @@
                   v-model="selectedExportFormat"
                   id="export-format-select"
                 >
-                  <option disabled value="null">Select a format...</option>
+                  <option
+                    disabled
+                    value="null"
+                  >
+                    Select a format...
+                  </option>
                   <option
                     :key="f.value"
                     v-for="f in exportFormats"
@@ -61,59 +80,65 @@
                   </option>
                 </select>
               </div>
-
-           </div>
+            </div>
 
             <!-- Location -->
             <div class="form-group">
               <label for="fileDirectory">Output Directory</label>
               <file-picker
                 v-model="fileDirectory"
-                :defaultPath="defaultPath"
+                :default-path="defaultPath"
                 :save="false"
                 :options="dialogOptions"
-                buttonText="Choose"
-                >
-              </file-picker>
+                button-text="Choose"
+              />
             </div>
 
             <!-- Advanced Options -->
-            <div class="advanced-options-toggle flex flex-middle" @click.prevent="toggleAdvanced">
-              <i class="material-icons">{{toggleIcon}}</i>
+            <div
+              class="advanced-options-toggle flex flex-middle"
+              @click.prevent="toggleAdvanced"
+            >
+              <i class="material-icons">{{ toggleIcon }}</i>
               <span>Advanced Options</span>
             </div>
-            <div class="advanced-options" :class="{open: advancedToggled}">
+            <div
+              class="advanced-options"
+              :class="{open: advancedToggled}"
+            >
               <component
-                v-bind:is="selectedExportFormat.component"
+                :is="selectedExportFormat.component"
                 v-model="outputOptions"
-              ></component>
+              />
               <div class="modal-form export-form export-advanced-options">
                 <div class="form-group row">
                   <label title="How many records to read at once from the cursor">Chunk size</label>
-                    <input
-                      v-model="options.chunkSize"
-                      type="number"
-                      class="form-control"
-                      ref="paramInput"
-                      min="10"
-                      step="10"
-                    />
+                  <input
+                    v-model="options.chunkSize"
+                    type="number"
+                    class="form-control"
+                    ref="paramInput"
+                    min="10"
+                    step="10"
+                  >
                 </div>
                 <div class="form-group row">
-                  <label for="deleteOnAbort" class="checkbox-group">
+                  <label
+                    for="deleteOnAbort"
+                    class="checkbox-group"
+                  >
                     <input
                       v-model="options.deleteOnAbort"
                       id="deleteOnAbort"
                       type="checkbox"
                       name="deleteOnAbort"
                       class="form-control"
-                    />
+                    >
                     <span>Delete file on abort/error</span>
                   </label>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
         <div class="vue-dialog-buttons">
