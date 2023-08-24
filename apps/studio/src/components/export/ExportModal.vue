@@ -212,6 +212,7 @@ export default {
     defaultFileName () {
       const now = new Date();
       const formatted = dateFormat(now, 'yyyy-mm-dd_HHMMss')
+      const schema = this.table.schema ? `${this.table.schema}_` : ''
       const extension = this.selectedExportFormat.key
       let fileName;
       if (this.table) {
@@ -271,6 +272,8 @@ export default {
       if (!this.filePath) {
         return;
       }
+
+      // eslint-disable-next-line
       const component = this;
 
       const payload = {

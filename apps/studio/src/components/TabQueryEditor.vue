@@ -90,8 +90,18 @@
 
     <!-- Save Modal -->
     <portal to="modals">
-      <modal class="vue-dialog beekeeper-modal" name="save-modal" @closed="selectEditor" @opened="selectTitleInput" height="auto" :scrollable="true">
-        <form v-if="query" @submit.prevent="saveQuery">
+      <modal
+        class="vue-dialog beekeeper-modal"
+        :name="`save-modal-${tab.id}`"
+        @closed="selectEditor"
+        @opened="selectTitleInput"
+        height="auto"
+        :scrollable="true"
+      >
+        <form
+          v-if="query"
+          @submit.prevent="saveQuery"
+        >
           <div class="dialog-content">
             <div class="dialog-c-title">Saved Query Name</div>
             <div class="modal-form">
@@ -102,8 +112,19 @@
             </div>
           </div>
           <div class="vue-dialog-buttons">
-            <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('save-modal')">Cancel</button>
-            <button class="btn btn-primary" type="submit">Save</button>
+            <button
+              class="btn btn-flat"
+              type="button"
+              @click.prevent="$modal.hide(`save-modal-${tab.id}`)"
+            >
+              Cancel
+            </button>
+            <button
+              class="btn btn-primary"
+              type="submit"
+            >
+              Save
+            </button>
           </div>
         </form>
       </modal>
@@ -111,7 +132,14 @@
 
     <!-- Parameter modal -->
     <portal to="modals">
-      <modal class="vue-dialog beekeeper-modal" name="parameters-modal" @opened="selectFirstParameter" @closed="selectEditor" height="auto" :scrollable="true">
+      <modal
+        class="vue-dialog beekeeper-modal"
+        :name="`parameters-modal-${tab.id}`"
+        @opened="selectFirstParameter"
+        @closed="selectEditor"
+        height="auto"
+        :scrollable="true"
+      >
         <form @submit.prevent="submitQuery(queryForExecution, true)">
           <div class="dialog-content">
             <div class="dialog-c-title">Provide parameter values</div>
@@ -128,8 +156,19 @@
             </div>
           </div>
           <div class="vue-dialog-buttons">
-            <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('parameters-modal')">Cancel</button>
-            <button class="btn btn-primary" type="submit">Run</button>
+            <button
+              class="btn btn-flat"
+              type="button"
+              @click.prevent="$modal.hide(`parameters-modal-${tab.id}`)"
+            >
+              Cancel
+            </button>
+            <button
+              class="btn btn-primary"
+              type="submit"
+            >
+              Run
+            </button>
           </div>
         </form>
       </modal>
@@ -137,10 +176,19 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
   import _ from 'lodash'
   import CodeMirror from 'codemirror'
+  import 'codemirror/addon/comment/comment'
+  import 'codemirror/keymap/vim.js'
+  import 'codemirror/addon/dialog/dialog'
+  import 'codemirror/addon/search/search'
+  import 'codemirror/addon/search/jump-to-line'
+  import 'codemirror/addon/scroll/annotatescrollbar'
+  import 'codemirror/addon/search/matchesonscrollbar'
+  import 'codemirror/addon/search/matchesonscrollbar.css'
+  import 'codemirror/addon/search/searchcursor'
 
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
@@ -161,6 +209,8 @@
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
   import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
+  import { OpenTab } from '@/common/appdb/models/OpenTab'
+  import { makeDBHint, findTableOrViewByWord } from '@/lib/editor'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -169,7 +219,10 @@
   export default {
     // this.queryText holds the current editor value, always
     components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager},
-    props: ['tab', 'active'],
+    props: {
+      tab: OpenTab,
+      active: Boolean
+    },
     data() {
       return {
         results: [],
@@ -198,9 +251,24 @@
       }
     },
     computed: {
-      ...mapGetters(['dialect', 'defaultSchema']),
+      ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
       ...mapState(['usedConfig', 'connection', 'database', 'tables', 'storeInitialized']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
+      ...mapState('settings', ['settings']),
+      userKeymap: {
+        get() {
+          const value = this.settings?.keymap?.value;
+          return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
+        },
+        set(value) {
+          if (value === this.keymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
+          this.$store.dispatch('settings/save', { key: 'keymap', value: value });
+          this.initialize();
+        }
+      },
+      keymapTypes() {
+        return this.$config.defaults.keymapTypes
+      },
       shouldInitialize() {
         return this.storeInitialized && this.active && !this.initialized
       },
@@ -322,25 +390,8 @@
         return this.connection.connectionType;
       },
       hintOptions() {
-        // Previously we had to provide a table: column[] mapping.
-        // we don't need to provide the columns anymore because we fetch them dynamically.
-        const result = {}
-        this.tables.forEach(table => {
-          if (table.schema && table.schema != this.defaultSchema) {
-            // do nothing - don't add this table
-          } else {
-            // add quoted option for everyone that needs to be quoted
-            if (this.connectionType === 'postgresql' && (/[^a-z0-9_]/.test(table.name) || /^\d/.test(table.name))) {
-              result[`"${table.name}"`] = []
-            }
-
-            // don't add table names that can get in conflict with database schema
-            if (!/\./.test(table.name)) {
-              result[table.name] = []
-            }
-          }
-        })
-        return { tables: result }
+        const dbHint = makeDBHint(this.tables, this.dialectData, this.defaultSchema)
+        return { dbHint }
       },
       queryParameterPlaceholders() {
         let params = this.individualQueries.flatMap((qs) => qs.parameters)
@@ -409,7 +460,7 @@
             this.editor.focus()
           })
         } else {
-          this.$modal.hide('save-modal')
+          this.$modal.hide(`save-modal-${this.tab.id}`)
         }
       },
       currentQueryPosition() {
@@ -427,7 +478,7 @@
         const { from, to } = this.currentQueryPosition
 
         const editorText = this.editor.getValue()
-        const lines = editorText.split(/\n/)
+        // const lines = editorText.split(/\n/)
 
         const [markStart, markEnd] = this.locationFromPosition(editorText, from, to)
         this.marker = this.editor.getDoc().markText(markStart, markEnd, {className: 'highlight'})
@@ -460,8 +511,8 @@
         const lines = editorText.split(/\n/)
         const positions = rawPositions.map((p) => p + startCharacter)
 
-        const finished = positions.map((p) => false)
-        const results = positions.map((p) => ({ line: null, ch: null}))
+        const finished = positions.map((_p) => false)
+        const results = positions.map((_p) => ({ line: null, ch: null}))
 
         let startOfLine = 0
         lines.forEach((line, idx) => {
@@ -485,9 +536,19 @@
         console.log("starting value", startingValue)
         this.tab.unsavedChanges = this.unsavedChanges
 
+        if (this.editor) {
+          this.editor.toTextArea();
+          this.editor = null;
+        }
+
+        if (this.split) {
+          this.split.destroy();
+          this.split = null;
+        }
+
         this.$nextTick(() => {
           this.split = Split(this.splitElements, {
-            elementStyle: (dimension, size) => ({
+            elementStyle: (_dimension, size) => ({
                 'flex-basis': `calc(${size}%)`,
             }),
             sizes: [50,50],
@@ -501,7 +562,7 @@
             }
           })
 
-          const runQueryKeyMap = {
+          const runQueryKeyMap: any = {
             "Shift-Ctrl-Enter": this.submitCurrentQuery,
             "Shift-Cmd-Enter": this.submitCurrentQuery,
             "Ctrl-Enter": this.submitTabQuery,
@@ -519,6 +580,12 @@
             "Cmd+I": this.submitQueryToFile,
             "Shift+Ctrl+I": this.submitCurrentQueryToFile,
             "Shift+Cmd+I": this.submitCurrentQueryToFile
+          }
+
+          if(this.userKeymap === "vim") {
+            runQueryKeyMap["Ctrl-Esc"] = this.cancelQuery
+          } else {
+            runQueryKeyMap.Esc = this.cancelQuery
           }
 
           const modes = {
@@ -547,13 +614,16 @@
             options: {
               closeOnBlur: false
             },
+            // eslint-disable-next-line
+            // @ts-ignore
             hint: CodeMirror.hint.sql,
             hintOptions: this.hintOptions,
+            keyMap: this.userKeymap,
             getColumns: this.getColumnsForAutocomplete
-          })
+          } as CodeMirror.EditorConfiguration)
           this.editor.setValue(startingValue)
           this.editor.addKeyMap(runQueryKeyMap)
-          this.editor.on("keydown", (cm, e) => {
+          this.editor.on("keydown", (_cm, e) => {
             if (this.$store.state.menuActive) {
               e.preventDefault()
             }
@@ -566,9 +636,11 @@
           })
 
           if (this.connectionType === 'postgresql')  {
-            this.editor.on("beforeChange", (cm, co) => {
+            this.editor.on("beforeChange", (_cm, co) => {
               const { to, from, origin, text } = co;
 
+              // eslint-disable-next-line
+              // @ts-ignore
               const keywords = CodeMirror.resolveMode(this.editor.options.mode).keywords
 
               // quote names when needed
@@ -610,33 +682,85 @@
         this.$root.$emit(AppEvent.closeTab)
       },
       showContextMenu(event) {
+        const selectionDepClass = this.hasSelectedText ? '' : 'disabled';
         this.$bks.openMenu({
           item: this.tab,
           options: [
-            {
-              name: "Format Query",
-              slug: 'format',
-              handler: this.formatSql
-            },
-            {
-              type: 'divider'
-            },
-            {
-              name: "Find",
-              slug: 'find',
-              handler: this.find
-            },
-            {
-              name: "Replace",
-              slug: "replace",
-              handler: this.replace
-            },
-            {
-              name: "ReplaceAll",
-              slug: "replace_all",
-              handler: this.replaceAll
-            }
-          ],
+          {
+            name: 'Undo',
+            slug: '',
+            handler: this.editorUndo,
+            shortcut: this.ctrlOrCmd('z')
+          },
+          {
+            name: 'Redo',
+            slug: '',
+            handler: this.editorRedo,
+            shortcut: this.ctrlOrCmd('shift+z')
+          },
+          {
+            name: 'Cut',
+            slug: '',
+            handler: this.editorCut,
+            class: selectionDepClass,
+            shortcut: this.ctrlOrCmd('x')
+          },
+          {
+            name: 'Copy',
+            slug: '',
+            handler: this.editorCopy,
+            class: selectionDepClass,
+            shortcut: this.ctrlOrCmd('c')
+          },
+          {
+            name: 'Paste',
+            slug: '',
+            handler: this.editorPaste,
+            shortcut: this.ctrlOrCmd('v')
+          },
+          {
+            name: 'Delete',
+            slug: '',
+            handler: this.editorDelete,
+            class: selectionDepClass
+          },
+          {
+            name: 'Select All',
+            slug: '',
+            handler: this.editorSelectAll,
+            shortcut: this.ctrlOrCmd('a')
+          },
+          {
+            type: 'divider'
+          },
+          {
+            name: "Format Query",
+            slug: 'format',
+            handler: this.formatSql,
+            shortcut: this.ctrlOrCmd('shift+f')
+          },
+          {
+            type: 'divider'
+          },
+          {
+            name: "Find",
+            slug: 'find',
+            handler: this.find,
+            shortcut: this.ctrlOrCmd('f')
+          },
+          {
+            name: "Replace",
+            slug: "replace",
+            handler: this.replace,
+            shortcut: this.ctrlOrCmd('r')
+          },
+          {
+            name: "ReplaceAll",
+            slug: "replace_all",
+            handler: this.replaceAll,
+            shortcut: this.ctrlOrCmd('shift+r')
+          }
+        ],
           event,
         })
       },
@@ -655,9 +779,13 @@
         this.$refs.table.clipboard()
       },
       clipboardJson() {
+        // eslint-disable-next-line
+        // @ts-ignore
         const data = this.$refs.table.clipboard('json')
       },
       clipboardMarkdown() {
+        // eslint-disable-next-line
+        // @ts-ignore
         const data = this.$refs.table.clipboard('md')
       },
       selectEditor() {
@@ -679,7 +807,7 @@
         if (this.query?.id) {
           this.saveQuery()
         } else {
-          this.$modal.show('save-modal')
+          this.$modal.show(`save-modal-${this.tab.id}`)
         }
       },
       async saveQuery() {
@@ -691,7 +819,7 @@
           try {
             const payload = _.clone(this.query)
             payload.text = this.unsavedText
-            this.$modal.hide('save-modal')
+            this.$modal.hide(`save-modal-${this.tab.id}`)
             const id = await this.$store.dispatch('data/queries/save', payload)
             this.tab.queryId = id
 
@@ -764,17 +892,19 @@
 
         try {
           if (this.hasParams && (!fromModal || this.paramsModalRequired)) {
-            this.$modal.show('parameters-modal')
+            this.$modal.show(`parameters-modal-${this.tab.id}`)
             return
           }
 
           const query = this.deparameterizedQuery
-          this.$modal.hide('parameters-modal')
+          this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           this.runningQuery = this.connection.query(query)
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute()
           const queryEndTime = new Date()
+          // eslint-disable-next-line
+          // @ts-ignore
           this.executeTime = queryEndTime - queryStartTime
           let totalRows = 0
           results.forEach(result => {
@@ -790,7 +920,7 @@
           })
           this.results = Object.freeze(results);
 
-          const defaultResult = Math.max(results.length - 1, 0)
+          // const defaultResult = Math.max(results.length - 1, 0)
 
           const nonEmptyResult = _.chain(results).findLastIndex((r) => !!r.rows?.length).value()
           console.log("non empty result", nonEmptyResult)
@@ -828,6 +958,8 @@
         const space = 32
         if (editor.state.completionActive) return;
         if (triggers[e.keyCode] && !this.inQuote(editor, e)) {
+          // eslint-disable-next-line
+          // @ts-ignore
           CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
         }
         if (e.keyCode === space) {
@@ -839,6 +971,8 @@
             const word = editor.findWordAt(pos)
             const lastWord = editor.getRange(word.anchor, word.head)
             if (!triggerWords.includes(lastWord.toLowerCase())) return;
+            // eslint-disable-next-line
+            // @ts-ignore
             CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
 
           } catch (ex) {
@@ -865,8 +999,8 @@
       fakeRemoteChange() {
         this.query.text = "select * from foo"
       },
-      async getColumnsForAutocomplete(tableName) {
-        const tableToFind = this.tables.find(t => t.name === tableName)
+      async getColumnsForAutocomplete(tableWord) {
+        const tableToFind = findTableOrViewByWord(this.tables, tableWord)
         if (!tableToFind) return null
         // Only refresh columns if we don't have them cached.
         if (!tableToFind.columns?.length) {
@@ -874,6 +1008,37 @@
         }
 
         return tableToFind?.columns.map((c) => c.columnName)
+      },
+      // Right click menu handlers
+      editorCut() {
+        const selection = this.editor.getSelection();
+        this.editor.replaceSelection('');
+        this.$native.clipboard.writeText(selection);
+      },
+      editorCopy() {
+        const selection = this.editor.getSelection();
+        this.$native.clipboard.writeText(selection);
+      },
+      editorPaste() {
+        const clipboard = this.$native.clipboard.readText();
+        if (this.hasSelectedText) {
+          this.editor.replaceSelection(clipboard, 'around');
+        } else {
+          const cursor = this.editor.getCursor();
+          this.editor.replaceRange(clipboard, cursor);
+        }
+      },
+      editorDelete() {
+        this.editor.replaceSelection('')
+      },
+      editorUndo() {
+        this.editor.execCommand('undo')
+      },
+      editorRedo() {
+        this.editor.execCommand('redo')
+      },
+      editorSelectAll() {
+        this.editor.execCommand('selectAll')
       }
     },
     mounted() {

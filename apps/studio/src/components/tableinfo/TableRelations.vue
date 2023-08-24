@@ -1,12 +1,21 @@
 <template>
-  <div class="table-info-table view-only" v-hotkey="hotkeys">
+  <div
+    class="table-info-table view-only"
+    v-hotkey="hotkeys"
+  >
     <div class="table-info-table-wrap">
       <div class="center-wrap">
-        <error-alert :error="error" v-if="error" />
-        <div class="notices" v-if="notice">
+        <error-alert
+          :error="error"
+          v-if="error"
+        />
+        <div
+          class="notices"
+          v-if="notice"
+        >
           <div class="alert alert-info">
             <i class="material-icons-outlined">info</i>
-            <div>{{notice}}</div>
+            <div>{{ notice }}</div>
           </div>
         </div>
 
@@ -14,13 +23,25 @@
           <div class="table-title">
             <h2>Relations</h2>
           </div>
-          <div class="expand"></div>
+          <div class="expand" />
           <div class="actions">
-              <a @click.prevent="$emit('refresh')" v-tooltip="`${ctrlOrCmd('r')} or F5`" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
-              <a v-if="enabled && canAdd" @click.prevent="addRow" v-tooltip="ctrlOrCmd('n')" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
+            <a
+              @click.prevent="$emit('refresh')"
+              v-tooltip="`${ctrlOrCmd('r')} or F5`"
+              class="btn btn-link btn-fab"
+            ><i class="material-icons">refresh</i></a>
+            <a
+              v-if="enabled && canAdd"
+              @click.prevent="addRow"
+              v-tooltip="ctrlOrCmd('n')"
+              class="btn btn-primary btn-fab"
+            ><i class="material-icons">add</i></a>
           </div>
         </div>
-        <div class="table-relations" ref="tabulator"></div>
+        <div
+          class="table-relations"
+          ref="tabulator"
+        />
       </div>
     </div>
 
@@ -29,23 +50,44 @@
     <status-bar class="tabulator-footer">
       <div class="flex flex-middle flex-right statusbar-actions">
         <slot name="footer" />
-        <x-button v-if="hasEdits && !loading" class="btn btn-flat reset" @click.prevent="submitUndo">Reset</x-button>
-        <x-buttons v-if="hasEdits && !loading" class="pending-changes">
-          <x-button class="btn btn-primary" @click.prevent="submitApply">
-            <i v-if="error" class="material-icons">error</i>
-            <span class="badge" v-if="!error"><small>{{editCount}}</small></span>
+        <x-button
+          v-if="hasEdits && !loading"
+          class="btn btn-flat reset"
+          @click.prevent="submitUndo"
+        >
+          Reset
+        </x-button>
+        <x-buttons
+          v-if="hasEdits && !loading"
+          class="pending-changes"
+        >
+          <x-button
+            class="btn btn-primary"
+            @click.prevent="submitApply"
+          >
+            <i
+              v-if="error"
+              class="material-icons"
+            >error</i>
+            <span
+              class="badge"
+              v-if="!error"
+            ><small>{{ editCount }}</small></span>
             <span>Apply</span>
           </x-button>
-          <x-button class="btn btn-primary" menu>
+          <x-button
+            class="btn btn-primary"
+            menu
+          >
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
               <x-menuitem @click.prevent="submitApply">
                 <x-label>Apply</x-label>
-                <x-shortcut value="Control+S"></x-shortcut>
+                <x-shortcut value="Control+S" />
               </x-menuitem>
               <x-menuitem @click.prevent="submitSql">
                 <x-label>Copy to SQL</x-label>
-                <x-shortcut value="Control+Shift+S"></x-shortcut>
+                <x-shortcut value="Control+Shift+S" />
               </x-menuitem>
             </x-menu>
           </x-button>
@@ -75,6 +117,7 @@ import { AppEvent } from '@/common/AppEvent'
 import rawLog from 'electron-log'
 import ErrorAlert from '../common/ErrorAlert.vue'
 const log = rawLog.scope('TableRelations');
+import { escapeHtml } from '@/mixins/data_mutators';
 
 export default Vue.extend({
   props: ["table", "connection", "tabId", "active", "properties", 'tabState'],
@@ -151,7 +194,7 @@ export default Vue.extend({
           editable,
           editor: 'list',
           editorParams: {
-            values: this.table.columns.map((c) => c.columnName)
+            values: this.table.columns.map((c) => escapeHtml(c.columnName))
           }
         },
         ...( showSchema ? [{
@@ -160,7 +203,7 @@ export default Vue.extend({
           editable,
           editor: 'list' as any,
           editorParams: {
-            values: [...this.schemas]
+            values: this.schemas.map((s) => escapeHtml(s))
           },
           cellEdited: (cell) => cell.getRow().getCell('toTable')?.setValue(null)
         }] : []),
@@ -170,7 +213,7 @@ export default Vue.extend({
           editable,
           editor: 'list',
           editorParams: {
-            // @ts-ignore
+            // @ts-expect-error Incorrectly typed
             valuesLookup: this.getTables
           },
           cellEdited: (cell) => cell.getRow().getCell('toColumn')?.setValue(null)
@@ -182,7 +225,7 @@ export default Vue.extend({
           editable,
           editor: 'select',
           editorParams: {
-            // @ts-ignore
+            // @ts-expect-error Incorrectly typed
             valuesLookup: this.getColumns
           },
         },
@@ -201,7 +244,7 @@ export default Vue.extend({
           title: 'On Delete',
           editable,
           editor: 'select',
-          // @ts-ignore
+          // @ts-expect-error Bad Type
           editorParams: {
             values: this.dialectData.constraintActions,
             defaultValue: 'NO ACTION',
@@ -230,19 +273,19 @@ export default Vue.extend({
     getTables(cell: CellComponent): string[] {
       const schema = cell.getRow().getData()['toSchema']
       return schema ?
-        this.schemaTables.find((st) => st.schema === schema)?.tables.map((t) => t.name) :
-        this.tables.map((t) => t.name)
+        this.schemaTables.find((st) => escapeHtml(st.schema) === schema)?.tables.map((t) => escapeHtml(t.name)) :
+        this.tables.map((t) => escapeHtml(t.name))
     },
     getColumns(cell: CellComponent): string[] {
       const data = cell.getRow().getData()
       const schema = data['toSchema']
       const table = data['toTable']
       if (!schema) {
-        return this.tables.find((t: TableOrView) => t.name === table)?.columns.map((c: TableColumn) => c.columnName) || []
+        return this.tables.find((t: TableOrView) => escapeHtml(t.name) === table)?.columns.map((c: TableColumn) => escapeHtml(c.columnName)) || []
       } else {
         return this.tables.find((t: TableOrView) =>
-          t.name === table && t.schema === schema
-        )?.columns.map((c: TableColumn) => c.columnName) || []
+          escapeHtml(t.name) === table && escapeHtml(t.schema) === schema
+        )?.columns.map((c: TableColumn) => escapeHtml(c.columnName)) || []
       }
     },
     getPayload(): RelationAlterations {
@@ -322,7 +365,6 @@ export default Vue.extend({
     initializeTabulator() {
 
       this.tabulator?.destroy()
-      // @ts-ignore
       this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         columns: this.tableColumns,
         data: this.tableData,

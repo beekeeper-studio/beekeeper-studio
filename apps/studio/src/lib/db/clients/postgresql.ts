@@ -24,7 +24,7 @@ import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftCh
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 
 
-const base64 = require('base64-url');
+const base64 = require('base64-url'); // eslint-disable-line
 const PD = PostgresData
 function isConnection(x: any): x is HasConnection {
   return x.connection !== undefined
@@ -105,7 +105,7 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
     isCockroach,
     isRedshift,
     number,
-    hasPartitions: (isPostgres && number >= 90000) //for future cochroach support?: || (isCockroach && number >= 200070)
+    hasPartitions: (isPostgres && number >= 100000), //for future cochroach support?: || (isCockroach && number >= 200070)
   }
 }
 
@@ -226,7 +226,11 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
     setTableDescription: (table: string, description: string, schema = defaultSchema) => setTableDescription(conn, table, description, schema),
     dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string|null) => dropElement(conn, elementName, typeOfElement, schema),
-    truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema)
+    truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => truncateElement(conn, elementName, typeOfElement, schema),
+
+    // duplicate table
+    duplicateTable: (tableName: string, duplicateTableName: string, schema?: string) => duplicateTable(conn, tableName, duplicateTableName, schema),
+    duplicateTableSql: (tableName: string, duplicateTableName: string, schema?: string) => duplicateTableSql(tableName, duplicateTableName, schema),
   };
 }
 
@@ -248,18 +252,21 @@ export async function listTables(conn: HasPool, filter: FilterOptions = { schema
   if (version.hasPartitions) {
     // TODO (day): when we support more dbs for partitioning, we will need to construct a different query for cockroach.
     sql += `
-        pc.relkind as tabletype
+        pc.relkind as tabletype,
+        parent_pc.relkind as parenttype
       FROM information_schema.tables AS t
+      JOIN pg_class AS pc
+        ON t.table_name = pc.relname AND quote_ident(t.table_schema) = pc.relnamespace::regnamespace::text
       LEFT OUTER JOIN pg_inherits AS i
-      ON t.table_name::text = i.inhrelid::regclass::text
-      LEFT OUTER JOIN pg_class AS pc
-      ON t.table_name = pc.relname
+        ON pc.oid = i.inhrelid
+      LEFT OUTER JOIN pg_class AS parent_pc
+        ON parent_pc.oid = i.inhparent
       WHERE t.table_type NOT LIKE '%VIEW%'
-      AND i.inhrelid::regclass IS NULL
     `;
   } else {
     sql += `
-        'r' as tabletype
+        'r' as tabletype,
+        'r' as parenttype
       FROM information_schema.tables AS t
       WHERE t.table_type NOT LIKE '%VIEW%'
     `;
@@ -279,7 +286,7 @@ export async function listTablePartitions(conn: HasPool, tableName: string, sche
   // only postgres will pass this canary for now.
   if (!version.hasPartitions) return null;
 
-  let sql = knex.raw(`
+  const sql = knex.raw(`
     SELECT
       ps.schemaname AS schema,
       ps.relname AS name,
@@ -289,23 +296,8 @@ export async function listTablePartitions(conn: HasPool, tableName: string, sche
       JOIN pg_class pt                ON pt.oid = i.inhrelid
       JOIN pg_stat_all_tables ps      ON ps.relid = i.inhrelid
       JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid = base_tb.relnamespace 
-    WHERE nmsp_parent.nspname = ? AND base_tb.oid = ?::regclass;
+    WHERE nmsp_parent.nspname = ? AND base_tb.relname = ? AND base_tb.relkind = 'p';
   `, [schemaName, tableName]).toQuery();
-
-
-  if (version.number < 100000) {
-    sql = knex.raw(`
-      SELECT
-        nmsp_child.nspname  AS schema,
-        child.relname       AS name
-      FROM pg_inherits
-        JOIN pg_class parent            ON pg_inherits.inhparent = parent.oid
-        JOIN pg_class child             ON pg_inherits.inhrelid   = child.oid
-        JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid  = parent.relnamespace
-        JOIN pg_namespace nmsp_child    ON nmsp_child.oid   = child.relnamespace
-      WHERE nmsp_parent.nspname = ? and parent.relname=?;
-    `, [schemaName, tableName]).toQuery()
-  }
 
   const data = await driverExecuteSingle(conn, { query: sql });
 
@@ -636,7 +628,6 @@ export async function listTableColumns(
   if (table && !schema) {
     throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`)
   }
-  const column_comment_clause = table ? "col_description(($1 || '.' || $2)::regclass, ordinal_position) as column_comment," : ""
 
   const sql = `
     SELECT
@@ -646,11 +637,12 @@ export async function listTableColumns(
       is_nullable,
       ordinal_position,
       column_default,
-      ${column_comment_clause}
       CASE
-        WHEN character_maximum_length is not null  and udt_name != 'text'
+        WHEN character_maximum_length is not null  and udt_name != 'text' 
           THEN CONCAT(udt_name, concat('(', concat(character_maximum_length::varchar(255), ')')))
-        WHEN datetime_precision is not null THEN
+        WHEN numeric_precision is not null 
+        	THEN CONCAT(udt_name, concat('(', concat(numeric_precision::varchar(255),',',numeric_scale::varchar(255), ')')))
+        WHEN datetime_precision is not null AND udt_name != 'date' THEN
           CONCAT(udt_name, concat('(', concat(datetime_precision::varchar(255), ')')))
         ELSE udt_name
       END as data_type
@@ -669,7 +661,6 @@ export async function listTableColumns(
     nullable: row.is_nullable === 'YES',
     defaultValue: row.column_default,
     ordinalPosition: Number(row.ordinal_position),
-    comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
   }));
 }
 
@@ -1289,7 +1280,7 @@ export function query(conn: Conn, queryText: string, _schema: string) {
   };
 }
 
-export async function executeQuery(conn: Conn, queryText: string, arrayMode: boolean = false) {
+export async function executeQuery(conn: Conn, queryText: string, arrayMode = false) {
   const data = await driverExecuteQuery(conn, { query: queryText, multiple: true, arrayMode });
 
   const commands = identifyCommands(queryText).map((item) => item.type);
@@ -1325,75 +1316,149 @@ export function getQuerySelectTop(_conn: Conn, table: string, limit: number, sch
   return `SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)} LIMIT ${limit}`;
 }
 
-export async function getTableCreateScript(conn: Conn, table: string, schema: string): Promise<string> {
-  // Reference http://stackoverflow.com/a/32885178
-  const sql = `
-    SELECT
-      'CREATE TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) || E' (\n' ||
-      array_to_string(
-        array_agg(
-          '  ' || quote_ident(tabdef.column_name) || ' ' ||
-          case when tabdef.def_val like 'nextval(%_seq%' then
-            case when tabdef.type = 'integer' then 'serial'
-                 when tabdef.type = 'smallint' then 'smallserial'
-                 when tabdef.type = 'bigint' then 'bigserial'
-                 else tabdef.type end
-          else
-            tabdef.type
-          end || ' ' ||
-          tabdef.not_null ||
-          CASE WHEN tabdef.def_val IS NOT NULL
-                    AND NOT (tabdef.def_val like 'nextval(%_seq%'
-                             AND (tabdef.type = 'integer' OR tabdef.type = 'smallint' OR tabdef.type = 'bigint'))
-               THEN ' DEFAULT ' || tabdef.def_val
-          ELSE '' END ||
-          CASE WHEN tabdef.identity IS NOT NULL THEN ' ' || tabdef.identity ELSE '' END
-          ORDER BY tabdef.column_idx ASC
-        )
-        , E',\n'
-      ) || E'\n);\n' ||
-      CASE WHEN tc.constraint_name IS NULL THEN ''
-           ELSE E'\nALTER TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) ||
-           ' ADD CONSTRAINT ' || quote_ident(tc.constraint_name)  ||
-           ' PRIMARY KEY ' || '(' || substring(constr.column_name from 0 for char_length(constr.column_name)-1) || ')'
-      END AS createtable
-    FROM
-    ( SELECT
-        c.relname AS table_name,
-        a.attname AS column_name,
-        a.attnum AS column_idx,
-        pg_catalog.format_type(a.atttypid, a.atttypmod) AS type,
-        CASE
-          WHEN a.attnotnull OR a.attidentity != '' THEN 'NOT NULL'
-        ELSE 'NULL'
-        END AS not_null,
-        CASE WHEN a.atthasdef THEN pg_catalog.pg_get_expr(ad.adbin, ad.adrelid) ELSE null END AS def_val,
-        CASE WHEN a.attidentity = 'a' THEN 'GENERATED ALWAYS AS IDENTITY' when a.attidentity = 'd' THEN 'GENERATED BY DEFAULT AS IDENTITY' ELSE null END AS identity,
-        n.nspname as schema_name
-      FROM pg_class c
-       JOIN pg_namespace n ON (n.oid = c.relnamespace)
-       JOIN pg_attribute a ON (a.attnum > 0 AND a.attrelid = c.oid)
-       JOIN pg_type t ON (a.atttypid = t.oid)
-       LEFT JOIN pg_attrdef ad ON (a.attrelid = ad.adrelid AND a.attnum = ad.adnum)
-      WHERE c.relname = $1
-      AND n.nspname = $2
-      ORDER BY a.attnum DESC
-    ) AS tabdef
-    LEFT JOIN information_schema.table_constraints tc
-    ON  tc.table_name       = tabdef.table_name
-    AND tc.table_schema     = tabdef.schema_name
-    AND tc.constraint_Type  = 'PRIMARY KEY'
-    LEFT JOIN LATERAL (
-      SELECT column_name || ', ' AS column_name
-      FROM   information_schema.key_column_usage kcu
-      WHERE  kcu.constraint_name = tc.constraint_name
-      AND kcu.table_name = tabdef.table_name
-      AND kcu.table_schema = tabdef.schema_name
-      ORDER BY ordinal_position
-    ) AS constr ON true
-    GROUP BY tabdef.schema_name, tabdef.table_name, tc.constraint_name, constr.column_name;
-  `;
 
+const postgres10CreateScript = `
+  SELECT
+  'CREATE TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) || E' (\n' ||
+  array_to_string(
+    array_agg(
+      '  ' || quote_ident(tabdef.column_name) || ' ' ||
+      case when tabdef.def_val like 'nextval(%_seq%' then
+        case when tabdef.type = 'integer' then 'serial'
+            when tabdef.type = 'smallint' then 'smallserial'
+            when tabdef.type = 'bigint' then 'bigserial'
+            else tabdef.type end
+      else
+        tabdef.type
+      end || ' ' ||
+      tabdef.not_null ||
+      CASE WHEN tabdef.def_val IS NOT NULL
+                AND NOT (tabdef.def_val like 'nextval(%_seq%'
+                        AND (tabdef.type = 'integer' OR tabdef.type = 'smallint' OR tabdef.type = 'bigint'))
+          THEN ' DEFAULT ' || tabdef.def_val
+      ELSE '' END ||
+      CASE WHEN tabdef.identity IS NOT NULL THEN ' ' || tabdef.identity ELSE '' END
+      ORDER BY tabdef.column_idx ASC
+    )
+    , E',\n'
+  ) || E'\n);\n' ||
+  CASE WHEN tc.constraint_name IS NULL THEN ''
+      ELSE E'\nALTER TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) ||
+      ' ADD CONSTRAINT ' || quote_ident(tc.constraint_name)  ||
+      ' PRIMARY KEY ' || '(' || substring(constr.column_name from 0 for char_length(constr.column_name)-1) || ')'
+  END AS createtable
+  FROM
+  ( SELECT
+    c.relname AS table_name,
+    a.attname AS column_name,
+    a.attnum AS column_idx,
+    pg_catalog.format_type(a.atttypid, a.atttypmod) AS type,
+    CASE
+      WHEN a.attnotnull OR a.attidentity != '' THEN 'NOT NULL'
+    ELSE 'NULL'
+    END AS not_null,
+    CASE WHEN a.atthasdef THEN pg_catalog.pg_get_expr(ad.adbin, ad.adrelid) ELSE null END AS def_val,
+    CASE WHEN a.attidentity = 'a' THEN 'GENERATED ALWAYS AS IDENTITY' when a.attidentity = 'd' THEN 'GENERATED BY DEFAULT AS IDENTITY' ELSE null END AS identity,
+    n.nspname as schema_name
+  FROM pg_class c
+  JOIN pg_namespace n ON (n.oid = c.relnamespace)
+  JOIN pg_attribute a ON (a.attnum > 0 AND a.attrelid = c.oid)
+  JOIN pg_type t ON (a.atttypid = t.oid)
+  LEFT JOIN pg_attrdef ad ON (a.attrelid = ad.adrelid AND a.attnum = ad.adnum)
+  WHERE c.relname = $1
+  AND n.nspname = $2
+  ORDER BY a.attnum DESC
+  ) AS tabdef
+  LEFT JOIN information_schema.table_constraints tc
+  ON  tc.table_name       = tabdef.table_name
+  AND tc.table_schema     = tabdef.schema_name
+  AND tc.constraint_Type  = 'PRIMARY KEY'
+  LEFT JOIN LATERAL (
+  SELECT column_name || ', ' AS column_name
+  FROM   information_schema.key_column_usage kcu
+  WHERE  kcu.constraint_name = tc.constraint_name
+  AND kcu.table_name = tabdef.table_name
+  AND kcu.table_schema = tabdef.schema_name
+  ORDER BY ordinal_position
+  ) AS constr ON true
+  GROUP BY tabdef.schema_name, tabdef.table_name, tc.constraint_name, constr.column_name;
+
+`
+const defaultCreateScript = `
+  SELECT
+  'CREATE TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) || E' (\n' ||
+  array_to_string(
+    array_agg(
+      '  ' || quote_ident(tabdef.column_name) || ' ' ||
+      case when tabdef.def_val like 'nextval(%_seq%' then
+        case when tabdef.type = 'integer' then 'serial'
+            when tabdef.type = 'smallint' then 'smallserial'
+            when tabdef.type = 'bigint' then 'bigserial'
+            else tabdef.type end
+      else
+        tabdef.type
+      end || ' ' ||
+      tabdef.not_null ||
+      CASE WHEN tabdef.def_val IS NOT NULL
+                AND NOT (tabdef.def_val like 'nextval(%_seq%'
+                        AND (tabdef.type = 'integer' OR tabdef.type = 'smallint' OR tabdef.type = 'bigint'))
+          THEN ' DEFAULT ' || tabdef.def_val
+      ELSE '' END ||
+      CASE WHEN tabdef.identity IS NOT NULL THEN ' ' || tabdef.identity ELSE '' END
+      ORDER BY tabdef.column_idx ASC
+    )
+    , E',\n'
+  ) || E'\n);\n' ||
+  CASE WHEN tc.constraint_name IS NULL THEN ''
+      ELSE E'\nALTER TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) ||
+      ' ADD CONSTRAINT ' || quote_ident(tc.constraint_name)  ||
+      ' PRIMARY KEY ' || '(' || substring(constr.column_name from 0 for char_length(constr.column_name)-1) || ')'
+  END AS createtable
+  FROM
+  ( SELECT
+    c.relname AS table_name,
+    a.attname AS column_name,
+    a.attnum AS column_idx,
+    pg_catalog.format_type(a.atttypid, a.atttypmod) AS type,
+    CASE
+      WHEN a.attnotnull THEN 'NOT NULL'
+    ELSE 'NULL'
+    END AS not_null,
+    CASE WHEN a.atthasdef THEN pg_catalog.pg_get_expr(ad.adbin, ad.adrelid) ELSE null END AS def_val,
+    null::text as identity,
+    n.nspname as schema_name
+  FROM pg_class c
+  JOIN pg_namespace n ON (n.oid = c.relnamespace)
+  JOIN pg_attribute a ON (a.attnum > 0 AND a.attrelid = c.oid)
+  JOIN pg_type t ON (a.atttypid = t.oid)
+  LEFT JOIN pg_attrdef ad ON (a.attrelid = ad.adrelid AND a.attnum = ad.adnum)
+  WHERE c.relname = $1
+  AND n.nspname = $2
+  ORDER BY a.attnum DESC
+  ) AS tabdef
+  LEFT JOIN information_schema.table_constraints tc
+  ON  tc.table_name       = tabdef.table_name
+  AND tc.table_schema     = tabdef.schema_name
+  AND tc.constraint_Type  = 'PRIMARY KEY'
+  LEFT JOIN LATERAL (
+  SELECT column_name || ', ' AS column_name
+  FROM   information_schema.key_column_usage kcu
+  WHERE  kcu.constraint_name = tc.constraint_name
+  AND kcu.table_name = tabdef.table_name
+  AND kcu.table_schema = tabdef.schema_name
+  ORDER BY ordinal_position
+  ) AS constr ON true
+  GROUP BY tabdef.schema_name, tabdef.table_name, tc.constraint_name, constr.column_name;
+
+`
+
+
+export async function getTableCreateScript(conn: HasPool, table: string, schema: string): Promise<string> {
+  // Reference http://stackoverflow.com/a/32885178
+  const version = await getVersion(conn)
+  const includesAttIdentify = (version.isPostgres && version.number >= 100000)
+
+  const sql = includesAttIdentify ? postgres10CreateScript : defaultCreateScript;
   const params = [
     table,
     schema,
@@ -1488,7 +1553,7 @@ export async function truncateAllTables(conn: Conn, schema: string) {
   });
 }
 
-export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
@@ -1511,13 +1576,29 @@ export async function createDatabase(conn, databaseName, charset) {
   await driverExecuteQuery(conn, { query: sql })
 }
 
-export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
 
     await driverExecuteSingle(connClient, { query: sql })
   });
+}
+
+export async function duplicateTable(conn: Conn, tableName: string,  duplicateTableName: string, schema: string) {
+  const sql = duplicateTableSql(tableName, duplicateTableName, schema);
+
+  await driverExecuteQuery(conn, { query: sql });
+}
+
+export function duplicateTableSql(tableName: string,  duplicateTableName: string, schema: string) {
+  const sql = `
+    CREATE TABLE ${wrapIdentifier(schema)}.${wrapIdentifier(duplicateTableName)} AS
+    SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(tableName)}
+  `;
+
+  return sql;
+
 }
 
 async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectionServerConfig}, database: { database: string}) {
@@ -1576,7 +1657,7 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
     connectionTimeoutMillis: globals.psqlTimeout,
     idleTimeoutMillis: globals.psqlIdleTimeout,
     // not in the typings, but works.
-    // @ts-ignore
+    // @ts-expect-error Fix Typings
     options: optionsString
   };
 

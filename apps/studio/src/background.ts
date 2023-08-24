@@ -1,5 +1,4 @@
 'use strict'
-// import '@babel/polyfill'
 import * as fs from 'fs'
 import { app, protocol } from 'electron'
 import log from 'electron-log'
@@ -7,6 +6,7 @@ import * as electron from 'electron'
 import { ipcMain } from 'electron'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 
+// eslint-disable-next-line
 require('@electron/remote/main').initialize()
 log.transports.file.level = "info"
 log.catchErrors({ showDialog: false})

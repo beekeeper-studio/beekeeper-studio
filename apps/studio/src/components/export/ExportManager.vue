@@ -33,6 +33,7 @@ interface ExportTriggerOptions {
   filters?: TableFilter[]
 }
 
+
 const ExportClassPicker = {
   'csv': CsvExporter,
   'json': JsonExporter,
@@ -54,6 +55,7 @@ interface StartExportOptions {
   }
   outputOptions: any
 }
+
 
 export default Vue.extend({
   components: { ExportModal, ExportNotification },

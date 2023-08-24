@@ -84,7 +84,8 @@ const store = new Vuex.Store<State>({
       filterQuery: undefined,
       showTables: true,
       showRoutines: true,
-      showViews: true
+      showViews: true,
+      showPartitions: false
     },
     tablesLoading: "Loading tables...",
     columnsLoading: 'Loading columns...',
@@ -134,7 +135,7 @@ const store = new Vuex.Store<State>({
       return _.sortBy(state.usedConfigs, 'updatedAt').reverse()
     },
     filteredTables(state) {
-      return entityFilter(state.tables, state.entityFilter)
+      return entityFilter(state.tables, state.entityFilter);
     },
     filteredRoutines(state) {
       return entityFilter(state.routines, state.entityFilter)
@@ -151,6 +152,13 @@ const store = new Vuex.Store<State>({
       }
       const obj = _.chain(g.filteredTables).groupBy('schema').value()
       const routines = _.groupBy(g.filteredRoutines, 'schema')
+
+      for (const key in routines) {
+        if (!obj[key]) {
+            obj[key] = [];
+        }
+      }
+      
       return _(obj).keys().map(k => {
         return {
           schema: k,
@@ -204,6 +212,9 @@ const store = new Vuex.Store<State>({
     showRoutines(state) {
       state.entityFilter.showRoutines = !state.entityFilter.showRoutines
     },
+    showPartitions(state) {
+      state.entityFilter.showPartitions = !state.entityFilter.showPartitions
+    },
     tabActive(state, tab: CoreTab) {
       state.activeTab = tab
     },
@@ -230,7 +241,8 @@ const store = new Vuex.Store<State>({
         filterQuery: undefined,
         showTables: true,
         showViews: true,
-        showRoutines: true
+        showRoutines: true,
+        showPartitions: false
       }
     },
     updateConnection(state, {connection, database}) {
@@ -435,8 +447,10 @@ const store = new Vuex.Store<State>({
           onlyTables.forEach((t) => {
             t.entityType = 'table'
             t.columns = []
-            if (!context.state.connection.supportedFeatures().partitions) 
-              t.tabletype = null;
+            // if (!context.state.connection.supportedFeatures().partitions) {
+            //   t.tabletype = null;
+            //   t.parenttype = null;
+            // } 
           })
           const views = await context.state.connection.listViews({ schema })
           views.forEach((v) => {

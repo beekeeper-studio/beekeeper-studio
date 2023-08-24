@@ -35,12 +35,21 @@
   &:hover {
     background: rgba($theme-base, 0.05);
   }
+  &.disabled {
+    pointer-events: none;
+    color: darken($text-dark, 25%);
+    background: darken(rgba($theme-base, 0.05), 25%);
+  }
   i {
     height: 24px!important;
     line-height: 24px!important;
     width: 24px;
     opacity: 0.6;
     margin-right: $gutter-h!important;
+  }
+  .shortcut {
+    padding-left: 5px;
+    color: darken($text-dark, 30%);
   }
 }
 .vue-simple-context-menu__divider, hr {

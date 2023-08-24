@@ -148,8 +148,6 @@ export default {
         return `Execution time: ${humanizeDuration(this.executeTime)}`
       }
     },
-    mounted() {
-    },
     methods: {
       pluralize(word, amount, flag) {
         return pluralize(word, amount, flag)

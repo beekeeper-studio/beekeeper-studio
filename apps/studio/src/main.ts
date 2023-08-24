@@ -12,8 +12,7 @@ import 'codemirror/addon/scroll/annotatescrollbar'
 import 'codemirror/addon/search/matchesonscrollbar'
 import 'codemirror/addon/search/matchesonscrollbar.css'
 import 'codemirror/addon/search/searchcursor'
-// @ts-ignore
-import { TabulatorFull as Tabulator, EditModule } from 'tabulator-tables'
+import { TabulatorFull as Tabulator } from 'tabulator-tables'
 import './filters/pretty-bytes-filter'
 import PortalVue from 'portal-vue'
 import App from './App.vue'
@@ -81,9 +80,8 @@ import SettingsPlugin from './plugins/SettingsPlugin'
     log.info("starting logging")
     tls.DEFAULT_MIN_VERSION = "TLSv1"
     TimeAgo.addLocale(en)
-    // @ts-ignore
     Tabulator.defaultOptions.layout = "fitDataFill";
-    // @ts-ignore
+    // @ts-expect-error default options not fully typed
     Tabulator.defaultOptions.menuContainer = ".beekeeper-studio-wrapper";
     // Tabulator.prototype.bindModules([EditModule]);
     const appDb = platformInfo.appDbPath
@@ -132,7 +130,7 @@ import SettingsPlugin from './plugins/SettingsPlugin'
     Vue.config.productionTip = false
     Vue.use(TypeOrmPlugin, {connection})
     Vue.use(VueHotkey)
-    Vue.use(VTooltip)
+    Vue.use(VTooltip, { defaultHtml: false, })
     Vue.use(VModal)
     Vue.use(VueClipboard)
     Vue.use(ConfigPlugin)
@@ -162,5 +160,3 @@ import SettingsPlugin from './plugins/SettingsPlugin'
     throw err
   }
 })();
-
-

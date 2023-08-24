@@ -1,5 +1,5 @@
 <template>
-  <div v-if="false"></div>
+  <div v-if="false" />
 </template>
 <script lang="ts">
 import { ipcRenderer } from 'electron'
@@ -15,6 +15,7 @@ export default Vue.extend({
         text: "👋 Beekeeper Studio is run by a small team. Buy the full version of Beekeeper Studio to support development and get more features. Thank you ♥",
         timeout: false,
         queue: "upsell",
+        killer: 'upsell',
         layout: 'bottomRight',
         closeWith: ['button'],
         buttons: [

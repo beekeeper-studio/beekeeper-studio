@@ -28,6 +28,7 @@ export interface TableOrView extends DatabaseEntity {
   columns?: TableColumn[];
   partitions?: TablePartition[];
   tabletype?: string | null
+  parenttype?: string | null
 }
 
 export interface IndexedColumn {
@@ -148,7 +149,7 @@ export interface TableChanges {
 export interface TableInsert {
   table: string
   schema?: string
-  data: object[]
+  data: Record<string, any>[]
 }
 
 export interface PKSelector {

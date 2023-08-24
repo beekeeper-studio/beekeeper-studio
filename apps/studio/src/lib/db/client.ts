@@ -5,7 +5,7 @@ import createLogger from '../logger';
 import { SSHConnection } from '@/vendor/node-ssh-forward/index';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, TablePartition } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
-import { RedshiftOptions } from '@/common/appdb/models/saved_connection';
+import type { RedshiftOptions } from '@/common/appdb/models/saved_connection';
 
 const logger = createLogger('db');
 
@@ -90,6 +90,10 @@ export interface DatabaseClient {
   // delete stuff
   dropElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => Promise<void>
   truncateElement: (elementName: string, typeOfElement: DatabaseElement, schema?: string) => Promise<void>
+
+  // duplicate table
+  duplicateTable: (tableName: string, duplicateTableName: string, schema?: string) => Promise<void>
+  duplicateTableSql: (tableName: string, duplicateTableName: string, schema?: string) => string
 }
 
 export type IDbClients = keyof typeof clients
@@ -133,7 +137,7 @@ export interface IDbSshTunnel {
   connection: SSHConnection,
   localHost: string,
   localPort: number,
-  tunnel: {}
+  tunnel: Record<string, any>
 }
 
 export interface IDbConnectionServer {
@@ -224,6 +228,10 @@ export class DBConnection {
   // delete stuff
   dropElement = bindAsync.bind(null, 'dropElement', this.server, this.database)
   truncateElement = bindAsync.bind(null, 'truncateElement', this.server, this.database)
+
+  // duplicateTAble
+  duplicateTable = bindAsync.bind(null, 'duplicateTable', this.server, this.database)
+  duplicateTableSql = bind.bind(null, 'duplicateTableSql', this.server, this.database)
 
   async currentDatabase() {
     return this.database.database

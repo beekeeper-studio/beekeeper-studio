@@ -1,4 +1,15 @@
 /* eslint-disable */
+const {
+  findTablesBySchema,
+  pushTablesToResult,
+  queryTable,
+  parseDBHintTable,
+  splitSchemaTable,
+  isQuote,
+  getTextNearCursor,
+  splitWords,
+} = require("@/lib/editor");
+
 // "forked" from CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: https://codemirror.net/5/LICENSE
 (function(mod) {
@@ -11,7 +22,10 @@
 })(function(CodeMirror) {
   "use strict";
 
-  var tables;
+  /**
+    * @type {import('@/lib/editor').DBHint}
+    **/
+  let dbHint;
   var defaultTable;
   var keywords;
   var identifierQuote;
@@ -61,7 +75,7 @@
   }
 
   function getTable(name) {
-    return tables[name.toUpperCase()]
+    return queryTable(dbHint, name)
   }
 
   function shallowClone(object) {
@@ -120,7 +134,18 @@
     return name;
   }
 
+  function findTablesForMatches(search) {
+    const [schema, table] = splitSchemaTable(search);
+    const unwrappedSchema = dbHint.dialect.unwrapIdentifier(schema);
+    return dbHint.schemaWordList[unwrappedSchema]
+      ? findTablesBySchema(dbHint, unwrappedSchema)
+          .map((table) => `${schema}.${table.text}`)
+      : [];
+  }
+
   async function nameCompletion(cur, token, result, editor) {
+    const textNearCursor = getTextNearCursor(editor, cur)
+
     // Try to complete table, column names and return start position of completion
     var useIdentifierQuotes = false;
     var nameParts = [];
@@ -140,9 +165,16 @@
       }
     }
 
+    addMatches(
+      result,
+      textNearCursor.text,
+      findTablesForMatches(textNearCursor.text),
+      (w) => w
+    );
+
     // Try to complete table names
     var string = nameParts.join(".");
-    addMatches(result, string, tables, function(w) {
+    addMatches(result, string, dbHint.defaultTableWordList, function(w) {
       return useIdentifierQuotes ? insertIdentifierQuotes(w) : w;
     });
 
@@ -155,16 +187,29 @@
     string = nameParts.pop();
     var table = nameParts.join(".");
 
+    let tableWord = getTable(table);
+    if (!tableWord) {
+      // If the table query fails, it could be that CodeMirror didn't get the
+      // token correctly. For example, if the query is `SELECT * FROM
+      // "schema".table` then this will produce `".table` instead of
+      // `"schema".table`. If that happens, we will try to use the return
+      // value from getTextNearCursor() to find the table.
+      table = textNearCursor.text.substring(0, textNearCursor.text.length - 1);
+      start = textNearCursor.startAt;
+      tableWord = getTable(table);
+    }
+
     var alias = false;
     var aliasTable = table;
     // Check if table is available. If not, find table by Alias
-    if (!getTable(table)) {
+    if (!tableWord) {
       var oldTable = table;
-      table = findTableByAlias(table, editor);
+      tableWord = findTableByAlias(table, editor);
+      table = tableWord?.name;
       if (table !== oldTable) alias = true;
     }
 
-    var columns = globalEditorOptions.getColumns ? await globalEditorOptions.getColumns(table): getTable(table)
+    var columns = globalEditorOptions.getColumns && tableWord ? await globalEditorOptions.getColumns(tableWord): getTable(table)
 
     if (columns && columns.columns)
       columns = columns.columns;
@@ -187,7 +232,8 @@
   }
 
   function eachWord(lineText, f) {
-    var words = lineText.split(/\s+/)
+    var words = splitWords(lineText);
+    // var words = lineText.split(/\s+/)
     for (var i = 0; i < words.length; i++)
       if (words[i]) f(words[i].replace(/[`,;]/g, ''))
   }
@@ -197,7 +243,7 @@
     var fullQuery = doc.getValue();
     var aliasUpperCase = alias.toUpperCase();
     var previousWord = "";
-    var table = "";
+    let table;
     var separator = [];
     var validRange = {
       start: Pos(0, 0),
@@ -226,14 +272,15 @@
 
     if (validRange.start) {
       var query = doc.getRange(validRange.start, validRange.end, false);
-
       for (var i = 0; i < query.length; i++) {
         var lineText = query[i];
         eachWord(lineText, function(word) {
           var wordUpperCase = word.toUpperCase();
-          if (wordUpperCase === aliasUpperCase && getTable(previousWord))
-            table = previousWord;
+          const tableWord = getTable(previousWord)
+          if (wordUpperCase === aliasUpperCase && tableWord)
+            table = tableWord;
           if (wordUpperCase !== CONS.ALIAS_KEYWORD)
+            // FIXME see this to fix alias spaces in the identifier.
             previousWord = word;
         });
         if (table) break;
@@ -242,11 +289,10 @@
     return table;
   }
 
-  // FIXME: Add support for schemas.
-  //        Currently this only auto-completes tables and columns in the current schema
   CodeMirror.registerHelper("hint", "sql", async function(editor, options) {
     globalEditorOptions = {...editor.options}
-    tables = parseTables(options?.tables)
+    dbHint = options?.dbHint
+
     var defaultTableName = options?.defaultTable;
     var disableKeywords = options?.disableKeywords;
     defaultTable = defaultTableName && getTable(defaultTableName);
@@ -269,10 +315,15 @@
       token.string = token.string.slice(0, cur.ch - token.start);
     }
 
-    if (token.string.match(/^[.`"'\w@][\w$#]*$/g)) {
+    if (token.string.match(/^[.`"'\w@][\w$#]*$/g) && !isQuote(token.string)) {
       search = token.string;
       start = token.start;
       end = token.end;
+    } else if (isQuote(token.string)) {
+      const { text: search, startAt: start } = getTextNearCursor(editor, cur)
+      end = cur.ch;
+      const tables = findTablesForMatches(search);
+      addMatches(result, search, tables, (w) => w);
     } else {
       start = end = cur.ch;
       search = "";
@@ -294,10 +345,13 @@
     addMatches(
         result,
         search,
-        tables, function(w) {
+        dbHint.defaultTableWordList, function(w) {
           return objectOrClass(w, "CodeMirror-hint-table");
         }
     );
+    addMatches(result, search, dbHint.schemaWordList, function (w) {
+      return objectOrClass(w, "CodeMirror-hint-schema");
+    });
     if (!disableKeywords)
       addMatches(result, search, keywords, function(w) {
           return objectOrClass(w.toUpperCase(), "CodeMirror-hint-keyword");

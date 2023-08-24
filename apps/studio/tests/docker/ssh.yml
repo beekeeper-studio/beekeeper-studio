@@ -4,6 +4,7 @@ volumes:
 services:
   postgres:
     image: postgres:13
+    container_name: test_ssh_postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
@@ -16,6 +17,7 @@ services:
     build:
       context: ./
       dockerfile: ./SSHDockerFile
+    container_name: test_ssh
     environment:
       - PUID=1000
       - PGID=1000

@@ -1,6 +1,10 @@
 <template>
-  <div class="sidebar flex-col" id="sidebar" ref="sidebar">
-    <slot></slot>
+  <div
+    class="sidebar flex-col"
+    id="sidebar"
+    ref="sidebar"
+  >
+    <slot />
   </div>
 </template>
 

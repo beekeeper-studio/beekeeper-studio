@@ -10,7 +10,10 @@
             <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Trigger</a> -->
           </div>
         </div>
-        <div class="table-triggers" ref="tabulator"></div>
+        <div
+          class="table-triggers"
+          ref="tabulator"
+        />
       </div>
     </div>
 

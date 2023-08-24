@@ -3,23 +3,36 @@
     <section class="subheader">
       <div class="big-wrap">
         <h1>SQL Table Templates</h1>
-        <div class="subtitle">Use these templates as a starting point for your next table. All templates are fully custimizable.</div>
+        <div class="subtitle">
+          Use these templates as a starting point for your next table. All templates are fully custimizable.
+        </div>
       </div>
     </section>
     <section>
       <div class="big-wrap">
         <div class="row gutter">
-          <div v-for="template in templates" :key="template.name" class="col s6">
-            <router-link :to="{ name: 'Template', params: {id: template.id}}" class="card-flat card-link padding">
-              <h2>{{template.name}}</h2>
-              <p>{{template.description}}</p>
+          <div
+            v-for="template in templates"
+            :key="template.name"
+            class="col s6"
+          >
+            <router-link
+              :to="{ name: 'Template', params: {id: template.id}}"
+              class="card-flat card-link padding"
+            >
+              <h2>{{ template.name }}</h2>
+              <p>{{ template.description }}</p>
               <div class="badges flex wrap">
-                <span class="badge" v-for="item in template.toSchema(dialect).columns" :key="item.columnName">
+                <span
+                  class="badge"
+                  v-for="item in template.toSchema(dialect).columns"
+                  :key="item.columnName"
+                >
                   <span class="column-name">{{ item.columnName }}:</span>
                   <span class="data-type">{{ item.dataType }}</span>
                 </span>
               </div>
-              <span class="expand"></span>
+              <span class="expand" />
             </router-link>
           </div>
         </div>

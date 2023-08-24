@@ -5,7 +5,8 @@ export interface EntityFilter {
   filterQuery?: string
   showTables: boolean
   showViews: boolean
-  showRoutines: boolean
+  showRoutines: boolean,
+  showPartitions: boolean
 }
 
 export enum TabType {

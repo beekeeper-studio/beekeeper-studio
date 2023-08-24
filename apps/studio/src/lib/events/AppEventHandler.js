@@ -19,6 +19,7 @@ export default class {
     this.forward(AppEvent.newTab)
     this.forward(AppEvent.toggleSidebar)
     this.forward(AppEvent.quickSearch)
+    this.forward(AppEvent.upgradeModal)
   }
 
   forward(event) {
