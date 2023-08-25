@@ -5,6 +5,7 @@ import {homedir} from 'os';
 import path from 'path';
 import mkdirp from 'mkdirp';
 import { Error as CustomError } from '../lib/errors'
+import platformInfo from './platform_info';
 
 export function having<T, U>(item: T | undefined | null, f: (T) => U, errorOnNone?: string): U | null {
   if (item) return f(item)
@@ -67,9 +68,14 @@ export function readJSONFile(filename: string): Promise<any> {
 }
 
 export function readVimrc(): string[] {
-  const data = fs.readFileSync(resolveHomePathToAbsolute(".beekeeper.vimrc"), 'uft-8');
-  const dataSplit = data.split("\n");
-  return dataSplit;
+  const vimrcPath = path.join(platformInfo.userDirectory, ".beekeeper.vimrc");
+  if (fileExistsSync(vimrcPath)) {
+    const data = fs.readFileSync(vimrcPath, { encoding: 'utf-8', flag: 'r'});
+    const dataSplit = data.split("\n");
+    return dataSplit;
+  }
+
+  return [];
 }
 
 export function readJSONFileSync(filename: string): any {

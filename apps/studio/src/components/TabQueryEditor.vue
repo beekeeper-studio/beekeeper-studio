@@ -724,7 +724,11 @@
 
           if (this.userKeymap === "vim") {
             const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
-            setKeybindingsFromVimrc(codeMirrorVimInstance);
+            if(!codeMirrorVimInstance) {
+              console.error("Error: Could not find Code Mirror Vim Instance");
+            } else {
+              setKeybindingsFromVimrc(codeMirrorVimInstance);
+            }
           }
 
           this.editor.setValue(startingValue)

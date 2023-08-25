@@ -1,3 +1,5 @@
+import { readVimrc } from "@/common/utils";
+
 type IMapping = {
   mappingMode: string;
   lhs: string;
@@ -5,25 +7,27 @@ type IMapping = {
   mode: string;
 };
 
-export function setKeybindingsFromVimrc(codeMirrorVimInstance: any) {
+export default function setKeybindingsFromVimrc(codeMirrorVimInstance: any) {
   const keyMappingModes = ["nmap", "imap", "vmap"];
-  //const data = fs.readFileSync("./.vimrc", { encoding: 'utf8', flag: 'r'})
-  //const dataSplit = data.split("\n")
-  const dataSplit: string[] = []; //TODO: Grab this data from the readvimrc electron process
+  const potentialCommands = readVimrc();
 
-  if (dataSplit.length === 0) {
+  if (potentialCommands.length === 0) {
     return;
   }
 
   const mappings: IMapping[] = [];
 
-  dataSplit.forEach((line: string) => {
+  potentialCommands.forEach((line: string) => {
     if (!line) {
       return;
     }
+    //TODO: Change this up so that we can enter command mode for some keybindings
+    //One of the commands might look something like this: vmap K :m '<-2<CR>gv=gv
+    //This is a simple version to add some very basic keybindings
+    //Currently this will support your basic keybindings like: nmap gl $ which is a helix keybinding
     const words = line.split(" ");
     if (words.length !== 3) {
-      console.log(`Unable to parse this command: ${line}.`);
+      console.error(`Unable to parse this command: ${line}.`);
       return;
     }
 
@@ -40,7 +44,7 @@ export function setKeybindingsFromVimrc(codeMirrorVimInstance: any) {
     };
 
     if (keyMappingModes.includes(newCommand.mappingMode) === false) {
-      console.log(
+      console.error(
         `Sorry, type needs to be one of the following: ${keyMappingModes.join(
           ", "
         )}`
