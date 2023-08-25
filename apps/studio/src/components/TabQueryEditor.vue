@@ -721,8 +721,6 @@
             keyMap: this.userKeymap,
             getColumns: this.getColumnsForAutocomplete
           } as CodeMirror.EditorConfiguration)
-==== BASE ====
-==== BASE ====
           this.editor.setValue(startingValue)
           this.editor.addKeyMap(runQueryKeyMap)
           this.editor.on("keydown", (_cm, e) => {
@@ -730,6 +728,15 @@
               e.preventDefault()
             }
           })
+
+          if (this.userKeymap === "vim") {
+            const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
+            if(!codeMirrorVimInstance) {
+              console.error("Could not find code mirror vim instance");
+            } else {
+              setKeybindingsFromVimrc(codeMirrorVimInstance);
+            }
+          }
 
           this.editor.on("change", (cm) => {
             // this also updates `this.queryText`
