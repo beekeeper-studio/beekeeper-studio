@@ -237,7 +237,6 @@ export default {
     defaultFileName () {
       const now = new Date();
       const formatted = dateFormat(now, 'yyyy-mm-dd_HHMMss')
-      const schema = this.table.schema ? `${this.table.schema}_` : ''
       const extension = this.selectedExportFormat.key
       let fileName;
       if (this.table) {

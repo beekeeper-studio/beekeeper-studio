@@ -41,6 +41,30 @@
       />
       <span class="expand" />
       <div class="toolbar text-right">
+        <div class="actions btn-group">
+          <x-button
+            class="btn btn-flat btn-small"
+            menu
+          >
+            <i class="material-icons">settings</i>
+            <x-menu>
+              <x-menuitem
+                :key="t.value"
+                v-for="t in keymapTypes"
+                @click.prevent="userKeymap = t.value"
+              > 
+                <x-label class="keymap-label">
+                  <span
+                    class="material-icons"
+                    v-if="t.value === userKeymap"
+                  >done</span>
+                  {{ t.name }}
+                </x-label> 
+              </x-menuitem>
+            </x-menu>
+          </x-button>
+        </div>
+        <div class="expand" />
         <div
           class="actions btn-group"
           ref="actions"
@@ -51,7 +75,6 @@
           >
             Save
           </x-button>
-
           <x-buttons class="">
             <x-button
               class="btn btn-primary btn-small"
