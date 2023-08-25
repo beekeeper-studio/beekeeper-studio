@@ -212,7 +212,7 @@
         </div>
         <div class="vue-dialog-buttons">
           <button class="btn btn-flat" type="button" @click.prevent="$modal.hide(`discard-changes-modal-${tab.id}`)">Cancel</button>
-          <button class="btn btn-primary" type="button" @click.prevent="forceFilter">I'm Sure</button>
+          <button class="btn btn-primary" type="button" @click.prevent="forceFilter" autofocus>I'm Sure</button>
         </div>
       </modal>
     </portal>
