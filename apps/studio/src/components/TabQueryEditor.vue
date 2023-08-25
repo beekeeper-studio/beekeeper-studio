@@ -295,7 +295,7 @@
   import 'codemirror/addon/search/matchesonscrollbar.css'
   import 'codemirror/addon/search/searchcursor'
 
-  import setKeybindingsFromVimrc from '../lib/readVimrc';
+  import setKeybindingsFromVimrc from "../lib/readVimrc"
 
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
@@ -721,16 +721,8 @@
             keyMap: this.userKeymap,
             getColumns: this.getColumnsForAutocomplete
           } as CodeMirror.EditorConfiguration)
-
-          if (this.userKeymap === "vim") {
-            const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
-            if(!codeMirrorVimInstance) {
-              console.error("Error: Could not find Code Mirror Vim Instance");
-            } else {
-              setKeybindingsFromVimrc(codeMirrorVimInstance);
-            }
-          }
-
+==== BASE ====
+==== BASE ====
           this.editor.setValue(startingValue)
           this.editor.addKeyMap(runQueryKeyMap)
           this.editor.on("keydown", (_cm, e) => {

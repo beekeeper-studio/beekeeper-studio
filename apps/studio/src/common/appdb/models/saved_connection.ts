@@ -21,7 +21,8 @@ export const ConnectionTypes = [
   { name: 'SQL Server', value: 'sqlserver' },
   { name: 'Amazon Redshift', value: 'redshift' },
   { name: 'CockroachDB', value: 'cockroachdb' },
-  { name: 'Oracle (ultimate)', value: 'other' }
+  { name: 'Oracle', value: 'other' },
+  { name: 'Cassandra', value: 'other' }
 ]
 
 export const keymapTypes = [

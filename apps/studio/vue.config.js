@@ -194,7 +194,7 @@ module.exports = {
     //   'strong-oracle': 'strong-oracle',
     //   'oracledb': 'oracledb',
     //   // 'pg': 'pg',
-    //   // 'pg-query-stream': 'pg-query-stream'
+    //   // 'pg-query-stream': 'pg-query-stzream'
     // },
     node: {
       dns: 'mock'

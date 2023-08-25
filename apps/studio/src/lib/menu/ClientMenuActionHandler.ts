@@ -44,4 +44,5 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   disconnect = () => send('disconnect')
   addBeekeeper = () => send('addBeekeeper')
   toggleSidebar = () => send('toggleSidebar')
+  upgradeModal = () => send('upgradeModal')
 }

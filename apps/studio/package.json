@@ -1,6 +1,6 @@
 {
   "name": "beekeeper-studio",
-   "version": "3.9.18",
+   "version": "3.9.20",
   "private": true,
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "author": {
@@ -66,9 +66,9 @@
     "sass-loader": "^10.1.1",
     "simple-encryptor": "^3.0.0",
     "split.js": "^1.5.11",
-    "sql-formatter": "^10.0.0",
+    "sql-formatter": "~10.7.2",
     "sql-query-identifier": "^2.2.0",
-    "ssh2": "^1.11.0",
+    "ssh2": "^1.14.0",
     "tabulator-tables": "~5.4.1",
     "tinyduration": "^3.2.4",
     "typeface-roboto": "^0.0.75",
@@ -126,7 +126,7 @@
     "electron-updater": "^4.6.5",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
-    "testcontainers": "^4.6.0",
+    "testcontainers": "~8.9.0",
     "typescript": "~4.1.5",
     "vue-cli-plugin-electron-builder": "~2.1.1",
     "vue-template-compiler": "^2.6.11",

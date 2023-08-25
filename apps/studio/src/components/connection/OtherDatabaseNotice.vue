@@ -3,7 +3,7 @@
     <br>
     <div class="alert alert-warning">
       <i class="material-icons-outlined">info</i>
-      <span>Download the Ultimate Edition to connect to Oracle Databases. Try free for 14 days.</span>
+      <span>This connection type is only available in the full (paid) version of Beekeeper Studio. Try free for 14 days.</span>
     </div>
     <br>
     <div class="flex-middle row">
@@ -13,12 +13,12 @@
       <div class="btn-group">
         <a
           class="btn btn-flat"
-          href="https://beekeeperstudio.io/db/oracle-client"
+          href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
         >Learn More</a>
         <a
           class="btn btn-primary"
-          href="https://beekeeperstudio.io/get"
-        >Download Ultimate Edition</a>
+          href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
+        >Upgrade</a>
       </div>
     </div>
   </div>

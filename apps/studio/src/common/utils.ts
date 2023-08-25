@@ -84,6 +84,13 @@ export function readJSONFileSync(filename: string): any {
   return JSON.parse(data);
 }
 
+export function readVimrc(): string[] {
+  //TODO: Map this to the correct .config directory for beekeeper-studio
+  const data = fs.readFileSync(resolveHomePathToAbsolute(".beekeeper.vimrc"), 'uft-8');
+  const dataSplit = data.split("\n");
+  return dataSplit;
+}
+
 export function createParentDirectory(filename: string): Promise<string> {
   return mkdirp(path.dirname(filename))
 }
