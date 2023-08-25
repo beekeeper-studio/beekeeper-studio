@@ -7,7 +7,7 @@ Beekeeper Studio is a cross-platform SQL editor and database manager available f
 - Download the full version from [the Beekeeper Studio website](https://beekeeperstudio.io/get)
 - Download the community edition [from the releases page](https://github.com/beekeeper-studio/beekeeper-studio/releases/latest)
 
-We publishes binaries for MacOS, Windows, and Linux.
+We publish binaries for MacOS, Windows, and Linux.
 
 ![image](https://user-images.githubusercontent.com/279769/203650152-4a34af1f-8a38-47cf-a273-d34d1c84feeb.png)
 
