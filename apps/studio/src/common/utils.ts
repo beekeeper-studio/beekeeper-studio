@@ -5,6 +5,7 @@ import {homedir} from 'os';
 import path from 'path';
 import mkdirp from 'mkdirp';
 import { Error as CustomError } from '../lib/errors'
+import _ from 'lodash';
 
 export function having<T, U>(item: T | undefined | null, f: (T) => U, errorOnNone?: string): U | null {
   if (item) return f(item)
@@ -119,4 +120,9 @@ export function createCancelablePromise(error: CustomError, timeIdle = 100): any
       discarded = true;
     },
   };
+}
+
+export function makeString(value: any): string {
+  if(value === BigInt(0)) return '0';
+  return _.toString(value);
 }
