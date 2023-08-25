@@ -152,6 +152,13 @@ const store = new Vuex.Store<State>({
       }
       const obj = _.chain(g.filteredTables).groupBy('schema').value()
       const routines = _.groupBy(g.filteredRoutines, 'schema')
+
+      for (const key in routines) {
+        if (!obj[key]) {
+            obj[key] = [];
+        }
+      }
+      
       return _(obj).keys().map(k => {
         return {
           schema: k,

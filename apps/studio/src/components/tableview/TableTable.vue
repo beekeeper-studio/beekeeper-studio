@@ -877,7 +877,6 @@ export default Vue.extend({
       this.tabulator.setPage(this.page || 1)
     }, 500),
     active() {
-      log.debug('active', this.active)
       if (!this.tabulator) return;
       if (this.active) {
         this.tabulator.restoreRedraw()
@@ -886,6 +885,8 @@ export default Vue.extend({
           this.$nextTick(() => {
             this.tabulator.redraw(true)
           })
+        } else {
+          this.$nextTick(() => this.tabulator.redraw())
         }
       } else {
         this.tabulator.blockRedraw()
