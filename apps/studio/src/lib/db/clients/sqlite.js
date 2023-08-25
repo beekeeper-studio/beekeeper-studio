@@ -12,6 +12,7 @@ import { SqliteCursor } from './sqlite/SqliteCursor';
 import { SqliteChangeBuilder } from '@shared/lib/sql/change_builder/SqliteChangeBuilder';
 import { SqliteData } from '@shared/lib/dialects/sqlite';
 import { ClientError } from '../client';
+import { makeString } from '@/common/utils';
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
@@ -25,7 +26,7 @@ const knex = knexlib({
 knex.client = Object.assign(knex.client, {
   _escapeBinding: makeEscape({
     escapeString(str) {
-      str = _.toString(str)
+      str = makeString(str)
       return str ? `'${str.replace(/'/g, "''")}'` : ''
     }
   })

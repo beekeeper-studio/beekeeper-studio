@@ -1,12 +1,21 @@
 <template>
-  <div class="table-info-table table-schema" v-hotkey="hotkeys">
+  <div
+    class="table-info-table table-schema"
+    v-hotkey="hotkeys"
+  >
     <div class="table-info-table-wrap">
       <div class="center-wrap">
-        <error-alert :error="error" v-if="error" />
-        <div class="notices" v-if="notice">
+        <error-alert
+          :error="error"
+          v-if="error"
+        />
+        <div
+          class="notices"
+          v-if="notice"
+        >
           <div class="alert alert-info">
             <i class="material-icons-outlined">info</i>
-            <div>{{notice}}</div>
+            <div>{{ notice }}</div>
           </div>
         </div>
 
@@ -15,15 +24,27 @@
             <h2>Columns</h2>
           </div>
           <slot />
-          <span class="expand"></span>
+          <span class="expand" />
           <div class="actions">
-            <a @click.prevent="refreshColumns" v-tooltip="`${ctrlOrCmd('r')} or F5`" class="btn btn-link btn-fab"><i class="material-icons">refresh</i></a>
-            <a v-if="editable" v-tooltip="ctrlOrCmd('n')" @click.prevent="addRow" class="btn btn-primary btn-fab"><i class="material-icons">add</i></a>
+            <a
+              @click.prevent="refreshColumns"
+              v-tooltip="`${ctrlOrCmd('r')} or F5`"
+              class="btn btn-link btn-fab"
+            ><i class="material-icons">refresh</i></a>
+            <a
+              v-if="editable"
+              v-tooltip="ctrlOrCmd('n')"
+              @click.prevent="addRow"
+              class="btn btn-primary btn-fab"
+            ><i class="material-icons">add</i></a>
           </div>
         </div>
-        <div ref="tableSchema"></div>
+        <div ref="tableSchema" />
         <!-- Tabulator can be slow to open especially for some really large column counts. Let the user know. -->
-        <div v-if="this.table.columns.length" class="columns-loading-disclaimer">
+        <div
+          v-if="this.table.columns.length"
+          class="columns-loading-disclaimer"
+        >
           <p>Columns loading.</p>
           <p>This may take a few minutes depending on column count.</p>
         </div>
@@ -35,23 +56,44 @@
     <status-bar class="tabulator-footer">
       <div class="flex flex-middle statusbar-actions">
         <slot name="footer" />
-        <x-button v-if="hasEdits" class="btn btn-flat reset" @click.prevent="submitUndo">Reset</x-button>
-        <x-buttons v-if="hasEdits" class="pending-changes">
-          <x-button class="btn btn-primary" @click.prevent="submitApply">
-            <i v-if="error" class="material-icons">error</i>
-            <span class="badge" v-if="!error"><small>{{editCount}}</small></span>
+        <x-button
+          v-if="hasEdits"
+          class="btn btn-flat reset"
+          @click.prevent="submitUndo"
+        >
+          Reset
+        </x-button>
+        <x-buttons
+          v-if="hasEdits"
+          class="pending-changes"
+        >
+          <x-button
+            class="btn btn-primary"
+            @click.prevent="submitApply"
+          >
+            <i
+              v-if="error"
+              class="material-icons"
+            >error</i>
+            <span
+              class="badge"
+              v-if="!error"
+            ><small>{{ editCount }}</small></span>
             <span>Apply</span>
           </x-button>
-          <x-button class="btn btn-primary" menu>
+          <x-button
+            class="btn btn-primary"
+            menu
+          >
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
               <x-menuitem @click.prevent="submitApply">
                 <x-label>Apply</x-label>
-                <x-shortcut value="Control+S"></x-shortcut>
+                <x-shortcut value="Control+S" />
               </x-menuitem>
               <x-menuitem @click.prevent="submitSql">
                 <x-label>Copy to SQL</x-label>
-                <x-shortcut value="Control+Shift+S"></x-shortcut>
+                <x-shortcut value="Control+Shift+S" />
               </x-menuitem>
             </x-menu>
           </x-button>
@@ -399,7 +441,6 @@ export default Vue.extend({
     initializeTabulator() {
       if (this.tabulator) this.tabulator.destroy()
       // TODO: a loader would be so cool for tabulator for those gnarly column count tables that people might create...
-      // @ts-ignore
       this.tabulator = new TabulatorFull(this.$refs.tableSchema, {
         columns: this.tableColumns,
         layout: 'fitColumns',

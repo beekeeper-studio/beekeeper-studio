@@ -1,7 +1,20 @@
 <template>
   <div>
-    <input class="nullible-input" :placeholder="smartPlaceholder" ref='input' type="text" v-model="value" @blur.prevent="submit" @change.prevent="submit" @keydown="keydown">
-    <i class="material-icons clear" @mousedown.prevent.stop="clear" title="Nullify Value">cancel</i>
+    <input
+      class="nullible-input"
+      :placeholder="smartPlaceholder"
+      ref="input"
+      type="text"
+      v-model="value"
+      @blur.prevent="submit"
+      @change.prevent="submit"
+      @keydown="keydown"
+    >
+    <i
+      class="material-icons clear"
+      @mousedown.prevent.stop="clear"
+      title="Nullify Value"
+    >cancel</i>
   </div>
 </template>
 <script lang="ts">

@@ -29,5 +29,5 @@ export class HiddenSchema extends ApplicationEntity {
   connectionId: number
 
   @Column({type: 'integer', nullable: false, default: -1})
-  workspaceId: number = -1
+  workspaceId = -1
 }

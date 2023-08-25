@@ -13,13 +13,13 @@ export class PinnedConnection extends ApplicationEntity {
   }
 
   @Column({type: 'float', nullable: false, default: 1})
-  position: number = 99.0;
+  position = 99.0;
 
   @Column({type: 'integer', nullable: false})
   connectionId: number;
 
   @Column({type: 'integer', nullable: false, default: -1})
-  workspaceId: number = -1;
+  workspaceId = -1;
 
 
   connection: SavedConnection;

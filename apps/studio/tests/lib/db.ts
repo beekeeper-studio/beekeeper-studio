@@ -33,7 +33,7 @@ export class DBTestUtil {
   public knex: Knex
   public server: IDbConnectionPublicServer
   public connection: DBConnection
-  public extraTables: number = 0
+  public extraTables = 0
   private options: Options
   private dbType: string
 
@@ -108,10 +108,6 @@ export class DBTestUtil {
     this.jobId = jobs[0].id
     this.personId = people[0].id
     await this.knex("people_jobs").insert({job_id: this.jobId, person_id: this.personId })
-  }
-
-  testdb() {
-
   }
 
   async dropTableTests() {

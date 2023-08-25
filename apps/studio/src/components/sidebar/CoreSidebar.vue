@@ -1,24 +1,24 @@
 <template>
-
   <div class="sidebar-wrap row">
     <global-sidebar
       @selected="click"
       v-on="$listeners"
-      :activeItem="activeItem"
-    ></global-sidebar>
+      :active-item="activeItem"
+    />
 
     <div class="tab-content">
-
-
       <!-- Tables -->
-    <div
+      <div
         class="tab-pane"
         id="tab-tables"
         :class="tabClasses('tables')"
         v-show="activeItem === 'tables'"
       >
-        <database-dropdown @databaseSelected="databaseSelected" :connection="connection"></database-dropdown>
-        <table-list></table-list>
+        <database-dropdown
+          @databaseSelected="databaseSelected"
+          :connection="connection"
+        />
+        <table-list />
       </div>
 
       <!-- History -->
@@ -28,7 +28,7 @@
         v-show="activeItem === 'history'"
         :class="tabClasses('history')"
       >
-        <history-list></history-list>
+        <history-list />
       </div>
 
       <!-- Favorites -->
@@ -38,11 +38,9 @@
         :class="tabClasses('queries')"
         v-show="activeItem === 'queries'"
       >
-        <favorite-list></favorite-list>
+        <favorite-list />
       </div>
-
     </div>
-
   </div>
 </template>
 

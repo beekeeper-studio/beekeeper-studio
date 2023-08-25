@@ -1,15 +1,37 @@
 <template>
   <div class="query-rename-form">
     <form @submit.prevent="submit">
-      <div class="alert alert-danger save-errors" v-if="saveError">
-        {{saveError}}
+      <div
+        class="alert alert-danger save-errors"
+        v-if="saveError"
+      >
+        {{ saveError }}
       </div>
       <div class="form-group">
-        <input ref="input" type="text" v-model="title" autofocus class="form-control" name="title">
+        <input
+          ref="input"
+          type="text"
+          v-model="title"
+          autofocus
+          class="form-control"
+          name="title"
+        >
       </div>
       <div class="buttons">
-        <button class="btn btn-flat" type="button" @click.prevent="$emit('done')">Cancel</button>
-        <button class="btn btn-primary" :disabled="working" type="submit">Save</button>
+        <button
+          class="btn btn-flat"
+          type="button"
+          @click.prevent="$emit('done')"
+        >
+          Cancel
+        </button>
+        <button
+          class="btn btn-primary"
+          :disabled="working"
+          type="submit"
+        >
+          Save
+        </button>
       </div>
     </form>
   </div>

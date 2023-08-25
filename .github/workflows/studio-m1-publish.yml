@@ -23,8 +23,12 @@ jobs:
       - name: Clean cache
         run: arch -arm64 yarn cache clean
 
-      - name: Check dependencies
-        run: "arch -arm64 yarn install --frozen-lockfile --network-timeout 100000"
+      - name: yarn install (with retry)
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: "arch -arm64 yarn install --frozen-lockfile --network-timeout 100000"
 
       - name: Remove dist directory
         if: "!startsWith(matrix.os, 'windows')"

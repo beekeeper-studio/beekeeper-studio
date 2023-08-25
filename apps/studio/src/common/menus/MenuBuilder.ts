@@ -71,6 +71,14 @@ export default class extends DefaultMenu {
       },
       this.viewMenu(),
       {
+        label: "Tools",
+        submenu: [
+          this.menuItems.upgradeModal("Data Export"),
+          this.menuItems.upgradeModal("Create a Backup"),
+          this.menuItems.upgradeModal("Restore a Backup")
+        ]
+      },
+      {
         label: "Help",
         submenu: [
           this.menuItems.opendocs,

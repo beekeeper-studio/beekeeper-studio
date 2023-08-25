@@ -1,52 +1,105 @@
 <template>
-<div class="connection-button flex flex-middle" v-if="config" :title="$bks.buildConnectionString(config)">
-  <x-button class="btn btn-link btn-icon" menu>
-    <i class="material-icons">link</i>
-    <span class="connection-name truncate expand">{{connectionName}}</span>
-    <span class="connection-type badge truncate" v-tooltip="databaseVersion">{{connectionType}}</span>
-    <x-menu>
-      <x-menuitem @click.prevent="disconnect(false)" class="red">
-        <x-label><i class="material-icons">power_settings_new</i>Disconnect</x-label>
-      </x-menuitem>
-      <x-menuitem @click.prevent="$modal.show('config-save-modal')">
-        <x-label v-if="config.id"><i class="material-icons">edit</i>Edit Connection</x-label>
-        <x-label v-else><i class="material-icons">save</i>Save Connection</x-label>
-      </x-menuitem>
-    </x-menu>
-  </x-button>
+  <div
+    class="connection-button flex flex-middle"
+    v-if="config"
+    :title="$bks.buildConnectionString(config)"
+  >
+    <x-button
+      class="btn btn-link btn-icon"
+      menu
+    >
+      <i class="material-icons">link</i>
+      <span class="connection-name truncate expand">{{ connectionName }}</span>
+      <span
+        class="connection-type badge truncate"
+        v-tooltip="databaseVersion"
+      >{{ connectionType }}</span>
+      <x-menu>
+        <x-menuitem
+          @click.prevent="disconnect(false)"
+          class="red"
+        >
+          <x-label><i class="material-icons">power_settings_new</i>Disconnect</x-label>
+        </x-menuitem>
+        <x-menuitem @click.prevent="$modal.show('config-save-modal')">
+          <x-label v-if="config.id">
+            <i class="material-icons">edit</i>Edit Connection
+          </x-label>
+          <x-label v-else>
+            <i class="material-icons">save</i>Save Connection
+          </x-label>
+        </x-menuitem>
+      </x-menu>
+    </x-button>
 
-  <portal to="modals">
-    <modal class="vue-dialog beekeeper-modal save-connection-modal" name="config-save-modal" height="auto" :scrollable="true">
-      <div class="dialog-content">
-        <div v-if="errors" class="alert alert-danger">
-          <i class="material-icons">error_outline</i>
-          <div class="alert-body flex-col">
-            <span>Please fix the following errors:</span>
-            <ul>
-              <li v-for="(e, i) in errors" :key="i">{{e}}</li>
-            </ul>
-          </div>
-        </div>
-        <SaveConnectionForm :selectInput="true" @cancel="$modal.hide('config-save-modal')" :canCancel="true" :config="config" @save="save"></SaveConnectionForm>
-      </div>
-    </modal>
-  </portal>
-  <portal to="modals">
-    <modal class="vue-dialog beekeeper-modal" name="running-exports-modal" height="auto" :scrollable="true">
-      <form @submit.prevent="disconnect(true)">
+    <portal to="modals">
+      <modal
+        class="vue-dialog beekeeper-modal save-connection-modal"
+        name="config-save-modal"
+        height="auto"
+        :scrollable="true"
+      >
         <div class="dialog-content">
-          <div class="dialog-c-title">Confirm Disconnect</div>
-          There are active exports running. Are you sure you want to disconnect?
+          <div
+            v-if="errors"
+            class="alert alert-danger"
+          >
+            <i class="material-icons">error_outline</i>
+            <div class="alert-body flex-col">
+              <span>Please fix the following errors:</span>
+              <ul>
+                <li
+                  v-for="(e, i) in errors"
+                  :key="i"
+                >
+                  {{ e }}
+                </li>
+              </ul>
+            </div>
+          </div>
+          <SaveConnectionForm
+            :select-input="true"
+            @cancel="$modal.hide('config-save-modal')"
+            :can-cancel="true"
+            :config="config"
+            @save="save"
+          />
         </div>
-        <div class="vue-dialog-buttons">
-          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('running-exports-modal')">Cancel</button>
-          <button class="btn btn-danger" type="submit">Disconnect</button>
-        </div>
-      </form>
-    </modal>
-  </portal>
-</div>
-
+      </modal>
+    </portal>
+    <portal to="modals">
+      <modal
+        class="vue-dialog beekeeper-modal"
+        name="running-exports-modal"
+        height="auto"
+        :scrollable="true"
+      >
+        <form @submit.prevent="disconnect(true)">
+          <div class="dialog-content">
+            <div class="dialog-c-title">
+              Confirm Disconnect
+            </div>
+            There are active exports running. Are you sure you want to disconnect?
+          </div>
+          <div class="vue-dialog-buttons">
+            <button
+              class="btn btn-flat"
+              type="button"
+              @click.prevent="$modal.hide('running-exports-modal')"
+            >
+              Cancel
+            </button>
+            <button
+              class="btn btn-danger"
+              type="submit"
+            >
+              Disconnect
+            </button>
+          </div>
+        </form>
+      </modal>
+    </portal>
+  </div>
 </template>
 <script>
 import { mapState, mapGetters } from 'vuex'
