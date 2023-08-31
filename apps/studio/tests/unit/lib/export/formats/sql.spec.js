@@ -3,7 +3,7 @@ import { SqlExporter } from '@/lib/export/formats/sql'
 
 describe('sql exporter', () => {
 
-  let exporter = new SqlExporter("./tmp/sql.export", {connectionType: 'postgresql'}, { name: 'table'}, [], {}, {})
+  let exporter = new SqlExporter("./tmp/sql.export", {connectionType: 'postgresql'}, { name: 'table'}, '', '', [], {}, {})
 
   it("Should generate a basic insert", () => {
     const input = ['a', 'b']
