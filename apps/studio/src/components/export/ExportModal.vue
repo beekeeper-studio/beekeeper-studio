@@ -12,7 +12,7 @@
           <div class="dialog-c-title flex flex-middle">
             <div>
               Export
-              <span class="text-primary truncate">{{ table.name }}</span>
+              <span class="text-primary truncate">{{ table ? table.name : queryName }}</span>
               <span
                 v-if="filters"
                 class="text-light"
@@ -21,6 +21,14 @@
               <span class="badge badge-info">Beta</span>
             </div>
           </div>
+
+          <p>This will {{ table ? 'export table rows' : 'run your query and save the results' }}  directly to a file.</p>
+          <p>You can choose the format and file name.</p>
+          <p>
+            For {{ table ? 'tables with many' : 'queries with many results' }} rows, this will run in the background,
+            allowing you to continue to do other work.
+          </p>
+
           <span class="close-btn btn btn-fab">
             <i
               class="material-icons"
@@ -66,6 +74,7 @@
                     v-for="f in exportFormats"
                     :value="f"
                     :selected="selectedExportFormat === f.value"
+                    :disabled="(f.name === 'SQL' && queryName) ? true : false"
                   >
                     {{ f.name }}
                   </option>
@@ -95,7 +104,7 @@
             </div>
             <div
               class="advanced-options"
-              :class="{ open: advancedToggled }"
+              :class="{open: advancedToggled}"
             >
               <component
                 :is="selectedExportFormat.component"
@@ -131,22 +140,22 @@
               </div>
             </div>
           </div>
-          <div class="vue-dialog-buttons">
-            <button
-              class="btn btn-flat"
-              type="button"
-              @click.prevent="closeModal"
-            >
-              Cancel
-            </button>
-            <button
-              class="btn btn-primary"
-              type="submit"
-              :disabled="!filePath"
-            >
-              Run
-            </button>
-          </div>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button
+            class="btn btn-flat"
+            type="button"
+            @click.prevent="closeModal"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="submit"
+            :disabled="!filePath"
+          >
+            Run
+          </button>
         </div>
       </form>
     </modal>
@@ -187,7 +196,7 @@ const exportFormats = [
 
 export default {
   components: { FilePicker },
-  props: ['table', 'filters', 'connection'],
+  props: ['table', 'query', 'queryName', 'filters', 'connection'],
   data() {
     return {
       selectedExportFormat: exportFormats[0],
@@ -206,6 +215,11 @@ export default {
         this.$modal.show("export-modal");
       }
     },
+    query() {
+      if (this.query) {
+        this.$modal.show("export-modal");
+      }
+    },
     fileDirectory() {
       if (this.fileDirectory) {
         localStorage.setItem('export/directory', this.fileDirectory)
@@ -220,19 +234,31 @@ export default {
     }
   },
   computed: {
-    defaultFileName() {
+    defaultFileName () {
       const now = new Date();
       const formatted = dateFormat(now, 'yyyy-mm-dd_HHMMss')
-      const schema = this.table.schema ? `${this.table.schema}_` : ''
       const extension = this.selectedExportFormat.key
-      return `${schema}${this.table.name}_export_${formatted}.${extension}`
+      let fileName;
+      if (this.table) {
+        const schema = this.table.schema ? `${this.table.schema}_` : ''
+        const extension = this.selectedExportFormat.key
+        fileName = `${schema}${this.table.name}_export_${formatted}.${extension}`
+      } else {
+        // sanitize query name for use as filename
+        let queryFileName = this.queryName.replace(/[^a-z0-9]/gi, '_').toLowerCase()
+        queryFileName = queryFileName.replace(/_+/gi, '_') // avoid double-underscores
+        queryFileName = queryFileName.replace(/^_/gi, '')   // remove any leading underscore
+        queryFileName = queryFileName.replace(/_$/gi, '')   // remove any trailing underscore
+        fileName = `${queryFileName}_${formatted}.${extension}`
+      }
+      return fileName
     },
     filePath() {
       if (!this.fileDirectory || !this.fileName) return null
       return path.join(this.fileDirectory, this.fileName)
     },
     dialogOptions() {
-      const result = { buttonLabel: 'Choose Directory', properties: ['openDirectory', 'createDirectory'] }
+      const result = { buttonLabel: 'Choose Directory', properties: [ 'openDirectory', 'createDirectory'] }
       return result
     },
     hasFilters() {
@@ -276,16 +302,18 @@ export default {
 
       const payload = {
         table: this.table,
+        query: this.query,
+        queryName: this.queryName,
         filters: this.filters,
         filePath: this.filePath,
         options: this.options,
         outputOptions: this.outputOptions,
         exporter: this.selectedExportFormat.key
       }
-      this.$emit('export', payload)
+      this.$emit('export', payload) // handled by ExportManager
       this.$modal.hide('export-modal')
     },
-    closeModal() {
+    closeModal () {
       this.$modal.hide('export-modal')
     },
     toggleAdvanced() {

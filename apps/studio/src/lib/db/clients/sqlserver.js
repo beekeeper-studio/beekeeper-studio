@@ -75,6 +75,7 @@ export default async function (server, database) {
     getTableLength: (table, schema) => getTableLength(conn, table, schema),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
+    queryStream: (db, query, chunkSize) => selectTopStream(conn, db, query, chunkSize),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
@@ -279,6 +280,12 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
   }
 }
 
+export async function queryStream(conn, db, query, orderBy, filters, chunkSize, schema, selects = ['*']) {
+  const version = await getVersion(conn);
+  return {
+    cursor: new SqlServerCursor(conn, query, chunkSize)
+  }
+}
 
 export function wrapIdentifier(value) {
   if (_.isString(value)) {

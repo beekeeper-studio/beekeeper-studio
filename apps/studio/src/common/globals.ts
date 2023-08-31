@@ -13,6 +13,7 @@ export default {
   maxColumnWidthTableInfo: 300,
   workspaceCheckInterval: 5000, // 5 seconds
   dataCheckInterval: 1000 * 30, // 30 secs
+  errorNoticeTimeout: 60 * 1000, // 1 minute
 }
 
 

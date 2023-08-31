@@ -1,5 +1,5 @@
 <template>
-  <statusbar :class="{'empty': results.length === 0, 'query-meta': true}">
+  <statusbar :class="{ 'empty': results.length === 0, 'query-meta': true }">
     <template v-if="results.length > 0">
       <div class="truncate statusbar-info">
         <span
@@ -9,7 +9,7 @@
         >
           <div
             class="select-wrap"
-            v-tooltip="{content: 'More query results in here', placement: 'top', show: showHint, trigger: 'manual', classes: ['tooltip-info']}"
+            v-tooltip="{ content: 'More query results in here', placement: 'top', show: showHint, trigger: 'manual', classes: ['tooltip-info'] }"
           >
             <select
               name="resultSelector"
@@ -18,11 +18,13 @@
               class="form-control"
             >
               <option
-                v-for="(r, index) in results"
+                v-for="(resultOption, index) in results"
                 :selected="value == index"
                 :key="index"
                 :value="index"
-              >Result {{ index + 1 }}: {{ shortNum(r.rows.length, 0) }} {{ pluralize('row', r.rows.length, false) }}</option>
+              >
+                Result {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ pluralize('row',
+                                                                                                 resultOption.rows.length, false) }}</option>
             </select>
           </div>
         </span>
@@ -40,7 +42,7 @@
         </div>
         <div
           class="statusbar-item affected-rows"
-          v-if="affectedRowsText "
+          v-if="affectedRowsText"
           :title="affectedRowsText + ' ' + 'Rows Affected'"
         >
           <i class="material-icons">clear_all</i>
@@ -81,6 +83,20 @@
             <x-label>Markdown</x-label>
           </x-menuitem>
           <hr>
+          <span
+            v-tooltip="{
+              content: `${result.truncated ? 'The ' : 'If the'} query\'s result set was truncated (because it had too many rows to display)<br />
+                          use this to export the query\'s full result set ${result.truncated ? '(' + result.totalRowCount + ' rows)' : ''} to a CSV or JSON file`
+            }"
+          >
+            <x-menuitem
+              @click.prevent="$event => submitCurrentQueryToFile()"
+              :disabled="!result.truncated"
+            >
+              <x-label>Download Full Result Set (if truncated) ...</x-label>
+            </x-menuitem>
+          </span>
+
           <x-menuitem
             title="Probably don't do this with large results (500+)"
             @click.prevent="copyToClipboard"
@@ -129,95 +145,98 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-    props: ['results', 'running', 'value', 'executeTime'],
-    components: { Statusbar },
-    data() {
-      return {
-        showHint: false,
+  props: ['results', 'running', 'value', 'executeTime'],
+  components: { Statusbar },
+  data() {
+    return {
+      showHint: false,
 
-      }
-    },
-
-    watch: {
-      results() {
-        if (this.results && this.results.length > 1 && !this.hasUsedDropdown) {
-          this.showHint = true
-          setTimeout(() => this.showHint = false, 2000)
-        }
-      }
-    },
-    computed: {
-      ...mapState('settings', ['settings']),
-      hasUsedDropdown: {
-        get() {
-          const s = this.settings.hideResultsDropdown
-          return s ? s.value : false
-        },
-        set(value) {
-          this.$store.dispatch('settings/save', { key: 'hideResultsDropdown', value })
-        }
-      },
-      rowCount() {
-        return this.result && this.result.rows ? this.result.rows.length : 0
-      },
-      result() {
-        return this.results[this.value]
-      },
-      affectedRowsText() {
-        if (!this.result) {
-          return null
-        }
-        const rows = this.result.affectedRows || 0
-        return `${rows}`
-      },
-      executeTimeText() {
-        if (!this.executeTime) {
-          return null
-        }
-        const executeTime = this.executeTime || 0
-        return shortEnglishHumanizer(executeTime)
-      },
-      executionTimeTitle() {
-        if (!this.executeTime) {
-          return null;
-        }
-        return `Execution time: ${humanizeDuration(this.executeTime)}`
-      }
-    },
-    methods: {
-      pluralize(word, amount, flag) {
-        return pluralize(word, amount, flag)
-      },
-      // Attribution: https://stackoverflow.com/questions/10599933/convert-long-number-into-abbreviated-string-in-javascript-with-a-special-shortn/10601315
-      shortNum(num, fixed) {
-        // fix "TypeError: Cannot read property 'toPrecision' of undefined" (after INSERT and CREATE TABLE commands)
-        if (num === null || typeof num === 'undefined') { return null; } // terminate early
-
-        if (num === 0) { return '0'; } // terminate early
-        fixed = (!fixed || fixed < 0) ? 0 : fixed; // number of decimal places to show
-        const b = (num).toPrecision(2).split("e"), // get power
-            k = b.length === 1 ? 0 : Math.floor(Math.min(b[1].slice(1), 14) / 3), // floor at decimals, ceiling at trillions
-            c = k < 1 ? num.toFixed(0 + fixed) : (num / Math.pow(10, k * 3) ).toFixed(1 + fixed), // divide by power
-            d = c < 0 ? c : Math.abs(c), // enforce -0 is 0
-            e = d + ['', 'K', 'M', 'B', 'T'][k]; // append power
-        return e;
-      },
-      updateValue(event) {
-        this.$emit('input', parseInt(event.target.value))
-        this.hasUsedDropdown = true
-      },
-      download(format) {
-        this.$emit('download', format)
-      },
-      copyToClipboard() {
-        this.$emit('clipboard')
-      },
-      copyToClipboardJson() {
-        this.$emit('clipboardJson')
-      },
-      copyToClipboardMarkdown() {
-        this.$emit('clipboardMarkdown')
-      },
     }
+  },
+
+  watch: {
+    results() {
+      if (this.results && this.results.length > 1 && !this.hasUsedDropdown) {
+        this.showHint = true
+        setTimeout(() => this.showHint = false, 2000)
+      }
+    }
+  },
+  computed: {
+    ...mapState('settings', ['settings']),
+    hasUsedDropdown: {
+      get() {
+        const s = this.settings.hideResultsDropdown
+        return s ? s.value : false
+      },
+      set(value) {
+        this.$store.dispatch('settings/save', { key: 'hideResultsDropdown', value })
+      }
+    },
+    rowCount() {
+      return this.result && this.result.rows ? this.result.rows.length : 0
+    },
+    result() {
+      return this.results[this.value]
+    },
+    affectedRowsText() {
+      if (!this.result) {
+        return null
+      }
+      const rows = this.result.affectedRows || 0
+      return `${rows}`
+    },
+    executeTimeText() {
+      if (!this.executeTime) {
+        return null
+      }
+      const executeTime = this.executeTime || 0
+      return shortEnglishHumanizer(executeTime)
+    },
+    executionTimeTitle() {
+      if (!this.executeTime) {
+        return null;
+      }
+      return `Execution time: ${humanizeDuration(this.executeTime)}`
+    }
+  },
+  methods: {
+    pluralize(word, amount, flag) {
+      return pluralize(word, amount, flag)
+    },
+    // Attribution: https://stackoverflow.com/questions/10599933/convert-long-number-into-abbreviated-string-in-javascript-with-a-special-shortn/10601315
+    shortNum(num, fixed) {
+      // fix "TypeError: Cannot read property 'toPrecision' of undefined" (after INSERT and CREATE TABLE commands)
+      if (num === null || typeof num === 'undefined') { return null; } // terminate early
+
+      if (num === 0) { return '0'; } // terminate early
+      fixed = (!fixed || fixed < 0) ? 0 : fixed; // number of decimal places to show
+      const b = (num).toPrecision(2).split("e"), // get power
+        k = b.length === 1 ? 0 : Math.floor(Math.min(b[1].slice(1), 14) / 3), // floor at decimals, ceiling at trillions
+        c = k < 1 ? num.toFixed(0 + fixed) : (num / Math.pow(10, k * 3)).toFixed(1 + fixed), // divide by power
+        d = c < 0 ? c : Math.abs(c), // enforce -0 is 0
+        e = d + ['', 'K', 'M', 'B', 'T'][k]; // append power
+      return e;
+    },
+    updateValue(event) {
+      this.$emit('input', parseInt(event.target.value))
+      this.hasUsedDropdown = true
+    },
+    download(format) {
+      this.$emit('download', format)
+    },
+    copyToClipboard() {
+      this.$emit('clipboard')
+    },
+    copyToClipboardJson() {
+      this.$emit('clipboardJson')
+    },
+    copyToClipboardMarkdown() {
+      this.$emit('clipboardMarkdown')
+    },
+    submitCurrentQueryToFile() {
+      this.$emit('submitCurrentQueryToFile')
+    },
+  }
 }
 </script>
