@@ -324,6 +324,7 @@
   import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
   import { OpenTab } from '@/common/appdb/models/OpenTab'
   import { makeDBHint, findTableOrViewByWord } from '@/lib/editor'
+  import { removeQueryQuotes } from '@/lib/db/sql_tools';
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -742,6 +743,18 @@
             }
           })
 
+          this.editor.on("paste", (_cm, e) => {
+            e.preventDefault();
+            let clipboard = (e.clipboardData.getData("text") as string).trim();
+            clipboard = removeQueryQuotes(clipboard, this.identifyDialect);
+            if (this.hasSelectedText) {
+              this.editor.replaceSelection(clipboard, 'around');
+            } else {
+              const cursor = this.editor.getCursor();
+              this.editor.replaceRange(clipboard, cursor);
+            }
+          });
+
           this.editor.on("change", (cm) => {
             // this also updates `this.queryText`
             // this.tab.query.text = cm.getValue()
@@ -1156,7 +1169,6 @@
     },
     mounted() {
       if (this.shouldInitialize) this.initialize()
-
     },
     beforeDestroy() {
       if(this.split) {
