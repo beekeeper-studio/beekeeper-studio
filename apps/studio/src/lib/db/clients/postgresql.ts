@@ -704,28 +704,24 @@ export async function listTableTriggers(conn: HasPool, table: string, schema: st
   // which is not supported anymore since 08 Oct 2015.
   // From version 9.1 onwards, released 08 Sep 2011, 
   // action_timing was used instead
-  // const timing_columns = ['action_timing', 'condition_timing']
-  const timing_columns = ['action_timing']
-  const sequels = timing_columns.map((c) => `
+  const timing_column = version.number <= 90000 ? 'condition_timing' : 'action_timing'
+  const sql = `
     SELECT
       trigger_name,
-      ${c} as timing,
+      ${timing_column} as timing,
       event_manipulation as manipulation,
       action_statement as action,
       action_condition as condition
     FROM information_schema.triggers
     WHERE event_object_schema = $1
     AND event_object_table = $2
-  `)
+  `
   const params = [
     schema,
     table,
   ];
-  const promises = sequels.map((sql) => {
-    return driverExecuteSingle(conn, { query: sql, params });
-  })
 
-  const data = await Promise.any(promises)
+  const data = await driverExecuteSingle(conn, { query: sql, params });
 
   return data.rows.map((row) => ({
     name: row.trigger_name,

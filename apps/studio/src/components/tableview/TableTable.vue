@@ -309,16 +309,34 @@
     </statusbar>
 
     <portal to="modals">
-      <modal class="vue-dialog beekeeper-modal" :name="`discard-changes-modal-${tab.id}`">
+      <modal
+        class="vue-dialog beekeeper-modal"
+        :name="`discard-changes-modal-${tab.id}`"
+      >
         <div class="dialog-content">
-          <div class="dialog-c-title">Confirmation</div>
+          <div class="dialog-c-title">
+            Confirmation
+          </div>
           <div class="modal-form">
-            Sorting or Filtering now will discard {{pendingChangesCount}} pending change(s). Are you sure?
+            Sorting or Filtering now will discard {{ pendingChangesCount }} pending change(s). Are you sure?
           </div>
         </div>
         <div class="vue-dialog-buttons">
-          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide(`discard-changes-modal-${tab.id}`)">Cancel</button>
-          <button class="btn btn-primary" type="button" @click.prevent="forceFilter" autofocus>I'm Sure</button>
+          <button
+            class="btn btn-flat"
+            type="button"
+            @click.prevent="$modal.hide(`discard-changes-modal-${tab.id}`)"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            @click.prevent="forceFilter"
+            autofocus
+          >
+            I'm Sure
+          </button>
         </div>
       </modal>
     </portal>
