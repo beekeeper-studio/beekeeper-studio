@@ -52,14 +52,14 @@
                 :key="t.value"
                 v-for="t in keymapTypes"
                 @click.prevent="userKeymap = t.value"
-              > 
+              >
                 <x-label class="keymap-label">
                   <span
                     class="material-icons"
                     v-if="t.value === userKeymap"
                   >done</span>
                   {{ t.name }}
-                </x-label> 
+                </x-label>
               </x-menuitem>
             </x-menu>
           </x-button>
@@ -75,6 +75,7 @@
           >
             Save
           </x-button>
+
           <x-buttons class="">
             <x-button
               class="btn btn-primary btn-small"
@@ -302,6 +303,8 @@
   import 'codemirror/addon/search/matchesonscrollbar'
   import 'codemirror/addon/search/matchesonscrollbar.css'
   import 'codemirror/addon/search/searchcursor'
+
+  import setKeybindingsFromVimrc from "../lib/readVimrc"
 
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
@@ -742,6 +745,15 @@
               e.preventDefault()
             }
           })
+
+          if (this.userKeymap === "vim") {
+            const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
+            if(!codeMirrorVimInstance) {
+              console.error("Could not find code mirror vim instance");
+            } else {
+              setKeybindingsFromVimrc(codeMirrorVimInstance);
+            }
+          }
 
           this.editor.on("paste", (_cm, e) => {
             e.preventDefault();
