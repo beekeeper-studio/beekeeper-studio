@@ -1,9 +1,11 @@
 <template>
   <div class="export-manager">
     <ExportModal
-      v-if="table"
+      v-if="table || query"
       :connection="connection"
       :table="table"
+      :query="query"
+      :query-name="queryName"
       :filters="filters"
       @export="startExport"
       @closed="handleDeadModal"
@@ -26,9 +28,12 @@ import ExportNotification from './ExportNotification.vue'
 import ExportModal from './ExportModal.vue'
 import { CsvExporter, JsonExporter, JsonLineExporter, SqlExporter } from '../../lib/export'
 import { ExportProgress, ExportStatus } from '../../lib/export/models'
+import globals from '@/common/globals'
 
 interface ExportTriggerOptions {
   table?: TableOrView,
+  query?: string,
+  queryName?: string,
   filters?: TableFilter[]
 }
 
@@ -42,6 +47,8 @@ const ExportClassPicker = {
 
 interface StartExportOptions {
   table: TableOrView,
+  query?: string,
+  queryName?: string,
   filters: TableFilter[],
   exporter: 'csv' | 'json' | 'sql' | 'jsonl'
   filePath: string
@@ -63,6 +70,8 @@ export default Vue.extend({
     return {
       // these are like 'pending Export'
       table: (undefined as TableOrView | undefined),
+      query: '',
+      queryName: '',
       filters: (undefined as TableFilter[] | undefined),
     }
   },
@@ -70,49 +79,65 @@ export default Vue.extend({
     ...mapGetters({ 'exports': 'exports/runningExports' }),
     rootBindings(): RootBinding[] {
       return [
-        { event: AppEvent.beginExport, handler: this.handleExportRequest }
+        { event: AppEvent.beginExport, handler: this.handleExportRequest },
       ]
     }
   },
   methods: {
     ...mapMutations({ addExport: "exports/addExport" }),
     async startExport(options: StartExportOptions) {
-        const exporter = new ExportClassPicker[options.exporter](
-          options.filePath,
-          this.connection,
-          options.table,
-          options.filters || [],
-          options.options,
-          options.outputOptions
-        )
-        this.addExport(exporter)
-        exporter.onProgress(this.notifyProgress.bind(this))
-        try {
-          await exporter.exportToFile()          
-        } catch (ex) {
-          this.$noty.error(`Error during export of ${options.table.name} - ${ex.message}`)
+      const exporter = new ExportClassPicker[options.exporter](
+        options.filePath,
+        this.connection,
+        options.table,
+        options.query,
+        options.queryName,
+        options.filters || [],
+        options.options,
+        options.outputOptions
+      )
+      this.addExport(exporter)
+      exporter.onProgress(this.notifyProgress.bind(this))
 
-        }
-        if (exporter.status !== ExportStatus.Completed) return;
-        const n = this.$noty.success(`Export of ${options.table.name} complete`, {
+      const exportName = options.table ? options.table.name : options.queryName;
+
+      await exporter.exportToFile()
+
+      if (exporter.status == ExportStatus.Error) {
+        const exportName = options.table ? options.table.name : options.queryName;
+        const error_notice = this.$noty.error(`Export of ${exportName} failed: ${exporter.error}`, {
           buttons: [
-            Noty.button('Show', "btn btn-primary", () => {
-              this.$native.files.showItemInFolder(options.filePath)
-              n.close()
+            Noty.button('Close', "btn btn-primary", () => {
+              error_notice.close()
             })
           ]
-        })
+        }).setTimeout(globals.errorNoticeTimeout)
+        return
+      }
+      if (exporter.status !== ExportStatus.Completed) return;
+      const n = this.$noty.success(`Export of ${exportName} complete`, {
+        buttons: [
+          Noty.button('Show', "btn btn-primary", () => {
+            this.$native.files.showItemInFolder(options.filePath)
+            n.close()
+          })
+        ]
+      })
     },
     handleExportRequest(options?: ExportTriggerOptions): void {
       this.table = options?.table
+      this.query = options?.query
+      this.queryName = options?.queryName
       this.filters = options?.filters
     },
     handleDeadModal() {
       this.table = undefined
       this.filters = undefined
+      this.query = undefined
+      this.queryName = undefined
     },
     notifyProgress(_progress: ExportProgress) {
-      // TODO: Implement
+      // Empty on purpose
     }
   },
   mounted() {

@@ -98,6 +98,14 @@
                   <x-label>Run Current</x-label>
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
+                <x-menuitem @click.prevent="submitQueryToFile">
+                  <x-label>{{ hasSelectedText ? 'Run Selection to File...' : 'Run to File...' }}</x-label>
+                  <x-shortcut value="Control+I" />
+                </x-menuitem>
+                <x-menuitem @click.prevent="submitCurrentQueryToFile">
+                  <x-label>Run Current Query to File...</x-label>
+                  <x-shortcut value="Control+Shift+I" />
+                </x-menuitem>
               </x-menu>
             </x-button>
           </x-buttons>
@@ -161,6 +169,7 @@
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
+        @submitCurrentQueryToFile="submitCurrentQueryToFile"
         :execute-time="executeTime"
       />
     </div>
@@ -302,7 +311,7 @@
   import { identify } from 'sql-query-identifier'
   import pluralize from 'pluralize'
 
-  import { splitQueries } from '../lib/db/sql_tools'
+  import { splitQueries, extractParams } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
@@ -318,6 +327,7 @@
   import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
   import { OpenTab } from '@/common/appdb/models/OpenTab'
   import { makeDBHint, findTableOrViewByWord } from '@/lib/editor'
+  import { removeQueryQuotes } from '@/lib/db/sql_tools';
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -489,6 +499,8 @@
         if (!this.active) return {}
         const result = {}
         result[this.ctrlOrCmd('l')] = this.selectEditor
+        result[this.ctrlOrCmd('i')] = this.submitQueryToFile
+        result[this.ctrlOrCmdShift('i')] = this.submitCurrentQueryToFile
         return result
       },
       connectionType() {
@@ -678,8 +690,13 @@
             "Shift-Cmd-F": this.formatSql,
             "Ctrl-/": this.toggleComment,
             "Cmd-/": this.toggleComment,
+            "Esc": this.cancelQuery,
             "F5": this.submitTabQuery,
-            "Shift-F5": this.submitCurrentQuery
+            "Shift-F5": this.submitCurrentQuery,
+            "Ctrl+I": this.submitQueryToFile,
+            "Cmd+I": this.submitQueryToFile,
+            "Shift+Ctrl+I": this.submitCurrentQueryToFile,
+            "Shift+Cmd+I": this.submitCurrentQueryToFile
           }
 
           if(this.userKeymap === "vim") {
@@ -737,6 +754,18 @@
               setKeybindingsFromVimrc(codeMirrorVimInstance);
             }
           }
+
+          this.editor.on("paste", (_cm, e) => {
+            e.preventDefault();
+            let clipboard = (e.clipboardData.getData("text") as string).trim();
+            clipboard = removeQueryQuotes(clipboard, this.identifyDialect);
+            if (this.hasSelectedText) {
+              this.editor.replaceSelection(clipboard, 'around');
+            } else {
+              const cursor = this.editor.getCursor();
+              this.editor.replaceRange(clipboard, cursor);
+            }
+          });
 
           this.editor.on("change", (cm) => {
             // this also updates `this.queryText`
@@ -951,6 +980,22 @@
       escapeRegExp(string) {
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
+      async submitQueryToFile() {
+        // run the currently hilighted text (if any) to a file, else all sql
+        const query_sql = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
+        const saved_name = this.hasTitle ? this.query.title : null
+        const tab_title = this.tab.title // e.g. "Query #1"
+        const queryName = saved_name || tab_title
+        this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
+      },
+      async submitCurrentQueryToFile() {
+        // run the currently selected query (if there are multiple) to a file, else all sql
+        const query_sql = this.currentlySelectedQuery ? this.currentlySelectedQuery.text : this.editor.getValue()
+        const saved_name = this.hasTitle ? this.query.title : null
+        const tab_title = this.tab.title // e.g. "Query #1"
+        const queryName = saved_name || tab_title
+        this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
+      },
       async submitCurrentQuery() {
         if (this.currentlySelectedQuery) {
           this.runningType = 'current'
@@ -1136,7 +1181,6 @@
     },
     mounted() {
       if (this.shouldInitialize) this.initialize()
-
     },
     beforeDestroy() {
       if(this.split) {

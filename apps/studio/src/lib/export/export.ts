@@ -38,8 +38,10 @@ export abstract class Export {
     public filePath: string,
     public connection: DBConnection,
     public table: TableOrView,
+    public query: string,
+    public queryName: string,
     public filters: TableFilter[] | any[],
-    public options: ExportOptions,
+    public options: ExportOptions
   ) {
     this.id = this.generateId()
   }
@@ -77,11 +79,13 @@ export abstract class Export {
 
 
   set status(status: ExportStatus) {
+    // i thought you weren't supposed to mess with vue's private _properties
     this._status = status
     this.notify()
   }
 
   get status() {
+    // more accessing vue's private _properties
     return this._status
   }
 
@@ -101,6 +105,7 @@ export abstract class Export {
       status: this.status,
       percentComplete: this.percentComplete,
     }
+    // console.log('notify() calling callbacks', payload, 'callbacks: ', this.callbacks.progress)
     this.callbacks.progress.forEach(c => c(payload))
   }
 
@@ -109,7 +114,7 @@ export abstract class Export {
     const md5sum = crypto.createHash('md5')
 
     md5sum.update(Date.now().toString(), 'utf8')
-    md5sum.update(this.table.name)
+    md5sum.update(this.table ? this.table.name : this.queryName)
     md5sum.update(this.filePath)
 
     return md5sum.digest('hex')
@@ -121,22 +126,44 @@ export abstract class Export {
 
 
     this.fileHandle = await fs.promises.open(this.filePath, 'w+')
-    const results = await this.connection.selectTopStream(
-      this.table.name,
-      [],
-      this.filters,
-      this.options.chunkSize,
-      this.table.schema,
-    )
-    this.columns = results.columns
-    this.cursor = results.cursor
 
-    this.countTotal = results.totalRows
-    await this.cursor?.start()
-    const header = await this.getHeader(results.columns)
+    let results;
+    if (this.table) {
+      results = await this.connection.selectTopStream(
+        this.table.name,
+        [],
+        this.filters,
+        this.options.chunkSize,
+        this.table.schema,
+      )
+      this.columns = results.columns
+      this.cursor = results.cursor
 
-    if (header) {
-      await this.fileHandle.write(header)
+      this.countTotal = results.totalRows
+      await this.cursor?.start()
+      const header = await this.getHeader(results.columns)
+
+      if (header) {
+        await this.fileHandle.write(header)
+      }
+    }
+    else {
+      // string sql query, not table
+      results = await this.connection.queryStream(
+        this.query,
+        this.options.chunkSize,
+      )
+      this.columns = results.columns
+      this.cursor = results.cursor
+
+      this.countTotal = results.totalRows
+      await this.cursor?.start()
+      const header = await this.getHeader(results.columns)
+
+      if (header) {
+        await this.fileHandle.write(header)
+      }
+
     }
   }
 
@@ -171,6 +198,7 @@ export abstract class Export {
         }
         this.countExported += rows.length
 
+        // console.log('calculating time left')
         this.calculateTimeLeft()
         this.notify()
 
@@ -212,7 +240,6 @@ export abstract class Export {
       if (this.options.deleteOnAbort) {
         await promises.unlink(this.filePath)
       }
-      throw error
     } finally {
       this.fileHandle = undefined
     }
@@ -230,6 +257,7 @@ export abstract class Export {
   }
 
   onProgress(func: (progress: ExportProgress) => void): void {
+    // console.log('adding progress callback')
     this.callbacks.progress.push(func)
   }
 

@@ -307,6 +307,21 @@
         </x-button>
       </div>
     </statusbar>
+
+    <portal to="modals">
+      <modal class="vue-dialog beekeeper-modal" :name="`discard-changes-modal-${tab.id}`">
+        <div class="dialog-content">
+          <div class="dialog-c-title">Confirmation</div>
+          <div class="modal-form">
+            Sorting or Filtering now will discard {{pendingChangesCount}} pending change(s). Are you sure?
+          </div>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide(`discard-changes-modal-${tab.id}`)">Cancel</button>
+          <button class="btn btn-primary" type="button" @click.prevent="forceFilter" autofocus>I'm Sure</button>
+        </div>
+      </modal>
+    </portal>
   </div>
 </template>
 
@@ -1434,6 +1449,10 @@ export default Vue.extend({
       this.$modal.show(this.columnFilterModalName)
     },
     triggerFilter() {
+      if (this.pendingChangesCount > 0) {
+        this.$modal.show(`discard-changes-modal-${this.tab.id}`)
+        return;
+      }
       if (this.tabulator) this.tabulator.setData()
     },
     clearFilter() {
@@ -1599,6 +1618,11 @@ export default Vue.extend({
       this.tabulator.restoreRedraw();
 
       this.tabulator.redraw(true)
+    },
+    forceFilter() {
+      this.discardChanges();
+      this.triggerFilter();
+      this.$modal.hide(`discard-changes-modal-${this.tab.id}`);
     }
   }
 });
