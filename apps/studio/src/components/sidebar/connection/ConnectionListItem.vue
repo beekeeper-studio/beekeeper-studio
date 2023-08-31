@@ -11,14 +11,20 @@
       @click.prevent="click(config)"
       @dblclick.prevent="doubleClick(config)"
     >
-      <span :class="`connection-label connection-label-color-${labelColor}`"></span>
+      <span :class="`connection-label connection-label-color-${labelColor}`" />
       <div class="connection-title flex-col expand">
-        <div class="title">{{label}}</div>
+        <div class="title">{{ label }}</div>
         <div class="subtitle"> 
-          <span class="bastion" v-if="this.config.sshBastionHost">
+          <span
+            class="bastion"
+            v-if="this.config.sshBastionHost"
+          >
             <span class="truncate">{{ this.config.sshBastionHost }}</span>&nbsp;>&nbsp;
           </span>
-          <span class="ssh" v-if="this.config.sshHost">
+          <span
+            class="ssh"
+            v-if="this.config.sshHost"
+          >
             <span class="truncate">{{ this.config.sshHost }}</span>&nbsp;>&nbsp;
           </span>
           <span class="connection">
@@ -26,7 +32,36 @@
           </span>
         </div>
       </div>
-      <span class="badge"><span>{{config.connectionType}}</span></span>
+      <span class="badge"><span>{{ config.connectionType }}</span></span>
+      <span
+        v-if="!isRecentList"
+        class="actions"
+        :class="{'pinned': pinned}"
+      >
+        <span
+          v-if="!pinned"
+          @mousedown.prevent.stop="pin"
+          :title="'Pin'"
+          class="btn-fab pin"
+        ><i class="bk-pin" /></span>
+        <span
+          v-if="pinned"
+          @mousedown.prevent.stop="unpin"
+          :title="'Unpin'"
+          class="btn-fab unpin"
+        ><i class="material-icons">clear</i></span>
+        <span
+          v-if="pinned"
+          @mousedown.prevent.stop="unpin"
+          class="btn-fab pinned"
+        >
+          <i
+            class="bk-pin"
+            :title="'Unpin'"
+          />
+          <i class="material-icons">clear</i>
+        </span>
+      </span>
     </a>
   </div>
 </template>
@@ -38,7 +73,7 @@ import { mapGetters, mapState } from 'vuex'
 export default {
   // recent list is 'recent connections'
   // if that is true, we need to find the companion saved connection
-  props: ['config', 'isRecentList', 'selectedConfig', 'showDuplicate'],
+  props: ['config', 'isRecentList', 'selectedConfig', 'showDuplicate', 'pinned'],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
     split: null
@@ -106,9 +141,6 @@ export default {
         return this.config
       }
     },
-  },
-  mounted() {
-
   },
   methods: {
     showContextMenu(event) {
@@ -195,6 +227,12 @@ export default {
       } catch (err) {
         this.$noty.success(`The ${this.connectionType} could not be copied!`)
       }
+    },
+    pin() {
+      this.$store.dispatch('pinnedConnections/add', this.config);
+    },
+    unpin() {
+      this.$store.dispatch('pinnedConnections/remove', this.config);
     }
   }
 

@@ -1,6 +1,15 @@
 <template>
-  <div class="tabulator-bks-checkbox" :class="editable ? 'editable' : 'read-only'" @mousedown.prevent.stop="click">
-    <input type="checkbox" :disabled="!editable" @mousedown.prevent.stop="click" :checked="checked" />
+  <div
+    class="tabulator-bks-checkbox"
+    :class="editable ? 'editable' : 'read-only'"
+    @mousedown.prevent.stop="click"
+  >
+    <input
+      type="checkbox"
+      :disabled="!editable"
+      @mousedown.prevent.stop="click"
+      :checked="checked"
+    >
   </div>
 </template>
 <script lang="ts">
@@ -12,10 +21,6 @@
       return {
         rendered: false,
         checked: false
-      }
-    },
-    watch: {
-      rendered() {
       }
     },
     computed: {

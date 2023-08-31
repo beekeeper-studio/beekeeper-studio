@@ -4,18 +4,20 @@ import { TableFilter, TableOrView } from "../../db/models";
 import { ExportOptions } from "../models";
 
 export class JsonLineExporter extends Export {
-  public static extension: string = "jsonl"
+  public static extension = "jsonl"
   readonly format: string = 'jsonl'
-  rowSeparator: string = '\n'
+  rowSeparator = '\n'
 
   constructor(
     filePath: string,
     connection: DBConnection,
     table: TableOrView,
+    query: string,
+    queryName: string,
     filters: TableFilter[] | any[],
     options: ExportOptions
   ) {
-    super(filePath, connection, table, filters, options)
+    super(filePath, connection, table, query, queryName, filters, options)
   }
 
   async getHeader(): Promise<string> {

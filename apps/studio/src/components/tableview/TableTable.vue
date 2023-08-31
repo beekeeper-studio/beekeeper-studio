@@ -1,14 +1,22 @@
 <template>
-  <div v-hotkey="keymap" class="tabletable flex-col" :class="{'view-only': !editable}">
+  <div
+    v-hotkey="keymap"
+    class="tabletable flex-col"
+    :class="{'view-only': !editable}"
+  >
     <template v-if="!table && initialized">
-      <div class="no-content">
-
-      </div>
+      <div class="no-content" />
     </template>
-    <template v-else >
+    <template v-else>
       <div class="table-filter">
-        <form @submit.prevent="triggerFilter" class="flex flex-middle">
-          <div class="filter-group" style="margin-left: 0.2rem">
+        <form
+          @submit.prevent="triggerFilter"
+          class="flex flex-middle"
+        >
+          <div
+            class="filter-group"
+            style="margin-left: 0.2rem"
+          >
             <button
               type="button"
               class="btn btn-flat btn-fab"
@@ -19,9 +27,17 @@
               <i class="material-icons-outlined">visibility</i>
             </button>
           </div>
-          <div v-if="filterMode === 'raw'" class="filter-group row gutter expand">
+          <div
+            v-if="filterMode === 'raw'"
+            class="filter-group row gutter expand"
+          >
             <div class="btn-wrap">
-              <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('builder')" title="Toggle Filter Type">
+              <button
+                class="btn btn-flat btn-fab"
+                type="button"
+                @click.stop="changeFilterMode('builder')"
+                title="Toggle Filter Type"
+              >
                 <i class="material-icons-outlined">filter_alt</i>
               </button>
             </div>
@@ -32,8 +48,8 @@
                   type="text"
                   v-model="filterRaw"
                   ref="valueInput"
-                  :placeholder=filterPlaceholder
-                />
+                  :placeholder="filterPlaceholder"
+                >
                 <button
                   type="button"
                   class="clear btn-link"
@@ -44,32 +60,60 @@
               </div>
             </div>
             <div class="btn-wrap">
-              <button class="btn btn-primary btn-fab" type="submit" title="Filter">
+              <button
+                class="btn btn-primary btn-fab"
+                type="submit"
+                title="Filter"
+              >
                 <i class="material-icons">search</i>
               </button>
             </div>
           </div>
-          <div v-else-if="filterMode === 'builder'" class="filter-group row gutter expand">
+          <div
+            v-else-if="filterMode === 'builder'"
+            class="filter-group row gutter expand"
+          >
             <div class="btn-wrap">
-              <button class="btn btn-flat btn-fab" type="button" @click.stop="changeFilterMode('raw')" title="Toggle Filter Type">
+              <button
+                class="btn btn-flat btn-fab"
+                type="button"
+                @click.stop="changeFilterMode('raw')"
+                title="Toggle Filter Type"
+              >
                 <i class="material-icons">code</i>
               </button>
             </div>
             <div>
               <div class="select-wrap">
-                <select name="Filter Field" class="form-control" v-model="filter.field">
+                <select
+                  name="Filter Field"
+                  class="form-control"
+                  v-model="filter.field"
+                >
                   <option
                     v-for="column in table.columns"
-                    v-bind:key="column.columnName"
+                    :key="column.columnName"
                     :value="column.columnName"
-                  >{{column.columnName}}</option>
+                  >
+                    {{ column.columnName }}
+                  </option>
                 </select>
               </div>
             </div>
             <div>
               <div class="select-wrap">
-                <select name="Filter Type" class="form-control" v-model="filter.type">
-                  <option v-for="(v, k) in filterTypes" v-bind:key="k" :value="v">{{k}}</option>
+                <select
+                  name="Filter Type"
+                  class="form-control"
+                  v-model="filter.type"
+                >
+                  <option
+                    v-for="(v, k) in filterTypes"
+                    :key="k"
+                    :value="v"
+                  >
+                    {{ k }}
+                  </option>
                 </select>
               </div>
             </div>
@@ -79,9 +123,9 @@
                   class="form-control"
                   type="text"
                   v-model="filter.value"
-                  :placeholder=builderPlaceholder
+                  :placeholder="builderPlaceholder"
                   ref="valueInput"
-                />
+                >
                 <button
                   type="button"
                   class="clear btn-link"
@@ -92,35 +136,56 @@
               </div>
             </div>
             <div class="btn-wrap">
-              <button class="btn btn-primary btn-fab" type="submit" title="Filter">
+              <button
+                class="btn btn-primary btn-fab"
+                type="submit"
+                title="Filter"
+              >
                 <i class="material-icons">search</i>
               </button>
             </div>
           </div>
         </form>
       </div>
-      <div ref="table"></div>
+      <div ref="table" />
       <ColumnFilterModal
-        :modalName="columnFilterModalName"
-        :columnsWithFilterAndOrder="columnsWithFilterAndOrder"
+        :modal-name="columnFilterModalName"
+        :columns-with-filter-and-order="columnsWithFilterAndOrder"
+        :has-pending-changes="pendingChangesCount > 0"
         @changed="applyColumnChanges"
       />
     </template>
 
     <statusbar :mode="statusbarMode">
-
-
       <div class="truncate statusbar-info">
-        <x-button @click.prevent="openProperties" class="btn btn-flat btn-icon end" title="View Structure">
+        <x-button
+          @click.prevent="openProperties"
+          class="btn btn-flat btn-icon end"
+          title="View Structure"
+        >
           Structure <i class="material-icons">north_east</i>
         </x-button>
         <!-- Info -->
-        <table-length :table="table" :connection="connection" />
-        <a @click="refreshTable" tabindex="0" role="button" class="statusbar-item hoverable" v-if="lastUpdatedText && !error" :title="'Updated' + ' ' + lastUpdatedText">
+        <table-length
+          :table="table"
+          :connection="connection"
+        />
+        <a
+          @click="refreshTable"
+          tabindex="0"
+          role="button"
+          class="statusbar-item hoverable"
+          v-if="lastUpdatedText && !error"
+          :title="'Updated' + ' ' + lastUpdatedText"
+        >
           <i class="material-icons">update</i>
-          <span>{{lastUpdatedText}}</span>
+          <span>{{ lastUpdatedText }}</span>
         </a>
-        <span v-if="error" class="statusbar-item error" :title="error.message">
+        <span
+          v-if="error"
+          class="statusbar-item error"
+          :title="error.message"
+        >
           <i class="material-icons">error_outline</i>
           <span class="">{{ error.title }}</span>
         </span>
@@ -129,9 +194,18 @@
       <!-- Pagination -->
       <div class="tabulator-paginator">
         <div class="flex-center flex-middle flex">
-          <a @click="page = page  - 1" v-tooltip="ctrlOrCmd('left')"><i class="material-icons">navigate_before</i></a>
-          <input type="number" v-model="page" />
-          <a @click="page = page + 1" v-tooltip="ctrlOrCmd('right')"><i class="material-icons">navigate_next</i></a>
+          <a
+            @click="page = page - 1"
+            v-tooltip="ctrlOrCmd('left')"
+          ><i class="material-icons">navigate_before</i></a>
+          <input
+            type="number"
+            v-model="page"
+          >
+          <a
+            @click="page = page + 1"
+            v-tooltip="ctrlOrCmd('right')"
+          ><i class="material-icons">navigate_next</i></a>
         </div>
       </div>
 
@@ -147,41 +221,107 @@
         </div> -->
 
         <template v-if="pendingChangesCount > 0">
-          <x-button class="btn btn-flat" @click.prevent="discardChanges">Reset</x-button>
-          <x-button class="btn btn-primary btn-badge btn-icon" @click.prevent="saveChanges" :title="saveButtonText" :class="{'error': !!saveError}">
-            <i v-if="error" class="material-icons ">error_outline</i>
-            <span class="badge" v-if="!error">{{pendingChangesCount}}</span>
-            <span>Apply</span>
+          <x-button
+            class="btn btn-flat"
+            @click.prevent="discardChanges"
+          >
+            Reset
           </x-button>
+          <x-buttons class="pending-changes">
+            <x-button
+              class="btn btn-primary btn-badge btn-icon"
+              @click.prevent="saveChanges"
+              :title="saveButtonText"
+              :class="{'error': !!saveError}"
+            >
+              <i
+                v-if="error"
+                class="material-icons "
+              >error_outline</i>
+              <span
+                class="badge"
+                v-if="!error"
+              >{{ pendingChangesCount }}</span>
+              <span>Apply</span>
+            </x-button>
+            <x-button
+              class="btn btn-primary"
+              menu
+            >
+              <i class="material-icons">arrow_drop_down</i>
+              <x-menu>
+                <x-menuitem @click.prevent="saveChanges">
+                  <x-label>Apply</x-label>
+                  <x-shortcut value="Control+S" />
+                </x-menuitem>
+                <x-menuitem @click.prevent="copyToSql">
+                  <x-label>Copy to SQL</x-label>
+                  <x-shortcut value="Control+Shift+S" />
+                </x-menuitem>
+              </x-menu>
+            </x-button>
+          </x-buttons>
         </template>
         <template v-if="!editable">
-          <span class="statusbar-item" :title="readOnlyNotice"><i class="material-icons-outlined">info</i> Editing Disabled</span>
+          <span
+            class="statusbar-item"
+            :title="readOnlyNotice"
+          ><i class="material-icons-outlined">info</i> Editing Disabled</span>
         </template>
 
         <!-- Actions -->
-        <x-button v-tooltip="`${ctrlOrCmd('r')} or F5`" class="btn btn-flat" title="Refresh table" @click="refreshTable">
+        <x-button
+          v-tooltip="`${ctrlOrCmd('r')} or F5`"
+          class="btn btn-flat"
+          title="Refresh table"
+          @click="refreshTable"
+        >
           <i class="material-icons">refresh</i>
         </x-button>
-        <x-button class="btn btn-flat" v-tooltip="ctrlOrCmd('n')" title="Add row" @click.prevent="cellAddRow">
+        <x-button
+          class="btn btn-flat"
+          v-tooltip="ctrlOrCmd('n')"
+          title="Add row"
+          @click.prevent="cellAddRow"
+        >
           <i class="material-icons">add</i>
         </x-button>
-        <x-button class="actions-btn btn btn-flat" title="actions">
+        <x-button
+          class="actions-btn btn btn-flat"
+          title="actions"
+        >
           <i class="material-icons">settings</i>
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
             <x-menuitem @click="exportTable">
-              <x-label>Export Whole Table</x-label>
+              <x-label>Export whole table</x-label>
             </x-menuitem>
 
             <x-menuitem @click="exportFiltered">
-              <x-label>Export Filtered View</x-label>
+              <x-label>Export filtered view</x-label>
+            </x-menuitem>
+            <x-menuitem @click="showColumnFilterModal">
+              <x-label>Show or hide columns</x-label>
             </x-menuitem>
           </x-menu>
         </x-button>
-
       </div>
-
     </statusbar>
+
+    <portal to="modals">
+      <modal class="vue-dialog beekeeper-modal" :name="`discard-changes-modal-${tab.id}`">
+        <div class="dialog-content">
+          <div class="dialog-c-title">Confirmation</div>
+          <div class="modal-form">
+            Sorting or Filtering now will discard {{pendingChangesCount}} pending change(s). Are you sure?
+          </div>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button class="btn btn-flat" type="button" @click.prevent="$modal.hide(`discard-changes-modal-${tab.id}`)">Cancel</button>
+          <button class="btn btn-primary" type="button" @click.prevent="forceFilter" autofocus>I'm Sure</button>
+        </div>
+      </modal>
+    </portal>
   </div>
 </template>
 
@@ -215,7 +355,8 @@ import { mapGetters, mapState } from 'vuex';
 import { Tabulator } from 'tabulator-tables'
 import { TableUpdate } from '@/lib/db/models';
 import { markdownTable } from 'markdown-table'
-import { dialectFor } from '@shared/lib/dialects/models'
+import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
+import { format } from 'sql-formatter';
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
@@ -268,7 +409,7 @@ export default Vue.extend({
       timeAgo: new TimeAgo('en-US'),
       lastUpdated: null,
       lastUpdatedText: null,
-      // @ts-ignore
+      // @ts-expect-error Fix typings
       interval: setInterval(this.setlastUpdatedText, 10000),
 
       forceRedraw: false,
@@ -281,7 +422,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
-    ...mapGetters(['dialectData']),
+    ...mapGetters(['dialectData', 'dialect']),
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
       const cols = this.tabulator.getColumns()
@@ -327,6 +468,7 @@ export default Vue.extend({
       result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
+      result[this.ctrlOrCmd('shift+s')] = this.copyToSql.bind(this)
       result[this.ctrlOrCmd('f')] = () => this.$refs.valueInput.focus()
       result[this.ctrlOrCmd('c')] = this.copyCell
       return result
@@ -723,6 +865,9 @@ export default Vue.extend({
   },
 
   watch: {
+    allColumnsSelected() {
+      this.resetPendingChanges()
+    },
     shouldInitialize() {
       if (this.shouldInitialize) {
         this.initialize()
@@ -732,7 +877,6 @@ export default Vue.extend({
       this.tabulator.setPage(this.page || 1)
     }, 500),
     active() {
-      log.debug('active', this.active)
       if (!this.tabulator) return;
       if (this.active) {
         this.tabulator.restoreRedraw()
@@ -741,6 +885,8 @@ export default Vue.extend({
           this.$nextTick(() => {
             this.tabulator.redraw(true)
           })
+        } else {
+          this.$nextTick(() => this.tabulator.redraw())
         }
       } else {
         this.tabulator.blockRedraw()
@@ -863,7 +1009,6 @@ export default Vue.extend({
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
 
 
-      // @ts-ignore-error
       this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,
         columns: this.tableColumns,
@@ -1182,6 +1327,41 @@ export default Vue.extend({
         deletes: []
       }
     },
+    async copyToSql() {
+      this.saveError = null
+
+      try {
+        const changes = {
+          inserts: this.buildPendingInserts(),
+          updates: this.pendingChanges.updates,
+          deletes: this.pendingChanges.deletes
+        }
+        const sql = this.connection.applyChangesSql(changes)
+        const formatted = format(sql, { language: FormatterDialect(this.dialect) })
+        this.$root.$emit(AppEvent.newTab, formatted)
+      } catch(ex) {
+        console.error(ex);
+        this.pendingChanges.updates.forEach(edit => {
+            edit.cell.getElement().classList.add('edit-error')
+        })
+
+        this.pendingChanges.inserts.forEach(insert => {
+          insert.row.getElement().classList.add('edit-error')
+        })
+
+        this.saveError = {
+          title: ex.message,
+          message: ex.message,
+          ex
+        }
+        this.$noty.error(ex.message)
+
+        return
+      } finally {
+        if (!this.active)
+          this.forceRedraw = true
+      }
+    },
     async saveChanges() {
         this.saveError = null
 
@@ -1269,6 +1449,10 @@ export default Vue.extend({
       this.$modal.show(this.columnFilterModalName)
     },
     triggerFilter() {
+      if (this.pendingChangesCount > 0) {
+        this.$modal.show(`discard-changes-modal-${this.tab.id}`)
+        return;
+      }
       if (this.tabulator) this.tabulator.setData()
     },
     clearFilter() {
@@ -1434,6 +1618,11 @@ export default Vue.extend({
       this.tabulator.restoreRedraw();
 
       this.tabulator.redraw(true)
+    },
+    forceFilter() {
+      this.discardChanges();
+      this.triggerFilter();
+      this.$modal.hide(`discard-changes-modal-${this.tab.id}`);
     }
   }
 });

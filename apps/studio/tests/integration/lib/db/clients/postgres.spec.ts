@@ -1,6 +1,5 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { Duration, TemporalUnit } from "node-duration"
 import { runCommonTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/client'
 import { TableInsert } from '../../../../../src/lib/db/models'
@@ -19,7 +18,6 @@ function testWith(dockerTag, socket = false) {
     let container: StartedTestContainer;
     let util: DBTestUtil
 
-
     beforeAll(async () => {
       const timeoutDefault = 10000
       jest.setTimeout(dbtimeout)
@@ -27,17 +25,17 @@ function testWith(dockerTag, socket = false) {
       // container = environment.getContainer("psql_1")
 
       const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'psql-'));
-      container = await new GenericContainer("postgres", dockerTag)
+      container = await new GenericContainer(`postgres:${dockerTag}`)
         .withEnv("POSTGRES_PASSWORD", "example")
         .withEnv("POSTGRES_DB", "banana")
         .withExposedPorts(5432)
-        .withStartupTimeout(new Duration(dbtimeout, TemporalUnit.MILLISECONDS))
         .withBindMount(path.join(temp, "postgresql"), "/var/run/postgresql", "rw")
+        .withStartupTimeout(dbtimeout)
         .start()
       jest.setTimeout(timeoutDefault)
       const config: IDbConnectionServerConfig = {
         client: 'postgresql',
-        host: container.getContainerIpAddress(),
+        host: container.getHost(),
         port: container.getMappedPort(5432),
         user: 'postgres',
         password: 'example',
@@ -67,6 +65,59 @@ function testWith(dockerTag, socket = false) {
         table.specificType('names', 'TEXT []')
         table.text("normal")
       })
+
+      await util.knex.raw(
+        `CREATE TYPE this_is_a_mood AS ENUM ('sad', 'ok', 'happy');`
+      )
+
+      await util.knex.raw(`
+        CREATE TABLE
+          public.moody_people (
+            id serial NOT NULL,
+            current_mood this_is_a_mood NULL DEFAULT 'sad'::this_is_a_mood
+          );
+      `)
+
+      if (dockerTag == 'latest') {
+        await util.knex.raw(`
+          CREATE TABLE partitionedtable (
+            recordId SERIAL,
+            number INT
+          ) PARTITION BY RANGE(number);
+          CREATE TABLE partition_1 PARTITION OF partitionedtable
+          FOR VALUES FROM (0) TO (10);
+          CREATE TABLE another_partition PARTITION OF partitionedtable
+          FOR VALUES FROM (11) TO (20);
+          CREATE TABLE party PARTITION OF partitionedtable
+          FOR VALUES FROM (21) TO (30);
+
+          CREATE TABLE parent (
+            id INTEGER PRIMARY KEY
+          );
+          CREATE TABLE child (
+            name VARCHAR(100)
+          ) INHERITS (parent);
+        `);
+      }
+
+      await util.knex.raw(`
+          CREATE SCHEMA schema1;
+          CREATE TABLE schema1.duptable (
+            "id" INTEGER PRIMARY KEY
+          );
+          CREATE SCHEMA schema2;
+          CREATE TABLE schema2.duptable (
+            "id" INTEGER PRIMARY KEY
+          );
+        `);
+
+      await util.knex.raw(`
+          CREATE SCHEMA "1234";
+          CREATE TABLE "1234"."5678" (
+            "id" SERIAL PRIMARY KEY,
+            "9101" INTEGER
+          );
+        `);
 
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
@@ -105,6 +156,12 @@ function testWith(dockerTag, socket = false) {
       expect(result).toMatchObject([
         { id: 1, names: [], normal: 'foo' }
       ])
+    })
+
+    it("Should be able to get a table create script without erroring", async() => {
+      // checking that create table script with a custom type can be retrieved.
+      const result = await util.connection.getTableCreateScript("moody_people")
+      expect(result).not.toBeNull()
     })
 
     it("Should allow me to insert a row with an array", async () => {
@@ -173,6 +230,63 @@ function testWith(dockerTag, socket = false) {
         amount_of_time: insertedValue // should still be the string not an object
       })
     })
+
+    it("Should be able to list partitions for a table", async () => {
+      if (dockerTag == 'latest') {
+        const partitions = await util.connection.listTablePartitions('partitionedtable');
+
+        expect(partitions.length).toBe(3);
+      }
+    })
+
+
+    // regression test for Bug #1564 "BUG: Tables appear twice in UI"
+    it("Should not have duplicate tables for tables with the same name in different schemas", async () => {
+      const tables = await util.connection.listTables({});
+      const schema1 = tables.filter((t) => t.schema == "schema1");
+      const schema2 = tables.filter((t) => t.schema == "schema2");
+
+      expect(schema1.length).toBe(1);
+      expect(schema2.length).toBe(1);
+    });
+
+    // regression test for Bug #1572 "Only schemas that show are now information_schema and pg_catalog"
+    it("Numeric names should still be pulled back in queries", async () => {
+      const tables = await util.connection.listTables({ schema: '1234' });
+      const columns = await util.connection.listTableColumns('banana', '5678', '1234');
+
+      expect(tables.length).toBe(1);
+      expect(tables[0].name).toBe('5678');
+      expect(columns.map((c) => c.columnName).includes('9101'));
+    });
+
+    // regression tests for Bug #1583 "Only parent table shows in UI when using INHERITS"
+    it("Inherited tables should NOT behave like partitioned tables", async () => {
+      if (dockerTag == 'latest') {
+        const tables = await util.connection.listTables({ schema: 'public', tables: ['parent', 'child']});
+        const partitions = await util.connection.listTablePartitions('parent');
+        const parent = tables.find((value) => value.name == 'parent');
+        const child = tables.find((value) => value.name == 'child');
+
+        expect(partitions.length).toBe(0);
+        expect(parent.parenttype).toBe(null);
+        expect(child.parenttype).toBe('r');
+      }
+    })
+
+    it("Partitions should have parenttype 'p'", async () => {
+      if (dockerTag == 'latest') {
+        const tables = await util.connection.listTables({ schema: 'public', tables: ['partition_1', 'another_partition', 'party']});
+        const partition1 = tables.find((value) => value.name == 'partition_1');
+        const another = tables.find((value) => value.name == 'another_partition');
+        const party = tables.find((value) => value.name == 'party');
+
+        expect(partition1.parenttype).toBe('p');
+        expect(another.parenttype).toBe('p');
+        expect(party.parenttype).toBe('p');
+      }
+    })
+    // END regression tests for Bug #1583
 
     describe("Common Tests", () => {
       runCommonTests(() => util)

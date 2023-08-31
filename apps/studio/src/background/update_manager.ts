@@ -16,6 +16,7 @@ function dealWithAppImage() {
   if (platformInfo.isAppImage) {
     // remap temporary running AppImage to actual source
     // THIS IS PROBABLY SUPER BRITTLE AND MAKES ME WANT TO STOP USING APPIMAGE
+    // eslint-disable-next-line
     // @ts-ignore
     autoUpdater.logger?.info('rewriting $APPIMAGE', {
       oldValue: process.env.APPIMAGE,
@@ -36,7 +37,7 @@ function checkForUpdates() {
   }
 }
 
-export function manageUpdates(debug?: boolean) {
+export function manageUpdates(debug?: boolean): void {
 
   if (platformInfo.environment === 'development' || platformInfo.isSnap || (platformInfo.isLinux && !platformInfo.isAppImage)) {
     log.info("not doing any updates, didn't meet conditional")

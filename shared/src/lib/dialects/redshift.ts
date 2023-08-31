@@ -1,4 +1,11 @@
-import { ColumnType, defaultEscapeString, defaultWrapLiteral, DialectData, SpecialTypes } from "./models";
+import {
+  ColumnType,
+  defaultEscapeString,
+  friendlyNormalizedIdentifier,
+  defaultWrapLiteral,
+  DialectData,
+  SpecialTypes,
+} from "./models";
 
 const types = [
   ...SpecialTypes,
@@ -18,15 +25,16 @@ export const RedshiftData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [],
   wrapIdentifier: (id: string) => `"${id.replaceAll(/"/g, '""')}"`,
+  friendlyNormalizedIdentifier: friendlyNormalizedIdentifier,
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
+  unwrapIdentifier: (s) => s,
   disabledFeatures: {
     alter: {
       multiStatement: true
     },
     informationSchema: {
-      extra: true,
-      comment: true
+      extra: true
     },
     constraints: {
       onUpdate: true,
@@ -34,4 +42,5 @@ export const RedshiftData: DialectData = {
     },
     createIndex: true,
   }
+
 }

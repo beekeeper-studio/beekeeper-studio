@@ -34,6 +34,8 @@
       overflow: hidden;
     }
   }
+
+
   .toolbar {
     display: flex;
     align-items: center;
@@ -48,6 +50,16 @@
       display: flex;
       align-items: center;
       padding: 0;
+
+      .keymap-label {
+        font-size: 95%;
+        padding-left: $gutter-w * 2.6;
+        cursor: pointer;
+        .material-icons {
+          position: absolute;
+          left: $gutter-h;
+        }
+      }
     }
     .btn-fab {
       i {
@@ -55,6 +67,7 @@
         font-size: 18px;
       }
     }
+   
   }
   .top-panel {
     .toolbar {

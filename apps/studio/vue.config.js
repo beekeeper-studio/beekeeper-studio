@@ -1,5 +1,8 @@
+/* eslint-disable */
 const webpack = require('webpack');
 const path = require('path');
+/* eslint-enable */
+
 const fpmOptions = [
   "--after-install=build/deb-postinstall"
 ]
@@ -11,6 +14,7 @@ if (  process.env.PI_BUILD ) {
 
 const externals = ['better-sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2', 'ssh2', '@electron/remote']
 module.exports = {
+  transpileDependencies: ['@aws-sdk/*'],
   pluginOptions: {
     electronBuilder: {
       nodeModulesPath: ['./node_modules', '../../node_modules'],
@@ -46,7 +50,7 @@ module.exports = {
         releaseInfo: {
           releaseNotesFile: "build/release-notes.md"
         },
-        files: ['**/*', 'public/icons/**/*'],
+        files: ['**/*', 'public/icons/**/*', '!**/node_gyp_bins/*'],
         afterSign: "electron-builder-notarize",
         afterPack: "./build/afterPack.js",
         extraResources: [
@@ -159,7 +163,8 @@ module.exports = {
         },
         win: {
           icon: './public/icons/png/512x512.png',
-          target: ['nsis', 'portable']
+          target: ['nsis', 'portable'],
+          sign: "./build/win/sign.js"
         },
         portable: {
           "artifactName": "${productName}-${version}-portable.exe",
@@ -189,7 +194,7 @@ module.exports = {
     //   'strong-oracle': 'strong-oracle',
     //   'oracledb': 'oracledb',
     //   // 'pg': 'pg',
-    //   // 'pg-query-stream': 'pg-query-stream'
+    //   // 'pg-query-stream': 'pg-query-stzream'
     // },
     node: {
       dns: 'mock'

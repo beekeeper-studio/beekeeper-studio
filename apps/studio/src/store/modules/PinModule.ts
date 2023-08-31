@@ -4,15 +4,16 @@ import { Module } from "vuex";
 import { PinnedEntity } from "../../common/appdb/models/PinnedEntity";
 import { State as RootState } from '../index'
 interface State {
-  pins: PinnedEntity[]
+  pins: PinnedEntity[],
 }
 
 export const PinModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
-    pins: []
+    pins: [],
   }),
   getters: {
+
     pinned(state: State, _g, root): PinnedEntity[] {
       return state.pins.filter((p) => p.databaseName === root.database)
     },
@@ -38,7 +39,7 @@ export const PinModule: Module<State, RootState> = {
     },
     remove(state, pin: PinnedEntity) {
       state.pins = _.without(state.pins, pin)
-    }
+    },
   },
   actions: {
     async loadPins(context) {

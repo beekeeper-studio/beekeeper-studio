@@ -1,20 +1,41 @@
 <template>
-  <div class="dialect-example-page" v-if="example">
+  <div
+    class="dialect-example-page"
+    v-if="example"
+  >
     <div class="subheader">
       <div class="small-wrap">
-        <router-link  class="back-link" :to="{name: 'Dialect', params: {dialect_id: dialect}}">
+        <router-link
+          class="back-link"
+          :to="{name: 'Dialect', params: {dialect_id: dialect}}"
+        >
           <i class="material-icons">arrow_backward</i> 
-          <span>Back to {{dialectTitle}} code examples</span>
+          <span>Back to {{ dialectTitle }} code examples</span>
         </router-link>
-        <h1>{{example.title}}</h1>
-        <div class="description">{{example.description}}</div>
+        <h1>{{ example.title }}</h1>
+        <div class="description">
+          {{ example.description }}
+        </div>
       </div>
     </div>
     <section class="code-examples">
       <div class="small-wrap">
-        <div class="code" v-for="(item, idx) in codes" :key="idx">
-          <highlighted-code :format="true" :code="item.value || item" :dialect="dialect">
-            <div class="code-title" v-if="item.title">{{item.title}}</div>
+        <div
+          class="code"
+          v-for="(item, idx) in codes"
+          :key="idx"
+        >
+          <highlighted-code
+            :format="true"
+            :code="item.value || item"
+            :dialect="dialect"
+          >
+            <div
+              class="code-title"
+              v-if="item.title"
+            >
+              {{ item.title }}
+            </div>
           </highlighted-code>
         </div>
       </div>
@@ -24,9 +45,12 @@
         <hr>
         <h3>Using Beekeeper Studio?</h3>
         <p>Beekeeper Studio is a free and open source database manager for Windows, Mac, and Linux.</p> 
-        <p>This feature is baked right in, so there's no need to manually type SQL every time. <span v-if="example.beekeeperBlurb">{{example.beekeeperBlurb}}</span></p>
+        <p>This feature is baked right in, so there's no need to manually type SQL every time. <span v-if="example.beekeeperBlurb">{{ example.beekeeperBlurb }}</span></p>
         <a href="https://beekeeperstudio.io/get">Download Beekeeper Studio</a>
-        <img src="@/assets/img/bk-example.png" alt="">
+        <img
+          src="@/assets/img/bk-example.png"
+          alt=""
+        >
       </div>
     </section>
   </div>

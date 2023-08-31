@@ -1,5 +1,5 @@
 <template>
-  <div></div>
+  <div />
 </template>
 <script>
 import Noty from "noty";
@@ -10,10 +10,11 @@ export default {
   mixins: [ExportInfo],
   props: ['exporter'],
   data() {
+    const exportName = this.exporter.table ? this.exporter.table.name : this.queryName;
     return {
       percentComplete: 0,
       notification: new Noty({
-        text: `Exporting '${this.exporter.table.name}'`,
+        text: `Exporting '${exportName}'`,
         layout: "bottomRight",
         timeout: false,
         closeWith: 'button',
@@ -27,7 +28,14 @@ export default {
   },
   computed: {
     notificationText() {
-      return `(${this.percentComplete}%) Exporting '${this.exporter.table.name}'`
+      const exportName = this.exporter.table ? this.exporter.table.name : this.exporter.queryName;
+      // CoPilot suggested the comment below, and it was right af lol
+      // this is a hack to get the countExported to update
+      const countExported = this.countExported;
+      const percentComplete = this.percentComplete;
+      return this.exporter.table
+        ? `(${percentComplete}%) Exporting table '${exportName}'`
+        : `(${countExported} rows) Exporting query '${exportName}'`
     },
   },
   methods: {
@@ -37,10 +45,13 @@ export default {
       }
       this.exporter.abort();
       this.notification.close();
-      this.$noty.error(`${this.exporter.table.name} export aborted`);
+      const exportName = this.exporter.table ? this.exporter.table.name : this.exporter.queryName;
+      this.$noty.error(`${exportName} export aborted`);
     },
     updateProgress(progress) {
-      this.percentComplete = progress.percentComplete
+      // not quite sure why this hackiness (and only this hackiness) finally made it work but i'll take it
+      this.countExported = progress.countExported
+      this.percentComplete = this.exporter.table ? progress.percentComplete : progress.countExported
     }
   },
   watch: {

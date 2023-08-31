@@ -2,17 +2,24 @@
   <div class="dialect-page">
     <div class="subheader">
       <div class="small-wrap">
-        <h1 class="title">Code examples for {{dialectName}}</h1>
+        <h1 class="title">
+          Code examples for {{ dialectName }}
+        </h1>
         <div class="subtitle description">
-          Remembering all the syntax for {{dialectName}} is hard, at least we find it hard to remember it all. Hopefully the examples below help you as much as they help us.
+          Remembering all the syntax for {{ dialectName }} is hard, at least we find it hard to remember it all. Hopefully the examples below help you as much as they help us.
         </div>
       </div>
     </div>
     <section class="page-content examples-list">
       <div class="small-wrap">
-        <router-link :to="{name: 'Example', params: {dialect_id: dialect, id: example.id} }" class="card-flat card-link example-item" v-for="example in dialectExamples" :key="example.id">
-          <div><span class="badge" >{{example.linkText}}</span></div>
-          <span class="example-item-description">{{example.description}}</span>
+        <router-link
+          :to="{name: 'Example', params: {dialect_id: dialect, id: example.id} }"
+          class="card-flat card-link example-item"
+          v-for="example in dialectExamples"
+          :key="example.id"
+        >
+          <div><span class="badge">{{ example.linkText }}</span></div>
+          <span class="example-item-description">{{ example.description }}</span>
         </router-link>
       </div>
     </section>

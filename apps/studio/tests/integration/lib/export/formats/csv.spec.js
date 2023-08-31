@@ -34,6 +34,8 @@ describe("CSV Exporter", () => {
       filename,
       util.connection,
       { name: 'toexport'},
+      '',
+      '',
       [],
       { deleteOnAbort: true, chunkSize: 1},
       { header: true, delimiter: ','}

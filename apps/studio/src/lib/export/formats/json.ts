@@ -8,20 +8,23 @@ interface OutputOptionsJson {
   prettyprint: boolean
 }
 export class JsonExporter extends Export {
-  public static extension: string = "json"
+  public static extension = "json"
   readonly format: string = 'json'
-  rowSeparator: string = ',\n'
+  rowSeparator = ',\n'
+  needsFinalSeparator = false
   outputOptions: OutputOptionsJson;
 
   constructor(
     filePath: string,
     connection: DBConnection,
     table: TableOrView,
+    query: string,
+    queryName: string,
     filters: TableFilter[] | any[],
     options: ExportOptions,
     outputOptions: OutputOptionsJson
   ) {
-    super(filePath, connection, table, filters, options)
+    super(filePath, connection, table, query, queryName, filters, options)
     this.outputOptions = outputOptions
   }
 

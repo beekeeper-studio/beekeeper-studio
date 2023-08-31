@@ -1,7 +1,7 @@
 
 
 export const SmartLocalStorage = {
-  removeItem(key: string) {
+  removeItem(key: string): void {
     localStorage.removeItem(key)
   },
   getDate(key: string): Date | null {
@@ -13,10 +13,10 @@ export const SmartLocalStorage = {
       return null
     }
   },
-  setDate(key: string, d: Date) {
+  setDate(key: string, d: Date): void {
     localStorage.setItem(key, d.getTime().toString())
   },
-  getWithExpiry(key) {
+  getWithExpiry(key: string): any {
     const itemStr = localStorage.getItem(key)
     // if the item doesn't exist, return null
     if (!itemStr) {
@@ -33,7 +33,7 @@ export const SmartLocalStorage = {
     }
     return item.value
   },
-  setWithExpiry(key, value, ttl) {
+  setWithExpiry(key: string, value: any, ttl: number): void {
     const now = new Date()
 
     // `item` is an object which contains the original value

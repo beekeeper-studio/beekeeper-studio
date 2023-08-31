@@ -5,18 +5,31 @@ import _ from 'lodash'
 import Database from 'better-sqlite3'
 import { identify } from 'sql-query-identifier';
 import knexlib from 'knex'
+import { makeEscape } from 'knex/lib/util/string'
 import rawLog from 'electron-log'
-import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery, escapeLiteral } from './utils';
+import { buildInsertQuery, buildInsertQueries, buildDeleteQueries, genericSelectTop, buildSelectTopQuery, escapeLiteral, buildUpdateQueries, applyChangesSql } from './utils';
 import { SqliteCursor } from './sqlite/SqliteCursor';
 import { SqliteChangeBuilder } from '@shared/lib/sql/change_builder/SqliteChangeBuilder';
 import { SqliteData } from '@shared/lib/dialects/sqlite';
 import { ClientError } from '../client';
+import { makeString } from '@/common/utils';
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
-const knex = knexlib({ client: 'better-sqlite3',
+const knex = knexlib({
+  client: 'better-sqlite3',
   // silence the "sqlite does not support inserting default values" warnings on every insert
   useNullAsDefault: true,
+})
+
+// HACK (day): this is to prevent the 'str.replace is not a function' error that seems to happen with all changes.
+knex.client = Object.assign(knex.client, {
+  _escapeBinding: makeEscape({
+    escapeString(str) {
+      str = makeString(str)
+      return str ? `'${str.replace(/'/g, "''")}'` : ''
+    }
+  })
 })
 
 const sqliteErrors = {
@@ -35,7 +48,7 @@ export default async function (server, database) {
   const version = await driverExecuteQuery(conn, { query: 'SELECT sqlite_version()' });
 
   return {
-    supportedFeatures: () => ({ customRoutines: false, comments: false, properties: true }),
+    supportedFeatures: () => ({ customRoutines: false, comments: false, properties: true, partitions: false, editPartitions: false }),
     versionString: () => getVersionString(version),
     wrapIdentifier,
     defaultSchema: () => null,
@@ -59,11 +72,13 @@ export default async function (server, database) {
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize) => selectTopStream(conn, db, table, orderBy, filters, chunkSize),
+    queryStream: (db, query, chunkSize) => queryStream(conn, db, query, chunkSize),
+    applyChangesSql: (changes) => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
     getViewCreateScript: (view) => getViewCreateScript(conn, view),
-    getMaterializedViewCreateScript:  () => Promise.resolve([]),
+    getMaterializedViewCreateScript: () => Promise.resolve([]),
     getRoutineCreateScript: (routine) => getRoutineCreateScript(conn, routine),
     truncateAllTables: () => truncateAllTables(conn),
     getTableProperties: (table) => getTableProperties(conn, table),
@@ -88,7 +103,11 @@ export default async function (server, database) {
 
     // delete stuff
     dropElement: (elementName, typeOfElement) => dropElement(conn, elementName, typeOfElement),
-    truncateElement: (elementName) => truncateElement(conn, elementName)
+    truncateElement: (elementName) => truncateElement(conn, elementName),
+
+    // duplicate table
+    duplicateTableSql: (tableName, dublicateTableName) => duplicateTableSql(tableName, dublicateTableName),
+    duplicateTable: (tableName, dublicateTableName) => duplicateTable(conn, tableName, dublicateTableName)
   };
 }
 
@@ -147,6 +166,12 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
   }
 }
 
+export async function queryStream(conn, db, query, chunkSize) {
+  return {
+    cursor: new SqliteCursor(conn, query, [], chunkSize)
+  }
+}
+
 export function query(conn, queryText) {
   let queryConnection = null;
 
@@ -186,11 +211,11 @@ export function query(conn, queryText) {
 
 export async function insertRows(cli, inserts) {
 
-    for (const command of buildInsertQueries(knex, inserts)) {
-      await driverExecuteQuery(cli, { query: command })
-    }
+  for (const command of buildInsertQueries(knex, inserts)) {
+    await driverExecuteQuery(cli, { query: command })
+  }
 
-    return true
+  return true
 }
 
 export async function applyChanges(conn, changes) {
@@ -198,7 +223,7 @@ export async function applyChanges(conn, changes) {
 
   await runWithConnection(conn, async (connection) => {
     const cli = { connection }
-    await driverExecuteQuery(cli, { query: 'BEGIN'})
+    await driverExecuteQuery(cli, { query: 'BEGIN' })
 
     try {
       if (changes.inserts) {
@@ -213,7 +238,7 @@ export async function applyChanges(conn, changes) {
         await deleteRows(cli, changes.deletes)
       }
 
-      await driverExecuteQuery(cli, { query: 'COMMIT'})
+      await driverExecuteQuery(cli, { query: 'COMMIT' })
     } catch (ex) {
       log.error("query exception: ", ex)
       await driverExecuteQuery(cli, { query: 'ROLLBACK' })
@@ -223,6 +248,7 @@ export async function applyChanges(conn, changes) {
 
   return results
 }
+
 
 export async function updateValues(cli, updates) {
   const commands = updates.map(update => {
@@ -387,10 +413,10 @@ export async function listTableIndexes(conn, database, table) {
   const { data } = await driverExecuteQuery(conn, { query: sql });
 
   const allSQL = data.map((row) => `PRAGMA INDEX_XINFO('${escapeString(row.name)}')`).join(";")
-  const infos = await driverExecuteQuery(conn, { query: allSQL, multiple: true})
+  const infos = await driverExecuteQuery(conn, { query: allSQL, multiple: true })
 
   const indexColumns = infos.map((result) => {
-    return result.data.filter((r) => !!r.name).map((r) => ({name: r.name, order: r.desc ? 'DESC' : 'ASC'}))
+    return result.data.filter((r) => !!r.name).map((r) => ({ name: r.name, order: r.desc ? 'DESC' : 'ASC' }))
   })
 
   return data.map((row, idx) => ({
@@ -419,7 +445,7 @@ export function getTableReferences() {
 
 export async function getPrimaryKeys(conn, database, table) {
   const sql = `pragma table_info('${escapeString(table)}')`
-  const { data } = await driverExecuteQuery(conn, { query: sql})
+  const { data } = await driverExecuteQuery(conn, { query: sql })
   const found = data.filter(r => r.pk > 0)
   if (!found || found.length === 0) return []
   return found.map((r) => ({
@@ -496,7 +522,7 @@ export async function truncateAllTables(conn) {
   });
 }
 
-export async function dropElement (conn, elementName, typeOfElement) {
+export async function dropElement(conn, elementName, typeOfElement) {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `DROP ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(elementName)}`
@@ -505,13 +531,26 @@ export async function dropElement (conn, elementName, typeOfElement) {
   });
 }
 
-export async function truncateElement (conn, elementName) {
+export async function truncateElement(conn, elementName) {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `Delete from ${PD.wrapIdentifier(elementName)}; vacuum;`
 
     await driverExecuteQuery(connClient, { query: sql })
   });
+}
+
+export async function duplicateTable(conn, tableName, dublicateTableName) {
+  await runWithConnection(conn, async (connection) => {
+    const connClient = { connection };
+    const sql = duplicateTableSql(tableName, dublicateTableName)
+
+    await driverExecuteQuery(connClient, { query: sql })
+  });
+}
+
+export function duplicateTableSql(tableName, dublicateTableName) {
+  return `CREATE TABLE ${PD.wrapIdentifier(dublicateTableName)} AS SELECT * FROM ${PD.wrapIdentifier(tableName)};`
 }
 
 export async function getTableProperties(conn, table) {
@@ -629,7 +668,7 @@ export function driverExecuteQuery(conn, queryArgs) {
     for (let index = 0; index < statements.length; index++) {
       const statement = statements[index];
       const r = await runQuery(connection, statement)
-      results.push({...r, statement})
+      results.push({ ...r, statement })
     }
 
     return queryArgs.multiple ? results : results[0];
