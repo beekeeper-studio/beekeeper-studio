@@ -1,5 +1,11 @@
 <template>
   <div class="with-connection-type">
+    <div class="alert alert-info">
+      <div>
+        Beekeeper's BigQuery support is still in its Alpha stage, and as such may be unstable and have some unusual behaviour.
+        If you have any issues, please report them on our <a href="https://github.com/beekeeper-studio/beekeeper-studio/issues">GitHub.</a>
+      </div>
+    </div>
     <div class="form-group">
       <label for="Project Id">ProjectId</label>
       <input
