@@ -359,6 +359,7 @@ import { TabulatorFull } from 'tabulator-tables'
 // import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
+import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
 import rawLog from 'electron-log'
@@ -381,7 +382,7 @@ const FILTER_MODE_RAW = 'raw'
 
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength },
-  mixins: [data_converter, DataMutators],
+  mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["connection", "initialFilter", "active", 'tab', 'table'],
   data() {
     return {
@@ -759,41 +760,7 @@ export default Vue.extend({
         results.push(result)
 
         if (keyDatas && keyDatas.length > 0) {
-          const icon = () => "<i class='material-icons fk-link'>launch</i>"
-          const tooltip = () => {
-            if (keyDatas.length == 1)
-              return `View record in ${keyDatas[0].toTable}`
-            else
-              return `View records in ${(keyDatas.map(item => item.toTable).join(', ') as string).replace(/, (?![\s\S]*, )/, ', or ')}`
-          }
-          let clickMenu = null;
-          if (keyDatas.length > 1) {
-            clickMenu = [];
-            keyDatas.forEach(x => {
-              clickMenu.push({
-                label: `<x-menuitem><x-label>${x.toTable}(${x.toColumn})</x-label></x-menuitem>`,
-                action: (_e, cell) => {
-                  this.fkClick(_e, cell, x.toTable, x.toColumn);
-                }
-              })
-            })
-          }
-
-          const keyResult = {
-            headerSort: false,
-            download: false,
-            width: keyWidth,
-            resizable: false,
-            field: column.columnName + '-link--bks',
-            title: "",
-            cssClass: "foreign-key-button",
-            cellClick: clickMenu == null ? this.fkClick : null,
-            formatter: icon,
-            clickMenu,
-            tooltip
-          }
-          result.cssClass = 'foreign-key'
-          results.push(keyResult)
+          results.push(this.fkColumn(result, keyDatas))
         }
 
       });
@@ -1126,38 +1093,6 @@ export default Vue.extend({
         case 'bool': return 'select'
         default: return ne
       }
-    },
-    fkClick(_e, cell, toTable = null, toColumn = null) {
-      const fromColumn = cell.getField().replace(/-link--bks$/g, "")
-      const valueCell = this.valueCellFor(cell)
-      const value = valueCell.getValue()
-
-      const keyDatas = this.tableKeys[fromColumn]
-      if (!keyDatas || keyDatas.length === 0) {
-        log.error("fk-click, couldn't find key data. Please open an issue. fromColumn:", fromColumn)
-        this.$noty.error("Unable to open foreign key. See dev console")
-      }
-      const keyData = toColumn == null || toTable == null ? keyDatas[0] : keyDatas.find(x => x.toTable === toTable && x.toColumn === toColumn);
-
-      const tableName = keyData.toTable;
-      const schemaName = keyData.toSchema;
-      const table = this.$store.state.tables.find(t => {
-        return (!schemaName || schemaName === t.schema) && t.name === tableName
-      })
-      if (!table) {
-        log.error("fk-click: unable to find destination table", tableName)
-        return
-      }
-      const filter = {
-        value,
-        type: '=',
-        field: keyData.toColumn
-      }
-      const payload = {
-        table, filter, titleScope: value
-      }
-      log.debug('fk-click: clicked ', value, keyData)
-      this.$root.$emit('loadTable', payload)
     },
     copyCell() {
         if (!this.active) return;
