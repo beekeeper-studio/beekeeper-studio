@@ -97,6 +97,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       nonNativeMacOSRole: true,
       click: actionHandler.devtools
     },
+    checkForUpdate: {
+      id: 'updatecheck',
+      label: 'Check for Software Updates',
+      click: actionHandler.checkForUpdates
+    },
     opendocs : {
       id: 'opendocs',
       label: 'Documentation and Support',

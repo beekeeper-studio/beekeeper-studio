@@ -186,6 +186,8 @@
   }
   .actions {
     padding: 0 $gutter-h;
+    display: flex;
+    flex-direction: row;
     -webkit-app-region: no-drag;
   }
 }

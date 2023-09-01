@@ -27,12 +27,15 @@
         />
       </Draggable>
       <!-- </div> -->
-      <span class="actions">
+      <span class="actions expand">
         <a
           @click.prevent="createQuery(null)"
           class="btn-fab add-query"
         ><i class=" material-icons">add_circle</i></a>
       </span>
+      <a @click.prevent="upgradeModal" class="btn btn-flat btn-icon">
+        <i class="material-icons">stars</i> Upgrade
+      </a>
     </div>
     <div class="tab-content">
       <div class="empty flex-col  expand">
@@ -325,6 +328,9 @@ export default Vue.extend({
     },
   },
   methods: {
+    upgradeModal() {
+      this.$root.$emit(AppEvent.upgradeModal)
+    },
     completeDeleteAction() {
       const { schema, name: dbName, entityType } = this.dbDeleteElementParams
       if (entityType !== 'table' && this.dbAction == 'truncate') {
