@@ -14,7 +14,7 @@
             <select
               name="resultSelector"
               id="resultSelector"
-              @change="updateValue"
+              @change="selectedResult = parseInt($event.target.value);"
               class="form-control"
             >
               <option
@@ -160,6 +160,10 @@ export default {
         this.showHint = true
         setTimeout(() => this.showHint = false, 2000)
       }
+    },
+    selectedResult(newValue) {
+        this.$emit('input', this.selectedResult);
+        this.hasUsedDropdown = true
     }
   },
   computed: {
@@ -201,18 +205,16 @@ export default {
     },
     keymap() {
       const result = {}
-      result['shift+up'] = () => this.changeSelectedResult(1);
-      result['shift+down'] = () => this.changeSelectedResult(-1);
+      result['shift+up'] = () => this.changeSelectedResult(-1);
+      result['shift+down'] = () => this.changeSelectedResult(1);
       return result
     }
   },
   methods: {
     changeSelectedResult(direction) {
-      const newIndex = this.selectedResult + direction;
+      const newIndex =  this.selectedResult + direction;
       if (newIndex >= 0 && newIndex < this.results.length) {
         this.selectedResult = newIndex;
-        this.$emit('input', this.selectedResult);
-        this.hasUsedDropdown = true
       }
     },
     pluralize(word, amount, flag) {
@@ -231,12 +233,6 @@ export default {
         d = c < 0 ? c : Math.abs(c), // enforce -0 is 0
         e = d + ['', 'K', 'M', 'B', 'T'][k]; // append power
       return e;
-    },
-    updateValue(event) {
-      const selectedIndex = parseInt(event.target.value);
-      this.selectedResult = selectedIndex;
-      this.$emit('input',selectedIndex)
-      this.hasUsedDropdown = true
     },
     download(format) {
       this.$emit('download', format)
