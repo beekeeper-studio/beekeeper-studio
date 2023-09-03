@@ -1,7 +1,7 @@
 <template>
   <statusbar :class="{ 'empty': results.length === 0, 'query-meta': true }">
     <template v-if="results.length > 0">
-      <div class="truncate statusbar-info">
+      <div class="truncate statusbar-info" v-hotkey="keymap">
         <span
           v-show="results.length > 1"
           class="statusbar-item result-selector"
@@ -150,7 +150,7 @@ export default {
   data() {
     return {
       showHint: false,
-
+      selectedResult: 0,
     }
   },
 
@@ -198,9 +198,23 @@ export default {
         return null;
       }
       return `Execution time: ${humanizeDuration(this.executeTime)}`
+    },
+    keymap() {
+      const result = {}
+      result['shift+up'] = () => this.changeSelectedResult(1);
+      result['shift+down'] = () => this.changeSelectedResult(-1);
+      return result
     }
   },
   methods: {
+    changeSelectedResult(direction) {
+      const newIndex = this.selectedResult + direction;
+      if (newIndex >= 0 && newIndex < this.results.length) {
+        this.selectedResult = newIndex;
+        this.$emit('input', this.selectedResult);
+        this.hasUsedDropdown = true
+      }
+    },
     pluralize(word, amount, flag) {
       return pluralize(word, amount, flag)
     },
@@ -219,7 +233,9 @@ export default {
       return e;
     },
     updateValue(event) {
-      this.$emit('input', parseInt(event.target.value))
+      const selectedIndex = parseInt(event.target.value);
+      this.selectedResult = selectedIndex;
+      this.$emit('input',selectedIndex)
       this.hasUsedDropdown = true
     },
     download(format) {
