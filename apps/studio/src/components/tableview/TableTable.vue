@@ -690,7 +690,6 @@ export default Vue.extend({
       return this.table?.columns.map((c) => c.columnName).join("-")
     },
     tableColumns() {
-      const keyWidth = 40
       const results = []
       if (!this.table) return []
       // 1. add a column for a real column
