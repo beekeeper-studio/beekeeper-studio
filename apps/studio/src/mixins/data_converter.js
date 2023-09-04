@@ -13,9 +13,14 @@ export default {
               ];
             */
           const columnNamesOnly = columns.map((c) => c.field)
-          return data.rows.map((row) => {
-          return _.pick(row, columnNamesOnly)
-          })
+          return data.rows.map((row) => _
+            .chain(row)
+            .pick(columnNamesOnly)
+            .transform((result, val, key) => {
+              result[key] = Array.isArray(val) ? `{${val.join(',')}}` : val
+            }, {})
+            .value()
+          )
         },
         extractColumns(data) {
             // columns here
