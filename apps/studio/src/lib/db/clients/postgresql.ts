@@ -1189,7 +1189,9 @@ async function updateValues(cli: any, rawUpdates: TableUpdate[]): Promise<TableU
   const updates = rawUpdates.map((update) => {
     const result = { ...update}
     if (update.columnType?.startsWith('_')) {
-      result.value = JSON.parse(update.value)
+      const extracted: string | undefined = update.value.match(/\{(.*)\}/)[1]
+      if(!extracted) throw 'Array type should be wrapped in {}'
+      result.value = JSON.parse(`[${extracted}]`)
     } else if (update.columnType === 'bytea' && update.value) {
         result.value = '\\x' + base64.decode(update.value, 'hex')
     }
