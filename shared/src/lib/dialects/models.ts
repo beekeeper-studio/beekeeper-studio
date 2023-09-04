@@ -34,6 +34,7 @@ export const DialectTitles: {[K in Dialect]: string} = {
   sqlserver: "SQL Server",
   redshift: "Amazon Redshift",
   sqlite: "SQLite",
+  bigquery: "BigQuery",
   ...UltimateDialectTitles
 
 }

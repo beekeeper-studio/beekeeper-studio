@@ -30,7 +30,7 @@
         v-show="iamAuthenticationEnabled"
       >
         <div class="row gutter">
-          <div class="alert alert-info">
+          <div class="alert alert-info expand">
             <i class="material-icons-outlined">info</i>
             <div>
               Create a service account key. <a

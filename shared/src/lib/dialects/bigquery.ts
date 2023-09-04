@@ -16,9 +16,21 @@ export const BigQueryData: DialectData = {
   wrapLiteral: defaultWrapLiteral,
   unwrapIdentifier: (s) => s,
   disabledFeatures: {
+    tableTable: true,
     constraints: {
       onUpdate: true,
       onDelete: true
-    }
+    },
+    // these disabled features are just until we have knex support.
+    alter: {
+      everything: true
+    },
+  },
+  notices: {
+    infoSchema: 'Editing schemas is currently disabled for BigQuery, we\'re working on it!',
+    infoIndexes: 'Editing indexes is currently disabled for BigQuery, we\'re working on it!',
+    infoRelations: 'Editing relations is currently disabled for BigQuery, we\'re working on it!',
+    infoTriggers: 'Editing triggers is currently disabled for BigQuery, we\'re working on it!',
+    tableTable: 'Editing records is currently disabled for BigQuery, we\'re working on it!'
   }
 }
