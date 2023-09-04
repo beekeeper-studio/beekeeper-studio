@@ -192,6 +192,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getTableLength: (table: string, schema: string) => getTableLength(conn, table, schema),
     selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema, selects: string[] = ['*']) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (database: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema: string = defaultSchema) => selectTopStream(conn, database, table, orderBy, filters, chunkSize, schema),
+    selectTopSql: (table, offset, limit, orderBy, filters, schema = defaultSchema, selects = ['*']) => selectTopSql(conn, table, offset, limit, orderBy, filters, schema, selects),
     queryStream: (database: string, query: string, chunkSize: number) => queryStream(conn, database, query, chunkSize),
     applyChangesSql: (changes: TableChanges): string => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert: TableInsert): Promise<string> => getInsertQuery(conn, database.database, tableInsert),
@@ -523,6 +524,30 @@ async function selectTopStream(
     columns,
     cursor: new PsqlCursor(cursorOpts)
   }
+}
+
+export async function selectTopSql(
+  conn: HasPool,
+  table: string,
+  offset: number,
+  limit: number,
+  orderBy: OrderBy[],
+  filters: TableFilter[] | string,
+  schema = "public",
+  selects = ["*"]
+): Promise<string> {
+  const version = await getVersion(conn)
+  const { query, params } = buildSelectTopQueries({
+    table,
+    offset,
+    limit,
+    orderBy,
+    filters,
+    selects,
+    schema,
+    version,
+  });
+  return knex.raw(query.replaceAll(/\$\d+/g, '?'), params).toQuery();
 }
 
 async function queryStream(

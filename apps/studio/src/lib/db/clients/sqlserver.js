@@ -75,6 +75,7 @@ export default async function (server, database) {
     getTableLength: (table, schema) => getTableLength(conn, table, schema),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
+    selectTopSql: (table, offset, limit, orderBy, filters, schema, selects) => selectTopSql(conn, table, offset, limit, orderBy, filters, schema, selects),
     queryStream: (db, query, chunkSize) => selectTopStream(conn, db, query, chunkSize),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -278,6 +279,22 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
     columns,
     cursor: new SqlServerCursor(conn, query, chunkSize)
   }
+}
+
+export async function selectTopSql(
+  conn,
+  table,
+  offset,
+  limit,
+  orderBy,
+  filters,
+  schema,
+  selects
+) {
+  const version = await getVersion(conn);
+  return version.supportOffsetFetch
+    ? genSelectNew(table, offset, limit, orderBy, filters, schema, selects)
+    : genSelectOld(table, offset, limit, orderBy, filters, schema, selects);
 }
 
 export async function queryStream(conn, db, query, orderBy, filters, chunkSize, schema, selects = ['*']) {

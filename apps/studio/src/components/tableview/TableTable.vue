@@ -303,6 +303,9 @@
             <x-menuitem @click="showColumnFilterModal">
               <x-label>Show or hide columns</x-label>
             </x-menuitem>
+            <x-menuitem @click="openQueryTab">
+              <x-label>Open in query tab</x-label>
+            </x-menuitem>
           </x-menu>
         </x-button>
       </div>
@@ -375,6 +378,7 @@ import { TableUpdate } from '@/lib/db/models';
 import { markdownTable } from 'markdown-table'
 import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
+import { safeSqlFormat } from '@/common/utils'
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
@@ -1462,6 +1466,38 @@ export default Vue.extend({
       pendingUpdate.cell.setValue(pendingUpdate.oldValue)
       pendingUpdate.cell.getElement().classList.remove('edited')
       pendingUpdate.cell.getElement().classList.remove('edit-error')
+    },
+    openQueryTab() {
+      const filters = this.filterForTabulator;
+      const page = this.tabulator.getPage();
+      const orderBy = [
+        _.pick(this.tabulator.getSorters()[0], ["field", "dir"]),
+      ];
+      const limit = this.tabulator.getPageSize() ?? this.limit;
+      const offset = (this.tabulator.getPage() - 1) * limit;
+      const selects = ["*"];
+
+      // like if you change a filter
+      if (page && page !== this.page) {
+        this.page = page;
+      }
+
+      this.connection.selectTopSql(
+        this.table.name,
+        offset,
+        limit,
+        orderBy,
+        filters,
+        this.table.schema,
+        selects
+      ).then((query: string) => {
+        const language = FormatterDialect(this.dialect);
+        const formatted = safeSqlFormat(query, { language });
+        this.$root.$emit(AppEvent.newTab, formatted);
+      }).catch((e: unknown) => {
+        log.error("Error opening query tab:", e);
+        this.$noty.error("Unable to open query tab. See dev console for details.");
+      });
     },
     showColumnFilterModal() {
       this.$modal.show(this.columnFilterModalName)
