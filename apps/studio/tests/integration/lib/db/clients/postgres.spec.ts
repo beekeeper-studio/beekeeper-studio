@@ -142,7 +142,7 @@ function testWith(dockerTag, socket = false) {
     it("Should allow me to update rows with an empty array", async () => {
       const updates = [
         {
-          value: "[]",
+          value: "{}",
           column: "names",
           primaryKeys: [{
             column: 'id', value: 1
@@ -169,7 +169,7 @@ function testWith(dockerTag, socket = false) {
         table:'witharrays',
         schema: 'public',
         data: [
-          {names: '[]', id: 2, normal: 'xyz'}
+          {names: '{}', id: 2, normal: 'xyz'}
         ]
       }
 
@@ -182,7 +182,7 @@ function testWith(dockerTag, socket = false) {
     it("Should allow me to update rows with array types", async () => {
 
       const updates = [{
-        value: '["x", "y", "z"]',
+        value: '{"x", "y", "z"}',
         column: "names",
         primaryKeys: [
           { column: 'id', value: 1}
