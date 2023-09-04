@@ -561,7 +561,7 @@ export default Vue.extend({
               cell.setValue(null);
             }
           },
-          disabled: !this.editable
+          disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell)
         },
         { separator: true },
         {
@@ -617,12 +617,12 @@ export default Vue.extend({
         {
           label: '<x-menuitem><x-label>Clone Row</x-label></x-menuitem>',
           action: this.cellCloneRow.bind(this),
-          disabled: !this.editable
+          disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell)
         },
         {
           label: '<x-menuitem><x-label>Delete Row</x-label></x-menuitem>',
           action: (_e, cell) => this.addRowToPendingDeletes(cell.getRow()),
-          disabled: !this.editable
+          disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell)
         },
       ]
     },
@@ -1116,7 +1116,9 @@ export default Vue.extend({
 
       }
     },
-    cellEditCheck(cell) {
+    cellEditCheck(cell: Tabulator.CellComponent) {
+      if (this.insertionCellCheck(cell)) return true;
+
       // check this first because it is easy
       if (!this.editable) return false
 
@@ -1135,6 +1137,12 @@ export default Vue.extend({
       const pendingDelete = _.find(this.pendingChanges.deletes, (item) => _.isEqual(item.primaryKeys, primaryKeys))
 
       return this.editable && !this.isPrimaryKey(cell.getField()) && !pendingDelete
+    },
+    insertionCellCheck(cell: Tabulator.CellComponent) {
+      const pendingInsert = _.find(this.pendingChanges.inserts, { row: cell.getRow() });
+      return pendingInsert
+        ? this.table.entityType === 'table' && !this.dialectData.disabledFeatures?.tableTable
+        : false;
     },
     cellEdited(cell) {
 
