@@ -115,6 +115,7 @@ $titlebar-actions-height:   30px;
 .titlebar-wrapper {
   & .titlebar.windows.fullscreen {
     display: none;
+    -webkit-app-region: no-drag;
   }
   &:hover .titlebar.windows.fullscreen {
     display: flex;
