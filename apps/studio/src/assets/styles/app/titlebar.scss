@@ -35,7 +35,7 @@ $titlebar-actions-height:   30px;
   x-menubar {
     margin: -11px 0;
   }
-  .titlebar-title {    
+  .titlebar-title {
     position: absolute;
     left: 0;
     right: 0;
@@ -97,5 +97,23 @@ $titlebar-actions-height:   30px;
       left: initial;
       bottom: initial;
     }
+  }
+}
+
+.titlebar-reveal {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 100vw;
+  height: 1px;
+  z-index: 999;
+}
+
+.titlebar-wrapper {
+  & .titlebar.windows.fullscreen {
+    display: none;
+  }
+  &:hover .titlebar.windows.fullscreen {
+    display: flex;
   }
 }
