@@ -371,7 +371,7 @@ import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEd
 import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
 import { Tabulator } from 'tabulator-tables'
-import { TableUpdate } from '@/lib/db/models';
+import { TableUpdate, TableUpdateResult } from '@/lib/db/models';
 import { markdownTable } from 'markdown-table'
 import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
@@ -1093,6 +1093,15 @@ export default Vue.extend({
       })
       return inserts
     },
+    /**
+     * Converts a TableUpdateResult to data that is consumed by Tabulator.updateData
+     */
+    convertUpdateResult(result: TableUpdateResult) {
+      return result.map((row: Record<string, any>) => {
+        const internalIndex = this.primaryKeys.map((k: string) => row[k]).join(",");
+        return { ...row, [this.internalIndexColumn]: internalIndex };
+      });
+    },
     defaultColumnWidth(slimType, defaultValue) {
       const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector']
       if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
@@ -1400,7 +1409,7 @@ export default Vue.extend({
             replaceData = true
           } else if (this.hasPendingUpdates) {
             this.tabulator.clearCellEdited()
-            this.tabulator.updateData(result)
+            this.tabulator.updateData(this.convertUpdateResult(result))
             this.pendingChanges.updates.forEach(edit => {
               edit.cell.getElement().classList.remove('edited')
               edit.cell.getElement().classList.add('edit-success')
