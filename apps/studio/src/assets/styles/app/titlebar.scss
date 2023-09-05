@@ -47,6 +47,9 @@ $titlebar-actions-height:   30px;
       display: none;
     }
   }
+  &.fullscreen .titlebar-title {
+    -webkit-app-region: no-drag;
+  }
   .titlebar-actions {
     display: flex;
     margin: -$gutter-h;
