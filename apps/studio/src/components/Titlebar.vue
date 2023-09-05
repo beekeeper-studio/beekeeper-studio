@@ -37,8 +37,12 @@
             @click.prevent="maximizeWindow"
           >
             <i
+              class="material-icons"
+              v-if="fullscreen"
+            >close_fullscreen</i>
+            <i
               class="material-icons maximized"
-              v-if="maximized"
+              v-else-if="maximized"
             >filter_none</i>
             <i
               class="material-icons"
@@ -98,7 +102,9 @@ export default {
       this.getWindow()?.minimize();
     },
     maximizeWindow() {
-      if (this.isMaximized()) {
+      if (this.fullscreen) {
+        this.getWindow()?.setFullScreen(false);
+      } else if (this.isMaximized()) {
         this.getWindow()?.unmaximize();
       } else {
         this.getWindow()?.maximize();
