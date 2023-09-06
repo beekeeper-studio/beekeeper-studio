@@ -42,5 +42,8 @@ export const MysqlData: DialectData = {
     alter: {
       multiStatement: true
     }
+  },
+  notices: {
+    infoIndexes: 'Only ascending indexes are supported in MySQL before version 8.0.'
   }
 }

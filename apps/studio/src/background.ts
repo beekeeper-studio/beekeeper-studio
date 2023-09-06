@@ -101,6 +101,12 @@ app.on('activate', async (_event, hasVisibleWindows) => {
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
+    // Need to explicitly disable CORS when running in dev mode because
+    // we can't connect to bigquery-emulator on localhost.
+    // See: https://github.com/electron/electron/issues/23664
+    console.log("Dev mode detected, disabling CORS")
+    app.commandLine.appendSwitch('disable-web-security');
+    app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
     // Install Vue Devtools
     try {
       console.log("installing vue devtools")

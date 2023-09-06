@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift']
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery']
 const ultimateDialects = []
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
@@ -34,6 +34,7 @@ export const DialectTitles: {[K in Dialect]: string} = {
   sqlserver: "SQL Server",
   redshift: "Amazon Redshift",
   sqlite: "SQLite",
+  bigquery: "BigQuery",
   ...UltimateDialectTitles
 
 }
