@@ -4,6 +4,7 @@ import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypes
 
 describe("Sqlite Tests", () => {
   let dbfile;
+  /** @type {DBTestUtil} */
   let util
 
   beforeAll(async () => {
@@ -16,6 +17,15 @@ describe("Sqlite Tests", () => {
     util.extraTables = 1
     await util.setupdb()
 
+    await util.knex.schema.createTable('withbooleans', (table) => {
+      table.integer('id').primary()
+      table.specificType('flag', 'boolean')
+    })
+    await util.knex('withbooleans').insert([
+      { id: 1, flag: 1 },
+      { id: 2, flag: 0 },
+      { id: 3, flag: 0 },
+    ])
   })
 
   afterAll(async () => {
@@ -46,6 +56,43 @@ describe("Sqlite Tests", () => {
       await q.execute()
     }).not.toThrowError()
   })
+
+  it("Should apply changes to boolean values correctly", async () => {
+    const updates = [
+      { id: 1, expect: false, toBe: 0 },
+      { id: 2, expect: true, toBe: 1 },
+      { id: 3, expect: null, toBe: null },
+    ]
+
+    const inserts = [
+      { id: 4, expect: false, toBe: 0 },
+      { id: 5, expect: true, toBe: 1 },
+      { id: 6, expect: null, toBe: null },
+    ]
+
+    await util.connection.applyChanges({
+      inserts: inserts.map(({ id, expect }) => ({
+        table: 'withbooleans',
+        data: [{ id, flag: expect }],
+      })),
+      updates: updates.map(({ id, expect }) => ({
+        table: 'withbooleans',
+        column: 'flag',
+        primaryKeys: [{ column: 'id', value: id }],
+        value: expect,
+      })),
+    })
+
+    const results = await util.knex
+      .select()
+      .table('withbooleans')
+      .orderBy('id')
+
+    expect(results).toEqual([
+      ...updates.map(({ id, toBe }) => ({ id, flag: toBe })),
+      ...inserts.map(({ id, toBe }) => ({ id, flag: toBe })),
+    ])
+  });
 
   describe("Issue-1399 Regresstion Tests", () => {
     let row
