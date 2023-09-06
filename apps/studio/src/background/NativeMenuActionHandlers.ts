@@ -7,6 +7,7 @@ import path from 'path'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
+import { autoUpdater } from "electron-updater"
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -84,6 +85,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
 
   opendocs(): void {
     shell.openExternal("https://docs.beekeeperstudio.io/")
+  }
+
+  checkForUpdates(menuItem: Electron.MenuItem, win: Electron.BrowserWindow): void {
+    autoUpdater.checkForUpdates()
   }
 
   devtools(_1: Electron.MenuItem, win: ElectronWindow): void {
