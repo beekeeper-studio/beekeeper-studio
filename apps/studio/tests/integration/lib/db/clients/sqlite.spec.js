@@ -70,18 +70,19 @@ describe("Sqlite Tests", () => {
       { id: 6, expect: null, toBe: null },
     ]
 
-    await util.connection.applyChanges({
-      inserts: inserts.map(({ id, expect }) => ({
-        table: 'withbooleans',
-        data: [{ id, flag: expect }],
-      })),
-      updates: updates.map(({ id, expect }) => ({
-        table: 'withbooleans',
-        column: 'flag',
-        primaryKeys: [{ column: 'id', value: id }],
-        value: expect,
-      })),
-    })
+    await expect(util.connection.applyChanges({
+        inserts: inserts.map(({ id, expect }) => ({
+          table: 'withbooleans',
+          data: [{ id, flag: expect }],
+        })),
+        updates: updates.map(({ id, expect }) => ({
+          table: 'withbooleans',
+          column: 'flag',
+          primaryKeys: [{ column: 'id', value: id }],
+          value: expect,
+        })),
+      })
+    ).resolves.toBeTruthy();
 
     const results = await util.knex
       .select()
