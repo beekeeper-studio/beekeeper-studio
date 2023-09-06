@@ -127,6 +127,16 @@ hr {
     color: $theme-bg;
   }
 }
+
+.btn-brand {
+  color: #181818;
+  background: $theme-primary;
+  &:hover, &:focus {
+    background: $theme-primary;
+    color: #000;
+  }
+}
+
 .btn-flat {
   color: $theme-base;
   background: rgba($theme-base, 0.06);

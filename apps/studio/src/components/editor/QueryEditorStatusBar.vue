@@ -31,7 +31,7 @@
         <div
           class="statusbar-item row-counts"
           v-if="rowCount > 0"
-          :title="`${rowCount} Records${result.truncated ? ' (Truncated)' : ''}`"
+          :title="`${rowCount} Records${result?.truncated ? ' (Truncated)' : ''}`"
         >
           <i class="material-icons">list_alt</i>
           <span class="num-rows">{{ rowCount }}</span>
@@ -85,13 +85,13 @@
           <hr>
           <span
             v-tooltip="{
-              content: `${result.truncated ? 'The ' : 'If the'} query\'s result set was truncated (because it had too many rows to display)<br />
-                          use this to export the query\'s full result set ${result.truncated ? '(' + result.totalRowCount + ' rows)' : ''} to a CSV or JSON file`
+              content: `${result?.truncated ? 'The ' : 'If the'} query\'s result set was truncated (because it had too many rows to display)<br />
+                          use this to export the query\'s full result set ${result?.truncated ? '(' + result.totalRowCount + ' rows)' : ''} to a CSV or JSON file`
             }"
           >
             <x-menuitem
               @click.prevent="$event => submitCurrentQueryToFile()"
-              :disabled="!result.truncated"
+              :disabled="!result?.truncated"
             >
               <x-label>Download Full Result Set (if truncated) ...</x-label>
             </x-menuitem>

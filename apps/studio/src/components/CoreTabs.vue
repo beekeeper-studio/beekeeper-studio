@@ -33,7 +33,11 @@
           class="btn-fab add-query"
         ><i class=" material-icons">add_circle</i></a>
       </span>
-      <a @click.prevent="upgradeModal" class="btn btn-flat btn-icon">
+      <a
+        href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
+        class="btn btn-brand btn-icon btn-upgrade"
+        v-tooltip="'Full version includes: backup/restore, data import, larger query results, and more'"
+      >
         <i class="material-icons">stars</i> Upgrade
       </a>
     </div>
@@ -328,9 +332,6 @@ export default Vue.extend({
     },
   },
   methods: {
-    upgradeModal() {
-      this.$root.$emit(AppEvent.upgradeModal)
-    },
     completeDeleteAction() {
       const { schema, name: dbName, entityType } = this.dbDeleteElementParams
       if (entityType !== 'table' && this.dbAction == 'truncate') {
