@@ -252,7 +252,7 @@ export async function applyChanges(conn, changes) {
 
 export async function updateValues(cli, updates) {
   const commands = updates.map(update => {
-    const params = [update.value];
+    const params = [_.isBoolean(update.value) ? _.toInteger(update.value) : update.value];
     const whereList = []
     update.primaryKeys.forEach(({ column, value }) => {
       whereList.push(`${wrapIdentifier(column)} = ?`);
