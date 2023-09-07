@@ -444,6 +444,53 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   }
 }
 
+function buildParameterizedSelectTopQuery(
+  options: STQOptions & { connection: pg.ClientBase }
+): string {
+  const escapeLiteral = options.connection.escapeLiteral
+  const filters = options.filters
+  const orderBy = options.orderBy
+  const selects = options.selects ?? ['*']
+  let orderByString = ""
+  let filterString = ""
+
+  if (orderBy && orderBy.length > 0) {
+    orderByString = "ORDER BY " + (orderBy.map((item) => {
+      if (_.isObject(item)) {
+        return `${wrapIdentifier(item.field)} ${item.dir}`
+      } else {
+        return wrapIdentifier(item)
+      }
+    })).join(",")
+  }
+
+  if (_.isString(filters)) {
+    filterString = `WHERE ${filters}`
+  } else if (filters && filters.length > 0) {
+    filterString = "WHERE " + filters.map((item) => {
+      if (item.type === 'in' && _.isArray(item.value)) {
+        const values = item.value.map((val) => escapeLiteral(val))
+        return `${wrapIdentifier(item.field)} ${item.type} (${values.join(',')})`
+      }
+      return `${wrapIdentifier(item.field)} ${item.type} ${escapeLiteral(item.value as string)}`
+    }).join(" AND ")
+  }
+
+  const selectSQL = `SELECT ${selects.join(', ')}`
+  const baseParameterizedSQL = `
+    FROM ${wrapIdentifier(options.schema)}.${wrapIdentifier(options.table)}
+    ${filterString}
+  `
+
+  const query = `
+    ${selectSQL} ${baseParameterizedSQL}
+    ${orderByString}
+    ${_.isNumber(options.limit) ? `LIMIT ${options.limit}` : ''}
+    ${_.isNumber(options.offset) ? `OFFSET ${options.offset}` : ''}
+    `
+  return query
+}
+
 async function getTableLength(conn: HasPool, table: string, schema: string): Promise<number> {
   const version = await getVersion(conn)
   const tableType = await getEntityType(conn, table, schema)
@@ -537,7 +584,8 @@ export async function selectTopSql(
   selects = ["*"]
 ): Promise<string> {
   const version = await getVersion(conn)
-  const { query, params } = buildSelectTopQueries({
+  const connection = await conn.pool.connect()
+  const query = buildParameterizedSelectTopQuery({
     table,
     offset,
     limit,
@@ -546,8 +594,10 @@ export async function selectTopSql(
     selects,
     schema,
     version,
-  });
-  return knex.raw(query.replaceAll(/\$\d+/g, '?'), params).toQuery();
+    connection,
+  })
+  connection.release()
+  return query
 }
 
 async function queryStream(
