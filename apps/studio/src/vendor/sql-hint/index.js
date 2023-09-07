@@ -200,9 +200,10 @@ const {
     }
 
     var alias = false;
-    var aliasTable = table;
+    var aliasTable = nameParts.join('.');
     // Check if table is available. If not, find table by Alias
     if (!tableWord) {
+      table = aliasTable;
       var oldTable = table;
       tableWord = findTableByAlias(table, editor);
       table = tableWord?.name;
