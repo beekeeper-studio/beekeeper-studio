@@ -304,7 +304,7 @@
               <x-label>Show or hide columns</x-label>
             </x-menuitem>
             <x-menuitem @click="openQueryTab">
-              <x-label>Open in query tab</x-label>
+              <x-label>Copy view to SQL</x-label>
             </x-menuitem>
           </x-menu>
         </x-button>
