@@ -1156,43 +1156,17 @@ export async function setTableDescription(conn: HasPool, table: string, descript
 }
 
 async function insertRows(cli: any, rawInserts: TableInsert[]) {
-  const columnsList = await Promise.all(rawInserts.map((insert) => {
-    return listTableColumns(cli, null, insert.table, insert.schema)
-  }))
-
-  // expect({ insertRows: "rawInserts"}).toEqual(rawInserts)
-  const fixedInserts = rawInserts.map((insert, idx) => {
-    const result = { ...insert}
-    const columns = columnsList[idx]
-    result.data = result.data.map((obj) => {
-      return _.mapValues(obj, (value, key) => {
-        const column = columns.find((c) => c.columnName === key)
-        if (column && column.dataType.startsWith('_')) {
-          return JSON.parse(value)
-        } else {
-          return value
-        }
-      })
-    })
-    return result
-  })
-  await driverExecuteQuery(cli, { query: buildInsertQueries(knex, fixedInserts).join(";") })
-
+  await driverExecuteQuery(cli, { query: buildInsertQueries(knex, rawInserts).join(";") })
   return true
 }
 
 async function updateValues(cli: any, rawUpdates: TableUpdate[]): Promise<TableUpdateResult[]> {
-
   // If a type starts with an underscore - it's an array
   // so we need to turn the string representation back to an array
   // if a type is BYTEA, decodes BASE64 URL encoded to hex
   const updates = rawUpdates.map((update) => {
     const result = { ...update}
-    if (update.columnType?.startsWith('_')) {
-      const extracted: string | undefined = update.value.match(/\{(.*)\}/)?.[1]
-      if(extracted == null) throw 'Array type should be wrapped in {}'
-      result.value = JSON.parse(`[${extracted}]`)
-    } else if (update.columnType === 'bytea' && update.value) {
+    if (update.columnType === 'bytea' && update.value) {
         result.value = '\\x' + base64.decode(update.value, 'hex')
     }
     return result

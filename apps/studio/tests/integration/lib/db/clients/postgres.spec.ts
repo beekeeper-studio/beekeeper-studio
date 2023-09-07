@@ -63,6 +63,7 @@ function testWith(dockerTag, socket = false) {
       await util.knex.schema.createTable('witharrays', (table) => {
         table.integer("id").primary()
         table.specificType('names', 'TEXT []')
+        table.specificType('md_names', 'TEXT [][]')
         table.text("normal")
       })
 
@@ -119,7 +120,12 @@ function testWith(dockerTag, socket = false) {
           );
         `);
 
-      await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
+      await util.knex("witharrays").insert({
+        id: 1,
+        names: ["a", "b", "c"],
+        md_names: [["a", "b"], ["c", "d"]],
+        normal: "foo",
+      })
 
       // test table for issue-1442 "BUG: INTERVAL columns receive wrong value when cloning row"
       await util.knex.schema.createTable('test_intervals', (table) => {
@@ -180,28 +186,32 @@ function testWith(dockerTag, socket = false) {
     })
 
     it("Should allow me to update rows with array types", async () => {
-
       const updates = [{
         value: '{"x", "y", "z"}',
         column: "names",
-        primaryKeys: [
-          { column: 'id', value: 1}
-        ],
+        primaryKeys: [{ column: 'id', value: 1}],
         columnType: "_text",
         table: "witharrays",
-      },
-      {
+      }, {
+        value: '{{"w", "x"}, {"y", "z"}}',
+        column: "md_names",
+        primaryKeys: [{ column: 'id', value: 1}],
+        columnType: "_text",
+        table: "witharrays",
+      }, {
         value: 'Bananas',
         table: 'witharrays',
         column: 'normal',
-        primaryKeys: [
-          { column: 'id', value: 1}
-        ],
+        primaryKeys: [{ column: 'id', value: 1}],
         columnType: 'text',
-      }
-      ]
+      }]
       const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
-      expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+      expect(result).toMatchObject([{
+        id: 1,
+        names: ['x', 'y', 'z'],
+        md_names: [['w', 'x'], ['y', 'z']],
+        normal: 'Bananas',
+      }])
     })
 
     // regression test for Bug #1442 "BUG: INTERVAL columns receive wrong value when cloning row"
