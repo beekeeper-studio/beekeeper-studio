@@ -307,6 +307,39 @@
         </x-button>
       </div>
     </statusbar>
+
+    <portal to="modals">
+      <modal
+        class="vue-dialog beekeeper-modal"
+        :name="`discard-changes-modal-${tab.id}`"
+      >
+        <div class="dialog-content">
+          <div class="dialog-c-title">
+            Confirmation
+          </div>
+          <div class="modal-form">
+            Sorting or Filtering now will discard {{ pendingChangesCount }} pending change(s). Are you sure?
+          </div>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button
+            class="btn btn-flat"
+            type="button"
+            @click.prevent="$modal.hide(`discard-changes-modal-${tab.id}`)"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            @click.prevent="forceFilter"
+            autofocus
+          >
+            I'm Sure
+          </button>
+        </div>
+      </modal>
+    </portal>
   </div>
 </template>
 
@@ -326,6 +359,7 @@ import { TabulatorFull } from 'tabulator-tables'
 // import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
+import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
 import rawLog from 'electron-log'
@@ -338,7 +372,7 @@ import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEd
 import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
 import { Tabulator } from 'tabulator-tables'
-import { TableUpdate } from '@/lib/db/models';
+import { TableUpdate, TableUpdateResult } from '@/lib/db/models';
 import { markdownTable } from 'markdown-table'
 import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
@@ -348,7 +382,7 @@ const FILTER_MODE_RAW = 'raw'
 
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength },
-  mixins: [data_converter, DataMutators],
+  mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["connection", "initialFilter", "active", 'tab', 'table'],
   data() {
     return {
@@ -527,7 +561,7 @@ export default Vue.extend({
               cell.setValue(null);
             }
           },
-          disabled: !this.editable
+          disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell)
         },
         { separator: true },
         {
@@ -583,12 +617,12 @@ export default Vue.extend({
         {
           label: '<x-menuitem><x-label>Clone Row</x-label></x-menuitem>',
           action: this.cellCloneRow.bind(this),
-          disabled: !this.editable
+          disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell)
         },
         {
           label: '<x-menuitem><x-label>Delete Row</x-label></x-menuitem>',
           action: (_e, cell) => this.addRowToPendingDeletes(cell.getRow()),
-          disabled: !this.editable
+          disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell)
         },
       ]
     },
@@ -656,7 +690,6 @@ export default Vue.extend({
       return this.table?.columns.map((c) => c.columnName).join("-")
     },
     tableColumns() {
-      const keyWidth = 40
       const results = []
       if (!this.table) return []
       // 1. add a column for a real column
@@ -716,7 +749,9 @@ export default Vue.extend({
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             search: true,
-            values: column.dataType === 'bool' ? [true, false] : undefined,
+            values: /^(bool|boolean)$/i.test(column.dataType)
+              ? [true, false]
+              : undefined,
             allowEmpty: true,
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
@@ -726,41 +761,7 @@ export default Vue.extend({
         results.push(result)
 
         if (keyDatas && keyDatas.length > 0) {
-          const icon = () => "<i class='material-icons fk-link'>launch</i>"
-          const tooltip = () => {
-            if (keyDatas.length == 1)
-              return `View record in ${keyDatas[0].toTable}`
-            else
-              return `View records in ${(keyDatas.map(item => item.toTable).join(', ') as string).replace(/, (?![\s\S]*, )/, ', or ')}`
-          }
-          let clickMenu = null;
-          if (keyDatas.length > 1) {
-            clickMenu = [];
-            keyDatas.forEach(x => {
-              clickMenu.push({
-                label: `<x-menuitem><x-label>${x.toTable}(${x.toColumn})</x-label></x-menuitem>`,
-                action: (_e, cell) => {
-                  this.fkClick(_e, cell, x.toTable, x.toColumn);
-                }
-              })
-            })
-          }
-
-          const keyResult = {
-            headerSort: false,
-            download: false,
-            width: keyWidth,
-            resizable: false,
-            field: column.columnName + '-link--bks',
-            title: "",
-            cssClass: "foreign-key-button",
-            cellClick: clickMenu == null ? this.fkClick : null,
-            formatter: icon,
-            clickMenu,
-            tooltip
-          }
-          result.cssClass = 'foreign-key'
-          results.push(keyResult)
+          results.push(this.fkColumn(result, keyDatas))
         }
 
       });
@@ -862,7 +863,6 @@ export default Vue.extend({
       this.tabulator.setPage(this.page || 1)
     }, 500),
     active() {
-      log.debug('active', this.active)
       if (!this.tabulator) return;
       if (this.active) {
         this.tabulator.restoreRedraw()
@@ -871,6 +871,8 @@ export default Vue.extend({
           this.$nextTick(() => {
             this.tabulator.redraw(true)
           })
+        } else {
+          this.$nextTick(() => this.tabulator.redraw())
         }
       } else {
         this.tabulator.blockRedraw()
@@ -1059,6 +1061,15 @@ export default Vue.extend({
       })
       return inserts
     },
+    /**
+     * Converts a TableUpdateResult to data that is consumed by Tabulator.updateData
+     */
+    convertUpdateResult(result: TableUpdateResult) {
+      return result.map((row: Record<string, any>) => {
+        const internalIndex = this.primaryKeys.map((k: string) => row[k]).join(",");
+        return { ...row, [this.internalIndexColumn]: internalIndex };
+      });
+    },
     defaultColumnWidth(slimType, defaultValue) {
       const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector']
       if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
@@ -1081,7 +1092,7 @@ export default Vue.extend({
     },
     editorType(dt) {
       const ne = vueEditor(NullableInputEditorVue)
-      switch (dt) {
+      switch (dt.toLowerCase()) {
         case 'text':
         case 'json':
         case 'jsonb':
@@ -1089,41 +1100,11 @@ export default Vue.extend({
         case 'tsvector':
         case '_text':
           return 'textarea'
-        case 'bool': return 'select'
+        case 'bool':
+        case 'boolean':
+          return 'select'
         default: return ne
       }
-    },
-    fkClick(_e, cell, toTable = null, toColumn = null) {
-      const fromColumn = cell.getField().replace(/-link--bks$/g, "")
-      const valueCell = this.valueCellFor(cell)
-      const value = valueCell.getValue()
-
-      const keyDatas = this.tableKeys[fromColumn]
-      if (!keyDatas || keyDatas.length === 0) {
-        log.error("fk-click, couldn't find key data. Please open an issue. fromColumn:", fromColumn)
-        this.$noty.error("Unable to open foreign key. See dev console")
-      }
-      const keyData = toColumn == null || toTable == null ? keyDatas[0] : keyDatas.find(x => x.toTable === toTable && x.toColumn === toColumn);
-
-      const tableName = keyData.toTable;
-      const schemaName = keyData.toSchema;
-      const table = this.$store.state.tables.find(t => {
-        return (!schemaName || schemaName === t.schema) && t.name === tableName
-      })
-      if (!table) {
-        log.error("fk-click: unable to find destination table", tableName)
-        return
-      }
-      const filter = {
-        value,
-        type: '=',
-        field: keyData.toColumn
-      }
-      const payload = {
-        table, filter, titleScope: value
-      }
-      log.debug('fk-click: clicked ', value, keyData)
-      this.$root.$emit('loadTable', payload)
     },
     copyCell() {
         if (!this.active) return;
@@ -1147,7 +1128,9 @@ export default Vue.extend({
 
       }
     },
-    cellEditCheck(cell) {
+    cellEditCheck(cell: Tabulator.CellComponent) {
+      if (this.insertionCellCheck(cell)) return true;
+
       // check this first because it is easy
       if (!this.editable) return false
 
@@ -1166,6 +1149,12 @@ export default Vue.extend({
       const pendingDelete = _.find(this.pendingChanges.deletes, (item) => _.isEqual(item.primaryKeys, primaryKeys))
 
       return this.editable && !this.isPrimaryKey(cell.getField()) && !pendingDelete
+    },
+    insertionCellCheck(cell: Tabulator.CellComponent) {
+      const pendingInsert = _.find(this.pendingChanges.inserts, { row: cell.getRow() });
+      return pendingInsert
+        ? this.table.entityType === 'table' && !this.dialectData.disabledFeatures?.tableTable
+        : false;
     },
     cellEdited(cell) {
 
@@ -1366,7 +1355,7 @@ export default Vue.extend({
             replaceData = true
           } else if (this.hasPendingUpdates) {
             this.tabulator.clearCellEdited()
-            this.tabulator.updateData(result)
+            this.tabulator.updateData(this.convertUpdateResult(result))
             this.pendingChanges.updates.forEach(edit => {
               edit.cell.getElement().classList.remove('edited')
               edit.cell.getElement().classList.add('edit-success')
@@ -1433,6 +1422,10 @@ export default Vue.extend({
       this.$modal.show(this.columnFilterModalName)
     },
     triggerFilter() {
+      if (this.pendingChangesCount > 0) {
+        this.$modal.show(`discard-changes-modal-${this.tab.id}`)
+        return;
+      }
       if (this.tabulator) this.tabulator.setData()
     },
     clearFilter() {
@@ -1598,6 +1591,11 @@ export default Vue.extend({
       this.tabulator.restoreRedraw();
 
       this.tabulator.redraw(true)
+    },
+    forceFilter() {
+      this.discardChanges();
+      this.triggerFilter();
+      this.$modal.hide(`discard-changes-modal-${this.tab.id}`);
     }
   }
 });

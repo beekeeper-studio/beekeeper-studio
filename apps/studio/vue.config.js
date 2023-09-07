@@ -173,6 +173,7 @@ module.exports = {
     }
   },
   configureWebpack: {
+    devtool: 'source-map',
     plugins: [
       new webpack.IgnorePlugin(/pg-native/, /pg/),
       new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/),

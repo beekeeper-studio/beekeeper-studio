@@ -166,7 +166,7 @@
 
               const tableInsert = {
                 table: 'mytable',
-                schema: null,
+                schema: this.connection.defaultSchema(),
                 data: [fixed],
               }
               const query = await this.connection.getInsertQuery(tableInsert)

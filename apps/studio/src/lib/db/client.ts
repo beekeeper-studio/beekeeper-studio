@@ -5,7 +5,7 @@ import createLogger from '../logger';
 import { SSHConnection } from '@/vendor/node-ssh-forward/index';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, TablePartition } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
-import type { RedshiftOptions } from '@/common/appdb/models/saved_connection';
+import type { RedshiftOptions, BigQueryOptions } from '@/common/appdb/models/saved_connection';
 
 const logger = createLogger('db');
 
@@ -81,6 +81,9 @@ export interface DatabaseClient {
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string, selects?: string[]): Promise<TableResult>,
   selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema?: string ): Promise<StreamResults>,
 
+  // for export
+  queryStream(db: string, query: string, chunkSize: number ): Promise<StreamResults>,
+
   wrapIdentifier: (value: string) => string
   setTableDescription: (table: string, description: string, schema?: string) => Promise<string>
 
@@ -128,6 +131,7 @@ export interface IDbConnectionServerConfig {
   trustServerCertificate?: boolean
   options?: any
   redshiftOptions?: RedshiftOptions
+  bigQueryOptions?: BigQueryOptions
 }
 
 export interface IDbSshTunnel {
@@ -191,6 +195,9 @@ export class DBConnection {
   selectTopStream = selectTopStream.bind(null, this.server, this.database)
   applyChanges = applyChanges.bind(null, this.server, this.database)
   applyChangesSql = applyChangesSql.bind(null, this.server, this.database)
+
+  // query export
+  queryStream = queryStream.bind(null, this.server, this.database)
 
   // alter table
   alterTableSql = bind.bind(null, 'alterTableSql', this.server, this.database)
@@ -330,6 +337,17 @@ function selectTopStream(
   checkIsConnected(server, database)
   if (!database.connection) throw "No database connection available"
   return database.connection?.selectTopStream(database.database, table, orderBy, filters, chunkSize, schema)
+}
+
+function queryStream(
+  server: IDbConnectionServer,
+  database: IDbConnectionDatabase,
+  query: string,
+  chunkSize: number,
+): Promise<StreamResults> {
+  checkIsConnected(server, database)
+  if (!database.connection) throw "No database connection available"
+  return database.connection?.queryStream(database.database, query, chunkSize)
 }
 
 function listSchemas(server: IDbConnectionServer, database: IDbConnectionDatabase, filter: SchemaFilterOptions) {
@@ -513,7 +531,7 @@ function getViewCreateScript(server: IDbConnectionServer, database: IDbConnectio
 function getMaterializedViewCreateScript(server: IDbConnectionServer, database: IDbConnectionDatabase, view: string /* , schema */) {
   checkIsConnected(server , database);
 
-  if(typeof database.connection?.getMaterializedViewCreateScript !== 'function') {
+  if (typeof database.connection?.getMaterializedViewCreateScript !== 'function') {
     return null;
   } else {
     return database.connection?.getMaterializedViewCreateScript(view);

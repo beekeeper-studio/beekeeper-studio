@@ -172,7 +172,7 @@ export default Vue.extend({
       return result
     },
     notice() {
-      return this.dialect === 'mysql' ? 'Only ascending indexes are supported in MySQL before version 8.0.' : null
+      return this.dialectData.notices?.infoIndexes;
     },
     indexColumnOptions() {
       const normal = this.table.columns.map((c) => escapeHtml(c.columnName))

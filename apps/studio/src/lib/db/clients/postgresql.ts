@@ -192,6 +192,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getTableLength: (table: string, schema: string) => getTableLength(conn, table, schema),
     selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema, selects: string[] = ['*']) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (database: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema: string = defaultSchema) => selectTopStream(conn, database, table, orderBy, filters, chunkSize, schema),
+    queryStream: (database: string, query: string, chunkSize: number) => queryStream(conn, database, query, chunkSize),
     applyChangesSql: (changes: TableChanges): string => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert: TableInsert): Promise<string> => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
@@ -524,6 +525,29 @@ async function selectTopStream(
   }
 }
 
+async function queryStream(
+  conn: HasPool,
+  database: string,
+  query: string,
+  chunkSize: number
+): Promise<StreamResults> {
+  const db = database // why
+  log.debug('db', db)
+
+  const cursorOpts = {
+    query: query,
+    params: [],
+    conn: conn,
+    chunkSize
+  }
+
+  return {
+    totalRows: undefined, // totalRecords,
+    columns: undefined, // columns,
+    cursor: new PsqlCursor(cursorOpts)
+  }
+}
+
 export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promise<Routine[]> {
   const version = await getVersion(conn)
   if (version.isCockroach) {
@@ -615,11 +639,11 @@ export async function listTableColumns(
       column_default,
       CASE
         WHEN character_maximum_length is not null  and udt_name != 'text' 
-          THEN CONCAT(udt_name, concat('(', concat(character_maximum_length::varchar(255), ')')))
+          THEN udt_name || '(' || character_maximum_length::varchar(255) || ')'
         WHEN numeric_precision is not null 
-        	THEN CONCAT(udt_name, concat('(', concat(numeric_precision::varchar(255),',',numeric_scale::varchar(255), ')')))
+        	THEN udt_name || '(' || numeric_precision::varchar(255) || ',' || numeric_scale::varchar(255) || ')'
         WHEN datetime_precision is not null AND udt_name != 'date' THEN
-          CONCAT(udt_name, concat('(', concat(datetime_precision::varchar(255), ')')))
+          udt_name || '(' || datetime_precision::varchar(255) || ')'
         ELSE udt_name
       END as data_type
     FROM information_schema.columns
@@ -676,29 +700,28 @@ export async function listTableTriggers(conn: HasPool, table: string, schema: st
 
   if (version.isCockroach) return []
   // action_timing has taken over from condition_timing
-  // this way we try both, and take the one that works.
-  const timing_columns = ['action_timing', 'condition_timing']
-  // const timing_column = 'action_timing'
-  const sequels = timing_columns.map((c) => `
+  // condition_timing was last used in PostgreSQL version 9.0
+  // which is not supported anymore since 08 Oct 2015.
+  // From version 9.1 onwards, released 08 Sep 2011, 
+  // action_timing was used instead
+  const timing_column = version.number <= 90000 ? 'condition_timing' : 'action_timing'
+  const sql = `
     SELECT
       trigger_name,
-      ${c} as timing,
+      ${timing_column} as timing,
       event_manipulation as manipulation,
       action_statement as action,
       action_condition as condition
     FROM information_schema.triggers
     WHERE event_object_schema = $1
     AND event_object_table = $2
-  `)
+  `
   const params = [
     schema,
     table,
   ];
-  const promises = sequels.map((sql) => {
-    return driverExecuteSingle(conn, { query: sql, params });
-  })
 
-  const data = await Promise.any(promises)
+  const data = await driverExecuteSingle(conn, { query: sql, params });
 
   return data.rows.map((row) => ({
     name: row.trigger_name,
