@@ -749,7 +749,9 @@ export default Vue.extend({
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             search: true,
-            values: column.dataType === 'bool' ? [true, false] : undefined,
+            values: /^(bool|boolean)$/i.test(column.dataType)
+              ? [true, false]
+              : undefined,
             allowEmpty: true,
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
@@ -1124,7 +1126,7 @@ export default Vue.extend({
     },
     editorType(dt) {
       const ne = vueEditor(NullableInputEditorVue)
-      switch (dt) {
+      switch (dt.toLowerCase()) {
         case 'text':
         case 'json':
         case 'jsonb':
@@ -1132,7 +1134,9 @@ export default Vue.extend({
         case 'tsvector':
         case '_text':
           return 'textarea'
-        case 'bool': return 'select'
+        case 'bool':
+        case 'boolean':
+          return 'select'
         default: return ne
       }
     },
