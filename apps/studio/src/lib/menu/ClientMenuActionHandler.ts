@@ -9,7 +9,9 @@ function send(name: string, arg?: any) {
 
 export default class ClientMenuActionHandler implements IMenuActionHandler {
 
-  constructor() {}
+  constructor() {
+    // TODO: implement
+  }
 
   quit = () => send('quit')
   undo = () => send('undo')
@@ -42,5 +44,6 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   disconnect = () => send('disconnect')
   addBeekeeper = () => send('addBeekeeper')
   toggleSidebar = () => send('toggleSidebar')
+  upgradeModal = () => send('upgradeModal')
+  checkForUpdates = () => send('checkForUpdates')
 }
-

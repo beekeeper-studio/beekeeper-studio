@@ -1,5 +1,8 @@
+/* eslint-disable */
 const webpack = require('webpack');
 const path = require('path');
+/* eslint-enable */
+
 const fpmOptions = [
   "--after-install=build/deb-postinstall"
 ]
@@ -11,6 +14,7 @@ if (  process.env.PI_BUILD ) {
 
 const externals = ['better-sqlite3', 'sequelize', 'typeorm', 'reflect-metadata', 'cassandra-driver', 'mysql2', 'ssh2', '@electron/remote']
 module.exports = {
+  transpileDependencies: ['@aws-sdk/*'],
   pluginOptions: {
     electronBuilder: {
       nodeModulesPath: ['./node_modules', '../../node_modules'],
@@ -159,7 +163,8 @@ module.exports = {
         },
         win: {
           icon: './public/icons/png/512x512.png',
-          target: ['nsis', 'portable']
+          target: ['nsis', 'portable'],
+          sign: "./build/win/sign.js"
         },
         portable: {
           "artifactName": "${productName}-${version}-portable.exe",
@@ -168,6 +173,7 @@ module.exports = {
     }
   },
   configureWebpack: {
+    devtool: 'source-map',
     plugins: [
       new webpack.IgnorePlugin(/pg-native/, /pg/),
       new webpack.IgnorePlugin(/kerberos/, /cassandra-driver/),
@@ -189,7 +195,7 @@ module.exports = {
     //   'strong-oracle': 'strong-oracle',
     //   'oracledb': 'oracledb',
     //   // 'pg': 'pg',
-    //   // 'pg-query-stream': 'pg-query-stream'
+    //   // 'pg-query-stream': 'pg-query-stzream'
     // },
     node: {
       dns: 'mock'

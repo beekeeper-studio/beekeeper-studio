@@ -2,10 +2,19 @@
 
 Beekeeper Studio is a cross-platform SQL editor and database manager available for Linux, Mac, and Windows. Beekeeper Studio Community Edition is GPL licensed so it is free (libre) and free (gratis).
 
+## How to install Beekeeper Studio
+
+- Download the full version from [the Beekeeper Studio website](https://beekeeperstudio.io/get)
+- Download the community edition [from the releases page](https://github.com/beekeeper-studio/beekeeper-studio/releases/latest)
+
+We publish binaries for MacOS, Windows, and Linux.
+
+![image](https://user-images.githubusercontent.com/279769/203650152-4a34af1f-8a38-47cf-a273-d34d1c84feeb.png)
+
+
 👉 [Join the community Slack](https://launchpass.com/beekeeperstud-lvg5276)
 
 👉 Love Beekeeper Studio? [Leave us a testimonial!](https://testimonial.to/beekeeper-studio)
-![image](https://user-images.githubusercontent.com/279769/203650152-4a34af1f-8a38-47cf-a273-d34d1c84feeb.png)
 
 ## Editions of Beekeeper Studio
 
@@ -31,6 +40,17 @@ Top feature: It's smooth 🍫, fast 🏎, and you'll actually enjoy using it �
 - Query run-history, so you can find that one query you got working 3 days ago
 - Default dark theme
 
+Features exclusive to the full commercial edition ([available on our website](https://beekeeperstudio.io/get)):
+
+- More themes
+- Online storage for queries and connections with [Workspaces](https://www.beekeeperstudio.io/features/workspace)
+- Easy data formatting with [Query magics](https://docs.beekeeperstudio.io/docs/query-magics)
+- Multi-table export (v4+)
+- Easy database backup using native tools (v4+)
+- Easy database restore using native tools (coming soon)
+- Oracle Database support
+- Cassandra database support
+
 One of our frustrations with other open-source SQL editors and database managers is that they take a 'kitchen sink' approach to features, adding so many features that the UI becomes cluttered and hard to navigate. We wanted a good looking, open source SQL workbench that's powerful, but also easy to use. We couldn't find one, so we created Beekeeper Studio!
 
 Beekeeper Studio supports connecting to the following databases:
@@ -42,6 +62,11 @@ Beekeeper Studio supports connecting to the following databases:
 - CockroachDB
 - SQL Server
 - Amazon Redshift
+
+The commercial version of Beekeeper Studio ([avaliable here](https://beekeeperstudio.io/get)) also supports:
+
+- Oracle Database
+- Cassandra Database
 
 ## Supporting Beekeeper Studio
 

@@ -1,12 +1,14 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { Duration, TemporalUnit } from "node-duration"
 import { runCommonTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/client'
 import { TableInsert } from '../../../../../src/lib/db/models'
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
+import { buildSelectTopQueries, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
+import { safeSqlFormat } from '@/common/utils';
+
 const TEST_VERSIONS = [
   { version: '9.3', socket: false},
   { version: '9.4', socket: false},
@@ -19,7 +21,6 @@ function testWith(dockerTag, socket = false) {
     let container: StartedTestContainer;
     let util: DBTestUtil
 
-
     beforeAll(async () => {
       const timeoutDefault = 10000
       jest.setTimeout(dbtimeout)
@@ -27,17 +28,17 @@ function testWith(dockerTag, socket = false) {
       // container = environment.getContainer("psql_1")
 
       const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'psql-'));
-      container = await new GenericContainer("postgres", dockerTag)
+      container = await new GenericContainer(`postgres:${dockerTag}`)
         .withEnv("POSTGRES_PASSWORD", "example")
         .withEnv("POSTGRES_DB", "banana")
         .withExposedPorts(5432)
-        .withStartupTimeout(new Duration(dbtimeout, TemporalUnit.MILLISECONDS))
         .withBindMount(path.join(temp, "postgresql"), "/var/run/postgresql", "rw")
+        .withStartupTimeout(dbtimeout)
         .start()
       jest.setTimeout(timeoutDefault)
       const config: IDbConnectionServerConfig = {
         client: 'postgresql',
-        host: container.getContainerIpAddress(),
+        host: container.getHost(),
         port: container.getMappedPort(5432),
         user: 'postgres',
         password: 'example',
@@ -67,6 +68,18 @@ function testWith(dockerTag, socket = false) {
         table.specificType('names', 'TEXT []')
         table.text("normal")
       })
+
+      await util.knex.raw(
+        `CREATE TYPE this_is_a_mood AS ENUM ('sad', 'ok', 'happy');`
+      )
+
+      await util.knex.raw(`
+        CREATE TABLE
+          public.moody_people (
+            id serial NOT NULL,
+            current_mood this_is_a_mood NULL DEFAULT 'sad'::this_is_a_mood
+          );
+      `)
 
       if (dockerTag == 'latest') {
         await util.knex.raw(`
@@ -146,6 +159,12 @@ function testWith(dockerTag, socket = false) {
       expect(result).toMatchObject([
         { id: 1, names: [], normal: 'foo' }
       ])
+    })
+
+    it("Should be able to get a table create script without erroring", async() => {
+      // checking that create table script with a custom type can be retrieved.
+      const result = await util.connection.getTableCreateScript("moody_people")
+      expect(result).not.toBeNull()
     })
 
     it("Should allow me to insert a row with an array", async () => {
@@ -271,6 +290,47 @@ function testWith(dockerTag, socket = false) {
       }
     })
     // END regression tests for Bug #1583
+
+    it("should build select top query with inline parameters", async () => {
+      const fmt = (sql: string) =>
+        safeSqlFormat(sql, { language: 'postgresql' })
+
+      const options: STQOptions = {
+        table: "jobs",
+        offset: 0,
+        limit: 100,
+        orderBy: [{ field: "hourly_rate", dir: "ASC" }],
+        filters: [
+          {
+            field: "job_name",
+            type: "in",
+            value: ["Programmer", "Surgeon's Assistant"],
+          },
+        ],
+        selects: ["*"],
+        schema: "public",
+        version: {
+          version: "",
+          isPostgres: true,
+          isCockroach: false,
+          isRedshift: false,
+          number: 0,
+          hasPartitions: false,
+        },
+      }
+
+      const { query: defaultQuery } = buildSelectTopQueries(options)
+      const { query: inlineParams } = buildSelectTopQueries({
+        ...options,
+        inlineParams: true
+      })
+
+      const expectedDefault = `SELECT * FROM "public"."jobs" WHERE "job_name" IN ($1,$2) ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`
+      const expectedInline = `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`
+
+      expect(fmt(defaultQuery)).toBe(fmt(expectedDefault))
+      expect(fmt(inlineParams)).toBe(fmt(expectedInline))
+    });
 
     describe("Common Tests", () => {
       runCommonTests(() => util)

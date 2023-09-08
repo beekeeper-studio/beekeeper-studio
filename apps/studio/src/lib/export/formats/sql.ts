@@ -30,11 +30,13 @@ export class SqlExporter extends Export {
     filePath: string,
     connection: DBConnection,
     table: TableOrView,
+    query: string,
+    queryName: string,
     filters: TableFilter[] | any[],
     options: ExportOptions,
     outputOptions: OutputOptionsSql
   ) {
-    super(filePath, connection, table, filters, options)
+    super(filePath, connection, table, query, queryName, filters, options)
     this.outputOptions = outputOptions
     if (!this.connection.connectionType || !this.knexTypes[this.connection.connectionType]) {
       throw new Error("SQL export not supported on connection type " + this.connection.connectionType)
@@ -47,6 +49,7 @@ export class SqlExporter extends Export {
     console.log("getting header")
     if (this.outputOptions.createTable) {
       const schema = this.table.schema && this.outputOptions.schema ? this.table.schema : ''
+
       const result = await this.connection.getTableCreateScript(this.table.name, schema)
       if (result) {
         console.log("returning header ", result)
@@ -63,6 +66,14 @@ export class SqlExporter extends Export {
 
   formatRow(rowArray: any): string {
     const row = this.rowToObject(rowArray)
+    // error found when attemping to copy over an array into a JSON field https://github.com/beekeeper-studio/beekeeper-studio/issues/1647
+    // which is an issue with Knex itself https://github.com/knex/knex/issues/5430
+    for (const r in row) {
+      if (Array.isArray(row[r])) {
+        row[r] = JSON.stringify(row[r])
+      }
+    }
+
     let knex = this.knex(this.table.name)
     if (this.outputOptions.schema && this.table.schema) {
       knex = knex.withSchema(this.table.schema)

@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift']
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery']
 const ultimateDialects = []
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
@@ -34,6 +34,7 @@ export const DialectTitles: {[K in Dialect]: string} = {
   sqlserver: "SQL Server",
   redshift: "Amazon Redshift",
   sqlite: "SQLite",
+  bigquery: "BigQuery",
   ...UltimateDialectTitles
 
 }
@@ -47,13 +48,15 @@ export function KnexDialect(d: Dialect): KnexDialect {
   if (d === 'oracle') return 'oracledb'
   return d as KnexDialect
 }
-
-export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2'
+// REF: https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md#options
+export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite'
 export function FormatterDialect(d: Dialect): FormatterDialect {
   if (!d) return 'mysql'
   if (d === 'sqlserver') return 'tsql'
-  if (d === 'sqlite') return 'mysql'
+  if (d === 'sqlite') return 'sqlite'
   if (d === 'oracle') return 'plsql'
+  if (d === 'postgresql') return 'postgresql'
+  if (d === 'redshift') return 'redshift'
   return 'mysql' // we want this as the default
 }
 
@@ -62,7 +65,7 @@ export class ColumnType {
   public name: string
   public supportsLength: boolean
   public defaultLength: number
-  constructor(name: string, supportsLength?: boolean, defaultLength: number = 255) {
+  constructor(name: string, supportsLength?: boolean, defaultLength = 255) {
     this.name = name
     this.supportsLength = supportsLength
     this.defaultLength = defaultLength
@@ -80,8 +83,10 @@ export interface DialectData {
   columnTypes: ColumnType[],
   constraintActions: string[]
   wrapIdentifier: (s: string) => string
+  friendlyNormalizedIdentifier: (s: string) => string
   escapeString: (s: string, quote?: boolean) => string
   wrapLiteral: (s: string) => string
+  unwrapIdentifier: (s: string) => string
   disabledFeatures?: {
     informationSchema?: {
       extra?: boolean
@@ -138,6 +143,12 @@ export function defaultWrapLiteral(str: string): string {
 
 export function defaultWrapIdentifier(value: string): string {
   return value ? `"${value.replaceAll(/"/g, '""')}"` : ''
+}
+
+const mayebWrapIdentifierRegex = /(?:[^a-z0-9_]|^\d)/;
+
+export function friendlyNormalizedIdentifier(value: string, quote: '`' | "'" | '"' = '"'): string {
+  return mayebWrapIdentifierRegex.test(value) ? `${quote}${value}${quote}` : value;
 }
 
 export interface SchemaConfig {

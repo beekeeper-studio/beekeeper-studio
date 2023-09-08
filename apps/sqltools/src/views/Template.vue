@@ -1,19 +1,32 @@
 <template>
-  <div class="template" v-if="template">
+  <div
+    class="template"
+    v-if="template"
+  >
     <section class="subheader">
       <div class="small-wrap">
-        <router-link to="/templates"><i class="material-icons">arrow_backward</i> All Templates</router-link>
+        <router-link to="/templates">
+          <i class="material-icons">arrow_backward</i> All Templates
+        </router-link>
       </div>
     </section>
     <section>
       <div class="small-wrap">
-        
         <!-- Table Header -->
         <div class="table-header flex flex-top">
           <div class="flex-col expand">
-            <h1 class="table-name">{{template.name}} <span class="badge">template</span></h1>
-            <div class="table-description">{{template.description}}</div>
-            <router-link class="text-primary" :to="{name: 'Build', params: {id: template.id}}">Open in Table Builder</router-link>
+            <h1 class="table-name">
+              {{ template.name }} <span class="badge">template</span>
+            </h1>
+            <div class="table-description">
+              {{ template.description }}
+            </div>
+            <router-link
+              class="text-primary"
+              :to="{name: 'Build', params: {id: template.id}}"
+            >
+              Open in Table Builder
+            </router-link>
           </div>
           <div class="actions">
             <dialect-picker />
@@ -23,13 +36,15 @@
         <!-- Schema Builder -->
         <schema-builder
           v-if="template"
-          :initialColumns="template.toSchema(dialect).columns"
-          :resetOnUpdate="true"
+          :initial-columns="template.toSchema(dialect).columns"
+          :reset-on-update="true"
           :disabled="true"
-        >
-        </schema-builder>
+        />
 
-        <highlighted-code :code="sql" :dialect="dialect">
+        <highlighted-code
+          :code="sql"
+          :dialect="dialect"
+        >
           <h3>Generated SQL</h3>
         </highlighted-code>
       </div>
@@ -103,8 +118,6 @@ export default Vue.extend({
       }
       return false
     }
-  },
-  mounted() {
   }
 })
 </script>

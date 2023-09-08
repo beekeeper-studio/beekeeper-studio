@@ -24,7 +24,7 @@ import { RedshiftChangeBuilder } from '@shared/lib/sql/change_builder/RedshiftCh
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 
 
-const base64 = require('base64-url');
+const base64 = require('base64-url'); // eslint-disable-line
 const PD = PostgresData
 function isConnection(x: any): x is HasConnection {
   return x.connection !== undefined
@@ -105,7 +105,7 @@ async function getVersion(conn: HasPool): Promise<VersionInfo> {
     isCockroach,
     isRedshift,
     number,
-    hasPartitions: (isPostgres && number >= 100000) //for future cochroach support?: || (isCockroach && number >= 200070)
+    hasPartitions: (isPostgres && number >= 100000), //for future cochroach support?: || (isCockroach && number >= 200070)
   }
 }
 
@@ -192,6 +192,8 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getTableLength: (table: string, schema: string) => getTableLength(conn, table, schema),
     selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema, selects: string[] = ['*']) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (database: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema: string = defaultSchema) => selectTopStream(conn, database, table, orderBy, filters, chunkSize, schema),
+    selectTopSql: (table, offset, limit, orderBy, filters, schema = defaultSchema, selects = ['*']) => selectTopSql(conn, table, offset, limit, orderBy, filters, schema, selects),
+    queryStream: (database: string, query: string, chunkSize: number) => queryStream(conn, database, query, chunkSize),
     applyChangesSql: (changes: TableChanges): string => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert: TableInsert): Promise<string> => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit, schema = defaultSchema) => getQuerySelectTop(conn, table, limit, schema),
@@ -345,7 +347,7 @@ export async function listMaterializedViews(conn: HasPool, filter: FilterOptions
   }
 }
 
-interface STQOptions {
+export interface STQOptions {
   table: string,
   orderBy?: OrderBy[],
   filters?: TableFilter[] | string,
@@ -355,6 +357,7 @@ interface STQOptions {
   version: VersionInfo
   forceSlow?: boolean,
   selects?: string[],
+  inlineParams?: boolean
 }
 
 interface STQResults {
@@ -364,7 +367,7 @@ interface STQResults {
 
 }
 
-function buildSelectTopQueries(options: STQOptions): STQResults {
+export function buildSelectTopQueries(options: STQOptions): STQResults {
   const filters = options.filters
   const orderBy = options.orderBy
   const selects = options.selects ?? ['*']
@@ -373,9 +376,9 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   let params: (string | string[])[] = []
 
   if (orderBy && orderBy.length > 0) {
-    orderByString = "order by " + (orderBy.map((item) => {
+    orderByString = "ORDER BY " + (orderBy.map((item) => {
       if (_.isObject(item)) {
-        return `${wrapIdentifier(item.field)} ${item.dir}`
+        return `${wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`
       } else {
         return wrapIdentifier(item)
       }
@@ -388,15 +391,19 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
     let paramIdx = 1
     filterString = "WHERE " + filters.map((item) => {
       if (item.type === 'in' && _.isArray(item.value)) {
-        const values = item.value.map((_v, idx) => {
-          return `$${paramIdx + idx}`
+        const values = item.value.map((v, idx) => {
+          return options.inlineParams
+            ? knex.raw('?', [v]).toQuery()
+            : `$${paramIdx + idx}`
         })
         paramIdx += values.length
-        return `${wrapIdentifier(item.field)} ${item.type} (${values.join(',')})`
+        return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${values.join(',')})`
       }
-      const value = `$${paramIdx}`
+      const value = options.inlineParams
+        ? knex.raw('?', [item.value]).toQuery()
+        : `$${paramIdx}`
       paramIdx += 1
-      return `${wrapIdentifier(item.field)} ${item.type} ${value}`
+      return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${value}`
     }).join(" AND ")
 
     params = filters.flatMap((item) => {
@@ -524,6 +531,54 @@ async function selectTopStream(
   }
 }
 
+export async function selectTopSql(
+  conn: HasPool,
+  table: string,
+  offset: number,
+  limit: number,
+  orderBy: OrderBy[],
+  filters: TableFilter[] | string,
+  schema = "public",
+  selects = ["*"]
+): Promise<string> {
+  const version = await getVersion(conn)
+  const { query } = buildSelectTopQueries({
+    table,
+    offset,
+    limit,
+    orderBy,
+    filters,
+    selects,
+    schema,
+    version,
+    inlineParams: true,
+  })
+  return query
+}
+
+async function queryStream(
+  conn: HasPool,
+  database: string,
+  query: string,
+  chunkSize: number
+): Promise<StreamResults> {
+  const db = database // why
+  log.debug('db', db)
+
+  const cursorOpts = {
+    query: query,
+    params: [],
+    conn: conn,
+    chunkSize
+  }
+
+  return {
+    totalRows: undefined, // totalRecords,
+    columns: undefined, // columns,
+    cursor: new PsqlCursor(cursorOpts)
+  }
+}
+
 export async function listRoutines(conn: HasPool, filter?: FilterOptions): Promise<Routine[]> {
   const version = await getVersion(conn)
   if (version.isCockroach) {
@@ -615,11 +670,11 @@ export async function listTableColumns(
       column_default,
       CASE
         WHEN character_maximum_length is not null  and udt_name != 'text' 
-          THEN CONCAT(udt_name, concat('(', concat(character_maximum_length::varchar(255), ')')))
+          THEN udt_name || '(' || character_maximum_length::varchar(255) || ')'
         WHEN numeric_precision is not null 
-        	THEN CONCAT(udt_name, concat('(', concat(numeric_precision::varchar(255),',',numeric_scale::varchar(255), ')')))
+        	THEN udt_name || '(' || numeric_precision::varchar(255) || ',' || numeric_scale::varchar(255) || ')'
         WHEN datetime_precision is not null AND udt_name != 'date' THEN
-          CONCAT(udt_name, concat('(', concat(datetime_precision::varchar(255), ')')))
+          udt_name || '(' || datetime_precision::varchar(255) || ')'
         ELSE udt_name
       END as data_type
     FROM information_schema.columns
@@ -676,29 +731,28 @@ export async function listTableTriggers(conn: HasPool, table: string, schema: st
 
   if (version.isCockroach) return []
   // action_timing has taken over from condition_timing
-  // this way we try both, and take the one that works.
-  const timing_columns = ['action_timing', 'condition_timing']
-  // const timing_column = 'action_timing'
-  const sequels = timing_columns.map((c) => `
+  // condition_timing was last used in PostgreSQL version 9.0
+  // which is not supported anymore since 08 Oct 2015.
+  // From version 9.1 onwards, released 08 Sep 2011, 
+  // action_timing was used instead
+  const timing_column = version.number <= 90000 ? 'condition_timing' : 'action_timing'
+  const sql = `
     SELECT
       trigger_name,
-      ${c} as timing,
+      ${timing_column} as timing,
       event_manipulation as manipulation,
       action_statement as action,
       action_condition as condition
     FROM information_schema.triggers
     WHERE event_object_schema = $1
     AND event_object_table = $2
-  `)
+  `
   const params = [
     schema,
     table,
   ];
-  const promises = sequels.map((sql) => {
-    return driverExecuteSingle(conn, { query: sql, params });
-  })
 
-  const data = await Promise.any(promises)
+  const data = await driverExecuteSingle(conn, { query: sql, params });
 
   return data.rows.map((row) => ({
     name: row.trigger_name,
@@ -1256,7 +1310,7 @@ export function query(conn: Conn, queryText: string, _schema: string) {
   };
 }
 
-export async function executeQuery(conn: Conn, queryText: string, arrayMode: boolean = false) {
+export async function executeQuery(conn: Conn, queryText: string, arrayMode = false) {
   const data = await driverExecuteQuery(conn, { query: queryText, multiple: true, arrayMode });
 
   const commands = identifyCommands(queryText).map((item) => item.type);
@@ -1292,75 +1346,149 @@ export function getQuerySelectTop(_conn: Conn, table: string, limit: number, sch
   return `SELECT * FROM ${wrapIdentifier(schema)}.${wrapIdentifier(table)} LIMIT ${limit}`;
 }
 
-export async function getTableCreateScript(conn: Conn, table: string, schema: string): Promise<string> {
-  // Reference http://stackoverflow.com/a/32885178
-  const sql = `
-    SELECT
-      'CREATE TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) || E' (\n' ||
-      array_to_string(
-        array_agg(
-          '  ' || quote_ident(tabdef.column_name) || ' ' ||
-          case when tabdef.def_val like 'nextval(%_seq%' then
-            case when tabdef.type = 'integer' then 'serial'
-                 when tabdef.type = 'smallint' then 'smallserial'
-                 when tabdef.type = 'bigint' then 'bigserial'
-                 else tabdef.type end
-          else
-            tabdef.type
-          end || ' ' ||
-          tabdef.not_null ||
-          CASE WHEN tabdef.def_val IS NOT NULL
-                    AND NOT (tabdef.def_val like 'nextval(%_seq%'
-                             AND (tabdef.type = 'integer' OR tabdef.type = 'smallint' OR tabdef.type = 'bigint'))
-               THEN ' DEFAULT ' || tabdef.def_val
-          ELSE '' END ||
-          CASE WHEN tabdef.identity IS NOT NULL THEN ' ' || tabdef.identity ELSE '' END
-          ORDER BY tabdef.column_idx ASC
-        )
-        , E',\n'
-      ) || E'\n);\n' ||
-      CASE WHEN tc.constraint_name IS NULL THEN ''
-           ELSE E'\nALTER TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) ||
-           ' ADD CONSTRAINT ' || quote_ident(tc.constraint_name)  ||
-           ' PRIMARY KEY ' || '(' || substring(constr.column_name from 0 for char_length(constr.column_name)-1) || ')'
-      END AS createtable
-    FROM
-    ( SELECT
-        c.relname AS table_name,
-        a.attname AS column_name,
-        a.attnum AS column_idx,
-        pg_catalog.format_type(a.atttypid, a.atttypmod) AS type,
-        CASE
-          WHEN a.attnotnull OR a.attidentity != '' THEN 'NOT NULL'
-        ELSE 'NULL'
-        END AS not_null,
-        CASE WHEN a.atthasdef THEN pg_catalog.pg_get_expr(ad.adbin, ad.adrelid) ELSE null END AS def_val,
-        CASE WHEN a.attidentity = 'a' THEN 'GENERATED ALWAYS AS IDENTITY' when a.attidentity = 'd' THEN 'GENERATED BY DEFAULT AS IDENTITY' ELSE null END AS identity,
-        n.nspname as schema_name
-      FROM pg_class c
-       JOIN pg_namespace n ON (n.oid = c.relnamespace)
-       JOIN pg_attribute a ON (a.attnum > 0 AND a.attrelid = c.oid)
-       JOIN pg_type t ON (a.atttypid = t.oid)
-       LEFT JOIN pg_attrdef ad ON (a.attrelid = ad.adrelid AND a.attnum = ad.adnum)
-      WHERE c.relname = $1
-      AND n.nspname = $2
-      ORDER BY a.attnum DESC
-    ) AS tabdef
-    LEFT JOIN information_schema.table_constraints tc
-    ON  tc.table_name       = tabdef.table_name
-    AND tc.table_schema     = tabdef.schema_name
-    AND tc.constraint_Type  = 'PRIMARY KEY'
-    LEFT JOIN LATERAL (
-      SELECT column_name || ', ' AS column_name
-      FROM   information_schema.key_column_usage kcu
-      WHERE  kcu.constraint_name = tc.constraint_name
-      AND kcu.table_name = tabdef.table_name
-      AND kcu.table_schema = tabdef.schema_name
-      ORDER BY ordinal_position
-    ) AS constr ON true
-    GROUP BY tabdef.schema_name, tabdef.table_name, tc.constraint_name, constr.column_name;
-  `;
 
+const postgres10CreateScript = `
+  SELECT
+  'CREATE TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) || E' (\n' ||
+  array_to_string(
+    array_agg(
+      '  ' || quote_ident(tabdef.column_name) || ' ' ||
+      case when tabdef.def_val like 'nextval(%_seq%' then
+        case when tabdef.type = 'integer' then 'serial'
+            when tabdef.type = 'smallint' then 'smallserial'
+            when tabdef.type = 'bigint' then 'bigserial'
+            else tabdef.type end
+      else
+        tabdef.type
+      end || ' ' ||
+      tabdef.not_null ||
+      CASE WHEN tabdef.def_val IS NOT NULL
+                AND NOT (tabdef.def_val like 'nextval(%_seq%'
+                        AND (tabdef.type = 'integer' OR tabdef.type = 'smallint' OR tabdef.type = 'bigint'))
+          THEN ' DEFAULT ' || tabdef.def_val
+      ELSE '' END ||
+      CASE WHEN tabdef.identity IS NOT NULL THEN ' ' || tabdef.identity ELSE '' END
+      ORDER BY tabdef.column_idx ASC
+    )
+    , E',\n'
+  ) || E'\n);\n' ||
+  CASE WHEN tc.constraint_name IS NULL THEN ''
+      ELSE E'\nALTER TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) ||
+      ' ADD CONSTRAINT ' || quote_ident(tc.constraint_name)  ||
+      ' PRIMARY KEY ' || '(' || substring(constr.column_name from 0 for char_length(constr.column_name)-1) || ')'
+  END AS createtable
+  FROM
+  ( SELECT
+    c.relname AS table_name,
+    a.attname AS column_name,
+    a.attnum AS column_idx,
+    pg_catalog.format_type(a.atttypid, a.atttypmod) AS type,
+    CASE
+      WHEN a.attnotnull OR a.attidentity != '' THEN 'NOT NULL'
+    ELSE 'NULL'
+    END AS not_null,
+    CASE WHEN a.atthasdef THEN pg_catalog.pg_get_expr(ad.adbin, ad.adrelid) ELSE null END AS def_val,
+    CASE WHEN a.attidentity = 'a' THEN 'GENERATED ALWAYS AS IDENTITY' when a.attidentity = 'd' THEN 'GENERATED BY DEFAULT AS IDENTITY' ELSE null END AS identity,
+    n.nspname as schema_name
+  FROM pg_class c
+  JOIN pg_namespace n ON (n.oid = c.relnamespace)
+  JOIN pg_attribute a ON (a.attnum > 0 AND a.attrelid = c.oid)
+  JOIN pg_type t ON (a.atttypid = t.oid)
+  LEFT JOIN pg_attrdef ad ON (a.attrelid = ad.adrelid AND a.attnum = ad.adnum)
+  WHERE c.relname = $1
+  AND n.nspname = $2
+  ORDER BY a.attnum DESC
+  ) AS tabdef
+  LEFT JOIN information_schema.table_constraints tc
+  ON  tc.table_name       = tabdef.table_name
+  AND tc.table_schema     = tabdef.schema_name
+  AND tc.constraint_Type  = 'PRIMARY KEY'
+  LEFT JOIN LATERAL (
+  SELECT column_name || ', ' AS column_name
+  FROM   information_schema.key_column_usage kcu
+  WHERE  kcu.constraint_name = tc.constraint_name
+  AND kcu.table_name = tabdef.table_name
+  AND kcu.table_schema = tabdef.schema_name
+  ORDER BY ordinal_position
+  ) AS constr ON true
+  GROUP BY tabdef.schema_name, tabdef.table_name, tc.constraint_name, constr.column_name;
+
+`
+const defaultCreateScript = `
+  SELECT
+  'CREATE TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) || E' (\n' ||
+  array_to_string(
+    array_agg(
+      '  ' || quote_ident(tabdef.column_name) || ' ' ||
+      case when tabdef.def_val like 'nextval(%_seq%' then
+        case when tabdef.type = 'integer' then 'serial'
+            when tabdef.type = 'smallint' then 'smallserial'
+            when tabdef.type = 'bigint' then 'bigserial'
+            else tabdef.type end
+      else
+        tabdef.type
+      end || ' ' ||
+      tabdef.not_null ||
+      CASE WHEN tabdef.def_val IS NOT NULL
+                AND NOT (tabdef.def_val like 'nextval(%_seq%'
+                        AND (tabdef.type = 'integer' OR tabdef.type = 'smallint' OR tabdef.type = 'bigint'))
+          THEN ' DEFAULT ' || tabdef.def_val
+      ELSE '' END ||
+      CASE WHEN tabdef.identity IS NOT NULL THEN ' ' || tabdef.identity ELSE '' END
+      ORDER BY tabdef.column_idx ASC
+    )
+    , E',\n'
+  ) || E'\n);\n' ||
+  CASE WHEN tc.constraint_name IS NULL THEN ''
+      ELSE E'\nALTER TABLE ' || quote_ident(tabdef.schema_name) || '.' || quote_ident(tabdef.table_name) ||
+      ' ADD CONSTRAINT ' || quote_ident(tc.constraint_name)  ||
+      ' PRIMARY KEY ' || '(' || substring(constr.column_name from 0 for char_length(constr.column_name)-1) || ')'
+  END AS createtable
+  FROM
+  ( SELECT
+    c.relname AS table_name,
+    a.attname AS column_name,
+    a.attnum AS column_idx,
+    pg_catalog.format_type(a.atttypid, a.atttypmod) AS type,
+    CASE
+      WHEN a.attnotnull THEN 'NOT NULL'
+    ELSE 'NULL'
+    END AS not_null,
+    CASE WHEN a.atthasdef THEN pg_catalog.pg_get_expr(ad.adbin, ad.adrelid) ELSE null END AS def_val,
+    null::text as identity,
+    n.nspname as schema_name
+  FROM pg_class c
+  JOIN pg_namespace n ON (n.oid = c.relnamespace)
+  JOIN pg_attribute a ON (a.attnum > 0 AND a.attrelid = c.oid)
+  JOIN pg_type t ON (a.atttypid = t.oid)
+  LEFT JOIN pg_attrdef ad ON (a.attrelid = ad.adrelid AND a.attnum = ad.adnum)
+  WHERE c.relname = $1
+  AND n.nspname = $2
+  ORDER BY a.attnum DESC
+  ) AS tabdef
+  LEFT JOIN information_schema.table_constraints tc
+  ON  tc.table_name       = tabdef.table_name
+  AND tc.table_schema     = tabdef.schema_name
+  AND tc.constraint_Type  = 'PRIMARY KEY'
+  LEFT JOIN LATERAL (
+  SELECT column_name || ', ' AS column_name
+  FROM   information_schema.key_column_usage kcu
+  WHERE  kcu.constraint_name = tc.constraint_name
+  AND kcu.table_name = tabdef.table_name
+  AND kcu.table_schema = tabdef.schema_name
+  ORDER BY ordinal_position
+  ) AS constr ON true
+  GROUP BY tabdef.schema_name, tabdef.table_name, tc.constraint_name, constr.column_name;
+
+`
+
+
+export async function getTableCreateScript(conn: HasPool, table: string, schema: string): Promise<string> {
+  // Reference http://stackoverflow.com/a/32885178
+  const version = await getVersion(conn)
+  const includesAttIdentify = (version.isPostgres && version.number >= 100000)
+
+  const sql = includesAttIdentify ? postgres10CreateScript : defaultCreateScript;
   const params = [
     table,
     schema,
@@ -1455,7 +1583,7 @@ export async function truncateAllTables(conn: Conn, schema: string) {
   });
 }
 
-export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+export async function dropElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
@@ -1478,7 +1606,7 @@ export async function createDatabase(conn, databaseName, charset) {
   await driverExecuteQuery(conn, { query: sql })
 }
 
-export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema: string = 'public'): Promise<void> {
+export async function truncateElement (conn: Conn, elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
   await runWithConnection(conn, async (connection) => {
     const connClient = { connection };
     const sql = `TRUNCATE ${PD.wrapLiteral(typeOfElement)} ${wrapIdentifier(schema)}.${wrapIdentifier(elementName)}`
@@ -1559,7 +1687,7 @@ async function configDatabase(server: { sshTunnel: boolean, config: IDbConnectio
     connectionTimeoutMillis: globals.psqlTimeout,
     idleTimeoutMillis: globals.psqlIdleTimeout,
     // not in the typings, but works.
-    // @ts-ignore
+    // @ts-expect-error Fix Typings
     options: optionsString
   };
 

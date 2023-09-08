@@ -1,6 +1,5 @@
 import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { Duration, TemporalUnit } from "node-duration"
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
@@ -8,7 +7,7 @@ import data_mutators from '../../../../../src/mixins/data_mutators';
 import { itShouldInsertGoodData, itShouldNotInsertBadData, itShouldApplyAllTypesOfChanges, itShouldNotCommitOnChangeError, runCommonTests } from './all'
 
 const TEST_VERSIONS = [
-  {version: '5.7'}, 
+  {version: '5.7'},
   { version: '8', socket: false},
   { version: '8', socket: true }
 ]
@@ -30,13 +29,13 @@ function testWith(tag, socket = false) {
         .withEnv("MYSQL_ROOT_PASSWORD", "test")
         .withEnv("MYSQL_DATABASE", "test")
         .withExposedPorts(3306)
-        .withStartupTimeout(new Duration(dbtimeout, TemporalUnit.MILLISECONDS))
+        .withStartupTimeout(dbtimeout)
         .withBindMount(temp, '/var/run/mysqld/', 'rw')
         .start()
       jest.setTimeout(timeoutDefault)
       const config = {
         client: 'mysql',
-        host: container.getContainerIpAddress(),
+        host: container.getHost(),
         port: container.getMappedPort(3306),
         user: 'root',
         password: 'test'

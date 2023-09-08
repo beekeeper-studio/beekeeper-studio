@@ -12,7 +12,7 @@ interface OutputOptionsCsv {
 export class CsvExporter extends Export {
   static extension = "csv"
   readonly format: string = 'csv'
-  rowSeparator: string = '\n'
+  rowSeparator = '\n'
 
   preserveComplex = false
 
@@ -26,13 +26,15 @@ export class CsvExporter extends Export {
     filePath: string,
     connection: DBConnection,
     table: TableOrView,
+    query: string,
+    queryName: string,
     filters: TableFilter[] | any[],
     options: ExportOptions,
-    outputOptions: OutputOptionsCsv,
+    outputOptions: OutputOptionsCsv
   ) {
-    super(filePath, connection, table, filters, options)
+    super(filePath, connection, table, query, queryName, filters, options)
     this.headerConfig = {
-      header: true,
+      header: table ? true : false, // dont know columns for query
       delimiter: outputOptions.delimiter,
     }
     this.outputOptions = outputOptions
@@ -40,6 +42,7 @@ export class CsvExporter extends Export {
   }
 
   async getHeader(columns: TableColumn[]): Promise<string> {
+    if (!columns) return ""
     const fields = columns.map(c => c.columnName)
     if (fields.length > 0 && this.outputOptions.header) {
       return Papa.unparse([fields], this.headerConfig) + this.rowSeparator

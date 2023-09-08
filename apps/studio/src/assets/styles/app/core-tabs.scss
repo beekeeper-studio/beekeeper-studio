@@ -4,6 +4,11 @@
   display: flex;
   flex: 1 1 100%;
   flex-direction: column;
+
+  .btn-upgrade {
+    margin-right: 0.8rem;
+  }
+
   .tab-content, .tab-pane {
     position: relative;
     display: flex;
@@ -186,6 +191,8 @@
   }
   .actions {
     padding: 0 $gutter-h;
+    display: flex;
+    flex-direction: row;
     -webkit-app-region: no-drag;
   }
 }

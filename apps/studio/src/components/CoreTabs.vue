@@ -1,79 +1,183 @@
 <template>
-  <div class="core-tabs" v-hotkey="keymap">
+  <div
+    class="core-tabs"
+    v-hotkey="keymap"
+  >
     <div class="tabs-header">
       <!-- <div class="nav-tabs nav"> -->
-      <Draggable :options="dragOptions" v-model="tabItems" tag="ul" class="nav-tabs nav"
-        chosen-class="nav-item-wrap-chosen">
-        <core-tab-header v-for="tab in tabItems" :key="tab.id" :tab="tab" :tabsCount="tabItems.length"
-          :selected="activeTab === tab" @click="click" @close="close" @closeAll="closeAll" @closeOther="closeOther"
-          @closeToRight="closeToRight" @duplicate="duplicate"></core-tab-header>
+      <Draggable
+        :options="dragOptions"
+        v-model="tabItems"
+        tag="ul"
+        class="nav-tabs nav"
+        chosen-class="nav-item-wrap-chosen"
+      >
+        <core-tab-header
+          v-for="tab in tabItems"
+          :key="tab.id"
+          :tab="tab"
+          :tabs-count="tabItems.length"
+          :selected="activeTab === tab"
+          @click="click"
+          @close="close"
+          @closeAll="closeAll"
+          @closeOther="closeOther"
+          @closeToRight="closeToRight"
+          @duplicate="duplicate"
+        />
       </Draggable>
       <!-- </div> -->
-      <span class="actions">
-        <a @click.prevent="createQuery(null)" class="btn-fab add-query"><i class=" material-icons">add_circle</i></a>
+      <span class="actions expand">
+        <a
+          @click.prevent="createQuery(null)"
+          class="btn-fab add-query"
+        ><i class=" material-icons">add_circle</i></a>
       </span>
+      <a
+        href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
+        class="btn btn-brand btn-icon btn-upgrade"
+        v-tooltip="'Full version includes: backup/restore, data import, larger query results, and more'"
+      >
+        <i class="material-icons">stars</i> Upgrade
+      </a>
     </div>
     <div class="tab-content">
       <div class="empty flex-col  expand">
-        <div class="expand layout-center"><shortcut-hints></shortcut-hints></div>
-        <statusbar class="tabulator-footer"></statusbar>
+        <div class="expand layout-center">
+          <shortcut-hints />
+        </div>
+        <statusbar class="tabulator-footer" />
       </div>
-      <div v-for="(tab, idx) in tabItems" class="tab-pane" :id="'tab-' + idx" :key="tab.id"
-        :class="{ active: (activeTab === tab) }" v-show="activeTab === tab">
-        <QueryEditor v-if="tab.type === 'query'" :active="activeTab === tab" :tab="tab" :tabId="tab.id"
-          :connection="connection"></QueryEditor>
-        <tab-with-table v-if="tab.type === 'table'" :tab="tab" @close="close">
+      <div
+        v-for="(tab, idx) in tabItems"
+        class="tab-pane"
+        :id="'tab-' + idx"
+        :key="tab.id"
+        :class="{ active: (activeTab === tab) }"
+        v-show="activeTab === tab"
+      >
+        <QueryEditor
+          v-if="tab.type === 'query'"
+          :active="activeTab === tab"
+          :tab="tab"
+          :tab-id="tab.id"
+          :connection="connection"
+        />
+        <tab-with-table
+          v-if="tab.type === 'table'"
+          :tab="tab"
+          @close="close"
+        >
           <template v-slot:default="slotProps">
-            <TableTable :tab="tab" :active="activeTab === tab" :connection="connection" :initialFilter="tab.filter"
-              :table="slotProps.table"></TableTable>
+            <TableTable
+              :tab="tab"
+              :active="activeTab === tab"
+              :connection="connection"
+              :initial-filter="tab.filter"
+              :table="slotProps.table"
+            />
           </template>
         </tab-with-table>
-        <tab-with-table v-if="tab.type === 'table-properties'" :tab="tab" @close="close">
+        <tab-with-table
+          v-if="tab.type === 'table-properties'"
+          :tab="tab"
+          @close="close"
+        >
           <template v-slot:default="slotProps">
-            <TableProperties :active="activeTab === tab" :tab="tab" :tabId="tab.id" :connection="connection"
-              :table="slotProps.table"></TableProperties>
+            <TableProperties
+              :active="activeTab === tab"
+              :tab="tab"
+              :tab-id="tab.id"
+              :connection="connection"
+              :table="slotProps.table"
+            />
           </template>
         </tab-with-table>
-        <TableBuilder v-if="tab.type === 'table-builder'" :active="activeTab === tab" :tab="tab" :tabId="tab.id"
-          :connection="connection"></TableBuilder>
-
+        <TableBuilder
+          v-if="tab.type === 'table-builder'"
+          :active="activeTab === tab"
+          :tab="tab"
+          :tab-id="tab.id"
+          :connection="connection"
+        />
       </div>
     </div>
     <portal to="modals">
-      <modal :name="modalName" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened"
-        @closed="sureClosed" @before-open="beforeOpened">
+      <modal
+        :name="modalName"
+        class="beekeeper-modal vue-dialog sure header-sure"
+        @opened="sureOpened"
+        @closed="sureClosed"
+        @before-open="beforeOpened"
+      >
         <div class="dialog-content">
-          <div class="dialog-c-title">Really {{ this.dbAction | titleCase }} <span class="tab-like"><tab-icon
-                :tab="tabIcon" /> {{ this.dbElement }}</span>?</div>
+          <div class="dialog-c-title">
+            Really {{ this.dbAction | titleCase }} <span class="tab-like"><tab-icon
+              :tab="tabIcon"
+            /> {{ this.dbElement }}</span>?
+          </div>
           <p>This change cannot be undone</p>
         </div>
         <div class="vue-dialog-buttons">
-          <span class="expand"></span>
-          <button ref="no" @click.prevent="$modal.hide(modalName)" class="btn btn-sm btn-flat">Cancel</button>
-          <button @focusout="sureOpen && $refs.no && $refs.no.focus()" @click.prevent="completeDeleteAction"
-            class="btn btn-sm btn-primary">{{ this.titleCaseAction }} {{ this.dbElement }}</button>
+          <span class="expand" />
+          <button
+            ref="no"
+            @click.prevent="$modal.hide(modalName)"
+            class="btn btn-sm btn-flat"
+          >
+            Cancel
+          </button>
+          <button
+            @focusout="sureOpen && $refs.no && $refs.no.focus()"
+            @click.prevent="completeDeleteAction"
+            class="btn btn-sm btn-primary"
+          >
+            {{ this.titleCaseAction }} {{ this.dbElement }}
+          </button>
         </div>
       </modal>
 
       <!-- Duplicate Modal -->
 
-      <modal :name="duplicateTableModal" class="beekeeper-modal vue-dialog sure header-sure" @opened="sureOpened"
-        @closed="sureClosed" @before-open="beforeOpened">
+      <modal
+        :name="duplicateTableModal"
+        class="beekeeper-modal vue-dialog sure header-sure"
+        @opened="sureOpened"
+        @closed="sureClosed"
+        @before-open="beforeOpened"
+      >
         <div class="dialog-content">
-          <div class="dialog-c-title">{{ this.dbAction | titleCase }} <span class="tab-like"><tab-icon :tab="tabIcon" />
-              {{ this.dbElement }}</span>?</div>
+          <div class="dialog-c-title">
+            {{ this.dbAction | titleCase }} <span class="tab-like"><tab-icon :tab="tabIcon" />
+              {{ this.dbElement }}</span>?
+          </div>
           <div class="form-group">
             <label for="duplicateTableName">New table name</label>
-            <input type="text" name="duplicateTableName" class="form-control" required v-model="duplicateTableName"
-              autofocus>
+            <input
+              type="text"
+              name="duplicateTableName"
+              class="form-control"
+              required
+              v-model="duplicateTableName"
+              autofocus
+            >
           </div>
           <small>This will create a new table and copy all existing data into it. Keep in mind that any indexes,
             relations, or triggers associated with the original table will not be duplicated in the new table</small>
         </div>
         <div class="vue-dialog-buttons">
-          <span class="expand"></span>
-          <button ref="no" @click.prevent="$modal.hide(duplicateTableModal)" class="btn btn-sm btn-flat">Cancel</button>
-          <pending-changes-button :submit-apply="duplicateTable" :submit-sql="duplicateTableSql" />
+          <span class="expand" />
+          <button
+            ref="no"
+            @click.prevent="$modal.hide(duplicateTableModal)"
+            class="btn btn-sm btn-flat"
+          >
+            Cancel
+          </button>
+          <pending-changes-button
+            :submit-apply="duplicateTable"
+            :submit-sql="duplicateTableSql"
+          />
         </div>
       </modal>
     </portal>
@@ -101,6 +205,7 @@ import TabWithTable from './common/TabWithTable.vue';
 import TabIcon from './tab/TabIcon.vue'
 import { DatabaseEntity } from "@/lib/db/models"
 import PendingChangesButton from './common/PendingChangesButton.vue'
+import { safeSqlFormat as safeFormat } from '@/common/utils';
 
 export default Vue.extend({
   props: ['connection'],
@@ -270,7 +375,7 @@ export default Vue.extend({
 
       try {
         const sql = await this.connection.duplicateTableSql(tableName, this.duplicateTableName, schema)
-        const formatted = format(sql, { language: FormatterDialect(this.dialect) })
+        const formatted = safeFormat(sql, { language: FormatterDialect(this.dialect) })
 
         const tab = new OpenTab('query')
         tab.unsavedQueryText = formatted
@@ -416,9 +521,15 @@ export default Vue.extend({
         this.$noty.error(`Can't find script for ${table.name} (${table.entityType})`)
         return
       }
-      const result = await method(table.name, table.schema)
-      const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
-      this.createQuery(stringResult)
+      try {
+        const result = await method(table.name, table.schema)
+        const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
+        this.createQuery(stringResult)
+      } catch (ex) {
+        this.$noty.error(`An error occured while loading the SQL for '${table.name}' - ${ex.message}`)
+        throw ex
+      }
+
     },
     dropDatabaseElement({ item: dbActionParams, action: dbAction }) {
       this.dbElement = dbActionParams.name
@@ -445,8 +556,8 @@ export default Vue.extend({
     },
     async loadRoutineCreate(routine) {
       const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema)
-      // const stringResult = format(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
-      this.createQuery(_.isArray(result) ? result[0] : result);
+      const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
+      this.createQuery(stringResult);
     },
     openTableBuilder() {
       const tab = new OpenTab('table-builder')

@@ -1,7 +1,7 @@
 import { execSync } from 'child_process'
 import platformInfo from './common/platform_info'
 import { loadEncryptionKey } from './common/encryption_key'
-import { ConnectionTypes } from './common/appdb/models/saved_connection'
+import { ConnectionTypes, keymapTypes } from './common/appdb/models/saved_connection'
 
 const userDirectory = platformInfo.userDirectory
 
@@ -29,6 +29,7 @@ export default {
 
   defaults: {
     connectionTypes: ConnectionTypes,
+    keymapTypes: keymapTypes
   },
   maxResults: 50000
 }

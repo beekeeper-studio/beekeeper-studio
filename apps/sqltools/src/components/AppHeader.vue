@@ -1,17 +1,44 @@
 <template>
   <header class="header row flex-middle">
-    <router-link class="logo" to="/" title="SQLTools by Beekeeper Studio - Homepage">
-      <img class="logo-img" src="@/assets/icons/bk-logo-yellow-icon.svg">
+    <router-link
+      class="logo"
+      to="/"
+      title="SQLTools by Beekeeper Studio - Homepage"
+    >
+      <img
+        class="logo-img"
+        src="@/assets/icons/bk-logo-yellow-icon.svg"
+      >
       <div class="flex-col">
         <span class="logo-title">SQLTools</span>
       </div>
     </router-link>
-    <span class="expand"></span>
+    <span class="expand" />
     <nav>
-      <router-link :to="{path: '/format'}" class="btn btn-link">SQL Formatter</router-link>
-      <router-link :to="{path: '/build'}" class="btn btn-link">SQL Table Creator</router-link>
-      <router-link to="/templates" class="btn btn-link">Table Templates</router-link>
-      <router-link to="/dialects" class="btn btn-link">Code Examples</router-link>
+      <router-link
+        :to="{path: '/format'}"
+        class="btn btn-link"
+      >
+        SQL Formatter
+      </router-link>
+      <router-link
+        :to="{path: '/build'}"
+        class="btn btn-link"
+      >
+        SQL Table Creator
+      </router-link>
+      <router-link
+        to="/templates"
+        class="btn btn-link"
+      >
+        Table Templates
+      </router-link>
+      <router-link
+        to="/dialects"
+        class="btn btn-link"
+      >
+        Code Examples
+      </router-link>
       <!-- <dialect-picker /> -->
     </nav>
   </header>

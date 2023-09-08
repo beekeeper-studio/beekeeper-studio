@@ -1,6 +1,9 @@
 <template>
-  <div class="result-table" v-hotkey="keymap">
-    <div ref="tabulator"></div>
+  <div
+    class="result-table"
+    v-hotkey="keymap"
+  >
+    <div ref="tabulator" />
   </div>
 </template>
 
@@ -163,7 +166,7 @@
 
               const tableInsert = {
                 table: 'mytable',
-                schema: null,
+                schema: this.connection.defaultSchema(),
                 data: [fixed],
               }
               const query = await this.connection.getInsertQuery(tableInsert)
@@ -174,10 +177,9 @@
       },
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
-        return this.result.fields.map((column) => {
-          console.log('COLUMN: ', column);
+        return this.result.fields.map((column, index) => {
           const result = {
-            title: column.name,
+            title: column.name || `Result ${index}`,
             titleFormatter: 'plaintext',
             field: column.id,
             titleDownload: escapeHtml(column.name),
@@ -272,7 +274,7 @@
         };
         // Fix Issue #1493 Lost column names in json query download
         // by overriding the tabulator-generated json with ...what cipboard() does, below:
-        formatter = format !== 'json' ? format : (rows, options, setFileContents) => {
+        formatter = format !== 'json' ? formatter : (rows, options, setFileContents) => {
           setFileContents(
             JSON.stringify(this.dataToJson(this.tabulator.getData(), false), null, "  "), 'text/json'
            )

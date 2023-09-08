@@ -75,6 +75,8 @@ export default async function (server, database) {
     getTableLength: (table, schema) => getTableLength(conn, table, schema),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
+    selectTopSql: (table, offset, limit, orderBy, filters, schema, selects) => selectTopSql(conn, table, offset, limit, orderBy, filters, schema, selects),
+    queryStream: (db, query, chunkSize) => selectTopStream(conn, db, query, chunkSize),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
     getTableCreateScript: (table) => getTableCreateScript(conn, table),
@@ -154,7 +156,7 @@ function buildFilterString(filters) {
         `(${item.value.map((v) => D.escapeString(v, true)).join(',')})` :
         D.escapeString(item.value, true)
 
-      return `${wrapIdentifier(item.field)} ${item.type} ${wrappedValue}`
+      return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${wrappedValue}`
     }).join(" AND ")
   }
   return filterString
@@ -191,9 +193,9 @@ function genOrderByString(orderBy) {
 
   let orderByString = "ORDER BY (SELECT NULL)"
   if (orderBy && orderBy.length > 0) {
-    orderByString = "order by " + (orderBy.map((item) => {
+    orderByString = "ORDER BY " + (orderBy.map((item) => {
       if (_.isObject(item)) {
-        return `${wrapIdentifier(item.field)} ${item.dir}`
+        return `${wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`
       } else {
         return wrapIdentifier(item)
       }
@@ -279,6 +281,28 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
   }
 }
 
+export async function selectTopSql(
+  conn,
+  table,
+  offset,
+  limit,
+  orderBy,
+  filters,
+  schema,
+  selects
+) {
+  const version = await getVersion(conn);
+  return version.supportOffsetFetch
+    ? genSelectNew(table, offset, limit, orderBy, filters, schema, selects)
+    : genSelectOld(table, offset, limit, orderBy, filters, schema, selects);
+}
+
+export async function queryStream(conn, db, query, orderBy, filters, chunkSize, schema, selects = ['*']) {
+  const version = await getVersion(conn);
+  return {
+    cursor: new SqlServerCursor(conn, query, chunkSize)
+  }
+}
 
 export function wrapIdentifier(value) {
   if (_.isString(value)) {
@@ -483,17 +507,18 @@ export async function listTableColumns(conn, database, table, schema) {
       table_schema as "table_schema",
       table_name as "table_name",
       column_name as "column_name",
-      data_type as "data_type",
       ordinal_position as "ordinal_position",
       column_default as "column_default",
       is_nullable as "is_nullable",
       CASE
-        WHEN character_maximum_length is not null AND data_type != 'text'
-          THEN character_maximum_length
-        WHEN datetime_precision is not null THEN
-          datetime_precision
-        ELSE null
-      END as length
+        WHEN character_maximum_length is not null AND data_type != 'text' 
+            THEN CONCAT(data_type, '(', character_maximum_length, ')')
+        WHEN numeric_precision is not null 
+            THEN CONCAT(data_type, '(', numeric_precision, ',', numeric_scale, ')')
+        WHEN datetime_precision is not null AND data_type != 'date' 
+            THEN CONCAT(data_type, '(', datetime_precision, ')')
+        ELSE data_type
+      END as "data_type"
     FROM INFORMATION_SCHEMA.COLUMNS
     ${clause}
     ORDER BY table_schema, table_name, ordinal_position
@@ -505,7 +530,7 @@ export async function listTableColumns(conn, database, table, schema) {
     schemaName: row.table_schema,
     tableName: row.table_name,
     columnName: row.column_name,
-    dataType: row.length ? `${row.data_type}(${row.length})` : row.data_type,
+    dataType: row.data_type,
     ordinalPosition: Number(row.ordinal_position),
     nullable: row.is_nullable === 'YES',
     defaultValue: row.column_default

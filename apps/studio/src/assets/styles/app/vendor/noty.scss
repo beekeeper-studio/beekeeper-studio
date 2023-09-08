@@ -14,11 +14,12 @@
     padding: $gutter-w * 1.25;
     padding-right: $gutter-w * 1.75;
   }
-  .noty_buttons{
+  .noty_buttons {
     display: flex;
     justify-content: flex-end;
     margin: 0 -3px;
     padding-top: 0;
+    padding-bottom: $gutter-w * 1.25;
     > .btn {
       margin: 0 3px;
     };
