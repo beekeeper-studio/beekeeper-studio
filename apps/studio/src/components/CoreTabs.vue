@@ -205,14 +205,7 @@ import TabWithTable from './common/TabWithTable.vue';
 import TabIcon from './tab/TabIcon.vue'
 import { DatabaseEntity } from "@/lib/db/models"
 import PendingChangesButton from './common/PendingChangesButton.vue'
-
-function safeFormat(value, options) {
-  try {
-    return format(value, options)
-  } catch(ex) {
-    return value
-  }
-}
+import { safeSqlFormat as safeFormat } from '@/common/utils';
 
 export default Vue.extend({
   props: ['connection'],
