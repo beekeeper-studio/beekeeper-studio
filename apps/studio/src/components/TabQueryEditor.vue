@@ -765,10 +765,12 @@
             codeMirrorVimInstance.defineEx("tabnext", "tabn", coreTabs.nextTab)
             codeMirrorVimInstance.defineEx("tabprevious", "tabp", coreTabs.previousTab)
             codeMirrorVimInstance.defineEx("tabnew", "tabnew", (_cn, params) => {
-              if(params.args.length > 0){
+              if(params.args && params.args.length > 0){
                 let queryName = params.args[0]
                 coreTabs.createQuery("",queryName)
+                return
               }
+              coreTabs.createQuery()
             })
 
 
