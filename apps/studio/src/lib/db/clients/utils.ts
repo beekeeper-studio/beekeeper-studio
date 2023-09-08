@@ -88,9 +88,9 @@ export function buildFilterString(filters, columns = []) {
           item.value.map(() => '?').join(',')
           : '?'
 
-        return `${field} ${item.type} (${questionMarks})`
+        return `${field} ${item.type.toUpperCase()} (${questionMarks})`
       }
-      return `${field} ${item.type} ?`
+      return `${field} ${item.type.toUpperCase()} ?`
     }).join(" AND ")
 
     filterParams = filters.flatMap((item) => {
@@ -118,9 +118,9 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
   let orderByString = ""
 
   if (orderBy && orderBy.length > 0) {
-    orderByString = "order by " + (orderBy.map((item: any) => {
+    orderByString = "ORDER BY " + (orderBy.map((item: any) => {
       if (_.isObject(item)) {
-        return `\`${item['field']}\` ${item['dir']}`
+        return `\`${item['field']}\` ${item['dir'].toUpperCase()}`
       } else {
         return `\`${item}\``
       }

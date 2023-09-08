@@ -347,7 +347,7 @@ export async function listMaterializedViews(conn: HasPool, filter: FilterOptions
   }
 }
 
-interface STQOptions {
+type STQOptions = {
   table: string,
   orderBy?: OrderBy[],
   filters?: TableFilter[] | string,
@@ -357,7 +357,12 @@ interface STQOptions {
   version: VersionInfo
   forceSlow?: boolean,
   selects?: string[],
-}
+} & ({
+  inlineParams?: false
+} | {
+  inlineParams: true
+  connection: pg.ClientBase
+})
 
 interface STQResults {
   query: string,
@@ -375,9 +380,9 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   let params: (string | string[])[] = []
 
   if (orderBy && orderBy.length > 0) {
-    orderByString = "order by " + (orderBy.map((item) => {
+    orderByString = "ORDER BY " + (orderBy.map((item) => {
       if (_.isObject(item)) {
-        return `${wrapIdentifier(item.field)} ${item.dir}`
+        return `${wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`
       } else {
         return wrapIdentifier(item)
       }
@@ -390,15 +395,19 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
     let paramIdx = 1
     filterString = "WHERE " + filters.map((item) => {
       if (item.type === 'in' && _.isArray(item.value)) {
-        const values = item.value.map((_v, idx) => {
-          return `$${paramIdx + idx}`
+        const values = item.value.map((v, idx) => {
+          return options.inlineParams
+            ? options.connection.escapeLiteral(v)
+            : `$${paramIdx + idx}`
         })
         paramIdx += values.length
-        return `${wrapIdentifier(item.field)} ${item.type} (${values.join(',')})`
+        return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${values.join(',')})`
       }
-      const value = `$${paramIdx}`
+      const value = options.inlineParams
+        ? options.connection.escapeLiteral(item.value as string)
+        : `$${paramIdx}`
       paramIdx += 1
-      return `${wrapIdentifier(item.field)} ${item.type} ${value}`
+      return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${value}`
     }).join(" AND ")
 
     params = filters.flatMap((item) => {
@@ -442,53 +451,6 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   return {
     query, countQuery, params
   }
-}
-
-function buildParameterizedSelectTopQuery(
-  options: STQOptions & { connection: pg.ClientBase }
-): string {
-  const escapeLiteral = options.connection.escapeLiteral
-  const filters = options.filters
-  const orderBy = options.orderBy
-  const selects = options.selects ?? ['*']
-  let orderByString = ""
-  let filterString = ""
-
-  if (orderBy && orderBy.length > 0) {
-    orderByString = "ORDER BY " + (orderBy.map((item) => {
-      if (_.isObject(item)) {
-        return `${wrapIdentifier(item.field)} ${item.dir}`
-      } else {
-        return wrapIdentifier(item)
-      }
-    })).join(",")
-  }
-
-  if (_.isString(filters)) {
-    filterString = `WHERE ${filters}`
-  } else if (filters && filters.length > 0) {
-    filterString = "WHERE " + filters.map((item) => {
-      if (item.type === 'in' && _.isArray(item.value)) {
-        const values = item.value.map((val) => escapeLiteral(val))
-        return `${wrapIdentifier(item.field)} ${item.type} (${values.join(',')})`
-      }
-      return `${wrapIdentifier(item.field)} ${item.type} ${escapeLiteral(item.value as string)}`
-    }).join(" AND ")
-  }
-
-  const selectSQL = `SELECT ${selects.join(', ')}`
-  const baseParameterizedSQL = `
-    FROM ${wrapIdentifier(options.schema)}.${wrapIdentifier(options.table)}
-    ${filterString}
-  `
-
-  const query = `
-    ${selectSQL} ${baseParameterizedSQL}
-    ${orderByString}
-    ${_.isNumber(options.limit) ? `LIMIT ${options.limit}` : ''}
-    ${_.isNumber(options.offset) ? `OFFSET ${options.offset}` : ''}
-    `
-  return query
 }
 
 async function getTableLength(conn: HasPool, table: string, schema: string): Promise<number> {
@@ -585,7 +547,7 @@ export async function selectTopSql(
 ): Promise<string> {
   const version = await getVersion(conn)
   const connection = await conn.pool.connect()
-  const query = buildParameterizedSelectTopQuery({
+  const { query } = buildSelectTopQueries({
     table,
     offset,
     limit,
@@ -594,6 +556,7 @@ export async function selectTopSql(
     selects,
     schema,
     version,
+    inlineParams: true,
     connection,
   })
   connection.release()

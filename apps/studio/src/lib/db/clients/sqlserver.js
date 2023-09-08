@@ -156,7 +156,7 @@ function buildFilterString(filters) {
         `(${item.value.map((v) => D.escapeString(v, true)).join(',')})` :
         D.escapeString(item.value, true)
 
-      return `${wrapIdentifier(item.field)} ${item.type} ${wrappedValue}`
+      return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${wrappedValue}`
     }).join(" AND ")
   }
   return filterString
@@ -193,9 +193,9 @@ function genOrderByString(orderBy) {
 
   let orderByString = "ORDER BY (SELECT NULL)"
   if (orderBy && orderBy.length > 0) {
-    orderByString = "order by " + (orderBy.map((item) => {
+    orderByString = "ORDER BY " + (orderBy.map((item) => {
       if (_.isObject(item)) {
-        return `${wrapIdentifier(item.field)} ${item.dir}`
+        return `${wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`
       } else {
         return wrapIdentifier(item)
       }

@@ -175,6 +175,10 @@ export function runCommonTests(getUtil) {
     test("Should generate scripts for all types of changes", () => {
       itShouldGenerateSQLForAllChanges(getUtil())
     })
+
+    test("Should generate scripts for top selection", async () => {
+      await getUtil().buildSelectTopQueryTests()
+    })
   })
 
 }

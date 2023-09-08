@@ -5,12 +5,13 @@ import { createServer } from '../../src/lib/db/index'
 import log from 'electron-log'
 import platformInfo from '../../src/common/platform_info'
 import { IDbConnectionPublicServer } from '../../src/lib/db/server'
-import { AlterTableSpec, Dialect, DialectData } from '../../../../shared/src/lib/dialects/models'
+import { AlterTableSpec, Dialect, DialectData, FormatterDialect } from '../../../../shared/src/lib/dialects/models'
 import { getDialectData } from '../../../../shared/src/lib/dialects/'
 import _ from 'lodash'
 import { TableIndex } from '../../src/lib/db/models'
 export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
+import { safeSqlFormat } from '../../src/common/utils'
 
 
 const KnexTypes: any = {
@@ -533,6 +534,34 @@ export class DBTestUtil {
     }
 
     expect(insertQuery).toBe(expectedQueries[this.dbType])
+  }
+
+  async buildSelectTopQueryTests() {
+    const query = await this.connection.selectTopSql(
+      'jobs',
+      0,
+      100,
+      [{ field: 'hourly_rate', dir: 'asc' }],
+      [{ field: 'job_name', type: 'in', value: ['Programmer', 'Manager'] }],
+      'public',
+      ['*']
+    )
+    const expectedQueries = {
+      postgresql: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Manager') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
+      mysql: "SELECT * FROM `jobs` WHERE `job_name` IN ('Programmer','Manager') ORDER BY `hourly_rate` ASC LIMIT 100 OFFSET 0",
+      mariadb: "SELECT * FROM `jobs` WHERE `job_name` IN ('Programmer','Manager') ORDER BY `hourly_rate` ASC LIMIT 100 OFFSET 0",
+      sqlite: "SELECT * FROM `jobs` WHERE `job_name` IN ('Programmer','Manager') ORDER BY `hourly_rate` ASC LIMIT 100 OFFSET 0",
+      sqlserver: "SELECT * FROM [public].[jobs] WHERE [job_name] IN ('Programmer','Manager') ORDER BY [hourly_rate] ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
+      cockroachdb: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Manager') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
+    }
+    const language = FormatterDialect(
+      this.dbType === 'cockroachdb'
+        ? 'postgresql'
+        : this.dialect
+    )
+    // format this so we can compare
+    expect(safeSqlFormat(query, { language }))
+      .toBe(safeSqlFormat(expectedQueries[this.dbType], { language }))
   }
 
   // lets start simple, it should resolve for all connection types
