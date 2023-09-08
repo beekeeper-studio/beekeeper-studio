@@ -370,8 +370,9 @@
     computed: {
       ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
       ...mapState(['usedConfig', 'connection', 'database', 'tables', 'storeInitialized']),
-      ...mapState('data/queries', {'savedQueries': 'items'}),
+      ...mapState('data/queries', {'savedQueries': 'items'}, ),
       ...mapState('settings', ['settings']),
+      ...mapState('tabs', { 'activeTab': 'active' }),
       userKeymap: {
         get() {
           const value = this.settings?.keymap?.value;
@@ -650,6 +651,8 @@
         // TODO (matthew): Add hint options for all tables and columns\
         this.initializeQueries()
         const startingValue = this.unsavedText || this.query?.text || editorDefault
+        this.query.title = this.activeTab.title
+
         console.log("starting value", startingValue)
         this.tab.unsavedChanges = this.unsavedChanges
 
@@ -745,8 +748,30 @@
             }
           })
 
+
+
+
           if (this.userKeymap === "vim") {
             const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
+            const coreTabs = this.$root.$refs.CoreTabs
+            codeMirrorVimInstance.defineEx("write", "w", this.triggerSave)
+            codeMirrorVimInstance.defineEx("quit", "q", this.close)
+            codeMirrorVimInstance.defineEx("x", "x", () => {
+              this.triggerSave()
+              if(this.query.id) {
+                this.close()
+              }
+            })
+            codeMirrorVimInstance.defineEx("tabnext", "tabn", coreTabs.nextTab)
+            codeMirrorVimInstance.defineEx("tabprevious", "tabp", coreTabs.previousTab)
+            codeMirrorVimInstance.defineEx("tabnew", "tabnew", (_cn, params) => {
+              if(params.args.length > 0){
+                let queryName = params.args[0]
+                coreTabs.createQuery("",queryName)
+              }
+            })
+
+
             if(!codeMirrorVimInstance) {
               console.error("Could not find code mirror vim instance");
             } else {

@@ -331,6 +331,9 @@ export default Vue.extend({
       return result
     },
   },
+  created() {
+    this.$root.$refs.CoreTabs = this;
+  },
   methods: {
     completeDeleteAction() {
       const { schema, name: dbName, entityType } = this.dbDeleteElementParams
@@ -504,7 +507,7 @@ export default Vue.extend({
     handleCreateTab() {
       this.createQuery()
     },
-    createQuery(optionalText) {
+    createQuery(optionalText, queryTitle?) {
       // const text = optionalText ? optionalText : ""
       let qNum = 0
       let tabName = "New Query"
@@ -512,6 +515,9 @@ export default Vue.extend({
         qNum = qNum + 1
         tabName = `Query #${qNum}`
       } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
+      if(queryTitle) {
+        tabName = queryTitle
+      }
 
       const result = new OpenTab('query')
       result.title = tabName,
