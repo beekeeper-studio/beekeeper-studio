@@ -441,6 +441,8 @@ export default Vue.extend({
       internalColumnPrefix: "__beekeeper_internal_",
       internalIndexColumn: "__beekeeper_internal_index",
       selectedCell: null,
+      mouseDownHandle: null,
+      lastMouseOverRow: null
     };
   },
   computed: {
@@ -560,21 +562,21 @@ export default Vue.extend({
     rowHandleContextMenu() {
       return [
         {
-          label: '<x-menuitem><x-label>Copy Row(s) as JSON</x-label></x-menuitem>',
+          label: `<x-menuitem><x-label>Copy row(s) as JSON</x-label></x-menuitem>`,
           action: (_e, cell) => {
             const clean = this.getCleanSelectedRowData(cell)
             this.$native.clipboard.writeText(JSON.stringify(clean))
           }
         },
         {
-          label: '<x-menuitem><x-label>Copy Row(s) as TSV for Excel</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Copy row(s) as TSV for Excel</x-label></x-menuitem>',
           action: (_e, cell) => {
             const clean = this.getCleanSelectedRowData(cell)
             this.$native.clipboard.writeText(Papa.unparse(clean, { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
           }
         },
         {
-          label: '<x-menuitem><x-label>Copy Row(s) as Markdown</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Copy row(s) as Markdown</x-label></x-menuitem>',
           action: (_e, cell) => {
             const fixed = this.getCleanSelectedRowData(cell)
 
@@ -588,7 +590,7 @@ export default Vue.extend({
           }
         },
         {
-          label: '<x-menuitem><x-label>Copy Row(s) as Insert</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Copy row(s) as SQL</x-label></x-menuitem>',
           action: async (_e, cell) => {
 
             const fixed = this.getCleanSelectedRowData(cell)
@@ -604,12 +606,12 @@ export default Vue.extend({
         },
         { separator: true },
         {
-          label: '<x-menuitem><x-label>Clone Row(s)</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Clone row(s)</x-label></x-menuitem>',
           action: this.cellCloneRow.bind(this),
           disabled: !this.editable
         },
         {
-          label: '<x-menuitem><x-label>Delete Row(s)</x-label></x-menuitem>',
+          label: '<x-menuitem><x-label>Delete row(s)</x-label></x-menuitem>',
           action: (_e, cell) => {
             let selectedRows = this.tabulator.getSelectedRows()
             if (!selectedRows.length) selectedRows = [cell.getRow()]
@@ -621,8 +623,17 @@ export default Vue.extend({
     },
     cellContextMenu() {
 
-      return [{
-          label: '<x-menuitem><x-label>Set Null</x-label></x-menuitem>',
+      const menuItem = (text: string) => `<x-menuitem><x-label>${text}</x-label></x-menuitem>`
+
+      return [
+        {
+          label: menuItem('Copy'),
+          action: (_e, cell: Tabulator.CellComponent) => {
+            this.copyCell(cell)
+          }
+        },
+        {
+          label: menuItem("Set as NULL"),
           action: (_e, cell: Tabulator.CellComponent) => {
             if (this.isPrimaryKey(cell.getField())) {
               // do nothing
@@ -712,10 +723,11 @@ export default Vue.extend({
         resizable: false,
         cssClass: 'select-row-col',
         formatter: 'text',
-        // formatter: () => '<span class="row-handle material-icons">chevron_right</span>',
         frozen: true,
         maxWidth: 40,
         width: 40,
+        // cellMouseDown: this.handleRowHandleMouseDown,
+        // cellMouseEnter: this.handleCellMouseEnter,
         cellClick: this.handleRowHandleClick,
         contextMenu: this.rowHandleContextMenu,
         headerClick: () => this.showColumnFilterModal()
@@ -760,6 +772,9 @@ export default Vue.extend({
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
           dataType: column.dataType,
           cellClick: this.cellClick,
+          // Part of click and drag for rows
+          // cellMouseUp: this.handleCellMouseUp,
+          // cellMouseEnter: this.handleCellMouseEnter,
           minWidth: globals.minColumnWidth,
           width: columnWidth,
           maxWidth: globals.maxColumnWidth,
@@ -953,6 +968,7 @@ export default Vue.extend({
   },
   beforeDestroy() {
     document.removeEventListener('click', this.maybeUnselectCell)
+    document.removeEventListener('mouseUp', this.handleCellMouseUp)
     if(this.interval) clearInterval(this.interval)
     if (this.tabulator) {
       this.tabulator.destroy()
@@ -960,6 +976,7 @@ export default Vue.extend({
   },
   async mounted() {
     document.addEventListener('click', this.maybeUnselectCell)
+    document.addEventListener('mouseUp', this.handleCellMouseUp)
     if (this.shouldInitialize) {
       this.$nextTick(async() => {
         await this.initialize()
@@ -980,20 +997,23 @@ export default Vue.extend({
       this.tabulator.deselectRow()
       this.unselectCell()
     },
-    // TODO (matthew): Fix click and drag
-    // handleRowHandleMouseDown(_event: MouseEvent, cell: Tabulator.CellComponent) {
-    //   this.mouseDownHandle = cell
-    // },
-    // handleRowHandleMouseUp(_event: MouseEvent, cell: Tabulator.CellComponent) {
-    //   if (!this.mouseDownHandle) return;
-    //   const startPosition = this.mouseDownHandle.getRow().getIndex()
-    //   const endPosition = cell.getRow().getIndex()
-    //   for(let i = startPosition; i <= endPosition; i++) {
-    //     this.tabulator.selectRow(i)
-    //   }
-    //   this.mouseDownHandle = null
-    // },
+    // TODO (matthew): Make click and drag work
+    // What this need to work:
+    // - [ ] Mousedown on a handle begins row selection
+    // - [ ] moving mouse over other rows highlights them in the selection
+    // - [ ] releasing mouse (anywhere) keeps the selection and stops selection from happening anymore
+    handleRowHandleMouseDown(_event: MouseEvent, cell: Tabulator.CellComponent) {
+      this.mouseDownHandle = cell
+      // this.handleRowHandleClick(_event, cell)
+    },
+    handleCellMouseEnter(_event: MouseEvent, _cell: Tabulator.CellComponent) {
+      // Please fix me kind software engineer 
+    },
+    handleCellMouseUp(_event: MouseEvent, _cell: Tabulator.CellComponent) {
+      this.mouseDownHandle = null
+    },
     handleRowHandleClick(event: MouseEvent, cell: Tabulator.CellComponent) {
+      // this.mouseDownHandle = null
       const row = cell.getRow()
       const selectedRows: Tabulator.RowComponent[] = this.tabulator.getSelectedRows();
 
@@ -1019,7 +1039,7 @@ export default Vue.extend({
           this.tabulator.selectRow(toSelect)
         }
 
-      } else if (event.ctrlKey) {
+      } else if (event.ctrlKey || (this.$config.isMac && event.metaKey)) {
         row.toggleSelect()
       } else {
         // clicking a row doesn't deselect it
@@ -1220,6 +1240,12 @@ export default Vue.extend({
         default: return ne
       }
     },
+    copyCell(cell: Tabulator.CellComponent) {
+      cell.getElement().classList.add('copied')
+      setTimeout(() => cell.getElement().classList.remove('copied'), 500)
+      this.$native.clipboard.writeText(cell.getValue(), false)
+
+    },
     maybeCopyCellOrRow() {
         if (!this.active) return;
         if (!this.tabulator) return;
@@ -1227,10 +1253,7 @@ export default Vue.extend({
         if (!this.selectedCell && !selectedRows?.length) return;
 
         if (this.selectedCell) {
-          this.selectedCell.getElement().classList.add('copied')
-          const cell = this.selectedCell
-          setTimeout(() => cell.getElement().classList.remove('copied'), 500)
-          this.$native.clipboard.writeText(this.selectedCell.getValue(), false)
+          this.copyCell(this.selectedCell)
         }
 
         if (selectedRows?.length) {
