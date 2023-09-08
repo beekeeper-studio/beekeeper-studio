@@ -1616,7 +1616,7 @@ export default Vue.extend({
       });
     },
     showColumnFilterModal() {
-      this.$modal.show(this.columnFilterModalName, )
+      this.$modal.show(this.columnFilterModalName)
     },
     triggerFilter() {
       if (this.pendingChangesCount > 0) {

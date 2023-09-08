@@ -263,7 +263,6 @@ $cell-padding:           $gutter-w;
   &.copied {
     background: rgba($theme-base, 0.4) !important;
     .tabulator-cell {
-      // background: rgba($theme-base, 0.4) !important;
 
       &:hover {
         background: rgba($theme-base, 0.4) !important;
