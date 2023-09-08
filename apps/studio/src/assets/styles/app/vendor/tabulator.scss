@@ -181,9 +181,6 @@ $cell-padding:           $gutter-w;
 
     &.copied {
       background: rgba($theme-base, 0.4) !important;
-      &:hover {
-        background: rgba($theme-base, 0.4) !important;
-      }
     }
 
     // Cell States
@@ -263,6 +260,16 @@ $cell-padding:           $gutter-w;
     }
   }
 
+  &.copied {
+    background: rgba($theme-base, 0.4) !important;
+    .tabulator-cell {
+
+      &:hover {
+        background: rgba($theme-base, 0.4) !important;
+      }
+    }
+  }
+
   // Cell Edit States
   .tabulator-cell {
     &.edited {
@@ -290,18 +297,24 @@ $cell-padding:           $gutter-w;
     }
   }
 
-  &.tabulator-selectable:hover {
-    background: rgba($theme-base, 0.05);
-    cursor: default;
-    i.fk-link {
-      display: inline-block;
-      &:hover {
-        color: white;
+  &.tabulator-selectable {
+    &:hover {
+      background: rgba($theme-base, 0.05);
+      cursor: default;
+      i.fk-link {
+        display: inline-block;
+        &:hover {
+          color: white;
+        }
+      }
+      &.tabulator-selected {
+        background: rgba($theme-base, 0.1);
       }
     }
-  }
-  &.tabulator-selected {
-    background: rgba($theme-base, 0.05);
+    &.tabulator-selected {
+      background: rgba($theme-base, 0.1);
+    }
+
   }
 
 }
@@ -372,8 +385,8 @@ $cell-padding:           $gutter-w;
   .tabulator-header {
     background: transparent;
     border: 0;
-    box-shadow: inset 0 -1px $border-color;
     width: -webkit-fill-available;
+    box-shadow: inset 0 -1px $border-color;
     .tabulator-col {
       background: transparent;
       border-color: transparent;
