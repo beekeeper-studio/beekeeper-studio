@@ -542,17 +542,17 @@ export class DBTestUtil {
       0,
       100,
       [{ field: 'hourly_rate', dir: 'asc' }],
-      [{ field: 'job_name', type: 'in', value: ['Programmer', 'Manager'] }],
+      [{ field: 'job_name', type: 'in', value: ['Programmer', "Surgeon's Assistant"] }],
       'public',
       ['*']
     )
     const expectedQueries = {
-      postgresql: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Manager') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
-      mysql: "SELECT * FROM `jobs` WHERE `job_name` IN ('Programmer','Manager') ORDER BY `hourly_rate` ASC LIMIT 100 OFFSET 0",
-      mariadb: "SELECT * FROM `jobs` WHERE `job_name` IN ('Programmer','Manager') ORDER BY `hourly_rate` ASC LIMIT 100 OFFSET 0",
-      sqlite: "SELECT * FROM `jobs` WHERE `job_name` IN ('Programmer','Manager') ORDER BY `hourly_rate` ASC LIMIT 100 OFFSET 0",
-      sqlserver: "SELECT * FROM [public].[jobs] WHERE [job_name] IN ('Programmer','Manager') ORDER BY [hourly_rate] ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
-      cockroachdb: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Manager') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
+      postgresql: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
+      mysql: "SELECT * FROM `jobs` WHERE `job_name` IN ('Programmer','Surgeon\\'s Assistant') ORDER BY `hourly_rate` ASC LIMIT 100 OFFSET 0",
+      mariadb: "SELECT * FROM `jobs` WHERE `job_name` IN ('Programmer','Surgeon\\'s Assistant') ORDER BY `hourly_rate` ASC LIMIT 100 OFFSET 0",
+      sqlite: "SELECT * FROM `jobs` WHERE `job_name` IN ('Programmer','Surgeon''s Assistant') ORDER BY `hourly_rate` ASC LIMIT 100 OFFSET 0",
+      sqlserver: "SELECT * FROM [public].[jobs] WHERE [job_name] IN ('Programmer','Surgeon''s Assistant') ORDER BY [hourly_rate] ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
+      cockroachdb: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
     }
     const language = FormatterDialect(
       this.dbType === 'cockroachdb'

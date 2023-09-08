@@ -28,6 +28,7 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
+    "tests/**/*.ts",
     "../../shared/src/**/*.ts",
     "../../shared/src/**/*.tsx",
     "../../shared/src/**/*.vue",

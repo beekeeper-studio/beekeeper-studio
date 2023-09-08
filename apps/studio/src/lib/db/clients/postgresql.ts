@@ -347,7 +347,7 @@ export async function listMaterializedViews(conn: HasPool, filter: FilterOptions
   }
 }
 
-type STQOptions = {
+export interface STQOptions {
   table: string,
   orderBy?: OrderBy[],
   filters?: TableFilter[] | string,
@@ -357,12 +357,8 @@ type STQOptions = {
   version: VersionInfo
   forceSlow?: boolean,
   selects?: string[],
-} & ({
-  inlineParams?: false
-} | {
-  inlineParams: true
-  connection: pg.ClientBase
-})
+  inlineParams?: boolean
+}
 
 interface STQResults {
   query: string,
@@ -371,7 +367,7 @@ interface STQResults {
 
 }
 
-function buildSelectTopQueries(options: STQOptions): STQResults {
+export function buildSelectTopQueries(options: STQOptions): STQResults {
   const filters = options.filters
   const orderBy = options.orderBy
   const selects = options.selects ?? ['*']
@@ -397,14 +393,14 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
       if (item.type === 'in' && _.isArray(item.value)) {
         const values = item.value.map((v, idx) => {
           return options.inlineParams
-            ? options.connection.escapeLiteral(v)
+            ? knex.raw('?', [v]).toQuery()
             : `$${paramIdx + idx}`
         })
         paramIdx += values.length
         return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${values.join(',')})`
       }
       const value = options.inlineParams
-        ? options.connection.escapeLiteral(item.value as string)
+        ? knex.raw('?', [item.value]).toQuery()
         : `$${paramIdx}`
       paramIdx += 1
       return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${value}`
@@ -546,7 +542,6 @@ export async function selectTopSql(
   selects = ["*"]
 ): Promise<string> {
   const version = await getVersion(conn)
-  const connection = await conn.pool.connect()
   const { query } = buildSelectTopQueries({
     table,
     offset,
@@ -557,9 +552,7 @@ export async function selectTopSql(
     schema,
     version,
     inlineParams: true,
-    connection,
   })
-  connection.release()
   return query
 }
 
