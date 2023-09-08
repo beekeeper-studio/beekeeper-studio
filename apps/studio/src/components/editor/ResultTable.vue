@@ -177,11 +177,9 @@
       },
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
-        return this.result.fields.map((column) => {
-          console.log('COLUMN: ', column);
-          console.log(column.name)
+        return this.result.fields.map((column, index) => {
           const result = {
-            title: column.name || 'Result',
+            title: column.name || `Result ${index}`,
             titleFormatter: 'plaintext',
             field: column.id,
             titleDownload: escapeHtml(column.name),
