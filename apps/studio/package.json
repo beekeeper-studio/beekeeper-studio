@@ -69,7 +69,7 @@
     "sql-formatter": "~10.7.2",
     "sql-query-identifier": "^2.2.0",
     "ssh2": "^1.14.0",
-    "tabulator-tables": "~5.4.1",
+    "tabulator-tables": "~5.5.2",
     "tinyduration": "^3.2.4",
     "typeface-roboto": "^0.0.75",
     "typeface-source-code-pro": "^1.1.3",

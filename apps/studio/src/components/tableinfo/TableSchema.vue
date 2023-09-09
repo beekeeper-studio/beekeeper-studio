@@ -217,7 +217,6 @@ export default Vue.extend({
           field: 'columnName',
           editor: vueEditor(NullableInputEditorVue),
           cellEdited: this.cellEdited,
-          headerFilter: true,
           tooltip: this.columnNameCellTooltip.bind(this),
           formatter: this.cellFormatter,
           editable: this.isCellEditable.bind(this, 'renameColumn'),

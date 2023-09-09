@@ -14,20 +14,6 @@
           class="flex flex-middle"
         >
           <div
-            class="filter-group"
-            style="margin-left: 0.2rem"
-          >
-            <!-- <button
-              type="button"
-              class="btn btn-flat btn-fab"
-              :class="{'btn-primary': !allColumnsSelected}"
-              :title="`Set column visibility (${hiddenColumnCount} hidden)`"
-              @click="showColumnFilterModal()"
-            >
-              <i class="material-icons-outlined">visibility</i>
-            </button> -->
-          </div>
-          <div
             v-if="filterMode === 'raw'"
             class="filter-group row gutter expand"
           >
