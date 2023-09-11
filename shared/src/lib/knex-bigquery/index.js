@@ -3,10 +3,10 @@
 const Promise = require('bluebird');
 const Client = require('knex/lib/client');
 
-const SchemaCompiler = require('./schema/compiler')
-const QueryCompiler = require('./query/querycompiler')
-const ColumnCompiler = require('./schema/columncompiler')
-const TableCompiler = require('./schema/tablecompiler')
+const SchemaCompiler = require('./schema/compiler').default
+const QueryCompiler = require('./query/querycompiler').default
+const ColumnCompiler = require('./schema/columncompiler').default
+const TableCompiler = require('./schema/tablecompiler').default
 /* eslint-enable */
 
 
@@ -16,6 +16,7 @@ class BigQueryClient extends Client {
   }
 
   schemaCompiler() {
+    console.log('COMPILER: ', SchemaCompiler);
     return new SchemaCompiler(this, ...arguments);
   }
 
