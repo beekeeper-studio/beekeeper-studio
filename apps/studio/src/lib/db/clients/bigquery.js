@@ -82,9 +82,37 @@ function configDatabase(server, database) {
 
 async function getTableKeys(conn, database, table) {
   const sql = `
-    
-  `
-  return []
+    SELECT
+      NULL as from_schema,
+      f.table_name as from_table,
+      f.column_name as from_column,
+      NULL as to_schema,
+      t.table_name as to_table,
+      t.column_name as to_column,
+      f.constraint_name,
+      NULL as update_rule,
+      NULL as delete_rule
+    FROM
+      ${wrapIdentifier(database)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as f
+    JOIN ${wrapIdentifier(database)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE as t
+    ON f.constraint_name = t.constraint_name
+    WHERE f.table_schema = '${escapeString(database)}'
+    AND f.table_name = '${escapeString(table)}'
+  `;
+
+  const data = await driverExecuteSingle(conn, { query: sql });
+
+  return data.rows.map((row) => ({
+    toTable: row.to_table,
+    toSchema: row.to_schema,
+    toColumn: row.to_column,
+    fromTable: row.from_table,
+    fromSchema: row.from_schema,
+    fromColumn: row.from_column,
+    constraintName: row.constraint_name,
+    onUpdate: row.update_rule,
+    onDelete: row.delete_rule
+  }));
 }
 
 async function getPrimaryKey(conn, database, table) {
@@ -99,7 +127,7 @@ async function getPrimaryKeys(conn, database, table) {
       use.ordinal_position as position
     FROM
       ${wrapIdentifier(database)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as use 
-    JOIN test.INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS con 
+    JOIN ${wrapIdentifier(database)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS con 
     ON use.constraint_catalog = con.constraint_catalog 
     AND use.constraint_schema = con.constraint_schema 
     AND use.constraint_name = con.constraint_name
@@ -269,12 +297,12 @@ export async function getTableProperties(client, db, table) {
     length,
     indexes,
     triggers, // BigQuery has no triggers
-    relations // BigQuery has no relations
+    relations
   ] = await Promise.all([
     getTableLength(client, db, table),
     null,
     null,
-    null,
+    getTableKeys(client, db, table)
   ])
   return {
     length, indexes, relations, triggers

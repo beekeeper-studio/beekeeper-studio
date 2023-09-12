@@ -992,7 +992,6 @@ export default Vue.extend({
       }
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
-      console.log('PRIMARY KEYS: ', rawPrimaryKeys)
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
 
 
