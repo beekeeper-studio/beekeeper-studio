@@ -107,6 +107,10 @@ export const timestampColumn = (name: string): TemplatedSchemaItem => ({
       dataType: 'timestamp',
       defaultValue: 'CURRENT_TIMESTAMP',
     },
+    bigquery: {
+      dataType: 'timestamp',
+      defaultValue: 'CURRENT_TIMESTAMP'
+    },
   }
 })
 
