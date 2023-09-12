@@ -10,6 +10,7 @@ import { BigQueryOptions } from '@/common/appdb/models/saved_connection';
 import { table, time } from 'console';
 import { data } from 'jquery';
 import { buildDeleteQueries, buildInsertQueries, buildUpdateQueries, buildInsertQuery, genericSelectTop, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, applyChangesSql } from './utils';
+import { wrapIdentifier } from './mysql';
 const log = rawLog.scope('bigquery')
 const logger = () => log
 
@@ -24,7 +25,7 @@ export default async function (server, database) {
   logger().debug('bigquery client created ', client)
 
   // light solution to test connection with with a simple query
-  const results = await executeQuery(client, { query: 'SELECT CURRENT_TIMESTAMP()' });
+  const results = await driverExecuteQuery(client, { query: 'SELECT CURRENT_TIMESTAMP()' });
   logger().debug("bigquery client connected")
 
   return {
@@ -38,10 +39,11 @@ export default async function (server, database) {
     listTableColumns: (db, table) => listTableColumns(client, db, table),
     getTableLength: (table) => getTableLength(client, database.database, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(client, database.database, table, offset, limit, orderBy, filters, selects),
-    getTableKeys: (db, table) => Promise.resolve([]),
-    getPrimaryKeys: (db, table) => Promise.resolve([]),
+    getTableKeys: (db, table) => getTableKeys(client, db, table),
+    getPrimaryKey: (db, table) => getPrimaryKey(client, db, table),
+    getPrimaryKeys: (db, table) => getPrimaryKeys(client, db, table),
     query: (queryText) => query(client, queryText),
-    executeQuery: (queryText) => executeQuery(client, queryText),
+    executeQuery: (queryText) => driverExecuteQuery(client, queryText),
     listDatabases: () => listDatasets(client),
     getTableProperties: (table) => getTableProperties(client, database.database, table),
     versionString: () => getVersionString(),
@@ -78,6 +80,43 @@ function configDatabase(server, database) {
   return config
 }
 
+async function getTableKeys(conn, database, table) {
+  const sql = `
+    
+  `
+  return []
+}
+
+async function getPrimaryKey(conn, database, table) {
+  const keys = await getPrimaryKeys(conn, database, table);
+  return keys.length === 1 ? keys[0].columnName : null;
+}
+
+async function getPrimaryKeys(conn, database, table) {
+  const query = `
+    SELECT
+      use.column_name as column_name,
+      use.ordinal_position as position
+    FROM
+      ${wrapIdentifier(database)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as use 
+    JOIN test.INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS con 
+    ON use.constraint_catalog = con.constraint_catalog 
+    AND use.constraint_schema = con.constraint_schema 
+    AND use.constraint_name = con.constraint_name
+    WHERE use.table_schema = '${escapeString(database)}'
+    AND use.table_name = '${escapeString(table)}'
+    AND con.constraint_type = 'PRIMARY KEY'`;
+
+  const data = await driverExecuteSingle(conn, { query });
+  if (data.rows) {
+    return data.rows.map((r) => ({
+      columnName: r.column_name,
+      position: r.position
+    }));
+  } else {
+    return []
+  }
+}
 
 function query(client, queryText) {
   logger().debug('bigQuery query: ' + queryText)
@@ -98,7 +137,7 @@ function query(client, queryText) {
         logger().debug("wait for executeQuery job.id: ", job.id)
         const data = await Promise.race([
           cancelable.wait(),
-          executeQuery(client, queryText, job),
+          driverExecuteQuery(client, queryText, job),
         ])
         return data
       } catch (err) {
@@ -166,8 +205,11 @@ function parseRowQueryResult(data) {
   }
 }
 
+async function driverExecuteSingle(conn, queries, job) {
+  return (await driverExecuteQuery(conn, queries, job))[0];
+}
 
-async function executeQuery(client, queries, job) {
+async function driverExecuteQuery(client, queries, job) {
   // Support passing a single query string and an object with params
   if (queries instanceof String) {
     queries = { query: queries }
@@ -263,7 +305,7 @@ export async function selectTop(client, db, table, offset, limit, orderBy, filte
   const columns = await listTableColumns(client, db, table)
   const bqTable = db + "." + table
   const queries = buildSelectTopQuery(bqTable, offset, limit, orderBy, filters, 'total', columns, selects)
-  const queriesResult = await executeQuery(client, queries)
+  const queriesResult = await driverExecuteQuery(client, queries)
   const data = queriesResult[0]
   const rowCount = Number(data.rowCount)
   const fields = Object.keys(data.rows[0] || {})
