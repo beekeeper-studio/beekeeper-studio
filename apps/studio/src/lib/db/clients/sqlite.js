@@ -16,7 +16,7 @@ import { makeString } from '@/common/utils';
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
-const knex = knexlib({
+export const knex = knexlib({
   client: 'better-sqlite3',
   // silence the "sqlite does not support inserting default values" warnings on every insert
   useNullAsDefault: true,

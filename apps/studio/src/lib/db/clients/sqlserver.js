@@ -29,7 +29,7 @@ const log = logRaw.scope('sql-server')
 const logger = () => log;
 const D = SqlServerData
 const defaultSchema = 'dbo'
-const knex = knexlib({
+export const knex = knexlib({
   client: 'mssql'
 })
 const mmsqlErrors = {

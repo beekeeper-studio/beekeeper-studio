@@ -102,8 +102,11 @@ export const timestampColumn = (name: string): TemplatedSchemaItem => ({
     redshift: {
       dataType: 'timestamp',
       defaultValue: 'GETDATE()'
-    }
-
+    },
+    oracle: {
+      dataType: 'timestamp',
+      defaultValue: 'CURRENT_TIMESTAMP',
+    },
   }
 })
 

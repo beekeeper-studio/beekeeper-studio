@@ -1,7 +1,4 @@
 import _ from 'lodash'
-import knexlib from 'knex'
-
-const knex = knexlib({ client: 'pg' })
 
 export default {
     methods: {
@@ -16,16 +13,9 @@ export default {
               ];
             */
           const columnNamesOnly = columns.map((c) => c.field)
-          return data.rows.map((row) => _
-            .chain(row)
-            .pick(columnNamesOnly)
-            .transform((result, val, key) => {
-              result[key] = Array.isArray(val)
-                ? knex.raw('?', [val]).toQuery().slice(1, -1)
-                : val
-            }, {})
-            .value()
-          )
+          return data.rows.map((row) => {
+          return _.pick(row, columnNamesOnly)
+          })
         },
         extractColumns(data) {
             // columns here

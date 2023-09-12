@@ -64,13 +64,15 @@ export class SqlExporter extends Export {
     return ""
   }
 
-  formatRow(rowArray: any): string {
+  formatRow(rowArray: any, dataTypes: Record<string, string> = {}): string {
     const row = this.rowToObject(rowArray)
     // error found when attemping to copy over an array into a JSON field https://github.com/beekeeper-studio/beekeeper-studio/issues/1647
     // which is an issue with Knex itself https://github.com/knex/knex/issues/5430
     for (const r in row) {
       if (Array.isArray(row[r])) {
-        row[r] = JSON.stringify(row[r])
+        row[r] = dataTypes[r] === 'json'
+          ? JSON.stringify(row[r])
+          : this.knex.raw('?', [row[r]]).toQuery().slice(1, -1)
       }
     }
 

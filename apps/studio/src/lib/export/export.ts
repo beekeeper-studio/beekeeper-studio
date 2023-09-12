@@ -53,7 +53,7 @@ export abstract class Export {
   abstract getHeader(columns: TableColumn[]): Promise<string>
   abstract getFooter(): string
   // do not add newlines / row separators
-  abstract formatRow(data: any[]): string
+  abstract formatRow(data: any[], dataTypes?: Record<string, string>): string
 
   protected rowToObject(row: any[]): Record<string, any> {
     const columns = this.dedupedColumns?.length ?  this.dedupedColumns : row.map((_r, i) => {
@@ -179,8 +179,12 @@ export abstract class Export {
         rows = await this.cursor?.read()
         for (let rI = 0; rI < rows.length; rI++) {
           const row = rows[rI];
+          const dataTypes = this.columns?.reduce(
+            (acc, c) => ({ ...acc, [c.columnName]: c.dataType }),
+            {}
+          ) || {}
           const mutated = Mutators.mutateRow(row, this.columns?.map((c) => c.dataType), this.preserveComplex, dialectFor(this.connection.connectionType))
-          const formatted = this.formatRow(mutated)
+          const formatted = this.formatRow(mutated, dataTypes)
 
           // needsSeparator allows us to skip adding the rowSeparator
           // on the FINAL row of the file

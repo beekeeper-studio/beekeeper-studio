@@ -22,4 +22,29 @@ describe('sql exporter', () => {
     const result = exporter.formatRow(input)
     expect(result).toBe(`insert into "table" ("col_1") values ('a''\nb')`)
   })
+
+  it("Should generate an insert with array columns", () => {
+    const input = ['a', ['b', 'c']]
+    const result = exporter.formatRow(input)
+    expect(result).toBe(`insert into "table" ("col_1", "col_2") values ('a', '{"b","c"}')`)
+  })
+
+  it("Should generate an insert with JSON columns (MySQL)", () => {
+    const mysqlExporter = new SqlExporter(
+      "./tmp/sql.export",
+      { connectionType: "mysql" },
+      { name: "table" },
+      "",
+      "",
+      [],
+      {},
+      {}
+    )
+    const row = ["a", { b: "c" }, [{ d: "e" }, { f: "g" }]]
+    const dataTypes = { col_1: "varchar", col_2: "json", col_3: "json" }
+    const result = mysqlExporter.formatRow(row, dataTypes)
+    expect(result).toBe(
+      `insert into \`table\` (\`col_1\`, \`col_2\`, \`col_3\`) values ('a', '{\\"b\\":\\"c\\"}', '[{\\"d\\":\\"e\\"},{\\"f\\":\\"g\\"}]')`
+    )
+  });
 });

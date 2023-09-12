@@ -1,11 +1,20 @@
 // Copyright (c) 2015 The SQLECTRON Team
 
-import mysql from './mysql';
-import postgresql from './postgresql';
-import sqlserver from './sqlserver';
-import sqlite from './sqlite';
+import mysql, { knex as mysqlKnex } from './mysql';
+import postgresql, { knex as postgresKnex } from './postgresql';
+import sqlserver, { knex as sqlServerKnex } from './sqlserver';
+import sqlite, { knex as sqliteKnex } from './sqlite';
 import cassandra from './cassandra';
+import { Dialect } from '@shared/lib/dialects/models';
+import { Knex } from 'knex';
 
+export function knexOf(dialect: Dialect): Knex | undefined {
+  if (dialect === 'mysql') return mysqlKnex
+  if (dialect === 'postgresql') return postgresKnex
+  if (dialect === 'sqlserver') return sqlServerKnex
+  if (dialect === 'sqlite') return sqliteKnex
+  return undefined
+}
 
 export function findClient(key: string): Client | undefined {
   const client = CLIENTS.find((cli) => cli.key === key);

@@ -1,9 +1,9 @@
 import _ from 'lodash'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift']
-const ultimateDialects = []
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'oracle'] as const
+const ultimateDialects = [] as const
 
-export const Dialects = [...communityDialects, ...ultimateDialects] as const
+export const Dialects = [...communityDialects, ...ultimateDialects]
 
 
 export const SpecialTypes = ['autoincrement']
@@ -13,7 +13,6 @@ export function dialectFor(s: string): Dialect | null {
   switch (s) {
     case 'cockroachdb':
       return 'postgresql'
-      break;
     case 'mariadb':
       return 'mysql'
     case 'mssql':
@@ -24,7 +23,7 @@ export function dialectFor(s: string): Dialect | null {
 }
 
 
-const UltimateDialectTitles: {[K in Dialect]: string} = {
+const UltimateDialectTitles: {[K in typeof ultimateDialects[number]]: string} = {
 
 }
 
@@ -34,11 +33,12 @@ export const DialectTitles: {[K in Dialect]: string} = {
   sqlserver: "SQL Server",
   redshift: "Amazon Redshift",
   sqlite: "SQLite",
+  oracle: "Oracle",
   ...UltimateDialectTitles
 
 }
 
-export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'sqlite3', 'redshift', 'mysql', 'oracledb']
+export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'sqlite3', 'redshift', 'mysql', 'oracledb'] as const
 export type KnexDialect = typeof KnexDialects[number]
 
 export function KnexDialect(d: Dialect): KnexDialect {
@@ -47,6 +47,7 @@ export function KnexDialect(d: Dialect): KnexDialect {
   if (d === 'oracle') return 'oracledb'
   return d as KnexDialect
 }
+
 // REF: https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md#options
 export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite'
 export function FormatterDialect(d: Dialect): FormatterDialect {

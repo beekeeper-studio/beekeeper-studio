@@ -18,7 +18,7 @@ import { ClientError } from '../client';
 const log = rawLog.scope('mysql')
 const logger = () => log
 
-const knex = knexlib({ client: 'mysql2' })
+export const knex = knexlib({ client: 'mysql2' })
 
 const mysqlErrors = {
   EMPTY_QUERY: 'ER_EMPTY_QUERY',

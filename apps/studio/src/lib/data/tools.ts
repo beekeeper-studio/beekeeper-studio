@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import { Dialect } from '@shared/lib/dialects/models'
+import { knexOf } from '@/lib/db/clients';
 type JsonFriendly = string | boolean | number | null | JsonFriendly[] | Record<string, any>
 
 function dec28bits(num: any): string {
@@ -21,7 +22,7 @@ export const Mutators = {
     if (dataType && dataType.startsWith('bit')) {
       return this.bitMutator.bind(this, dialect)
     }
-    return this.genericMutator.bind(this)
+    return this.genericMutator.bind(this, dataType, dialect)
   },
 
 
@@ -40,11 +41,17 @@ export const Mutators = {
    * @param  {any} value
    * @returns JsonFriendly
    */
-  genericMutator(value: any, preserveComplex = false): JsonFriendly {
-    const mutate = Mutators.genericMutator
+  genericMutator(dataType: string, dialect: Dialect, value: any, preserveComplex = false): JsonFriendly {
+    const mutate = Mutators.genericMutator.bind(this, dataType, dialect)
     if (_.isBuffer(value)) return value.toString('hex')
     if (_.isDate(value)) return value.toISOString()
-    if (_.isArray(value)) return preserveComplex? value.map((v) => mutate(v, preserveComplex)) : JSON.stringify(value)
+    if (_.isArray(value)) {
+      if (preserveComplex) return value.map((v) => mutate(v, preserveComplex))
+      if (dataType === 'json') return JSON.stringify(value)
+      // slice to remove quotes
+      const literal = knexOf(dialect)?.raw('?', [value]).toQuery().slice(1, -1)
+      return literal || JSON.stringify(value)
+    }
     if (_.isObject(value)) return preserveComplex? _.mapValues(value, (v) => mutate(v, preserveComplex)) : JSON.stringify(value)
     if (_.isBoolean(value)) return value
     return value

@@ -33,7 +33,7 @@ function isConnection(x: any): x is HasConnection {
 const log = logRaw.scope('postgresql')
 const logger = () => log
 
-const knex = knexlib({ client: 'pg'})
+export const knex = knexlib({ client: 'pg'})
 
 const pgErrors = {
   CANCELED: '57014',
