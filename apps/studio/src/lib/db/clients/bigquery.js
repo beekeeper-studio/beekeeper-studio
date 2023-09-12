@@ -96,11 +96,17 @@ async function getTableKeys(conn, database, table) {
       ${wrapIdentifier(database)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as f
     JOIN ${wrapIdentifier(database)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE as t
     ON f.constraint_name = t.constraint_name
+    JOIN ${wrapIdentifier(database)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS as con
+    ON f.constraint_catalog = con.constraint_catalog
+    AND f.constraint_schema = con.constraint_schema
+    AND f.constraint_name = con.constraint_name
     WHERE f.table_schema = '${escapeString(database)}'
     AND f.table_name = '${escapeString(table)}'
+    AND con.constraint_type = 'FOREIGN KEY'
   `;
 
   const data = await driverExecuteSingle(conn, { query: sql });
+  console.log('DATA: ', data);
 
   return data.rows.map((row) => ({
     toTable: row.to_table,
