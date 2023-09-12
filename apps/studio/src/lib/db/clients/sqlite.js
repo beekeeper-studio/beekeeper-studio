@@ -72,6 +72,7 @@ export default async function (server, database) {
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize) => selectTopStream(conn, db, table, orderBy, filters, chunkSize),
+    selectTopSql: (table, offset, limit, orderBy, filters, schema, selects) => selectTopSql(table, offset, limit, orderBy, filters, schema, selects),
     queryStream: (db, query, chunkSize) => queryStream(conn, db, query, chunkSize),
     applyChangesSql: (changes) => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
@@ -166,6 +167,28 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
   }
 }
 
+export async function selectTopSql(
+  table,
+  offset,
+  limit,
+  orderBy,
+  filters,
+  schema,
+  selects
+) {
+  const { query, params } = buildSelectTopQuery(
+    table,
+    offset,
+    limit,
+    orderBy,
+    filters,
+    undefined,
+    undefined,
+    selects
+  );
+  return knex.raw(query, params).toQuery();
+}
+
 export async function queryStream(conn, db, query, chunkSize) {
   return {
     cursor: new SqliteCursor(conn, query, [], chunkSize)
@@ -252,7 +275,7 @@ export async function applyChanges(conn, changes) {
 
 export async function updateValues(cli, updates) {
   const commands = updates.map(update => {
-    const params = [update.value];
+    const params = [_.isBoolean(update.value) ? _.toInteger(update.value) : update.value];
     const whereList = []
     update.primaryKeys.forEach(({ column, value }) => {
       whereList.push(`${wrapIdentifier(column)} = ?`);

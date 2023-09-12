@@ -22,7 +22,8 @@ export const ConnectionTypes = [
   { name: 'Amazon Redshift', value: 'redshift' },
   { name: 'CockroachDB', value: 'cockroachdb' },
   { name: 'Oracle', value: 'other' },
-  { name: 'Cassandra', value: 'other' }
+  { name: 'Cassandra', value: 'other' },
+  { name: 'BigQuery', value: 'bigquery' },
 ]
 
 export const keymapTypes = [
@@ -38,6 +39,12 @@ export interface RedshiftOptions {
   clusterIdentifier?: string;
   databaseGroup?: string;
   tokenDurationSeconds?: number;
+}
+
+export interface BigQueryOptions {
+  iamAuthenticationEnabled?: boolean
+  keyFilename?: string;
+  projectId?: string;
 }
 
 export interface ConnectionOptions {
@@ -99,6 +106,8 @@ export class DbConnectionBase extends ApplicationEntity {
       return 1433
     } else if (this.connectionType === 'cockroachdb') {
       return 26257
+    } else if (this._connectionType === 'bigquery') {
+      return 443
     }
     return null
   }
@@ -184,6 +193,9 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({ type: 'simple-json', nullable: false })
   redshiftOptions: RedshiftOptions = {}
+
+  @Column({ type: 'simple-json', nullable: false })
+  bigQueryOptions: BigQueryOptions = {}
 
   // this is only for SQL Server.
   @Column({ type: 'boolean', nullable: false })

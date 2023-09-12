@@ -30,4 +30,5 @@ export interface IMenuActionHandler {
   disconnect: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   addBeekeeper: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   upgradeModal: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  checkForUpdates: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
 }

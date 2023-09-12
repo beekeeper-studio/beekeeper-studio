@@ -1,6 +1,7 @@
 import { RedshiftOptions } from "../appdb/models/saved_connection"
+import { BigQueryOptions } from "../appdb/models/saved_connection"
 
-export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra'
+export type ConnectionType = 'sqlite' | 'sqlserver' | 'redshift' | 'cockroachdb' | 'mysql' | 'postgresql' | 'mariadb' | 'cassandra' | 'bigquery'
 export type SshMode = null | 'agent' | 'userpass' | 'keyfile'
 
 export interface ISimpleConnection {
@@ -31,6 +32,7 @@ export interface ISimpleConnection {
   trustServerCertificate?: boolean
   options?: any
   redshiftOptions?: RedshiftOptions
+  bigQueryOptions?: BigQueryOptions
 }
 
 export interface IConnection extends ISimpleConnection {

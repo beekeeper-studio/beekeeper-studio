@@ -192,6 +192,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getTableLength: (table: string, schema: string) => getTableLength(conn, table, schema),
     selectTop: (table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = defaultSchema, selects: string[] = ['*']) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (database: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema: string = defaultSchema) => selectTopStream(conn, database, table, orderBy, filters, chunkSize, schema),
+    selectTopSql: (table, offset, limit, orderBy, filters, schema = defaultSchema, selects = ['*']) => selectTopSql(conn, table, offset, limit, orderBy, filters, schema, selects),
     queryStream: (database: string, query: string, chunkSize: number) => queryStream(conn, database, query, chunkSize),
     applyChangesSql: (changes: TableChanges): string => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert: TableInsert): Promise<string> => getInsertQuery(conn, database.database, tableInsert),
@@ -346,7 +347,7 @@ export async function listMaterializedViews(conn: HasPool, filter: FilterOptions
   }
 }
 
-interface STQOptions {
+export interface STQOptions {
   table: string,
   orderBy?: OrderBy[],
   filters?: TableFilter[] | string,
@@ -356,6 +357,7 @@ interface STQOptions {
   version: VersionInfo
   forceSlow?: boolean,
   selects?: string[],
+  inlineParams?: boolean
 }
 
 interface STQResults {
@@ -365,7 +367,7 @@ interface STQResults {
 
 }
 
-function buildSelectTopQueries(options: STQOptions): STQResults {
+export function buildSelectTopQueries(options: STQOptions): STQResults {
   const filters = options.filters
   const orderBy = options.orderBy
   const selects = options.selects ?? ['*']
@@ -374,9 +376,9 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
   let params: (string | string[])[] = []
 
   if (orderBy && orderBy.length > 0) {
-    orderByString = "order by " + (orderBy.map((item) => {
+    orderByString = "ORDER BY " + (orderBy.map((item) => {
       if (_.isObject(item)) {
-        return `${wrapIdentifier(item.field)} ${item.dir}`
+        return `${wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`
       } else {
         return wrapIdentifier(item)
       }
@@ -389,15 +391,19 @@ function buildSelectTopQueries(options: STQOptions): STQResults {
     let paramIdx = 1
     filterString = "WHERE " + filters.map((item) => {
       if (item.type === 'in' && _.isArray(item.value)) {
-        const values = item.value.map((_v, idx) => {
-          return `$${paramIdx + idx}`
+        const values = item.value.map((v, idx) => {
+          return options.inlineParams
+            ? knex.raw('?', [v]).toQuery()
+            : `$${paramIdx + idx}`
         })
         paramIdx += values.length
-        return `${wrapIdentifier(item.field)} ${item.type} (${values.join(',')})`
+        return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${values.join(',')})`
       }
-      const value = `$${paramIdx}`
+      const value = options.inlineParams
+        ? knex.raw('?', [item.value]).toQuery()
+        : `$${paramIdx}`
       paramIdx += 1
-      return `${wrapIdentifier(item.field)} ${item.type} ${value}`
+      return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${value}`
     }).join(" AND ")
 
     params = filters.flatMap((item) => {
@@ -525,6 +531,31 @@ async function selectTopStream(
   }
 }
 
+export async function selectTopSql(
+  conn: HasPool,
+  table: string,
+  offset: number,
+  limit: number,
+  orderBy: OrderBy[],
+  filters: TableFilter[] | string,
+  schema = "public",
+  selects = ["*"]
+): Promise<string> {
+  const version = await getVersion(conn)
+  const { query } = buildSelectTopQueries({
+    table,
+    offset,
+    limit,
+    orderBy,
+    filters,
+    selects,
+    schema,
+    version,
+    inlineParams: true,
+  })
+  return query
+}
+
 async function queryStream(
   conn: HasPool,
   database: string,
@@ -639,11 +670,11 @@ export async function listTableColumns(
       column_default,
       CASE
         WHEN character_maximum_length is not null  and udt_name != 'text' 
-          THEN CONCAT(udt_name, concat('(', concat(character_maximum_length::varchar(255), ')')))
+          THEN udt_name || '(' || character_maximum_length::varchar(255) || ')'
         WHEN numeric_precision is not null 
-        	THEN CONCAT(udt_name, concat('(', concat(numeric_precision::varchar(255),',',numeric_scale::varchar(255), ')')))
+        	THEN udt_name || '(' || numeric_precision::varchar(255) || ',' || numeric_scale::varchar(255) || ')'
         WHEN datetime_precision is not null AND udt_name != 'date' THEN
-          CONCAT(udt_name, concat('(', concat(datetime_precision::varchar(255), ')')))
+          udt_name || '(' || datetime_precision::varchar(255) || ')'
         ELSE udt_name
       END as data_type
     FROM information_schema.columns

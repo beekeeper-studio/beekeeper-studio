@@ -2,6 +2,15 @@
   <div class="table-info-table view-only">
     <div class="table-info-table-wrap">
       <div class="center-wrap">
+        <div
+          class="notices"
+          v-if="notice"
+        >
+          <div class="alert alert-info">
+            <i class="material-icons-outlined">info</i>
+            <div>{{ notice }}</div>
+          </div>
+        </div>
         <div class="table-subheader">
           <div class="table-title">
             <h2>Triggers</h2>
@@ -32,6 +41,8 @@ import {Tabulator, TabulatorFull} from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
 import globals from '../../common/globals'
 import StatusBar from '../common/StatusBar.vue'
+import { mapGetters } from 'vuex'
+
 export default {
   components: {
     StatusBar,
@@ -44,6 +55,10 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(['dialectData']),
+    notice() {
+      return this.dialectData.notices?.infoTriggers;
+    },
     tableColumns() {
       return this.connection.connectionType === 'sqlite' ?
         this.sqliteTableColumns : this.normalTableColumns

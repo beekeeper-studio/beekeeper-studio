@@ -32,6 +32,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.redshiftOptions = other.redshiftOptions
       this.socketPath = other.socketPath
       this.socketPathEnabled = other.socketPathEnabled
+      this.bigQueryOptions = other.bigQueryOptions
     }
 
   }

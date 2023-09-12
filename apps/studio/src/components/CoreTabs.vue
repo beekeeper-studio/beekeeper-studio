@@ -27,12 +27,19 @@
         />
       </Draggable>
       <!-- </div> -->
-      <span class="actions">
+      <span class="actions expand">
         <a
           @click.prevent="createQuery(null)"
           class="btn-fab add-query"
         ><i class=" material-icons">add_circle</i></a>
       </span>
+      <a
+        href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
+        class="btn btn-brand btn-icon btn-upgrade"
+        v-tooltip="'Full version includes: backup/restore, data import, larger query results, and more'"
+      >
+        <i class="material-icons">stars</i> Upgrade
+      </a>
     </div>
     <div class="tab-content">
       <div class="empty flex-col  expand">
@@ -198,14 +205,7 @@ import TabWithTable from './common/TabWithTable.vue';
 import TabIcon from './tab/TabIcon.vue'
 import { DatabaseEntity } from "@/lib/db/models"
 import PendingChangesButton from './common/PendingChangesButton.vue'
-
-function safeFormat(value, options) {
-  try {
-    return format(value, options)
-  } catch(ex) {
-    return value
-  }
-}
+import { safeSqlFormat as safeFormat } from '@/common/utils';
 
 export default Vue.extend({
   props: ['connection'],

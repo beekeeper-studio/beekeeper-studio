@@ -1,6 +1,8 @@
 // @import "~codemirror/theme/monokai";
 // @import "./app/vendor/codemirror";
 
+$row-handle-selected: lighten($query-editor-bg, 10%);
+
 & {
   background: $theme-bg;
   color: $text;
@@ -96,7 +98,7 @@
         }
       }
     }
-    
+
     // New Pagination
     .tabulator-paginator > div {
       input[type="number"] {

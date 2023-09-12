@@ -8,6 +8,7 @@ volumes:
   psql13:
   mariadb:
   cockroachdb:
+  bigquery:
 
 services:
 
@@ -101,5 +102,12 @@ services:
     ports:
       - 26257:26257
     command: start-single-node --insecure
-
-
+  bigquery:
+    image: ghcr.io/goccy/bigquery-emulator:latest
+    volumes:
+      - ./dev/docker_bigquery:/data
+      - ./dev/docker_bigquery:/docker_init
+    ports:
+      - 9050:9050
+      - 9060:9060
+    entrypoint: sh -c 'chmod +x /docker_init/data.sh; /docker_init/data.sh'

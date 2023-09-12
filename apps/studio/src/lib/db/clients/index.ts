@@ -5,6 +5,7 @@ import postgresql, { knex as postgresKnex } from './postgresql';
 import sqlserver, { knex as sqlServerKnex } from './sqlserver';
 import sqlite, { knex as sqliteKnex } from './sqlite';
 import cassandra from './cassandra';
+import bigquery from './bigquery.js';
 import { Dialect } from '@shared/lib/dialects/models';
 import { Knex } from 'knex';
 
@@ -133,6 +134,21 @@ export const CLIENTS: ClientConfig[] = [
       'cancelQuery',
     ],
   },
+  {
+    key: 'bigquery',
+    name: 'BigQuery',
+    defaultPort: 443,
+    disabledFeatures: [
+      'server:ssl',
+      'server:socketPath',
+      'server:user',
+      'server:password',
+      'server:schema',
+      'server:domain',
+      'server:ssh',
+      'scriptCreateTable',
+    ],
+  },
 ];
 
 
@@ -144,5 +160,6 @@ export default {
   cassandra,
   redshift: postgresql,
   mariadb: mysql,
-  cockroachdb: postgresql
+  cockroachdb: postgresql,
+  bigquery,
 };

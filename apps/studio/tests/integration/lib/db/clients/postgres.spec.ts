@@ -6,6 +6,9 @@ import { TableInsert } from '../../../../../src/lib/db/models'
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
+import { buildSelectTopQueries, STQOptions } from '../../../../../src/lib/db/clients/postgresql'
+import { safeSqlFormat } from '@/common/utils';
+
 const TEST_VERSIONS = [
   { version: '9.3', socket: false},
   { version: '9.4', socket: false},
@@ -297,6 +300,47 @@ function testWith(dockerTag, socket = false) {
       }
     })
     // END regression tests for Bug #1583
+
+    it("should build select top query with inline parameters", async () => {
+      const fmt = (sql: string) =>
+        safeSqlFormat(sql, { language: 'postgresql' })
+
+      const options: STQOptions = {
+        table: "jobs",
+        offset: 0,
+        limit: 100,
+        orderBy: [{ field: "hourly_rate", dir: "ASC" }],
+        filters: [
+          {
+            field: "job_name",
+            type: "in",
+            value: ["Programmer", "Surgeon's Assistant"],
+          },
+        ],
+        selects: ["*"],
+        schema: "public",
+        version: {
+          version: "",
+          isPostgres: true,
+          isCockroach: false,
+          isRedshift: false,
+          number: 0,
+          hasPartitions: false,
+        },
+      }
+
+      const { query: defaultQuery } = buildSelectTopQueries(options)
+      const { query: inlineParams } = buildSelectTopQueries({
+        ...options,
+        inlineParams: true
+      })
+
+      const expectedDefault = `SELECT * FROM "public"."jobs" WHERE "job_name" IN ($1,$2) ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`
+      const expectedInline = `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`
+
+      expect(fmt(defaultQuery)).toBe(fmt(expectedDefault))
+      expect(fmt(inlineParams)).toBe(fmt(expectedInline))
+    });
 
     describe("Common Tests", () => {
       runCommonTests(() => util)
