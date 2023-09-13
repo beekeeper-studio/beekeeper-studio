@@ -10,20 +10,20 @@ const supportsLength = [];
 export const BigQueryData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t))),
   constraintActions: [],
-  wrapIdentifier: (_id: string) => ``,
+  wrapIdentifier: (id: string) => id ? `\`${id.replaceAll(/`/g, '\\`')}\`` : null,
   friendlyNormalizedIdentifier: friendlyNormalizedIdentifier,
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
   unwrapIdentifier: (s) => s,
   disabledFeatures: {
-    tableTable: true,
+    // tableTable: true,
     constraints: {
       onUpdate: true,
       onDelete: true
     },
     // these disabled features are just until we have knex support.
     alter: {
-      everything: true
+      // everything: true
     },
   },
   notices: {

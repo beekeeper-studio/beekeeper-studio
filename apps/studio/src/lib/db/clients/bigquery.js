@@ -11,8 +11,9 @@ import { table, time } from 'console';
 import { data } from 'jquery';
 import { buildDeleteQueries, buildInsertQueries, buildUpdateQueries, buildInsertQuery, genericSelectTop, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, applyChangesSql } from './utils';
 import { wrapIdentifier } from './mysql';
-import { BigQueryClient } from '@shared/lib/knex-bigquery';
-import knexlib from 'knex';
+import { BigQueryClient } from '@shared/lib/knex-bigquery'; import knexlib from 'knex';
+import { Connection } from 'typeorm';
+import { BigQueryChangeBuilder } from '@shared/lib/sql/change_builder/BigQueryChangeBuilder';
 const log = rawLog.scope('bigquery')
 const logger = () => log
 
@@ -64,6 +65,10 @@ export default async function (server, database) {
     listDatabases: () => listDatasets(client),
     getTableProperties: (table) => getTableProperties(client, database.database, table),
     versionString: () => getVersionString(),
+
+    // alter table
+    alterTableSql: (change) => alterTableSql(client, change),
+    alterTable: (change) => alterTable(client, change),
     // db creation
     // TODO: determine if bigquery has different charsets
     listCharsets: () => [],
@@ -123,7 +128,6 @@ async function getTableKeys(conn, database, table) {
   `;
 
   const data = await driverExecuteSingle(conn, { query: sql });
-  console.log('DATA: ', data);
 
   return data.rows.map((row) => ({
     toTable: row.to_table,
@@ -279,6 +283,34 @@ async function driverExecuteQuery(client, queries, job) {
   return results.map(parseRowQueryResult)
 }
 
+async function executeWithTransaction(conn, queryArgs) {
+  let fullQuery = joinQueries([
+    'BEGIN TRANSACTION', queryArgs.query, 'COMMIT TRANSACTION;', `
+      EXCEPTION WHEN ERROR THEN
+      ROLLBACK TRANSACTION;
+      RAISE USING MESSAGE = @@error.message;
+    `,
+    'END',
+    'CALL BQ.ABORT_SESSION()',
+  ]);
+  // if there's a ; after BEGIN, BQ gets really mad
+  fullQuery = 'BEGIN\n' + fullQuery;
+  console.log('QUERY', fullQuery);
+  return await runWithConnection(conn, async (connection) => {
+    let response;
+    try {
+      return await driverExecuteQuery(connection, { ...queryArgs, query: fullQuery, createSession: true });
+    } catch (ex) {
+      log.error("executeWithTransaction", ex);
+      throw ex;
+    }
+  })
+}
+
+async function runWithConnection(conn, run) {
+  await run(conn);
+}
+
 
 export async function disconnect(client) {
   return Promise.resolve()
@@ -335,6 +367,17 @@ export async function getTableProperties(client, db, table) {
   return {
     length, indexes, relations, triggers
   }
+}
+
+export async function alterTableSql(conn, changes) {
+  const builder = new BigQueryChangeBuilder(changes.table);
+  return builder.alterTable(changes);
+}
+
+export async function alterTable(conn, changes) {
+  const sql = await alterTableSql(conn, changes);
+
+  await executeWithTransaction(conn, { query: sql });
 }
 
 
