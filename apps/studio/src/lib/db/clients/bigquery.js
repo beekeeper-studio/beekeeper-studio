@@ -11,8 +11,12 @@ import { table, time } from 'console';
 import { data } from 'jquery';
 import { buildDeleteQueries, buildInsertQueries, buildUpdateQueries, buildInsertQuery, genericSelectTop, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, applyChangesSql } from './utils';
 import { wrapIdentifier } from './mysql';
+import { BigQueryClient } from '@shared/lib/knex-bigquery';
+import knexlib from 'knex';
 const log = rawLog.scope('bigquery')
 const logger = () => log
+
+let knex;
 
 /**
  * To keep compatibility with the other clients we treat dataset as database.
@@ -23,6 +27,17 @@ export default async function (server, database) {
   const dbConfig = configDatabase(server, database)
   client = new bq.BigQuery(dbConfig)
   logger().debug('bigquery client created ', client)
+
+  const apiEndpoint = dbConfig.host !== "" && dbConfig.port !== "" ? `http://${dbConfig.host}:${dbConfig.port}` : undefined;
+  knex = knexlib({
+        client: BigQueryClient,
+        connection: {
+          projectId: dbConfig.bigQueryOptions?.projectId,
+          keyFilename: dbConfig.bigQueryOptions?.keyFilename,
+          // for testing
+          apiEndpoint
+        }
+      });
 
   // light solution to test connection with with a simple query
   const results = await driverExecuteQuery(client, { query: 'SELECT CURRENT_TIMESTAMP()' });
@@ -43,6 +58,8 @@ export default async function (server, database) {
     getPrimaryKey: (db, table) => getPrimaryKey(client, db, table),
     getPrimaryKeys: (db, table) => getPrimaryKeys(client, db, table),
     query: (queryText) => query(client, queryText),
+    applyChanges: (changes) => applyChanges(client, changes),
+    applyChangesSql: (changes) => applyChangesSql(changes, knex),
     executeQuery: (queryText) => driverExecuteQuery(client, queryText),
     listDatabases: () => listDatasets(client),
     getTableProperties: (table) => getTableProperties(client, database.database, table),
@@ -197,6 +214,11 @@ function query(client, queryText) {
       }
     },
   }
+}
+
+async function applyChanges(conn, changes) {
+  let results = []
+
 }
 
 
@@ -365,3 +387,4 @@ export async function createDatabase(client, databaseName) {
   const [dataset] = await client.createDataset(databaseName, options);
   logger().debug(`Dataset ${dataset.id} created.`);
 }
+

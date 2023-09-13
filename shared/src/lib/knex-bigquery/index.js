@@ -16,7 +16,6 @@ class BigQueryClient extends Client {
   }
 
   schemaCompiler() {
-    console.log('COMPILER: ', SchemaCompiler);
     return new SchemaCompiler(this, ...arguments);
   }
 

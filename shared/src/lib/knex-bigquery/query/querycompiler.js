@@ -7,3 +7,5 @@ class BQ_QueryCompiler extends QueryCompiler {
     I'm putting this structure in now just in case we want to improve it.
   */
 }
+
+export default BQ_QueryCompiler;
