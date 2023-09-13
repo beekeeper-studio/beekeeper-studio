@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'oracle', 'bigquery'] as const
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
 const ultimateDialects = [] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects]
@@ -33,19 +33,17 @@ export const DialectTitles: {[K in Dialect]: string} = {
   sqlserver: "SQL Server",
   redshift: "Amazon Redshift",
   sqlite: "SQLite",
-  oracle: "Oracle",
   bigquery: "BigQuery",
   ...UltimateDialectTitles
 
 }
 
-export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'sqlite3', 'redshift', 'mysql', 'oracledb'] as const
+export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'sqlite3', 'redshift', 'mysql'] as const
 export type KnexDialect = typeof KnexDialects[number]
 
 export function KnexDialect(d: Dialect): KnexDialect {
   if (d === 'sqlserver') return 'mssql'
   if (d === 'sqlite') return 'sqlite3'
-  if (d === 'oracle') return 'oracledb'
   return d as KnexDialect
 }
 
@@ -55,7 +53,6 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (!d) return 'mysql'
   if (d === 'sqlserver') return 'tsql'
   if (d === 'sqlite') return 'sqlite'
-  if (d === 'oracle') return 'plsql'
   if (d === 'postgresql') return 'postgresql'
   if (d === 'redshift') return 'redshift'
   return 'mysql' // we want this as the default
