@@ -49,10 +49,17 @@ export default {
           }
         },
         {
-          name: "Export",
+          name: "Export To File",
           slug: 'export',
           handler: ({ item }) => {
             this.trigger(AppEvent.beginExport, { table: item })
+          }
+        },
+        {
+          name: "Import From CSV",
+          slug: 'import',
+          handler: () => {
+            this.$root.$emit(AppEvent.upgradeModal)
           }
         },
         {

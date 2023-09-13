@@ -78,22 +78,22 @@
       >
         No Columns
       </p>
-      <span
+      <p
         v-else-if="table.columns.length > 0"
         :key="c.columnName"
         v-for="(c, i) in table.columns"
         class="sub-item"
-      >
+        >
         <span
-          class="title truncate"
-          ref="title"
-          @click="selectColumn(i)"
-        >{{ c.columnName }}</span>
-        <span
-          class="badge"
-          :class="c.dataType"
-        ><span>{{ c.dataType }}</span></span>
-      </span>
+            class="title truncate"
+            ref="title"
+            @click="selectColumn(i)"
+          >{{ c.columnName }}</span>
+          <span
+            class="badge"
+            :class="c.dataType"
+          ><span>{{ c.dataType }}</span></span>
+      </p>
       <p
         class="sub-item"
         v-else
