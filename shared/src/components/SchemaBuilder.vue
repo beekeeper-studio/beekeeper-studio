@@ -163,16 +163,19 @@ export default Vue.extend({
         //     widthShrink: 1,
         //   }
         // ),
-        {
-          title: 'Comment',
-          field: 'comment',
-          formatter: this.cellFormatter,
-          editor: vueEditor(NullableInputEditor),
-          widthShrink:1,
-          tooltip: true,
-          headerTooltip: "Leave a friendly comment for other database users about this column",
-          minWidth: 100,
-        },
+        this.disabledFeatures?.comments
+          ? null
+          : {
+              title: "Comment",
+              field: "comment",
+              formatter: this.cellFormatter,
+              editor: vueEditor(NullableInputEditor),
+              widthShrink: 1,
+              tooltip: true,
+              headerTooltip:
+                "Leave a friendly comment for other database users about this column",
+              minWidth: 100,
+            },
         {
           title: 'Primary', field: 'primaryKey',
           editor: vueEditor(CheckboxEditor),
@@ -298,16 +301,6 @@ export default Vue.extend({
             .tabulator-col-title {
               color: $text-lighter;
             }
-          }
-        }
-        .tabulator-frozen {
-          position: relative;
-          &::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-color: $query-editor-bg;
-            z-index: -1;
           }
         }
       }
@@ -437,10 +430,6 @@ export default Vue.extend({
     // Resize Handle
     .tabulator-row {
       padding: 0!important;
-      .tabulator-cell.tabulator-frozen {
-        border: 0 !important;
-        background-color: transparent;
-      }
       .tabulator-row-handle {
         border: 0!important;
         padding: 0!important;
@@ -459,22 +448,6 @@ export default Vue.extend({
             }
           }
         }
-      }
-    }
-
-    // Apply when not dragging rows so it can be transparent
-    .tabulator:not(.tabulator-block-select) .tabulator-row .tabulator-frozen {
-      position: relative;
-      background-color: $query-editor-bg !important;
-      &::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background-color: rgba($theme-base, 0.05);
-        z-index: -10;
-      }
-      &:hover::before {
-        background-color: rgba($theme-base, 0.10);
       }
     }
 
