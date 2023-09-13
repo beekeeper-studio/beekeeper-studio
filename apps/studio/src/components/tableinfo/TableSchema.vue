@@ -269,7 +269,7 @@ export default Vue.extend({
           editor: vueEditor(NullableInputEditorVue),
           minWidth: 90,
         }),
-        {
+        (this.disabledFeatures?.comments ? null : {
           title: 'Comment',
           field: 'comment',
           tooltip: true,
@@ -279,7 +279,7 @@ export default Vue.extend({
           cellEdited: this.cellEdited,
           editor: vueEditor(NullableInputEditorVue),
           minWidth: 90,
-        },
+        }),
         {
           title: 'Primary',
           field: 'primary',
