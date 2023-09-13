@@ -159,7 +159,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
 
   const version = await getVersion(conn)
 
-  const features = version.isRedshift ? 
+  const features = version.isRedshift ?
     { customRoutines: true, comments: false, properties: false, partitions: false, editPartitions: false } :
     { customRoutines: true, comments: true, properties: true, partitions: version.hasPartitions, editPartitions: version.number >= 100000}
 
@@ -296,7 +296,7 @@ export async function listTablePartitions(conn: HasPool, tableName: string, sche
       JOIN pg_inherits i              ON i.inhparent = base_tb.oid
       JOIN pg_class pt                ON pt.oid = i.inhrelid
       JOIN pg_stat_all_tables ps      ON ps.relid = i.inhrelid
-      JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid = base_tb.relnamespace 
+      JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid = base_tb.relnamespace
     WHERE nmsp_parent.nspname = ? AND base_tb.relname = ? AND base_tb.relkind = 'p';
   `, [schemaName, tableName]).toQuery();
 
@@ -669,9 +669,9 @@ export async function listTableColumns(
       ordinal_position,
       column_default,
       CASE
-        WHEN character_maximum_length is not null  and udt_name != 'text' 
+        WHEN character_maximum_length is not null  and udt_name != 'text'
           THEN udt_name || '(' || character_maximum_length::varchar(255) || ')'
-        WHEN numeric_precision is not null 
+        WHEN numeric_precision is not null
         	THEN udt_name || '(' || numeric_precision::varchar(255) || ',' || numeric_scale::varchar(255) || ')'
         WHEN datetime_precision is not null AND udt_name != 'date' THEN
           udt_name || '(' || datetime_precision::varchar(255) || ')'
@@ -733,7 +733,7 @@ export async function listTableTriggers(conn: HasPool, table: string, schema: st
   // action_timing has taken over from condition_timing
   // condition_timing was last used in PostgreSQL version 9.0
   // which is not supported anymore since 08 Oct 2015.
-  // From version 9.1 onwards, released 08 Sep 2011, 
+  // From version 9.1 onwards, released 08 Sep 2011,
   // action_timing was used instead
   const timing_column = version.number <= 90000 ? 'condition_timing' : 'action_timing'
   const sql = `
@@ -972,31 +972,36 @@ export async function getTableReferences(conn: Conn, table: string, schema: stri
 
 export async function getTableKeys(conn: Conn, _database: string, table: string, schema: string): Promise<TableKey[]> {
   const sql = `
-    SELECT
-        tc.table_schema as from_schema,
-        tc.table_name as from_table,
-        kcu.column_name as from_column,
-        ccu.table_schema AS to_schema,
-        ccu.table_name AS to_table,
-        ccu.column_name AS to_column,
-        tc.constraint_name,
-        rc.update_rule as update_rule,
-        rc.delete_rule as delete_rule
-    FROM
-        information_schema.table_constraints AS tc
-        JOIN information_schema.key_column_usage AS kcu
-          ON tc.constraint_name = kcu.constraint_name
-          AND tc.table_schema = kcu.table_schema
-        JOIN information_schema.constraint_column_usage AS ccu
-          ON ccu.constraint_name = tc.constraint_name
-          AND ccu.table_schema = tc.table_schema
-         JOIN information_schema.referential_constraints rc
-          on tc.constraint_name = rc.constraint_name
-          and tc.table_schema = rc.constraint_schema
-    WHERE tc.constraint_type = 'FOREIGN KEY'
-    AND tc.table_name= $1 and tc.table_schema = $2;
-
-  `;
+SELECT
+    kcu.constraint_schema AS from_schema,
+    kcu.table_name AS from_table,
+    kcu.column_name AS from_column,
+    rc.unique_constraint_schema AS to_schema,
+    tc.constraint_name,
+    rc.update_rule,
+    rc.delete_rule,
+    (SELECT kcu2.table_name
+     FROM information_schema.key_column_usage AS kcu2
+     WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_table,
+    (SELECT kcu2.column_name
+     FROM information_schema.key_column_usage AS kcu2
+     WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column
+FROM
+    information_schema.key_column_usage AS kcu
+JOIN
+    information_schema.table_constraints AS tc
+ON
+    tc.constraint_name = kcu.constraint_name
+JOIN
+    information_schema.referential_constraints AS rc
+ON
+    rc.constraint_name = kcu.constraint_name
+WHERE
+    tc.constraint_type = 'FOREIGN KEY' AND
+    kcu.table_schema NOT LIKE 'pg_%' AND
+    kcu.table_schema = $2 AND
+    kcu.table_name = $1;
+`;
 
   const params = [
     table,
