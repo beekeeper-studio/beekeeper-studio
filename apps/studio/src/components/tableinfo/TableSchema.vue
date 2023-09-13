@@ -220,7 +220,9 @@ export default Vue.extend({
           tooltip: this.columnNameCellTooltip.bind(this),
           formatter: this.cellFormatter,
           editable: this.isCellEditable.bind(this, 'renameColumn'),
-          cellClick: this.columnNameCellClick.bind(this)
+          cellClick: this.columnNameCellClick.bind(this),
+          frozen: true,
+          minWidth: 100,
         },
         {
           title: 'Type',
@@ -228,7 +230,8 @@ export default Vue.extend({
           editor: 'autocomplete',
           editorParams: autocompleteOptions,
           cellEdited: this.cellEdited,
-          editable: this.isCellEditable.bind(this, 'alterColumn')
+          editable: this.isCellEditable.bind(this, 'alterColumn'),
+          minWidth: 90,
         },
         {
           title: 'Nullable',
@@ -252,6 +255,7 @@ export default Vue.extend({
           cellEdited: this.cellEdited,
           formatter: this.cellFormatter,
           editable: this.isCellEditable.bind(this, 'alterColumn'),
+          minWidth: 90,
         },
         (this.disabledFeatures?.informationSchema?.extra ? null : {
           title: "Extra",
@@ -261,7 +265,19 @@ export default Vue.extend({
           editable: this.isCellEditable.bind(this, 'alterColumn'),
           formatter: this.cellFormatter,
           cellEdited: this.cellEdited,
-          editor: vueEditor(NullableInputEditorVue)
+          editor: vueEditor(NullableInputEditorVue),
+          minWidth: 90,
+        }),
+        (this.disabledFeatures?.comments ? null : {
+          title: 'Comment',
+          field: 'comment',
+          tooltip: true,
+          headerTooltip: "Leave a friendly comment for other database users about this column",
+          editable: this.isCellEditable.bind(this, 'alterColumn'),
+          formatter: this.cellFormatter,
+          cellEdited: this.cellEdited,
+          editor: vueEditor(NullableInputEditorVue),
+          minWidth: 90,
         }),
         {
           title: 'Primary',
