@@ -370,14 +370,15 @@ export async function getTableProperties(client, db, table) {
 }
 
 export async function alterTableSql(conn, changes) {
-  const builder = new BigQueryChangeBuilder(changes.table);
+  const builder = new BigQueryChangeBuilder(changes.table, changes.database);
   return builder.alterTable(changes);
 }
 
 export async function alterTable(conn, changes) {
   const sql = await alterTableSql(conn, changes);
 
-  await executeWithTransaction(conn, { query: sql });
+  // NOTE (@day): bigquery doesn't support running DDL statements in a transaction so this is kinda dangerous
+  await driverExecuteQuery(conn, { query: sql });
 }
 
 

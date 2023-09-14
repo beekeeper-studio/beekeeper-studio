@@ -181,6 +181,7 @@ export interface SchemaItemChange {
 export interface AlterTableSpec {
   table: string
   schema?: string
+  database?: string
   alterations?: SchemaItemChange[]
   adds?: SchemaItem[]
   drops?: string[]
