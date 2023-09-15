@@ -137,8 +137,7 @@ import StatusBar from '../common/StatusBar.vue'
 import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
 import { escapeHtml } from '@/mixins/data_mutators';
-import { canBeUnsignedColumn } from '@shared/lib/utils'
-import type { TableColumn } from "@/lib/db/models";
+
 
 const FakeCell = {
   getRow: () => ({}),
@@ -212,31 +211,6 @@ export default Vue.extend({
         showListOnEmpty: true
       }
 
-      function toggleUnsignedInDataType(
-        dataTypeCell: Tabulator.CellComponent
-      ) {
-        const dataType: string = dataTypeCell.getValue()
-        const nextUnsigned = !/unsigned/i.test(dataType)
-        const nextDataType = nextUnsigned
-          ? dataType.replaceAll(/\s+signed/ig, "") + " unsigned"
-          : dataType.replaceAll(/\s*unsigned/ig, "")
-        dataTypeCell.setValue(nextDataType)
-      }
-
-      function copyDataTypeToUnsigned(
-        unsignedCell: Tabulator.CellComponent,
-        dataTypeCell: Tabulator.CellComponent
-      ) {
-        const dataType: string = dataTypeCell.getValue()
-        const isUnsigned = /unsigned/i.test(dataType)
-        unsignedCell.setValue(isUnsigned)
-        unsignedCell.$bksVueInstance.$set(
-          unsignedCell.$bksVueInstance.$data,
-          'checked',
-          isUnsigned
-        )
-      }
-
       const result = [
         {
           title: 'Name',
@@ -254,13 +228,7 @@ export default Vue.extend({
           field: 'dataType',
           editor: 'autocomplete',
           editorParams: autocompleteOptions,
-          cellEdited: (cell: Tabulator.CellComponent) => {
-            if (!this.disabledFeatures?.unsignedColumns) {
-                copyDataTypeToUnsigned(cell.getRow().getCell('unsigned'), cell)
-            }
-
-            this.cellEdited(cell)
-          },
+          cellEdited: this.cellEdited,
           editable: this.isCellEditable.bind(this, 'alterColumn')
         },
         {
@@ -277,31 +245,6 @@ export default Vue.extend({
           width: 70,
           cssClass: "no-padding no-edit-highlight",
         },
-        this.disabledFeatures?.unsignedColumns
-          ? null
-          : {
-              title: "Unsigned",
-              field: "unsigned",
-              cssClass: "no-padding no-edit-highlight hide-on-read-only",
-              headerTooltip: "Set this column to be unsigned",
-              editor: vueEditor(CheckboxEditorVue),
-              formatter: vueFormatter(CheckboxFormatterVue),
-              formatterParams: {
-                editable: (cell: Tabulator.CellComponent) => {
-                  const editable = canBeUnsignedColumn(
-                    cell.getRow().getData().dataType
-                  );
-                  cell.getElement()?.classList?.toggle("invisible", !editable);
-                  return editable;
-                },
-                onClick: ({ cell, preventDefault }) => {
-                  toggleUnsignedInDataType(cell.getRow().getCell('dataType'))
-                  preventDefault()
-                },
-              },
-              width: 76,
-              widthShrink: 1,
-            },
         {
           title: 'Default Value',
           field: 'defaultValue',
@@ -345,16 +288,10 @@ export default Vue.extend({
     },
     tableData() {
       const keys = _.keyBy(this.primaryKeys, 'columnName')
-      return this.table.columns.map((c: TableColumn) => {
+      return this.table.columns.map((c) => {
         const key = keys[c.columnName]
-        const unsigned =
-          this.disabledFeatures?.unsignedColumns
-          || !canBeUnsignedColumn(c.dataType)
-            ? undefined
-            : /unsigned/i.test(c.dataType)
         return {
           primary: !!key || null,
-          unsigned,
           ...c
         }
       })
@@ -383,7 +320,9 @@ export default Vue.extend({
       await this.$emit('refresh')
     },
     collectChanges(): AlterTableSpec {
-      const alterations: AlterTableSpec['alterations'] = this.editedCells.map((cell: CellComponent) => {
+
+      const alterations = this.editedCells.map((cell: CellComponent) => {
+
         // renames happen last, so we need to get the original column name here.
         const nameCell = cell.getRow().getCell('columnName')
         const name = nameCell.isEdited() ? nameCell.getInitialValue() : nameCell.getValue()

@@ -31,7 +31,6 @@ import NullableInputEditor from './tabulator/NullableInputEditor.vue'
 import CheckboxEditor from './tabulator/CheckboxEditor.vue'
 import CheckboxFormatter from './tabulator/CheckboxFormatter.vue'
 import { Dialect, SchemaItem } from '../lib/dialects/models'
-import { canBeUnsignedColumn } from '../lib/utils'
 
 interface SchemaBuilderData {
   builtColumns: SchemaItem[],
@@ -103,32 +102,6 @@ export default Vue.extend({
     tableColumns() {
       const trashButton = () => '<i class="material-icons" title="remove">clear</i>'
       const editable = this.editable
-
-      function toggleUnsignedInDataType(
-        dataTypeCell: Tabulator.CellComponent
-      ) {
-        const dataType: string = dataTypeCell.getValue()
-        const nextUnsigned = !/unsigned/i.test(dataType)
-        const nextDataType = nextUnsigned
-          ? dataType.replaceAll(/\s+signed/ig, "") + " unsigned"
-          : dataType.replaceAll(/\s*unsigned/ig, "")
-        dataTypeCell.setValue(nextDataType)
-      }
-
-      function copyDataTypeToUnsigned(
-        unsignedCell: Tabulator.CellComponent,
-        dataTypeCell: Tabulator.CellComponent
-      ) {
-        const dataType: string = dataTypeCell.getValue()
-        const isUnsigned = /unsigned/i.test(dataType)
-        unsignedCell.setValue(isUnsigned)
-        unsignedCell.$bksVueInstance.$set(
-          unsignedCell.$bksVueInstance.$data,
-          'checked',
-          isUnsigned
-        )
-      }
-
       const dataColumns = [
         {
           title: 'Name',
@@ -139,19 +112,8 @@ export default Vue.extend({
           editorParams: {
           }
         },
-        {
-          title: "Type",
-          field: "dataType",
-          editor: "autocomplete",
-          editorParams: this.autoCompleteOptions,
-          minWidth: 56,
-          widthShrink: 1,
-          cellEdited(cell: Tabulator.CellComponent) {
-            if (this.disabledFeatures?.unsignedColumns) return
+        {title: 'Type', field: 'dataType', editor: 'autocomplete', editorParams: this.autoCompleteOptions,  minWidth: 56,widthShrink:1},
 
-            copyDataTypeToUnsigned(cell.getRow().getCell('unsigned'), cell)
-          },
-        },
         {
           title: 'Nullable',
           field: 'nullable',
@@ -163,33 +125,8 @@ export default Vue.extend({
             editable
           },
           width: 76,
-          widthShrink:1,
+          widthShrink:1
         },
-        this.disabledFeatures?.unsignedColumns
-          ? null
-          : {
-              title: "Unsigned",
-              field: "unsigned",
-              cssClass: "no-padding no-edit-highlight hide-on-read-only",
-              headerTooltip: "Set this column to be unsigned",
-              editor: vueEditor(CheckboxEditor),
-              formatter: vueFormatter(CheckboxFormatter),
-              formatterParams: {
-                editable: (cell: Tabulator.CellComponent) => {
-                  const editable = canBeUnsignedColumn(
-                    cell.getRow().getData().dataType
-                  );
-                  cell.getElement()?.classList?.toggle("invisible", !editable);
-                  return editable;
-                },
-                onClick: ({ cell, preventDefault }) => {
-                  toggleUnsignedInDataType(cell.getRow().getCell('dataType'))
-                  preventDefault()
-                },
-              },
-              width: 76,
-              widthShrink: 1,
-            },
         {
           title: 'Default Value',
           field: 'defaultValue',

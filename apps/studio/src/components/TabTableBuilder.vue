@@ -150,13 +150,7 @@ export default Vue.extend({
       return {
         name: this.tableName,
         schema: this.fixedSchema,
-        columns: this.columns.map((col: SchemaItem) => ({
-          ...col,
-          // Unsigned column types are handled by adding a 'UNSIGNED' suffix
-          // to the dataType
-          unsigned: undefined,
-        }))
-
+        columns: this.columns
       }
     },
     simpleTableName() {

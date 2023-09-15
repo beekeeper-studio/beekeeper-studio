@@ -110,7 +110,6 @@ export interface DialectData {
     }
     createIndex?: boolean
     comments?: boolean
-    unsignedColumns?: boolean
   },
   notices?: {
     infoSchema?: string

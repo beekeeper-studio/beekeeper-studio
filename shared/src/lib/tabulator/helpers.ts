@@ -18,8 +18,6 @@ export function vueFormatter(component: any) {
     })
     instance.$mount()
 
-    cell.$bksVueInstance = instance
-
     onRendered(() => {
       instance.$set(instance.$data, 'rendered', true)
     })

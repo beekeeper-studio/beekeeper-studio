@@ -47,8 +47,7 @@ export const SqlServerData: DialectData = {
     },
     informationSchema: {
       extra: true
-    },
-    unsignedColumns: true
+    }
   }
 
 }
