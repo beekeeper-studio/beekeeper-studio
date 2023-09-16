@@ -209,7 +209,7 @@ import PendingChangesButton from './common/PendingChangesButton.vue'
 function safeFormat(value, options) {
   try {
     return format(value, options)
-  } catch(ex) {
+  } catch (ex) {
     return value
   }
 }
@@ -515,7 +515,7 @@ export default Vue.extend({
         qNum = qNum + 1
         tabName = `Query #${qNum}`
       } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
-      if(queryTitle) {
+      if (queryTitle) {
         tabName = queryTitle
       }
 
@@ -618,6 +618,17 @@ export default Vue.extend({
       await this.setActiveTab(tab)
 
     },
+      handleKeyPress(event) {
+      if (event.altKey) {
+        const keyCode = event.keyCode || event.which;
+        if (keyCode >= 49 && keyCode <= 57) {       // Check if the pressed key is a number between 1 and 9
+          const pressedNumber = keyCode - 48; // Convert keyCode to the corresponding number
+          if(pressedNumber <= this.tabItems.length) {
+            this.setActiveTab(this.tabItems[pressedNumber - 1])
+          }
+        }
+      }
+    },
     async close(tab) {
       if (this.activeTab === tab) {
         if (tab === this.lastTab) {
@@ -681,13 +692,16 @@ export default Vue.extend({
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings)
+    window.removeEventListener('keydown', this.handleKeyDown);
   },
+
   async mounted() {
     await this.$store.dispatch('tabs/load')
     if (!this.tabItems?.length) {
       this.createQuery()
     }
     this.registerHandlers(this.rootBindings)
+    window.addEventListener("keydown", this.handleKeyPress)
   }
 })
 </script>
