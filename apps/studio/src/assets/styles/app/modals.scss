@@ -1,0 +1,40 @@
+
+
+.beekeeper-modal {
+
+  .dialog-c-title {
+    &.has-icon {
+      display: flex;
+      align-items: center;
+      i.material-icons {
+        margin-right: 1rem;
+        font-size: 1.2em;
+      }
+    }
+  }
+
+  &.upgrade-modal {
+    .dialog-c-title {
+      font-size: 1.2em;
+    }
+    .checkbox-wrapper {
+      margin-left: auto;
+      margin-right: auto;
+      ul.check-list {
+        padding-left: 0;
+        li {
+          padding-bottom: 10px;
+          &:before {
+            font-family: "Material Icons";
+            content: "\e5ca";
+            margin-right: 0.5rem;
+            margin-bottom: -10px;
+            color: $brand-success;
+          }
+          list-style: none;
+        }
+      }
+    }
+  }
+
+}

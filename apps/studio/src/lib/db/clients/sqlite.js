@@ -72,6 +72,7 @@ export default async function (server, database) {
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize) => selectTopStream(conn, db, table, orderBy, filters, chunkSize),
+    selectTopSql: (table, offset, limit, orderBy, filters, schema, selects) => selectTopSql(table, offset, limit, orderBy, filters, schema, selects),
     queryStream: (db, query, chunkSize) => queryStream(conn, db, query, chunkSize),
     applyChangesSql: (changes) => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
@@ -164,6 +165,28 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
     columns,
     cursor: new SqliteCursor(conn, query, params, chunkSize)
   }
+}
+
+export async function selectTopSql(
+  table,
+  offset,
+  limit,
+  orderBy,
+  filters,
+  schema,
+  selects
+) {
+  const { query, params } = buildSelectTopQuery(
+    table,
+    offset,
+    limit,
+    orderBy,
+    filters,
+    undefined,
+    undefined,
+    selects
+  );
+  return knex.raw(query, params).toQuery();
 }
 
 export async function queryStream(conn, db, query, chunkSize) {

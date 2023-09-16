@@ -80,6 +80,7 @@ export interface DatabaseClient {
   getTableLength(table: string, schema?: string): Promise<number>
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string, selects?: string[]): Promise<TableResult>,
   selectTopStream(db: string, table: string, orderBy: OrderBy[], filters: TableFilter[] | string, chunkSize: number, schema?: string ): Promise<StreamResults>,
+  selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string, selects?: string[]): Promise<string>,
 
   // for export
   queryStream(db: string, query: string, chunkSize: number ): Promise<StreamResults>,
@@ -193,6 +194,7 @@ export class DBConnection {
   getTableLength = bindAsync.bind(null, 'getTableLength', this.server, this.database)
   selectTop = selectTop.bind(null, this.server, this.database)
   selectTopStream = selectTopStream.bind(null, this.server, this.database)
+  selectTopSql = selectTopSql.bind(null, this.server, this.database)
   applyChanges = applyChanges.bind(null, this.server, this.database)
   applyChangesSql = applyChangesSql.bind(null, this.server, this.database)
 
@@ -337,6 +339,21 @@ function selectTopStream(
   checkIsConnected(server, database)
   if (!database.connection) throw "No database connection available"
   return database.connection?.selectTopStream(database.database, table, orderBy, filters, chunkSize, schema)
+}
+
+function selectTopSql(
+  server: IDbConnectionServer,
+  database: IDbConnectionDatabase,
+  table: string,
+  offset: number,
+  limit: number,
+  orderBy: OrderBy[],
+  filters: TableFilter[] | string,
+  schema: string,
+  selects: string[],
+): Promise<string> {
+  checkIsConnected(server, database);
+  return database.connection?.selectTopSql(table, offset, limit, orderBy, filters, schema, selects);
 }
 
 function queryStream(

@@ -98,7 +98,7 @@ import TabIcon from './tab/TabIcon.vue'
       },
       sureOpened() {
         this.sureOpen = true
-        this.$refs.no.focus()
+        this.$refs.no?.focus()
       },
       sureClosed() {
         this.sureOpen = false
