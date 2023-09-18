@@ -91,7 +91,7 @@ export function buildFilterString(filters, columns = []) {
         return `${field} ${item.type.toUpperCase()} (${questionMarks})`
       }
       return `${field} ${item.type.toUpperCase()} ?`
-    }).join(" AND ")
+    }).reduce((a, b, idx) => `${a} ${filters[idx]?.op || 'AND'} ${b}`)
 
     filterParams = filters.flatMap((item) => {
       return _.isArray(item.value) ? item.value : [item.value]

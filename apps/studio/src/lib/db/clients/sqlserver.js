@@ -157,7 +157,7 @@ function buildFilterString(filters) {
         D.escapeString(item.value, true)
 
       return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${wrappedValue}`
-    }).join(" AND ")
+    }).reduce((a, b, idx) => `${a} ${filters[idx]?.op || 'AND'} ${b}`)
   }
   return filterString
 }
@@ -253,10 +253,7 @@ async function getTableLength(conn, table, schema) {
 
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema, selects = ['*']) {
   log.debug("filters", filters)
-  const version = await getVersion(conn);
-  const query = version.supportOffsetFetch ?
-    genSelectNew(table, offset, limit, orderBy, filters, schema, selects) :
-    genSelectOld(table, offset, limit, orderBy, filters, schema, selects)
+  const query = await selectTopSql(table, offset, limit, orderBy, filters, schema, selects)
   logger().debug(query)
 
   const result = await driverExecuteQuery(conn, { query })

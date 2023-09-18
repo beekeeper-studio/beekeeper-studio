@@ -13,20 +13,20 @@
           @submit.prevent="triggerFilter"
           class="flex flex-middle"
         >
-          <div
-            class="filter-group"
-            style="margin-left: 0.2rem"
-          >
-            <!-- <button
-              type="button"
-              class="btn btn-flat btn-fab"
-              :class="{'btn-primary': !allColumnsSelected}"
-              :title="`Set column visibility (${hiddenColumnCount} hidden)`"
-              @click="showColumnFilterModal()"
-            >
-              <i class="material-icons-outlined">visibility</i>
-            </button> -->
-          </div>
+          <!-- <div -->
+          <!--   class="filter-group" -->
+          <!--   style="margin-left: 0.2rem" -->
+          <!-- > -->
+          <!--   <button -->
+          <!--     type="button" -->
+          <!--     class="btn btn-flat btn-fab" -->
+          <!--     :class="{'btn-primary': !allColumnsSelected}" -->
+          <!--     :title="`Set column visibility (${hiddenColumnCount} hidden)`" -->
+          <!--     @click="showColumnFilterModal()" -->
+          <!--   > -->
+          <!--     <i class="material-icons-outlined">visibility</i> -->
+          <!--   </button> -->
+          <!-- </div> -->
           <div
             v-if="filterMode === 'raw'"
             class="filter-group row gutter expand"
@@ -73,76 +73,120 @@
             v-else-if="filterMode === 'builder'"
             class="filter-group row gutter expand"
           >
-            <div class="btn-wrap">
-              <button
-                class="btn btn-flat btn-fab"
-                type="button"
-                @click.stop="changeFilterMode('raw')"
-                title="Toggle Filter Type"
-              >
-                <i class="material-icons">code</i>
-              </button>
-            </div>
-            <div>
-              <div class="select-wrap">
-                <select
-                  name="Filter Field"
-                  class="form-control"
-                  v-model="filter.field"
-                >
-                  <option
-                    v-for="column in table.columns"
-                    :key="column.columnName"
-                    :value="column.columnName"
-                  >
-                    {{ column.columnName }}
-                  </option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <div class="select-wrap">
-                <select
-                  name="Filter Type"
-                  class="form-control"
-                  v-model="filter.type"
-                >
-                  <option
-                    v-for="(v, k) in filterTypes"
-                    :key="k"
-                    :value="v"
-                  >
-                    {{ k }}
-                  </option>
-                </select>
-              </div>
-            </div>
-            <div class="expand filter">
-              <div class="filter-wrap">
-                <input
-                  class="form-control"
-                  type="text"
-                  v-model="filter.value"
-                  :placeholder="builderPlaceholder"
-                  ref="valueInput"
-                >
+            <div class="left-section">
+              <div class="btn-wrap">
                 <button
+                  class="btn btn-flat btn-fab"
                   type="button"
-                  class="clear btn-link"
-                  @click.prevent="filter.value = ''"
+                  @click.stop="changeFilterMode('raw')"
+                  title="Toggle Filter Type"
                 >
-                  <i class="material-icons">cancel</i>
+                  <i class="material-icons">code</i>
+                </button>
+              </div>
+              <div
+                class="btn-wrap"
+                v-for="(filter, index) in additionalFilters"
+                :key="index"
+              >
+                <button
+                  class="btn btn-flat btn-fab op-filter"
+                  type="button"
+                  @click.stop="filter.op = (filter.op === 'AND' ? 'OR' : 'AND')"
+                  title="Toggle Filter AND / OR"
+                >
+                  {{ filter.op }}
                 </button>
               </div>
             </div>
-            <div class="btn-wrap">
-              <button
-                class="btn btn-primary btn-fab"
-                type="submit"
-                title="Filter"
-              >
-                <i class="material-icons">search</i>
-              </button>
+            <div class="middle-section multiple-filter">
+              <div v-for="(filter, index) in filters" :key="index">
+                <div class="select-wrap">
+                  <select
+                    name="Filter Field"
+                    class="form-control"
+                    v-model="filter.field"
+                  >
+                    <option
+                      v-for="column in table.columns"
+                      :key="column.columnName"
+                      :value="column.columnName"
+                    >
+                      {{ column.columnName }}
+                    </option>
+                  </select>
+                </div>
+                <div class="select-wrap">
+                  <select
+                    name="Filter Type"
+                    class="form-control"
+                    v-model="filter.type"
+                  >
+                    <option
+                      v-for="(v, k) in filterTypes"
+                      :key="k"
+                      :value="v"
+                    >
+                      {{ k }}
+                    </option>
+                  </select>
+                </div>
+                <div class="expand filter">
+                  <div class="filter-wrap">
+                    <input
+                      class="form-control"
+                      type="text"
+                      v-model="filter.value"
+                      :placeholder="
+                        filter.type === 'in'
+                          ? `Enter values separated by comma, eg: foo,bar`
+                          : 'Enter Value'
+                      "
+                      ref="valueInput"
+                    >
+                    <button
+                      type="button"
+                      class="clear btn-link"
+                      @click.prevent="filter.value = ''"
+                    >
+                      <i class="material-icons">cancel</i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="right-section">
+              <div class="row" style="gap: 0.4rem;">
+                <div class="btn-wrap">
+                  <button
+                    class="btn btn-flat btn-fab add-filter"
+                    type="button"
+                    title="Add filter"
+                    @click="addFilter"
+                  >
+                    <i class="material-icons">add</i>
+                  </button>
+                </div>
+                <div class="btn-wrap">
+                  <button
+                    class="btn btn-primary btn-fab"
+                    type="submit"
+                    title="Apply filter"
+                  >
+                    <i class="material-icons">search</i>
+                  </button>
+                </div>
+              </div>
+              <div class="btn-wrap" v-for="(filter, index) in additionalFilters" :key="index">
+                <button
+                  class="btn btn-flat btn-fab remove-filter"
+                  type="button"
+                  title="Remove filter"
+                  @click="removeFilter(index)"
+                >
+                  <i class="material-icons">remove</i>
+                </button>
+              </div>
             </div>
           </div>
         </form>
@@ -346,11 +390,35 @@
   </div>
 </template>
 
-<style>
-.loading-overlay {
-  position: absolute;
-  right: 50%;
-  top: 200px;
+<style lang="scss" scoped>
+// TODO move this to coretable.scss
+body .table-filter {
+  .left-section, .middle-section, .right-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .multiple-filter  {
+    flex-grow: 1;
+    & > * {
+      display: flex;
+      gap: 0.4rem;
+      div.select-wrap {
+        width: initial;
+      }
+    }
+  }
+  .op-filter, .add-filter, .remove-filter {
+    font-size: 0.75rem;
+    opacity: 0.75;
+    &:not(:hover) {
+      background-color: transparent;
+      font-weight: 500;
+    }
+    &:hover {
+      font-weight: 500;
+    }
+  }
 }
 </style>
 
@@ -380,6 +448,7 @@ import { markdownTable } from 'markdown-table'
 import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { safeSqlFormat } from '@/common/utils'
+import { TableFilter } from '@/lib/db/models';
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
@@ -387,7 +456,7 @@ const FILTER_MODE_RAW = 'raw'
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength },
   mixins: [data_converter, DataMutators, FkLinkMixin],
-  props: ["connection", "initialFilter", "active", 'tab', 'table'],
+  props: ["connection", "initialFilters", "active", 'tab', 'table'],
   data() {
     return {
       filterTypes: {
@@ -400,11 +469,12 @@ export default Vue.extend({
         "greater than or equal": ">=",
         in: "in"
       },
-      filter: {
-        value: null,
+      filters: [{
+        op: "AND",
+        field: '',
         type: "=",
-        field: null
-      },
+        value: '',
+      }],
       filterRaw: null,
       filterMode: FILTER_MODE_BUILDER,
       headerFilter: true,
@@ -442,12 +512,20 @@ export default Vue.extend({
       internalIndexColumn: "__beekeeper_internal_index",
       selectedCell: null,
       mouseDownHandle: null,
-      lastMouseOverRow: null
+      lastMouseOverRow: null,
+      filterModalName: `filter-modal-${this.tab.id}`,
     };
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
     ...mapGetters(['dialectData', 'dialect']),
+    filter() {
+      return this.filters[0]
+    },
+    additionalFilters() {
+      const [_, ...additional] = this.filters
+      return additional
+    },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
       const cols = this.tabulator.getColumns()
@@ -659,9 +737,6 @@ export default Vue.extend({
     hiddenColumnCount() {
       return this.columnsWithFilterAndOrder.filter((c) => !c.filter).length
     },
-    builderPlaceholder() {
-      return this.filter.type === 'in' ? `Enter values separated by comma, eg: foo,bar` : 'Enter Value'
-    },
     pendingChangesCount() {
       return this.pendingChanges.inserts.length
              + this.pendingChanges.updates.length
@@ -852,28 +927,15 @@ export default Vue.extend({
         persistenceID: this.tableId,
       }
     },
-    filterValue() {
-      return this.filter.value;
-    },
     filterForTabulator() {
       if (this.filterMode === FILTER_MODE_RAW && this.filterRaw) {
         return this.filterRaw
-      } else if (
-        this.filterMode === FILTER_MODE_BUILDER &&
-        this.filter.type && this.filter.field && this.filter.value
-      ) {
-        if (this.filter.type === 'in') {
-          const vals = this.filter.value.split(/\s*,\s*/)
-          return [{
-            ...this.filter,
-            value: vals
-          }]
-        } else {
-          return [this.filter]
-        }
-      } else {
-        return null
       }
+      const filters = this.preProcessedFilters()
+      if (this.filterMode === FILTER_MODE_BUILDER && filters) {
+        return filters
+      }
+      return null
     },
     initialSort() {
       // FIXME: Don't specify an initial sort order
@@ -930,15 +992,10 @@ export default Vue.extend({
       await this.tabulator.setColumns(this.tableColumns)
       await this.refreshTable();
     },
-    filterValue() {
-      if (this.filter.value === "") {
-        this.clearFilter();
-      }
-    },
-    filter: {
+    filters: {
       deep: true,
       handler() {
-        this.tab.filter = this.filter
+        this.tab.setFilters(this.filters)
         this.$store.dispatch('tabs/save', this.tab)
       }
     },
@@ -1007,7 +1064,7 @@ export default Vue.extend({
       // this.handleRowHandleClick(_event, cell)
     },
     handleCellMouseEnter(_event: MouseEvent, _cell: Tabulator.CellComponent) {
-      // Please fix me kind software engineer 
+      // Please fix me kind software engineer
     },
     handleCellMouseUp(_event: MouseEvent, _cell: Tabulator.CellComponent) {
       this.mouseDownHandle = null
@@ -1120,9 +1177,9 @@ export default Vue.extend({
       this.initialized = true
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
-      this.filter.field = this.table?.columns[0]?.columnName
+      this.filters[0].field = this.table?.columns[0]?.columnName
       if (this.initialFilter) {
-        this.filter = _.clone(this.initialFilter)
+        this.filters = _.clone(this.initialFilter)
       }
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
@@ -1796,7 +1853,25 @@ export default Vue.extend({
       this.discardChanges();
       this.triggerFilter();
       this.$modal.hide(`discard-changes-modal-${this.tab.id}`);
-    }
+    },
+    addFilter() {
+      const lastFilter = this.filters[this.filters.length - 1]
+      this.filters.push(_.clone(lastFilter))
+    },
+    removeFilter(additionalIdx: number) {
+      this.filters.splice(additionalIdx + 1, 1)
+    },
+    preProcessedFilters(): TableFilter[] {
+      return (this.filters as TableFilter[])
+        .filter((filter) => filter.type && filter.field && filter.value)
+        .map((filter) => {
+          if (filter.type === "in") {
+            const value = (filter.value as string).split(/\s*,\s*/)
+            return { ...filter, value }
+          }
+          return filter
+        })
+    },
   }
 });
 </script>
