@@ -447,7 +447,7 @@ import { TableUpdate, TableUpdateResult } from '@/lib/db/models';
 import { markdownTable } from 'markdown-table'
 import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
-import { safeSqlFormat } from '@/common/utils'
+import { safeSqlFormat, joinFilters } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
@@ -1685,16 +1685,18 @@ export default Vue.extend({
     clearFilter() {
       if (this.tabulator) this.tabulator.setData();
     },
-    changeFilterMode(filterMode) {
+    changeFilterMode(filterMode: string) {
+      const filters: TableFilter[] = this.preProcessedFilters()
       // Populate raw filter query with existing filter if raw filter is empty
       if (
         filterMode === FILTER_MODE_RAW &&
-        !_.isNil(this.filter.value) &&
-        !_.isEmpty(this.filter.value) &&
+        !_.isEmpty(filters) &&
         _.isEmpty(this.filterRaw)
       ) {
-        const rawFilter = _.join([this.filter.field, this.filter.type, this.filter.value], ' ')
-        this.filterRaw = rawFilter
+        const allFilters = filters.map((filter) =>
+          `${filter.field} ${filter.type} ${this.dialectData.escapeString(filter.value, true)}`
+        )
+        this.filterRaw = joinFilters(allFilters, filters)
       }
 
       this.filterMode = filterMode

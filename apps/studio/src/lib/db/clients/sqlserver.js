@@ -24,6 +24,7 @@ import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
 import { SqlServerData } from '@shared/lib/dialects/sqlserver';
 import { SqlServerChangeBuilder } from '@shared/lib/sql/change_builder/SqlServerChangeBuilder';
+import { joinFilters } from '@/common/utils';
 const log = logRaw.scope('sql-server')
 
 const logger = () => log;
@@ -76,6 +77,7 @@ export default async function (server, database) {
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
     selectTopSql: (table, offset, limit, orderBy, filters, schema, selects) => selectTopSql(conn, table, offset, limit, orderBy, filters, schema, selects),
+    filterSql: (filters) => buildFilterString(filters),
     queryStream: (db, query, chunkSize) => selectTopStream(conn, db, query, chunkSize),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -150,14 +152,15 @@ export async function disconnect(conn) {
 function buildFilterString(filters) {
   let filterString = ""
   if (filters && filters.length > 0) {
-    filterString = "WHERE " + filters.map((item) => {
+    const allFilters = filters.map((item) => {
 
       let wrappedValue = _.isArray(item.value) ?
         `(${item.value.map((v) => D.escapeString(v, true)).join(',')})` :
         D.escapeString(item.value, true)
 
       return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${wrappedValue}`
-    }).reduce((a, b, idx) => `${a} ${filters[idx]?.op || 'AND'} ${b}`)
+    })
+    filterString = "WHERE " + joinFilters(allFilters, filters)
   }
   return filterString
 }
