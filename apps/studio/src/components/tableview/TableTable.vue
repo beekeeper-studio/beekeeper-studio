@@ -11,7 +11,9 @@
       <div class="table-filter">
         <form
           @submit.prevent="triggerFilter"
-          class="flex flex-middle"
+          :class="{ resizable: filters.length > 1 && filterMode === 'builder' }"
+          @scroll="$event.target.classList.toggle('filter-outside-viewport', $event.target.scrollTop > 31)"
+          ref="filterGroupWrapper"
         >
           <!-- <div -->
           <!--   class="filter-group" -->
@@ -99,8 +101,12 @@
                 </button>
               </div>
             </div>
-            <div class="middle-section multiple-filter">
-              <div v-for="(filter, index) in filters" :key="index">
+            <div class="middle-section multiple-filter" ref="multipleFilters">
+              <div
+                v-for="(filter, index) in filters"
+                :key="index"
+                class="filter-container"
+              >
                 <div class="select-wrap">
                   <select
                     name="Filter Field"
@@ -156,25 +162,40 @@
               </div>
             </div>
             <div class="right-section">
-              <div class="row" style="gap: 0.4rem;">
+              <div class="ghost-add-reply">
                 <div class="btn-wrap">
-                  <button
-                    class="btn btn-flat btn-fab add-filter"
-                    type="button"
-                    title="Add filter"
-                    @click="addFilter"
-                  >
+                  <button class="btn btn-flat btn-fab">
                     <i class="material-icons">add</i>
                   </button>
                 </div>
                 <div class="btn-wrap">
-                  <button
-                    class="btn btn-primary btn-fab"
-                    type="submit"
-                    title="Apply filter"
-                  >
+                  <button class="btn btn-primary btn-fab">
                     <i class="material-icons">search</i>
                   </button>
+                </div>
+              </div>
+              <div class="filter-add-apply">
+                <div class="row fixed">
+                  <div class="btn-wrap add-filter">
+                    <button
+                      class="btn btn-flat btn-fab"
+                      type="button"
+                      title="Add filter"
+                      @click="addFilter"
+                    >
+                      <i class="material-icons">add</i>
+                    </button>
+                  </div>
+                  <!-- TODO 2 : when you add a filter, it should scroll automatically -->
+                  <div class="btn-wrap" ref="filterButtonWrapper">
+                    <button
+                      class="btn btn-primary btn-fab"
+                      type="submit"
+                      title="Apply filter"
+                    >
+                      <i class="material-icons">search</i>
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="btn-wrap" v-for="(filter, index) in additionalFilters" :key="index">
@@ -190,6 +211,7 @@
             </div>
           </div>
         </form>
+        <div class="filter-drag-icon"><i class="material-icons">drag_handle</i></div>
       </div>
       <div ref="table" />
       <ColumnFilterModal
@@ -390,38 +412,6 @@
   </div>
 </template>
 
-<style lang="scss" scoped>
-// TODO move this to coretable.scss
-body .table-filter {
-  .left-section, .middle-section, .right-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  .multiple-filter  {
-    flex-grow: 1;
-    & > * {
-      display: flex;
-      gap: 0.4rem;
-      div.select-wrap {
-        width: initial;
-      }
-    }
-  }
-  .op-filter, .add-filter, .remove-filter {
-    font-size: 0.75rem;
-    opacity: 0.75;
-    &:not(:hover) {
-      background-color: transparent;
-      font-weight: 500;
-    }
-    &:hover {
-      font-weight: 500;
-    }
-  }
-}
-</style>
-
 <script lang="ts">
 import Vue from 'vue'
 import Papa from 'papaparse'
@@ -452,6 +442,7 @@ import { TableFilter } from '@/lib/db/models';
 const log = rawLog.scope('TableTable')
 const FILTER_MODE_BUILDER = 'builder'
 const FILTER_MODE_RAW = 'raw'
+const MAX_FILTER_HEIGHT = 201
 
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength },
@@ -514,14 +505,12 @@ export default Vue.extend({
       mouseDownHandle: null,
       lastMouseOverRow: null,
       filterModalName: `filter-modal-${this.tab.id}`,
+      cappedFilterHeight: false,
     };
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
     ...mapGetters(['dialectData', 'dialect']),
-    filter() {
-      return this.filters[0]
-    },
     additionalFilters() {
       const [_, ...additional] = this.filters
       return additional
@@ -1006,10 +995,13 @@ export default Vue.extend({
     },
     async lastUpdated() {
       this.setlastUpdatedText()
+      const primaryFilter = (this.preProcessedFilters() as TableFilter[]).find(
+        (filter) => this.isPrimaryKey(filter.field)
+      );
       let result = 'all'
-      if (this.primaryKeys?.length && this.filter.value && this.filter.type === '=' && this.isPrimaryKey(this.filter.field)) {
-        log.info("setting scope", this.filter.value)
-        result = this.filter.value
+      if (this.primaryKeys?.length && primaryFilter) {
+        log.info("setting scope", primaryFilter.value)
+        result = _.truncate(primaryFilter.value.toString())
       } else {
         if (this.filterRaw) result = 'custom'
       }
@@ -1018,6 +1010,17 @@ export default Vue.extend({
     },
     filterMode() {
       this.triggerFilter()
+      this.$nextTick(() => {
+        if (this.filterMode === FILTER_MODE_RAW) {
+          this.$refs.filterGroupWrapper.style.removeProperty('height')
+        } else {
+          const filterGroupWrapper = this.$refs.filterGroupWrapper
+          const child = filterGroupWrapper.firstChild
+          if (child.offsetHeight > MAX_FILTER_HEIGHT){
+            filterGroupWrapper.style.height = MAX_FILTER_HEIGHT + 'px'
+          }
+        }
+      })
     },
     pendingChangesCount() {
       this.tab.unsavedChanges = this.pendingChangesCount > 0
@@ -1034,6 +1037,16 @@ export default Vue.extend({
   async mounted() {
     document.addEventListener('click', this.maybeUnselectCell)
     document.addEventListener('mouseUp', this.handleCellMouseUp)
+
+    const filterGroupWrapper = this.$refs.filterGroupWrapper
+    new ResizeObserver(() => {
+      if (!this.cappedFilterHeight && this.filters.length > 5) {
+        // Stop it from growing height
+        this.cappedFilterHeight = true
+        filterGroupWrapper.style.height = filterGroupWrapper.offsetHeight + 'px'
+      }
+    }).observe(filterGroupWrapper)
+
     if (this.shouldInitialize) {
       this.$nextTick(async() => {
         await this.initialize()
@@ -1178,8 +1191,9 @@ export default Vue.extend({
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
       this.filters[0].field = this.table?.columns[0]?.columnName
-      if (this.initialFilter) {
-        this.filters = _.clone(this.initialFilter)
+      console.log("momo", this.initialFilters)
+      if (this.initialFilters) {
+        this.filters = _.clone(this.initialFilters)
       }
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
@@ -1859,21 +1873,35 @@ export default Vue.extend({
     addFilter() {
       const lastFilter = this.filters[this.filters.length - 1]
       this.filters.push(_.clone(lastFilter))
+      this.$nextTick(() => {
+        const filters = this.$refs.multipleFilters.children
+        filters[filters.length - 1].scrollIntoView()
+      })
     },
     removeFilter(additionalIdx: number) {
       this.filters.splice(additionalIdx + 1, 1)
+      this.$nextTick(() => {
+        const filterGroupWrapper = this.$refs.filterGroupWrapper
+        const child = filterGroupWrapper.firstChild
+        if (child.offsetHeight < filterGroupWrapper.offsetHeight) {
+          filterGroupWrapper.style.removeProperty('height')
+          this.cappedFilterHeight = false
+        }
+      })
     },
-    preProcessedFilters(): TableFilter[] {
-      return (this.filters as TableFilter[])
-        .filter((filter) => filter.type && filter.field && filter.value)
-        .map((filter) => {
-          if (filter.type === "in") {
-            const value = (filter.value as string).split(/\s*,\s*/)
-            return { ...filter, value }
-          }
-          return filter
-        })
-    },
+    preProcessedFilters() {
+      let preProcessed: TableFilter[] = [];
+      for (const filter of this.filters as TableFilter[]) {
+        if (!(filter.type && filter.field && filter.value)) continue;
+        if (filter.type === "in") {
+          const value = (filter.value as string).split(/\s*,\s*/)
+          preProcessed.push({ ...filter, value })
+        } else {
+          preProcessed.push(filter)
+        }
+      }
+      return preProcessed
+    }
   }
 });
 </script>
