@@ -181,9 +181,6 @@ $cell-padding:           $gutter-w;
 
     &.copied {
       background: rgba($theme-base, 0.4) !important;
-      &:hover {
-        background: rgba($theme-base, 0.4) !important;
-      }
     }
 
     // Cell States
@@ -261,6 +258,20 @@ $cell-padding:           $gutter-w;
         display: none;
       }
     }
+    &.tabulator-frozen {
+      border: 0 !important;
+      background-color: transparent;
+    }
+  }
+
+  &.copied {
+    background: rgba($theme-base, 0.4) !important;
+    .tabulator-cell {
+
+      &:hover {
+        background: rgba($theme-base, 0.4) !important;
+      }
+    }
   }
 
   // Cell Edit States
@@ -290,18 +301,24 @@ $cell-padding:           $gutter-w;
     }
   }
 
-  &.tabulator-selectable:hover {
-    background: rgba($theme-base, 0.05);
-    cursor: default;
-    i.fk-link {
-      display: inline-block;
-      &:hover {
-        color: white;
+  &.tabulator-selectable {
+    &:hover {
+      background: rgba($theme-base, 0.05);
+      cursor: default;
+      i.fk-link {
+        display: inline-block;
+        &:hover {
+          color: white;
+        }
+      }
+      &.tabulator-selected {
+        background: rgba($theme-base, 0.1);
       }
     }
-  }
-  &.tabulator-selected {
-    background: rgba($theme-base, 0.05);
+    &.tabulator-selected {
+      background: rgba($theme-base, 0.1);
+    }
+
   }
 
 }
@@ -372,8 +389,8 @@ $cell-padding:           $gutter-w;
   .tabulator-header {
     background: transparent;
     border: 0;
-    box-shadow: inset 0 -1px $border-color;
     width: -webkit-fill-available;
+    box-shadow: inset 0 -1px $border-color;
     .tabulator-col {
       background: transparent;
       border-color: transparent;
@@ -467,6 +484,16 @@ $cell-padding:           $gutter-w;
         }
       }
     }
+    .tabulator-frozen {
+      position: relative;
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-color: $query-editor-bg;
+        z-index: -1;
+      }
+    }
   }
   .tabulator-tableHolder {
     .tabulator-table {
@@ -510,6 +537,23 @@ $cell-padding:           $gutter-w;
   }
 
 }
+
+// Applied when not dragging rows so frozen cells can be transparent
+.tabulator:not(.tabulator-block-select) .tabulator-row .tabulator-frozen {
+  position: relative;
+  background-color: $query-editor-bg !important;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: rgba($theme-base, 0.05);
+    z-index: -10;
+  }
+  &:hover::before {
+    background-color: rgba($theme-base, 0.10);
+  }
+}
+
 
 .tabulator-edit-select-list {
   background: $theme-bg;

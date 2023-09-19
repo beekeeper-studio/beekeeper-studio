@@ -33,6 +33,8 @@ $input-highlight:           rgba($theme-base, 0.27);
 
 $db-select-text:            white;
 $query-editor-bg:           white;
+$row-handle-selected: darken($query-editor-bg, 10%);
+$row-handle-hover:          darken($query-editor-bg, 5%);
 
 $titlebar-bg:               transparent;
 $global-sidebar-bg:         transparent;

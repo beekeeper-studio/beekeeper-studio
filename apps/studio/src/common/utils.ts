@@ -7,6 +7,7 @@ import mkdirp from 'mkdirp';
 import { Error as CustomError } from '../lib/errors'
 import _ from 'lodash';
 import platformInfo from './platform_info';
+import { format } from 'sql-formatter';
 
 export function having<T, U>(item: T | undefined | null, f: (T) => U, errorOnNone?: string): U | null {
   if (item) return f(item)
@@ -137,4 +138,14 @@ export function createCancelablePromise(error: CustomError, timeIdle = 100): any
 export function makeString(value: any): string {
   if(value === BigInt(0)) return '0';
   return _.toString(value);
+}
+
+export function safeSqlFormat(
+  ...args: Parameters<typeof format>
+): ReturnType<typeof format> {
+  try {
+    return format(args[0], args[1]);
+  } catch (ex) {
+    return args[0];
+  }
 }
