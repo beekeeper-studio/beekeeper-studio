@@ -20,7 +20,7 @@
           <!-- <p class="text-muted">This feature is not included in the Community Edition. Please upgrade the app to continue.</p> -->
           <p class="text-muted">Get everything in the community edition, plus:</p>
           <div class="row">
-            <div class="col m6">
+            <div class="col s6">
               <ul class="check-list">
                 <li>Import data from CSV</li>
                 <li>Export multiple tables</li>
@@ -28,7 +28,7 @@
                 <li>Magic formatting</li>
               </ul>
             </div>
-            <div class="col m6">
+            <div class="col s6">
               <ul class="check-list">
                 <li title="Oracle, Cassandra, BigQuery, and more">More database engines</li>
                 <li>Cloud sync</li>
