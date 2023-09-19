@@ -92,6 +92,7 @@ export interface DialectData {
       extra?: boolean
     }
     tableTable?: boolean,
+    indexes?: boolean,
     alter?: {
       addColumn?: boolean
       dropColumn?: boolean
