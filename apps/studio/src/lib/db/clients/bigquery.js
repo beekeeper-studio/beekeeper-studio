@@ -14,6 +14,8 @@ import { wrapIdentifier } from './mysql';
 import { BigQueryClient } from '@shared/lib/knex-bigquery'; import knexlib from 'knex';
 import { Connection } from 'typeorm';
 import { BigQueryChangeBuilder } from '@shared/lib/sql/change_builder/BigQueryChangeBuilder';
+import { BigQueryCursor } from './bigquery/BigQueryCursor';
+import _ from 'lodash';
 const log = rawLog.scope('bigquery')
 const logger = () => log
 
@@ -55,6 +57,8 @@ export default async function (server, database) {
     listTableColumns: (db, table) => listTableColumns(client, db, table),
     getTableLength: (table) => getTableLength(client, database.database, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(client, database.database, table, offset, limit, orderBy, filters, selects),
+    selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(client, db, table, orderBy, filters, chunkSize, schema),
+    queryStream: (db, query, chunkSize) => queryStream(client, db, query, chunkSize),
     getTableKeys: (db, table) => getTableKeys(client, db, table),
     getPrimaryKey: (db, table) => getPrimaryKey(client, db, table),
     getPrimaryKeys: (db, table) => getPrimaryKeys(client, db, table),
@@ -416,6 +420,40 @@ export async function selectTop(client, db, table, offset, limit, orderBy, filte
     fields: { fields }
   }
   return result
+}
+
+export async function selectTopStream(conn, db, table, orderBy, filters, chunkSize) {
+  const bqTable = db + "." + table
+  const qs = buildSelectTopQuery(bqTable, null, null, orderBy, filters);
+  const columns = await listTableColumns(conn, db, table);
+  console.log('PARAMS: ', {
+    db, 
+    table,
+    orderBy,
+    filters,
+    chunkSize,
+    qs,
+    columns
+  });
+  const rowCount = await getTableLength(conn, db, table);
+  const { query, params } = qs;
+
+  return {
+    totalRows: rowCount,
+    columns,
+    cursor: new BigQueryCursor(conn, query, params, chunkSize)
+  };
+}
+
+export async function queryStream(conn, db, query, chunkSize) {
+  const theCursor = new BigQueryCursor(conn, query, [], chunkSize);
+  log.debug('results', theCursor);
+
+  return {
+    totalRows: undefined, // rowCount,
+    columns: undefined, // theCursor.result.columns,
+    cursor: theCursor
+  };
 }
 
 
