@@ -34,9 +34,9 @@
         ><i class=" material-icons">add_circle</i></a>
       </span>
       <a
-        href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
+        @click.prevent="showUpgradeModal"
         class="btn btn-brand btn-icon btn-upgrade"
-        v-tooltip="'Full version includes: backup/restore, data import, larger query results, and more'"
+        v-tooltip="'Upgrade for: backup/restore, import from CSV, larger query results, and more!'"
       >
         <i class="material-icons">stars</i> Upgrade
       </a>
@@ -187,7 +187,7 @@
 <script lang="ts">
 
 import _ from 'lodash'
-import { format } from 'sql-formatter';
+
 import QueryEditor from './TabQueryEditor.vue'
 import Statusbar from './common/StatusBar.vue'
 import CoreTabHeader from './CoreTabHeader.vue'
@@ -325,6 +325,9 @@ export default Vue.extend({
     },
   },
   methods: {
+    showUpgradeModal() {
+      this.$root.$emit(AppEvent.upgradeModal)
+    },
     completeDeleteAction() {
       const { schema, name: dbName, entityType } = this.dbDeleteElementParams
       if (entityType !== 'table' && this.dbAction == 'truncate') {
