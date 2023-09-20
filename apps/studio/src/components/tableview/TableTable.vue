@@ -8,211 +8,12 @@
       <div class="no-content" />
     </template>
     <template v-else>
-      <div class="table-filter">
-        <form
-          @submit.prevent="triggerFilter"
-          :class="{ resizable: filters.length > 1 && filterMode === 'builder' }"
-          @scroll="$event.target.classList.toggle('filter-outside-viewport', $event.target.scrollTop > 31)"
-          ref="filterGroupWrapper"
-        >
-          <!-- <div -->
-          <!--   class="filter-group" -->
-          <!--   style="margin-left: 0.2rem" -->
-          <!-- > -->
-          <!--   <button -->
-          <!--     type="button" -->
-          <!--     class="btn btn-flat btn-fab" -->
-          <!--     :class="{'btn-primary': !allColumnsSelected}" -->
-          <!--     :title="`Set column visibility (${hiddenColumnCount} hidden)`" -->
-          <!--     @click="showColumnFilterModal()" -->
-          <!--   > -->
-          <!--     <i class="material-icons-outlined">visibility</i> -->
-          <!--   </button> -->
-          <!-- </div> -->
-          <div
-            v-if="filterMode === 'raw'"
-            class="filter-group row gutter expand"
-          >
-            <div class="btn-wrap">
-              <button
-                class="btn btn-flat btn-fab"
-                type="button"
-                @click.stop="changeFilterMode('builder')"
-                title="Toggle Filter Type"
-              >
-                <i class="material-icons-outlined">filter_alt</i>
-              </button>
-            </div>
-            <div class="expand filter">
-              <div class="filter-wrap">
-                <input
-                  class="form-control"
-                  type="text"
-                  v-model="filterRaw"
-                  ref="valueInput"
-                  :placeholder="filterPlaceholder"
-                >
-                <button
-                  type="button"
-                  class="clear btn-link"
-                  @click.prevent="filterRaw = ''"
-                >
-                  <i class="material-icons">cancel</i>
-                </button>
-              </div>
-            </div>
-            <div class="btn-wrap">
-              <button
-                class="btn btn-primary btn-fab"
-                type="submit"
-                title="Filter"
-              >
-                <i class="material-icons">search</i>
-              </button>
-            </div>
-          </div>
-          <div
-            v-else-if="filterMode === 'builder'"
-            class="filter-group row gutter expand"
-          >
-            <div class="left-section">
-              <div class="btn-wrap">
-                <button
-                  class="btn btn-flat btn-fab"
-                  type="button"
-                  @click.stop="changeFilterMode('raw')"
-                  title="Toggle Filter Type"
-                >
-                  <i class="material-icons">code</i>
-                </button>
-              </div>
-              <div
-                class="btn-wrap"
-                v-for="(filter, index) in additionalFilters"
-                :key="index"
-              >
-                <button
-                  class="btn btn-flat btn-fab op-filter"
-                  type="button"
-                  @click.stop="filter.op = (filter.op === 'AND' ? 'OR' : 'AND')"
-                  title="Toggle Filter AND / OR"
-                >
-                  {{ filter.op }}
-                </button>
-              </div>
-            </div>
-            <div class="middle-section multiple-filter" ref="multipleFilters">
-              <div
-                v-for="(filter, index) in filters"
-                :key="index"
-                class="filter-container"
-              >
-                <div class="select-wrap">
-                  <select
-                    name="Filter Field"
-                    class="form-control"
-                    v-model="filter.field"
-                  >
-                    <option
-                      v-for="column in table.columns"
-                      :key="column.columnName"
-                      :value="column.columnName"
-                    >
-                      {{ column.columnName }}
-                    </option>
-                  </select>
-                </div>
-                <div class="select-wrap">
-                  <select
-                    name="Filter Type"
-                    class="form-control"
-                    v-model="filter.type"
-                  >
-                    <option
-                      v-for="(v, k) in filterTypes"
-                      :key="k"
-                      :value="v"
-                    >
-                      {{ k }}
-                    </option>
-                  </select>
-                </div>
-                <div class="expand filter">
-                  <div class="filter-wrap">
-                    <input
-                      class="form-control"
-                      type="text"
-                      v-model="filter.value"
-                      :placeholder="
-                        filter.type === 'in'
-                          ? `Enter values separated by comma, eg: foo,bar`
-                          : 'Enter Value'
-                      "
-                      ref="valueInput"
-                    >
-                    <button
-                      type="button"
-                      class="clear btn-link"
-                      @click.prevent="filter.value = ''"
-                    >
-                      <i class="material-icons">cancel</i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="right-section">
-              <div class="ghost-add-reply">
-                <div class="btn-wrap">
-                  <button class="btn btn-flat btn-fab">
-                    <i class="material-icons">add</i>
-                  </button>
-                </div>
-                <div class="btn-wrap">
-                  <button class="btn btn-primary btn-fab">
-                    <i class="material-icons">search</i>
-                  </button>
-                </div>
-              </div>
-              <div class="filter-add-apply">
-                <div class="row fixed">
-                  <div class="btn-wrap add-filter">
-                    <button
-                      class="btn btn-flat btn-fab"
-                      type="button"
-                      title="Add filter"
-                      @click="addFilter"
-                    >
-                      <i class="material-icons">add</i>
-                    </button>
-                  </div>
-                  <!-- TODO 2 : when you add a filter, it should scroll automatically -->
-                  <div class="btn-wrap" ref="filterButtonWrapper">
-                    <button
-                      class="btn btn-primary btn-fab"
-                      type="submit"
-                      title="Apply filter"
-                    >
-                      <i class="material-icons">search</i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="btn-wrap" v-for="(filter, index) in additionalFilters" :key="index">
-                <button
-                  class="btn btn-flat btn-fab remove-filter"
-                  type="button"
-                  title="Remove filter"
-                  @click="removeFilter(index)"
-                >
-                  <i class="material-icons">remove</i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </form>
-        <div class="filter-drag-icon"><i class="material-icons">drag_handle</i></div>
-      </div>
+      <row-filter-builder
+        :columns="table.columns"
+        :initialFilters="tab.getFilters()"
+        @changed="saveFilters"
+        @submit="triggerFilter"
+      />
       <div ref="table" />
       <ColumnFilterModal
         :modal-name="columnFilterModalName"
@@ -422,6 +223,7 @@ import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
 import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
+import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
 import rawLog from 'electron-log'
 import _ from 'lodash'
@@ -437,37 +239,19 @@ import { TableUpdate, TableUpdateResult } from '@/lib/db/models';
 import { markdownTable } from 'markdown-table'
 import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
-import { safeSqlFormat, joinFilters } from '@/common/utils'
+import { safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 const log = rawLog.scope('TableTable')
-const FILTER_MODE_BUILDER = 'builder'
-const FILTER_MODE_RAW = 'raw'
-const MAX_FILTER_HEIGHT = 201
+
+let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["connection", "initialFilters", "active", 'tab', 'table'],
   data() {
     return {
-      filterTypes: {
-        equals: "=",
-        "does not equal": "!=",
-        like: "like",
-        "less than": "<",
-        "less than or equal": "<=",
-        "greater than": ">",
-        "greater than or equal": ">=",
-        in: "in"
-      },
-      filters: [{
-        op: "AND",
-        field: '',
-        type: "=",
-        value: '',
-      }],
-      filterRaw: null,
-      filterMode: FILTER_MODE_BUILDER,
+      filters: [],
       headerFilter: true,
       columnsSet: false,
       tabulator: null,
@@ -504,17 +288,11 @@ export default Vue.extend({
       selectedCell: null,
       mouseDownHandle: null,
       lastMouseOverRow: null,
-      filterModalName: `filter-modal-${this.tab.id}`,
-      cappedFilterHeight: false,
     };
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
     ...mapGetters(['dialectData', 'dialect']),
-    additionalFilters() {
-      const [_, ...additional] = this.filters
-      return additional
-    },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
       const cols = this.tabulator.getColumns()
@@ -916,16 +694,6 @@ export default Vue.extend({
         persistenceID: this.tableId,
       }
     },
-    filterForTabulator() {
-      if (this.filterMode === FILTER_MODE_RAW && this.filterRaw) {
-        return this.filterRaw
-      }
-      const filters = this.preProcessedFilters()
-      if (this.filterMode === FILTER_MODE_BUILDER && filters) {
-        return filters
-      }
-      return null
-    },
     initialSort() {
       // FIXME: Don't specify an initial sort order
       // because it can slow down some databases.
@@ -977,50 +745,22 @@ export default Vue.extend({
       if (!this.tabulator) return;
 
       if (!this.active) this.forceRedraw = true;
-      console.log("setting columns")
       await this.tabulator.setColumns(this.tableColumns)
       await this.refreshTable();
     },
-    filters: {
-      deep: true,
-      handler() {
-        this.tab.setFilters(this.filters)
-        this.$store.dispatch('tabs/save', this.tab)
-      }
-    },
-    filterRaw() {
-      if (this.filterRaw === '') {
-        this.clearFilter()
-      }
-    },
     async lastUpdated() {
       this.setlastUpdatedText()
-      const primaryFilter = (this.preProcessedFilters() as TableFilter[]).find(
-        (filter) => this.isPrimaryKey(filter.field)
-      );
+      const primaryFilter: TableFilter | false = _.isArray(this.filters) &&
+        this.filters.find((filter: TableFilter) => this.isPrimaryKey(filter.field));
       let result = 'all'
       if (this.primaryKeys?.length && primaryFilter) {
         log.info("setting scope", primaryFilter.value)
         result = _.truncate(primaryFilter.value.toString())
-      } else {
-        if (this.filterRaw) result = 'custom'
+      } else if (_.isString(this.filters)) {
+        result = 'custom'
       }
       this.tab.titleScope = result
       await this.$store.dispatch('tabs/save', this.tab)
-    },
-    filterMode() {
-      this.triggerFilter()
-      this.$nextTick(() => {
-        if (this.filterMode === FILTER_MODE_RAW) {
-          this.$refs.filterGroupWrapper.style.removeProperty('height')
-        } else {
-          const filterGroupWrapper = this.$refs.filterGroupWrapper
-          const child = filterGroupWrapper.firstChild
-          if (child.offsetHeight > MAX_FILTER_HEIGHT){
-            filterGroupWrapper.style.height = MAX_FILTER_HEIGHT + 'px'
-          }
-        }
-      })
     },
     pendingChangesCount() {
       this.tab.unsavedChanges = this.pendingChangesCount > 0
@@ -1037,16 +777,6 @@ export default Vue.extend({
   async mounted() {
     document.addEventListener('click', this.maybeUnselectCell)
     document.addEventListener('mouseUp', this.handleCellMouseUp)
-
-    const filterGroupWrapper = this.$refs.filterGroupWrapper
-    new ResizeObserver(() => {
-      if (!this.cappedFilterHeight && this.filters.length > 5) {
-        // Stop it from growing height
-        this.cappedFilterHeight = true
-        filterGroupWrapper.style.height = filterGroupWrapper.offsetHeight + 'px'
-      }
-    }).observe(filterGroupWrapper)
-
     if (this.shouldInitialize) {
       this.$nextTick(async() => {
         await this.initialize()
@@ -1190,10 +920,8 @@ export default Vue.extend({
       this.initialized = true
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
-      this.filters[0].field = this.table?.columns[0]?.columnName
-      console.log("momo", this.initialFilters)
       if (this.initialFilters) {
-        this.filters = _.clone(this.initialFilters)
+        this.saveFilters(this.initialFilters)
       }
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
@@ -1216,7 +944,7 @@ export default Vue.extend({
         paginationElement: this.$refs.paginationArea,
         paginationButtonCount: 0,
         initialSort: this.initialSort,
-        initialFilter: [this.initialFilter || {}],
+        initialFilter: this.initialFilters ?? [{}],
         ...this.persistenceOptions,
 
         // callbacks
@@ -1655,7 +1383,6 @@ export default Vue.extend({
       pendingUpdate.cell.getElement().classList.remove('edit-error')
     },
     openQueryTab() {
-      const filters = this.filterForTabulator;
       const page = this.tabulator.getPage();
       const orderBy = [
         _.pick(this.tabulator.getSorters()[0], ["field", "dir"]),
@@ -1674,7 +1401,7 @@ export default Vue.extend({
         offset,
         limit,
         orderBy,
-        filters,
+        this.filters,
         this.table.schema,
         selects
       ).then((query: string) => {
@@ -1689,35 +1416,18 @@ export default Vue.extend({
     showColumnFilterModal() {
       this.$modal.show(this.columnFilterModalName)
     },
-    triggerFilter() {
+    triggerFilter(filters: TableFilter[] | string | null) {
       if (this.pendingChangesCount > 0) {
+        draftFilters = filters
         this.$modal.show(`discard-changes-modal-${this.tab.id}`)
         return;
       }
+      this.filters = filters
       if (this.tabulator) this.tabulator.setData()
     },
-    clearFilter() {
-      if (this.tabulator) this.tabulator.setData();
-    },
-    changeFilterMode(filterMode: string) {
-      const filters: TableFilter[] = this.preProcessedFilters()
-      // Populate raw filter query with existing filter if raw filter is empty
-      if (
-        filterMode === FILTER_MODE_RAW &&
-        !_.isEmpty(filters) &&
-        _.isEmpty(this.filterRaw)
-      ) {
-        const allFilters = filters.map((filter) =>
-          `${filter.field} ${filter.type} ${this.dialectData.escapeString(filter.value, true)}`
-        )
-        this.filterRaw = joinFilters(allFilters, filters)
-      }
-
-      this.filterMode = filterMode
-      this.$nextTick(() => {
-        this.$refs.valueInput.focus()
-      })
-    },
+    // clearFilter() {
+    //   if (this.tabulator) this.tabulator.setData();
+    // },
     dataFetch(_url, _config, params) {
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
@@ -1726,7 +1436,7 @@ export default Vue.extend({
       let offset = 0;
       let limit = this.limit;
       let orderBy = null;
-      let filters = this.filterForTabulator;
+      let filters = this.filters
 
       if (params.sort) {
         orderBy = params.sort
@@ -1832,7 +1542,7 @@ export default Vue.extend({
       this.trigger(AppEvent.beginExport, { table: this.table })
     },
     exportFiltered() {
-      this.trigger(AppEvent.beginExport, {table: this.table, filters: this.filterForTabulator} )
+      this.trigger(AppEvent.beginExport, {table: this.table, filters: this.filters} )
     },
     modifyRowData(data) {
       if (_.isArray(data)) {
@@ -1867,41 +1577,13 @@ export default Vue.extend({
     },
     forceFilter() {
       this.discardChanges();
-      this.triggerFilter();
+      this.triggerFilter(draftFilters);
       this.$modal.hide(`discard-changes-modal-${this.tab.id}`);
     },
-    addFilter() {
-      const lastFilter = this.filters[this.filters.length - 1]
-      this.filters.push(_.clone(lastFilter))
-      this.$nextTick(() => {
-        const filters = this.$refs.multipleFilters.children
-        filters[filters.length - 1].scrollIntoView()
-      })
+    saveFilters(filters: TableFilter[]) {
+      this.tab.setFilters(filters)
+      this.$store.dispatch('tabs/save', this.tab)
     },
-    removeFilter(additionalIdx: number) {
-      this.filters.splice(additionalIdx + 1, 1)
-      this.$nextTick(() => {
-        const filterGroupWrapper = this.$refs.filterGroupWrapper
-        const child = filterGroupWrapper.firstChild
-        if (child.offsetHeight < filterGroupWrapper.offsetHeight) {
-          filterGroupWrapper.style.removeProperty('height')
-          this.cappedFilterHeight = false
-        }
-      })
-    },
-    preProcessedFilters() {
-      let preProcessed: TableFilter[] = [];
-      for (const filter of this.filters as TableFilter[]) {
-        if (!(filter.type && filter.field && filter.value)) continue;
-        if (filter.type === "in") {
-          const value = (filter.value as string).split(/\s*,\s*/)
-          preProcessed.push({ ...filter, value })
-        } else {
-          preProcessed.push(filter)
-        }
-      }
-      return preProcessed
-    }
   }
 });
 </script>

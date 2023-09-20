@@ -371,6 +371,7 @@
     position: relative;
     overflow-y: scroll;
     overflow-x: hidden;
+    max-height: 202px;
     &.resizable {
       resize: vertical;
       &::-webkit-resizer { background-color: transparent; }
@@ -384,21 +385,21 @@
         right: 4.75rem;
         & .fixed {
           position: fixed;
-          padding-top: 0.5rem;
+          padding-top: 0.4rem;
           background-color: $query-editor-bg;
         }
       }
-      .ghost-add-reply {
+      .ghost-add-apply {
         display: inline-flex;
       }
     }
-    .filter-add-apply > *, .ghost-add-reply {
+    .filter-add-apply > *, .ghost-add-apply {
       display: flex;
       gap: 0.4rem;
       flex-wrap: nowrap;
     }
     // Used for adding empty space when the actions are floating
-    .ghost-add-reply {
+    .ghost-add-apply {
       display: none;
       visibility: hidden;
     }

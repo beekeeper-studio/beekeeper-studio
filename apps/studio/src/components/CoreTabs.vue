@@ -583,7 +583,7 @@ export default Vue.extend({
       tab.tableName = table.name
       tab.schemaName = table.schema
       tab.entityType = table.entityType
-      tab.filters = filters
+      tab.setFilters(filters)
       tab.titleScope = "all"
       const existing = this.tabItems.find((t) => t.matches(tab))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
