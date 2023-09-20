@@ -920,13 +920,9 @@ export default Vue.extend({
       this.initialized = true
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
-      if (this.initialFilters) {
-        this.saveFilters(this.initialFilters)
-      }
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,
@@ -1423,11 +1419,8 @@ export default Vue.extend({
         return;
       }
       this.filters = filters
-      if (this.tabulator) this.tabulator.setData()
+      this.tabulator?.setData()
     },
-    // clearFilter() {
-    //   if (this.tabulator) this.tabulator.setData();
-    // },
     dataFetch(_url, _config, params) {
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.

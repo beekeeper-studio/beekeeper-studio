@@ -290,8 +290,25 @@ export default Vue.extend({
     },
   },
   watch: {
-    filters() {
-      this.$emit("changed", this.filters);
+    filters: {
+      deep: true,
+      handler(nextFilters: TableFilter[], oldFilters: TableFilter[]) {
+        this.$emit("changed", nextFilters);
+        // Submit when it's only one filter and it's empty
+        if (
+          nextFilters.length === 1 &&
+          oldFilters[0].value !== "" &&
+          nextFilters[0].value === ""
+        ) {
+          this.submit();
+        }
+      },
+    },
+    filterMode() {
+      this.submit();
+    },
+    filterRaw() {
+      if (this.filterRaw === "") this.submit();
     },
   },
 });
