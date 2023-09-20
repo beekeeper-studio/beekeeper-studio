@@ -10,7 +10,10 @@
       "
       ref="filterGroupWrapper"
     >
-      <div v-if="filterMode === RAW" class="filter-group row gutter expand">
+      <div
+        v-if="filterMode === RAW"
+        class="filter-group row gutter expand"
+      >
         <div class="btn-wrap">
           <button
             class="btn btn-flat btn-fab"
@@ -29,7 +32,7 @@
               v-model="filterRaw"
               ref="valueInput"
               placeholder="Enter condition, eg: name like 'Matthew%'"
-            />
+            >
             <button
               type="button"
               class="clear btn-link"
@@ -40,7 +43,11 @@
           </div>
         </div>
         <div class="btn-wrap">
-          <button class="btn btn-primary btn-fab" type="submit" title="Filter">
+          <button
+            class="btn btn-primary btn-fab"
+            type="submit"
+            title="Filter"
+          >
             <i class="material-icons">search</i>
           </button>
         </div>
@@ -75,7 +82,10 @@
             </button>
           </div>
         </div>
-        <div class="middle-section multiple-filter" ref="multipleFilters">
+        <div
+          class="middle-section multiple-filter"
+          ref="multipleFilters"
+        >
           <div
             v-for="(filter, index) in filters"
             :key="index"
@@ -102,7 +112,11 @@
                 class="form-control"
                 v-model="filter.type"
               >
-                <option v-for="(v, k) in filterTypes" :key="k" :value="v">
+                <option
+                  v-for="(v, k) in filterTypes"
+                  :key="k"
+                  :value="v"
+                >
                   {{ k }}
                 </option>
               </select>
@@ -118,7 +132,7 @@
                       ? `Enter values separated by comma, eg: foo,bar`
                       : 'Enter Value'
                   "
-                />
+                >
                 <button
                   type="button"
                   class="clear btn-link"
@@ -155,7 +169,10 @@
                   <i class="material-icons">add</i>
                 </button>
               </div>
-              <div class="btn-wrap" ref="filterButtonWrapper">
+              <div
+                class="btn-wrap"
+                ref="filterButtonWrapper"
+              >
                 <button
                   class="btn btn-primary btn-fab"
                   type="submit"

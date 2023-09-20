@@ -10,7 +10,7 @@
     <template v-else>
       <row-filter-builder
         :columns="table.columns"
-        :initialFilters="tab.getFilters()"
+        :initial-filters="tab.getFilters()"
         @changed="saveFilters"
         @submit="triggerFilter"
       />
