@@ -13,6 +13,7 @@ $codemirror-hint-bg:       darken($theme-bg, 2%);
 
 // Table Editing
 $row-highlight:            darken($query-editor-bg, 3%);
+$row-handle-selected: darken($query-editor-bg, 10%);
 $row-add:                  #5ff3c0;
 $row-delete:               #FC8A87;
 $row-error:                #F9B8B7;

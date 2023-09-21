@@ -1,4 +1,5 @@
 import { RedshiftData } from "@shared/lib/dialects/redshift";
+import { BigQueryData } from "./bigquery";
 import { Dialect, DialectData } from "./models";
 import { MysqlData } from "./mysql";
 import { PostgresData } from "./postgresql";
@@ -17,6 +18,8 @@ export function getDialectData(dialect: Dialect): DialectData  {
       return SqliteData
     case 'redshift':
       return RedshiftData
+    case 'bigquery':
+      return BigQueryData
     default:
       return SqliteData
   }

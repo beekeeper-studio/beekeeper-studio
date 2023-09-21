@@ -28,11 +28,17 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
+    "tests/**/*.ts",
     "../../shared/src/**/*.ts",
     "../../shared/src/**/*.tsx",
     "../../shared/src/**/*.vue",
+    "src/*.js",
+    "src/**/*.js",
   ],
   "exclude": [
     "node_modules", "dist", "dist_electron"
-  ]
+  ],
+  "sourceMapPathOverrides": {
+    "src/*": "${webRoot}/apps/studio/src/*"
+  },
 }

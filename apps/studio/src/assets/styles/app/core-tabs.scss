@@ -4,6 +4,11 @@
   display: flex;
   flex: 1 1 100%;
   flex-direction: column;
+
+  .btn-upgrade {
+    margin-right: 0.8rem;
+  }
+
   .tab-content, .tab-pane {
     position: relative;
     display: flex;
@@ -186,6 +191,8 @@
   }
   .actions {
     padding: 0 $gutter-h;
+    display: flex;
+    flex-direction: row;
     -webkit-app-region: no-drag;
   }
 }
@@ -249,6 +256,7 @@
 }
 .table-filter {
   width: 100%;
+  position: relative;
   .filter-group {
     padding: $gutter-h;
     margin-left: -($gutter-h * 0.5);
@@ -259,6 +267,15 @@
       padding-left: ($gutter-h * 0.5);
       padding-right: ($gutter-h * 0.5);
       margin: 0;
+    }
+    // Show arrows and clear button on hover
+    .filter-container:not(:hover) {
+      .select-wrap select {
+        background: none !important;
+      }
+      .filter-wrap .clear.btn-link {
+        visibility: hidden;
+      }
     }
     .select-wrap {
       padding-right: $gutter-h;
@@ -336,6 +353,78 @@
       i {
         font-size: 16px;
         width: 26px;
+      }
+    }
+  }
+  .filter-drag-icon {
+    position: absolute;
+    display: flex;
+    visibility: hidden;
+    bottom: 0;
+    right: 0;
+    pointer-events: none;
+    color: rgba($theme-base, 0.5);
+    transform: scaleX(1.2) translateX(0.07rem);
+    & > i { font-size: 1rem; }
+  }
+  form {
+    position: relative;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    max-height: 202px;
+    &.resizable {
+      resize: vertical;
+      &::-webkit-resizer { background-color: transparent; }
+      & ~ .filter-drag-icon { visibility: visible; }
+    }
+    &.filter-outside-viewport {
+      .filter-add-apply {
+        z-index: 99;
+        position: absolute;
+        top: 0;
+        right: 4.75rem;
+        & .fixed {
+          position: fixed;
+          padding-top: 0.4rem;
+          background-color: $query-editor-bg;
+        }
+      }
+      .ghost-add-apply {
+        display: inline-flex;
+      }
+    }
+    .filter-add-apply > *, .ghost-add-apply {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: nowrap;
+    }
+    // Used for adding empty space when the actions are floating
+    .ghost-add-apply {
+      display: none;
+      visibility: hidden;
+    }
+    .left-section, .middle-section, .right-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .multiple-filter  {
+      flex-grow: 1;
+      & > * {
+        display: flex;
+        gap: 0.4rem;
+        div.select-wrap {
+          width: initial;
+        }
+      }
+    }
+    .op-filter, .add-filter > button, .remove-filter {
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 0.75rem;
+      opacity: 0.75;
+      &:not(:hover) {
+        background-color: transparent;
       }
     }
   }

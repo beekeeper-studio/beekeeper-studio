@@ -16,8 +16,8 @@ describe("data converter", () => {
     ]
 
     const expected = [
-      { foo: 1, bar: 2},
-      { foo: 3, bar: 4}
+      { foo: 1, bar: 2, 'row-selector--bks': 1},
+      { foo: 3, bar: 4, 'row-selector--bks': 2}
     ]
 
     const result = data_converter.methods.dataToTableData(data, columns)

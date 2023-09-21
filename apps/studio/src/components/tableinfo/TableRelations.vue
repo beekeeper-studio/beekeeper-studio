@@ -158,6 +158,9 @@ export default Vue.extend({
       if (!this.canDrop) {
         results.push("Dropping constraints is not supported")
       }
+      if (this.dialectData.notices?.infoRelations) {
+        results.push(this.dialectData.notices.infoRelations)
+      }
       if (results?.length) {
         return `${DialectTitles[this.dialect]}: ${results.join(". ")}`
       }

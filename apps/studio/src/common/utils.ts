@@ -5,6 +5,10 @@ import {homedir} from 'os';
 import path from 'path';
 import mkdirp from 'mkdirp';
 import { Error as CustomError } from '../lib/errors'
+import _ from 'lodash';
+import platformInfo from './platform_info';
+import { format } from 'sql-formatter';
+import { TableFilter } from '@/lib/db/models';
 
 export function having<T, U>(item: T | undefined | null, f: (T) => U, errorOnNone?: string): U | null {
   if (item) return f(item)
@@ -66,6 +70,17 @@ export function readJSONFile(filename: string): Promise<any> {
   return readFile(filename).then((data) => JSON.parse(data));
 }
 
+export function readVimrc(): string[] {
+  const vimrcPath = path.join(platformInfo.userDirectory, ".beekeeper.vimrc");
+  if (fileExistsSync(vimrcPath)) {
+    const data = fs.readFileSync(vimrcPath, { encoding: 'utf-8', flag: 'r'});
+    const dataSplit = data.split("\n");
+    return dataSplit;
+  }
+
+  return [];
+}
+
 export function readJSONFileSync(filename: string): any {
   const filePath = resolveHomePathToAbsolute(filename);
   const data = fs.readFileSync(path.resolve(filePath), 'utf-8');
@@ -119,4 +134,24 @@ export function createCancelablePromise(error: CustomError, timeIdle = 100): any
       discarded = true;
     },
   };
+}
+
+export function makeString(value: any): string {
+  if(value === BigInt(0)) return '0';
+  return _.toString(value);
+}
+
+export function safeSqlFormat(
+  ...args: Parameters<typeof format>
+): ReturnType<typeof format> {
+  try {
+    return format(args[0], args[1]);
+  } catch (ex) {
+    return args[0];
+  }
+}
+
+export function joinFilters(filters: string[], ops: TableFilter[] = []): string {
+  if (filters.length === 0) return ''
+  return filters.reduce((a, b, idx) => `${a} ${ops[idx]?.op || 'AND'} ${b}`)
 }

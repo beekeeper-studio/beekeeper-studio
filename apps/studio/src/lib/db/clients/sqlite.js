@@ -12,6 +12,7 @@ import { SqliteCursor } from './sqlite/SqliteCursor';
 import { SqliteChangeBuilder } from '@shared/lib/sql/change_builder/SqliteChangeBuilder';
 import { SqliteData } from '@shared/lib/dialects/sqlite';
 import { ClientError } from '../client';
+import { makeString } from '@/common/utils';
 const log = rawLog.scope('sqlite')
 const logger = () => log
 
@@ -25,7 +26,7 @@ const knex = knexlib({
 knex.client = Object.assign(knex.client, {
   _escapeBinding: makeEscape({
     escapeString(str) {
-      str = _.toString(str)
+      str = makeString(str)
       return str ? `'${str.replace(/'/g, "''")}'` : ''
     }
   })
@@ -71,6 +72,8 @@ export default async function (server, database) {
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize) => selectTopStream(conn, db, table, orderBy, filters, chunkSize),
+    selectTopSql: (table, offset, limit, orderBy, filters, schema, selects) => selectTopSql(table, offset, limit, orderBy, filters, schema, selects),
+    queryStream: (db, query, chunkSize) => queryStream(conn, db, query, chunkSize),
     applyChangesSql: (changes) => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -164,6 +167,34 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
   }
 }
 
+export async function selectTopSql(
+  table,
+  offset,
+  limit,
+  orderBy,
+  filters,
+  schema,
+  selects
+) {
+  const { query, params } = buildSelectTopQuery(
+    table,
+    offset,
+    limit,
+    orderBy,
+    filters,
+    undefined,
+    undefined,
+    selects
+  );
+  return knex.raw(query, params).toQuery();
+}
+
+export async function queryStream(conn, db, query, chunkSize) {
+  return {
+    cursor: new SqliteCursor(conn, query, [], chunkSize)
+  }
+}
+
 export function query(conn, queryText) {
   let queryConnection = null;
 
@@ -244,7 +275,7 @@ export async function applyChanges(conn, changes) {
 
 export async function updateValues(cli, updates) {
   const commands = updates.map(update => {
-    const params = [update.value];
+    const params = [_.isBoolean(update.value) ? _.toInteger(update.value) : update.value];
     const whereList = []
     update.primaryKeys.forEach(({ column, value }) => {
       whereList.push(`${wrapIdentifier(column)} = ?`);

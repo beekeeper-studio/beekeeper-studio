@@ -74,6 +74,8 @@ export const BeekeeperPlugin = {
       return path.basename(config.defaultDatabase || "./unknown.db")
     } else if (config.connectionType === 'cockroachdb' && config.options?.cluster) {
       connectionString = `${config.options.cluster}/${config.defaultDatabase || 'cloud'}`
+    } else if (config.connectionType === 'bigquery') {
+      connectionString = `${config.bigQueryOptions.projectId}${config.defaultDatabase ? '.' + config.defaultDatabase : ''}`
     } else {
       if (config.defaultDatabase) {
         connectionString += `/${config.defaultDatabase}`
@@ -87,7 +89,7 @@ export const BeekeeperPlugin = {
     Object.keys(data).forEach((key) => {
       const v = data[key]
       // internal table fields used just for us
-      if (!key.endsWith('--bks')) {
+      if (!key.endsWith('--bks') && !key.startsWith('__beekeeper_internal')) {
         const column = columns.find((c) => c.field === key)
         const nuKey = column ? column.title : key
         fixed[nuKey] = v

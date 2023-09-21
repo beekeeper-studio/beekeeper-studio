@@ -9,6 +9,7 @@ import addZoom from './20200703_add_zoom_to_settings'
 import addSc from './20200707-add-sc-to-used-connections'
 import dev1 from './dev-1'
 import dev2 from './dev-2'
+import dev3 from './dev-3'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
@@ -31,6 +32,7 @@ import createHiddenSchemas from './20220908_create_hidden_schemas'
 import redshiftOptions from './20220817_add_redshift_options'
 import connectionPins from './20230308_create_connection_pins'
 import fixKeymapType from './20230619_fix_keymap_type'
+import bigQueryOptions from './20230426_add_bigquery_options'
 
 const logger = createLogger('migrations')()
 
@@ -45,7 +47,7 @@ const realMigrations = [
   addSc, sslFiles, sslReject, pinned, addSort,
   createCreds, workspaceScoping, workspace2, addTabs, scWorkspace, systemTheme,
   serverCerts, socketPath, connectionOptions, keepaliveInterval, redshiftOptions,
-  createHiddenEntities, createHiddenSchemas, connectionPins, fixKeymapType
+  createHiddenEntities, createHiddenSchemas, connectionPins, fixKeymapType, bigQueryOptions
 ]
 
 // fixtures require the models
@@ -54,7 +56,7 @@ const fixtures = [
 ]
 
 const devMigrations = [
-  dev1, dev2
+  dev1, dev2, dev3
 ]
 
 const migrations = [...realMigrations, ...fixtures, ...devMigrations]
@@ -84,7 +86,7 @@ export default class {
     console.log("running migrations")
     const runner = this.connection.connection.createQueryRunner()
     await runner.query(setupSQL)
-    for(let i = 0; i < migrations.length; i++){
+    for(let i = 0; i < migrations.length; i++) {
       const migration = migrations[i]
       logger.debug(`Checking migration ${migration.name}`)
       if(migration.env && migration.env !== this.env) {
