@@ -255,7 +255,7 @@ async function getTableLength(conn, table, schema) {
 
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema, selects = ['*']) {
   log.debug("filters", filters)
-  const query = await selectTopSql(table, offset, limit, orderBy, filters, schema, selects)
+  const query = await selectTopSql(conn, table, offset, limit, orderBy, filters, schema, selects)
   logger().debug(query)
 
   const result = await driverExecuteQuery(conn, { query })
