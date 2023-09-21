@@ -75,6 +75,7 @@
             <button
               class="btn btn-flat btn-fab op-filter"
               type="button"
+              :disabled="dialectData.disabledFeatures?.filterWithOR"
               @click.stop="filter.op = filter.op === 'AND' ? 'OR' : 'AND'"
               title="Toggle Filter AND / OR"
             >

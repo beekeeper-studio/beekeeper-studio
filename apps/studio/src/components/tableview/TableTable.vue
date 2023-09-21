@@ -9,8 +9,9 @@
     </template>
     <template v-else>
       <row-filter-builder
+        v-if="table.columns?.length"
         :columns="table.columns"
-        :initial-filters="tab.getFilters()"
+        :initial-filters="initialFilters"
         @changed="saveFilters"
         @submit="triggerFilter"
       />
