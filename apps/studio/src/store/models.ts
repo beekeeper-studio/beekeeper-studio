@@ -28,7 +28,7 @@ export interface QueryTab extends Tab {
 export interface TableTab extends Tab {
   table: TableOrView,
   connection: any,
-  initialFilter: any,
+  initialFilters: any[],
   titleScope: string
 }
 

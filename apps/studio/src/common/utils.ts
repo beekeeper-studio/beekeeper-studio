@@ -8,6 +8,7 @@ import { Error as CustomError } from '../lib/errors'
 import _ from 'lodash';
 import platformInfo from './platform_info';
 import { format } from 'sql-formatter';
+import { TableFilter } from '@/lib/db/models';
 
 export function having<T, U>(item: T | undefined | null, f: (T) => U, errorOnNone?: string): U | null {
   if (item) return f(item)
@@ -148,4 +149,9 @@ export function safeSqlFormat(
   } catch (ex) {
     return args[0];
   }
+}
+
+export function joinFilters(filters: string[], ops: TableFilter[] = []): string {
+  if (filters.length === 0) return ''
+  return filters.reduce((a, b, idx) => `${a} ${ops[idx]?.op || 'AND'} ${b}`)
 }

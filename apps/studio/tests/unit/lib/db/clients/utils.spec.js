@@ -52,7 +52,19 @@ describe("buildSelectTopQuery", () => {
           query: 'select * from `info` where `id` > ? and `id` < ? limit 10 offset 100',
           params: ["3", "9"]
         }
-      }
+      },
+      {
+        params: ['info', 100, 10, null, [
+          { field: 'id', type: '>', value: '3' },
+          { op: 'AND', field: 'id', type: '<', value: '9' },
+          { op: 'OR', field: 'name', type: 'like', value: 'john' },
+        ]],
+        result: {
+          countQuery: 'select count(*) as total from `info` where `id` > ? and `id` < ? or `name` like ?',
+          query: 'select * from `info` where `id` > ? and `id` < ? or `name` like ? limit 10 offset 100',
+          params: ["3", "9", "john"]
+        }
+      },
     ]
 
     const trimQuery = query => {
