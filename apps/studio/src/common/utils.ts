@@ -159,7 +159,7 @@ export function joinFilters(filters: string[], ops: TableFilter[] = []): string 
 
 /** Get rid of invalid filters and parse if needed */
 export function normalizeFilters(filters: TableFilter[]) {
-  let normalized: TableFilter[] = [];
+  const normalized: TableFilter[] = [];
   for (const filter of filters as TableFilter[]) {
     if (!(filter.type && filter.field && filter.value)) continue;
     if (filter.type === "in") {
