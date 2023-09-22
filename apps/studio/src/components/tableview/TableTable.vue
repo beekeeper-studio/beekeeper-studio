@@ -224,7 +224,7 @@ import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
 import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
-import RowFilterBuilder from './RowFilterBuilder.vue'
+import RowFilterBuilder, { normalizeFilters } from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
 import rawLog from 'electron-log'
 import _ from 'lodash'
@@ -924,6 +924,7 @@ export default Vue.extend({
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
+      this.filters = normalizeFilters(this.initialFilters || [])
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,

@@ -217,7 +217,7 @@ const BUILDER = "builder";
 const RAW = "raw";
 
 /** Get rid of invalid filters and parse if needed */
-function normalizeFilters(filters: TableFilter[]) {
+export function normalizeFilters(filters: TableFilter[]) {
   let normalized: TableFilter[] = [];
   for (const filter of filters as TableFilter[]) {
     if (!(filter.type && filter.field && filter.value)) continue;
@@ -289,7 +289,9 @@ export default Vue.extend({
     },
     addFilter() {
       const lastFilter = this.filters[this.filters.length - 1];
-      this.filters.push(_.clone(lastFilter));
+      const cloned = _.clone(lastFilter)
+      if (!cloned.op) cloned.op = "AND"
+      this.filters.push(cloned);
       this.$nextTick(() => {
         const filters = this.$refs.multipleFilters.children;
         filters[filters.length - 1].scrollIntoView();
