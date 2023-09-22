@@ -1,5 +1,8 @@
 <template>
-  <div class="table-filter">
+  <div
+    v-hotkey="keymap"
+    class="table-filter"
+  >
     <form
       @submit.prevent="submit"
       @scroll="
@@ -125,7 +128,7 @@
             <div class="expand filter">
               <div class="filter-wrap">
                 <input
-                  class="form-control"
+                  class="form-control filter-value"
                   type="text"
                   v-model="filter.value"
                   :placeholder="
@@ -250,8 +253,17 @@ export default Vue.extend({
       const [_, ...additional] = this.filters;
       return additional;
     },
+    keymap() {
+      return {
+        [this.ctrlOrCmd('f')]: this.focusOnInput,
+      }
+    }
   },
   methods: {
+    focusOnInput() {
+      if (this.filterMode === RAW) this.$refs.valueInput.focus();
+      else this.$refs.multipleFilters.querySelector('.filter-value')?.focus();
+    },
     toggleFilterMode() {
       const filters: TableFilter[] = normalizeFilters(this.filters);
       const filterMode = this.filterMode === BUILDER ? RAW : BUILDER;
@@ -270,7 +282,7 @@ export default Vue.extend({
       }
 
       this.filterMode = filterMode;
-      this.$nextTick(() => this.$refs.valueInput?.focus());
+      this.$nextTick(this.focusOnInput);
     },
     addFilter() {
       const lastFilter = this.filters[this.filters.length - 1];

@@ -168,6 +168,7 @@ export function normalizeFilters(filters: TableFilter[]) {
     } else {
       normalized.push(filter);
     }
+    filter.value = filter.value.toString();
   }
   return normalized;
 }
