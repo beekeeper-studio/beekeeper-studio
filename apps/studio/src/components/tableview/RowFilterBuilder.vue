@@ -210,26 +210,11 @@
 <script lang="ts">
 import Vue from "vue";
 import { TableFilter } from "@/lib/db/models";
-import { joinFilters } from "@/common/utils";
+import { joinFilters, normalizeFilters } from "@/common/utils";
 import { mapGetters } from "vuex";
 
 const BUILDER = "builder";
 const RAW = "raw";
-
-/** Get rid of invalid filters and parse if needed */
-export function normalizeFilters(filters: TableFilter[]) {
-  let normalized: TableFilter[] = [];
-  for (const filter of filters as TableFilter[]) {
-    if (!(filter.type && filter.field && filter.value)) continue;
-    if (filter.type === "in") {
-      const value = (filter.value as string).split(/\s*,\s*/);
-      normalized.push({ ...filter, value });
-    } else {
-      normalized.push(filter);
-    }
-  }
-  return normalized;
-}
 
 export default Vue.extend({
   props: ["columns", "initialFilters"],
