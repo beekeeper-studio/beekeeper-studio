@@ -640,6 +640,11 @@ export default Vue.extend({
               ? [true, false]
               : undefined,
             allowEmpty: true,
+            preserveObject: column.dataType.startsWith('_'),
+            onPreserveObjectFail: () => {
+              this.$noty.error("Value is not valid")
+              return true
+            }
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
             // }

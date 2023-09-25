@@ -20,6 +20,7 @@
 <script lang="ts">
 import _ from 'lodash'
 import Vue from 'vue'
+import helpers from '@shared/lib/tabulator'
 export default Vue.extend({
   props: ['cell', 'params'],
   data() {
@@ -69,6 +70,13 @@ export default Vue.extend({
       // some cases we always want null, never empty string
       if (this.params.allowEmpty === false && _.isEmpty(this.value)) {
         this.$emit('value', null)
+      } else if (this.params.preserveObject) {
+        try {
+          this.$emit('value', JSON.parse(this.value))
+        } catch (e) {
+          const updateAnyway = this.params.onPreserveObjectFail?.(this.value)
+          updateAnyway && this.$emit('value', this.value)
+        }
       } else {
         this.$emit('value', this.value)
       }
@@ -81,7 +89,7 @@ export default Vue.extend({
   watch: {
     rendered() {
       if (this.rendered) {
-        this.value = this.cell.getValue()
+        this.value = helpers.niceString(this.cell.getValue())
         this.$nextTick(() => {
           this.$refs.input.focus();
           if (this.params.autoSelect) {

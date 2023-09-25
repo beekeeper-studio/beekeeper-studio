@@ -11,7 +11,7 @@ export const Mutators = {
 
   resolveTabulatorMutator(dataType?: string, dialect?: Dialect): (v: any) => JsonFriendly {
     const mutator = this.resolveDataMutator(dataType, dialect)
-    return (v: any) => mutator(v) // this cleans off the additional params
+    return (v: any) => mutator(v, true) // this cleans off the additional params
   },
 
   resolveDataMutator(dataType?: string, dialect?: Dialect): (v: any, p?: boolean) => JsonFriendly {
