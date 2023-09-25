@@ -112,6 +112,7 @@ export interface DialectData {
     }
     createIndex?: boolean
     comments?: boolean
+    filterWithOR?: boolean
   },
   notices?: {
     infoSchema?: string

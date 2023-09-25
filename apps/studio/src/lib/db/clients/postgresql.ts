@@ -13,7 +13,7 @@ import { DatabaseClient, IDbConnectionServerConfig, DatabaseElement } from '../c
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from '../authentication/amazon-redshift';
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries, applyChangesSql } from './utils';
-import { createCancelablePromise } from '../../../common/utils';
+import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 import globals from '../../../common/globals';
 import { HasPool, VersionInfo, HasConnection, Conn } from './postgresql/types'
@@ -389,7 +389,7 @@ export function buildSelectTopQueries(options: STQOptions): STQResults {
     filterString = `WHERE ${filters}`
   } else if (filters && filters.length > 0) {
     let paramIdx = 1
-    filterString = "WHERE " + filters.map((item) => {
+    const allFilters = filters.map((item) => {
       if (item.type === 'in' && _.isArray(item.value)) {
         const values = item.value.map((v, idx) => {
           return options.inlineParams
@@ -404,7 +404,8 @@ export function buildSelectTopQueries(options: STQOptions): STQResults {
         : `$${paramIdx}`
       paramIdx += 1
       return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${value}`
-    }).join(" AND ")
+    })
+    filterString = "WHERE " + joinFilters(allFilters, filters)
 
     params = filters.flatMap((item) => {
       return _.isArray(item.value) ? item.value : [item.value]
@@ -473,6 +474,30 @@ async function getEntityType(
   return result.rows[0]? result.rows[0]['tt'] : null
 }
 
+async function _selectTopSql(
+  conn: HasPool,
+  table: string,
+  offset: number,
+  limit: number,
+  orderBy: OrderBy[],
+  filters: TableFilter[] | string,
+  schema = "public",
+  selects = ["*"],
+  inlineParams?: boolean,
+): Promise<STQResults> {
+  const version = await getVersion(conn)
+  return buildSelectTopQueries({
+    table,
+    offset,
+    limit,
+    orderBy,
+    filters,
+    selects,
+    schema,
+    version,
+    inlineParams
+  })
+}
 
 async function selectTop(
   conn: HasPool,
@@ -484,14 +509,8 @@ async function selectTop(
   schema = 'public',
   selects = ['*'],
 ): Promise<TableResult> {
-
-  const version = await getVersion(conn)
-  version.isPostgres
-  const qs = buildSelectTopQueries({
-    table, offset, limit, orderBy, filters, schema, version, selects
-  })
+  const qs = await _selectTopSql(conn, table, offset, limit, orderBy, filters, schema, selects)
   const result = await driverExecuteSingle(conn, { query: qs.query, params: qs.params })
-
   return {
     result: result.rows,
     fields: result.fields.map(f => f.name)
@@ -531,7 +550,7 @@ async function selectTopStream(
   }
 }
 
-export async function selectTopSql(
+async function selectTopSql(
   conn: HasPool,
   table: string,
   offset: number,
@@ -541,19 +560,8 @@ export async function selectTopSql(
   schema = "public",
   selects = ["*"]
 ): Promise<string> {
-  const version = await getVersion(conn)
-  const { query } = buildSelectTopQueries({
-    table,
-    offset,
-    limit,
-    orderBy,
-    filters,
-    selects,
-    schema,
-    version,
-    inlineParams: true,
-  })
-  return query
+  const qs = await _selectTopSql(conn, table, offset, limit, orderBy, filters, schema, selects, true)
+  return qs.query
 }
 
 async function queryStream(

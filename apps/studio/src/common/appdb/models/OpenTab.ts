@@ -71,28 +71,26 @@ export class OpenTab extends ApplicationEntity {
   @Column({type: 'text', name: 'filters', nullable: true})
   filters?: string
 
-  public set filter(v : Nullable<TableFilter>) {
-    if(v && _.isObject(v)) {
-      this.filters = JSON.stringify(v);
+  public setFilters(filters: Nullable<TableFilter[]>) {
+    if (filters && _.isArray(filters)) {
+      this.filters = JSON.stringify(filters)
     } else {
       this.filters = null
     }
   }
-  
-  public get filter() : Nullable<TableFilter> {
+
+  public getFilters(): Nullable<TableFilter[]> {
     try {
-      if (this.filters) {
-        const result: TableFilter = JSON.parse(this.filters)
-        return _.isObject(result) ? result : null
-      }
+      if (!this.filters) return null
+      const result: TableFilter | TableFilter[] = JSON.parse(this.filters)
+      if (_.isArray(result)) return result
+      if (_.isObject(result)) return [result]
       return null
     } catch (ex) {
       console.warn("error inflating filter", this.filters)
       return null
     }
   }
-  
-  
 
   duplicate(): OpenTab {
     const result = new OpenTab(this.tabType)

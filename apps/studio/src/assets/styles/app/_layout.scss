@@ -761,6 +761,10 @@ input[type=file] {
   p {
     margin: 0;
   }
+  a:not(.btn) {
+    text-decoration: underline;
+    color: inherit;
+  }
   .alert-body {
     display: flex;
     align-items: flex-start;
