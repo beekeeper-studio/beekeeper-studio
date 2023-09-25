@@ -159,7 +159,7 @@ export default Vue.extend({
   computed: {
     ...mapGetters(['dialect', 'dialectData']),
     enabled() {
-      return !this.dialectData.disabledFeatures?.alter?.everything
+      return !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData.disabledFeatures.indexes;
     },
     hotkeys() {
       if (!this.active) return {}

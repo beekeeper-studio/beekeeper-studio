@@ -92,6 +92,7 @@ export interface DialectData {
       extra?: boolean
     }
     tableTable?: boolean,
+    indexes?: boolean,
     alter?: {
       addColumn?: boolean
       dropColumn?: boolean
@@ -182,6 +183,7 @@ export interface SchemaItemChange {
 export interface AlterTableSpec {
   table: string
   schema?: string
+  database?: string
   alterations?: SchemaItemChange[]
   adds?: SchemaItem[]
   drops?: string[]
