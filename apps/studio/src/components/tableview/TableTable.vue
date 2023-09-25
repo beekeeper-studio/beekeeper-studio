@@ -132,9 +132,12 @@
         </template>
         <template v-if="!editable">
           <span
-            class="statusbar-item"
+            class="statusbar-item item-notice"
             :title="readOnlyNotice"
-          ><i class="material-icons-outlined">info</i> Editing Disabled</span>
+          >
+            <i class="material-icons-outlined">info</i>
+            <span> Editing Disabled</span>
+          </span>
         </template>
 
         <!-- Actions -->
@@ -213,6 +216,14 @@
     </portal>
   </div>
 </template>
+
+<style>
+.item-notice > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+</style>
 
 <script lang="ts">
 import Vue from 'vue'

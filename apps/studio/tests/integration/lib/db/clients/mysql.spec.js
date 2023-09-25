@@ -17,6 +17,7 @@ function testWith(tag, socket = false) {
   describe(`Mysql [${tag} socket? ${socket}]`, () => {
 
     let container;
+    /** @type {DBTestUtil} */
     let util
 
     beforeAll(async () => {
@@ -177,7 +178,26 @@ function testWith(tag, socket = false) {
       expect(fixed).toBe("b'00000000000000000000010000000000'")
     })
 
-
+    it("should be able to create / alter unsigned columns", async () => {
+      await util.knex.schema.createTable("unsigned_integers", (table) => {
+        table.integer("number").primary()
+      })
+      await util.connection.alterTable({
+        table: "unsigned_integers",
+        adds: [{ columnName: "tiny_number", dataType: "tinyint unsigned" }],
+        alterations: [{
+          changeType: "dataType",
+          columnName: "number",
+          newValue: "int unsigned",
+        }],
+      })
+      expect(util.connection.applyChanges({
+        inserts: [{
+          table: 'unsigned_integers',
+          data: [{ number: -1, tiny_number: -1 }],
+        }]
+      })).rejects.toThrowError()
+    })
   })
 
 
