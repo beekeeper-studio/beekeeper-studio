@@ -71,32 +71,31 @@
         Download <i class="material-icons">arrow_drop_down</i>
         <x-menu>
           <x-menuitem @click.prevent="download('csv')">
-            <x-label>CSV</x-label>
+            <x-label>Download as CSV</x-label>
           </x-menuitem>
           <x-menuitem @click.prevent="download('xlsx')">
-            <x-label>Excel</x-label>
+            <x-label>Download as Excel</x-label>
           </x-menuitem>
           <x-menuitem @click.prevent="download('json')">
-            <x-label>JSON</x-label>
+            <x-label>Download as JSON</x-label>
           </x-menuitem>
           <x-menuitem @click.prevent="download('md')">
-            <x-label>Markdown</x-label>
+            <x-label>Download as Markdown</x-label>
           </x-menuitem>
-          <hr>
           <span
             v-tooltip="{
-              content: `${result?.truncated ? 'The ' : 'If the'} query\'s result set was truncated (because it had too many rows to display)<br />
-                          use this to export the query\'s full result set ${result?.truncated ? '(' + result.totalRowCount + ' rows)' : ''} to a CSV or JSON file`
-            }"
+                content: downloadFullTooltip
+              }"
           >
             <x-menuitem
               @click.prevent="$event => submitCurrentQueryToFile()"
               :disabled="!result?.truncated"
             >
-              <x-label>Download Full Result Set (if truncated) ...</x-label>
+              <x-label>Download Full Resultset</x-label>
+              <i v-if="$config.isCommunity" class="material-icons menu-icon">stars</i>
             </x-menuitem>
           </span>
-
+          <hr>
           <x-menuitem
             title="Probably don't do this with large results (500+)"
             @click.prevent="copyToClipboard"
@@ -202,6 +201,12 @@ export default {
         return null;
       }
       return `Execution time: ${humanizeDuration(this.executeTime)}`
+    },
+    downloadFullTooltip() {
+      if (this.result?.truncated) {
+        return `Re - run the query and send the full result to a file${ this.result?.truncated ? ' (' + this.result.totalRowCount + ' rows)' : '' }`
+      }
+      return `Only needed for result sets that have been truncated (Beekeeper will tell you if this happens)`
     },
     keymap() {
       const result = {}

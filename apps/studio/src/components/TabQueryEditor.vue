@@ -99,12 +99,12 @@
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitQueryToFile">
-                  <x-label>{{ hasSelectedText ? 'Run Selection to File...' : 'Run to File...' }}</x-label>
-                  <x-shortcut value="Control+I" />
+                  <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
+                  <i v-if="$config.isCommunity" class="material-icons menu-icon">stars</i>
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQueryToFile">
-                  <x-label>Run Current Query to File...</x-label>
-                  <x-shortcut value="Control+Shift+I" />
+                  <x-label>Run Current to File</x-label>
+                  <i v-if="$config.isCommunity" class="material-icons menu-icon ">stars</i>
                 </x-menuitem>
               </x-menu>
             </x-button>
@@ -311,6 +311,7 @@
   import { identify } from 'sql-query-identifier'
   import pluralize from 'pluralize'
 
+  import platformInfo from '@/common/platform_info'
   import { splitQueries, extractParams } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
@@ -981,6 +982,10 @@
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
       async submitQueryToFile() {
+        if (platformInfo.isCommunity) {
+          this.$root.$emit(AppEvent.upgradeModal)
+          return;
+        }
         // run the currently hilighted text (if any) to a file, else all sql
         const query_sql = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue()
         const saved_name = this.hasTitle ? this.query.title : null
@@ -989,6 +994,10 @@
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQueryToFile() {
+        if (platformInfo.isCommunity) {
+          this.$root.$emit(AppEvent.upgradeModal)
+          return;
+        }
         // run the currently selected query (if there are multiple) to a file, else all sql
         const query_sql = this.currentlySelectedQuery ? this.currentlySelectedQuery.text : this.editor.getValue()
         const saved_name = this.hasTitle ? this.query.title : null
