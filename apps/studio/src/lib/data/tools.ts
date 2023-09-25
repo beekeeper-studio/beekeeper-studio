@@ -10,16 +10,19 @@ function dec28bits(num: any): string {
 export const Mutators = {
 
   resolveTabulatorMutator(dataType?: string, dialect?: Dialect): (v: any) => JsonFriendly {
-    const mutator = this.resolveDataMutator(dataType, dialect)
+    const mutator = this.resolveDataMutator(dataType, dialect, true)
     return (v: any) => mutator(v, true) // this cleans off the additional params
   },
 
-  resolveDataMutator(dataType?: string, dialect?: Dialect): (v: any, p?: boolean) => JsonFriendly {
+  resolveDataMutator(dataType?: string, dialect?: Dialect, mutateJSON = false): (v: any, p?: boolean) => JsonFriendly {
     if (dataType && dataType === 'bit(1)') {
       return this.bit1Mutator.bind(this)
     }
     if (dataType && dataType.startsWith('bit')) {
       return this.bitMutator.bind(this, dialect)
+    }
+    if (dataType && dataType.startsWith('json') && mutateJSON) {
+      return this.jsonMutator.bind(this)
     }
     return this.genericMutator.bind(this)
   },
@@ -79,5 +82,10 @@ export const Mutators = {
 
     return `b'${result.map(d => dec28bits(d)).join("")}'`
 
-  }
+  },
+
+  /** Stringify json data for MySQL column */
+  jsonMutator(value: any): JsonFriendly {
+    return JSON.stringify(value)
+  },
 }

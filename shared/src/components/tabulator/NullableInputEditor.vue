@@ -55,7 +55,7 @@ export default Vue.extend({
           this.value = ''
         }
       } else if (e.key === 'Enter') {
-        this.$emit('value', this.value)
+        this.submit()
       } else if (e.key === 'Tab') {
         // this.$emit('value', this.value)
       } else if (e.key.startsWith("Arrow")) {
@@ -111,7 +111,7 @@ export default Vue.extend({
 </script>
 <style lang="scss" scoped>
   @import '@shared/assets/styles/_variables';
-  
+
   div {
     position: relative;
     display: flex;

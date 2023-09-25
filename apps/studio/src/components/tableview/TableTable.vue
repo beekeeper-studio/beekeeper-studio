@@ -644,7 +644,7 @@ export default Vue.extend({
             onPreserveObjectFail: () => {
               this.$noty.error("Value is not valid")
               return true
-            }
+            },
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
             // }
