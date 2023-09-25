@@ -240,7 +240,7 @@ import { TableUpdate, TableUpdateResult } from '@/lib/db/models';
 import { markdownTable } from 'markdown-table'
 import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
-import { safeSqlFormat } from '@/common/utils'
+import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 const log = rawLog.scope('TableTable')
 
@@ -340,7 +340,6 @@ export default Vue.extend({
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
       result[this.ctrlOrCmd('shift+s')] = this.copyToSql.bind(this)
-      result[this.ctrlOrCmd('f')] = () => this.$refs.valueInput.focus()
       result[this.ctrlOrCmd('c')] = this.maybeCopyCellOrRow
       result["Escape"] = this.unselectStuff
       return result
@@ -924,6 +923,7 @@ export default Vue.extend({
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
+      this.filters = normalizeFilters(this.initialFilters || [])
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,
