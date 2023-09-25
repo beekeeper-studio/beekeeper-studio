@@ -10,13 +10,15 @@ import { BigQueryOptions } from '@/common/appdb/models/saved_connection';
 import { table, time } from 'console';
 import { data } from 'jquery';
 import { buildDeleteQueries, buildInsertQueries, buildUpdateQueries, buildInsertQuery, genericSelectTop, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, applyChangesSql } from './utils';
-import { wrapIdentifier } from '@shared/lib/dialects/bigquery';
+import { BigQueryData } from '@shared/lib/dialects/bigquery';
 import { BigQueryClient } from '@shared/lib/knex-bigquery'; 
 import { Connection } from 'typeorm';
 import { BigQueryChangeBuilder } from '@shared/lib/sql/change_builder/BigQueryChangeBuilder';
 import { BigQueryCursor } from './bigquery/BigQueryCursor';
 import knexlib from 'knex';
 import _ from 'lodash';
+
+const { wrapIdentifier } = BigQueryData;
 
 const log = rawLog.scope('bigquery')
 const logger = () => log
