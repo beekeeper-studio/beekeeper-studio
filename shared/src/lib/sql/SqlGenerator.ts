@@ -3,10 +3,6 @@ import {Knex} from 'knex'
 import knexlib from 'knex'
 import { BigQueryClient } from '../knex-bigquery'
 
-
-// eslint-disable-next-line
-// const { BigQueryClient } = require('../knex-bigquery');
-
 interface GeneratorConnection {
   dbConfig: any
   dbName: string

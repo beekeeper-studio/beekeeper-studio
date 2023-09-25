@@ -20,16 +20,16 @@ class BigQueryClient extends Client {
   }
 
   queryCompiler(builder, formatter) {
-		return new QueryCompiler(this, builder, formatter);
-	}
+    return new QueryCompiler(this, builder, formatter);
+  }
 
-	columnCompiler() {
-		return new ColumnCompiler(this, ...arguments);
-	}
+  columnCompiler() {
+    return new ColumnCompiler(this, ...arguments);
+  }
 
-	tableCompiler() {
-		return new TableCompiler(this, ...arguments);
-	}
+  tableCompiler() {
+    return new TableCompiler(this, ...arguments);
+  }
 
   get dialect() {
     return 'bigquery';
@@ -138,4 +138,3 @@ class BigQueryClient extends Client {
 }
 
 module.exports = { BigQueryClient };
-// export default BigQueryClient;

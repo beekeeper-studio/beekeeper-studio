@@ -31,7 +31,6 @@ export const BigQueryData: DialectData = {
   },
   notices: {
     infoIndexes: 'Editing indexes is currently disabled for BigQuery, we\'re working on it!',
-    // infoTriggers: 'Editing triggers is currently disabled for BigQuery, we\'re working on it!',
     tableTable: 'Editing records is currently disabled for BigQuery, we\'re working on it!'
   }
 }

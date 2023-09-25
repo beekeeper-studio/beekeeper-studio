@@ -10,12 +10,14 @@ import { BigQueryOptions } from '@/common/appdb/models/saved_connection';
 import { table, time } from 'console';
 import { data } from 'jquery';
 import { buildDeleteQueries, buildInsertQueries, buildUpdateQueries, buildInsertQuery, genericSelectTop, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, applyChangesSql } from './utils';
-import { wrapIdentifier } from './mysql';
-import { BigQueryClient } from '@shared/lib/knex-bigquery'; import knexlib from 'knex';
+import { wrapIdentifier } from '@shared/lib/dialects/bigquery';
+import { BigQueryClient } from '@shared/lib/knex-bigquery'; 
 import { Connection } from 'typeorm';
 import { BigQueryChangeBuilder } from '@shared/lib/sql/change_builder/BigQueryChangeBuilder';
 import { BigQueryCursor } from './bigquery/BigQueryCursor';
+import knexlib from 'knex';
 import _ from 'lodash';
+
 const log = rawLog.scope('bigquery')
 const logger = () => log
 
@@ -225,8 +227,7 @@ function query(client, queryText) {
 }
 
 async function applyChanges(conn, changes) {
-  let results = []
-
+  throw new Error('Function not implemented.');
 }
 
 
@@ -299,7 +300,6 @@ async function executeWithTransaction(conn, queryArgs) {
   ]);
   // if there's a ; after BEGIN, BQ gets really mad
   fullQuery = 'BEGIN\n' + fullQuery;
-  console.log('QUERY', fullQuery);
   return await runWithConnection(conn, async (connection) => {
     let response;
     try {
@@ -426,15 +426,6 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
   const bqTable = db + "." + table
   const qs = buildSelectTopQuery(bqTable, null, null, orderBy, filters);
   const columns = await listTableColumns(conn, db, table);
-  console.log('PARAMS: ', {
-    db, 
-    table,
-    orderBy,
-    filters,
-    chunkSize,
-    qs,
-    columns
-  });
   const rowCount = await getTableLength(conn, db, table);
   const { query, params } = qs;
 

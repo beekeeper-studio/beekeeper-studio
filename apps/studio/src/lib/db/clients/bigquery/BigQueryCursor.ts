@@ -45,7 +45,6 @@ export class BigQueryCursor extends BeeCursor {
       }
 
       job.getQueryResults(queryOptions, this.handleRow.bind(this));
-      // job.on('complete', this.handleEnd.bind(this));
       job.on('error', this.handleError.bind(this));
       this.cursor = { job: job, options: queryOptions };
       resolve();
