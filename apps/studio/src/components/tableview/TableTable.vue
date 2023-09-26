@@ -1537,6 +1537,8 @@ export default Vue.extend({
       this.queryError = null
     },
     async refreshTable() {
+      if (!this.tabulator) return;
+
       log.debug('refreshing table')
       const page = this.tabulator.getPage()
       await this.tabulator.replaceData()
