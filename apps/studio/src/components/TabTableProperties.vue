@@ -225,7 +225,8 @@ export default {
       return this.tablesInitialLoaded && this.active && !this.initialized
     },
     editable() {
-      return this.table.entityType === 'table' && !!this.primaryKeys.length
+      // (Sept 2023) we don't need a PK for table schemas to be editable
+      return this.table.entityType === 'table'
     },
     unsavedChanges() {
       return this.pills.filter((p) => p.dirty).length > 0

@@ -184,8 +184,8 @@ export default Vue.extend({
       return result
     },
     editable() {
+      // (sept 23) we don't need a primary key to make schemas editable
       return this.table.entityType === 'table' &&
-        !!this.primaryKeys.length &&
         !this.dialectData.disabledFeatures?.alter?.everything
     },
     notice() {
