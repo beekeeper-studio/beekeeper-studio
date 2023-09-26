@@ -24,6 +24,7 @@ import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
 import { SqlServerData } from '@shared/lib/dialects/sqlserver';
 import { SqlServerChangeBuilder } from '@shared/lib/sql/change_builder/SqlServerChangeBuilder';
+import { joinFilters } from '@/common/utils';
 const log = logRaw.scope('sql-server')
 
 const logger = () => log;
@@ -150,14 +151,15 @@ export async function disconnect(conn) {
 function buildFilterString(filters) {
   let filterString = ""
   if (filters && filters.length > 0) {
-    filterString = "WHERE " + filters.map((item) => {
+    const allFilters = filters.map((item) => {
 
       let wrappedValue = _.isArray(item.value) ?
         `(${item.value.map((v) => D.escapeString(v, true)).join(',')})` :
         D.escapeString(item.value, true)
 
       return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${wrappedValue}`
-    }).join(" AND ")
+    })
+    filterString = "WHERE " + joinFilters(allFilters, filters)
   }
   return filterString
 }
@@ -253,10 +255,7 @@ async function getTableLength(conn, table, schema) {
 
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema, selects = ['*']) {
   log.debug("filters", filters)
-  const version = await getVersion(conn);
-  const query = version.supportOffsetFetch ?
-    genSelectNew(table, offset, limit, orderBy, filters, schema, selects) :
-    genSelectOld(table, offset, limit, orderBy, filters, schema, selects)
+  const query = await selectTopSql(conn, table, offset, limit, orderBy, filters, schema, selects)
   logger().debug(query)
 
   const result = await driverExecuteQuery(conn, { query })

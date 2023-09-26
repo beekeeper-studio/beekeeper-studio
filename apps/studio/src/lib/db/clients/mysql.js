@@ -966,9 +966,8 @@ function parseFields(fields, rowsAsArray) {
   if (!fields) return []
   return fields.map((field, idx) => {
     return { id: rowsAsArray ? `c${idx}` : field.name, ...field }
-  })
+  });
 }
-
 
 function parseRowQueryResult(data, rawFields, command, rowsAsArray = false) {
   // Fallback in case the identifier could not reconize the command

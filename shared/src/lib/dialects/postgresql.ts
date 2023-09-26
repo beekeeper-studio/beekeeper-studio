@@ -33,7 +33,7 @@ export const PostgresData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions, 'RESTRICT'],
   wrapIdentifier: (id: string) => id ? `"${id.replaceAll(/"/g, '""')}"` : null,
-  friendlyNormalizedIdentifier: (s) => friendlyNormalizedIdentifier(s, '"'),
+  editorFriendlyIdentifier: (s) => friendlyNormalizedIdentifier(s, '"'),
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
   unwrapIdentifier(value: string) {

@@ -207,7 +207,10 @@ export default Vue.extend({
   beforeMount() {
     const schema = BasicTable.toSchema(this.dialect)
     this.initialColumns = schema.columns
-    this.generator = new SqlGenerator(this.dialect)
+    this.generator = new SqlGenerator(this.dialect, {
+      dbConfig: this.connection.server.config,
+      dbName: this.connection.database.database
+    })
   },
 })
 </script>

@@ -73,7 +73,7 @@
               :tab="tab"
               :active="activeTab === tab"
               :connection="connection"
-              :initial-filter="tab.filter"
+              :initial-filters="tab.getFilters()"
               :table="slotProps.table"
             />
           </template>
@@ -584,13 +584,13 @@ export default Vue.extend({
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
     },
-    openTable({ table, filter }) {
+    openTable({ table, filters }) {
       const tab = new OpenTab('table')
       tab.title = table.name
       tab.tableName = table.name
       tab.schemaName = table.schema
       tab.entityType = table.entityType
-      tab.filter = filter
+      tab.setFilters(filters)
       tab.titleScope = "all"
       const existing = this.tabItems.find((t) => t.matches(tab))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)

@@ -8,6 +8,7 @@ import { Error as CustomError } from '../lib/errors'
 import _ from 'lodash';
 import platformInfo from './platform_info';
 import { format } from 'sql-formatter';
+import { TableFilter } from '@/lib/db/models';
 
 export function having<T, U>(item: T | undefined | null, f: (T) => U, errorOnNone?: string): U | null {
   if (item) return f(item)
@@ -149,3 +150,26 @@ export function safeSqlFormat(
     return args[0];
   }
 }
+
+/** Join filters by AND or OR */
+export function joinFilters(filters: string[], ops: TableFilter[] = []): string {
+  if (filters.length === 0) return ''
+  return filters.reduce((a, b, idx) => `${a} ${ops[idx]?.op || 'AND'} ${b}`)
+}
+
+/** Get rid of invalid filters and parse if needed */
+export function normalizeFilters(filters: TableFilter[]) {
+  const normalized: TableFilter[] = [];
+  for (const filter of filters as TableFilter[]) {
+    if (!(filter.type && filter.field && filter.value)) continue;
+    if (filter.type === "in") {
+      const value = (filter.value as string).split(/\s*,\s*/);
+      normalized.push({ ...filter, value });
+    } else {
+      normalized.push(filter);
+    }
+    filter.value = filter.value.toString();
+  }
+  return normalized;
+}
+

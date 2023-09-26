@@ -120,6 +120,7 @@ export interface TableFilter {
   field: string;
   type: string;
   value: string | string[];
+  op?: 'AND' | 'OR';
 }
 
 export interface IDbInsertValue {

@@ -10,8 +10,20 @@ import { BigQueryOptions } from '@/common/appdb/models/saved_connection';
 import { table, time } from 'console';
 import { data } from 'jquery';
 import { buildDeleteQueries, buildInsertQueries, buildUpdateQueries, buildInsertQuery, genericSelectTop, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, applyChangesSql } from './utils';
+import { BigQueryData } from '@shared/lib/dialects/bigquery';
+import { BigQueryClient } from '@shared/lib/knex-bigquery'; 
+import { Connection } from 'typeorm';
+import { BigQueryChangeBuilder } from '@shared/lib/sql/change_builder/BigQueryChangeBuilder';
+import { BigQueryCursor } from './bigquery/BigQueryCursor';
+import knexlib from 'knex';
+import _ from 'lodash';
+
+const { wrapIdentifier } = BigQueryData;
+
 const log = rawLog.scope('bigquery')
 const logger = () => log
+
+let knex;
 
 /**
  * To keep compatibility with the other clients we treat dataset as database.
@@ -23,8 +35,19 @@ export default async function (server, database) {
   client = new bq.BigQuery(dbConfig)
   logger().debug('bigquery client created ', client)
 
+  const apiEndpoint = dbConfig.host !== "" && dbConfig.port !== "" ? `http://${dbConfig.host}:${dbConfig.port}` : undefined;
+  knex = knexlib({
+        client: BigQueryClient,
+        connection: {
+          projectId: dbConfig.bigQueryOptions?.projectId,
+          keyFilename: dbConfig.bigQueryOptions?.keyFilename,
+          // for testing
+          apiEndpoint
+        }
+      });
+
   // light solution to test connection with with a simple query
-  const results = await executeQuery(client, { query: 'SELECT CURRENT_TIMESTAMP()' });
+  const results = await driverExecuteQuery(client, { query: 'SELECT CURRENT_TIMESTAMP()' });
   logger().debug("bigquery client connected")
 
   return {
@@ -38,13 +61,22 @@ export default async function (server, database) {
     listTableColumns: (db, table) => listTableColumns(client, db, table),
     getTableLength: (table) => getTableLength(client, database.database, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(client, database.database, table, offset, limit, orderBy, filters, selects),
-    getTableKeys: (db, table) => Promise.resolve([]),
-    getPrimaryKeys: (db, table) => Promise.resolve([]),
+    selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(client, db, table, orderBy, filters, chunkSize, schema),
+    queryStream: (db, query, chunkSize) => queryStream(client, db, query, chunkSize),
+    getTableKeys: (db, table) => getTableKeys(client, db, table),
+    getPrimaryKey: (db, table) => getPrimaryKey(client, db, table),
+    getPrimaryKeys: (db, table) => getPrimaryKeys(client, db, table),
     query: (queryText) => query(client, queryText),
-    executeQuery: (queryText) => executeQuery(client, queryText),
+    applyChanges: (changes) => applyChanges(client, changes),
+    applyChangesSql: (changes) => applyChangesSql(changes, knex),
+    executeQuery: (queryText) => driverExecuteQuery(client, queryText),
     listDatabases: () => listDatasets(client),
     getTableProperties: (table) => getTableProperties(client, database.database, table),
     versionString: () => getVersionString(),
+
+    // alter table
+    alterTableSql: (change) => alterTableSql(client, change),
+    alterTable: (change) => alterTable(client, change),
     // db creation
     // TODO: determine if bigquery has different charsets
     listCharsets: () => [],
@@ -78,6 +110,76 @@ function configDatabase(server, database) {
   return config
 }
 
+async function getTableKeys(conn, database, table) {
+  const sql = `
+    SELECT
+      NULL as from_schema,
+      f.table_name as from_table,
+      f.column_name as from_column,
+      NULL as to_schema,
+      t.table_name as to_table,
+      t.column_name as to_column,
+      f.constraint_name,
+      NULL as update_rule,
+      NULL as delete_rule
+    FROM
+      ${wrapIdentifier(database)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as f
+    JOIN ${wrapIdentifier(database)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE as t
+    ON f.constraint_name = t.constraint_name
+    JOIN ${wrapIdentifier(database)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS as con
+    ON f.constraint_catalog = con.constraint_catalog
+    AND f.constraint_schema = con.constraint_schema
+    AND f.constraint_name = con.constraint_name
+    WHERE f.table_schema = '${escapeString(database)}'
+    AND f.table_name = '${escapeString(table)}'
+    AND con.constraint_type = 'FOREIGN KEY'
+  `;
+
+  const data = await driverExecuteSingle(conn, { query: sql });
+
+  return data.rows.map((row) => ({
+    toTable: row.to_table,
+    toSchema: row.to_schema,
+    toColumn: row.to_column,
+    fromTable: row.from_table,
+    fromSchema: row.from_schema,
+    fromColumn: row.from_column,
+    constraintName: row.constraint_name,
+    onUpdate: row.update_rule,
+    onDelete: row.delete_rule
+  }));
+}
+
+async function getPrimaryKey(conn, database, table) {
+  const keys = await getPrimaryKeys(conn, database, table);
+  return keys.length === 1 ? keys[0].columnName : null;
+}
+
+async function getPrimaryKeys(conn, database, table) {
+  const query = `
+    SELECT
+      use.column_name as column_name,
+      use.ordinal_position as position
+    FROM
+      ${wrapIdentifier(database)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as use 
+    JOIN ${wrapIdentifier(database)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS con 
+    ON use.constraint_catalog = con.constraint_catalog 
+    AND use.constraint_schema = con.constraint_schema 
+    AND use.constraint_name = con.constraint_name
+    WHERE use.table_schema = '${escapeString(database)}'
+    AND use.table_name = '${escapeString(table)}'
+    AND con.constraint_type = 'PRIMARY KEY'`;
+
+  const data = await driverExecuteSingle(conn, { query });
+  if (data.rows) {
+    return data.rows.map((r) => ({
+      columnName: r.column_name,
+      position: r.position
+    }));
+  } else {
+    return []
+  }
+}
 
 function query(client, queryText) {
   logger().debug('bigQuery query: ' + queryText)
@@ -98,7 +200,7 @@ function query(client, queryText) {
         logger().debug("wait for executeQuery job.id: ", job.id)
         const data = await Promise.race([
           cancelable.wait(),
-          executeQuery(client, queryText, job),
+          driverExecuteQuery(client, queryText, job),
         ])
         return data
       } catch (err) {
@@ -124,6 +226,10 @@ function query(client, queryText) {
       }
     },
   }
+}
+
+async function applyChanges(conn, changes) {
+  throw new Error('Function not implemented.');
 }
 
 
@@ -166,8 +272,11 @@ function parseRowQueryResult(data) {
   }
 }
 
+async function driverExecuteSingle(conn, queries, job) {
+  return (await driverExecuteQuery(conn, queries, job))[0];
+}
 
-async function executeQuery(client, queries, job) {
+async function driverExecuteQuery(client, queries, job) {
   // Support passing a single query string and an object with params
   if (queries instanceof String) {
     queries = { query: queries }
@@ -179,6 +288,33 @@ async function executeQuery(client, queries, job) {
   // Wait for the query to finish
   const results = await job.getQueryResults()
   return results.map(parseRowQueryResult)
+}
+
+async function executeWithTransaction(conn, queryArgs) {
+  let fullQuery = joinQueries([
+    'BEGIN TRANSACTION', queryArgs.query, 'COMMIT TRANSACTION;', `
+      EXCEPTION WHEN ERROR THEN
+      ROLLBACK TRANSACTION;
+      RAISE USING MESSAGE = @@error.message;
+    `,
+    'END',
+    'CALL BQ.ABORT_SESSION()',
+  ]);
+  // if there's a ; after BEGIN, BQ gets really mad
+  fullQuery = 'BEGIN\n' + fullQuery;
+  return await runWithConnection(conn, async (connection) => {
+    let response;
+    try {
+      return await driverExecuteQuery(connection, { ...queryArgs, query: fullQuery, createSession: true });
+    } catch (ex) {
+      log.error("executeWithTransaction", ex);
+      throw ex;
+    }
+  })
+}
+
+async function runWithConnection(conn, run) {
+  await run(conn);
 }
 
 
@@ -227,16 +363,28 @@ export async function getTableProperties(client, db, table) {
     length,
     indexes,
     triggers, // BigQuery has no triggers
-    relations // BigQuery has no relations
+    relations
   ] = await Promise.all([
     getTableLength(client, db, table),
     null,
     null,
-    null,
+    getTableKeys(client, db, table)
   ])
   return {
     length, indexes, relations, triggers
   }
+}
+
+export async function alterTableSql(conn, changes) {
+  const builder = new BigQueryChangeBuilder(changes.table, changes.database);
+  return builder.alterTable(changes);
+}
+
+export async function alterTable(conn, changes) {
+  const sql = await alterTableSql(conn, changes);
+
+  // NOTE (@day): bigquery doesn't support running DDL statements in a transaction so this is kinda dangerous
+  await driverExecuteQuery(conn, { query: sql });
 }
 
 
@@ -263,7 +411,7 @@ export async function selectTop(client, db, table, offset, limit, orderBy, filte
   const columns = await listTableColumns(client, db, table)
   const bqTable = db + "." + table
   const queries = buildSelectTopQuery(bqTable, offset, limit, orderBy, filters, 'total', columns, selects)
-  const queriesResult = await executeQuery(client, queries)
+  const queriesResult = await driverExecuteQuery(client, queries)
   const data = queriesResult[0]
   const rowCount = Number(data.rowCount)
   const fields = Object.keys(data.rows[0] || {})
@@ -274,6 +422,31 @@ export async function selectTop(client, db, table, offset, limit, orderBy, filte
     fields: { fields }
   }
   return result
+}
+
+export async function selectTopStream(conn, db, table, orderBy, filters, chunkSize) {
+  const bqTable = db + "." + table
+  const qs = buildSelectTopQuery(bqTable, null, null, orderBy, filters);
+  const columns = await listTableColumns(conn, db, table);
+  const rowCount = await getTableLength(conn, db, table);
+  const { query, params } = qs;
+
+  return {
+    totalRows: rowCount,
+    columns,
+    cursor: new BigQueryCursor(conn, query, params, chunkSize)
+  };
+}
+
+export async function queryStream(conn, db, query, chunkSize) {
+  const theCursor = new BigQueryCursor(conn, query, [], chunkSize);
+  log.debug('results', theCursor);
+
+  return {
+    totalRows: undefined, // rowCount,
+    columns: undefined, // theCursor.result.columns,
+    cursor: theCursor
+  };
 }
 
 
@@ -289,3 +462,4 @@ export async function createDatabase(client, databaseName) {
   const [dataset] = await client.createDataset(databaseName, options);
   logger().debug(`Dataset ${dataset.id} created.`);
 }
+

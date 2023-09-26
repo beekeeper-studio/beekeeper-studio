@@ -8,131 +8,13 @@
       <div class="no-content" />
     </template>
     <template v-else>
-      <div class="table-filter">
-        <form
-          @submit.prevent="triggerFilter"
-          class="flex flex-middle"
-        >
-          <div
-            v-if="filterMode === 'raw'"
-            class="filter-group row gutter expand"
-          >
-            <div class="btn-wrap">
-              <button
-                class="btn btn-flat btn-fab"
-                type="button"
-                @click.stop="changeFilterMode('builder')"
-                title="Toggle Filter Type"
-              >
-                <i class="material-icons-outlined">filter_alt</i>
-              </button>
-            </div>
-            <div class="expand filter">
-              <div class="filter-wrap">
-                <input
-                  class="form-control"
-                  type="text"
-                  v-model="filterRaw"
-                  ref="valueInput"
-                  :placeholder="filterPlaceholder"
-                >
-                <button
-                  type="button"
-                  class="clear btn-link"
-                  @click.prevent="filterRaw = ''"
-                >
-                  <i class="material-icons">cancel</i>
-                </button>
-              </div>
-            </div>
-            <div class="btn-wrap">
-              <button
-                class="btn btn-primary btn-fab"
-                type="submit"
-                title="Filter"
-              >
-                <i class="material-icons">search</i>
-              </button>
-            </div>
-          </div>
-          <div
-            v-else-if="filterMode === 'builder'"
-            class="filter-group row gutter expand"
-          >
-            <div class="btn-wrap">
-              <button
-                class="btn btn-flat btn-fab"
-                type="button"
-                @click.stop="changeFilterMode('raw')"
-                title="Toggle Filter Type"
-              >
-                <i class="material-icons">code</i>
-              </button>
-            </div>
-            <div>
-              <div class="select-wrap">
-                <select
-                  name="Filter Field"
-                  class="form-control"
-                  v-model="filter.field"
-                >
-                  <option
-                    v-for="column in table.columns"
-                    :key="column.columnName"
-                    :value="column.columnName"
-                  >
-                    {{ column.columnName }}
-                  </option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <div class="select-wrap">
-                <select
-                  name="Filter Type"
-                  class="form-control"
-                  v-model="filter.type"
-                >
-                  <option
-                    v-for="(v, k) in filterTypes"
-                    :key="k"
-                    :value="v"
-                  >
-                    {{ k }}
-                  </option>
-                </select>
-              </div>
-            </div>
-            <div class="expand filter">
-              <div class="filter-wrap">
-                <input
-                  class="form-control"
-                  type="text"
-                  v-model="filter.value"
-                  :placeholder="builderPlaceholder"
-                  ref="valueInput"
-                >
-                <button
-                  type="button"
-                  class="clear btn-link"
-                  @click.prevent="filter.value = ''"
-                >
-                  <i class="material-icons">cancel</i>
-                </button>
-              </div>
-            </div>
-            <div class="btn-wrap">
-              <button
-                class="btn btn-primary btn-fab"
-                type="submit"
-                title="Filter"
-              >
-                <i class="material-icons">search</i>
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
+      <row-filter-builder
+        v-if="table.columns?.length"
+        :columns="table.columns"
+        :initial-filters="initialFilters"
+        @changed="saveFilters"
+        @submit="triggerFilter"
+      />
       <div ref="table" />
       <ColumnFilterModal
         :modal-name="columnFilterModalName"
@@ -250,9 +132,12 @@
         </template>
         <template v-if="!editable">
           <span
-            class="statusbar-item"
+            class="statusbar-item item-notice"
             :title="readOnlyNotice"
-          ><i class="material-icons-outlined">info</i> Editing Disabled</span>
+          >
+            <i class="material-icons-outlined">info</i>
+            <span> Editing Disabled</span>
+          </span>
         </template>
 
         <!-- Actions -->
@@ -333,10 +218,10 @@
 </template>
 
 <style>
-.loading-overlay {
-  position: absolute;
-  right: 50%;
-  top: 200px;
+.item-notice > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>
 
@@ -350,6 +235,7 @@ import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
 import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
+import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
 import rawLog from 'electron-log'
 import _ from 'lodash'
@@ -365,34 +251,19 @@ import { TableUpdate, TableUpdateResult } from '@/lib/db/models';
 import { markdownTable } from 'markdown-table'
 import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
-import { safeSqlFormat } from '@/common/utils'
+import { normalizeFilters, safeSqlFormat } from '@/common/utils'
+import { TableFilter } from '@/lib/db/models';
 const log = rawLog.scope('TableTable')
-const FILTER_MODE_BUILDER = 'builder'
-const FILTER_MODE_RAW = 'raw'
+
+let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder },
   mixins: [data_converter, DataMutators, FkLinkMixin],
-  props: ["connection", "initialFilter", "active", 'tab', 'table'],
+  props: ["connection", "initialFilters", "active", 'tab', 'table'],
   data() {
     return {
-      filterTypes: {
-        equals: "=",
-        "does not equal": "!=",
-        like: "like",
-        "less than": "<",
-        "less than or equal": "<=",
-        "greater than": ">",
-        "greater than or equal": ">=",
-        in: "in"
-      },
-      filter: {
-        value: null,
-        type: "=",
-        field: null
-      },
-      filterRaw: null,
-      filterMode: FILTER_MODE_BUILDER,
+      filters: [],
       headerFilter: true,
       columnsSet: false,
       tabulator: null,
@@ -428,7 +299,7 @@ export default Vue.extend({
       internalIndexColumn: "__beekeeper_internal_index",
       selectedCell: null,
       mouseDownHandle: null,
-      lastMouseOverRow: null
+      lastMouseOverRow: null,
     };
   },
   computed: {
@@ -480,7 +351,6 @@ export default Vue.extend({
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
       result[this.ctrlOrCmd('shift+s')] = this.copyToSql.bind(this)
-      result[this.ctrlOrCmd('f')] = () => this.$refs.valueInput.focus()
       result[this.ctrlOrCmd('c')] = this.maybeCopyCellOrRow
       result["Escape"] = this.unselectStuff
       return result
@@ -644,9 +514,6 @@ export default Vue.extend({
     },
     hiddenColumnCount() {
       return this.columnsWithFilterAndOrder.filter((c) => !c.filter).length
-    },
-    builderPlaceholder() {
-      return this.filter.type === 'in' ? `Enter values separated by comma, eg: foo,bar` : 'Enter Value'
     },
     pendingChangesCount() {
       return this.pendingChanges.inserts.length
@@ -838,29 +705,6 @@ export default Vue.extend({
         persistenceID: this.tableId,
       }
     },
-    filterValue() {
-      return this.filter.value;
-    },
-    filterForTabulator() {
-      if (this.filterMode === FILTER_MODE_RAW && this.filterRaw) {
-        return this.filterRaw
-      } else if (
-        this.filterMode === FILTER_MODE_BUILDER &&
-        this.filter.type && this.filter.field && this.filter.value
-      ) {
-        if (this.filter.type === 'in') {
-          const vals = this.filter.value.split(/\s*,\s*/)
-          return [{
-            ...this.filter,
-            value: vals
-          }]
-        } else {
-          return [this.filter]
-        }
-      } else {
-        return null
-      }
-    },
     initialSort() {
       // FIXME: Don't specify an initial sort order
       // because it can slow down some databases.
@@ -912,41 +756,22 @@ export default Vue.extend({
       if (!this.tabulator) return;
 
       if (!this.active) this.forceRedraw = true;
-      console.log("setting columns")
       await this.tabulator.setColumns(this.tableColumns)
       await this.refreshTable();
     },
-    filterValue() {
-      if (this.filter.value === "") {
-        this.clearFilter();
-      }
-    },
-    filter: {
-      deep: true,
-      handler() {
-        this.tab.filter = this.filter
-        this.$store.dispatch('tabs/save', this.tab)
-      }
-    },
-    filterRaw() {
-      if (this.filterRaw === '') {
-        this.clearFilter()
-      }
-    },
     async lastUpdated() {
       this.setlastUpdatedText()
+      const primaryFilter: TableFilter | false = _.isArray(this.filters) &&
+        this.filters.find((filter: TableFilter) => this.isPrimaryKey(filter.field));
       let result = 'all'
-      if (this.primaryKeys?.length && this.filter.value && this.filter.type === '=' && this.isPrimaryKey(this.filter.field)) {
-        log.info("setting scope", this.filter.value)
-        result = this.filter.value
-      } else {
-        if (this.filterRaw) result = 'custom'
+      if (this.primaryKeys?.length && primaryFilter) {
+        log.info("setting scope", primaryFilter.value)
+        result = _.truncate(primaryFilter.value.toString())
+      } else if (_.isString(this.filters)) {
+        result = 'custom'
       }
       this.tab.titleScope = result
       await this.$store.dispatch('tabs/save', this.tab)
-    },
-    filterMode() {
-      this.triggerFilter()
     },
     pendingChangesCount() {
       this.tab.unsavedChanges = this.pendingChangesCount > 0
@@ -993,7 +818,7 @@ export default Vue.extend({
       // this.handleRowHandleClick(_event, cell)
     },
     handleCellMouseEnter(_event: MouseEvent, _cell: Tabulator.CellComponent) {
-      // Please fix me kind software engineer 
+      // Please fix me kind software engineer
     },
     handleCellMouseUp(_event: MouseEvent, _cell: Tabulator.CellComponent) {
       this.mouseDownHandle = null
@@ -1106,14 +931,10 @@ export default Vue.extend({
       this.initialized = true
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
-      this.filter.field = this.table?.columns[0]?.columnName
-      if (this.initialFilter) {
-        this.filter = _.clone(this.initialFilter)
-      }
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-
+      this.filters = normalizeFilters(this.initialFilters || [])
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
         height: this.actualTableHeight,
@@ -1131,7 +952,7 @@ export default Vue.extend({
         paginationElement: this.$refs.paginationArea,
         paginationButtonCount: 0,
         initialSort: this.initialSort,
-        initialFilter: [this.initialFilter || {}],
+        initialFilter: this.initialFilters ?? [{}],
         ...this.persistenceOptions,
 
         // callbacks
@@ -1570,7 +1391,6 @@ export default Vue.extend({
       pendingUpdate.cell.getElement().classList.remove('edit-error')
     },
     openQueryTab() {
-      const filters = this.filterForTabulator;
       const page = this.tabulator.getPage();
       const orderBy = [
         _.pick(this.tabulator.getSorters()[0], ["field", "dir"]),
@@ -1589,7 +1409,7 @@ export default Vue.extend({
         offset,
         limit,
         orderBy,
-        filters,
+        this.filters,
         this.table.schema,
         selects
       ).then((query: string) => {
@@ -1604,32 +1424,14 @@ export default Vue.extend({
     showColumnFilterModal() {
       this.$modal.show(this.columnFilterModalName)
     },
-    triggerFilter() {
+    triggerFilter(filters: TableFilter[] | string | null) {
       if (this.pendingChangesCount > 0) {
+        draftFilters = filters
         this.$modal.show(`discard-changes-modal-${this.tab.id}`)
         return;
       }
-      if (this.tabulator) this.tabulator.setData()
-    },
-    clearFilter() {
-      if (this.tabulator) this.tabulator.setData();
-    },
-    changeFilterMode(filterMode) {
-      // Populate raw filter query with existing filter if raw filter is empty
-      if (
-        filterMode === FILTER_MODE_RAW &&
-        !_.isNil(this.filter.value) &&
-        !_.isEmpty(this.filter.value) &&
-        _.isEmpty(this.filterRaw)
-      ) {
-        const rawFilter = _.join([this.filter.field, this.filter.type, this.filter.value], ' ')
-        this.filterRaw = rawFilter
-      }
-
-      this.filterMode = filterMode
-      this.$nextTick(() => {
-        this.$refs.valueInput.focus()
-      })
+      this.filters = filters
+      this.tabulator?.setData()
     },
     dataFetch(_url, _config, params) {
       // this conforms to the Tabulator API
@@ -1639,7 +1441,7 @@ export default Vue.extend({
       let offset = 0;
       let limit = this.limit;
       let orderBy = null;
-      let filters = this.filterForTabulator;
+      let filters = this.filters
 
       if (params.sort) {
         orderBy = params.sort
@@ -1745,7 +1547,7 @@ export default Vue.extend({
       this.trigger(AppEvent.beginExport, { table: this.table })
     },
     exportFiltered() {
-      this.trigger(AppEvent.beginExport, {table: this.table, filters: this.filterForTabulator} )
+      this.trigger(AppEvent.beginExport, {table: this.table, filters: this.filters} )
     },
     modifyRowData(data) {
       if (_.isArray(data)) {
@@ -1780,9 +1582,13 @@ export default Vue.extend({
     },
     forceFilter() {
       this.discardChanges();
-      this.triggerFilter();
+      this.triggerFilter(draftFilters);
       this.$modal.hide(`discard-changes-modal-${this.tab.id}`);
-    }
+    },
+    saveFilters(filters: TableFilter[]) {
+      this.tab.setFilters(filters)
+      this.$store.dispatch('tabs/save', this.tab)
+    },
   }
 });
 </script>
