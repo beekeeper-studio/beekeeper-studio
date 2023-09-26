@@ -281,6 +281,7 @@ export default Vue.extend({
     rootBindings() {
       return [
         { event: AppEvent.closeTab, handler: this.closeCurrentTab },
+        { event: AppEvent.closeAllTabs, handler: this.closeAll },
         { event: AppEvent.newTab, handler: this.createQuery },
         { event: AppEvent.createTable, handler: this.openTableBuilder },
         { event: 'historyClick', handler: this.createQueryFromItem },
@@ -320,6 +321,15 @@ export default Vue.extend({
       const result = {
         'ctrl+tab': this.nextTab,
         'ctrl+shift+tab': this.previousTab,
+        'alt+1': this.handleAltNumberKeyPress,
+        'alt+2': this.handleAltNumberKeyPress,
+        'alt+3': this.handleAltNumberKeyPress,
+        'alt+4': this.handleAltNumberKeyPress,
+        'alt+5': this.handleAltNumberKeyPress,
+        'alt+6': this.handleAltNumberKeyPress,
+        'alt+7': this.handleAltNumberKeyPress,
+        'alt+8': this.handleAltNumberKeyPress,
+        'alt+9': this.handleAltNumberKeyPress,
       }
 
       return result
@@ -615,14 +625,12 @@ export default Vue.extend({
       await this.setActiveTab(tab)
 
     },
-      handleKeyPress(event) {
+      handleAltNumberKeyPress(event) {
       if (event.altKey) {
-        const keyCode = event.keyCode || event.which;
-        if (keyCode >= 49 && keyCode <= 57) {       // Check if the pressed key is a number between 1 and 9
-          const pressedNumber = keyCode - 48; // Convert keyCode to the corresponding number
-          if(pressedNumber <= this.tabItems.length) {
-            this.setActiveTab(this.tabItems[pressedNumber - 1])
-          }
+        const pressedNumber = Number(event.key); // Convert keyCode to the corresponding number
+        console.log("Pressed key is ", pressedNumber)
+        if(pressedNumber <= this.tabItems.length) {
+          this.setActiveTab(this.tabItems[pressedNumber - 1])
         }
       }
     },
@@ -689,7 +697,6 @@ export default Vue.extend({
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings)
-    window.removeEventListener('keydown', this.handleKeyDown);
   },
 
   async mounted() {
@@ -698,7 +705,6 @@ export default Vue.extend({
       this.createQuery()
     }
     this.registerHandlers(this.rootBindings)
-    window.addEventListener("keydown", this.handleKeyPress)
   }
 })
 </script>

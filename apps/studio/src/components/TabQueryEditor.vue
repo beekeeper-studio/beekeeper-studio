@@ -754,24 +754,22 @@
 
           if (this.userKeymap === "vim") {
             const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
-            const coreTabs = this.$root.$refs.CoreTabs
             codeMirrorVimInstance.defineEx("write", "w", this.triggerSave)
             codeMirrorVimInstance.defineEx("quit", "q", this.close)
+            codeMirrorVimInstance.defineEx("qa", "qa", () => {this.$root.$emit(AppEvent.closeAllTabs)})
             codeMirrorVimInstance.defineEx("x", "x", () => {
               this.triggerSave()
               if(this.query.id) {
                 this.close()
               }
             })
-            codeMirrorVimInstance.defineEx("tabnext", "tabn", coreTabs.nextTab)
-            codeMirrorVimInstance.defineEx("tabprevious", "tabp", coreTabs.previousTab)
             codeMirrorVimInstance.defineEx("tabnew", "tabnew", (_cn, params) => {
               if(params.args && params.args.length > 0){
                 let queryName = params.args[0]
-                coreTabs.createQuery("",queryName)
+                this.$root.$emit(AppEvent.newTab,"", queryName)
                 return
               }
-              coreTabs.createQuery()
+              this.$root.$emit(AppEvent.newTab)
             })
 
 

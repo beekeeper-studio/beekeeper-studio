@@ -9,6 +9,7 @@ export enum AppEvent {
   menuStyleChanged = 'mc-style',
   newTab = 'nt',
   closeTab = 'ct',
+  closeAllTabs = 'close_all_tabs',
   disconnect = 'dc',
   beekeeperAdded = 'bkadd',
   openExternally = 'oe',
