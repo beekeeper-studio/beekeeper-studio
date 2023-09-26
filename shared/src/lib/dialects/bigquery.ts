@@ -11,7 +11,7 @@ export const BigQueryData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t))),
   constraintActions: [],
   wrapIdentifier: (id: string) => id ? `\`${id.replaceAll(/`/g, '\\`')}\`` : null,
-  friendlyNormalizedIdentifier: friendlyNormalizedIdentifier,
+  editorFriendlyIdentifier: friendlyNormalizedIdentifier,
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
   unwrapIdentifier: (s) => s,
