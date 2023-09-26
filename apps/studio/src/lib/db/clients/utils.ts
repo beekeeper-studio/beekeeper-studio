@@ -1,7 +1,8 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
 import logRaw from 'electron-log'
-import { TableChanges, TableDelete, TableInsert, TableUpdate } from '../models'
+import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate } from '../models'
+import { joinFilters } from '@/common/utils'
 
 const log = logRaw.scope('db/util')
 
@@ -73,11 +74,11 @@ function wrapIdentifier(value) {
 }
 
 
-export function buildFilterString(filters, columns = []) {
+export function buildFilterString(filters: TableFilter[], columns = []) {
   let filterString = ""
   let filterParams = []
   if (filters && _.isArray(filters) && filters.length > 0) {
-    filterString = "WHERE " + filters.map((item) => {
+    const allFilters = filters.map((item) => {
       const column = columns.find((c) => c.columnName === item.field)
       const field = column?.dataType.toUpperCase().includes('BINARY') ?
         `HEX(${wrapIdentifier(item.field)})` :
@@ -88,10 +89,11 @@ export function buildFilterString(filters, columns = []) {
           item.value.map(() => '?').join(',')
           : '?'
 
-        return `${field} ${item.type} (${questionMarks})`
+        return `${field} ${item.type.toUpperCase()} (${questionMarks})`
       }
-      return `${field} ${item.type} ?`
-    }).join(" AND ")
+      return `${field} ${item.type.toUpperCase()} ?`
+    })
+    filterString = "WHERE " + joinFilters(allFilters, filters)
 
     filterParams = filters.flatMap((item) => {
       return _.isArray(item.value) ? item.value : [item.value]
@@ -118,9 +120,9 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
   let orderByString = ""
 
   if (orderBy && orderBy.length > 0) {
-    orderByString = "order by " + (orderBy.map((item: any) => {
+    orderByString = "ORDER BY " + (orderBy.map((item: any) => {
       if (_.isObject(item)) {
-        return `\`${item['field']}\` ${item['dir']}`
+        return `\`${item['field']}\` ${item['dir'].toUpperCase()}`
       } else {
         return `\`${item}\``
       }

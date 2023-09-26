@@ -1,68 +1,80 @@
 <template>
-  <div class="with-connection-type">
-    <div class="alert alert-info">
-      <div>
-        Beekeeper's BigQuery support is still in its Alpha stage, and as such may be unstable and have some unusual behaviour.
-        If you have any issues, please report them on our <a href="https://github.com/beekeeper-studio/beekeeper-studio/issues">GitHub.</a>
-      </div>
+  <div class="with-connection-type sqlite-form">
+    <div class="alert alert-warning">
+      <i class="material-icons">warning</i>
+      <span>
+        BigQuery support is still in beta. Please report any problems on <a href="https://github.com/beekeeper-studio/beekeeper-studio/issues/new/choose">our issue tracker</a>.
+      </span>
     </div>
     <div class="form-group">
       <label for="Project Id">ProjectId</label>
       <input
         type="text"
         class="form-control"
+        placeholder="eg: example-project"
         v-model="config.bigQueryOptions.projectId"
       >
     </div>
-    <div class="advanced-connection-settings">
-      <h4
-        class="advanced-heading flex"
-        :class="{ enabled: iamAuthenticationEnabled }"
-      >
-        <span class="expand">IAM Authentication</span>
-        <x-switch
-          @click.prevent="toggleIAMAuthentication"
-          :toggled="iamAuthenticationEnabled"
-        />
-      </h4>
-      <div
-        class="advanced-body"
-        v-show="iamAuthenticationEnabled"
-      >
-        <div class="row gutter">
+    <div class="form-group">
+      <label for="defaultDataset">Default Dataset</label>
+      <input type="text" class="form-control" v-model="config.defaultDatabase" placeholder="(Optional)">
+    </div>
+    <toggle-form-area v-if="$config.isDevelopment" :expanded="devMode" title="[DEV MODE OVERRIDES]" :hideToggle="true">
+      <template v-slot:header>
+        <x-switch @click.prevent="devMode = !devMode" :toggled="devMode"></x-switch>
+      </template>
+      <div class="form-group"><label for="host">Host</label><input type="text" class="form-control" v-model="config.host"></div>
+      <div class="form-group"><label for="port">Port</label><input type="text" class="form-control" v-model="config.port"></div>
+    </toggle-form-area>
+    <toggle-form-area
+      :expanded="true"
+      :hideToggle="true"
+      title="Authentication"
+    >
+    <div class="row gutter">
           <div class="alert alert-info expand">
             <i class="material-icons-outlined">info</i>
-            <div>
-              Create a service account key. <a
-                href="https://cloud.google.com/iam/docs/keys-create-delete#creating"
-              >Read
-                More</a>
-            </div>
+            <span>
+              You need a service account with the roles 'BigQuery Data Viewer' and 'BigQuery Job User' - <a
+                href="https://docs.beekeeperstudio.io/docs/google-bigquery"
+              > Read More</a>
+            </span>
           </div>
         </div>
 
         <div class="form-group">
           <label for="KeyFilename">
-            Key file
+            Service Account's JSON Private Key
           </label>
           <file-picker v-model="config.bigQueryOptions.keyFilename" />
         </div>
-      </div>
-    </div>
-    <common-server-inputs :config="config" />
-    <common-advanced :config="config" />
+  </toggle-form-area>
+
+
   </div>
 </template>
-<script>
-import FilePicker from '@/components/common/form/FilePicker'
-import CommonAdvanced from './CommonAdvanced'
-import CommonServerInputs from './CommonServerInputs'
+<script lang="ts">
+import Vue from 'vue'
+import FilePicker from '@/components/common/form/FilePicker.vue'
+import ToggleFormArea from '../common/ToggleFormArea.vue'
 
-export default {
-  components: { CommonAdvanced, CommonServerInputs, FilePicker },
+export default Vue.extend({
+  components: { FilePicker, ToggleFormArea },
   data() {
     return {
+      devMode: false,
       iamAuthenticationEnabled: this.config.bigQueryOptions?.iamAuthenticationEnabled || false
+    }
+  },
+  watch: {
+    devMode() {
+      if (this.devMode) {
+        this.config.host = 'localhost'
+        this.config.port = 443
+      } else {
+        this.config.host = null
+        this.config.port = null
+      }
     }
   },
   methods: {
@@ -71,5 +83,5 @@ export default {
     }
   },
   props: ['config'],
-}
+})
 </script>

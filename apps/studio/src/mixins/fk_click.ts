@@ -95,13 +95,13 @@ export const FkLinkMixin = {
         columnName = await this.connection.getPrimaryKey(tableName, schemaName)
       }
 
-      const filter = {
+      const filters = [{
         value,
         type: '=',
         field: columnName
-      }
+      }]
       const payload = {
-        table, filter, titleScope: value
+        table, filters, titleScope: value
       }
       this.$root.$emit('loadTable', payload)
     },

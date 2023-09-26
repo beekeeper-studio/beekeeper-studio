@@ -166,11 +166,11 @@
             class="pitch"
             v-if="!config.connectionType"
           >
-            🧚 Hey! If you love the app, consider buying the full version of Beekeeper Studio to support us (and get more
-            features too!). <a
+            🌟 <strong>Upgrade to premium</strong> for data import, multi-table export, backup & restore, Oracle support, and more.
+            <a
               href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
               class=""
-            >Learn more ></a>.
+            >Upgrade Now</a>.
           </div>
         </div>
 

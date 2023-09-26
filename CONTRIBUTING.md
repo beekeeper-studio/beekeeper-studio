@@ -4,7 +4,7 @@ Last updated: Feb 27 2022
 
 We welcome community contributions! If you're thinking of contributing, thank you!
 
-We ask that all contributors abide by our [code of conduct](https://github.com/beekeeper-studio/beekeeper-studio/code_of_conduct.md)
+We ask that all contributors abide by our [code of conduct](https://github.com/beekeeper-studio/beekeeper-studio/blob/master/code_of_conduct.md)
 
 
 ### Opening Issues

@@ -24,6 +24,7 @@ import logRaw from 'electron-log'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor';
 import { SqlServerData } from '@shared/lib/dialects/sqlserver';
 import { SqlServerChangeBuilder } from '@shared/lib/sql/change_builder/SqlServerChangeBuilder';
+import { joinFilters } from '@/common/utils';
 const log = logRaw.scope('sql-server')
 
 const logger = () => log;
@@ -75,6 +76,7 @@ export default async function (server, database) {
     getTableLength: (table, schema) => getTableLength(conn, table, schema),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, schema, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
+    selectTopSql: (table, offset, limit, orderBy, filters, schema, selects) => selectTopSql(conn, table, offset, limit, orderBy, filters, schema, selects),
     queryStream: (db, query, chunkSize) => selectTopStream(conn, db, query, chunkSize),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
     getQuerySelectTop: (table, limit) => getQuerySelectTop(conn, table, limit),
@@ -149,14 +151,15 @@ export async function disconnect(conn) {
 function buildFilterString(filters) {
   let filterString = ""
   if (filters && filters.length > 0) {
-    filterString = "WHERE " + filters.map((item) => {
+    const allFilters = filters.map((item) => {
 
       let wrappedValue = _.isArray(item.value) ?
         `(${item.value.map((v) => D.escapeString(v, true)).join(',')})` :
         D.escapeString(item.value, true)
 
-      return `${wrapIdentifier(item.field)} ${item.type} ${wrappedValue}`
-    }).join(" AND ")
+      return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${wrappedValue}`
+    })
+    filterString = "WHERE " + joinFilters(allFilters, filters)
   }
   return filterString
 }
@@ -192,9 +195,9 @@ function genOrderByString(orderBy) {
 
   let orderByString = "ORDER BY (SELECT NULL)"
   if (orderBy && orderBy.length > 0) {
-    orderByString = "order by " + (orderBy.map((item) => {
+    orderByString = "ORDER BY " + (orderBy.map((item) => {
       if (_.isObject(item)) {
-        return `${wrapIdentifier(item.field)} ${item.dir}`
+        return `${wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`
       } else {
         return wrapIdentifier(item)
       }
@@ -252,10 +255,7 @@ async function getTableLength(conn, table, schema) {
 
 export async function selectTop(conn, table, offset, limit, orderBy, filters, schema, selects = ['*']) {
   log.debug("filters", filters)
-  const version = await getVersion(conn);
-  const query = version.supportOffsetFetch ?
-    genSelectNew(table, offset, limit, orderBy, filters, schema, selects) :
-    genSelectOld(table, offset, limit, orderBy, filters, schema, selects)
+  const query = await selectTopSql(conn, table, offset, limit, orderBy, filters, schema, selects)
   logger().debug(query)
 
   const result = await driverExecuteQuery(conn, { query })
@@ -278,6 +278,22 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
     columns,
     cursor: new SqlServerCursor(conn, query, chunkSize)
   }
+}
+
+export async function selectTopSql(
+  conn,
+  table,
+  offset,
+  limit,
+  orderBy,
+  filters,
+  schema,
+  selects
+) {
+  const version = await getVersion(conn);
+  return version.supportOffsetFetch
+    ? genSelectNew(table, offset, limit, orderBy, filters, schema, selects)
+    : genSelectOld(table, offset, limit, orderBy, filters, schema, selects);
 }
 
 export async function queryStream(conn, db, query, orderBy, filters, chunkSize, schema, selects = ['*']) {

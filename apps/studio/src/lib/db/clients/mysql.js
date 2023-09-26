@@ -68,6 +68,7 @@ export default async function (server, database) {
     getTableLength: (table) => getTableLength(conn, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(conn, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(conn, db, table, orderBy, filters, chunkSize, schema),
+    selectTopSql: (table, offset, limit, orderBy, filters, schema, selects) => selectTopSql(conn, table, offset, limit, orderBy, filters, selects),
     queryStream: (db, query, chunkSize) => queryStream(conn, db, query, chunkSize),
     applyChangesSql: (changes) => applyChangesSql(changes, knex),
     getInsertQuery: (tableInsert) => getInsertQuery(conn, database.database, tableInsert),
@@ -330,6 +331,30 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
     columns,
     cursor: new MysqlCursor(conn, query, params, chunkSize)
   }
+}
+
+export async function selectTopSql(
+  conn,
+  table,
+  offset,
+  limit,
+  orderBy,
+  filters,
+  schema,
+  selects
+) {
+  const columns = await listTableColumns(conn, null, table);
+  const { query, params } = buildSelectTopQuery(
+    table,
+    offset,
+    limit,
+    orderBy,
+    filters,
+    "total",
+    columns,
+    selects
+  );
+  return knex.raw(query, params).toQuery();
 }
 
 export async function queryStream(conn, db, query, chunkSize) {

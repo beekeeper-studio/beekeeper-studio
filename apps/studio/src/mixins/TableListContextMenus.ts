@@ -3,6 +3,8 @@ import { ContextOption } from "@/plugins/BeekeeperPlugin";
 
 export default {
   data() {
+    // HACK (@day): this stuff will be removed once we get write mode working for BQ
+    const isBQClass = this.connection.connectionType == 'bigquery' ? 'disabled' : '';
     return {
       routineMenuOptions: [
         {
@@ -23,6 +25,7 @@ export default {
         {
           name: "SQL: Create",
           slug: 'sql-create',
+          class: isBQClass,
           handler: this.routineMenuClick
         },
 
@@ -33,6 +36,8 @@ export default {
   },
   computed: {
     tableMenuOptions() {
+      // HACK (@day): this stuff will be removed once we get write mode working for BQ
+      const isBQClass = this.connection.connectionType == 'bigquery' ? 'disabled' : '';
       return [
         {
           name: "View Data",
@@ -49,10 +54,18 @@ export default {
           }
         },
         {
-          name: "Export",
+          name: "Export To File",
           slug: 'export',
           handler: ({ item }) => {
             this.trigger(AppEvent.beginExport, { table: item })
+          }
+        },
+        {
+          name: "Import From CSV",
+          class: isBQClass,
+          slug: 'import',
+          handler: () => {
+            this.$root.$emit(AppEvent.upgradeModal)
           }
         },
         {
@@ -79,6 +92,7 @@ export default {
         {
           name: "SQL: Create",
           slug: 'sql-create',
+          class: isBQClass,
           handler: ({ item }) => {
             this.$root.$emit('loadTableCreate', item)
           }
@@ -86,6 +100,7 @@ export default {
         {
           name: "Drop",
           slug: 'sql-drop',
+          class: isBQClass,
           handler: ({ item }) => {
             console.log("Drop?")
             this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'drop' })
@@ -94,6 +109,7 @@ export default {
         {
           name: "Truncate",
           slug: 'sql-truncate',
+          class: isBQClass,
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'truncate' })
           }
@@ -101,6 +117,7 @@ export default {
         {
           name: "Duplicate",
           slug: 'sql-duplicate',
+          class: isBQClass,
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.duplicateDatabaseTable, { item, action: 'duplicate' })
           }

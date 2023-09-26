@@ -7,7 +7,6 @@ import { SqliteData } from "./sqlite";
 import { SqlServerData } from "./sqlserver";
 
 export function getDialectData(dialect: Dialect): DialectData  {
-  console.log('DIALECT: ', dialect);
   switch (dialect) {
     case "postgresql":
       return PostgresData

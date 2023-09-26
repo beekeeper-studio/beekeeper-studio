@@ -73,6 +73,13 @@ export const idColumn: TemplatedSchemaItem = {
     nullable: false,
     primaryKey: true
   },
+  dialectConfigs: {
+    bigquery: {
+      dataType: 'int64',
+      nullable: false,
+      primaryKey: true
+    }
+  }
 }
 
 
@@ -102,6 +109,10 @@ export const timestampColumn = (name: string): TemplatedSchemaItem => ({
     redshift: {
       dataType: 'timestamp',
       defaultValue: 'GETDATE()'
+    },
+    bigquery: {
+      dataType: 'timestamp',
+      defaultValue: 'CURRENT_TIMESTAMP'
     }
 
   }

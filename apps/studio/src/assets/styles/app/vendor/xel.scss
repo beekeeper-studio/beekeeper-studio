@@ -814,6 +814,11 @@ x-menuitem {
     width: 24px;
     opacity: 0.6;
     margin-right: $gutter-h!important;
+    &.menu-icon {
+      margin-left: auto;
+      margin-right: 0!important;
+      opacity: 0.5;
+    }
   }
   x-label {
     display: flex;

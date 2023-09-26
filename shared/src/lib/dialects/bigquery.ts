@@ -10,27 +10,28 @@ const supportsLength = [];
 export const BigQueryData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t))),
   constraintActions: [],
-  wrapIdentifier: (_id: string) => ``,
+  wrapIdentifier: (id: string) => id ? `\`${id.replaceAll(/`/g, '\\`')}\`` : null,
   friendlyNormalizedIdentifier: friendlyNormalizedIdentifier,
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
   unwrapIdentifier: (s) => s,
   disabledFeatures: {
     tableTable: true,
+    indexes: true,
     constraints: {
       onUpdate: true,
       onDelete: true
     },
-    // these disabled features are just until we have knex support.
     alter: {
-      everything: true
+      addConstraint: true,
+      dropConstraint: true
     },
+    createIndex: true,
+    comments: true
   },
   notices: {
-    infoSchema: 'Editing schemas is currently disabled for BigQuery, we\'re working on it!',
-    infoIndexes: 'Editing indexes is currently disabled for BigQuery, we\'re working on it!',
-    infoRelations: 'Editing relations is currently disabled for BigQuery, we\'re working on it!',
-    infoTriggers: 'Editing triggers is currently disabled for BigQuery, we\'re working on it!',
+    infoIndexes: 'BigQuery: table indexes are not supported.',
+    infoTriggers: 'BigQuery: table triggers are not supported.',
     tableTable: 'Editing records is currently disabled for BigQuery, we\'re working on it!'
   }
 }

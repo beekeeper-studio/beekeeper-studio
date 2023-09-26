@@ -38,25 +38,25 @@ export default {
   methods: {
 
 
-    niceString(value: any) {
+    niceString(value: any, truncate = false) {
 
       let cellValue = value.toString();
       if (_.isArray(value)) {
         cellValue = value.map((v) => v.toString()).join(", ")
       }
-      return cellValue
+      return truncate ? _.truncate(cellValue, { length: 256 }) : cellValue
     },
 
     cellTooltip(_event, cell: Tabulator.CellComponent) {
       const nullValue = emptyResult(cell.getValue())
-      return nullValue ? nullValue : escapeHtml(this.niceString(cell.getValue()))
+      return nullValue ? nullValue : escapeHtml(this.niceString(cell.getValue(), true))
     },
     cellFormatter(cell: Tabulator.CellComponent) {
       const nullValue = emptyResult(cell.getValue())
       if (nullValue) {
         return nullValue
       }
-      let cellValue = this.niceString(cell.getValue())
+      let cellValue = this.niceString(cell.getValue(), true)
       cellValue = cellValue.replace(/\n/g, ' ↩ ');
       cellValue = escapeHtml(cellValue);
       // removing the <pre> will break selection / copy paste, see ResultTable
