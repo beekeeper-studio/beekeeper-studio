@@ -646,15 +646,33 @@ export default Vue.extend({
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             search: true,
-            values: /^(bool|boolean)$/i.test(column.dataType)
-              ? [true, false]
-              : undefined,
             allowEmpty: true,
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
             // }
           },
         }
+
+        if (/^(bool|boolean)$/i.test(column.dataType)) {
+          // BigInt to match the value from backend
+          const values = [
+            { label: '0', value: BigInt(0) },
+            { label: '1', value: BigInt(1) },
+          ]
+          if (column.nullable) values.push({ label: '(NULL)', value: null })
+          result.editorParams['values'] = values
+          result.editorParams['itemFormatter'] = (
+            label: string,
+            value: BigInt | null
+          ) => {
+            // This will make sure that the dropdown will show false/true.
+            // We can't just set the label to false/true initially because
+            // that will change the cell when editing, which can be confusing.
+            if (value !== null) return Boolean(value).toString()
+            return label
+          }
+        }
+
         results.push(result)
 
         if (keyDatas && keyDatas.length > 0) {
