@@ -143,12 +143,13 @@
         </div>
         <div class="vue-dialog-buttons">
           <button
-            class="btn btn-flat"
-            type="button"
-            @click.prevent="closeModal"
-          >
-            Cancel
-          </button>
+              class="btn btn-flat btn-icon"
+              type="button"
+              @click.prevent="upgradeModal"
+            >
+              <i class="material-icons">tab</i>
+              Export multiple tables
+            </button>
           <button
             class="btn btn-primary"
             type="submit"
@@ -169,6 +170,7 @@ import rawlog from 'electron-log'
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "./forms"
 import FilePicker from '../common/form/FilePicker'
 import platformInfo from '../../common/platform_info'
+import { AppEvent } from '@/common/AppEvent'
 const log = rawlog.scope('export/export-modal')
 
 const exportFormats = [
@@ -315,6 +317,10 @@ export default {
     },
     closeModal () {
       this.$modal.hide('export-modal')
+    },
+    upgradeModal() {
+      this.closeModal()
+      this.$root.$emit(AppEvent.upgradeModal)
     },
     toggleAdvanced() {
       this.advancedToggled = !this.advancedToggled
