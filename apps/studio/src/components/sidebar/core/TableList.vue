@@ -158,34 +158,42 @@
                 :force-collapse="allCollapsed"
                 @contextmenu.prevent.stop="$bks.openMenu({ item: blob, event: $event, options: schemaMenuOptions})"
               >
-                <template v-for="table in blob.tables">
+                <template v-for="idx in maxTablesToShow(blob)">
                   <table-list-item
-                    v-if="!hiddenEntities.includes(table)"
-                    :key="entityKey(table)"
-                    :pinned="pinnedEntities.includes(table)"
+                    v-if="!hiddenEntities.includes(blob.tables[idx - 1])"
+                    :key="entityKey(blob.tables[idx - 1])"
+                    :pinned="pinnedEntities.includes(blob.tables[idx - 1])"
                     :container="$refs.entityContainer"
                     @selected="tableSelected"
                     @unselected="tableUnselected"
-                    :table="table"
+                    :table="blob.tables[idx - 1]"
                     :connection="connection"
                     :force-expand="allExpanded"
                     :force-collapse="listItemsCollapsed"
-                    @contextmenu.prevent.stop="$bks.openMenu({ item: table, event: $event, options: tableMenuOptions})"
+                    @contextmenu.prevent.stop="$bks.openMenu({ item: blob.tables[idx - 1], event: $event, options: tableMenuOptions})"
                   />
                 </template>
-                <template v-for="routine in blob.routines">
+                <template v-for="idx in maxRoutinesToShow(blob)">
                   <routine-list-item
-                    v-if="!hiddenEntities.includes(routine)"
-                    :key="entityKey(routine)"
-                    :pinned="pinnedEntities.includes(routine)"
+                    v-if="!hiddenEntities.includes(blob.routines[idx - 1])"
+                    :key="entityKey(blob.routines[idx - 1])"
+                    :pinned="pinnedEntities.includes(blob.routines[idx - 1])"
                     :container="$refs.entityContainer"
-                    :routine="routine"
+                    :routine="blob.routines[idx - 1]"
                     :connection="connection"
                     :force-expand="allExpanded"
                     :force-collapse="listItemsCollapsed"
-                    @contextmenu.prevent.stop="$bks.openMenu({item: routine, event: $event, options: routineMenuOptions})"
+                    @contextmenu.prevent.stop="$bks.openMenu({item: blob.routines[idx - 1], event: $event, options: routineMenuOptions})"
                   />
                 </template>
+                <div class="show-all-entities" v-if="exceededMaxEntities(blob)">
+                  Some entities are hidden to avoid performance hit.
+                  <button
+                    class="btn btn-link"
+                    @click="$set(maxEntities, blob.schema, Infinity)"
+
+                  >Show all {{ blob.tables.length + blob.routines.length }} entities</button>
+                </div>
               </sidebar-folder>
             </template>
           </div>
@@ -228,6 +236,7 @@
   import PinnedTableList from '@/components/sidebar/core/PinnedTableList.vue'
   import SidebarFolder from '@/components/common/SidebarFolder.vue'
   import { AppEvent } from '@/common/AppEvent'
+  const MAX_ENTITIES_PER_SCHEMA = 800
   export default {
     mixins: [TableFilter, TableListContextMenus],
     components: { TableListItem, RoutineListItem, PinnedTableList, SidebarFolder, HiddenEntitiesModal },
@@ -241,7 +250,8 @@
         activeItem: 'tables',
         split: null,
         sizes: [25,75],
-        expandedTables: []
+        expandedTables: [],
+        maxEntities: {},
       }
     },
     computed: {
@@ -396,6 +406,16 @@
           this.$store.commit('selectSidebarItem', null)
         }
       },
+      maxTablesToShow(schema) {
+        return Math.min(schema.tables.length, this.maxEntities[schema.schema] ?? MAX_ENTITIES_PER_SCHEMA)
+      },
+      maxRoutinesToShow(schema) {
+        return Math.min(schema.routines.length, Math.max(0, (this.maxEntities[schema.schema] ?? MAX_ENTITIES_PER_SCHEMA) - schema.tables.length))
+      },
+      exceededMaxEntities(schema) {
+        return schema.tables.length + schema.routines.length > (this.maxEntities[schema.schema] ?? MAX_ENTITIES_PER_SCHEMA)
+      },
+
     },
     mounted() {
       document.addEventListener('mousedown', this.maybeUnselect)

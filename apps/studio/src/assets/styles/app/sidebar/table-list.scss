@@ -50,6 +50,15 @@
     padding-top: $gutter-w;
     padding-bottom: $gutter-w;
   }
+  .show-all-entities {
+    margin-top: 0.25rem;
+    padding-left: 1rem;
+    padding-right: 0.8rem;
+    button {
+      font-family: inherit;
+      padding: 0;
+    }
+  }
 }
 
 .hidden-indicator {

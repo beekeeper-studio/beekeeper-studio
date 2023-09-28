@@ -318,7 +318,7 @@ export default Vue.extend({
     filters: {
       deep: true,
       handler(nextFilters: TableFilter[], oldFilters: TableFilter[]) {
-        this.$emit("changed", nextFilters);
+        this.$emit("input", nextFilters);
         // Submit when it's only one filter and it's empty
         if (
           nextFilters.length === 1 &&

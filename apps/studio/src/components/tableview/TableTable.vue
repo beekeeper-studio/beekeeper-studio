@@ -12,7 +12,7 @@
         v-if="table.columns?.length"
         :columns="table.columns"
         :initial-filters="initialFilters"
-        @changed="saveFilters"
+        @input="saveFilters"
         @submit="triggerFilter"
       />
       <div ref="table" />
@@ -256,6 +256,7 @@ import { TableFilter } from '@/lib/db/models';
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
+let debouncedSaveTab: _.DebouncedFunc<(tab: unknown) => unknown>;
 
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder },
@@ -780,6 +781,7 @@ export default Vue.extend({
   beforeDestroy() {
     document.removeEventListener('click', this.maybeUnselectCell)
     document.removeEventListener('mouseUp', this.handleCellMouseUp)
+    debouncedSaveTab?.cancel()
     if(this.interval) clearInterval(this.interval)
     if (this.tabulator) {
       this.tabulator.destroy()
@@ -788,6 +790,10 @@ export default Vue.extend({
   async mounted() {
     document.addEventListener('click', this.maybeUnselectCell)
     document.addEventListener('mouseUp', this.handleCellMouseUp)
+    debouncedSaveTab = _.debounce(
+      (tab) => this.$store.dispatch("tabs/save", tab),
+      1000
+    );
     if (this.shouldInitialize) {
       this.$nextTick(async() => {
         await this.initialize()
@@ -1589,7 +1595,7 @@ export default Vue.extend({
     },
     saveFilters(filters: TableFilter[]) {
       this.tab.setFilters(filters)
-      this.$store.dispatch('tabs/save', this.tab)
+      debouncedSaveTab(this.tab)
     },
   }
 });
