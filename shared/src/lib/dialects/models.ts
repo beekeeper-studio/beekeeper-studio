@@ -123,6 +123,12 @@ export interface DialectData {
     query?: string
   },
   charsets?: string[]|null
+  dataTypes: {
+    boolean?: {
+      true: any
+      false: any
+    }
+  }
 }
 
 export const defaultConstraintActions = [
