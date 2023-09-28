@@ -42,5 +42,4 @@ export const RedshiftData: DialectData = {
     },
     createIndex: true,
   },
-  dataTypes: {},
 }

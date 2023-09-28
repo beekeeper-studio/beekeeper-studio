@@ -48,5 +48,4 @@ export const SqlServerData: DialectData = {
       extra: true
     }
   },
-  dataTypes: {},
 }

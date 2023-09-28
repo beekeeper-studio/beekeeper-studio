@@ -46,6 +46,5 @@ export const PostgresData: DialectData = {
     }
   },
   charsets,
-  dataTypes: {},
 }
 

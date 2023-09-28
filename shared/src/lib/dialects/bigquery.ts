@@ -34,5 +34,4 @@ export const BigQueryData: DialectData = {
     infoTriggers: 'BigQuery: table triggers are not supported.',
     tableTable: 'Editing records is currently disabled for BigQuery, we\'re working on it!'
   },
-  dataTypes: {},
 }

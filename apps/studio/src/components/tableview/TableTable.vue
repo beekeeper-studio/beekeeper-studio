@@ -654,8 +654,8 @@ export default Vue.extend({
         }
 
         if (/^(bool|boolean)$/i.test(column.dataType)) {
-          const trueVal = this.dialectData.dataTypes.boolean?.true ?? true
-          const falseVal = this.dialectData.dataTypes.boolean?.false ?? false
+          const trueVal = this.dialectData.boolean?.true ?? true
+          const falseVal = this.dialectData.boolean?.false ?? false
           const values = [
             { label: trueVal.toString(), value: trueVal },
             { label: falseVal.toString(), value: falseVal },

@@ -123,11 +123,9 @@ export interface DialectData {
     query?: string
   },
   charsets?: string[]|null
-  dataTypes: {
-    boolean?: {
-      true: any
-      false: any
-    }
+  boolean?: {
+    true: any
+    false: any
   }
 }
 
