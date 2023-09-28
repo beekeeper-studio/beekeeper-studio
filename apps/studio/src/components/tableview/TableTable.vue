@@ -656,10 +656,7 @@ export default Vue.extend({
         if (/^(bool|boolean)$/i.test(column.dataType)) {
           const trueVal = this.dialectData.boolean?.true ?? true
           const falseVal = this.dialectData.boolean?.false ?? false
-          const values = [
-            { label: trueVal.toString(), value: trueVal },
-            { label: falseVal.toString(), value: falseVal },
-          ]
+          const values = [falseVal, trueVal]
           if (column.nullable) values.push({ label: '(NULL)', value: null })
           result.editorParams['values'] = values
         }
