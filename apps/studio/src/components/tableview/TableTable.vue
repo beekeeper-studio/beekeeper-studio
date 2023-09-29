@@ -561,7 +561,7 @@ export default Vue.extend({
     // we can use this to track if column names have been updated and we need
     // to refresh
     tableColumnNames() {
-      return this.table?.columns.map((c) => c.columnName).join("-")
+      return this.table?.columns?.map((c) => c.columnName).join("-") || []
     },
     tableColumns() {
       const results = []
