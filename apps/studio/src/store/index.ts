@@ -446,7 +446,7 @@ const store = new Vuex.Store<State>({
           const onlyTables = await context.state.connection.listTables({ schema })
           onlyTables.forEach((t) => {
             t.entityType = 'table'
-            t.columns = []
+            // t.columns = []
             // if (!context.state.connection.supportedFeatures().partitions) {
             //   t.tabletype = null;
             //   t.parenttype = null;
@@ -455,7 +455,7 @@ const store = new Vuex.Store<State>({
           const views = await context.state.connection.listViews({ schema })
           views.forEach((v) => {
             v.entityType = 'view'
-            v.columns = []
+            // v.columns = []
           })
 
           const materialized = await context.state.connection.listMaterializedViews({ schema })
