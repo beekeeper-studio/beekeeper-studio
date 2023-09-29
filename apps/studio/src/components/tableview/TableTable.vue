@@ -591,8 +591,7 @@ export default Vue.extend({
       // to the FK table.
       this.table.columns.forEach(column => {
 
-        const keyDatas: any[] = this.tableKeys[column.columnName]
-
+        const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0].includes(column.columnName));
         // this needs fixing
         // currently it doesn't fetch the right result if you update the PK
         // because it uses the PK to fetch the result.
@@ -606,10 +605,11 @@ export default Vue.extend({
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
         if (keyDatas && keyDatas.length > 0) {
-          if (keyDatas.length === 1)
-            headerTooltip += ` -> ${keyDatas[0].toTable}(${keyDatas[0].toColumn})`
+          const keyData = keyDatas[0][1];
+          if (keyData.length === 1)
+            headerTooltip += ` -> ${keyData[0].toTable}(${keyData[0].toColumn})`
           else
-            headerTooltip += ` -> ${keyDatas.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`
+            headerTooltip += ` -> ${keyData.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`
         } else if (isPK) {
           headerTooltip += ' [Primary Key]'
         }
@@ -658,7 +658,7 @@ export default Vue.extend({
         results.push(result)
 
         if (keyDatas && keyDatas.length > 0) {
-          results.push(this.fkColumn(result, keyDatas))
+          results.push(this.fkColumn(result, keyDatas[0][1]))
         }
 
       });
