@@ -1039,7 +1039,7 @@ export default Vue.extend({
     },
     editorType(dt) {
       const ne = vueEditor(NullableInputEditorVue)
-      switch (dt.toLowerCase()) {
+      switch (dt?.toLowerCase() ?? '') {
         case 'text':
         case 'json':
         case 'jsonb':
