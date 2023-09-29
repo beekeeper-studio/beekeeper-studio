@@ -691,7 +691,6 @@
             "Shift-Cmd-F": this.formatSql,
             "Ctrl-/": this.toggleComment,
             "Cmd-/": this.toggleComment,
-            "Esc": this.cancelQuery,
             "F5": this.submitTabQuery,
             "Shift-F5": this.submitCurrentQuery,
             "Ctrl+I": this.submitQueryToFile,
