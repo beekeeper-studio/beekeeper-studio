@@ -12,7 +12,7 @@
         v-if="table.columns?.length"
         :columns="table.columns"
         :initial-filters="initialFilters"
-        @changed="saveFilters"
+        @input="handleRowFilterBuilderInput"
         @submit="triggerFilter"
       />
       <div ref="table" />
@@ -1587,10 +1587,13 @@ export default Vue.extend({
       this.triggerFilter(draftFilters);
       this.$modal.hide(`discard-changes-modal-${this.tab.id}`);
     },
-    saveFilters(filters: TableFilter[]) {
+    handleRowFilterBuilderInput(filters: TableFilter[]) {
       this.tab.setFilters(filters)
-      this.$store.dispatch('tabs/save', this.tab)
+      this.debouncedSaveTab(this.tab)
     },
+    debouncedSaveTab: _.debounce(function(tab) {
+      this.$store.dispatch('tabs/save', tab)
+    }, 300),
   }
 });
 </script>
