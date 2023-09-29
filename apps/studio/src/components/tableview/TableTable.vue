@@ -646,15 +646,21 @@ export default Vue.extend({
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             search: true,
-            values: /^(bool|boolean)$/i.test(column.dataType)
-              ? [true, false]
-              : undefined,
             allowEmpty: true,
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
             // }
           },
         }
+
+        if (/^(bool|boolean)$/i.test(column.dataType)) {
+          const trueVal = this.dialectData.boolean?.true ?? true
+          const falseVal = this.dialectData.boolean?.false ?? false
+          const values = [falseVal, trueVal]
+          if (column.nullable) values.push({ label: '(NULL)', value: null })
+          result.editorParams['values'] = values
+        }
+
         results.push(result)
 
         if (keyDatas && keyDatas.length > 0) {
