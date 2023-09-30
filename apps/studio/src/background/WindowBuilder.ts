@@ -75,6 +75,16 @@ class BeekeeperWindow {
       electron.shell.openExternal(u.toString());
     })
 
+    this.win.webContents.setWindowOpenHandler(({ url }) => {
+      if (url === appUrl){
+        return {
+          action: 'allow'
+        }
+      } else {
+        return { action: 'deny' }
+      }
+    })
+
     this.win.webContents.on('ipc-message', (e, channel, ...args) => {
       if(channel === 'setWindowTitle') {
         this.win.setTitle(args[0])
