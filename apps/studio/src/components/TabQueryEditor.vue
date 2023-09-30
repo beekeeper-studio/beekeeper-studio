@@ -327,7 +327,6 @@
   import { AppEvent } from '@/common/AppEvent'
   import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
   import { OpenTab } from '@/common/appdb/models/OpenTab'
-  import { makeDBHint, findTableOrViewByWord } from '@/lib/editor'
   import { removeQueryQuotes } from '@/lib/db/sql_tools';
 
   const log = rawlog.scope('query-editor')
@@ -508,8 +507,32 @@
         return this.connection.connectionType;
       },
       hintOptions() {
-        const dbHint = makeDBHint(this.tables, this.dialectData, this.defaultSchema)
-        return { dbHint }
+        const firstTables = {}
+        const secondTables = {}
+        const thirdTables = {}
+
+        this.tables.forEach((table) => {
+          // don't add table names that can get in conflict with database schema
+          if (/\./.test(table.name)) return
+
+          // Previously we had to provide a table: column[] mapping.
+          // we don't need to provide the columns anymore because we fetch them dynamically.
+          if (!table.schema) {
+            firstTables[table.name] = []
+            return
+          }
+
+          if (table.schema === this.defaultSchema) {
+            firstTables[table.name] = []
+            secondTables[`${table.schema}.${table.name}`] = []
+          } else {
+            thirdTables[`${table.schema}.${table.name}`] = []
+          }
+        })
+
+        const sorted = Object.assign(firstTables, Object.assign(secondTables, thirdTables))
+
+        return { tables: sorted }
       },
       queryParameterPlaceholders() {
         let params = this.individualQueries.flatMap((qs) => qs.parameters)
@@ -707,7 +730,7 @@
 
           const modes = {
             'mysql': 'text/x-mysql',
-            'postgresql': 'text/x-pgsql',
+            'postgresql': 'text/x-sqlite',
             'sqlserver': 'text/x-mssql',
           };
 
@@ -1145,8 +1168,10 @@
       fakeRemoteChange() {
         this.query.text = "select * from foo"
       },
-      async getColumnsForAutocomplete(tableWord) {
-        const tableToFind = findTableOrViewByWord(this.tables, tableWord)
+      async getColumnsForAutocomplete(tableName) {
+        const tableToFind = this.tables.find(
+          (t) => t.name === tableName || `${t.schema}.${t.name}` === tableName
+        )
         if (!tableToFind) return null
         // Only refresh columns if we don't have them cached.
         if (!tableToFind.columns?.length) {
