@@ -143,13 +143,13 @@
         </div>
         <div class="vue-dialog-buttons">
           <button
-              class="btn btn-flat btn-icon"
-              type="button"
-              @click.prevent="upgradeModal"
-            >
-              <i class="material-icons">tab</i>
-              Export multiple tables
-            </button>
+            class="btn btn-flat btn-icon"
+            type="button"
+            @click.prevent="upgradeModal"
+          >
+            <i class="material-icons">tab</i>
+            Export multiple tables
+          </button>
           <button
             class="btn btn-primary"
             type="submit"

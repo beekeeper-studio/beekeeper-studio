@@ -100,11 +100,21 @@
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitQueryToFile">
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
-                  <i v-if="$config.isCommunity" class="material-icons menu-icon">stars</i>
+                  <i
+                    v-if="$config.isCommunity"
+                    class="material-icons menu-icon"
+                  >
+                    stars
+                  </i>
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQueryToFile">
                   <x-label>Run Current to File</x-label>
-                  <i v-if="$config.isCommunity" class="material-icons menu-icon ">stars</i>
+                  <i
+                    v-if="$config.isCommunity"
+                    class="material-icons menu-icon "
+                  >
+                    stars
+                  </i>
                 </x-menuitem>
               </x-menu>
             </x-button>
@@ -312,7 +322,7 @@
   import pluralize from 'pluralize'
 
   import platformInfo from '@/common/platform_info'
-  import { splitQueries, extractParams } from '../lib/db/sql_tools'
+  import { splitQueries } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
