@@ -1,8 +1,7 @@
 // "forked" from CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: https://codemirror.net/5/LICENSE
 
-import CodeMirror from "codemirror";
-import "@/vendor/sql-hint/index";
+import { Pos, testCompletions as test } from "./helpers";
 
 const simpleTables = {
   users: ["name", "score", "birthDate"],
@@ -52,37 +51,8 @@ const displayTextTablesWithDefault = [
   },
 ];
 
-const Pos = CodeMirror.Pos;
-
-function _testCompletions(it, name, spec) {
-  it(name, async () => {
-    const textarea = document.createElement("textarea");
-    document.body.appendChild(textarea);
-    const cm = CodeMirror.fromTextArea(textarea, {
-      mode: spec.mode || "text/x-mysql",
-      value: spec.value,
-    });
-    cm.setValue(spec.value);
-    cm.setCursor(spec.cursor);
-    const completions = await CodeMirror.hint.sql(cm, {
-      tables: spec.tables,
-      defaultTable: spec.defaultTable,
-      disableKeywords: spec.disableKeywords,
-    });
-    expect(spec.list.sort()).toEqual(completions.list.sort());
-    expect(spec.from).toEqual(completions.from);
-    expect(spec.to).toEqual(completions.to);
-    document.body.removeChild(textarea);
-  });
-}
-
-/** @type jest.It */
-const testCompletions = _testCompletions.bind(null, test);
-testCompletions.only = _testCompletions.bind(null, test.only);
-testCompletions.skip = _testCompletions.bind(null, test.skip);
-
-describe("codemirror", () => {
-  testCompletions("keywords", {
+describe("CodeMirror completions", () => {
+  test("keywords", {
     value: "SEL",
     cursor: Pos(0, 3),
     list: [{ text: "SELECT", className: "CodeMirror-hint-keyword" }],
@@ -90,7 +60,7 @@ describe("codemirror", () => {
     to: Pos(0, 3),
   });
 
-  testCompletions("keywords_disabled", {
+  test("keywords_disabled", {
     value: "SEL",
     cursor: Pos(0, 3),
     disableKeywords: true,
@@ -99,7 +69,7 @@ describe("codemirror", () => {
     to: Pos(0, 3),
   });
 
-  testCompletions("from", {
+  test("from", {
     value: "SELECT * fr",
     cursor: Pos(0, 11),
     list: [{ text: "FROM", className: "CodeMirror-hint-keyword" }],
@@ -107,7 +77,7 @@ describe("codemirror", () => {
     to: Pos(0, 11),
   });
 
-  testCompletions("table", {
+  test("table", {
     value: "SELECT xc",
     cursor: Pos(0, 9),
     tables: simpleTables,
@@ -116,7 +86,7 @@ describe("codemirror", () => {
     to: Pos(0, 9),
   });
 
-  testCompletions("columns", {
+  test("columns", {
     value: "SELECT users.",
     cursor: Pos(0, 13),
     tables: simpleTables,
@@ -125,7 +95,7 @@ describe("codemirror", () => {
     to: Pos(0, 13),
   });
 
-  testCompletions("singlecolumn", {
+  test("singlecolumn", {
     value: "SELECT users.na",
     cursor: Pos(0, 15),
     tables: simpleTables,
@@ -134,7 +104,7 @@ describe("codemirror", () => {
     to: Pos(0, 15),
   });
 
-  testCompletions("quoted", {
+  test("quoted", {
     value: "SELECT `users`.`na",
     cursor: Pos(0, 18),
     tables: simpleTables,
@@ -143,7 +113,7 @@ describe("codemirror", () => {
     to: Pos(0, 18),
   });
 
-  testCompletions("doublequoted", {
+  test("doublequoted", {
     value: 'SELECT "users"."na',
     cursor: Pos(0, 18),
     tables: simpleTables,
@@ -153,7 +123,7 @@ describe("codemirror", () => {
     mode: "text/x-sqlite",
   });
 
-  testCompletions("quotedcolumn", {
+  test("quotedcolumn", {
     value: "SELECT users.`na",
     cursor: Pos(0, 16),
     tables: simpleTables,
@@ -162,7 +132,7 @@ describe("codemirror", () => {
     to: Pos(0, 16),
   });
 
-  testCompletions("doublequotedcolumn", {
+  test("doublequotedcolumn", {
     value: 'SELECT users."na',
     cursor: Pos(0, 16),
     tables: simpleTables,
@@ -172,7 +142,7 @@ describe("codemirror", () => {
     mode: "text/x-sqlite",
   });
 
-  testCompletions("schema", {
+  test("schema", {
     value: "SELECT schem",
     cursor: Pos(0, 12),
     tables: schemaTables,
@@ -187,7 +157,7 @@ describe("codemirror", () => {
     to: Pos(0, 12),
   });
 
-  testCompletions("schemaquoted", {
+  test("schemaquoted", {
     value: "SELECT `sch",
     cursor: Pos(0, 11),
     tables: schemaTables,
@@ -196,7 +166,7 @@ describe("codemirror", () => {
     to: Pos(0, 11),
   });
 
-  testCompletions("schemadoublequoted", {
+  test("schemadoublequoted", {
     value: 'SELECT "sch',
     cursor: Pos(0, 11),
     tables: schemaTables,
@@ -206,7 +176,7 @@ describe("codemirror", () => {
     mode: "text/x-sqlite",
   });
 
-  testCompletions("schemacolumn", {
+  test("schemacolumn", {
     value: "SELECT schema.users.",
     cursor: Pos(0, 20),
     tables: schemaTables,
@@ -215,7 +185,7 @@ describe("codemirror", () => {
     to: Pos(0, 20),
   });
 
-  testCompletions("schemacolumnquoted", {
+  test("schemacolumnquoted", {
     value: "SELECT `schema`.`users`.",
     cursor: Pos(0, 24),
     tables: schemaTables,
@@ -228,7 +198,7 @@ describe("codemirror", () => {
     to: Pos(0, 24),
   });
 
-  testCompletions("schemacolumndoublequoted", {
+  test("schemacolumndoublequoted", {
     value: 'SELECT "schema"."users".',
     cursor: Pos(0, 24),
     tables: schemaTables,
@@ -242,7 +212,7 @@ describe("codemirror", () => {
     mode: "text/x-sqlite",
   });
 
-  testCompletions("displayText_default_table", {
+  test("displayText_default_table", {
     value: "SELECT a",
     cursor: Pos(0, 8),
     disableKeywords: true,
@@ -262,7 +232,7 @@ describe("codemirror", () => {
     to: Pos(0, 8),
   });
 
-  testCompletions("displayText_table", {
+  test("displayText_table", {
     value: "SELECT myt",
     cursor: Pos(0, 10),
     tables: displayTextTables,
@@ -277,7 +247,7 @@ describe("codemirror", () => {
     to: Pos(0, 10),
   });
 
-  testCompletions("displayText_column", {
+  test("displayText_column", {
     value: "SELECT mytable.",
     cursor: Pos(0, 15),
     tables: displayTextTables,
@@ -289,7 +259,7 @@ describe("codemirror", () => {
     to: Pos(0, 15),
   });
 
-  testCompletions("alias_complete", {
+  test("alias_complete", {
     value: "SELECT t. FROM users t",
     cursor: Pos(0, 9),
     tables: simpleTables,
@@ -298,7 +268,7 @@ describe("codemirror", () => {
     to: Pos(0, 9),
   });
 
-  testCompletions("alias_complete_with_displayText", {
+  test("alias_complete_with_displayText", {
     value: "SELECT t. FROM mytable t",
     cursor: Pos(0, 9),
     tables: displayTextTables,
