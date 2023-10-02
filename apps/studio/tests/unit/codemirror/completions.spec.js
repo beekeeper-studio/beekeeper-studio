@@ -279,4 +279,22 @@ describe("CodeMirror completions", () => {
     from: Pos(0, 7),
     to: Pos(0, 9),
   });
+
+  test("complete alias from quoted tables (backtick)", {
+    value: "SELECT t. FROM `users` t",
+    cursor: Pos(0, 9),
+    tables: simpleTables,
+    list: ["t.name", "t.score", "t.birthDate"],
+    from: Pos(0, 7),
+    to: Pos(0, 9),
+  })
+
+  test("complete alias from quoted tables (doublequoted)", {
+    value: 'SELECT t. FROM "users" t',
+    cursor: Pos(0, 9),
+    tables: simpleTables,
+    list: ["t.name", "t.score", "t.birthDate"],
+    from: Pos(0, 7),
+    to: Pos(0, 9),
+  })
 });
