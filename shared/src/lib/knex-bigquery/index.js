@@ -2,6 +2,7 @@
 /* eslint-disable */
 const Promise = require('bluebird');
 const Client = require('knex/lib/client');
+const { makeEscape } = require('knex/lib/util/string')
 
 const SchemaCompiler = require('./schema/compiler').default
 const QueryCompiler = require('./query/querycompiler').default
@@ -135,6 +136,41 @@ class BigQueryClient extends Client {
         return value;
     }
   }
+
+  // Turns a list of values into a list of ?'s, joining them with commas unless
+  // a "joining" value is specified (e.g. ' and ')
+  parameterize(values, notSetValue, builder, bindingsHolder) {
+    if (typeof values === 'function')
+      return this.parameter(values, builder, bindingsHolder);
+    values = Array.isArray(values) ? values : [values];
+    let str = '',
+      i = -1;
+    while (++i < values.length) {
+      if (i > 0) str += ', ';
+      let value = values[i];
+      str += this.parameter(
+        value === undefined ? notSetValue : value,
+        builder,
+        bindingsHolder
+      );
+    }
+    return str;
+  }
+
 }
+
+Object.assign(BigQueryClient.prototype, {
+  _escapeBinding: makeEscape({
+    escapeArray(val, esc, ctx) {
+      ctx.preventEscapeString = true;
+      return esc(JSON.stringify(val), ctx);
+    },
+    escapeString(str, esc, ctx) {
+      if (ctx.preventEscapeString) return str;
+      return `'${str.replace(/'/g, "''")}'`;
+    },
+  })
+})
+
 
 module.exports = { BigQueryClient };
