@@ -209,7 +209,7 @@ describe("CodeMirror completions", () => {
     ],
     from: Pos(0, 7),
     to: Pos(0, 24),
-    mode: "text/x-sqlite",
+    mode: "text/x-pgsql",
   });
 
   test("displayText_default_table", {

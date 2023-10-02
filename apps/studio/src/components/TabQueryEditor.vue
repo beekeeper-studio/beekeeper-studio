@@ -730,7 +730,7 @@
 
           const modes = {
             'mysql': 'text/x-mysql',
-            'postgresql': 'text/x-sqlite', // FIXME x-pgsql does not allow double quoted identifiers
+            'postgresql': 'text/x-pgsql',
             'sqlserver': 'text/x-mssql',
             'mariadb': 'text/x-mariadb',
             'sqlite': 'text/x-sqlite',

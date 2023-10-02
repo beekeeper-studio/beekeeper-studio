@@ -1,5 +1,6 @@
 import CodeMirror from "codemirror";
 import "@/vendor/sql-hint/index";
+import "@/lib/codemirror"
 
 export const Pos = CodeMirror.Pos;
 
@@ -26,6 +27,6 @@ function _testCompletions(it, name, spec) {
 }
 
 /** @type jest.It */
-export const testCompletions = _testCompletions.bind(null, test);
-testCompletions.only = _testCompletions.bind(null, test.only);
-testCompletions.skip = _testCompletions.bind(null, test.skip);
+export const testCompletions = _testCompletions.bind(test, test);
+testCompletions['only'] = _testCompletions.bind(null, test['only']);
+testCompletions['skip'] = _testCompletions.bind(null, test['skip']);
