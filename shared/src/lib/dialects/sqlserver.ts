@@ -3,7 +3,6 @@ import {
   ColumnType,
   defaultConstraintActions,
   defaultEscapeString,
-  friendlyNormalizedIdentifier,
   defaultWrapLiteral,
   DialectData,
   SpecialTypes,
@@ -34,7 +33,7 @@ export const SqlServerData: DialectData = {
   constraintActions: [...defaultConstraintActions],
   wrapIdentifier: (value) =>   _.isString(value) ?
     (value !== '*' ? `[${value.replace(/\[/g, '[')}]` : '*') : value,
-  friendlyNormalizedIdentifier: (s) => friendlyNormalizedIdentifier(s, '"'),
+  editorFriendlyIdentifier: (s) => s,
   wrapLiteral: defaultWrapLiteral,
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);

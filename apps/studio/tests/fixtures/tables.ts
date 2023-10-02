@@ -1,9 +1,12 @@
+import { MysqlData } from "../../../../shared/src/lib/dialects/mysql";
 import { PostgresData } from "../../../../shared/src/lib/dialects/postgresql";
 import { SqliteData } from "../../../../shared/src/lib/dialects/sqlite";
+import { SqlServerData } from "../../../../shared/src/lib/dialects/sqlserver";
 import { TableOrView } from "../../src/lib/db/models";
 import { DBHint } from "../../src/lib/editor";
+import _ from "lodash";
 
-export const tableOrViews: TableOrView[] = [
+export const tables: TableOrView[] = [
   {
     schema: "public",
     name: "my_table",
@@ -22,15 +25,7 @@ export const tableOrViews: TableOrView[] = [
   },
   {
     schema: "public",
-    name: "CASE_SENSITIVE_table",
-    tabletype: "r",
-    parenttype: null,
-    entityType: "table",
-    columns: [],
-  },
-  {
-    schema: "public",
-    name: "CASE_sensitive_table",
+    name: "MixedCase",
     tabletype: "r",
     parenttype: null,
     entityType: "table",
@@ -62,7 +57,7 @@ export const tableOrViews: TableOrView[] = [
   },
 ];
 
-export const dbHint: DBHint = {
+export const postgresDBHint: DBHint = {
   defaultSchema: "public",
   defaultTableWordList: {
     my_table: {
@@ -71,21 +66,27 @@ export const dbHint: DBHint = {
       type: "table",
       schema: "public",
     },
-    "special+table": {
+    '"special+table"': {
       name: "special+table",
       text: '"special+table"',
       type: "table",
       schema: "public",
     },
-    CASE_SENSITIVE_table: {
-      name: "CASE_SENSITIVE_table",
-      text: '"CASE_SENSITIVE_table"',
+    "special+table": {
+      name: "special+table",
+      text: "special+table",
       type: "table",
       schema: "public",
     },
-    CASE_sensitive_table: {
-      name: "CASE_sensitive_table",
-      text: '"CASE_sensitive_table"',
+    '"MixedCase"': {
+      name: "MixedCase",
+      text: '"MixedCase"',
+      type: "table",
+      schema: "public",
+    },
+    MixedCase: {
+      name: "MixedCase",
+      text: "MixedCase",
       type: "table",
       schema: "public",
     },
@@ -104,14 +105,20 @@ export const dbHint: DBHint = {
       schema: "public",
     },
     {
-      name: "CASE_SENSITIVE_table",
-      text: '"CASE_SENSITIVE_table"',
+      name: "special+table",
+      text: "special+table",
       type: "table",
       schema: "public",
     },
     {
-      name: "CASE_sensitive_table",
-      text: '"CASE_sensitive_table"',
+      name: "MixedCase",
+      text: '"MixedCase"',
+      type: "table",
+      schema: "public",
+    },
+    {
+      name: "MixedCase",
+      text: "MixedCase",
       type: "table",
       schema: "public",
     },
@@ -150,7 +157,12 @@ export const dbHint: DBHint = {
   dialect: PostgresData,
 };
 
-export const tableOrViewsWithoutSchema: TableOrView[] = [
+export const sqlServerDBHint: DBHint = _.chain(postgresDBHint)
+  .thru(omitQuotes)
+  .assign({ dialect: SqlServerData })
+  .value();
+
+export const tablesWithoutSchema: TableOrView[] = [
   {
     name: "my_table",
     tabletype: "r",
@@ -158,13 +170,25 @@ export const tableOrViewsWithoutSchema: TableOrView[] = [
     entityType: "table",
     columns: [],
   },
+  {
+    name: "MixedCase",
+    tabletype: "r",
+    parenttype: null,
+    entityType: "table",
+    columns: [],
+  },
 ];
 
-export const dbHintWithoutSchema: DBHint = {
+export const sqliteDBHint: DBHint = {
   defaultTableWordList: {
     my_table: {
       name: "my_table",
       text: "my_table",
+      type: "table",
+    },
+    MixedCase: {
+      name: "MixedCase",
+      text: "MixedCase",
       type: "table",
     },
   },
@@ -174,7 +198,38 @@ export const dbHintWithoutSchema: DBHint = {
       text: "my_table",
       type: "table",
     },
+    {
+      name: "MixedCase",
+      text: "MixedCase",
+      type: "table",
+    },
   ],
   schemaWordList: {},
   dialect: SqliteData,
 };
+
+export const mysqlDBHint: DBHint = {
+  ...sqliteDBHint,
+  dialect: MysqlData,
+};
+
+function omitQuotes(dbHint: DBHint): DBHint {
+  return {
+    ...dbHint,
+    defaultTableWordList: _.omit(dbHint.defaultTableWordList, [
+      '"special+table"',
+      '"MixedCase"',
+    ]),
+    tableWords: dbHint.tableWords.filter(
+      (t) => t.text !== '"special+table"' && t.text !== '"MixedCase"'
+    ),
+    schemaWordList: {
+      ...dbHint.schemaWordList,
+      "schema with spaces": {
+        name: "schema with spaces",
+        text: "schema with spaces",
+        type: "schema",
+      },
+    },
+  };
+}

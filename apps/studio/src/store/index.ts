@@ -259,6 +259,7 @@ const store = new Vuex.Store<State>({
       } else {
         // TODO: make this not O(n^2)
         const result = tables.map((t) => {
+          t.columns ||= []
           const existingIdx = state.tables.findIndex((st) => tablesMatch(st, t))
           if (existingIdx >= 0) {
             const existing = state.tables[existingIdx]
@@ -446,21 +447,28 @@ const store = new Vuex.Store<State>({
           const onlyTables = await context.state.connection.listTables({ schema })
           onlyTables.forEach((t) => {
             t.entityType = 'table'
-            t.columns = []
-            // if (!context.state.connection.supportedFeatures().partitions) {
-            //   t.tabletype = null;
-            //   t.parenttype = null;
-            // } 
           })
           const views = await context.state.connection.listViews({ schema })
           views.forEach((v) => {
             v.entityType = 'view'
-            v.columns = []
           })
 
           const materialized = await context.state.connection.listMaterializedViews({ schema })
           materialized.forEach(v => v.entityType = 'materialized-view')
           const tables = onlyTables.concat(views).concat(materialized)
+
+          // FIXME (matthew): We're doing another loop here for no reason
+          // so we're looping n*2 times
+          // Also this is a little duplicated from `updateTableColumns`, but it doesn't make sense
+          // to dispatch that separately as it causes blinking tabletable state.
+          for (const table of tables) {
+            const match = context.state.tables.find((st) => tablesMatch(st, table))
+            if (match?.columns?.length > 0) {
+              table.columns = (table.entityType === 'materialized-view' ?
+                await context.state.connection?.listMaterializedViewColumns(table.name, table.schema) :
+                await context.state.connection?.listTableColumns(table.name, table.schema)) || []
+            }
+          }
           context.commit("tablesLoading", `Loading ${tables.length} tables`)
 
           context.commit('tables', tables)

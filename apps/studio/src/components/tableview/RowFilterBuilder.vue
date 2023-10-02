@@ -1,5 +1,8 @@
 <template>
-  <div class="table-filter">
+  <div
+    v-hotkey="keymap"
+    class="table-filter"
+  >
     <form
       @submit.prevent="submit"
       @scroll="
@@ -125,7 +128,7 @@
             <div class="expand filter">
               <div class="filter-wrap">
                 <input
-                  class="form-control"
+                  class="form-control filter-value"
                   type="text"
                   v-model="filter.value"
                   :placeholder="
@@ -210,26 +213,13 @@
 <script lang="ts">
 import Vue from "vue";
 import { TableFilter } from "@/lib/db/models";
-import { joinFilters } from "@/common/utils";
+import { joinFilters, normalizeFilters } from "@/common/utils";
 import { mapGetters } from "vuex";
+import platformInfo from "@/common/platform_info";
+import { AppEvent } from "@/common/AppEvent";
 
 const BUILDER = "builder";
 const RAW = "raw";
-
-/** Get rid of invalid filters and parse if needed */
-function normalizeFilters(filters: TableFilter[]) {
-  let normalized: TableFilter[] = [];
-  for (const filter of filters as TableFilter[]) {
-    if (!(filter.type && filter.field && filter.value)) continue;
-    if (filter.type === "in") {
-      const value = (filter.value as string).split(/\s*,\s*/);
-      normalized.push({ ...filter, value });
-    } else {
-      normalized.push(filter);
-    }
-  }
-  return normalized;
-}
 
 export default Vue.extend({
   props: ["columns", "initialFilters"],
@@ -265,8 +255,17 @@ export default Vue.extend({
       const [_, ...additional] = this.filters;
       return additional;
     },
+    keymap() {
+      return {
+        [this.ctrlOrCmd('f')]: this.focusOnInput,
+      }
+    }
   },
   methods: {
+    focusOnInput() {
+      if (this.filterMode === RAW) this.$refs.valueInput.focus();
+      else this.$refs.multipleFilters.querySelector('.filter-value')?.focus();
+    },
     toggleFilterMode() {
       const filters: TableFilter[] = normalizeFilters(this.filters);
       const filterMode = this.filterMode === BUILDER ? RAW : BUILDER;
@@ -285,11 +284,19 @@ export default Vue.extend({
       }
 
       this.filterMode = filterMode;
-      this.$nextTick(() => this.$refs.valueInput?.focus());
+      this.$nextTick(this.focusOnInput);
     },
     addFilter() {
+      if (platformInfo.isCommunity) {
+        if (this.filters.length >= 2) {
+          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use more than 2 filters")
+          return;
+        }
+      }
       const lastFilter = this.filters[this.filters.length - 1];
-      this.filters.push(_.clone(lastFilter));
+      const cloned = _.clone(lastFilter)
+      if (!cloned.op) cloned.op = "AND"
+      this.filters.push(cloned);
       this.$nextTick(() => {
         const filters = this.$refs.multipleFilters.children;
         filters[filters.length - 1].scrollIntoView();
@@ -311,7 +318,7 @@ export default Vue.extend({
     filters: {
       deep: true,
       handler(nextFilters: TableFilter[], oldFilters: TableFilter[]) {
-        this.$emit("changed", nextFilters);
+        this.$emit("input", nextFilters);
         // Submit when it's only one filter and it's empty
         if (
           nextFilters.length === 1 &&

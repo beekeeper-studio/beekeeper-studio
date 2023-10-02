@@ -36,7 +36,7 @@ export const FkLinkMixin = {
         download: false,
         width: keyWidth,
         resizable: false,
-        field: column.field + '-link--bks',
+        field: keyDatas[0].fromColumn + '-link--bks',
         title: "",
         cssClass: "foreign-key-button",
         cellClick: clickMenu.length === 0 ? fkClick : null,
@@ -51,8 +51,6 @@ export const FkLinkMixin = {
     async fkClick(rawKeyData, _e, cell: Tabulator.CellComponent) {
       log.debug('fk click', rawKeyData)
       const fromColumn = cell.getField().replace(/-link--bks$/g, "")
-      const valueCell = cell.getRow().getCell(fromColumn)
-      const value = valueCell.getValue()
 
       if (!rawKeyData) {
         log.error("fk-click, couldn't find key data. Please open an issue. fromColumn:", fromColumn)
@@ -95,13 +93,26 @@ export const FkLinkMixin = {
         columnName = await this.connection.getPrimaryKey(tableName, schemaName)
       }
 
-      const filters = [{
-        value,
-        type: '=',
-        field: columnName
-      }]
+      const filters = [];
+
+      // might be compound keys
+      const FromColumnKeys = fromColumn.split(',');
+      const ToColumnKeys = columnName.split(',');
+      const values = [];
+
+      ToColumnKeys.forEach((key: string, index: number) => {
+        const valueCell = cell.getRow().getCell(FromColumnKeys[index]);
+        const value = valueCell.getValue();
+        values.push(value);
+        filters.push({
+          value,
+          type: '=',
+          field: key
+        });
+      });
+
       const payload = {
-        table, filters, titleScope: value
+        table, filters, titleScope: values.join(',')
       }
       this.$root.$emit('loadTable', payload)
     },

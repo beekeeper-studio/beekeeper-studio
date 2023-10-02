@@ -29,6 +29,9 @@ export const Mutators = {
 
 
   mutateRow(row: any[], dataTypes: string[] = [], preserveComplex = false, dialect?: Dialect): JsonFriendly[] {
+    if (_.isObject(row)) {
+      row = Object.values(row);
+    }
     return row.map((item, index) => {
       const typ = dataTypes[index]
       const mutator = this.resolveDataMutator(typ, dialect)

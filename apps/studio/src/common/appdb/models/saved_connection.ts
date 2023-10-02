@@ -42,9 +42,9 @@ export interface RedshiftOptions {
 }
 
 export interface BigQueryOptions {
-  iamAuthenticationEnabled?: boolean
   keyFilename?: string;
   projectId?: string;
+  devMode?: boolean
 }
 
 export interface ConnectionOptions {

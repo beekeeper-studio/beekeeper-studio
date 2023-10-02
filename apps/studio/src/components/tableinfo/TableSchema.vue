@@ -130,7 +130,7 @@ import { vueEditor, vueFormatter, trashButton, TabulatorStateWatchers } from '@s
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import { getDialectData } from '@shared/lib/dialects'
 import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
@@ -172,6 +172,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(['dialect', 'dialectData']),
+    ...mapState(['database']),
     hotkeys() {
       if (!this.active) return {}
       const result = {}
@@ -183,8 +184,8 @@ export default Vue.extend({
       return result
     },
     editable() {
+      // (sept 23) we don't need a primary key to make schemas editable
       return this.table.entityType === 'table' &&
-        !!this.primaryKeys.length &&
         !this.dialectData.disabledFeatures?.alter?.everything
     },
     notice() {
@@ -358,6 +359,7 @@ export default Vue.extend({
       return {
         table: this.table.name,
         schema: this.table.schema,
+        database: this.database,
         alterations,
         adds,
         drops

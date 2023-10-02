@@ -83,7 +83,7 @@ export interface DialectData {
   columnTypes: ColumnType[],
   constraintActions: string[]
   wrapIdentifier: (s: string) => string
-  friendlyNormalizedIdentifier: (s: string) => string
+  editorFriendlyIdentifier: (s: string) => string
   escapeString: (s: string, quote?: boolean) => string
   wrapLiteral: (s: string) => string
   unwrapIdentifier: (s: string) => string
@@ -92,6 +92,7 @@ export interface DialectData {
       extra?: boolean
     }
     tableTable?: boolean,
+    indexes?: boolean,
     alter?: {
       addColumn?: boolean
       dropColumn?: boolean
@@ -122,6 +123,10 @@ export interface DialectData {
     query?: string
   },
   charsets?: string[]|null
+  boolean?: {
+    true: any
+    false: any
+  }
 }
 
 export const defaultConstraintActions = [
@@ -148,8 +153,9 @@ export function defaultWrapIdentifier(value: string): string {
 
 const mayebWrapIdentifierRegex = /(?:[^a-z0-9_]|^\d)/;
 
-export function friendlyNormalizedIdentifier(value: string, quote: '`' | "'" | '"' = '"'): string {
-  return mayebWrapIdentifierRegex.test(value) ? `${quote}${value}${quote}` : value;
+export function friendlyNormalizedIdentifier(value: string, quote: '`' | "'" | '"' = '"', tester?: RegExp): string {
+  const regex = tester || mayebWrapIdentifierRegex
+  return regex.test(value) ? `${quote}${value}${quote}` : value;
 }
 
 export interface SchemaConfig {
@@ -182,6 +188,7 @@ export interface SchemaItemChange {
 export interface AlterTableSpec {
   table: string
   schema?: string
+  database?: string
   alterations?: SchemaItemChange[]
   adds?: SchemaItem[]
   drops?: string[]

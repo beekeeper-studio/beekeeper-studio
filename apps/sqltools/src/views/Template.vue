@@ -109,7 +109,10 @@ export default Vue.extend({
       this.sql = format(unformatted, { language: FormatterDialect(this.dialect)})
     },
     setTemplate(id: string) {
-      this.generator = new SqlGenerator(this.dialect)
+      this.generator = new SqlGenerator(this.dialect, {
+        dbConfig: this.connection.server.config,
+        dbName: this.connection.database.database
+      })
       const t = templates.find((t) => t.id === id)
       if (t) {
         this.template = t

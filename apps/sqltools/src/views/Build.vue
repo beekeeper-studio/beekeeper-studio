@@ -216,7 +216,10 @@ export default Vue.extend ({
     }
   },
   mounted() {
-      this.generator = new SqlGenerator(this.dialect)
+      this.generator = new SqlGenerator(this.dialect, {
+        dbConfig: this.connection.server.config,
+        dbName: this.connection.database.database
+      })
   }
 })
 </script>
