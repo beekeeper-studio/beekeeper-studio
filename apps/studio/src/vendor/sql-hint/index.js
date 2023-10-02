@@ -15,7 +15,6 @@
   var defaultTable;
   var keywords;
   var identifierQuote;
-  let globalEditorOptions = {}
   var CONS = {
     QUERY_DIV: ";",
     ALIAS_KEYWORD: "AS"
@@ -164,7 +163,7 @@
       if (table !== oldTable) alias = true;
     }
 
-    var columns = globalEditorOptions.getColumns ? await globalEditorOptions.getColumns(table): getTable(table)
+    var columns = editor.options.getColumns ? await editor.options.getColumns(table): getTable(table)
 
     if (columns && columns.columns)
       columns = columns.columns;
@@ -243,7 +242,6 @@
   }
 
   CodeMirror.registerHelper("hint", "sql", async function(editor, options) {
-    globalEditorOptions = {...editor.options}
     tables = parseTables(options?.tables)
     var defaultTableName = options?.defaultTable;
     var disableKeywords = options?.disableKeywords;
@@ -276,7 +274,7 @@
       search = "";
     }
     if (search.charAt(0) == "." || search.charAt(0) == identifierQuote) {
-      start = nameCompletion(cur, token, result, editor);
+      start = await nameCompletion(cur, token, result, editor);
     } else {
       var objectOrClass = function(w, className) {
         if (typeof w === "object") {

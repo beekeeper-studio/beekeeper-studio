@@ -730,8 +730,11 @@
 
           const modes = {
             'mysql': 'text/x-mysql',
-            'postgresql': 'text/x-sqlite',
+            'postgresql': 'text/x-sqlite', // FIXME x-pgsql does not allow double quoted identifiers
             'sqlserver': 'text/x-mssql',
+            'mariadb': 'text/x-mariadb',
+            'sqlite': 'text/x-sqlite',
+            'cassandra': 'text/x-cassandra',
           };
 
           const extraKeys = {}
