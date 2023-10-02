@@ -1,6 +1,6 @@
 global.document.createRange = () => ({
-  setStart: () => {},
-  setEnd: () => {},
+  setStart: () => undefined,
+  setEnd: () => undefined,
   getBoundingClientRect: () => ({
     left: 0,
     top: 0,

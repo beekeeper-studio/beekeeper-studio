@@ -64,7 +64,6 @@ function _testCompletions(it, name, spec) {
     });
     cm.setValue(spec.value);
     cm.setCursor(spec.cursor);
-    // @ts-ignore
     const completions = await CodeMirror.hint.sql(cm, {
       tables: spec.tables,
       defaultTable: spec.defaultTable,
