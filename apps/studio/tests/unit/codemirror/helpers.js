@@ -11,6 +11,7 @@ function _testCompletions(it, name, spec) {
     const cm = CodeMirror.fromTextArea(textarea, {
       mode: spec.mode || "text/x-mysql",
       value: spec.value,
+      getColumns: spec.getColumns,
     });
     cm.setValue(spec.value);
     cm.setCursor(spec.cursor);

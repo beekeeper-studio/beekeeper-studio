@@ -95,6 +95,16 @@ describe("CodeMirror completions", () => {
     to: Pos(0, 13),
   });
 
+  test("dynamic columns", {
+    value: "SELECT users.",
+    cursor: Pos(0, 13),
+    tables: { users: [] },
+    getColumns: () => ["name", "score", "birthDate"],
+    list: ["users.name", "users.score", "users.birthDate"],
+    from: Pos(0, 7),
+    to: Pos(0, 13),
+  });
+
   test("singlecolumn", {
     value: "SELECT users.na",
     cursor: Pos(0, 15),
@@ -287,7 +297,7 @@ describe("CodeMirror completions", () => {
     list: ["t.name", "t.score", "t.birthDate"],
     from: Pos(0, 7),
     to: Pos(0, 9),
-  })
+  });
 
   test("complete alias from quoted tables (doublequoted)", {
     value: 'SELECT t. FROM "users" t',
@@ -296,5 +306,98 @@ describe("CodeMirror completions", () => {
     list: ["t.name", "t.score", "t.birthDate"],
     from: Pos(0, 7),
     to: Pos(0, 9),
-  })
+  });
+
+  test("long query", {
+    value: `
+SELECT
+  mt.*,
+FROM
+  (
+    SELECT
+      *
+    FROM
+      main_products
+    ORDER BY
+      id DESC
+  ) AS mt
+  LEFT JOIN alternate_products AS alt ON alt.product_id = mt.product_id
+  LEFT JOIN product_data as pd ON pd.product_id = mt.product_id
+  LEFT JOIN product_grouping AS pg ON pg.id = pd.group
+  LEFT JOIN product_prices AS opp ON pp.product_id = mt.product_id
+  AND (
+    (
+      pd.group = 0
+      AND pp.reason != 5
+    )
+    OR (
+      pd.group != 0
+      AND 1 = 1
+    )
+  )
+  AND NOT EXISTS (
+    SELECT
+      1
+    FROM
+      product_prices AS opp2
+    WHERE
+      opp2.product_id = pp.product_id
+      AND opp2.id > pp.id
+      AND (
+        (
+          pd.group = 0
+          AND opp2.reason != 5
+        )
+        OR (
+          pd.group != 0
+          AND 1 = 1
+        )
+      )
+  )
+  LEFT JOIN product_inventory AS oi ON prin.product_id = mt.product_id
+  AND prin.type IN (3, 5)
+  LEFT JOIN product_prices AS ppTwo ON ppTwo. = mt.product_id
+  AND ppTwo.reason = 5
+  AND NOT EXISTS (
+    SELECT
+      1
+    FROM
+      product_prices AS ppTwoInner
+    WHERE
+      ppTwoInner.id > ppTwo.id
+      AND ppTwoInner.product_id = ppTwo.product_id
+      AND ppTwoInner.reason = 5
+  )
+WHERE
+  mt.id IN (
+    (
+      SELECT
+        MAX(id)
+      FROM
+        main_products
+      WHERE
+        product_id = mt.product_id
+    )
+  )
+  AND alt.product_id IS NULL
+  AND (
+    pp.id IS NULL
+    OR (
+      pp.id IS NOT NULL
+      AND mt.cost > 0
+      AND mt.retail > 0
+    )
+  )
+GROUP BY
+  mt.product_id
+`.trim(),
+    cursor: Pos(46, 45),
+    disableKeywords: true,
+    tables: {
+      product_prices: ["product_id", "price"],
+    },
+    list: ["ppTwo.product_id", "ppTwo.price"],
+    from: Pos(46, 39),
+    to: Pos(46, 45),
+  });
 });
