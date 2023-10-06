@@ -1,7 +1,10 @@
 <template>
   <statusbar :class="{ 'empty': results.length === 0, 'query-meta': true }">
     <template v-if="results.length > 0">
-      <div class="truncate statusbar-info" v-hotkey="keymap">
+      <div
+        class="truncate statusbar-info"
+        v-hotkey="keymap"
+      >
         <span
           v-show="results.length > 1"
           class="statusbar-item result-selector"
@@ -84,15 +87,18 @@
           </x-menuitem>
           <span
             v-tooltip="{
-                content: downloadFullTooltip
-              }"
+              content: downloadFullTooltip
+            }"
           >
             <x-menuitem
               @click.prevent="$event => submitCurrentQueryToFile()"
               :disabled="!result?.truncated"
             >
               <x-label>Download Full Resultset</x-label>
-              <i v-if="$config.isCommunity" class="material-icons menu-icon">stars</i>
+              <i
+                v-if="$config.isCommunity"
+                class="material-icons menu-icon"
+              >stars</i>
             </x-menuitem>
           </span>
           <hr>
