@@ -8,5 +8,6 @@ module.exports = {
   moduleNameMapper: {
     '^@shared/(.*)': resolve(__dirname, '../../shared/src/$1'),
     '^@/(.*)': resolve(__dirname, './src/$1')
-  }
+  },
+  setupFilesAfterEnv: [resolve(__dirname, './tests/setupTests.js')],
 }
