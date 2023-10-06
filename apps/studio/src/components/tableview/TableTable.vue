@@ -647,6 +647,11 @@ export default Vue.extend({
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             search: true,
             allowEmpty: true,
+            preserveObject: column.dataType.startsWith('_'),
+            onPreserveObjectFail: (value: unknown) => {
+              log.error('Failed to preserve object for', value)
+              return true
+            },
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
             // }

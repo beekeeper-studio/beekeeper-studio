@@ -2,7 +2,7 @@ import knexlib from "knex";
 import { Knex } from 'knex';
 import _ from 'lodash';
 import { DBConnection } from '../../db/client';
-import { TableFilter, TableOrView } from '../../db/models';
+import { TableFilter, TableOrView, TableColumn } from '../../db/models';
 import { Export } from '../export';
 import { ExportOptions } from '../models';
 
@@ -64,15 +64,16 @@ export class SqlExporter extends Export {
     return ""
   }
 
-  formatRow(rowArray: any): string {
-    const row = this.rowToObject(rowArray)
-    // error found when attemping to copy over an array into a JSON field https://github.com/beekeeper-studio/beekeeper-studio/issues/1647
-    // which is an issue with Knex itself https://github.com/knex/knex/issues/5430
-    for (const r in row) {
-      if (Array.isArray(row[r])) {
-        row[r] = JSON.stringify(row[r])
+  formatRow(rowArray: any[], columns: TableColumn[] = []): string {
+    const sanitized = rowArray.map((val, idx) => {
+      // error found when attemping to copy over an array into a JSON field https://github.com/beekeeper-studio/beekeeper-studio/issues/1647
+      // which is an issue with Knex itself https://github.com/knex/knex/issues/5430
+      if (columns[idx]?.dataType.startsWith('json') && Array.isArray(val)) {
+        return JSON.stringify(val)
       }
-    }
+      return val
+    })
+    const row = this.rowToObject(sanitized)
 
     let knex = this.knex(this.table.name)
     if (this.outputOptions.schema && this.table.schema) {

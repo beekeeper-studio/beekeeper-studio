@@ -36,17 +36,7 @@ function emptyResult(value: any) {
 export default {
 
   methods: {
-
-
-    niceString(value: any, truncate = false) {
-
-      let cellValue = value.toString();
-      if (_.isArray(value)) {
-        cellValue = value.map((v) => v.toString()).join(", ")
-      }
-      return truncate ? _.truncate(cellValue, { length: 256 }) : cellValue
-    },
-
+    niceString: helpers.niceString,
     cellTooltip(_event, cell: Tabulator.CellComponent) {
       const nullValue = emptyResult(cell.getValue())
       return nullValue ? nullValue : escapeHtml(this.niceString(cell.getValue(), true))

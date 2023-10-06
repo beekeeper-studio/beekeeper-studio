@@ -41,8 +41,12 @@ export function vueEditor(component: any) {
       instance.$destroy()
     }
 
-    instance.$on('value', (v) => {
-      success(v)
+    instance.$on('value', (v: any) => {
+      if (editorParams.preserveObject && _.isEqual(v, cell.getValue())) {
+        success(cell.getValue()) // prevents detecting a change
+      } else {
+        success(v)
+      }
       off()
     })
 

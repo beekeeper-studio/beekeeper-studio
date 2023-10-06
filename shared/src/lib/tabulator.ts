@@ -27,6 +27,13 @@ function yesNoResult(value: boolean) {
 }
 
 export default {
+  niceString(value: any, truncate = false) {
+    let cellValue = value.toString();
+    if(_.isArray(value) || _.isObject(value)) {
+      cellValue = JSON.stringify(value)
+    }
+    return truncate ? _.truncate(cellValue, { length: 256 }) : cellValue
+  },
   cellFormatter(cell: Tabulator.CellComponent) {
     if (_.isNil(cell.getValue())) {
       return '<span class="null-value">(NULL)</span>'

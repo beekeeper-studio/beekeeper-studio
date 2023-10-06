@@ -56,11 +56,13 @@ export default async function (server, database) {
     getTableLength: (table) => getTableLength(client, database.database, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(client, database.database, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(client, db, table, orderBy, filters, chunkSize, schema),
+    selectTopSql: (table, offset, limit, orderBy, filters, schema, selects) => selectTopSql(client, database.database, table, offset, limit, orderBy, filters, schema, selects),
     queryStream: (db, query, chunkSize) => queryStream(client, db, query, chunkSize),
     getTableKeys: (db, table) => getTableKeys(client, db, table),
     getPrimaryKey: (db, table) => getPrimaryKey(client, db, table),
     getPrimaryKeys: (db, table) => getPrimaryKeys(client, db, table),
     query: (queryText) => query(client, queryText),
+    getInsertQuery: (tableInsert) => buildInsertQuery(knex, { ...tableInsert, schema: database.database }),
     applyChanges: (changes) => applyChanges(client, changes),
     applyChangesSql: (changes) => applyChangesSql(changes, knex),
     executeQuery: (queryText) => driverExecuteQuery(client, queryText),
@@ -433,6 +435,13 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
     columns,
     cursor: new BigQueryCursor(conn, query, params, chunkSize)
   };
+}
+
+export async function selectTopSql(client, db, table, offset, limit, orderBy, filters, schema, selects) {
+  const columns = await listTableColumns(client, db, table)
+  const bqTable = db + "." + table
+  const queries = buildSelectTopQuery(bqTable, offset, limit, orderBy, filters, 'total', columns, selects)
+  return queries.query
 }
 
 export async function queryStream(conn, db, query, chunkSize) {
