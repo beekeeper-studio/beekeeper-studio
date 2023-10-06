@@ -648,8 +648,8 @@ export default Vue.extend({
             search: true,
             allowEmpty: true,
             preserveObject: column.dataType.startsWith('_'),
-            onPreserveObjectFail: () => {
-              this.$noty.error("Value is not valid")
+            onPreserveObjectFail: (value: unknown) => {
+              log.error('Failed to preserve object for', value)
               return true
             },
             // elementAttributes: {
