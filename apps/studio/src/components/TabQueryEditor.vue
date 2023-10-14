@@ -819,10 +819,11 @@
 
               // quote names when needed
               if (origin === 'complete' && keywords[text[0].toLowerCase()] != true) {
+                const alias = this.editor.activeAlias
                 const names = text[0]
                   .match(/("[^"]*"|[^.]+)/g)
-                  .map(n => /^\d/.test(n) ? `"${n}"` : n)
-                  .map(n => /[^a-z0-9_]/.test(n) && !/"/.test(n) ? `"${n}"` : n)
+                  .map(n => /^\d/.test(n) && n !== alias ? `"${n}"` : n)
+                  .map(n => /[^a-z0-9_]/.test(n) && !/"/.test(n) && n !== alias ? `"${n}"` : n)
                   .join('.')
 
                 co.update(from, to, [names], origin)
