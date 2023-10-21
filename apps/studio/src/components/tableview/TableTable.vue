@@ -614,6 +614,11 @@ export default Vue.extend({
           headerTooltip += ' [Primary Key]'
         }
 
+        // if column has a comment, add it to the tooltip
+        if (column.comment) {
+          headerTooltip += `<br/> ${column.comment}`
+        }
+
         const result = {
           title: column.columnName,
           field: column.columnName,
