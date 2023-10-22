@@ -1,7 +1,15 @@
 <template>
   <div>
+    <date-picker
+      v-if="this.isDateTime"
+      ref="input"
+      type="datetime"
+      v-model="value"
+      prefix-class="bk"
+    />
     <input
-      class="nullible-input"
+      v-else
+      :class="[{'date-thing': this.isDateTime}, 'nullible-input']"
       :placeholder="smartPlaceholder"
       ref="input"
       type="text"
@@ -10,19 +18,21 @@
       @change.prevent="submit"
       @keydown="keydown"
     >
-    <i
+    <!-- <i
       class="material-icons clear"
       @mousedown.prevent.stop="clear"
       title="Nullify Value"
-    >cancel</i>
+    >cancel</i> -->
   </div>
 </template>
 <script lang="ts">
 import _ from 'lodash'
 import Vue from 'vue'
+import DatePicker from 'vue2-datepicker'
 import helpers from '@shared/lib/tabulator'
 export default Vue.extend({
   props: ['cell', 'params'],
+  components: { DatePicker },
   data() {
     return {
       value: null,
@@ -42,6 +52,31 @@ export default Vue.extend({
         }
       }
       return ''
+    },
+    isDateTime() {
+      console.log('isDateTime', this.params.dataType?.search(/(date|time)/i) > -1)
+      return this.params.dataType?.search(/(date|time)/i) > -1
+      /*
+        [
+          'date',
+          'datetime',
+          'time',
+          'timestamp',
+          'timetz',
+          'timestamptz',
+          'timestamp without time zone',
+          'timestamp with time zone',
+          'time without time zone',
+          'time with time zone',
+          'daterange',
+          'datetime2',
+          'datetimeoffset',
+          'smalldatetime'
+        ]
+      */
+    },
+    getDateTimeOptions() {
+      return 'goobers'
     }
   },
   methods: {
@@ -112,6 +147,9 @@ export default Vue.extend({
 <style lang="scss" scoped>
   @import '@shared/assets/styles/_variables';
 
+  .date-thing {
+    background-color: red !important;
+  }
   div {
     position: relative;
     display: flex;

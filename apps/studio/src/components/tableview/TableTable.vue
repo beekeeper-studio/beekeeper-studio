@@ -253,6 +253,7 @@ import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
+import DateTimeEditorVue from '@shared/components/tabulator/DateTimeEditor.vue';
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
@@ -645,13 +646,14 @@ export default Vue.extend({
           formatter: this.cellFormatter,
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
+            dataType: column.dataType,
             search: true,
             allowEmpty: true,
             preserveObject: column.dataType.startsWith('_'),
             onPreserveObjectFail: (value: unknown) => {
               log.error('Failed to preserve object for', value)
               return true
-            },
+            }
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
             // }
