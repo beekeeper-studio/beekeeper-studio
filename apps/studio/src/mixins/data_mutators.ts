@@ -57,7 +57,7 @@ export default {
       // removing the <pre> will break selection / copy paste, see ResultTable
       let result = `<pre>${cellValue}</pre>`
 
-      if (params.fk) {
+      if (params?.fk) {
         let tooltip = ''
         if (params.fk.length === 1) tooltip = `View record in ${params.fk[0].toTable}`
         else tooltip = `View records in ${(params.fk.map(item => item.toTable).join(', ') as string).replace(/, (?![\s\S]*, )/, ', or ')}`
