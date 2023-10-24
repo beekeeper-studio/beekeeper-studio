@@ -1,10 +1,11 @@
+import { Pos } from "codemirror";
 import { testAutoquotes as test } from "./helpers";
 
 describe("Codemirror autoquotes", () => {
   test("Lowercased identifier", {
     tables: { Foobar: [] },
     value: "SELECT * FROM Foo",
-    cursor: { ch: 17, line: 0 },
+    cursor: Pos(0, 17),
     completeTo: "foobar",
     result: "SELECT * FROM foobar",
   });
@@ -12,7 +13,7 @@ describe("Codemirror autoquotes", () => {
   test("Lowercased identifier, uppercased alias", {
     tables: { foo: ["baz"] },
     value: "SELECT Bar. FROM foo AS Bar",
-    cursor: { ch: 11, line: 0 },
+    cursor: Pos(0, 11),
     completeTo: "Bar.baz",
     result: "SELECT Bar.baz FROM foo AS Bar",
   });
@@ -20,7 +21,7 @@ describe("Codemirror autoquotes", () => {
   test("Uppercased identifier", {
     tables: { Foobar: [] },
     value: "SELECT * FROM Foo",
-    cursor: { ch: 17, line: 0 },
+    cursor: Pos(0, 17),
     completeTo: "Foobar",
     result: 'SELECT * FROM "Foobar"',
   });
@@ -28,7 +29,7 @@ describe("Codemirror autoquotes", () => {
   test("Uppercased identifier, uppercased alias", {
     tables: { foo: ["Baz"] },
     value: "SELECT Bar. FROM foo AS Bar",
-    cursor: { ch: 11, line: 0 },
+    cursor: Pos(0, 11),
     completeTo: "Bar.Baz",
     result: 'SELECT Bar."Baz" FROM foo AS Bar',
   });

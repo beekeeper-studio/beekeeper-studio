@@ -1,12 +1,11 @@
 import CodeMirror from "codemirror";
 import "@/vendor/sql-hint/index";
+import "@/lib/codemirror-definition"
 import {
   registerAutoquote,
   unregisterAutoquote,
   autoquoteHandler,
 } from "@/lib/codemirror";
-
-export const Pos = CodeMirror.Pos;
 
 class Editor {
   constructor(opts = {}) {
