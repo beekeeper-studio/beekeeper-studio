@@ -98,8 +98,18 @@ $cell-padding:           $gutter-w;
   background: transparent;
   width: min-content;
   min-width: 100%;
-  &:nth-child(odd) {
-    background: rgba($theme-base, 0.015);
+  &.tabulator-row-odd {
+    background-color: rgba($theme-base, 0.015);
+  }
+  &.tabulator-selected.tabulator-row-even:hover {
+    background-color: transparent;
+  }
+  &.tabulator-highlight .tabulator-cell.tabulator-frozen.tabulator-row-header {
+    background-color: darken($theme-base, 92%) !important;
+  }
+  &.tabulator-selected .tabulator-cell.tabulator-frozen.tabulator-row-header {
+    background-color: darken($theme-primary, 50%) !important;
+    border-radius: 0;
   }
   &.inserted {
     .tabulator-cell {
@@ -134,8 +144,11 @@ $cell-padding:           $gutter-w;
     &:last-of-type {
       padding-right: $cell-padding * 1.5;
     }
-    i.fk-link {
-      display:none;
+    &.tabulator-row-header {
+      padding: 0;
+      &:hover {
+        background-color: darken($theme-primary, 50%);
+      }
     }
     pre {
       margin: 0;
@@ -169,14 +182,6 @@ $cell-padding:           $gutter-w;
       background: $selection;
       border-color: $input-highlight;
       color: $db-select-text;
-    }
-
-    &.selected {
-      background: rgba($theme-base, 0.10) !important;
-      opacity: 1!important;
-      &:hover {
-        background: rgba($theme-base, 0.10) !important;
-      }
     }
 
     &.copied {
@@ -232,35 +237,18 @@ $cell-padding:           $gutter-w;
         }
       }
     }
-    &.foreign-key {
-      padding-right: $foreign-key-width - 6px;
-    }
-    &.foreign-key-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: flex-end;
-      width: $foreign-key-width!important;
-      min-width: $foreign-key-width!important;
-      padding-left: 0!important;
-      padding-right: 0.35rem!important;
-      margin-left: -$foreign-key-width;
-      cursor: pointer!important;
-      &:hover {
-        background: transparent!important;
-      }
-      .material-icons {
-        font-size: 14px;
-        line-height: 22px;
-        color: $text-light;
-        cursor: pointer;
-      }
-      .tabulator-col-resize-handle.prev {
-        display: none;
-      }
-    }
     &.tabulator-frozen {
       border: 0 !important;
       background-color: transparent;
+    }
+
+    .cell-link-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      :not(.fk-link) {
+        flex-grow: 1;
+      }
     }
   }
 
@@ -299,28 +287,33 @@ $cell-padding:           $gutter-w;
     &.edit-success {
       @include cell-shadow(rgba($query-editor-bg, 0.75));
     }
-  }
 
-  &.tabulator-selectable {
     &:hover {
-      background: rgba($theme-base, 0.05);
+      background-color: rgba($theme-base, 0.05);
       cursor: default;
-      i.fk-link {
-        display: inline-block;
-        &:hover {
-          color: white;
-        }
-      }
-      &.tabulator-selected {
-        background: rgba($theme-base, 0.1);
+      &.tabulator-selected:not(.tabulator-only-cell-selected) {
+        background-color: rgba($theme-base, 0.05);
       }
     }
-    &.tabulator-selected {
-      background: rgba($theme-base, 0.1);
+    &.tabulator-selected:not(.tabulator-only-cell-selected) {
+      background-color: rgba($theme-base, 0.05);
     }
-
   }
 
+  i.fk-link {
+    display:none;
+    cursor: pointer;
+    color: $text-light;
+    font-size: 14px;
+  }
+  &:hover {
+    i.fk-link {
+      display: inline-block;
+      &:hover {
+        color: white;
+      }
+    }
+  }
 }
 
 // Editable Hover
@@ -332,7 +325,9 @@ $cell-padding:           $gutter-w;
     }
     &.primary-key {
       cursor: default;
-      opacity: 0.5;
+      & > * {
+        opacity: 0.5;
+      }
       &:hover {
         background: transparent;
       }
@@ -397,30 +392,68 @@ $cell-padding:           $gutter-w;
       height: 32px!important;
       font-size: 90%;
       line-height: 1;
-
+      border-radius: 2px;
+      &:hover {
+        background: rgba($theme-base, 0.035);
+        .tabulator-header-popup-button {
+          display: inline-block;
+        }
+      }
+      &.tabulator-highlight {
+        background-color: darken($theme-base, 93%);
+      }
+      &.tabulator-selected {
+        background-color: darken($theme-primary, 50%);
+      }
+      .tabulator-header-popup-button {
+        display: none;
+        position: relative;
+        &::before {
+          transition: opacity 0.15s;
+          content: "";
+          position: absolute;
+          width: 24px;
+          height: 24px;
+          transform: translate(-50%, -50%);
+          top: 50%;
+          left: 50%;
+          border-radius: 9999px;
+          z-index: -1;
+          background-color: rgba($theme-base, 0.1);
+          opacity: 0;
+        }
+        &:hover {
+          opacity: 1;
+          &::before {
+            opacity: 1;
+          }
+        }
+      }
       .tabulator-col-title {
+        display: flex;
+        flex-direction: row-reverse;
         color: $text-dark;
+        .title {
+          flex-grow: 1;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          & > * {
+            display: inline;
+          }
+        }
       }
 
       &:first-of-type .tabulator-col-content {
         padding-left: $gutter-w * 1.5;
       }
       &:last-of-type .tabulator-col-content {
-        padding-right: $gutter-w * 1.5;
+        padding-right: $gutter-w * 0.5;
       }
       .badge {
         background: transparent;
         color: $text-lighter;
         padding: 0 0.1rem;
-      }
-      &.tabulator-sortable{
-        border-radius: 2px;
-        &:hover {
-          background: rgba($theme-base, 0.035);
-        }
-        .tabulator-col-title {
-          padding-right: 16px;
-        }
       }
       &.tabulator-sortable[aria-sort="ascending"] {
         .tabulator-col-content {
@@ -714,3 +747,17 @@ $cell-padding:           $gutter-w;
     }
   }
 }
+
+.tabulator-range-overlay {
+  .tabulator-range, .tabulator-range-cell-active {
+    border-color: darken($theme-primary, 30%);
+    border-width: 1px;
+  }
+  .tabulator-range::after {
+    background-color: darken($theme-primary, 30%);
+  }
+  .tabulator-range.copied {
+    border-style: dashed;
+  }
+}
+

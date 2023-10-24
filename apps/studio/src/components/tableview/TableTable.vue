@@ -227,10 +227,8 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import Papa from 'papaparse'
 import pluralize from 'pluralize'
-import { TabulatorFull } from 'tabulator-tables'
-// import pluralize from 'pluralize'
+import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
 import { FkLinkMixin } from '@/mixins/fk_click'
@@ -246,13 +244,12 @@ import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
 import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
-import { Tabulator } from 'tabulator-tables'
 import { TableUpdate, TableUpdateResult } from '@/lib/db/models';
-import { markdownTable } from 'markdown-table'
 import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
+import { copyRange, copyActionsMenu, commonColumnMenu, createMenuItem } from '@/lib/menu/tableMenu';
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
@@ -297,9 +294,6 @@ export default Vue.extend({
       initialized: false,
       internalColumnPrefix: "__beekeeper_internal_",
       internalIndexColumn: "__beekeeper_internal_index",
-      selectedCell: null,
-      mouseDownHandle: null,
-      lastMouseOverRow: null,
     };
   },
   computed: {
@@ -351,160 +345,10 @@ export default Vue.extend({
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
       result[this.ctrlOrCmd('shift+s')] = this.copyToSql.bind(this)
-      result[this.ctrlOrCmd('c')] = this.maybeCopyCellOrRow
-      result["Escape"] = this.unselectStuff
+      result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
+      result[this.ctrlOrCmd('d')] = this.cloneSelection.bind(this)
+      result['delete'] = this.deleteTableSelection.bind(this)
       return result
-    },
-    headerContextMenu() {
-      return [
-        {
-          label: '<x-menuitem><x-label>Resize all columns to match</x-label></x-menuitem>',
-          action: (_e, column: Tabulator.ColumnComponent) => {
-            try {
-              this.tabulator.blockRedraw()
-              const columns = this.tabulator.getColumns()
-              columns.forEach((col) => {
-                col.setWidth(column.getWidth())
-              })
-            } catch (error) {
-              console.error(error)
-            } finally {
-              this.tabulator.restoreRedraw()
-            }
-          }
-        },
-        {
-        label: '<x-menuitem><x-label>Resize all columns to fit content</x-label></x-menuitem>',
-        action: (_e, _column: Tabulator.ColumnComponent) => {
-          try {
-            this.tabulator.blockRedraw()
-            const columns = this.tabulator.getColumns()
-            columns.forEach((col) => {
-              col.setWidth(true)
-            })
-          } catch (error) {
-            console.error(error)
-          } finally {
-            this.tabulator.restoreRedraw()
-          }
-        }
-      },
-        {
-        label: '<x-menuitem><x-label>Resize all columns to fixed width</x-label></x-menuitem>',
-        action: (_e, _column: Tabulator.ColumnComponent) => {
-          try {
-            this.tabulator.blockRedraw()
-            const columns = this.tabulator.getColumns()
-            columns.forEach((col) => {
-              col.setWidth(200)
-            })
-            // const layout = this.tabulator.getColumns().map((c: CC) => ({
-            //   field: c.getField(),
-            //   width: c.getWidth(),
-            // }))
-            // this.tabulator.setColumnLayout(layout)
-            // this.tabulator.redraw(true)
-          } catch (error) {
-            console.error(error)
-          } finally {
-            this.tabulator.restoreRedraw()
-          }
-        }
-      }
-
-      ]
-    },
-    // row only actions
-    rowHandleContextMenu() {
-      return [
-        {
-          label: `<x-menuitem><x-label>Copy row(s) as JSON</x-label></x-menuitem>`,
-          action: (_e, cell) => {
-            const clean = this.getCleanSelectedRowData(cell)
-            this.$native.clipboard.writeText(JSON.stringify(clean))
-          }
-        },
-        {
-          label: '<x-menuitem><x-label>Copy row(s) as TSV for Excel</x-label></x-menuitem>',
-          action: (_e, cell) => {
-            const clean = this.getCleanSelectedRowData(cell)
-            this.$native.clipboard.writeText(Papa.unparse(clean, { header: false, delimiter: "\t", quotes: true, escapeFormulae: true }))
-          }
-        },
-        {
-          label: '<x-menuitem><x-label>Copy row(s) as Markdown</x-label></x-menuitem>',
-          action: (_e, cell) => {
-            const fixed = this.getCleanSelectedRowData(cell)
-
-            if (fixed.length) {
-              const headers = Object.keys(fixed[0])
-              return this.$native.clipboard.writeText(markdownTable([
-                headers,
-                ...fixed.map((item) => Object.values(item)),
-              ]))
-            }
-          }
-        },
-        {
-          label: '<x-menuitem><x-label>Copy row(s) as SQL</x-label></x-menuitem>',
-          action: async (_e, cell) => {
-
-            const fixed = this.getCleanSelectedRowData(cell)
-
-            const tableInsert = {
-              table: this.table.name,
-              schema: this.table.schema,
-              data: fixed,
-            }
-            const query = await this.connection.getInsertQuery(tableInsert)
-            this.$native.clipboard.writeText(query)
-          }
-        },
-        { separator: true },
-        {
-          label: '<x-menuitem><x-label>Clone row(s)</x-label></x-menuitem>',
-          action: this.cellCloneRow.bind(this),
-          disabled: !this.editable
-        },
-        {
-          label: '<x-menuitem><x-label>Delete row(s)</x-label></x-menuitem>',
-          action: (_e, cell) => {
-            let selectedRows = this.tabulator.getSelectedRows()
-            if (!selectedRows.length) selectedRows = [cell.getRow()]
-            selectedRows.forEach((row) => this.addRowToPendingDeletes(row))
-          },
-          disabled: !this.editable
-        },
-      ]
-    },
-    cellContextMenu() {
-
-      const menuItem = (text: string) => `<x-menuitem><x-label>${text}</x-label></x-menuitem>`
-
-      return [
-        {
-          label: menuItem('Copy'),
-          action: (_e, cell: Tabulator.CellComponent) => {
-            this.copyCell(cell)
-          }
-        },
-        {
-          label: menuItem("Set as NULL"),
-          action: (_e, cell: Tabulator.CellComponent) => {
-            if (this.isPrimaryKey(cell.getField())) {
-              // do nothing
-            } else {
-              cell.setValue(null);
-            }
-          },
-          disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell)
-        },
-        { separator: true },
-        ...this.rowHandleContextMenu
-      ]
-    },
-    filterPlaceholder() {
-      return `Enter condition, eg: name like 'Matthew%'`
     },
     tableHolder() {
       return this.$el.querySelector('.tabulator-tableholder')
@@ -567,24 +411,55 @@ export default Vue.extend({
       const results = []
       if (!this.table) return []
 
+      const cellMenu = (keyDatas?: any[]) => {
+        return (_, cell: Tabulator.CellComponent) => {
+          const range = cell.getRange()
+          const menu = [
+            this.setAsNullMenuItem(range),
+            { separator: true },
+            ...copyActionsMenu({
+              range,
+              connection: this.connection,
+              table: this.table.name,
+              schema: this.table.schema,
+            }),
+            { separator: true },
+            ...this.rowActionsMenu(range),
+          ]
 
-      results.push({
-        title: '<span class="column-config material-icons">settings</span>',
-        editable: false,
-        field: 'row-selector--bks',
-        headerSort: false,
-        resizable: false,
-        cssClass: 'select-row-col',
-        formatter: 'text',
-        frozen: true,
-        maxWidth: 40,
-        width: 40,
-        // cellMouseDown: this.handleRowHandleMouseDown,
-        // cellMouseEnter: this.handleCellMouseEnter,
-        cellClick: this.handleRowHandleClick,
-        contextMenu: this.rowHandleContextMenu,
-        headerClick: () => this.showColumnFilterModal()
-      })
+          if (keyDatas?.length > 0) {
+            menu.push({ separator: true })
+            keyDatas.forEach(keyData => {
+              menu.push({
+                label: createMenuItem(`Go to ${keyData.toTable} (${keyData.toColumn})`),
+                action: (e, cell) => this.fkClick(keyData, cell)
+              })
+            })
+          }
+
+          return menu
+        }
+      }
+
+      const columnMenu = (_, column: Tabulator.ColumnComponent) => {
+        const range = column.getRange()
+        return [
+          this.setAsNullMenuItem(range),
+          { separator: true },
+          ...copyActionsMenu({
+            range,
+            connection: this.connection,
+            table: this.table.name,
+            schema: this.table.schema,
+          }),
+          { separator: true },
+          ...commonColumnMenu,
+          {
+            label: createMenuItem("Open Column Filter"),
+            action: this.showColumnFilterModal
+          },
+        ]
+      }
 
       // 1. add a column for a real column
       // if a FK, add another column with the link
@@ -602,9 +477,10 @@ export default Vue.extend({
         const columnWidth = this.table.columns.length > 30 ?
           this.defaultColumnWidth(slimDataType, globals.bigTableColumnWidth) :
           undefined;
+        const hasKeyDatas = keyDatas && keyDatas.length > 0
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
-        if (keyDatas && keyDatas.length > 0) {
+        if (hasKeyDatas) {
           const keyData = keyDatas[0][1];
           if (keyData.length === 1)
             headerTooltip += ` -> ${keyData[0].toTable}(${keyData[0].toColumn})`
@@ -612,6 +488,13 @@ export default Vue.extend({
             headerTooltip += ` -> ${keyData.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`
         } else if (isPK) {
           headerTooltip += ' [Primary Key]'
+        }
+
+        let cssClass: string;
+        if (isPK) {
+          cssClass = 'primary-key';
+        } else if (hasKeyDatas) {
+          cssClass = 'foreign-key';
         }
 
         const result = {
@@ -624,25 +507,26 @@ export default Vue.extend({
           },
           mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connection.connectionType)),
           dataType: column.dataType,
-          cellClick: this.cellClick,
-          // Part of click and drag for rows
-          // cellMouseUp: this.handleCellMouseUp,
-          // cellMouseEnter: this.handleCellMouseEnter,
           minWidth: globals.minColumnWidth,
           width: columnWidth,
           maxWidth: globals.maxColumnWidth,
           maxInitialWidth: globals.maxInitialWidth,
-          cssClass: isPK ? 'primary-key' : '',
+          cssClass,
           editable: this.cellEditCheck,
           headerSort: true,
           editor: editorType,
           tooltip: this.cellTooltip,
-          contextMenu: this.cellContextMenu,
-          headerContextMenu: this.headerContextMenu,
+          contextMenu: cellMenu(hasKeyDatas ? keyDatas[0][1] : undefined),
+          headerContextMenu: columnMenu,
+          headerMenu: columnMenu,
           variableHeight: true,
           headerTooltip: headerTooltip,
           cellEditCancelled: cell => cell.getRow().normalizeHeight(),
           formatter: this.cellFormatter,
+          formatterParams: {
+            fk: hasKeyDatas && keyDatas[0][1],
+            fkOnClick: hasKeyDatas && ((e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
+          },
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             search: true,
@@ -667,18 +551,12 @@ export default Vue.extend({
         }
 
         results.push(result)
-
-        if (keyDatas && keyDatas.length > 0) {
-          results.push(this.fkColumn(result, keyDatas[0][1]))
-        }
-
       });
 
       // add internal index column
       const result = {
         title: this.internalIndexColumn,
         field: this.internalIndexColumn,
-        cellClick: this.cellClick,
         maxWidth: globals.maxColumnWidth,
         maxInitialWidth: globals.maxInitialWidth,
         editable: false,
@@ -789,16 +667,12 @@ export default Vue.extend({
     }
   },
   beforeDestroy() {
-    document.removeEventListener('click', this.maybeUnselectCell)
-    document.removeEventListener('mouseUp', this.handleCellMouseUp)
     if(this.interval) clearInterval(this.interval)
     if (this.tabulator) {
       this.tabulator.destroy()
     }
   },
   async mounted() {
-    document.addEventListener('click', this.maybeUnselectCell)
-    document.addEventListener('mouseUp', this.handleCellMouseUp)
     if (this.shouldInitialize) {
       this.$nextTick(async() => {
         await this.initialize()
@@ -806,6 +680,15 @@ export default Vue.extend({
     }
   },
   methods: {
+    copySelection() {
+      if (!document.activeElement.classList.contains('tabulator-tableholder')) return
+      copyRange({ range: this.tabulator.getActiveRange(), type: 'tsv' })
+    },
+    deleteTableSelection(_: Event, range?: Tabulator.RangeComponent) {
+      if (!document.activeElement.classList.contains('tabulator-tableholder')) return
+      if (!range) range = this.tabulator.getActiveRange()
+      this.addRowsToPendingDeletes(range.getRows());
+    },
     getCleanSelectedRowData(cell) {
       const selectedRows = this.tabulator.getSelectedRows()
       const rowData = selectedRows?.length ? selectedRows : [cell.getRow()]
@@ -815,64 +698,10 @@ export default Vue.extend({
       })
       return clean;
     },
-    unselectStuff() {
-      this.tabulator.deselectRow()
-      this.unselectCell()
-    },
-    // TODO (matthew): Make click and drag work
-    // What this need to work:
-    // - [ ] Mousedown on a handle begins row selection
-    // - [ ] moving mouse over other rows highlights them in the selection
-    // - [ ] releasing mouse (anywhere) keeps the selection and stops selection from happening anymore
-    handleRowHandleMouseDown(_event: MouseEvent, cell: Tabulator.CellComponent) {
-      this.mouseDownHandle = cell
-      // this.handleRowHandleClick(_event, cell)
-    },
-    handleCellMouseEnter(_event: MouseEvent, _cell: Tabulator.CellComponent) {
-      // Please fix me kind software engineer
-    },
-    handleCellMouseUp(_event: MouseEvent, _cell: Tabulator.CellComponent) {
-      this.mouseDownHandle = null
-    },
-    handleRowHandleClick(event: MouseEvent, cell: Tabulator.CellComponent) {
-      // this.mouseDownHandle = null
-      const row = cell.getRow()
-      const selectedRows: Tabulator.RowComponent[] = this.tabulator.getSelectedRows();
-
-      if (event.shiftKey) {
-        if (!selectedRows?.length) {
-          row.select();
-          return;
-        }
-
-        const firstSelected = _.minBy(selectedRows, (r) => r.getPosition())
-        const lastSelected = _.maxBy(selectedRows, (r) => r.getPosition())
-        if (row.getPosition() > lastSelected.getPosition()) {
-          const toSelect = this.tabulator.getRows().filter((r) =>
-            r.getPosition() > lastSelected.getPosition() &&
-            r.getPosition() <= row.getPosition()
-          )
-          this.tabulator.selectRow(toSelect)
-        } else {
-          const toSelect = this.tabulator.getRows().filter((r) =>
-            r.getPosition() < firstSelected.getPosition() &&
-            r.getPosition() >= row.getPosition()
-          )
-          this.tabulator.selectRow(toSelect)
-        }
-
-      } else if (event.ctrlKey || (this.$config.isMac && event.metaKey)) {
-        row.toggleSelect()
-      } else {
-        // clicking a row doesn't deselect it
-        this.tabulator.deselectRow();
-        row.select();
-      }
-    },
     headerFormatter(_cell, formatterParams) {
       const { columnName, dataType } = formatterParams
       return `
-        <span class="tabletable-title">
+        <span class="title">
           ${escapeHtml(columnName)}
           <span class="badge">${dataType}</span>
         </span>`
@@ -897,41 +726,6 @@ export default Vue.extend({
         this.preLoadScrollPosition = null
       }
     },
-    cellIncludesTarget(cell, target) {
-      const targets = [cell.getElement(), ...Array.from(cell.getElement().getElementsByTagName("*"))]
-      return targets.includes(target)
-    },
-    unselectCell() {
-      if (!this.selectedCell) return
-      this.selectedCell.getElement().classList.remove('selected')
-      this.selectedCell = null
-    },
-    maybeUnselectRows(event) {
-      // also unselect rows in tabulator
-      if (!this.tabulator) return;
-      if (!this.active) return;
-
-      const selectedRows = this.tabulator.getSelectedRows()
-      if (!selectedRows?.length) return;
-      const handleCells = selectedRows.map((r) => r.getCell('row-selector--bks'))
-      const clickedCell = handleCells.find((c) =>
-        this.cellIncludesTarget(c, event.target)
-      )
-      if (clickedCell) return;
-
-      this.tabulator.deselectRow()
-
-    },
-    maybeUnselectCell(event) {
-      this.maybeUnselectRows(event)
-
-      if (!this.selectedCell) return
-      if (!this.active) return
-      const target = event.target
-      if (!this.cellIncludesTarget(this.selectedCell, target)) {
-        this.unselectCell()
-      }
-    },
     async close() {
       this.$root.$emit(AppEvent.closeTab)
     },
@@ -948,6 +742,7 @@ export default Vue.extend({
       this.filters = normalizeFilters(this.initialFilters || [])
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
+        spreadsheet: true,
         height: this.actualTableHeight,
         columns: this.tableColumns,
         nestedFieldSeparator: false,
@@ -975,9 +770,23 @@ export default Vue.extend({
           scrollPageUp: false,
           scrollPageDown: false
         },
-        rowContextMenu:[
-
-        ]
+        rowHeader: {
+          contextMenu: (_, cell: Tabulator.CellComponent) => {
+            const range = cell.getRange()
+            return [
+              this.setAsNullMenuItem(range),
+              { separator: true },
+              ...copyActionsMenu({
+                range,
+                connection: this.connection,
+                table: this.table.name,
+                schema: this.table.schema,
+              }),
+              { separator: true },
+              ...this.rowActionsMenu(range),
+            ]
+          }
+        },
       });
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
@@ -987,6 +796,39 @@ export default Vue.extend({
           this.$refs.valueInput.focus()
         }
       })
+    },
+    rowActionsMenu(range: Tabulator.RangeComponent) {
+      const rowRangeLabel = `${range.getTop() + 1} - ${range.getBottom() + 1}`
+      return [
+        {
+          label:
+            range.getTop() === range.getBottom()
+              ? createMenuItem("Clone row")
+              : createMenuItem(`Clone rows ${rowRangeLabel}`),
+          action: this.cellCloneRow.bind(this),
+          disabled: !this.editable,
+        },
+        {
+          label:
+            range.getTop() === range.getBottom()
+              ? createMenuItem("Delete row", "Delete")
+              : createMenuItem(`Delete rows ${rowRangeLabel}`, "Delete"),
+          action: () => {
+            this.tabulator.rowManager.element.focus()
+            this.deleteTableSelection(undefined, range)
+          },
+          disabled: !this.editable,
+        },
+      ]
+    },
+    setAsNullMenuItem(range: Tabulator.RangeComponent) {
+      return {
+        label: createMenuItem("Set as NULL"),
+        action: () => range.getCells().map((cell) => {
+          if (!this.isPrimaryKey(cell.getField())) cell.setValue(null);
+        }),
+        disabled: !this.editable,
+      }
     },
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
@@ -1027,11 +869,7 @@ export default Vue.extend({
       if (chunkyTypes.includes(slimType)) return globals.largeFieldWidth
       return defaultValue
     },
-    valueCellFor(cell) {
-      const fromColumn = cell.getField().replace(/-link--bks$/g, "")
-      const valueCell = cell.getRow().getCell(fromColumn)
-      return valueCell
-    },
+    // TODO: this is not attached to anything. but it might be needed?
     allowHeaderSort(column) {
       if(!column.dataType) return true
       if(column.dataType.startsWith('json')) return false
@@ -1056,54 +894,6 @@ export default Vue.extend({
         case 'boolean':
           return 'select'
         default: return ne
-      }
-    },
-    copyCell(cell: Tabulator.CellComponent) {
-      cell.getElement().classList.add('copied')
-      setTimeout(() => cell.getElement().classList.remove('copied'), 500)
-      this.$native.clipboard.writeText(cell.getValue(), false)
-
-    },
-    maybeCopyCellOrRow() {
-        if (!this.active) return;
-        if (!this.tabulator) return;
-        const selectedRows = this.tabulator.getSelectedRows()
-        if (!this.selectedCell && !selectedRows?.length) return;
-
-        if (this.selectedCell) {
-          this.copyCell(this.selectedCell)
-        }
-
-        if (selectedRows?.length) {
-          const result = this.getCleanSelectedRowData(this.selectedCell)
-
-          selectedRows.forEach((row) => {
-            row.getElement().classList.add('copied')
-            setTimeout(() => row.getElement().classList.remove('copied'), 500)
-          })
-
-          this.$native.clipboard.writeText(
-            Papa.unparse(
-              result,
-              { header: true, delimiter: "\t", quotes: true, escapeFormulae: true,}
-            ),
-            true
-          )
-        }
-    },
-    cellClick(_e, cell) {
-      this.tabulator.deselectRow()
-      if (this.selectedCell) this.selectedCell.getElement().classList.remove("selected")
-      this.selectedCell = null
-      // this makes it easier to select text if not editing
-      if (!this.cellEditCheck(cell)) {
-        this.selectedCell = cell
-        cell.getElement().classList.add("selected")
-      } else {
-        setTimeout(() => {
-          cell.getRow().normalizeHeight();
-        }, 10)
-
       }
     },
     cellEditCheck(cell: Tabulator.CellComponent) {
@@ -1190,9 +980,9 @@ export default Vue.extend({
         this.$set(this.pendingChanges, 'updates', pendingUpdates)
       }
     },
-    cellCloneRow(_e, cell) {
-      let selectedRows = this.tabulator.getSelectedRows()
-      if (!selectedRows.length) selectedRows = [cell.getRow()]
+    cloneSelection(range?: Tabulator.RangeComponent) {
+      if (!range) range = this.tabulator.getActiveRange()
+      const selectedRows = range.getStructuredCells().map((cells) => cells[0].getRow())
 
       selectedRows.forEach((row) => {
         const data = { ...row.getData() }
@@ -1209,6 +999,9 @@ export default Vue.extend({
         })
 
       })
+    },
+    cellCloneRow(_, cell: Tabulator.CellComponent) {
+      this.cloneSelection(cell.getRange())
     },
     cellAddRow() {
       if (this.dialectData.disabledFeatures?.tableTable) {
@@ -1231,50 +1024,61 @@ export default Vue.extend({
 
       this.pendingChanges.inserts.push(payload)
     },
-    addRowToPendingDeletes(row) {
-      const pkCells = row.getCells().filter(c => this.isPrimaryKey(c.getField()))
-
-      if (!pkCells) {
+    addRowsToPendingDeletes(rows: Tabulator.RowComponent[]) {
+      if (!this.primaryKeys) {
         this.$noty.error("Can't delete row -- couldn't figure out primary key")
         return
       }
 
-      if (this.hasPendingInserts && _.find(this.pendingChanges.inserts, { row: row })) {
-        this.$set(this.pendingChanges, 'inserts', _.reject(this.pendingChanges.inserts, { row: row }))
-        this.tabulator.deleteRow(row)
-        return
+      if (this.hasPendingInserts) {
+        const matchingInserts = this.pendingChanges.inserts.filter((insert) => rows.includes(insert.row))
+        if (matchingInserts.length > 0) {
+          this.$set(this.pendingChanges, 'inserts', this.pendingChanges.inserts.filter((insert) => !rows.includes(insert.row)))
+          matchingInserts.forEach((insert) => insert.row.delete())
+          return
+        }
       }
 
-      row.getElement().classList.add('deleted')
+      const discardedUpdates = []
+      const payloads = []
 
-      const primaryKeys = pkCells.map((cell) => {
-        const column = this.table.columns.find(c => c.columnName === cell.getField())
-        const isBinary = column.dataType.toUpperCase().includes('BINARY')
-        return {
-          column: cell.getField(),
-          value: isBinary ? Buffer.from(cell.getValue(), 'hex') : cell.getValue()
+      rows.forEach((row) => {
+        const primaryKeys = []
+
+        this.primaryKeys.forEach((pk: string) => {
+          const cell = row.getCell(pk)
+          const isBinary = cell.getColumn().getDefinition().dataType.toUpperCase().includes('BINARY')
+          primaryKeys.push({
+            column: cell.getField(),
+            value: isBinary ? Buffer.from(cell.getValue(), 'hex') : cell.getValue()
+          })
+        })
+
+        const matchingPrimaryKeys =  (update) => _.isEqual(update.primaryKeys, payload.primaryKeys)
+
+        const filteredUpdates = _.filter(this.pendingChanges.updates, matchingPrimaryKeys)
+        discardedUpdates.push(...filteredUpdates)
+
+        const payload = {
+          table: this.table.name,
+          row,
+          schema: this.table.schema,
+          primaryKeys,
+        }
+
+        payloads.push(payload)
+
+        row.getElement().classList.add('deleted')
+
+        if (!_.find(this.pendingChanges.deletes, matchingPrimaryKeys)) {
+          this.pendingChanges.deletes.push(payload)
         }
       })
 
-      const payload = {
-        table: this.table.name,
-        row: row,
-        schema: this.table.schema,
-        primaryKeys,
-      }
-
-      const matchesFn =  (update) => _.isEqual(update.primaryKeys, payload.primaryKeys)
       // remove pending updates for the row marked for deletion
-      const discardedUpdates = _.filter(this.pendingChanges.updates, matchesFn)
-      const pendingUpdates = _.without(this.pendingChanges.updates, discardedUpdates)
-
       discardedUpdates.forEach(update => this.discardColumnUpdate(update))
 
-      this.$set(this.pendingChanges, 'updates', pendingUpdates)
-
-      if (!_.find(this.pendingChanges.deletes, matchesFn)) {
-        this.pendingChanges.deletes.push(payload)
-      }
+      this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, discardedUpdates))
     },
     resetPendingChanges() {
       this.pendingChanges = {
