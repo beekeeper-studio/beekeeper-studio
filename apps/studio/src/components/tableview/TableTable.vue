@@ -982,9 +982,8 @@ export default Vue.extend({
     },
     cloneSelection(range?: Tabulator.RangeComponent) {
       if (!range) range = this.tabulator.getActiveRange()
-      const selectedRows = range.getStructuredCells().map((cells) => cells[0].getRow())
 
-      selectedRows.forEach((row) => {
+      range.getRows().forEach((row) => {
         const data = { ...row.getData() }
         const dataParsed = Object.keys(data).reduce((acc, d) => {
           if (!this.primaryKeys?.includes(d)) {

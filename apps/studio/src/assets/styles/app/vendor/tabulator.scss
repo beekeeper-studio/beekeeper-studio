@@ -2,7 +2,6 @@ $errorColor:             $brand-danger;
 $foreign-key-width:      20px;
 
 $row-height:             30px;
-$row-highlight:          lighten($query-editor-bg, 1%);
 $row-add:                #18855F;
 $row-delete:             #8A3937;
 $row-error:              #38201F;
@@ -14,6 +13,9 @@ $cell-success:           $row-add;
 $cell-radius:            2px;
 
 $cell-padding:           $gutter-w;
+
+$header-highlight:       lighten($query-editor-bg, 4%);
+$header-selected:        rgba($theme-primary, 0.35);
 
 // Mixin
 @mixin cell-shadow($bg) {
@@ -105,10 +107,11 @@ $cell-padding:           $gutter-w;
     background-color: transparent;
   }
   &.tabulator-highlight .tabulator-cell.tabulator-frozen.tabulator-row-header {
-    background-color: darken($theme-base, 92%) !important;
+    background-color: $header-highlight !important;
+    color: $text-dark;
   }
   &.tabulator-selected .tabulator-cell.tabulator-frozen.tabulator-row-header {
-    background-color: darken($theme-primary, 50%) !important;
+    background-color: $header-selected !important;
     border-radius: 0;
   }
   &.inserted {
@@ -136,18 +139,22 @@ $cell-padding:           $gutter-w;
     min-height: $row-height;
     height: $row-height;
     line-height: $row-height;
-    border-radius: $cell-radius;
     cursor: default;
+    &:not(.tabulator-row-header) {
+      border-radius: $cell-radius;
+    }
     &:first-of-type {
       padding-left: $cell-padding * 1.5;
     }
     &:last-of-type {
       padding-right: $cell-padding * 1.5;
     }
-    &.tabulator-row-header {
+    &.tabulator-frozen.tabulator-row-header {
       padding: 0;
+      background-color: $query-editor-bg;
+      border-right: 1px solid $border-color !important;
       &:hover {
-        background-color: darken($theme-primary, 50%);
+        background-color: rgba($theme-base, 0.10);
       }
     }
     pre {
@@ -392,7 +399,9 @@ $cell-padding:           $gutter-w;
       height: 32px!important;
       font-size: 90%;
       line-height: 1;
-      border-radius: 2px;
+      &:not(.tabulator-row-header) {
+        border-radius: $cell-radius;
+      }
       &:hover {
         background: rgba($theme-base, 0.035);
         .tabulator-header-popup-button {
@@ -400,10 +409,13 @@ $cell-padding:           $gutter-w;
         }
       }
       &.tabulator-highlight {
-        background-color: darken($theme-base, 93%);
+        background-color: $header-highlight;
       }
       &.tabulator-selected {
-        background-color: darken($theme-primary, 50%);
+        background-color: $header-selected;
+      }
+      &.tabulator-row-header {
+        background-color: transparent;
       }
       .tabulator-header-popup-button {
         display: none;
@@ -570,23 +582,6 @@ $cell-padding:           $gutter-w;
   }
 
 }
-
-// Applied when not dragging rows so frozen cells can be transparent
-.tabulator:not(.tabulator-block-select) .tabulator-row .tabulator-frozen {
-  position: relative;
-  background-color: $query-editor-bg !important;
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-color: rgba($theme-base, 0.05);
-    z-index: -10;
-  }
-  &:hover::before {
-    background-color: rgba($theme-base, 0.10);
-  }
-}
-
 
 .tabulator-edit-select-list {
   background: $theme-bg;
