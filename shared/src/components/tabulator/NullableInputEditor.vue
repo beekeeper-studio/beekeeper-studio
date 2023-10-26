@@ -87,7 +87,7 @@ export default Vue.extend({
         return new Date(`2023-03-31T${dataValue}`)
       }
 
-      // TODO: also, figure out how date range works
+      // TODO: also, figure out how date range works (saving it isn't working out super great)
       // TODO: figure out how to keep the timezone (maybe there has to be an option to do input or datepicker)
 
       return dataValue !== '' ? new Date(dataValue) : dataValue
