@@ -1,7 +1,10 @@
-$namespace: 'bk'; // change the 'mx' to 'xmx'. then <date-picker prefix-class="xmx" />
+$namespace: 'bkdates'; // change the 'mx' to 'xmx'. then <date-picker prefix-class="xmx" />
 
-$default-color: $theme-base;
+$default-color: $theme-bg;
 $primary-color: $theme-base;
+$calendar-active-color: $theme-primary;
+$calendar-active-background-color: $theme-secondary;
+$today-color: $theme-secondary;
 
 @import './var.scss';
 @import './icon.scss';
@@ -41,7 +44,6 @@ $primary-color: $theme-base;
   height: 34px;
   padding: 6px 30px;
   padding-left: 10px;
-  font-size: 14px;
   line-height: 1.4;
   color: $input-color;
   background-color: #fff;
@@ -76,21 +78,20 @@ $primary-color: $theme-base;
   transform: translateY(-50%);
   font-size: 16px;
   line-height: 1;
-  color: rgba(0, 0, 0, 0.5);
+  color: rgba($theme-secondary, 0.5);
   vertical-align: middle;
 }
 
 .#{$namespace}-icon-clear {
   cursor: pointer;
   &:hover {
-    color: rgba(0, 0, 0, 0.8);
+    color: rgba($theme-secondary, 0.8);
   }
 }
 
 .#{$namespace}-datepicker-main {
-  font: 14px/1.5 'Helvetica Neue', Helvetica, Arial, 'Microsoft Yahei', sans-serif;
-  color: $default-color;
-  background-color: #fff;
+  color: $primary-color;
+  background-color: $default-color;
   border: 1px solid $border-color;
 }
 
@@ -267,13 +268,14 @@ $primary-color: $theme-base;
   .cell.not-current-month {
     color: #ccc;
     background: none; // cover the in-range style
+    cursor: not-allowed;
   }
 }
 
 .#{$namespace}-time {
   flex: 1;
   width: 224px;
-  background: #fff;
+  background: $default-color;
   & + & {
     border-left: 1px solid $border-color;
   }
@@ -351,7 +353,6 @@ $primary-color: $theme-base;
 .#{$namespace}-time-option {
   cursor: pointer;
   padding: 8px 10px;
-  font-size: 14px;
   line-height: 20px;
   &:hover {
     color: $time-hover-color;

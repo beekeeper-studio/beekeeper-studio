@@ -3,9 +3,14 @@
     <date-picker
       v-if="this.isDateTime"
       ref="input"
-      type="datetime"
+      :type="this.datePickerType"
+      :range="this.isDateRange"
       v-model="value"
-      prefix-class="bk"
+      :default-value="this.datePickerStarter"
+      prefix-class="bkdates"
+      :confirm="true"
+      confirm-text="click to confirm new selection"
+      @confirm="submit"
     />
     <input
       v-else
@@ -53,8 +58,41 @@ export default Vue.extend({
       }
       return ''
     },
+    isDateRange() {
+      const dataType = this.params?.dataType?.trim().toLowerCase() ?? ''
+
+      return dataType === 'daterange'
+    },
+    datePickerType() {
+      const dataType = this.params?.dataType?.trim().toLowerCase() ?? ''
+      console.log(`~~~ datePickerType ${dataType} ~~~`)
+
+      if (dataType === 'date' || dataType === 'daterange') {
+        return 'date'
+      }
+
+      if (this.isTimeType(dataType)) {
+        return 'time'
+      }
+
+      return 'datetime'
+    },
+    datePickerStarter() {
+      const dataType = this.params.dataType || ''
+      let dataValue = this.value == null ? this.value : helpers.niceString(this.value)
+
+      if (this.isTimeType(dataType) && dataValue !== null) {
+        dataValue = dataValue.search(/(\+|-)/i) > -1 && !isNaN(dataValue.slice(-1)) ? `${dataValue}:00`: dataValue  
+
+        return new Date(`2023-03-31T${dataValue}`)
+      }
+
+      // TODO: also, figure out how date range works
+      // TODO: figure out how to keep the timezone (maybe there has to be an option to do input or datepicker)
+
+      return dataValue !== '' ? new Date(dataValue) : dataValue
+    },
     isDateTime() {
-      console.log('isDateTime', this.params.dataType?.search(/(date|time)/i) > -1)
       return this.params.dataType?.search(/(date|time)/i) > -1
       /*
         [
@@ -74,12 +112,19 @@ export default Vue.extend({
           'smalldatetime'
         ]
       */
-    },
-    getDateTimeOptions() {
-      return 'goobers'
     }
   },
   methods: {
+    isTimeType(dataValue) {
+      const times = [
+        'time',
+        'timetz',
+        'time without time zone',
+        'time with time zone'
+      ]
+
+      return times.includes(dataValue.trim().toLowerCase().replace(/ *\([^)]*\) */g, ""))
+    },
     keydown(e: KeyboardEvent) {
       if (e.key === 'Backspace') {
         if (this.value === '') {
@@ -103,6 +148,7 @@ export default Vue.extend({
     },
     submit() {
       // some cases we always want null, never empty string
+      console.log('submit called!')
       if (this.params.allowEmpty === false && _.isEmpty(this.value)) {
         this.$emit('value', null)
       } else if (this.params.preserveObject) {
@@ -124,7 +170,7 @@ export default Vue.extend({
   watch: {
     rendered() {
       if (this.rendered) {
-        this.value = helpers.niceString(this.cell.getValue())
+        this.value = this.cell.getValue() === null ? null : helpers.niceString(this.cell.getValue())
         this.$nextTick(() => {
           this.$refs.input.focus();
           if (this.params.autoSelect) {
@@ -137,7 +183,6 @@ export default Vue.extend({
   },
   mounted() {
     // nothing really happens here, rendered watch is the real hook.
-
   },
   beforeDestroy() {
     // add some logging here if you wanna check there's no memory leak
@@ -147,9 +192,6 @@ export default Vue.extend({
 <style lang="scss" scoped>
   @import '@shared/assets/styles/_variables';
 
-  .date-thing {
-    background-color: red !important;
-  }
   div {
     position: relative;
     display: flex;
