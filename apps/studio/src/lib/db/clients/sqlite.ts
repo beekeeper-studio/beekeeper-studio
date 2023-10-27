@@ -6,8 +6,7 @@ import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChange
 import Database from "better-sqlite3";
 import { ClientError, DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../client";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete } from "../models"; 
-import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient";
-import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery,  applyChangesSql } from './utils';
+import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery,  applyChangesSql } from './utils';
 import knexlib from 'knex';
 import { makeEscape } from 'knex/lib/util/string';
 import { makeString } from '@/common/utils';
@@ -62,7 +61,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   constructor(_server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, sqliteContext);
 
-    this.database = database.database;
+    this.database = database?.database;
   }
   
   versionString(): string {
