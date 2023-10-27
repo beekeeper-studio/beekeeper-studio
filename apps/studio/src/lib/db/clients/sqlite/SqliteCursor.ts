@@ -1,5 +1,7 @@
 import { BeeCursor } from "../../models";
 import Sqlite, { Database, Statement } from 'better-sqlite3'
+
+// TODO (@day): remove this interface, I think it might be useless now
 interface Conn {
   dbConfig: {
     database: string
