@@ -104,6 +104,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
   protected abstract rawExecuteQuery(q: string, options: any): Promise<RawResultType | RawResultType[]>
 
   async driverExecuteQuery(q: string, options: any = {}): Promise<RawResultType | RawResultType[]> {
+    throw new Error(`HERE ARE THE OPTIONS: ${options}`);
     const logOptions: QueryLogOptions = { options, status: 'completed'}
     try {
         const result = await this.rawExecuteQuery(q, options)

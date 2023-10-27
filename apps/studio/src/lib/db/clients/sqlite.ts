@@ -222,13 +222,14 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   // NOTE (@day): This may need some more work
   query(queryText: string): CancelableQuery {
     let queryConnection: Database.Database = null;
+    const executeQuery = this.executeQuery.bind(this);
 
     return {
       async execute(): Promise<QueryResult> {
         try {
           queryConnection = new Database(this.database);
 
-          const result = await this.executeQuery(queryText, { connection: queryConnection })
+          const result = await executeQuery(queryText, { connection: queryConnection })
           return result;
         } catch (err) {
           if (err.code === sqliteErrors.CANCELED) {
@@ -239,6 +240,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
             const nuError = new ClientError(`${err.message} - Check that you only use double quotes (") for identifiers, not strings`, "https://docs.beekeeperstudio.io/pages/troubleshooting#no-such-column-x");
             throw nuError
           }
+
+          err.message = `THIS IS FROM THE EXECUTE FUNCTION: ${err.message}`
 
           throw err;
         }
@@ -502,7 +505,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     throw new Error("Method not implemented.");
   }
 
-  protected async rawExecuteQuery(q: string, options: any): Promise<SqliteResult> {
+  protected async rawExecuteQuery(q: string, options: any): Promise<SqliteResult | SqliteResult[]> {
     const queries = this.identifyCommands(q);
     const params = options.params || [];
 
