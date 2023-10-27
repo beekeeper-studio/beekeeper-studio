@@ -129,8 +129,6 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
   }
   async alterTable(change: AlterTableSpec): Promise<void> {
     const sql = await this.alterTableSql(change)
-    // TODO (@day): we should remove this
-    console.log("Alter table", sql)
     await this.executeQuery(sql)
   }
   alterIndexSql(changes: IndexAlterations): string {

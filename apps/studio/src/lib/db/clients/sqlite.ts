@@ -1,5 +1,5 @@
 // Original Copyright (c) 2015 The SQLECTRON Team
-import { TableKey } from "@shared/lib/dialects/models";
+import { AlterTableSpec, TableKey } from "@shared/lib/dialects/models";
 import { SqliteData } from "@shared/lib/dialects/sqlite";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder";
