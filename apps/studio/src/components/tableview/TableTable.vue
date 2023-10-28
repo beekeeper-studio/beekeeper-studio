@@ -375,44 +375,43 @@ export default Vue.extend({
           }
         },
         {
-        label: '<x-menuitem><x-label>Resize all columns to fit content</x-label></x-menuitem>',
-        action: (_e, _column: Tabulator.ColumnComponent) => {
-          try {
-            this.tabulator.blockRedraw()
-            const columns = this.tabulator.getColumns()
-            columns.forEach((col) => {
-              col.setWidth(true)
-            })
-          } catch (error) {
-            console.error(error)
-          } finally {
-            this.tabulator.restoreRedraw()
+          label: '<x-menuitem><x-label>Resize all columns to fit content</x-label></x-menuitem>',
+          action: (_e, _column: Tabulator.ColumnComponent) => {
+            try {
+              this.tabulator.blockRedraw()
+              const columns = this.tabulator.getColumns()
+              columns.forEach((col) => {
+                col.setWidth(true)
+              })
+            } catch (error) {
+              console.error(error)
+            } finally {
+              this.tabulator.restoreRedraw()
+            }
           }
-        }
-      },
+        },
         {
-        label: '<x-menuitem><x-label>Resize all columns to fixed width</x-label></x-menuitem>',
-        action: (_e, _column: Tabulator.ColumnComponent) => {
-          try {
-            this.tabulator.blockRedraw()
-            const columns = this.tabulator.getColumns()
-            columns.forEach((col) => {
-              col.setWidth(200)
-            })
-            // const layout = this.tabulator.getColumns().map((c: CC) => ({
-            //   field: c.getField(),
-            //   width: c.getWidth(),
-            // }))
-            // this.tabulator.setColumnLayout(layout)
-            // this.tabulator.redraw(true)
-          } catch (error) {
-            console.error(error)
-          } finally {
-            this.tabulator.restoreRedraw()
+          label: '<x-menuitem><x-label>Resize all columns to fixed width</x-label></x-menuitem>',
+          action: (_e, _column: Tabulator.ColumnComponent) => {
+            try {
+              this.tabulator.blockRedraw()
+              const columns = this.tabulator.getColumns()
+              columns.forEach((col) => {
+                col.setWidth(200)
+              })
+              // const layout = this.tabulator.getColumns().map((c: CC) => ({
+              //   field: c.getField(),
+              //   width: c.getWidth(),
+              // }))
+              // this.tabulator.setColumnLayout(layout)
+              // this.tabulator.redraw(true)
+            } catch (error) {
+              console.error(error)
+            } finally {
+              this.tabulator.restoreRedraw()
+            }
           }
         }
-      }
-
       ]
     },
     // row only actions

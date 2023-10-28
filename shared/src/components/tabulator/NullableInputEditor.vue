@@ -8,6 +8,7 @@
       v-model="value"
       :default-value="this.datePickerStarter"
       prefix-class="bkdates"
+      :clearable="false"
       :confirm="true"
       confirm-text="click to confirm new selection"
       @confirm="submit"
@@ -24,10 +25,15 @@
       @keydown="keydown"
     >
     <!-- <i
+      class="material-icons special-type"
+      @mousedown.prevent.stop="clear"
+      title="Do something"
+    >cancel</i> -->
+    <i
       class="material-icons clear"
       @mousedown.prevent.stop="clear"
       title="Nullify Value"
-    >cancel</i> -->
+    >cancel</i>
   </div>
 </template>
 <script lang="ts">
@@ -212,4 +218,16 @@ export default Vue.extend({
     text-align: center;
     margin-top: -1px;
   }
+  // .special-type {
+  //   position: absolute;
+  //   top: 0;
+  //   bottom: 0;
+  //   right: 8px;
+  //   display: flex;
+  //   align-items: center;
+  //   font-size: 14px!important;
+  //   width: 16px;
+  //   text-align: center;
+  //   margin-top: -1px;
+  // }
 </style>

@@ -80,6 +80,7 @@ $today-color: $theme-secondary;
   line-height: 1;
   color: rgba($theme-secondary, 0.5);
   vertical-align: middle;
+  display: none;
 }
 
 .#{$namespace}-icon-clear {
