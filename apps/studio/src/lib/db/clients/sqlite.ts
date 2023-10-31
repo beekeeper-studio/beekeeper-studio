@@ -12,6 +12,7 @@ import { makeEscape } from 'knex/lib/util/string';
 import { makeString } from '@/common/utils';
 import { identify } from "sql-query-identifier";
 import { Statement } from "sql-query-identifier/lib/defines";
+import _ from 'lodash';
 import rawLog from 'electron-log'
 import { SqliteCursor } from "./sqlite/SqliteCursor";
 const log = rawLog.scope('sqlite');
@@ -244,7 +245,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
             throw nuError
           }
 
-          err.message = `THIS IS FROM THE EXECUTE FUNCTION: ${err.message}`
+          err.message = `THIS IS FROM THE EXECUTE FUNCTION: ${err.message}. \n QUERY: ${queryText}`;
 
           throw err;
         }
@@ -263,8 +264,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async executeQuery(queryText: string, options: any = {}): Promise<NgQueryResult[]> {
     const result = await this.driverExecuteQuery(queryText, { ...options, multiple: true }) as SqliteResult[];
 
-    // TODO (@day): statement and changes are in the original code, but it never actually did that. Let's see if we can fix that.
-    return result.map(({ data, statement, changes }) => {
+    // TEMP (@day): this is just so we stop getting hard errors during tests so I can actually figure out what's going on.
+    return (result || []).map(({ data, statement, changes }) => {
       // Fallback in case the identifier could not reconize the command
       const isSelect = Array.isArray(data);
       const rows = data || [];
