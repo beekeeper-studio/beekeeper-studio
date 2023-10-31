@@ -63,6 +63,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     super(knex, sqliteContext);
 
     this.database = database?.database;
+    console.log("DATABASE: ", this.database);
   }
   
   versionString(): string {
@@ -226,14 +227,13 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   // NOTE (@day): This may need some more work
   query(queryText: string): CancelableQuery {
     let queryConnection: Database.Database = null;
-    const executeQuery = this.executeQuery.bind(this);
 
     return {
-      async execute(): Promise<QueryResult> {
+      execute: (async (): Promise<QueryResult> => {
         try {
           queryConnection = new Database(this.database);
 
-          const result = await executeQuery(queryText, { connection: queryConnection })
+          const result = await this.executeQuery(queryText, { connection: queryConnection })
           return result;
         } catch (err) {
           if (err.code === sqliteErrors.CANCELED) {
@@ -249,7 +249,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
           throw err;
         }
-      },
+      }).bind(this),
       async cancel() {
         if (!queryConnection) {
           throw new Error('Query not ready to be canceled');
@@ -529,6 +529,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       const statement: Database.Statement = connection.prepare(query.text);
 
       try {
+        console.log('STATEMENT: ', statement);
         const result = statement.reader ? statement.all(params) : statement.run(params);
 
         results.push({
