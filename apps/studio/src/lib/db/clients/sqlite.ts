@@ -529,7 +529,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       const statement: Database.Statement = connection.prepare(query.text);
 
       try {
-        console.log('STATEMENT: ', statement);
         const result = statement.reader ? statement.all(params) : statement.run(params);
 
         results.push({
@@ -619,7 +618,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
     for (let index = 0; index < returnQueries.length; index++) {
       const blob = returnQueries[index];
-      const r = await this.driverExecuteQuery(cli, blob) as SqliteResult;
+      const r = await this.driverExecuteQuery(blob.query, { ...cli, params: blob.params }) as SqliteResult;
       if (r.data[0]) results.push(r.data[0])
     }
 
@@ -638,6 +637,5 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 export default async function (server: IDbConnectionServer, database: IDbConnectionDatabase) {
   const client = new SqliteClient(server, database);
   await client.connect();
-  console.log("CONNECTED WITH NEW CLIENT!!!")
   return client;
 }
