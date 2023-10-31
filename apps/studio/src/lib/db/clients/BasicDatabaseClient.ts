@@ -111,6 +111,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
     } catch (ex) {
         logOptions.status = 'failed'
         logOptions.error = ex.message
+        throw ex;
     } finally {
         this.contextProvider.logQuery(q, logOptions, this.contextProvider.getExecutionContext())
     }
