@@ -45,7 +45,6 @@ const sqliteContext = {
   }
 }
 
-// TODO (@day): what is the type of data?
 type SqliteResult = { 
   data: any,
   statement: Statement,
@@ -108,7 +107,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       ORDER BY name
     `;
 
-    // TODO (@day): NULL?? 
     const { data } = await this.driverExecuteQuery(sql) as SqliteResult;
 
     return data;
@@ -311,7 +309,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
       await this.driverExecuteQuery('COMMIT', cli);
     } catch (ex) {
-      // TODO (@day): are we still using this?
       log.error("query exception: ", ex);
       await this.driverExecuteQuery('ROLLBACK', cli);
       throw ex;
@@ -337,7 +334,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       this.getTableKeys(null, table)
     ])
     return {
-      // TODO (@day): make sure this is correct
       size: length, 
       indexes, 
       relations, 
@@ -437,7 +433,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return {
       totalRows: rowCount,
       columns,
-      // TODO (@day): could probably change this to just pass in the string for the database
       cursor: new SqliteCursor({ dbConfig: { database: this.database }}, query, params, chunkSize)
     }
   }
@@ -538,7 +533,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         });
       } catch (error) {
         log.error(error);
-        // TODO (@day) do I need to do anything special here?
         throw error;
       }
     }
