@@ -82,8 +82,11 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     };
   }
 
-  connect(): Promise<void> {
-    // empty on purpose
+  async connect(): Promise<void> {
+    // set sqlite version
+    const version = await this.driverExecuteQuery('SELECT sqlite_version()') as SqliteResult;
+
+    this.version = version;
     return;
   }
 
@@ -628,18 +631,11 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
     return true
   }
-
-  async setVersion() {
-    const version = await this.driverExecuteQuery('SELECT sqlite_version()') as SqliteResult;
-
-    this.version = version;
-  }
 }
 
 export default async function (server: IDbConnectionServer, database: IDbConnectionDatabase) {
   const client = new SqliteClient(server, database);
   await client.connect();
-  await client.setVersion();
   console.log("CONNECTED WITH NEW CLIENT!!!")
   return client;
 }
