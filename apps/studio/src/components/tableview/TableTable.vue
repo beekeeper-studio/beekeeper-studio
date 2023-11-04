@@ -269,16 +269,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-pre {
-  user-select: text;
-
-  background: rgba(255,255,255,0.1);
-  border-radius: 4px;
-
-  max-height: 600px;
-  overflow: scroll;
-}
 </style>
 
 <script lang="ts">
