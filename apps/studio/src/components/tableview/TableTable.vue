@@ -4,6 +4,44 @@
     class="tabletable flex-col"
     :class="{'view-only': !editable}"
   >
+    <portal to="modals">
+      <modal
+        :name="modalName"
+        class="beekeeper-modal vue-dialog"
+        v-if="active"
+      >
+        <div class="dialog-content">
+          <div class="dialog-c-title">
+            Viewing JSON
+          </div>
+
+          <highlightjs
+            lang="json"
+            :code="modalJsonContent"
+          />
+        </div>
+
+        <div class="vue-dialog-buttons">
+          <span class="expand" />
+          <button
+            @click.prevent="$modal.hide(modalName)"
+            class="btn btn-sm btn-flat"
+          >
+            Close
+          </button>
+          <button
+            class="btn btn-sm btn-flat"
+            @click="copyCurrentJson"
+          >
+            Copy
+          </button>
+          <button class="btn btn-sm btn-primary">
+            Save
+          </button>
+        </div>
+      </modal>
+    </portal>
+
     <template v-if="!table && initialized">
       <div class="no-content" />
     </template>
@@ -223,6 +261,16 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+pre {
+  user-select: text;
+
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+
+  max-height: 600px;
+  overflow: scroll;
+}
 </style>
 
 <script lang="ts">
@@ -270,6 +318,10 @@ export default Vue.extend({
       tabulator: null,
       actualTableHeight: "100%",
       loading: false,
+
+      // modal
+      modalName: "viewJsonModel",
+      modalJsonContent: "",
 
       // table data
       data: null, // array of data
@@ -495,10 +547,14 @@ export default Vue.extend({
             const column = cell.getField()
             const valueCell = cell.getRow().getCell(column);
             const value = valueCell.getValue();
+            let parsed: null | Record<string,unknown> = null
 
             try {
-              JSON.parse(value)
+              parsed = JSON.parse(value)
+
             } catch (e) {
+              console.log("Invalid JSON", e)
+
               const notification = new Noty({
                 text: "This row does not seem to be valid JSON",
                 layout: "bottomRight",
@@ -512,7 +568,10 @@ export default Vue.extend({
               return
             }
 
-            console.log(value)
+            if (parsed !== null) {
+              this.modalJsonContent = JSON.stringify(parsed, null, 4)
+              this.$modal.show("viewJsonModel")
+            }
           }
         },
         {
@@ -833,6 +892,20 @@ export default Vue.extend({
     }
   },
   methods: {
+    copyCurrentJson() {
+      this.$copyText(this.modalJsonContent)
+
+      const notification = new Noty({
+        text: "Copied the JSON data to your clipboard!",
+        layout: "bottomRight",
+        queue: "viewJson",
+        timeout: 2000,
+      })
+
+      Noty.closeAll('viewJson')
+      notification.show()
+    },
+
     getCleanSelectedRowData(cell) {
       const selectedRows = this.tabulator.getSelectedRows()
       const rowData = selectedRows?.length ? selectedRows : [cell.getRow()]

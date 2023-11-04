@@ -15,6 +15,7 @@ import 'codemirror/addon/search/searchcursor'
 import { TabulatorFull as Tabulator } from 'tabulator-tables'
 import './filters/pretty-bytes-filter'
 import PortalVue from 'portal-vue'
+import hljs from 'highlight.js'
 import App from './App.vue'
 import 'typeface-roboto'
 import 'typeface-source-code-pro'
@@ -49,6 +50,7 @@ import _ from 'lodash'
 import NotyPlugin from '@/plugins/NotyPlugin'
 import './common/initializers/big_int_initializer.ts'
 import SettingsPlugin from './plugins/SettingsPlugin'
+import "highlight.js/styles/atom-one-dark.css"
 
 (async () => {
   try {
@@ -139,6 +141,7 @@ import SettingsPlugin from './plugins/SettingsPlugin'
     Vue.use(SettingsPlugin)
     Vue.use(VueElectronPlugin)
     Vue.use(PortalVue)
+    Vue.use(hljs.vuePlugin)
     Vue.use(NotyPlugin, {
       timeout: 2300,
       progressBar: true,
