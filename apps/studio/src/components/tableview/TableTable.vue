@@ -9,6 +9,7 @@
         :name="modalName"
         class="beekeeper-modal vue-dialog"
         v-if="active"
+        @closed="onJsonModalClose"
       >
         <div class="dialog-content">
           <div class="dialog-c-title">
@@ -31,11 +32,14 @@
           </button>
           <button
             class="btn btn-sm btn-flat"
-            @click="copyCurrentJson"
+            @click.prevent="copyCurrentJson"
           >
             Copy
           </button>
-          <button class="btn btn-sm btn-primary">
+          <button
+            class="btn btn-sm btn-primary"
+            @click.prevent="saveCurrentJson"
+          >
             Save
           </button>
         </div>
@@ -322,6 +326,7 @@ export default Vue.extend({
       // modal
       modalName: "viewJsonModel",
       modalJsonContent: "",
+      currentJsonCell: null,
 
       // table data
       data: null, // array of data
@@ -542,35 +547,40 @@ export default Vue.extend({
           }
         },
         {
-          label: `<x-menuitem><x-label>View row as JSON</x-label></x-menuitem>`,
+          label: `<x-menuitem><x-label>Edit row as JSON</x-label></x-menuitem>`,
+          disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell),
           action: (_e, cell) => {
-            const column = cell.getField()
-            const valueCell = cell.getRow().getCell(column);
-            const value = valueCell.getValue();
-            let parsed: null | Record<string,unknown> = null
+            if (!this.isPrimaryKey(cell.getField()) && this.primaryKeys.length >= 1) {
+              const column = cell.getField()
+              const row = cell.getRow()
+              const valueCell = row.getCell(column);
+              const value = valueCell.getValue();
+              let parsed: null | Record<string,unknown> = null
 
-            try {
-              parsed = JSON.parse(value)
+              try {
+                parsed = JSON.parse(value)
 
-            } catch (e) {
-              console.log("Invalid JSON", e)
+              } catch (e) {
+                console.log("Invalid JSON", e)
 
-              const notification = new Noty({
-                text: "This row does not seem to be valid JSON",
-                layout: "bottomRight",
-                queue: "viewJson",
-                timeout: 2000,
-              })
+                const notification = new Noty({
+                  text: "This row does not seem to be valid JSON",
+                  layout: "bottomRight",
+                  queue: "viewJson",
+                  timeout: 2000,
+                })
 
-              Noty.closeAll('viewJson')
-              notification.show()
+                Noty.closeAll('viewJson')
+                notification.show()
 
-              return
-            }
+                return
+              }
 
-            if (parsed !== null) {
-              this.modalJsonContent = JSON.stringify(parsed, null, 4)
-              this.$modal.show("viewJsonModel")
+              if (parsed !== null) {
+                this.modalJsonContent = JSON.stringify(parsed, null, 4)
+                this.currentJsonCell = cell
+                this.$modal.show("viewJsonModel")
+              }
             }
           }
         },
@@ -897,6 +907,65 @@ export default Vue.extend({
 
       const notification = new Noty({
         text: "Copied the JSON data to your clipboard!",
+        layout: "bottomRight",
+        queue: "viewJson",
+        timeout: 2000,
+      })
+
+      Noty.closeAll('viewJson')
+      notification.show()
+    },
+
+    onJsonModalClose() {
+      this.modalJsonContent = ""
+      this.currentJsonCell = null
+    },
+
+    saveCurrentJson() {
+      if (this.currentJsonCell) {
+        let parsed: Record<string, unknown> | null = null;
+
+        try {
+          parsed = JSON.parse(this.modalJsonContent)
+        } catch (e) {
+          console.log("Invalid JSON", e)
+
+          const notification = new Noty({
+            text: "Failed to save JSON as it is invalid",
+            layout: "bottomRight",
+            queue: "viewJson",
+            timeout: 2000,
+          })
+
+          Noty.closeAll('viewJson')
+          notification.show()
+
+          return
+        }
+
+        if (parsed) {
+          this.$modal.hide(this.modalName)
+
+          const saveData = JSON.stringify(parsed)
+
+          this.currentJsonCell.setValue(saveData)
+
+          const notification = new Noty({
+            text: "Successfully saved the JSON data",
+            layout: "bottomRight",
+            queue: "viewJson",
+            timeout: 2000,
+          })
+
+          Noty.closeAll('viewJson')
+          notification.show()
+
+          return
+        }
+      }
+
+      const notification = new Noty({
+        text: "An unknown issue occured whilst trying to save your JSON data",
         layout: "bottomRight",
         queue: "viewJson",
         timeout: 2000,
