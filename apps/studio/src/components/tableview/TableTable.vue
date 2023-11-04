@@ -983,31 +983,6 @@ export default Vue.extend({
     },
 
     onJsonModalOpen() {
-      const runQueryKeyMap: any = {
-        "Shift-Ctrl-Enter": this.submitCurrentQuery,
-        "Shift-Cmd-Enter": this.submitCurrentQuery,
-        "Ctrl-Enter": this.submitTabQuery,
-        "Cmd-Enter": this.submitTabQuery,
-        "Ctrl-S": this.triggerSave,
-        "Cmd-S": this.triggerSave,
-        "Shift-Ctrl-F": this.formatSql,
-        "Shift-Cmd-F": this.formatSql,
-        "Ctrl-/": this.toggleComment,
-        "Cmd-/": this.toggleComment,
-        "F5": this.submitTabQuery,
-        "Shift-F5": this.submitCurrentQuery,
-        "Ctrl+I": this.submitQueryToFile,
-        "Cmd+I": this.submitQueryToFile,
-        "Shift+Ctrl+I": this.submitCurrentQueryToFile,
-        "Shift+Cmd+I": this.submitCurrentQueryToFile
-      }
-
-      if(this.userKeymap === "vim") {
-        runQueryKeyMap["Ctrl-Esc"] = this.cancelQuery
-      } else {
-        runQueryKeyMap.Esc = this.cancelQuery
-      }
-
       const extraKeys = {}
 
       extraKeys[this.cmCtrlOrCmd('F')] = 'findPersistent'
@@ -1041,7 +1016,6 @@ export default Vue.extend({
       } as CodeMirror.EditorConfiguration)
 
       this.editor.setValue(this.modalJsonContent)
-      this.editor.addKeyMap(runQueryKeyMap)
       this.editor.on("keydown", (_cm, e) => {
         if (this.$store.state.menuActive) {
           e.preventDefault()
