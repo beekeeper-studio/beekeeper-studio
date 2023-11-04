@@ -382,34 +382,6 @@ export default Vue.extend({
     hasSelectedText() {
       return this.editor ? !!this.editor.getSelection() : false
     },
-    hintOptions() {
-      const firstTables = {}
-      const secondTables = {}
-      const thirdTables = {}
-
-      this.tables.forEach((table) => {
-        // don't add table names that can get in conflict with database schema
-        if (/\./.test(table.name)) return
-
-        // Previously we had to provide a table: column[] mapping.
-        // we don't need to provide the columns anymore because we fetch them dynamically.
-        if (!table.schema) {
-          firstTables[table.name] = []
-          return
-        }
-
-        if (table.schema === this.defaultSchema) {
-          firstTables[table.name] = []
-          secondTables[`${table.schema}.${table.name}`] = []
-        } else {
-          thirdTables[`${table.schema}.${table.name}`] = []
-        }
-      })
-
-      const sorted = Object.assign(firstTables, Object.assign(secondTables, thirdTables))
-
-      return { tables: sorted }
-    },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
       const cols = this.tabulator.getColumns()
@@ -949,19 +921,6 @@ export default Vue.extend({
     }
   },
   methods: {
-    async getColumnsForAutocomplete(tableName) {
-      const tableToFind = this.tables.find(
-        (t) => t.name === tableName || `${t.schema}.${t.name}` === tableName
-      )
-      if (!tableToFind) return null
-      // Only refresh columns if we don't have them cached.
-      if (!tableToFind.columns?.length) {
-        await this.$store.dispatch('updateTableColumns', tableToFind)
-      }
-
-      return tableToFind?.columns.map((c) => c.columnName)
-    },
-
     copyCurrentJson() {
       this.$copyText(this.modalJsonContent)
 
@@ -982,12 +941,6 @@ export default Vue.extend({
     },
 
     onJsonModalOpen() {
-      const extraKeys = {}
-
-      extraKeys[this.cmCtrlOrCmd('F')] = 'findPersistent'
-      extraKeys[this.cmCtrlOrCmd('R')] = 'replace'
-      extraKeys[this.cmCtrlOrCmd('Shift-R')] = 'replaceAll'
-
       this.editor = CodeMirror.fromTextArea(this.$refs.editorRef, {
         lineNumbers: true,
         mode: {
@@ -1001,7 +954,9 @@ export default Vue.extend({
         extraKeys: {
           "Ctrl-Space": "autocomplete",
           "Shift-Tab": "indentLess",
-          ...extraKeys
+          [this.cmCtrlOrCmd('F')]: 'findPersistent',
+          [this.cmCtrlOrCmd('R')]: 'replace',
+          [this.cmCtrlOrCmd('Shift-R')]: 'replaceAll'
         },
         options: {
           closeOnBlur: false
@@ -1009,9 +964,7 @@ export default Vue.extend({
         // eslint-disable-next-line
         // @ts-ignore
         hint: CodeMirror.hint.json,
-        hintOptions: this.hintOptions,
-        keyMap: this.userKeymap,
-        getColumns: this.getColumnsForAutocomplete
+        keyMap: this.userKeymap
       } as CodeMirror.EditorConfiguration)
 
       this.editor.setValue(this.modalJsonContent)
@@ -1033,7 +986,6 @@ export default Vue.extend({
       this.editor.on("change", (cm) => {
         this.modalJsonContent = cm.getValue()
       })
-
 
       this.editor.focus()
 
