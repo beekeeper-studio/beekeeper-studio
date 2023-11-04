@@ -253,6 +253,7 @@ import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
+import Noty from 'noty'
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
@@ -486,6 +487,32 @@ export default Vue.extend({
           label: menuItem('Copy'),
           action: (_e, cell: Tabulator.CellComponent) => {
             this.copyCell(cell)
+          }
+        },
+        {
+          label: `<x-menuitem><x-label>View row as JSON</x-label></x-menuitem>`,
+          action: (_e, cell) => {
+            const column = cell.getField()
+            const valueCell = cell.getRow().getCell(column);
+            const value = valueCell.getValue();
+
+            try {
+              JSON.parse(value)
+            } catch (e) {
+              const notification = new Noty({
+                text: "This row does not seem to be valid JSON",
+                layout: "bottomRight",
+                queue: "viewJson",
+                timeout: 2000,
+              })
+
+              Noty.closeAll('viewJson')
+              notification.show()
+
+              return
+            }
+
+            console.log(value)
           }
         },
         {
