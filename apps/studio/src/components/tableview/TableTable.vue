@@ -8,17 +8,21 @@
       <modal
         :name="modalName"
         class="beekeeper-modal vue-dialog"
-        v-if="active"
+        v-show="active"
         @closed="onJsonModalClose"
+        @opened="onJsonModalOpen"
       >
         <div class="dialog-content">
           <div class="dialog-c-title">
             Viewing JSON
           </div>
 
-          <highlightjs
-            lang="json"
-            :code="modalJsonContent"
+          <textarea
+            name="editor"
+            class="editor"
+            ref="editorRef"
+            cols="30"
+            rows="10"
           />
         </div>
 
@@ -306,6 +310,16 @@ import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import Noty from 'noty'
+import CodeMirror from 'codemirror'
+import 'codemirror/addon/comment/comment'
+import 'codemirror/keymap/vim.js'
+import 'codemirror/addon/dialog/dialog'
+import 'codemirror/addon/search/search'
+import 'codemirror/addon/search/jump-to-line'
+import 'codemirror/addon/scroll/annotatescrollbar'
+import 'codemirror/addon/search/matchesonscrollbar'
+import 'codemirror/addon/search/matchesonscrollbar.css'
+import 'codemirror/addon/search/searchcursor'
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
@@ -327,6 +341,8 @@ export default Vue.extend({
       modalName: "viewJsonModel",
       modalJsonContent: "",
       currentJsonCell: null,
+      editor: null,
+      cursorIndex: null,
 
       // table data
       data: null, // array of data
@@ -363,6 +379,48 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
     ...mapGetters(['dialectData', 'dialect']),
+    userKeymap: {
+      get() {
+        const value = this.settings?.keymap?.value;
+        return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
+      },
+      set(value) {
+        if (value === this.keymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
+        this.$store.dispatch('settings/save', { key: 'keymap', value: value });
+        this.initialize();
+      }
+    },
+    hasSelectedText() {
+      return this.editor ? !!this.editor.getSelection() : false
+    },
+    hintOptions() {
+      const firstTables = {}
+      const secondTables = {}
+      const thirdTables = {}
+
+      this.tables.forEach((table) => {
+        // don't add table names that can get in conflict with database schema
+        if (/\./.test(table.name)) return
+
+        // Previously we had to provide a table: column[] mapping.
+        // we don't need to provide the columns anymore because we fetch them dynamically.
+        if (!table.schema) {
+          firstTables[table.name] = []
+          return
+        }
+
+        if (table.schema === this.defaultSchema) {
+          firstTables[table.name] = []
+          secondTables[`${table.schema}.${table.name}`] = []
+        } else {
+          thirdTables[`${table.schema}.${table.name}`] = []
+        }
+      })
+
+      const sorted = Object.assign(firstTables, Object.assign(secondTables, thirdTables))
+
+      return { tables: sorted }
+    },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
       const cols = this.tabulator.getColumns()
@@ -577,7 +635,7 @@ export default Vue.extend({
               }
 
               if (parsed !== null) {
-                this.modalJsonContent = JSON.stringify(parsed, null, 4)
+                this.modalJsonContent = JSON.stringify(parsed, null, 2)
                 this.currentJsonCell = cell
                 this.$modal.show("viewJsonModel")
               }
@@ -902,6 +960,19 @@ export default Vue.extend({
     }
   },
   methods: {
+    async getColumnsForAutocomplete(tableName) {
+      const tableToFind = this.tables.find(
+        (t) => t.name === tableName || `${t.schema}.${t.name}` === tableName
+      )
+      if (!tableToFind) return null
+      // Only refresh columns if we don't have them cached.
+      if (!tableToFind.columns?.length) {
+        await this.$store.dispatch('updateTableColumns', tableToFind)
+      }
+
+      return tableToFind?.columns.map((c) => c.columnName)
+    },
+
     copyCurrentJson() {
       this.$copyText(this.modalJsonContent)
 
@@ -919,6 +990,146 @@ export default Vue.extend({
     onJsonModalClose() {
       this.modalJsonContent = ""
       this.currentJsonCell = null
+    },
+
+    onJsonModalOpen() {
+      const runQueryKeyMap: any = {
+        "Shift-Ctrl-Enter": this.submitCurrentQuery,
+        "Shift-Cmd-Enter": this.submitCurrentQuery,
+        "Ctrl-Enter": this.submitTabQuery,
+        "Cmd-Enter": this.submitTabQuery,
+        "Ctrl-S": this.triggerSave,
+        "Cmd-S": this.triggerSave,
+        "Shift-Ctrl-F": this.formatSql,
+        "Shift-Cmd-F": this.formatSql,
+        "Ctrl-/": this.toggleComment,
+        "Cmd-/": this.toggleComment,
+        "F5": this.submitTabQuery,
+        "Shift-F5": this.submitCurrentQuery,
+        "Ctrl+I": this.submitQueryToFile,
+        "Cmd+I": this.submitQueryToFile,
+        "Shift+Ctrl+I": this.submitCurrentQueryToFile,
+        "Shift+Cmd+I": this.submitCurrentQueryToFile
+      }
+
+      if(this.userKeymap === "vim") {
+        runQueryKeyMap["Ctrl-Esc"] = this.cancelQuery
+      } else {
+        runQueryKeyMap.Esc = this.cancelQuery
+      }
+
+      const extraKeys = {}
+
+      extraKeys[this.cmCtrlOrCmd('F')] = 'findPersistent'
+      extraKeys[this.cmCtrlOrCmd('R')] = 'replace'
+      extraKeys[this.cmCtrlOrCmd('Shift-R')] = 'replaceAll'
+
+      this.editor = CodeMirror.fromTextArea(this.$refs.editorRef, {
+        lineNumbers: true,
+        mode: {
+          name: "javascript",
+          json: true,
+          statementIndent: 2
+        },
+        indentWithTabs: false,
+        tabSize: 2,
+        theme: 'monokai',
+        extraKeys: {
+          "Ctrl-Space": "autocomplete",
+          "Shift-Tab": "indentLess",
+          ...extraKeys
+        },
+        options: {
+          closeOnBlur: false
+        },
+        // eslint-disable-next-line
+        // @ts-ignore
+        hint: CodeMirror.hint.json,
+        hintOptions: this.hintOptions,
+        keyMap: this.userKeymap,
+        getColumns: this.getColumnsForAutocomplete
+      } as CodeMirror.EditorConfiguration)
+
+      this.editor.setValue(this.modalJsonContent)
+      this.editor.addKeyMap(runQueryKeyMap)
+      this.editor.on("keydown", (_cm, e) => {
+        if (this.$store.state.menuActive) {
+          e.preventDefault()
+        }
+      })
+
+      if (this.userKeymap === "vim") {
+        const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
+        if(!codeMirrorVimInstance) {
+          console.error("Could not find code mirror vim instance");
+        } else {
+          setKeybindingsFromVimrc(codeMirrorVimInstance);
+        }
+      }
+
+      this.editor.on("paste", (_cm, e) => {
+        e.preventDefault();
+        let clipboard = (e.clipboardData.getData("text") as string).trim();
+        if (this.hasSelectedText) {
+          this.editor.replaceSelection(clipboard, 'around');
+        } else {
+          const cursor = this.editor.getCursor();
+          this.editor.replaceRange(clipboard, cursor);
+        }
+      });
+
+      this.editor.on("change", (cm) => {
+        // this also updates `this.queryText`
+        // this.tab.query.text = cm.getValue()
+        this.modalJsonContent = cm.getValue()
+      })
+
+
+      // TODO: make this not suck
+      this.editor.on('keyup', this.maybeAutoComplete)
+      this.editor.on('cursorActivity', (editor) => this.cursorIndex = editor.getDoc().indexFromPos(editor.getCursor(true)))
+      this.editor.focus()
+
+      setTimeout(() => {
+        // this fixes the editor not showing because it doesn't think it's dom element is in view.
+        // its a hit and miss error
+        this.editor.refresh()
+      }, 1)
+    },
+
+    maybeAutoComplete(editor, e) {
+      // BUGS:
+      // 1. only on periods if not in a quote
+      // 2. post-space trigger after a few SQL keywords
+      //    - from, join
+      const triggerWords = ['from', 'join']
+      const triggers = {
+        '190': 'period'
+      }
+      const space = 32
+      if (editor.state.completionActive) return;
+      if (triggers[e.keyCode] && !this.inQuote(editor, e)) {
+        // eslint-disable-next-line
+        // @ts-ignore
+        CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
+      }
+      if (e.keyCode === space) {
+        try {
+          const pos = _.clone(editor.getCursor());
+          if (pos.ch > 0) {
+            pos.ch = pos.ch - 2
+          }
+          const word = editor.findWordAt(pos)
+          const lastWord = editor.getRange(word.anchor, word.head)
+          if (!triggerWords.includes(lastWord.toLowerCase())) return;
+          // eslint-disable-next-line
+          // @ts-ignore
+          CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
+
+        } catch (ex) {
+          // do nothing
+        }
+      }
     },
 
     saveCurrentJson() {
