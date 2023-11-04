@@ -332,7 +332,6 @@ export default Vue.extend({
       modalJsonContent: "",
       currentJsonCell: null,
       editor: null,
-      cursorIndex: null,
 
       // table data
       data: null, // array of data
@@ -1031,27 +1030,11 @@ export default Vue.extend({
         }
       }
 
-      this.editor.on("paste", (_cm, e) => {
-        e.preventDefault();
-        let clipboard = (e.clipboardData.getData("text") as string).trim();
-        if (this.hasSelectedText) {
-          this.editor.replaceSelection(clipboard, 'around');
-        } else {
-          const cursor = this.editor.getCursor();
-          this.editor.replaceRange(clipboard, cursor);
-        }
-      });
-
       this.editor.on("change", (cm) => {
-        // this also updates `this.queryText`
-        // this.tab.query.text = cm.getValue()
         this.modalJsonContent = cm.getValue()
       })
 
 
-      // TODO: make this not suck
-      this.editor.on('keyup', this.maybeAutoComplete)
-      this.editor.on('cursorActivity', (editor) => this.cursorIndex = editor.getDoc().indexFromPos(editor.getCursor(true)))
       this.editor.focus()
 
       setTimeout(() => {
@@ -1059,41 +1042,6 @@ export default Vue.extend({
         // its a hit and miss error
         this.editor.refresh()
       }, 1)
-    },
-
-    maybeAutoComplete(editor, e) {
-      // BUGS:
-      // 1. only on periods if not in a quote
-      // 2. post-space trigger after a few SQL keywords
-      //    - from, join
-      const triggerWords = ['from', 'join']
-      const triggers = {
-        '190': 'period'
-      }
-      const space = 32
-      if (editor.state.completionActive) return;
-      if (triggers[e.keyCode] && !this.inQuote(editor, e)) {
-        // eslint-disable-next-line
-        // @ts-ignore
-        CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
-      }
-      if (e.keyCode === space) {
-        try {
-          const pos = _.clone(editor.getCursor());
-          if (pos.ch > 0) {
-            pos.ch = pos.ch - 2
-          }
-          const word = editor.findWordAt(pos)
-          const lastWord = editor.getRange(word.anchor, word.head)
-          if (!triggerWords.includes(lastWord.toLowerCase())) return;
-          // eslint-disable-next-line
-          // @ts-ignore
-          CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
-
-        } catch (ex) {
-          // do nothing
-        }
-      }
     },
 
     saveCurrentJson() {
