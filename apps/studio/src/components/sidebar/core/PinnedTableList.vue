@@ -1,17 +1,14 @@
 <template>
   <nav class="list-group flex-col">
-    <div class="list-heading row">
-      <div class="sub row flex-middle noselect">
-        <div>Pinned <span class="badge">{{ orderedPins.length }}</span></div>
-      </div>
-      <div class="row">
-        <div class="actions">
-          <sidebar-sort-buttons
-            v-model="sort"
-            :sort-options="sortOptions"
-            no-order="position"
-          />
-        </div>
+    <div class="list-heading">
+      <span class="sub">Pinned</span>
+      <span class="badge">{{ orderedPins.length }}</span>
+      <div class="actions">
+        <sidebar-sort-buttons
+          v-model="sort"
+          :sort-options="sortOptions"
+          no-order="position"
+        />
       </div>
     </div>
     <Draggable

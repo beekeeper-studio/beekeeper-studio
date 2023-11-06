@@ -290,8 +290,8 @@ export default Vue.extend({
         { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
         { event: 'favoriteClick', handler: this.favoriteClick },
         { event: 'exportTable', handler: this.openExportModal },
-        { event: AppEvent.hideEntity, handler: this.hideEntity },
-        { event: AppEvent.hideSchema, handler: this.hideSchema },
+        { event: AppEvent.toggleHideEntity, handler: this.toggleHideEntity },
+        { event: AppEvent.toggleHideSchema, handler: this.toggleHideSchema },
         { event: AppEvent.deleteDatabaseElement, handler: this.deleteDatabaseElement },
         { event: AppEvent.dropDatabaseElement, handler: this.dropDatabaseElement },
         { event: AppEvent.duplicateDatabaseTable, handler: this.duplicateDatabaseTable },
@@ -593,11 +593,13 @@ export default Vue.extend({
       this.tableExportOptions = options
       this.showExportModal = true
     },
-    hideEntity(entity: DatabaseEntity) {
-      this.$store.dispatch('hideEntities/addEntity', entity)
+    toggleHideEntity(entity: DatabaseEntity, hide: boolean) {
+      if (hide) this.$store.dispatch('hideEntities/addEntity', entity)
+      else this.$store.dispatch('hideEntities/removeEntity', entity)
     },
-    hideSchema(schema: string) {
-      this.$store.dispatch('hideEntities/addSchema', schema)
+    toggleHideSchema(schema: string, hide: boolean) {
+      if (hide) this.$store.dispatch('hideEntities/addSchema', schema)
+      else this.$store.dispatch('hideEntities/removeSchema', schema)
     },
     openSettings() {
       const tab = new OpenTab('settings')

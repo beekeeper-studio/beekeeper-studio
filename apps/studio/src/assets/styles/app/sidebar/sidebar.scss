@@ -67,9 +67,9 @@
   // Empty
   // ---------------------------------
   .empty {
-    padding: $gutter-w ($gutter-w + $gutter-h);
+    padding: $gutter-w;
     color: $text;
-    font-size: 90%;
+    font-size: 0.85rem;
     .empty-actions {
       .btn {
         margin-top: $gutter-h * 2;
@@ -194,9 +194,7 @@
     }
   }
   .create-table {
-    display: flex;
     color: $text;
-    padding: 0 0.6rem 0 0;
     transition: color 0.2s ease-in-out;
     &:hover {
       color: $theme-base;
@@ -230,40 +228,39 @@
 
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: $gutter-w $gutter-w ($gutter-h * 0.5);
-  padding-right: $gutter-h;
-  background: transparent;
-  min-height: 33px;
-  .sub {
-    color: $text-dark;
-    line-height: 1;
-    padding: 0 $gutter-h;
-    div {
-      display: flex;
-      align-items: center;
-      padding-top: 1px;
-      color: $text-dark;
-    }
-    .badge {
-      font-size: 90%;
-      font-weight: normal;
-      color: $text;
-      margin-top: -0.1rem;
-      margin-left: ($gutter-h * 0.75);
-      border-radius: $list-heading-height;
-      background: $border-color;
-      &.active {
-        color: $theme-primary;
-      }
+  padding: $gutter-w $gutter-w $gutter-w * 0.5;
+  color: $text-dark;
+  .badge {
+    font-size: 0.7rem;
+    font-weight: normal;
+    color: $text;
+    margin-top: -0.1rem;
+    margin-left: ($gutter-h * 0.75);
+    border-radius: $list-heading-height;
+    background: $border-color;
+    &.active {
+      color: $theme-primary;
     }
   }
   .actions {
-    padding-right: $gutter-h;
-    a, .btn-link {
-      margin: 0 ($gutter-h * 0.5);
-      margin-right: 0;
-      padding: 0!important;
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    gap: $gutter-h;
+    & button {
+      font-size: inherit;
+      line-height: inherit;
+      padding: 0;
+      border: 0;
+      background-color: transparent;
+      display: flex;
+      cursor: pointer;
+    }
+    & > * {
+      visibility: hidden;
+    }
+    & .create-table {
+      visibility: visible;
     }
     .material-icons, .material-icons-outlined {
       font-size: 16px;
@@ -278,11 +275,10 @@
   flex: 1 1 auto;
   // Why was this 0? Because of Chrome being a derp.
   height: 0;
-  // max-height: -webkit-fill-available;
-  padding: $gutter-h 0 ($gutter * 0.75);
-  overflow: hidden;
+  overflow: auto;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch!important;
+  padding-left: $gutter-w - 0.4rem;
 }
 .list-group {
   display: flex;
@@ -291,7 +287,7 @@
   flex: 1 1 auto;
   height: 100%;
   &:hover{
-    .list-heading .actions {
+    .list-heading .actions > * {
       visibility: visible;
     }
   }
@@ -313,11 +309,6 @@
   .error-alert {
     margin: $gutter-h $gutter-w;
   }
-  .list-heading .actions {
-    display: flex;
-    align-items: center;
-    visibility: hidden;
-  }
   .btn-wrap {
     padding: $gutter-w;
   }
@@ -327,11 +318,15 @@
     flex: 0 1 100%;
   }
   .list-item {
-    padding: 0 $gutter-w;
+    --level: 0;
+    margin-left: calc(1.2rem * var(--level));
+
+    &.schema-item:not(:first-child) {
+      margin-top: $gutter-h;
+    }
   }
   .list-item-btn {
     color: rgba($theme-base, 0.77);
-    padding: 0 $gutter-h;
     // margin-right: $gutter-h;
     line-height: 1.8rem;
     height: 1.8rem;
@@ -536,17 +531,15 @@
 #sidebar {
   .folder-group {
     position: relative;
-    margin-bottom: $gutter-h;
-    padding-left: $gutter-w;
     .folder-btn {
       display: flex;
       align-items: center;
       padding-left: 0;
-      margin-bottom: $gutter-h * 0.5;
       border-radius: 4px;
+      color: rgba($theme-base, 0.77);
       .btn-fab {
         display: inline-flex!important;
-        margin-right: 0;
+        margin-right: $gutter-h * 0.5;
       }
       &:hover {
         background: rgba($theme-base, 0.035);
