@@ -166,14 +166,11 @@ import { RoutineTypeNames } from '@/lib/db/models'
         this.showArgs = !this.showArgs
       },
       pin() {
-        this.$store.dispatch('pins/add', this.routine)
+        this.trigger(AppEvent.togglePinTableList, this.table, true);
       },
       unpin() {
-        this.$store.dispatch('pins/remove', this.routine)
+        this.trigger(AppEvent.togglePinTableList, this.table, false);
       },
-      createRoutine() {
-        this.$root.$emit('loadRoutineCreate', this.routine)
-      }
     }
 	}
 </script>

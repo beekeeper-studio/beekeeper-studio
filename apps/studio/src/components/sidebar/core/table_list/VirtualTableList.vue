@@ -19,7 +19,7 @@ import ItemComponent from "./Item.vue";
 import VirtualList from "vue-virtual-scroll-list";
 import { AppEvent } from "@/common/AppEvent";
 import { mapGetters, mapState } from "vuex";
-import { PinnedEntity } from '@/common/appdb/models/PinnedEntity'
+import { PinnedEntity } from "@/common/appdb/models/PinnedEntity";
 
 type Entity = TableOrView | Routine | string;
 
@@ -99,7 +99,9 @@ export default Vue.extend({
             contextMenu: this.routineMenuOptions,
             parent: schemaItem,
             level: noFolder ? 0 : 1,
-            pinned: this.pins.find((pin: PinnedEntity) => pin.entity === routine),
+            pinned: this.pins.find(
+              (pin: PinnedEntity) => pin.entity === routine
+            ),
           });
         });
       });
@@ -116,15 +118,7 @@ export default Vue.extend({
       this.generateDisplayItems();
     },
     handlePin(_: Event, item: TableItem) {
-      item.pinned = !item.pinned;
-      if (item.pinned) {
-        this.$store.dispatch('pins/add', item.entity)
-        if (item.type === 'table') {
-          this.$store.dispatch('updateTableColumns', item.entity)
-        }
-      } else {
-        this.$store.dispatch('pins/remove', item.entity)
-      }
+      this.trigger(AppEvent.togglePinTableList, item.entity, !item.pinned);
     },
     handleToggleHidden(
       entity: TableOrView | Routine | string,
@@ -146,6 +140,13 @@ export default Vue.extend({
       });
       this.generateDisplayItems();
     },
+    handleTogglePinned(entity: Entity, pinned?: boolean) {
+      const item = this.items.find((item: Item) => item.entity === entity);
+      if (typeof pinned === "undefined") {
+        pinned = !item.pinned;
+      }
+      item.pinned = !item.pinned;
+    },
   },
   computed: {
     resizeObserver() {
@@ -162,6 +163,10 @@ export default Vue.extend({
         {
           event: AppEvent.toggleExpandTableList,
           handler: this.handleToggleExpanded,
+        },
+        {
+          event: AppEvent.togglePinTableList,
+          handler: this.handleTogglePinned,
         },
       ];
     },

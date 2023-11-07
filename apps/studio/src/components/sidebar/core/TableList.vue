@@ -164,6 +164,7 @@
   import PinnedTableList from '@/components/sidebar/core/PinnedTableList.vue'
   import { AppEvent } from '@/common/AppEvent'
   import VirtualTableList from './table_list/VirtualTableList.vue'
+  import { TableOrView, Routine } from "@/lib/db/models";
 
   export default {
     mixins: [TableFilter, TableListContextMenus],
@@ -238,6 +239,11 @@
       loadedWithPins() {
         return !this.tablesLoading && this.pinnedEntities.length > 0
       },
+      rootBindings() {
+        return [
+          { event: AppEvent.togglePinTableList, handler: this.togglePinTableList },
+        ]
+      },
       ...mapState(['selectedSidebarItem', 'tables', 'routines', 'connection', 'database', 'tablesLoading']),
       ...mapGetters(['filteredTables', 'filteredRoutines']),
       ...mapGetters({
@@ -302,6 +308,18 @@
           this.$store.commit('selectSidebarItem', null)
         }
       },
+      togglePinTableList(entity: TableOrView | Routine, pinned?: boolean) {
+        if (typeof pinned === 'undefined') {
+          pinned = !this.pinnedEntities.includes(entity)
+        }
+
+        if (pinned) this.$store.dispatch('pins/add', entity)
+        else this.$store.dispatch('pins/remove', entity)
+
+        if (pinned && entity.entityType === 'table') {
+          this.$store.dispatch('updateTableColumns', entity)
+        }
+      }
     },
     mounted() {
       document.addEventListener('mousedown', this.maybeUnselect)
@@ -313,12 +331,14 @@
         direction: 'vertical',
         sizes: this.sizes,
       })
+      this.registerHandlers(this.rootBindings)
     },
     beforeDestroy() {
       document.removeEventListener('mousedown', this.maybeUnselect)
       if(this.split) {
         this.split.destroy()
       }
+      this.unregisterHandlers(this.rootBindings)
     }
   }
 </script>

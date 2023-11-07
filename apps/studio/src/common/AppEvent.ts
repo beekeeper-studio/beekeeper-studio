@@ -28,6 +28,7 @@ export enum AppEvent {
   duplicateDatabaseTable = 'duplicateDatabaseTable',
   upgradeModal = 'showUpgradeModal',
   toggleExpandTableList = 'toggleExpandTableList',
+  togglePinTableList = 'togglePinTableList',
 }
 
 export interface RootBinding {
