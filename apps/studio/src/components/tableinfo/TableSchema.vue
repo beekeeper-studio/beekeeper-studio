@@ -302,16 +302,6 @@ export default Vue.extend({
         return { ...col, cssClass }
       })
     },
-    tableData() {
-      const keys = _.keyBy(this.primaryKeys, 'columnName')
-      return this.table.columns.map((c) => {
-        const key = keys[c.columnName]
-        return {
-          primary: !!key || null,
-          ...c
-        }
-      })
-    },
   },
   methods: {
     isCellEditable(feature: string, cell: CellComponent): boolean {
@@ -467,8 +457,18 @@ export default Vue.extend({
           resizable: false,
           headerSort: false,
         },
-        data: this.tableData,
+        data: this.generateTableData(),
         placeholder: "No Columns",
+      })
+    },
+    generateTableData() {
+      const keys = _.keyBy(this.primaryKeys, 'columnName')
+      return this.table.columns.map((c) => {
+        const key = keys[c.columnName]
+        return {
+          primary: !!key || null,
+          ...c
+        }
       })
     },
     columnNameCellClick(_e: any, cell: CellComponent) {
