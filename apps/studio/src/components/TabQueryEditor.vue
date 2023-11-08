@@ -100,11 +100,17 @@
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitQueryToFile">
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
-                  <i v-if="$config.isCommunity" class="material-icons menu-icon">stars</i>
+                  <i
+                    v-if="$config.isCommunity"
+                    class="material-icons menu-icon"
+                  >stars</i>
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQueryToFile">
                   <x-label>Run Current to File</x-label>
-                  <i v-if="$config.isCommunity" class="material-icons menu-icon ">stars</i>
+                  <i
+                    v-if="$config.isCommunity"
+                    class="material-icons menu-icon "
+                  >stars</i>
                 </x-menuitem>
               </x-menu>
             </x-button>
@@ -371,7 +377,7 @@
     computed: {
       ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
       ...mapState(['usedConfig', 'connection', 'database', 'tables', 'storeInitialized']),
-      ...mapState('data/queries', {'savedQueries': 'items'}, ),
+      ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       userKeymap: {
@@ -757,12 +763,8 @@
             codeMirrorVimInstance.defineEx("write", "w", this.triggerSave)
             codeMirrorVimInstance.defineEx("quit", "q", this.close)
             codeMirrorVimInstance.defineEx("qa", "qa", () => {this.$root.$emit(AppEvent.closeAllTabs)})
-            codeMirrorVimInstance.defineEx("x", "x", () => {
-              this.triggerSave()
-              if(this.query.id) {
-                this.close()
-              }
-            })
+            codeMirrorVimInstance.defineEx("x", "x", this.writeQuit)
+            codeMirrorVimInstance.defineEx("wq", "wq", this.writeQuit)
             codeMirrorVimInstance.defineEx("tabnew", "tabnew", (_cn, params) => {
               if(params.args && params.args.length > 0){
                 let queryName = params.args[0]
@@ -1210,6 +1212,12 @@
       },
       editorSelectAll() {
         this.editor.execCommand('selectAll')
+      },
+      writeQuit() {
+        this.triggerSave()
+        if(this.query.id) {
+          this.close()
+        }
       }
     },
     mounted() {

@@ -18,7 +18,9 @@
         </span>
         <div class="checkbox-wrapper">
           <!-- <p class="text-muted">This feature is not included in the Community Edition. Please upgrade the app to continue.</p> -->
-          <p class="text-muted"><strong v-if="message">{{ message }}</strong>. Upgrade to get exclusive featuers:</p>
+          <p class="text-muted">
+            <strong v-if="message">{{ message }}</strong>. Upgrade to get exclusive featuers:
+          </p>
           <div class="row">
             <div class="col s6">
               <ul class="check-list">
@@ -31,7 +33,9 @@
             </div>
             <div class="col s6">
               <ul class="check-list">
-                <li title="Oracle, Cassandra, BigQuery, and more">More database engines</li>
+                <li title="Oracle, Cassandra, BigQuery, and more">
+                  More database engines
+                </li>
                 <li>Cloud sync</li>
                 <li>Read-only mode</li>
                 <li>SQLite Extensions</li>

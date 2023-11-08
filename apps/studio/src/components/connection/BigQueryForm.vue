@@ -17,40 +17,63 @@
     </div>
     <div class="form-group">
       <label for="defaultDataset">Default Dataset</label>
-      <input type="text" class="form-control" v-model="config.defaultDatabase" placeholder="(Optional)">
+      <input
+        type="text"
+        class="form-control"
+        v-model="config.defaultDatabase"
+        placeholder="(Optional)"
+      >
     </div>
-    <toggle-form-area v-if="$config.isDevelopment" :expanded="devMode" title="[DEV MODE OVERRIDES]" :hideToggle="true">
+    <toggle-form-area
+      v-if="$config.isDevelopment"
+      :expanded="devMode"
+      title="[DEV MODE OVERRIDES]"
+      :hide-toggle="true"
+    >
       <template v-slot:header>
-        <x-switch @click.prevent="devMode = !devMode" :toggled="devMode"></x-switch>
+        <x-switch
+          @click.prevent="devMode = !devMode"
+          :toggled="devMode"
+        />
       </template>
-      <div class="form-group"><label for="host">Host</label><input type="text" class="form-control" v-model="config.host"></div>
-      <div class="form-group"><label for="port">Port</label><input type="text" class="form-control" v-model="config.port"></div>
+      <div class="form-group">
+        <label for="host">Host</label><input
+          type="text"
+          class="form-control"
+          v-model="config.host"
+        >
+      </div>
+      <div class="form-group">
+        <label for="port">Port</label><input
+          type="text"
+          class="form-control"
+          v-model="config.port"
+        >
+      </div>
     </toggle-form-area>
     <toggle-form-area
       :expanded="true"
-      :hideToggle="true"
+      :hide-toggle="true"
       title="Authentication"
     >
-    <div class="row gutter">
-          <div class="alert alert-info expand">
-            <i class="material-icons-outlined">info</i>
-            <span>
-              You need a service account with the roles 'BigQuery Data Viewer' and 'BigQuery Job User' - <a
-                href="https://docs.beekeeperstudio.io/docs/google-bigquery"
-              > Read More</a>
-            </span>
-          </div>
+      <div class="row gutter">
+        <div class="alert alert-info expand">
+          <i class="material-icons-outlined">info</i>
+          <span>
+            You need a service account with the roles 'BigQuery Data Viewer' and 'BigQuery Job User' - <a
+              href="https://docs.beekeeperstudio.io/docs/google-bigquery"
+            > Read More</a>
+          </span>
         </div>
+      </div>
 
-        <div class="form-group">
-          <label for="KeyFilename">
-            Service Account's JSON Private Key
-          </label>
-          <file-picker v-model="config.bigQueryOptions.keyFilename" />
-        </div>
-  </toggle-form-area>
-
-
+      <div class="form-group">
+        <label for="KeyFilename">
+          Service Account's JSON Private Key
+        </label>
+        <file-picker v-model="config.bigQueryOptions.keyFilename" />
+      </div>
+    </toggle-form-area>
   </div>
 </template>
 <script lang="ts">

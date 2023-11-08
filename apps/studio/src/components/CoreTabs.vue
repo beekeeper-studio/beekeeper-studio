@@ -628,7 +628,6 @@ export default Vue.extend({
       handleAltNumberKeyPress(event) {
       if (event.altKey) {
         const pressedNumber = Number(event.key); // Convert keyCode to the corresponding number
-        console.log("Pressed key is ", pressedNumber)
         if(pressedNumber <= this.tabItems.length) {
           this.setActiveTab(this.tabItems[pressedNumber - 1])
         }

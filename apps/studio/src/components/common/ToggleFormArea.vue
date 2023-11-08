@@ -10,14 +10,21 @@
       </span>
       <h4 class="advanced-heading flex">
         <span class="expand">{{ this.title }}</span>
-        <slot name="header"></slot>
+        <slot name="header" />
       </h4>
     </div>
-    <transition @before-enter="beforeEnter" @enter="enter" @before-leave="beforeLeave" @leave="leave">
-      <div class="advanced-body" v-if="toggleContent">
-        <slot></slot>
+    <transition
+      @before-enter="beforeEnter"
+      @enter="enter"
+      @before-leave="beforeLeave"
+      @leave="leave"
+    >
+      <div
+        class="advanced-body"
+        v-if="toggleContent"
+      >
+        <slot />
       </div>
-
     </transition>
   </div>
 </template>
