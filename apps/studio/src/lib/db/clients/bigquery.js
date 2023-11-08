@@ -11,12 +11,13 @@ import { table, time } from 'console';
 import { data } from 'jquery';
 import { buildDeleteQueries, buildInsertQueries, buildUpdateQueries, buildInsertQuery, genericSelectTop, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, applyChangesSql } from './utils';
 import { BigQueryData } from '@shared/lib/dialects/bigquery';
-import { BigQueryClient } from '@shared/lib/knex-bigquery'; 
+import { BigQueryClient } from '@shared/lib/knex-bigquery';
 import { Connection } from 'typeorm';
 import { BigQueryChangeBuilder } from '@shared/lib/sql/change_builder/BigQueryChangeBuilder';
 import { BigQueryCursor } from './bigquery/BigQueryCursor';
 import knexlib from 'knex';
 import _ from 'lodash';
+import platformInfo from '@/common/platform_info';
 
 const { wrapIdentifier } = BigQueryData;
 
@@ -34,16 +35,9 @@ export default async function (server, database) {
   const dbConfig = configDatabase(server, database)
   client = new bq.BigQuery(dbConfig)
   logger().debug('bigquery client created ', client)
-
-  const apiEndpoint = dbConfig.host !== "" && dbConfig.port !== "" ? `http://${dbConfig.host}:${dbConfig.port}` : undefined;
   knex = knexlib({
         client: BigQueryClient,
-        connection: {
-          projectId: dbConfig.bigQueryOptions?.projectId,
-          keyFilename: dbConfig.bigQueryOptions?.keyFilename,
-          // for testing
-          apiEndpoint
-        }
+        connection: { ...dbConfig }
       });
 
   // light solution to test connection with with a simple query
@@ -62,11 +56,13 @@ export default async function (server, database) {
     getTableLength: (table) => getTableLength(client, database.database, table),
     selectTop: (table, offset, limit, orderBy, filters, schema, selects) => selectTop(client, database.database, table, offset, limit, orderBy, filters, selects),
     selectTopStream: (db, table, orderBy, filters, chunkSize, schema) => selectTopStream(client, db, table, orderBy, filters, chunkSize, schema),
+    selectTopSql: (table, offset, limit, orderBy, filters, schema, selects) => selectTopSql(client, database.database, table, offset, limit, orderBy, filters, schema, selects),
     queryStream: (db, query, chunkSize) => queryStream(client, db, query, chunkSize),
     getTableKeys: (db, table) => getTableKeys(client, db, table),
     getPrimaryKey: (db, table) => getPrimaryKey(client, db, table),
     getPrimaryKeys: (db, table) => getPrimaryKeys(client, db, table),
     query: (queryText) => query(client, queryText),
+    getInsertQuery: (tableInsert) => buildInsertQuery(knex, { ...tableInsert, schema: database.database }),
     applyChanges: (changes) => applyChanges(client, changes),
     applyChangesSql: (changes) => applyChangesSql(changes, knex),
     executeQuery: (queryText) => driverExecuteQuery(client, queryText),
@@ -86,25 +82,27 @@ export default async function (server, database) {
   };
 }
 
+function bigQueryEndpoint(config) {
+  if (platformInfo.isDevelopment && config.bigQueryOptions?.devMode) {
+    return `http://${config.host}:${config.port}`
+  }
+  return undefined
+}
 
 function configDatabase(server, database) {
 
   const host = server.config.host
   const port = server.config.port
 
+
   // For BigQuery Only -- IAM authentication and credential exchange
   const bigQueryOptions = server.config.bigQueryOptions
   const config = {}
 
   config.projectId = bigQueryOptions.projectId || server.config.projectId
-  if (server.config.client === 'bigquery' && bigQueryOptions?.iamAuthenticationEnabled) {
-    config.keyFilename = bigQueryOptions.keyFilename
-  }
+  config.keyFilename = bigQueryOptions.keyFilename
   // For testing purposes
-  if (host !== "" && port !== "") {
-    config.apiEndpoint = "http://" + host + ":" + port
-    logger().debug(`configDatabase host: ${host} port: ${port} setting apiEndpoint: ${config.apiEndpoint}`)
-  } // use default otherwise
+  config.apiEndpoint = bigQueryEndpoint(server.config)
 
   logger().debug("configDatabase config: ", config)
   return config
@@ -161,10 +159,10 @@ async function getPrimaryKeys(conn, database, table) {
       use.column_name as column_name,
       use.ordinal_position as position
     FROM
-      ${wrapIdentifier(database)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as use 
-    JOIN ${wrapIdentifier(database)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS con 
-    ON use.constraint_catalog = con.constraint_catalog 
-    AND use.constraint_schema = con.constraint_schema 
+      ${wrapIdentifier(database)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as use
+    JOIN ${wrapIdentifier(database)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS con
+    ON use.constraint_catalog = con.constraint_catalog
+    AND use.constraint_schema = con.constraint_schema
     AND use.constraint_name = con.constraint_name
     WHERE use.table_schema = '${escapeString(database)}'
     AND use.table_name = '${escapeString(table)}'
@@ -281,6 +279,7 @@ async function driverExecuteQuery(client, queries, job) {
   if (queries instanceof String) {
     queries = { query: queries }
   }
+  log.info("BIGQUERY, executing", queries)
   if (!job) {
     [job] = await client.createQueryJob(queries)
   }
@@ -436,6 +435,13 @@ export async function selectTopStream(conn, db, table, orderBy, filters, chunkSi
     columns,
     cursor: new BigQueryCursor(conn, query, params, chunkSize)
   };
+}
+
+export async function selectTopSql(client, db, table, offset, limit, orderBy, filters, schema, selects) {
+  const columns = await listTableColumns(client, db, table)
+  const bqTable = db + "." + table
+  const queries = buildSelectTopQuery(bqTable, offset, limit, orderBy, filters, 'total', columns, selects)
+  return queries.query
 }
 
 export async function queryStream(conn, db, query, chunkSize) {

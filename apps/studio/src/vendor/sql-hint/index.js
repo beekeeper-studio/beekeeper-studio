@@ -1,15 +1,4 @@
 /* eslint-disable */
-const {
-  findTablesBySchema,
-  pushTablesToResult,
-  queryTable,
-  parseDBHintTable,
-  splitSchemaTable,
-  isQuote,
-  getTextNearCursor,
-  splitWords,
-} = require("@/lib/editor");
-
 // "forked" from CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: https://codemirror.net/5/LICENSE
 (function(mod) {
@@ -22,14 +11,10 @@ const {
 })(function(CodeMirror) {
   "use strict";
 
-  /**
-    * @type {import('@/lib/editor').DBHint}
-    **/
-  let dbHint;
+  var tables;
   var defaultTable;
   var keywords;
   var identifierQuote;
-  let globalEditorOptions = {}
   var CONS = {
     QUERY_DIV: ";",
     ALIAS_KEYWORD: "AS"
@@ -75,7 +60,7 @@ const {
   }
 
   function getTable(name) {
-    return queryTable(dbHint, name)
+    return tables[name.toUpperCase()]
   }
 
   function shallowClone(object) {
@@ -134,18 +119,7 @@ const {
     return name;
   }
 
-  function findTablesForMatches(search) {
-    const [schema, table] = splitSchemaTable(search);
-    const unwrappedSchema = dbHint.dialect.unwrapIdentifier(schema);
-    return dbHint.schemaWordList[unwrappedSchema]
-      ? findTablesBySchema(dbHint, unwrappedSchema)
-          .map((table) => `${schema}.${table.text}`)
-      : [];
-  }
-
   async function nameCompletion(cur, token, result, editor) {
-    const textNearCursor = getTextNearCursor(editor, cur)
-
     // Try to complete table, column names and return start position of completion
     var useIdentifierQuotes = false;
     var nameParts = [];
@@ -165,16 +139,9 @@ const {
       }
     }
 
-    addMatches(
-      result,
-      textNearCursor.text,
-      findTablesForMatches(textNearCursor.text),
-      (w) => w
-    );
-
     // Try to complete table names
     var string = nameParts.join(".");
-    addMatches(result, string, dbHint.defaultTableWordList, function(w) {
+    addMatches(result, string, tables, function(w) {
       return useIdentifierQuotes ? insertIdentifierQuotes(w) : w;
     });
 
@@ -187,30 +154,16 @@ const {
     string = nameParts.pop();
     var table = nameParts.join(".");
 
-    let tableWord = getTable(table);
-    if (!tableWord) {
-      // If the table query fails, it could be that CodeMirror didn't get the
-      // token correctly. For example, if the query is `SELECT * FROM
-      // "schema".table` then this will produce `".table` instead of
-      // `"schema".table`. If that happens, we will try to use the return
-      // value from getTextNearCursor() to find the table.
-      table = textNearCursor.text.substring(0, textNearCursor.text.length - 1);
-      start = textNearCursor.startAt;
-      tableWord = getTable(table);
-    }
-
     var alias = false;
-    var aliasTable = nameParts.join('.');
+    var aliasTable = table;
     // Check if table is available. If not, find table by Alias
-    if (!tableWord) {
-      table = aliasTable;
+    if (!getTable(table)) {
       var oldTable = table;
-      tableWord = findTableByAlias(table, editor);
-      table = tableWord?.name;
+      table = findTableByAlias(table, editor);
       if (table !== oldTable) alias = true;
     }
 
-    var columns = globalEditorOptions.getColumns && tableWord ? await globalEditorOptions.getColumns(tableWord): getTable(table)
+    var columns = editor.options.getColumns ? await editor.options.getColumns(table): getTable(table)
 
     if (columns && columns.columns)
       columns = columns.columns;
@@ -233,10 +186,9 @@ const {
   }
 
   function eachWord(lineText, f) {
-    var words = splitWords(lineText);
-    // var words = lineText.split(/\s+/)
+    var words = lineText.split(/\s+/)
     for (var i = 0; i < words.length; i++)
-      if (words[i]) f(words[i].replace(/[`,;]/g, ''))
+      if (words[i]) f(words[i].replace(/["`,;]/g, ''))
   }
 
   function findTableByAlias(alias, editor) {
@@ -244,7 +196,7 @@ const {
     var fullQuery = doc.getValue();
     var aliasUpperCase = alias.toUpperCase();
     var previousWord = "";
-    let table;
+    var table = "";
     var separator = [];
     var validRange = {
       start: Pos(0, 0),
@@ -273,15 +225,14 @@ const {
 
     if (validRange.start) {
       var query = doc.getRange(validRange.start, validRange.end, false);
+
       for (var i = 0; i < query.length; i++) {
         var lineText = query[i];
         eachWord(lineText, function(word) {
           var wordUpperCase = word.toUpperCase();
-          const tableWord = getTable(previousWord)
-          if (wordUpperCase === aliasUpperCase && tableWord)
-            table = tableWord;
+          if (wordUpperCase === aliasUpperCase && getTable(previousWord))
+            table = previousWord;
           if (wordUpperCase !== CONS.ALIAS_KEYWORD)
-            // FIXME see this to fix alias spaces in the identifier.
             previousWord = word;
         });
         if (table) break;
@@ -291,9 +242,7 @@ const {
   }
 
   CodeMirror.registerHelper("hint", "sql", async function(editor, options) {
-    globalEditorOptions = {...editor.options}
-    dbHint = options?.dbHint
-
+    tables = parseTables(options?.tables)
     var defaultTableName = options?.defaultTable;
     var disableKeywords = options?.disableKeywords;
     defaultTable = defaultTableName && getTable(defaultTableName);
@@ -316,23 +265,16 @@ const {
       token.string = token.string.slice(0, cur.ch - token.start);
     }
 
-    if (token.string.match(/^[.`"'\w@][\w$#]*$/g) && !isQuote(token.string)) {
+    if (token.string.match(/^[.`"'\w@][\w$#]*$/g)) {
       search = token.string;
       start = token.start;
       end = token.end;
-    } else if (isQuote(token.string)) {
-      const { text, startAt } = getTextNearCursor(editor, cur)
-      search = text;
-      start = startAt;
-      end = cur.ch;
-      const tables = findTablesForMatches(search);
-      addMatches(result, search, tables, (w) => w);
     } else {
       start = end = cur.ch;
       search = "";
     }
     if (search.charAt(0) == "." || search.charAt(0) == identifierQuote) {
-      start = nameCompletion(cur, token, result, editor);
+      start = await nameCompletion(cur, token, result, editor);
     } else {
       var objectOrClass = function(w, className) {
         if (typeof w === "object") {
@@ -348,19 +290,15 @@ const {
       addMatches(
           result,
           search,
-          dbHint.defaultTableWordList, function(w) {
+          tables, function(w) {
             return objectOrClass(w, "CodeMirror-hint-table");
           }
       );
-      addMatches(result, search, dbHint.schemaWordList, function (w) {
-        return objectOrClass(w, "CodeMirror-hint-schema");
-      });
-      if (!disableKeywords) {
+      if (!disableKeywords)
         addMatches(result, search, keywords, function(w) {
             return objectOrClass(w.toUpperCase(), "CodeMirror-hint-keyword");
         });
       }
-    }
 
     const dataFrom = Pos(cur.line, start)
     // Because there are some promises around for getting the columns, the ch position in the "from" object was returning as an unresolved promise

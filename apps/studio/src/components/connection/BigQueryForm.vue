@@ -85,18 +85,25 @@ export default Vue.extend({
   components: { FilePicker, ToggleFormArea },
   data() {
     return {
-      devMode: false,
       iamAuthenticationEnabled: this.config.bigQueryOptions?.iamAuthenticationEnabled || false
+    }
+  },
+  computed: {
+    devMode: {
+      get() {
+        return this.config.bigQueryOptions.devMode
+      },
+      set(value: boolean) {
+        this.$set(this.config.bigQueryOptions, 'devMode', !!value)
+      }
     }
   },
   watch: {
     devMode() {
       if (this.devMode) {
-        this.config.host = 'localhost'
-        this.config.port = 443
-      } else {
-        this.config.host = null
-        this.config.port = null
+        // set some defaults if we don't have any and dev mode is enabled
+        this.config.host ||= 'localhost'
+        this.config.port ||= 443
       }
     }
   },

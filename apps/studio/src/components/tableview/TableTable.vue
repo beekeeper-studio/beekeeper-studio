@@ -12,7 +12,7 @@
         v-if="table.columns?.length"
         :columns="table.columns"
         :initial-filters="initialFilters"
-        @changed="saveFilters"
+        @input="handleRowFilterBuilderInput"
         @submit="triggerFilter"
       />
       <div ref="table" />
@@ -561,7 +561,7 @@ export default Vue.extend({
     // we can use this to track if column names have been updated and we need
     // to refresh
     tableColumnNames() {
-      return this.table?.columns.map((c) => c.columnName).join("-")
+      return this.table?.columns?.map((c) => c.columnName).join("-") || []
     },
     tableColumns() {
       const results = []
@@ -591,8 +591,7 @@ export default Vue.extend({
       // to the FK table.
       this.table.columns.forEach(column => {
 
-        const keyDatas: any[] = this.tableKeys[column.columnName]
-
+        const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0].includes(column.columnName));
         // this needs fixing
         // currently it doesn't fetch the right result if you update the PK
         // because it uses the PK to fetch the result.
@@ -606,10 +605,11 @@ export default Vue.extend({
 
         let headerTooltip = `${column.columnName} ${column.dataType}`
         if (keyDatas && keyDatas.length > 0) {
-          if (keyDatas.length === 1)
-            headerTooltip += ` -> ${keyDatas[0].toTable}(${keyDatas[0].toColumn})`
+          const keyData = keyDatas[0][1];
+          if (keyData.length === 1)
+            headerTooltip += ` -> ${keyData[0].toTable}(${keyData[0].toColumn})`
           else
-            headerTooltip += ` -> ${keyDatas.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`
+            headerTooltip += ` -> ${keyData.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`
         } else if (isPK) {
           headerTooltip += ' [Primary Key]'
         }
@@ -646,19 +646,30 @@ export default Vue.extend({
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             search: true,
-            values: /^(bool|boolean)$/i.test(column.dataType)
-              ? [true, false]
-              : undefined,
             allowEmpty: true,
+            preserveObject: column.dataType.startsWith('_'),
+            onPreserveObjectFail: (value: unknown) => {
+              log.error('Failed to preserve object for', value)
+              return true
+            },
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
             // }
           },
         }
+
+        if (/^(bool|boolean)$/i.test(column.dataType)) {
+          const trueVal = this.dialectData.boolean?.true ?? true
+          const falseVal = this.dialectData.boolean?.false ?? false
+          const values = [falseVal, trueVal]
+          if (column.nullable) values.push({ label: '(NULL)', value: null })
+          result.editorParams['values'] = values
+        }
+
         results.push(result)
 
         if (keyDatas && keyDatas.length > 0) {
-          results.push(this.fkColumn(result, keyDatas))
+          results.push(this.fkColumn(result, keyDatas[0][1]))
         }
 
       });
@@ -1033,7 +1044,7 @@ export default Vue.extend({
     },
     editorType(dt) {
       const ne = vueEditor(NullableInputEditorVue)
-      switch (dt.toLowerCase()) {
+      switch (dt?.toLowerCase() ?? '') {
         case 'text':
         case 'json':
         case 'jsonb':
@@ -1537,6 +1548,8 @@ export default Vue.extend({
       this.queryError = null
     },
     async refreshTable() {
+      if (!this.tabulator) return;
+
       log.debug('refreshing table')
       const page = this.tabulator.getPage()
       await this.tabulator.replaceData()
@@ -1585,10 +1598,13 @@ export default Vue.extend({
       this.triggerFilter(draftFilters);
       this.$modal.hide(`discard-changes-modal-${this.tab.id}`);
     },
-    saveFilters(filters: TableFilter[]) {
+    handleRowFilterBuilderInput(filters: TableFilter[]) {
       this.tab.setFilters(filters)
-      this.$store.dispatch('tabs/save', this.tab)
+      this.debouncedSaveTab(this.tab)
     },
+    debouncedSaveTab: _.debounce(function(tab) {
+      this.$store.dispatch('tabs/save', tab)
+    }, 300),
   }
 });
 </script>

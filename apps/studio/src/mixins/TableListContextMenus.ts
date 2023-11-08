@@ -4,7 +4,7 @@ import { ContextOption } from "@/plugins/BeekeeperPlugin";
 export default {
   data() {
     // HACK (@day): this stuff will be removed once we get write mode working for BQ
-    const isBQClass = this.connection.connectionType == 'bigquery' ? 'disabled' : '';
+    const isBQClass = this.connection?.connectionType == 'bigquery' ? 'disabled' : '';
     return {
       routineMenuOptions: [
         {
@@ -37,7 +37,7 @@ export default {
   computed: {
     tableMenuOptions() {
       // HACK (@day): this stuff will be removed once we get write mode working for BQ
-      const isBQClass = this.connection.connectionType == 'bigquery' ? 'disabled' : '';
+      const isBQClass = this.connection?.connectionType == 'bigquery' ? 'disabled' : '';
       return [
         {
           name: "View Data",

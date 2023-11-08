@@ -335,7 +335,7 @@
         //        This isn't anything to do with table selection
         await this.$store.dispatch('updateTableColumns', table)
         const k = this.entityKey(table)
-        if (this.expandedTables.includes(k))
+        if (this.expandedTables?.includes(k))
           return;
         this.expandedTables = [...this.expandedTables, k]
       },

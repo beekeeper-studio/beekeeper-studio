@@ -225,7 +225,8 @@ export default {
       return this.tablesInitialLoaded && this.active && !this.initialized
     },
     editable() {
-      return this.table.entityType === 'table' && !!this.primaryKeys.length
+      // (Sept 2023) we don't need a PK for table schemas to be editable
+      return this.table.entityType === 'table'
     },
     unsavedChanges() {
       return this.pills.filter((p) => p.dirty).length > 0
@@ -302,8 +303,10 @@ export default {
       // this.properties = null
       try {
         await this.$store.dispatch('updateTableColumns', this.table)
+        console.log("getting primary keys")
         this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema)
         if (this.table.entityType === 'table') {
+          console.log("calling getTableProperties")
           this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema)
         }
         this.loading = false
