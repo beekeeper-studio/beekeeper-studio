@@ -356,23 +356,21 @@ export default Vue.extend({
       }
     },
     // submission methods
-    async submitApply(): Promise<void> {
-      try {
-        this.error = null
-        const changes = this.collectChanges()
-        await this.connection.alterTable(changes)
-
-        this.clearChanges()
-        await this.$store.dispatch('updateTableColumns', this.table)
-        this.$nextTick(() => {
+    async submitApply() {
+      this.error = null
+      this.trigger(AppEvent.alterTable, {
+        changes: this.collectChanges(),
+        table: this.table,
+        onSuccess: async () => {
+          this.clearChanges()
           this.initializeTabulator()
-        })
-        this.$noty.success(`${this.table.name} Updated`)
-      } catch(ex) {
-        this.error = ex
-        console.error(ex)
-      }
-    },
+          this.$noty.success(`${this.table.name} Updated`)
+        },
+        onError: (err: unknown) => {
+          this.error = err
+        },
+      })
+   },
     async submitSql(): Promise<void> {
       try {
         this.error = null

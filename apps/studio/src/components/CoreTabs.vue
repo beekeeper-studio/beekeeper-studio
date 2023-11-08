@@ -206,6 +206,11 @@ import TabIcon from './tab/TabIcon.vue'
 import { DatabaseEntity } from "@/lib/db/models"
 import PendingChangesButton from './common/PendingChangesButton.vue'
 import { safeSqlFormat as safeFormat } from '@/common/utils';
+import { AlterTableSpec } from "@shared/lib/dialects/models";
+import { TableOrView } from "@/lib/db/models";
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('CoreTabs')
 
 export default Vue.extend({
   props: ['connection'],
@@ -284,6 +289,7 @@ export default Vue.extend({
         { event: AppEvent.createTable, handler: this.openTableBuilder },
         { event: 'historyClick', handler: this.createQueryFromItem },
         { event: AppEvent.loadTable, handler: this.openTable },
+        { event: AppEvent.alterTable, handler: this.alterTable },
         { event: AppEvent.openTableProperties, handler: this.openTableProperties },
         { event: 'loadSettings', handler: this.openSettings },
         { event: 'loadTableCreate', handler: this.loadTableCreate },
@@ -592,6 +598,17 @@ export default Vue.extend({
     openExportModal(options) {
       this.tableExportOptions = options
       this.showExportModal = true
+    },
+    async alterTable(options: { changes: AlterTableSpec, table: TableOrView, onError?: (e: any) => void, onSuccess?: () => void }) {
+      try {
+        await this.connection.alterTable(options.changes)
+        await this.$store.dispatch('updateTableColumns', options.table)
+        options.onSuccess?.()
+        this.trigger(AppEvent.tableAltered, options.table)
+      } catch (e) {
+        log.error(e);
+        options.onError?.(e)
+      }
     },
     hideEntity(entity: DatabaseEntity) {
       this.$store.dispatch('hideEntities/addEntity', entity)
