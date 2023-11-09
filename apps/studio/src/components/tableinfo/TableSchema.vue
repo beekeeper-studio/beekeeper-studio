@@ -302,6 +302,16 @@ export default Vue.extend({
         return { ...col, cssClass }
       })
     },
+    tableData() {
+      const keys = _.keyBy(this.primaryKeys, 'columnName')
+      return this.table.columns.map((c) => {
+        const key = keys[c.columnName]
+        return {
+          primary: !!key || null,
+          ...c
+        }
+      })
+    },
   },
   methods: {
     isCellEditable(feature: string, cell: CellComponent): boolean {
@@ -356,21 +366,23 @@ export default Vue.extend({
       }
     },
     // submission methods
-    async submitApply() {
-      this.error = null
-      this.trigger(AppEvent.alterTable, {
-        changes: this.collectChanges(),
-        table: this.table,
-        onSuccess: async () => {
-          this.clearChanges()
+    async submitApply(): Promise<void> {
+      try {
+        this.error = null
+        const changes = this.collectChanges()
+        await this.connection.alterTable(changes)
+
+        this.clearChanges()
+        await this.$store.dispatch('updateTableColumns', this.table)
+        this.$nextTick(() => {
           this.initializeTabulator()
-          this.$noty.success(`${this.table.name} Updated`)
-        },
-        onError: (err: unknown) => {
-          this.error = err
-        },
-      })
-   },
+        })
+        this.$noty.success(`${this.table.name} Updated`)
+      } catch(ex) {
+        this.error = ex
+        console.error(ex)
+      }
+    },
     async submitSql(): Promise<void> {
       try {
         this.error = null
@@ -455,18 +467,8 @@ export default Vue.extend({
           resizable: false,
           headerSort: false,
         },
-        data: this.generateTableData(),
+        data: this.tableData,
         placeholder: "No Columns",
-      })
-    },
-    generateTableData() {
-      const keys = _.keyBy(this.primaryKeys, 'columnName')
-      return this.table.columns.map((c) => {
-        const key = keys[c.columnName]
-        return {
-          primary: !!key || null,
-          ...c
-        }
       })
     },
     columnNameCellClick(_e: any, cell: CellComponent) {

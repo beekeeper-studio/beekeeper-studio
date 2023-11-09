@@ -252,7 +252,7 @@ import { markdownTable } from 'markdown-table'
 import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
-import { TableFilter, TableOrView } from '@/lib/db/models';
+import { TableFilter } from '@/lib/db/models';
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
@@ -300,8 +300,6 @@ export default Vue.extend({
       selectedCell: null,
       mouseDownHandle: null,
       lastMouseOverRow: null,
-
-      tableColumnsInvalidator: 0,
     };
   },
   computed: {
@@ -560,9 +558,12 @@ export default Vue.extend({
       })
       return result
     },
+    // we can use this to track if column names have been updated and we need
+    // to refresh
+    tableColumnNames() {
+      return this.table?.columns?.map((c) => c.columnName).join("-") || []
+    },
     tableColumns() {
-      this.tableColumnsInvalidator
-
       const results = []
       if (!this.table) return []
 
@@ -732,11 +733,6 @@ export default Vue.extend({
     columnFilterModalName() {
       return `column-filter-modal-${this.tab.id}`
     },
-    rootBindings() {
-      return [
-        { event: AppEvent.tableAltered, handler: this.handleTableAltered },
-      ]
-    },
   },
 
   watch: {
@@ -767,6 +763,13 @@ export default Vue.extend({
         this.tabulator.blockRedraw()
       }
     },
+    async tableColumnNames() {
+      if (!this.tabulator) return;
+
+      if (!this.active) this.forceRedraw = true;
+      await this.tabulator.setColumns(this.tableColumns)
+      await this.refreshTable();
+    },
     async lastUpdated() {
       this.setlastUpdatedText()
       const primaryFilter: TableFilter | false = _.isArray(this.filters) &&
@@ -788,7 +791,6 @@ export default Vue.extend({
   beforeDestroy() {
     document.removeEventListener('click', this.maybeUnselectCell)
     document.removeEventListener('mouseUp', this.handleCellMouseUp)
-    this.unregisterHandlers(this.rootBindings)
     if(this.interval) clearInterval(this.interval)
     if (this.tabulator) {
       this.tabulator.destroy()
@@ -797,7 +799,6 @@ export default Vue.extend({
   async mounted() {
     document.addEventListener('click', this.maybeUnselectCell)
     document.addEventListener('mouseUp', this.handleCellMouseUp)
-    this.registerHandlers(this.rootBindings)
     if (this.shouldInitialize) {
       this.$nextTick(async() => {
         await this.initialize()
@@ -1596,15 +1597,6 @@ export default Vue.extend({
       this.discardChanges();
       this.triggerFilter(draftFilters);
       this.$modal.hide(`discard-changes-modal-${this.tab.id}`);
-    },
-    async handleTableAltered(table: TableOrView) {
-      if (table === this.table) {
-        this.tableColumnsInvalidator++
-
-        if (!this.active) this.forceRedraw = true;
-        await this.tabulator.setColumns(this.tableColumns)
-        await this.refreshTable()
-      }
     },
     handleRowFilterBuilderInput(filters: TableFilter[]) {
       this.tab.setFilters(filters)

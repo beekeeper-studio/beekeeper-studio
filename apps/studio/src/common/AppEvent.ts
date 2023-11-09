@@ -17,8 +17,6 @@ export enum AppEvent {
   createTable = 'new_table',
   openTableProperties = 'loadTableProperties',
   loadTable = 'loadTable',
-  alterTable = 'alterTable',
-  tableAltered = 'tableAltered',
   quickSearch = 'quickSearch',
   promptLogin = 'cloud_signin',
   promptQueryImport = 'cloud_q_import',
@@ -49,9 +47,9 @@ export const AppEventMixin = Vue.extend({
         this.$root.$off(event, handler)
       })
     },
-    trigger(event: AppEvent, ...args: any) {
-      log.debug('trigger', event, ...args)
-      this.$root.$emit(event.toString(), ...args)
+    trigger<T>(event: AppEvent, options: T) {
+      log.debug('trigger', event, options)
+      this.$root.$emit(event.toString(), options)
     }
   }
 
