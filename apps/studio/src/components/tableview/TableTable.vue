@@ -4,53 +4,12 @@
     class="tabletable flex-col"
     :class="{'view-only': !editable}"
   >
-    <portal to="modals">
-      <modal
-        :name="modalName"
-        class="beekeeper-modal vue-dialog json-dialog"
-        v-show="active"
-        @closed="onJsonModalClose"
-        @opened="onJsonModalOpen"
-      >
-        <div class="dialog-content">
-          <div class="dialog-c-title">
-            Editing Cell Content
-          </div>
-
-          <div class="codeArea">
-            <textarea
-              name="editor"
-              class="editor"
-              ref="editorRef"
-              cols="30"
-              rows="10"
-            />
-          </div>
-        </div>
-
-        <div class="vue-dialog-buttons">
-          <span class="expand" />
-          <button
-            @click.prevent="$modal.hide(modalName)"
-            class="btn btn-sm btn-flat"
-          >
-            Close
-          </button>
-          <button
-            class="btn btn-sm btn-flat"
-            @click.prevent="copyCurrentJson"
-          >
-            Copy
-          </button>
-          <button
-            class="btn btn-sm btn-primary"
-            @click.prevent="saveCurrentJson"
-          >
-            Save
-          </button>
-        </div>
-      </modal>
-    </portal>
+    <EditorModal
+      :tabid="tab.id"
+      :cell="modalCell"
+      :content="modalContent"
+      @updateContent="updateModalContent"
+    />
 
     <template v-if="!table && initialized">
       <div class="no-content" />
@@ -265,37 +224,11 @@
   </div>
 </template>
 
-<style lang="scss">
+<style>
 .item-notice > span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.json-dialog {
-  .v--modal {
-    display: flex;
-    flex-direction: column;
-
-    overflow: hidden!important;
-  }
-
-  .dialog-content {
-    display: flex;
-    flex-direction: column;
-
-    height: 100%;
-    flex: 1!important;
-
-    overflow: hidden;
-  }
-
-  .codeArea {
-    flex: 1;
-    height: 100%;
-
-    overflow-y: scroll;
-  }
 }
 </style>
 
@@ -310,6 +243,7 @@ import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
+import EditorModal from './EditorModal.vue'
 import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
@@ -326,22 +260,12 @@ import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
-import CodeMirror from 'codemirror'
-import 'codemirror/addon/comment/comment'
-import 'codemirror/keymap/vim.js'
-import 'codemirror/addon/dialog/dialog'
-import 'codemirror/addon/search/search'
-import 'codemirror/addon/search/jump-to-line'
-import 'codemirror/addon/scroll/annotatescrollbar'
-import 'codemirror/addon/search/matchesonscrollbar'
-import 'codemirror/addon/search/matchesonscrollbar.css'
-import 'codemirror/addon/search/searchcursor'
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["connection", "initialFilters", "active", 'tab', 'table'],
   data() {
@@ -354,10 +278,8 @@ export default Vue.extend({
       loading: false,
 
       // modal
-      modalName: "viewJsonModel",
-      modalJsonContent: "",
-      currentJsonCell: null,
-      editor: null,
+      modalContent: "",
+      modalCell: null,
 
       // table data
       data: null, // array of data
@@ -394,12 +316,6 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
     ...mapGetters(['dialectData', 'dialect']),
-    userKeymap: {
-      get() {
-        const value = this.settings?.keymap?.value;
-        return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
-      },
-    },
     hasSelectedText() {
       return this.editor ? !!this.editor.getSelection() : false
     },
@@ -576,7 +492,6 @@ export default Vue.extend({
       ]
     },
     cellContextMenu() {
-
       const menuItem = (text: string) => `<x-menuitem><x-label>${text}</x-label></x-menuitem>`
 
       return [
@@ -587,7 +502,7 @@ export default Vue.extend({
           }
         },
         {
-          label: `<x-menuitem><x-label>Edit cell in Editor</x-label></x-menuitem>`,
+          label: `<x-menuitem><x-label>Open cell in Editor</x-label></x-menuitem>`,
           disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell),
           action: (_e, cell) => {
             if (!this.isPrimaryKey(cell.getField()) && this.primaryKeys.length >= 1) {
@@ -609,9 +524,9 @@ export default Vue.extend({
               }
 
               if (parsed !== null) {
-                this.modalJsonContent = JSON.stringify(parsed, null, 2)
-                this.currentJsonCell = cell
-                this.$modal.show("viewJsonModel")
+                this.modalContent = JSON.stringify(parsed, null, 2)
+                this.modalCell = cell
+                this.$modal.show(`view-json-modal-${this.tab.id}`)
               }
             }
           }
@@ -934,101 +849,8 @@ export default Vue.extend({
     }
   },
   methods: {
-    copyCurrentJson() {
-      this.$copyText(this.modalJsonContent)
-
-      this.$noty.success("Copied the JSON data to your clipboard!")
-    },
-
-    onJsonModalClose() {
-      this.modalJsonContent = ""
-      this.currentJsonCell = null
-    },
-
-    onJsonModalOpen() {
-      this.editor = CodeMirror.fromTextArea(this.$refs.editorRef, {
-        lineNumbers: true,
-        mode: {
-          name: "javascript",
-          json: true,
-          statementIndent: 2
-        },
-        indentWithTabs: false,
-        tabSize: 2,
-        theme: 'monokai',
-        extraKeys: {
-          "Ctrl-Space": "autocomplete",
-          "Shift-Tab": "indentLess",
-          [this.cmCtrlOrCmd('F')]: 'findPersistent',
-          [this.cmCtrlOrCmd('R')]: 'replace',
-          [this.cmCtrlOrCmd('Shift-R')]: 'replaceAll'
-        },
-        options: {
-          closeOnBlur: false
-        },
-        // eslint-disable-next-line
-        // @ts-ignore
-        hint: CodeMirror.hint.json,
-        keyMap: this.userKeymap
-      } as CodeMirror.EditorConfiguration)
-
-      this.editor.setValue(this.modalJsonContent)
-      this.editor.on("keydown", (_cm, e) => {
-        if (this.$store.state.menuActive) {
-          e.preventDefault()
-        }
-      })
-
-      if (this.userKeymap === "vim") {
-        const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
-        if(!codeMirrorVimInstance) {
-          console.error("Could not find code mirror vim instance");
-        } else {
-          setKeybindingsFromVimrc(codeMirrorVimInstance);
-        }
-      }
-
-      this.editor.on("change", (cm) => {
-        this.modalJsonContent = cm.getValue()
-      })
-
-      this.editor.focus()
-
-      setTimeout(() => {
-        // this fixes the editor not showing because it doesn't think it's dom element is in view.
-        // its a hit and miss error
-        this.editor.refresh()
-      }, 1)
-    },
-
-    saveCurrentJson() {
-      if (this.currentJsonCell) {
-        let parsed: Record<string, unknown> | null = null;
-
-        try {
-          parsed = JSON.parse(this.modalJsonContent)
-        } catch (e) {
-          log.error("Invalid JSON", e)
-
-          this.$noty.error("Failed to save JSON as it is invalid")
-
-          return
-        }
-
-        if (parsed) {
-          this.$modal.hide(this.modalName)
-
-          const saveData = JSON.stringify(parsed)
-
-          this.currentJsonCell.setValue(saveData)
-
-          this.$noty.success("Successfully saved the JSON data")
-
-          return
-        }
-      }
-
-      this.$noty.error("An unknown issue occured whilst trying to save your JSON data")
+    updateModalContent(newValue: string): void {
+      this.modalContent = newValue
     },
 
     getCleanSelectedRowData(cell) {
