@@ -2,7 +2,7 @@
   <portal to="modals">
     <modal
       :name="modalName"
-      class="beekeeper-modal vue-dialog json-dialog"
+      class="beekeeper-modal vue-dialog editor-dialog"
       @closed="onClose"
       @opened="onOpen"
     >
@@ -48,7 +48,7 @@
 </template>
 
 <style lang="scss">
-.json-dialog {
+.editor-dialog {
   .v--modal {
     display: flex;
     flex-direction: column;
@@ -87,120 +87,123 @@ import 'codemirror/addon/scroll/annotatescrollbar'
 import 'codemirror/addon/search/matchesonscrollbar'
 import 'codemirror/addon/search/matchesonscrollbar.css'
 import 'codemirror/addon/search/searchcursor'
+import {Languages} from './languageData'
 
 export default Vue.extend({
   props: ["tabid", "content", "cell"],
-  emits: ["updateContent"],
+  emits: ["updateContent", "updateCell"],
 
   data() {
     return {
       editor: null,
+      language: "json"
     }
   },
 
   methods: {
+    findLanguage() {
+      const idx = Languages.findIndex((lang) => lang.name == this.language)
+
+      if (idx !== -1) {
+        return Languages[idx]
+      } else {
+        return null
+      }
+    },
+
     copy() {
       this.$copyText(this.content)
 
-      this.$noty.success("Copied the JSON data to your clipboard!")
+      this.$noty.success("Copied the data to your clipboard!")
     },
 
     save() {
       if (this.cell) {
-        let parsed: Record<string, unknown> | null = null;
+        const language = this.findLanguage()
 
-        try {
-          parsed = JSON.parse(this.content)
-        } catch (e) {
-          log.error("Invalid JSON", e)
-
-          this.$noty.error("Failed to save JSON as it is invalid")
-
-          return
-        }
-
-        if (parsed) {
+        if (language && language.isValid(this.content)) {
           this.$modal.hide(this.modalName)
 
-          const saveData = JSON.stringify(parsed)
+          this.cell.setValue(language.minify(this.content))
 
-          this.cell.setValue(saveData)
-
-          this.$noty.success("Successfully saved the JSON data")
+          this.$noty.success("Successfully saved thedata")
 
           return
+        } else {
+          this.$noty.error("The data you are trying to save does not seem to be valid")
         }
       }
 
-      this.$noty.error("An unknown issue occured whilst trying to save your JSON data")
+      this.$noty.error("An unknown issue occured whilst trying to save your data")
     },
 
     onOpen() {
-      this.editor = CodeMirror.fromTextArea(this.$refs.editorRef, {
-        lineNumbers: true,
-        mode: {
-          name: "javascript",
-          json: true,
-          statementIndent: 2
-        },
-        indentWithTabs: false,
-        tabSize: 2,
-        theme: 'monokai',
-        extraKeys: {
-          "Ctrl-Space": "autocomplete",
-          "Shift-Tab": "indentLess",
-          [this.cmCtrlOrCmd('F')]: 'findPersistent',
-          [this.cmCtrlOrCmd('R')]: 'replace',
-          [this.cmCtrlOrCmd('Shift-R')]: 'replaceAll'
-        },
-        options: {
-          closeOnBlur: false
-        },
-        // eslint-disable-next-line
-        // @ts-ignore
-        hint: CodeMirror.hint.json,
-        keyMap: this.userKeymap
-      } as CodeMirror.EditorConfiguration)
+      const language = this.findLanguage()
 
-      this.editor.setValue(this.content)
-      this.editor.on("keydown", (_cm, e) => {
-        if (this.$store.state.menuActive) {
-          e.preventDefault()
-        }
-      })
+      if (language) {
+        this.editor = CodeMirror.fromTextArea(this.$refs.editorRef, {
+          lineNumbers: true,
+          mode: {
+            name: "javascript",
+            json: true,
+            statementIndent: 2
+          },
+          indentWithTabs: false,
+          tabSize: 2,
+          theme: 'monokai',
+          extraKeys: {
+            "Ctrl-Space": "autocomplete",
+            "Shift-Tab": "indentLess",
+            [this.cmCtrlOrCmd('F')]: 'findPersistent',
+            [this.cmCtrlOrCmd('R')]: 'replace',
+            [this.cmCtrlOrCmd('Shift-R')]: 'replaceAll'
+          },
+          options: {
+            closeOnBlur: false
+          },
+          keyMap: this.userKeymap
+        } as CodeMirror.EditorConfiguration)
 
-      if (this.userKeymap === "vim") {
-        const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
-        if(!codeMirrorVimInstance) {
-          console.error("Could not find code mirror vim instance");
-        } else {
-          setKeybindingsFromVimrc(codeMirrorVimInstance);
+        this.editor.setValue(language.beautify(this.content))
+        this.editor.on("keydown", (_cm, e) => {
+          if (this.$store.state.menuActive) {
+            e.preventDefault()
+          }
+        })
+
+        if (this.userKeymap === "vim") {
+          const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
+          if(!codeMirrorVimInstance) {
+            console.error("Could not find code mirror vim instance");
+          } else {
+            setKeybindingsFromVimrc(codeMirrorVimInstance);
+          }
         }
+
+        this.editor.on("change", (cm) => {
+          this.$emit("updateContent", cm.getValue())
+        })
+
+        this.editor.focus()
+
+        setTimeout(() => {
+          // this fixes the editor not showing because it doesn't think it's dom element is in view.
+          // its a hit and miss error
+          this.editor.refresh()
+        }, 1)
       }
-
-      this.editor.on("change", (cm) => {
-        this.$emit("updateContent", cm.getValue())
-      })
-
-      this.editor.focus()
-
-      setTimeout(() => {
-        // this fixes the editor not showing because it doesn't think it's dom element is in view.
-        // its a hit and miss error
-        this.editor.refresh()
-      }, 1)
     },
 
 
     onClose() {
-      this.content = ""
-      this.cell = null
+      this.$emit("updateContent", "")
+      this.$emit("updateCell", null)
     },
   },
 
   computed: {
     modalName() {
-      return this.tabid ? `view-json-modal-${this.tabid}` : ""
+      return this.tabid ? `cell-editor-modal-${this.tabid}` : ""
     },
     userKeymap() {
       const value = this.settings?.keymap?.value;

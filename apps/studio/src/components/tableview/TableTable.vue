@@ -9,6 +9,7 @@
       :cell="modalCell"
       :content="modalContent"
       @updateContent="updateModalContent"
+      @updateCell="updateModalCell"
     />
 
     <template v-if="!table && initialized">
@@ -316,9 +317,6 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId']),
     ...mapGetters(['dialectData', 'dialect']),
-    hasSelectedText() {
-      return this.editor ? !!this.editor.getSelection() : false
-    },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
       const cols = this.tabulator.getColumns()
@@ -510,24 +508,10 @@ export default Vue.extend({
               const row = cell.getRow()
               const valueCell = row.getCell(column);
               const value = valueCell.getValue();
-              let parsed: null | Record<string,unknown> = null
 
-              try {
-                parsed = JSON.parse(value)
-
-              } catch (e) {
-                log.error("Invalid JSON", e)
-
-                this.$noty.error("Unable to open in the JSON editor, are you sure this value is valid JSON?")
-
-                return
-              }
-
-              if (parsed !== null) {
-                this.modalContent = JSON.stringify(parsed, null, 2)
-                this.modalCell = cell
-                this.$modal.show(`view-json-modal-${this.tab.id}`)
-              }
+              this.modalContent = value
+              this.modalCell = cell
+              this.$modal.show(`cell-editor-modal-${this.tab.id}`)
             }
           }
         },
@@ -851,6 +835,10 @@ export default Vue.extend({
   methods: {
     updateModalContent(newValue: string): void {
       this.modalContent = newValue
+    },
+
+    updateModalCell(newValue: unknown): void {
+      this.modalCell = newValue
     },
 
     getCleanSelectedRowData(cell) {
