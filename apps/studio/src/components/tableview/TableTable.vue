@@ -8,8 +8,10 @@
       :tabid="tab.id"
       :cell="modalCell"
       :content="modalContent"
+      :languageprop="modalLanguage"
       @updateContent="updateModalContent"
       @updateCell="updateModalCell"
+      @updateLanguage="updateModalLanguage"
     />
 
     <template v-if="!table && initialized">
@@ -261,6 +263,7 @@ import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
+import { Languages } from './languageData'
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
@@ -281,6 +284,7 @@ export default Vue.extend({
       // modal
       modalContent: "",
       modalCell: null,
+      modalLanguage: null,
 
       // table data
       data: null, // array of data
@@ -509,6 +513,20 @@ export default Vue.extend({
               const valueCell = row.getCell(column);
               const value = valueCell.getValue();
 
+              let foundLang: string | null = null
+              for (let i = 0; i < Languages.length; i++ ) {
+                const lang = Languages[i]
+
+                if (lang.isValid(value)) {
+                  foundLang = lang.name
+                }
+              }
+
+              if (!foundLang) {
+                this.$noty.error("Failed to find a matching language for your code")
+              }
+
+              this.modalLanguage = foundLang
               this.modalContent = value
               this.modalCell = cell
               this.$modal.show(`cell-editor-modal-${this.tab.id}`)
@@ -839,6 +857,10 @@ export default Vue.extend({
 
     updateModalCell(newValue: unknown): void {
       this.modalCell = newValue
+    },
+
+    updateModalLanguage(newValue: string): void {
+      this.modalLanguage = newValue
     },
 
     getCleanSelectedRowData(cell) {

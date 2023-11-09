@@ -17,6 +17,13 @@
             v-model="language"
           >
             <option
+              disabled
+              value="null"
+              v-if="language == null"
+            >
+              Select a language
+            </option>
+            <option
               v-for="(lang, idx) in languages"
               :key="idx"
               :value="lang.name"
@@ -77,7 +84,7 @@
     }
 
     .language-select {
-      width: 128px;
+      width: 150px;
 
       margin: 0;
     }
@@ -126,19 +133,18 @@ import 'codemirror/addon/search/searchcursor'
 import {Languages} from './languageData'
 
 export default Vue.extend({
-  props: ["tabid", "content", "cell"],
-  emits: ["updateContent", "updateCell"],
+  props: ["tabid", "content", "cell", "languageprop"],
+  emits: ["updateContent", "updateCell", "updateLanguage"],
 
   data() {
     return {
-      editor: null,
-      language: "json"
+      editor: null
     }
   },
 
   methods: {
-    findLanguage() {
-      const idx = Languages.findIndex((lang) => lang.name == this.language)
+    findLanguage(customValue?: string) {
+      const idx = Languages.findIndex((lang) => lang.name == (customValue ?? this.language))
 
       if (idx !== -1) {
         return Languages[idx]
@@ -176,65 +182,66 @@ export default Vue.extend({
 
     onOpen() {
       const language = this.findLanguage()
+      let content = this.content
 
       if (language) {
-        this.editor = CodeMirror.fromTextArea(this.$refs.editorRef, {
-          lineNumbers: true,
-          mode: {
-            name: "javascript",
-            json: true,
-            statementIndent: 2
-          },
-          indentWithTabs: false,
-          tabSize: 2,
-          theme: 'monokai',
-          extraKeys: {
-            "Ctrl-Space": "autocomplete",
-            "Shift-Tab": "indentLess",
-            [this.cmCtrlOrCmd('F')]: 'findPersistent',
-            [this.cmCtrlOrCmd('R')]: 'replace',
-            [this.cmCtrlOrCmd('Shift-R')]: 'replaceAll'
-          },
-          options: {
-            closeOnBlur: false
-          },
-          keyMap: this.userKeymap
-        } as CodeMirror.EditorConfiguration)
-
-        this.editor.setValue(language.beautify(this.content))
-        this.editor.on("keydown", (_cm, e) => {
-          if (this.$store.state.menuActive) {
-            e.preventDefault()
-          }
-        })
-
-        if (this.userKeymap === "vim") {
-          const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
-          if(!codeMirrorVimInstance) {
-            console.error("Could not find code mirror vim instance");
-          } else {
-            setKeybindingsFromVimrc(codeMirrorVimInstance);
-          }
-        }
-
-        this.editor.on("change", (cm) => {
-          this.$emit("updateContent", cm.getValue())
-        })
-
-        this.editor.focus()
-
-        setTimeout(() => {
-          // this fixes the editor not showing because it doesn't think it's dom element is in view.
-          // its a hit and miss error
-          this.editor.refresh()
-        }, 1)
+        content = language.beautify(content)
       }
+
+      this.editor = CodeMirror.fromTextArea(this.$refs.editorRef, {
+        lineNumbers: true,
+        mode: language !== null ? language.editorMode : undefined,
+        indentWithTabs: false,
+        tabSize: 2,
+        theme: 'monokai',
+        extraKeys: {
+          "Ctrl-Space": "autocomplete",
+          "Shift-Tab": "indentLess",
+          [this.cmCtrlOrCmd('F')]: 'findPersistent',
+          [this.cmCtrlOrCmd('R')]: 'replace',
+          [this.cmCtrlOrCmd('Shift-R')]: 'replaceAll'
+        },
+        options: {
+          closeOnBlur: false
+        },
+        keyMap: this.userKeymap
+      } as CodeMirror.EditorConfiguration)
+
+      this.editor.setValue(content)
+      this.editor.on("keydown", (_cm, e) => {
+        if (this.$store.state.menuActive) {
+          e.preventDefault()
+        }
+      })
+
+      if (this.userKeymap === "vim") {
+        const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
+        if(!codeMirrorVimInstance) {
+          console.error("Could not find code mirror vim instance");
+        } else {
+          setKeybindingsFromVimrc(codeMirrorVimInstance);
+        }
+      }
+
+      this.editor.on("change", (cm) => {
+        this.$emit("updateContent", cm.getValue())
+      })
+
+      this.editor.focus()
+
+      setTimeout(() => {
+        // this fixes the editor not showing because it doesn't think it's dom element is in view.
+        // its a hit and miss error
+        this.editor.refresh()
+      }, 1)
     },
 
 
     onClose() {
       this.$emit("updateContent", "")
       this.$emit("updateCell", null)
+      this.$emit("updateLanguage", null)
+      this.editor = null
     },
   },
 
@@ -248,6 +255,22 @@ export default Vue.extend({
     },
     languages() {
       return Languages
+    },
+    language: {
+      get() {
+        return this.languageprop
+      },
+      set(value) {
+        this.$emit('updateLanguage', value)
+
+        if (this.editor) {
+          const language = this.findLanguage(value)
+
+          if (language) {
+            this.editor.setOption("mode", language.editorMode)
+          }
+        }
+      }
     }
   }
 })

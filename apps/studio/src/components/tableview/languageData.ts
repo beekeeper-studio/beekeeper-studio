@@ -4,12 +4,18 @@ export interface LanguageData {
   minify: (beautified: string) => string;
   name: string;
   label: string;
+  editorMode: Record<string, unknown>;
 }
 
 export const Languages: LanguageData[] = [
   {
     name: "json",
     label: "JSON",
+    editorMode: {
+      name: "javascript",
+      json: true,
+      statementIndent: 2,
+    },
     isValid: (value: string) => {
       try {
         JSON.parse(value);
@@ -29,6 +35,9 @@ export const Languages: LanguageData[] = [
   {
     name: "html",
     label: "HTML",
+    editorMode: {
+      name: "html",
+    },
     isValid: (value: string) => {
       const parser = new DOMParser();
       const doc = parser.parseFromString(value, "text/xml");
