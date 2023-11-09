@@ -57,6 +57,8 @@
       </div>
     </div>
 
+    <x-progressbar v-show="tablesLoading" />
+
     <!-- Pinned Tables -->
     <div
       class="table-list pinned flex-col"
@@ -73,7 +75,6 @@
     <!-- Tables -->
     <hr v-show="pinnedEntities.length > 0"> <!-- Fake splitjs Gutter styling -->
 
-    <!-- v-if="!tablesLoading" -->
     <nav class="list-group flex-col" ref="tables">
       <div class="list-heading">
         <span class="sub">Entities</span>
@@ -127,19 +128,12 @@
         </div>
       </div>
 
-      <virtual-table-list v-show="!tablesLoading" />
-
-      <div
-        class="empty"
-        v-if="tablesLoading"
-      >
-        {{ tablesLoading }}
-      </div>
+      <virtual-table-list />
 
       <!-- TODO (gregory): Make the 'no tables div nicer' -->
       <div
         class="empty truncate"
-        v-else-if="!tables || tables.length === 0"
+        v-if="!tablesLoading && (!tables || tables.length === 0)"
       >
         There are no entities in<br> <span>{{ database }}</span>
       </div>

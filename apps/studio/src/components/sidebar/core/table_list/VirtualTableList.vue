@@ -12,6 +12,17 @@
 </template>
 
 <script lang="ts">
+/*
+
+In some cases, there are databases that have over 1000 tables or even much
+more. Without optimizing the table list, it can be very slow.
+
+This component will render the items that are visible. Items that are outside
+the viewport are destroyed. So all the states that need to be persistent
+should be stored here instead of the item component.
+
+*/
+
 import Vue from "vue";
 import { TableOrView, Routine } from "@/lib/db/models";
 import TableListContextMenus from "@/mixins/TableListContextMenus";
@@ -20,10 +31,11 @@ import VirtualList from "vue-virtual-scroll-list";
 import { AppEvent } from "@/common/AppEvent";
 import { mapGetters, mapState } from "vuex";
 import { PinnedEntity } from "@/common/appdb/models/PinnedEntity";
+import { entityId } from "@/common/utils";
 
 type Entity = TableOrView | Routine | string;
 
-type Item = SchemaItem | TableItem;
+type Item = SchemaItem | TableItem | RoutineItem;
 
 interface BaseItem {
   type: "schema" | "table" | "routine";
@@ -42,8 +54,15 @@ interface SchemaItem extends BaseItem {
 }
 
 interface TableItem extends BaseItem {
-  type: "table" | "routine";
-  entity: TableOrView | Routine;
+  type: "table";
+  entity: TableOrView;
+  parent: SchemaItem;
+  pinned: boolean;
+}
+
+interface RoutineItem extends BaseItem {
+  type: "routine";
+  entity: Routine;
   parent: SchemaItem;
   pinned: boolean;
 }
@@ -58,6 +77,7 @@ export default Vue.extend({
       itemComponent: ItemComponent,
       itemHeight: 22.8,
       keeps: 30,
+      expandedItems: [],
     };
   },
   methods: {
@@ -65,11 +85,12 @@ export default Vue.extend({
       const items = [] as Item[];
       const noFolder = this.schemaTables.length === 1;
       this.schemaTables.forEach((schema: any) => {
+        const key = entityId(schema.schema);
         const schemaItem: SchemaItem = {
           type: "schema",
-          key: schema.schema,
+          key,
           entity: schema.schema,
-          expanded: true,
+          expanded: this.expandedItems.includes(key),
           hidden: this.hiddenSchemas.includes(schema.schema),
           contextMenu: this.schemaMenuOptions,
           skipDisplay: noFolder,
@@ -77,11 +98,12 @@ export default Vue.extend({
         };
         items.push(schemaItem);
         schema.tables.forEach((table: TableOrView) => {
+          const key = entityId(schema.schema, table);
           items.push({
             type: "table",
-            key: `${schema.schema}.${table.name}.table`,
+            key,
             entity: table,
-            expanded: false,
+            expanded: this.expandedItems.includes(key),
             hidden: this.hiddenEntities.includes(table),
             contextMenu: this.tableMenuOptions,
             parent: schemaItem,
@@ -90,11 +112,12 @@ export default Vue.extend({
           });
         });
         schema.routines.forEach((routine: Routine) => {
+          const key = entityId(schema.schema, routine);
           items.push({
             entity: routine,
-            key: `${schema.schema}.${routine.name}.routine`,
+            key: key,
             type: "routine",
-            expanded: false,
+            expanded: this.expandedItems.includes(key),
             hidden: this.hiddenEntities.includes(routine),
             contextMenu: this.routineMenuOptions,
             parent: schemaItem,
@@ -114,7 +137,16 @@ export default Vue.extend({
       });
     },
     handleExpand(_: Event, item: Item) {
-      item.expanded = !item.expanded;
+      const expanded = !this.expandedItems.includes(item.key);
+      item.expanded = expanded;
+      if (expanded) {
+        this.expandedItems.push(item.key);
+      } else {
+        this.expandedItems.splice(this.expandedItems.indexOf(item.key), 1);
+      }
+      if (expanded && item.type === "table") {
+        this.$store.dispatch("updateTableColumns", item.entity);
+      }
       this.generateDisplayItems();
     },
     handlePin(_: Event, item: TableItem) {
@@ -171,6 +203,7 @@ export default Vue.extend({
       ];
     },
     ...mapGetters({
+      defaultSchema: "defaultSchema",
       schemaTables: "schemaTables",
       hiddenEntities: "hideEntities/databaseEntities",
       hiddenSchemas: "hideEntities/databaseSchemas",
@@ -184,6 +217,7 @@ export default Vue.extend({
     },
   },
   mounted() {
+    this.expandedItems = [entityId(this.defaultSchema)];
     this.registerHandlers(this.rootBindings);
     this.$nextTick(() => this.resizeObserver.observe(this.$refs.vList.$el));
   },
