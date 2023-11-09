@@ -36,7 +36,15 @@ export const Languages: LanguageData[] = [
     name: "html",
     label: "HTML",
     editorMode: {
-      name: "html",
+      name: "htmlmixed",
+      tags: {
+        style: [["type", /^text\/(x-)?scss$/, "text/x-scss"], [
+          null,
+          null,
+          "css",
+        ]],
+        custom: [[null, null, "customMode"]],
+      },
     },
     isValid: (value: string) => {
       const parser = new DOMParser();

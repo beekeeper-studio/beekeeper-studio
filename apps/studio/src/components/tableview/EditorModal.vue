@@ -114,6 +114,10 @@
     height: 100%;
 
     overflow-y: scroll;
+
+    .CodeMirror {
+      min-height: 128px;
+    }
   }
 }
 </style>
@@ -267,6 +271,7 @@ export default Vue.extend({
           const language = this.findLanguage(value)
 
           if (language) {
+            console.log(language.editorMode)
             this.editor.setOption("mode", language.editorMode)
           }
         }

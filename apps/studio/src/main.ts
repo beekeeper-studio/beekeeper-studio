@@ -23,6 +23,9 @@ import $ from 'jquery'
 
 import 'codemirror/mode/sql/sql'
 import 'codemirror/mode/javascript/javascript' // for json
+import 'codemirror/mode/htmlmixed/htmlmixed'
+import 'codemirror/mode/css/css'
+import 'codemirror/mode/xml/xml'
 import 'codemirror/mode/diff/diff'
 import './vendor/sql-hint'
 import './vendor/show-hint'
