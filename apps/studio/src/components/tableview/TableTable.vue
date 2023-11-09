@@ -7,23 +7,25 @@
     <portal to="modals">
       <modal
         :name="modalName"
-        class="beekeeper-modal vue-dialog"
+        class="beekeeper-modal vue-dialog json-dialog"
         v-show="active"
         @closed="onJsonModalClose"
         @opened="onJsonModalOpen"
       >
         <div class="dialog-content">
           <div class="dialog-c-title">
-           Editing Cell Content
+            Editing Cell Content
           </div>
 
-          <textarea
-            name="editor"
-            class="editor"
-            ref="editorRef"
-            cols="30"
-            rows="10"
-          />
+          <div class="codeArea">
+            <textarea
+              name="editor"
+              class="editor"
+              ref="editorRef"
+              cols="30"
+              rows="10"
+            />
+          </div>
         </div>
 
         <div class="vue-dialog-buttons">
@@ -263,11 +265,37 @@
   </div>
 </template>
 
-<style>
+<style lang="scss">
 .item-notice > span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.json-dialog {
+  .v--modal {
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden!important;
+  }
+
+  .dialog-content {
+    display: flex;
+    flex-direction: column;
+
+    height: 100%;
+    flex: 1!important;
+
+    overflow: hidden;
+  }
+
+  .codeArea {
+    flex: 1;
+    height: 100%;
+
+    overflow-y: scroll;
+  }
 }
 </style>
 
@@ -276,7 +304,6 @@ import Vue from 'vue'
 import Papa from 'papaparse'
 import pluralize from 'pluralize'
 import { TabulatorFull } from 'tabulator-tables'
-// import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
 import { FkLinkMixin } from '@/mixins/fk_click'
