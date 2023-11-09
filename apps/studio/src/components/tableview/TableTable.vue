@@ -14,7 +14,7 @@
       >
         <div class="dialog-content">
           <div class="dialog-c-title">
-            Viewing JSON
+           Editing Cell Content
           </div>
 
           <textarea
@@ -299,7 +299,6 @@ import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
-import Noty from 'noty'
 import CodeMirror from 'codemirror'
 import 'codemirror/addon/comment/comment'
 import 'codemirror/keymap/vim.js'
@@ -373,11 +372,6 @@ export default Vue.extend({
         const value = this.settings?.keymap?.value;
         return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
       },
-      set(value) {
-        if (value === this.keymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
-        this.$store.dispatch('settings/save', { key: 'keymap', value: value });
-        this.initialize();
-      }
     },
     hasSelectedText() {
       return this.editor ? !!this.editor.getSelection() : false
@@ -566,7 +560,7 @@ export default Vue.extend({
           }
         },
         {
-          label: `<x-menuitem><x-label>Edit row as JSON</x-label></x-menuitem>`,
+          label: `<x-menuitem><x-label>Edit cell in Editor</x-label></x-menuitem>`,
           disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell),
           action: (_e, cell) => {
             if (!this.isPrimaryKey(cell.getField()) && this.primaryKeys.length >= 1) {
@@ -580,17 +574,9 @@ export default Vue.extend({
                 parsed = JSON.parse(value)
 
               } catch (e) {
-                console.log("Invalid JSON", e)
+                log.error("Invalid JSON", e)
 
-                const notification = new Noty({
-                  text: "This row does not seem to be valid JSON",
-                  layout: "bottomRight",
-                  queue: "viewJson",
-                  timeout: 2000,
-                })
-
-                Noty.closeAll('viewJson')
-                notification.show()
+                this.$noty.error("Unable to open in the JSON editor, are you sure this value is valid JSON?")
 
                 return
               }
@@ -924,15 +910,7 @@ export default Vue.extend({
     copyCurrentJson() {
       this.$copyText(this.modalJsonContent)
 
-      const notification = new Noty({
-        text: "Copied the JSON data to your clipboard!",
-        layout: "bottomRight",
-        queue: "viewJson",
-        timeout: 2000,
-      })
-
-      Noty.closeAll('viewJson')
-      notification.show()
+      this.$noty.success("Copied the JSON data to your clipboard!")
     },
 
     onJsonModalClose() {
@@ -1003,17 +981,9 @@ export default Vue.extend({
         try {
           parsed = JSON.parse(this.modalJsonContent)
         } catch (e) {
-          console.log("Invalid JSON", e)
+          log.error("Invalid JSON", e)
 
-          const notification = new Noty({
-            text: "Failed to save JSON as it is invalid",
-            layout: "bottomRight",
-            queue: "viewJson",
-            timeout: 2000,
-          })
-
-          Noty.closeAll('viewJson')
-          notification.show()
+          this.$noty.error("Failed to save JSON as it is invalid")
 
           return
         }
@@ -1025,29 +995,13 @@ export default Vue.extend({
 
           this.currentJsonCell.setValue(saveData)
 
-          const notification = new Noty({
-            text: "Successfully saved the JSON data",
-            layout: "bottomRight",
-            queue: "viewJson",
-            timeout: 2000,
-          })
-
-          Noty.closeAll('viewJson')
-          notification.show()
+          this.$noty.success("Successfully saved the JSON data")
 
           return
         }
       }
 
-      const notification = new Noty({
-        text: "An unknown issue occured whilst trying to save your JSON data",
-        layout: "bottomRight",
-        queue: "viewJson",
-        timeout: 2000,
-      })
-
-      Noty.closeAll('viewJson')
-      notification.show()
+      this.$noty.error("An unknown issue occured whilst trying to save your JSON data")
     },
 
     getCleanSelectedRowData(cell) {
