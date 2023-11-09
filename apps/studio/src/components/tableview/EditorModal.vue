@@ -7,8 +7,23 @@
       @opened="onOpen"
     >
       <div class="dialog-content">
-        <div class="dialog-c-title">
-          Editing Cell Content
+        <div class="top">
+          <div class="dialog-c-title">
+            Editing Cell Content as
+          </div>
+
+          <select
+            class="form-control language-select"
+            v-model="language"
+          >
+            <option
+              v-for="(lang, idx) in languages"
+              :key="idx"
+              :value="lang.name"
+            >
+              {{ lang.label }}
+            </option>
+          </select>
         </div>
 
         <div class="codeArea">
@@ -49,11 +64,30 @@
 
 <style lang="scss">
 .editor-dialog {
+  .top {
+    display:flex;
+    flex-direction: row;
+    align-items: center;
+    column-gap: 16px;
+
+    padding-bottom: 1.5rem;
+
+    .dialog-c-title {
+      padding: 0!important;
+    }
+
+    .language-select {
+      width: 128px;
+
+      margin: 0;
+    }
+  }
+
   .v--modal {
     display: flex;
     flex-direction: column;
 
-    overflow: hidden!important;
+    overflow: hidden;
   }
 
   .dialog-content {
@@ -64,6 +98,8 @@
     flex: 1!important;
 
     overflow: hidden;
+
+    padding-bottom: 1.5rem!important;
   }
 
   .codeArea {
@@ -126,11 +162,12 @@ export default Vue.extend({
 
           this.cell.setValue(language.minify(this.content))
 
-          this.$noty.success("Successfully saved thedata")
+          this.$noty.success("Successfully saved the data")
 
           return
         } else {
           this.$noty.error("The data you are trying to save does not seem to be valid")
+          return
         }
       }
 
@@ -209,6 +246,9 @@ export default Vue.extend({
       const value = this.settings?.keymap?.value;
       return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
     },
+    languages() {
+      return Languages
+    }
   }
 })
 </script>

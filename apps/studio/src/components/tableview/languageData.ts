@@ -3,11 +3,13 @@ export interface LanguageData {
   beautify: (raw: string) => string;
   minify: (beautified: string) => string;
   name: string;
+  label: string;
 }
 
 export const Languages: LanguageData[] = [
   {
     name: "json",
+    label: "JSON",
     isValid: (value: string) => {
       try {
         JSON.parse(value);
@@ -22,6 +24,57 @@ export const Languages: LanguageData[] = [
     },
     minify: (value: string) => {
       return JSON.stringify(JSON.parse(value));
+    },
+  },
+  {
+    name: "html",
+    label: "HTML",
+    isValid: (value: string) => {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(value, "text/xml");
+      if (doc.documentElement.querySelector("parsererror")) {
+        return false;
+      } else {
+        return true;
+      }
+    },
+    beautify: (value: string) => {
+      // credits: https://jsfiddle.net/buksy/rxucg1gd/
+      const whitespace = " ".repeat(4);
+      let currentIndent = 0;
+      let char = null;
+      let nextChar = null;
+
+      let result = "";
+      for (let pos = 0; pos <= value.length; pos++) {
+        char = value.substr(pos, 1);
+        nextChar = value.substr(pos + 1, 1);
+
+        if (char === "<" && nextChar !== "/") {
+          result += "\n" + whitespace.repeat(currentIndent);
+          currentIndent++;
+        } else if (char === "<" && nextChar === "/") {
+          if (--currentIndent < 0) {
+            currentIndent = 0;
+          }
+          result += "\n" + whitespace.repeat(currentIndent);
+        } else if (char === " " && nextChar === " ") {
+          char = "";
+        } else if (char === "\n") {
+          if (value.substr(pos, value.substr(pos).indexOf("<")).trim() === "") {
+            char = "";
+          }
+        }
+
+        result += char;
+      }
+
+      return result;
+    },
+    minify: (value: string) => {
+      return value
+        .replace(/<!--\s*?[^\s?[][\s\S]*?-->/g, "")
+        .replace(/>\s*</g, "><");
     },
   },
 ];
