@@ -25,6 +25,9 @@
     }
   }
 }
+.actions:not(.pinned) .btn-fab .unpin {
+  display: none;
+}
 .table-list {
   .list-group {
     min-height: 105px;
@@ -42,9 +45,6 @@
         overflow: hidden;
       }
     }
-  }
-  .list-body {
-    padding-bottom: $gutter-w;
   }
   .empty {
     padding-top: $gutter-w;

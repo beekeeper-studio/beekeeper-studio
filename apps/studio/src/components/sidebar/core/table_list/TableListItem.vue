@@ -252,11 +252,10 @@ export default {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
     },
     pin() {
-      this.$store.dispatch('pins/add', this.table)
-      this.$store.dispatch('updateTableColumns', this.table)
+      this.trigger(AppEvent.togglePinTableList, this.table, true);
     },
     unpin() {
-      this.$store.dispatch('pins/remove', this.table)
+      this.trigger(AppEvent.togglePinTableList, this.table, false);
     }
   }
 }

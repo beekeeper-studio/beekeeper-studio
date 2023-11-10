@@ -16,7 +16,7 @@ export default {
           name: "Hide",
           slug: 'hide-entity',
           handler: ({ item }) => {
-            this.$root.$emit(AppEvent.hideEntity, item)
+            this.trigger(AppEvent.toggleHideEntity, item, true)
           }
         },
         {
@@ -82,7 +82,7 @@ export default {
           name: "Hide",
           slug: 'hide-entity',
           handler: ({ item }) => {
-            this.$root.$emit(AppEvent.hideEntity, item)
+            this.trigger(AppEvent.toggleHideEntity, item, true)
           }
         },
 
@@ -130,14 +130,13 @@ export default {
           name: "Hide",
           slug: 'hide-schema',
           handler: ({ item }) => {
-            this.$root.$emit(AppEvent.hideSchema, item.schema)
+            this.trigger(AppEvent.toggleHideSchema, item, true)
           },
         },
         {
           name: "Drop",
           slug: 'sql-drop',
           handler: ({ item }) => {
-            console.log("Drop?")
             this.$root.$emit(AppEvent.dropDatabaseElement, {item, action: 'drop'})
           }
         },
