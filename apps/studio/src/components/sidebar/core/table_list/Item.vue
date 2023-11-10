@@ -20,6 +20,7 @@
     :expanded="source.expanded"
     :table="source.entity"
     :pinned="source.pinned"
+    :loadingColumns="source.loadingColumns"
     @expand="onExpand($event, source)"
     @pin="onPin($event, source)"
     @contextmenu.prevent.stop="

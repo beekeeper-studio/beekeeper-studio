@@ -46,7 +46,7 @@
       </span>
     </a>
     <div v-if="expanded" class="sub-items">
-      <span class="sub-item" v-if="!columnsLoading && !table.columns?.length">
+      <span class="sub-item" v-if="!loadingColumns && !table.columns?.length">
         No Columns
       </span>
       <template v-else-if="table.columns?.length > 0">
@@ -64,7 +64,7 @@
         </span>
       </template>
       <span class="sub-item" v-else>
-        {{ columnsLoading }}
+        Loading columns...
       </span>
     </div>
   </div>
@@ -110,6 +110,7 @@ export default Vue.extend({
     "draggable",
     "level",
     "expanded",
+    "loadingColumns",
   ],
   components: { TableIcon },
   data() {
@@ -152,7 +153,7 @@ export default Vue.extend({
       return tableSelected;
     },
     ...mapGetters(["selectedSidebarItem"]),
-    ...mapState(["activeTab", "columnsLoading"]),
+    ...mapState(["activeTab"]),
   },
   methods: {
     selectItem() {

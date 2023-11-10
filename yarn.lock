@@ -13713,6 +13713,11 @@ scmp@2.0.0:
   resolved "https://registry.yarnpkg.com/scmp/-/scmp-2.0.0.tgz#247110ef22ccf897b13a3f0abddb52782393cd6a"
   integrity sha512-FaHoAk75AYhT+rnBmMpkvHSIcQma4OHzYXOhn1XXtgNomi0FTV8YEXYuh2EIdCg5IKMVyFbXeJT4Cn96+fzABg==
 
+scrollyfills@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/scrollyfills/-/scrollyfills-1.0.0.tgz#2990faeb80eea2071ee317b362dccd1d6d805f4c"
+  integrity sha512-2Wwwgx5KoAqhmix+q3/HzcJfZm42k5XOcXcXu5L6vsEDxeCcorbSMshZtwQQxqGeowWf3/8RSGVswmwqOB+utw==
+
 scss-tokenizer@^0.2.3:
   version "0.2.3"
   resolved "https://registry.yarnpkg.com/scss-tokenizer/-/scss-tokenizer-0.2.3.tgz#8eb06db9a9723333824d3f5530641149847ce5d1"

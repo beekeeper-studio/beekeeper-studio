@@ -32,6 +32,7 @@ import { AppEvent } from "@/common/AppEvent";
 import { mapGetters, mapState } from "vuex";
 import { PinnedEntity } from "@/common/appdb/models/PinnedEntity";
 import { entityId } from "@/common/utils";
+import "scrollyfills";
 
 type Entity = TableOrView | Routine | string;
 
@@ -58,6 +59,7 @@ interface TableItem extends BaseItem {
   entity: TableOrView;
   parent: SchemaItem;
   pinned: boolean;
+  loadingColumns: boolean;
 }
 
 interface RoutineItem extends BaseItem {
@@ -77,7 +79,7 @@ export default Vue.extend({
       itemComponent: ItemComponent,
       itemHeight: 22.8,
       keeps: 30,
-      expandedItems: [],
+      generated: false,
     };
   },
   methods: {
@@ -90,7 +92,11 @@ export default Vue.extend({
           type: "schema",
           key,
           entity: schema.schema,
-          expanded: this.expandedItems.includes(key),
+          expanded: !this.generated
+            ? this.defaultSchema === schema.schema
+            : this.items.findIndex(
+                (item: Item) => item.key === key && item.expanded
+              ) >= 0,
           hidden: this.hiddenSchemas.includes(schema.schema),
           contextMenu: this.schemaMenuOptions,
           skipDisplay: noFolder,
@@ -103,21 +109,26 @@ export default Vue.extend({
             type: "table",
             key,
             entity: table,
-            expanded: this.expandedItems.includes(key),
+            expanded: this.items.findIndex(
+              (item: Item) => item.key === key && item.expanded
+            ) >= 0,
             hidden: this.hiddenEntities.includes(table),
             contextMenu: this.tableMenuOptions,
             parent: schemaItem,
             level: noFolder ? 0 : 1,
             pinned: this.pins.find((pin: PinnedEntity) => pin.entity === table),
+            loadingColumns: false,
           });
         });
         schema.routines.forEach((routine: Routine) => {
           const key = entityId(schema.schema, routine);
           items.push({
             entity: routine,
-            key: key,
+            key,
             type: "routine",
-            expanded: this.expandedItems.includes(key),
+            expanded: this.items.findIndex(
+              (item: Item) => item.key === key && item.expanded
+            ) >= 0,
             hidden: this.hiddenEntities.includes(routine),
             contextMenu: this.routineMenuOptions,
             parent: schemaItem,
@@ -129,6 +140,7 @@ export default Vue.extend({
         });
       });
       this.items = items;
+      this.generated = true;
     },
     generateDisplayItems() {
       this.displayItems = this.items.filter((item: Item) => {
@@ -136,16 +148,35 @@ export default Vue.extend({
         return !item.hidden && !item.parent.hidden && item.parent.expanded;
       });
     },
-    handleExpand(_: Event, item: Item) {
-      const expanded = !this.expandedItems.includes(item.key);
-      item.expanded = expanded;
-      if (expanded) {
-        this.expandedItems.push(item.key);
-      } else {
-        this.expandedItems.splice(this.expandedItems.indexOf(item.key), 1);
+    updateTableColumnsInRange(whenEmpty = false) {
+      const range = this.$refs.vList.range;
+
+      const visibleItems: Item[] = this.displayItems.slice(
+        range.start,
+        range.end + 1
+      );
+
+      for (const item of visibleItems) {
+        if (!item.expanded) continue;
+        if (item.type !== "table") continue;
+        if (whenEmpty && item.entity.columns?.length) continue;
+        if (item.loadingColumns) continue;
+
+        item.loadingColumns = true
+        this.$nextTick(async () => {
+          await this.$store.dispatch("updateTableColumns", item.entity);
+          item.loadingColumns = false
+        })
       }
-      if (expanded && item.type === "table") {
-        this.$store.dispatch("updateTableColumns", item.entity);
+    },
+    handleExpand(_: Event, item: Item) {
+      item.expanded = !item.expanded;
+      if (item.expanded && item.type === "table") {
+        item.loadingColumns = true
+        this.$nextTick(async () => {
+          await this.$store.dispatch("updateTableColumns", item.entity);
+          item.loadingColumns = false
+        })
       }
       this.generateDisplayItems();
     },
@@ -163,7 +194,7 @@ export default Vue.extend({
       item.hidden = hidden;
       this.generateDisplayItems();
     },
-    handleToggleExpanded(expand?: boolean) {
+    handleToggleExpandedAll(expand?: boolean) {
       if (typeof expand === "undefined") {
         expand = false;
       }
@@ -171,6 +202,11 @@ export default Vue.extend({
         item.expanded = expand;
       });
       this.generateDisplayItems();
+      if (expand) {
+        this.$nextTick(() => {
+          this.updateTableColumnsInRange();
+        })
+      }
     },
     handleTogglePinned(entity: Entity, pinned?: boolean) {
       const item = this.items.find((item: Item) => item.entity === entity);
@@ -178,6 +214,9 @@ export default Vue.extend({
         pinned = !item.pinned;
       }
       item.pinned = !item.pinned;
+    },
+    handleScrollEnd() {
+      this.updateTableColumnsInRange(true);
     },
   },
   computed: {
@@ -194,7 +233,7 @@ export default Vue.extend({
         { event: AppEvent.toggleHideEntity, handler: this.handleToggleHidden },
         {
           event: AppEvent.toggleExpandTableList,
-          handler: this.handleToggleExpanded,
+          handler: this.handleToggleExpandedAll,
         },
         {
           event: AppEvent.togglePinTableList,
@@ -217,13 +256,14 @@ export default Vue.extend({
     },
   },
   mounted() {
-    this.expandedItems = [entityId(this.defaultSchema)];
     this.registerHandlers(this.rootBindings);
     this.$nextTick(() => this.resizeObserver.observe(this.$refs.vList.$el));
+    this.$refs.vList.$el.addEventListener("scrollend", this.handleScrollEnd);
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings);
     this.resizeObserver.disconnect();
+    this.$refs.vList.$el.removeEventListener("scrollend", this.handleScrollEnd);
   },
 });
 </script>

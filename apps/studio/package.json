@@ -64,6 +64,7 @@
     "query-string": "^7.0.0",
     "reflect-metadata": "^0.1.10",
     "sass-loader": "^10.1.1",
+    "scrollyfills": "^1.0.0",
     "simple-encryptor": "^3.0.0",
     "split.js": "^1.5.11",
     "sql-formatter": "~10.7.2",

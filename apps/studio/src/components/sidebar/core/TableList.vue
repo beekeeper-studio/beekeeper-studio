@@ -57,7 +57,7 @@
       </div>
     </div>
 
-    <x-progressbar v-show="tablesLoading" />
+    <x-progressbar v-show="tablesLoading" style="margin-top: -5px;" />
 
     <!-- Pinned Tables -->
     <div
