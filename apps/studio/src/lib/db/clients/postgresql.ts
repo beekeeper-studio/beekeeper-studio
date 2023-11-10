@@ -1525,11 +1525,11 @@ export async function getTableCreateScript(conn: HasPool, table: string, schema:
 }
 
 export async function getViewCreateScript(conn: Conn, view: string, schema: string) {
-  const createViewSql = `CREATE OR REPLACE VIEW ${wrapIdentifier(schema)}.${view} AS`;
+  const createViewSql = `CREATE OR REPLACE VIEW ${wrapIdentifier(schema)}.${wrapIdentifier(view)} AS`;
 
   const sql = 'SELECT pg_get_viewdef($1::regclass, true)';
 
-  const params = [view];
+  const params = [wrapIdentifier(view)];
 
   const data = await driverExecuteSingle(conn, { query: sql, params });
 
