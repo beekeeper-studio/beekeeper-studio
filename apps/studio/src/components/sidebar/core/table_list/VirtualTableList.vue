@@ -5,7 +5,7 @@
     :data-key="'key'"
     :data-sources="displayItems"
     :data-component="itemComponent"
-    :estimate-size="itemHeight"
+    :estimate-size="estimateItemHeight"
     :keeps="keeps"
     :extra-props="{ onExpand: handleExpand, onPin: handlePin }"
   ></virtual-list>
@@ -39,34 +39,39 @@ type Entity = TableOrView | Routine | string;
 type Item = SchemaItem | TableItem | RoutineItem;
 
 interface BaseItem {
-  type: "schema" | "table" | "routine";
+  type: "schema" | "table" | "routine" | "root";
   entity: Entity;
   key: string;
   expanded: boolean;
   hidden: boolean;
   contextMenu: any[];
   level: number;
+  parent?: BaseItem;
+  pinned: boolean;
+}
+
+interface RootItem extends BaseItem {
+  type: "root";
+  entity: string;
 }
 
 interface SchemaItem extends BaseItem {
   type: "schema";
   entity: string;
-  skipDisplay: boolean;
+  parent: BaseItem;
 }
 
 interface TableItem extends BaseItem {
   type: "table";
   entity: TableOrView;
-  parent: SchemaItem;
-  pinned: boolean;
+  parent: BaseItem;
   loadingColumns: boolean;
 }
 
 interface RoutineItem extends BaseItem {
   type: "routine";
   entity: Routine;
-  parent: SchemaItem;
-  pinned: boolean;
+  parent: BaseItem;
 }
 
 export default Vue.extend({
@@ -77,7 +82,7 @@ export default Vue.extend({
       items: [],
       displayItems: [],
       itemComponent: ItemComponent,
-      itemHeight: 22.8, // height of collapsed item
+      estimateItemHeight: 22.8, // height of collapsed item
       keeps: 30,
       generated: false,
     };
@@ -86,23 +91,43 @@ export default Vue.extend({
     generateItems() {
       const items = [] as Item[];
       const noFolder = this.schemaTables.length === 1;
+      const root: RootItem = {
+        type: "root",
+        entity: "",
+        key: "",
+        expanded: true,
+        hidden: false,
+        contextMenu: [],
+        level: 0,
+        pinned: false,
+      };
+
       this.schemaTables.forEach((schema: any) => {
-        const key = entityId(schema.schema);
-        const schemaItem: SchemaItem = {
-          type: "schema",
-          key,
-          entity: schema.schema,
-          expanded: !this.generated
-            ? this.defaultSchema === schema.schema
-            : this.items.findIndex(
-                (item: Item) => item.key === key && item.expanded
-              ) >= 0,
-          hidden: this.hiddenSchemas.includes(schema.schema),
-          contextMenu: this.schemaMenuOptions,
-          skipDisplay: noFolder,
-          level: 0,
-        };
-        items.push(schemaItem);
+        let parent: BaseItem;
+
+        if (noFolder) {
+          parent = root;
+        } else {
+          const key = entityId(schema.schema);
+          const schemaItem: SchemaItem = {
+            type: "schema",
+            key,
+            entity: schema.schema,
+            expanded: !this.generated
+              ? this.defaultSchema === schema.schema
+              : this.items.findIndex(
+                  (item: Item) => item.key === key && item.expanded
+                ) >= 0,
+            hidden: this.hiddenSchemas.includes(schema.schema),
+            contextMenu: this.schemaMenuOptions,
+            parent: root,
+            level: 0,
+            pinned: false,
+          };
+          items.push(schemaItem);
+          parent = schemaItem;
+        }
+
         schema.tables.forEach((table: TableOrView) => {
           const key = entityId(schema.schema, table);
           items.push({
@@ -115,12 +140,13 @@ export default Vue.extend({
               ) >= 0,
             hidden: this.hiddenEntities.includes(table),
             contextMenu: this.tableMenuOptions,
-            parent: schemaItem,
+            parent,
             level: noFolder ? 0 : 1,
             pinned: this.pins.find((pin: PinnedEntity) => pin.entity === table),
             loadingColumns: false,
           });
         });
+
         schema.routines.forEach((routine: Routine) => {
           const key = entityId(schema.schema, routine);
           items.push({
@@ -133,7 +159,7 @@ export default Vue.extend({
               ) >= 0,
             hidden: this.hiddenEntities.includes(routine),
             contextMenu: this.routineMenuOptions,
-            parent: schemaItem,
+            parent,
             level: noFolder ? 0 : 1,
             pinned: this.pins.find(
               (pin: PinnedEntity) => pin.entity === routine
@@ -141,14 +167,37 @@ export default Vue.extend({
           });
         });
       });
+
       this.items = items;
       this.generated = true;
     },
     generateDisplayItems() {
-      this.displayItems = this.items.filter((item: Item) => {
-        if (item.type === "schema") return !item.hidden && !item.skipDisplay;
-        return !item.hidden && !item.parent.hidden && item.parent.expanded;
-      });
+      let totalHeight = 0;
+      const displayItems: Item[] = [];
+      const items: Item[] = this.items;
+
+      for (const item of items) {
+        if (!item.hidden && !item.parent.hidden && item.parent.expanded) {
+          displayItems.push(item);
+
+          // Summarizing the total height of all list items to get the average height
+
+          totalHeight += 22.8; // height of list item
+
+          if (item.expanded) {
+            if (item.type === "table") {
+              const cols = item.entity.columns?.length ?? 1;
+              totalHeight += cols * 20.29; // plus column height when expanded
+            } else if (item.type === "routine") {
+              const params = item.entity.routineParams?.length ?? 0;
+              totalHeight += params * 20.29;
+            }
+          }
+        }
+      }
+
+      this.estimateItemHeight = totalHeight / displayItems.length;
+      this.displayItems = displayItems;
     },
     loadColumns(item: TableItem) {
       item.loadingColumns = true;
@@ -221,7 +270,7 @@ export default Vue.extend({
     resizeObserver() {
       return new ResizeObserver(() => {
         const vListHeight = this.$refs.vList.$el.clientHeight;
-        const minKeeps = Math.ceil(vListHeight / this.itemHeight);
+        const minKeeps = Math.ceil(vListHeight / this.estimateItemHeight);
         this.keeps = Math.max(30, Math.ceil(minKeeps * 1.3));
       });
     },
