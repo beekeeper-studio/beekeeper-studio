@@ -77,7 +77,7 @@ export default Vue.extend({
       items: [],
       displayItems: [],
       itemComponent: ItemComponent,
-      itemHeight: 22.8,
+      itemHeight: 22.8, // height of collapsed item
       keeps: 30,
       generated: false,
     };
@@ -109,9 +109,10 @@ export default Vue.extend({
             type: "table",
             key,
             entity: table,
-            expanded: this.items.findIndex(
-              (item: Item) => item.key === key && item.expanded
-            ) >= 0,
+            expanded:
+              this.items.findIndex(
+                (item: Item) => item.key === key && item.expanded
+              ) >= 0,
             hidden: this.hiddenEntities.includes(table),
             contextMenu: this.tableMenuOptions,
             parent: schemaItem,
@@ -126,9 +127,10 @@ export default Vue.extend({
             entity: routine,
             key,
             type: "routine",
-            expanded: this.items.findIndex(
-              (item: Item) => item.key === key && item.expanded
-            ) >= 0,
+            expanded:
+              this.items.findIndex(
+                (item: Item) => item.key === key && item.expanded
+              ) >= 0,
             hidden: this.hiddenEntities.includes(routine),
             contextMenu: this.routineMenuOptions,
             parent: schemaItem,
@@ -148,35 +150,31 @@ export default Vue.extend({
         return !item.hidden && !item.parent.hidden && item.parent.expanded;
       });
     },
+    loadColumns(item: TableItem) {
+      item.loadingColumns = true;
+      this.$nextTick(() => {
+        this.$store.dispatch("updateTableColumns", item.entity).finally(() => {
+          item.loadingColumns = false;
+        });
+      });
+    },
     updateTableColumnsInRange(whenEmpty = false) {
       const range = this.$refs.vList.range;
 
-      const visibleItems: Item[] = this.displayItems.slice(
-        range.start,
-        range.end + 1
-      );
-
-      for (const item of visibleItems) {
+      for (let i = range.start; i < range.end + 1; i++) {
+        const item = this.displayItems[i];
         if (!item.expanded) continue;
         if (item.type !== "table") continue;
         if (whenEmpty && item.entity.columns?.length) continue;
         if (item.loadingColumns) continue;
 
-        item.loadingColumns = true
-        this.$nextTick(async () => {
-          await this.$store.dispatch("updateTableColumns", item.entity);
-          item.loadingColumns = false
-        })
+        this.loadColumns(item);
       }
     },
     handleExpand(_: Event, item: Item) {
       item.expanded = !item.expanded;
       if (item.expanded && item.type === "table") {
-        item.loadingColumns = true
-        this.$nextTick(async () => {
-          await this.$store.dispatch("updateTableColumns", item.entity);
-          item.loadingColumns = false
-        })
+        this.loadColumns(item);
       }
       this.generateDisplayItems();
     },
@@ -205,7 +203,7 @@ export default Vue.extend({
       if (expand) {
         this.$nextTick(() => {
           this.updateTableColumnsInRange();
-        })
+        });
       }
     },
     handleTogglePinned(entity: Entity, pinned?: boolean) {
