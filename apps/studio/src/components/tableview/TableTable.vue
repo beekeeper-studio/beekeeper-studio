@@ -253,7 +253,6 @@ import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
-import DateTimeEditorVue from '@shared/components/tabulator/DateTimeEditor.vue';
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;

@@ -2,12 +2,12 @@
   <div>
     <date-picker
       v-if="this.typeEditorActive && this.isDateTime"
-      :type="this.datePickerType"
+      :type="datePickerType"
       :clearable="false"
       :confirm="true"
       :default-value="this.datePickerStarter"
-      :open="true"
-      ref="input"
+      :open.sync="typeEditorActive"
+      ref="datepicker"
       v-model="value"
       prefix-class="bkdates"
       confirm-text="click to confirm new selection"
@@ -57,12 +57,12 @@ export default Vue.extend({
   computed: {
     typeEditorTitle() {
       if (this.typeEditorActive) return 'Use standard input'
-      if (this.isDateTime) return 'Open date/time picker' 
+      if (helpers.isDateTime(this.params.dataType)) return 'Open date/time picker' 
       return ''
     },
     typeEditorIcon() {
       if (this.typeEditorActive) return 'edit'
-      if (this.isDateTime) return 'edit_calendar' 
+      if (helpers.isDateTime(this.params.dataType)) return 'edit_calendar' 
       return ''
     },
     smartPlaceholder() {
@@ -99,30 +99,11 @@ export default Vue.extend({
         
         return new Date(`2023-03-31T${dataValue}`)
       }
-      console.log('thingerjigger', dataValue, dataValue !== '' ? new Date(dataValue) : dataValue)
 
       return dataValue !== '' ? new Date(dataValue) : dataValue
     },
     isDateTime() {
-      return this.params.dataType?.search(/(date|time)/i) > -1 && this.params.dataType?.toLowerCase() !== 'daterange'
-      /*
-        [
-          'date',
-          'datetime',
-          'time',
-          'timestamp',
-          'timetz',
-          'timestamptz',
-          'timestamp without time zone',
-          'timestamp with time zone',
-          'time without time zone',
-          'time with time zone',
-          'daterange',
-          'datetime2',
-          'datetimeoffset',
-          'smalldatetime'
-        ]
-      */
+      return helpers.isDateTime(this.params.dataType)
     }
   },
   methods: {
@@ -161,10 +142,10 @@ export default Vue.extend({
       }
     },
     submit(e) {
-      // some cases we always want null, never empty string
-      console.log('submit called!', e.currentTarget, e, this.typeEditorActive)
+      // if the typeEditor is active and you blur, don't submit anything
       if (e.type === 'blur' && this.typeEditorActive) return false
 
+      // some cases we always want null, never empty string
       if (this.params.allowEmpty === false && _.isEmpty(this.value)) {
         this.$emit('value', null)
       } else if (this.params.preserveObject) {
@@ -186,9 +167,10 @@ export default Vue.extend({
     }
   },
   watch: {
+    // have to figure out how to set the typeEditorActive to false on focusOut of the component
     rendered() {
       if (this.rendered) {
-        this.value = this.cell.getValue() === null ? null : helpers.niceString(this.cell.getValue())
+        this.value = _.isNil(this.cell.getValue()) ? this.cell.getValue() : helpers.niceString(this.cell.getValue())
         this.$nextTick(() => {
           this.$refs.input.focus();
           if (this.params.autoSelect) {
@@ -204,6 +186,7 @@ export default Vue.extend({
   },
   beforeDestroy() {
     // add some logging here if you wanna check there's no memory leak
+    this.typeEditorActive = false
   }
 })
 </script>
