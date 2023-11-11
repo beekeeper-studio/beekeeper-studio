@@ -121,6 +121,7 @@
 
 <script lang="ts">
   import TableIcon from '@/components/common/TableIcon.vue'
+  import { AppEvent } from "@/common/AppEvent"
 
   export default {
     props: ['hiddenEntities', 'hiddenSchemas'],
@@ -146,13 +147,13 @@
         this.entities = [...this.hiddenEntities]
         this.schemas = [...this.hiddenSchemas]
       },
-      unhideSchema(index: number) { 
+      unhideSchema(index: number) {
         const [schema] = this.schemas.splice(index, 1)
-        this.$store.dispatch('hideEntities/removeSchema', schema)
+        this.trigger(AppEvent.toggleHideSchema, schema, false)
       },
       unhideEntity(index: number) {
         const [entity] = this.entities.splice(index, 1)
-        this.$store.dispatch('hideEntities/removeEntity', entity)
+        this.trigger(AppEvent.toggleHideEntity, entity, false)
       },
       closeModal() {
         this.$modal.hide(this.modalName)

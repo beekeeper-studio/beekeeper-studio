@@ -298,6 +298,7 @@ export default Vue.extend({
       internalColumnPrefix: "__beekeeper_internal_",
       internalIndexColumn: "__beekeeper_internal_index",
       selectedCell: null,
+      editingCell: false,
       mouseDownHandle: null,
       lastMouseOverRow: null,
     };
@@ -345,8 +346,12 @@ export default Vue.extend({
       if (!this.active) return {}
       const result = {}
       result['f5'] = this.refreshTable.bind(this)
-      result[this.ctrlOrCmd('right')] = () => this.page = this.page + 1
-      result[this.ctrlOrCmd('left')] = () => this.page = this.page - 1
+      result[this.ctrlOrCmd('right')] = () => {
+        if (!this.editingCell) this.page++
+      }
+      result[this.ctrlOrCmd('left')] = () => {
+        if (!this.editingCell) this.page--
+      }
       result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
@@ -640,7 +645,12 @@ export default Vue.extend({
           headerContextMenu: this.headerContextMenu,
           variableHeight: true,
           headerTooltip: headerTooltip,
-          cellEditCancelled: cell => cell.getRow().normalizeHeight(),
+          cellEditing: () => this.editingCell = true,
+          cellEdited: () => this.editingCell = false,
+          cellEditCancelled: (cell) => {
+            this.editingCell = false
+            cell.getRow().normalizeHeight()
+          },
           formatter: this.cellFormatter,
           editorParams: {
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
