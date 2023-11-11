@@ -458,7 +458,7 @@ export default Vue.extend({
             const tableInsert = {
               table: this.table.name,
               schema: this.table.schema,
-              data: this.removeAutoColumns(fixed),
+              data: this.parseSqlCopyData(fixed),
             }
             const query = await this.connection.getInsertQuery(tableInsert)
             this.$native.clipboard.writeText(query)
@@ -824,10 +824,16 @@ export default Vue.extend({
       })
       return clean;
     },
-    checkExtra(extra) {
-      return extra.includes("auto_increment")
+    shouldColumnBeIncludedInCopy(column) {
+      if (!column.extra) {
+        return true
+      }
+
+      const extra = column.extra.toLowerCase()
+
+      return !extra.includes("auto_increment")
     },
-    removeAutoColumns(data) {
+    parseSqlCopyData(data) {
       for (let i = 0; i < data.length; i++) {
         const columns = data[i]
 
@@ -837,7 +843,7 @@ export default Vue.extend({
           if (columnIdx !== -1) {
             const column = this.table.columns[columnIdx]
 
-            if (column.extra !== null && this.checkExtra(column.extra.toLowerCase()) == true) {
+            if (this.shouldColumnBeIncludedInCopy(column) == false) {
               delete data[i][key]
             }
           }
