@@ -186,7 +186,6 @@ export default Vue.extend({
   },
   beforeDestroy() {
     // add some logging here if you wanna check there's no memory leak
-    this.typeEditorActive = false
   }
 })
 </script>
