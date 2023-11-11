@@ -453,13 +453,12 @@ export default Vue.extend({
         {
           label: '<x-menuitem><x-label>Copy row(s) as SQL</x-label></x-menuitem>',
           action: async (_e, cell) => {
-
             const fixed = this.getCleanSelectedRowData(cell)
 
             const tableInsert = {
               table: this.table.name,
               schema: this.table.schema,
-              data: fixed,
+              data: this.removeAutoColumns(fixed),
             }
             const query = await this.connection.getInsertQuery(tableInsert)
             this.$native.clipboard.writeText(query)
@@ -824,6 +823,28 @@ export default Vue.extend({
         return this.$bks.cleanData(m, this.tableColumns)
       })
       return clean;
+    },
+    checkExtra(extra) {
+      return extra.includes("auto_increment")
+    },
+    removeAutoColumns(data) {
+      for (let i = 0; i < data.length; i++) {
+        const columns = data[i]
+
+        for (const key in columns) {
+          const columnIdx = this.table.columns.findIndex((col) => col.columnName == key)
+
+          if (columnIdx !== -1) {
+            const column = this.table.columns[columnIdx]
+
+            if (column.extra !== null && this.checkExtra(column.extra.toLowerCase()) == true) {
+              delete data[i][key]
+            }
+          }
+        }
+      }
+
+      return data
     },
     unselectStuff() {
       this.tabulator.deselectRow()
