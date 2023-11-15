@@ -2,7 +2,7 @@ import { GenericContainer, StartedTestContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/client'
-import { TableInsert } from '../../../../../src/lib/db/models'
+import { TableInsert, TableUpdate } from '../../../../../src/lib/db/models'
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
@@ -119,6 +119,15 @@ function testWith(dockerTag, socket = false) {
           CREATE TABLE "1234"."5678" (
             "id" SERIAL PRIMARY KEY,
             "9101" INTEGER
+          );
+        `);
+
+      await util.knex.raw(`
+          CREATE TABLE
+            public.with_question_mark (
+              "approved?" boolean NULL DEFAULT false,
+              str_col character varying(255) NOT NULL,
+              another_str_col character varying(255) NOT NULL PRIMARY KEY
           );
         `);
 
@@ -331,6 +340,22 @@ function testWith(dockerTag, socket = false) {
       expect(fmt(defaultQuery)).toBe(fmt(expectedDefault))
       expect(fmt(inlineParams)).toBe(fmt(expectedInline))
     });
+
+    // regression test for #1734
+    it("should be able to insert to a table with a ? in a column name", async () => {
+      const newRow: TableInsert = {
+        table:'with_question_mark',
+        schema: 'public',
+        data: [
+          {"approved?": true, str_col: "hello?", another_str_col: '????'}
+        ]
+      }
+
+      const result = await util.connection.applyChanges(
+        { updates: [], inserts: [newRow], deletes: []}
+      )
+      expect(result).not.toBeNull()
+    })
 
     describe("Common Tests", () => {
       runCommonTests(() => util)
