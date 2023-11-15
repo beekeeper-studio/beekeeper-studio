@@ -219,7 +219,27 @@ export default Vue.extend({
             // @ts-expect-error Incorrectly typed
             valuesLookup: this.getTables
           },
-          cellEdited: (cell) => cell.getRow().getCell('toColumn')?.setValue(null)
+          cellEdited: async (cell) => { 
+            const data = cell.getRow().getData()
+            const schema = data['toSchema']
+            const table = data['toTable']
+            let tableData
+            
+            if (table !== null) {
+              if (!schema) {
+                tableData = this.tables.find((t: TableOrView) => escapeHtml(t.name) === table)
+              } else {
+                tableData = this.tables.find((t: TableOrView) =>
+                  escapeHtml(t.name) === table && escapeHtml(t.schema) === schema
+                )
+              }
+              
+              if (tableData !== null) {
+                await this.$store.dispatch('updateTableColumns', tableData)
+              }
+            }
+            return cell.getRow().getCell('toColumn')?.setValue(null)
+          }
 
         },
         {
