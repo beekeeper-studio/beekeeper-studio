@@ -770,7 +770,7 @@ export default Vue.extend({
           scrollPageUp: false,
           scrollPageDown: false
         },
-        rowHeader: {
+        spreadsheetRowHeader: {
           contextMenu: (_, cell: Tabulator.CellComponent) => {
             const range = cell.getRange()
             return [
@@ -784,6 +784,25 @@ export default Vue.extend({
               }),
               { separator: true },
               ...this.rowActionsMenu(range),
+            ]
+          },
+          headerContextMenu: (_, column: Tabulator.ColumnComponent) => {
+            const range = column.getRange()
+            return [
+              this.setAsNullMenuItem(range),
+              { separator: true },
+              ...copyActionsMenu({
+                range,
+                connection: this.connection,
+                table: this.table.name,
+                schema: this.table.schema,
+              }),
+              { separator: true },
+              ...commonColumnMenu,
+              {
+                label: createMenuItem("Open Column Filter"),
+                action: this.showColumnFilterModal,
+              },
             ]
           }
         },

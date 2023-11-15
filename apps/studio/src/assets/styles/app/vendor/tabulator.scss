@@ -14,8 +14,8 @@ $cell-radius:            2px;
 
 $cell-padding:           $gutter-w;
 
-$header-highlight:       lighten($query-editor-bg, 4%);
-$header-selected:        rgba($theme-primary, 0.35);
+$header-highlight:       mix($query-editor-bg, $theme-base, 95%);
+$header-selected:        mix($query-editor-bg, $theme-primary, 10%);
 
 // Mixin
 @mixin cell-shadow($bg) {
@@ -103,15 +103,17 @@ $header-selected:        rgba($theme-primary, 0.35);
   &.tabulator-row-odd {
     background-color: rgba($theme-base, 0.015);
   }
-  &.tabulator-selected.tabulator-row-even:hover {
+  &.tabulator-spreadsheet-selected.tabulator-row-even:hover {
     background-color: transparent;
   }
-  &.tabulator-highlight .tabulator-cell.tabulator-frozen.tabulator-row-header {
+  &.tabulator-spreadsheet-highlight .tabulator-cell.tabulator-frozen.tabulator-spreadsheet-row-header {
     background-color: $header-highlight !important;
     color: $text-dark;
   }
-  &.tabulator-selected .tabulator-cell.tabulator-frozen.tabulator-row-header {
+  &.tabulator-spreadsheet-selected .tabulator-cell.tabulator-frozen.tabulator-spreadsheet-row-header {
     background-color: $header-selected !important;
+    color: black;
+    font-weight: bold;
     border-radius: 0;
   }
   &.inserted {
@@ -140,7 +142,7 @@ $header-selected:        rgba($theme-primary, 0.35);
     height: $row-height;
     line-height: $row-height;
     cursor: default;
-    &:not(.tabulator-row-header) {
+    &:not(.tabulator-spreadsheet-row-header) {
       border-radius: $cell-radius;
     }
     &:first-of-type {
@@ -149,10 +151,11 @@ $header-selected:        rgba($theme-primary, 0.35);
     &:last-of-type {
       padding-right: $cell-padding * 1.5;
     }
-    &.tabulator-frozen.tabulator-row-header {
+    &.tabulator-frozen.tabulator-spreadsheet-row-header {
       padding: 0;
       background-color: $query-editor-bg;
-      border-right: 1px solid $border-color !important;
+      border-right: 0 !important;
+      box-shadow: 1px 0 $border-color;
       &:hover {
         background-color: rgba($theme-base, 0.10);
       }
@@ -298,11 +301,11 @@ $header-selected:        rgba($theme-primary, 0.35);
     &:hover {
       background-color: rgba($theme-base, 0.05);
       cursor: default;
-      &.tabulator-selected:not(.tabulator-only-cell-selected) {
+      &.tabulator-spreadsheet-selected:not(.tabulator-spreadsheet-only-cell-selected) {
         background-color: rgba($theme-base, 0.05);
       }
     }
-    &.tabulator-selected:not(.tabulator-only-cell-selected) {
+    &.tabulator-spreadsheet-selected:not(.tabulator-spreadsheet-only-cell-selected) {
       background-color: rgba($theme-base, 0.05);
     }
   }
@@ -317,7 +320,7 @@ $header-selected:        rgba($theme-primary, 0.35);
     i.fk-link {
       display: inline-block;
       &:hover {
-        color: white;
+        color: $theme-base;
       }
     }
   }
@@ -392,15 +395,17 @@ $header-selected:        rgba($theme-primary, 0.35);
     background: transparent;
     border: 0;
     width: -webkit-fill-available;
-    box-shadow: inset 0 -1px $border-color;
+    box-shadow: 0 1px $border-color;
     .tabulator-col {
       background: transparent;
       border-color: transparent;
       height: 32px!important;
       font-size: 90%;
       line-height: 1;
-      &:not(.tabulator-row-header) {
-        border-radius: $cell-radius;
+      color: $text-dark;
+      &:not(.tabulator-spreadsheet-row-header):not(.tabulator-spreadsheet-selected) {
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
       }
       &:hover {
         background: rgba($theme-base, 0.035);
@@ -408,13 +413,14 @@ $header-selected:        rgba($theme-primary, 0.35);
           display: inline-block;
         }
       }
-      &.tabulator-highlight {
+      &.tabulator-spreadsheet-highlight {
         background-color: $header-highlight;
       }
-      &.tabulator-selected {
+      &.tabulator-spreadsheet-selected {
         background-color: $header-selected;
+        color: black;
       }
-      &.tabulator-row-header {
+      &.tabulator-spreadsheet-row-header {
         background-color: transparent;
       }
       .tabulator-header-popup-button {
@@ -430,7 +436,6 @@ $header-selected:        rgba($theme-primary, 0.35);
           top: 50%;
           left: 50%;
           border-radius: 9999px;
-          z-index: -1;
           background-color: rgba($theme-base, 0.1);
           opacity: 0;
         }
@@ -444,7 +449,7 @@ $header-selected:        rgba($theme-primary, 0.35);
       .tabulator-col-title {
         display: flex;
         flex-direction: row-reverse;
-        color: $text-dark;
+        overflow: visible;
         .title {
           flex-grow: 1;
           min-width: 0;
@@ -462,10 +467,13 @@ $header-selected:        rgba($theme-primary, 0.35);
       &:last-of-type .tabulator-col-content {
         padding-right: $gutter-w * 0.5;
       }
-      .badge {
+      & .badge {
         background: transparent;
         color: $text-lighter;
         padding: 0 0.1rem;
+      }
+      &.tabulator-spreadsheet-selected .badge {
+        color: black;
       }
       &.tabulator-sortable[aria-sort="ascending"] {
         .tabulator-col-content {
@@ -511,9 +519,15 @@ $header-selected:        rgba($theme-primary, 0.35);
 
         }
       }
-      &.primary-key {
-        &:before {
-          color: $theme-secondary;
+      &.primary-key:before {
+        color: $theme-secondary;
+      }
+      &.tabulator-spreadsheet-selected {
+        &.primary-key:before {
+          color: black;
+        }
+        &.foreign-key:before {
+          color: mix($theme-primary, black, 60%);
         }
       }
       &.foreign-key-button {
@@ -745,11 +759,11 @@ $header-selected:        rgba($theme-primary, 0.35);
 
 .tabulator-range-overlay {
   .tabulator-range, .tabulator-range-cell-active {
-    border-color: darken($theme-primary, 30%);
+    border-color: darken($theme-primary, 20%);
     border-width: 1px;
   }
   .tabulator-range::after {
-    background-color: darken($theme-primary, 30%);
+    background-color: darken($theme-primary, 20%);
   }
   .tabulator-range.copied {
     border-style: dashed;
