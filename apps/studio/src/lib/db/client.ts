@@ -280,6 +280,8 @@ async function connect(server: IDbConnectionServer, database: IDbConnectionDatab
       database.connection = connection;
     }
   } catch (err) {
+    logger().error('Connection error %j', err);
+    disconnect(server, database);
     throw new Error('Database Connection Error: ' + err.message);
     logger().error('Connection error %j', err);
     disconnect(server, database);
