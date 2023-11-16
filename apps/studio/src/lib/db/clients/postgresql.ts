@@ -1232,6 +1232,7 @@ async function insertRows(cli: any, rawInserts: TableInsert[]) {
     })
     return result
   })
+
   await driverExecuteQuery(cli, { query: buildInsertQueries(knex, fixedInserts).join(";") })
 
   return true
