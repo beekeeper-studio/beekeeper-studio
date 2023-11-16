@@ -122,11 +122,11 @@ function testWith(dockerTag, socket = false) {
           );
         `);
 
-      await util.knex.schema.createTable('withquestionmark', (table) => {
-        table.boolean('approved?').nullable().defaultTo(false);
-        table.string('str_col').notNullable();
-        table.string('another_str_col').notNullable().primary();
-      });
+      // await util.knex.schema.createTable('withquestionmark', (table) => {
+      //   table.boolean('approved?').nullable().defaultTo(false);
+      //   table.string('str_col').notNullable();
+      //   table.string('another_str_col').notNullable().primary();
+      // });
 
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
@@ -340,6 +340,16 @@ function testWith(dockerTag, socket = false) {
 
     // regression test for #1734
     it("should be able to insert to a table with a ? in a column name", async () => {
+      const query = util.connection.query(`
+          CREATE TABLE public.withquestionmark (
+            "approved?" boolean NULL DEFAULT false,
+            str_col character varying(255) NOT NULL,
+            another_str_col character varying(255) NOT NULL PRIMARY KEY
+          );
+        `);
+
+      await query.execute();
+    
       let data = {
         str_col: 'hello?',
         another_str_col: '???'
