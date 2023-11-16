@@ -4,6 +4,8 @@ $default-color: $theme-bg;
 $primary-color: $theme-base;
 $calendar-active-color: $theme-primary;
 $calendar-active-background-color: $theme-secondary;
+$time-active-color: $theme-primary;
+$time-active-background-color: $theme-secondary;
 $today-color: $theme-secondary;
 
 @import './var.scss';

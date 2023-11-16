@@ -25,8 +25,8 @@ $calendar-hover-background-color: mix(#fff, $calendar-active-background-color, 9
 $calendar-in-range-color: $default-color !default;
 $calendar-in-range-background-color: mix(#fff, $calendar-active-background-color, 85%) !default;
 
-$time-active-color: $primary-color !default;
-$time-active-background-color: transparent !default;
+$time-active-color: #fff !default;
+$time-active-background-color: $default-color !default;
 
 $time-hover-color: $default-color !default;
 $time-hover-background-color: mix(#fff, $calendar-active-background-color, 95%) !default;

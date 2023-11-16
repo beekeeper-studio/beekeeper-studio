@@ -5,10 +5,9 @@
       :type="datePickerType"
       :clearable="false"
       :confirm="true"
-      :default-value="this.datePickerStarter"
       :open.sync="typeEditorActive"
       ref="datepicker"
-      v-model="value"
+      v-model="datePickerValue"
       prefix-class="bkdates"
       confirm-text="click to confirm new selection"
       @confirm="submit"
@@ -48,6 +47,7 @@ export default Vue.extend({
   components: { DatePicker },
   data() {
     return {
+      datePickerValue: null,
       value: null,
       rendered: false,
       everEdited: false,
@@ -89,24 +89,12 @@ export default Vue.extend({
       }
 
       return 'datetime'
-    },
-    datePickerStarter() {
-      const dataType = this.params.dataType || ''
-      let dataValue = this.value == null ? this.value : helpers.niceString(this.value)
-      
-      if (this.isTimeType(dataType) && dataValue !== null) {
-        dataValue = dataValue.search(/(\+|-)/i) > -1 && !isNaN(dataValue.slice(-1)) ? `${dataValue}:00`: dataValue  
-        
-        return new Date(`2023-03-31T${dataValue}`)
-      }
-
-      return dataValue !== '' ? new Date(dataValue) : dataValue
-    },
-    isDateTime() {
-      return helpers.isDateTime(this.params.dataType)
     }
   },
   methods: {
+    isDateTime() {
+      return helpers.isDateTime(this.params.dataType)
+    },
     isTimeType(dataValue) {
       const times = [
         'time',
@@ -145,6 +133,10 @@ export default Vue.extend({
       // if the typeEditor is active and you blur, don't submit anything
       if (e.type === 'blur' && this.typeEditorActive) return false
 
+      // the datepicker returns a date object on submit while the others return an event object
+      if (_.isDate(e)) {
+        this.value = e
+      }
       // some cases we always want null, never empty string
       if (this.params.allowEmpty === false && _.isEmpty(this.value)) {
         this.$emit('value', null)
@@ -179,6 +171,20 @@ export default Vue.extend({
           }
         })
       }
+    },
+    typeEditorActive() {
+      if (this.typeEditorActive && this.isDateTime()) {
+        const dataType = this.params.dataType || ''
+        let dataValue = this.value == null ? this.value : helpers.niceString(this.value)
+        
+        if (this.isTimeType(dataType) && dataValue !== null) {
+          dataValue = dataValue.search(/(\+|-)/i) > -1 && !isNaN(dataValue.slice(-1)) ? `${dataValue}:00`: dataValue  
+          this.datePickerValue = new Date(`2023-03-31T${dataValue}`)
+        } else if (dataValue !== '') {
+          this.datePickerValue = new Date(dataValue)
+        }
+      }
+      console.log('type editor active!', helpers.isDateTime(this.params.dataType))
     }
   },
   mounted() {
