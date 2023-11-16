@@ -12,6 +12,7 @@ import { makeEscape } from 'knex/lib/util/string';
 import { makeString } from '@/common/utils';
 import { identify } from "sql-query-identifier";
 import { Statement } from "sql-query-identifier/lib/defines";
+import * as path from 'path';
 import _ from 'lodash';
 import rawLog from 'electron-log'
 import { SqliteCursor } from "./sqlite/SqliteCursor";
@@ -62,11 +63,10 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     super(knex, sqliteContext);
 
     this.database = database?.database;
-    console.log("DATABASE: ", this.database);
   }
   
   versionString(): string {
-    return this.version.data[0]["sqlite_version()"];  
+    return this.version?.data[0]["sqlite_version()"];  
   }
 
   getBuilder(table: string, _schema?: string): ChangeBuilderBase {
@@ -85,7 +85,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async connect(): Promise<void> {
     // set sqlite version
-    const version = await this.driverExecuteQuery('SELECT sqlite_version()') as SqliteResult;
+    const version = await this.driverExecuteSingle('SELECT sqlite_version()');
 
     this.version = version;
     return;
@@ -107,7 +107,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       ORDER BY name
     `;
 
-    const { data } = await this.driverExecuteQuery(sql) as SqliteResult;
+    const { data } = await this.driverExecuteSingle(sql);
 
     return data;
   }
@@ -119,7 +119,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       WHERE type = 'view'
     `;
 
-    const { data } = await this.driverExecuteQuery(sql) as SqliteResult;
+    const { data } = await this.driverExecuteSingle(sql);
 
     return data;
   }
@@ -136,7 +136,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     if (table) {
       const sql = `PRAGMA table_info(${SD.escapeString(table, true)})`;
 
-      const { data } = await this.driverExecuteQuery(sql) as SqliteResult;
+      const { data } = await this.driverExecuteSingle(sql);
       return this.dataToColumns(data, table);
     }
 
@@ -153,7 +153,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     })
 
     const query = everything.map((e) => e.sql).join(";")
-    const allResults = await this.driverExecuteQuery(query, { multiple: true }) as SqliteResult[];
+    const allResults = await this.driverExecuteMultiple(query);
     const results = allResults.map((r, i) => {
       return {
         result: r,
@@ -172,7 +172,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         AND tbl_name = '${table}'
     `;
 
-    const { data } = await this.driverExecuteQuery(sql) as SqliteResult;
+    const { data } = await this.driverExecuteSingle(sql);
 
     return data
   }
@@ -180,10 +180,10 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async listTableIndexes(_db: string, table: string, _schema?: string): Promise<TableIndex[]> {
     const sql = `PRAGMA INDEX_LIST('${SD.escapeString(table)}')`;
 
-    const { data } = await this.driverExecuteQuery(sql) as SqliteResult;
+    const { data } = await this.driverExecuteSingle(sql);
 
     const allSQL = data.map((row) => `PRAGMA INDEX_XINFO('${SD.escapeString(row.name)}')`).join(";");
-    const infos = await this.driverExecuteQuery(allSQL, { multiple: true }) as SqliteResult[];
+    const infos = await this.driverExecuteMultiple(allSQL);
 
     const indexColumns = infos.map((result) => {
       return result.data.filter((r) => !!r.name).map((r) => ({ name: r.name, order: r.desc ? 'DESC' : 'ASC' }))
@@ -209,7 +209,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async getTableKeys(_db: string, table: string, _schema?: string): Promise<TableKey[]> {
     const sql = `pragma foreign_key_list('${SD.escapeString(table)}')`
-    const { data } = await this.driverExecuteQuery(sql) as SqliteResult;
+    const { data } = await this.driverExecuteSingle(sql);
     return data.map(row => ({
       constraintName: row.id,
       constraintType: 'FOREIGN',
@@ -222,7 +222,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     }))
   }
 
-  // NOTE (@day): This may need some more work
   query(queryText: string): CancelableQuery {
     let queryConnection: Database.Database = null;
 
@@ -243,8 +242,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
             throw nuError
           }
 
-          err.message = `THIS IS FROM THE EXECUTE FUNCTION: ${err.message}. \n QUERY: ${queryText}`;
-
           throw err;
         }
       }).bind(this),
@@ -252,17 +249,13 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         if (!queryConnection) {
           throw new Error('Query not ready to be canceled');
         }
-
-        // NOTE (@day): from what I can tell, this function doesn't actually exist?!
-        // queryConnection.interrupt();
       }
     }
   }
 
   async executeQuery(queryText: string, options: any = {}): Promise<NgQueryResult[]> {
-    const result = await this.driverExecuteQuery(queryText, { ...options, multiple: true }) as SqliteResult[];
+    const result = await this.driverExecuteMultiple(queryText, options);
 
-    // TEMP (@day): this is just so we stop getting hard errors during tests so I can actually figure out what's going on.
     return (result || []).map(({ data, statement, changes }) => {
       // Fallback in case the identifier could not reconize the command
       const isSelect = Array.isArray(data);
@@ -278,7 +271,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
-    const result = await this.driverExecuteQuery('PRAGMA database_list;') as SqliteResult;
+    const result = await this.driverExecuteSingle('PRAGMA database_list;');
 
     return result.data.map((row) => row.file || ':memory:');
   }
@@ -292,7 +285,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
     const connection = new Database(this.database);
     const cli = { connection };
-    await this.driverExecuteQuery('BEGIN', cli);
+    await this.driverExecuteSingle('BEGIN', cli);
 
     try {
       if (changes.inserts) {
@@ -307,10 +300,10 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         await this.deleteRows(cli, changes.deletes);
       }
 
-      await this.driverExecuteQuery('COMMIT', cli);
+      await this.driverExecuteSingle('COMMIT', cli);
     } catch (ex) {
       log.error("query exception: ", ex);
-      await this.driverExecuteQuery('ROLLBACK', cli);
+      await this.driverExecuteSingle('ROLLBACK', cli);
       throw ex;
     }
 
@@ -348,7 +341,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       WHERE name = '${table}';
     `;
 
-    const { data } = await this.driverExecuteQuery(sql) as SqliteResult;
+    const { data } = await this.driverExecuteSingle(sql);
 
     return data.map((row) => row.sql);
   }
@@ -360,7 +353,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       WHERE name = '${view}';
     `;
 
-    const { data } = await this.driverExecuteQuery(sql) as SqliteResult;
+    const { data } = await this.driverExecuteSingle(sql);
 
     return data.map((row) => row.sql);
   }
@@ -379,7 +372,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     // TODO: Check if sqlite_sequence exists then execute:
     // DELETE FROM sqlite_sequence WHERE name='${table}';
 
-    await this.driverExecuteQuery(truncateAll);
+    await this.driverExecuteSingle(truncateAll);
   }
 
   listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
@@ -393,7 +386,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async getPrimaryKeys(_db: string, table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
     const sql = `pragma table_info('${SD.escapeString(table)}')`
-    const { data } = await this.driverExecuteQuery(sql) as SqliteResult;
+    const { data } = await this.driverExecuteSingle(sql);
     const found = data.filter(r => r.pk > 0)
     if (!found || found.length === 0) return []
     return found.map((r) => ({
@@ -404,7 +397,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async getTableLength(table: string, _schema?: string): Promise<number> {
     const { countQuery, params } = buildSelectTopQuery(table, null, null, null, [])
-    const countResults = await this.driverExecuteQuery(countQuery, { params }) as SqliteResult;
+    const countResults = await this.driverExecuteSingle(countQuery, { params });
     const rowWithTotal = countResults.data.find((row) => { return row.total })
     const totalRecords = rowWithTotal ? rowWithTotal.total : 0
     return Number(totalRecords)
@@ -412,7 +405,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
     const query = await this.selectTopSql(table, offset, limit, orderBy, filters, schema, selects);
-    const result = await this.driverExecuteQuery(query) as SqliteResult;
+    const result = await this.driverExecuteSingle(query);
 
     return {
       result: result.data,
@@ -433,7 +426,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return {
       totalRows: rowCount,
       columns,
-      cursor: new SqliteCursor({ dbConfig: { database: this.database }}, query, params, chunkSize)
+      cursor: new SqliteCursor(this.database, query, params, chunkSize)
     }
   }
 
@@ -441,7 +434,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return {
       totalRows: undefined,
       columns: undefined, 
-      cursor: new SqliteCursor({ dbConfig: { database: this.database }}, query, [], chunkSize)
+      cursor: new SqliteCursor(this.database, query, [], chunkSize)
     };
   }
 
@@ -459,19 +452,19 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
     const sql = `DROP ${SD.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(elementName)}`
 
-    await this.driverExecuteQuery(sql);
+    await this.driverExecuteSingle(sql);
   }
 
   async truncateElement(elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
     const sql = `Delete from ${SD.wrapIdentifier(elementName)}; vacuum;`
 
-    await this.driverExecuteQuery(sql);
+    await this.driverExecuteSingle(sql);
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, _schema?: string): Promise<void> {
     const sql = this.duplicateTableSql(tableName, duplicateTableName);
 
-    await this.driverExecuteQuery(sql);
+    await this.driverExecuteSingle(sql);
   }
 
   duplicateTableSql(tableName: string, duplicateTableName: string, _schema?: string): string {
@@ -496,7 +489,9 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     const fileLocation = this.database.split('/');
     fileLocation.pop();
 
-    const db = new Database(`${fileLocation.join('/')}/${databaseName}.db`)
+    const dbPath = path.join(...fileLocation, `${databaseName}.db`);
+
+    const db = new Database(dbPath)
     db.close()
   }
 
@@ -562,7 +557,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   private async insertRows(cli: any, inserts: TableInsert[]) {
     for (const command of buildInsertQueries(knex, inserts)) {
-      await this.driverExecuteQuery(command, cli);
+      await this.driverExecuteSingle(command, cli);
     }
 
     return true
@@ -589,7 +584,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     // TODO: this should probably return the updated values
     for (let index = 0; index < commands.length; index++) {
       const blob = commands[index];
-      await this.driverExecuteQuery(blob.query, { ...cli, params: blob.params });
+      await this.driverExecuteSingle(blob.query, { ...cli, params: blob.params });
     }
 
     const returnQueries = updates.map(update => {
@@ -612,7 +607,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
     for (let index = 0; index < returnQueries.length; index++) {
       const blob = returnQueries[index];
-      const r = await this.driverExecuteQuery(blob.query, { ...cli, params: blob.params }) as SqliteResult;
+      const r = await this.driverExecuteSingle(blob.query, { ...cli, params: blob.params });
       if (r.data[0]) results.push(r.data[0])
     }
 
@@ -621,7 +616,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   private async deleteRows(cli: any, deletes: TableDelete[]) {
     for (const command of buildDeleteQueries(knex, deletes)) {
-      await this.driverExecuteQuery(command, cli)
+      await this.driverExecuteSingle(command, cli)
     }
 
     return true

@@ -100,13 +100,14 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
   abstract createDatabaseSQL(): string
 
   // structure to allow logging of all queries to a query log
-  // TODO: What should this return?
   protected abstract rawExecuteQuery(q: string, options: any): Promise<RawResultType | RawResultType[]>
 
-  async driverExecuteQuery(q: string, options: any = {}): Promise<RawResultType | RawResultType[]> {
+  async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const logOptions: QueryLogOptions = { options, status: 'completed'}
+    // force rawExecuteQuery to return a single result
+    options['multiple'] = false
     try {
-        const result = await this.rawExecuteQuery(q, options)
+        const result = await this.rawExecuteQuery(q, options) as RawResultType
         return result
     } catch (ex) {
         logOptions.status = 'failed'
@@ -114,6 +115,22 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
         throw ex;
     } finally {
         this.contextProvider.logQuery(q, logOptions, this.contextProvider.getExecutionContext())
+    }
+  }
+
+  async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
+    const logOptions: QueryLogOptions = { options, status: 'completed' }
+    // force rawExecuteQuery to return an array
+    options['multiple'] = true;
+    try {
+      const result = await this.rawExecuteQuery(q, options) as RawResultType[]
+      return result
+    } catch (ex) {
+      logOptions.status = 'failed'
+      logOptions.error = ex.message
+      throw ex;
+    } finally {
+      this.contextProvider.logQuery(q, logOptions, this.contextProvider.getExecutionContext())
     }
   }
 
