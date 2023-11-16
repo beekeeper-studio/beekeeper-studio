@@ -294,7 +294,6 @@ export default Vue.extend({
       initialized: false,
       internalColumnPrefix: "__beekeeper_internal_",
       internalIndexColumn: "__beekeeper_internal_index",
-      editingCell: false,
     };
   },
   computed: {
@@ -341,10 +340,12 @@ export default Vue.extend({
       const result = {}
       result['f5'] = this.refreshTable.bind(this)
       result[this.ctrlOrCmd('right')] = () => {
-        if (!this.editingCell) this.page++
+        const focusingTable = this.tabulator.element.contains(document.activeElement)
+        if (!focusingTable) this.page++
       }
       result[this.ctrlOrCmd('left')] = () => {
-        if (!this.editingCell) this.page--
+        const focusingTable = this.tabulator.element.contains(document.activeElement)
+        if (!focusingTable) this.page++
       }
       result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
@@ -526,12 +527,7 @@ export default Vue.extend({
           headerMenu: columnMenu,
           variableHeight: true,
           headerTooltip: headerTooltip,
-          cellEditing: () => this.editingCell = true,
-          cellEdited: () => this.editingCell = false,
-          cellEditCancelled: (cell) => {
-            this.editingCell = false
-            cell.getRow().normalizeHeight()
-          },
+          cellEditCancelled: (cell) => cell.getRow().normalizeHeight(),
           formatter: this.cellFormatter,
           formatterParams: {
             fk: hasKeyDatas && keyDatas[0][1],
