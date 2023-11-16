@@ -2,10 +2,10 @@ $namespace: 'bkdates'; // change the 'mx' to 'xmx'. then <date-picker prefix-cla
 
 $default-color: $theme-bg;
 $primary-color: $theme-base;
-$calendar-active-color: $theme-primary;
-$calendar-active-background-color: $theme-secondary;
-$time-active-color: $theme-primary;
-$time-active-background-color: $theme-secondary;
+$calendar-active-color: $text-dark;
+$calendar-active-background-color: $theme-primary;
+$time-active-color: $text-dark;
+$time-active-background-color: $theme-primary;
 $today-color: $theme-secondary;
 
 @import './var.scss';

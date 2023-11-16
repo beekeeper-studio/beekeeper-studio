@@ -16,7 +16,7 @@ $disabled-background-color: #f3f3f3 !default;
 
 $border-color: #e8e8e8 !default;
 
-$calendar-active-color: #fff !default;
+$calendar-active-color: $default-color !default;
 $calendar-active-background-color: $primary-color !default;
 
 $calendar-hover-color: $default-color !default;
@@ -25,7 +25,7 @@ $calendar-hover-background-color: mix(#fff, $calendar-active-background-color, 9
 $calendar-in-range-color: $default-color !default;
 $calendar-in-range-background-color: mix(#fff, $calendar-active-background-color, 85%) !default;
 
-$time-active-color: #fff !default;
+$time-active-color: $default-color !default;
 $time-active-background-color: $default-color !default;
 
 $time-hover-color: $default-color !default;
