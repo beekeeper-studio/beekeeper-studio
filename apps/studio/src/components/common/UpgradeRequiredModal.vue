@@ -19,7 +19,7 @@
         <div class="checkbox-wrapper">
           <!-- <p class="text-muted">This feature is not included in the Community Edition. Please upgrade the app to continue.</p> -->
           <p class="text-muted">
-            <strong v-if="message">{{ message }}.</strong> Upgrade to get exclusive featuers:
+            <strong v-if="message">{{ message }}.</strong> Upgrade to get exclusive features:
           </p>
           <div class="row">
             <div class="col s6">

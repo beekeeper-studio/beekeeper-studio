@@ -8,7 +8,7 @@ import { Error as CustomError } from '../lib/errors'
 import _ from 'lodash';
 import platformInfo from './platform_info';
 import { format } from 'sql-formatter';
-import { TableFilter } from '@/lib/db/models';
+import { TableFilter, TableOrView, Routine } from '@/lib/db/models';
 
 export function having<T, U>(item: T | undefined | null, f: (T) => U, errorOnNone?: string): U | null {
   if (item) return f(item)
@@ -173,3 +173,8 @@ export function normalizeFilters(filters: TableFilter[]) {
   return normalized;
 }
 
+/** Useful for identifying an entity item in table list */
+export function entityId(schema: string, entity?: TableOrView | Routine) {
+  if (entity) return `${entity.entityType}.${schema}.${entity.name}`;
+  return `schema.${schema}`;
+}

@@ -205,6 +205,7 @@ import TabWithTable from './common/TabWithTable.vue';
 import TabIcon from './tab/TabIcon.vue'
 import { DatabaseEntity } from "@/lib/db/models"
 import PendingChangesButton from './common/PendingChangesButton.vue'
+
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 
 export default Vue.extend({
@@ -280,6 +281,7 @@ export default Vue.extend({
     rootBindings() {
       return [
         { event: AppEvent.closeTab, handler: this.closeCurrentTab },
+        { event: AppEvent.closeAllTabs, handler: this.closeAll },
         { event: AppEvent.newTab, handler: this.createQuery },
         { event: AppEvent.createTable, handler: this.openTableBuilder },
         { event: 'historyClick', handler: this.createQueryFromItem },
@@ -290,8 +292,8 @@ export default Vue.extend({
         { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
         { event: 'favoriteClick', handler: this.favoriteClick },
         { event: 'exportTable', handler: this.openExportModal },
-        { event: AppEvent.hideEntity, handler: this.hideEntity },
-        { event: AppEvent.hideSchema, handler: this.hideSchema },
+        { event: AppEvent.toggleHideEntity, handler: this.toggleHideEntity },
+        { event: AppEvent.toggleHideSchema, handler: this.toggleHideSchema },
         { event: AppEvent.deleteDatabaseElement, handler: this.deleteDatabaseElement },
         { event: AppEvent.dropDatabaseElement, handler: this.dropDatabaseElement },
         { event: AppEvent.duplicateDatabaseTable, handler: this.duplicateDatabaseTable },
@@ -319,10 +321,22 @@ export default Vue.extend({
       const result = {
         'ctrl+tab': this.nextTab,
         'ctrl+shift+tab': this.previousTab,
+        'alt+1': this.handleAltNumberKeyPress,
+        'alt+2': this.handleAltNumberKeyPress,
+        'alt+3': this.handleAltNumberKeyPress,
+        'alt+4': this.handleAltNumberKeyPress,
+        'alt+5': this.handleAltNumberKeyPress,
+        'alt+6': this.handleAltNumberKeyPress,
+        'alt+7': this.handleAltNumberKeyPress,
+        'alt+8': this.handleAltNumberKeyPress,
+        'alt+9': this.handleAltNumberKeyPress,
       }
 
       return result
     },
+  },
+  created() {
+    this.$root.$refs.CoreTabs = this;
   },
   methods: {
     showUpgradeModal() {
@@ -500,7 +514,7 @@ export default Vue.extend({
     handleCreateTab() {
       this.createQuery()
     },
-    createQuery(optionalText) {
+    createQuery(optionalText, queryTitle?) {
       // const text = optionalText ? optionalText : ""
       let qNum = 0
       let tabName = "New Query"
@@ -508,6 +522,9 @@ export default Vue.extend({
         qNum = qNum + 1
         tabName = `Query #${qNum}`
       } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
+      if (queryTitle) {
+        tabName = queryTitle
+      }
 
       const result = new OpenTab('query')
       result.title = tabName,
@@ -593,11 +610,13 @@ export default Vue.extend({
       this.tableExportOptions = options
       this.showExportModal = true
     },
-    hideEntity(entity: DatabaseEntity) {
-      this.$store.dispatch('hideEntities/addEntity', entity)
+    toggleHideEntity(entity: DatabaseEntity, hide: boolean) {
+      if (hide) this.$store.dispatch('hideEntities/addEntity', entity)
+      else this.$store.dispatch('hideEntities/removeEntity', entity)
     },
-    hideSchema(schema: string) {
-      this.$store.dispatch('hideEntities/addSchema', schema)
+    toggleHideSchema(schema: string, hide: boolean) {
+      if (hide) this.$store.dispatch('hideEntities/addSchema', schema)
+      else this.$store.dispatch('hideEntities/removeSchema', schema)
     },
     openSettings() {
       const tab = new OpenTab('settings')
@@ -607,6 +626,14 @@ export default Vue.extend({
     async click(tab) {
       await this.setActiveTab(tab)
 
+    },
+      handleAltNumberKeyPress(event) {
+      if (event.altKey) {
+        const pressedNumber = Number(event.key); // Convert keyCode to the corresponding number
+        if(pressedNumber <= this.tabItems.length) {
+          this.setActiveTab(this.tabItems[pressedNumber - 1])
+        }
+      }
     },
     async close(tab) {
       if (this.activeTab === tab) {
@@ -672,6 +699,7 @@ export default Vue.extend({
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings)
   },
+
   async mounted() {
     await this.$store.dispatch('tabs/load')
     if (!this.tabItems?.length) {
