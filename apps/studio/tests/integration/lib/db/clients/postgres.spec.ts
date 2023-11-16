@@ -123,7 +123,7 @@ function testWith(dockerTag, socket = false) {
         `);
 
       await util.knex.raw(`
-          CREATE TABLE public.withquestionmark (
+          CREATE TABLE withquestionmark (
               "approved?" boolean NULL DEFAULT false,
               str_col character varying(255) NOT NULL,
               another_str_col character varying(255) NOT NULL PRIMARY KEY
@@ -343,7 +343,7 @@ function testWith(dockerTag, socket = false) {
     // regression test for #1734
     it("should be able to insert to a table with a ? in a column name", async () => {
       const newRow: TableInsert = {
-        table:'withquestionmark',
+        table: 'withquestionmark',
         schema: 'public',
         data: [
           {
