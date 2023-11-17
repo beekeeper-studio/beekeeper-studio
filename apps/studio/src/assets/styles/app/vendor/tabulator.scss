@@ -541,7 +541,9 @@ $cell-padding:           $gutter-w;
 // Applied when not dragging rows so frozen cells can be transparent
 .tabulator:not(.tabulator-block-select) .tabulator-row .tabulator-frozen {
   position: relative;
-  background-color: $query-editor-bg !important;
+  &:not(.edited) {
+    background-color: $query-editor-bg;
+  }
   &::before {
     content: '';
     position: absolute;
