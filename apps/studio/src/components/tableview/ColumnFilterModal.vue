@@ -170,6 +170,7 @@
     },
   }
 </script>
+      // Removed methods from here
       onDragStart(column) {
         this.draggedColumn = column
       },
