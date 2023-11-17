@@ -723,7 +723,7 @@ $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
   padding: 0.3rem 0;
 
   .tabulator-menu-item {
-    &:hover {
+    &:hover, &.tabulator-spreadsheet-menu-item-focused {
       background: rgba($theme-base, 0.05);
     }
     color: $text-dark;
