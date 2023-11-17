@@ -3,6 +3,7 @@ import { TableFilter, TableOrView } from "@/lib/db/models";
 import { Column, Entity } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import _ from 'lodash'
+import { tableId } from "@/common/utils";
 
 
 type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder'
@@ -119,16 +120,12 @@ export class OpenTab extends ApplicationEntity {
     }
     switch (other.tabType) {
       case 'table-properties':
-        return this.tableName === other.tableName &&
-        (this.schemaName || null) === (other.schemaName || null) &&
-        (this.entityType || null) === (other.entityType || null)
       case 'table':
-        return false
-        // we just want false for now as filters aren't properly saved.
-        // return this.tableName === other.tableName &&
-        //   (this.schemaName || null) === (other.schemaName || null) &&
-        //   (this.entityType || null) === (other.entityType || null) &&
-        //   _.isEqual(this.filters, other.filters)
+        // Ok finally changing 'table' so we only have one tab per table.
+        // I think this is more intuitive. I realize it causes another UX
+        // issue for tables with a FK link overriding the current open view.
+        return tableId(this.tableName, this.entityType, this.tableName) ===
+          tableId(other.tableName, other.entityType, other.schemaName)
       case 'query':
         return this.queryId === other.queryId
       default:

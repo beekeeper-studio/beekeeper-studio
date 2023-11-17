@@ -178,3 +178,7 @@ export function entityId(schema: string, entity?: TableOrView | Routine) {
   if (entity) return `${entity.entityType}.${schema}.${entity.name}`;
   return `schema.${schema}`;
 }
+
+export function tableId(name: string, typ?: string, schema?: string) {
+  `${schema || '0'}.${typ || '0'}.${name}`
+}
