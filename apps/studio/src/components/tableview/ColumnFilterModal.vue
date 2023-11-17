@@ -59,7 +59,15 @@
                   :key="column.name"
                   class="list-item"
                 >
-                  <label class="checkbox-group flex-between expand">
+                  <label class="checkbox-group flex-between expand"
+                    draggable="true"
+                    @dragstart="onDragStart(column)"
+                    @dragover.prevent
+                    @drop="onDrop(column)"
+                  >
+                    <span class="drag-handle">
+                      <i class="material-icons">drag_indicator</i>
+                    </span>
                     <span class="input-wrapper">
                       <input
                         type="checkbox"
@@ -162,3 +170,15 @@
     },
   }
 </script>
+      onDragStart(column) {
+        this.draggedColumn = column
+      },
+      onDrop(column) {
+        const draggedColumnIndex = this.columns.indexOf(this.draggedColumn)
+        const droppedColumnIndex = this.columns.indexOf(column)
+
+        this.columns.splice(draggedColumnIndex, 1)
+        this.columns.splice(droppedColumnIndex, 0, this.draggedColumn)
+
+        this.draggedColumn = null
+      },
