@@ -45,6 +45,26 @@
           class="statusbar-item hoverable"
           v-if="lastUpdatedText && !error"
           :title="'Updated' + ' ' + lastUpdatedText"
+applyColumnChanges(columns) {
+  if (!this.tabulator) return;
+
+  this.tabulator.blockRedraw();
+
+  // Sort columns based on the order
+  columns.sort((a, b) => a.order - b.order);
+
+  columns.forEach(({name, filter}, index) => {
+    if(filter) this.tabulator.showColumn(name)
+    else this.tabulator.hideColumn(name)
+
+    // Move the column to its new position
+    this.tabulator.moveColumn(name, index);
+  })
+
+  this.tabulator.restoreRedraw();
+
+  this.tabulator.redraw(true)
+},
         >
           <i class="material-icons">update</i>
           <span>{{ lastUpdatedText }}</span>
