@@ -616,7 +616,7 @@ export default Vue.extend({
 
         // if column has a comment, add it to the tooltip
         if (column.comment) {
-          headerTooltip += `<br/> ${column.comment}`
+          headerTooltip += `<br/> ${escapeHtml(column.comment)}`
         }
 
         const result = {
