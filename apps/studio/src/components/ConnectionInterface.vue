@@ -35,6 +35,7 @@
               </h3>
               <h3
                 class="card-title"
+                :style="determineLabelColor"
                 v-if="pageTitle"
               >
                 {{ pageTitle }}
@@ -241,6 +242,11 @@ export default Vue.extend({
     },
     dialect() {
       return dialectFor(this.config.connectionType)
+    },
+    determineLabelColor() {
+      return {
+        "color": this.config.labelColor == "default" ? "black" : this.config.labelColor
+      }
     }
   },
   watch: {
