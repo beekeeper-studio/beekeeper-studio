@@ -597,6 +597,24 @@ $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
 
 }
 
+// Applied when not dragging rows so frozen cells can be transparent
+.tabulator:not(.tabulator-block-select) .tabulator-row .tabulator-frozen {
+  position: relative;
+  &:not(.edited) {
+    background-color: $query-editor-bg;
+  }
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: rgba($theme-base, 0.05);
+    z-index: -10;
+  }
+  &:hover::before {
+    background-color: rgba($theme-base, 0.10);
+  }
+}
+
 .tabulator-edit-select-list {
   background: $theme-bg;
   color: white;
