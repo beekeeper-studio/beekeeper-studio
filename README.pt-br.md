@@ -26,7 +26,7 @@ Principais funcionalidades: é leve 🍫, rápido 🏎 e você realmente vai gos
 
 Uma de nossas frustrações com outros editores e gerenciadores SQL de código aberto é que eles usam uma abordagem de "pia na cozinha" para suas funcionalidades, adicionando tantas funcionalidades que tornam a interface desordenada e difícil de navegar. Nós queremos um visual legal, uma ferramenta SQL de código aberto que seja poderosa, mas fácil de usar. Não encontramos uma que atendesse esses requisitos, então resolvemos criar uma.
 
-![Beekeeper Studio Screenshot](https://docs.beekeeperstudio.io/assets/img/hero.289d6ce0.jpg)
+![Beekeeper Studio Screenshot](https://app.duckdocs.com/sites/2/pages/introduction/images/1)
 
 Beekeeper Studio suporta conexão com os seguintes bancos de dados:
 
