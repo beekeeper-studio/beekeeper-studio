@@ -1,4 +1,3 @@
-
 // Copyright (c) 2015 The SQLECTRON Team
 
 import { readFileSync } from 'fs';
@@ -11,7 +10,7 @@ import logRaw from 'electron-log'
 
 import { DatabaseClient, IDbConnectionServerConfig, DatabaseElement } from '../client'
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from '../authentication/amazon-redshift';
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, IndexedColumn, InternalPrimaryKey, } from "../models";
 import { buildDatabseFilter, buildDeleteQueries, buildInsertQuery, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, joinQueries, applyChangesSql } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -185,6 +184,7 @@ export default async function (server: any, database: any): Promise<DatabaseClie
     getTableKeys: (db, table, schema = defaultSchema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema = defaultSchema) => getPrimaryKey(conn, db, table, schema),
     getPrimaryKeys: (db, table, schema = defaultSchema) => getPrimaryKeys(conn, db, table, schema),
+    getInternalPrimaryKey: (db, table, schema = defaultSchema) => getInternalPrimaryKey(conn, db, table, schema),
     applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText, schema = defaultSchema) => query(conn, queryText, schema),
     executeQuery: (queryText, _schema = defaultSchema) => executeQuery(conn, queryText),
@@ -1093,6 +1093,11 @@ export async function getPrimaryKeys(conn: HasPool, _database: string, table: st
   } else {
     return []
   }
+}
+
+export async function getInternalPrimaryKey(conn: HasPool, _database: string, table: string, schema: string): Promise<InternalPrimaryKey | null> {
+  console.log(conn, table, schema)
+  return null
 }
 
 export async function applyChanges(conn: Conn, changes: TableChanges): Promise<TableUpdateResult[]> {

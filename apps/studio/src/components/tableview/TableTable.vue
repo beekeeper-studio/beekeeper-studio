@@ -279,6 +279,7 @@ export default Vue.extend({
       limit: 100,
       rawTableKeys: [],
       primaryKeys: null,
+      internalPrimaryKey: null,
       pendingChanges: {
         inserts: [],
         updates: [],
@@ -700,7 +701,20 @@ export default Vue.extend({
         print: false,
         download: false
       }
+
       results.push(result)
+
+      if (this.internalPrimaryKey) {
+        results.push({
+          title: this.internalPrimaryKey.result,
+          field: this.internalPrimaryKey.result,
+          editable: false,
+          visible: false,
+          clipboard: false,
+          print: false,
+          download: false
+        })
+      }
 
       return results
     },
@@ -953,8 +967,17 @@ export default Vue.extend({
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema)
+
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
+
+      if (rawPrimaryKeys.length === 0) {
+        this.internalPrimaryKey = await this.connection.getInternalPrimaryKey('nopk')
+        this.primaryKeys.push(this.internalPrimaryKey.select)
+      } else {
+        this.internalPrimaryKey = null
+      }
+
       this.filters = normalizeFilters(this.initialFilters || [])
 
       this.tabulator = new TabulatorFull(this.$refs.table, {
@@ -1180,6 +1203,14 @@ export default Vue.extend({
           value: cell.getValue()
         }
       })
+
+      if (primaryKeys.length === 0 && this.internalPrimaryKey) {
+        primaryKeys.push({
+          column: this.internalPrimaryKey.result,
+          value: cell.getRow().getCell(this.internalPrimaryKey.result).getValue(),
+        })
+      }
+
       if (currentEdit) {
         currentEdit.value = cell.getValue()
       } else {
@@ -1489,6 +1520,11 @@ export default Vue.extend({
 
             // lets just make column selection a front-end only thing
             const selects = ['*']
+
+            if (this.internalPrimaryKey) {
+              selects.push(this.internalPrimaryKey.select)
+            }
+
             const response = await this.connection.selectTop(
               this.table.name,
               offset,

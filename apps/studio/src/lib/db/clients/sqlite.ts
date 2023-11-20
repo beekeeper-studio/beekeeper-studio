@@ -5,7 +5,7 @@ import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderB
 import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder";
 import Database from "better-sqlite3";
 import { ClientError, DatabaseElement, IDbConnectionDatabase, IDbConnectionServer } from "../client";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete } from "../models"; 
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete, InternalPrimaryKey } from "../models"; 
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery,  applyChangesSql } from './utils';
 import knexlib from 'knex';
 import { makeEscape } from 'knex/lib/util/string';
@@ -58,6 +58,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   version: SqliteResult;
   database: string;
+
+  defaultSchema = () => null
 
   constructor(_server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, sqliteContext);
@@ -393,6 +395,30 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       columnName: r.name,
       position: Number(r.pk)
     }))
+  }
+
+  async getInternalPrimaryKey(_db: string, table: string, _schema?: string): Promise<InternalPrimaryKey | null> {
+    const columns = await this.listTableColumns(table, _schema)
+
+    const availableKeys = ['rowid', 'oid', '_rowid_']
+
+    // Here we check if the table has columns that are named like the
+    // internal primary keys. A column with the same name as the internal
+    // primary key cannot be used because the result will not be the key.
+    columns.forEach(({ columnName }) => {
+      if (availableKeys.includes(columnName)) {
+        availableKeys.splice(availableKeys.indexOf(columnName), 1)
+      }
+    })
+
+    if (availableKeys.length === 0) {
+      return null
+    }
+
+    return {
+      select: availableKeys[0],
+      result: 'rowid',
+    }
   }
 
   async getTableLength(table: string, _schema?: string): Promise<number> {

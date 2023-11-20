@@ -3,7 +3,7 @@ import connectTunnel from './tunnel';
 import clients from './clients';
 import createLogger from '../logger';
 import { SSHConnection } from '@/vendor/node-ssh-forward/index';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, TablePartition } from './models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, TableUpdateResult, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, TablePartition, InternalPrimaryKey } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import type { RedshiftOptions, BigQueryOptions } from '@/common/appdb/models/saved_connection';
 
@@ -76,6 +76,7 @@ export interface DatabaseClient {
   listMaterializedViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
   getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string | null>,
   getPrimaryKeys: (db: string, table: string, schema?: string) => Promise<PrimaryKeyColumn[]>,
+  getInternalPrimaryKey: (db: string, table: string, schema?: string) => Promise<InternalPrimaryKey>,
   // for tabletable
   getTableLength(table: string, schema?: string): Promise<number>
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string, selects?: string[]): Promise<TableResult>,
@@ -177,6 +178,7 @@ export class DBConnection {
   getTableReferences = getTableReferences.bind(null, this.server, this.database)
   getPrimaryKey = getPrimaryKey.bind(null, this.server, this.database)
   getPrimaryKeys = getPrimaryKeys.bind(null, this.server, this.database)
+  getInternalPrimaryKey = getInternalPrimaryKey.bind(null, this.server, this.database)
   getTableKeys = getTableKeys.bind(null, this.server, this.database)
   getTableProperties = getTableProperties.bind(null, this.server, this.database)
   query = query.bind(null, this.server, this.database)
@@ -436,6 +438,11 @@ function getPrimaryKey(server: IDbConnectionServer, database: IDbConnectionDatab
 function getPrimaryKeys(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema?: string) {
   checkIsConnected(server, database)
   return database.connection?.getPrimaryKeys(database.database, table, schema)
+}
+
+function getInternalPrimaryKey(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema?: string) {
+  checkIsConnected(server, database)
+  return database.connection?.getInternalPrimaryKey(database.database, table, schema)
 }
 
 function getTableKeys(server: IDbConnectionServer, database: IDbConnectionDatabase, table: string, schema: string) {

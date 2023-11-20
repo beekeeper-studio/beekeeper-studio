@@ -92,6 +92,17 @@ export interface PrimaryKeyColumn {
   position: number
 }
 
+/**
+ * For reference:
+ * https://github.com/beekeeper-studio/beekeeper-studio/issues/1532#issuecomment-1500720585
+ **/
+export interface InternalPrimaryKey {
+  /**  A column name used for the selection */
+  select: string
+  /**  A column name that shows in the result */
+  result: string
+}
+
 export interface FilterOptions {
   schema: Nullable<string>;
   only?: string[];
