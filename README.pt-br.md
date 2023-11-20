@@ -16,7 +16,7 @@ Curtiu o Beekeeper Studio e quer contribuir, mas não com código? [Temos alguma
 
 Principais funcionalidades: é leve 🍫, rápido 🏎 e você realmente vai gostar de usa-lo 🥰
 
-- Editor de queries SQL com autocomplemento e realce de sintax
+- Editor de queries SQL com autocomplemento e realce de sintaxe.
 - Interface com abas, então você pode fazer multitarefas.
 - Ordenação e filtros dos dados na tabela, para facilitar encontrar o que você precisa.
 - Atalhos sensíveis no teclado.
@@ -60,17 +60,17 @@ Nós queremos a sua contribuição, leia nosso [guia de contribuição de 10 min
 Quer melhorar o Beekeeper Studio codificando ou melhorando a documentação? Execute o projeto de forma fácil no Mac, Linux ou Windows.
 
 ```bash
-# First: Install NodeJS 12+, NPM, and Yarn
+# Primeiro: Instale NodeJS 12+, NPM e Yarn
 # ...
 
-# 1. Fork the Beekeeper Studio Repo (click fork button at top right of this screen)
-# 2. Check out your fork:
+# 1. Crie um fork do repositório do Beekeeper Studio (clique no botão de fork no topo a direita dessa tela)
+# 2. Checkout o seu fork:
 git clone git@github.com:<your-username>/beekeeper-studio.git beekeeper-studio
 cd beekeeper-studio/
-yarn install # installs dependencies
+yarn install # instala dependencias
 
-# Now you can start the app:
-yarn run electron:serve ## the app will now start
+# Agora você pode iniciar a aplicação:
+yarn run electron:serve ## a aplicação será iniciada
 ```
 
 ### Onde fazer modificações?
@@ -78,7 +78,7 @@ yarn run electron:serve ## the app will now start
 Beekeeper Studio tem dois pontos de entrada:
 
 - `background.js`: essa é a parte electron, código que controla as partes nativas como mostrar as janelas.
-- `main.js`: esse é o ponto de dentrada para a aplicação Vue.js. Você pode seguir os _breadcrumbs_ dos componentes a partir de `App.vue` para encontrar a tela que você precisa.
+- `main.js`: esse é o ponto de entrada para a aplicação Vue.js. Você pode seguir os _breadcrumbs_ dos componentes a partir de `App.vue` para encontrar a tela que você precisa.
 
 **No geral nós temos duas telas:**
 
@@ -97,11 +97,11 @@ Beekeeper Studio tem dois pontos de entrada:
 1. Incremente a versão no package.json
 2. Substitua `build/release-notes.md` com as últimas notas da release. Siga o formato que está aqui.
 
-- run `git log <last-tag>..HEAD --oneline | grep 'Merge pull'` para encontrar os Pull Requests mergeados.
+- execute `git log <last-tag>..HEAD --oneline | grep 'Merge pull'` para encontrar os Pull Requests mergeados.
 
 2. Commit
-3. Push to master
-4. Create a tag `git tag v<version>`. Precia começar com a letra 'v'
+3. Push para master
+4. Crie uma tag `git tag v<version>`. Precisa começar com a letra 'v'
 5. `git push origin <tagname>`
 
 - Agora espere pela ação de _build/publish_ completar no GitHub.
@@ -113,4 +113,4 @@ Beekeeper Studio tem dois pontos de entrada:
 
 ## Agradecimentos
 
-Beekeeper Studio não existiria sem [Sqlectron-core](https://github.com/sqlectron/sqlectron-core), a biblioteca principal de Banco de Dados (agora não mais mantida) Sqlectron project. O Beekeeper Studio começou como um fork experimental desse repositório. Um grande obrigado ao @maxcnunes e os outros membros da comunidade Sqlectron .
+Beekeeper Studio não existiria sem [Sqlectron-core](https://github.com/sqlectron/sqlectron-core), a biblioteca principal de Banco de Dados (agora não mais mantida) Sqlectron project. O Beekeeper Studio começou como um fork experimental desse repositório. Um grande obrigado ao @maxcnunes e os outros membros da comunidade Sqlectron.
