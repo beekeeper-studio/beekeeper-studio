@@ -972,7 +972,7 @@ export default Vue.extend({
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
 
       if (rawPrimaryKeys.length === 0) {
-        this.internalPrimaryKey = await this.connection.getInternalPrimaryKey('nopk')
+        this.internalPrimaryKey = await this.connection.getInternalPrimaryKey(this.table.name, this.table.schema)
         this.primaryKeys.push(this.internalPrimaryKey.select)
       } else {
         this.internalPrimaryKey = null
