@@ -52,6 +52,7 @@ export default async function (server, database) {
     getTableReferences: (table) => getTableReferences(conn, table),
     getPrimaryKey: (db, table) => getPrimaryKey(conn, db, table),
     getPrimaryKeys: (db, table) => getPrimaryKeys(conn, db, table),
+    getInternalPrimaryKey: (db, table) => getInternalPrimaryKey(conn, db, table),
     getTableKeys: (db, table) => getTableKeys(conn, db, table),
     query: (queryText) => query(conn, queryText),
     applyChanges: (changes) => applyChanges(conn, changes),
@@ -467,6 +468,10 @@ export async function getPrimaryKeys(conn, database, table) {
 export async function getPrimaryKey(conn, database, table) {
   const res = await getPrimaryKeys(conn, database, table)
   return res.length === 1 ? res[0].columnName : null
+}
+
+export async function getInternalPrimaryKey(conn, database, table) {
+  return null
 }
 
 export async function getTableKeys(conn, database, table) {

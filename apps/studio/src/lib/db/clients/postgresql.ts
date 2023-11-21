@@ -1095,9 +1095,19 @@ export async function getPrimaryKeys(conn: HasPool, _database: string, table: st
   }
 }
 
-export async function getInternalPrimaryKey(conn: HasPool, _database: string, table: string, schema: string): Promise<InternalPrimaryKey | null> {
-  console.log(conn, table, schema)
-  return null
+export async function getInternalPrimaryKey(conn: HasPool, database: string, table: string, schema: string): Promise<InternalPrimaryKey> {
+  if ((await getVersion(conn)).isCockroach) {
+    const columns = await listTableColumns(conn, database, table, schema)
+    const pk = columns.find((column) => column.defaultValue === 'unique_rowid()' && column.columnName.startsWith('rowid'))
+    return {
+      select: pk.columnName,
+      result: pk.columnName,
+    }
+  }
+  return {
+    select: 'ctid',
+    result: 'ctid',
+  }
 }
 
 export async function applyChanges(conn: Conn, changes: TableChanges): Promise<TableUpdateResult[]> {

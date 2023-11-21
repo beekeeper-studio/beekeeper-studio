@@ -121,6 +121,10 @@ export function runCommonTests(getUtil) {
     test("should fetch table properties", async() => {
       await getUtil().tablePropertiesTests()
     })
+
+    test("should get an internal primary key", async () => {
+      await getInternalPrimaryKeyTests(getUtil())
+    })
   })
 
   describe("Data modification", () => {
@@ -708,4 +712,65 @@ export const itShouldGenerateSQLForAllChanges = function(util) {
   expect(sql.includes('test_inserts'));
   expect(sql.includes('jane'));
   expect(sql.includes('testy'));
+}
+
+export const getInternalPrimaryKeyTests = async function (util) {
+  const specs = {
+    sqlite: [
+      {
+        columns: ['name'],
+        internalPK: { select: 'rowid', result: 'rowid' },
+      },
+      {
+        columns: ['rowid'],
+        internalPK: { select: 'oid', result: 'rowid' },
+      },
+      {
+        columns: ['rowid', 'oid', '_rowid_'],
+        internalPK: null,
+      },
+    ],
+    postgresql: [
+      {
+        columns: ['name'],
+        internalPK: { select: 'ctid', result: 'ctid' },
+      },
+    ],
+    cockroachdb: [
+      {
+        columns: ['name'],
+        internalPK: { select: 'rowid', result: 'rowid' },
+      },
+      {
+        columns: ['rowid'],
+        internalPK: { select: 'rowid_1', result: 'rowid_1' },
+      },
+      {
+        columns: ['rowid', 'rowid_1'],
+        internalPK: { select: 'rowid_2', result: 'rowid_2' },
+      },
+      {
+        columns: ['rowid_1'],
+        internalPK: { select: 'rowid', result: 'rowid' },
+      },
+    ],
+    generic: [
+      {
+        columns: ['name'],
+        internalPK: null,
+      },
+    ]
+  }
+
+  const spec = specs[util.dbType] || specs.generic
+
+  for (let idx = 0; idx < spec.length; idx++) {
+    const tableSpec = spec[idx]
+    const tableName = `internal_primary_key_${idx}`
+    await util.knex.schema.createTable(tableName, (table) => {
+      tableSpec.columns.forEach((column) => table.string(column))
+    })
+    const internalPK = await util.connection.getInternalPrimaryKey(tableName)
+    expect(internalPK).toStrictEqual(tableSpec.internalPK)
+  }
 }

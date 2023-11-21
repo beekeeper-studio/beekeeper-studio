@@ -61,6 +61,7 @@ export default async function (server, database) {
     getTableKeys: (db, table) => getTableKeys(client, db, table),
     getPrimaryKey: (db, table) => getPrimaryKey(client, db, table),
     getPrimaryKeys: (db, table) => getPrimaryKeys(client, db, table),
+    getInternalPrimaryKey: (db, table) => getInternalPrimaryKey(client, db, table),
     query: (queryText) => query(client, queryText),
     getInsertQuery: (tableInsert) => buildInsertQuery(knex, { ...tableInsert, schema: database.database }),
     applyChanges: (changes) => applyChanges(client, changes),
@@ -177,6 +178,10 @@ async function getPrimaryKeys(conn, database, table) {
   } else {
     return []
   }
+}
+
+async function getInternalPrimaryKey(conn, database, table) {
+  return null
 }
 
 function query(client, queryText) {

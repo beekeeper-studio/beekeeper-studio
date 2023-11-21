@@ -399,7 +399,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async getInternalPrimaryKey(_db: string, table: string, _schema?: string): Promise<InternalPrimaryKey | null> {
     const columns = await this.listTableColumns(_db, table)
-
     const availableKeys = ['rowid', 'oid', '_rowid_']
 
     // Here we check if the table has columns that are named like the

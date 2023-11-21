@@ -68,6 +68,7 @@ export default async function (server, database) {
     getTableKeys: (db, table, schema) => getTableKeys(conn, db, table, schema),
     getPrimaryKey: (db, table, schema) => getPrimaryKey(conn, db, table, schema),
     getPrimaryKeys: (db, table, schema) => getPrimaryKeys(conn, db, table, schema),
+    getInternalPrimaryKey: (db, table, schema) => getInternalPrimaryKey(conn, db, table, schema),
     applyChangesSql: (changes) => applyChangesSql(changes, knex),
     applyChanges: (changes) => applyChanges(conn, changes),
     query: (queryText) => query(conn, queryText),
@@ -510,11 +511,11 @@ export async function listTableColumns(conn, database, table, schema) {
       column_default as "column_default",
       is_nullable as "is_nullable",
       CASE
-        WHEN character_maximum_length is not null AND data_type != 'text' 
+        WHEN character_maximum_length is not null AND data_type != 'text'
             THEN CONCAT(data_type, '(', character_maximum_length, ')')
-        WHEN numeric_precision is not null 
+        WHEN numeric_precision is not null
             THEN CONCAT(data_type, '(', numeric_precision, ',', numeric_scale, ')')
-        WHEN datetime_precision is not null AND data_type != 'date' 
+        WHEN datetime_precision is not null AND data_type != 'date'
             THEN CONCAT(data_type, '(', datetime_precision, ')')
         ELSE data_type
       END as "data_type"
@@ -737,6 +738,10 @@ export async function getPrimaryKeys(conn, database, table, schema) {
 export async function getPrimaryKey(conn, database, table, schema) {
   const res = await getPrimaryKeys(conn, database, table, schema)
   return res.length === 1 ? res[0].columnName : null
+}
+
+export async function getInternalPrimaryKey(conn, database, table, schema) {
+  return null
 }
 
 export async function applyChanges(conn, changes) {

@@ -160,28 +160,4 @@ describe("Sqlite Tests", () => {
     expect(result.length).toBe(1)
     return { ...result[0] }
   }
-
-  it("should get an internal primary key", async () => {
-    await util.knex.schema.createTable('nopk', (table) => {
-      table.string('name')
-    })
-    await util.knex.schema.createTable('nopk_with_rowid', (table) => {
-      table.string('rowid')
-    })
-    await util.knex.schema.createTable('nopk_nointernal', (table) => {
-      table.string('rowid')
-      table.string('oid')
-      table.string('_rowid_')
-    })
-
-    expect(util.connection.getInternalPrimaryKey('nopk')).resolves.toStrictEqual({
-      select: 'rowid',
-      result: 'rowid',
-    })
-    expect(util.connection.getInternalPrimaryKey('nopk_with_rowid')).resolves.toStrictEqual({
-      select: 'oid',
-      result: 'rowid',
-    })
-    expect(util.connection.getInternalPrimaryKey('nopk_nointernal')).resolves.toBeNull()
-  })
 })
