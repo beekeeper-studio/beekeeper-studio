@@ -1110,7 +1110,8 @@ export async function getPrimaryKeys(conn: HasPool, _database: string, table: st
     const internalPrimaryKey = await getInternalPrimaryKey(conn, _database, table, schema)
     if (internalPrimaryKey) {
       // Exclude internal primary key
-      columns.splice(columns.findIndex((col) => col.columnName === internalPrimaryKey.select), 1)
+      const idx = columns.findIndex((col) => col.columnName === internalPrimaryKey.select)
+      if (idx >= 0) columns.splice(idx, 1)
     }
   }
 
