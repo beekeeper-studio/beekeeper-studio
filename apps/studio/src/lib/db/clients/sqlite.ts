@@ -401,9 +401,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     const columns = await this.listTableColumns(_db, table)
     const availableKeys = ['rowid', 'oid', '_rowid_']
 
-    // Here we check if the table has columns that are named like the
-    // internal primary keys. A column with the same name as the internal
-    // primary key cannot be used because the result will not be the key.
+    // If a table has columns that are named like the rowid, they can't be
+    // considered as rowid.
     columns.forEach(({ columnName }) => {
       if (availableKeys.includes(columnName)) {
         availableKeys.splice(availableKeys.indexOf(columnName), 1)

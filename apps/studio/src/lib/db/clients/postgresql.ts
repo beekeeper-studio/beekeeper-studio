@@ -661,12 +661,22 @@ export async function listTableColumns(
   table?: string,
   schema?: string
 ): Promise<ExtendedTableColumn[]> {
-  // if you provide table, you have to provide schema
-  const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : ""
   const params = table ? [schema, table] : []
   if (table && !schema) {
     throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`)
   }
+
+  const clauses = []
+  if (table) {
+    // if you provide table, you have to provide schema
+    clauses.push("table_schema = $1 AND table_name = $2")
+  }
+  const version = await getVersion(conn)
+  if (version.isCockroach) {
+    // don't list rowid (a hidden primary key)
+    clauses.push("is_hidden = 'NO'")
+  }
+  const clause = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
 
   const sql = `
     SELECT
@@ -1096,13 +1106,27 @@ export async function getPrimaryKeys(conn: HasPool, _database: string, table: st
 }
 
 export async function getInternalPrimaryKey(conn: HasPool, database: string, table: string, schema: string): Promise<InternalPrimaryKey> {
-  if ((await getVersion(conn)).isCockroach) {
+  const version = await getVersion(conn)
+  if (version.isCockroach) {
     const columns = await listTableColumns(conn, database, table, schema)
-    const pk = columns.find((column) => column.defaultValue === 'unique_rowid()' && column.columnName.startsWith('rowid'))
-    return {
-      select: pk.columnName,
-      result: pk.columnName,
+    const rowIds = []
+    columns.forEach((column) => {
+      if (column.columnName.startsWith('rowid')) {
+        rowIds.push(column.columnName)
+      }
+    })
+
+    // Cockroach uses a 'rowid' name that is unused.
+    // And someone might name their columns 'rowid', 'rowid_1', 'rowid_2'
+    // ¯\_(ツ)_/¯
+    for (let i = 0; i < 100; i++) {
+      if (i === 0 && rowIds.includes('rowid')) continue
+      if (rowIds.includes(`rowid_${i}`)) continue
+      const result = i === 0 ? `rowid` : `rowid_${i}`
+      return { select: result, result }
     }
+
+    return null
   }
   return {
     select: 'ctid',

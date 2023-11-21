@@ -81,6 +81,11 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
   abstract listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]>;
   abstract getPrimaryKey(db: string, table: string, schema?: string): Promise<string | null>;
   abstract getPrimaryKeys(db: string, table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
+
+  /**
+   * This method assumes that the table does not have a primary key.
+   * It does not check whether the table has a primary key or not.
+   * */
   abstract getInternalPrimaryKey(db: string, table: string, schema?: string): Promise<InternalPrimaryKey | null>;
   abstract getTableLength(table: string, schema?: string): Promise<number>;
   abstract selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>;
