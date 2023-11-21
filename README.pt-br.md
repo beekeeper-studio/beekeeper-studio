@@ -64,7 +64,7 @@ Nós queremos a sua contribuição, leia nosso [guia de contribuição de 10 min
 Quer melhorar o Beekeeper Studio codificando ou melhorando a documentação? Execute o projeto de forma fácil no Mac, Linux ou Windows.
 
 ```bash
-# Primeiro: Instale NodeJS 12+, NPM e Yarn
+# Primeiro: Instale NodeJS 12+ ou 14, NPM e Yarn
 # ...
 
 # 1. Crie um fork do repositório do Beekeeper Studio (clique no botão de fork no topo a direita dessa tela)
@@ -72,6 +72,9 @@ Quer melhorar o Beekeeper Studio codificando ou melhorando a documentação? Exe
 git clone git@github.com:<your-username>/beekeeper-studio.git beekeeper-studio
 cd beekeeper-studio/
 yarn install # instala dependencias
+
+# Se estiver usando NodeJS 16.17+:
+export NODE_OPTIONS=--openssl-legacy-provider
 
 # Agora você pode iniciar a aplicação:
 yarn run electron:serve ## a aplicação será iniciada
@@ -100,17 +103,13 @@ Beekeeper Studio tem dois pontos de entrada:
 
 1. Incremente a versão no package.json
 2. Substitua `build/release-notes.md` com as últimas notas da release. Siga o formato que está aqui.
-
-- execute `git log <last-tag>..HEAD --oneline | grep 'Merge pull'` para encontrar os Pull Requests mergeados.
-
-2. Commit
-3. Push para master
-4. Crie uma tag `git tag v<version>`. Precisa começar com a letra 'v'
-5. `git push origin <tagname>`
-
-- Agora espere pela ação de _build/publish_ completar no GitHub.
-
-6. Subir a nova release
+   - execute `git log <last-tag>..HEAD --oneline | grep 'Merge pull'` para encontrar os Pull Requests mergeados.
+3. Commit
+4. Push para master
+5. Crie uma tag `git tag v<version>`. Precisa começar com a letra 'v'
+6. `git push origin <tagname>`
+   - Agora espere pela ação de _build/publish_ completar no GitHub.
+7. Subir a nova release
 
 - Vá para o "rascunho" da nova release na aba de releases do GitHub, edite as notas e publique
 - Faça Login em snapcraft.io, arraste a versão enviada para o canal 'estável' de cada arquitetura.
