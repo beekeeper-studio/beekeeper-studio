@@ -1095,14 +1095,26 @@ export async function getPrimaryKeys(conn: HasPool, _database: string, table: st
   `
   const query = version.isRedshift ? redshiftQuery : psqlQuery
   const data = await driverExecuteSingle(conn, { query })
-  if (data.rows) {
-    return data.rows.map((r) => ({
-      columnName: r.column_name,
-      position: r.position
-    }))
-  } else {
+
+  if (!data.rows) {
     return []
   }
+
+  const columns = data.rows.map((r) => ({
+    columnName: r.column_name,
+    position: r.position
+  }))
+
+
+  if (version.isCockroach) {
+    const internalPrimaryKey = await getInternalPrimaryKey(conn, _database, table, schema)
+    if (internalPrimaryKey) {
+      // Exclude internal primary key
+      columns.splice(columns.findIndex((col) => col.columnName === internalPrimaryKey.select), 1)
+    }
+  }
+
+  return columns
 }
 
 export async function getInternalPrimaryKey(conn: HasPool, database: string, table: string, schema: string): Promise<InternalPrimaryKey> {
