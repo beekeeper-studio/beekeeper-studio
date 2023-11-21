@@ -2,6 +2,7 @@
   <virtual-list
     ref="vList"
     class="list-body"
+    :class="{ 'list-body-empty': displayItems.length === 0 }"
     :data-key="'key'"
     :data-sources="displayItems"
     :data-component="itemComponent"
@@ -74,6 +75,8 @@ interface RoutineItem extends BaseItem {
   parent: BaseItem;
 }
 
+const INITIAL_ITEM_HEIGHT = 22.8;
+
 export default Vue.extend({
   mixins: [TableListContextMenus],
   components: { VirtualList },
@@ -82,7 +85,7 @@ export default Vue.extend({
       items: [],
       displayItems: [],
       itemComponent: ItemComponent,
-      estimateItemHeight: 22.8, // height of collapsed item
+      estimateItemHeight: INITIAL_ITEM_HEIGHT, // height of collapsed item
       keeps: 30,
       generated: false,
     };
@@ -182,7 +185,7 @@ export default Vue.extend({
 
           // Summarizing the total height of all list items to get the average height
 
-          totalHeight += 22.8; // height of list item
+          totalHeight += INITIAL_ITEM_HEIGHT; // height of list item
 
           if (item.expanded) {
             if (item.type === "table") {
@@ -196,7 +199,11 @@ export default Vue.extend({
         }
       }
 
-      this.estimateItemHeight = totalHeight / displayItems.length;
+      if (displayItems.length > 0) {
+        this.estimateItemHeight = totalHeight / displayItems.length;
+      } else {
+        this.estimateItemHeight = INITIAL_ITEM_HEIGHT;
+      }
       this.displayItems = displayItems;
     },
     loadColumns(item: TableItem) {
