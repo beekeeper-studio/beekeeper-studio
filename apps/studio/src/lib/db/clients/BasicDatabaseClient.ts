@@ -40,7 +40,6 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
     this.knex = knex;
     this.contextProvider = contextProvider
   }
-  defaultSchema?: () => string;
   listTablePartitions(_table: string): Promise<TablePartition[]> {
     return Promise.resolve([])
   }
@@ -50,6 +49,7 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
   alterPartition: (changes: AlterPartitionsSpec) => Promise<void> = () => Promise.resolve();
   getMaterializedViewCreateScript?: (view: string, schema?: string) => Promise<string[]> = () => Promise.resolve([]);
   abstract versionString(): string;
+  abstract defaultSchema(): string | null;
 
 
   abstract getBuilder(table: string, schema?: string): ChangeBuilderBase

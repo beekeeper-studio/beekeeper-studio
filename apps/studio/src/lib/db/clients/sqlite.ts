@@ -69,6 +69,10 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return this.version?.data[0]["sqlite_version()"];  
   }
 
+  defaultSchema(): string | null {
+    return null
+  }
+
   getBuilder(table: string, _schema?: string): ChangeBuilderBase {
     return new SqliteChangeBuilder(table);
   }
