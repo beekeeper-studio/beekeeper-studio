@@ -746,6 +746,7 @@
             'mariadb': 'text/x-mariadb',
             'sqlite': 'text/x-sqlite',
             'cassandra': 'text/x-cassandra',
+            'redshift': 'text/x-pgsql',
           };
 
           const extraKeys = {}
