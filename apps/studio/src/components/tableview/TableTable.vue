@@ -503,6 +503,11 @@ export default Vue.extend({
           cssClass = 'foreign-key';
         }
 
+        // if column has a comment, add it to the tooltip
+        if (column.comment) {
+          headerTooltip += `<br/> ${escapeHtml(column.comment)}`
+        }
+
         const result = {
           title: column.columnName,
           field: column.columnName,
@@ -525,7 +530,6 @@ export default Vue.extend({
           contextMenu: cellMenu(hasKeyDatas ? keyDatas[0][1] : undefined),
           headerContextMenu: columnMenu,
           headerMenu: columnMenu,
-          variableHeight: true,
           headerTooltip: headerTooltip,
           cellEditCancelled: (cell) => cell.getRow().normalizeHeight(),
           formatter: this.cellFormatter,
@@ -566,7 +570,6 @@ export default Vue.extend({
         maxWidth: globals.maxColumnWidth,
         maxInitialWidth: globals.maxInitialWidth,
         editable: false,
-        variableHeight: true,
         cellEditCancelled: cell => cell.getRow().normalizeHeight(),
         formatter: this.cellFormatter,
         visible: false,
