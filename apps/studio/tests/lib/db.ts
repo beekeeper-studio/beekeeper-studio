@@ -174,19 +174,19 @@ export class DBTestUtil {
   }
 
   async truncateTableTests() {
-    await this.knex('group').insert([{select: 'something'}, {select: 'something'}])
-    const initialRowCount = await this.knex.select().from('group')
+    await this.knex('group_table').insert([{select_col: 'something'}, {select_col: 'something'}])
+    const initialRowCount = await this.knex.select().from('group_table')
 
-    await this.connection.truncateElement('group', 'TABLE', this.defaultSchema)
-    const newRowCount = await this.knex.select().from('group')
+    await this.connection.truncateElement('group_table', 'TABLE', this.defaultSchema)
+    const newRowCount = await this.knex.select().from('group_table')
 
     expect(newRowCount.length).toBe(0)
     expect(initialRowCount.length).toBeGreaterThan(newRowCount.length)
   }
 
   async badTruncateTableTests() {
-    await this.knex('group').insert([{select: 'something'}, {select: 'something'}])
-    const initialRowCount = await this.knex.select().from('group')
+    await this.knex('group_table').insert([{select_col: 'something'}, {select_col: 'something'}])
+    const initialRowCount = await this.knex.select().from('group_table')
     const expectedQueries = {
       postgresql: 'group"drop table test_inserts"',
       mysql: "group'drop table test_inserts'",
@@ -198,16 +198,16 @@ export class DBTestUtil {
     try {
       // TODO: this should not the right method to call here
       await this.connection.dropElement(expectedQueries[this.dbType], 'TABLE', this.defaultSchema)
-      const newRowCount = await this.knex.select().from('group')
+      const newRowCount = await this.knex.select().from('group_table')
       expect(newRowCount.length).toEqual(initialRowCount.length)
     } catch (err) {
-      const newRowCount = await this.knex.select().from('group')
+      const newRowCount = await this.knex.select().from('group_table')
       expect(newRowCount.length).toEqual(initialRowCount.length)
     }
   }
 
   async duplicateTableSqlTests() {
-    const sql = await this.connection.duplicateTableSql('group', 'group_copy', this.defaultSchema)
+    const sql = await this.connection.duplicateTableSql('group_table', 'group_copy', this.defaultSchema)
 
     expect(sql).not.toBeUndefined()
     expect(sql).not.toBeNull()
@@ -219,11 +219,11 @@ export class DBTestUtil {
   async duplicateTableTests() {
     const tables = await this.connection.listTables({ schema: this.defaultSchema })
 
-    await this.connection.duplicateTable('group', 'group_copy', this.defaultSchema)
+    await this.connection.duplicateTable('group_table', 'group_copy', this.defaultSchema)
 
     const newTablesCount = await this.connection.listTables({ schema: this.defaultSchema })
 
-    const originalTableRowCount = await this.knex.select().from('group')
+    const originalTableRowCount = await this.knex.select().from('group_table')
     const duplicateTableRowCount = await this.knex.select().from('group_copy')
 
     expect(newTablesCount.length).toBe(tables.length + 1)
@@ -253,7 +253,7 @@ export class DBTestUtil {
 
   async tableColumnsTests() {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)
-    const groupColumns = columns.filter((row) => row.tableName === 'group')
+    const groupColumns = columns.filter((row) => row.tableName === 'group_table')
     expect(groupColumns.length).toBe(2)
   }
 
@@ -264,32 +264,32 @@ export class DBTestUtil {
   async tableViewTests() {
 
     // reserved word as table name
-    expect(await this.connection.getPrimaryKey("group", this.defaultSchema))
+    expect(await this.connection.getPrimaryKey("group_table", this.defaultSchema))
       .toBe("id");
 
     expect(await this.connection.getPrimaryKey("MixedCase", this.defaultSchema))
       .toBe("id");
 
-    const stR = await this.connection.selectTop("group", 0, 10, [{ field: "select", dir: 'ASC'} ], [], this.defaultSchema)
+    const stR = await this.connection.selectTop("group_table", 0, 10, [{ field: "select_col", dir: 'ASC'} ], [], this.defaultSchema)
     expect(stR)
       .toMatchObject({ result: [] })
 
-    await this.knex("group").insert([{select: "bar"}, {select: "abc"}])
+    await this.knex("group_table").insert([{select_col: "bar"}, {select_col: "abc"}])
 
-    let r = await this.connection.selectTop("group", 0, 10, [{field: "select", dir: 'ASC'}], [], this.defaultSchema)
-    let result = r.result.map((r: any) => r.select)
+    let r = await this.connection.selectTop("group_table", 0, 10, [{field: "select_col", dir: 'ASC'}], [], this.defaultSchema)
+    let result = r.result.map((r: any) => r.select_col)
     expect(result).toMatchObject(["abc", "bar"])
 
-    r = await this.connection.selectTop("group", 0, 10, [{field: 'select', dir: 'DESC'}], [], this.defaultSchema)
-    result = r.result.map((r: any) => r.select)
+    r = await this.connection.selectTop("group_table", 0, 10, [{field: 'select_col', dir: 'DESC'}], [], this.defaultSchema)
+    result = r.result.map((r: any) => r.select_col)
     expect(result).toMatchObject(['bar', 'abc'])
 
-    r = await this.connection.selectTop("group", 0, 1, [{ field: 'select', dir: 'DESC' }], [], this.defaultSchema)
-    result = r.result.map((r: any) => r.select)
+    r = await this.connection.selectTop("group_table", 0, 1, [{ field: 'select_col', dir: 'DESC' }], [], this.defaultSchema)
+    result = r.result.map((r: any) => r.select_col)
     expect(result).toMatchObject(['bar'])
 
-    r = await this.connection.selectTop("group", 1, 10, [{ field: 'select', dir: 'DESC' }], [], this.defaultSchema)
-    result = r.result.map((r: any) => r.select)
+    r = await this.connection.selectTop("group_table", 1, 10, [{ field: 'select_col', dir: 'DESC' }], [], this.defaultSchema)
+    result = r.result.map((r: any) => r.select_col)
     expect(result).toMatchObject(['abc'])
 
     r = await this.connection.selectTop("MixedCase", 0, 1, [], [], this.defaultSchema)
@@ -620,7 +620,7 @@ export class DBTestUtil {
 
   // lets start simple, it should resolve for all connection types
   async tablePropertiesTests() {
-    await this.connection.getTableProperties('group', this.defaultSchema)
+    await this.connection.getTableProperties('group_table', this.defaultSchema)
 
     if (!this.data.disabledFeatures?.createIndex) {
       const indexes = await this.connection.listTableIndexes('has_index', this.defaultSchema)
@@ -724,9 +724,9 @@ export class DBTestUtil {
       table.string("bananas")
     })
 
-    await this.knex.schema.createTable('group', (table) => {
+    await this.knex.schema.createTable('group_table', (table) => {
       table.increments().primary()
-      table.string("select")
+      table.string("select_col")
     })
 
     await this.knex.schema.createTable("people", (table) => {
