@@ -26,7 +26,7 @@
             type="button"
             @click.prevent="closeModal"
           >
-            Cancel
+            Cancel Change
           </button>
         </div>
       </div>
@@ -39,7 +39,7 @@ import Vue from 'vue'
 import DatePicker from 'vue2-datepicker'
 import helpers from '@shared/lib/tabulator'
 export default Vue.extend({
-  props: ['cell', 'dataType', 'active'],
+  props: ['cell', 'dataType'],
   components: { DatePicker },
   data() {
     return {
@@ -88,14 +88,13 @@ export default Vue.extend({
       return times.includes(dataValue.trim().toLowerCase().replace(/ *\([^)]*\) */g, ''))
     },
     submit(e) {
-      console.log('Submit', e)
-      this.$emit('value', e)
+      this.cell.setValue(e)
       this.$modal.hide(this.modalName)
     },
   },
   mounted() {
     // nothing really happens here, rendered watch is the real hook.
-    console.log('~~~', this.dataType, this.cell.getValue(), this.active)
+    console.log('~~~', this.dataType, this.cell.getValue())
     const dataType = this.dataType || ''
     const val = this.cell.getValue()
     let dataValue = val == null ? val : helpers.niceString(val)
