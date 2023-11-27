@@ -24,7 +24,7 @@
   "dependencies": {
     "@aws-sdk/client-redshift": "^3.145.0",
     "@electron/remote": "^2.0.9",
-    "axios": "^0.21.4",
+    "axios": "^1.6.0",
     "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
     "better-sqlite3": "~8.2.0",
