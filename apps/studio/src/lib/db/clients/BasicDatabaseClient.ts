@@ -8,7 +8,7 @@ import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderB
 export interface ExecutionContext {
     executedBy: 'user' | 'app'
     location: string // eg tab name or ID
-    purpose?: string // why 
+    purpose?: string // why
     details?: string // any useful details
 }
 
@@ -49,7 +49,9 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
   alterPartition: (changes: AlterPartitionsSpec) => Promise<void> = () => Promise.resolve();
   getMaterializedViewCreateScript?: (view: string, schema?: string) => Promise<string[]> = () => Promise.resolve([]);
   abstract versionString(): string;
-  abstract defaultSchema(): string | null;
+  defaultSchema(): string | null {
+    return null
+  }
 
 
   abstract getBuilder(table: string, schema?: string): ChangeBuilderBase
