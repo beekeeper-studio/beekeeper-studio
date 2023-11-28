@@ -26,6 +26,7 @@
       v-if="isDateTime && this.typeEditorActive"
       :cell="this.cell"
       :data-type="this.params.dataType"
+      :active="typeEditorActive"
     />
   </div>
 </template>
