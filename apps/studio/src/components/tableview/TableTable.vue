@@ -242,8 +242,10 @@ import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
+import helpers from '@shared/lib/tabulator'
 import { vueEditor } from '@shared/lib/tabulator/helpers';
-import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
+import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
+import DatePickerEditorVue from '@shared/components/tabulator/DateTimePickerEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
 import { Tabulator } from 'tabulator-tables'
@@ -253,6 +255,7 @@ import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
+import DateTimePickerEditorVue from '@shared/components/tabulator/DateTimePickerEditor.vue';
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
@@ -1054,6 +1057,11 @@ export default Vue.extend({
     },
     editorType(dt) {
       const ne = vueEditor(NullableInputEditorVue)
+
+      if (helpers.isDateTime(dt)) {
+        return vueEditor(DateTimePickerEditorVue)
+      }
+
       switch (dt?.toLowerCase() ?? '') {
         case 'text':
         case 'json':
