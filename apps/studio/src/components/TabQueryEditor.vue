@@ -390,9 +390,10 @@
           return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
         },
         set(value) {
-          if (value === this.keymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
-          this.$store.dispatch('settings/save', { key: 'keymap', value: value });
-          this.initialize();
+          if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
+          this.$store.dispatch('settings/save', { key: 'keymap', value: value }).then(() => {
+            this.initialize();
+          });
         }
       },
       keymapTypes() {
