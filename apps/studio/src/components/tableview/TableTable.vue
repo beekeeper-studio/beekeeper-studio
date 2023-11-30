@@ -237,7 +237,7 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import 
+import
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
@@ -260,7 +260,7 @@ import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
-import { Languages } from './languageData'
+import { Languages } from '../../lib/editor/languageData'
 
 import { copyRange, copyActionsMenu, commonColumnMenu, createMenuItem } from '@/lib/menu/tableMenu';
 const log = rawLog.scope('TableTable')

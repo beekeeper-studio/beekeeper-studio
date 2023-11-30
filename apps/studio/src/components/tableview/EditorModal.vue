@@ -1,126 +1,45 @@
 <template>
   <portal to="modals">
-    <modal
-      :name="modalName"
-      class="beekeeper-modal vue-dialog editor-dialog"
-      @closed="onClose"
-      @opened="onOpen"
-    >
+    <modal :name="modalName" class="beekeeper-modal vue-dialog editor-dialog" @closed="onClose" @opened="onOpen">
       <div class="dialog-content">
         <div class="top">
           <div class="dialog-c-title">
             Editing Cell Content as
           </div>
 
-          <select
-            class="form-control language-select"
-            v-model="language"
-          >
-            <option
-              disabled
-              value="null"
-              v-if="language == null"
-            >
+          <select class="form-control language-select" v-model="language">
+            <option disabled value="null" v-if="language == null">
               Select a language
             </option>
-            <option
-              v-for="(lang, idx) in languages"
-              :key="idx"
-              :value="lang.name"
-            >
+            <option v-for="(lang, idx) in languages" :key="idx" :value="lang.name">
               {{ lang.label }}
             </option>
           </select>
         </div>
 
         <div class="codeArea">
-          <textarea
-            name="editor"
-            class="editor"
-            ref="editorRef"
-            cols="30"
-            rows="10"
-          />
+          <textarea name="editor" class="editor" ref="editorRef" cols="30" rows="10" />
         </div>
       </div>
 
+      <ErrorAlert :error="error" />
+
       <div class="vue-dialog-buttons">
         <span class="expand" />
-        <button
-          @click.prevent="$modal.hide(modalName)"
-          class="btn btn-sm btn-flat"
-        >
-          Close
+        <button @click.prevent="$modal.hide(modalName)" class="btn btn-sm btn-flat">
+          Cancel
         </button>
-        <button
-          class="btn btn-sm btn-flat"
-          @click.prevent="copy"
-        >
+        <button class="btn btn-sm btn-flat" @click.prevent="copy">
           Copy
         </button>
-        <button
-          class="btn btn-sm btn-primary"
-          @click.prevent="save"
-        >
-          Save
+        <button class="btn btn-sm btn-primary" @click.prevent="save">
+          Done
         </button>
       </div>
     </modal>
   </portal>
 </template>
 
-<style lang="scss">
-.editor-dialog {
-  .top {
-    display:flex;
-    flex-direction: row;
-    align-items: center;
-    column-gap: 16px;
-
-    padding-bottom: 1.5rem;
-
-    .dialog-c-title {
-      padding: 0!important;
-    }
-
-    .language-select {
-      width: 150px;
-
-      margin: 0;
-    }
-  }
-
-  .v--modal {
-    display: flex;
-    flex-direction: column;
-
-    overflow: hidden;
-  }
-
-  .dialog-content {
-    display: flex;
-    flex-direction: column;
-
-    height: 100%;
-    flex: 1!important;
-
-    overflow: hidden;
-
-    padding-bottom: 1.5rem!important;
-  }
-
-  .codeArea {
-    flex: 1;
-    height: 100%;
-
-    overflow-y: scroll;
-
-    .CodeMirror {
-      min-height: 128px;
-    }
-  }
-}
-</style>
 
 <script lang="ts">
 import Vue from 'vue'
@@ -134,49 +53,78 @@ import 'codemirror/addon/scroll/annotatescrollbar'
 import 'codemirror/addon/search/matchesonscrollbar'
 import 'codemirror/addon/search/matchesonscrollbar.css'
 import 'codemirror/addon/search/searchcursor'
-import {Languages} from './languageData'
+import { Languages, TextLanguage } from '../../lib/editor/languageData'
+import setKeybindingsFromVimrc from '@/lib/readVimrc'
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 
 export default Vue.extend({
+  name: "CellEditorModal",
+  components: { ErrorAlert },
   props: ["tabid", "content", "cell", "languageprop"],
-  emits: ["updateContent", "updateCell", "updateLanguage"],
-
+  // not a thing in Vue2
+  // emits: ["updateContent", "updateCell", "updateLanguage"],
   data() {
     return {
-      editor: null
+      editor: null,
+      error: null
+    }
+  },
+
+
+  computed: {
+    modalName() {
+      return this.tabid ? `cell-editor-modal-${this.tabid}` : ""
+    },
+    userKeymap() {
+      const value = this.settings?.keymap?.value;
+      return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
+    },
+    languages() {
+      return Languages
+    },
+    language: {
+      get(): string {
+        return this.languageprop
+      },
+      set(value: string): void {
+        this.$emit('updateLanguage', value)
+
+        if (this.editor) {
+          const language = this.findLanguage(value)
+
+          if (language) {
+            console.log(language.editorMode)
+            this.editor.setOption("mode", language.editorMode)
+          }
+        }
+      }
     }
   },
 
   methods: {
     findLanguage(customValue?: string) {
-      const idx = Languages.findIndex((lang) => lang.name == (customValue ?? this.language))
-
-      if (idx !== -1) {
-        return Languages[idx]
-      } else {
-        return null
-      }
+      this.content = ""
+      const result = Languages.find((lang) => lang.name === (customValue ?? this.languageprop))
+      return result ?? TextLanguage
     },
 
     copy() {
       this.$copyText(this.content)
-
       this.$noty.success("Copied the data to your clipboard!")
     },
 
     save() {
+      this.error = null
       if (this.cell) {
         const language = this.findLanguage()
 
         if (language && language.isValid(this.content)) {
           this.$modal.hide(this.modalName)
-
           this.cell.setValue(language.minify(this.content))
-
-          this.$noty.success("Successfully saved the data")
-
           return
         } else {
-          this.$noty.error("The data you are trying to save does not seem to be valid")
+          this.error = `Invalid ${this.language} content`
+          this.$noty.error(this.error)
           return
         }
       }
@@ -209,7 +157,7 @@ export default Vue.extend({
           closeOnBlur: false
         },
         keyMap: this.userKeymap
-      } as CodeMirror.EditorConfiguration)
+      } as any)
 
       this.editor.setValue(content)
       this.editor.on("keydown", (_cm, e) => {
@@ -220,7 +168,7 @@ export default Vue.extend({
 
       if (this.userKeymap === "vim") {
         const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
-        if(!codeMirrorVimInstance) {
+        if (!codeMirrorVimInstance) {
           console.error("Could not find code mirror vim instance");
         } else {
           setKeybindingsFromVimrc(codeMirrorVimInstance);
@@ -240,7 +188,6 @@ export default Vue.extend({
       }, 1)
     },
 
-
     onClose() {
       this.$emit("updateContent", "")
       this.$emit("updateCell", null)
@@ -248,35 +195,60 @@ export default Vue.extend({
       this.editor = null
     },
   },
+});
+</script>
 
-  computed: {
-    modalName() {
-      return this.tabid ? `cell-editor-modal-${this.tabid}` : ""
-    },
-    userKeymap() {
-      const value = this.settings?.keymap?.value;
-      return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
-    },
-    languages() {
-      return Languages
-    },
-    language: {
-      get() {
-        return this.languageprop
-      },
-      set(value) {
-        this.$emit('updateLanguage', value)
 
-        if (this.editor) {
-          const language = this.findLanguage(value)
 
-          if (language) {
-            console.log(language.editorMode)
-            this.editor.setOption("mode", language.editorMode)
-          }
-        }
-      }
+<style lang="scss" scoped>
+.editor-dialog {
+  .top {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    column-gap: 16px;
+
+    padding-bottom: 1.5rem;
+
+    .dialog-c-title {
+      padding: 0 !important;
+    }
+
+    .language-select {
+      width: 150px;
+
+      margin: 0;
     }
   }
-})
-</script>
+
+  .v--modal {
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+  }
+
+  .dialog-content {
+    display: flex;
+    flex-direction: column;
+
+    height: 100%;
+    flex: 1 !important;
+
+    overflow: hidden;
+
+    padding-bottom: 1.5rem !important;
+  }
+
+  .codeArea {
+    flex: 1;
+    height: 100%;
+
+    overflow-y: scroll;
+
+    .CodeMirror {
+      min-height: 128px;
+    }
+  }
+}
+</style>

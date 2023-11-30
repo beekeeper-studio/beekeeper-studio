@@ -7,7 +7,19 @@ export interface LanguageData {
   editorMode: Record<string, unknown>;
 }
 
+export const TextLanguage: LanguageData = {
+  name: 'text',
+  label: "Text",
+  editorMode: {
+    name: 'text'
+  },
+  isValid: () => true,
+  beautify: (v) => v,
+  minify: (v) => v
+}
+
 export const Languages: LanguageData[] = [
+  TextLanguage,
   {
     name: "json",
     label: "JSON",
