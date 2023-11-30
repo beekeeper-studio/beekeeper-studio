@@ -1,6 +1,4 @@
-import { sqliteTestOnly } from "../../../../../src/lib/db/clients/sqlite"
-
-
+import { SqliteClient } from "../../../../../src/lib/db/clients/sqlite"
 
 describe("SQLite UNIT test (no connection)", () => {
   it("Should build alter table statements", async () => {
@@ -20,7 +18,8 @@ describe("SQLite UNIT test (no connection)", () => {
       ]
     }
 
-    const result = await sqliteTestOnly.alterTableSql(null, input)
+    const client = new SqliteClient(null, null);
+    const result = await client.alterTableSql(input)
     const expected = 'ALTER TABLE "foo" RENAME COLUMN "a" TO "b";ALTER TABLE "foo" RENAME COLUMN "c" TO "d";'
     expect(result).toBe(expected);
   })

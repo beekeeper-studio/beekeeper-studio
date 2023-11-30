@@ -61,6 +61,7 @@
                 >
                   <option
                     disabled
+                    hidden
                     value="null"
                   >
                     Select a connection type...

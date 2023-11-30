@@ -322,7 +322,7 @@
   import pluralize from 'pluralize'
 
   import platformInfo from '@/common/platform_info'
-  import { splitQueries } from '../lib/db/sql_tools'
+  import { splitQueries, extractParams } from '../lib/db/sql_tools'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
@@ -337,6 +337,7 @@
   import { AppEvent } from '@/common/AppEvent'
   import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
   import { OpenTab } from '@/common/appdb/models/OpenTab'
+  import { makeDBHint, findTableOrViewByWord } from '@/lib/editor'
   import { removeQueryQuotes } from '@/lib/db/sql_tools';
 
   const log = rawlog.scope('query-editor')
@@ -382,15 +383,17 @@
       ...mapState(['usedConfig', 'connection', 'database', 'tables', 'storeInitialized']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
+      ...mapState('tabs', { 'activeTab': 'active' }),
       userKeymap: {
         get() {
           const value = this.settings?.keymap?.value;
           return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
         },
         set(value) {
-          if (value === this.keymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
-          this.$store.dispatch('settings/save', { key: 'keymap', value: value });
-          this.initialize();
+          if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
+          this.$store.dispatch('settings/save', { key: 'keymap', value: value }).then(() => {
+            this.initialize();
+          });
         }
       },
       keymapTypes() {
@@ -684,6 +687,8 @@
         // TODO (matthew): Add hint options for all tables and columns\
         this.initializeQueries()
         const startingValue = this.unsavedText || this.query?.text || editorDefault
+        this.query.title = this.activeTab.title
+
         console.log("starting value", startingValue)
         this.tab.unsavedChanges = this.unsavedChanges
 
@@ -735,7 +740,7 @@
           if(this.userKeymap === "vim") {
             runQueryKeyMap["Ctrl-Esc"] = this.cancelQuery
           } else {
-            runQueryKeyMap.Esc = this.cancelQuery
+            runQueryKeyMap["Esc"] = this.cancelQuery
           }
 
           const modes = {
@@ -782,8 +787,26 @@
             }
           })
 
+
+
+
           if (this.userKeymap === "vim") {
             const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
+            codeMirrorVimInstance.defineEx("write", "w", this.triggerSave)
+            codeMirrorVimInstance.defineEx("quit", "q", this.close)
+            codeMirrorVimInstance.defineEx("qa", "qa", () => {this.$root.$emit(AppEvent.closeAllTabs)})
+            codeMirrorVimInstance.defineEx("x", "x", this.writeQuit)
+            codeMirrorVimInstance.defineEx("wq", "wq", this.writeQuit)
+            codeMirrorVimInstance.defineEx("tabnew", "tabnew", (_cn, params) => {
+              if(params.args && params.args.length > 0){
+                let queryName = params.args[0]
+                this.$root.$emit(AppEvent.newTab,"", queryName)
+                return
+              }
+              this.$root.$emit(AppEvent.newTab)
+            })
+
+
             if(!codeMirrorVimInstance) {
               console.error("Could not find code mirror vim instance");
             } else {
@@ -1223,6 +1246,12 @@
       },
       editorSelectAll() {
         this.editor.execCommand('selectAll')
+      },
+      writeQuit() {
+        this.triggerSave()
+        if(this.query.id) {
+          this.close()
+        }
       }
     },
     mounted() {

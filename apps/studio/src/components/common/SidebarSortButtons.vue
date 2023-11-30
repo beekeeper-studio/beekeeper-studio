@@ -40,6 +40,7 @@
     display: flex;
     .btn.actions-btn {
       min-width: 0;
+      padding: 0;
       &:hover {
         background-color: inherit;
       }

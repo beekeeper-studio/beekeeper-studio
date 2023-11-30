@@ -91,9 +91,6 @@
       overflow: hidden;
       .tabulator-cell {
         cursor: default;
-        &:hover {
-          background: transparent;
-        }
       }
     }
     .not-run-yet {

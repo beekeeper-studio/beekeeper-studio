@@ -122,6 +122,17 @@ function testWith(dockerTag, socket = false) {
           );
         `);
 
+      // NOTE (@day): this query doesn't run properly unless we use this
+      const query = util.connection.query(`
+          CREATE TABLE public.withquestionmark (
+            "approved?" boolean NULL DEFAULT false,
+            str_col character varying(255) NOT NULL,
+            another_str_col character varying(255) NOT NULL PRIMARY KEY
+          );
+        `);
+
+      await query.execute();
+
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
 
       // test table for issue-1442 "BUG: INTERVAL columns receive wrong value when cloning row"
@@ -331,6 +342,27 @@ function testWith(dockerTag, socket = false) {
       expect(fmt(defaultQuery)).toBe(fmt(expectedDefault))
       expect(fmt(inlineParams)).toBe(fmt(expectedInline))
     });
+
+    // regression test for #1734
+    it("should be able to insert to a table with a ? in a column name", async () => {
+      let data = {
+        str_col: 'hello?',
+        another_str_col: '???'
+      };
+      data['approved?'] = true;
+      const newRow: TableInsert = {
+        table:'withquestionmark',
+        schema: 'public',
+        data: [
+          data
+        ]
+      }
+
+      const result = await util.connection.applyChanges(
+        { updates: [], inserts: [newRow], deletes: []}
+      )
+      expect(result).not.toBeNull()
+    })
 
     describe("Common Tests", () => {
       runCommonTests(() => util)

@@ -8,7 +8,7 @@
 </template>
 
 <script type="text/javascript">
-  import {TabulatorFull} from 'tabulator-tables'
+  import { Tabulator, TabulatorFull} from 'tabulator-tables'
   import _ from 'lodash'
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
@@ -20,6 +20,7 @@
   import { markdownTable } from 'markdown-table'
   import * as intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
+  import { copyRange, copyActionsMenu, commonColumnMenu } from '@/lib/menu/tableMenu';
 
   export default {
     mixins: [Converter, Mutators],
@@ -27,7 +28,6 @@
       return {
         tabulator: null,
         actualTableHeight: '100%',
-        selectedCell: null
       }
     },
     props: ['result', 'tableHeight', 'query', 'active'],
@@ -61,7 +61,7 @@
       ...mapState(['connection']),
       keymap() {
         const result = {}
-        result[this.ctrlOrCmd('c')] = this.copyCell
+        result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
         return result
       },
       tableData() {
@@ -70,117 +70,35 @@
       tableTruncated() {
           return this.result.truncated
       },
-
-      headerContextMenu() {
-        return [
-          {
-            label: '<x-menuitem><x-label>Resize all columns to match</x-label></x-menuitem>',
-            action: (_e, column) => {
-              try {
-                this.tabulator.blockRedraw()
-                const columns = this.tabulator.getColumns()
-                columns.forEach((col) => {
-                  col.setWidth(column.getWidth())
-                })
-              } catch (error) {
-                console.error(error)
-              } finally {
-                this.tabulator.restoreRedraw()
-              }
-            }
-          },
-          {
-          label: '<x-menuitem><x-label>Resize all columns to fit content</x-label></x-menuitem>',
-          action: (_e, _column) => {
-            try {
-              this.tabulator.blockRedraw()
-              const columns = this.tabulator.getColumns()
-              columns.forEach((col) => {
-                col.setWidth(true)
-              })
-            } catch (error) {
-              console.error(error)
-            } finally {
-              this.tabulator.restoreRedraw()
-            }
-          }
-        },
-          {
-          label: '<x-menuitem><x-label>Resize all columns to fixed width</x-label></x-menuitem>',
-          action: (_e, _column) => {
-            try {
-              this.tabulator.blockRedraw()
-              const columns = this.tabulator.getColumns()
-              columns.forEach((col) => {
-                col.setWidth(200)
-              })
-              // const layout = this.tabulator.getColumns().map((c: CC) => ({
-              //   field: c.getField(),
-              //   width: c.getWidth(),
-              // }))
-              // this.tabulator.setColumnLayout(layout)
-              // this.tabulator.redraw(true)
-            } catch (error) {
-              console.error(error)
-            } finally {
-              this.tabulator.restoreRedraw()
-            }
-          }
-        }
-
-        ]
-      },
-      cellContextMenu() {
-        return [
-          {
-            label: '<x-menuitem><x-label>Copy Cell</x-label></x-menuitem>',
-            action: (_e, cell) => this.$native.clipboard.writeText(cell.getValue())
-          },
-          {
-            label: '<x-menuitem><x-label>Copy Row (JSON)</x-label></x-menuitem>',
-            action: (_e, cell) => {
-              const data = cell.getRow().getData()
-              const fixed = this.dataToJson(data, true)
-              this.$native.clipboard.writeText(JSON.stringify(fixed))
-            }
-          },
-          {
-            label: '<x-menuitem><x-label>Copy Row (TSV / Excel)</x-label></x-menuitem>',
-            action: (_e, cell) => this.$native.clipboard.writeText(Papa.unparse([this.$bks.cleanData(cell.getRow().getData())], { header: false, quotes: true, delimiter: "\t", escapeFormulae: true }))
-          },
-          {
-            label: '<x-menuitem><x-label>Copy Row (Markdown)</x-label></x-menuitem>',
-            action: (_e, cell) => {
-              const data = cell.getRow().getData()
-              const fixed = this.dataToJson(data, true)
-              return this.$native.clipboard.writeText(markdownTable([
-                Object.keys(fixed),
-                Object.values(fixed),
-              ]))
-            }
-          },
-          {
-            label: '<x-menuitem><x-label>Copy Row (Insert)</x-label></x-menuitem>',
-            action: async (_e, cell) => {
-              const fixed = this.$bks.cleanData(cell.getRow().getData(), this.tableColumns)
-
-              const tableInsert = {
-                table: 'mytable',
-                schema: this.connection.defaultSchema(),
-                data: [fixed],
-              }
-              const query = await this.connection.getInsertQuery(tableInsert)
-              this.$native.clipboard.writeText(query)
-            }
-          }
-        ]
-      },
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? globals.bigTableColumnWidth : undefined
+
+        const cellMenu = (_, cell) => {
+          return copyActionsMenu({
+            range: cell.getRange(),
+            connection: this.connection,
+            table: 'mytable',
+            schema: this.connection.defaultSchema(),
+          })
+        }
+
+        const columnMenu = (_, column) => {
+          return [
+            ...copyActionsMenu({
+              range: column.getRange(),
+              connection: this.connection,
+              table: 'mytable',
+              schema: this.connection.defaultSchema(),
+            }),
+            { separator: true },
+            ...commonColumnMenu,
+          ]
+        }
+
         return this.result.fields.map((column, index) => {
+          const title = column.name || `Result ${index}`
           const result = {
-            title: column.name || `Result ${index}`,
-            titleFormatter: 'plaintext',
+            title: `<span class="title">${escapeHtml(title)}</span>`,
             field: column.id,
             titleDownload: escapeHtml(column.name),
             dataType: column.dataType,
@@ -189,9 +107,9 @@
             formatter: this.cellFormatter,
             maxInitialWidth: globals.maxColumnWidth,
             tooltip: this.cellTooltip,
-            contextMenu: this.cellContextMenu,
-            headerContextMenu: this.headerContextMenu,
-            cellClick: this.cellClick.bind(this)
+            contextMenu: cellMenu,
+            headerContextMenu: columnMenu,
+            headerMenu: columnMenu,
           }
           if (column.dataType === 'INTERVAL') {
             // add interval sorter
@@ -212,53 +130,35 @@
       if (this.tabulator) {
         this.tabulator.destroy()
       }
-      document.removeEventListener('click', this.maybeUnselectCell)
     },
     async mounted() {
       this.tabulator = new TabulatorFull(this.$refs.tabulator, {
+        spreadsheet: true,
         data: this.tableData, //link data to table
         reactiveData: true,
         renderHorizontal: 'virtual',
         columns: this.tableColumns, //define table columns
         height: this.actualTableHeight,
         nestedFieldSeparator: false,
-
-        clipboard: true,
-        keybindings: {
-          copyToClipboard: false
+        rowHeader: {
+          contextMenu: (_, cell) => {
+            return copyActionsMenu({
+              range: cell.getRange(),
+              connection: this.connection,
+              table: 'mytable',
+              schema: this.connection.defaultSchema(),
+            })
+          }
         },
         downloadConfig: {
           columnHeaders: true
-        }
+        },
       });
-      document.addEventListener('click', this.maybeUnselectCell)
     },
     methods: {
-      maybeUnselectCell(event) {
-        if (!this.active) return
-        const target = event.target
-        if (this.selectedCell) {
-          const targets = Array.from(this.selectedCell.getElement().getElementsByTagName("*"))
-          if (!targets.includes(target)) {
-            this.selectedCell.getElement().classList.remove('selected')
-            this.selectedCell = null
-          }
-        }
-      },
-      copyCell() {
-        if (!this.active) return;
-        if (!this.selectedCell) return;
-        this.selectedCell.getElement().classList.add('copied')
-        const cell = this.selectedCell
-        setTimeout(() => cell.getElement().classList.remove('copied'), 500)
-        this.$native.clipboard.writeText(this.selectedCell.getValue(), false)
-      },
-      cellClick(e, cell) {
-        if (this.selectedCell) {
-          this.selectedCell.getElement().classList.remove('selected')
-        }
-        this.selectedCell = cell
-        cell.getElement().classList.add('selected')
+      copySelection() {
+        if (!document.activeElement.classList.contains('tabulator-tableholder')) return
+        copyRange({ range: this.tabulator.getActiveRange(), type: 'tsv' })
       },
       dataToJson(rawData, firstObjectOnly) {
         const rows = _.isArray(rawData) ? rawData : [rawData]
