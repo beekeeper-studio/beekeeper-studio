@@ -1,0 +1,12 @@
+version: '3'
+services:
+  firebird:
+    image: jacobalberty/firebird:v4.0.1
+    ports:
+      - 3050
+    environment:
+      - ISC_PASSWORD=masterkey
+      - FIREBIRD_DATABASE=defaultdb.fdb
+      - EnableLegacyClientAuth=true
+    container_name: test_firebird
+

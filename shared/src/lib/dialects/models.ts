@@ -220,6 +220,8 @@ export interface CreateIndexSpec {
   name?: string
   columns: IndexColumn[]
   unique: boolean
+  // Set order for entire index. Used in firebird.
+  order?: 'ASC' | 'DESC'
 }
 
 export interface DropIndexSpec {
