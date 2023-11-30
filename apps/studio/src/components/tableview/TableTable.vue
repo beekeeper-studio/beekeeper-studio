@@ -4,6 +4,16 @@
     class="tabletable flex-col"
     :class="{'view-only': !editable}"
   >
+    <EditorModal
+      :tabid="tab.id"
+      :cell="modalCell"
+      :content="modalContent"
+      :languageprop="modalLanguage"
+      @updateContent="updateModalContent"
+      @updateCell="updateModalCell"
+      @updateLanguage="updateModalLanguage"
+    />
+
     <template v-if="!table && initialized">
       <div class="no-content" />
     </template>
@@ -227,7 +237,7 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import pluralize from 'pluralize'
+import 
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
@@ -235,6 +245,7 @@ import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
+import EditorModal from './EditorModal.vue'
 import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
@@ -249,13 +260,15 @@ import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
+import { Languages } from './languageData'
+
 import { copyRange, copyActionsMenu, commonColumnMenu, createMenuItem } from '@/lib/menu/tableMenu';
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["connection", "initialFilters", "active", 'tab', 'table'],
   data() {
@@ -266,6 +279,11 @@ export default Vue.extend({
       tabulator: null,
       actualTableHeight: "100%",
       loading: false,
+
+      // modal
+      modalContent: "",
+      modalCell: null,
+      modalLanguage: null,
 
       // table data
       data: null, // array of data
@@ -356,6 +374,7 @@ export default Vue.extend({
       result['delete'] = this.deleteTableSelection.bind(this)
       return result
     },
+
     tableHolder() {
       return this.$el.querySelector('.tabulator-tableholder')
     },
@@ -689,6 +708,18 @@ export default Vue.extend({
     }
   },
   methods: {
+    updateModalContent(newValue: string): void {
+      this.modalContent = newValue
+    },
+
+    updateModalCell(newValue: unknown): void {
+      this.modalCell = newValue
+    },
+
+    updateModalLanguage(newValue: string): void {
+      this.modalLanguage = newValue
+    },
+
     copySelection() {
       if (!document.activeElement.classList.contains('tabulator-tableholder')) return
       copyRange({ range: this.tabulator.getActiveRange(), type: 'tsv' })
