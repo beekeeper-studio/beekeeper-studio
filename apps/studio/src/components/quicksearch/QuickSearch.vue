@@ -211,8 +211,11 @@ export default Vue.extend({
 
     },
     persistentSearchEnter(){
-      const result = this.results[this.selectedItem]
-      this.submit(result, true)
+      const cursorPosition = this.$refs.searchBox.selectionStart
+      if (this.searchTerm.length === cursorPosition){
+        const result = this.results[this.selectedItem]
+        this.submit(result, true)
+      }
     },
     maybeHide(event: MouseEvent) {
       const target = event.target
