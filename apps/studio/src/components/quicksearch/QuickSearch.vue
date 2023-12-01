@@ -147,6 +147,7 @@ export default Vue.extend({
       result['ctrl+p'] = this.selectUp
       result['ctrl+n'] = this.selectDown
       result['right'] = this.persistentSearchEnter
+      result[this.ctrlOrCmd('right')] = this.persistentSearchMetaEnter
 
       return result
     }
@@ -184,7 +185,7 @@ export default Vue.extend({
       }
       if (!persistSearch) this.closeSearch()
     },
-    submitAlt(result) {
+    submitAlt(result, persistSearch = false) {
       if(!result?.item) return
 
       if (result.type === 'table') {
@@ -192,7 +193,7 @@ export default Vue.extend({
       } else {
         return this.submit(result)
       }
-      this.closeSearch()
+      if (!persistSearch) this.closeSearch()
     },
     handleClick(event: MouseEvent, result: any) {
       if (event.ctrlKey) {
@@ -215,6 +216,13 @@ export default Vue.extend({
       if (this.searchTerm.length === cursorPosition){
         const result = this.results[this.selectedItem]
         this.submit(result, true)
+      }
+    },
+    persistentSearchMetaEnter(){
+      const cursorPosition = this.$refs.searchBox.selectionStart
+      if (this.searchTerm.length === cursorPosition){
+        const result = this.results[this.selectedItem]
+        this.submitAlt(result, true)
       }
     },
     maybeHide(event: MouseEvent) {
