@@ -29,16 +29,12 @@ A repo is provided for Debian and Ubuntu 16.04+. To install the repo:
 
 
 ```bash
-# Install our GPG key
-wget --quiet -O - https://deb.beekeeperstudio.io/beekeeper.key | sudo apt-key add -
+curl -fsSL https://deb.beekeeperstudio.io/beekeeper.key | sudo gpg --dearmor --output /usr/share/keyrings/beekeeper.gpg \
+  && sudo chmod go+r /usr/share/keyrings/beekeeper.gpg \
+  && echo "deb [signed-by=/usr/share/keyrings/beekeeper.gpg] https://deb.beekeeperstudio.io stable main" \
+  | sudo tee /etc/apt/sources.list.d/beekeeper.list > /dev/null
 
-# add our repo to your apt lists directory
-echo "deb https://deb.beekeeperstudio.io stable main" | sudo tee /etc/apt/sources.list.d/beekeeper-studio-app.list
-
-# Update apt and install
-sudo apt update
-sudo apt install beekeeper-studio
-
+sudo apt update && sudo apt install beekeeper-studio -y
 ```
 
 #### Migrating from Bintray
