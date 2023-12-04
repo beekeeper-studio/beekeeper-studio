@@ -953,8 +953,13 @@ export default Vue.extend({
         : false;
     },
     cellEdited(cell) {
-
       const pkCells = cell.getRow().getCells().filter(c => this.isPrimaryKey(c.getField()))
+
+      // some number fields were being converted to strings so were triggered the cellEdited event because tabulator probably `===` stuff
+      // If the cell value does fall into this, we don't want anything edited.
+      if (cell.getOldValue() == cell.getValue()) {
+        return
+      }
 
       if (!pkCells) {
         this.$noty.error("Can't edit column -- couldn't figure out primary key")
@@ -976,7 +981,7 @@ export default Vue.extend({
       cell.getElement().classList.add('edited')
       const currentEdit = _.find(this.pendingChanges.updates, { key: key })
 
-      if (currentEdit?.oldValue === cell.getValue()) {
+      if (currentEdit?.oldValue == cell.getValue()) {
         this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit))
         cell.getElement().classList.remove('edited')
         return
