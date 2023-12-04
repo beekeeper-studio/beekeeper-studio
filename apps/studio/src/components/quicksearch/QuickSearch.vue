@@ -46,6 +46,24 @@
           </div>
           <span class="hint">(tables only)</span>
         </div>
+        <div class="shortcut-item">
+          <div>Open In Background</div>
+          <div class="shortcut">
+            <!-- <span v-if="this.$config.isMac">Cmd</span>
+            <span v-if="!this.$config.isMac">Ctrl</span> -->
+            <span>Right Arrow</span>
+          </div>
+          <span class="hint">(tables only)</span>
+        </div>
+        <div class="shortcut-item">
+          <div>Alt In Background</div>
+          <div class="shortcut">
+            <span v-if="this.$config.isMac">Cmd</span>
+            <span v-if="!this.$config.isMac">Ctrl</span>
+            <span>Right Arrow</span>
+          </div>
+          <span class="hint">(tables only)</span>
+        </div>
       </div>
       <ul
         class="results"
