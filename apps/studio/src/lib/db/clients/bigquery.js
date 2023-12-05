@@ -9,7 +9,7 @@ import { createCancelablePromise } from '@/common/utils';
 import { BigQueryOptions } from '@/common/appdb/models/saved_connection';
 import { table, time } from 'console';
 import { data } from 'jquery';
-import { buildDeleteQueries, buildInsertQueries, buildUpdateQueries, buildInsertQuery, genericSelectTop, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, applyChangesSql } from './utils';
+import { buildDeleteQueries, buildInsertQueries, buildUpdateQueries, buildInsertQuery, genericSelectTop, buildSelectTopQuery, escapeString, joinQueries, escapeLiteral, applyChangesSql, buildSelectQueriesFromUpdates } from './utils';
 import { BigQueryData } from '@shared/lib/dialects/bigquery';
 import { BigQueryClient } from '@shared/lib/knex-bigquery';
 import { Connection } from 'typeorm';
@@ -226,8 +226,65 @@ function query(client, queryText) {
   }
 }
 
+// TODO (@day): if I remember correctly we can't do transactions, so this might be sketchy
 async function applyChanges(conn, changes) {
-  throw new Error('Function not implemented.');
+  let results = [];
+
+  await runWithConnection(conn, async (connection) => {
+    // START TRANSACTION HERE?
+
+    try {
+      if (changes.inserts) {
+        await insertRows(connection, changes.inserts);
+      }
+
+      if (changes.updates) {
+        results = await updateValues(connection, changes.updates);
+      }
+
+      if (changes.deletes) {
+        await deleteRows(connection, changes.deletes);
+      }
+
+      // COMMIT?
+    } catch (ex) {
+      logger().error("query exception: ", ex);
+      // ROLLBACK?
+
+      throw ex;
+    }
+  });
+
+  return results;
+}
+
+async function insertRows(cli, inserts) {
+  for (const insert of inserts) {
+    const columns = await listTableColumns(cli, null, insert.table);
+    const command = buildInsertQuery(knex, insert, columns);
+    await driverExecuteQuery(cli, { query: command });
+  }
+
+  return true;
+}
+
+// TODO (@day): in postgres we do some stuff for arrays here. See if we need to do the same for bq
+async function updateValues(cli, updates) {
+  log.info("applying updates", updates);
+  let results = [];
+  await driverExecuteQuery(cli, { query: buildUpdateQueries(knex, updates).join(";") });
+  const data = await driverExecuteSingle(cli, { query: buildSelectQueriesFromUpdates(knex, updates).join(";"), multiple: true })
+  results = [data.rows[0]];
+
+  return results;
+}
+
+async function deleteRows(cli, deletes) {
+  for (const command of buildDeleteQueries(knex, deletes)) {
+    await driverExecuteQuery(cli, { query: command});
+  }
+
+  return true;
 }
 
 
