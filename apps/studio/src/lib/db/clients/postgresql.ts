@@ -1245,7 +1245,9 @@ async function updateValues(cli: any, rawUpdates: TableUpdate[]): Promise<TableU
   // if a type is BYTEA, decodes BASE64 URL encoded to hex
   const updates = rawUpdates.map((update) => {
     const result = { ...update}
-    if (update.columnType?.startsWith('_') && _.isString(update.value)) {
+    // if the type starts with an _ and is already an array, just leave the value as is and fall through. Otherwise, it should be 
+    // JSON parsed for maximum effect.
+    if (!_.isArray(update.value) && update.columnType?.startsWith('_') && _.isString(update.value)) {
       result.value = JSON.parse(update.value)
     } else if (update.columnType === 'bytea' && update.value) {
         result.value = '\\x' + base64.decode(update.value, 'hex')

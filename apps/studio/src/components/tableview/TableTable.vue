@@ -954,16 +954,22 @@ export default Vue.extend({
     },
     cellEdited(cell) {
       const pkCells = cell.getRow().getCells().filter(c => this.isPrimaryKey(c.getField()))
+      const oldValue = cell.getOldValue()
+      const currentValue = cell.getValue()
+      const isArray = _.isArray(oldValue)
 
       // some number fields were being converted to strings so were triggered the cellEdited event because tabulator probably `===` stuff
       // If the cell value does fall into this, we don't want anything edited.
-      if (cell.getOldValue() == cell.getValue()) {
+      if (oldValue == currentValue) {
+        // here's another one: If you are editing an array, tabulator is turning it into a comma-delimited string so if it was an array, keep it as such
+        if (_.isArray(oldValue) && !_.isArray(currentValue)) {
+          cell.setValue(currentValue.split(','), false)
+        }
         return
       }
 
       if (!pkCells) {
         this.$noty.error("Can't edit column -- couldn't figure out primary key")
-        // cell.setValue(cell.getOldValue())
         cell.restoreOldValue()
         return
       }
@@ -981,7 +987,7 @@ export default Vue.extend({
       cell.getElement().classList.add('edited')
       const currentEdit = _.find(this.pendingChanges.updates, { key: key })
 
-      if (currentEdit?.oldValue == cell.getValue()) {
+      if (currentEdit?.oldValue == currentValue) {
         this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit))
         cell.getElement().classList.remove('edited')
         return
@@ -993,6 +999,15 @@ export default Vue.extend({
           value: cell.getValue()
         }
       })
+
+      let valueToSave = cell.getValue(0)
+
+      if (isArray) {
+        if (!_.isArray(valueToSave)) {
+          valueToSave = valueToSave.split(',')
+        }
+      }
+
       if (currentEdit) {
         currentEdit.value = cell.getValue()
       } else {
@@ -1003,9 +1018,9 @@ export default Vue.extend({
           column: cell.getField(),
           columnType: column ? column.dataType : undefined,
           primaryKeys,
-          oldValue: cell.getOldValue(),
+          oldValue: oldValue,
           cell: cell,
-          value: cell.getValue(0)
+          value: valueToSave
         }
         // remove existing pending updates with identical pKey-column combo
         let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
