@@ -25,7 +25,10 @@
         id="page-content"
       >
         <div class="small-wrap expand">
-          <div class="card-flat padding">
+          <div
+            class="card-flat padding"
+            :class="determineLabelColor"
+          >
             <div class="flex flex-between">
               <h3
                 class="card-title"
@@ -35,7 +38,6 @@
               </h3>
               <h3
                 class="card-title"
-                :style="determineLabelColor"
                 v-if="pageTitle"
               >
                 {{ pageTitle }}
@@ -244,9 +246,7 @@ export default Vue.extend({
       return dialectFor(this.config.connectionType)
     },
     determineLabelColor() {
-      return {
-        "color": this.config.labelColor == "default" ? "black" : this.config.labelColor
-      }
+      return this.config.labelColor == "default" ? '' : `connection-label-color-${this.config.labelColor}`
     }
   },
   watch: {
