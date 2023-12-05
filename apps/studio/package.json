@@ -68,7 +68,7 @@
     "simple-encryptor": "^3.0.0",
     "split.js": "^1.5.11",
     "sql-formatter": "~10.7.2",
-    "sql-query-identifier": "^2.2.0",
+    "sql-query-identifier": "^2.6.0",
     "ssh2": "^1.14.0",
     "tabulator-tables": "beekeeper-studio/tabulator#daa59721b253cb6d69e8b35c4fee468666954fc2",
     "tinyduration": "^3.2.4",
