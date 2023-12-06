@@ -229,6 +229,7 @@
 import Vue from 'vue'
 import pluralize from 'pluralize'
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
+import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
 import { FkLinkMixin } from '@/mixins/fk_click'
