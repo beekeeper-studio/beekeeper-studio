@@ -107,3 +107,12 @@ export const Languages: LanguageData[] = [
     },
   },
 ];
+
+export function getLanguageByContent(content: string): LanguageData | undefined {
+  const lang = Languages.find((lang) => lang !== TextLanguage && lang.isValid(content));
+  return lang ? lang : TextLanguage
+}
+
+export function getLanguageByName(name: string): LanguageData | undefined {
+  return Languages.find((lang) => lang.name === name);
+}

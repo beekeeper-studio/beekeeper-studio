@@ -5,15 +5,9 @@
     :class="{'view-only': !editable}"
   >
     <EditorModal
-      :tabid="tab.id"
-      :cell="modalCell"
-      :content="modalContent"
-      :languageprop="modalLanguage"
-      @updateContent="updateModalContent"
-      @updateCell="updateModalCell"
-      @updateLanguage="updateModalLanguage"
+      ref="editorModal"
+      @save="onSaveEditorModal"
     />
-
     <template v-if="!table && initialized">
       <div class="no-content" />
     </template>
@@ -237,7 +231,6 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
@@ -260,7 +253,7 @@ import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
-import { Languages } from '../../lib/editor/languageData'
+import { LanguageData } from '../../lib/editor/languageData'
 
 import { copyRange, copyActionsMenu, commonColumnMenu, createMenuItem } from '@/lib/menu/tableMenu';
 const log = rawLog.scope('TableTable')
@@ -279,11 +272,6 @@ export default Vue.extend({
       tabulator: null,
       actualTableHeight: "100%",
       loading: false,
-
-      // modal
-      modalContent: "",
-      modalCell: null,
-      modalLanguage: null,
 
       // table data
       data: null, // array of data
@@ -450,6 +438,7 @@ export default Vue.extend({
             }),
             { separator: true },
             ...this.rowActionsMenu(range),
+            this.openEditorMenu(cell),
           ]
 
           if (keyDatas?.length > 0) {
@@ -708,18 +697,6 @@ export default Vue.extend({
     }
   },
   methods: {
-    updateModalContent(newValue: string): void {
-      this.modalContent = newValue
-    },
-
-    updateModalCell(newValue: unknown): void {
-      this.modalCell = newValue
-    },
-
-    updateModalLanguage(newValue: string): void {
-      this.modalLanguage = newValue
-    },
-
     copySelection() {
       if (!document.activeElement.classList.contains('tabulator-tableholder')) return
       copyRange({ range: this.tabulator.getActiveRange(), type: 'tsv' })
@@ -888,6 +865,19 @@ export default Vue.extend({
         }),
         disabled: !this.editable,
       }
+    },
+    openEditorMenu(cell: Tabulator.CellComponent) {
+      return {
+        label: createMenuItem("Open cell in Editor"),
+        disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell),
+        action: () => {
+          if (this.isPrimaryKey(cell.getField())) return
+          this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
+        }
+      }
+    },
+    onSaveEditorModal(content: string, language: LanguageData, cell: Tabulator.CellComponent){
+      cell.setValue(language.minify(content))
     },
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })

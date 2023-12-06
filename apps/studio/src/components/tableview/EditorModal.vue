@@ -1,14 +1,14 @@
 <template>
   <portal to="modals">
-    <modal :name="modalName" class="beekeeper-modal vue-dialog editor-dialog" @closed="onClose" @opened="onOpen">
+    <modal :name="modalName" class="beekeeper-modal vue-dialog editor-dialog" @opened="onOpen">
       <div class="dialog-content">
         <div class="top">
           <div class="dialog-c-title">
             Editing Cell Content as
           </div>
 
-          <select class="form-control language-select" v-model="language">
-            <option disabled value="null" v-if="language == null">
+          <select class="form-control language-select" v-model="languageName">
+            <option disabled value="" v-if="!languageName">
               Select a language
             </option>
             <option v-for="(lang, idx) in languages" :key="idx" :value="lang.name">
@@ -53,27 +53,29 @@ import 'codemirror/addon/scroll/annotatescrollbar'
 import 'codemirror/addon/search/matchesonscrollbar'
 import 'codemirror/addon/search/matchesonscrollbar.css'
 import 'codemirror/addon/search/searchcursor'
-import { Languages, TextLanguage } from '../../lib/editor/languageData'
+import { Languages, LanguageData, getLanguageByName, getLanguageByContent } from '../../lib/editor/languageData'
 import setKeybindingsFromVimrc from '@/lib/readVimrc'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { uuidv4 } from "@/lib/uuid"
 
 export default Vue.extend({
   name: "CellEditorModal",
   components: { ErrorAlert },
-  props: ["tabid", "content", "cell", "languageprop"],
-  // not a thing in Vue2
-  // emits: ["updateContent", "updateCell", "updateLanguage"],
   data() {
     return {
       editor: null,
-      error: null
+      error: null,
+      language: null,
+      languageName: "",
+      content: "",
+      eventParams: null,
     }
   },
 
 
   computed: {
     modalName() {
-      return this.tabid ? `cell-editor-modal-${this.tabid}` : ""
+      return uuidv4()
     },
     userKeymap() {
       const value = this.settings?.keymap?.value;
@@ -82,30 +84,26 @@ export default Vue.extend({
     languages() {
       return Languages
     },
-    language: {
-      get(): string {
-        return this.languageprop
-      },
-      set(value: string): void {
-        this.$emit('updateLanguage', value)
+  },
 
-        if (this.editor) {
-          const language = this.findLanguage(value)
-
-          if (language) {
-            console.log(language.editorMode)
-            this.editor.setOption("mode", language.editorMode)
-          }
-        }
+  watch: {
+    languageName() {
+      const language = getLanguageByName(this.languageName)
+      if (language && this.editor) {
+        this.editor.setOption("mode", language.editorMode)
+        this.language = language
       }
     }
   },
 
   methods: {
-    findLanguage(customValue?: string) {
-      this.content = ""
-      const result = Languages.find((lang) => lang.name === (customValue ?? this.languageprop))
-      return result ?? TextLanguage
+    openModal(content: string, language: LanguageData, eventParams?: any) {
+      language = language ? language : getLanguageByContent(content)
+      this.language = language
+      this.languageName = language.name
+      this.content = content
+      this.eventParams = eventParams
+      this.$modal.show(this.modalName)
     },
 
     copy() {
@@ -115,25 +113,20 @@ export default Vue.extend({
 
     save() {
       this.error = null
-      if (this.cell) {
-        const language = this.findLanguage()
 
-        if (language && language.isValid(this.content)) {
-          this.$modal.hide(this.modalName)
-          this.cell.setValue(language.minify(this.content))
-          return
-        } else {
-          this.error = `Invalid ${this.language} content`
-          this.$noty.error(this.error)
-          return
-        }
+      if (this.language && this.language.isValid(this.content)) {
+        this.$emit('save', this.content, this.language, this.eventParams)
+        this.$modal.hide(this.modalName)
+        return
+      } else {
+        this.error = `Invalid ${this.languageName} content`
+        this.$noty.error(this.error)
+        return
       }
-
-      this.$noty.error("An unknown issue occured whilst trying to save your data")
     },
 
     onOpen() {
-      const language = this.findLanguage()
+      const language = this.language
       let content = this.content
 
       if (language) {
@@ -176,7 +169,7 @@ export default Vue.extend({
       }
 
       this.editor.on("change", (cm) => {
-        this.$emit("updateContent", cm.getValue())
+        this.content = cm.getValue()
       })
 
       this.editor.focus()
@@ -186,13 +179,6 @@ export default Vue.extend({
         // its a hit and miss error
         this.editor.refresh()
       }, 1)
-    },
-
-    onClose() {
-      this.$emit("updateContent", "")
-      this.$emit("updateCell", null)
-      this.$emit("updateLanguage", null)
-      this.editor = null
     },
   },
 });
