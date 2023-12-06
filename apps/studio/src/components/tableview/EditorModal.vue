@@ -17,24 +17,23 @@
           </select>
         </div>
 
-        <div class="codeArea">
-          <textarea name="editor" class="editor" ref="editorRef" cols="30" rows="10" />
-        </div>
+        <textarea name="editor" ref="editorRef" />
       </div>
+      <div class="bottom">
+        <span class="error-message" v-show="error">{{ error }}</span>
 
-      <ErrorAlert :error="error" />
-
-      <div class="vue-dialog-buttons">
-        <span class="expand" />
-        <button @click.prevent="$modal.hide(modalName)" class="btn btn-sm btn-flat">
-          Cancel
-        </button>
-        <button class="btn btn-sm btn-flat" @click.prevent="copy">
-          Copy
-        </button>
-        <button class="btn btn-sm btn-primary" @click.prevent="save">
-          Done
-        </button>
+        <div class="vue-dialog-buttons">
+          <span class="expand" />
+          <button @click.prevent="$modal.hide(modalName)" class="btn btn-sm btn-flat">
+            Cancel
+          </button>
+          <button class="btn btn-sm btn-flat" @click.prevent="copy">
+            Copy
+          </button>
+          <button class="btn btn-sm btn-primary" @click.prevent="save">
+            Done
+          </button>
+        </div>
       </div>
     </modal>
   </portal>
@@ -55,12 +54,11 @@ import 'codemirror/addon/search/matchesonscrollbar.css'
 import 'codemirror/addon/search/searchcursor'
 import { Languages, LanguageData, getLanguageByName, getLanguageByContent } from '../../lib/editor/languageData'
 import setKeybindingsFromVimrc from '@/lib/readVimrc'
-import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { uuidv4 } from "@/lib/uuid"
+import debounce from 'lodash/debounce'
 
 export default Vue.extend({
   name: "CellEditorModal",
-  components: { ErrorAlert },
   data() {
     return {
       editor: null,
@@ -92,6 +90,7 @@ export default Vue.extend({
       if (language && this.editor) {
         this.editor.setOption("mode", language.editorMode)
         this.language = language
+        this.debouncedCheckForErrors();
       }
     }
   },
@@ -112,17 +111,8 @@ export default Vue.extend({
     },
 
     save() {
-      this.error = null
-
-      if (this.language && this.language.isValid(this.content)) {
-        this.$emit('save', this.content, this.language, this.eventParams)
-        this.$modal.hide(this.modalName)
-        return
-      } else {
-        this.error = `Invalid ${this.languageName} content`
-        this.$noty.error(this.error)
-        return
-      }
+      this.$emit('save', this.content, this.language, this.eventParams)
+      this.$modal.hide(this.modalName)
     },
 
     onOpen() {
@@ -170,6 +160,7 @@ export default Vue.extend({
 
       this.editor.on("change", (cm) => {
         this.content = cm.getValue()
+        this.debouncedCheckForErrors();
       })
 
       this.editor.focus()
@@ -180,6 +171,11 @@ export default Vue.extend({
         this.editor.refresh()
       }, 1)
     },
+
+    debouncedCheckForErrors: debounce(function() {
+      const isValid = this.language.isValid(this.content)
+      this.error = isValid ? null : `Invalid ${this.languageName} content`
+    }, 50),
   },
 });
 </script>
@@ -187,13 +183,21 @@ export default Vue.extend({
 
 
 <style lang="scss" scoped>
+@import '@shared/assets/styles/_variables';
+
+div.vue-dialog div.dialog-content {
+  padding: 0;
+  .top {
+    padding: 1rem 1.2rem 1rem;
+  }
+}
+
 .editor-dialog {
   .top {
     display: flex;
     flex-direction: row;
     align-items: center;
     column-gap: 16px;
-
     padding-bottom: 1.5rem;
 
     .dialog-c-title {
@@ -202,39 +206,38 @@ export default Vue.extend({
 
     .language-select {
       width: 150px;
-
       margin: 0;
+    }
+  }
+
+  .bottom {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.2rem;
+    .error-message {
+      color: $brand-danger;
+    }
+    .vue-dialog-buttons {
+      padding: 0;
+      width: fit-content;
+      margin-left: auto;
     }
   }
 
   .v--modal {
     display: flex;
     flex-direction: column;
-
     overflow: hidden;
   }
 
   .dialog-content {
-    display: flex;
-    flex-direction: column;
-
-    height: 100%;
+    height: 300px;
+    min-height: 300px;
+    max-height: 630px;
+    resize: vertical;
     flex: 1 !important;
-
     overflow: hidden;
-
-    padding-bottom: 1.5rem !important;
-  }
-
-  .codeArea {
-    flex: 1;
-    height: 100%;
-
-    overflow-y: scroll;
-
-    .CodeMirror {
-      min-height: 128px;
-    }
+    padding: 0;
   }
 }
 </style>
