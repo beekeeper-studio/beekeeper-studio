@@ -44,6 +44,17 @@
   .card-flat {
     background: $theme-bg;
     margin: $gutter-w 0;
+    &[class*="connection-label-color"] {
+      position: relative;
+      padding-top: 2.5rem;
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0 0 auto;
+        height: 1rem;
+        background-color: var(--connection-label-color);
+      }
+    }
   }
   .sqlite-form {
     margin-bottom: $gutter-h;

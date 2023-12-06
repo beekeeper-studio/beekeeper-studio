@@ -29,7 +29,7 @@ import 'codemirror/mode/xml/xml'
 import 'codemirror/mode/diff/diff'
 import './vendor/sql-hint'
 import './vendor/show-hint'
-import './lib/codemirror'
+import './lib/codemirror-definition'
 
 import store from './store/index'
 import 'reflect-metadata'

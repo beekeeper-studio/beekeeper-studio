@@ -313,6 +313,7 @@
   import 'codemirror/addon/search/matchesonscrollbar'
   import 'codemirror/addon/search/matchesonscrollbar.css'
   import 'codemirror/addon/search/searchcursor'
+  import { registerAutoquote } from '@/lib/codemirror'
 
   import setKeybindingsFromVimrc from "../lib/readVimrc"
 
@@ -750,6 +751,7 @@
             'mariadb': 'text/x-mariadb',
             'sqlite': 'text/x-sqlite',
             'cassandra': 'text/x-cassandra',
+            'redshift': 'text/x-pgsql',
           };
 
           const extraKeys = {}
@@ -832,26 +834,7 @@
             this.unsavedText = cm.getValue()
           })
 
-          if (this.connectionType === 'postgresql')  {
-            this.editor.on("beforeChange", (_cm, co) => {
-              const { to, from, origin, text } = co;
-
-              // eslint-disable-next-line
-              // @ts-ignore
-              const keywords = CodeMirror.resolveMode(this.editor.options.mode).keywords
-
-              // quote names when needed
-              if (origin === 'complete' && keywords[text[0].toLowerCase()] != true) {
-                const names = text[0]
-                  .match(/("[^"]*"|[^.]+)/g)
-                  .map(n => /^\d/.test(n) ? `"${n}"` : n)
-                  .map(n => /[^a-z0-9_]/.test(n) && !/"/.test(n) ? `"${n}"` : n)
-                  .join('.')
-
-                co.update(from, to, [names], origin)
-              }
-            })
-          }
+          registerAutoquote(this.editor)
 
           // TODO: make this not suck
           this.editor.on('keyup', this.maybeAutoComplete)

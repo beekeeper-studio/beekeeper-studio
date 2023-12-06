@@ -14222,10 +14222,10 @@ sql-formatter@~10.7.2:
     argparse "^2.0.1"
     nearley "^2.20.1"
 
-sql-query-identifier@^2.2.0:
-  version "2.4.4"
-  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.4.4.tgz#38ea76013ed0ffce176b0d6cff025e66e84fee2d"
-  integrity sha512-PyN/rs84dPEUEry0kervGLomCpol2xylLVb+A4wPBGo7lhk6qn8zmqWfg7NiwUunvAv5N2w599JMjrYy0GEQ3A==
+sql-query-identifier@^2.6.0:
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.6.0.tgz#ee56c0dacb946157f53f0ea0fbacb237250be8bd"
+  integrity sha512-gxlT1LX+BZi1NR8qWDtiU8umJf53OYuSKZN4xIufl6apD3OAVoBc/06FYBWPc+cHKrdqwvvs6wkiGfhvtqZwRw==
 
 sqlstring@^2.3.2:
   version "2.3.3"
@@ -14687,9 +14687,9 @@ table@^5.2.3:
     slice-ansi "^2.1.0"
     string-width "^3.0.0"
 
-tabulator-tables@beekeeper-studio/tabulator#daa59721b253cb6d69e8b35c4fee468666954fc2:
+tabulator-tables@beekeeper-studio/tabulator#9755670787b032cb812dcd83fe25b75ec27329c3:
   version "5.5.2"
-  resolved "https://codeload.github.com/beekeeper-studio/tabulator/tar.gz/daa59721b253cb6d69e8b35c4fee468666954fc2"
+  resolved "https://codeload.github.com/beekeeper-studio/tabulator/tar.gz/9755670787b032cb812dcd83fe25b75ec27329c3"
 
 tapable@^1.0.0, tapable@^1.1.3:
   version "1.1.3"
