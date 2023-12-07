@@ -877,8 +877,8 @@ export default Vue.extend({
         }
       }
     },
-    onSaveEditorModal(content: string, language: LanguageData, cell: Tabulator.CellComponent){
-      cell.setValue(language.minify(content))
+    onSaveEditorModal(content: string, _: LanguageData, cell: Tabulator.CellComponent){
+      cell.setValue(content)
     },
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })

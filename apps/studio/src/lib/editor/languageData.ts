@@ -5,6 +5,7 @@ export interface LanguageData {
   name: string;
   label: string;
   editorMode: Record<string, unknown>;
+  wrapTextByDefault?: boolean;
 }
 
 export const TextLanguage: LanguageData = {
@@ -15,7 +16,8 @@ export const TextLanguage: LanguageData = {
   },
   isValid: () => true,
   beautify: (v) => v,
-  minify: (v) => v
+  minify: (v) => v,
+  wrapTextByDefault: true,
 }
 
 export const Languages: LanguageData[] = [

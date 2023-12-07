@@ -15,9 +15,30 @@
               {{ lang.label }}
             </option>
           </select>
+
+          <x-button
+            class="btn btn-flat"
+            title="Actions"
+          >
+            <i class="material-icons">settings</i>
+            <i class="material-icons">arrow_drop_down</i>
+            <x-menu>
+              <x-menuitem @click.prevent="format" v-show="language.name !== 'text'">
+                <x-label>Format {{ language?.label }}</x-label>
+              </x-menuitem>
+              <x-menuitem @click.prevent="minify">
+                <x-label>Minify text</x-label>
+              </x-menuitem>
+              <x-menuitem @click.prevent="toggleWrapText">
+                <x-label>{{ wrapText ? 'Unwrap text' : 'Wrap text' }}</x-label>
+              </x-menuitem>
+            </x-menu>
+          </x-button>
         </div>
 
-        <textarea name="editor" ref="editorRef" />
+        <div class="editor-container">
+          <textarea name="editor" ref="editorRef" />
+        </div>
       </div>
       <div class="bottom">
         <span class="error-message" v-show="error">{{ error }}</span>
@@ -52,32 +73,38 @@ import 'codemirror/addon/scroll/annotatescrollbar'
 import 'codemirror/addon/search/matchesonscrollbar'
 import 'codemirror/addon/search/matchesonscrollbar.css'
 import 'codemirror/addon/search/searchcursor'
-import { Languages, LanguageData, getLanguageByName, getLanguageByContent } from '../../lib/editor/languageData'
+import { Languages, LanguageData, TextLanguage, getLanguageByName, getLanguageByContent } from '../../lib/editor/languageData'
 import setKeybindingsFromVimrc from '@/lib/readVimrc'
 import { uuidv4 } from "@/lib/uuid"
-import debounce from 'lodash/debounce'
+import _ from 'lodash'
+import { mapGetters } from 'vuex'
+import rawlog from 'electron-log'
+
+const log = rawlog.scope('EditorModal')
 
 export default Vue.extend({
   name: "CellEditorModal",
   data() {
     return {
       editor: null,
-      error: null,
-      language: null,
-      languageName: "",
+      error: "",
+      language: TextLanguage,
+      languageName: "text",
       content: "",
       eventParams: null,
+      wrapText: TextLanguage.wrapTextByDefault,
     }
   },
 
-
   computed: {
+    ...mapGetters({ 'settings': 'settings/settings' }),
     modalName() {
       return uuidv4()
     },
     userKeymap() {
       const value = this.settings?.keymap?.value;
-      return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
+      const keymapTypes = this.$config.defaults.keymapTypes
+      return value && keymapTypes.map(k => k.value).includes(value) ? value : 'default';
     },
     languages() {
       return Languages
@@ -92,7 +119,7 @@ export default Vue.extend({
         this.language = language
         this.debouncedCheckForErrors();
       }
-    }
+    },
   },
 
   methods: {
@@ -108,6 +135,7 @@ export default Vue.extend({
       this.languageName = language.name
       this.content = content
       this.eventParams = eventParams
+      this.wrapText = language.wrapTextByDefault ?? false
       this.$modal.show(this.modalName)
     },
 
@@ -123,14 +151,10 @@ export default Vue.extend({
 
     onOpen() {
       const language = this.language
-      let content = this.content
-
-      if (language) {
-        content = language.beautify(content)
-      }
 
       this.editor = CodeMirror.fromTextArea(this.$refs.editorRef, {
         lineNumbers: true,
+        lineWrapping: this.wrapText,
         mode: language !== null ? language.editorMode : undefined,
         indentWithTabs: false,
         tabSize: 2,
@@ -148,7 +172,7 @@ export default Vue.extend({
         keyMap: this.userKeymap
       } as any)
 
-      this.editor.setValue(content)
+      this.editor.setValue(this.content)
       this.editor.on("keydown", (_cm, e) => {
         if (this.$store.state.menuActive) {
           e.preventDefault()
@@ -158,7 +182,7 @@ export default Vue.extend({
       if (this.userKeymap === "vim") {
         const codeMirrorVimInstance = document.querySelector(".CodeMirror").CodeMirror.constructor.Vim
         if (!codeMirrorVimInstance) {
-          console.error("Could not find code mirror vim instance");
+          log.error("Could not find code mirror vim instance");
         } else {
           setKeybindingsFromVimrc(codeMirrorVimInstance);
         }
@@ -176,12 +200,39 @@ export default Vue.extend({
         // its a hit and miss error
         this.editor.refresh()
       }, 1)
-    },
 
-    debouncedCheckForErrors: debounce(function() {
+      this.$nextTick(this.resizeHeightToFitContent)
+    },
+    resizeHeightToFitContent() {
+      const wrapperEl = this.editor.getWrapperElement()
+      const wrapperStyle = window.getComputedStyle(wrapperEl)
+
+      const minHeight = parseInt(wrapperStyle.minHeight)
+      const maxHeight = parseInt(wrapperStyle.maxHeight)
+
+      const sizerEl = wrapperEl.querySelector(".CodeMirror-sizer")
+
+      const targetHeight = _.clamp(sizerEl.offsetHeight, minHeight, maxHeight)
+
+      this.editor.setSize(null, targetHeight)
+    },
+    debouncedCheckForErrors: _.debounce(function() {
       const isValid = this.language.isValid(this.content)
-      this.error = isValid ? null : `Invalid ${this.languageName} content`
+      this.error = isValid ? "" : `Invalid ${this.language?.label} content`
     }, 50),
+    toggleWrapText() {
+      this.wrapText = !this.wrapText
+      this.editor?.setOption("lineWrapping", this.wrapText)
+    },
+    format() {
+      this.content = this.language.beautify(this.content)
+      this.editor.setValue(this.content)
+      this.$nextTick(this.resizeHeightToFitContent())
+    },
+    minify() {
+      this.content = this.language.minify(this.content)
+      this.editor.setValue(this.content)
+    }
   },
 });
 </script>
@@ -214,6 +265,25 @@ div.vue-dialog div.dialog-content {
       width: 150px;
       margin: 0;
     }
+
+    .wrap-text {
+      display: flex;
+      margin-left: auto;
+      gap: 0.75rem;
+      & > input {
+        margin: 0;
+      }
+    }
+
+    .btn.btn-flat {
+      margin-left: auto;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+      min-width: auto;
+      .material-icons {
+        font-size: 16px;
+      }
+    }
   }
 
   .bottom {
@@ -237,13 +307,21 @@ div.vue-dialog div.dialog-content {
   }
 
   .dialog-content {
-    height: 300px;
-    min-height: 300px;
-    max-height: 630px;
-    resize: vertical;
     flex: 1 !important;
     overflow: hidden;
     padding: 0;
+  }
+
+  .editor-container::v-deep {
+    & * {
+      box-sizing: initial;
+    }
+    .CodeMirror {
+      height: 300px;
+      min-height: 300px;
+      max-height: 556px;
+      resize: vertical;
+    }
   }
 }
 </style>
