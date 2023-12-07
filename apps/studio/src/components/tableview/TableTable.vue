@@ -352,7 +352,7 @@ export default Vue.extend({
       }
       result[this.ctrlOrCmd('left')] = () => {
         const focusingTable = this.tabulator.element.contains(document.activeElement)
-        if (!focusingTable) this.page++
+        if (!focusingTable) this.page--
       }
       result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
