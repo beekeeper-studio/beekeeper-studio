@@ -730,12 +730,6 @@ export const getInternalPrimaryKeyTests = async function (util) {
         internalPK: null,
       },
     ],
-    postgresql: [
-      {
-        columns: ['name'],
-        internalPK: { select: 'ctid', result: 'ctid' },
-      },
-    ],
     cockroachdb: [
       {
         columns: ['name'],

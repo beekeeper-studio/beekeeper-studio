@@ -1118,7 +1118,7 @@ export async function getPrimaryKeys(conn: HasPool, _database: string, table: st
   return columns
 }
 
-export async function getInternalPrimaryKey(conn: HasPool, database: string, table: string, schema: string): Promise<InternalPrimaryKey> {
+export async function getInternalPrimaryKey(conn: HasPool, database: string, table: string, schema: string): Promise<InternalPrimaryKey | null> {
   const version = await getVersion(conn)
   if (version.isCockroach) {
     const columns = await listTableColumns(conn, database, table, schema)
@@ -1138,13 +1138,8 @@ export async function getInternalPrimaryKey(conn: HasPool, database: string, tab
       const result = i === 0 ? `rowid` : `rowid_${i}`
       return { select: result, result }
     }
-
-    return null
   }
-  return {
-    select: 'ctid',
-    result: 'ctid',
-  }
+  return null
 }
 
 export async function applyChanges(conn: Conn, changes: TableChanges): Promise<TableUpdateResult[]> {
