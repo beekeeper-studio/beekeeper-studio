@@ -234,15 +234,15 @@ async function applyChanges(conn, changes) {
     // START TRANSACTION HERE?
 
     try {
-      if (changes.inserts) {
+      if (changes.inserts && changes.inserts.length > 0) {
         await insertRows(connection, changes.inserts);
       }
 
-      if (changes.updates) {
+      if (changes.updates && changes.updates.length > 0) {
         results = await updateValues(connection, changes.updates);
       }
 
-      if (changes.deletes) {
+      if (changes.deletes && changes.deletes.length > 0) {
         await deleteRows(connection, changes.deletes);
       }
 
@@ -260,7 +260,7 @@ async function applyChanges(conn, changes) {
 
 async function insertRows(cli, inserts) {
   for (const insert of inserts) {
-    const columns = await listTableColumns(cli, null, insert.table);
+    const columns = await listTableColumns(cli, insert.dataset, insert.table);
     const command = buildInsertQuery(knex, insert, columns);
     await driverExecuteQuery(cli, { query: command });
   }

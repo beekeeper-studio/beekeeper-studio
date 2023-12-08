@@ -150,6 +150,7 @@ export interface TableChanges {
 export interface TableInsert {
   table: string
   schema?: string
+  dataset?: string
   data: Record<string, any>[]
 }
 
@@ -163,6 +164,7 @@ export interface TableUpdate {
   column: string;
   primaryKeys: PKSelector[]
   schema?: string;
+  dataset?: string
   columnType?: string;
   value: any;
 }
@@ -171,6 +173,7 @@ export interface TableDelete {
   table: string;
   primaryKeys: PKSelector[]
   schema?: string;
+  dataset?: string
 }
 
 export type TableUpdateResult = any;

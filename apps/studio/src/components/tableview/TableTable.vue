@@ -878,6 +878,7 @@ export default Vue.extend({
         return {
           table: this.table.name,
           schema: this.table.schema,
+          dataset: this.database,
           data: [result]
         }
       })

@@ -183,6 +183,11 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitCon
         }
       }
 
+      // HACK (@day): fixes the weird type error for bq integers, should figure out a better way and remove this.
+      if (matching && matching.dataType && matching.dataType.toLowerCase().startsWith('int')) {
+        item[ic] = parseInt(item[ic]);
+      }
+
       // HACK (@day): fixes #1734. Knex reads any '?' in identifiers as a parameter, so we need to escape any that appear.
       if (ic.includes('?')) {
         const newIc = ic.replaceAll('?', '\\?');
@@ -192,7 +197,8 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitCon
     })
 
   })
-  const builder = knex(insert.table)
+  const table = insert.dataset ? `${insert.dataset}.${insert.table}` : insert.table;
+  const builder = knex(table);
   if (insert.schema) {
     builder.withSchema(insert.schema)
   }
