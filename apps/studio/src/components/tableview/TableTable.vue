@@ -1000,6 +1000,7 @@ export default Vue.extend({
           key: key,
           table: this.table.name,
           schema: this.table.schema,
+          dataset: this.database,
           column: cell.getField(),
           columnType: column ? column.dataType : undefined,
           primaryKeys,
@@ -1095,6 +1096,7 @@ export default Vue.extend({
           table: this.table.name,
           row,
           schema: this.table.schema,
+          dataset: this.database,
           primaryKeys,
         }
 
