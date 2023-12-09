@@ -222,7 +222,6 @@ export default Vue.extend({
           formatter: this.cellFormatter,
           editable: this.isCellEditable.bind(this, 'renameColumn'),
           cellClick: this.columnNameCellClick.bind(this),
-          frozen: true,
           minWidth: 100,
         },
         {
