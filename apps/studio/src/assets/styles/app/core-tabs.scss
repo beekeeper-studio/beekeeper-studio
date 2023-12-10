@@ -408,6 +408,10 @@
       flex-direction: column;
       gap: 0.5rem;
     }
+    .left-section {
+      padding-left: 0.45rem;
+      padding-right: 0.25rem;
+    }
     .multiple-filter  {
       flex-grow: 1;
       & > * {

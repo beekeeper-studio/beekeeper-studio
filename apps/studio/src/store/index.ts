@@ -278,9 +278,7 @@ const store = new Vuex.Store<State>({
     table(state, table: TableOrView) {
       const existingIdx = state.tables.findIndex((st) => tablesMatch(st, table))
       if (existingIdx >= 0) {
-        const result = state.tables
-        Object.assign(result[existingIdx], table)
-        state.tables = result
+        Vue.set(state.tables, existingIdx, table)
       } else {
         state.tables = [...state.tables, table]
       }
@@ -427,8 +425,7 @@ const store = new Vuex.Store<State>({
         const updated = _.xorWith(table.columns, columns, _.isEqual)
         log.debug('Should I update table columns?', updated)
         if (updated?.length) {
-          table.columns = columns
-          context.commit('table', table)
+          context.commit('table', { ...table, columns })
         }
       } finally {
         context.commit("columnsLoading", null)

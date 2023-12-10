@@ -12,9 +12,8 @@ export default {
                 {id:5, name:"Margret Marmajuke", age:"16", col:"yellow", dob:"31/01/1999"},
               ];
             */
-          const columnNamesOnly = ['row-selector--bks', ...columns.map((c) => c.field)]
+          const columnNamesOnly = columns.map((c) => c.field)
           return data.rows.map((row, idx) => {
-            row['row-selector--bks'] = idx + 1 + offset;
             return _.pick(row, columnNamesOnly)
           })
         },

@@ -24,6 +24,7 @@
       multiple
     />
     <data-manager />
+    <confirmation-modal />
   </div>
 </template>
 
@@ -40,13 +41,13 @@ import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
 import NotificationManager from './components/NotificationManager.vue'
 import UpgradeRequiredModal from './components/common/UpgradeRequiredModal.vue'
-
+import ConfirmationModal from '@/components/common/modals/ConfirmationModal.vue'
 
 export default Vue.extend({
   name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
-    StateManager, DataManager, UpgradeRequiredModal
+    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModal
   },
   data() {
     return {

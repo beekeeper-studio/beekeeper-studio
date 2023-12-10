@@ -1,11 +1,5 @@
 import { BeeCursor } from "../../models";
 import Sqlite, { Database, Statement } from 'better-sqlite3'
-interface Conn {
-  dbConfig: {
-    database: string
-  }
-}
-
 
 export class SqliteCursor extends BeeCursor {
 
@@ -14,11 +8,11 @@ export class SqliteCursor extends BeeCursor {
   private iterator?: IterableIterator<any>;
 
   constructor(
-    conn: Conn,
+    databaseName: string,
     private query: string,
     private params: string[], chunkSize: number) {
     super(chunkSize);
-    this.database = new Sqlite(conn.dbConfig.database)
+    this.database = new Sqlite(databaseName)
     this.statement = this.database.prepare(this.query)
     this.statement.raw(true);
   }

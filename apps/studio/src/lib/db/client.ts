@@ -282,7 +282,7 @@ async function connect(server: IDbConnectionServer, database: IDbConnectionDatab
   } catch (err) {
     logger().error('Connection error %j', err);
     disconnect(server, database);
-    throw err;
+    throw new Error('Database Connection Error: ' + err.message);
   } finally {
     database.connecting = false;
   }
@@ -305,7 +305,6 @@ function disconnect(server: IDbConnectionServer, database: IDbConnectionDatabase
     delete server.db[database.database];
   }
 }
-
 function supportedFeatures(server: IDbConnectionServer, database: IDbConnectionDatabase) {
   checkIsConnected(server, database)
   return database.connection?.supportedFeatures()

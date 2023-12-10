@@ -327,7 +327,8 @@ export default Vue.extend({
     },
     async refreshColumns() {
       if(this.hasEdits) {
-        if (!window.confirm("Are you sure? You will lose unsaved changes")) {
+        const confirmed = await this.$confirm("Are you sure? You will lose unsaved changes")
+        if (!confirmed) {
           return
         }
       }
