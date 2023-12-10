@@ -219,28 +219,7 @@ export default Vue.extend({
             // @ts-expect-error Incorrectly typed
             valuesLookup: this.getTables
           },
-          cellEdited: async (cell) => { 
-            const data = cell.getRow().getData()
-            const schema = data['toSchema']
-            const table = data['toTable']
-            let tableData
-            
-            if (table !== null) {
-              if (!schema) {
-                tableData = this.tables.find((t: TableOrView) => escapeHtml(t.name) === table)
-              } else {
-                tableData = this.tables.find((t: TableOrView) =>
-                  escapeHtml(t.name) === table && escapeHtml(t.schema) === schema
-                )
-              }
-              
-              if (tableData !== null) {
-                await this.$store.dispatch('updateTableColumns', tableData)
-              }
-            }
-            return cell.getRow().getCell('toColumn')?.setValue(null)
-          }
-
+          cellEdited: (cell) => cell.getRow().getCell('toColumn')?.setValue(null)
         },
         {
           field: 'toColumn',
@@ -299,17 +278,27 @@ export default Vue.extend({
         this.schemaTables.find((st) => escapeHtml(st.schema) === schema)?.tables.map((t) => escapeHtml(t.name)) :
         this.tables.map((t) => escapeHtml(t.name))
     },
-    getColumns(cell: CellComponent): string[] {
+    findTable(schema: string | null, table: string): null | TableOrView {
+      if (!schema) {
+        return this.tables.find((t: TableOrView) => escapeHtml(t.name) === table)
+      }
+
+      return this.tables.find((t: TableOrView) =>
+        escapeHtml(t.name) === table && escapeHtml(t.schema) === schema
+      )
+    },
+    async getColumns(cell: CellComponent): Promise<string[]> {
       const data = cell.getRow().getData()
       const schema = data['toSchema']
       const table = data['toTable']
-      if (!schema) {
-        return this.tables.find((t: TableOrView) => escapeHtml(t.name) === table)?.columns.map((c: TableColumn) => escapeHtml(c.columnName)) || []
-      } else {
-        return this.tables.find((t: TableOrView) =>
-          escapeHtml(t.name) === table && escapeHtml(t.schema) === schema
-        )?.columns.map((c: TableColumn) => escapeHtml(c.columnName)) || []
+      let tableData = this.findTable(schema, table)
+
+      if (tableData?.columns == null) {
+        await this.$store.dispatch('updateTableColumns', tableData)
+        tableData = this.findTable(schema, table)
       }
+      
+      return await tableData.columns.map((c: TableColumn) => escapeHtml(c.columnName)) || []
     },
     getPayload(): RelationAlterations {
       const additions: CreateRelationSpec[] = this.newRows.map((row: RowComponent) => {
