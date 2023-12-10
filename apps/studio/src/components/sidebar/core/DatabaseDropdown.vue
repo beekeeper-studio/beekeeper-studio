@@ -57,14 +57,13 @@
   import vSelect from 'vue-select'
   import {AppEvent} from '@/common/AppEvent'
   import AddDatabaseForm from "@/components/connection/AddDatabaseForm"
+  import { mapActions, mapState } from 'vuex'
 
   export default {
     props: [ 'connection' ],
     data() {
       return {
-        currentDatabase: null,
         selectedDatabase: null,
-        dbs: [],
         OpenIndicator: {
           render: createElement => createElement('i', {class: {'material-icons': true}}, 'arrow_drop_down')
         }
@@ -75,9 +74,7 @@
       AddDatabaseForm
     },
     methods: {
-      async refreshDatabases() {
-        this.dbs = await this.connection.listDatabases()
-      },
+      ...mapActions({refreshDatabases: 'updateDatabaseList'}),
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
         console.log(this.selectedDatabase)
@@ -91,15 +88,20 @@
       }
     },
     async mounted() {
-      this.selectedDatabase = await this.connection.currentDatabase()
-      this.dbs = await this.connection.listDatabases()
+      this.selectedDatabase = this.currentDatabase
     },
     computed: {
       availableDatabases() {
         return _.without(this.dbs, this.selectedDatabase)
-      }
+      },
+      ...mapState({currentDatabase: 'database', dbs: 'databaseList'}),
     },
     watch: {
+      currentDatabase(newValue) {
+        if (this.selectedDatabase !== newValue) {
+          this.selectedDatabase = newValue
+        }
+      },
       selectedDatabase() {
         this.$emit('databaseSelected', this.selectedDatabase)
       }
