@@ -149,7 +149,9 @@ export default Vue.extend({
       this.$modal.hide(this.modalName)
     },
 
-    onOpen() {
+    async onOpen() {
+      await this.$nextTick();
+
       const language = this.language
 
       this.editor = CodeMirror.fromTextArea(this.$refs.editorRef, {
