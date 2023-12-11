@@ -212,9 +212,11 @@
   }
 
   .tab-like {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     line-height: 2rem ;
     background-color: rgba($theme-base, 0.1);
-    padding: 5px;
     padding-left: 7px;
     padding-right: 7px;
     margin-right: 5px;
