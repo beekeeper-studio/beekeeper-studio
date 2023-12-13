@@ -232,7 +232,6 @@
 <script lang="ts">
 import Vue from 'vue'
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
-import pluralize from 'pluralize'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
 import { FkLinkMixin } from '@/mixins/fk_click'
@@ -256,7 +255,7 @@ import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 
-import { copyRange, copyActionsMenu, commonColumnMenu, createMenuItem } from '@/lib/menu/tableMenu';
+import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem } from '@/lib/menu/tableMenu';
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
@@ -359,7 +358,8 @@ export default Vue.extend({
       result[this.ctrlOrCmd('s')] = this.saveChanges.bind(this)
       result[this.ctrlOrCmd('shift+s')] = this.copyToSql.bind(this)
       result[this.ctrlOrCmd('c')] = this.copySelection.bind(this)
-      result[this.ctrlOrCmd('d')] = this.cloneSelection.bind(this)
+      result[this.ctrlOrCmd('v')] = this.pasteSelection.bind(this)
+      result[this.ctrlOrCmd('d')] = this.cloneSelection.bind(this, undefined)
       result['delete'] = this.deleteTableSelection.bind(this)
       return result
     },
@@ -437,6 +437,8 @@ export default Vue.extend({
               table: this.table.name,
               schema: this.table.schema,
             }),
+            { separator: true },
+            ...pasteActionsMenu(range),
             { separator: true },
             ...this.rowActionsMenu(range),
             this.openEditorMenu(cell),
@@ -702,6 +704,10 @@ export default Vue.extend({
       if (!document.activeElement.classList.contains('tabulator-tableholder')) return
       copyRange({ range: this.tabulator.getActiveRange(), type: 'tsv' })
     },
+    pasteSelection() {
+      if (!document.activeElement.classList.contains('tabulator-tableholder')) return
+      pasteRange(this.tabulator.getActiveRange())
+    },
     deleteTableSelection(_: Event, range?: Tabulator.RangeComponent) {
       if (!document.activeElement.classList.contains('tabulator-tableholder')) return
       if (!range) range = this.tabulator.getActiveRange()
@@ -938,7 +944,6 @@ export default Vue.extend({
         case 'jsonb':
         case 'bytea':
         case 'tsvector':
-        case '_text':
           return 'textarea'
         case 'bool':
         case 'boolean':

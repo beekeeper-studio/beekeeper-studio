@@ -607,7 +607,7 @@ $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
     content: '';
     position: absolute;
     inset: 0;
-    background-color: rgba($theme-base, 0.05);
+    background-color: var(--row-bg-color);
     z-index: -10;
   }
   &:hover::before {
