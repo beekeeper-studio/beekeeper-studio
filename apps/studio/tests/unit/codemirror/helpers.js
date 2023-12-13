@@ -1,29 +1,83 @@
 import CodeMirror from "codemirror";
 import "@/vendor/sql-hint/index";
-import "@/lib/codemirror"
+import "@/lib/codemirror-definition"
+import {
+  registerAutoquote,
+  unregisterAutoquote,
+  autoquoteHandler,
+} from "@/lib/codemirror";
 
-export const Pos = CodeMirror.Pos;
+class Editor {
+  constructor(opts = {}) {
+    this.textarea = document.createElement("textarea");
+    document.body.appendChild(this.textarea);
+
+    this.cm = CodeMirror.fromTextArea(this.textarea, {
+      ...opts,
+      mode: opts.mode || "text/x-mysql",
+    });
+
+    this.cm.setValue(opts.value || "");
+  }
+
+  async complete(completeTo) {
+    function mockedBeforeChange(cm, co) {
+      co.origin = "complete";
+      autoquoteHandler(cm, co);
+    }
+
+    registerAutoquote(this.cm, mockedBeforeChange);
+
+    const hint = await this.hint();
+
+    this.cm.replaceRange(completeTo, hint.from, hint.to);
+
+    unregisterAutoquote(this.cm, mockedBeforeChange);
+  }
+
+  async hint() {
+    return await CodeMirror.hint.sql(this.cm, {
+      tables: this.cm.getOption("tables"),
+      defaultTable: this.cm.getOption("defaultTable"),
+      disableKeywords: this.cm.getOption("disableKeywords"),
+    });
+  }
+
+  destroy() {
+    document.body.removeChild(this.textarea);
+  }
+}
 
 function _testCompletions(it, name, spec) {
   it(name, async () => {
-    const textarea = document.createElement("textarea");
-    document.body.appendChild(textarea);
-    const cm = CodeMirror.fromTextArea(textarea, {
+    const editor = new Editor({
       mode: spec.mode || "text/x-mysql",
       value: spec.value,
       getColumns: spec.getColumns,
-    });
-    cm.setValue(spec.value);
-    cm.setCursor(spec.cursor);
-    const completions = await CodeMirror.hint.sql(cm, {
       tables: spec.tables,
       defaultTable: spec.defaultTable,
       disableKeywords: spec.disableKeywords,
     });
+    editor.cm.setCursor(spec.cursor);
+    const completions = await editor.hint();
     expect(spec.list.sort()).toEqual(completions.list.sort());
     expect(spec.from).toEqual(completions.from);
     expect(spec.to).toEqual(completions.to);
-    document.body.removeChild(textarea);
+    editor.destroy();
+  });
+}
+
+function _testAutoquotes(it, name, spec) {
+  it(name, async () => {
+    const editor = new Editor({
+      mode: "text/x-pgsql",
+      tables: spec.tables,
+      value: spec.value,
+    });
+    editor.cm.setCursor(spec.cursor);
+    await editor.complete(spec.completeTo);
+    expect(editor.cm.getValue()).toBe(spec.result);
+    editor.destroy();
   });
 }
 
@@ -31,3 +85,8 @@ function _testCompletions(it, name, spec) {
 export const testCompletions = _testCompletions.bind(test, test);
 testCompletions['only'] = _testCompletions.bind(null, test['only']);
 testCompletions['skip'] = _testCompletions.bind(null, test['skip']);
+
+/** @type jest.It */
+export const testAutoquotes = _testAutoquotes.bind(test, test);
+testAutoquotes["only"] = _testAutoquotes.bind(null, test["only"]);
+testAutoquotes["skip"] = _testAutoquotes.bind(null, test["skip"]);

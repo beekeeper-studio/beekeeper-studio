@@ -1,7 +1,8 @@
 // "forked" from CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: https://codemirror.net/5/LICENSE
 
-import { Pos, testCompletions as test } from "./helpers";
+import { Pos } from "codemirror";
+import { testCompletions as test } from "./helpers";
 
 const simpleTables = {
   users: ["name", "score", "birthDate"],
