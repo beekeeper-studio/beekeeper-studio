@@ -4,6 +4,10 @@
     class="tabletable flex-col"
     :class="{'view-only': !editable}"
   >
+    <EditorModal
+      ref="editorModal"
+      @save="onSaveEditorModal"
+    />
     <template v-if="!table && initialized">
       <div class="no-content" />
     </template>
@@ -227,7 +231,6 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import pluralize from 'pluralize'
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
@@ -235,6 +238,7 @@ import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
+import EditorModal from './EditorModal.vue'
 import rawLog from 'electron-log'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
@@ -249,13 +253,15 @@ import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
+import { LanguageData } from '../../lib/editor/languageData'
+
 import { copyRange, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem } from '@/lib/menu/tableMenu';
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["connection", "initialFilters", "active", 'tab', 'table'],
   data() {
@@ -345,7 +351,7 @@ export default Vue.extend({
       }
       result[this.ctrlOrCmd('left')] = () => {
         const focusingTable = this.tabulator.element.contains(document.activeElement)
-        if (!focusingTable) this.page++
+        if (!focusingTable) this.page--
       }
       result[this.ctrlOrCmd('r')] = this.refreshTable.bind(this)
       result[this.ctrlOrCmd('n')] = this.cellAddRow.bind(this)
@@ -357,6 +363,7 @@ export default Vue.extend({
       result['delete'] = this.deleteTableSelection.bind(this)
       return result
     },
+
     tableHolder() {
       return this.$el.querySelector('.tabulator-tableholder')
     },
@@ -434,6 +441,7 @@ export default Vue.extend({
             ...pasteActionsMenu(range),
             { separator: true },
             ...this.rowActionsMenu(range),
+            this.openEditorMenu(cell),
           ]
 
           if (keyDatas?.length > 0) {
@@ -864,6 +872,19 @@ export default Vue.extend({
         }),
         disabled: !this.editable,
       }
+    },
+    openEditorMenu(cell: Tabulator.CellComponent) {
+      return {
+        label: createMenuItem("Open cell in Editor"),
+        disabled: (cell: Tabulator.CellComponent) => !this.editable && !this.insertionCellCheck(cell),
+        action: () => {
+          if (this.isPrimaryKey(cell.getField())) return
+          this.$refs.editorModal.openModal(cell.getValue(), undefined, cell)
+        }
+      }
+    },
+    onSaveEditorModal(content: string, _: LanguageData, cell: Tabulator.CellComponent){
+      cell.setValue(content)
     },
     openProperties() {
       this.$root.$emit(AppEvent.openTableProperties, { table: this.table })
