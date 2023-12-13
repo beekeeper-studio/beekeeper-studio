@@ -1,3 +1,4 @@
+/* eslint-disable-next-line */
 // @ts-nocheck
 
 import electronLog from "electron-log";
@@ -389,8 +390,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     );
 
     async function readBlob(callback: any): Promise<Buffer> {
-      return new Promise<Buffer>(async (resolve, reject) => {
-        await callback(async (err: any, _name: unknown, event: any) => {
+      return new Promise<Buffer>((resolve, reject) => {
+        callback(async (err: any, _name: unknown, event: any) => {
           const buffers = [];
           if (err) {
             reject(err);
@@ -409,7 +410,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return await Promise.all(
       result.data.map(async (row: any) => {
         let dataType = row["field_type"];
-        let defaultValue: Function | Buffer | string | null =
+        let defaultValue: () => unknown | Buffer | string | null =
           row["rdb$default_value"];
 
         if (typeof defaultValue === "function") {
