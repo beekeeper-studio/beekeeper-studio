@@ -24,6 +24,7 @@ export const ConnectionTypes = [
   { name: 'Oracle', value: 'other' },
   { name: 'Cassandra', value: 'other' },
   { name: 'BigQuery', value: 'bigquery' },
+  { name: 'Firebird', value: 'firebird'},
 ]
 
 export const keymapTypes = [

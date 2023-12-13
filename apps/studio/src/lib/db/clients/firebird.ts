@@ -3,7 +3,7 @@
 
 import electronLog from "electron-log";
 import knexlib, { Knex } from "knex";
-import KnexQueryBuilder from 'knex/lib/query/querybuilder'
+import KnexQueryBuilder from "knex/lib/query/querybuilder";
 import knexFirebirdDialect from "knex-firebird-dialect";
 import Firebird from "node-firebird";
 import { identify } from "sql-query-identifier";
@@ -31,6 +31,7 @@ import {
   OrderBy,
   TableResult,
   DatabaseFilterOptions,
+  SupportedFeatures,
 } from "../models";
 import {
   BasicDatabaseClient,
@@ -196,8 +197,8 @@ class Pool {
     return new Promise((_resolve, _reject) => {
       this.pool.get((err, database) => {
         function reject(err: any) {
+          database?.detach();
           _reject(err);
-          database.detach();
         }
 
         function resolve(result: any[]) {
@@ -275,6 +276,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       database: this.database.database,
       lowercase_keys: true,
     };
+
+    if (typeof config.database !== "string" || config.database === "") {
+      throw new Error("Invalid database name");
+    }
 
     log.debug("create driver client for postgres with config %j", config);
 
@@ -454,6 +459,18 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         };
       })
     );
+  }
+
+  async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
+    return []; // TODO
+  }
+
+  async listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]> {
+    return []; // TODO
+  }
+
+  async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
+    return []; // TODO
   }
 
   async getPrimaryKey(
@@ -873,6 +890,16 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       rows: data ?? [],
       rowCount: data?.length ?? 0,
     }));
+  }
+
+  supportedFeatures(): SupportedFeatures {
+    return {
+      customRoutines: false,
+      comments: false,
+      properties: false,
+      partitions: false,
+      editPartitions: false,
+    };
   }
 
   async disconnect(): Promise<void> {

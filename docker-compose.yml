@@ -120,4 +120,5 @@ services:
       - 3050:3050
     environment:
       - ISC_PASSWORD=masterkey
+      - EnableLegacyClientAuth=true
 
