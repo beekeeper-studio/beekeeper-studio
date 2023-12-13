@@ -197,7 +197,8 @@ export default Vue.extend({
           editable,
           editor: 'list',
           editorParams: {
-            values: this.table.columns.map((c) => escapeHtml(c.columnName))
+            // @ts-expect-error Incorrectly typed
+            valuesLookup: () => this.table.columns.map((c) => escapeHtml(c.columnName))
           }
         },
         ...( showSchema ? [{
@@ -206,7 +207,8 @@ export default Vue.extend({
           editable,
           editor: 'list' as any,
           editorParams: {
-            values: this.schemas.map((s) => escapeHtml(s))
+            // @ts-expect-error Incorrectly typed
+            valuesLookup: () => this.schemas.map((s) => escapeHtml(s))
           },
           cellEdited: (cell) => cell.getRow().getCell('toTable')?.setValue(null)
         }] : []),
@@ -297,8 +299,10 @@ export default Vue.extend({
         await this.$store.dispatch('updateTableColumns', tableData)
         tableData = this.findTable(schema, table)
       }
-      
-      return await tableData.columns.map((c: TableColumn) => escapeHtml(c.columnName)) || []
+
+      const result = await tableData.columns.map((c: TableColumn) => escapeHtml(c.columnName)) || []
+      console.log("getcolumns", result)
+      return result
     },
     getPayload(): RelationAlterations {
       const additions: CreateRelationSpec[] = this.newRows.map((row: RowComponent) => {

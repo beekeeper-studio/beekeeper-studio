@@ -26,15 +26,23 @@
 
 <script lang="ts">
 import Vue from 'vue'
+import rawLog from 'electron-log'
 import { mapState } from 'vuex'
+
+const log = rawLog.scope('TabWithTable')
+
 export default Vue.extend({
   props: ['tab'],
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded']),
     table() {
-      console.log("table changed")
       return this.tab.findTable(this.tables)
     },
+  },
+  watch: {
+    table() {
+      log.debug("table changed!", this.table)
+    }
   }
 })
 </script>
