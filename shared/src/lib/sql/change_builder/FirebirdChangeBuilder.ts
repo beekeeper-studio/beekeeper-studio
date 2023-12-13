@@ -31,4 +31,8 @@ export class FirebirdChangeBuilder extends ChangeBuilderBase {
 
     return `CREATE ${unique} INDEX ${spec.name} ON ${this.tableName} (${columns})`
   }
+
+  alterType(column: string, newType: string) {
+    return `ALTER COLUMN ${this.wrapIdentifier(column)} TYPE ${newType}`
+  }
 }

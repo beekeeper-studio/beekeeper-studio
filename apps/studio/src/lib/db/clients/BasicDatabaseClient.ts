@@ -32,11 +32,11 @@ export interface AppContextProvider {
 // raw result type is specific to each database implementation
 export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClient {
 
-  knex: Knex;
+  knex: Knex | null;
   contextProvider: AppContextProvider
 
 
-  constructor(knex: Knex, contextProvider: AppContextProvider) {
+  constructor(knex: Knex | null, contextProvider: AppContextProvider) {
     this.knex = knex;
     this.contextProvider = contextProvider
   }

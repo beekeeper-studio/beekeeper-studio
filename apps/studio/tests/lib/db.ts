@@ -94,6 +94,10 @@ export class DBTestUtil {
   }
 
   maybeArrayToObject(items, key) {
+    // Only 'firebird knex' returns an object instead of an array.
+    if (!Array.isArray(items)) {
+      items = [items]
+    }
     return items.map((item) => {
       if(_.isObject(item)) return item
       const result = {}
@@ -369,7 +373,7 @@ export class DBTestUtil {
         {
           columnName: 'first_name',
           changeType: 'defaultValue',
-          newValue: "'Foo''bar'"
+          newValue: this.dbType === 'firebird' ? "Foo'bar" : "'Foo''bar'"
         },
         {
           columnName: 'age',
@@ -379,7 +383,7 @@ export class DBTestUtil {
         {
           columnName: 'age',
           changeType: 'defaultValue',
-          newValue: "'99'"
+          newValue: '99'
         },
         {
           columnName: 'age',
@@ -414,27 +418,33 @@ export class DBTestUtil {
       if (this.dialect === 'sqlserver') return `('${s.replaceAll("'", "''")}')`
       return s.toString()
     }
+
+    const columnName = (s: string) => {
+      if (this.dbType === 'firebird') return s.toUpperCase()
+      return s
+    }
+
     const expected = [
       {
-        columnName: this.dbType === 'firebird' ? 'ID' : 'id',
+        columnName: columnName('id'),
         dataType: 'varchar(255)',
         nullable: false,
         defaultValue: null,
       },
       {
-        columnName: this.dbType === 'firebird' ? 'FIRST_NAME' : 'first_name',
+        columnName: columnName('first_name'),
         dataType: 'varchar(256)',
         nullable: true,
         defaultValue: defaultValue("Foo'bar"),
       },
       {
-        columnName: this.dbType === 'firebird' ? 'FAMILY_NAME' : 'family_name',
+        columnName: columnName('family_name'),
         dataType: 'varchar(255)',
         nullable: false,
         defaultValue: defaultValue('Rath\'bone'),
       },
       {
-        columnName: this.dbType === 'firebird' ? 'AGE' : 'age',
+        columnName: columnName('age'),
         dataType: 'varchar(256)',
         nullable: false,
         defaultValue: defaultValue(99),
@@ -578,6 +588,7 @@ export class DBTestUtil {
       sqlite: "SELECT * FROM `jobs` WHERE `job_name` IN ('Programmer','Surgeon''s Assistant') ORDER BY `hourly_rate` ASC LIMIT 100 OFFSET 0",
       sqlserver: "SELECT * FROM [public].[jobs] WHERE [job_name] IN ('Programmer','Surgeon''s Assistant') ORDER BY [hourly_rate] ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
       cockroachdb: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
+      firebird: "SELECT FIRST 100 SKIP 0 * FROM jobs WHERE job_name IN ('Programmer','Surgeon''s Assistant') ORDER BY hourly_rate ASC"
     }
     expect(fmt(query)) .toBe(fmt(expectedQueries[dbType]))
 
@@ -630,6 +641,13 @@ export class DBTestUtil {
             AND "hourly_rate" >= '41'
             OR "hourly_rate" >= '31'
         ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0
+      `,
+      firebird: `
+        SELECT FIRST 100 SKIP 0 * FROM jobs
+          WHERE job_name IN ('Programmer', 'Surgeon''s Assistant')
+            AND hourly_rate >= '41'
+            OR hourly_rate >= '31'
+        ORDER BY hourly_rate ASC
       `,
     }
     expect(fmt(multipleFiltersQuery)).toBe(fmt(expectedFiltersQueries[dbType]))
