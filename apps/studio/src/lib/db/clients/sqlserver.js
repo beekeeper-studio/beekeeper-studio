@@ -511,11 +511,11 @@ export async function listTableColumns(conn, database, table, schema) {
       is_nullable as "is_nullable",
       CASE
         WHEN character_maximum_length is not null AND data_type != 'text' 
-            THEN CONCAT(data_type, '(', character_maximum_length, ')')
+            THEN data_type + '(' + CAST(character_maximum_length AS VARCHAR(16)) + ')'
         WHEN numeric_precision is not null 
-            THEN CONCAT(data_type, '(', numeric_precision, ',', numeric_scale, ')')
+            THEN data_type + '(' + CAST(numeric_precision AS VARCHAR(16)) + ')'
         WHEN datetime_precision is not null AND data_type != 'date' 
-            THEN CONCAT(data_type, '(', datetime_precision, ')')
+            THEN data_type + '(' + CAST(datetime_precision AS VARCHAR(16)) + ')'
         ELSE data_type
       END as "data_type"
     FROM INFORMATION_SCHEMA.COLUMNS
