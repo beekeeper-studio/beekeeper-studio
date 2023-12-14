@@ -1,3 +1,4 @@
+import { transformObj } from '../../../../lib/db'
 
 export function runCommonTests(getUtil) {
 
@@ -205,21 +206,6 @@ export function runCommonTests(getUtil) {
 
 // test functions below
 
-/*
- * Make a new object that the properties are lowercased. This is helpful
- * This is helpful especially for Firebird where the column names (identifiers)
- * are not case-sensitive.
- **/
-function transformObj(util, obj) {
-  if (util.dbType === 'firebird') {
-    return Object.entries(obj).reduce((acc, [key, value]) => {
-      acc[key.toLowerCase()] = value
-      return acc
-    }, {})
-  }
-  return obj
-}
-
 const prepareTestTable = async function(util) {
   await util.knex.schema.dropTableIfExists("test_inserts")
   await util.knex.schema.createTable("test_inserts", (table) => {
@@ -347,7 +333,9 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
   expect(results.length).toBe(1)
   const firstResult = { ...results[0] }
   // hack for cockroachdb
-  firstResult.id = Number(firstResult.id)
+  if (util.dbType !== 'firebird') {
+    firstResult.id = Number(firstResult.id)
+  }
   expect(firstResult).toStrictEqual(transformObj(util, {
     id: 1,
     firstName: 'Testy',
@@ -419,7 +407,9 @@ export const itShouldNotCommitOnChangeError = async function(util) {
   expect(results.length).toBe(1)
   const firstResult = { ...results[0]}
   // hack for cockroachdb
-  firstResult.id = Number(firstResult.id)
+  if (util.dbType !== 'firebird') {
+    firstResult.id = Number(firstResult.id)
+  }
   expect(firstResult).toStrictEqual(transformObj(util, {
     id: 1,
     firstName: 'Terry',
@@ -596,10 +586,12 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
   const secondResult = { ...results[1] }
 
   // hack for cockroachdb
-  firstResult.id1 = Number(firstResult.id1)
-  firstResult.id2 = Number(firstResult.id2)
-  secondResult.id1 = Number(secondResult.id1)
-  secondResult.id2 = Number(secondResult.id2)
+  if (util.dbType !== 'firebird') {
+    firstResult.id1 = Number(firstResult.id1)
+    firstResult.id2 = Number(firstResult.id2)
+    secondResult.id1 = Number(secondResult.id1)
+    secondResult.id2 = Number(secondResult.id2)
+  }
 
   expect(firstResult).toStrictEqual(transformObj(util, {
     id1: 1,
@@ -687,8 +679,10 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
   const firstResult = { ...results[0]}
 
   // hack for cockroachdb
-  firstResult.id1 = Number(firstResult.id1)
-  firstResult.id2 = Number(firstResult.id2)
+  if (util.dbType !== 'firebird') {
+    firstResult.id1 = Number(firstResult.id1)
+    firstResult.id2 = Number(firstResult.id2)
+  }
 
   expect(firstResult).toStrictEqual(transformObj(util, {
     id1: 1,

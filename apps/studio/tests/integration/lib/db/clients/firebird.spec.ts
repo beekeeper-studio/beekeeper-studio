@@ -40,9 +40,6 @@ describe("Firebird Tests", () => {
     const options: Options = {
       dialect: "firebird",
       skipPkQuote: true,
-      knexConnectionConfig: {
-        lowercase_keys: true,
-      },
     };
     const database = "/firebird/data/defaultdb.fdb";
 

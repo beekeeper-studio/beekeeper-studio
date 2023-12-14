@@ -274,7 +274,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       user: this.server.config.user,
       password: this.server.config.password,
       database: this.database.database,
-      lowercase_keys: true,
     };
 
     if (typeof config.database !== "string" || config.database === "") {
@@ -288,7 +287,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     const versionResult = await this.driverExecuteSingle(
       "SELECT RDB$GET_CONTEXT('SYSTEM', 'ENGINE_VERSION') from rdb$database;"
     );
-    this.version = versionResult.data[0]["rdb$get_context"];
+    this.version = versionResult.data[0]["RDB$GET_CONTEXT"];
 
     const serverConfig = this.server.config;
     const knex = knexlib({
@@ -302,9 +301,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         user: serverConfig.user,
         password: serverConfig.password,
         database: this.database.database,
-        /* eslint-disable-next-line */
-        // @ts-ignore
-        lowercase_keys: true,
         blobAsText: true,
       },
     });
@@ -322,11 +318,15 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     filter?: FilterOptions // TODO implement filter
   ): Promise<TableOrView[]> {
     const result = await this.driverExecuteSingle(`
-      SELECT a.RDB$RELATION_NAME
+      SELECT TRIM(a.RDB$RELATION_NAME) as RDB$RELATION_NAME
       FROM RDB$RELATIONS a
       WHERE COALESCE(RDB$SYSTEM_FLAG, 0) = 0 AND RDB$RELATION_TYPE = 0
     `);
-    return result.data;
+    const mapped = result.data.map((row: any) => ({
+      name: row["RDB$RELATION_NAME"],
+      entityType: "table",
+    }));
+    return mapped;
   }
 
   async listTableColumns(
@@ -414,16 +414,16 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
     return await Promise.all(
       result.data.map(async (row: any) => {
-        let dataType = row["field_type"];
+        let dataType = row["FIELD_TYPE"];
         let defaultValue: () => unknown | Buffer | string | null =
-          row["rdb$default_value"];
+          row["RDB$DEFAULT_VALUE"];
 
         if (typeof defaultValue === "function") {
           defaultValue = await readBlob(defaultValue);
         }
 
         if (dataType === "varchar" || dataType === "char") {
-          dataType += `(${row["rdb$character_length"]})`;
+          dataType += `(${row["RDB$CHARACTER_LENGTH"]})`;
 
           // If it's buffer (BINARY BLR), it contains metadata so we need to extract it
           if (Buffer.isBuffer(defaultValue)) {
@@ -451,11 +451,11 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         }
 
         return {
-          tableName: row["rdb$relation_name"],
-          columnName: row["rdb$field_name"],
+          tableName: row["RDB$RELATION_NAME"],
+          columnName: row["RDB$FIELD_NAME"],
           dataType,
           defaultValue,
-          nullable: row["rdb$null_flag"] === null,
+          nullable: row["RDB$NULL_FLAG"] === null,
         };
       })
     );
@@ -504,8 +504,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       { params: [table.toUpperCase()] }
     );
     return result.data.map((row: any) => ({
-      columnName: row["rdb$field_name"],
-      position: row["rdb$field_position"],
+      columnName: row["RDB$FIELD_NAME"],
+      position: row["RDB$FIELD_POSITION"],
     }));
   }
 
@@ -669,22 +669,22 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       WHERE rid.rdb$system_flag = 0
     `);
 
-    const grouped = _.groupBy(result.data, "rdb$index_name");
+    const grouped = _.groupBy(result.data, "RDB$INDEX_NAME");
 
     return Object.keys(grouped).map((name) => {
       const blob = grouped[name];
-      const order = blob[0]["rdb$index_type"] === 1 ? "DESC" : "ASC";
-      const unique = blob[0]["rdb$unique_flag"] === 1;
+      const order = blob[0]["RDB$INDEX_TYPE"] === 1 ? "DESC" : "ASC";
+      const unique = blob[0]["RDB$UNIQUE_FLAG"] === 1;
       const primary =
-        blob.findIndex((b) => b["rdb$constraint_type"] === "PRIMARY KEY") !==
+        blob.findIndex((b) => b["RDB$CONSTRAINT_TYPE"] === "PRIMARY KEY") !==
         -1;
       return {
-        id: blob[0]["rdb$index_id"],
-        table: blob[0]["rdb$relation_name"],
+        id: blob[0]["RDB$INDEX_ID"],
+        table: blob[0]["RDB$RELATION_NAME"],
         schema: "",
         name,
-        columns: _.sortBy(blob, "rdb$field_position").map((b) => ({
-          name: b["rdb$field_name"],
+        columns: _.sortBy(blob, "RDB$FIELD_POSITION").map((b) => ({
+          name: b["RDB$FIELD_NAME"],
           order,
         })),
         unique,
@@ -867,16 +867,21 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     const row = result.data[0];
 
     return {
-      description: row["rdb$description"],
+      description: row["RDB$DESCRIPTION"],
       size: undefined, // TODO implement size
       indexSize: undefined, // TODO implement indexSize
       indexes: [], // TODO implement indexes
       relations: [], // TODO implement relations
       triggers: [], // TODO implement triggers
-      owner: row["rdb$owner_name"],
+      owner: row["RDB$OWNER_NAME"],
       createdAt: undefined, // TODO implement createdAt
     };
   }
+
+  async getTableKeys(db: string, table: string, schema?: string): Promise<TableKey[]> {
+    return []; // TODO
+  }
+
 
   async executeQuery(
     queryText: string,

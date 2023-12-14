@@ -14,6 +14,22 @@ import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '../../src/common/utils'
 import knexFirebirdDialect from 'knex-firebird-dialect'
 
+/*
+ * Make a new object consisting of uppercased properties if needed. This is
+ * helpful to even out column names between databases especially for Firebird
+ * where the column names (identifiers) are not case-sensitive and always
+ * uppercased.
+ **/
+export function transformObj(util: DBTestUtil, obj: any) {
+  if (util.connection.connectionType === 'firebird') {
+    return Object.entries(obj).reduce((acc, [key, value]) => {
+      acc[key.toUpperCase()] = value
+      return acc
+    }, {})
+  }
+  return obj
+}
+
 
 const KnexTypes: any = {
   postgresql: 'pg',
@@ -111,11 +127,11 @@ export class DBTestUtil {
     await this.createTables()
     const address = this.maybeArrayToObject(await this.knex("addresses").insert({country: "US"}).returning("id"), 'id')
     await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
-    const people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0].id}).returning("id"), 'id')
+    const people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: this.dbType === 'firebird' ? address[0].ID : address[0].id}).returning("id"), 'id')
     const jobs = this.maybeArrayToObject(await this.knex("jobs").insert({job_name: "Programmer"}).returning("id"), 'id')
 
-    this.jobId = jobs[0].id
-    this.personId = people[0].id
+    this.jobId = jobs[0].id || jobs[0].ID
+    this.personId = people[0].id || people[0].ID
     await this.knex("people_jobs").insert({job_id: this.jobId, person_id: this.personId })
   }
 
@@ -289,23 +305,23 @@ export class DBTestUtil {
     await this.knex("group_table").insert({select_col: "abc"})
 
     let r = await this.connection.selectTop("group_table", 0, 10, [{field: "select_col", dir: 'ASC'}], [], this.defaultSchema)
-    let result = r.result.map((r: any) => r.select_col)
+    let result = r.result.map((r: any) => r.select_col || r.SELECT_COL)
     expect(result).toMatchObject(["abc", "bar"])
 
     r = await this.connection.selectTop("group_table", 0, 10, [{field: 'select_col', dir: 'DESC'}], [], this.defaultSchema)
-    result = r.result.map((r: any) => r.select_col)
+    result = r.result.map((r: any) => r.select_col || r.SELECT_COL)
     expect(result).toMatchObject(['bar', 'abc'])
 
     r = await this.connection.selectTop("group_table", 0, 1, [{ field: 'select_col', dir: 'DESC' }], [], this.defaultSchema)
-    result = r.result.map((r: any) => r.select_col)
+    result = r.result.map((r: any) => r.select_col || r.SELECT_COL)
     expect(result).toMatchObject(['bar'])
 
     r = await this.connection.selectTop("group_table", 1, 10, [{ field: 'select_col', dir: 'DESC' }], [], this.defaultSchema)
-    result = r.result.map((r: any) => r.select_col)
+    result = r.result.map((r: any) => r.select_col || r.SELECT_COL)
     expect(result).toMatchObject(['abc'])
 
     r = await this.connection.selectTop("MixedCase", 0, 1, [], [], this.defaultSchema)
-    result = r.result.map((r: any) => r.bananas)
+    result = r.result.map((r: any) => r.bananas || r.BANANAS)
     expect(result).toMatchObject(["pears"])
   }
 
@@ -457,52 +473,52 @@ export class DBTestUtil {
   async filterTests() {
     // filter test - builder
     let r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: '=', value: "pears" }], this.defaultSchema)
-    let result = r.result.map((r: any) => r.bananas)
+    let result = r.result.map((r: any) => r.bananas || r.BANANAS)
     expect(result).toMatchObject(['pears'])
 
     // filter test - builder in clause
     r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: 'in', value: ["pears"] }], this.defaultSchema)
-    result = r.result.map((r: any) => r.bananas)
+    result = r.result.map((r: any) => r.bananas || r.BANANAS)
     expect(result).toMatchObject(['pears'])
 
     r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: 'in', value: ["apples"] }], this.defaultSchema)
-    result = r.result.map((r: any) => r.bananas)
+    result = r.result.map((r: any) => r.bananas || r.BANANAS)
     expect(result).toMatchObject([])
 
     await this.knex("MixedCase").insert({bananas: "cheese"}).returning("id")
 
     r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: 'in', value: ["pears", 'cheese'] }], this.defaultSchema)
-    result = r.result.map((r: any) => r.bananas)
+    result = r.result.map((r: any) => r.bananas || r.BANANAS)
     expect(result).toMatchObject(['pears', 'cheese'])
 
     await this.knex('MixedCase').where({bananas: 'cheese'}).delete()
 
     // filter test - raw
     r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], "bananas = 'pears'", this.defaultSchema)
-    result = r.result.map((r: any) => r.bananas)
+    result = r.result.map((r: any) => r.bananas || r.BANANAS)
     expect(result).toMatchObject(['pears'])
   }
 
   async columnFilterTests() {
     let r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema)
-    expect(r.result).toEqual([{
+    expect(r.result).toEqual([transformObj(this, {
       // integer equality tests need additional logic for sqlite's BigInts (Issue #1399)
       person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
       job_id: this.dbType === 'sqlite' ? BigInt(this.jobId) : this.jobId,
       created_at: null,
       updated_at: null,
-    }])
+    })])
 
     r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id'])
-    expect(r.result).toEqual([{
+    expect(r.result).toEqual([transformObj(this, {
       person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
-    }])
+    })])
 
     r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id', 'job_id'])
-    expect(r.result).toEqual([{
+    expect(r.result).toEqual([transformObj(this, {
       person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
       job_id: this.dbType === 'sqlite' ? BigInt(this.jobId) : this.jobId,
-    }])
+    })])
   }
 
   async triggerTests() {
