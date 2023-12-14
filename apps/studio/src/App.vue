@@ -74,7 +74,7 @@ export default Vue.extend({
   async mounted() {
     await this.$store.dispatch('fetchUsername')
 
-    const query = querystring.parse(global.location.search)
+    const query = querystring.parse(global.location.search, { parseBooleans: true })
     if (query) {
       this.url = query.url || null
       this.runningWayland = !!query.runningWayland
