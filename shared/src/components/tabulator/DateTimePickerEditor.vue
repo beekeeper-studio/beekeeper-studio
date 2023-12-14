@@ -1,5 +1,9 @@
 <template>
-  <div>
+  <NullableInputEditor
+    ref="nullable"
+    :cell="cell"
+    :params="params"
+  >
     <date-picker
       v-if="this.typeEditorActive"
       :type="datePickerType"
@@ -12,30 +16,12 @@
       confirm-text="click to confirm new selection"
       @confirm="submit"
     />
-    <input
-      v-else
-      class="nullible-input"
-      :placeholder="smartPlaceholder"
-      ref="input"
-      type="text"
-      v-model="value"
-      @blur.prevent="submit"
-      @change.prevent="submit"
-      @keydown="keydown"
-    >
-    <div class="icon-wrapper">
-      <i
-        class="material-icons special-type"
-        @mousedown.prevent.stop="toggleTypeEditor"
-        :title="this.typeEditorTitle"
-      >{{ this.typeEditorIcon }}</i>
-      <i
-        class="material-icons clear"
-        @mousedown.prevent.stop="clear"
-        title="Nullify Value"
-      >cancel</i>
-    </div>
-  </div>
+    <i
+      class="material-icons special-type"
+      @mousedown.prevent.stop="toggleTypeEditor"
+      :title="this.typeEditorTitle"
+    >{{ this.typeEditorIcon }}</i>
+  </NullableInputEditor>
 </template>
 <script lang="ts">
 /*
@@ -46,15 +32,14 @@ import _ from 'lodash'
 import Vue from 'vue'
 import DatePicker from 'vue2-datepicker'
 import helpers from '@shared/lib/tabulator'
+import NullableInputEditor from './NullableInputEditor.vue'
 export default Vue.extend({
   props: ['cell', 'params'],
-  components: { DatePicker },
+  components: { DatePicker, NullableInputEditor },
   data() {
     return {
       datePickerValue: null,
-      value: null,
       rendered: false,
-      everEdited: false,
       typeEditorActive: false
     }
   },
@@ -66,18 +51,6 @@ export default Vue.extend({
     typeEditorIcon() {
       if (this.typeEditorActive) return 'edit'
       return 'edit_calendar' 
-    },
-    smartPlaceholder() {
-      if (_.isNil(this.value)) {
-        return '(NULL)'
-      } else if (this.value === '') {
-        if (this.params.allowEmpty) {
-          return '(EMPTY)'
-        } else {
-          return '(NULL)'
-        }
-      }
-      return ''
     },
     datePickerType() {
       const dataType = this.params?.dataType?.trim().toLowerCase() ?? ''
@@ -107,27 +80,6 @@ export default Vue.extend({
     toggleTypeEditor() {
       this.typeEditorActive = !this.typeEditorActive
     },
-    keydown(e: KeyboardEvent) {
-      if (e.key === 'Backspace') {
-        if (this.value === '') {
-          this.value = null
-        }
-      } else if (e.key === 'Delete') {
-        if (_.isNil(this.value) && this.params.allowEmpty) {
-          this.value = ''
-        }
-      } else if (e.key === 'Enter') {
-        this.submit()
-      } else if (e.key === 'Tab') {
-        // this.$emit('value', this.value)
-      } else if (e.key.startsWith("Arrow")) {
-        // this.$emit('value', this.value)
-      } else if (e.key === 'Escape') {
-        this.$emit('cancel')
-      } else {
-        this.everEdited = true
-      }
-    },
     submit(e) {
       // if the typeEditor is active and you blur, don't submit anything
       if (e.type === 'blur' && this.typeEditorActive) return false
@@ -137,35 +89,20 @@ export default Vue.extend({
         this.value = e
       }
       // some cases we always want null, never empty string
-      if (this.params.allowEmpty === false && _.isEmpty(this.value)) {
-        this.$emit('value', null)
-      } else {
-        this.$emit('value', this.value)
-      }
+      this.$emit('value', this.value)
 
       this.toggleTypeEditor = false
-
-    },
-    clear() {
-      this.$emit('value', null)
     }
   },
   watch: {
-    // have to figure out how to set the typeEditorActive to false on focusOut of the component
     rendered() {
-      if (this.rendered) {
-        this.value = _.isNil(this.cell.getValue()) ? this.cell.getValue() : helpers.niceString(this.cell.getValue())
-        this.$nextTick(() => {
-          this.$refs.input.focus();
-          if (this.params.autoSelect) {
-
-            this.$refs.input.select();
-          }
-        })
-      }
+      console.log('DateTimePickerEditor:watch:rendered: ', this.rendered)
+      this.$set(this.$refs.nullable.$data, 'rendered', this.rendered)
     },
     typeEditorActive() {
+      console.log('DateTimePickerEditor:typeEditorActive ', this.typeEditorActive)
       if (this.typeEditorActive) {
+        console.log(this.value)
         const dataType = this.params.dataType || ''
         let dataValue = this.value == null ? this.value : helpers.niceString(this.value)
         
@@ -176,6 +113,7 @@ export default Vue.extend({
           this.datePickerValue = new Date(dataValue)
         }
       }
+      this.$set(this.$refs.nullable.$data, 'typeEditorActive', this.typeEditorActive)
     }
   },
   mounted() {
@@ -189,30 +127,10 @@ export default Vue.extend({
 <style lang="scss" scoped>
   @import '@shared/assets/styles/_variables';
 
-  div {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-  .nullible-input {
-    padding-right: 18px!important;
-  }
-  .icon-wrapper{
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    right: 3px;
-    max-width: 32px;
-    margin-top: -1px;
-    display: flex;
-    flex-wrap: nowrap;
-  }
-  .clear {
-    font-size: 14px!important;
-    width: 16px;
-  }
   .special-type {
     font-size: 14px!important;
     width: 16px;
+    position: absolute;
+    right: 20px;
   }
 </style>

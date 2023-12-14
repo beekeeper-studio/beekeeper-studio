@@ -1,6 +1,7 @@
 <template>
   <div>
     <input
+      v-if="!typeEditorActive"
       class="nullible-input"
       :placeholder="smartPlaceholder"
       ref="input"
@@ -10,6 +11,7 @@
       @change.prevent="submit"
       @keydown="keydown"
     >
+    <slot />
     <i
       class="material-icons clear"
       @mousedown.prevent.stop="clear"
@@ -27,7 +29,8 @@ export default Vue.extend({
     return {
       value: null,
       rendered: false,
-      everEdited: false
+      everEdited: false,
+      typeEditorActive: false
     }
   },
   computed: {
@@ -98,6 +101,9 @@ export default Vue.extend({
           }
         })
       }
+    },
+    typeEditorActive() {
+      console.log('NullableInputEditor:typeEditorActive ', this.typeEditorActive)
     }
   },
   mounted() {
