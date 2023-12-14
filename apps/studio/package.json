@@ -16,7 +16,7 @@
     "docs:build": "vuepress build docs",
     "docs:serve": "vuepress dev docs",
     "electron:build": "vue-cli-service electron:build",
-    "electron:serve": "vue-cli-service electron:serve --host localhost",
+    "electron:serve": "vue-cli-service electron:serve --host localhost --ozone-platform-hint=auto",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps"
   },

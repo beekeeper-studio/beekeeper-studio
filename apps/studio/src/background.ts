@@ -77,6 +77,16 @@ async function initBasics() {
   return settings
 }
 
+// so we need to check that the DM is running in wayland
+// and we need to check that wayland has been enabled
+// why? Because we have to force the usage of the client titlebar
+function isWaylandMode() {
+  const slice = platformInfo.isDevelopment ? 2 : 1
+  const parsedArgs = yargs(process.argv.slice(slice))
+  return parsedArgs['ozone-platform-hint'] &&
+    platformInfo.isWayland && platformInfo.isLinux
+}
+
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -92,7 +102,8 @@ app.on('activate', async (_event, hasVisibleWindows) => {
   // dock icon is clicked and there are no other windows open.
   if (!hasVisibleWindows) {
     if (!settings) throw "No settings initialized!"
-    buildWindow(settings)
+    const runningWayland = isWaylandMode()
+    buildWindow(settings, { runningWayland })
   }
 })
 
@@ -117,8 +128,12 @@ app.on('ready', async () => {
   }
   const slice = platformInfo.isDevelopment ? 2 : 1
   const parsedArgs = yargs(process.argv.slice(slice))
+
   log.debug("Parsing app args", parsedArgs)
-  const options = parsedArgs._.map((url: string) => ({ url }))
+  const runningWayland = isWaylandMode()
+
+  // this gets positional arguments
+  const options = parsedArgs._.map((url: string) => ({ url, runningWayland }))
   const settings = await initBasics()
 
   if (options.length > 0) {
@@ -127,7 +142,8 @@ app.on('ready', async () => {
   } else {
     if (getActiveWindows().length === 0) {
       const settings = await initBasics()
-      await buildWindow(settings)
+      const runningWayland = isWaylandMode()
+      await buildWindow(settings, { runningWayland })
     }
   }
 })
@@ -136,15 +152,17 @@ app.on('ready', async () => {
 app.on('open-file', async (event, file) => {
   event.preventDefault();
   const settings = await initBasics()
-
-  await buildWindow(settings, { url: file })
+  const runningWayland = isWaylandMode()
+  await buildWindow(settings, { url: file, runningWayland })
 });
 
 // Open a connection from a url (e.g. postgres://host)
 app.on('open-url', async (event, url) => {
   event.preventDefault();
   const settings = await initBasics()
-  await buildWindow(settings, { url })
+  const runningWayland = isWaylandMode()
+
+  await buildWindow(settings, { url, runningWayland })
 });
 
 // Exit cleanly on request from parent process in development mode.

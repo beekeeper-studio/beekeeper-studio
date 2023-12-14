@@ -1,7 +1,7 @@
 <template>
   <div class="style-wrapper">
     <div class="beekeeper-studio-wrapper">
-      <titlebar v-if="$config.isMac || menuStyle === 'client'" />
+      <titlebar v-if="$config.isMac || menuStyle === 'client' || (runningWayland)" />
       <template v-if="storeInitialized">
         <connection-interface v-if="!connection" />
         <core-interface
@@ -51,7 +51,8 @@ export default Vue.extend({
   },
   data() {
     return {
-      url: null
+      url: null,
+      runningWayland: false
     }
   },
   computed: {
@@ -76,6 +77,7 @@ export default Vue.extend({
     const query = querystring.parse(global.location.search)
     if (query) {
       this.url = query.url || null
+      this.runningWayland = !!query.runningWayland
     }
 
 
