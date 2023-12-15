@@ -86,25 +86,23 @@ export default Vue.extend({
 
       // the datepicker returns a date object on submit while the others return an event object
       if (_.isDate(e)) {
-        this.value = e
+        this.datePickerValue = e
       }
       // some cases we always want null, never empty string
-      this.$emit('value', this.value)
+      this.$emit('value', this.datePickerValue)
 
       this.toggleTypeEditor = false
     }
   },
   watch: {
     rendered() {
-      console.log('DateTimePickerEditor:watch:rendered: ', this.rendered)
       this.$set(this.$refs.nullable.$data, 'rendered', this.rendered)
     },
     typeEditorActive() {
-      console.log('DateTimePickerEditor:typeEditorActive ', this.typeEditorActive)
       if (this.typeEditorActive) {
-        console.log(this.value)
+        const refValue = this.cell.getValue()
         const dataType = this.params.dataType || ''
-        let dataValue = this.value == null ? this.value : helpers.niceString(this.value)
+        let dataValue = refValue == null ? refValue : helpers.niceString(refValue)
         
         if (this.isTimeType(dataType) && dataValue !== null) {
           dataValue = dataValue.search(/(\+|-)/i) > -1 && !isNaN(dataValue.slice(-1)) ? `${dataValue}:00`: dataValue  

@@ -86,13 +86,14 @@ export default Vue.extend({
 
     },
     clear() {
+      console.log('~~~~ hi ~~~~')
       this.$emit('value', null)
     }
   },
   watch: {
     rendered() {
       if (this.rendered) {
-        this.value = helpers.niceString(this.cell.getValue())
+        this.value = this.cell.getValue() == null ? null : helpers.niceString(this.cell.getValue())
         this.$nextTick(() => {
           this.$refs.input.focus();
           if (this.params.autoSelect) {
@@ -128,14 +129,9 @@ export default Vue.extend({
   }
   .clear {
     position: absolute;
-    top: 0;
-    bottom: 0;
     right: 3px;
-    display: flex;
-    align-items: center;
     font-size: 14px!important;
     width: 16px;
-    text-align: center;
-    margin-top: -1px;
+    z-index: 10000;
   }
 </style>
