@@ -424,3 +424,8 @@ $cell-success:           $row-add;
     }
   }
 }
+
+.tabulator .tabulator-header .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
+  background-color: rgba($theme-base, 0.035);
+}
+

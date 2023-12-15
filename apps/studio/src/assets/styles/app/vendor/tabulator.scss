@@ -402,16 +402,9 @@ $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
       height: 32px!important;
       font-size: 90%;
       line-height: 1;
-      color: $text-dark;
       &:not(.tabulator-spreadsheet-row-header):not(.tabulator-spreadsheet-selected) {
         border-top-left-radius: 4px;
         border-top-right-radius: 4px;
-      }
-      &:hover {
-        background: rgba($theme-base, 0.035);
-        .tabulator-header-popup-button {
-          display: inline-block;
-        }
       }
       &.tabulator-spreadsheet-highlight {
         background-color: $header-highlight;
@@ -447,18 +440,7 @@ $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
         }
       }
       .tabulator-col-title {
-        display: flex;
-        flex-direction: row-reverse;
-        overflow: visible;
-        .title {
-          flex-grow: 1;
-          min-width: 0;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          & > * {
-            display: inline;
-          }
-        }
+        color: $text-dark;
       }
 
       &:first-of-type .tabulator-col-content {
@@ -788,3 +770,36 @@ $header-selected:        mix($query-editor-bg, $theme-primary, 10%);
   }
 }
 
+.spreadsheet-table {
+  .tabulator-header {
+    outline: none;
+    .tabulator-col {
+
+      &:not(.tabulator-spreadsheet-selected):hover {
+        background: rgba($theme-base, 0.035);
+        .tabulator-header-popup-button {
+          display: inline-block;
+        }
+      }
+
+      &.tabulator-spreadsheet-selected .tabulator-col-title {
+        color: inherit;
+      }
+
+      .tabulator-col-title {
+        display: flex;
+        flex-direction: row-reverse;
+        overflow: visible;
+        .title {
+          flex-grow: 1;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          & > * {
+            display: inline;
+          }
+        }
+      }
+    }
+  }
+}

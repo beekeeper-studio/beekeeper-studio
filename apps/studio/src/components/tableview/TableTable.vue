@@ -19,7 +19,10 @@
         @input="handleRowFilterBuilderInput"
         @submit="triggerFilter"
       />
-      <div ref="table" />
+      <div
+        ref="table"
+        class="spreadsheet-table"
+      />
       <ColumnFilterModal
         :modal-name="columnFilterModalName"
         :columns-with-filter-and-order="columnsWithFilterAndOrder"
