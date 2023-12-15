@@ -3,7 +3,10 @@
     class="result-table"
     v-hotkey="keymap"
   >
-    <div ref="tabulator" />
+    <div
+      ref="tabulator"
+      class="spreadsheet-table"
+    />
   </div>
 </template>
 
