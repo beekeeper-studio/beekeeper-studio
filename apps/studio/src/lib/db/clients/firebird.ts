@@ -274,6 +274,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       user: this.server.config.user,
       password: this.server.config.password,
       database: this.database.database,
+      blobAsText: true,
     };
 
     if (typeof config.database !== "string" || config.database === "") {
@@ -342,34 +343,48 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         r.rdb$field_source,
         f.rdb$field_length,
         f.rdb$character_length,
+        f.rdb$field_type,
+        r.rdb$field_position,
+        r.rdb$description,
         TRIM(CASE f.rdb$field_type
-          WHEN 261 THEN 'blob'
-          WHEN 14 THEN 'char'
 
-          WHEN 40 THEN 'cstring'
-
-          WHEN 11 THEN 'd_float'
-
-          WHEN 27 THEN 'double'
-          WHEN 10 THEN 'float'
+          WHEN 7 THEN 'SMALLINT'
+          WHEN 8 THEN
+            CASE f.rdb$field_sub_type
+              WHEN 2 THEN 'DECIMAL'
+              ELSE 'INTEGER'
+            END
+          WHEN 10 THEN 'FLOAT'
+          WHEN 12 THEN 'DATE'
+          WHEN 13 THEN 'TIME'
+          WHEN 14 THEN 'CHAR'
           WHEN 16 THEN
             CASE f.rdb$field_scale
-              WHEN 0 THEN 'bigint'
-              ELSE 'double'
+              WHEN 0 THEN 'BIGINT'
+              ELSE 'DOUBLE'
             END
-          WHEN 8 THEN 'integer'
+          WHEN 23 THEN 'BOOLEAN'
+          WHEN 24 THEN 'DECFLOAT(16)'
+          WHEN 25 THEN 'DECFLOAT(16)'
+          WHEN 26 THEN 'INT128'
+          WHEN 27 THEN 'DOUBLE PRECISION'
+          WHEN 28 THEN 'TIME WITH TIME ZONE'
+          WHEN 29 THEN 'TIMESTAMP WITH TIME ZONE'
+          WHEN 35 THEN 'TIMESTAMP'
+          WHEN 37 THEN 'VARCHAR'
+          WHEN 261 THEN 'BLOB'
 
-          WHEN 9 THEN 'quad'
-          WHEN 7 THEN 'smallint'
-          WHEN 12 THEN 'date'
-          WHEN 13 THEN 'time'
-          WHEN 35 THEN 'timestamp'
-          WHEN 37 THEN 'varchar'
-          ELSE 'unknown'
+          WHEN 9 THEN 'QUAD'
+          WHEN 11 THEN 'D_FLOAT'
+          WHEN 27 THEN 'DOUBLE'
+          WHEN 40 THEN 'CSTRING'
+
+          ELSE 'UNKNOWN'
+
         END) AS field_type,
         f.rdb$field_scale,
         f.rdb$field_sub_type,
-        r.rdb$default_value,
+        r.rdb$default_source,
         r.rdb$null_flag
 
       FROM
@@ -394,71 +409,53 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       table ? { params: [table.toUpperCase()] } : undefined
     );
 
-    async function readBlob(callback: any): Promise<Buffer> {
-      return new Promise<Buffer>((resolve, reject) => {
-        callback(async (err: any, _name: unknown, event: any) => {
-          const buffers = [];
-          if (err) {
-            reject(err);
-            return;
-          }
-          event.on("data", (chunk: any) => {
-            buffers.push(chunk);
-          });
-          event.once("end", () => {
-            resolve(Buffer.concat(buffers));
-          });
-        });
-      });
-    }
-
     return await Promise.all(
       result.data.map(async (row: any) => {
+        const subType = row["RDB$FIELD_SUB_TYPE"];
         let dataType = row["FIELD_TYPE"];
-        let defaultValue: () => unknown | Buffer | string | null =
-          row["RDB$DEFAULT_VALUE"];
 
-        if (typeof defaultValue === "function") {
-          defaultValue = await readBlob(defaultValue);
-        }
-
-        if (dataType === "varchar" || dataType === "char") {
+        if (dataType === "VARCHAR" || dataType === "CHAR") {
           dataType += `(${row["RDB$CHARACTER_LENGTH"]})`;
-
-          // If it's buffer (BINARY BLR), it contains metadata so we need to extract it
-          if (Buffer.isBuffer(defaultValue)) {
-            const chars = defaultValue.toString();
-            const lengthCodes = [];
-            let state: "HEADER1" | "HEADER2" = "HEADER1";
-            let start = 0;
-            for (let i = 0; i < chars.length; i++) {
-              const code = chars.charCodeAt(i);
-              if (state === "HEADER2") {
-                lengthCodes.push(code);
-              }
-              if (code === 0 && state === "HEADER1") {
-                state = "HEADER2";
-                continue;
-              } else if (code === 0 && state === "HEADER2") {
-                start = i + 1;
-                lengthCodes.pop();
-                break;
-              }
-            }
-            const length = Buffer.from(lengthCodes).readUint8();
-            defaultValue = chars.slice(start, start + length);
-          }
         }
+
+        const defaultValue =
+          typeof row["RDB$DEFAULT_SOURCE"] === "string"
+            ? row["RDB$DEFAULT_SOURCE"].replace("DEFAULT ", "")
+            : null;
+
+        const nullable = row["RDB$NULL_FLAG"] === null;
 
         return {
           tableName: row["RDB$RELATION_NAME"],
           columnName: row["RDB$FIELD_NAME"],
+          ordinalPosition: row["RDB$FIELD_POSITION"],
+          comment: row["RDB$DESCRIPTION"],
           dataType,
           defaultValue,
-          nullable: row["RDB$NULL_FLAG"] === null,
+          nullable,
         };
       })
     );
+  }
+
+  static async readBlob(
+    callback: (transaction: any, callback: any) => void
+  ): Promise<Buffer> {
+    return new Promise<Buffer>((resolve, reject) => {
+      callback(async (err: any, _name: unknown, event: any) => {
+        const buffers = [];
+        if (err) {
+          reject(err);
+          return;
+        }
+        event.on("data", (chunk: any) => {
+          buffers.push(chunk);
+        });
+        event.once("end", () => {
+          resolve(Buffer.concat(buffers));
+        });
+      });
+    });
   }
 
   async listViews(filter?: FilterOptions): Promise<TableOrView[]> {

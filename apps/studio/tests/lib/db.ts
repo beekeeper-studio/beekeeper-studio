@@ -428,43 +428,55 @@ export class DBTestUtil {
 
     // this is different in each database.
     const defaultValue = (s: any) => {
+      if (s === null) return null
       if (this.dialect === 'postgresql' && _.isNumber(s)) return s.toString()
       if (this.dialect === 'postgresql') return `'${s.replaceAll("'", "''")}'::character varying`
       if (this.dialect === 'sqlserver' && _.isNumber(s)) return `((${s}))`
       if (this.dialect === 'sqlserver') return `('${s.replaceAll("'", "''")}')`
+      if (this.dialect === 'firebird') return `'${s.toString().replaceAll("'", "''")}'`
       return s.toString()
     }
 
-    const columnName = (s: string) => {
-      if (this.dbType === 'firebird') return s.toUpperCase()
-      return s
+    const tbl = (o: Record<keyof MiniColumn, any>) => {
+      let columnName = o.columnName
+      if (this.dbType === 'firebird') columnName = columnName.toUpperCase()
+
+      let dataType = o.dataType
+      if (this.dbType === 'firebird') dataType = dataType.toUpperCase()
+
+      return {
+        columnName,
+        dataType,
+        nullable: o.nullable,
+        defaultValue: defaultValue(o.defaultValue),
+      }
     }
 
     const expected = [
-      {
-        columnName: columnName('id'),
+      tbl({
+        columnName: 'id',
         dataType: 'varchar(255)',
         nullable: false,
         defaultValue: null,
-      },
-      {
-        columnName: columnName('first_name'),
+      }),
+      tbl({
+        columnName: 'first_name',
         dataType: 'varchar(256)',
         nullable: true,
-        defaultValue: defaultValue("Foo'bar"),
-      },
-      {
-        columnName: columnName('family_name'),
+        defaultValue: "Foo'bar",
+      }),
+      tbl({
+        columnName: 'family_name',
         dataType: 'varchar(255)',
         nullable: false,
-        defaultValue: defaultValue('Rath\'bone'),
-      },
-      {
-        columnName: columnName('age'),
+        defaultValue: 'Rath\'bone',
+      }),
+      tbl({
+        columnName: 'age',
         dataType: 'varchar(256)',
         nullable: false,
-        defaultValue: defaultValue(99),
-      }
+        defaultValue: 99,
+      }),
     ]
     expect(result).toMatchObject(expected)
 
