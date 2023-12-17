@@ -1003,11 +1003,11 @@ export default Vue.extend({
         pendingInsert.data = pendingInsert.row.getData()
         return
       }
-      
+
       const column = this.table.columns.find(c => c.columnName === cell.getField())
       const pkValues = pkCells.map((cell) => cell.getValue()).join('-')
       const key = `${pkValues}-${cell.getField()}`
-      
+
       cell.getElement().classList.add('edited')
       const currentEdit = _.find(this.pendingChanges.updates, { key: key })
 
@@ -1187,7 +1187,6 @@ export default Vue.extend({
       }
     },
     async saveChanges() {
-        console.log('~~~ in save changes ~~~')
         this.saveError = null
 
         let replaceData = false
