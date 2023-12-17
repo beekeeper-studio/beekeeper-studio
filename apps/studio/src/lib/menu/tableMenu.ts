@@ -170,9 +170,7 @@ export function pasteRange(range: Tabulator.RangeComponent) {
 }
 
 export function setCellValue(cell: Tabulator.CellComponent, value: string) {
-  /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
-  // @ts-ignore
-  const editableFunc = cell.getColumn().getDefinition().__spreadsheet_editable
+  const editableFunc = cell.getColumn().getDefinition().editable
   const editable = typeof editableFunc === 'function' ? editableFunc(cell) : editableFunc
   if (editable) cell.setValue(value);
 }
