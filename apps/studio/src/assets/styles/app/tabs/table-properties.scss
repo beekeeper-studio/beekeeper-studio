@@ -264,6 +264,7 @@ $cell-success:           $row-add;
       margin: $row-gutter 0;
       &.tabulator-row-even, 
       &:nth-child(odd){
+        --row-bg-color: #{rgba($theme-base, 0.05)};
         background: rgba($theme-base, 0.05)!important;
       }
       .tabulator-cell {
@@ -392,9 +393,11 @@ $cell-success:           $row-add;
     &.tabulator-row-even, 
     &:nth-child(odd){
       &.inserted {
+        --row-bg-color: #{$row-add};
         background-color: $row-add!important;
       }
       &.deleted {
+        --row-bg-color: #{$row-delete};
         background-color: $row-delete!important;
         div.dynamic-action::after {
           content: "undo";
@@ -421,3 +424,8 @@ $cell-success:           $row-add;
     }
   }
 }
+
+.tabulator .tabulator-header .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
+  background-color: rgba($theme-base, 0.035);
+}
+

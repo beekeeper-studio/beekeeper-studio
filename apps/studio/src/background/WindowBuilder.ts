@@ -18,6 +18,7 @@ const windows: BeekeeperWindow[] = []
 
 export interface OpenOptions {
   url?: string
+  runningWayland: boolean
 }
 
 function getIcon() {
@@ -28,11 +29,17 @@ class BeekeeperWindow {
   private win: BrowserWindow | null
   private reloaded = false
 
-  constructor(settings: IGroupedUserSettings, openOptions?: OpenOptions) {
+  constructor(settings: IGroupedUserSettings, openOptions: OpenOptions) {
     const theme = settings.theme
     const dark = electron.nativeTheme.shouldUseDarkColors || theme.value.toString().includes('dark')
-    const showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
-    const titleBarStyle = platformInfo.isWindows && settings.menuStyle.value == 'native' ? 'default' : 'hidden'
+    let showFrame = settings.menuStyle && settings.menuStyle.value == 'native' ? true : false
+    let titleBarStyle: 'default' | 'hidden' = platformInfo.isWindows && settings.menuStyle.value == 'native' ? 'default' : 'hidden'
+
+    if (openOptions.runningWayland) {
+      showFrame = false
+      titleBarStyle = 'hidden'
+    }
+
       log.info('constructing the window')
     this.win = new BrowserWindow({
       width: 1200,
@@ -127,6 +134,6 @@ export function getActiveWindows(): BeekeeperWindow[] {
   return _.filter(windows, 'active')
 }
 
-export function buildWindow(settings: IGroupedUserSettings, options?: OpenOptions): void {
+export function buildWindow(settings: IGroupedUserSettings, options: OpenOptions): void {
   windows.push(new BeekeeperWindow(settings, options))
 }
