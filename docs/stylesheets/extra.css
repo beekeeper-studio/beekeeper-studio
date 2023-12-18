@@ -1,0 +1,12 @@
+:root {
+  --md-accent-fg-color: #FAD83B;
+  --md-accent-fg-color--transparent: #fad73b58;
+
+}
+[data-md-color-scheme="slate"] {
+  --md-typeset-a-color: var(--md-accent-fg-color);
+
+}
+
+
+

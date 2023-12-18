@@ -1,0 +1,20 @@
+site_name: Beekeeper Studio
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.tracking
+    - navigation.sections
+    - search.suggest
+    - search.highlight
+  palette:
+    scheme: slate
+    primary: black
+    accent: custom
+
+extra_css:
+  - stylesheets/extra.css
+plugins:
+  - search
