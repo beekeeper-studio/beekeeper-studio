@@ -234,6 +234,7 @@
 
 <script lang="ts">
 import Vue from 'vue'
+import pluralize from 'pluralize'
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import data_converter from "../../mixins/data_converter";
 import DataMutators, { escapeHtml } from '../../mixins/data_mutators'
@@ -560,6 +561,7 @@ export default Vue.extend({
               log.error('Failed to preserve object for', value)
               return true
             },
+            typeHint: column.dataType.toLowerCase()
             // elementAttributes: {
             //   maxLength: column.columnLength // TODO
             // }
