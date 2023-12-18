@@ -11,7 +11,7 @@ theme:
     - search.highlight
   palette:
     scheme: slate
-    primary: black
+    primary: custom
     accent: custom
 
 extra_css:
