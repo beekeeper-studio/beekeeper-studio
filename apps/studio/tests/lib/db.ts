@@ -555,22 +555,30 @@ export class DBTestUtil {
   }
 
   async queryTests() {
-    if (this.dbType === 'sqlite') return
-    const q = await this.connection.query("select 'a' as total, 'b' as total")
+    const total = this.dbType === 'firebird' ? 'TOTAL' : 'total'
+    const q = await this.connection.query(
+      this.dbType === 'firebird' ?
+        "select trim('a') as total, trim('b') as total from rdb$database" :
+        "select 'a' as total, 'b' as total"
+    )
     if(!q) throw new Error("no query result")
     const result = await q.execute()
 
     expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
     const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name}))
-    expect(fields).toMatchObject([{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}])
+    expect(fields).toMatchObject([{id: 'c0', name: total}, {id: 'c1', name: total}])
 
-    const q2 = await this.connection.query("select 'a' as a; select 'b' as b");
+    const q2 = await this.connection.query(
+      this.dbType === 'firebird' ?
+        "select trim('a') as a from rdb$database; select trim('b') as b from rdb$database" :
+        "select 'a' as a; select 'b' as b"
+    );
     if (!q2) throw "No query result"
     const r2 = await q2.execute()
     expect(r2[0].rows).toMatchObject([{c0: "a"}])
     expect(r2[1].rows).toMatchObject([{c0: 'b'}])
-    expect(r2[0].fields.map((f: any) => [f.id, f.name])).toMatchObject([['c0', 'a']])
-    expect(r2[1].fields.map((f: any) => [f.id, f.name])).toMatchObject([['c0', 'b']])
+    expect(r2[0].fields.map((f: any) => [f.id, f.name])).toMatchObject([['c0', this.dbType === 'firebird' ? 'A' : 'a']])
+    expect(r2[1].fields.map((f: any) => [f.id, f.name])).toMatchObject([['c0', this.dbType === 'firebird' ? 'B' : 'b']])
 
   }
 

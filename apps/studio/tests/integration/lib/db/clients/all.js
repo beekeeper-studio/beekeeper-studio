@@ -27,7 +27,7 @@ export function runCommonTests(getUtil) {
   })
 
   test("query tests", async () => {
-    if (getUtil().dbType.match(/sqlite|firebird/)) {
+    if (getUtil().dbType === 'sqlite') {
       return
     }
     await getUtil().queryTests()

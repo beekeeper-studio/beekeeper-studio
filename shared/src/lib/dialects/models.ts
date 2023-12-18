@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery']
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'firebird']
 const ultimateDialects = []
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
@@ -39,7 +39,7 @@ export const DialectTitles: {[K in Dialect]: string} = {
 
 }
 
-export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'sqlite3', 'redshift', 'mysql', 'oracledb']
+export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'sqlite3', 'redshift', 'mysql', 'oracledb', 'firebird']
 export type KnexDialect = typeof KnexDialects[number]
 
 export function KnexDialect(d: Dialect): KnexDialect {
@@ -113,6 +113,7 @@ export interface DialectData {
     createIndex?: boolean
     comments?: boolean
     filterWithOR?: boolean
+    cancelQuery?: boolean
   },
   notices?: {
     infoSchema?: string

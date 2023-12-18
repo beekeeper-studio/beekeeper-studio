@@ -3,7 +3,6 @@
 
 import electronLog from "electron-log";
 import knexlib, { Knex } from "knex";
-import KnexQueryBuilder from "knex/lib/query/querybuilder";
 import knexFirebirdDialect from "knex-firebird-dialect";
 import Firebird from "node-firebird";
 import { identify } from "sql-query-identifier";
@@ -32,6 +31,10 @@ import {
   TableResult,
   DatabaseFilterOptions,
   SupportedFeatures,
+  SchemaFilterOptions,
+  StreamResults,
+  TableColumn,
+  Routine,
 } from "../models";
 import {
   BasicDatabaseClient,
@@ -44,12 +47,14 @@ import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdCh
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
 import { buildDeleteQueries, buildUpdateQueries } from "./utils";
+import { Pool, Connection } from "./firebird/Pool";
+import { IdentifyResult } from "sql-query-identifier/lib/defines";
+import { TableKey } from "@shared/lib/dialects/models";
 
 type FirebirdResult = {
-  data: any;
-  statement: Statement;
-  // Number of changes made by the query
-  changes: number;
+  result: any[];
+  meta: any[];
+  statement: IdentifyResult;
 };
 
 const log = electronLog.scope("firebird");
@@ -154,104 +159,6 @@ function buildInsertQueries(knex: Knex, inserts: TableInsert[]) {
   return inserts.map((insert) => buildInsertQuery(knex, insert));
 }
 
-class Connection {
-  constructor(private database: Firebird.Database) {}
-
-  get() {
-    return this.database;
-  }
-
-  release(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.database.detach((err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve();
-      });
-    });
-  }
-
-  query(query: string, params: any[]): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      this.database.query(query, params, (err: any, result: any[]) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(result);
-      });
-    });
-  }
-}
-
-class Pool {
-  private pool: Firebird.ConnectionPool;
-
-  constructor(config: Firebird.Options) {
-    this.pool = Firebird.pool(5, config);
-  }
-
-  query(query: string, params: any[]): Promise<any[]> {
-    return new Promise((_resolve, _reject) => {
-      this.pool.get((err, database) => {
-        function reject(err: any) {
-          database?.detach();
-          _reject(err);
-        }
-
-        function resolve(result: any[]) {
-          database.detach();
-          _resolve(result);
-        }
-
-        if (err) {
-          reject(err);
-          return;
-        }
-
-        if (typeof query !== "string") {
-          reject(new Error("Invalid query. Query must be a string."));
-          return;
-        }
-
-        database.query(query, params, (err: any, result: any[]) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-
-          resolve(result);
-        });
-      });
-    });
-  }
-
-  acquire(): Promise<Connection> {
-    return new Promise((resolve, reject) => {
-      let connection: Connection | undefined;
-      try {
-        this.pool.get((err, database) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          connection = new Connection(database);
-          resolve(connection);
-        });
-      } catch (err) {
-        connection.release();
-        reject(err);
-      }
-    });
-  }
-
-  destroy() {
-    this.pool.destroy();
-  }
-}
-
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   version: any;
   pool: Pool;
@@ -285,10 +192,11 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
     this.pool = new Pool(config);
 
+    // TODO use node firebird service
     const versionResult = await this.driverExecuteSingle(
       "SELECT RDB$GET_CONTEXT('SYSTEM', 'ENGINE_VERSION') from rdb$database;"
     );
-    this.version = versionResult.data[0]["RDB$GET_CONTEXT"];
+    this.version = versionResult.result[0]["RDB$GET_CONTEXT"];
 
     const serverConfig = this.server.config;
     const knex = knexlib({
@@ -302,6 +210,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         user: serverConfig.user,
         password: serverConfig.password,
         database: this.database.database,
+        // eslint-disable-next-line
+        // @ts-ignore
         blobAsText: true,
       },
     });
@@ -323,11 +233,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       FROM RDB$RELATIONS a
       WHERE COALESCE(RDB$SYSTEM_FLAG, 0) = 0 AND RDB$RELATION_TYPE = 0
     `);
-    const mapped = result.data.map((row: any) => ({
+    return result.result.map((row: any) => ({
       name: row["RDB$RELATION_NAME"],
       entityType: "table",
     }));
-    return mapped;
   }
 
   async listTableColumns(
@@ -410,7 +319,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     );
 
     return await Promise.all(
-      result.data.map(async (row: any) => {
+      result.result.map(async (row: any) => {
         const subType = row["RDB$FIELD_SUB_TYPE"];
         let dataType = row["FIELD_TYPE"];
 
@@ -439,7 +348,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   static async readBlob(
-    callback: (transaction: any, callback: any) => void
+    callback: (transaction: any, callback?: any) => void
   ): Promise<Buffer> {
     return new Promise<Buffer>((resolve, reject) => {
       callback(async (err: any, _name: unknown, event: any) => {
@@ -500,7 +409,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     `,
       { params: [table.toUpperCase()] }
     );
-    return result.data.map((row: any) => ({
+    return result.result.map((row: any) => ({
       columnName: row["RDB$FIELD_NAME"],
       position: row["RDB$FIELD_POSITION"],
     }));
@@ -515,7 +424,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     schema?: string,
     selects = ["*"]
   ): Promise<TableResult> {
-    const { query, params } = this.buildSelectTopQuery(
+    const { query, params } = FirebirdClient.buildSelectTopQuery(
       table,
       offset,
       limit,
@@ -528,8 +437,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     const result = await this.driverExecuteSingle(query, { params });
 
     return {
-      result: result.data,
-      fields: Object.keys(result.data[0] || {}),
+      result: result.result,
+      fields: Object.keys(result.result[0] || {}),
     };
   }
 
@@ -539,29 +448,29 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     limit: number,
     orderBy: OrderBy[],
     filters: string | TableFilter[],
-    schema?: string,
+    _schema?: string,
     selects?: string[]
   ): Promise<string> {
-    const { query, params } = this.buildSelectTopQuery(
+    const { query, params } = FirebirdClient.buildSelectTopQuery(
       table,
       offset,
       limit,
       orderBy,
       filters,
-      schema,
+      undefined,
       selects
     );
     return this.knex.raw(query, params).toString();
   }
 
-  private buildSelectTopQuery(
+  private static buildSelectTopQuery(
     table: string,
-    offset: number,
-    limit: number,
-    orderBy: OrderBy[],
-    filters: string | TableFilter[],
-    _schema?: string,
-    selects?: string[]
+    offset?: number,
+    limit?: number,
+    orderBy?: OrderBy[],
+    filters: string | TableFilter[] = [],
+    countTitle = 'total',
+    selects: string[] = ['*']
   ) {
     let orderByString = "";
     if (orderBy && orderBy.length > 0) {
@@ -590,27 +499,36 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         SELECT
           ${_.isNumber(limit) ? `FIRST ${limit}` : ""}
           ${_.isNumber(offset) ? `SKIP ${offset}` : ""}
-            ${selects.join(", ")}
+          ${selects.join(", ")}
         FROM ${table}
         ${filterString}
         ${orderByString}
       `,
+      countQuery: `SELECT COUNT(*) AS ${countTitle} FROM ${table}`,
       params: filterParams,
     };
   }
 
-  // TODO complete this function
-  async query(queryText: string): CancelableQuery {
+  query(queryText: string): CancelableQuery {
     return {
       execute: async () => {
-        const query = identifyCommands(queryText);
-        const results = await this.driverExecuteMultiple(queryText);
-        return results.map(({ data, statement }) => ({
-          command: statement.type,
-          rows: data,
-        }));
+        const driverResult = await this.driverExecuteMultiple(queryText, { rowAsArray: true });
+        return driverResult.map(({ result, meta }) => {
+          const rows = result.map((row: Record<string, any>) => {
+            const transformedRow = {}
+            Object.keys(row).forEach((key, idx) => {
+              transformedRow[`c${idx}`] = row[key];
+            })
+            return transformedRow
+          })
+          const fields = meta.map((field, idx) => ({
+            id: `c${idx}`,
+            name: field.alias || field.field,
+          }))
+          return { fields, rows };
+        });
       },
-      cancel: () => {
+      cancel: async () => {
         // TODO
       },
     };
@@ -636,7 +554,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     schema?: string
   ): Promise<TableTrigger[]> {
     const result = await this.driverExecuteSingle(`SELECT * FROM RDB$TRIGGERS`);
-    return result.data;
+    return result.result;
   }
 
   async listTableIndexes(
@@ -666,7 +584,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       WHERE rid.rdb$system_flag = 0
     `);
 
-    const grouped = _.groupBy(result.data, "RDB$INDEX_NAME");
+    const grouped = _.groupBy(result.result, "RDB$INDEX_NAME");
 
     return Object.keys(grouped).map((name) => {
       const blob = grouped[name];
@@ -705,7 +623,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       FROM RDB$RELATIONS
       WHERE RDB$RELATION_TYPE = 0 AND RDB$SYSTEM_FLAG = 0
     `);
-    return result.data;
+    return result.result;
   }
 
   async truncateElement(
@@ -713,7 +631,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     typeOfElement: DatabaseElement,
     schema?: string
   ): Promise<void> {
-    // There is no internal function to truncate a table
+    // TODO There is no internal function to truncate a table
   }
 
   async duplicateTable(
@@ -721,7 +639,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     duplicateTableName: string,
     schema?: string
   ): Promise<void> {
-    // There is no internal function to duplicate a table
+    // TODO There is no internal function to duplicate a table
   }
 
   async createDatabase(
@@ -737,6 +655,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     const connection = await this.pool.acquire();
     const cli = { connection };
 
+    // TODO use service manager functions
     await this.driverExecuteSingle("SET TRANSACTION", cli);
 
     try {
@@ -840,7 +759,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         ...cli,
         params: blob.params,
       });
-      if (r.data[0]) results.push(r.data[0]);
+      if (r.result[0]) results.push(r.result[0]);
     }
 
     return results;
@@ -861,7 +780,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         table
       ).toUpperCase()}
     `);
-    const row = result.data[0];
+    const row = result.result[0];
 
     return {
       description: row["RDB$DESCRIPTION"],
@@ -875,7 +794,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     };
   }
 
-  async getTableKeys(db: string, table: string, schema?: string): Promise<TableKey[]> {
+  async getTableKeys(db: string, table: string, _schema?: string): Promise<TableKey[]> {
     return []; // TODO
   }
 
@@ -885,7 +804,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     options?: any
   ): Promise<NgQueryResult[]> {
     const result = await this.driverExecuteMultiple(queryText, options);
-    return result.map(({ data, statement }) => ({
+    return result.map(({ result: data, statement }) => ({
       fields: [], // TODO implement fields
       affectedRows: undefined, // TODO implement affectedRows
       command: statement.type,
@@ -914,6 +833,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       connection?: Connection;
       multiple?: boolean;
       params?: any[];
+      rowAsArray?: boolean;
     } = {}
   ): Promise<FirebirdResult | FirebirdResult[]> {
     const queries = identifyCommands(queryText);
@@ -924,18 +844,96 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     // we do it this way to ensure the queries are run IN ORDER
     for (let index = 0; index < queries.length; index++) {
       const query = queries[index];
-
-      const result = options.connection
-        ? await options.connection.query(query.text, params)
-        : await this.pool.query(query.text, params);
+      const conn = options.connection ?? this.pool;
+      const data = await conn.query(query.text, params, options.rowAsArray);
 
       results.push({
-        data: result,
+        meta: data.meta,
+        result: data.result,
         statement: query,
       });
     }
 
     return options.multiple ? results : results[0];
+  }
+
+  async listMaterializedViewColumns(_db: string, _table: string, _schema?: string): Promise<TableColumn[]> {
+    return [] // Doesn't support materialized views
+  }
+
+  async listSchemas(_db: string, _filter?: SchemaFilterOptions): Promise<string[]> {
+    return []; // Doesn't support schemas
+  }
+
+  async getTableReferences(_table: string, _schema?: string): Promise<string[]> {
+    return []; // TODO
+  }
+
+  getQuerySelectTop(table: string, limit: number, _schema?: string): string {
+    return `SELECT FIRST ${limit} * FROM ${table}`;
+  }
+
+  getTableCreateScript(_table: string, _schema?: string): Promise<string> {
+    // TODO
+    // 1. get all columns of a table with their source types
+    // 2. use knex to build the query
+      throw new Error("Method not implemented.");
+  }
+
+  getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
+      throw new Error("Method not implemented.");
+  }
+
+  getRoutineCreateScript(_routine: string, _type: string, _schema?: string): Promise<string[]> {
+      throw new Error("Method not implemented.");
+  }
+
+  async truncateAllTables(db: string, _schema?: string): Promise<void> {
+    const tables = await this.listTables(db);
+    const query = tables.map((table) => `DELETE FROM ${table.name};`).join('');
+    await this.driverExecuteSingle(query);
+  }
+
+  async getTableLength(table: string, _schema?: string): Promise<number> {
+    const result = await this.pool.query(`SELECT COUNT(*) AS TOTAL FROM ${table}`);
+    return result[0]['TOTAL'];
+  }
+
+  selectTopStream(_db: string, _table: string, _orderBy: OrderBy[], _filters: string | TableFilter[], _chunkSize: number, _schema?: string): Promise<StreamResults> {
+      throw new Error("Method not implemented.");
+  }
+
+  queryStream(_db: string, _query: string, _chunkSize: number): Promise<StreamResults> {
+      throw new Error("Method not implemented.");
+  }
+
+  wrapIdentifier(value: string): string {
+    return value;
+  }
+
+  setTableDescription(_table: string, _description: string, _schema?: string): Promise<string> {
+      throw new Error("Method not implemented.");
+  }
+
+  duplicateTableSql(_tableName: string, _duplicateTableName: string, _schema?: string): string {
+      // TODO There is no native implementation of this
+      throw new Error("Method not implemented.");
+  }
+
+  listCharsets(): Promise<string[]> {
+      throw new Error("Method not implemented.");
+  }
+
+  async getDefaultCharset(): Promise<string> {
+    return null
+  }
+
+  listCollations(_charset: string): Promise<string[]> {
+      throw new Error("Method not implemented.");
+  }
+
+  createDatabaseSQL(): string {
+      throw new Error("Method not implemented.");
   }
 }
 
