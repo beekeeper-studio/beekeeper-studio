@@ -94,6 +94,8 @@ export default Vue.extend({
         return parseInt(this.value);
       } else if (floatTypes.includes(typeHint)) {
         return parseFloat(this.value);
+      } else {
+        return this.value;
       }
     }
   },
