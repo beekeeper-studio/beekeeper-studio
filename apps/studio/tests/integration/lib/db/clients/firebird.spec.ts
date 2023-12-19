@@ -1,22 +1,32 @@
-import { DockerComposeEnvironment } from "testcontainers";
+import { GenericContainer, StartedTestContainer, Wait } from "testcontainers";
 import { IDbConnectionServerConfig } from "@/lib/db/client";
-import { StartedGenericContainer } from "testcontainers/dist/generic-container/started-generic-container";
 import { DBTestUtil, dbtimeout, Options } from "../../../../lib/db";
 import { runCommonTests } from "./all";
 
 describe("Firebird Tests", () => {
-  let container: StartedGenericContainer;
+  let container: StartedTestContainer;
   let util: DBTestUtil;
 
   beforeAll(async () => {
     const timeoutDefault = 5000;
     jest.setTimeout(dbtimeout);
 
-    const environment = await new DockerComposeEnvironment(
-      "tests/docker",
-      "firebird.yml"
-    ).up();
-    container = environment.getContainer("test_firebird");
+    container = await new GenericContainer("jacobalberty/firebird:v4.0.1")
+      .withName("test_firebird")
+      .withEnv("ISC_PASSWORD", "masterkey")
+      .withEnv("FIREBIRD_DATABASE", "defaultdb.fdb")
+      .withEnv("EnableLegacyClientAuth", "true")
+      .withExposedPorts(3050)
+      .withWaitStrategy(Wait.forHealthCheck())
+      .withHealthCheck({
+        test: `(echo "select 1 as a from rdb\$database;" | /usr/local/firebird/bin/isql -user sysdba -password masterkey /firebird/data/sakila.fdb) || exit 1`,
+        interval: 2000,
+        timeout: 3000,
+        retries: 10,
+        startPeriod: 5000,
+      })
+      .withStartupTimeout(dbtimeout)
+      .start()
 
     jest.setTimeout(timeoutDefault);
 

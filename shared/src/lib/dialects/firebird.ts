@@ -25,7 +25,12 @@ export const FirebirdData: DialectData = {
   wrapLiteral: Firebird.escape,
   unwrapIdentifier: defaultWrapLiteral,
   disabledFeatures: {
+    alter: {
+      indexes: true,
+    },
     cancelQuery: true,
+    backup: true,
+    truncateElement: true,
   },
   notices: {
   },

@@ -13,54 +13,25 @@ export class Pool {
     this.pool = Firebird.pool(5, config);
   }
 
-  query(query: string, params?: any[], rowAsArray?: boolean): Promise<Result> {
-    return new Promise((resolve, reject) => {
-      if (typeof query !== "string") {
-        reject(new Error("Invalid query. Query must be a string."));
-        return;
-      }
+  async query(
+    query: string,
+    params?: any[],
+    rowAsArray?: boolean
+  ): Promise<Result> {
+    if (typeof query !== "string") {
+      // Do it here cause node-firebird would throw an error that can't be caught
+      // in beekeeper.
+      throw new Error("Invalid query. Query must be a string.");
+    }
 
-      this.pool.get((err, database) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-
-        function callback(
-          err: any,
-          result: any[],
-          meta: any[],
-          isSelect: boolean
-        ) {
-          database.detach();
-          if (err) {
-            reject(err);
-          } else {
-            resolve({ result, meta, isSelect });
-          }
-        }
-
-        if (rowAsArray) {
-          /* eslint-disable-next-line */
-          // @ts-ignore
-          database.execute(query, params, callback);
-        } else {
-          /* eslint-disable-next-line */
-          // @ts-ignore
-          database.query(query, params, callback);
-        }
-      });
-    });
+    const connection = await this.getConnection();
+    const result = await connection.query(query, params, rowAsArray);
+    connection.release();
+    return result;
   }
 
-  /**
-   * To use this, you need to release manually.
-   * E.g.
-   * const connection = await pool.acquire();
-   * await connection.query("SELECT 1");
-   * connection.release();
-   **/
-  acquire(): Promise<Connection> {
+  /** To use this, you need to release manually. */
+  getConnection(): Promise<Connection> {
     return new Promise((resolve, reject) => {
       let connection: Connection | undefined;
       try {
@@ -87,10 +58,6 @@ export class Pool {
 export class Connection {
   constructor(private database: Firebird.Database) {}
 
-  get() {
-    return this.database;
-  }
-
   release(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.database.detach((err) => {
@@ -105,11 +72,6 @@ export class Connection {
 
   query(query: string, params?: any[], rowAsArray?: boolean): Promise<Result> {
     return new Promise((resolve, reject) => {
-      if (typeof query !== "string") {
-        reject(new Error("Invalid query. Query must be a string."));
-        return;
-      }
-
       const database = this.database;
 
       function callback(
@@ -136,5 +98,76 @@ export class Connection {
         database.query(query, params, callback);
       }
     });
+  }
+
+  transaction(
+    isolation: Firebird.Isolation = Firebird.ISOLATION_READ_COMMITTED
+  ): Promise<Transaction> {
+    return new Promise((resolve, reject) => {
+      this.database.transaction(isolation, (err, transaction) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(new Transaction(transaction));
+      });
+    });
+  }
+}
+
+export class Transaction {
+  constructor(private transaction: Firebird.Transaction) {}
+
+  query(query: string, params?: any[], rowAsArray?: boolean): Promise<Result> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.transaction;
+
+      function callback(
+        err: any,
+        result: any[],
+        meta: any[],
+        isSelect: boolean
+      ) {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve({ result, meta, isSelect });
+      }
+
+      if (rowAsArray) {
+        /* eslint-disable-next-line */
+        // @ts-ignore
+        transaction.execute(query, params, callback);
+      } else {
+        /* eslint-disable-next-line */
+        // @ts-ignore
+        transaction.query(query, params, callback);
+      }
+    });
+  }
+
+  commit(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.transaction.commit((err) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  rollback(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.transaction.rollback((err) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve();
+      });
+    })
   }
 }

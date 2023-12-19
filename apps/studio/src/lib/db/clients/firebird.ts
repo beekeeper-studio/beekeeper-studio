@@ -47,7 +47,7 @@ import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdCh
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
 import { buildDeleteQueries, buildUpdateQueries } from "./utils";
-import { Pool, Connection } from "./firebird/Pool";
+import { Pool, Connection, Transaction } from "./firebird/Pool";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { TableKey } from "@shared/lib/dialects/models";
 
@@ -652,30 +652,30 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
   async applyChanges(changes: TableChanges): Promise<any[]> {
     let results = [];
-    const connection = await this.pool.acquire();
-    const cli = { connection };
-
-    // TODO use service manager functions
-    await this.driverExecuteSingle("SET TRANSACTION", cli);
+    const connection = await this.pool.getConnection();
+    const transaction = await connection.transaction();
 
     try {
       if (changes.inserts) {
-        await this.insertRows(cli, changes.inserts);
+        for (const command of buildInsertQueries(this.knex, changes.inserts)) {
+          await transaction.query(command)
+        }
       }
 
       if (changes.updates) {
-        results = await this.updateValues(cli, changes.updates);
+        results = await this.updateValues(transaction, changes.updates);
       }
 
       if (changes.deletes) {
-        await this.deleteRows(cli, changes.deletes);
+        for (const command of buildDeleteQueries(this.knex, changes.deletes)) {
+          await transaction.query(command)
+        }
       }
 
-      await this.driverExecuteSingle("COMMIT", cli);
+      await transaction.commit();
     } catch (ex) {
       log.error("query exception: ", ex);
-      // FIXME: rollback doesn't work
-      await this.driverExecuteSingle("ROLLBACK", cli);
+      await transaction.rollback();
       await connection.release();
       throw ex;
     }
@@ -699,14 +699,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return queriesStr;
   }
 
-  async insertRows(cli: any, inserts: TableInsert[]) {
-    for (const command of buildInsertQueries(this.knex, inserts)) {
-      await this.driverExecuteSingle(command, cli);
-    }
-  }
-
   async updateValues(
-    cli: any,
+    cli: Connection | Transaction,
     updates: TableUpdate[]
   ): Promise<TableUpdateResult[]> {
     const commands = updates.map((update) => {
@@ -731,44 +725,11 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     // TODO: this should probably return the updated values
     for (let index = 0; index < commands.length; index++) {
       const blob = commands[index];
-      await this.driverExecuteSingle(blob.query, {
-        ...cli,
-        params: blob.params,
-      });
-    }
-
-    const returnQueries = updates.map((update) => {
-      const params = [];
-      const whereList = [];
-      update.primaryKeys.forEach(({ column, value }) => {
-        whereList.push(`${FirebirdData.wrapIdentifier(column)} = ?`);
-        params.push(value);
-      });
-
-      const where = whereList.join(" AND ");
-
-      return {
-        query: `select * from ${update.table} where ${where}`,
-        params: params,
-      };
-    });
-
-    for (let index = 0; index < returnQueries.length; index++) {
-      const blob = returnQueries[index];
-      const r = await this.driverExecuteSingle(blob.query, {
-        ...cli,
-        params: blob.params,
-      });
-      if (r.result[0]) results.push(r.result[0]);
+      const result = await cli.query(blob.query, blob.params);
+      results.push(result);
     }
 
     return results;
-  }
-
-  async deleteRows(cli: any, deletes: TableDelete[]) {
-    for (const command of buildDeleteQueries(this.knex, deletes)) {
-      await this.driverExecuteSingle(command, cli);
-    }
   }
 
   async getTableProperties(

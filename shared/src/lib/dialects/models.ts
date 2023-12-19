@@ -102,6 +102,7 @@ export interface DialectData {
       addConstraint?: boolean
       dropConstraint?: boolean
       everything?: boolean
+      indexes?: boolean
     },
     constraints?: {
       onUpdate?: boolean,
@@ -114,6 +115,8 @@ export interface DialectData {
     comments?: boolean
     filterWithOR?: boolean
     cancelQuery?: boolean
+    backup?: boolean
+    truncateElement?: boolean
   },
   notices?: {
     infoSchema?: string

@@ -158,8 +158,6 @@ export function runCommonTests(getUtil) {
     })
 
     test("should not commit on change error", async () => {
-      // FIXME: broken in firebird
-      if (getUtil().dbType === 'firebird') return
       await itShouldNotCommitOnChangeError(getUtil())
     })
   })
@@ -182,8 +180,6 @@ export function runCommonTests(getUtil) {
     })
 
     test("should not commit on change error", async () => {
-      // FIXME: broken in firebird
-      if (getUtil().dbType === 'firebird') return
       await itShouldNotCommitOnChangeErrorCompositePK(getUtil())
     })
   })
@@ -271,12 +267,7 @@ export const itShouldNotInsertBadData = async function(util) {
 
   const results = await util.knex.select().table('test_inserts')
 
-  if (util.dbType === 'firebird') {
-    // In firebird, the data is inserted separately
-    expect(results.length).toBe(1)
-  } else {
-    expect(results.length).toBe(0)
-  }
+  expect(results.length).toBe(0)
 }
 
 export const itShouldApplyAllTypesOfChanges = async function(util) {
@@ -500,12 +491,7 @@ export const itShouldNotInsertBadDataCompositePK = async function(util) {
   await expect(util.connection.applyChanges({ inserts: inserts })).rejects.toThrow()
 
   const results = await util.knex.select().table('test_inserts_composite_pk')
-  if (util.dbType === 'firebird') {
-    // In firebird, the data is inserted separately
-    expect(results.length).toBe(1)
-  } else {
-    expect(results.length).toBe(0)
-  }
+  expect(results.length).toBe(0)
 }
 
 export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
