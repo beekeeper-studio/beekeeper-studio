@@ -3,6 +3,7 @@
     ref="nullable"
     :cell="cell"
     :params="params"
+    @nullifyInput="nullifyInput"
   >
     <date-picker
       v-if="this.typeEditorActive"
@@ -25,8 +26,7 @@
 </template>
 <script lang="ts">
 /*
-  Copied mostly from the [NullableInputEditor.vue file](shared/src/components/tabulator/NullableInputEditor.vue).
-  https://github.com/mengxiong10/vue2-datepicker uses this plugin. There is an update for vue 3 when we're ready for that https://github.com/mengxiong10/vue-datepicker-next
+  https://github.com/mengxiong10/vue2-datepicker. There is an update for vue 3 when we're ready for that https://github.com/mengxiong10/vue-datepicker-next
 */
 import _ from 'lodash'
 import Vue from 'vue'
@@ -84,14 +84,13 @@ export default Vue.extend({
       // if the typeEditor is active and you blur, don't submit anything
       if (e.type === 'blur' && this.typeEditorActive) return false
 
-      // the datepicker returns a date object on submit while the others return an event object
-      if (_.isDate(e)) {
-        this.datePickerValue = e
-      }
-      // some cases we always want null, never empty string
       this.$emit('value', this.datePickerValue)
 
       this.toggleTypeEditor = false
+    },
+    nullifyInput() {
+      this.toggleTypeEditor = false
+      this.$emit('value', null)
     }
   },
   watch: {
@@ -103,12 +102,14 @@ export default Vue.extend({
         const refValue = this.cell.getValue()
         const dataType = this.params.dataType || ''
         let dataValue = refValue == null ? refValue : helpers.niceString(refValue)
-        
+
         if (this.isTimeType(dataType) && dataValue !== null) {
           dataValue = dataValue.search(/(\+|-)/i) > -1 && !isNaN(dataValue.slice(-1)) ? `${dataValue}:00`: dataValue  
           this.datePickerValue = new Date(`2023-03-31T${dataValue}`)
-        } else if (dataValue !== '') {
+        } else if (dataValue !== null && dataValue !== '') {
           this.datePickerValue = new Date(dataValue)
+        } else if (dataValue == null) {
+          this.datePickerValue = new Date()
         }
       }
       this.$set(this.$refs.nullable.$data, 'typeEditorActive', this.typeEditorActive)

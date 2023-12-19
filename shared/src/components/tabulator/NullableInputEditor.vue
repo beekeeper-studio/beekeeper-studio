@@ -86,6 +86,9 @@ export default Vue.extend({
 
     },
     clear() {
+      this.typeEditorActive = false
+      // nullifyInput is listened to by any slots which will then nullify the value and go through the whole submission process. Not having the below line caused sadness
+      this.$emit('nullifyInput')
       this.$emit('value', null)
     }
   },
@@ -101,9 +104,6 @@ export default Vue.extend({
           }
         })
       }
-    },
-    typeEditorActive() {
-      console.log('NullableInputEditor:typeEditorActive ', this.typeEditorActive)
     }
   },
   mounted() {
