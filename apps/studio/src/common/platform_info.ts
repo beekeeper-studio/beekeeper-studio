@@ -43,6 +43,7 @@ if (p.env.PORTABLE_EXECUTABLE_DIR) {
 const platformInfo = {
   isWindows, isMac,
   isLinux: !isWindows && !isMac,
+  isWayland: p.env.XDG_SESSION_TYPE === 'wayland', 
   isSnap: p.env.ELECTRON_SNAP,
   isPortable: isWindows && p.env.PORTABLE_EXECUTABLE_DIR,
   isDevelopment: isDevEnv,

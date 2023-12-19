@@ -86,7 +86,6 @@ export default Vue.extend({
 
     },
     clear() {
-      console.log('~~~~ hi ~~~~')
       this.$emit('value', null)
     }
   },
@@ -132,6 +131,8 @@ export default Vue.extend({
     right: 3px;
     font-size: 14px!important;
     width: 16px;
-    z-index: 10000;
+    text-align: center;
+    margin-top: -1px;
+    cursor: pointer;
   }
 </style>
