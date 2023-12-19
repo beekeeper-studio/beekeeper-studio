@@ -20,7 +20,7 @@ Beekeeper Studio currently supports the following database types:
 - Oracle Database
 
 
-![Image Alt Tag]\(/assets/images/first-page-5.png)
+![Image Alt Tag](/assets/images/first-page-5.png)
 The Beekeeper Studio Connection Screen
 {: .text-muted .small .text-center }
 
@@ -28,7 +28,7 @@ The Beekeeper Studio Connection Screen
 
 You can connect to some databases with either a `socket` or a `TCP` connection. Socket connections only work when the database server is running on your local machine (it's the default set-up for a MySQL installation for example). TCP connections require a hostname and port.
 
-![Image Alt Tag]\(/assets/images/first-page-6.png)
+![Image Alt Tag](/assets/images/first-page-6.png)
 
 TCP (Host/Port) connection example
 {: .text-muted .text-center .small}
@@ -37,7 +37,7 @@ Note that SSL, SSH, and other advanced connection options are only available wit
 
 ## SSL
 
-![Image Alt Tag]\(/assets/images/first-page-7.png)
+![Image Alt Tag](/assets/images/first-page-7.png)
 Beekeeper Studio's SSL Configuration
 {: .text-muted .small .text-center }
 
@@ -62,7 +62,7 @@ You can provide your own custom certificate files if needed.
 
 ## SSH
 
-![Image Alt Tag]\(/assets/images/first-page-8.png)
+![Image Alt Tag](/assets/images/first-page-8.png)
 Beekeeper Studio's SSH configuration
 {: .text-muted .text-center .small }
 

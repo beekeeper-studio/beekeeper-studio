@@ -11,7 +11,7 @@ Here's a quick walkthrough on how to use Query Magics.
 <br/>
 
 
-![Query magics]\(/assets/images/query-magics-16.png)
+![Query magics](/assets/images/query-magics-16.png)
 
 
 ## Use Query Magics to
@@ -37,7 +37,7 @@ select url as url__format__link from some_table
 Here's a quick example that displays clickable emails, links to another table, and renders a number as a star rating.
 
 
-![Query Magics]\(/assets/images/query-magics-17.png)
+![Query Magics](/assets/images/query-magics-17.png)
 
 
 ## Available Query Magics
@@ -98,11 +98,11 @@ In your result table this will replace `id` with `value`. So in the final exampl
 
 Here are the enums in action:
 
-![Image Alt Tag]\(/assets/images/query-magics-85.png)
+![Image Alt Tag](/assets/images/query-magics-85.png)
 
-![Image Alt Tag]\(/assets/images/query-magics-84.png)
+![Image Alt Tag](/assets/images/query-magics-84.png)
 
-![Image Alt Tag]\(/assets/images/query-magics-86.png)
+![Image Alt Tag](/assets/images/query-magics-86.png)
 
 ### Format as a clickable link
 

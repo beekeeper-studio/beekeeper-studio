@@ -10,13 +10,13 @@ To install Beekeeper Studio download the `dmg` installer file from [our website]
 
 Note that by default MacOS will prevent you from installing third-party distributed apps (through the Mac app store). To enable this, navigate to `Settings -> Security and Privacy`, and enable `App Store and Identified Developers`:
 
-![Image Alt Tag]\(/assets/images/installation-2.png)
+![Image Alt Tag](/assets/images/installation-2.png)
 
 ## Apple Silicon vs Intel
 
 Beekeeper Studio installers are available for both Intel and Apple silicon Macs. You can choose your preferred installer type when downloading from the website
 
-![Image Alt Tag]\(/assets/images/macos-m1-intel-10.png)
+![Image Alt Tag](/assets/images/macos-m1-intel-10.png)
 
 ### Oracle Requires Intel
 

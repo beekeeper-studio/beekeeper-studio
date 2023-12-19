@@ -53,7 +53,7 @@ A quick and easy way to explore Beekeeper Studio's functionality is with the `Sa
 
 Beekeeper will open, showing you the contents of the database:
 
-![Opening the demo database in Beekeeper Studio]\(/assets/images/getting-started-guide-60.gif)
+![Opening the demo database in Beekeeper Studio](/assets/images/getting-started-guide-60.gif)
 
 ### Open a table and change some data
 
@@ -62,7 +62,7 @@ Double click on the `film` table in the left sidebar. This will open the data vi
 Remember - this is just a demo database, you can do whatever you like to it without any risk. Try clicking on the `title` cell for a movie and changing the movie name. You can save your changes by clicking the `apply` button in the footer.
 
 
-![Image Alt Tag]\(/assets/images/getting-started-guide-61.gif)
+![Image Alt Tag](/assets/images/getting-started-guide-61.gif)
 
 ### Write your first SQL query
 

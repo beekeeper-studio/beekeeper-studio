@@ -10,11 +10,11 @@ Beekeeper Studio lets you **CREATE** and **ALTER** database tables with a user-f
 
 At the top of the entitly list in the left sidebar, click the `+` button to open the table creation interface.
 
-![Image Alt Tag]\(/assets/images/editing-data-19.png)
+![Image Alt Tag](/assets/images/editing-data-19.png)
 
 On this screen you can add and remove columns from your new table, then click `create table` in the bottom right
 
-![Image Alt Tag]\(/assets/images/editing-data-20.gif)
+![Image Alt Tag](/assets/images/editing-data-20.gif)
 
 ### Adding an autoincrement column
 
@@ -40,11 +40,11 @@ You can also click `Copy to SQL` rather than `create table` to open the generate
 
 Right click any table in the sidebar and click `View Structure` to view and edit the table schema.
 
-![Image Alt Tag]\(/assets/images/editing-data-21.png)
+![Image Alt Tag](/assets/images/editing-data-21.png)
 
 This view works much the same as the table creation view, except you also have options for modifying indexes, relations, and triggers.
 
-![Image Alt Tag]\(/assets/images/editing-data-22.png)
+![Image Alt Tag](/assets/images/editing-data-22.png)
 
 **Note**: Some database engines don't support some types of schema modifications, in these cases Beekeeper Studio will provide a warning and that feature will be disabled
 {: .alert .alert-info }

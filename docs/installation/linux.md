@@ -65,7 +65,7 @@ If you see something like this, we recommend you move to the [AppImage](#appimag
 
 
 
-![Image Alt Tag]\(/assets/images/linux-4.png)
+![Image Alt Tag](/assets/images/linux-4.png)
 Font rendering issues in Gnome 3.38+ with the snap package
 {: .text-muted .small .text-center }
 
