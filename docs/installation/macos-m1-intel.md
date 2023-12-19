@@ -10,16 +10,16 @@ To install Beekeeper Studio download the `dmg` installer file from [our website]
 
 Note that by default MacOS will prevent you from installing third-party distributed apps (through the Mac app store). To enable this, navigate to `Settings -> Security and Privacy`, and enable `App Store and Identified Developers`:
 
-![Image Alt Tag](/assets/images/installation-2.png)
-
 ## Apple Silicon vs Intel
 
-Beekeeper Studio installers are available for both Intel and Apple silicon Macs. You can choose your preferred installer type when downloading from the website
+Beekeeper Studio installers are available for both Intel and Apple silicon Macs. You can choose your preferred installer type when downloading from the website.
 
+!!! warning "Oracle Database Does Not Support Apple Silicon"
+    Oracle Database libraries and packages are **not** available yet for Apple Silicon. So if you want to connect Beekeeper Studio to your Oracle Database you must install the Intel version of Beekeeper Studio and [run it in Rosetta 2](https://support.apple.com/en-us/HT211861)
+
+
+### Choose Your Architecture
+When downloading Beekeeper Studio, be sure to choose the version that matches your MacOS architecture.
 ![Image Alt Tag](/assets/images/macos-m1-intel-10.png)
-
-### Oracle Requires Intel
-
-One limitation of Apple Silicon is that Oracle Database libraries and packages are **not** available yet for Apple Silicon. So if you want to connect Beekeeper Studio to your Oracle Database you must install the Intel version of Beekeeper Studio and [run it in Rosetta 2](https://support.apple.com/en-us/HT211861)
 
 

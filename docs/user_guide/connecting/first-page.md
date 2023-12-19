@@ -13,11 +13,13 @@ Beekeeper Studio currently supports the following database types:
 - PostgreSQL
 - MySQL
 - SQLite
-- SQL Server (even SS 2005 works)
+- SQL Server (2005 onwards works)
 - Amazon Redshift
 - CockroachDB
 - MariaDB
 - Oracle Database
+- Cassandra
+- Google BigQuery
 
 
 ![Image Alt Tag](/assets/images/first-page-5.png)
