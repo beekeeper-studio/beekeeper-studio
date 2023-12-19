@@ -11,7 +11,7 @@ Even better, workspaces allow multiple people to work from the same set of data 
 
 Queries and Connections stored in a workspace are only available for use through the Beekeeper Studio app, not through a web interface.
 
-![Image Alt Tag](assets/images/cloud-storage-team-workspaces-28.png)
+![Image Alt Tag]\(/assets/images/cloud-storage-team-workspaces-28.png)
 
 ## Concepts
 

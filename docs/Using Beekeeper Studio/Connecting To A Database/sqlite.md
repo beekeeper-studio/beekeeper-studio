@@ -31,7 +31,7 @@ This is a **global** setting, so it applies to any and all SQLite connections on
 
 To add a runtime extension, expand the `Runtime Extension` settings block and choose the file.
 
-![SQLite runtime extensions loader](assets/images/sqlite-88.png)
+![SQLite runtime extensions loader]\(/assets/images/sqlite-88.png)
 
 ### Requirements
 

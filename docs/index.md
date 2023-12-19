@@ -16,7 +16,7 @@ Beekeeper Studio comes in two editions:
 These docs and the main website primarily talk about features of the full commercial edition of Beekeeper Studio. See [GitHub](https://github.com/beekeeper-studio/beekeeper-studio) for information on the community edition.
 
 
-![Beekeeper Studio preview](assets/images/introduction-1.png)
+![Beekeeper Studio preview]\(/assets/images/introduction-1.png)
 
 
 ### Databases Supported by Beekeeper Studio

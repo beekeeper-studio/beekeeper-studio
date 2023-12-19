@@ -11,11 +11,11 @@ old_url: "https://docs.beekeeperstudio.io/docs/importing-data-csv-json-etc"
 ## Step 1: Select File
 - Start by finding the table you want to import data into and right click it. Click `Import From CSV`.
 
-![Select Import From CSV](assets/images/importing-data-csv-json-etc-844e-148.png)
+![Select Import From CSV]\(/assets/images/importing-data-csv-json-etc-844e-148.png)
 
 - Select which file to import.
 
-![Import File Settings](assets/images/importing-data-csv-json-etc-844e-149.png)
+![Import File Settings]\(/assets/images/importing-data-csv-json-etc-844e-149.png)
 
 - Select if each cell should have existing wrapping white space removed from it or if the string should be trimmed..
 - Beekeeper will autodetect specific file type seperators and set defaults. You have the ability to override these.
@@ -26,7 +26,7 @@ old_url: "https://docs.beekeeperstudio.io/docs/importing-data-csv-json-etc"
 ## Step 2: Map Columns
 Now, map the columns from the file to the columns in your table.
 
-![Import Map to Table](assets/images/importing-data-csv-json-etc-844e-150.png)
+![Import Map to Table]\(/assets/images/importing-data-csv-json-etc-844e-150.png)
 
 - Decide if this is to be a clean import (truncates the table) or if adding data to what's already in the table. Beekeeper runs the import as a transaction so don't worry about losing anything.
 - Go through and map each file column to a table column. Some mappings will be made based on the file column name to the table column (you can change these if it's not quite right). Column names will be matched on case insensitive alphanumeric only characters.
@@ -43,7 +43,7 @@ Now, map the columns from the file to the columns in your table.
 - Each table column will show the type and if nullable or not to help with decision making.
 
 ## Step 3: Import
-![Preview and execute](assets/images/importing-data-csv-json-etc-844e-151.png)
+![Preview and execute]\(/assets/images/importing-data-csv-json-etc-844e-151.png)
 
 When mapping has been completed, a final 10 row preview of what will be dropped into the table will be shown to make sure things are good to go. If it looks good, select **Run The Import** to bring in the file. Larger imports will take some time to complete (tested with 100k rows and took on average 30-40 seconds).
 

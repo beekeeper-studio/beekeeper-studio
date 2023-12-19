@@ -28,14 +28,14 @@ Once you have set up your IAM user and downloaded your private key JSON file, yo
 2. Default Big Query dataset to use once connected
 3. Path to the JSON primary key file
 
-![Image Alt Tag](assets/images/google-bigquery-101.png)
+![Image Alt Tag]\(/assets/images/google-bigquery-101.png)
 
 
 ## Gotcha: Use region-specific datasets only
 
 When setting up a dataset in BigQuery be sure to explicitly specify a region.
 
-![Image Alt Tag](assets/images/google-bigquery-100.png)
+![Image Alt Tag]\(/assets/images/google-bigquery-100.png)
 
 If you choose 'Multi-Region' many common functions will not work, both in Beekeeper Studio and in the Google Cloud console.
 
