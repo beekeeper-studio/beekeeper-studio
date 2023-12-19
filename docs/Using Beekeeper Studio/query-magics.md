@@ -11,7 +11,7 @@ Here's a quick walkthrough on how to use Query Magics.
 <br/>
 
 
-![Query magics](https://app.duckdocs.com/sites/2/pages/query-magics/images/16)
+![Query magics](assets/images/query-magics-16.png)
 
 
 ## Use Query Magics to
@@ -37,7 +37,7 @@ select url as url__format__link from some_table
 Here's a quick example that displays clickable emails, links to another table, and renders a number as a star rating.
 
 
-![Query Magics](https://app.duckdocs.com/sites/2/pages/query-magics/images/17)
+![Query Magics](assets/images/query-magics-17.png)
 
 
 ## Available Query Magics
@@ -88,9 +88,9 @@ When selecing columns in your query, use the following QueryMagic format
 
 ```
 select a as  columnname__format__enum__enumname
- 
+
  --examples
-select 
+select
   user as user__format__enum__user_type,
   account_id as account__format__enum__account_type
 ```
@@ -98,11 +98,11 @@ In your result table this will replace `id` with `value`. So in the final exampl
 
 Here are the enums in action:
 
-![Image Alt Tag](https://app.duckdocs.com/sites/2/pages/query-magics/images/85)
+![Image Alt Tag](assets/images/query-magics-85.png)
 
-![Image Alt Tag](https://app.duckdocs.com/sites/2/pages/query-magics/images/84)
+![Image Alt Tag](assets/images/query-magics-84.png)
 
-![Image Alt Tag](https://app.duckdocs.com/sites/2/pages/query-magics/images/86)
+![Image Alt Tag](assets/images/query-magics-86.png)
 
 ### Format as a clickable link
 

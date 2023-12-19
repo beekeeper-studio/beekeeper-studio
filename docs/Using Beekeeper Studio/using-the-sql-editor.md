@@ -10,7 +10,7 @@ You can use the SQL query tab to write, and run, SQL queries quickly and easily.
 
 ## Code completion
 
-We have tried to make our code completion useful but not intrusive. 
+We have tried to make our code completion useful but not intrusive.
 
 Code suggestions will automatically appear in the following situations:
 
@@ -23,7 +23,7 @@ In these situations, Beekeeper will automatically resolve the correct table and 
 
 The default key combo to manually trigger autocomplete is `Ctrl+Space`, or `Cmd+Space` for MacOS users.
 
-![Image Alt Tag](https://app.duckdocs.com/sites/2/pages/using-the-sql-editor/images/11)
+![Image Alt Tag](assets/images/using-the-sql-editor-11.png)
 
 ## Run Contexts
 
@@ -35,7 +35,7 @@ Beekeeper allows you to:
 2. Run only the 'current' query (Beekeeper highlights this query for you so you know what will run)
 3. Run only what you have selected.
 
-![Image Alt Tag](https://app.duckdocs.com/sites/2/pages/using-the-sql-editor/images/12)
+![Image Alt Tag](assets/images/using-the-sql-editor-12.png)
 
 ## Query Parameters
 
@@ -48,14 +48,14 @@ select * from table where foo = :one and bar = :two
 
 select * from table where foo = $1 and bar = $2
 ```
-![Image Alt Tag](https://app.duckdocs.com/sites/2/pages/using-the-sql-editor/images/13)
+![Image Alt Tag](assets/images/using-the-sql-editor-13.png)
 
 
 ## Downloading Results
 
 When you run a query, the results will appear right underneath the SQL editor, simple!
 
-![Image Alt Tag](https://app.duckdocs.com/sites/2/pages/using-the-sql-editor/images/99)
+![Image Alt Tag](assets/images/using-the-sql-editor-99.png)
 
 If you run multiple SQL queries, you can select different result sets with the dropdown on the status bar. You'll get a little popup to tell you about it the first time you do it.
 
@@ -65,19 +65,19 @@ If you run a query that generates a result set of more than 50,000 records Beeke
 
 In the commercial edition of Beekeeper Studio, you can also select `Run To File`, this will run your SQL query and send the full results directly to a CSV file.
 
-## Vim Mode 
+## Vim Mode
 Along with the default query editor, Beekeeper supports Vim mode, which allows you to write queries in a Vim-like text editor.
 
 To enable this, you can click the cog in the bottom left corner of the query editor:
 
-![editor mode selection](https://app.duckdocs.com/sites/2/pages/using-the-sql-editor/images/155)
+![editor mode selection](assets/images/using-the-sql-editor-155.png)
 
 And then you're off to the races with a vim editor in Beekeeper!
 
 Whichever editor you prefer will be preserved across all connections/restarts/etc.
 
 ### Customisation
-You can also add your own keybindings and motions to the vim editor by placing a `.beekeeper.vimrc` file in the `userDirectory` for Beekeeper Studio and writing out your custom mappings. 
+You can also add your own keybindings and motions to the vim editor by placing a `.beekeeper.vimrc` file in the `userDirectory` for Beekeeper Studio and writing out your custom mappings.
 
 `userDirectory` locations:
 - Windows: `%APPDATA%\beekeeper-studio`

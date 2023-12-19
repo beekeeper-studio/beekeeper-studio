@@ -11,8 +11,11 @@ Beekeeper Studio is more than an app, come say hi:
 - [Join the community Slack group](https://beekeeperstudio.io/slack)
 - [Explore feature requests on Github](https://github.com/beekeeper-studio/beekeeper-studio)
 
-ℹ This page will help you get familiar with Beekeeper Studio. If you've used similar applications in the past, feel free to explore the rest of the documentation site, or just start using Beekeeper Studio (it's pretty intuitive!)
-{: .alert .alert-info }
+
+
+!!! note "Hey there!"
+    This page will help you get familiar with Beekeeper Studio. If you've used similar applications in the past, feel free to explore the rest of the documentation site, or just start using Beekeeper Studio (it's pretty intuitive!)
+
 
 If you're new to database management apps in general it might help to watch this walkthrough of Beekeeper Studio, I go through a bunch of major features
 
@@ -22,7 +25,6 @@ If you're new to database management apps in general it might help to watch this
 
 ## First step - install Beekeeper Studio
 
-<!-- md:version 1.0-->
 
 Beekeeper Studio is a desktop application, so the first step is to [[overview|Install Beekeeper Studio]].
 
@@ -51,7 +53,7 @@ A quick and easy way to explore Beekeeper Studio's functionality is with the `Sa
 
 Beekeeper will open, showing you the contents of the database:
 
-![Opening the demo database in Beekeeper Studio](https://app.duckdocs.com/sites/2/pages/getting-started-guide/images/60)
+![Opening the demo database in Beekeeper Studio](assets/images/getting-started-guide-60.png)
 
 ### Open a table and change some data
 
@@ -60,7 +62,7 @@ Double click on the `film` table in the left sidebar. This will open the data vi
 Remember - this is just a demo database, you can do whatever you like to it without any risk. Try clicking on the `title` cell for a movie and changing the movie name. You can save your changes by clicking the `apply` button in the footer.
 
 
-![Image Alt Tag](https://app.duckdocs.com/sites/2/pages/getting-started-guide/images/61)
+![Image Alt Tag](assets/images/getting-started-guide-61.png)
 
 ### Write your first SQL query
 

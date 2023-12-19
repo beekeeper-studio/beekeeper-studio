@@ -160,7 +160,7 @@ See [this StackOverflow answer](https://stackoverflow.com/a/20880247/18818) or [
 ## Linux (Snap)
 
 ### The Filepicker shows 'little rectangles' instead of a font
-![Image Alt Tag](https://app.duckdocs.com/sites/2/pages/troubleshooting/images/58)
+![Image Alt Tag](assets/images/troubleshooting-58.png)
 
 This is an issue with `snapd` itself and how it isolates apps from font config (or doesn't, in this case). This seems to come up with Arch, Manjaro, and Fedora, I guess because the snap team mostly cares about snaps working in Ubuntu.
 

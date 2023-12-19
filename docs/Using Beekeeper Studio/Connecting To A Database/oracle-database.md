@@ -13,7 +13,7 @@ There are a number of ways you can connect to an Oracle database using Beekeeper
 
 ## First set Oracle Instant Client location
 
-Before you can connect to Oracle at all you need to tell Beekeeper where on your computer the Oracle Instant Client libraries are stored. This is a downloadable set of files provided by Oracle. 
+Before you can connect to Oracle at all you need to tell Beekeeper where on your computer the Oracle Instant Client libraries are stored. This is a downloadable set of files provided by Oracle.
 
 This is an Oracle requirement and not something Beekeeper Studio controls unfortunately
 
@@ -21,7 +21,7 @@ This is an Oracle requirement and not something Beekeeper Studio controls unfort
 
 In Beekeeper Studio you can choose the location of the instant client in the `Global Configuration` section before making your first connection:
 
-![Set oracle instant client](https://app.duckdocs.com/sites/2/pages/oracle-database/images/62)
+![Set oracle instant client](assets/images/oracle-database-62.png)
 
 
 ## Connection string examples
@@ -38,7 +38,7 @@ If you are using a connection string to connect to your database, Beekeeper supp
 # Long service name
 (DESCRIPTION=(ADDRESS=(host=host_name)(protocol=protocol_name)(port=port_number))
       (CONNECT_DATA=(SERVICE_NAME=service_name)))
-      
+
  # Long version with SID
  (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(Host=host_name)(Port=port))(CONNECT_DATA=(SID=sid_here)))
 ```

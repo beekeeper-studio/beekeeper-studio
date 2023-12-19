@@ -7,7 +7,7 @@ old_url: "https://docs.beekeeperstudio.io/docs/creating-tables"
 
 Double click a table in the left sidebar to open an Excel-like interface for viewing and editing the data.
 
-![Image Alt Tag](https://app.duckdocs.com/sites/2/pages/creating-tables/images/14)
+![Image Alt Tag](assets/images/creating-tables-14.png)
 
 ## Navigating the table
 
@@ -22,7 +22,7 @@ To multi-select rows:
 2. `cmd/ctrl + click` to select a second row
 3. `shift + click` to select a continuous range of rows
 4. Esc, or click away to cancel the selection
-![Image Alt Tag](https://app.duckdocs.com/sites/2/pages/creating-tables/images/98)
+![Image Alt Tag](assets/images/creating-tables-98.png)
 
 ## Copying Data
 
@@ -35,7 +35,7 @@ If you press the `copy` keyboard shortcut (`ctrl+c` or `cmd+c`), you will copy t
 
 Alternatively, right-click any cell to copy that row (or all selected rows) in a range of formats like CSV, JSON, and Markdown.
 
-![Image Alt Tag](https://app.duckdocs.com/sites/2/pages/creating-tables/images/95)
+![Image Alt Tag](assets/images/creating-tables-95.png)
 
 
 ## Editing Data

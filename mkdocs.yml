@@ -2,6 +2,16 @@ site_name: Beekeeper Studio
 repo_url: https://github.com/beekeeper-studio/beekeeper-studio
 repo_name: beekeeper-studio
 edit_uri: edit/master/docs
+copyright: Copyright &copy; Beekeeper Studio, Inc
+extra:
+  social:
+    - icon: fontawesome/brands/x-twitter
+      link: https://twitter.com/beekeeperdata
+      name: Beekeeper on X (Twitter)
+    - icon: fontawesome/brands/github
+      link: https://github.com/beekeeper-studio/beekeeper-studio
+      name: Beekeeper Studio on GitHub
+  generator: false
 theme:
   logo: assets/bks.svg
   favicon: assets/favicon.ico
@@ -12,16 +22,18 @@ theme:
     text: Rubik
   features:
     - navigation.instant
-    - navigation.tabs
+    # - navigation.tabs
     - navigation.tabs.sticky
     - navigation.tracking
     - navigation.sections
     - navigation.footer
+    - navigation.expand
     - search.suggest
     - search.highlight
     - content.action.edit
     - content.action.view
     - content.code.copy
+
   palette:
     scheme: slate
     primary: custom
@@ -47,3 +59,12 @@ markdown_extensions:
   - tables
   - attr_list
   - md_in_html
+
+nav:
+  - Introduction: index.md
+  - getting-started-guide.md
+  - Installation:
+    - installation/index.md
+    - installation/windows.md
+    - installation/macos-m1-intel.md
+    - installation/linux.md

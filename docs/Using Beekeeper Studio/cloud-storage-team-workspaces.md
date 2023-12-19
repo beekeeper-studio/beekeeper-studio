@@ -11,7 +11,7 @@ Even better, workspaces allow multiple people to work from the same set of data 
 
 Queries and Connections stored in a workspace are only available for use through the Beekeeper Studio app, not through a web interface.
 
-![Image Alt Tag](https://app.duckdocs.com/sites/2/pages/cloud-storage-team-workspaces/images/28)
+![Image Alt Tag](assets/images/cloud-storage-team-workspaces-28.png)
 
 ## Concepts
 
@@ -22,7 +22,7 @@ Queries and Connections stored in a workspace are only available for use through
 
 ## Workspace Access
 
-Workspaces are free so long as you maintain an active Beekeeper Studio subscription. 
+Workspaces are free so long as you maintain an active Beekeeper Studio subscription.
 
 ## Getting Started
 
