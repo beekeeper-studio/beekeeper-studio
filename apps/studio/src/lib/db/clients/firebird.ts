@@ -1,5 +1,5 @@
-/* eslint-disable-next-line */
-// @ts-nocheck
+// /* eslint-disable-next-line */
+// // @ts-nocheck
 
 import electronLog from "electron-log";
 import knexlib, { Knex } from "knex";
@@ -52,7 +52,7 @@ import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { TableKey } from "@shared/lib/dialects/models";
 
 type FirebirdResult = {
-  result: any[];
+  rows: any[];
   meta: any[];
   statement: IdentifyResult;
 };
@@ -196,7 +196,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     const versionResult = await this.driverExecuteSingle(
       "SELECT RDB$GET_CONTEXT('SYSTEM', 'ENGINE_VERSION') from rdb$database;"
     );
-    this.version = versionResult.result[0]["RDB$GET_CONTEXT"];
+    this.version = versionResult.rows[0]["RDB$GET_CONTEXT"];
 
     const serverConfig = this.server.config;
     const knex = knexlib({
@@ -226,14 +226,14 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
   async listTables(
     _db: string,
-    filter?: FilterOptions // TODO implement filter
+    _filter?: FilterOptions
   ): Promise<TableOrView[]> {
     const result = await this.driverExecuteSingle(`
       SELECT TRIM(a.RDB$RELATION_NAME) as RDB$RELATION_NAME
       FROM RDB$RELATIONS a
       WHERE COALESCE(RDB$SYSTEM_FLAG, 0) = 0 AND RDB$RELATION_TYPE = 0
     `);
-    return result.result.map((row: any) => ({
+    return result.rows.map((row: any) => ({
       name: row["RDB$RELATION_NAME"],
       entityType: "table",
     }));
@@ -319,8 +319,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     );
 
     return await Promise.all(
-      result.result.map(async (row: any) => {
-        const subType = row["RDB$FIELD_SUB_TYPE"];
+      result.rows.map(async (row: any) => {
+        // const subType = row["RDB$FIELD_SUB_TYPE"];
         let dataType = row["FIELD_TYPE"];
 
         if (dataType === "VARCHAR" || dataType === "CHAR") {
@@ -367,15 +367,21 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     });
   }
 
-  async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    return []; // TODO
+  async listViews(_filter?: FilterOptions): Promise<TableOrView[]> {
+    const result = await this.driverExecuteSingle(`
+      SELECT RDB$RELATION_NAME
+        FROM RDB$RELATIONS
+      WHERE RDB$VIEW_BLR IS NOT NULL
+        AND (RDB$SYSTEM_FLAG IS NULL OR RDB$SYSTEM_FLAG = 0);
+    `)
+    return result.rows.map((row) => row['RDB$RELATION_NAME'])
   }
 
-  async listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    return []; // TODO
+  async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
+    return [];
   }
 
-  async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
+  async listRoutines(_filter?: FilterOptions): Promise<Routine[]> {
     return []; // TODO
   }
 
@@ -409,7 +415,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     `,
       { params: [table.toUpperCase()] }
     );
-    return result.result.map((row: any) => ({
+    return result.rows.map((row: any) => ({
       columnName: row["RDB$FIELD_NAME"],
       position: row["RDB$FIELD_POSITION"],
     }));
@@ -437,8 +443,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     const result = await this.driverExecuteSingle(query, { params });
 
     return {
-      result: result.result,
-      fields: Object.keys(result.result[0] || {}),
+      result: result.rows,
+      fields: Object.keys(result.rows[0] || {}),
     };
   }
 
@@ -513,7 +519,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return {
       execute: async () => {
         const driverResult = await this.driverExecuteMultiple(queryText, { rowAsArray: true });
-        return driverResult.map(({ result, meta }) => {
+        return driverResult.map(({ rows: result, meta }) => {
           const rows = result.map((row: Record<string, any>) => {
             const transformedRow = {}
             Object.keys(row).forEach((key, idx) => {
@@ -551,16 +557,57 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
   async listTableTriggers(
     table: string,
-    schema?: string
+    _schema?: string
   ): Promise<TableTrigger[]> {
-    const result = await this.driverExecuteSingle(`SELECT * FROM RDB$TRIGGERS`);
-    return result.result;
+    // Refs
+    // Trigger type - https://firebirdsql.org/file/documentation/html/en/refdocs/fblangref40/firebird-40-language-reference.html#fblangref-appx04-triggers-type
+    const result = await this.driverExecuteSingle(`
+      SELECT
+        RDB$TRIGGER_NAME,
+        RDB$RELATION_NAME,
+        TRIM(CASE RDB$TRIGGER_TYPE
+          WHEN 1 THEN 'BEFORE INSERT'
+          WHEN 2 THEN 'AFTER INSERT'
+          WHEN 3 THEN 'BEFORE UPDATE'
+          WHEN 4 THEN 'AFTER UPDATE'
+          WHEN 5 THEN 'BEFORE DELETE'
+          WHEN 6 THEN 'AFTER DELETE'
+          WHEN 17 THEN 'BEFORE INSERT OR UPDATE'
+          WHEN 18 THEN 'AFTER INSERT OR UPDATE'
+          WHEN 25 THEN 'BEFORE INSERT OR DELETE'
+          WHEN 26 THEN 'AFTER INSERT OR DELETE'
+          WHEN 27 THEN 'BEFORE UPDATE OR DELETE'
+          WHEN 28 THEN 'AFTER UPDATE OR DELETE'
+          WHEN 113 THEN 'BEFORE INSERT OR UPDATE OR DELETE'
+          WHEN 114 THEN 'AFTER INSERT OR UPDATE OR DELETE'
+          WHEN 8192 THEN 'ON CONNECT'
+          WHEN 8193 THEN 'ON DISCONNECT'
+          WHEN 8194 THEN 'ON TRANSACTION START'
+          WHEN 8195 THEN 'ON TRANSACTION COMMIT'
+          WHEN 8196 THEN 'ON TRANSACTION ROLLBACK'
+          ELSE 'UNKNOWN'
+        ) AS TRIGGER_TYPE
+      FROM RDB$TRIGGERS
+      WHERE RDB$RELATION_NAME = ?
+    `, { params: [table] });
+
+    return result.rows.map((row) => {
+      const [, timing, manipulation] = row['TRIGGER_TYPE'].match(/(BEFORE|AFTER|ON) (.+)/);
+      return {
+        name: row['RDB$TRIGGER_NAME'],
+        timing,
+        manipulation,
+        action: '',
+        condition: null,
+        table: row['RDB$RELATION_NAME'],
+      };
+    });
   }
 
   async listTableIndexes(
-    db: string,
+    _db: string,
     table: string,
-    schema?: string
+    _schema?: string
   ): Promise<TableIndex[]> {
     const result = await this.driverExecuteSingle(`
       SELECT
@@ -582,9 +629,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           ON (rc.rdb$index_name = rid.rdb$index_name AND rc.rdb$relation_name = rid.rdb$relation_name)
 
       WHERE rid.rdb$system_flag = 0
-    `);
+      WHERE rid.rdb$relation_name = ?
+    `, { params: [table] });
 
-    const grouped = _.groupBy(result.result, "RDB$INDEX_NAME");
+    const grouped = _.groupBy(result.rows, "RDB$INDEX_NAME");
 
     return Object.keys(grouped).map((name) => {
       const blob = grouped[name];
@@ -618,12 +666,13 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
   async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
     // TODO implement filter
+    // TODO list tables? or databases?
     const result = await this.driverExecuteSingle(`
       SELECT RDB$RELATION_NAME
       FROM RDB$RELATIONS
       WHERE RDB$RELATION_TYPE = 0 AND RDB$SYSTEM_FLAG = 0
     `);
-    return result.result;
+    return result.rows;
   }
 
   async truncateElement(
@@ -741,7 +790,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         table
       ).toUpperCase()}
     `);
-    const row = result.result[0];
+    const row = result.rows[0];
 
     return {
       description: row["RDB$DESCRIPTION"],
@@ -765,7 +814,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     options?: any
   ): Promise<NgQueryResult[]> {
     const result = await this.driverExecuteMultiple(queryText, options);
-    return result.map(({ result: data, statement }) => ({
+    return result.map(({ rows: data, statement }) => ({
       fields: [], // TODO implement fields
       affectedRows: undefined, // TODO implement affectedRows
       command: statement.type,

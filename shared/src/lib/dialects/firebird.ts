@@ -31,6 +31,7 @@ export const FirebirdData: DialectData = {
     cancelQuery: true,
     backup: true,
     truncateElement: true,
+    duplicateTable: true,
   },
   notices: {
   },
