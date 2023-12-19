@@ -1,7 +1,13 @@
 site_name: Beekeeper Studio
+repo_url: https://github.com/beekeeper-studio/beekeeper-studio
+repo_name: beekeeper-studio
+edit_uri: edit/master/docs
 theme:
   logo: assets/bks.svg
+  favicon: assets/favicon.ico
   name: material
+  icon:
+    repo: fontawesome/brands/github
   font:
     text: Rubik
   features:
@@ -10,8 +16,12 @@ theme:
     - navigation.tabs.sticky
     - navigation.tracking
     - navigation.sections
+    - navigation.footer
     - search.suggest
     - search.highlight
+    - content.action.edit
+    - content.action.view
+    - content.code.copy
   palette:
     scheme: slate
     primary: custom
@@ -21,3 +31,19 @@ extra_css:
   - stylesheets/extra.css
 plugins:
   - search
+  - social
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - tables
+  - attr_list
+  - md_in_html

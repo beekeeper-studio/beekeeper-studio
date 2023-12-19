@@ -22,6 +22,8 @@ If you're new to database management apps in general it might help to watch this
 
 ## First step - install Beekeeper Studio
 
+<!-- md:version 1.0-->
+
 Beekeeper Studio is a desktop application, so the first step is to [[overview|Install Beekeeper Studio]].
 
 
@@ -67,7 +69,7 @@ Now you know how to view and edit table data, why not write some custom SQL to p
 Here's a sample query to count the number of films in the database grouped by rating (like PG-13):
 
 ```sql
-SELECT 
+SELECT
     film.rating, COUNT(DISTINCT inventory.film_id) AS film_count
     FROM film JOIN inventory
     ON film.film_id = inventory.film_id
