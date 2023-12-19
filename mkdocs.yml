@@ -1,6 +1,9 @@
 site_name: Beekeeper Studio
 theme:
+  logo: assets/bks.svg
   name: material
+  font:
+    text: Rubik
   features:
     - navigation.instant
     - navigation.tabs

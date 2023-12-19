@@ -15,16 +15,19 @@
     --md-hue: 225deg;
     --md-accent-fg-color: #fad83b;
     --md-accent-fg-color--transparent: #fad73b 58;
-    --md-primary-fg-color: black;
+    --md-primary-fg-color: #2c2c2c;
     --md-primary-fg-color--light: lightblue;
     --md-primary-fg-color--dark: darkblue;
     --md-primary-bg-color: white;
-    --md-primary-bg-color--light: pink;
+    --md-primary-bg-color--light: #fad83b;
 
 
 }
 [data-md-color-scheme="slate"] {
   --md-typeset-a-color: var(--md-accent-fg-color);
+  --md-default-bg-color: #1a1a1a;
+  --md-typeset-color: rgba(255, 255, 255, 0.72);
+  --md-default-fg-color--light: white;
 
 }
 
