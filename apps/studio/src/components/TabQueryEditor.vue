@@ -98,6 +98,9 @@
                   <x-label>Run Current</x-label>
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
+                <x-menuitem @click.prevent="submitDryRunQuery">
+                  <x-label>Estimate Query Cost</x-label>
+                </x-menuitem>
                 <x-menuitem @click.prevent="submitQueryToFile">
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
                   <i
@@ -1064,7 +1067,16 @@
           this.error = 'No query to run'
         }
       },
-      async submitQuery(rawQuery, fromModal = false) {
+      async submitDryRunQuery() {
+        const text = this.hasSelectedText ? this.editor.getSelection() : this.editor.getValue();
+        this.runningType = this.hasSelectedText ? 'selection' : 'everything';
+        if (text.trim()) {
+          this.submitQuery(text, false, true);
+        } else { 
+          this.error = 'No query to run'
+        }
+      },
+      async submitQuery(rawQuery, fromModal = false, dryRun = false) {
         if (this.remoteDeleted) return;
         this.running = true
         this.error = null
@@ -1087,7 +1099,8 @@
           const query = this.deparameterizedQuery
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
-          this.runningQuery = this.connection.query(query)
+          // Dry run is for bigquery, allows query cost estimations
+          this.runningQuery = this.connection.query(query, { dryRun: dryRun })
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute()
           const queryEndTime = new Date()

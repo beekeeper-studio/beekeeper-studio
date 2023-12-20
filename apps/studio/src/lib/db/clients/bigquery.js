@@ -61,7 +61,7 @@ export default async function (server, database) {
     getTableKeys: (db, table) => getTableKeys(client, db, table),
     getPrimaryKey: (db, table) => getPrimaryKey(client, db, table),
     getPrimaryKeys: (db, table) => getPrimaryKeys(client, db, table),
-    query: (queryText) => query(client, queryText),
+    query: (queryText, options) => query(client, queryText, options),
     getInsertQuery: (tableInsert) => buildInsertQuery(knex, { ...tableInsert, schema: database.database }),
     applyChanges: (changes) => applyChanges(client, changes),
     applyChangesSql: (changes) => applyChangesSql(changes, knex),
@@ -179,7 +179,7 @@ async function getPrimaryKeys(conn, database, table) {
   }
 }
 
-function query(client, queryText) {
+function query(client, queryText, options = {}) {
   logger().debug('bigQuery query: ' + queryText)
   let job = null
   let canceling = false
@@ -191,8 +191,10 @@ function query(client, queryText) {
   return {
     async execute() {
       // Get a query job first
-      [job] = await client.createQueryJob({ query: queryText })
+      const jobOptions = { query: queryText, ...options };
+      [job] = await client.createQueryJob(jobOptions)
       logger().debug("created job: ", job.id)
+      logger().debug('JOB METADATA: ', job.metadata);
 
       try {
         logger().debug("wait for executeQuery job.id: ", job.id)
@@ -343,6 +345,7 @@ async function driverExecuteQuery(client, queries, job) {
 
   // Wait for the query to finish
   const results = await job.getQueryResults()
+  console.log('DRY RUN RESULTS: ', results);
   return results.map(parseRowQueryResult)
 }
 
