@@ -30,7 +30,7 @@ Now, map the columns from the file to the columns in your table.
 
 - Decide if this is to be a clean import (truncates the table) or if adding data to what's already in the table. Beekeeper runs the import as a transaction so don't worry about losing anything.
 - Go through and map each file column to a table column. Some mappings will be made based on the file column name to the table column (you can change these if it's not quite right). Column names will be matched on case insensitive alphanumeric only characters.
-  - Ex: **Organization ID** === **organization_id**
+    - For example: **Organization ID** === **organization_id**
 - Continue by selecting **Review & Execute**.
 
 ### Some Rules and Good-to-Knows
@@ -49,4 +49,4 @@ When mapping has been completed, a final 10 row preview of what will be dropped 
 
 When the import is complete, you can either close the window or view the new data in your table.
 
-If there is an error importing the data, Beekeeper will return a response to the screen showing the exact database error received which can be copied to the clipboard to either look up or ask for some help in our [[https://launchpass.com/beekeeperstud-lvg5276|Slack community]]. The inserts are run in a transaction so the database's equivalent of a **ROLLBACK** will be performed keeping your table's state before the attempted import.
+If there is an error importing the data, Beekeeper will return a response to the screen showing the exact database error received which can be copied to the clipboard to either look up or ask for some help in our [Slack community](https://launchpass.com/beekeeperstud-lvg5276). The inserts are run in a transaction so the database's equivalent of a **ROLLBACK** will be performed keeping your table's state before the attempted import.

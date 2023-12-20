@@ -26,28 +26,29 @@ If you're new to database management apps in general it might help to watch this
 ## First step - install Beekeeper Studio
 
 
-Beekeeper Studio is a desktop application, so the first step is to [[overview|Install Beekeeper Studio]].
+Beekeeper Studio is a desktop application, so the first step is to [Install Beekeeper Studio](./installation/index.md)
 
-
-## 📢 Stop reading now if you already have a database to query
-
-If you already have a database you want to view, edit, and query, hop to it!
-
-These topics will help you get started with the most commonly used features of Beekeeper Studio
-
-- [[first-page|Connecting To A Database]]
-- [[using-the-sql-editor|Write some SQL]]
-- [[creating-tables|Browse and Edit Table Data]]
-- [[editing-data|Create & Modify Table Structure]]
 
 
 ## Lets explore Beekeeper Studio with a demo database
 
 A quick and easy way to explore Beekeeper Studio's functionality is with the `Sakila` demo database -- it's a sample database modeling an old-school DVD rental store, like a Blockbuster.
 
+
+!!! tip "Experts can skip to the end"
+    If you already have a database you want to view, edit, and query, hop to it!
+
+    These topics will help you get started with the most commonly used features of Beekeeper Studio
+
+    - [Connecting to a database](./user_guide/connecting/first-page.md)
+    - [Write some SQL](./user_guide/using-the-sql-editor.md)
+    - [Browse and edit table data](./user_guide/editing-data.md)
+    - [Create & modify tables](./user_guide/modify-tables.md)
+
+
 ### Getting started with Sakila and Beekeeper Studio
 
-1. Make sure you have Beekeeper Studio [[overview|downloaded and installed]]
+1. Make sure you have Beekeeper Studio [downloaded and installed](./installation/index.md)
 1. [Download the Sakila database](https://github.com/ivanceras/sakila/raw/master/sqlite-sakila-db/sakila.db) - this is a `.db` file - a self contained SQLite database file.
 2. Double click the `sakila.db` file you just downloaded.
 
@@ -62,7 +63,7 @@ Double click on the `film` table in the left sidebar. This will open the data vi
 Remember - this is just a demo database, you can do whatever you like to it without any risk. Try clicking on the `title` cell for a movie and changing the movie name. You can save your changes by clicking the `apply` button in the footer.
 
 
-![Image Alt Tag](./assets/images/getting-started-guide-61.gif)
+![Click apply to save changes](./assets/images/getting-started-guide-61.gif)
 
 ### Write your first SQL query
 
@@ -93,9 +94,9 @@ Executing this produces the below result:
 
 It's time to fly the nest and explore Beekeeper Studio on your own 🕊.
 
-- Try [[editing-data|creating a new table]]
-- Maybe [[data-export|export some data to Excel]]
-- Also checkout [[query-magics|beautifying your results with Query Magics]]
+- Try [creating a new table](./user_guide/modify-tables.md)
+- Maybe [export some data to Excel](./user_guide/data-export.md)
+- Also checkout [beautifying your results with Query Magics](./user_guide/query-magics.md)
 
 
 ## Reach out if you need help

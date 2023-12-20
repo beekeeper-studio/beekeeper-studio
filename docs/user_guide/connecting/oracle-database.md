@@ -17,7 +17,8 @@ Before you can connect to Oracle at all you need to tell Beekeeper where on your
 
 This is an Oracle requirement and not something Beekeeper Studio controls unfortunately
 
-- Download the Instant Client [from the Oracle website](https://www.oracle.com/cis/database/technologies/instant-client/downloads.html)
+!!! info
+    Download the Instant Client [from the Oracle website](https://www.oracle.com/cis/database/technologies/instant-client/downloads.html)
 
 In Beekeeper Studio you can choose the location of the instant client in the `Global Configuration` section before making your first connection:
 

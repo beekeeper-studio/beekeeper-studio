@@ -7,8 +7,6 @@ title: Troubleshooting
 
 Hopefully you can solve your problems with the details below. If not please [contact us][/contact/] and we'll try our best to help.
 
-[[toc]]
-
 ## Don't be shy, say hi!
 
 Feel free to file an issue or start a discussion, even if you're not sure if something is wrong. We're a super nice community, and we all help each other out.

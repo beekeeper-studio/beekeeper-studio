@@ -17,7 +17,7 @@ Beekeeper supports saving data in a number of formats
 
 ## Exporting SQL query results
 
-After running your query in the [[using-the-sql-editor|SQL Editor]], click the `download` button to export the results in a supported format.
+After running your query in the [SQL Editor](./using-the-sql-editor.md), click the `download` button to export the results in a supported format.
 
 ![Click Download](../assets/images/data-export-24.png)
 
@@ -33,7 +33,9 @@ You can choose to either download as a file, or copy the result to your clipboar
 
 ### Limits on SQL query downloads
 
-By default Beekeeper Studio limits query results to 20,000 records (so you don't crash the app). This limit also applies to the download (for the timebeing).
+By default Beekeeper Studio limits query results to 20,000 records (so you don't crash the app). This limit also applies to the download.
+
+To access the full result set You can select `Download full results` in the download menu to fetch the whole query result, and send it directly to a JSON or CSV file.
 
 ## Exporting a table or tables
 
@@ -54,17 +56,18 @@ From here, simply click run to start the process and generate your export.
 
 Exporting a large table can take a long time. You'll see a notification in the bottom right of the app to indicate the progress as it runs.
 
-### Need Multiple Tables?
-{: #multitable }
-Beekeeper has you covered. Either select `Export multiple tables` on the export modal or go through the app toolbar.
+### Multi-Table Export
+
+Select `Export multiple tables` on the export modal or go through the app toolbar (tools -> export).
 
 ![Multiple Table Export](../assets/images/data-export-156.gif)
 
 All tables in the database will be shown grouped by schemas (if the database supports them) and you have the ability to select all tables in a schema (or all of them really) with a simple click or pick and choose what you want.
 
-Each table is stored as a seperate file with a determined format of `table_name_whatever-you-added.extension`. All other options work the same as exporting one table.
+Each table is stored as a separate file with a determined format of `tablename.{sql,csv,json}`.
 
-This export process can take a long time depending on table size and number of tables being exported.
+!!! note
+    The export process can take a long time depending on table size and number of tables being exported.
 
 ### Table export formats
 
@@ -87,8 +90,7 @@ For any table in Beekeeper Studio, whether in the table explorer or the query re
 - SQL Insert
 
 
-## Easily copy database data and paste into Excel and Google Sheets
-{: #tsv }
+## Easily Export To Excel Or Google Sheets
 
 Beekeeper Studio's row-copy format is designed to allow the quick and easy pasting of data into Google Sheets and Microsoft Excel.
 

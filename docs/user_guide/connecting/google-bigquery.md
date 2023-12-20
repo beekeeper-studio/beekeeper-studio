@@ -40,6 +40,7 @@ When setting up a dataset in BigQuery be sure to explicitly specify a region.
 If you choose 'Multi-Region' many common functions will not work, both in Beekeeper Studio and in the Google Cloud console.
 
 Examples of tasks that will not work with multi-region enabled:
+
 - Uploading a CSV
 - Viewing table structure
 - Importing data

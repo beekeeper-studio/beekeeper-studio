@@ -1,56 +1,67 @@
 ---
-title: Create & Modify Table Structure
-summary: "Beekeeper Studio's SQL Table Creator lets you visually build a SQL table without having to remember the right syntax."
-old_url: "https://docs.beekeeperstudio.io/docs/editing-data"
+title: Browse and Edit Table Data
+summary: "View, search, and modify your database table data using our built-in table explorer."
+old_url: "https://docs.beekeeperstudio.io/docs/creating-tables"
 ---
 
-Beekeeper Studio lets you **CREATE** and **ALTER** database tables with a user-friendly UI **without having to write any SQL**.
 
-## Creating new SQL Tables
+Double click a table in the left sidebar to open an Excel-like interface for viewing and editing the data.
 
-At the top of the entitly list in the left sidebar, click the `+` button to open the table creation interface.
+![Image Alt Tag](../assets/images/creating-tables-14.png)
 
-![Image Alt Tag](../assets/images/editing-data-19.png)
+## Navigating the table
 
-On this screen you can add and remove columns from your new table, then click `create table` in the bottom right
 
-![Image Alt Tag](../assets/images/editing-data-20.gif)
+## Selecting multiple cells
 
-### Adding an autoincrement column
+You can select either a single cell, a single row, or a range of rows. You cannot (yet) select an arbitrary set of cells or columns.
 
-For new tables we automatically include an `autoincrement` primary key column to streamline the process of creating a table with a primary key that automatically increments. This is consistent across all database types.
+To multi-select rows:
 
-You can add as many of these as you like.
+1. Select a row
+2. `cmd/ctrl + click` to select a second row
+3. `shift + click` to select a continuous range of rows
+4. Esc, or click away to cancel the selection
+![Image Alt Tag](../assets/images/creating-tables-98.gif)
 
-### Adding a primary key
+## Copying Data
 
-You'll probably want to set a primary key on your new table, by default we select the `id` column as the primary key, but you can check multiple columns and Beekeeper Studio will create a compound primary key.
+The table view allows you to copy
 
-### Creating indexes and relations
+- An individual cell
+- An entire row
+- An arbitrary set of selected rows.
 
-After creating your table you will be able to add indexes and relations, but this is not available until after initially creating the table.
+If you press the `copy` keyboard shortcut (`ctrl+c` or `cmd+c`), you will copy the data in a spreadsheet-friendly format (it will paste beautifully into Google Sheets or Excel)
 
-### Finally - creating your table
+Alternatively, right-click any cell to copy that row (or all selected rows) in a range of formats like CSV, JSON, and Markdown.
 
-Click `CREATE TABLE` at the bottom right to create your new database table automatically.
+![Image Alt Tag](../assets/images/creating-tables-95.png)
 
-You can also click `Copy to SQL` rather than `create table` to open the generated `CREATE TABLE` syntax in a new sql editor tab, so you can edit it before applying it.
 
-## Altering an existing table
+## Editing Data
 
-Right click any table in the sidebar and click `View Structure` to view and edit the table schema.
+!!! note
+    Beekeeper only supports editing tables with primary keys.
 
-![Image Alt Tag](../assets/images/editing-data-21.png)
 
-This view works much the same as the table creation view, except you also have options for modifying indexes, relations, and triggers.
+Beekeeper has a unique design that 'stages' changes before applying them, so you can make multiple changes to be applied inside of a single transaction.
 
-![Image Alt Tag](../assets/images/editing-data-22.png)
+Staged change types are indicated by color:
 
-**Note**: Some database engines don't support some types of schema modifications, in these cases Beekeeper Studio will provide a warning and that feature will be disabled
-{: .alert .alert-info }
+- Green - new data to be added
+- Red - data to be deleted
+- Orange - data to be updated
 
-## SQL Table Creator Preview
+To commit a change, click the `Apply` in the bottom right of the screen. To discard the change, click `Reset`.
 
-Want to play around with our table creator code? You can use the online version of the table creator on the [SQL Tools website here](https://sqltools.beekeeperstudio.io/build). This is a stripped down version of our built-in table creator and cannot create your new table, but rather provides you with the generated SQL to download.
+!!! warning
+    Sorting or filtering the table during editing will discard your staged changes.
 
+## Editing Options
+
+1. Click a cell to edit the contents
+2. Right click a row and select `clone` to duplicate the row
+3. Right click a row and select `delete` to delete the row
+4. Click `+` in the bottom right to add a new row
 

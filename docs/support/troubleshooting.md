@@ -5,7 +5,7 @@ old_url: "https://docs.beekeeperstudio.io/docs/troubleshooting"
 ---
 
 
-Hopefully you can solve your problems with the details below. If not please  [[contact-support|Contact Support]] and we'll try our best to help.
+Hopefully you can solve your problems with the details below. If not please  [Contact Support](./contact-support.md) and we'll try our best to help.
 
 
 ## Don't be shy, say hi!

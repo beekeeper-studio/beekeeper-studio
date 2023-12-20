@@ -24,7 +24,6 @@ Beekeeper Studio currently supports the following database types:
 
 ![Image Alt Tag](../../assets/images/first-page-5.png)
 The Beekeeper Studio Connection Screen
-{: .text-muted .small .text-center }
 
 ## Connection Mode
 
@@ -33,17 +32,18 @@ You can connect to some databases with either a `socket` or a `TCP` connection. 
 ![Image Alt Tag](../../assets/images/first-page-6.png)
 
 TCP (Host/Port) connection example
-{: .text-muted .text-center .small}
 
 Note that SSL, SSH, and other advanced connection options are only available with a TCP connection.
 
 ## SSL
 
 ![Image Alt Tag](../../assets/images/first-page-7.png)
+
 Beekeeper Studio's SSL Configuration
-{: .text-muted .small .text-center }
+
 
 There are three ways to connect to a database with SSL
+
 1. **Trust the server:** Connect with SSL without providing your own certificate. This is the default.
 2. **Required Cert:** Connect with SSL, provide your own certs, and disable `rejectUnauthorized`.
 3. **Verified Cert:** Connect with SSL, provide your own certs, and enable `rejectUnauthorized`.
@@ -65,8 +65,9 @@ You can provide your own custom certificate files if needed.
 ## SSH
 
 ![Image Alt Tag](../../assets/images/first-page-8.png)
+
 Beekeeper Studio's SSH configuration
-{: .text-muted .text-center .small }
+
 
 ### Server Configuration
 
@@ -117,11 +118,6 @@ Beekeeper supports tunneling your connection via SSH. To connect to a remote dat
 7. **Enter a name for your Connection** (optionally check the **Save Passords** checkbox) and Press **Save** to have Beekeeper remember all of the above for you
 
 8. **Press the Connect button** to access your database!
-
-Once you are connected to your database Beekeeper Studio allows you to open tabs to do the following things:
-
-1. SQL Editor: Write and execute SQL Queries (this is what tabs do by default)
-2. Table Explorer: View table contents
 
 ## File Associations
 

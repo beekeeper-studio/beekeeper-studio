@@ -7,13 +7,10 @@ old_url: "https://docs.beekeeperstudio.io/docs/linux"
 
 There are several ways to install Beekeeper Studio on Linux systems.
 
-Supported Architectures: x86-64 and ARM64.
+Supported Architectures: `x86-64` (most laptops and desktops) and `ARM64` (Raspberry Pi).
 
-<div class="alert alert-info">
-  <div class="alert-title">We recommend AppImage</div>
-
-  <div class="text-muted">We find they provide the most consistent experience across all Linux distributions.</div>
-</div>
+!!! info "We recommend using AppImage"
+    We find they provide the most consistent experience across all Linux distributions.
 
 ## AppImage
 
@@ -46,8 +43,8 @@ sudo apt install beekeeper-studio
 
 You can also install Beekeeper Studio through Snapcraft (also part of the Ubuntu Store). Use either the Snap Store link below, or install through the terminal.
 
-**Please Note** Some features are unavailable in the Snap version of Beekeeper Studio due to the security model of Snap packages.
-{: .alert .alert-warning}
+!!! warning
+    Some features are unavailable in the Snap version of Beekeeper Studio due to the security model of Snap packages.
 
 `snap` is pre-installed on Ubuntu 16.04+, and can be installed on [Fedora](https://snapcraft.io/docs/installing-snap-on-fedora), and [Arch](https://snapcraft.io/docs/installing-snap-on-arch-linux)
 
