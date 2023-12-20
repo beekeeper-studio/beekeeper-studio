@@ -1,4 +1,5 @@
 .idea/
+.cache/
 .vscode/
 ./data/
 node_modules/
