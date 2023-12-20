@@ -21,7 +21,7 @@ This is an Oracle requirement and not something Beekeeper Studio controls unfort
 
 In Beekeeper Studio you can choose the location of the instant client in the `Global Configuration` section before making your first connection:
 
-![Set oracle instant client](/assets/images/oracle-database-62.png)
+![Set oracle instant client](../../assets/images/oracle-database-62.png)
 
 
 ## Connection string examples
