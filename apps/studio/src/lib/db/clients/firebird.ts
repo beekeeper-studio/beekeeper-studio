@@ -1,5 +1,5 @@
-// /* eslint-disable-next-line */
-// // @ts-nocheck
+/* eslint-disable-next-line */
+// @ts-nocheck
 
 import electronLog from "electron-log";
 import knexlib, { Knex } from "knex";
@@ -16,7 +16,6 @@ import {
   NgQueryResult,
   PrimaryKeyColumn,
   TableChanges,
-  TableDelete,
   TableFilter,
   TableIndex,
   TableInsert,
@@ -47,7 +46,12 @@ import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdCh
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
 import { buildDeleteQueries, buildUpdateQueries } from "./utils";
-import { Pool, Connection, Transaction } from "./firebird/Pool";
+import {
+  Pool,
+  Connection,
+  Transaction,
+  createDatabase,
+} from "./firebird/NodeFirebirdWrapper";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { TableKey } from "@shared/lib/dialects/models";
 
@@ -56,6 +60,10 @@ type FirebirdResult = {
   meta: any[];
   statement: IdentifyResult;
 };
+
+// Char fields are padded with spaces to the maximum defined length.
+// https://stackoverflow.com/a/8343764/10012118
+const TRIM_END_CHAR = true;
 
 const log = electronLog.scope("firebird");
 
@@ -75,8 +83,9 @@ const context = {
 function identifyCommands(queryText: string) {
   try {
     // FIXME: sql-query-identifier does not support firebird
-    return identify(queryText, {});
+    return identify(queryText, { strict: false, dialect: "generic" });
   } catch (err) {
+    log.error(err);
     return [];
   }
 }
@@ -202,10 +211,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     const knex = knexlib({
       client: knexFirebirdDialect,
       connection: {
-        host: serverConfig.socketPathEnabled ? undefined : serverConfig.host,
-        socketPath: serverConfig.socketPathEnabled
-          ? serverConfig.socketPath
-          : undefined,
+        host: serverConfig.host,
         port: serverConfig.port,
         user: serverConfig.user,
         password: serverConfig.password,
@@ -369,12 +375,15 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
   async listViews(_filter?: FilterOptions): Promise<TableOrView[]> {
     const result = await this.driverExecuteSingle(`
-      SELECT RDB$RELATION_NAME
+      SELECT TRIM(RDB$RELATION_NAME) AS RELATION_NAME
         FROM RDB$RELATIONS
       WHERE RDB$VIEW_BLR IS NOT NULL
         AND (RDB$SYSTEM_FLAG IS NULL OR RDB$SYSTEM_FLAG = 0);
-    `)
-    return result.rows.map((row) => row['RDB$RELATION_NAME'])
+    `);
+    return result.rows.map((row) => ({
+      name: row["RELATION_NAME"],
+      entityType: "view",
+    }));
   }
 
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
@@ -475,8 +484,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     limit?: number,
     orderBy?: OrderBy[],
     filters: string | TableFilter[] = [],
-    countTitle = 'total',
-    selects: string[] = ['*']
+    countTitle = "total",
+    selects: string[] = ["*"]
   ) {
     let orderByString = "";
     if (orderBy && orderBy.length > 0) {
@@ -518,19 +527,27 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   query(queryText: string): CancelableQuery {
     return {
       execute: async () => {
-        const driverResult = await this.driverExecuteMultiple(queryText, { rowAsArray: true });
-        return driverResult.map(({ rows: result, meta }) => {
-          const rows = result.map((row: Record<string, any>) => {
-            const transformedRow = {}
-            Object.keys(row).forEach((key, idx) => {
-              transformedRow[`c${idx}`] = row[key];
-            })
-            return transformedRow
-          })
+        const driverResult = await this.driverExecuteMultiple(queryText, {
+          rowAsArray: true,
+        });
+        return driverResult.map(({ rows, meta }) => {
           const fields = meta.map((field, idx) => ({
             id: `c${idx}`,
             name: field.alias || field.field,
-          }))
+          }));
+
+          rows = rows.map((row: Record<string, any>) => {
+            const transformedRow = {};
+            Object.keys(row).forEach((key, idx) => {
+              let val = row[key]
+              if(TRIM_END_CHAR && meta[idx].type === 452) { // SQLVarText or CHAR
+                val = val.trimEnd()
+              }
+              transformedRow[`c${idx}`] = val;
+            });
+            return transformedRow;
+          });
+
           return { fields, rows };
         });
       },
@@ -561,7 +578,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   ): Promise<TableTrigger[]> {
     // Refs
     // Trigger type - https://firebirdsql.org/file/documentation/html/en/refdocs/fblangref40/firebird-40-language-reference.html#fblangref-appx04-triggers-type
-    const result = await this.driverExecuteSingle(`
+    const result = await this.driverExecuteSingle(
+      `
       SELECT
         RDB$TRIGGER_NAME,
         RDB$RELATION_NAME,
@@ -586,20 +604,24 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           WHEN 8195 THEN 'ON TRANSACTION COMMIT'
           WHEN 8196 THEN 'ON TRANSACTION ROLLBACK'
           ELSE 'UNKNOWN'
-        ) AS TRIGGER_TYPE
+        END) AS TRIGGER_TYPE
       FROM RDB$TRIGGERS
       WHERE RDB$RELATION_NAME = ?
-    `, { params: [table] });
+    `,
+      { params: [table] }
+    );
 
     return result.rows.map((row) => {
-      const [, timing, manipulation] = row['TRIGGER_TYPE'].match(/(BEFORE|AFTER|ON) (.+)/);
+      const [, timing, manipulation] = row["TRIGGER_TYPE"].match(
+        /(BEFORE|AFTER|ON) (.+)/
+      );
       return {
-        name: row['RDB$TRIGGER_NAME'],
+        name: row["RDB$TRIGGER_NAME"],
         timing,
         manipulation,
-        action: '',
+        action: "",
         condition: null,
-        table: row['RDB$RELATION_NAME'],
+        table: row["RDB$RELATION_NAME"],
       };
     });
   }
@@ -609,7 +631,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     table: string,
     _schema?: string
   ): Promise<TableIndex[]> {
-    const result = await this.driverExecuteSingle(`
+    const result = await this.driverExecuteSingle(
+      `
       SELECT
         rid.rdb$index_id,
         TRIM(rid.rdb$index_name) as rdb$index_name,
@@ -629,8 +652,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           ON (rc.rdb$index_name = rid.rdb$index_name AND rc.rdb$relation_name = rid.rdb$relation_name)
 
       WHERE rid.rdb$system_flag = 0
-      WHERE rid.rdb$relation_name = ?
-    `, { params: [table] });
+        AND rid.rdb$relation_name = ?
+    `,
+      { params: [table.toUpperCase()] }
+    );
 
     const grouped = _.groupBy(result.rows, "RDB$INDEX_NAME");
 
@@ -664,15 +689,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     await this.driverExecuteSingle(`DROP ${typeOfElement} ${elementName}`);
   }
 
-  async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
-    // TODO implement filter
-    // TODO list tables? or databases?
-    const result = await this.driverExecuteSingle(`
-      SELECT RDB$RELATION_NAME
-      FROM RDB$RELATIONS
-      WHERE RDB$RELATION_TYPE = 0 AND RDB$SYSTEM_FLAG = 0
-    `);
-    return result.rows;
+  async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
+    return [this.database.database];
   }
 
   async truncateElement(
@@ -694,9 +712,16 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   async createDatabase(
     databaseName: string,
     charset: string,
-    collation: string
+    _collation: string
   ): Promise<void> {
-    // TODO
+    await createDatabase({
+      host: this.server.config.host,
+      port: this.server.config.port,
+      database: databaseName,
+      user: this.server.config.user,
+      password: this.server.config.password,
+      encoding: charset,
+    });
   }
 
   async applyChanges(changes: TableChanges): Promise<any[]> {
@@ -707,7 +732,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     try {
       if (changes.inserts) {
         for (const command of buildInsertQueries(this.knex, changes.inserts)) {
-          await transaction.query(command)
+          await transaction.query(command);
         }
       }
 
@@ -717,7 +742,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
       if (changes.deletes) {
         for (const command of buildDeleteQueries(this.knex, changes.deletes)) {
-          await transaction.query(command)
+          await transaction.query(command);
         }
       }
 
@@ -765,17 +790,19 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       const where = whereList.join(" AND ");
 
       return {
-        query: `UPDATE ${update.table} SET ${update.column} = ? WHERE ${where}`,
+        query: `
+          UPDATE ${update.table} SET ${update.column} = ?
+          WHERE ${where} RETURNING *
+        `,
         params: params,
       };
     });
 
     const results = [];
-    // TODO: this should probably return the updated values
     for (let index = 0; index < commands.length; index++) {
       const blob = commands[index];
       const result = await cli.query(blob.query, blob.params);
-      results.push(result);
+      results.push(result.rows[0]);
     }
 
     return results;
@@ -804,22 +831,25 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     };
   }
 
-  async getTableKeys(db: string, table: string, _schema?: string): Promise<TableKey[]> {
+  async getTableKeys(
+    db: string,
+    table: string,
+    _schema?: string
+  ): Promise<TableKey[]> {
     return []; // TODO
   }
-
 
   async executeQuery(
     queryText: string,
     options?: any
   ): Promise<NgQueryResult[]> {
     const result = await this.driverExecuteMultiple(queryText, options);
-    return result.map(({ rows: data, statement }) => ({
+    return result.map(({ rows, statement }) => ({
       fields: [], // TODO implement fields
       affectedRows: undefined, // TODO implement affectedRows
       command: statement.type,
-      rows: data ?? [],
-      rowCount: data?.length ?? 0,
+      rows: rows ?? [],
+      rowCount: rows?.length ?? 0,
     }));
   }
 
@@ -859,7 +889,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
       results.push({
         meta: data.meta,
-        result: data.result,
+        rows: data.rows,
         statement: query,
       });
     }
@@ -867,15 +897,25 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return options.multiple ? results : results[0];
   }
 
-  async listMaterializedViewColumns(_db: string, _table: string, _schema?: string): Promise<TableColumn[]> {
-    return [] // Doesn't support materialized views
+  async listMaterializedViewColumns(
+    _db: string,
+    _table: string,
+    _schema?: string
+  ): Promise<TableColumn[]> {
+    return []; // Doesn't support materialized views
   }
 
-  async listSchemas(_db: string, _filter?: SchemaFilterOptions): Promise<string[]> {
+  async listSchemas(
+    _db: string,
+    _filter?: SchemaFilterOptions
+  ): Promise<string[]> {
     return []; // Doesn't support schemas
   }
 
-  async getTableReferences(_table: string, _schema?: string): Promise<string[]> {
+  async getTableReferences(
+    _table: string,
+    _schema?: string
+  ): Promise<string[]> {
     return []; // TODO
   }
 
@@ -883,67 +923,96 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return `SELECT FIRST ${limit} * FROM ${table}`;
   }
 
-  getTableCreateScript(_table: string, _schema?: string): Promise<string> {
+  getTableCreateScript(table: string, _schema?: string): Promise<string> {
     // TODO
     // 1. get all columns of a table with their source types
     // 2. use knex to build the query
-      throw new Error("Method not implemented.");
+    throw new Error("Method not implemented.");
   }
 
   getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
-      throw new Error("Method not implemented.");
+    throw new Error("Method not implemented.");
   }
 
-  getRoutineCreateScript(_routine: string, _type: string, _schema?: string): Promise<string[]> {
-      throw new Error("Method not implemented.");
+  getRoutineCreateScript(
+    _routine: string,
+    _type: string,
+    _schema?: string
+  ): Promise<string[]> {
+    throw new Error("Method not implemented.");
   }
 
   async truncateAllTables(db: string, _schema?: string): Promise<void> {
     const tables = await this.listTables(db);
-    const query = tables.map((table) => `DELETE FROM ${table.name};`).join('');
+    const query = tables.map((table) => `DELETE FROM ${table.name};`).join("");
     await this.driverExecuteSingle(query);
   }
 
   async getTableLength(table: string, _schema?: string): Promise<number> {
-    const result = await this.pool.query(`SELECT COUNT(*) AS TOTAL FROM ${table}`);
-    return result[0]['TOTAL'];
+    const result = await this.pool.query(
+      `SELECT COUNT(*) AS TOTAL FROM ${table}`
+    );
+    return result[0]["TOTAL"];
   }
 
-  selectTopStream(_db: string, _table: string, _orderBy: OrderBy[], _filters: string | TableFilter[], _chunkSize: number, _schema?: string): Promise<StreamResults> {
-      throw new Error("Method not implemented.");
+  selectTopStream(
+    _db: string,
+    _table: string,
+    _orderBy: OrderBy[],
+    _filters: string | TableFilter[],
+    _chunkSize: number,
+    _schema?: string
+  ): Promise<StreamResults> {
+    throw new Error("Method not implemented.");
   }
 
-  queryStream(_db: string, _query: string, _chunkSize: number): Promise<StreamResults> {
-      throw new Error("Method not implemented.");
+  queryStream(
+    _db: string,
+    _query: string,
+    _chunkSize: number
+  ): Promise<StreamResults> {
+    throw new Error("Method not implemented.");
   }
 
   wrapIdentifier(value: string): string {
+    // No need to wrap. Firebird identifiers do not allow special characters.
     return value;
   }
 
-  setTableDescription(_table: string, _description: string, _schema?: string): Promise<string> {
-      throw new Error("Method not implemented.");
+  async setTableDescription(
+    table: string,
+    description: string,
+    _schema?: string
+  ): Promise<string> {
+    await this.driverExecuteSingle(
+      `COMMENT ON TABLE ${table} IS ${Firebird.escape(description)}`
+    );
+    return description;
   }
 
-  duplicateTableSql(_tableName: string, _duplicateTableName: string, _schema?: string): string {
-      // TODO There is no native implementation of this
-      throw new Error("Method not implemented.");
+  duplicateTableSql(
+    _tableName: string,
+    _duplicateTableName: string,
+    _schema?: string
+  ): string {
+    // TODO There is no native implementation of this
+    throw new Error("Method not implemented.");
   }
 
-  listCharsets(): Promise<string[]> {
-      throw new Error("Method not implemented.");
+  async listCharsets(): Promise<string[]> {
+    return FirebirdData.charsets;
   }
 
   async getDefaultCharset(): Promise<string> {
-    return null
+    return "UTF8";
   }
 
   listCollations(_charset: string): Promise<string[]> {
-      throw new Error("Method not implemented.");
+    throw new Error("Method not implemented.");
   }
 
   createDatabaseSQL(): string {
-      throw new Error("Method not implemented.");
+    throw new Error("Method not implemented.");
   }
 }
 

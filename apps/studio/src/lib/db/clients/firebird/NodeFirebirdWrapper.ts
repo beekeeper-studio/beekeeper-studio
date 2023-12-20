@@ -1,7 +1,7 @@
 import Firebird from "node-firebird";
 
 interface Result {
-  result: any[];
+  rows: any[];
   meta: any[];
   isSelect: boolean;
 }
@@ -80,12 +80,16 @@ export class Connection {
         meta: any[],
         isSelect: boolean
       ) {
-        database.detach();
         if (err) {
           reject(err);
-        } else {
-          resolve({ result, meta, isSelect });
+          return;
         }
+
+        if (!result) result = [];
+        if (!meta) meta = [];
+        if (!Array.isArray(result)) result = [result];
+
+        resolve({ rows: result, meta, isSelect });
       }
 
       if (rowAsArray) {
@@ -132,7 +136,12 @@ export class Transaction {
           reject(err);
           return;
         }
-        resolve({ result, meta, isSelect });
+
+        if (!result) result = [];
+        if (!meta) meta = [];
+        if (!Array.isArray(result)) result = [result];
+
+        resolve({ rows: result, meta, isSelect });
       }
 
       if (rowAsArray) {
@@ -170,4 +179,17 @@ export class Transaction {
       });
     })
   }
+}
+
+export async function createDatabase(options: Firebird.Options) {
+  return new Promise<void>((resolve, reject) => {
+    Firebird.create(options, (err, db) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      db.detach();
+      resolve();
+    })
+  })
 }

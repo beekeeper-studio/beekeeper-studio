@@ -26,13 +26,12 @@ export class FirebirdChangeBuilder extends ChangeBuilderBase {
 
     // FIXME: can't add order yet cause it's blocked by sql-query-identifier.
     //
-    // const order = spec.order || 'ASC'
-    // return `CREATE ${unique} ${order} INDEX ${spec.name} ON ${this.tableName} (${columns})`
-
-    return `CREATE ${unique} INDEX ${spec.name} ON ${this.tableName} (${columns})`
+    const order = spec.order || 'ASC'
+    return `CREATE ${unique} ${order} INDEX ${spec.name} ON ${this.tableName} (${columns})`
+    // return `CREATE ${unique} INDEX ${spec.name} ON ${this.tableName} (${columns})`
   }
 
   alterType(column: string, newType: string) {
-    return `ALTER COLUMN ${this.wrapIdentifier(column)} TYPE ${newType}`
+    return `ALTER COLUMN ${column} TYPE ${newType}`
   }
 }

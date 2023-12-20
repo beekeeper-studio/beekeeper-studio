@@ -118,6 +118,7 @@ export interface DialectData {
     backup?: boolean
     truncateElement?: boolean
     duplicateTable?: boolean
+    exportTable?: boolean
   },
   notices?: {
     infoSchema?: string

@@ -734,9 +734,9 @@ export class DBTestUtil {
       [
         {
         ...schemaDefault,
-        name: 'it_idx2',
-        columns: [{name: 'me_too', order: 'ASC'}],
-        table: 'index_test',
+        name: this.dbType === 'firebird' ? 'IT_IDX2' : 'it_idx2',
+        columns: [{name: this.dbType === 'firebird' ? 'ME_TOO' : 'me_too' , order: 'ASC'}],
+        table: this.dbType  === 'firebird' ? 'INDEX_TEST' : 'index_test' ,
       }]
     )
 

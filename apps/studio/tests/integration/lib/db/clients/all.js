@@ -62,8 +62,6 @@ export function runCommonTests(getUtil) {
       await getUtil().alterTableTests()
     })
     test("should alter indexes", async () => {
-      // TODO fix firebird
-      if (getUtil().dbType === 'firebird') return
       await getUtil().indexTests()
     })
   })
