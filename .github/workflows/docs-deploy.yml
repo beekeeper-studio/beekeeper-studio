@@ -1,0 +1,36 @@
+name: Deploy Docs to Netlify
+
+on:
+  push:
+    branches:
+      - master  # or your default branch
+    paths-ignore:
+      - 'apps/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'  # or any specific version
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Build site with mkdocs
+      run: mkdocs build
+
+    - name: Upload to Netlify
+      uses: nwtgck/actions-netlify@v1.2
+      with:
+        deploy-path: './site/'
+        production-branch: master  # or your default branch
+        alias: dev  # If you want to deploy to a different environment
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        netlify-auth-token: ${{ secrets.NETLIFY_AUTH_TOKEN }}  # Set in your repo's secrets
+        netlify-site-id: ${{ secrets.DOCS_SITE_ID }}  # Set in your repo's secrets
