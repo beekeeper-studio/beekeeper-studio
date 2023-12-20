@@ -1,8 +1,10 @@
 site_name: Beekeeper Studio
+site_url: https://docs.beekeeperstudio.io
+site_description: Beekeeper Studio user documentation - how to install, configure, and use Beekeeper Studio
+copyright: Copyright &copy; Beekeeper Studio, Inc
 repo_url: https://github.com/beekeeper-studio/beekeeper-studio
 repo_name: beekeeper-studio
 edit_uri: edit/master/docs
-copyright: Copyright &copy; Beekeeper Studio, Inc
 extra:
   social:
     - icon: fontawesome/brands/x-twitter
