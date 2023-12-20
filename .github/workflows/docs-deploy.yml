@@ -26,11 +26,12 @@ jobs:
       run: mkdocs build
 
     - name: Upload to Netlify
-      uses: nwtgck/actions-netlify@v1.2
+      uses: nwtgck/actions-netlify@v2.0
       with:
-        deploy-path: './site/'
+        publish-dir: './site'
         production-branch: master  # or your default branch
-        alias: dev  # If you want to deploy to a different environment
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        netlify-auth-token: ${{ secrets.NETLIFY_AUTH_TOKEN }}  # Set in your repo's secrets
-        netlify-site-id: ${{ secrets.DOCS_SITE_ID }}  # Set in your repo's secrets
+        deploy-message: Deploy from GitHub Actions
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.DOCS_SITE_ID }}
