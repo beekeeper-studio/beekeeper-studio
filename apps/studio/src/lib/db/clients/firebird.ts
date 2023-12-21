@@ -253,16 +253,13 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     const result = await this.driverExecuteSingle(
       `
       SELECT
-        TRIM(r.rdb$relation_name) AS rdb$relation_name,
-        TRIM(r.rdb$field_name) AS rdb$field_name,
-        r.rdb$field_source,
-        f.rdb$field_length,
-        f.rdb$character_length,
-        f.rdb$field_type,
-        r.rdb$field_position,
-        r.rdb$description,
-        TRIM(CASE f.rdb$field_type
-
+        MAX(TRIM(r.rdb$relation_name)) rdb$relation_name,
+        TRIM(r.rdb$field_name) rdb$field_name,
+        MAX(f.rdb$field_length) rdb$field_length,
+        MAX(f.rdb$character_length) rdb$character_length,
+        MAX(r.rdb$field_position) RDB$FIELD_POSITION,
+        MAX(r.rdb$description) RDB$DESCRIPTION,
+        MAX(TRIM(CASE f.rdb$field_type
           WHEN 7 THEN 'SMALLINT'
           WHEN 8 THEN
             CASE f.rdb$field_sub_type
@@ -295,12 +292,12 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           WHEN 40 THEN 'CSTRING'
 
           ELSE 'UNKNOWN'
+        END)) AS field_type,
 
-        END) AS field_type,
-        f.rdb$field_scale,
-        f.rdb$field_sub_type,
-        r.rdb$default_source,
-        r.rdb$null_flag
+        MAX(f.rdb$field_sub_type) rdb$field_sub_type,
+        MAX(r.rdb$default_source) rdb$default_source,
+        MAX(r.rdb$null_flag) RDB$NULL_FLAG,
+        MAX(rc.RDB$CONSTRAINT_TYPE) rdb$constraint_type
 
       FROM
         rdb$relation_fields r
@@ -309,6 +306,11 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         JOIN rdb$relations rl
           ON rl.rdb$relation_name = r.rdb$relation_name
 
+        LEFT JOIN rdb$index_segments isg
+          ON isg.RDB$FIELD_NAME = r.RDB$FIELD_NAME
+        LEFT JOIN RDB$RELATION_CONSTRAINTS rc
+          ON rc.RDB$INDEX_NAME = isg.RDB$INDEX_NAME
+          AND rc.RDB$RELATION_NAME = r.RDB$RELATION_NAME
       WHERE
         COALESCE(r.rdb$system_flag, 0) = 0
         AND
@@ -317,9 +319,11 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         rl.rdb$view_blr IS NULL
         ${table ? "AND r.rdb$relation_name = ?" : ""}
 
+      GROUP BY r.RDB$FIELD_NAME
+
       ORDER BY
-        r.rdb$relation_name,
-        r.rdb$field_position
+        rdb$relation_name,
+        rdb$field_position
       `,
       table ? { params: [table.toUpperCase()] } : undefined
     );
@@ -340,6 +344,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
         const nullable = row["RDB$NULL_FLAG"] === null;
 
+        const primaryKey = row["RDB$CONSTRAINT_TYPE"] === "PRIMARY KEY";
+
         return {
           tableName: row["RDB$RELATION_NAME"],
           columnName: row["RDB$FIELD_NAME"],
@@ -348,6 +354,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           dataType,
           defaultValue,
           nullable,
+          primaryKey,
         };
       })
     );
@@ -969,11 +976,20 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return `SELECT FIRST ${limit} * FROM ${table}`;
   }
 
-  getTableCreateScript(table: string, _schema?: string): Promise<string> {
-    // TODO
-    // 1. get all columns of a table with their source types
-    // 2. use knex to build the query
-    throw new Error("Method not implemented.");
+  async getTableCreateScript(table: string, _schema?: string): Promise<string> {
+    const columns = await this.listTableColumns("", table);
+    console.log({columns})
+    const columnsQuery = columns
+      .map((column) => {
+        const defaultValue = column.defaultValue
+          ? `DEFAULT ${column.defaultValue}`
+          : "";
+        const nullable = column.isNullable ? "NULL" : "NOT NULL";
+        const primaryKey = column.primaryKey ? "PRIMARY KEY" : "";
+        return `${column.columnName} ${column.dataType} ${defaultValue} ${nullable} ${primaryKey}`;
+      })
+      .join(",");
+    return `CREATE TABLE ${table} (${columnsQuery})`;
   }
 
   getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
