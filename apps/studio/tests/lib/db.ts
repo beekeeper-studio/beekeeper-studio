@@ -166,12 +166,12 @@ export class DBTestUtil {
     const dbs = await this.connection.listDatabases()
     const collation = 'utf8_general_ci'
     let charset = 'utf8'
-    if (this.dbType === 'postgresql') {
+    if (this.dbType.match(/postgresql|firebird/)) {
       charset = 'UTF8'
     }
     await this.connection.createDatabase('new-db_2', charset, collation)
 
-    if (this.dbType === 'sqlite') {
+    if (this.dbType.match(/sqlite|firebird/)) {
       // sqlite doesn't list the databases out because they're different files anyway so if it doesn't explode, we're happy as a clam
       return expect.anything()
     }

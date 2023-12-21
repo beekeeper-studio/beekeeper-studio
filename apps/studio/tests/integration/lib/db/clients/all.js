@@ -86,8 +86,6 @@ export function runCommonTests(getUtil) {
     })
 
     test("Should create database", async () => {
-      // FIXME: Firebird database is a new file
-      if (getUtil().dbType === 'firebird') return
       await getUtil().createDatabaseTests()
     })
   })

@@ -147,6 +147,7 @@ export const CLIENTS: ClientConfig[] = [
     defaultPort: 3050,
     disabledFeatures: [
       'server:schema',
+      'server:socketPath',
     ],
   },
 ];

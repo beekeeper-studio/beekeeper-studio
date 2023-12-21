@@ -92,6 +92,7 @@
     },
     methods: {
       async updateCollations() {
+        if (this.connection.connectionType === 'firebird') return
         this.collations = await this.connection.listCollations(this.selectedCharset)
         this.selectedCollation = this.collations[0]
       },

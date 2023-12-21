@@ -534,14 +534,16 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           const fields = meta.map((field, idx) => ({
             id: `c${idx}`,
             name: field.alias || field.field,
+            // TODO add dataType prop
           }));
 
           rows = rows.map((row: Record<string, any>) => {
             const transformedRow = {};
             Object.keys(row).forEach((key, idx) => {
-              let val = row[key]
-              if(TRIM_END_CHAR && meta[idx].type === 452) { // SQLVarText or CHAR
-                val = val.trimEnd()
+              let val = row[key];
+              if (TRIM_END_CHAR && meta[idx].type === 452) {
+                // SQLVarText or CHAR
+                val = val.trimEnd();
               }
               transformedRow[`c${idx}`] = val;
             });
@@ -711,7 +713,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
   async createDatabase(
     databaseName: string,
-    charset: string,
+    _charset: string,
     _collation: string
   ): Promise<void> {
     await createDatabase({
@@ -720,7 +722,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       database: databaseName,
       user: this.server.config.user,
       password: this.server.config.password,
-      encoding: charset,
+      // encoding: charset,
     });
   }
 
@@ -812,31 +814,71 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     table: string,
     _schema?: string
   ): Promise<TableProperties> {
-    const result = await this.driverExecuteSingle(`
-      SELECT * FROM rdb$relations WHERE rdb$relation_name = ${FirebirdData.escapeString(
-        table
-      ).toUpperCase()}
-    `);
-    const row = result.rows[0];
+    const info = this.driverExecuteSingle(
+      "SELECT * FROM rdb$relations WHERE rdb$relation_name = ?",
+      { params: [table] }
+    ).then((result) => result.rows[0]);
+    const size = this.driverExecuteSingle("SELECT COUNT(*) AS SIZE FROM ?", {
+      params: [table],
+    }).then((result) => result.rows[0]["SIZE"]);
+    const indexes = this.listTableIndexes("", table);
+    const relations = this.getTableKeys("", table);
+    const triggers = this.listTableTriggers(table);
 
     return {
-      description: row["RDB$DESCRIPTION"],
-      size: undefined, // TODO implement size
-      indexSize: undefined, // TODO implement indexSize
-      indexes: [], // TODO implement indexes
-      relations: [], // TODO implement relations
-      triggers: [], // TODO implement triggers
-      owner: row["RDB$OWNER_NAME"],
-      createdAt: undefined, // TODO implement createdAt
+      description: await info["RDB$DESCRIPTION"],
+      size: await size,
+      indexSize: undefined, // TODO
+      indexes: await indexes,
+      relations: await relations,
+      triggers: await triggers,
+      owner: await info["RDB$OWNER_NAME"],
+      createdAt: undefined, // TODO
     };
   }
 
   async getTableKeys(
-    db: string,
+    _db: string,
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
-    return []; // TODO
+    const result = await this.driverExecuteSingle(
+      `
+      SELECT
+        TRIM(PK.RDB$RELATION_NAME) AS TO_TABLE,
+        TRIM(ISP.RDB$FIELD_NAME) AS TO_COLUMN,
+        TRIM(FK.RDB$RELATION_NAME) AS FROM_TABLE,
+        TRIM(ISF.RDB$FIELD_NAME) AS FROM_COLUMN,
+        TRIM(FK.RDB$CONSTRAINT_NAME) AS CONSTRAINT_NAME,
+        TRIM(RC.RDB$UPDATE_RULE) AS ON_UPDATE,
+        TRIM(RC.RDB$DELETE_RULE) AS ON_DELETE
+      FROM
+        RDB$RELATION_CONSTRAINTS PK,
+        RDB$RELATION_CONSTRAINTS FK,
+        RDB$INDEX_SEGMENTS ISP,
+        RDB$INDEX_SEGMENTS ISF,
+        RDB$REF_CONSTRAINTS RC
+      WHERE FK.RDB$RELATION_NAME = ?
+        AND FK.RDB$CONSTRAINT_NAME = RC.RDB$CONSTRAINT_NAME
+        AND PK.RDB$CONSTRAINT_NAME = RC.RDB$CONST_NAME_UQ
+        AND ISP.RDB$INDEX_NAME = PK.RDB$INDEX_NAME
+        AND ISF.RDB$INDEX_NAME = FK.RDB$INDEX_NAME
+        AND ISP.RDB$FIELD_POSITION = ISF.RDB$FIELD_POSITION
+    `,
+      { params: [table] }
+    );
+
+    return result.rows.map((row) => ({
+      fromTable: row["FROM_TABLE"],
+      fromColumn: row["FROM_COLUMN"],
+      fromSchema: "",
+      toTable: row["TO_TABLE"],
+      toColumn: row["TO_COLUMN"],
+      toSchema: "",
+      constraintName: row["CONSTRAINT_NAME"],
+      onUpdate: row["ON_UPDATE"],
+      onDelete: row["ON_DELETE"],
+    }));
   }
 
   async executeQuery(
@@ -844,12 +886,16 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     options?: any
   ): Promise<NgQueryResult[]> {
     const result = await this.driverExecuteMultiple(queryText, options);
-    return result.map(({ rows, statement }) => ({
-      fields: [], // TODO implement fields
+    return result.map(({ rows, statement, meta }) => ({
+      fields: meta.map((field, idx) => ({
+        id: `c${idx}`,
+        name: field.alias || field.field,
+        // TODO add dataType prop
+      })),
       affectedRows: undefined, // TODO implement affectedRows
       command: statement.type,
-      rows: rows ?? [],
-      rowCount: rows?.length ?? 0,
+      rows: rows,
+      rowCount: rows.length,
     }));
   }
 
@@ -1000,15 +1046,27 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async listCharsets(): Promise<string[]> {
-    return FirebirdData.charsets;
+    // const result = await this.driverExecuteSingle(
+    //   "SELECT TRIM(RDB$CHARACTER_SET_NAME) AS CHARSET FROM RDB$CHARACTER_SETS"
+    // );
+    // return result.rows.map((row) => row["CHARSET"]);
+    return ["UTF8"]; // NOTE: node-firebird only let us to use UTF8
   }
 
   async getDefaultCharset(): Promise<string> {
     return "UTF8";
   }
 
-  listCollations(_charset: string): Promise<string[]> {
-    throw new Error("Method not implemented.");
+  async listCollations(charset: string): Promise<string[]> {
+    // const result = await this.driverExecuteSingle(
+    //   ` SELECT * FROM RDB$COLLATIONS cl
+    //     JOIN RDB$CHARACTER_SETS cs
+    //     ON cl.RDB$CHARACTER_SET_ID = cs.RDB$CHARACTER_SET_ID
+    //     WHERE cs.RDB$CHARACTER_SET_NAME = ?`,
+    //   { params: [charset] }
+    // );
+    // return result.rows.map((row) => row["RDB$COLLATION_NAME"]);
+    return [];
   }
 
   createDatabaseSQL(): string {

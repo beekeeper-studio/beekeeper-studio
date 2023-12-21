@@ -114,7 +114,6 @@ export interface DialectData {
     createIndex?: boolean
     comments?: boolean
     filterWithOR?: boolean
-    cancelQuery?: boolean
     backup?: boolean
     truncateElement?: boolean
     duplicateTable?: boolean
