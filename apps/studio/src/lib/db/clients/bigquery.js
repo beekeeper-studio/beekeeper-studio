@@ -179,6 +179,36 @@ async function getPrimaryKeys(conn, database, table) {
   }
 }
 
+function parseDryRunMetadata(metadata) {
+  const queryStatistics = metadata.statistics.query;
+  // bytes -> TiB * bq price per TiB processed
+  const onDemandPricingEstimateUSD = queryStatistics.totalBytesBilled / (1024 ^ 4) * 6.25;
+  const fields = [
+    { name: 'statementType', id: 'statementType' },
+    { name: 'totalBytesBilled', id: 'totalBytesBilled' },
+    { name: 'totalBytesProcessed', id: 'totalBytesProcessed' },
+    { name: 'totalBytesProcessedAccuracy', id: 'totalBytesProcessedAccuracy' },
+    { name: 'onDemandPricingEstimateUSD', id: 'onDemandPricingEstimateUSD' }
+  ];
+  const rows = [
+    {
+      statementType: queryStatistics.statementType,
+      totalBytesBilled: queryStatistics.totalBytesBilled,
+      totalBytesProcessed: queryStatistics.totalBytesProcessed,
+      totalBytesProcessedAccuracy: queryStatistics.totalBytesProcessedAccuracy,
+      onDemandPricingEstimateUSD
+    }
+  ];
+
+  return {
+    command: 'SELECT',
+    rows,
+    fields,
+    rowCount: 1,
+    affectedRows: 0
+  };
+}
+
 function query(client, queryText, options = {}) {
   logger().debug('bigQuery query: ' + queryText)
   let job = null
@@ -194,7 +224,12 @@ function query(client, queryText, options = {}) {
       const jobOptions = { query: queryText, ...options };
       [job] = await client.createQueryJob(jobOptions)
       logger().debug("created job: ", job.id)
-      logger().debug('JOB METADATA: ', job.metadata);
+      console.log('JOB METADATA: ', job.metadata)
+
+      if (options.dryRun) {
+        const metadata = job.metadata;
+        return [parseDryRunMetadata(metadata)];
+      }
 
       try {
         logger().debug("wait for executeQuery job.id: ", job.id)
@@ -345,7 +380,6 @@ async function driverExecuteQuery(client, queries, job) {
 
   // Wait for the query to finish
   const results = await job.getQueryResults()
-  console.log('DRY RUN RESULTS: ', results);
   return results.map(parseRowQueryResult)
 }
 
