@@ -1,6 +1,3 @@
-/* eslint-disable-next-line */
-// @ts-nocheck
-
 import electronLog from "electron-log";
 import knexlib, { Knex } from "knex";
 import knexFirebirdDialect from "knex-firebird-dialect";
@@ -171,6 +168,7 @@ function buildInsertQueries(knex: Knex, inserts: TableInsert[]) {
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   version: any;
   pool: Pool;
+  firebirdOptions: Firebird.Options;
 
   constructor(
     protected server: IDbConnectionServer,
@@ -197,11 +195,12 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       throw new Error("Invalid database name");
     }
 
-    log.debug("create driver client for postgres with config %j", config);
+    this.firebirdOptions = config;
+
+    log.debug("create driver client for firebird with config %j", config);
 
     this.pool = new Pool(config);
 
-    // TODO use node firebird service
     const versionResult = await this.driverExecuteSingle(
       "SELECT RDB$GET_CONTEXT('SYSTEM', 'ENGINE_VERSION') from rdb$database;"
     );
@@ -299,7 +298,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         r.rdb$default_source rdb$default_source,
         r.rdb$null_flag RDB$NULL_FLAG,
         (
-          SELECT rc.RDB$CONSTRAINT_TYPE
+          SELECT FIRST 1 rc.RDB$CONSTRAINT_TYPE
           FROM RDB$RELATION_CONSTRAINTS rc
           LEFT JOIN rdb$index_segments isg
             ON isg.RDB$FIELD_NAME = r.RDB$FIELD_NAME
@@ -319,8 +318,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         COALESCE(r.rdb$system_flag, 0) = 0
         AND
         COALESCE(rl.rdb$system_flag, 0) = 0
-        AND
-        rl.rdb$view_blr IS NULL
         ${table ? "AND r.rdb$relation_name = ?" : ""}
 
       ORDER BY
@@ -534,12 +531,20 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   query(queryText: string): CancelableQuery {
+    let connection: Connection | undefined;
+
     return {
       execute: async () => {
-        const driverResult = await this.driverExecuteMultiple(queryText, {
+        connection = await Connection.attach(this.firebirdOptions);
+
+        const results = await this.driverExecuteMultiple(queryText, {
           rowAsArray: true,
+          connection,
         });
-        return driverResult.map(({ rows, meta }) => {
+
+        connection.release();
+
+        return results.map(({ rows, meta }) => {
           const fields = meta.map((field, idx) => ({
             id: `c${idx}`,
             name: field.alias || field.field,
@@ -563,7 +568,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         });
       },
       cancel: async () => {
-        // TODO
+        connection?.release();
       },
     };
   }
@@ -705,17 +710,17 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async truncateElement(
-    elementName: string,
-    typeOfElement: DatabaseElement,
-    schema?: string
+    _elementName: string,
+    _typeOfElement: DatabaseElement,
+    _schema?: string
   ): Promise<void> {
     // TODO There is no internal function to truncate a table
   }
 
   async duplicateTable(
-    tableName: string,
-    duplicateTableName: string,
-    schema?: string
+    _tableName: string,
+    _duplicateTableName: string,
+    _schema?: string
   ): Promise<void> {
     // TODO There is no internal function to duplicate a table
   }
@@ -831,7 +836,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           (SELECT COUNT(*) AS SIZE FROM ${table})
         FROM rdb$relations
         WHERE rdb$relation_name = ${Firebird.escape(table)}
-      `,
+      `
     ).then((result) => result.rows[0]);
     const indexes = this.listTableIndexes("", table);
     const relations = this.getTableKeys("", table);
@@ -897,6 +902,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     queryText: string,
     options?: any
   ): Promise<NgQueryResult[]> {
+    console.log({queryText, options})
     const result = await this.driverExecuteMultiple(queryText, options);
     return result.map(({ rows, statement, meta }) => ({
       fields: meta.map((field, idx) => ({
@@ -944,7 +950,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       const query = queries[index];
       const conn = options.connection ?? this.pool;
       const data = await conn.query(query.text, params, options.rowAsArray);
-
       results.push({
         meta: data.meta,
         rows: data.rows,
@@ -1078,7 +1083,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return "UTF8";
   }
 
-  async listCollations(charset: string): Promise<string[]> {
+  async listCollations(_charset: string): Promise<string[]> {
     // const result = await this.driverExecuteSingle(
     //   ` SELECT * FROM RDB$COLLATIONS cl
     //     JOIN RDB$CHARACTER_SETS cs

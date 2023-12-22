@@ -30,6 +30,7 @@ export const FirebirdData: DialectData = {
     truncateElement: true,
     duplicateTable: true,
     exportTable: true,
+    createTable: true, // Blocked by knex builder creating unnecessary query
   },
   notices: {
   },

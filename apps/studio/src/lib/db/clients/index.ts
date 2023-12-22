@@ -148,7 +148,6 @@ export const CLIENTS: ClientConfig[] = [
     disabledFeatures: [
       'server:schema',
       'server:socketPath',
-      'cancelQuery',
     ],
   },
 ];

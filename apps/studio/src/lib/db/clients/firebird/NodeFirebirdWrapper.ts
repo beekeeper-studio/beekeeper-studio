@@ -1,6 +1,6 @@
 import Firebird from "node-firebird";
 
-interface Result {
+export interface Result {
   rows: any[];
   meta: any[];
   isSelect: boolean;
@@ -57,6 +57,18 @@ export class Pool {
 
 export class Connection {
   constructor(private database: Firebird.Database) {}
+
+  static attach(options: Firebird.Options): Promise<Connection> {
+    return new Promise((resolve, reject) => {
+      Firebird.attach(options, (err, db) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(new Connection(db));
+      })
+    })
+  }
 
   release(): Promise<void> {
     return new Promise((resolve, reject) => {
