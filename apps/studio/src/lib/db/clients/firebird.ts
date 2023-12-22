@@ -63,7 +63,7 @@ type FirebirdResult = {
 
 // Char fields are padded with spaces to the maximum defined length.
 // https://stackoverflow.com/a/8343764/10012118
-const TRIM_END_CHAR = true;
+const TRIM_END_CHAR = false;
 
 const log = electronLog.scope("firebird");
 
@@ -253,13 +253,14 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     const result = await this.driverExecuteSingle(
       `
       SELECT
-        MAX(TRIM(r.rdb$relation_name)) rdb$relation_name,
+        TRIM(r.rdb$relation_name) rdb$relation_name,
         TRIM(r.rdb$field_name) rdb$field_name,
-        MAX(f.rdb$field_length) rdb$field_length,
-        MAX(f.rdb$character_length) rdb$character_length,
-        MAX(r.rdb$field_position) RDB$FIELD_POSITION,
-        MAX(r.rdb$description) RDB$DESCRIPTION,
-        MAX(TRIM(CASE f.rdb$field_type
+        f.rdb$field_length rdb$field_length,
+        f.rdb$character_length rdb$character_length,
+        r.rdb$field_position RDB$FIELD_POSITION,
+        r.rdb$description RDB$DESCRIPTION,
+
+        TRIM(CASE f.rdb$field_type
           WHEN 7 THEN 'SMALLINT'
           WHEN 8 THEN
             CASE f.rdb$field_sub_type
@@ -292,12 +293,20 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           WHEN 40 THEN 'CSTRING'
 
           ELSE 'UNKNOWN'
-        END)) AS field_type,
+        END) AS field_type,
 
-        MAX(f.rdb$field_sub_type) rdb$field_sub_type,
-        MAX(r.rdb$default_source) rdb$default_source,
-        MAX(r.rdb$null_flag) RDB$NULL_FLAG,
-        MAX(rc.RDB$CONSTRAINT_TYPE) rdb$constraint_type
+        f.rdb$field_sub_type rdb$field_sub_type,
+        r.rdb$default_source rdb$default_source,
+        r.rdb$null_flag RDB$NULL_FLAG,
+        (
+          SELECT rc.RDB$CONSTRAINT_TYPE
+          FROM RDB$RELATION_CONSTRAINTS rc
+          LEFT JOIN rdb$index_segments isg
+            ON isg.RDB$FIELD_NAME = r.RDB$FIELD_NAME
+          WHERE rc.RDB$INDEX_NAME = isg.RDB$INDEX_NAME
+            AND rc.RDB$RELATION_NAME = r.RDB$RELATION_NAME
+          GROUP BY rc.RDB$CONSTRAINT_TYPE
+        )
 
       FROM
         rdb$relation_fields r
@@ -306,11 +315,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         JOIN rdb$relations rl
           ON rl.rdb$relation_name = r.rdb$relation_name
 
-        LEFT JOIN rdb$index_segments isg
-          ON isg.RDB$FIELD_NAME = r.RDB$FIELD_NAME
-        LEFT JOIN RDB$RELATION_CONSTRAINTS rc
-          ON rc.RDB$INDEX_NAME = isg.RDB$INDEX_NAME
-          AND rc.RDB$RELATION_NAME = r.RDB$RELATION_NAME
       WHERE
         COALESCE(r.rdb$system_flag, 0) = 0
         AND
@@ -318,8 +322,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         AND
         rl.rdb$view_blr IS NULL
         ${table ? "AND r.rdb$relation_name = ?" : ""}
-
-      GROUP BY r.RDB$FIELD_NAME
 
       ORDER BY
         rdb$relation_name,
@@ -822,19 +824,22 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     _schema?: string
   ): Promise<TableProperties> {
     const info = this.driverExecuteSingle(
-      "SELECT * FROM rdb$relations WHERE rdb$relation_name = ?",
-      { params: [table] }
+      `
+        SELECT
+          RDB$DESCRIPTION,
+          RDB$OWNER_NAME,
+          (SELECT COUNT(*) AS SIZE FROM ${table})
+        FROM rdb$relations
+        WHERE rdb$relation_name = ${Firebird.escape(table)}
+      `,
     ).then((result) => result.rows[0]);
-    const size = this.driverExecuteSingle("SELECT COUNT(*) AS SIZE FROM ?", {
-      params: [table],
-    }).then((result) => result.rows[0]["SIZE"]);
     const indexes = this.listTableIndexes("", table);
     const relations = this.getTableKeys("", table);
     const triggers = this.listTableTriggers(table);
 
     return {
       description: await info["RDB$DESCRIPTION"],
-      size: await size,
+      size: await info["SIZE"],
       indexSize: undefined, // TODO
       indexes: await indexes,
       relations: await relations,
@@ -978,13 +983,12 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
   async getTableCreateScript(table: string, _schema?: string): Promise<string> {
     const columns = await this.listTableColumns("", table);
-    console.log({columns})
     const columnsQuery = columns
       .map((column) => {
         const defaultValue = column.defaultValue
           ? `DEFAULT ${column.defaultValue}`
           : "";
-        const nullable = column.isNullable ? "NULL" : "NOT NULL";
+        const nullable = column.nullable ? "" : "NOT NULL";
         const primaryKey = column.primaryKey ? "PRIMARY KEY" : "";
         return `${column.columnName} ${column.dataType} ${defaultValue} ${nullable} ${primaryKey}`;
       })
@@ -1037,7 +1041,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   wrapIdentifier(value: string): string {
-    // No need to wrap. Firebird identifiers do not allow special characters.
+    // No need to wrap. Firebird identifiers are case-insensitive and do not
+    // allow special characters except _ and $.
     return value;
   }
 
