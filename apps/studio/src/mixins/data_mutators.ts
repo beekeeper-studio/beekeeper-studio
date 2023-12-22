@@ -72,7 +72,12 @@ export default {
           const fkLink = cell.getElement().querySelector('.fk-link') as HTMLElement
           fkLink.onclick = (e) => params.fkOnClick(e, cell);
         })
-      } else if ( Object.prototype.hasOwnProperty.call(params, 'isPK') && !params.isPK && _.isInteger(Number(cellValue)) && Number(cellValue) <= Number.MAX_SAFE_INTEGER) {
+      } else if (
+          Object.prototype.hasOwnProperty.call(params, 'isPK') &&
+          !params.isPK &&
+          _.isInteger(Number(cellValue)) &&
+          _.inRange(Number(cellValue), 946598400000, Number.MAX_SAFE_INTEGER) // epoch time from 1999-12-31 (party like it's 1999)
+        ) {
         tooltip = new Date(Number(cellValue)).toISOString()
         result = buildFormatterWithTooltip(cellValue, tooltip, 'timelapse')
     }
