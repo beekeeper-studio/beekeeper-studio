@@ -131,5 +131,6 @@ export default Vue.extend({
     width: 16px;
     text-align: center;
     margin-top: -1px;
+    cursor: pointer;
   }
 </style>

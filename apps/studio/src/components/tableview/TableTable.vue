@@ -1011,7 +1011,9 @@ export default Vue.extend({
       cell.getElement().classList.add('edited')
       const currentEdit = _.find(this.pendingChanges.updates, { key: key })
 
-      if (currentEdit?.oldValue == cell.getValue()) {
+      if (typeof currentEdit?.oldValue === 'undefined' && cell.getValue() === null) {
+        // don't do anything because of an issue found when trying to set to null, undefined == null so was getting rid of the need to make a change\
+      } else if (currentEdit?.oldValue == cell.getValue()) {
         this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit))
         cell.getElement().classList.remove('edited')
         return
