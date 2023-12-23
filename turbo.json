@@ -1,0 +1,46 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+    "pipeline": {
+	"electron:build": {
+	    "dependsOn": ["^build"],
+      "outputs": ["dist_electron"]
+	},
+    "build": {
+      // A package's `build` script depends on that package's
+      // dependencies and devDependencies
+      // `build` tasks  being completed first
+      // (the `^` symbol signifies `upstream`).
+      "dependsOn": ["^build"],
+      // note: output globs are relative to each package's `package.json`
+      // (and not the monorepo root)
+      "outputs": ["dist"]
+    },
+    "dev": {
+      "outputs": ["dist"],
+      "cache": false,
+      "persistent": true
+    },
+    "deploy": {
+      // A package's `deploy` script depends on the `build`,
+      // `test`, and `lint` scripts of the same package
+      // being completed. It also has no filesystem outputs.
+      "dependsOn": ["build", "test", "lint"]
+    },
+    "test": {
+      // A package's `test` script depends on that package's
+      // own `build` script being completed first.
+      "dependsOn": ["build"],
+      // A package's `test` script should only be rerun when
+      // either a `.tsx` or `.ts` file has changed in `src` or `test` folders.
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
+    },
+    // A package's `lint` script has no dependencies and
+    // can be run whenever. It also has no filesystem outputs.
+    "lint": {},
+    "electron:serve": {
+      "dependsOn": ["^dev"],
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

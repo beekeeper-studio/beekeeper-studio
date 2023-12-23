@@ -1,0 +1,16 @@
+{
+  "name": "@bks/dbs",
+  "version": "1.0.0",
+  "description": "Open source database drivers",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "author": "Beekeeper Studio, Inc",
+  "license": "GPLv3",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

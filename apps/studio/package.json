@@ -17,11 +17,13 @@
     "docs:serve": "vuepress dev docs",
     "electron:build": "vue-cli-service electron:build",
     "electron:serve": "vue-cli-service electron:serve --host localhost --ozone-platform-hint=auto",
+    "dev": "yarn electron:serve",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps"
   },
   "main": "background.js",
   "dependencies": {
+    "@bks/dbs": "*",
     "@aws-sdk/client-redshift": "^3.145.0",
     "@electron/remote": "^2.0.9",
     "axios": "^1.6.0",

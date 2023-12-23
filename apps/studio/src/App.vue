@@ -42,6 +42,9 @@ import querystring from 'query-string'
 import NotificationManager from './components/NotificationManager.vue'
 import UpgradeRequiredModal from './components/common/UpgradeRequiredModal.vue'
 import ConfirmationModal from '@/components/common/modals/ConfirmationModal.vue'
+import { Foo } from '@bks/dbs'
+
+console.log(Foo)
 
 export default Vue.extend({
   name: 'App',
