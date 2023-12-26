@@ -76,7 +76,7 @@ export default {
           Object.prototype.hasOwnProperty.call(params, 'isPK') &&
           !params.isPK &&
           _.isInteger(Number(cellValue)) &&
-          _.inRange(Number(cellValue), 946598400000, Number.MAX_SAFE_INTEGER) // epoch time from 1999-12-31 (party like it's 1999)
+          _.inRange(Number(cellValue), 946598400000, 8640000000000000) // epoch time from 1999-12-31 (party like it's 1999), more info: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#description
         ) {
         tooltip = new Date(Number(cellValue)).toISOString()
         result = buildFormatterWithTooltip(cellValue, tooltip, 'timelapse')
