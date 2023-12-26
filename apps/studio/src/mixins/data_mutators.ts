@@ -62,7 +62,7 @@ export default {
       let result = `<pre>${cellValue}</pre>`
       let tooltip = ''
 
-      if (params.fk) {
+      if (params?.fk) {
         if (params.fk.length === 1) tooltip = `View record in ${params.fk[0].toTable}`
         else tooltip = `View records in ${(params.fk.map(item => item.toTable).join(', ') as string).replace(/, (?![\s\S]*, )/, ', or ')}`
 
@@ -73,7 +73,7 @@ export default {
           fkLink.onclick = (e) => params.fkOnClick(e, cell);
         })
       } else if (
-          Object.prototype.hasOwnProperty.call(params, 'isPK') &&
+          params?.isPK != null &&
           !params.isPK &&
           _.isInteger(Number(cellValue)) &&
           _.inRange(Number(cellValue), 946598400000, 8640000000000000) // epoch time from 1999-12-31 (party like it's 1999), more info: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#description
