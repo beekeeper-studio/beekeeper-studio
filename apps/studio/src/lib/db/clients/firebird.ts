@@ -903,7 +903,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     queryText: string,
     options?: any
   ): Promise<NgQueryResult[]> {
-    console.log({queryText, options})
     const result = await this.driverExecuteMultiple(queryText, options);
     return result.map(({ rows, statement, meta }) => ({
       fields: meta.map((field, idx) => ({
