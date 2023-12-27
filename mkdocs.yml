@@ -1,0 +1,100 @@
+site_name: Beekeeper Studio
+site_url: https://docs.beekeeperstudio.io
+site_description: Beekeeper Studio user documentation - how to install, configure, and use Beekeeper Studio
+copyright: Copyright &copy; Beekeeper Studio, Inc
+repo_url: https://github.com/beekeeper-studio/beekeeper-studio
+repo_name: beekeeper-studio
+edit_uri: edit/master/docs
+extra:
+  social:
+    - icon: fontawesome/brands/x-twitter
+      link: https://twitter.com/beekeeperdata
+      name: Beekeeper on X (Twitter)
+    - icon: fontawesome/brands/github
+      link: https://github.com/beekeeper-studio/beekeeper-studio
+      name: Beekeeper Studio on GitHub
+  generator: false
+theme:
+  logo: assets/bks.svg
+  favicon: assets/favicon.ico
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  font:
+    text: Rubik
+  features:
+    - navigation.instant
+    # - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.tracking
+    - navigation.sections
+    - navigation.footer
+    - navigation.top
+    - navigation.expand
+    - search.suggest
+    - search.highlight
+    - content.action.edit
+    - content.action.view
+    - content.code.copy
+
+  palette:
+    scheme: slate
+    primary: custom
+    accent: custom
+
+extra_css:
+  - stylesheets/extra.css
+plugins:
+  - search
+  - social:
+      cards_layout_options:
+        background_color: "#2c2c2c"
+        color: "#ffffff"
+        font_family: Rubik
+
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - tables
+  - attr_list
+  - md_in_html
+  - nl2br
+
+nav:
+  - Introduction: index.md
+  - getting-started-guide.md
+  - Upgrading: support/upgrading-from-the-community-edition.md
+  - Installation:
+    - installation/index.md
+    - installation/windows.md
+    - installation/macos-m1-intel.md
+    - installation/linux.md
+  - Connecting To Databases:
+    - user_guide/connecting/first-page.md
+    - user_guide/connecting/sqlite.md
+    - user_guide/connecting/google-bigquery.md
+    - user_guide/connecting/oracle-database.md
+  - Using The App:
+    - user_guide/using-the-sql-editor.md
+    - user_guide/editing-data.md
+    - user_guide/data-export.md
+    - user_guide/modify-tables.md
+    - user_guide/entity-relationship-diagrams-erd.md
+    - user_guide/backup-restore.md
+    - user_guide/cloud-storage-team-workspaces.md
+    - user_guide/importing-data-csv-json-etc.md
+    - user_guide/query-magics.md
+  - Support:
+    - support/contact-support.md
+    - support/open-source.md
+    - support/troubleshooting.md
+    - support/data-location.md

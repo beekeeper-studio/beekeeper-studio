@@ -140,6 +140,7 @@ export const TabulatorStateWatchers = {
   table: {
     deep: true,
     handler() {
+      log.debug("table changed - initializing Tabulator")
       this.initializeTabulator()
     }
   }

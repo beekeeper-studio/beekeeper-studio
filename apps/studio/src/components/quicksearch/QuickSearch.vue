@@ -46,6 +46,24 @@
           </div>
           <span class="hint">(tables only)</span>
         </div>
+        <div class="shortcut-item">
+          <div>Open In Background</div>
+          <div class="shortcut">
+            <!-- <span v-if="this.$config.isMac">Cmd</span>
+            <span v-if="!this.$config.isMac">Ctrl</span> -->
+            <span>Right Arrow</span>
+          </div>
+          <span class="hint">(tables only)</span>
+        </div>
+        <div class="shortcut-item">
+          <div>Alt In Background</div>
+          <div class="shortcut">
+            <span v-if="this.$config.isMac">Cmd</span>
+            <span v-if="!this.$config.isMac">Ctrl</span>
+            <span>Right Arrow</span>
+          </div>
+          <span class="hint">(tables only)</span>
+        </div>
       </div>
       <ul
         class="results"
@@ -146,6 +164,8 @@ export default Vue.extend({
       // /me *evil laugh*
       result['ctrl+p'] = this.selectUp
       result['ctrl+n'] = this.selectDown
+      result['right'] = this.persistentSearchEnter
+      result[this.ctrlOrCmd('right')] = this.persistentSearchMetaEnter
 
       return result
     }
@@ -174,17 +194,16 @@ export default Vue.extend({
     selectDown() {
       this.selectedItem = this.selectedItem + 1
     },
-    submit(result) {
+    submit(result, persistSearch = false) {
       if(!result?.item) return
       if (result.type === 'table') {
         this.$root.$emit(AppEvent.loadTable, {table: result.item})
       } else {
         this.$root.$emit('favoriteClick', result.item)
       }
-      this.closeSearch()
-
+      if (!persistSearch) this.closeSearch()
     },
-    submitAlt(result) {
+    submitAlt(result, persistSearch = false) {
       if(!result?.item) return
 
       if (result.type === 'table') {
@@ -192,7 +211,7 @@ export default Vue.extend({
       } else {
         return this.submit(result)
       }
-      this.closeSearch()
+      if (!persistSearch) this.closeSearch()
     },
     handleClick(event: MouseEvent, result: any) {
       if (event.ctrlKey) {
@@ -209,6 +228,20 @@ export default Vue.extend({
       const result = this.results[this.selectedItem]
       this.submitAlt(result)
 
+    },
+    persistentSearchEnter(){
+      const cursorPosition = this.$refs.searchBox.selectionStart
+      if (this.searchTerm.length === cursorPosition){
+        const result = this.results[this.selectedItem]
+        this.submit(result, true)
+      }
+    },
+    persistentSearchMetaEnter(){
+      const cursorPosition = this.$refs.searchBox.selectionStart
+      if (this.searchTerm.length === cursorPosition){
+        const result = this.results[this.selectedItem]
+        this.submitAlt(result, true)
+      }
     },
     maybeHide(event: MouseEvent) {
       const target = event.target

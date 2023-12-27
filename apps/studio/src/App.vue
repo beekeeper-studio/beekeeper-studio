@@ -1,7 +1,7 @@
 <template>
   <div class="style-wrapper">
     <div class="beekeeper-studio-wrapper">
-      <titlebar v-if="$config.isMac || menuStyle === 'client'" />
+      <titlebar v-if="$config.isMac || menuStyle === 'client' || (runningWayland)" />
       <template v-if="storeInitialized">
         <connection-interface v-if="!connection" />
         <core-interface
@@ -24,6 +24,7 @@
       multiple
     />
     <data-manager />
+    <confirmation-modal />
   </div>
 </template>
 
@@ -40,17 +41,18 @@ import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
 import NotificationManager from './components/NotificationManager.vue'
 import UpgradeRequiredModal from './components/common/UpgradeRequiredModal.vue'
-
+import ConfirmationModal from '@/components/common/modals/ConfirmationModal.vue'
 
 export default Vue.extend({
   name: 'App',
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
-    StateManager, DataManager, UpgradeRequiredModal
+    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModal
   },
   data() {
     return {
-      url: null
+      url: null,
+      runningWayland: false
     }
   },
   computed: {
@@ -72,9 +74,10 @@ export default Vue.extend({
   async mounted() {
     await this.$store.dispatch('fetchUsername')
 
-    const query = querystring.parse(global.location.search)
+    const query = querystring.parse(global.location.search, { parseBooleans: true })
     if (query) {
       this.url = query.url || null
+      this.runningWayland = !!query.runningWayland
     }
 
 
