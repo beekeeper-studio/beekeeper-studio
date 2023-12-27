@@ -6,7 +6,7 @@
       ref="input"
       type="text"
       v-model="value"
-      @blur.prevent="submit"
+      @blur.prevent="onBlur"
       @change.prevent="submit"
       @keydown="keydown"
     >
@@ -21,6 +21,10 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import helpers from '@shared/lib/tabulator'
+import rawLog from 'electron-log'
+
+const log = rawLog.scope('NullableInputEditor')
+
 export default Vue.extend({
   props: ['cell', 'params'],
   data() {
@@ -55,9 +59,15 @@ export default Vue.extend({
           this.value = ''
         }
       } else if (e.key === 'Enter') {
+        // WHY: Without this we re-enter the editor right away
+        e.stopImmediatePropagation()
         this.submit()
       } else if (e.key === 'Tab') {
-        // this.$emit('value', this.value)
+        // FIXME: Without this tab and enter behave differently
+        // in the future we want these to behave like google sheets
+        // saving the value and moving to the next row/col respectively
+        e.stopImmediatePropagation()
+        this.$emit('value', this.value)
       } else if (e.key.startsWith("Arrow")) {
         // this.$emit('value', this.value)
       } else if (e.key === 'Escape') {
@@ -66,7 +76,11 @@ export default Vue.extend({
         this.everEdited = true
       }
     },
+    onBlur() {
+      log.debug('blur, not submitting')
+    },
     submit() {
+      log.debug('nullable submitted')
       // some cases we always want null, never empty string
       if (this.params.allowEmpty === false && _.isEmpty(this.value)) {
         this.$emit('value', null)

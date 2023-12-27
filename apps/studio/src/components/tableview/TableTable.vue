@@ -364,6 +364,7 @@ export default Vue.extend({
       result[this.ctrlOrCmd('v')] = this.pasteSelection.bind(this)
       result[this.ctrlOrCmd('d')] = this.cloneSelection.bind(this, undefined)
       result['delete'] = this.deleteTableSelection.bind(this)
+      result['tab'] = this.handleTab.bind(this)
       return result
     },
 
@@ -703,6 +704,11 @@ export default Vue.extend({
     }
   },
   methods: {
+    handleTab(e: KeyboardEvent) {
+      // do nothing?
+      log.debug('tab pressed')
+
+    },
     copySelection() {
       if (!document.activeElement.classList.contains('tabulator-tableholder')) return
       copyRange({ range: this.tabulator.getActiveRange(), type: 'tsv' })
