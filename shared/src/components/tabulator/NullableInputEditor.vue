@@ -63,10 +63,9 @@ export default Vue.extend({
         e.stopImmediatePropagation()
         this.submit()
       } else if (e.key === 'Tab') {
-        // FIXME: Without this tab and enter behave differently
-        // in the future we want these to behave like google sheets
-        // saving the value and moving to the next row/col respectively
-        // e.stopImmediatePropagation()
+        // FIXME: Tab and enter should both submit AND then move
+        // the selected cell, currently only tab does this.
+
         this.$emit('value', this.value)
       } else if (e.key.startsWith("Arrow")) {
         // this.$emit('value', this.value)
