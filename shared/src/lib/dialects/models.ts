@@ -119,6 +119,7 @@ export interface DialectData {
     duplicateTable?: boolean
     exportTable?: boolean
     createTable?: boolean
+    collations?: boolean
   },
   notices?: {
     infoSchema?: string

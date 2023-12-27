@@ -92,7 +92,7 @@
     },
     methods: {
       async updateCollations() {
-        if (this.connection.connectionType === 'firebird') return
+        if (this.$store.getters.dialectData.disabledFeatures?.collations) return
         this.collations = await this.connection.listCollations(this.selectedCharset)
         this.selectedCollation = this.collations[0]
       },

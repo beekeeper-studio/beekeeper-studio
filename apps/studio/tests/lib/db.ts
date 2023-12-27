@@ -751,12 +751,12 @@ export class DBTestUtil {
       { name: "Alethea" },
       { name: "Elias" }
     ]
-    await this.knex.schema.createTable('streamtest', (table) => {
-      table.increments().primary()
-      table.string("name")
-    })
 
-    await this.knex('streamtest').insert(names)
+    if (this.dbType === 'firebird') {
+      await Promise.all(names.map((name) => this.knex('streamtest').insert(name)))
+    } else {
+      await this.knex('streamtest').insert(names)
+    }
     const result = await this.connection.selectTopStream(
       'streamtest',
       [{ field: 'id', dir: 'ASC' }],
@@ -764,7 +764,11 @@ export class DBTestUtil {
       5,
       undefined,
     )
-    expect(result.columns.map(c => c.columnName)).toMatchObject(['id', 'name'])
+    if (this.dbType === 'firebird') {
+      expect(result.columns.map(c => c.columnName)).toMatchObject(['ID', 'NAME'])
+    } else {
+      expect(result.columns.map(c => c.columnName)).toMatchObject(['id', 'name'])
+    }
     expect(result.totalRows).toBe(6)
     const cursor = result.cursor
     await cursor.start()
@@ -863,6 +867,11 @@ export class DBTestUtil {
         table.integer("one").unsigned().notNullable().primary()
       })
     }
+
+    await this.knex.schema.createTable('streamtest', (table) => {
+      primary(table)
+      table.string("name")
+    })
   }
 
   async databaseVersionTest() {

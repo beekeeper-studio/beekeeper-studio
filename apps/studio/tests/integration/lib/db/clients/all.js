@@ -19,8 +19,7 @@ export function runCommonTests(getUtil) {
   })
 
   test("stream tests", async () => {
-    // TODO please recheck if firebird support this
-    if (getUtil().dbType.match(/cockroachdb|firebird/)) {
+    if (getUtil().dbType.match(/cockroachdb/)) {
       return
     }
     await getUtil().streamTests()

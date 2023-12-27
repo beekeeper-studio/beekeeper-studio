@@ -51,6 +51,7 @@ import {
 } from "./firebird/NodeFirebirdWrapper";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { TableKey } from "@shared/lib/dialects/models";
+import { FirebirdCursor } from "./firebird/FirebirdCursor";
 
 type FirebirdResult = {
   rows: any[];
@@ -484,7 +485,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return this.knex.raw(query, params).toString();
   }
 
-  private static buildSelectTopQuery(
+  static buildSelectTopQuery(
     table: string,
     offset?: number,
     limit?: number,
@@ -1020,21 +1021,35 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async getTableLength(table: string, _schema?: string): Promise<number> {
-    const result = await this.pool.query(
+    const result = await this.driverExecuteSingle(
       `SELECT COUNT(*) AS TOTAL FROM ${table}`
     );
-    return result[0]["TOTAL"];
+    return result.rows[0]["TOTAL"];
   }
 
-  selectTopStream(
+  async selectTopStream(
     _db: string,
-    _table: string,
-    _orderBy: OrderBy[],
-    _filters: string | TableFilter[],
-    _chunkSize: number,
+    table: string,
+    orderBy: OrderBy[],
+    filters: string | TableFilter[],
+    chunkSize: number,
     _schema?: string
   ): Promise<StreamResults> {
-    throw new Error("Method not implemented.");
+    const columns = this.listTableColumns("", table);
+    const totalRows = this.getTableLength(table);
+    const cursor = new FirebirdCursor({
+      config: this.firebirdOptions,
+      table,
+      orderBy,
+      filters,
+      chunkSize,
+    });
+
+    return {
+      columns: await columns,
+      totalRows: await totalRows,
+      cursor,
+    };
   }
 
   queryStream(
