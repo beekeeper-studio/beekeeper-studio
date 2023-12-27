@@ -66,7 +66,7 @@ export default Vue.extend({
         // FIXME: Without this tab and enter behave differently
         // in the future we want these to behave like google sheets
         // saving the value and moving to the next row/col respectively
-        e.stopImmediatePropagation()
+        // e.stopImmediatePropagation()
         this.$emit('value', this.value)
       } else if (e.key.startsWith("Arrow")) {
         // this.$emit('value', this.value)
