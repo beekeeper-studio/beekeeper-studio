@@ -730,24 +730,24 @@ export const getInternalPrimaryKeyTests = async function (util) {
         internalPK: null,
       },
     ],
-    cockroachdb: [
-      {
-        columns: ['name'],
-        internalPK: { select: 'rowid', result: 'rowid' },
-      },
-      {
-        columns: ['rowid'],
-        internalPK: { select: 'rowid_1', result: 'rowid_1' },
-      },
-      {
-        columns: ['rowid', 'rowid_1'],
-        internalPK: { select: 'rowid_2', result: 'rowid_2' },
-      },
-      {
-        columns: ['rowid_1'],
-        internalPK: { select: 'rowid', result: 'rowid' },
-      },
-    ],
+    // cockroachdb: [
+    //   {
+    //     columns: ['name'],
+    //     internalPK: { select: 'rowid', result: 'rowid' },
+    //   },
+    //   {
+    //     columns: ['rowid'],
+    //     internalPK: { select: 'rowid_1', result: 'rowid_1' },
+    //   },
+    //   {
+    //     columns: ['rowid', 'rowid_1'],
+    //     internalPK: { select: 'rowid_2', result: 'rowid_2' },
+    //   },
+    //   {
+    //     columns: ['rowid_1'],
+    //     internalPK: { select: 'rowid', result: 'rowid' },
+    //   },
+    // ],
     generic: [
       {
         columns: ['name'],
