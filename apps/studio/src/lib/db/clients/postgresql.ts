@@ -1118,27 +1118,27 @@ export async function getPrimaryKeys(conn: HasPool, _database: string, table: st
   return columns
 }
 
-export async function getInternalPrimaryKey(conn: HasPool, database: string, table: string, schema: string): Promise<InternalPrimaryKey | null> {
-  const version = await getVersion(conn)
-  if (version.isCockroach) {
-    const columns = await listTableColumns(conn, database, table, schema)
-    const rowIds = []
-    columns.forEach((column) => {
-      if (column.columnName.startsWith('rowid')) {
-        rowIds.push(column.columnName)
-      }
-    })
-
-    // Cockroach uses a 'rowid' name that is unused.
-    // And someone might name their columns 'rowid', 'rowid_1', 'rowid_2'
-    // ¯\_(ツ)_/¯
-    for (let i = 0; i < 100; i++) {
-      if (i === 0 && rowIds.includes('rowid')) continue
-      if (rowIds.includes(`rowid_${i}`)) continue
-      const result = i === 0 ? `rowid` : `rowid_${i}`
-      return { select: result, result }
-    }
-  }
+export async function getInternalPrimaryKey(_conn: HasPool, _database: string, _table: string, _schema: string): Promise<InternalPrimaryKey | null> {
+  // const version = await getVersion(conn)
+  // if (version.isCockroach) {
+  //   const columns = await listTableColumns(conn, database, table, schema)
+  //   const rowIds = []
+  //   columns.forEach((column) => {
+  //     if (column.columnName.startsWith('rowid')) {
+  //       rowIds.push(column.columnName)
+  //     }
+  //   })
+  //
+  //   // Cockroach uses a 'rowid' name that is unused.
+  //   // And someone might name their columns 'rowid', 'rowid_1', 'rowid_2'
+  //   // ¯\_(ツ)_/¯
+  //   for (let i = 0; i < 100; i++) {
+  //     if (i === 0 && rowIds.includes('rowid')) continue
+  //     if (rowIds.includes(`rowid_${i}`)) continue
+  //     const result = i === 0 ? `rowid` : `rowid_${i}`
+  //     return { select: result, result }
+  //   }
+  // }
   return null
 }
 

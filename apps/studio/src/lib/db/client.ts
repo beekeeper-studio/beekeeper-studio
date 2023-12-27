@@ -76,7 +76,7 @@ export interface DatabaseClient {
   listMaterializedViews: (filter?: FilterOptions) => Promise<TableOrView[]>,
   getPrimaryKey: (db: string, table: string, schema?: string) => Promise<string | null>,
   getPrimaryKeys: (db: string, table: string, schema?: string) => Promise<PrimaryKeyColumn[]>,
-  getInternalPrimaryKey: (db: string, table: string, schema?: string) => Promise<InternalPrimaryKey>,
+  getInternalPrimaryKey: (db: string, table: string, schema?: string) => Promise<InternalPrimaryKey | null>,
   // for tabletable
   getTableLength(table: string, schema?: string): Promise<number>
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema?: string, selects?: string[]): Promise<TableResult>,

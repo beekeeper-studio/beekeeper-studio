@@ -83,8 +83,9 @@ export abstract class BasicDatabaseClient<RawResultType> implements DatabaseClie
   abstract getPrimaryKeys(db: string, table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
 
   /**
-   * This method assumes that the table does not have a primary key.
-   * It does not check whether the table has a primary key or not.
+   * This is currently used for updating rows in case the provided table
+   * doesn't have a user defined primary key. If the database must not support
+   * updating rows with internal primary keys, this must return null.
    * */
   abstract getInternalPrimaryKey(db: string, table: string, schema?: string): Promise<InternalPrimaryKey | null>;
   abstract getTableLength(table: string, schema?: string): Promise<number>;
