@@ -78,9 +78,49 @@ const context = {
   },
 };
 
+const FIELD_TYPE_QUERY = (
+  fieldType: string,
+  subType: string,
+  fieldScale: string
+) => `
+  CASE ${fieldType}
+    WHEN 7 THEN 'SMALLINT'
+    WHEN 8 THEN
+      CASE ${subType}
+        WHEN 2 THEN 'DECIMAL'
+        ELSE 'INTEGER'
+      END
+    WHEN 10 THEN 'FLOAT'
+    WHEN 12 THEN 'DATE'
+    WHEN 13 THEN 'TIME'
+    WHEN 14 THEN 'CHAR'
+    WHEN 16 THEN
+      CASE ${fieldScale}
+        WHEN 0 THEN 'BIGINT'
+        ELSE 'DOUBLE'
+      END
+    WHEN 23 THEN 'BOOLEAN'
+    WHEN 24 THEN 'DECFLOAT(16)'
+    WHEN 25 THEN 'DECFLOAT(16)'
+    WHEN 26 THEN 'INT128'
+    WHEN 27 THEN 'DOUBLE PRECISION'
+    WHEN 28 THEN 'TIME WITH TIME ZONE'
+    WHEN 29 THEN 'TIMESTAMP WITH TIME ZONE'
+    WHEN 35 THEN 'TIMESTAMP'
+    WHEN 37 THEN 'VARCHAR'
+    WHEN 261 THEN 'BLOB'
+
+    WHEN 9 THEN 'QUAD'
+    WHEN 11 THEN 'D_FLOAT'
+    WHEN 27 THEN 'DOUBLE'
+    WHEN 40 THEN 'CSTRING'
+
+    ELSE 'UNKNOWN'
+  END
+`;
+
 function identifyCommands(queryText: string) {
   try {
-    // FIXME: sql-query-identifier does not support firebird
     return identify(queryText, { strict: false, dialect: "generic" });
   } catch (err) {
     log.error(err);
@@ -260,40 +300,11 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         r.rdb$field_position RDB$FIELD_POSITION,
         r.rdb$description RDB$DESCRIPTION,
 
-        TRIM(CASE f.rdb$field_type
-          WHEN 7 THEN 'SMALLINT'
-          WHEN 8 THEN
-            CASE f.rdb$field_sub_type
-              WHEN 2 THEN 'DECIMAL'
-              ELSE 'INTEGER'
-            END
-          WHEN 10 THEN 'FLOAT'
-          WHEN 12 THEN 'DATE'
-          WHEN 13 THEN 'TIME'
-          WHEN 14 THEN 'CHAR'
-          WHEN 16 THEN
-            CASE f.rdb$field_scale
-              WHEN 0 THEN 'BIGINT'
-              ELSE 'DOUBLE'
-            END
-          WHEN 23 THEN 'BOOLEAN'
-          WHEN 24 THEN 'DECFLOAT(16)'
-          WHEN 25 THEN 'DECFLOAT(16)'
-          WHEN 26 THEN 'INT128'
-          WHEN 27 THEN 'DOUBLE PRECISION'
-          WHEN 28 THEN 'TIME WITH TIME ZONE'
-          WHEN 29 THEN 'TIMESTAMP WITH TIME ZONE'
-          WHEN 35 THEN 'TIMESTAMP'
-          WHEN 37 THEN 'VARCHAR'
-          WHEN 261 THEN 'BLOB'
-
-          WHEN 9 THEN 'QUAD'
-          WHEN 11 THEN 'D_FLOAT'
-          WHEN 27 THEN 'DOUBLE'
-          WHEN 40 THEN 'CSTRING'
-
-          ELSE 'UNKNOWN'
-        END) AS field_type,
+        TRIM(${FIELD_TYPE_QUERY(
+          "f.rdb$field_type",
+          "f.rdb$field_sub_type",
+          "f.rdb$field_scale"
+        )}) AS field_type,
 
         f.rdb$field_sub_type rdb$field_sub_type,
         r.rdb$default_source rdb$default_source,
@@ -398,7 +409,86 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   }
 
   async listRoutines(_filter?: FilterOptions): Promise<Routine[]> {
-    return []; // TODO
+    const results = await this.driverExecuteMultiple(`
+      SELECT
+        TRIM(RDB$PROCEDURE_ID) AS ROUTINE_ID,
+        TRIM(RDB$PROCEDURE_NAME) AS ROUTINE_NAME,
+        TRIM('procedure') AS ROUTINE_TYPE,
+        NULL AS RETURN_ARG
+      FROM RDB$PROCEDURES
+      UNION ALL
+      SELECT
+        TRIM(RDB$FUNCTION_ID) AS ROUTINE_ID,
+        TRIM(RDB$FUNCTION_NAME) AS ROUTINE_NAME,
+        TRIM('function') AS ROUTINE_TYPE,
+        RDB$RETURN_ARGUMENT AS RETURN_ARG
+      FROM RDB$FUNCTIONS;
+
+      SELECT
+        TRIM(RDB$PARAMETER_NAME) AS PARAMETER_NAME,
+        TRIM(RDB$PROCEDURE_NAME) AS ROUTINE_NAME,
+        TRIM(CASE RDB$PARAMETER_TYPE
+          WHEN 0 THEN 'in'
+          WHEN 1 THEN 'out'
+        END) AS PARAMETER_TYPE,
+        TRIM('procedure') AS ROUTINE_TYPE,
+        NULL AS ARGUMENT_POSITION
+      FROM RDB$PROCEDURE_PARAMETERS
+      UNION ALL
+      SELECT
+        TRIM(RDB$ARGUMENT_NAME) AS PARAMETER_NAME,
+        TRIM(RDB$FUNCTION_NAME) AS ROUTINE_NAME,
+        (
+          SELECT TRIM(${FIELD_TYPE_QUERY(
+            "fl.RDB$FIELD_TYPE",
+            "fl.RDB$FIELD_SUB_TYPE",
+            "fl.RDB$FIELD_SCALE"
+          )})
+          FROM RDB$FIELDS fl
+          WHERE fl.RDB$FIELD_NAME = RDB$FIELD_SOURCE
+        ) AS PARAMETER_TYPE, -- TODO handle legacy types too
+        TRIM('function') AS ROUTINE_TYPE,
+        RDB$ARGUMENT_POSITION AS ARGUMENT_POSITION
+      FROM RDB$FUNCTION_ARGUMENTS;
+    `);
+
+    const routines = results[0].rows;
+    const params = results[1].rows;
+
+    return routines.map((routine) => {
+      const id = routine["ROUTINE_ID"];
+      const name = routine["ROUTINE_NAME"];
+      const type = routine["ROUTINE_TYPE"];
+      const returnType =
+        type === "function"
+          ? params.find(
+              (param) =>
+                param["ROUTINE_NAME"] === routine["ROUTINE_NAME"] &&
+                param["ARGUMENT_POSITION"] === routine["RETURN_ARG"]
+            )?.PARAMETER_TYPE
+          : undefined;
+
+      const routineParams = params
+        .filter(
+          (param) =>
+            param["ROUTINE_NAME"] === routine["ROUTINE_NAME"] &&
+            param["ROUTINE_TYPE"] === routine["ROUTINE_TYPE"] &&
+            param["PARAMETER_NAME"] !== null
+        )
+        .map((param) => ({
+          name: param["PARAMETER_NAME"],
+          type: param["PARAMETER_TYPE"],
+        }));
+
+      return {
+        id,
+        name,
+        type,
+        returnType,
+        entityType: "routine",
+        routineParams,
+      };
+    });
   }
 
   async getPrimaryKey(

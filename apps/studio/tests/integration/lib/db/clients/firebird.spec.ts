@@ -131,4 +131,32 @@ describe("Firebird Tests", () => {
       expect(result.rows).toStrictEqual([{ A: 1 }]);
     });
   });
+
+  it("should fetch routines correctly", async () => {
+    const routines = await util.connection.listRoutines();
+    expect(routines[0]).toMatchObject({
+      id: "1",
+      name: "TRANSITIONS",
+      type: "procedure",
+      entityType: "routine",
+      routineParams: [
+        { name: "RDB$TIME_ZONE_NAME", type: "in" },
+        { name: "RDB$FROM_TIMESTAMP", type: "in" },
+        { name: "RDB$TO_TIMESTAMP", type: "in" },
+        { name: "RDB$START_TIMESTAMP", type: "out" },
+        { name: "RDB$END_TIMESTAMP", type: "out" },
+        { name: "RDB$ZONE_OFFSET", type: "out" },
+        { name: "RDB$DST_OFFSET", type: "out" },
+        { name: "RDB$EFFECTIVE_OFFSET", type: "out" },
+      ],
+    });
+    expect(routines[1]).toMatchObject({
+      id: "1",
+      name: "DATABASE_VERSION",
+      type: "function",
+      returnType: "VARCHAR",
+      entityType: "routine",
+      routineParams: [],
+    });
+  });
 });
