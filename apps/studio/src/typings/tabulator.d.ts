@@ -10,6 +10,8 @@ declare module "tabulator-tables" {
       getColumns(): Tabulator.ColumnComponent[];
       getTop(): number;
       getBottom(): number;
+      getLeft(): number;
+      getRight(): number;
     }
 
     export class CellComponent {
