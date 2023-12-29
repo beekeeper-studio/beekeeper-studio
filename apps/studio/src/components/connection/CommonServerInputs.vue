@@ -162,10 +162,14 @@
       <div class="col s6 form-group">
         <label for="password">Password</label>
         <input
-          type="password"
+          :type="togglePasswordInputType"
           v-model="config.password"
-          class="form-control"
+          class="password form-control"
         >
+        <i
+          @click.prevent="togglePassword"
+          class="material-icons password-icon"
+        >{{ togglePasswordIcon }}</i>
       </div>
     </div>
     <slot />
@@ -194,6 +198,7 @@ import { findClient } from '@/lib/db/clients'
     data() {
       return {
         sslToggled: false,
+        showPassword: false,
       }
     },
     computed: {
@@ -202,6 +207,12 @@ import { findClient } from '@/lib/db/clients'
       },
       toggleIcon() {
         return this.sslToggled ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
+      },
+      togglePasswordIcon() {
+        return this.showPassword ? "visibility_off" : "visibility"
+      },
+      togglePasswordInputType() {
+        return this.showPassword ? "text" : "password"
       },
       supportsSocketPath() {
         return findClient(this.config.connectionType).supportsSocketPath
@@ -226,6 +237,9 @@ import { findClient } from '@/lib/db/clients'
       },
       toggleSslAdvanced() {
         this.sslToggled = !this.sslToggled;
+      },
+      togglePassword() {
+        this.showPassword = !this.showPassword
       }
     },
     mounted() {
