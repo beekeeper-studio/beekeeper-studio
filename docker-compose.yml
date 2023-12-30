@@ -115,10 +115,11 @@ services:
   firebird:
     image: jacobalberty/firebird:v4.0.1
     volumes:
-      - ./dev/docker_firebird/sakila.fdb:/firebird/data/sakila.fdb
+      - ./dev/docker_firebird:/docker_init
     ports:
       - 3050:3050
     environment:
       - ISC_PASSWORD=masterkey
       - EnableLegacyClientAuth=true
+    command: sh -c 'chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /usr/local/firebird/docker-entrypoint.sh firebird;'
 
