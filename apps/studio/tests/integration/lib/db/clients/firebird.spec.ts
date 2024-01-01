@@ -57,6 +57,9 @@ describe("Firebird Tests", () => {
     const options: Options = {
       dialect: "firebird",
       skipPkQuote: true,
+      knexConnectionOptions: {
+        lowercase_keys: true,
+      },
     };
     const database = "/firebird/data/defaultdb.fdb";
 
@@ -92,7 +95,7 @@ describe("Firebird Tests", () => {
     });
 
     it("can create a new database", async () => {
-      createDatabase(config);
+      await createDatabase(config);
       expect(true).toBe(true);
     });
 

@@ -15,19 +15,21 @@ import { safeSqlFormat } from '../../src/common/utils'
 import knexFirebirdDialect from 'knex-firebird-dialect'
 
 /*
- * Make a new object consisting of uppercased properties if needed. This is
- * helpful to even out column names between databases especially for Firebird
- * where the column names (identifiers) are not case-sensitive and always
- * uppercased.
+ * Make all properties lowercased. This is useful to even out column names
+ * between databases especially for Firebird where the column names
+ * (or any identifiers) are always uppercased and not case-sensitive.
  **/
-export function transformObj(util: DBTestUtil, obj: any) {
-  if (util.connection.connectionType === 'firebird') {
-    return Object.entries(obj).reduce((acc, [key, value]) => {
-      acc[key.toUpperCase()] = value
+export function rowobj(row: any) {
+  function modify(o: any) {
+    return Object.entries(o).reduce((acc, [key, value]) => {
+      acc[key.toLowerCase()] = value
       return acc
     }, {})
   }
-  return obj
+  if (Array.isArray(row)) {
+    return row.map(modify)
+  }
+  return modify(row)
 }
 
 
@@ -46,7 +48,7 @@ export interface Options {
   defaultSchema?: string
   version?: string,
   skipPkQuote?: boolean
-  knexConnectionConfig?: Record<string, any>
+  knexConnectionOptions?: Record<string, any>
 }
 
 export class DBTestUtil {
@@ -98,7 +100,7 @@ export class DBTestUtil {
           user: config.user || undefined,
           password: config.password || undefined,
           database,
-          ...options.knexConnectionConfig,
+          ...options.knexConnectionOptions,
         },
         pool: { min: 0, max: 50 }
       })
@@ -127,7 +129,7 @@ export class DBTestUtil {
     await this.createTables()
     const address = this.maybeArrayToObject(await this.knex("addresses").insert({country: "US"}).returning("id"), 'id')
     await this.knex("MixedCase").insert({bananas: "pears"}).returning("id")
-    const people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: this.dbType === 'firebird' ? address[0].ID : address[0].id}).returning("id"), 'id')
+    const people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0].id}).returning("id"), 'id')
     const jobs = this.maybeArrayToObject(await this.knex("jobs").insert({job_name: "Programmer"}).returning("id"), 'id')
 
     this.jobId = jobs[0].id || jobs[0].ID
@@ -513,24 +515,24 @@ export class DBTestUtil {
 
   async columnFilterTests() {
     let r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema)
-    expect(r.result).toEqual([transformObj(this, {
+    expect(rowobj(r.result)).toEqual([{
       // integer equality tests need additional logic for sqlite's BigInts (Issue #1399)
       person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
       job_id: this.dbType === 'sqlite' ? BigInt(this.jobId) : this.jobId,
       created_at: null,
       updated_at: null,
-    })])
+    }])
 
     r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id'])
-    expect(r.result).toEqual([transformObj(this, {
+    expect(rowobj(r.result)).toEqual([{
       person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
-    })])
+    }])
 
     r = await this.connection.selectTop("people_jobs", 0, 10, [], [], this.defaultSchema, ['person_id', 'job_id'])
-    expect(r.result).toEqual([transformObj(this, {
+    expect(rowobj(r.result)).toEqual([{
       person_id: this.dbType === 'sqlite' ? BigInt(this.personId) : this.personId,
       job_id: this.dbType === 'sqlite' ? BigInt(this.jobId) : this.jobId,
-    })])
+    }])
   }
 
   async triggerTests() {
@@ -555,7 +557,6 @@ export class DBTestUtil {
   }
 
   async queryTests() {
-    const total = this.dbType === 'firebird' ? 'TOTAL' : 'total'
     const q = await this.connection.query(
       this.dbType === 'firebird' ?
         "select trim('a') as total, trim('b') as total from rdb$database" :
@@ -565,8 +566,8 @@ export class DBTestUtil {
     const result = await q.execute()
 
     expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
-    const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name}))
-    expect(fields).toMatchObject([{id: 'c0', name: total}, {id: 'c1', name: total}])
+    const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name.toLowerCase()}))
+    expect(fields).toMatchObject([{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}])
 
     const q2 = await this.connection.query(
       this.dbType === 'firebird' ?
@@ -577,8 +578,8 @@ export class DBTestUtil {
     const r2 = await q2.execute()
     expect(r2[0].rows).toMatchObject([{c0: "a"}])
     expect(r2[1].rows).toMatchObject([{c0: 'b'}])
-    expect(r2[0].fields.map((f: any) => [f.id, f.name])).toMatchObject([['c0', this.dbType === 'firebird' ? 'A' : 'a']])
-    expect(r2[1].fields.map((f: any) => [f.id, f.name])).toMatchObject([['c0', this.dbType === 'firebird' ? 'B' : 'b']])
+    expect(r2[0].fields.map((f: any) => [f.id, f.name.toLowerCase()])).toMatchObject([['c0', 'a']])
+    expect(r2[1].fields.map((f: any) => [f.id, f.name.toLowerCase()])).toMatchObject([['c0', 'b']])
 
   }
 
@@ -766,11 +767,7 @@ export class DBTestUtil {
       5,
       undefined,
     )
-    if (this.dbType === 'firebird') {
-      expect(result.columns.map(c => c.columnName)).toMatchObject(['ID', 'NAME'])
-    } else {
-      expect(result.columns.map(c => c.columnName)).toMatchObject(['id', 'name'])
-    }
+    expect(result.columns.map(c => c.columnName.toLowerCase())).toMatchObject(['id', 'name'])
     expect(result.totalRows).toBe(6)
     const cursor = result.cursor
     await cursor.start()
@@ -787,8 +784,6 @@ export class DBTestUtil {
 
   private async createTables() {
 
-    const useTimestamps = this.dbType === 'firebird'
-
     const primary = (table: Knex.CreateTableBuilder) => {
       if (this.dbType === 'firebird') {
         table.specificType('id', 'integer generated by default as identity primary key')
@@ -797,17 +792,9 @@ export class DBTestUtil {
       }
     }
 
-    const timestamps = (table: Knex.CreateTableBuilder) => {
-      if (this.dbType === 'firebird') {
-        table.timestamps(true)
-      } else {
-        table.timestamps()
-      }
-    }
-
     await this.knex.schema.createTable('addresses', (table) => {
       primary(table)
-      timestamps(table)
+      table.timestamps(true)
       table.string("street")
       table.string("city")
       table.string("state")
@@ -826,7 +813,7 @@ export class DBTestUtil {
 
     await this.knex.schema.createTable("people", (table) => {
       primary(table)
-      table.timestamps(useTimestamps)
+      table.timestamps(true)
       table.string("firstname")
       table.string("lastname")
       table.string("email").notNullable()
@@ -836,7 +823,7 @@ export class DBTestUtil {
 
     await this.knex.schema.createTable("jobs", (table) => {
       primary(table)
-      table.timestamps(useTimestamps)
+      table.timestamps(true)
       table.string("job_name").notNullable()
       table.decimal("hourly_rate")
     })
@@ -854,7 +841,7 @@ export class DBTestUtil {
       table.foreign("person_id").references("people.id")
       table.foreign("job_id").references("jobs.id")
       table.primary(['person_id', "job_id"])
-      timestamps(table)
+      table.timestamps(true)
     })
 
     await this.knex.schema.createTable('with_composite_pk', (table) => {
@@ -863,7 +850,7 @@ export class DBTestUtil {
       table.primary(["id1", "id2"])
     })
 
-    // Firebird does not support special chars in identifiers
+    // Firebird doesn't support special chars in identifiers except $ and _
     if (this.dbType !== 'firebird') {
       await this.knex.schema.createTable("tablewith'char", (table) => {
         table.integer("one").unsigned().notNullable().primary()

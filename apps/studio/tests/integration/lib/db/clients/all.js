@@ -1,5 +1,3 @@
-import { transformObj } from '../../../../lib/db'
-
 export function runCommonTests(getUtil) {
 
   test("get database version should work", async() => {
@@ -19,7 +17,7 @@ export function runCommonTests(getUtil) {
   })
 
   test("stream tests", async () => {
-    if (getUtil().dbType.match(/cockroachdb/)) {
+    if (getUtil().dbType === 'cockroachdb') {
       return
     }
     await getUtil().streamTests()
@@ -201,8 +199,8 @@ const prepareTestTable = async function(util) {
   await util.knex.schema.dropTableIfExists("test_inserts")
   await util.knex.schema.createTable("test_inserts", (table) => {
     table.integer("id").primary().notNullable()
-    table.specificType("firstName", "varchar(255)")
-    table.specificType("lastName", "varchar(255)")
+    table.specificType("first_name", "varchar(255)")
+    table.specificType("last_name", "varchar(255)")
   })
 }
 
@@ -215,8 +213,8 @@ export const itShouldInsertGoodData = async function(util) {
       schema: util.options.defaultSchema,
       data: [{
         id: 1,
-        firstName: 'Terry',
-        lastName: 'Tester'
+        first_name: 'Terry',
+        last_name: 'Tester'
       }]
     },
     {
@@ -224,8 +222,8 @@ export const itShouldInsertGoodData = async function(util) {
       schema: util.options.defaultSchema,
       data: [{
         id: 2,
-        firstName: 'John',
-        lastName: 'Doe'
+        first_name: 'John',
+        last_name: 'Doe'
       }]
     }
   ]
@@ -243,8 +241,8 @@ export const itShouldNotInsertBadData = async function(util) {
       schema: util.options.defaultSchema,
       data: [{
         id: 1,
-        firstName: 'Terry',
-        lastName: 'Tester'
+        first_name: 'Terry',
+        last_name: 'Tester'
       }]
     },
     {
@@ -252,8 +250,8 @@ export const itShouldNotInsertBadData = async function(util) {
       schema: util.options.defaultSchema,
       data: [{
         id: 1,
-        firstName: 'John',
-        lastName: 'Doe'
+        first_name: 'John',
+        last_name: 'Doe'
       }]
     }
   ]
@@ -274,8 +272,8 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
         schema: util.options.defaultSchema,
         data: [{
           id: 1,
-          firstName: 'Tom',
-          lastName: 'Tester'
+          first_name: 'Tom',
+          last_name: 'Tester'
         }]
       },
       {
@@ -283,8 +281,8 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
         schema: util.options.defaultSchema,
         data: [{
           id: 2,
-          firstName: 'Jane',
-          lastName: 'Doe'
+          first_name: 'Jane',
+          last_name: 'Doe'
         }]
       }
     ],
@@ -298,7 +296,7 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
             value: 1
           }
         ],
-        column: 'firstName',
+        column: 'first_name',
         value: 'Testy'
       }
     ],
@@ -319,14 +317,14 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
   expect(results.length).toBe(1)
   const firstResult = { ...results[0] }
   // hack for cockroachdb
-  if (util.dbType !== 'firebird') {
+  if (util.dbType === 'cockroachdb') {
     firstResult.id = Number(firstResult.id)
   }
-  expect(firstResult).toStrictEqual(transformObj(util, {
+  expect(firstResult).toStrictEqual({
     id: 1,
-    firstName: 'Testy',
-    lastName: 'Tester'
-  }))
+    first_name: 'Testy',
+    last_name: 'Tester'
+  })
 }
 
 export const itShouldNotCommitOnChangeError = async function(util) {
@@ -337,8 +335,8 @@ export const itShouldNotCommitOnChangeError = async function(util) {
       schema: util.options.defaultSchema,
       data: [{
         id: 1,
-        firstName: 'Terry',
-        lastName: 'Tester'
+        first_name: 'Terry',
+        last_name: 'Tester'
       }]
     }
   ]
@@ -351,8 +349,8 @@ export const itShouldNotCommitOnChangeError = async function(util) {
         schema: util.options.defaultSchema,
         data: [{
           id: 2,
-          firstName: 'Tom',
-          lastName: 'Tester'
+          first_name: 'Tom',
+          last_name: 'Tester'
         }]
       },
       {
@@ -360,8 +358,8 @@ export const itShouldNotCommitOnChangeError = async function(util) {
         schema: util.options.defaultSchema,
         data: [{
           id: 3,
-          firstName: 'Jane',
-          lastName: 'Doe'
+          first_name: 'Jane',
+          last_name: 'Doe'
         }]
       }
     ],
@@ -393,14 +391,14 @@ export const itShouldNotCommitOnChangeError = async function(util) {
   expect(results.length).toBe(1)
   const firstResult = { ...results[0]}
   // hack for cockroachdb
-  if (util.dbType !== 'firebird') {
+  if (util.dbType === 'cockroachdb') {
     firstResult.id = Number(firstResult.id)
   }
-  expect(firstResult).toStrictEqual(transformObj(util, {
+  expect(firstResult).toStrictEqual({
     id: 1,
-    firstName: 'Terry',
-    lastName: 'Tester'
-  }))
+    first_name: 'Terry',
+    last_name: 'Tester'
+  })
 
 }
 
@@ -412,8 +410,8 @@ const prepareTestTableCompositePK = async function(util) {
     table.integer("id1").notNullable().unsigned()
     table.integer("id2").notNullable().unsigned()
     table.primary(["id1", "id2"])
-    table.specificType("firstName", "varchar(255)")
-    table.specificType("lastName", "varchar(255)")
+    table.specificType("first_name", "varchar(255)")
+    table.specificType("last_name", "varchar(255)")
   })
 }
 
@@ -427,8 +425,8 @@ export const itShouldInsertGoodDataCompositePK = async function(util) {
       data: [{
         id1: 1,
         id2: 1,
-        firstName: 'Terry',
-        lastName: 'Tester'
+        first_name: 'Terry',
+        last_name: 'Tester'
       }]
     },
     {
@@ -437,8 +435,8 @@ export const itShouldInsertGoodDataCompositePK = async function(util) {
       data: [{
         id1: 1,
         id2: 2,
-        firstName: 'John',
-        lastName: 'Doe'
+        first_name: 'John',
+        last_name: 'Doe'
       }]
     },
     {
@@ -447,8 +445,8 @@ export const itShouldInsertGoodDataCompositePK = async function(util) {
       data: [{
         id1: 2,
         id2: 1,
-        firstName: 'Jane',
-        lastName: 'Doe'
+        first_name: 'Jane',
+        last_name: 'Doe'
       }]
     }
   ]
@@ -467,8 +465,8 @@ export const itShouldNotInsertBadDataCompositePK = async function(util) {
       data: [{
         id1: 1,
         id2: 1,
-        firstName: 'Terry',
-        lastName: 'Tester'
+        first_name: 'Terry',
+        last_name: 'Tester'
       }]
     },
     {
@@ -477,8 +475,8 @@ export const itShouldNotInsertBadDataCompositePK = async function(util) {
       data: [{
         id1: 1,
         id2: 1,
-        firstName: 'John',
-        lastName: 'Doe'
+        first_name: 'John',
+        last_name: 'Doe'
       }]
     }
   ]
@@ -499,8 +497,8 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
         data: [{
           id1: 1,
           id2: 1,
-          firstName: 'Tom',
-          lastName: 'Tester'
+          first_name: 'Tom',
+          last_name: 'Tester'
         }]
       },
       {
@@ -509,8 +507,8 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
         data: [{
           id1: 1,
           id2: 2,
-          firstName: 'Jane',
-          lastName: 'Doe'
+          first_name: 'Jane',
+          last_name: 'Doe'
         }]
       },
       {
@@ -519,8 +517,8 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
         data: [{
           id1: 2,
           id2: 1,
-          firstName: 'John',
-          lastName: 'Doe'
+          first_name: 'John',
+          last_name: 'Doe'
         }]
       }
     ],
@@ -532,7 +530,7 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
           { column: 'id1', value: 1},
           { column: 'id2', value: 1}
         ],
-        column: 'firstName',
+        column: 'first_name',
         value: 'Testy'
       },
       {
@@ -542,7 +540,7 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
           { column: 'id1', value: 2},
           { column: 'id2', value: 1}
         ],
-        column: 'firstName',
+        column: 'first_name',
         value: 'Tester'
       }
     ],
@@ -567,26 +565,26 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
   const secondResult = { ...results[1] }
 
   // hack for cockroachdb
-  if (util.dbType !== 'firebird') {
+  if (util.dbType === 'cockroachdb') {
     firstResult.id1 = Number(firstResult.id1)
     firstResult.id2 = Number(firstResult.id2)
     secondResult.id1 = Number(secondResult.id1)
     secondResult.id2 = Number(secondResult.id2)
   }
 
-  expect(firstResult).toStrictEqual(transformObj(util, {
+  expect(firstResult).toStrictEqual({
     id1: 1,
     id2: 1,
-    firstName: 'Testy',
-    lastName: 'Tester'
-  }))
+    first_name: 'Testy',
+    last_name: 'Tester'
+  })
 
-  expect(secondResult).toStrictEqual(transformObj(util, {
+  expect(secondResult).toStrictEqual({
     id1: 2,
     id2: 1,
-    firstName: 'Tester',
-    lastName: 'Doe'
-  }))
+    first_name: 'Tester',
+    last_name: 'Doe'
+  })
 }
 
 export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
@@ -598,8 +596,8 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
       data: [{
         id1: 1,
         id2: 1,
-        firstName: 'Terry',
-        lastName: 'Tester'
+        first_name: 'Terry',
+        last_name: 'Tester'
       }]
     }
   ]
@@ -613,8 +611,8 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
         data: [{
           id1: 1,
           id2: 2,
-          firstName: 'Tom',
-          lastName: 'Tester'
+          first_name: 'Tom',
+          last_name: 'Tester'
         }]
       },
       {
@@ -623,8 +621,8 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
         data: [{
           id1: 2,
           id2: 1,
-          firstName: 'Jane',
-          lastName: 'Doe'
+          first_name: 'Jane',
+          last_name: 'Doe'
         }]
       }
     ],
@@ -660,17 +658,17 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
   const firstResult = { ...results[0]}
 
   // hack for cockroachdb
-  if (util.dbType !== 'firebird') {
+  if (util.dbType === 'cockroachdb') {
     firstResult.id1 = Number(firstResult.id1)
     firstResult.id2 = Number(firstResult.id2)
   }
 
-  expect(firstResult).toStrictEqual(transformObj(util, {
+  expect(firstResult).toStrictEqual({
     id1: 1,
     id2: 1,
-    firstName: 'Terry',
-    lastName: 'Tester'
-  }))
+    first_name: 'Terry',
+    last_name: 'Tester'
+  })
 
 }
 
@@ -682,8 +680,8 @@ export const itShouldGenerateSQLForAllChanges = function(util) {
         schema: util.options.defaultSchema,
         data: [{
           id: 1,
-          firstName: 'Tom',
-          lastName: 'Tester'
+          first_name: 'Tom',
+          last_name: 'Tester'
         }]
       },
       {
@@ -691,8 +689,8 @@ export const itShouldGenerateSQLForAllChanges = function(util) {
         schema: util.options.defaultSchema,
         data: [{
           id: 2,
-          firstName: 'Jane',
-          lastName: 'Doe'
+          first_name: 'Jane',
+          last_name: 'Doe'
         }]
       }
     ],
@@ -706,7 +704,7 @@ export const itShouldGenerateSQLForAllChanges = function(util) {
             value: 1
           }
         ],
-        column: 'firstName',
+        column: 'first_name',
         value: 'Testy'
       }
     ],
