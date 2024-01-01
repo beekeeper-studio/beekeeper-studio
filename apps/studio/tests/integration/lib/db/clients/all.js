@@ -316,9 +316,7 @@ export const itShouldApplyAllTypesOfChanges = async function(util) {
   expect(results.length).toBe(1)
   const firstResult = { ...results[0] }
   // hack for cockroachdb
-  if (util.dbType === 'cockroachdb') {
-    firstResult.id = Number(firstResult.id)
-  }
+  firstResult.id = Number(firstResult.id)
   expect(firstResult).toStrictEqual({
     id: 1,
     first_name: 'Testy',
@@ -390,9 +388,7 @@ export const itShouldNotCommitOnChangeError = async function(util) {
   expect(results.length).toBe(1)
   const firstResult = { ...results[0]}
   // hack for cockroachdb
-  if (util.dbType === 'cockroachdb') {
-    firstResult.id = Number(firstResult.id)
-  }
+  firstResult.id = Number(firstResult.id)
   expect(firstResult).toStrictEqual({
     id: 1,
     first_name: 'Terry',
@@ -564,12 +560,10 @@ export const itShouldApplyAllTypesOfChangesCompositePK = async function(util) {
   const secondResult = { ...results[1] }
 
   // hack for cockroachdb
-  if (util.dbType === 'cockroachdb') {
-    firstResult.id1 = Number(firstResult.id1)
-    firstResult.id2 = Number(firstResult.id2)
-    secondResult.id1 = Number(secondResult.id1)
-    secondResult.id2 = Number(secondResult.id2)
-  }
+  firstResult.id1 = Number(firstResult.id1)
+  firstResult.id2 = Number(firstResult.id2)
+  secondResult.id1 = Number(secondResult.id1)
+  secondResult.id2 = Number(secondResult.id2)
 
   expect(firstResult).toStrictEqual({
     id1: 1,
@@ -657,10 +651,8 @@ export const itShouldNotCommitOnChangeErrorCompositePK = async function(util) {
   const firstResult = { ...results[0]}
 
   // hack for cockroachdb
-  if (util.dbType === 'cockroachdb') {
-    firstResult.id1 = Number(firstResult.id1)
-    firstResult.id2 = Number(firstResult.id2)
-  }
+  firstResult.id1 = Number(firstResult.id1)
+  firstResult.id2 = Number(firstResult.id2)
 
   expect(firstResult).toStrictEqual({
     id1: 1,
