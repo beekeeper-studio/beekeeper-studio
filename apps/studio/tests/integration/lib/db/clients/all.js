@@ -259,7 +259,6 @@ export const itShouldNotInsertBadData = async function(util) {
   await expect(util.connection.applyChanges({ inserts: inserts })).rejects.toThrow()
 
   const results = await util.knex.select().table('test_inserts')
-
   expect(results.length).toBe(0)
 }
 

@@ -132,8 +132,8 @@ export class DBTestUtil {
     const people = this.maybeArrayToObject(await this.knex("people").insert({ email: "foo@bar.com", address_id: address[0].id}).returning("id"), 'id')
     const jobs = this.maybeArrayToObject(await this.knex("jobs").insert({job_name: "Programmer"}).returning("id"), 'id')
 
-    this.jobId = jobs[0].id || jobs[0].ID
-    this.personId = people[0].id || people[0].ID
+    this.jobId = jobs[0].id
+    this.personId = people[0].id
     await this.knex("people_jobs").insert({job_id: this.jobId, person_id: this.personId })
   }
 
@@ -168,7 +168,7 @@ export class DBTestUtil {
     const dbs = await this.connection.listDatabases()
     const collation = 'utf8_general_ci'
     let charset = 'utf8'
-    if (this.dbType.match(/postgresql|firebird/)) {
+    if (this.dbType === 'postgresql') {
       charset = 'UTF8'
     }
     await this.connection.createDatabase('new-db_2', charset, collation)
@@ -441,10 +441,13 @@ export class DBTestUtil {
 
     const tbl = (o: Record<keyof MiniColumn, any>) => {
       let columnName = o.columnName
-      if (this.dbType === 'firebird') columnName = columnName.toUpperCase()
-
       let dataType = o.dataType
-      if (this.dbType === 'firebird') dataType = dataType.toUpperCase()
+
+      if (this.dbType === 'firebird') {
+        columnName = columnName.toUpperCase()
+        dataType = dataType.toUpperCase()
+      }
+
 
       return {
         columnName,
@@ -541,10 +544,9 @@ export class DBTestUtil {
   }
 
   async primaryKeyTests() {
-    const ID = this.dbType === 'firebird' ? 'ID' : 'id'
     // primary key tests
     let pk = await this.connection.getPrimaryKey("people", this.defaultSchema)
-    expect(pk).toBe(ID)
+    expect(pk.toLowerCase()).toBe('id')
 
     if (!this.options.skipPkQuote) {
       pk = await this.connection.getPrimaryKey("tablewith'char", this.defaultSchema)
