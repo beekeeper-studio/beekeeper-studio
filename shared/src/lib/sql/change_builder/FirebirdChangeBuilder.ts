@@ -1,6 +1,6 @@
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
-import { CreateIndexSpec, Dialect } from "@shared/lib/dialects/models";
+import { AlterTableSpec, CreateIndexSpec, Dialect } from "@shared/lib/dialects/models";
 
 export class FirebirdChangeBuilder extends ChangeBuilderBase {
   dialect: Dialect = 'firebird'
@@ -33,5 +33,19 @@ export class FirebirdChangeBuilder extends ChangeBuilderBase {
 
   alterType(column: string, newType: string) {
     return `ALTER COLUMN ${column} TYPE ${newType}`
+  }
+
+  alterDefault(column: string, newDefault: string | boolean | null) {
+    if (newDefault === null) {
+      return `ALTER COLUMN ${this.wrapIdentifier(column)} DROP DEFAULT`
+    } else {
+      return `ALTER COLUMN ${this.wrapIdentifier(column)} SET DEFAULT ${newDefault.toString()}`
+    }
+  }
+
+  alterTable(spec: AlterTableSpec) {
+    const a = super.alterTable(spec)
+    console.log(a)
+    return a
   }
 }

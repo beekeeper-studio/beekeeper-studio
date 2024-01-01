@@ -389,7 +389,7 @@ export class DBTestUtil {
         {
           columnName: 'first_name',
           changeType: 'defaultValue',
-          newValue: this.dbType === 'firebird' ? "Foo'bar" : "'Foo''bar'"
+          newValue: "'Foo''bar'"
         },
         {
           columnName: 'age',
@@ -433,7 +433,7 @@ export class DBTestUtil {
       if (this.dialect === 'postgresql') return `'${s.replaceAll("'", "''")}'::character varying`
       if (this.dialect === 'sqlserver' && _.isNumber(s)) return `((${s}))`
       if (this.dialect === 'sqlserver') return `('${s.replaceAll("'", "''")}')`
-      if (this.dialect === 'firebird') return `'${s.toString().replaceAll("'", "''")}'`
+      if (this.dialect === 'firebird' && _.isString(s)) return `'${s.replaceAll("'", "''")}'`
       return s.toString()
     }
 

@@ -17,10 +17,15 @@ const types = [
 
 const supportsLength = [];
 
+function wrapIdentifier(id: string) {
+  if (id.includes(" ")) return `"${id}"`;
+  return id;
+}
+
 export const FirebirdData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t))),
   constraintActions: [],
-  wrapIdentifier: (id: string) => id,
+  wrapIdentifier,
   editorFriendlyIdentifier: friendlyNormalizedIdentifier,
   escapeString: (s) => Firebird.escape(s),
   wrapLiteral: Firebird.escape,
@@ -32,6 +37,5 @@ export const FirebirdData: DialectData = {
     createTable: true, // Blocked by knex builder creating unnecessary query
     collations: true,
   },
-  notices: {
-  },
+  notices: {},
 };
