@@ -753,7 +753,9 @@ export class DBTestUtil {
     ]
 
     if (this.dbType === 'firebird') {
-      await Promise.all(names.map((name) => this.knex('streamtest').insert(name)))
+      for (const name of names) {
+        await this.knex('streamtest').insert(name)
+      }
     } else {
       await this.knex('streamtest').insert(names)
     }
